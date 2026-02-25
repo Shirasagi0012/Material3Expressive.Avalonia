@@ -21,6 +21,11 @@
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path=".gitmodules" />
+    <File Path="Directory.Packages.props" />
     <File Path="nuget.config" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Material3Expressive.Demo/Material3Expressive.Demo.csproj" />
+    <Project Path="src/Material3Expressive/Material3Expressive.csproj" />
   </Folder>
 </Solution>
