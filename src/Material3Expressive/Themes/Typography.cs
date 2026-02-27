@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Styling;
 using Avalonia.Media;
 using Material3Expressive.Themes.Tokens;
@@ -9,6 +10,7 @@ using PropertyGenerator.Avalonia;
 namespace Material3Expressive.Themes;
 
 [DoNotGenerateOnPropertyChanged]
+[GenerateAttachedProperty<Control, TypographyRoleToken>("TextStyle", Inherits = true, DefaultValue = TypographyRoleToken.BodyMedium)]
 public partial class Typography : AvaloniaObject
 {
     internal static readonly AttachedProperty<Typography?> TypographyHostProperty =
@@ -29,7 +31,9 @@ public partial class Typography : AvaloniaObject
     public Typography()
     {
         BrandFontFamily = TypefaceTokens.Brand;
-        PlainFontFamily = TypefaceTokens.Plain;
+        PlainFontFamily = TypefaceTokens.Plain;        
+        EmphasizedBrandFontFamily = TypefaceTokens.EmphasizedBrand;
+        EmphasizedPlainFontFamily = TypefaceTokens.EmphasizedPlain;
         WeightBold = TypefaceTokens.WeightBold;
         WeightMedium = TypefaceTokens.WeightMedium;
         WeightRegular = TypefaceTokens.WeightRegular;
@@ -67,7 +71,9 @@ public partial class Typography : AvaloniaObject
 
     // Props
     [GeneratedStyledProperty] public partial FontFamily BrandFontFamily { get; set; }
-    [GeneratedStyledProperty] public partial FontFamily PlainFontFamily { get; set; }
+    [GeneratedStyledProperty] public partial FontFamily PlainFontFamily { get; set; }  
+    [GeneratedStyledProperty] public partial FontFamily EmphasizedBrandFontFamily { get; set; }
+    [GeneratedStyledProperty] public partial FontFamily EmphasizedPlainFontFamily { get; set; }
     [GeneratedStyledProperty] public partial FontWeight WeightBold { get; set; }
     [GeneratedStyledProperty] public partial FontWeight WeightMedium { get; set; }
     [GeneratedStyledProperty] public partial FontWeight WeightRegular { get; set; }

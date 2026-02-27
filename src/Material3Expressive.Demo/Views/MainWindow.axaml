@@ -15,10 +15,20 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <TextBlock Foreground="{m3:MdSysColor OnBackground}" 
-               Text="{Binding Greeting}" 
-               FontSize="{m3:MdTypeSize DisplayLarge}"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+    <StackPanel Margin="24" Spacing="16">
+        <TextBlock Text="TextBlock Style Validation"
+                   Foreground="{m3:MdSysColor OnBackground}"/>
+
+        <ComboBox Width="320"
+                  ItemsSource="{Binding TextStyles}"
+                  SelectedItem="{Binding SelectedTextStyle}" />
+
+        <TextBlock Text="{Binding SelectedTextStyle}"
+                   Foreground="{m3:MdSysColor OnBackground}" />
+
+        <TextBlock Foreground="{m3:MdSysColor OnBackground}"
+                   Text="{Binding Greeting}"
+                   m3:Typography.TextStyle="{Binding SelectedTextStyle}" />
+    </StackPanel>
 
 </Window>

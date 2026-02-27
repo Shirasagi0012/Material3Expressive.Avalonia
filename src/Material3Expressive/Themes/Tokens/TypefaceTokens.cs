@@ -6,7 +6,11 @@ public static class TypefaceTokens
 {
     public static readonly FontFamily Brand = FontFamily.Default;
 
-    public static readonly FontFamily Plain = FontFamily.Default;
+    public static readonly FontFamily Plain = FontFamily.Default; 
+    
+    public static readonly FontFamily EmphasizedBrand = FontFamily.Default;
+
+    public static readonly FontFamily EmphasizedPlain = FontFamily.Default;
 
     public static readonly FontWeight WeightRegular = FontWeight.Normal;
 
@@ -18,7 +22,9 @@ public static class TypefaceTokens
 public enum FontFamilyToken
 {
     Brand,
-    Plain
+    Plain,
+    EmphasizedBrand,
+    EmphasizedPlain
 }
 
 public enum FontWeightToken

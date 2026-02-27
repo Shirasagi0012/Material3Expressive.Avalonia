@@ -25,6 +25,8 @@ internal static class TypographyHelper
             {
                 FontFamilyToken.Brand => typography?.BrandFontFamily,
                 FontFamilyToken.Plain => typography?.PlainFontFamily,
+                FontFamilyToken.EmphasizedBrand => typography?.EmphasizedBrandFontFamily,
+                FontFamilyToken.EmphasizedPlain => typography?.EmphasizedPlainFontFamily,
                 _ => throw new ArgumentOutOfRangeException(nameof(typography), typography, null)
             });
     }
