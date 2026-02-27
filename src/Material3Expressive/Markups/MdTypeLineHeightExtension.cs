@@ -2,7 +2,7 @@ using System;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Material3Expressive.Themes;
-using Material3Expressive.Tokens;
+using Material3Expressive.Themes.Tokens;
 
 namespace Material3Expressive.Markups;
 

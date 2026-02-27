@@ -7,7 +7,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings;
 using Avalonia.Markup.Xaml.XamlIl.Runtime;
-using Material3Expressive.Tokens;
+using Material3Expressive.Themes.Tokens;
 
 namespace Material3Expressive.Themes;
 

@@ -1,4 +1,4 @@
-namespace Material3Expressive.Tokens;
+namespace Material3Expressive.Themes.Tokens;
 
 public enum TypographyRoleToken
 {

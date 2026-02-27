@@ -1,6 +1,6 @@
 using Avalonia.Media;
 
-namespace Material3Expressive.Tokens;
+namespace Material3Expressive.Themes.Tokens;
 
 public static class TypefaceTokens
 {

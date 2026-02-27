@@ -1,6 +1,6 @@
 using System;
 
-namespace Material3Expressive.Tokens;
+namespace Material3Expressive.Themes.Tokens;
 
 public readonly record struct TypeScaleToken(
     double FontSize,

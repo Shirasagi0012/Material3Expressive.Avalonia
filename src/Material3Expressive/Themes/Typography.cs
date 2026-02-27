@@ -3,7 +3,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Styling;
 using Avalonia.Media;
-using Material3Expressive.Tokens;
+using Material3Expressive.Themes.Tokens;
 using PropertyGenerator.Avalonia;
 
 namespace Material3Expressive.Themes;
