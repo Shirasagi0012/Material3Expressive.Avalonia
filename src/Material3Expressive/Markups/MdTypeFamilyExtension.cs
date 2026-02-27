@@ -3,8 +3,10 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3Expressive.Themes;
+using Material3Expressive.Tokens;
 
-namespace Material3Expressive.Themes;
+namespace Material3Expressive.Markups;
 
 public class MdTypeFamilyExtension
 {

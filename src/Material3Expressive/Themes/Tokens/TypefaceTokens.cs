@@ -1,6 +1,6 @@
 using Avalonia.Media;
 
-namespace Material3Expressive.Themes;
+namespace Material3Expressive.Tokens;
 
 public static class TypefaceTokens
 {
@@ -18,8 +18,9 @@ public static class TypefaceTokens
 public enum FontFamilyToken
 {
     Brand,
-    Plain,
+    Plain
 }
+
 public enum FontWeightToken
 {
     Regular,

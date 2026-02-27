@@ -1,7 +1,6 @@
 using System;
-using Avalonia.Media;
 
-namespace Material3Expressive.Themes;
+namespace Material3Expressive.Tokens;
 
 public readonly record struct TypeScaleToken(
     double FontSize,

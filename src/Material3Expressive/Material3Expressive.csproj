@@ -7,13 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Avalonia" />
-      <PackageReference Include="PropertyGenerator.Avalonia" />
+        <PackageReference Include="Avalonia"/>
+        <PackageReference Include="PropertyGenerator.Avalonia"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\MaterialColorUtilities.Avalonia.csproj" />
-      <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj" />
+        <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\MaterialColorUtilities.Avalonia.csproj"/>
+        <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj"/>
     </ItemGroup>
 
 </Project>

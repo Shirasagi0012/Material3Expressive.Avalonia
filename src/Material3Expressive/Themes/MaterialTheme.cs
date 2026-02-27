@@ -6,7 +6,8 @@ namespace Material3Expressive.Themes;
 
 public partial class MaterialTheme : AvaloniaObject
 {
-    public static readonly AttachedProperty<MaterialTheme> ThemeProperty = AvaloniaProperty.RegisterAttached<MaterialTheme, AvaloniaObject, MaterialTheme>("Theme");
+    public static readonly AttachedProperty<MaterialTheme> ThemeProperty =
+        AvaloniaProperty.RegisterAttached<MaterialTheme, AvaloniaObject, MaterialTheme>("Theme");
 
     public static void SetTheme(AvaloniaObject element, MaterialTheme value)
     {

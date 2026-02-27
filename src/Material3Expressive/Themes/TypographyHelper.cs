@@ -7,6 +7,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings;
 using Avalonia.Markup.Xaml.XamlIl.Runtime;
+using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Themes;
 
@@ -14,67 +15,75 @@ internal static class TypographyHelper
 {
     public static IBinding ProvideFontFamilyBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        FontFamilyToken token)
+        FontFamilyToken token
+    )
     {
         return CreateBinding(
             parentStack,
             TypefaceTokens.Brand,
-            typography => token switch {
+            typography => token switch
+            {
                 FontFamilyToken.Brand => typography?.BrandFontFamily,
                 FontFamilyToken.Plain => typography?.PlainFontFamily,
                 _ => throw new ArgumentOutOfRangeException(nameof(typography), typography, null)
             });
     }
-    
+
     public static IBinding ProvideFontWeightBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        FontWeightToken token)
+        FontWeightToken token
+    )
     {
         return CreateBinding(
             parentStack,
             TypefaceTokens.WeightRegular,
-            typography => token switch {
+            typography => token switch
+            {
                 FontWeightToken.Regular => typography?.WeightRegular,
                 FontWeightToken.Medium => typography?.WeightMedium,
                 FontWeightToken.Bold => typography?.WeightBold,
                 _ => throw new ArgumentOutOfRangeException(nameof(typography), typography, null)
             });
     }
-    
+
     public static IBinding ProvideTypeScaleFontSizeBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRoleToken token)
+        TypographyRoleToken token
+    )
     {
         return CreateBinding(
             parentStack,
             TypeScaleTokens.BodyMedium.FontSize,
             typography => typography?.GetTypeScale(token).FontSize);
     }
-    
+
     public static IBinding ProvideTypeScaleLineHeightBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRoleToken token)
+        TypographyRoleToken token
+    )
     {
         return CreateBinding(
             parentStack,
             TypeScaleTokens.BodyMedium.LineHeight,
             typography => typography?.GetTypeScale(token).LineHeight);
     }
-    
+
     public static IBinding ProvideTypeScaleLetterSpacingBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRoleToken token)
+        TypographyRoleToken token
+    )
     {
         return CreateBinding(
             parentStack,
             TypeScaleTokens.BodyMedium.LetterSpacing,
             typography => typography?.GetTypeScale(token).LetterSpacing);
     }
-    
+
     private static IBinding CreateBinding<T>(
         IAvaloniaXamlIlParentStackProvider parentStack,
         T fallback,
-        Func<Typography?, T> resolveValue)
+        Func<Typography?, T> resolveValue
+    )
     {
         object? source = null;
         if (parentStack is { Parents: { } parents })
@@ -84,7 +93,7 @@ internal static class TypographyHelper
                     source = styled;
                     break;
                 }
-        
+
         var typographyBinding = CreateBindingInternal(source);
         var appTypographyBinding = CreateBindingInternal(Application.Current);
 
@@ -121,7 +130,7 @@ internal static class TypographyHelper
                 Source = source,
                 Path = new CompiledBindingPathBuilder()
                     .Property(Typography.TypographyHostProperty, PropertyInfoAccessorFactory.CreateAvaloniaPropertyAccessor)
-                    .Build(),
+                    .Build()
             };
         }
     }

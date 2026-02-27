@@ -3,6 +3,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Styling;
 using Avalonia.Media;
+using Material3Expressive.Tokens;
 using PropertyGenerator.Avalonia;
 
 namespace Material3Expressive.Themes;
@@ -100,7 +101,7 @@ public partial class Typography : AvaloniaObject
     [GeneratedStyledProperty] public partial TypeScaleToken LabelLargeEmphasized { get; set; }
     [GeneratedStyledProperty] public partial TypeScaleToken LabelMediumEmphasized { get; set; }
     [GeneratedStyledProperty] public partial TypeScaleToken LabelSmallEmphasized { get; set; }
-    
+
     internal TypeScaleToken GetTypeScale(TypographyRoleToken role)
     {
         return role switch
@@ -120,7 +121,7 @@ public partial class Typography : AvaloniaObject
             TypographyRoleToken.LabelLarge => LabelLarge,
             TypographyRoleToken.LabelMedium => LabelMedium,
             TypographyRoleToken.LabelSmall => LabelSmall,
-            
+
             TypographyRoleToken.DisplayLargeEmphasized => DisplayLargeEmphasized,
             TypographyRoleToken.DisplayMediumEmphasized => DisplayMediumEmphasized,
             TypographyRoleToken.DisplaySmallEmphasized => DisplaySmallEmphasized,
@@ -139,5 +140,10 @@ public partial class Typography : AvaloniaObject
 
             _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
         };
+    }
+    
+    public object ProvideValue()
+    {
+        return this;
     }
 }

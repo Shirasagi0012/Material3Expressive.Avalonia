@@ -1,7 +1,4 @@
-using System;
-using Avalonia.Media;
-
-namespace Material3Expressive.Themes;
+namespace Material3Expressive.Tokens;
 
 public enum TypographyRoleToken
 {
@@ -35,5 +32,5 @@ public enum TypographyRoleToken
     BodySmallEmphasized,
     LabelLargeEmphasized,
     LabelMediumEmphasized,
-    LabelSmallEmphasized,
+    LabelSmallEmphasized
 }

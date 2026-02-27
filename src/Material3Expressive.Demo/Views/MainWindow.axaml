@@ -8,6 +8,7 @@
         x:DataType="vm:MainWindowViewModel"
         xmlns:m3t="using:Material3Expressive.Themes"
         xmlns:mcu="clr-namespace:MaterialColorUtilities.Avalonia;assembly=MaterialColorUtilities.Avalonia"
+        xmlns:markups="clr-namespace:Material3Expressive.Markups;assembly=Material3Expressive"
         Icon="/Assets/avalonia-logo.ico"
         Title="Material3Expressive.Demo"
         Background="{mcu:MdSysColor Background}">
@@ -18,6 +19,7 @@
 
     <TextBlock Foreground="{mcu:MdSysColor OnBackground}" 
                Text="{Binding Greeting}" 
+               FontSize="{markups:MdTypeSize DisplayLarge}"
                HorizontalAlignment="Center"
                VerticalAlignment="Center" />
 
