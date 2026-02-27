@@ -6,20 +6,18 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Material3Expressive.Demo.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        xmlns:m3t="using:Material3Expressive.Themes"
-        xmlns:mcu="clr-namespace:MaterialColorUtilities.Avalonia;assembly=MaterialColorUtilities.Avalonia"
-        xmlns:markups="clr-namespace:Material3Expressive.Markups;assembly=Material3Expressive"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         Icon="/Assets/avalonia-logo.ico"
         Title="Material3Expressive.Demo"
-        Background="{mcu:MdSysColor Background}">
+        Background="{m3:MdSysColor Background}">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <TextBlock Foreground="{mcu:MdSysColor OnBackground}" 
+    <TextBlock Foreground="{m3:MdSysColor OnBackground}" 
                Text="{Binding Greeting}" 
-               FontSize="{markups:MdTypeSize DisplayLarge}"
+               FontSize="{m3:MdTypeSize DisplayLarge}"
                HorizontalAlignment="Center"
                VerticalAlignment="Center" />
 

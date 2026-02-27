@@ -2,8 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Material3Expressive.Demo.App"
              xmlns:local="using:Material3Expressive.Demo"
-             xmlns:m3t="clr-namespace:Material3Expressive.Themes;assembly=Material3Expressive"
-             xmlns:mcu="clr-namespace:MaterialColorUtilities.Avalonia;assembly=MaterialColorUtilities.Avalonia"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
              RequestedThemeVariant="Default">
 
     <Application.DataTemplates>
@@ -14,9 +13,9 @@
         <FluentTheme />
     </Application.Styles>
     
-    <m3t:MaterialTheme.Theme>
-        <m3t:MaterialTheme 
-            ColorScheme="{mcu:TonalSpotScheme {DynamicResource SystemAccentColor}}"
-            TypographyScheme="{m3t:Typography}"/>
-    </m3t:MaterialTheme.Theme>
+    <m3:MaterialTheme.Theme>
+        <m3:MaterialTheme 
+            ColorScheme="{m3:TonalSpotScheme {DynamicResource SystemAccentColor}}"
+            TypographyScheme="{m3:Typography}"/>
+    </m3:MaterialTheme.Theme>
 </Application>
