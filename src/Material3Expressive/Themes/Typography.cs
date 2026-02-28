@@ -10,7 +10,7 @@ using PropertyGenerator.Avalonia;
 namespace Material3Expressive.Themes;
 
 [DoNotGenerateOnPropertyChanged]
-[GenerateAttachedProperty<Control, TypographyRoleToken>("TextStyle", Inherits = true, DefaultValue = TypographyRoleToken.BodyMedium)]
+[GenerateAttachedProperty<StyledElement, TypographyRoleToken>("TextStyle", Inherits = true, DefaultValue = TypographyRoleToken.BodyMedium)]
 public partial class Typography : AvaloniaObject
 {
     internal static readonly AttachedProperty<Typography?> TypographyHostProperty =
