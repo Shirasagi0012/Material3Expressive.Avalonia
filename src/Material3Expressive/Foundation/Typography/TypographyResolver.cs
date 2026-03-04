@@ -7,11 +7,11 @@ using Avalonia.Data.Converters;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings;
 using Avalonia.Markup.Xaml.XamlIl.Runtime;
-using Material3Expressive.Themes.Tokens;
+using Material3Expressive.Foundation.Tokens;
 
-namespace Material3Expressive.Themes;
+namespace Material3Expressive.Foundation;
 
-internal static class TypographyHelper
+internal static class TypographyResolver
 {
     public static IBinding ProvideFontFamilyBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
@@ -50,7 +50,7 @@ internal static class TypographyHelper
 
     public static IBinding ProvideTypeScaleFontSizeBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRoleToken token
+        TypographyRole token
     )
     {
         return CreateBinding(
@@ -61,7 +61,7 @@ internal static class TypographyHelper
 
     public static IBinding ProvideTypeScaleLineHeightBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRoleToken token
+        TypographyRole token
     )
     {
         return CreateBinding(
@@ -72,7 +72,7 @@ internal static class TypographyHelper
 
     public static IBinding ProvideTypeScaleLetterSpacingBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRoleToken token
+        TypographyRole token
     )
     {
         return CreateBinding(
@@ -84,7 +84,7 @@ internal static class TypographyHelper
     private static IBinding CreateBinding<T>(
         IAvaloniaXamlIlParentStackProvider parentStack,
         T fallback,
-        Func<Typography?, T> resolveValue
+        Func<TypographyScheme?, T> resolveValue
     )
     {
         object? source = null;
@@ -112,7 +112,7 @@ internal static class TypographyHelper
                     (values as IList<object?> ?? values.ToList()) switch
                     {
                         [var typography, var appTypography, ..] => resolveValue(
-                            typography as Typography ?? appTypography as Typography),
+                            typography as TypographyScheme ?? appTypography as TypographyScheme),
                         _ => fallback
                     })
             };
@@ -120,7 +120,7 @@ internal static class TypographyHelper
         }
 
         appTypographyBinding.Converter = new FuncValueConverter<object?, T>(value =>
-            resolveValue(value as Typography));
+            resolveValue(value as TypographyScheme));
         return appTypographyBinding;
 
         static CompiledBindingExtension CreateBindingInternal(object? source)
@@ -131,7 +131,7 @@ internal static class TypographyHelper
                 Priority = BindingPriority.Style,
                 Source = source,
                 Path = new CompiledBindingPathBuilder()
-                    .Property(Typography.TypographyHostProperty, PropertyInfoAccessorFactory.CreateAvaloniaPropertyAccessor)
+                    .Property(TypographyScheme.TypographyHostProperty, PropertyInfoAccessorFactory.CreateAvaloniaPropertyAccessor)
                     .Build()
             };
         }

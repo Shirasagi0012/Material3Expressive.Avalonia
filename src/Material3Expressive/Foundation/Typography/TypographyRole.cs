@@ -1,6 +1,6 @@
-namespace Material3Expressive.Themes.Tokens;
+namespace Material3Expressive.Foundation;
 
-public enum TypographyRoleToken
+public enum TypographyRole
 {
     DisplayLarge,
     DisplayMedium,

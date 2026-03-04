@@ -4,31 +4,17 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
 using Avalonia.Media;
-using Material3Expressive.Themes.Tokens;
+using Material3Expressive.Foundation.Tokens;
 using PropertyGenerator.Avalonia;
 
-namespace Material3Expressive.Themes;
+namespace Material3Expressive.Foundation;
 
 [DoNotGenerateOnPropertyChanged]
-[GenerateAttachedProperty<StyledElement, TypographyRoleToken>("TextStyle", Inherits = true, DefaultValue = TypographyRoleToken.BodyMedium)]
-public partial class Typography : AvaloniaObject
+[GenerateAttachedProperty<StyledElement, TypographyRole>("TextStyle", Inherits = true, DefaultValue = TypographyRole.BodyMedium)]
+[GenerateAttachedProperty<AvaloniaObject, TypographyScheme>("TypographyHost", Inherits = true)]
+public partial class TypographyScheme : AvaloniaObject
 {
-    internal static readonly AttachedProperty<Typography?> TypographyHostProperty =
-        AvaloniaProperty.RegisterAttached<Typography, AvaloniaObject, Typography?>(
-            "TypographyHost",
-            inherits: true);
-
-    internal static void SetTypographyHost(AvaloniaObject element, Typography? value)
-    {
-        element.SetValue(TypographyHostProperty, value);
-    }
-
-    internal static Typography? GetTypographyHost(AvaloniaObject element)
-    {
-        return element.GetValue(TypographyHostProperty);
-    }
-
-    public Typography()
+    public TypographyScheme()
     {
         BrandFontFamily = TypefaceTokens.Brand;
         PlainFontFamily = TypefaceTokens.Plain;        
@@ -108,41 +94,41 @@ public partial class Typography : AvaloniaObject
     [GeneratedStyledProperty] public partial TypeScaleToken LabelMediumEmphasized { get; set; }
     [GeneratedStyledProperty] public partial TypeScaleToken LabelSmallEmphasized { get; set; }
 
-    internal TypeScaleToken GetTypeScale(TypographyRoleToken role)
+    internal TypeScaleToken GetTypeScale(TypographyRole role)
     {
         return role switch
         {
-            TypographyRoleToken.DisplayLarge => DisplayLarge,
-            TypographyRoleToken.DisplayMedium => DisplayMedium,
-            TypographyRoleToken.DisplaySmall => DisplaySmall,
-            TypographyRoleToken.HeadlineLarge => HeadlineLarge,
-            TypographyRoleToken.HeadlineMedium => HeadlineMedium,
-            TypographyRoleToken.HeadlineSmall => HeadlineSmall,
-            TypographyRoleToken.TitleLarge => TitleLarge,
-            TypographyRoleToken.TitleMedium => TitleMedium,
-            TypographyRoleToken.TitleSmall => TitleSmall,
-            TypographyRoleToken.BodyLarge => BodyLarge,
-            TypographyRoleToken.BodyMedium => BodyMedium,
-            TypographyRoleToken.BodySmall => BodySmall,
-            TypographyRoleToken.LabelLarge => LabelLarge,
-            TypographyRoleToken.LabelMedium => LabelMedium,
-            TypographyRoleToken.LabelSmall => LabelSmall,
+            TypographyRole.DisplayLarge => DisplayLarge,
+            TypographyRole.DisplayMedium => DisplayMedium,
+            TypographyRole.DisplaySmall => DisplaySmall,
+            TypographyRole.HeadlineLarge => HeadlineLarge,
+            TypographyRole.HeadlineMedium => HeadlineMedium,
+            TypographyRole.HeadlineSmall => HeadlineSmall,
+            TypographyRole.TitleLarge => TitleLarge,
+            TypographyRole.TitleMedium => TitleMedium,
+            TypographyRole.TitleSmall => TitleSmall,
+            TypographyRole.BodyLarge => BodyLarge,
+            TypographyRole.BodyMedium => BodyMedium,
+            TypographyRole.BodySmall => BodySmall,
+            TypographyRole.LabelLarge => LabelLarge,
+            TypographyRole.LabelMedium => LabelMedium,
+            TypographyRole.LabelSmall => LabelSmall,
 
-            TypographyRoleToken.DisplayLargeEmphasized => DisplayLargeEmphasized,
-            TypographyRoleToken.DisplayMediumEmphasized => DisplayMediumEmphasized,
-            TypographyRoleToken.DisplaySmallEmphasized => DisplaySmallEmphasized,
-            TypographyRoleToken.HeadlineLargeEmphasized => HeadlineLargeEmphasized,
-            TypographyRoleToken.HeadlineMediumEmphasized => HeadlineMediumEmphasized,
-            TypographyRoleToken.HeadlineSmallEmphasized => HeadlineSmallEmphasized,
-            TypographyRoleToken.TitleLargeEmphasized => TitleLargeEmphasized,
-            TypographyRoleToken.TitleMediumEmphasized => TitleMediumEmphasized,
-            TypographyRoleToken.TitleSmallEmphasized => TitleSmallEmphasized,
-            TypographyRoleToken.BodyLargeEmphasized => BodyLargeEmphasized,
-            TypographyRoleToken.BodyMediumEmphasized => BodyMediumEmphasized,
-            TypographyRoleToken.BodySmallEmphasized => BodySmallEmphasized,
-            TypographyRoleToken.LabelLargeEmphasized => LabelLargeEmphasized,
-            TypographyRoleToken.LabelMediumEmphasized => LabelMediumEmphasized,
-            TypographyRoleToken.LabelSmallEmphasized => LabelSmallEmphasized,
+            TypographyRole.DisplayLargeEmphasized => DisplayLargeEmphasized,
+            TypographyRole.DisplayMediumEmphasized => DisplayMediumEmphasized,
+            TypographyRole.DisplaySmallEmphasized => DisplaySmallEmphasized,
+            TypographyRole.HeadlineLargeEmphasized => HeadlineLargeEmphasized,
+            TypographyRole.HeadlineMediumEmphasized => HeadlineMediumEmphasized,
+            TypographyRole.HeadlineSmallEmphasized => HeadlineSmallEmphasized,
+            TypographyRole.TitleLargeEmphasized => TitleLargeEmphasized,
+            TypographyRole.TitleMediumEmphasized => TitleMediumEmphasized,
+            TypographyRole.TitleSmallEmphasized => TitleSmallEmphasized,
+            TypographyRole.BodyLargeEmphasized => BodyLargeEmphasized,
+            TypographyRole.BodyMediumEmphasized => BodyMediumEmphasized,
+            TypographyRole.BodySmallEmphasized => BodySmallEmphasized,
+            TypographyRole.LabelLargeEmphasized => LabelLargeEmphasized,
+            TypographyRole.LabelMediumEmphasized => LabelMediumEmphasized,
+            TypographyRole.LabelSmallEmphasized => LabelSmallEmphasized,
 
             _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
         };

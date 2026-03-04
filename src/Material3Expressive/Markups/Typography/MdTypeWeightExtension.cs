@@ -2,8 +2,8 @@ using System;
 using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Avalonia.Media;
-using Material3Expressive.Themes;
-using Material3Expressive.Themes.Tokens;
+using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Markups;
 
@@ -25,6 +25,6 @@ public class MdTypeWeightExtension
     {
         var parentStack = (IAvaloniaXamlIlParentStackProvider?)serviceProvider.GetService(typeof(IAvaloniaXamlIlParentStackProvider));
         if (parentStack is null) return FontWeight.Regular;
-        return TypographyHelper.ProvideFontWeightBinding(parentStack, Token);
+        return TypographyResolver.ProvideFontWeightBinding(parentStack, Token);
     }
 }

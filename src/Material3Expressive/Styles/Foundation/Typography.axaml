@@ -1,226 +1,225 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        x:Class="Material3Expressive.Themes.MaterialStyles">
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type TextBlock}" TargetType="TextBlock">
-            <Style Selector="^[(m3|Typography.TextStyle)=DisplayLarge]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=DisplayLarge]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayLarge}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking DisplayLarge}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=DisplayMedium]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=DisplayMedium]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayMedium}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking DisplayMedium}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=DisplaySmall]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=DisplaySmall]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplaySmall}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking DisplaySmall}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=HeadlineLarge]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=HeadlineLarge]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineLarge}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking HeadlineLarge}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=HeadlineMedium]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=HeadlineMedium]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineMedium}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking HeadlineMedium}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=HeadlineSmall]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=HeadlineSmall]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineSmall}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking HeadlineSmall}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=TitleLarge]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=TitleLarge]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleLarge}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking TitleLarge}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=TitleMedium]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=TitleMedium]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleMedium}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking TitleMedium}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=TitleSmall]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=TitleSmall]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleSmall}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking TitleSmall}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=BodyLarge]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=BodyLarge]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyLarge}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking BodyLarge}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=BodyMedium]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=BodyMedium]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyMedium}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking BodyMedium}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=BodySmall]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=BodySmall]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodySmall}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking BodySmall}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=LabelLarge]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=LabelLarge]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelLarge}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking LabelLarge}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=LabelMedium]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=LabelMedium]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelMedium}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking LabelMedium}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=LabelSmall]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=LabelSmall]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelSmall}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking LabelSmall}" />
             </Style>
 
-            <Style Selector="^[(m3|Typography.TextStyle)=DisplayLargeEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=DisplayLargeEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayLargeEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking DisplayLargeEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=DisplayMediumEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=DisplayMediumEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayMediumEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking DisplayMediumEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=DisplaySmallEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=DisplaySmallEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplaySmallEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking DisplaySmallEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=HeadlineLargeEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=HeadlineLargeEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineLargeEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking HeadlineLargeEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=HeadlineMediumEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=HeadlineMediumEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineMediumEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking HeadlineMediumEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=HeadlineSmallEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=HeadlineSmallEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineSmallEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking HeadlineSmallEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=TitleLargeEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=TitleLargeEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleLargeEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking TitleLargeEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=TitleMediumEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=TitleMediumEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleMediumEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking TitleMediumEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=TitleSmallEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=TitleSmallEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleSmallEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking TitleSmallEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=BodyLargeEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=BodyLargeEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyLargeEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking BodyLargeEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=BodyMediumEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=BodyMediumEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyMediumEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking BodyMediumEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=BodySmallEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=BodySmallEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodySmallEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking BodySmallEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=LabelLargeEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=LabelLargeEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelLargeEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking LabelLargeEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=LabelMediumEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=LabelMediumEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelMediumEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking LabelMediumEmphasized}" />
             </Style>
-            <Style Selector="^[(m3|Typography.TextStyle)=LabelSmallEmphasized]">
+            <Style Selector="^[(m3|TypographyScheme.TextStyle)=LabelSmallEmphasized]">
                 <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelSmallEmphasized}" />
                 <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking LabelSmallEmphasized}" />
             </Style>
 
             <Style Selector="^.display-large">
-                <Setter Property="m3:Typography.TextStyle" Value="DisplayLarge" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="DisplayLarge" />
             </Style>
             <Style Selector="^.display-medium">
-                <Setter Property="m3:Typography.TextStyle" Value="DisplayMedium" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="DisplayMedium" />
             </Style>
             <Style Selector="^.display-small">
-                <Setter Property="m3:Typography.TextStyle" Value="DisplaySmall" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="DisplaySmall" />
             </Style>
             <Style Selector="^.headline-large">
-                <Setter Property="m3:Typography.TextStyle" Value="HeadlineLarge" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="HeadlineLarge" />
             </Style>
             <Style Selector="^.headline-medium">
-                <Setter Property="m3:Typography.TextStyle" Value="HeadlineMedium" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="HeadlineMedium" />
             </Style>
             <Style Selector="^.headline-small">
-                <Setter Property="m3:Typography.TextStyle" Value="HeadlineSmall" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="HeadlineSmall" />
             </Style>
             <Style Selector="^.title-large">
-                <Setter Property="m3:Typography.TextStyle" Value="TitleLarge" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="TitleLarge" />
             </Style>
             <Style Selector="^.title-medium">
-                <Setter Property="m3:Typography.TextStyle" Value="TitleMedium" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="TitleMedium" />
             </Style>
             <Style Selector="^.title-small">
-                <Setter Property="m3:Typography.TextStyle" Value="TitleSmall" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="TitleSmall" />
             </Style>
             <Style Selector="^.body-large">
-                <Setter Property="m3:Typography.TextStyle" Value="BodyLarge" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="BodyLarge" />
             </Style>
             <Style Selector="^.body-medium">
-                <Setter Property="m3:Typography.TextStyle" Value="BodyMedium" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="BodyMedium" />
             </Style>
             <Style Selector="^.body-small">
-                <Setter Property="m3:Typography.TextStyle" Value="BodySmall" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="BodySmall" />
             </Style>
             <Style Selector="^.label-large">
-                <Setter Property="m3:Typography.TextStyle" Value="LabelLarge" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelLarge" />
             </Style>
             <Style Selector="^.label-medium">
-                <Setter Property="m3:Typography.TextStyle" Value="LabelMedium" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelMedium" />
             </Style>
             <Style Selector="^.label-small">
-                <Setter Property="m3:Typography.TextStyle" Value="LabelSmall" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelSmall" />
             </Style>
 
             <Style Selector="^.display-large-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="DisplayLargeEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="DisplayLargeEmphasized" />
             </Style>
             <Style Selector="^.display-medium-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="DisplayMediumEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="DisplayMediumEmphasized" />
             </Style>
             <Style Selector="^.display-small-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="DisplaySmallEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="DisplaySmallEmphasized" />
             </Style>
             <Style Selector="^.headline-large-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="HeadlineLargeEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="HeadlineLargeEmphasized" />
             </Style>
             <Style Selector="^.headline-medium-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="HeadlineMediumEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="HeadlineMediumEmphasized" />
             </Style>
             <Style Selector="^.headline-small-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="HeadlineSmallEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="HeadlineSmallEmphasized" />
             </Style>
             <Style Selector="^.title-large-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="TitleLargeEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="TitleLargeEmphasized" />
             </Style>
             <Style Selector="^.title-medium-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="TitleMediumEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="TitleMediumEmphasized" />
             </Style>
             <Style Selector="^.title-small-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="TitleSmallEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="TitleSmallEmphasized" />
             </Style>
             <Style Selector="^.body-large-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="BodyLargeEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="BodyLargeEmphasized" />
             </Style>
             <Style Selector="^.body-medium-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="BodyMediumEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="BodyMediumEmphasized" />
             </Style>
             <Style Selector="^.body-small-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="BodySmallEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="BodySmallEmphasized" />
             </Style>
             <Style Selector="^.label-large-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="LabelLargeEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelLargeEmphasized" />
             </Style>
             <Style Selector="^.label-medium-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="LabelMediumEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelMediumEmphasized" />
             </Style>
             <Style Selector="^.label-small-emphasized">
-                <Setter Property="m3:Typography.TextStyle" Value="LabelSmallEmphasized" />
+                <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelSmallEmphasized" />
             </Style>
         </ControlTheme>
     </Styles.Resources>
     <!-- Control-level typography for templated controls -->
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=DisplayLarge]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayLarge]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayLarge}" />
@@ -234,7 +233,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=DisplayMedium]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayMedium]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayMedium}" />
@@ -248,7 +247,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=DisplaySmall]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplaySmall]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplaySmall}" />
@@ -262,7 +261,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=HeadlineLarge]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineLarge]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineLarge}" />
@@ -276,7 +275,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=HeadlineMedium]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineMedium]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineMedium}" />
@@ -290,7 +289,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=HeadlineSmall]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineSmall]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineSmall}" />
@@ -304,7 +303,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=TitleLarge]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleLarge]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleLarge}" />
@@ -318,7 +317,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=TitleMedium]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleMedium]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleMedium}" />
@@ -332,7 +331,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=TitleSmall]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleSmall]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleSmall}" />
@@ -346,7 +345,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=BodyLarge]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyLarge]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyLarge}" />
@@ -360,7 +359,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=BodyMedium]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyMedium]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyMedium}" />
@@ -374,7 +373,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=BodySmall]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodySmall]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodySmall}" />
@@ -388,7 +387,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=LabelLarge]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelLarge]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelLarge}" />
@@ -402,7 +401,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=LabelMedium]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelMedium]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelMedium}" />
@@ -416,7 +415,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=LabelSmall]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelSmall]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelSmall}" />
@@ -430,7 +429,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=DisplayLargeEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayLargeEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayLargeEmphasized}" />
@@ -444,7 +443,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=DisplayMediumEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayMediumEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayMediumEmphasized}" />
@@ -458,7 +457,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=DisplaySmallEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplaySmallEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplaySmallEmphasized}" />
@@ -472,7 +471,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=HeadlineLargeEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineLargeEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineLargeEmphasized}" />
@@ -486,7 +485,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=HeadlineMediumEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineMediumEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineMediumEmphasized}" />
@@ -500,7 +499,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=HeadlineSmallEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineSmallEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineSmallEmphasized}" />
@@ -514,7 +513,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=TitleLargeEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleLargeEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleLargeEmphasized}" />
@@ -528,7 +527,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=TitleMediumEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleMediumEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleMediumEmphasized}" />
@@ -542,7 +541,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=TitleSmallEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleSmallEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleSmallEmphasized}" />
@@ -556,7 +555,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=BodyLargeEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyLargeEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyLargeEmphasized}" />
@@ -570,7 +569,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=BodyMediumEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyMediumEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyMediumEmphasized}" />
@@ -584,7 +583,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=BodySmallEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodySmallEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodySmallEmphasized}" />
@@ -598,7 +597,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=LabelLargeEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelLargeEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelLargeEmphasized}" />
@@ -612,7 +611,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=LabelMediumEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelMediumEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelMediumEmphasized}" />
@@ -626,7 +625,7 @@
         </Style>
     </Style>
 
-    <Style Selector=":is(StyledElement)[(m3|Typography.TextStyle)=LabelSmallEmphasized]">
+    <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelSmallEmphasized]">
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelSmallEmphasized}" />

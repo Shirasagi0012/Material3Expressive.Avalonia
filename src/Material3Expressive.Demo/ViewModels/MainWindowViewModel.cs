@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Material3Expressive.Themes.Tokens;
+using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Demo.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    public IReadOnlyList<TypographyRoleToken> TextStyles { get; } = Enum.GetValues<TypographyRoleToken>();
+    public IReadOnlyList<TypographyRole> TextStyles { get; } = Enum.GetValues<TypographyRole>();
 
     [ObservableProperty]
-    private TypographyRoleToken selectedTextStyle = TypographyRoleToken.DisplayLarge;
+    private TypographyRole selectedTextStyle = TypographyRole.DisplayLarge;
 
     public string Greeting { get; } = "Welcome to Avalonia!";
 }

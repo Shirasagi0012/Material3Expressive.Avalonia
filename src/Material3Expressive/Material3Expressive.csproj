@@ -16,4 +16,15 @@
         <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Styles\Foundation\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Styles\MaterialStyles.axaml.cs">
+        <DependentUpon>MaterialStyles.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+    </ItemGroup>
+
 </Project>

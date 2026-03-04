@@ -1,6 +1,4 @@
-using System;
-
-namespace Material3Expressive.Themes.Tokens;
+namespace Material3Expressive.Foundation.Tokens;
 
 public readonly record struct TypeScaleToken(
     double FontSize,
@@ -49,43 +47,15 @@ public static class TypeScaleTokens
     public static readonly TypeScaleToken TitleLargeEmphasized = new(22, 28, 0);
     public static readonly TypeScaleToken TitleMediumEmphasized = new(16, 24, 0.15);
     public static readonly TypeScaleToken TitleSmallEmphasized = new(14, 20, 0.1);
-
-    public static TypeScaleToken Get(TypographyRoleToken role)
-    {
-        return role switch
-        {
-            TypographyRoleToken.DisplayLarge => DisplayLarge,
-            TypographyRoleToken.DisplayMedium => DisplayMedium,
-            TypographyRoleToken.DisplaySmall => DisplaySmall,
-            TypographyRoleToken.HeadlineLarge => HeadlineLarge,
-            TypographyRoleToken.HeadlineMedium => HeadlineMedium,
-            TypographyRoleToken.HeadlineSmall => HeadlineSmall,
-            TypographyRoleToken.TitleLarge => TitleLarge,
-            TypographyRoleToken.TitleMedium => TitleMedium,
-            TypographyRoleToken.TitleSmall => TitleSmall,
-            TypographyRoleToken.BodyLarge => BodyLarge,
-            TypographyRoleToken.BodyMedium => BodyMedium,
-            TypographyRoleToken.BodySmall => BodySmall,
-            TypographyRoleToken.LabelLarge => LabelLarge,
-            TypographyRoleToken.LabelMedium => LabelMedium,
-            TypographyRoleToken.LabelSmall => LabelSmall,
-
-            TypographyRoleToken.DisplayLargeEmphasized => DisplayLargeEmphasized,
-            TypographyRoleToken.DisplayMediumEmphasized => DisplayMediumEmphasized,
-            TypographyRoleToken.DisplaySmallEmphasized => DisplaySmallEmphasized,
-            TypographyRoleToken.HeadlineLargeEmphasized => HeadlineLargeEmphasized,
-            TypographyRoleToken.HeadlineMediumEmphasized => HeadlineMediumEmphasized,
-            TypographyRoleToken.HeadlineSmallEmphasized => HeadlineSmallEmphasized,
-            TypographyRoleToken.TitleLargeEmphasized => TitleLargeEmphasized,
-            TypographyRoleToken.TitleMediumEmphasized => TitleMediumEmphasized,
-            TypographyRoleToken.TitleSmallEmphasized => TitleSmallEmphasized,
-            TypographyRoleToken.BodyLargeEmphasized => BodyLargeEmphasized,
-            TypographyRoleToken.BodyMediumEmphasized => BodyMediumEmphasized,
-            TypographyRoleToken.BodySmallEmphasized => BodySmallEmphasized,
-            TypographyRoleToken.LabelLargeEmphasized => LabelLargeEmphasized,
-            TypographyRoleToken.LabelMediumEmphasized => LabelMediumEmphasized,
-            TypographyRoleToken.LabelSmallEmphasized => LabelSmallEmphasized,
-            _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
-        };
-    }
 }
+
+// public static class TypographyTokens
+// {
+//     public static readonly FontFamily BrandFontFamily = new();
+//     public static readonly FontFamily PlainFontFamily = new();
+//     public static readonly FontFamily EmphasizedBrandFontFamily = new();
+//     public static readonly FontFamily EmphasizedPlainFontFamily = new();
+//     public static readonly FontWeight WeightBold = new();
+//     public static readonly FontWeight WeightMedium = new();
+//     public static readonly FontWeight WeightRegular = new();
+// }

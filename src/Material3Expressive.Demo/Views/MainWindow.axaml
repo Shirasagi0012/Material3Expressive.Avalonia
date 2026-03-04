@@ -1,34 +1,15 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:Material3Expressive.Demo.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="using:Material3Expressive.Demo.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Material3Expressive.Demo.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         Icon="/Assets/avalonia-logo.ico"
         Title="Material3Expressive.Demo"
         Background="{m3:MdSysColor Background}">
 
-    <Design.DataContext>
-        <vm:MainWindowViewModel />
-    </Design.DataContext>
-
-    <StackPanel Margin="24" Spacing="16">
-        <TextBlock Text="TextBlock Style Validation"
-                   Foreground="{m3:MdSysColor OnBackground}"/>
-
-        <ComboBox Width="320"
-                  ItemsSource="{Binding TextStyles}"
-                  SelectedItem="{Binding SelectedTextStyle}" />
-
-        <TextBlock Text="{Binding SelectedTextStyle}"
-                   Foreground="{m3:MdSysColor OnBackground}" />
-
-        <TextBlock Foreground="{m3:MdSysColor OnBackground}"
-                   Text="{Binding Greeting}"
-                   m3:Typography.TextStyle="{Binding SelectedTextStyle}" />
-    </StackPanel>
+    <views:TypographyView />
 
 </Window>
