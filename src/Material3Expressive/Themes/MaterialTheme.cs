@@ -37,7 +37,7 @@ public partial class MaterialTheme : AvaloniaObject
     }
 
     [GeneratedStyledProperty]
-    public partial ISchemeProvider ColorScheme { get; set; }
+    public partial SchemeProviderBase ColorScheme { get; set; }
 
     [GeneratedStyledProperty]
     public partial Typography TypographyScheme { get; set; }
