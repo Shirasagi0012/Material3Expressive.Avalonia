@@ -257,7 +257,7 @@ Grouped by shared primitives, roughly in order:
 |---|---|
 | 2 | ~~Checkbox, Switch, RadioButton, Slider, ProgressIndicator (incl. wavy), LoadingIndicator~~ — **done 2026-07-26**. LoadingIndicator brought `modules/MaterialShapes` into the build; it is the only component that genuinely morphs polygons. |
 | 3 | ~~TextField (filled/outlined), Chips, ButtonGroup (standard + connected), SplitButton, FAB menu~~ — **done 2026-07-26**. |
-| 4 | NavigationBar (flexible), NavigationRail, Drawer, App bars / Toolbars (incl. floating), Tabs |
+| 4 | ~~NavigationBar, NavigationRail, Drawer, App bars, Tabs~~ — **done 2026-07-26**. The bar and rail are one control; floating toolbars are not built. |
 | 5 | Dialog, Bottom sheet, Menu, Snackbar, Tooltip, Search, Badge, Date/Time pickers, Carousel |
 
 Each wave: token tables first, then controls, then motion polish, then gallery.

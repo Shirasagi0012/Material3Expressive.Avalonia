@@ -1,0 +1,62 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <StackPanel Width="420">
+            <m3:MaterialAppBar Title="Inbox" NavigationIcon="&#x2261;" Actions="&#x22EF;" />
+            <m3:MaterialAppBar Size="Large" Title="Settings" Subtitle="Account" NavigationIcon="&#x2190;" />
+        </StackPanel>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialAppBar}" TargetType="m3:MaterialAppBar">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <!-- The small bar puts the title between the navigation icon and the actions;
+                         the taller two drop it onto its own line underneath. -->
+                    <Grid RowDefinitions="Auto,*" Margin="{TemplateBinding Padding}">
+                        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Height="64">
+                            <ContentPresenter Grid.Column="0"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding NavigationIcon}"
+                                              TextElement.Foreground="{TemplateBinding SubtitleBrush}" />
+                            <StackPanel x:Name="PART_InlineTitle"
+                                        Grid.Column="1"
+                                        Margin="16,0"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{TemplateBinding IsStacked, Converter={x:Static BoolConverters.Not}}">
+                                <ContentPresenter Content="{TemplateBinding Title}"
+                                                  TextElement.Foreground="{TemplateBinding TitleBrush}"
+                                                  TextElement.FontSize="{TemplateBinding FontSize}"
+                                                  TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                                  TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                                <ContentPresenter Content="{TemplateBinding Subtitle}"
+                                                  IsVisible="{TemplateBinding Subtitle, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                  TextElement.Foreground="{TemplateBinding SubtitleBrush}" />
+                            </StackPanel>
+                            <ContentPresenter Grid.Column="2"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Actions}"
+                                              TextElement.Foreground="{TemplateBinding SubtitleBrush}" />
+                        </Grid>
+
+                        <StackPanel x:Name="PART_StackedTitle"
+                                    Grid.Row="1"
+                                    Margin="0,0,0,16"
+                                    VerticalAlignment="Bottom"
+                                    IsVisible="{TemplateBinding IsStacked}">
+                            <ContentPresenter Content="{TemplateBinding Title}"
+                                              TextElement.Foreground="{TemplateBinding TitleBrush}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                            <ContentPresenter Content="{TemplateBinding Subtitle}"
+                                              IsVisible="{TemplateBinding Subtitle, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                              TextElement.Foreground="{TemplateBinding SubtitleBrush}" />
+                        </StackPanel>
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

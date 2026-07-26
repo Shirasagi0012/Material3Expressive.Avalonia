@@ -43,6 +43,7 @@
                              SelectionChanged="OnPageChanged">
                         <ListBoxItem Content="Buttons" />
                         <ListBoxItem Content="Icon buttons, FABs, cards" />
+                        <ListBoxItem Content="Navigation" />
                         <ListBoxItem Content="Typography" />
                     </ListBox>
                 </StackPanel>

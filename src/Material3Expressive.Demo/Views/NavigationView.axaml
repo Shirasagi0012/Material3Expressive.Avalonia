@@ -1,0 +1,111 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             x:Class="Material3Expressive.Demo.Views.NavigationView">
+    <ScrollViewer Padding="32">
+        <StackPanel Spacing="32">
+
+            <StackPanel Spacing="4">
+                <TextBlock Classes="headline-medium" Text="Navigation" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="The bar and the rail are one control turned ninety degrees — same items, same indicator, same selection rule. Only the surface, the elevation and the axis differ, and all three are tokens." />
+            </StackPanel>
+
+            <!-- App bars -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="App bars" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Small keeps the title beside the actions; medium and large give a long title its own line." />
+                <StackPanel Spacing="8" Width="460" HorizontalAlignment="Left">
+                    <Border ClipToBounds="True" CornerRadius="12">
+                        <m3:MaterialAppBar Title="Inbox" NavigationIcon="≡" Actions="⋯" />
+                    </Border>
+                    <Border ClipToBounds="True" CornerRadius="12">
+                        <m3:MaterialAppBar Size="Medium" Title="Settings" NavigationIcon="←" />
+                    </Border>
+                    <Border ClipToBounds="True" CornerRadius="12">
+                        <m3:MaterialAppBar Size="Large" Title="Photographs" Subtitle="384 items"
+                                           NavigationIcon="←" IsScrolled="True" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Tabs -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="Tabs" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="The indicator is drawn by the row, not the tab, because it travels. Centre and width are separate springs, so it stretches as it moves rather than resizing on arrival." />
+                <StackPanel Spacing="16" Width="460" HorizontalAlignment="Left">
+                    <m3:MaterialTabs SelectedIndex="0">
+                        <m3:MaterialTab Content="Overview" />
+                        <m3:MaterialTab Content="Specifications" />
+                        <m3:MaterialTab Content="Reviews" />
+                    </m3:MaterialTabs>
+                    <m3:MaterialTabs Variant="Secondary" SelectedIndex="1">
+                        <m3:MaterialTab Content="All" />
+                        <m3:MaterialTab Content="Unread" />
+                        <m3:MaterialTab Content="Flagged" />
+                    </m3:MaterialTabs>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Navigation bar and rail -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="Bar and rail" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="The selection is a pill that grows behind the icon, not a colour change alone." />
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <Border ClipToBounds="True" CornerRadius="12" Width="380" Height="80">
+                        <m3:MaterialNavigationBar SelectedIndex="0">
+                            <m3:MaterialNavigationItem Icon="⌂" Content="Home" />
+                            <m3:MaterialNavigationItem Icon="★" Content="Saved" />
+                            <m3:MaterialNavigationItem Icon="✉" Content="Inbox" />
+                            <m3:MaterialNavigationItem Icon="☰" Content="More" />
+                        </m3:MaterialNavigationBar>
+                    </Border>
+                    <Border ClipToBounds="True" CornerRadius="12" Width="96" Height="280">
+                        <m3:MaterialNavigationBar Variant="Rail" SelectedIndex="1">
+                            <m3:MaterialNavigationItem Icon="⌂" Content="Home" />
+                            <m3:MaterialNavigationItem Icon="★" Content="Saved" />
+                            <m3:MaterialNavigationItem Icon="✉" Content="Inbox" />
+                        </m3:MaterialNavigationBar>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Drawer -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="Navigation drawer" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="One spring slides the panel and fades the scrim, so dismissing it mid-open reverses from where it is. Tap the scrim to close." />
+                <m3:MaterialButton Variant="Tonal" Content="Open drawer" Click="OnOpenDrawer"
+                                   HorizontalAlignment="Left" />
+                <Border ClipToBounds="True" CornerRadius="12" Height="320" Width="460"
+                        HorizontalAlignment="Left"
+                        Background="{mcu:MdSysColor SurfaceContainerLowest}">
+                    <Panel>
+                        <TextBlock Margin="24" VerticalAlignment="Top"
+                                   Classes="body-medium"
+                                   Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                   Text="Content behind the drawer." />
+                        <m3:MaterialNavigationDrawer x:Name="Drawer">
+                            <StackPanel Margin="12,24" Spacing="4">
+                                <TextBlock Margin="16,0,0,8" Classes="title-small" Text="Mail" />
+                                <m3:MaterialNavigationItem Icon="✉" Content="Inbox" IsChecked="True" />
+                                <m3:MaterialNavigationItem Icon="★" Content="Starred" />
+                                <m3:MaterialNavigationItem Icon="☰" Content="Archive" />
+                            </StackPanel>
+                        </m3:MaterialNavigationDrawer>
+                    </Panel>
+                </Border>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,61 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Width="420">
+            <m3:MaterialTabs SelectedIndex="1">
+                <m3:MaterialTab Content="Overview" />
+                <m3:MaterialTab Content="Specifications" />
+                <m3:MaterialTab Content="Reviews" />
+            </m3:MaterialTabs>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialTab}" TargetType="m3:MaterialTab">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                        <Viewbox Width="{TemplateBinding IconSize}"
+                                 Height="{TemplateBinding IconSize}"
+                                 HorizontalAlignment="Center"
+                                 Stretch="Uniform"
+                                 IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <ContentPresenter Content="{TemplateBinding Icon}"
+                                              TextElement.Foreground="{TemplateBinding IconBrush}" />
+                        </Viewbox>
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                          TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialTabs}" TargetType="m3:MaterialTabs">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ItemsControl ItemsSource="{Binding $parent[m3:MaterialTabs].Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <!-- Tabs share the row equally, which is what lets the indicator's
+                                     travel be read off the tab bounds alone. -->
+                                <UniformGrid Rows="1" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

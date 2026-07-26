@@ -1,0 +1,70 @@
+{
+  "kind": "component",
+  "name": "TabTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "TabColors",
+  "version": "v0_162",
+  "source": "androidx compose/material3 tokens/{Primary,Secondary}NavigationTabTokens.kt",
+  "summary": "A row of tabs and the indicator that slides between them.",
+
+  "variantEnum": "TabVariant",
+  "variantEnumSummary": "Primary tabs sit under an app bar; secondary tabs sit inside content.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The row's surface." },
+    "ActiveIndicatorColor": { "type": "color", "summary": "The bar under the selected tab." },
+    "ActiveIconColor": { "type": "color", "summary": "The selected tab's icon." },
+    "ActiveLabelTextColor": { "type": "color", "summary": "The selected tab's label." },
+    "InactiveIconColor": { "type": "color", "summary": "An unselected tab's icon." },
+    "InactiveLabelTextColor": { "type": "color", "summary": "An unselected tab's label." },
+    "DividerColor": { "type": "color", "summary": "The hairline under the whole row." },
+    "StateLayerColor": { "type": "color", "summary": "The state layer over a tab." },
+
+    "ContainerHeight": { "type": "dimension", "summary": "The row's height with a label only." },
+    "IconAndLabelHeight": { "type": "dimension", "summary": "The row's height when tabs carry both." },
+    "ActiveIndicatorHeight": { "type": "dimension", "summary": "The indicator's thickness." },
+    "ActiveIndicatorCornerRadius": { "type": "dimension", "summary": "The indicator's corners — 3dp, below the smallest shape role." },
+    "DividerHeight": { "type": "dimension", "summary": "The hairline under the row." },
+    "IconSize": { "type": "dimension", "summary": "A tab's icon." },
+    "LabelTextStyle": { "type": "typography", "summary": "A tab's label." },
+    "IndicatorSpansLabel": { "type": "bool", "summary": "Whether the indicator hugs the label rather than filling the tab — the primary form does." }
+  },
+
+  "sets": [
+    {
+      "name": "Primary",
+      "values": {
+        "ContainerColor": "Surface",
+        "ActiveIndicatorColor": "Primary",
+        "ActiveIconColor": "Primary",
+        "ActiveLabelTextColor": "Primary",
+        "InactiveIconColor": "OnSurfaceVariant",
+        "InactiveLabelTextColor": "OnSurfaceVariant",
+        "DividerColor": "SurfaceVariant",
+        "StateLayerColor": "Primary",
+
+        "ContainerHeight": 48,
+        "IconAndLabelHeight": 64,
+        "ActiveIndicatorHeight": 3,
+        "ActiveIndicatorCornerRadius": 3,
+        "DividerHeight": 1,
+        "IconSize": 24,
+        "LabelTextStyle": "TitleSmall",
+        "IndicatorSpansLabel": true
+      }
+    },
+    {
+      "name": "Secondary",
+      "extends": "Primary",
+      // The secondary tab's indicator runs the full width of the tab and its label stays neutral;
+      // only the icon and indicator take the accent.
+      "values": {
+        "ActiveLabelTextColor": "OnSurface",
+        "ActiveIconColor": "OnSurface",
+        "ActiveIndicatorHeight": 2,
+        "ActiveIndicatorCornerRadius": 0,
+        "IndicatorSpansLabel": false
+      }
+    }
+  ]
+}

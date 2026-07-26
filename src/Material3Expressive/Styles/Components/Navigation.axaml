@@ -1,0 +1,69 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="0" Width="420">
+            <m3:MaterialNavigationBar SelectedIndex="0">
+                <m3:MaterialNavigationItem Icon="&#x2302;" Content="Home" />
+                <m3:MaterialNavigationItem Icon="&#x2605;" Content="Saved" />
+                <m3:MaterialNavigationItem Icon="&#x2709;" Content="Inbox" />
+            </m3:MaterialNavigationBar>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialNavigationItem}" TargetType="m3:MaterialNavigationItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <!-- The indicator is painted behind this by the control, so the template only
+                         has to stack the icon over the label and centre the pair. -->
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="{TemplateBinding IconLabelSpace}">
+                        <Viewbox Width="{TemplateBinding IconSize}"
+                                 Height="{TemplateBinding IconSize}"
+                                 HorizontalAlignment="Center"
+                                 Stretch="Uniform">
+                            <ContentPresenter Content="{TemplateBinding Icon}"
+                                              TextElement.Foreground="{TemplateBinding IconBrush}" />
+                        </Viewbox>
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                          TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialNavigationBar}" TargetType="m3:MaterialNavigationBar">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ItemsControl ItemsSource="{Binding $parent[m3:MaterialNavigationBar].Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <!-- A uniform grid rather than a stack: navigation items share the
+                                     bar equally, which is what keeps the row balanced when the
+                                     labels are different lengths. -->
+                                <UniformGrid Rows="1" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ControlTemplate>
+            </Setter>
+
+            <Style Selector="^[IsVertical=True] /template/ UniformGrid">
+                <Setter Property="Rows" Value="0" />
+                <Setter Property="Columns" Value="1" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

@@ -293,6 +293,153 @@ public class ProgressTests
 
 }
 
+public class NavigationTests
+{
+    [AvaloniaFact]
+    public void TheBarAndTheRail_DifferOnlyInSurfaceElevationAndAxis()
+    {
+        var bar = NavigationTokens.Bar;
+        var rail = NavigationTokens.Rail;
+
+        Assert.False(bar.IsVertical);
+        Assert.True(rail.IsVertical);
+        Assert.True(bar.ContainerElevation > rail.ContainerElevation);
+
+        // The items themselves are identical.
+        Assert.Equal(bar.IconSize, rail.IconSize);
+        Assert.Equal(bar.ActiveIndicatorWidth, rail.ActiveIndicatorWidth);
+        Assert.Equal(bar.ActiveIndicatorHeight, rail.ActiveIndicatorHeight);
+    }
+
+    [AvaloniaFact]
+    public void SelectionIsExclusive_AndOwnedByTheBar()
+    {
+        var bar = new MaterialNavigationBar();
+        bar.Items.Add(new MaterialNavigationItem { Content = "One" });
+        bar.Items.Add(new MaterialNavigationItem { Content = "Two" });
+        bar.Items.Add(new MaterialNavigationItem { Content = "Three" });
+        ThemeTestHelper.ShowWindow(bar);
+
+        bar.SelectedIndex = 1;
+
+        Assert.False(bar.Items[0].IsChecked);
+        Assert.True(bar.Items[1].IsChecked);
+        Assert.False(bar.Items[2].IsChecked);
+
+        // Checking an item directly reports back rather than leaving two selected.
+        bar.Items[2].IsChecked = true;
+
+        Assert.Equal(2, bar.SelectedIndex);
+        Assert.False(bar.Items[1].IsChecked);
+    }
+
+    [AvaloniaFact]
+    public void UncheckingTheSelectedItem_DoesNotLeaveTheBarEmpty()
+    {
+        var bar = new MaterialNavigationBar();
+        bar.Items.Add(new MaterialNavigationItem { Content = "One" });
+        bar.Items.Add(new MaterialNavigationItem { Content = "Two" });
+        ThemeTestHelper.ShowWindow(bar);
+
+        bar.SelectedIndex = 0;
+        bar.Items[0].IsChecked = false;
+
+        // A navigation bar always has somewhere you are.
+        Assert.True(bar.Items[0].IsChecked);
+        Assert.Equal(0, bar.SelectedIndex);
+    }
+}
+
+public class TabTests
+{
+    [AvaloniaFact]
+    public void ThePrimaryIndicatorHugsTheLabel_AndTheSecondaryOneDoesNot()
+    {
+        Assert.True(TabTokens.Primary.IndicatorSpansLabel);
+        Assert.False(TabTokens.Secondary.IndicatorSpansLabel);
+
+        // The primary indicator is also thicker and rounded; the secondary is a plain rule.
+        Assert.True(TabTokens.Primary.ActiveIndicatorHeight > TabTokens.Secondary.ActiveIndicatorHeight);
+        Assert.True(TabTokens.Primary.ActiveIndicatorCornerRadius > 0);
+        Assert.Equal(0, TabTokens.Secondary.ActiveIndicatorCornerRadius);
+    }
+
+    [AvaloniaFact]
+    public void SelectingATab_ChecksExactlyOne()
+    {
+        var tabs = new MaterialTabs();
+        tabs.Items.Add(new MaterialTab { Content = "One" });
+        tabs.Items.Add(new MaterialTab { Content = "Two" });
+        ThemeTestHelper.ShowWindow(tabs);
+
+        tabs.SelectedIndex = 1;
+
+        Assert.False(tabs.Items[0].IsChecked);
+        Assert.True(tabs.Items[1].IsChecked);
+    }
+}
+
+public class AppBarTests
+{
+    [AvaloniaFact]
+    public void OnlyTheTallerBars_PutTheTitleOnItsOwnLine()
+    {
+        Assert.False(AppBarTokens.Small.IsStacked);
+        Assert.True(AppBarTokens.Medium.IsStacked);
+        Assert.True(AppBarTokens.Large.IsStacked);
+
+        Assert.True(AppBarTokens.Medium.ContainerHeight > AppBarTokens.Small.ContainerHeight);
+        Assert.True(AppBarTokens.Large.ContainerHeight > AppBarTokens.Medium.ContainerHeight);
+    }
+
+    [AvaloniaFact]
+    public void AScrolledBar_ChangesSurfaceRatherThanGainingAShadow()
+    {
+        var tokens = AppBarTokens.Small;
+
+        Assert.NotEqual(tokens.ContainerColor, tokens.ScrolledContainerColor);
+        Assert.Equal(SysColorToken.Surface, tokens.ContainerColor.RoleToken);
+        Assert.Equal(SysColorToken.SurfaceContainer, tokens.ScrolledContainerColor.RoleToken);
+    }
+}
+
+public class DrawerTests
+{
+    [AvaloniaFact]
+    public void OnlyTheModalDrawer_HasAScrim()
+    {
+        Assert.True(DrawerTokens.Modal.IsModal);
+        Assert.True(DrawerTokens.Modal.ScrimOpacity > 0);
+
+        Assert.False(DrawerTokens.Standard.IsModal);
+        Assert.Equal(0, DrawerTokens.Standard.ScrimOpacity);
+    }
+
+    [AvaloniaFact]
+    public void ItsCornersAreRoundedOnlyOnTheEdgeFacingTheContent()
+    {
+        var shapes = new MaterialTheme().Resolved.Shapes;
+        var shape = shapes.Get(DrawerTokens.Modal.ContainerShape);
+
+        // CornerLargeEnd: square where it meets the screen edge, round where it meets the content.
+        Assert.Equal(CornerSize.Zero, shape.TopStart);
+        Assert.Equal(CornerSize.Zero, shape.BottomStart);
+        Assert.NotEqual(CornerSize.Zero, shape.TopEnd);
+    }
+
+    [AvaloniaFact]
+    public void AClosedDrawer_DoesNotSwallowClicks()
+    {
+        var drawer = new MaterialNavigationDrawer();
+        ThemeTestHelper.ShowWindow(drawer);
+
+        Assert.False(drawer.IsHitTestVisible);
+
+        drawer.IsOpen = true;
+        Assert.True(drawer.IsHitTestVisible);
+    }
+}
+
 public class FabMenuTests
 {
     [AvaloniaFact]

@@ -1,0 +1,187 @@
+using System;
+using Avalonia;
+using Avalonia.Collections;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Media;
+using Avalonia.Metadata;
+using Material3Expressive.Foundation;
+using MaterialColorUtilities.Avalonia.Tokens;
+
+namespace Material3Expressive.Controls;
+
+/// <summary>
+/// A navigation bar along the bottom of the window, or a rail up its side.
+/// </summary>
+/// <remarks>
+/// One control for both, because they are the same thing turned ninety degrees: the same items,
+/// the same indicator, the same selection rule. Only the surface colour, the elevation and the
+/// axis differ, and all three are tokens.
+/// <para>
+/// Selection is exclusive and lives here rather than on the items. An item that decided its own
+/// selection would have to know about its siblings, and a group of toggles with no owner is how
+/// you end up with two selected at once.
+/// </para>
+/// </remarks>
+public class MaterialNavigationBar : TemplatedControl
+{
+    public static readonly StyledProperty<NavigationVariant> VariantProperty =
+        AvaloniaProperty.Register<MaterialNavigationBar, NavigationVariant>(nameof(Variant));
+
+    /// <inheritdoc cref="SelectedIndex" />
+    public static readonly StyledProperty<int> SelectedIndexProperty =
+        AvaloniaProperty.Register<MaterialNavigationBar, int>(
+            nameof(SelectedIndex), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
+
+    private readonly MaterialThemeWatcher _theme;
+
+    private NavigationTokens _tokens = NavigationTokens.Bar;
+    private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
+    private bool _updatingSelection;
+
+    public MaterialNavigationBar()
+    {
+        _theme = new MaterialThemeWatcher(this);
+        _theme.Changed += (_, _) => ApplyTokens();
+
+        Items.CollectionChanged += (_, _) => AttachItems();
+        ApplyTokens();
+    }
+
+    static MaterialNavigationBar()
+    {
+        AffectsRender<MaterialNavigationBar>(VariantProperty);
+    }
+
+    /// <summary>Bar or rail.</summary>
+    public NavigationVariant Variant
+    {
+        get => GetValue(VariantProperty);
+        set => SetValue(VariantProperty, value);
+    }
+
+    /// <summary>Which destination is selected. -1 for none.</summary>
+    public int SelectedIndex
+    {
+        get => GetValue(SelectedIndexProperty);
+        set => SetValue(SelectedIndexProperty, value);
+    }
+
+    /// <summary>The destinations.</summary>
+    [Content]
+    public AvaloniaList<MaterialNavigationItem> Items { get; } = new();
+
+    /// <summary>The gap between items, from the token table.</summary>
+    public double ItemSpacing => _tokens.ItemBetweenSpace;
+
+    /// <summary>True when the items stack down the side rather than across the bottom.</summary>
+    public bool IsVertical => _tokens.IsVertical;
+
+    public static readonly DirectProperty<MaterialNavigationBar, double> ItemSpacingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationBar, double>(nameof(ItemSpacing), o => o.ItemSpacing);
+
+    public static readonly DirectProperty<MaterialNavigationBar, bool> IsVerticalProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationBar, bool>(nameof(IsVertical), o => o.IsVertical);
+
+    public override void Render(DrawingContext context)
+    {
+        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+
+        MaterialContainer.Draw(
+            context,
+            Bounds.Size,
+            default,
+            _colors.ContainerColor,
+            shadows: Elevation.ToBoxShadows(_tokens.ContainerElevation, shadow));
+
+        base.Render(context);
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var size = base.MeasureOverride(availableSize);
+
+        return _tokens.IsVertical
+            ? new Size(Math.Max(size.Width, _tokens.ContainerSize), size.Height)
+            : new Size(size.Width, Math.Max(size.Height, _tokens.ContainerSize));
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == VariantProperty)
+            ApplyTokens();
+        else if (change.Property == SelectedIndexProperty)
+            SyncSelection();
+    }
+
+    /// <summary>
+    /// Keeps exactly one item checked, and reflects a click back into
+    /// <see cref="SelectedIndex" />.
+    /// </summary>
+    private void AttachItems()
+    {
+        for (var i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+            item.Surface = Variant;
+            item.ApplyTokens();
+
+            // Re-subscribing is safe: the same handler removed then added leaves one subscription.
+            item.IsCheckedChanged -= OnItemCheckedChanged;
+            item.IsCheckedChanged += OnItemCheckedChanged;
+        }
+
+        SyncSelection();
+        InvalidateMeasure();
+    }
+
+    private void OnItemCheckedChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_updatingSelection || sender is not MaterialNavigationItem item)
+            return;
+
+        if (item.IsChecked != true)
+        {
+            // Clicking the selected item again must not leave the bar with nothing selected.
+            SyncSelection();
+            return;
+        }
+
+        SelectedIndex = Items.IndexOf(item);
+    }
+
+    private void SyncSelection()
+    {
+        if (_updatingSelection)
+            return;
+
+        _updatingSelection = true;
+
+        try
+        {
+            for (var i = 0; i < Items.Count; i++)
+                Items[i].IsChecked = i == SelectedIndex;
+        }
+        finally
+        {
+            _updatingSelection = false;
+        }
+    }
+
+    private void ApplyTokens()
+    {
+        var previousSpacing = ItemSpacing;
+        var previousVertical = IsVertical;
+
+        _tokens = _theme.Theme.GetNavigationTokens(Variant);
+        _colors = _theme.Theme.GetNavigationColors(Variant, _theme.IsDark);
+
+        RaisePropertyChanged(ItemSpacingProperty, previousSpacing, ItemSpacing);
+        RaisePropertyChanged(IsVerticalProperty, previousVertical, IsVertical);
+
+        AttachItems();
+        InvalidateVisual();
+    }
+}

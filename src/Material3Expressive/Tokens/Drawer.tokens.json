@@ -1,0 +1,75 @@
+{
+  "kind": "component",
+  "name": "DrawerTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "DrawerColors",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/NavigationDrawerTokens.kt",
+  "summary": "A navigation drawer and the destinations inside it.",
+
+  "variantEnum": "DrawerVariant",
+  "variantEnumSummary": "Modal drawers float above the content behind a scrim; standard ones sit beside it.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The drawer's surface." },
+    "ScrimColor": { "type": "color", "summary": "The dimming behind a modal drawer." },
+    "HeadlineColor": { "type": "color", "summary": "A section heading inside the drawer." },
+    "ActiveIndicatorColor": { "type": "color", "summary": "The pill behind the selected destination." },
+    "ActiveIconColor": { "type": "color", "summary": "The selected destination's icon." },
+    "ActiveLabelTextColor": { "type": "color", "summary": "The selected destination's label." },
+    "InactiveIconColor": { "type": "color", "summary": "An unselected destination's icon." },
+    "InactiveLabelTextColor": { "type": "color", "summary": "An unselected destination's label." },
+    "StateLayerColor": { "type": "color", "summary": "The state layer over a destination." },
+
+    "ContainerElevation": { "type": "elevation", "summary": "The drawer's shadow." },
+    "ContainerWidth": { "type": "dimension", "summary": "The drawer's width." },
+    "ContainerShape": { "type": "shape", "summary": "The drawer's corners — rounded only on the edge facing the content." },
+    "ItemHeight": { "type": "dimension", "summary": "A destination's height." },
+    "ItemShape": { "type": "shape", "summary": "A destination's indicator." },
+    "IconSize": { "type": "dimension", "summary": "A destination's icon." },
+    "ScrimOpacity": { "type": "opacity", "summary": "How far the scrim dims what is behind it." },
+    "HeadlineTextStyle": { "type": "typography", "summary": "A section heading." },
+    "LabelTextStyle": { "type": "typography", "summary": "A destination's label." },
+    "IsModal": { "type": "bool", "summary": "Whether the drawer floats over the content behind a scrim." }
+  },
+
+  "sets": [
+    {
+      "name": "Modal",
+      "values": {
+        "ContainerColor": "SurfaceContainerLow",
+        "ScrimColor": "Scrim",
+        "HeadlineColor": "OnSurfaceVariant",
+        "ActiveIndicatorColor": "SecondaryContainer",
+        "ActiveIconColor": "OnSecondaryContainer",
+        "ActiveLabelTextColor": "OnSecondaryContainer",
+        "InactiveIconColor": "OnSurfaceVariant",
+        "InactiveLabelTextColor": "OnSurfaceVariant",
+        "StateLayerColor": "OnSurface",
+
+        "ContainerElevation": "@ElevationTokens.Level1",
+        "ContainerWidth": 360,
+        "ContainerShape": "CornerLargeEnd",
+        "ItemHeight": 56,
+        "ItemShape": "CornerFull",
+        "IconSize": 24,
+        // Upstream's scrim is the Scrim role at 32% — dark enough to recede, light enough to keep
+        // the content behind legible.
+        "ScrimOpacity": 0.32,
+        "HeadlineTextStyle": "TitleSmall",
+        "LabelTextStyle": "LabelLarge",
+        "IsModal": true
+      }
+    },
+    {
+      "name": "Standard",
+      "extends": "Modal",
+      "values": {
+        "ContainerColor": "Surface",
+        "ContainerElevation": "@ElevationTokens.Level0",
+        "ScrimOpacity": 0,
+        "IsModal": false
+      }
+    }
+  ]
+}

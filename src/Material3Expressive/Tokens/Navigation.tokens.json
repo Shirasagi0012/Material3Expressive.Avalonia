@@ -1,0 +1,72 @@
+{
+  "kind": "component",
+  "name": "NavigationTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "NavigationColors",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/NavigationBarTokens.kt, NavigationBarVerticalItemTokens.kt, NavigationRailCollapsedTokens.kt",
+  "summary": "A navigation surface and its items, whether it runs along the bottom or up the side.",
+
+  "variantEnum": "NavigationVariant",
+  "variantEnumSummary": "Bar (horizontal, along the bottom) or rail (vertical, along the side).",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The surface behind the items." },
+    "ActiveIndicatorColor": { "type": "color", "summary": "The pill behind the selected item's icon." },
+    "ActiveIconColor": { "type": "color", "summary": "The selected item's icon." },
+    "ActiveLabelTextColor": { "type": "color", "summary": "The selected item's label." },
+    "InactiveIconColor": { "type": "color", "summary": "An unselected item's icon." },
+    "InactiveLabelTextColor": { "type": "color", "summary": "An unselected item's label." },
+    "StateLayerColor": { "type": "color", "summary": "The state layer over an item." },
+
+    "ContainerElevation": { "type": "elevation", "summary": "The surface's shadow." },
+    "ContainerSize": { "type": "dimension", "summary": "The bar's height, or the rail's width." },
+    "ActiveIndicatorWidth": { "type": "dimension", "summary": "The indicator pill." },
+    "ActiveIndicatorHeight": { "type": "dimension", "summary": "The indicator pill." },
+    "ActiveIndicatorShape": { "type": "shape", "summary": "The indicator's corners." },
+    "IconSize": { "type": "dimension", "summary": "An item's icon." },
+    "IconLabelSpace": { "type": "dimension", "summary": "The gap between the indicator and the label under it." },
+    "ItemBetweenSpace": { "type": "dimension", "summary": "The gap between items." },
+    "LabelTextStyle": { "type": "typography", "summary": "An item's label." },
+    "IsVertical": { "type": "bool", "summary": "Whether items stack down the side rather than across the bottom." }
+  },
+
+  "sets": [
+    {
+      "name": "Bar",
+      "summary": "Along the bottom of the window.",
+      "values": {
+        "ContainerColor": "SurfaceContainer",
+        "ActiveIndicatorColor": "SecondaryContainer",
+        "ActiveIconColor": "OnSecondaryContainer",
+        "ActiveLabelTextColor": "Secondary",
+        "InactiveIconColor": "OnSurfaceVariant",
+        "InactiveLabelTextColor": "OnSurfaceVariant",
+        "StateLayerColor": "OnSurface",
+
+        "ContainerElevation": "@ElevationTokens.Level2",
+        "ContainerSize": 80,
+        "ActiveIndicatorWidth": 56,
+        "ActiveIndicatorHeight": 32,
+        "ActiveIndicatorShape": "CornerFull",
+        "IconSize": 24,
+        "IconLabelSpace": 4,
+        "ItemBetweenSpace": 0,
+        "LabelTextStyle": "LabelMedium",
+        "IsVertical": false
+      }
+    },
+    {
+      "name": "Rail",
+      "extends": "Bar",
+      "summary": "Up the side of the window.",
+      "values": {
+        "ContainerColor": "Surface",
+        "ContainerElevation": "@ElevationTokens.Level0",
+        "ContainerSize": 96,
+        "ItemBetweenSpace": 6,
+        "IsVertical": true
+      }
+    }
+  ]
+}
