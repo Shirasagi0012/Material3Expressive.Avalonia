@@ -231,6 +231,64 @@ public class SelectionTests
     }
 }
 
+public class ProgressTests
+{
+    [AvaloniaFact]
+    public void TheTwoShapes_ShareTheirColoursAndDifferInMetrics()
+    {
+        var linear = ProgressTokens.Linear;
+        var circular = ProgressTokens.Circular;
+
+        Assert.Equal(linear.ActiveIndicatorColor, circular.ActiveIndicatorColor);
+        Assert.Equal(linear.TrackColor, circular.TrackColor);
+
+        // A circle has no far end, so no stop dot.
+        Assert.True(linear.StopSize > 0);
+        Assert.Equal(0, circular.StopSize);
+
+        // The circular wave is much shallower — it has to stay on a 40dp ring.
+        Assert.True(circular.WaveAmplitude < linear.WaveAmplitude);
+    }
+
+    [AvaloniaFact]
+    public void ExpressiveLeavesAGap_BetweenTheIndicatorAndTheTrack()
+    {
+        Assert.True(ProgressTokens.Linear.TrackActiveSpace > 0);
+        Assert.True(ProgressTokens.Circular.TrackActiveSpace > 0);
+    }
+
+    [AvaloniaFact]
+    public void AWavyIndicator_ReservesMoreHeightThanAFlatOne()
+    {
+        var flat = new MaterialLinearProgressIndicator { Value = 0.5, Width = 200 };
+        var wavy = new MaterialLinearProgressIndicator { Value = 0.5, Width = 200, IsWavy = true };
+        ThemeTestHelper.ShowWindow(new StackPanel { Children = { flat, wavy } });
+
+        Assert.True(wavy.Bounds.Height > flat.Bounds.Height);
+        Assert.Equal(ProgressTokens.Linear.WaveSize, wavy.Bounds.Height, 3);
+    }
+
+    [AvaloniaFact]
+    public void AnIndeterminateIndicator_KeepsItsLoopRunning()
+    {
+        // The one animation with no destination. A spinner that settles is a bug, so this asserts
+        // it does not — and that turning it off does stop it.
+        var loop = new LoopingAnimation(System.TimeSpan.FromSeconds(1));
+
+        Assert.True(loop.Tick(System.TimeSpan.FromSeconds(0.25)));
+        Assert.Equal(0.25, loop.Value, 6);
+
+        // It wraps rather than ending.
+        Assert.True(loop.Tick(System.TimeSpan.FromSeconds(1)));
+        Assert.Equal(0.25, loop.Value, 6);
+
+        loop.Settle();
+        Assert.False(loop.IsRunning);
+        Assert.False(loop.Tick(System.TimeSpan.FromSeconds(0.25)));
+    }
+
+}
+
 public class FabTests
 {
     [AvaloniaFact]

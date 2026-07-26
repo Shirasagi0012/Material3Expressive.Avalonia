@@ -151,6 +151,25 @@
                 </WrapPanel>
             </StackPanel>
 
+            <!-- Progress -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Progress" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Expressive separates the active indicator from the track and marks the far end with a stop dot. The wavy form is the same indicator drawn along a travelling sine." />
+                <StackPanel Spacing="16" MaxWidth="420" HorizontalAlignment="Left">
+                    <m3:MaterialLinearProgressIndicator Value="0.35" />
+                    <m3:MaterialLinearProgressIndicator Value="0.7" IsWavy="True" />
+                    <m3:MaterialLinearProgressIndicator IsIndeterminate="True" />
+                    <m3:MaterialLinearProgressIndicator IsIndeterminate="True" IsWavy="True" />
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <m3:MaterialCircularProgressIndicator Value="0.35" />
+                        <m3:MaterialCircularProgressIndicator Value="0.75" />
+                        <m3:MaterialCircularProgressIndicator IsIndeterminate="True" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+
             <!-- Card -->
             <StackPanel Spacing="12">
                 <TextBlock Classes="headline-medium" Text="Card" />

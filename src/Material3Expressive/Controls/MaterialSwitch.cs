@@ -11,7 +11,7 @@ namespace Material3Expressive.Controls;
 /// A Material 3 switch.
 /// </summary>
 /// <remarks>
-/// Derives from <see cref="ToggleButton" /> rather than <see cref="ToggleSwitch" />: the whole
+/// Derives from <see cref="ToggleButton" /> rather than <see cref="Avalonia.Controls.ToggleSwitch" />: the whole
 /// switch is painted here, so <c>ToggleSwitch</c>'s knob template parts and knob animation would
 /// be dead machinery, and its <c>OnContent</c>/<c>OffContent</c> surface would be a promise this
 /// control does not keep. Drag-to-toggle goes with it, and is not yet reimplemented.

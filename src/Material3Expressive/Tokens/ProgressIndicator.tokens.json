@@ -1,0 +1,68 @@
+{
+  "kind": "component",
+  "name": "ProgressTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "ProgressColors",
+  "version": "v0_7_0",
+  "source": "androidx compose/material3 tokens/{,Linear,Circular}ProgressIndicatorTokens.kt",
+  "summary": "The metrics and colours of a progress indicator, linear or circular.",
+
+  "variantEnum": "ProgressIndicatorShape",
+  "variantEnumSummary": "Whether the indicator runs along a line or around a circle.",
+
+  "properties": {
+    "ActiveIndicatorColor": { "type": "color", "summary": "The filled part." },
+    "TrackColor": { "type": "color", "summary": "The unfilled part." },
+    "StopColor": { "type": "color", "summary": "The dot at the far end of a linear track." },
+
+    "ActiveThickness": { "type": "dimension", "summary": "The active indicator's stroke." },
+    "TrackThickness": { "type": "dimension", "summary": "The track's stroke." },
+    "TrackActiveSpace": { "type": "dimension", "summary": "The gap Expressive leaves between the active indicator and the track." },
+    "Size": { "type": "dimension", "summary": "The circular indicator's diameter, or the linear one's height." },
+    "StopSize": { "type": "dimension", "summary": "The stop dot." },
+
+    "WaveAmplitude": { "type": "dimension", "summary": "How far the wavy indicator departs from the centre line." },
+    "WaveWavelength": { "type": "dimension", "summary": "One period of the wave." },
+    "IndeterminateWaveWavelength": { "type": "dimension", "summary": "The wavelength used while indeterminate, which is shorter." },
+    "WaveSize": { "type": "dimension", "summary": "The room a wavy indicator needs, which is more than a flat one." }
+  },
+
+  "sets": [
+    {
+      "name": "Linear",
+      "values": {
+        "ActiveIndicatorColor": "@ProgressIndicatorTokens.ActiveIndicatorColor",
+        "TrackColor": "@ProgressIndicatorTokens.TrackColor",
+        "StopColor": "@ProgressIndicatorTokens.StopColor",
+
+        "ActiveThickness": "@LinearProgressIndicatorTokens.ActiveThickness",
+        "TrackThickness": "@LinearProgressIndicatorTokens.TrackThickness",
+        "TrackActiveSpace": "@LinearProgressIndicatorTokens.TrackActiveSpace",
+        "Size": "@LinearProgressIndicatorTokens.Height",
+        "StopSize": "@LinearProgressIndicatorTokens.StopSize",
+
+        "WaveAmplitude": "@LinearProgressIndicatorTokens.ActiveWaveAmplitude",
+        "WaveWavelength": "@LinearProgressIndicatorTokens.ActiveWaveWavelength",
+        "IndeterminateWaveWavelength": "@LinearProgressIndicatorTokens.IndeterminateActiveWaveWavelength",
+        "WaveSize": "@LinearProgressIndicatorTokens.WaveHeight"
+      }
+    },
+    {
+      "name": "Circular",
+      "extends": "Linear",
+      "values": {
+        "ActiveThickness": "@CircularProgressIndicatorTokens.ActiveThickness",
+        "TrackThickness": "@CircularProgressIndicatorTokens.TrackThickness",
+        "TrackActiveSpace": "@CircularProgressIndicatorTokens.TrackActiveSpace",
+        "Size": "@CircularProgressIndicatorTokens.Size",
+        // A circular indicator has no far end, so no stop dot.
+        "StopSize": 0,
+
+        "WaveAmplitude": "@CircularProgressIndicatorTokens.ActiveWaveAmplitude",
+        "WaveWavelength": "@CircularProgressIndicatorTokens.ActiveWaveWavelength",
+        "IndeterminateWaveWavelength": "@CircularProgressIndicatorTokens.ActiveWaveWavelength",
+        "WaveSize": "@CircularProgressIndicatorTokens.WaveSize"
+      }
+    }
+  ]
+}

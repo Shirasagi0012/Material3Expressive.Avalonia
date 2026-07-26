@@ -1,0 +1,17 @@
+{
+  "kind": "tokenSet",
+  "name": "ProgressIndicatorTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_4_0",
+  "source": "androidx compose/material3 tokens/ProgressIndicatorTokens.kt",
+  "summary": "The colours both progress indicators share.",
+
+  "tokens": {
+    "ActiveIndicatorColor": { "type": "color", "value": "Primary" },
+    "TrackColor": { "type": "color", "value": "SecondaryContainer" },
+    "StopColor": { "type": "color", "value": "Primary" },
+    "ActiveShape": { "type": "shape", "value": "CornerFull" },
+    "TrackShape": { "type": "shape", "value": "CornerFull" },
+    "StopShape": { "type": "shape", "value": "CornerFull" }
+  }
+}
