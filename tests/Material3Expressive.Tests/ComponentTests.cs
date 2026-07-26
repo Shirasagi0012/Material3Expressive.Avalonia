@@ -293,6 +293,40 @@ public class ProgressTests
 
 }
 
+public class FabMenuTests
+{
+    [AvaloniaFact]
+    public void ItsItemsStartHidden_AndRevealInSequence()
+    {
+        var menu = new MaterialFabMenu { Icon = "+" };
+        menu.Items.Add(new MaterialFab { Label = "One" });
+        menu.Items.Add(new MaterialFab { Label = "Two" });
+        menu.Items.Add(new MaterialFab { Label = "Three" });
+        ThemeTestHelper.ShowWindow(menu);
+
+        foreach (var item in menu.Items)
+            Assert.False(item.IsVisible);
+
+        menu.IsExpanded = true;
+
+        // The item nearest the toggle leads, so the last in the list is ahead of the first.
+        Assert.True(menu.Items[2].Opacity >= menu.Items[1].Opacity);
+        Assert.True(menu.Items[1].Opacity >= menu.Items[0].Opacity);
+    }
+
+    [AvaloniaFact]
+    public void ItsItemsTakeTheMenusVariant()
+    {
+        var menu = new MaterialFabMenu { Variant = FabVariant.Tertiary };
+        menu.Items.Add(new MaterialFab { Label = "One" });
+        ThemeTestHelper.ShowWindow(menu);
+
+        menu.Variant = FabVariant.Secondary;
+
+        Assert.Equal(FabVariant.Secondary, menu.Items[0].Variant);
+    }
+}
+
 public class TextFieldTests
 {
     [AvaloniaFact]

@@ -1,0 +1,160 @@
+using System;
+using Avalonia;
+using Avalonia.Collections;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
+using Avalonia.Metadata;
+using Material3Expressive.Foundation;
+
+namespace Material3Expressive.Controls;
+
+/// <summary>
+/// A floating action button that expands into a column of labelled items.
+/// </summary>
+/// <remarks>
+/// The items are extended FABs — <see cref="MaterialFab" /> with a label — so each one already
+/// carries its own state layer, ripple, elevation and press morph. The menu contributes the
+/// arrangement and the reveal.
+/// <para>
+/// Items appear in sequence rather than together, each one a fraction of a second behind the last,
+/// which is what makes the menu read as unfolding rather than as a block appearing. The stagger is
+/// a phase offset into one shared spring, so closing reverses the order for free.
+/// </para>
+/// </remarks>
+public class MaterialFabMenu : TemplatedControl
+{
+    /// <inheritdoc cref="IsExpanded" />
+    public static readonly StyledProperty<bool> IsExpandedProperty =
+        AvaloniaProperty.Register<MaterialFabMenu, bool>(
+            nameof(IsExpanded), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
+
+    /// <inheritdoc cref="Icon" />
+    public static readonly StyledProperty<object?> IconProperty =
+        AvaloniaProperty.Register<MaterialFabMenu, object?>(nameof(Icon));
+
+    public static readonly StyledProperty<FabVariant> VariantProperty =
+        AvaloniaProperty.Register<MaterialFabMenu, FabVariant>(nameof(Variant));
+
+    /// <summary>How far apart in the cycle two neighbouring items start moving.</summary>
+    private const double StaggerFraction = 0.12;
+
+    private readonly MaterialThemeWatcher _theme;
+    private readonly MotionGroup _motion;
+
+    private SpringAnimation? _reveal;
+    private FabMenuTokens _tokens = FabMenuTokens.Default;
+
+    public MaterialFabMenu()
+    {
+        _theme = new MaterialThemeWatcher(this);
+        _motion = new MotionGroup(this);
+        _motion.Ticked += (_, _) => UpdateItems();
+
+        _theme.Changed += (_, _) => ApplyTokens();
+        Items.CollectionChanged += (_, _) => InvalidateMeasure();
+
+        ApplyTokens();
+    }
+
+    /// <summary>Whether the menu is showing its items.</summary>
+    public bool IsExpanded
+    {
+        get => GetValue(IsExpandedProperty);
+        set => SetValue(IsExpandedProperty, value);
+    }
+
+    /// <summary>The toggle's icon.</summary>
+    public object? Icon
+    {
+        get => GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
+
+    /// <summary>The colour variant the toggle and every item take.</summary>
+    public FabVariant Variant
+    {
+        get => GetValue(VariantProperty);
+        set => SetValue(VariantProperty, value);
+    }
+
+    /// <summary>The menu's items, which are extended FABs.</summary>
+    [Content]
+    public AvaloniaList<MaterialFab> Items { get; } = new();
+
+    /// <summary>The gap between items, from the token table.</summary>
+    public double ItemSpacing => _tokens.ItemBetweenSpace;
+
+    /// <summary>The gap between the last item and the toggle.</summary>
+    public double CloseButtonSpacing => _tokens.CloseButtonBetweenSpace;
+
+    // Read-only outputs of token resolution; the template binds to them.
+    public static readonly DirectProperty<MaterialFabMenu, double> ItemSpacingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialFabMenu, double>(nameof(ItemSpacing), o => o.ItemSpacing);
+
+    public static readonly DirectProperty<MaterialFabMenu, double> CloseButtonSpacingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialFabMenu, double>(
+            nameof(CloseButtonSpacing), o => o.CloseButtonSpacing);
+
+    private SpringAnimation Reveal =>
+        _reveal ??= _motion.AddSpring(IsExpanded ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == IsExpandedProperty)
+        {
+            Reveal.AnimateTo(IsExpanded ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+            _motion.Start();
+            UpdateItems();
+        }
+        else if (change.Property == VariantProperty)
+        {
+            foreach (var item in Items)
+                item.Variant = Variant;
+        }
+    }
+
+    /// <summary>
+    /// Applies the reveal to each item, offset so they arrive in sequence.
+    /// </summary>
+    /// <remarks>
+    /// The item nearest the toggle leads and the furthest trails, which is the direction the menu
+    /// grows. Reading the offsets off one spring rather than running one per item means a menu
+    /// closed halfway through opening unwinds in the right order without any extra state.
+    /// </remarks>
+    private void UpdateItems()
+    {
+        var progress = Reveal.Value;
+        var count = Items.Count;
+
+        for (var i = 0; i < count; i++)
+        {
+            // Items are laid out top to bottom but revealed bottom-up, from the toggle outwards.
+            var position = count - 1 - i;
+            var start = position * StaggerFraction;
+            var span = Math.Max(0.0001, 1 - start);
+            var local = Math.Clamp((progress - start) / span, 0, 1);
+
+            var item = Items[i];
+            item.Opacity = local;
+            item.IsVisible = local > 0.001;
+            item.RenderTransform = new Avalonia.Media.TranslateTransform(0, (1 - local) * 12);
+        }
+    }
+
+    private void ApplyTokens()
+    {
+        _tokens = _theme.Theme.FabMenuTokens;
+
+        foreach (var item in Items)
+        {
+            item.Variant = Variant;
+            item.HorizontalAlignment = HorizontalAlignment.Right;
+        }
+
+        UpdateItems();
+        InvalidateMeasure();
+    }
+}

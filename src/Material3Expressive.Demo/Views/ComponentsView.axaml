@@ -120,6 +120,26 @@
                         <PathIcon Data="{StaticResource EditIcon}" />
                     </m3:MaterialFab>
                 </WrapPanel>
+
+                <TextBlock Classes="title-small" Text="FAB menu" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Items arrive in sequence rather than together, read off one spring at staggered offsets — so closing halfway through opening unwinds in the right order." />
+                <Border Height="300" Padding="16" CornerRadius="16"
+                        Background="{mcu:MdSysColor SurfaceContainer}"
+                        HorizontalAlignment="Left" Width="320">
+                    <m3:MaterialFabMenu Icon="+">
+                        <m3:MaterialFab Label="Reply">
+                            <PathIcon Data="{StaticResource EditIcon}" />
+                        </m3:MaterialFab>
+                        <m3:MaterialFab Label="Star">
+                            <PathIcon Data="{StaticResource StarIcon}" />
+                        </m3:MaterialFab>
+                        <m3:MaterialFab Label="Dismiss">
+                            <PathIcon Data="{StaticResource CloseIcon}" />
+                        </m3:MaterialFab>
+                    </m3:MaterialFabMenu>
+                </Border>
             </StackPanel>
 
             <!-- Selection -->

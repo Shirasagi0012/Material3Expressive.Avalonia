@@ -15,4 +15,5 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Chip.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/ButtonGroup.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/TextField.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Components/FabMenu.axaml" />
 </Styles>
