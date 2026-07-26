@@ -4,8 +4,7 @@
     <Platform Name="ARM64" />
     <Platform Name="x64" />
   </Configurations>
-  <Folder Name="/modules/" />
-  <Folder Name="/modules/color/">
+  <Folder Name="/modules/">
     <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/MaterialColorUtilities.Avalonia.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
@@ -14,8 +13,6 @@
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-  </Folder>
-  <Folder Name="/modules/shape/">
     <Project Path="modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
