@@ -46,7 +46,8 @@ public partial class MainWindow : Window
 
         PageHost.Content = Pages.SelectedIndex switch
         {
-            1 => new TypographyView(),
+            1 => new ComponentsView(),
+            2 => new TypographyView(),
             _ => new ButtonsView()
         };
     }

@@ -1,0 +1,107 @@
+{
+  "kind": "component",
+  "name": "CardTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "CardColors",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/{Elevated,Filled,Outlined}CardTokens.kt",
+  "summary": "The colours, shape and elevations of one card variant.",
+
+  "variantEnum": "CardVariant",
+  "variantEnumSummary": "The three card variants.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The card's surface." },
+    "DisabledContainerColor": { "type": "color", "opacity": "DisabledContainerOpacity", "summary": "The surface when disabled, already scaled by its opacity." },
+    "DisabledContainerOpacity": { "type": "opacity", "summary": "Alpha applied to the disabled surface." },
+    "OutlineColor": { "type": "color", "summary": "The border. Transparent unless the variant is outlined." },
+    "DisabledOutlineColor": { "type": "color", "opacity": "DisabledOutlineOpacity", "summary": "The border when disabled." },
+    "DisabledOutlineOpacity": { "type": "opacity", "summary": "Alpha applied to the disabled border." },
+    "IconColor": { "type": "color", "summary": "The colour an icon inside the card takes." },
+    "StateLayerColor": { "type": "color", "summary": "The state layer colour, for a card that is clickable." },
+
+    "ContainerShape": { "type": "shape", "summary": "The card's corners." },
+    "OutlineWidth": { "type": "dimension", "summary": "The border thickness; zero unless outlined." },
+    "IconSize": { "type": "dimension", "summary": "The size of an icon inside the card." },
+    "HasOutline": { "type": "bool", "summary": "Whether this variant draws a border." },
+
+    "ContainerElevation": { "type": "elevation", "summary": "Resting elevation." },
+    "HoverContainerElevation": { "type": "elevation", "summary": "Elevation while hovered." },
+    "FocusContainerElevation": { "type": "elevation", "summary": "Elevation while focused." },
+    "PressedContainerElevation": { "type": "elevation", "summary": "Elevation while pressed." },
+    "DraggedContainerElevation": { "type": "elevation", "summary": "Elevation while dragged." },
+    "DisabledContainerElevation": { "type": "elevation", "summary": "Elevation while disabled." }
+  },
+
+  "sets": [
+    {
+      "name": "Elevated",
+      "summary": "A low surface lifted off the background by a shadow.",
+      "values": {
+        "ContainerColor": "@ElevatedCardTokens.ContainerColor",
+        "DisabledContainerColor": "@ElevatedCardTokens.DisabledContainerColor",
+        "DisabledContainerOpacity": "@ElevatedCardTokens.DisabledContainerOpacity",
+        "OutlineColor": "#00000000",
+        "DisabledOutlineColor": "#00000000",
+        "DisabledOutlineOpacity": 1,
+        "IconColor": "@ElevatedCardTokens.IconColor",
+        "StateLayerColor": "OnSurface",
+        "ContainerShape": "@ElevatedCardTokens.ContainerShape",
+        "OutlineWidth": 0,
+        "IconSize": "@ElevatedCardTokens.IconSize",
+        "HasOutline": false,
+        "ContainerElevation": "@ElevatedCardTokens.ContainerElevation",
+        "HoverContainerElevation": "@ElevatedCardTokens.HoverContainerElevation",
+        "FocusContainerElevation": "@ElevatedCardTokens.FocusContainerElevation",
+        "PressedContainerElevation": "@ElevatedCardTokens.PressedContainerElevation",
+        "DraggedContainerElevation": "@ElevatedCardTokens.DraggedContainerElevation",
+        "DisabledContainerElevation": "@ElevatedCardTokens.DisabledContainerElevation"
+      }
+    },
+    {
+      "name": "Filled",
+      "extends": "Elevated",
+      "summary": "The highest surface container, flat on the background.",
+      "values": {
+        "ContainerColor": "@FilledCardTokens.ContainerColor",
+        "DisabledContainerColor": "@FilledCardTokens.DisabledContainerColor",
+        "DisabledContainerOpacity": "@FilledCardTokens.DisabledContainerOpacity",
+        "IconColor": "@FilledCardTokens.IconColor",
+        "ContainerShape": "@FilledCardTokens.ContainerShape",
+        "IconSize": "@FilledCardTokens.IconSize",
+        "ContainerElevation": "@FilledCardTokens.ContainerElevation",
+        "HoverContainerElevation": "@FilledCardTokens.HoverContainerElevation",
+        "FocusContainerElevation": "@FilledCardTokens.FocusContainerElevation",
+        "PressedContainerElevation": "@FilledCardTokens.PressedContainerElevation",
+        "DraggedContainerElevation": "@FilledCardTokens.DraggedContainerElevation",
+        "DisabledContainerElevation": "@FilledCardTokens.DisabledContainerElevation"
+      }
+    },
+    {
+      "name": "Outlined",
+      "extends": "Elevated",
+      // The outlined card has no disabled container colour of its own upstream — the surface stays
+      // put and only the border dims — so the enabled colour is reused with no opacity.
+      "summary": "The plain surface behind a hairline border.",
+      "values": {
+        "ContainerColor": "@OutlinedCardTokens.ContainerColor",
+        "DisabledContainerColor": "@OutlinedCardTokens.ContainerColor",
+        "DisabledContainerOpacity": 1,
+        "OutlineColor": "@OutlinedCardTokens.OutlineColor",
+        "DisabledOutlineColor": "@OutlinedCardTokens.DisabledOutlineColor",
+        "DisabledOutlineOpacity": "@OutlinedCardTokens.DisabledOutlineOpacity",
+        "IconColor": "@OutlinedCardTokens.IconColor",
+        "ContainerShape": "@OutlinedCardTokens.ContainerShape",
+        "OutlineWidth": "@OutlinedCardTokens.OutlineWidth",
+        "IconSize": "@OutlinedCardTokens.IconSize",
+        "HasOutline": true,
+        "ContainerElevation": "@OutlinedCardTokens.ContainerElevation",
+        "HoverContainerElevation": "@OutlinedCardTokens.HoverContainerElevation",
+        "FocusContainerElevation": "@OutlinedCardTokens.FocusContainerElevation",
+        "PressedContainerElevation": "@OutlinedCardTokens.PressedContainerElevation",
+        "DraggedContainerElevation": "@OutlinedCardTokens.DraggedContainerElevation",
+        "DisabledContainerElevation": "@OutlinedCardTokens.DisabledContainerElevation"
+      }
+    }
+  ]
+}

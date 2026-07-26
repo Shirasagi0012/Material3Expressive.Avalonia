@@ -1,0 +1,25 @@
+{
+  "kind": "tokenSet",
+  "name": "OutlinedCardTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_192",
+  "source": "androidx compose/material3 tokens/OutlinedCardTokens.kt",
+  "summary": "The outlined card: the plain surface behind a hairline border.",
+
+  "tokens": {
+    "ContainerColor": { "type": "color", "value": "Surface" },
+    "ContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" },
+    "ContainerShape": { "type": "shape", "value": "CornerMedium" },
+    "DisabledContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" },
+    "DisabledOutlineColor": { "type": "color", "value": "Outline" },
+    "DisabledOutlineOpacity": { "type": "opacity", "value": 0.12 },
+    "DraggedContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level3" },
+    "FocusContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" },
+    "HoverContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level1" },
+    "IconColor": { "type": "color", "value": "Primary" },
+    "IconSize": { "type": "dimension", "value": 24 },
+    "OutlineColor": { "type": "color", "value": "OutlineVariant" },
+    "OutlineWidth": { "type": "dimension", "value": 1 },
+    "PressedContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" }
+  }
+}

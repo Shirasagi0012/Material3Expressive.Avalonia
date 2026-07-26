@@ -1,0 +1,15 @@
+{
+  "kind": "tokenSet",
+  "name": "FabBaselineTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_14_0",
+  "source": "androidx compose/material3 tokens/FabBaselineTokens.kt",
+  "summary": "The baseline (small) floating action button.",
+
+  "tokens": {
+    "ContainerHeight": { "type": "dimension", "value": 56 },
+    "ContainerWidth": { "type": "dimension", "value": 56 },
+    "ContainerShape": { "type": "shape", "value": "CornerLarge" },
+    "IconSize": { "type": "dimension", "value": 24 }
+  }
+}

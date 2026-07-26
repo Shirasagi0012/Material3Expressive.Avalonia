@@ -1,0 +1,36 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <m3:MaterialCard Variant="Elevated" Width="140" Height="90" Content="Elevated" />
+                <m3:MaterialCard Variant="Filled" Width="140" Height="90" Content="Filled" />
+                <m3:MaterialCard Variant="Outlined" Width="140" Height="90" Content="Outlined" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <!-- Like MaterialButton, the card paints its own surface, border and shadow in Render, so
+             the template is only the content. -->
+        <ControlTheme x:Key="{x:Type m3:MaterialCard}" TargetType="m3:MaterialCard">
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </ControlTemplate>
+            </Setter>
+
+            <Style Selector="^[IsClickable=True]">
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

@@ -98,20 +98,16 @@ public class MaterialButton : Button
 
         var corners = ContainerCornerRadius;
         var enabled = IsEffectivelyEnabled;
-
-        var container = enabled ? _colors.ContainerColor : _colors.DisabledContainerColor;
-        var outline = enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor;
-
         var tokens = _theme.Theme.GetButtonColorTokens(Variant);
-        var pen = tokens.HasOutline && _metrics.OutlineWidth > 0
-            ? new ImmutablePen(outline, _metrics.OutlineWidth)
-            : null;
 
-        // The border straddles the geometry, so inset by half its width to keep it inside bounds.
-        var inset = pen is { } ? _metrics.OutlineWidth / 2 : 0;
-        var geometry = new RoundedRect(bounds.Deflate(inset), Deflate(corners, inset));
-
-        context.DrawRectangle(container, pen, geometry, CurrentShadows(enabled));
+        MaterialContainer.Draw(
+            context,
+            Bounds.Size,
+            corners,
+            enabled ? _colors.ContainerColor : _colors.DisabledContainerColor,
+            enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
+            tokens.HasOutline ? _metrics.OutlineWidth : 0,
+            CurrentShadows(enabled));
 
         _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
 
@@ -196,17 +192,5 @@ public class MaterialButton : Button
 
         var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
         return Elevation.ToBoxShadows(elevation, shadow);
-    }
-
-    private static CornerRadius Deflate(CornerRadius radius, double amount)
-    {
-        if (amount <= 0)
-            return radius;
-
-        return new CornerRadius(
-            Math.Max(0, radius.TopLeft - amount),
-            Math.Max(0, radius.TopRight - amount),
-            Math.Max(0, radius.BottomRight - amount),
-            Math.Max(0, radius.BottomLeft - amount));
     }
 }

@@ -122,35 +122,37 @@ public class ButtonTests
         var pill = CornerRadiusOf(button).TopLeft;
         button.IsSquare = true;
 
-        // A few frames in, the corners have started moving but have not arrived — this is the whole
-        // point of driving the shape with a spring rather than assigning a CornerRadius.
-        PumpFrames(3);
-        var midway = CornerRadiusOf(button).TopLeft;
-        Assert.True(midway < pill, $"expected the morph to have started, still at {midway}");
-        Assert.True(midway > 12, $"expected the morph to still be running, already at {midway}");
+        // The corners move a little further towards the square shape on every frame, and are not
+        // there yet — this is the whole point of driving the shape with a spring rather than
+        // assigning a CornerRadius. That it arrives is covered by AnimatedShapeTests; what is
+        // being proved here is that the render clock drives the loop at all.
+        var previous = pill;
+        for (var frame = 0; frame < 3; frame++)
+        {
+            PumpFrame();
+            var current = CornerRadiusOf(button).TopLeft;
+            Assert.True(current < previous, $"frame {frame} did not advance the morph ({current})");
+            previous = current;
+        }
 
-        // The small button's square shape is CornerMedium.
-        PumpFrames(40);
-        Assert.Equal(12, CornerRadiusOf(button).TopLeft, 3);
+        // CornerMedium is where it is heading; it must not have jumped there.
+        Assert.True(previous > 12, $"expected the morph to still be running, already at {previous}");
     }
 
     /// <summary>
-    /// Runs the headless render clock.
+    /// Runs one frame of the headless render clock.
     /// </summary>
     /// <remarks>
-    /// The forced tick reports the elapsed time of a real stopwatch, and the frame loop measures
-    /// real deltas, so the frames have to be spaced in real time — ticking in a tight loop replays
-    /// the same instant and nothing moves. Each tick is also followed by a dispatcher pump, because
-    /// re-requesting an animation frame schedules the next render through the dispatcher.
+    /// The forced tick reports the elapsed time of a real stopwatch and the frame loop measures
+    /// real deltas, so frames have to be spaced in real time — ticking in a tight loop replays the
+    /// same instant and nothing moves. The tick is then pumped through the dispatcher, because
+    /// re-requesting an animation frame schedules the next render there.
     /// </remarks>
-    private static void PumpFrames(int count, int millisecondsPerFrame = 16)
+    private static void PumpFrame(int milliseconds = 16)
     {
-        for (var i = 0; i < count; i++)
-        {
-            System.Threading.Thread.Sleep(millisecondsPerFrame);
-            Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        }
+        System.Threading.Thread.Sleep(milliseconds);
+        Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
     }
 
     [AvaloniaFact]

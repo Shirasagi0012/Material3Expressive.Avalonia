@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             x:Class="Material3Expressive.Demo.Views.ComponentsView">
+    <UserControl.Resources>
+        <!-- Icon slots take content, not a typed icon, so the library never has to know what an
+             icon is. These are plain Material paths; a Material Symbols glyph drops into the same
+             slot without the library changing. -->
+        <StreamGeometry x:Key="AddIcon">M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z</StreamGeometry>
+        <StreamGeometry x:Key="StarIcon">M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z</StreamGeometry>
+        <StreamGeometry x:Key="EditIcon">M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z</StreamGeometry>
+        <StreamGeometry x:Key="CloseIcon">M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z</StreamGeometry>
+    </UserControl.Resources>
+
+    <ScrollViewer Padding="32">
+        <StackPanel Spacing="32">
+
+            <!-- Icon button -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Icon button" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Four variants, five sizes and three widths, all independent axes." />
+
+                <TextBlock Classes="title-small" Text="Variants" />
+                <WrapPanel ItemSpacing="12" LineSpacing="12">
+                    <m3:MaterialIconButton Variant="Standard">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Filled">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Tonal">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Outlined">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Filled" IsEnabled="False">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialIconButton>
+                </WrapPanel>
+
+                <TextBlock Classes="title-small" Text="Sizes, and square containers" />
+                <WrapPanel ItemSpacing="12" LineSpacing="12" VerticalAlignment="Center">
+                    <m3:MaterialIconButton Variant="Filled" Size="ExtraSmall">
+                        <PathIcon Data="{StaticResource EditIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Filled" Size="Small">
+                        <PathIcon Data="{StaticResource EditIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Filled" Size="Medium">
+                        <PathIcon Data="{StaticResource EditIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Tonal" Size="Medium" IsSquare="True">
+                        <PathIcon Data="{StaticResource EditIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Filled" Size="Large">
+                        <PathIcon Data="{StaticResource EditIcon}" />
+                    </m3:MaterialIconButton>
+                </WrapPanel>
+
+                <TextBlock Classes="title-small" Text="Widths" />
+                <WrapPanel ItemSpacing="12" LineSpacing="12">
+                    <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Narrow">
+                        <PathIcon Data="{StaticResource CloseIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Default">
+                        <PathIcon Data="{StaticResource CloseIcon}" />
+                    </m3:MaterialIconButton>
+                    <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Wide">
+                        <PathIcon Data="{StaticResource CloseIcon}" />
+                    </m3:MaterialIconButton>
+                </WrapPanel>
+            </StackPanel>
+
+            <!-- FAB -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Floating action button" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Extended and unextended are one control: setting a label extends it." />
+                <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                    <m3:MaterialFab>
+                        <PathIcon Data="{StaticResource AddIcon}" />
+                    </m3:MaterialFab>
+                    <m3:MaterialFab Size="Medium" Variant="Secondary">
+                        <PathIcon Data="{StaticResource AddIcon}" />
+                    </m3:MaterialFab>
+                    <m3:MaterialFab Size="Large" Variant="Tertiary">
+                        <PathIcon Data="{StaticResource AddIcon}" />
+                    </m3:MaterialFab>
+                    <m3:MaterialFab Variant="Surface" Label="Compose">
+                        <PathIcon Data="{StaticResource EditIcon}" />
+                    </m3:MaterialFab>
+                    <m3:MaterialFab Label="Lowered" IsLowered="True">
+                        <PathIcon Data="{StaticResource EditIcon}" />
+                    </m3:MaterialFab>
+                </WrapPanel>
+            </StackPanel>
+
+            <!-- Card -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Card" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="A card is inert until it is told it is clickable — Material only gives it a state layer when it is genuinely actionable." />
+                <WrapPanel ItemSpacing="16" LineSpacing="16">
+                    <m3:MaterialCard Variant="Elevated" Width="200" Height="120">
+                        <StackPanel Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Classes="title-medium" Text="Elevated" />
+                            <TextBlock Classes="body-small" Text="Surface container low, level 1." />
+                        </StackPanel>
+                    </m3:MaterialCard>
+                    <m3:MaterialCard Variant="Filled" Width="200" Height="120">
+                        <StackPanel Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Classes="title-medium" Text="Filled" />
+                            <TextBlock Classes="body-small" Text="Surface container highest, flat." />
+                        </StackPanel>
+                    </m3:MaterialCard>
+                    <m3:MaterialCard Variant="Outlined" Width="200" Height="120">
+                        <StackPanel Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Classes="title-medium" Text="Outlined" />
+                            <TextBlock Classes="body-small" Text="Surface behind a hairline." />
+                        </StackPanel>
+                    </m3:MaterialCard>
+                    <m3:MaterialCard Variant="Elevated" IsClickable="True" Width="200" Height="120">
+                        <StackPanel Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Classes="title-medium" Text="Clickable" />
+                            <TextBlock Classes="body-small" Text="Hover and press me." />
+                        </StackPanel>
+                    </m3:MaterialCard>
+                </WrapPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

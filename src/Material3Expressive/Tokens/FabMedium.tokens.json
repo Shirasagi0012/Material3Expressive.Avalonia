@@ -1,0 +1,17 @@
+{
+  "kind": "tokenSet",
+  "name": "FabMediumTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_14_0",
+  "source": "androidx compose/material3 tokens/FabMediumTokens.kt",
+  "summary": "The medium floating action button.",
+
+  "tokens": {
+    "ContainerHeight": { "type": "dimension", "value": 80 },
+    "ContainerWidth": { "type": "dimension", "value": 80 },
+    // Upstream has this line commented out in the generated file; CornerLargeIncreased is what the
+    // spec calls for and what FloatingActionButtonDefaults uses at this size.
+    "ContainerShape": { "type": "shape", "value": "CornerLargeIncreased" },
+    "IconSize": { "type": "dimension", "value": 28 }
+  }
+}
