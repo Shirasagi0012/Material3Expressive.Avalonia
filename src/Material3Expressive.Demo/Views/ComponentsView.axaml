@@ -151,6 +151,27 @@
                 </WrapPanel>
             </StackPanel>
 
+            <!-- Grouped buttons -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Grouped buttons" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="A connected group keeps the row's outer corners round and tightens the ones where segments meet — something no button can work out about itself, which is why the group is a panel and not a StackPanel with a margin." />
+                <StackPanel Spacing="16" HorizontalAlignment="Left">
+                    <m3:MaterialButtonGroup Variant="Connected">
+                        <m3:MaterialToggleButton Variant="Tonal" Content="Day" IsChecked="True" />
+                        <m3:MaterialToggleButton Variant="Tonal" Content="Week" />
+                        <m3:MaterialToggleButton Variant="Tonal" Content="Month" />
+                        <m3:MaterialToggleButton Variant="Tonal" Content="Year" />
+                    </m3:MaterialButtonGroup>
+                    <m3:MaterialButtonGroup Variant="Standard">
+                        <m3:MaterialButton Variant="Outlined" Content="Cancel" />
+                        <m3:MaterialButton Variant="Filled" Content="Confirm" />
+                    </m3:MaterialButtonGroup>
+                    <m3:MaterialSplitButton Content="Save" TrailingIcon="▾" />
+                </StackPanel>
+            </StackPanel>
+
             <!-- Chips -->
             <StackPanel Spacing="12">
                 <TextBlock Classes="headline-medium" Text="Chips" />

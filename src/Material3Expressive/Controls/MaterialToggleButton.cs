@@ -27,6 +27,10 @@ public class MaterialToggleButton : ToggleButton
     public static readonly StyledProperty<bool> IsSquareProperty =
         AvaloniaProperty.Register<MaterialToggleButton, bool>(nameof(IsSquare));
 
+    /// <inheritdoc cref="MaterialButton.ContainerShapeOverride" />
+    public static readonly StyledProperty<RoundedCornerShape?> ContainerShapeOverrideProperty =
+        AvaloniaProperty.Register<MaterialToggleButton, RoundedCornerShape?>(nameof(ContainerShapeOverride));
+
     private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
 
@@ -70,6 +74,13 @@ public class MaterialToggleButton : ToggleButton
         set => SetValue(IsSquareProperty, value);
     }
 
+    /// <inheritdoc cref="MaterialButton.ContainerShapeOverride" />
+    public RoundedCornerShape? ContainerShapeOverride
+    {
+        get => GetValue(ContainerShapeOverrideProperty);
+        set => SetValue(ContainerShapeOverrideProperty, value);
+    }
+
     protected CornerRadius ContainerCornerRadius =>
         Shape.ToCornerRadius(Bounds.Size, FlowDirection == FlowDirection.RightToLeft);
 
@@ -106,7 +117,7 @@ public class MaterialToggleButton : ToggleButton
             ApplyTokens();
         else if (change.Property == IsCheckedProperty)
             ApplyChecked();
-        else if (change.Property == IsSquareProperty)
+        else if (change.Property == IsSquareProperty || change.Property == ContainerShapeOverrideProperty)
             UpdateShape();
     }
 
@@ -166,6 +177,9 @@ public class MaterialToggleButton : ToggleButton
     /// </summary>
     private RoundedCornerShape RestingShape()
     {
+        if (ContainerShapeOverride is { } shape)
+            return shape;
+
         var round = IsSquare == IsSelected;
         return _theme.Theme.Shapes.Get(round ? _metrics.ContainerShape : _metrics.SquareContainerShape);
     }

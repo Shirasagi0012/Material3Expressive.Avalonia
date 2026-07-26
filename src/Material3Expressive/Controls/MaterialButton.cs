@@ -39,6 +39,10 @@ public class MaterialButton : Button
     public static readonly StyledProperty<bool> IsSquareProperty =
         AvaloniaProperty.Register<MaterialButton, bool>(nameof(IsSquare));
 
+    /// <inheritdoc cref="ContainerShapeOverride" />
+    public static readonly StyledProperty<RoundedCornerShape?> ContainerShapeOverrideProperty =
+        AvaloniaProperty.Register<MaterialButton, RoundedCornerShape?>(nameof(ContainerShapeOverride));
+
     private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
 
@@ -83,6 +87,21 @@ public class MaterialButton : Button
         set => SetValue(IsSquareProperty, value);
     }
 
+    /// <summary>
+    /// Replaces the resting shape outright, corner by corner.
+    /// </summary>
+    /// <remarks>
+    /// The escape hatch for containers that shape their children: a connected button group squares
+    /// only the corners where two segments meet, and a split button's two halves each keep one
+    /// round end. Neither can be said with <see cref="IsSquare" />, which is all four corners or
+    /// none. The press morph still applies on top.
+    /// </remarks>
+    public RoundedCornerShape? ContainerShapeOverride
+    {
+        get => GetValue(ContainerShapeOverrideProperty);
+        set => SetValue(ContainerShapeOverrideProperty, value);
+    }
+
     /// <summary>The corner radii the container is currently drawn with, morph included.</summary>
     protected CornerRadius ContainerCornerRadius =>
         Shape.ToCornerRadius(Bounds.Size, FlowDirection == FlowDirection.RightToLeft);
@@ -122,7 +141,7 @@ public class MaterialButton : Button
             || change.Property == SizeProperty
             || change.Property == IsEffectivelyEnabledProperty)
             ApplyTokens();
-        else if (change.Property == IsSquareProperty)
+        else if (change.Property == IsSquareProperty || change.Property == ContainerShapeOverrideProperty)
             UpdateShape();
     }
 
@@ -168,7 +187,8 @@ public class MaterialButton : Button
 
     private RoundedCornerShape RestingShape()
     {
-        return ShapeFor(IsSquare ? _metrics.SquareContainerShape : _metrics.ContainerShape);
+        return ContainerShapeOverride
+               ?? ShapeFor(IsSquare ? _metrics.SquareContainerShape : _metrics.ContainerShape);
     }
 
     private RoundedCornerShape ShapeFor(ShapeRole role)

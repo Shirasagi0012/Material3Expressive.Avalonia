@@ -1,0 +1,36 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <StackPanel Spacing="16">
+                <m3:MaterialButtonGroup Variant="Connected">
+                    <m3:MaterialToggleButton Variant="Tonal" Content="Day" IsChecked="True" />
+                    <m3:MaterialToggleButton Variant="Tonal" Content="Week" />
+                    <m3:MaterialToggleButton Variant="Tonal" Content="Month" />
+                </m3:MaterialButtonGroup>
+                <m3:MaterialSplitButton Content="Save" TrailingIcon="&#x25BE;" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialSplitButton}" TargetType="m3:MaterialSplitButton">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="{TemplateBinding BetweenSpace}">
+                        <m3:MaterialButton x:Name="PART_Leading"
+                                           Variant="{TemplateBinding Variant}"
+                                           Content="{TemplateBinding Content}" />
+                        <m3:MaterialToggleButton x:Name="PART_Trailing"
+                                                 Variant="{TemplateBinding Variant}"
+                                                 Content="{TemplateBinding TrailingIcon}"
+                                                 IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

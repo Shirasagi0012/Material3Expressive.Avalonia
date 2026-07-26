@@ -42,6 +42,10 @@ public class MaterialIconButton : Button
     public static readonly StyledProperty<bool> IsSquareProperty =
         AvaloniaProperty.Register<MaterialIconButton, bool>(nameof(IsSquare));
 
+    /// <inheritdoc cref="MaterialButton.ContainerShapeOverride" />
+    public static readonly StyledProperty<RoundedCornerShape?> ContainerShapeOverrideProperty =
+        AvaloniaProperty.Register<MaterialIconButton, RoundedCornerShape?>(nameof(ContainerShapeOverride));
+
     // A read-only output of token resolution. A direct property rather than a plain CLR one
     // because the template binds to it, and a TemplateBinding needs an AvaloniaProperty.
     public static readonly DirectProperty<MaterialIconButton, double> IconSizeProperty =
@@ -97,6 +101,13 @@ public class MaterialIconButton : Button
         set => SetValue(IsSquareProperty, value);
     }
 
+    /// <inheritdoc cref="MaterialButton.ContainerShapeOverride" />
+    public RoundedCornerShape? ContainerShapeOverride
+    {
+        get => GetValue(ContainerShapeOverrideProperty);
+        set => SetValue(ContainerShapeOverrideProperty, value);
+    }
+
     /// <summary>The size the icon in the content slot should be drawn at.</summary>
     public double IconSize => _metrics.IconSize;
 
@@ -133,7 +144,7 @@ public class MaterialIconButton : Button
             || change.Property == ButtonWidthProperty
             || change.Property == IsEffectivelyEnabledProperty)
             ApplyTokens();
-        else if (change.Property == IsSquareProperty)
+        else if (change.Property == IsSquareProperty || change.Property == ContainerShapeOverrideProperty)
             UpdateShape();
     }
 
@@ -183,6 +194,7 @@ public class MaterialIconButton : Button
 
     private RoundedCornerShape RestingShape()
     {
-        return _theme.Theme.Shapes.Get(IsSquare ? _metrics.SquareContainerShape : _metrics.ContainerShape);
+        return ContainerShapeOverride
+               ?? _theme.Theme.Shapes.Get(IsSquare ? _metrics.SquareContainerShape : _metrics.ContainerShape);
     }
 }

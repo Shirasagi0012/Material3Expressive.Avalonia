@@ -1,3 +1,4 @@
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -290,6 +291,76 @@ public class ProgressTests
         Assert.False(loop.Tick(System.TimeSpan.FromSeconds(0.25)));
     }
 
+}
+
+public class ButtonGroupTests
+{
+    [AvaloniaFact]
+    public void AConnectedGroup_SitsCloserThanASpacedOne()
+    {
+        Assert.True(ButtonGroupTokens.Connected.BetweenSpace < ButtonGroupTokens.Standard.BetweenSpace);
+        Assert.True(ButtonGroupTokens.Connected.IsConnected);
+        Assert.False(ButtonGroupTokens.Standard.IsConnected);
+    }
+
+    [AvaloniaFact]
+    public void AConnectedGroup_RoundsTheOutsideAndTightensTheSeams()
+    {
+        var first = new MaterialToggleButton { Content = "A" };
+        var middle = new MaterialToggleButton { Content = "B" };
+        var last = new MaterialToggleButton { Content = "C" };
+
+        var group = new MaterialButtonGroup { Variant = ButtonGroupVariant.Connected };
+        group.Children.Add(first);
+        group.Children.Add(middle);
+        group.Children.Add(last);
+        ThemeTestHelper.ShowWindow(group);
+
+        var inner = CornerSize.Absolute(ButtonGroupTokens.Connected.InnerCornerSize);
+
+        // The first segment keeps its leading corners round and tightens the trailing pair.
+        Assert.Equal(CornerSize.Full, first.ContainerShapeOverride!.TopStart);
+        Assert.Equal(inner, first.ContainerShapeOverride!.TopEnd);
+
+        // The middle is tight on both sides.
+        Assert.Equal(inner, middle.ContainerShapeOverride!.TopStart);
+        Assert.Equal(inner, middle.ContainerShapeOverride!.TopEnd);
+
+        // The last mirrors the first.
+        Assert.Equal(inner, last.ContainerShapeOverride!.TopStart);
+        Assert.Equal(CornerSize.Full, last.ContainerShapeOverride!.TopEnd);
+    }
+
+    [AvaloniaFact]
+    public void AStandardGroup_LeavesItsChildrenAlone()
+    {
+        var button = new MaterialButton { Content = "A" };
+        var group = new MaterialButtonGroup { Variant = ButtonGroupVariant.Standard };
+        group.Children.Add(button);
+        ThemeTestHelper.ShowWindow(group);
+
+        Assert.Null(button.ContainerShapeOverride);
+    }
+
+    [AvaloniaFact]
+    public void ASplitButtonsHalves_MeetAtATightenedSeam()
+    {
+        var split = new MaterialSplitButton { Content = "Save", TrailingIcon = "v" };
+        ThemeTestHelper.ShowWindow(split);
+
+        var leading = split.GetVisualDescendants().OfType<MaterialButton>().FirstOrDefault();
+        var trailing = split.GetVisualDescendants().OfType<MaterialToggleButton>().FirstOrDefault();
+
+        Assert.NotNull(leading);
+        Assert.NotNull(trailing);
+
+        var inner = CornerSize.Absolute(SplitButtonSmallTokens.InnerCornerSize);
+
+        Assert.Equal(CornerSize.Full, leading!.ContainerShapeOverride!.TopStart);
+        Assert.Equal(inner, leading.ContainerShapeOverride!.TopEnd);
+        Assert.Equal(inner, trailing!.ContainerShapeOverride!.TopStart);
+        Assert.Equal(CornerSize.Full, trailing.ContainerShapeOverride!.TopEnd);
+    }
 }
 
 public class ChipTests
