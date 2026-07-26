@@ -48,16 +48,58 @@ hand-rolled per-domain resolvers in `Foundation/`).
 
 ## Phases
 
-### Phase 0 — Stabilize the base
+### Phase 0 — Stabilize the base — **done 2026-07-26** (one item outstanding)
 
-- Fix `MaterialColorUtilities.Avalonia` WIP breakage
+- ~~Fix `MaterialColorUtilities.Avalonia` WIP breakage
   (`ColorTokenResolver.cs` has an incomplete switch arm for `RefPaletteToken.Custom`);
-  finish or cut custom-color support for now. Tests green.
-- CI: build + test on push (GitHub Actions), both this repo and the submodule.
-- Archive the DesignTokens repo (README pointing here); remove the
-  `DesignTokens.Avalonia` package reference as part of Phase 1.
-- Pin the Avalonia version; pin the compose-material3 version being tracked
-  (e.g. 1.4.x) so "parity" has a concrete referent.
+  finish or cut custom-color support for now. Tests green.~~
+  **Finished** custom key colors rather than cutting them — see below.
+- ~~CI: build + test on push (GitHub Actions), both this repo and the submodule.~~
+  Added to all three repos (`.github/workflows/ci.yml`), ubuntu + windows matrix.
+- ~~Remove the `DesignTokens.Avalonia` package reference as part of Phase 1.~~
+  **Pulled forward into Phase 0**: the package existed only on a local disk feed, so
+  CI could not restore it. The five generic types actually used are now vendored
+  `internal` under `Tokens/Infrastructure/`; theming core v3 deletes them.
+- Archive the DesignTokens repo (README pointing here). **Still outstanding** —
+  needs a GitHub settings change.
+- ~~Pin the Avalonia version~~ (**12.1.0**, see below); parity referent is pinned:
+  **compose-material3 `1.5.0-alpha25`** (androidx @ `ff0a0a99`, checked out at
+  `D:\source\androidx`).
+  Survey notes: [docs/androidx-reference.md](docs/androidx-reference.md).
+  Note: Expressive APIs are stable upstream — we treat Expressive as the default
+  behavior, not a variant.
+
+#### Custom key colors (delivered)
+
+`CustomColor` (name + seed color + harmonize flag) is the XAML content property of
+`ColorScheme`, so key colors are declared inline:
+
+```xml
+<mcu:TonalSpotScheme Color="#6750A4">
+    <mcu:CustomColor Name="Brand" Color="#FF5722" />
+</mcu:TonalSpotScheme>
+```
+
+Each produces a tonal palette — optionally harmonized toward the scheme's source
+color — reachable as `{MdRefPalette Custom, Tone=60, CustomKey=Brand}` and as the
+four `SysColorToken.Custom*` roles at the M3 spec tones (light 40/100/90/10, dark
+80/20/30/90; fixed, i.e. not contrast-responsive). An unknown key resolves to the
+binding's fallback rather than throwing.
+
+#### Pinned versions
+
+| What | Pin | Where |
+|---|---|---|
+| Avalonia | **12.1.0** | `AvaloniaVersion` in all three `Directory.Packages.props` |
+| .NET | `net10.0` (MaterialColorUtilities also targets `net8.0`) | per-project `TargetFramework(s)` |
+| compose-material3 | **1.5.0-alpha25** | androidx @ `ff0a0a99` |
+
+Avalonia 12 migration notes, for anything still on 11.x: `Avalonia.Data.IBinding`
+is gone (use `BindingBase`, which is also what `this[!Property]` now returns);
+`ConstructorArgumentAttribute` moved to `Avalonia.Metadata`; `BindingPlugins` is
+internal and DataAnnotations validation became opt-in via
+`AppBuilder.WithDataAnnotationsValidation()`; DevTools moved from
+`Avalonia.Diagnostics` to `AvaloniaUI.DiagnosticsSupport`.
 
 ### Phase 1 — Theming core v3
 
@@ -69,7 +111,11 @@ hand-rolled per-domain resolvers in `Foundation/`).
 - Typography rides through the theme object; keep `TypographyRole` +
   attribute-selector TextBlock theme.
 - Written spec in `docs/architecture.md`: resolution order, variant handling,
-  override semantics.
+  override semantics. Upstream validation: material3 1.5.0 itself collapsed its
+  per-subsystem CompositionLocals into a single `MaterialTheme.Values` local.
+  Mirror its outer-vs-nested default semantics and the per-theme-instance
+  default-bundle cache (60 color + 15 shape memo fields upstream — load-bearing
+  for perf; see docs/androidx-reference.md).
 - **Exit criteria:** headless UI tests proving (a) subtree theme override
   affects a control styled via ControlTheme (the case broken today),
   (b) light/dark switch re-resolves live, (c) app-level theme replacement
@@ -92,15 +138,27 @@ hand-rolled per-domain resolvers in `Foundation/`).
 
 - **Springs:** physics-based (no fixed duration) — Avalonia transitions can't
   express this. Build a spring animator on the render clock implementing
-  Compose `SpringSpec` semantics (stiffness / damping ratio), plus the
-  `MotionScheme` token set (spatial vs. effects × default/fast/slow).
-- **Interaction primitives:** `StateLayer` (hover/focus/press opacity from
-  tokens), ripple (optional), focus indicator ring, and a base control class
-  wiring interaction state → animated token values.
-- **Shape morphing:** port androidx `graphics-shapes` (RoundedPolygon, Morph)
-  as a standalone module (sibling to MaterialColorUtilities) — needed for
-  button press morph, loading indicator, FAB menu. Meaty but isolated; can
-  proceed in parallel. Fallback if it slips: animated corner radius only.
+  Compose `SpringSpec` semantics (stiffness / damping ratio, initial velocity,
+  mid-flight retargeting, velocity-preserving reversal, visibility threshold),
+  plus the `MotionScheme` token set (spatial vs. effects × default/fast/slow —
+  constants captured in docs/androidx-reference.md).
+- **Interaction primitives:** `StateLayer` (hover 0.08 / focus 0.10 /
+  pressed 0.10 / dragged 0.16), ripple (engine mechanics + timing constants
+  captured in docs/androidx-reference.md from `compose/material/material-ripple`;
+  the M3E wrapper node lives in `compose/material3/material3-ripple`, not yet in
+  the sparse checkout), focus indicator (Expressive inset ring drawn outside the
+  container fill), and a base control class wiring interaction state → animated
+  token values.
+- **Press shape morphing is NOT polygon morphing** (upstream finding): buttons
+  animate `CornerBasedShape` corner sizes with a spring via a small state
+  machine (`internal/AnimatedShape.kt`) + deferred CornerSize lerp. Port that —
+  it's ~200 lines and covers Button/IconButton/FAB/Chip/Menu press morphs.
+- **Polygon morphing (graphics-shapes): already ported** at
+  `D:\Shirasagi\Avalonia\MaterialShapes` — full 35-shape catalog, Morph
+  pipeline, 73 mirrored tests. Needed only for LoadingIndicator, wavy progress,
+  and the public shape catalog. Before shipping on it: fix the
+  FeatureMapping.cs concave-corner sentinel bug (task chip filed) and the
+  per-frame geometry allocation in MorphShapeView.
 - **Exit criteria:** a demo page showing spring-driven state-layer + shape
   transitions matching M3E timing on a prototype button.
 
@@ -148,19 +206,18 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
 ## Known risks / spikes
 
 1. **Spring animator** — no prior art in Avalonia core; spike early in Phase 3.
-2. **graphics-shapes port** — nontrivial geometry (cubic features, morph
-   matching). Parallel track with a corner-radius-only fallback.
-3. **Variable fonts** — M3E leans on Roboto Flex axes; Avalonia's variable-font
+2. **Variable fonts** — M3E leans on Roboto Flex axes; Avalonia's variable-font
    axis support is limited. Spike during Phase 1 typography work; may constrain
    emphasized styles to static weights.
-4. **Text metrics** — line-height/letter-spacing semantics differ from Android;
+3. **Text metrics** — line-height/letter-spacing semantics differ from Android;
    accept documented deviation rather than fight the text stack.
-5. **M3E is a moving target** — track a pinned compose-material3 release;
+4. **M3E is a moving target** — track a pinned compose-material3 release;
    upgrade deliberately, not continuously.
 
 ## Immediate next steps
 
-1. Phase 0: fix the submodule build break, wire up CI.
+1. ~~Phase 0: fix the submodule build break, wire up CI.~~ Done. Remaining Phase 0
+   loose end: archive the DesignTokens repo on GitHub with a README pointing here.
 2. Write `docs/architecture.md` for theming core v3 (the spec is the review
    feedback from 2026-07-26 distilled).
 3. Implement the core + the three exit-criteria tests.
