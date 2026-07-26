@@ -13,7 +13,7 @@ namespace Material3Expressive.Foundation;
 
 internal static class TypographyResolver
 {
-    public static IBinding ProvideFontFamilyBinding(
+    public static BindingBase ProvideFontFamilyBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
         FontFamilyToken token
     )
@@ -31,7 +31,7 @@ internal static class TypographyResolver
             });
     }
 
-    public static IBinding ProvideFontWeightBinding(
+    public static BindingBase ProvideFontWeightBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
         FontWeightToken token
     )
@@ -48,7 +48,7 @@ internal static class TypographyResolver
             });
     }
 
-    public static IBinding ProvideTypeScaleFontSizeBinding(
+    public static BindingBase ProvideTypeScaleFontSizeBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
         TypographyRole token
     )
@@ -59,7 +59,7 @@ internal static class TypographyResolver
             typography => typography?.GetTypeScale(token).FontSize);
     }
 
-    public static IBinding ProvideTypeScaleLineHeightBinding(
+    public static BindingBase ProvideTypeScaleLineHeightBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
         TypographyRole token
     )
@@ -70,7 +70,7 @@ internal static class TypographyResolver
             typography => typography?.GetTypeScale(token).LineHeight);
     }
 
-    public static IBinding ProvideTypeScaleLetterSpacingBinding(
+    public static BindingBase ProvideTypeScaleLetterSpacingBinding(
         IAvaloniaXamlIlParentStackProvider parentStack,
         TypographyRole token
     )
@@ -81,7 +81,7 @@ internal static class TypographyResolver
             typography => typography?.GetTypeScale(token).LetterSpacing);
     }
 
-    private static IBinding CreateBinding<T>(
+    private static BindingBase CreateBinding<T>(
         IAvaloniaXamlIlParentStackProvider parentStack,
         T fallback,
         Func<TypographyScheme?, T> resolveValue

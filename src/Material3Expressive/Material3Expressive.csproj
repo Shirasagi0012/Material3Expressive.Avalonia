@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Markups\Components\" />
       <Folder Include="Styles\Foundation\" />
     </ItemGroup>
 

@@ -1,10 +1,55 @@
-﻿<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
     <Design.PreviewWith>
         <Border Padding="20">
             <Button>Button</Button>
         </Border>
     </Design.PreviewWith>
 
-    <!-- Add Styles Here -->
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type Button}" TargetType="Button">
+            <Setter Property="Background" Value="{m3:MdButtonToken ContainerBrush}" />
+            <Setter Property="Foreground" Value="{m3:MdButtonToken ForegroundBrush}" />
+            <Setter Property="Padding" Value="{m3:MdButtonToken Padding}" />
+            <Setter Property="MinHeight" Value="{m3:MdButtonToken MinHeight}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelLarge" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{m3:MdButtonToken CornerRadius}">
+                        <Grid ClipToBounds="True">
+                            <Border x:Name="StateLayer"
+                                    Background="{m3:MdButtonToken StateLayerBrush}"
+                                    CornerRadius="{m3:MdButtonToken CornerRadius}"
+                                    Opacity="0" />
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True"
+                                              Content="{TemplateBinding Content}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+
+            <Style Selector="^:pointerover /template/ Border#StateLayer">
+                <Setter Property="Opacity" Value="{m3:MdButtonToken HoverStateLayerOpacity}" />
+            </Style>
+            <Style Selector="^:pressed /template/ Border#StateLayer">
+                <Setter Property="Opacity" Value="{m3:MdButtonToken PressedStateLayerOpacity}" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Background" Value="{m3:MdButtonToken DisabledContainerBrush}" />
+                <Setter Property="Foreground" Value="{m3:MdButtonToken DisabledForegroundBrush}" />
+            </Style>
+            <Style Selector="^:disabled /template/ Border#StateLayer">
+                <Setter Property="Opacity" Value="0" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
 </Styles>

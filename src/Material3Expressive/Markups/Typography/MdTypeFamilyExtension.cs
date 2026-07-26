@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Markup.Xaml;
+using Avalonia.Metadata;
 using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Avalonia.Media;
 using Avalonia.Styling;

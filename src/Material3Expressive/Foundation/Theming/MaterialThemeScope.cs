@@ -16,11 +16,13 @@ public class MaterialThemeScope : AvaloniaObject
             {
                 element[!MaterialColor.SchemeProperty] = theme[!MaterialTheme.ColorSchemeProperty];
                 element[!TypographyScheme.TypographyHostProperty] = theme[!MaterialTheme.TypographySchemeProperty];
+                element[!ButtonTokens.ButtonHostProperty] = theme[!MaterialTheme.ButtonTokensProperty];
             }
             else
             {
                 element.ClearValue(MaterialColor.SchemeProperty);
                 element.ClearValue(TypographyScheme.TypographyHostProperty);
+                element.ClearValue(ButtonTokens.ButtonHostProperty);
             }
         });
     }

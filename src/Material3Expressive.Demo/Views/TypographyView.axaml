@@ -14,6 +14,11 @@
     </Design.DataContext>
 
     <StackPanel Margin="24" Spacing="16">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <Button Content="Filled Button" />
+            <Button Content="Disabled Button" IsEnabled="False" />
+        </StackPanel>
+
         <TextBlock Text="TextBlock Style Validation"
                    Foreground="{mcu:MdSysColor OnBackground}"/>
 
