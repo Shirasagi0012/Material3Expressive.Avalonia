@@ -200,6 +200,17 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
 - **Packaging:** `Material3Expressive` (controls + theming),
   `MaterialColorUtilities` stays independently useful on NuGet; shapes port as
   its own package.
+- **Material Symbols icon package (parallel track, separate repo):** variable
+  Material Symbols rendered via SkiaSharp 4 (`ICustomDrawOperation` +
+  `ISkiaSharpApiLeaseFeature` — path verified). One repo, one package per family
+  (Outlined/Rounded/Sharp); `Symbol` enum source-generated from Google's
+  `.codepoints` file; `Fill`/`Weight`/`Grade`/`OpticalSize` as animatable
+  StyledProperties (opsz auto-tracks size 20–48; grade −25 in dark theme).
+  Requires consumers to override SkiaSharp 3.119 → 4.x — pin an exact tested
+  version, CI with the override applied + headless render test. **Publish to
+  NuGet.org early** (avoids the local-feed CI restore trap DesignTokens hit).
+  Core library must never depend on it — components take icon *content*;
+  only demo/gallery references the package. Wanted by Phase 4 (icon slots).
 - **Docs:** per-component page in the gallery + a parity table vs. Compose
   (what matches, what deviates and why).
 
