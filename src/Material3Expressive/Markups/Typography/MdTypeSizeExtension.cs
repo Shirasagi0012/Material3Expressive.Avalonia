@@ -1,12 +1,10 @@
-using System;
-using Avalonia.Markup.Xaml;
+using Avalonia.Data;
 using Avalonia.Metadata;
-using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Markups;
 
+/// <summary>Font size of a type scale, from the theme in scope at the target element.</summary>
 public class MdTypeSizeExtension
 {
     public MdTypeSizeExtension()
@@ -18,13 +16,11 @@ public class MdTypeSizeExtension
         Token = token;
     }
 
-    [ConstructorArgument("token")] 
+    [ConstructorArgument("token")]
     public TypographyRole Token { get; set; } = TypographyRole.BodyMedium;
 
-    public object ProvideValue(IServiceProvider serviceProvider)
+    public BindingBase ProvideValue()
     {
-        var parentStack = (IAvaloniaXamlIlParentStackProvider?)serviceProvider.GetService(typeof(IAvaloniaXamlIlParentStackProvider));
-        if (parentStack is null) return TypeScaleTokens.BodyMedium.FontSize;
-        return TypographyResolver.ProvideTypeScaleFontSizeBinding(parentStack, Token);
+        return TypographyResolver.FontSize(Token);
     }
 }

@@ -1,13 +1,11 @@
-using System;
-using Avalonia.Markup.Xaml;
+using Avalonia.Data;
 using Avalonia.Metadata;
-using Avalonia.Markup.Xaml.XamlIl.Runtime;
-using Avalonia.Media;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Markups;
 
+/// <summary>A font weight from the theme in scope at the target element.</summary>
 public class MdTypeWeightExtension
 {
     public MdTypeWeightExtension()
@@ -22,10 +20,8 @@ public class MdTypeWeightExtension
     [ConstructorArgument("token")]
     public FontWeightToken Token { get; set; } = FontWeightToken.Regular;
 
-    public object ProvideValue(IServiceProvider serviceProvider)
+    public BindingBase ProvideValue()
     {
-        var parentStack = (IAvaloniaXamlIlParentStackProvider?)serviceProvider.GetService(typeof(IAvaloniaXamlIlParentStackProvider));
-        if (parentStack is null) return FontWeight.Regular;
-        return TypographyResolver.ProvideFontWeightBinding(parentStack, Token);
+        return TypographyResolver.FontWeight(Token);
     }
 }

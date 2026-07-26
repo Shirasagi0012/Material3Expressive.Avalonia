@@ -36,14 +36,12 @@ jobs:
       - name: Build
         run: dotnet build Material3Expressive.slnx -c Release --no-restore
 
-      # The library has no test projects yet — headless tests land in phase 1 (see ROADMAP.md).
-      # This step picks them up automatically once they exist.
       - name: Test
         shell: bash
         run: |
-          mapfile -t projects < <(find src -name '*.Tests.csproj' -not -path '*/bin/*' -not -path '*/obj/*')
+          mapfile -t projects < <(find src tests -name '*.Tests.csproj' -not -path '*/bin/*' -not -path '*/obj/*')
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects found under src/ yet — skipping."
+            echo "No test projects found — skipping."
             exit 0
           fi
           for project in "${projects[@]}"; do

@@ -9,10 +9,10 @@
 
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type Button}" TargetType="Button">
-            <Setter Property="Background" Value="{m3:MdButtonToken ContainerBrush}" />
-            <Setter Property="Foreground" Value="{m3:MdButtonToken ForegroundBrush}" />
-            <Setter Property="Padding" Value="{m3:MdButtonToken Padding}" />
-            <Setter Property="MinHeight" Value="{m3:MdButtonToken MinHeight}" />
+            <Setter Property="Background" Value="{m3:MdButtonToken ContainerColor}" />
+            <Setter Property="Foreground" Value="{m3:MdButtonToken LabelTextColor}" />
+            <Setter Property="Padding" Value="{m3:MdButtonToken ContentPadding}" />
+            <Setter Property="MinHeight" Value="{m3:MdButtonToken ContainerHeight}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="BorderThickness" Value="0" />
@@ -20,11 +20,11 @@
             <Setter Property="Template">
                 <ControlTemplate>
                     <Border Background="{TemplateBinding Background}"
-                            CornerRadius="{m3:MdButtonToken CornerRadius}">
+                            CornerRadius="{m3:MdButtonToken ContainerCornerRadius}">
                         <Grid ClipToBounds="True">
                             <Border x:Name="StateLayer"
-                                    Background="{m3:MdButtonToken StateLayerBrush}"
-                                    CornerRadius="{m3:MdButtonToken CornerRadius}"
+                                    Background="{m3:MdButtonToken StateLayerColor}"
+                                    CornerRadius="{m3:MdButtonToken ContainerCornerRadius}"
                                     Opacity="0" />
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -40,12 +40,15 @@
             <Style Selector="^:pointerover /template/ Border#StateLayer">
                 <Setter Property="Opacity" Value="{m3:MdButtonToken HoverStateLayerOpacity}" />
             </Style>
+            <Style Selector="^:focus-visible /template/ Border#StateLayer">
+                <Setter Property="Opacity" Value="{m3:MdButtonToken FocusStateLayerOpacity}" />
+            </Style>
             <Style Selector="^:pressed /template/ Border#StateLayer">
                 <Setter Property="Opacity" Value="{m3:MdButtonToken PressedStateLayerOpacity}" />
             </Style>
             <Style Selector="^:disabled">
-                <Setter Property="Background" Value="{m3:MdButtonToken DisabledContainerBrush}" />
-                <Setter Property="Foreground" Value="{m3:MdButtonToken DisabledForegroundBrush}" />
+                <Setter Property="Background" Value="{m3:MdButtonToken DisabledContainerColor}" />
+                <Setter Property="Foreground" Value="{m3:MdButtonToken DisabledLabelTextColor}" />
             </Style>
             <Style Selector="^:disabled /template/ Border#StateLayer">
                 <Setter Property="Opacity" Value="0" />

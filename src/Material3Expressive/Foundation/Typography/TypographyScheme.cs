@@ -11,7 +11,6 @@ namespace Material3Expressive.Foundation;
 
 [DoNotGenerateOnPropertyChanged]
 [GenerateAttachedProperty<StyledElement, TypographyRole>("TextStyle", Inherits = true, DefaultValue = TypographyRole.BodyMedium)]
-[GenerateAttachedProperty<AvaloniaObject, TypographyScheme>("TypographyHost", Inherits = true)]
 public partial class TypographyScheme : AvaloniaObject
 {
     public TypographyScheme()

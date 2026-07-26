@@ -1,12 +1,10 @@
-using System;
-using Avalonia.Markup.Xaml;
+using Avalonia.Data;
 using Avalonia.Metadata;
-using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Markups;
 
+/// <summary>Line height of a type scale, from the theme in scope at the target element.</summary>
 public class MdTypeLineHeightExtension
 {
     public MdTypeLineHeightExtension()
@@ -18,13 +16,11 @@ public class MdTypeLineHeightExtension
         Token = token;
     }
 
-    [ConstructorArgument("token")] 
+    [ConstructorArgument("token")]
     public TypographyRole Token { get; set; } = TypographyRole.BodyMedium;
 
-    public object ProvideValue(IServiceProvider serviceProvider)
+    public BindingBase ProvideValue()
     {
-        var parentStack = (IAvaloniaXamlIlParentStackProvider?)serviceProvider.GetService(typeof(IAvaloniaXamlIlParentStackProvider));
-        if (parentStack is null) return TypeScaleTokens.BodyMedium.LineHeight;
-        return TypographyResolver.ProvideTypeScaleLineHeightBinding(parentStack, Token);
+        return TypographyResolver.LineHeight(Token);
     }
 }

@@ -29,4 +29,7 @@
     <Project Path="src/Material3Expressive.Demo/Material3Expressive.Demo.csproj" />
     <Project Path="src/Material3Expressive/Material3Expressive.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -1,139 +1,47 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Avalonia;
 using Avalonia.Data;
-using Avalonia.Data.Converters;
-using Avalonia.Markup.Xaml.MarkupExtensions;
-using Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings;
-using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Foundation;
 
+/// <summary>
+/// Bindings for the typography markup extensions. Typography has no variant dimension, so these
+/// depend on the theme alone.
+/// </summary>
 internal static class TypographyResolver
 {
-    public static BindingBase ProvideFontFamilyBinding(
-        IAvaloniaXamlIlParentStackProvider parentStack,
-        FontFamilyToken token
-    )
+    public static BindingBase FontFamily(FontFamilyToken token)
     {
-        return CreateBinding(
-            parentStack,
-            TypefaceTokens.Brand,
-            typography => token switch
-            {
-                FontFamilyToken.Brand => typography?.BrandFontFamily,
-                FontFamilyToken.Plain => typography?.PlainFontFamily,
-                FontFamilyToken.EmphasizedBrand => typography?.EmphasizedBrandFontFamily,
-                FontFamilyToken.EmphasizedPlain => typography?.EmphasizedPlainFontFamily,
-                _ => throw new ArgumentOutOfRangeException(nameof(typography), typography, null)
-            });
+        return ThemeBinding.FromTheme<object?>(
+            theme => theme.Typography.GetFontFamily(token),
+            AvaloniaProperty.UnsetValue);
     }
 
-    public static BindingBase ProvideFontWeightBinding(
-        IAvaloniaXamlIlParentStackProvider parentStack,
-        FontWeightToken token
-    )
+    public static BindingBase FontWeight(FontWeightToken token)
     {
-        return CreateBinding(
-            parentStack,
-            TypefaceTokens.WeightRegular,
-            typography => token switch
-            {
-                FontWeightToken.Regular => typography?.WeightRegular,
-                FontWeightToken.Medium => typography?.WeightMedium,
-                FontWeightToken.Bold => typography?.WeightBold,
-                _ => throw new ArgumentOutOfRangeException(nameof(typography), typography, null)
-            });
+        return ThemeBinding.FromTheme<object?>(
+            theme => theme.Typography.GetFontWeight(token),
+            AvaloniaProperty.UnsetValue);
     }
 
-    public static BindingBase ProvideTypeScaleFontSizeBinding(
-        IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRole token
-    )
+    public static BindingBase FontSize(TypographyRole role)
     {
-        return CreateBinding(
-            parentStack,
-            TypeScaleTokens.BodyMedium.FontSize,
-            typography => typography?.GetTypeScale(token).FontSize);
+        return ThemeBinding.FromTheme<object?>(
+            theme => theme.Typography.GetTypeScale(role).FontSize,
+            AvaloniaProperty.UnsetValue);
     }
 
-    public static BindingBase ProvideTypeScaleLineHeightBinding(
-        IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRole token
-    )
+    public static BindingBase LineHeight(TypographyRole role)
     {
-        return CreateBinding(
-            parentStack,
-            TypeScaleTokens.BodyMedium.LineHeight,
-            typography => typography?.GetTypeScale(token).LineHeight);
+        return ThemeBinding.FromTheme<object?>(
+            theme => theme.Typography.GetTypeScale(role).LineHeight,
+            AvaloniaProperty.UnsetValue);
     }
 
-    public static BindingBase ProvideTypeScaleLetterSpacingBinding(
-        IAvaloniaXamlIlParentStackProvider parentStack,
-        TypographyRole token
-    )
+    public static BindingBase LetterSpacing(TypographyRole role)
     {
-        return CreateBinding(
-            parentStack,
-            TypeScaleTokens.BodyMedium.LetterSpacing,
-            typography => typography?.GetTypeScale(token).LetterSpacing);
-    }
-
-    private static BindingBase CreateBinding<T>(
-        IAvaloniaXamlIlParentStackProvider parentStack,
-        T fallback,
-        Func<TypographyScheme?, T> resolveValue
-    )
-    {
-        object? source = null;
-        if (parentStack is { Parents: { } parents })
-            foreach (var parent in parents)
-                if (parent is StyledElement styled)
-                {
-                    source = styled;
-                    break;
-                }
-
-        var typographyBinding = CreateBindingInternal(source);
-        var appTypographyBinding = CreateBindingInternal(Application.Current);
-
-        if (source is { })
-        {
-            var binding = new MultiBinding
-            {
-                Mode = BindingMode.OneWay,
-                Priority = BindingPriority.Style,
-                FallbackValue = fallback!,
-                TargetNullValue = fallback!,
-                Bindings = [typographyBinding, appTypographyBinding],
-                Converter = new FuncMultiValueConverter<object?, T>(values =>
-                    (values as IList<object?> ?? values.ToList()) switch
-                    {
-                        [var typography, var appTypography, ..] => resolveValue(
-                            typography as TypographyScheme ?? appTypography as TypographyScheme),
-                        _ => fallback
-                    })
-            };
-            return binding;
-        }
-
-        appTypographyBinding.Converter = new FuncValueConverter<object?, T>(value =>
-            resolveValue(value as TypographyScheme));
-        return appTypographyBinding;
-
-        static CompiledBindingExtension CreateBindingInternal(object? source)
-        {
-            return new CompiledBindingExtension
-            {
-                Mode = BindingMode.OneWay,
-                Priority = BindingPriority.Style,
-                Source = source,
-                Path = new CompiledBindingPathBuilder()
-                    .Property(TypographyScheme.TypographyHostProperty, PropertyInfoAccessorFactory.CreateAvaloniaPropertyAccessor)
-                    .Build()
-            };
-        }
+        return ThemeBinding.FromTheme<object?>(
+            theme => theme.Typography.GetTypeScale(role).LetterSpacing,
+            AvaloniaProperty.UnsetValue);
     }
 }

@@ -16,18 +16,10 @@
         <m3:MaterialStyles />
     </Application.Styles>
     
+    <!-- Component tokens default to system-role references, so a theme only has to name its
+         colour scheme; the button's container follows Primary, its label OnPrimary, and both
+         re-resolve on a light/dark switch with no wiring here. -->
     <foundation:MaterialThemeScope.Theme>
-        <foundation:MaterialTheme 
-            ColorScheme="{mcu:TonalSpotScheme {DynamicResource SystemAccentColor}}"
-            TypographyScheme="{foundation:TypographyScheme}">
-            <foundation:MaterialTheme.ButtonTokens>
-                <foundation:ButtonTokens
-                    ContainerBrush="{mcu:MdSysColor Primary}"
-                    ForegroundBrush="{mcu:MdSysColor OnPrimary}"
-                    DisabledContainerBrush="{mcu:MdSysColor SurfaceContainerHigh}"
-                    DisabledForegroundBrush="{mcu:MdSysColor OnSurface}"
-                    StateLayerBrush="{mcu:MdSysColor OnPrimary}" />
-            </foundation:MaterialTheme.ButtonTokens>
-        </foundation:MaterialTheme>
+        <foundation:MaterialTheme ColorScheme="{mcu:TonalSpotScheme {DynamicResource SystemAccentColor}}" />
     </foundation:MaterialThemeScope.Theme>
 </Application>

@@ -1,14 +1,11 @@
-using System;
-using Avalonia.Markup.Xaml;
+using Avalonia.Data;
 using Avalonia.Metadata;
-using Avalonia.Markup.Xaml.XamlIl.Runtime;
-using Avalonia.Media;
-using Avalonia.Styling;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Markups;
 
+/// <summary>A typeface from the theme in scope at the target element.</summary>
 public class MdTypeFamilyExtension
 {
     public MdTypeFamilyExtension()
@@ -20,13 +17,11 @@ public class MdTypeFamilyExtension
         Token = token;
     }
 
-    [ConstructorArgument("token")] 
+    [ConstructorArgument("token")]
     public FontFamilyToken Token { get; set; } = FontFamilyToken.Plain;
 
-    public object ProvideValue(IServiceProvider serviceProvider)
+    public BindingBase ProvideValue()
     {
-        var parentStack = (IAvaloniaXamlIlParentStackProvider?)serviceProvider.GetService(typeof(IAvaloniaXamlIlParentStackProvider));
-        if (parentStack is null) return TypefaceTokens.Plain;
-        return TypographyResolver.ProvideFontFamilyBinding(parentStack, Token);
+        return TypographyResolver.FontFamily(Token);
     }
 }

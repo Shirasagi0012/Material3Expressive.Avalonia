@@ -1,87 +1,58 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Avalonia;
 using Avalonia.Data;
-using Avalonia.Data.Converters;
-using Avalonia.Markup.Xaml.MarkupExtensions;
-using Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings;
-using Avalonia.Markup.Xaml.XamlIl.Runtime;
-using Avalonia.Media;
 
 namespace Material3Expressive.Foundation;
 
+/// <summary>
+/// Bindings for the button markup extension.
+/// </summary>
+/// <remarks>
+/// There is one definition of every default now — the token bag's initializer. This resolver only
+/// selects, it never supplies values of its own, which is what removes the old triplication
+/// between constructor, resolver and markup fallback.
+/// </remarks>
 internal static class ButtonTokenResolver
 {
-    public static BindingBase ProvideBinding(IAvaloniaXamlIlParentStackProvider parentStack, ButtonToken token)
+    public static BindingBase Resolve(ButtonToken token)
     {
         return token switch
         {
-            ButtonToken.ContainerBrush => CreateBinding(parentStack, new SolidColorBrush(Color.Parse("#FF6750A4")), tokens => tokens?.ContainerBrush),
-            ButtonToken.ForegroundBrush => CreateBinding(parentStack, new SolidColorBrush(Colors.White), tokens => tokens?.ForegroundBrush),
-            ButtonToken.DisabledContainerBrush => CreateBinding(parentStack, new SolidColorBrush(Color.Parse("#FFE7E0EC")), tokens => tokens?.DisabledContainerBrush),
-            ButtonToken.DisabledForegroundBrush => CreateBinding(parentStack, new SolidColorBrush(Color.Parse("#FF49454F")), tokens => tokens?.DisabledForegroundBrush),
-            ButtonToken.StateLayerBrush => CreateBinding(parentStack, new SolidColorBrush(Colors.White), tokens => tokens?.StateLayerBrush),
-            ButtonToken.CornerRadius => CreateBinding(parentStack, new CornerRadius(20), tokens => tokens?.CornerRadius ?? new CornerRadius(20)),
-            ButtonToken.Padding => CreateBinding(parentStack, new Thickness(24, 10), tokens => tokens?.Padding ?? new Thickness(24, 10)),
-            ButtonToken.MinHeight => CreateBinding(parentStack, 40d, tokens => tokens?.MinHeight ?? 40d),
-            ButtonToken.HoverStateLayerOpacity => CreateBinding(parentStack, 0.08d, tokens => tokens?.HoverStateLayerOpacity ?? 0.08d),
-            ButtonToken.PressedStateLayerOpacity => CreateBinding(parentStack, 0.12d, tokens => tokens?.PressedStateLayerOpacity ?? 0.12d),
+            ButtonToken.ContainerColor => Color(static colors => colors.Container),
+            ButtonToken.LabelTextColor => Color(static colors => colors.LabelText),
+            ButtonToken.DisabledContainerColor => Color(static colors => colors.DisabledContainer),
+            ButtonToken.DisabledLabelTextColor => Color(static colors => colors.DisabledLabelText),
+            ButtonToken.StateLayerColor => Color(static colors => colors.StateLayer),
+            ButtonToken.ContainerCornerRadius => Metric(static theme => ContainerCornerRadius(theme)),
+            ButtonToken.ContentPadding => Metric(static theme => theme.ButtonTokens.ContentPadding),
+            ButtonToken.ContainerHeight => Metric(static theme => theme.ButtonTokens.ContainerHeight),
+            ButtonToken.HoverStateLayerOpacity => Metric(static theme => theme.ButtonTokens.HoverStateLayerOpacity),
+            ButtonToken.FocusStateLayerOpacity => Metric(static theme => theme.ButtonTokens.FocusStateLayerOpacity),
+            ButtonToken.PressedStateLayerOpacity => Metric(static theme => theme.ButtonTokens.PressedStateLayerOpacity),
             _ => throw new ArgumentOutOfRangeException(nameof(token), token, null)
         };
     }
 
-    private static BindingBase CreateBinding<T>(
-        IAvaloniaXamlIlParentStackProvider parentStack,
-        T fallback,
-        Func<ButtonTokens?, T> resolveValue)
+    /// <summary>
+    /// On this binding-driven path the shape resolves against the button's own token height, which
+    /// is what a percentage corner means for a pill-shaped button. A control that reads its tokens
+    /// in code resolves against its actual bounds instead.
+    /// </summary>
+    private static CornerRadius ContainerCornerRadius(ResolvedTheme theme)
     {
-        object? source = null;
-        if (parentStack is { Parents: { } parents })
-            foreach (var parent in parents)
-                if (parent is StyledElement styled)
-                {
-                    source = styled;
-                    break;
-                }
+        var height = theme.ButtonTokens.ContainerHeight;
+        return theme.Shapes.GetCornerRadius(theme.ButtonTokens.ContainerShape, new Size(height, height));
+    }
 
-        var localBinding = CreateBindingInternal(source);
-        var appBinding = CreateBindingInternal(Application.Current);
+    private static BindingBase Color(Func<ButtonColors, object?> select)
+    {
+        return ThemeBinding.FromThemeVariant(
+            (theme, isDark) => select(theme.GetButtonColors(isDark)),
+            AvaloniaProperty.UnsetValue);
+    }
 
-        if (source is { })
-        {
-            return new MultiBinding
-            {
-                Mode = BindingMode.OneWay,
-                Priority = BindingPriority.Style,
-                FallbackValue = fallback!,
-                TargetNullValue = fallback!,
-                Bindings = [localBinding, appBinding],
-                Converter = new FuncMultiValueConverter<object?, T>(values =>
-                    (values as IList<object?> ?? values.ToList()) switch
-                    {
-                        [var localHost, var appHost, ..] => resolveValue(localHost as ButtonTokens ?? appHost as ButtonTokens),
-                        _ => fallback
-                    })
-            };
-        }
-
-        appBinding.Converter = new FuncValueConverter<object?, T>(value =>
-            resolveValue(value as ButtonTokens));
-
-        return appBinding;
-
-        static CompiledBindingExtension CreateBindingInternal(object? source)
-        {
-            return new CompiledBindingExtension
-            {
-                Mode = BindingMode.OneWay,
-                Priority = BindingPriority.Style,
-                Source = source,
-                Path = new CompiledBindingPathBuilder()
-                    .Property(ButtonTokens.ButtonHostProperty, PropertyInfoAccessorFactory.CreateAvaloniaPropertyAccessor)
-                    .Build()
-            };
-        }
+    private static BindingBase Metric(Func<ResolvedTheme, object?> select)
+    {
+        return ThemeBinding.FromTheme(select, AvaloniaProperty.UnsetValue);
     }
 }

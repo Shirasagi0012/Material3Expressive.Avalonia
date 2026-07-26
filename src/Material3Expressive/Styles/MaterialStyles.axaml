@@ -1,6 +1,10 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         x:Class="Material3Expressive.Styles.MaterialStyles">
+    <!-- Hands the application-level theme to every TopLevel; must come first so that anything
+         below it resolves against a theme. -->
+    <m3:MaterialThemeStyles />
     <StyleInclude Source="avares://Material3Expressive/Styles/Foundation/Typography.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Button.axaml" />
 </Styles>

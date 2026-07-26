@@ -101,25 +101,44 @@ internal and DataAnnotations validation became opt-in via
 `AppBuilder.WithDataAnnotationsValidation()`; DevTools moved from
 `Avalonia.Diagnostics` to `AvaloniaUI.DiagnosticsSupport`.
 
-### Phase 1 — Theming core v3
+### Phase 1 — Theming core v3 — **done 2026-07-26**
 
-- Implement the single-theme-property model described above; port the color
-  system's Avalonia binding layer onto it (`MaterialColorUtilities` core — HCT,
-  DynamicScheme, variants — is untouched; only the host/resolver layer changes).
-- Shape scheme: corner-radius token scale (extra-small → full) with a shape
-  token type designed to admit morphable shapes later.
-- Typography rides through the theme object; keep `TypographyRole` +
-  attribute-selector TextBlock theme.
-- Written spec in `docs/architecture.md`: resolution order, variant handling,
-  override semantics. Upstream validation: material3 1.5.0 itself collapsed its
-  per-subsystem CompositionLocals into a single `MaterialTheme.Values` local.
-  Mirror its outer-vs-nested default semantics and the per-theme-instance
-  default-bundle cache (60 color + 15 shape memo fields upstream — load-bearing
-  for perf; see docs/androidx-reference.md).
-- **Exit criteria:** headless UI tests proving (a) subtree theme override
-  affects a control styled via ControlTheme (the case broken today),
-  (b) light/dark switch re-resolves live, (c) app-level theme replacement
-  re-resolves live.
+Spec: [docs/architecture.md](docs/architecture.md). Delivered:
+
+- ~~Single-theme-property model; color system's Avalonia binding layer ported onto it.~~
+  `MaterialThemeScope.Theme` (authoring) → immutable `ResolvedTheme` snapshot →
+  inherited `ResolvedTheme` property. `MaterialColorUtilities.Avalonia` gained
+  the same split (`MaterialColor.Scheme` → `ResolvedColorScheme`) and stays
+  standalone-usable; the vendored `Tokens/Infrastructure` generics are gone.
+- ~~Shape scheme.~~ `CornerSize` is dp-or-percent and resolves against the shape's
+  size, so `CornerFull` is genuinely 50% and Phase 3's deferred lerp drops in
+  unchanged. 8 configurable slots + 15 roles, per upstream `Shapes`/`ShapeKeyTokens`.
+- ~~Typography rides the theme object.~~ `ResolvedTypographyScheme`; `TypographyRole`
+  and the attribute-selector TextBlock theme are unchanged.
+- **MotionScheme** shipped as data (6 springs, expressive by default); no animator.
+- **Component tokens are role references.** `ButtonTokens.ContainerColor` defaults to
+  `SysColorToken.Primary`, not a brush — the demo's whole `ButtonTokens` override
+  block deleted itself. `ColorTokenValue` is the role-or-literal union.
+- **Per-theme memo bag** on the snapshot (`GetButtonColors(isDark)`), mirroring
+  upstream's cached default bundles.
+- `MaterialControl` reads tokens in C# off the inherited snapshot; markup
+  extensions rebuilt as `.Self()`-rooted bindings so they resolve per target.
+- **Exit criteria met** — `tests/Material3Expressive.Tests`, 32 tests:
+  (a) subtree theme override reaches both a ControlTheme-styled `Button` and a
+  C#-reading control, (b) light/dark switch re-resolves live, (c) app-level theme
+  replacement re-resolves live. Plus: live scheme mutation, subtree clearing,
+  and popup inheritance.
+
+Findings worth carrying forward:
+
+- `BindingBase.CreateInstance` is `internal abstract` in Avalonia 12 — custom
+  binding types are impossible; `CompiledBinding.Create(expr)` builds an *unrooted*
+  path (resolves against `DataContext`), so per-target resolution must use
+  `CompiledBindingPathBuilder().Self()`.
+- **Popups inherit subtree themes for free**: `Popup` sets the popup root's logical
+  parent to itself, and that sets `InheritanceParent`. No special handling needed.
+- `Application` is outside every tree, so the app theme is injected at each
+  `TopLevel` by a style in `MaterialThemeStyles`, at `Style` priority.
 
 ### Phase 2 — Token pipeline (codegen)
 
@@ -229,7 +248,10 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
 
 1. ~~Phase 0: fix the submodule build break, wire up CI.~~ Done. Remaining Phase 0
    loose end: archive the DesignTokens repo on GitHub with a README pointing here.
-2. Write `docs/architecture.md` for theming core v3 (the spec is the review
-   feedback from 2026-07-26 distilled).
-3. Implement the core + the three exit-criteria tests.
+2. ~~Write `docs/architecture.md` for theming core v3.~~ Done.
+3. ~~Implement the core + the three exit-criteria tests.~~ Done — Phase 1 complete.
 4. Spike the token-table JSON format against Button's real token set.
+5. Loose end from Phase 1: `Foundation/Typography/Tokens/TypeScaleTokens.cs`
+   predates the androidx survey and carries no token-DB stamp. Diff it against
+   `tokens/TypeScaleTokens.kt` and stamp it — every other token file in the repo
+   now records its upstream source and version.
