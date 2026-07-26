@@ -1,0 +1,54 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="24">
+            <StackPanel Spacing="16" Width="260">
+                <m3:MaterialTextField Label="Name" />
+                <m3:MaterialTextField Label="Email" Variant="Outlined" Text="a@b.c" />
+                <m3:MaterialTextField Label="Password" Variant="Outlined" IsError="True"
+                                      SupportingText="Too short" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialTextField}" TargetType="m3:MaterialTextField">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel>
+                        <!-- The field's own box. The control paints the container, indicator or
+                             border, and the floating label; the TextBox owns the editing. -->
+                        <Panel Height="{TemplateBinding MinHeight}">
+                            <TextBox x:Name="PART_TextBox"
+                                     Margin="{TemplateBinding Padding}"
+                                     VerticalAlignment="Bottom"
+                                     VerticalContentAlignment="Center"
+                                     Height="34"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     CornerRadius="0"
+                                     Padding="0"
+                                     Text="{TemplateBinding Text, Mode=TwoWay}"
+                                     PlaceholderText="{TemplateBinding Placeholder}"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     FontFamily="{TemplateBinding FontFamily}" />
+                        </Panel>
+                        <TextBlock x:Name="PART_Supporting"
+                                   Margin="16,4,16,0"
+                                   Classes="body-small"
+                                   Text="{TemplateBinding SupportingText}"
+                                   IsVisible="{TemplateBinding SupportingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+
+            <!-- Supporting text carries the error colour; the input itself stays readable. -->
+            <Style Selector="^ /template/ TextBlock#PART_Supporting">
+                <Setter Property="Foreground" Value="{Binding $parent[m3:MaterialTextField].SupportingBrush}" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

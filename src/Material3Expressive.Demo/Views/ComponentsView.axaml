@@ -151,6 +151,23 @@
                 </WrapPanel>
             </StackPanel>
 
+            <!-- Text fields -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Text field" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="The label is the component. Click into one and watch it travel to the top edge and shrink — one sprung fraction drives its position, size and colour together, so clicking away mid-float reverses instead of snapping. The outlined variant notches its border to let the label through." />
+                <StackPanel Spacing="20" MaxWidth="320" HorizontalAlignment="Left">
+                    <m3:MaterialTextField Label="Name" />
+                    <m3:MaterialTextField Label="Email" Text="ada@example.com"
+                                          SupportingText="We will not share this." />
+                    <m3:MaterialTextField Label="Full name" Variant="Outlined" />
+                    <m3:MaterialTextField Label="Password" Variant="Outlined" IsError="True"
+                                          SupportingText="Must be at least 12 characters." />
+                    <m3:MaterialTextField Label="Read only" Variant="Outlined" Text="Locked" IsEnabled="False" />
+                </StackPanel>
+            </StackPanel>
+
             <!-- Grouped buttons -->
             <StackPanel Spacing="12">
                 <TextBlock Classes="headline-medium" Text="Grouped buttons" />

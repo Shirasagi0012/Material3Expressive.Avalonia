@@ -293,6 +293,74 @@ public class ProgressTests
 
 }
 
+public class TextFieldTests
+{
+    [AvaloniaFact]
+    public void OnlyTheFilledVariant_HasASurfaceAndAnIndicator()
+    {
+        Assert.True(TextFieldTokens.Filled.IsFilled);
+        Assert.False(TextFieldTokens.Outlined.IsFilled);
+
+        Assert.Equal(SysColorToken.SurfaceContainerHighest, TextFieldTokens.Filled.ContainerColor.RoleToken);
+        Assert.Equal(0, TextFieldTokens.Outlined.ContainerColor.LiteralColor!.Value.A);
+
+        // The filled variant's shape is squared off at the bottom, because its indicator sits there.
+        Assert.Equal(ShapeRole.CornerExtraSmallTop, TextFieldTokens.Filled.ContainerShape);
+        Assert.Equal(ShapeRole.CornerExtraSmall, TextFieldTokens.Outlined.ContainerShape);
+    }
+
+    [AvaloniaFact]
+    public void FocusThickensTheIndicator_RatherThanOnlyRecolouringIt()
+    {
+        foreach (var variant in System.Enum.GetValues<TextFieldVariant>())
+        {
+            var tokens = TextFieldTokens.For(variant);
+            Assert.True(tokens.FocusOutlineWidth > tokens.OutlineWidth);
+        }
+    }
+
+    [AvaloniaFact]
+    public void TheLabel_ShrinksWhenItFloats()
+    {
+        var typography = new MaterialTheme().Resolved.Typography;
+        var tokens = TextFieldTokens.Filled;
+
+        var resting = typography.GetTypeScale(tokens.InputTextStyle).FontSize;
+        var floated = typography.GetTypeScale(tokens.FloatingLabelTextStyle).FontSize;
+
+        Assert.True(floated < resting);
+    }
+
+    [AvaloniaFact]
+    public void AFieldWithText_StartsWithItsLabelAlreadyFloated()
+    {
+        var empty = new MaterialTextField { Label = "Name", Width = 240 };
+        var filled = new MaterialTextField { Label = "Name", Text = "Ada", Width = 240 };
+        ThemeTestHelper.ShowWindow(new StackPanel { Children = { empty, filled } });
+
+        Assert.Equal(0, FloatOf(empty), 3);
+        Assert.Equal(1, FloatOf(filled), 3);
+    }
+
+    [AvaloniaFact]
+    public void AnErrorField_KeepsItsInputReadable()
+    {
+        // Only the surroundings turn red; text the user typed must stay legible.
+        var tokens = TextFieldTokens.Filled;
+
+        Assert.Equal(SysColorToken.Error, tokens.ErrorColor.RoleToken);
+        Assert.Equal(SysColorToken.OnSurface, tokens.ErrorInputColor.RoleToken);
+    }
+
+    private static double FloatOf(MaterialTextField field)
+    {
+        return (double)typeof(MaterialTextField)
+            .GetProperty("FloatFraction", System.Reflection.BindingFlags.Instance
+                                          | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(field)!;
+    }
+}
+
 public class ButtonGroupTests
 {
     [AvaloniaFact]
