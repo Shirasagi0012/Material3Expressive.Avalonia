@@ -122,6 +122,35 @@
                 </WrapPanel>
             </StackPanel>
 
+            <!-- Selection -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Selection" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="The switch runs two springs: the handle slides along the track, and its size changes separately — 16dp off, 24dp on, 28dp while held. Press and hold one to see them come apart." />
+                <WrapPanel ItemSpacing="32" LineSpacing="12">
+                    <StackPanel Spacing="8">
+                        <m3:MaterialCheckbox Content="Unchecked" />
+                        <m3:MaterialCheckbox Content="Checked" IsChecked="True" />
+                        <m3:MaterialCheckbox Content="Indeterminate" IsThreeState="True" IsChecked="{x:Null}" />
+                        <m3:MaterialCheckbox Content="Error" IsError="True" />
+                        <m3:MaterialCheckbox Content="Disabled" IsChecked="True" IsEnabled="False" />
+                    </StackPanel>
+                    <StackPanel Spacing="8">
+                        <m3:MaterialRadioButton GroupName="demo" Content="First" IsChecked="True" />
+                        <m3:MaterialRadioButton GroupName="demo" Content="Second" />
+                        <m3:MaterialRadioButton GroupName="demo" Content="Third" />
+                        <m3:MaterialRadioButton Content="Disabled" IsEnabled="False" />
+                    </StackPanel>
+                    <StackPanel Spacing="8">
+                        <m3:MaterialSwitch Content="Off" />
+                        <m3:MaterialSwitch Content="On" IsChecked="True" />
+                        <m3:MaterialSwitch Content="Disabled, off" IsEnabled="False" />
+                        <m3:MaterialSwitch Content="Disabled, on" IsChecked="True" IsEnabled="False" />
+                    </StackPanel>
+                </WrapPanel>
+            </StackPanel>
+
             <!-- Card -->
             <StackPanel Spacing="12">
                 <TextBlock Classes="headline-medium" Text="Card" />

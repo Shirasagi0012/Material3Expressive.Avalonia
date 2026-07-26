@@ -1,0 +1,62 @@
+{
+  "kind": "component",
+  "name": "CheckboxTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "CheckboxColors",
+  "version": "14_1_0",
+  "source": "androidx compose/material3 tokens/CheckboxTokens.kt",
+  "summary": "The checkbox: a box that fills when selected, outlined when not.",
+
+  // No variantEnum: a checkbox has one appearance, and its states are properties of the control
+  // rather than variants of the component.
+  "properties": {
+    "ContainerSize": { "type": "dimension", "summary": "The box itself." },
+    "ContainerCornerRadius": { "type": "dimension", "summary": "The box's corner radius. 2dp is below the smallest shape role, so it is a dimension rather than a role." },
+    "IconSize": { "type": "dimension", "summary": "The tick." },
+    "StateLayerSize": { "type": "dimension", "summary": "The circular hit and state-layer area around the box." },
+    "OutlineWidth": { "type": "dimension", "summary": "The unselected box's border." },
+
+    "SelectedContainerColor": { "type": "color", "summary": "The box when selected." },
+    "SelectedIconColor": { "type": "color", "summary": "The tick." },
+    "SelectedStateLayerColor": { "type": "color", "summary": "The state layer when selected." },
+    "UnselectedOutlineColor": { "type": "color", "summary": "The box's border when unselected." },
+    "UnselectedStateLayerColor": { "type": "color", "summary": "The state layer when unselected." },
+
+    "DisabledSelectedContainerColor": { "type": "color", "opacity": "DisabledContainerOpacity", "summary": "The filled box when disabled." },
+    "DisabledSelectedIconColor": { "type": "color", "summary": "The tick when disabled." },
+    "DisabledOutlineColor": { "type": "color", "opacity": "DisabledContainerOpacity", "summary": "The border when disabled." },
+    "DisabledContainerOpacity": { "type": "opacity", "summary": "Alpha applied to the disabled box and border." },
+
+    "ErrorContainerColor": { "type": "color", "summary": "The box when the checkbox is in error." },
+    "ErrorIconColor": { "type": "color", "summary": "The tick when in error." },
+    "ErrorOutlineColor": { "type": "color", "summary": "The border when in error." }
+  },
+
+  "sets": [
+    {
+      "name": "Default",
+      "values": {
+        "ContainerSize": 18,
+        "ContainerCornerRadius": 2,
+        "IconSize": 18,
+        "StateLayerSize": 40,
+        "OutlineWidth": 2,
+
+        "SelectedContainerColor": "Primary",
+        "SelectedIconColor": "OnPrimary",
+        "SelectedStateLayerColor": "Primary",
+        "UnselectedOutlineColor": "OnSurfaceVariant",
+        "UnselectedStateLayerColor": "OnSurface",
+
+        "DisabledSelectedContainerColor": "OnSurface",
+        "DisabledSelectedIconColor": "Surface",
+        "DisabledOutlineColor": "OnSurface",
+        "DisabledContainerOpacity": 0.38,
+
+        "ErrorContainerColor": "Error",
+        "ErrorIconColor": "OnError",
+        "ErrorOutlineColor": "Error"
+      }
+    }
+  ]
+}

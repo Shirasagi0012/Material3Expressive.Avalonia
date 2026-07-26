@@ -71,6 +71,17 @@ public sealed class MaterialInteractionHost
     /// <summary>Whether the ripple is clipped to the owner's bounds.</summary>
     public bool IsRippleBounded { get; set; } = true;
 
+    /// <summary>
+    /// The part of the control the state layer and ripples cover. Null means all of it.
+    /// </summary>
+    /// <remarks>
+    /// Selection controls need this: a checkbox's feedback belongs to the 40dp circle around its
+    /// box, not to the label sitting next to it.
+    /// </remarks>
+    public Rect? InteractionArea { get; set; }
+
+    private Rect Area => InteractionArea ?? new Rect(_owner.Bounds.Size);
+
     private TweenAnimation StateLayerAlpha =>
         _stateLayerAlpha ??= Motion.AddTween(0, StateLayer.FadeInDuration(InteractionState.Hovered));
 
@@ -93,7 +104,8 @@ public sealed class MaterialInteractionHost
         if (brush is null)
             return;
 
-        var container = new RoundedRect(new Rect(_owner.Bounds.Size), cornerRadius);
+        var area = Area;
+        var container = new RoundedRect(area, cornerRadius);
         var opacity = StateLayerOpacity;
 
         if (opacity <= 0 && _ripples.Count == 0)
@@ -107,6 +119,13 @@ public sealed class MaterialInteractionHost
             using (context.PushOpacity(opacity))
                 context.DrawRectangle(brush, null, container);
         }
+
+        if (_ripples.Count == 0)
+            return;
+
+        // Ripples are computed in area-local coordinates, so that a checkbox's ripple grows from
+        // the middle of its box rather than the middle of the label beside it.
+        using var origin = context.PushTransform(Matrix.CreateTranslation(area.X, area.Y));
 
         foreach (var ripple in _ripples)
             ripple.Draw(context, brush, StateLayer.Opacity(InteractionState.Pressed));
@@ -134,11 +153,12 @@ public sealed class MaterialInteractionHost
 
         Set(InteractionState.Pressed, true);
 
-        var size = _owner.Bounds.Size;
-        if (!IsRippleEnabled || size.Width <= 0 || size.Height <= 0)
+        var area = Area;
+        if (!IsRippleEnabled || area.Width <= 0 || area.Height <= 0)
             return;
 
-        var ripple = new RippleAnimation(origin, size, IsRippleBounded);
+        // The press point is in control coordinates; the ripple works in area-local ones.
+        var ripple = new RippleAnimation(origin - area.Position, area.Size, IsRippleBounded);
         _ripples.Add(ripple);
         Motion.Add(ripple);
         Motion.Start();

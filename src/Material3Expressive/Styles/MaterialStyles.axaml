@@ -10,4 +10,5 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/IconButton.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Card.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Fab.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Components/Selection.axaml" />
 </Styles>

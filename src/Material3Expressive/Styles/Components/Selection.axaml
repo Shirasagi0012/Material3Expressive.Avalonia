@@ -1,0 +1,72 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <StackPanel Spacing="8">
+                <m3:MaterialCheckbox Content="Checkbox" IsChecked="True" />
+                <m3:MaterialRadioButton Content="Radio" IsChecked="True" />
+                <m3:MaterialSwitch Content="Switch" IsChecked="True" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <!-- Each of these paints its own glyph, state layer and ripple in Render. The template is
+             the label, offset by the padding the control sets from its own tokens so the glyph has
+             room. -->
+        <ControlTheme x:Key="{x:Type m3:MaterialCheckbox}" TargetType="m3:MaterialCheckbox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="m3:TypographyScheme.TextStyle" Value="BodyMedium" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      RecognizesAccessKey="True"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialRadioButton}" TargetType="m3:MaterialRadioButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="m3:TypographyScheme.TextStyle" Value="BodyMedium" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      RecognizesAccessKey="True"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialSwitch}" TargetType="m3:MaterialSwitch">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="m3:TypographyScheme.TextStyle" Value="BodyMedium" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      RecognizesAccessKey="True"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

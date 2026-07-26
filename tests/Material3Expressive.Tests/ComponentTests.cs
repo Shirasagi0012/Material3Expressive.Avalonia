@@ -156,6 +156,81 @@ public class CardTests
     }
 }
 
+public class SelectionTests
+{
+    [AvaloniaFact]
+    public void ACheckboxsTouchTarget_IsLargerThanItsBox()
+    {
+        // Material sizes the state layer and the hit area at 40dp around an 18dp box; a control
+        // that only reserved the box would be a fiddly target.
+        var tokens = CheckboxTokens.Default;
+
+        Assert.Equal(18, tokens.ContainerSize);
+        Assert.Equal(40, tokens.StateLayerSize);
+        Assert.True(tokens.StateLayerSize > tokens.ContainerSize);
+    }
+
+    [AvaloniaFact]
+    public void ACheckbox_ReservesRoomForItsGlyph()
+    {
+        var checkbox = new MaterialCheckbox { Content = "Label" };
+        ThemeTestHelper.ShowWindow(checkbox);
+
+        Assert.Equal(CheckboxTokens.Default.StateLayerSize, checkbox.Padding.Left);
+        Assert.True(checkbox.Bounds.Height >= CheckboxTokens.Default.StateLayerSize);
+    }
+
+    [AvaloniaFact]
+    public void ARadioButtonsRing_FitsInsideItsIconBox()
+    {
+        var tokens = RadioButtonTokens.Default;
+
+        // The ring is stroked, so its centre line has to be inset by half the stroke or it would
+        // spill past the 20dp box.
+        Assert.True(tokens.RingWidth > 0);
+        Assert.True(tokens.DotSize < tokens.IconSize - tokens.RingWidth * 2);
+    }
+
+    [AvaloniaFact]
+    public void ASwitchsHandle_GrowsFromOffToOnToPressed()
+    {
+        var tokens = SwitchTokens.Default;
+
+        Assert.True(tokens.UnselectedHandleSize < tokens.SelectedHandleSize);
+        Assert.True(tokens.SelectedHandleSize < tokens.PressedHandleSize);
+
+        // And the largest of them still fits inside the track.
+        Assert.True(tokens.PressedHandleSize <= tokens.TrackHeight);
+    }
+
+    [AvaloniaFact]
+    public void ASwitchsColours_FollowTheThemeInScope()
+    {
+        var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
+        var host = new Border { Child = new MaterialSwitch() };
+        MaterialThemeScope.SetTheme(host, theme);
+        ThemeTestHelper.ShowWindow(host);
+
+        var colors = theme.Resolved.GetSwitchColors(isDark: false);
+
+        Assert.Equal(
+            ThemeTestHelper.Expected(theme, SysColorToken.Primary),
+            ThemeTestHelper.ColorOf(colors.SelectedTrackColor));
+    }
+
+    [AvaloniaFact]
+    public void ASingleSetTable_StillGetsItsOverrideBag()
+    {
+        // Checkbox, radio and switch have no variants, which is a different generator path from
+        // everything else in the library.
+        var theme = new MaterialTheme();
+        theme.Components.Add(new CheckboxOverrides { ContainerSize = 24 });
+
+        Assert.Equal(24, theme.Resolved.CheckboxTokens.ContainerSize);
+        Assert.Equal(CheckboxTokens.Default.StateLayerSize, theme.Resolved.CheckboxTokens.StateLayerSize);
+    }
+}
+
 public class FabTests
 {
     [AvaloniaFact]
