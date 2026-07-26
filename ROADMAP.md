@@ -255,7 +255,7 @@ Grouped by shared primitives, roughly in order:
 
 | Wave | Components |
 |---|---|
-| 2 | Checkbox, Switch, RadioButton, Slider (new track shape), ProgressIndicator (incl. wavy), LoadingIndicator (shape morph) |
+| 2 | ~~Checkbox, Switch, RadioButton, Slider (new track shape), ProgressIndicator (incl. wavy)~~ — **done 2026-07-26**. LoadingIndicator (shape morph) remains: it is the first component that needs `modules/MaterialShapes`, so it also brings that submodule into the build. |
 | 3 | TextField (filled/outlined — largest single component), Chips, ButtonGroup (standard + connected), SplitButton, FAB menu |
 | 4 | NavigationBar (flexible), NavigationRail, Drawer, App bars / Toolbars (incl. floating), Tabs |
 | 5 | Dialog, Bottom sheet, Menu, Snackbar, Tooltip, Search, Badge, Date/Time pickers, Carousel |
@@ -309,6 +309,19 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
 6. ~~Phase 3: spike the spring animator.~~ Done — Phase 3 complete.
 7. ~~Phase 4: first component wave.~~ Done, except the two outward-facing items
    under that phase (NuGet push, Compose screenshots).
-8. Phase 5, wave 2: Checkbox, Switch, RadioButton, Slider, ProgressIndicator,
-   LoadingIndicator. LoadingIndicator and wavy progress are where
-   `modules/MaterialShapes` finally joins the build.
+8. ~~Phase 5, wave 2: Checkbox, Switch, RadioButton, Slider, ProgressIndicator.~~
+   Done. The wavy progress indicator turned out **not** to need
+   `modules/MaterialShapes` — its wave is a sampled sine along a line or a ring,
+   not a polygon morph — so LoadingIndicator is now the only thing that does.
+9. LoadingIndicator, which brings `modules/MaterialShapes` into the build.
+10. Phase 5, waves 3–5: TextField and Chips (wave 3), navigation (wave 4),
+    dialogs and overlays (wave 5). None started.
+
+Findings worth carrying forward:
+
+- `ToggleSwitch` declares required template parts for its knob. A control that
+  paints itself cannot satisfy them meaningfully, so `MaterialSwitch` derives
+  from `ToggleButton`; drag-to-toggle went with it and is not reimplemented.
+- Avalonia's headless input helpers (`window.MouseDown(...)`) work and are much
+  less brittle than synthesising `PointerPressedEventArgs` by hand. The slider's
+  click test uses them.

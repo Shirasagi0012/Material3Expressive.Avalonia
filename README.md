@@ -17,7 +17,7 @@ it came from.
 | **Shape** | Corner sizes that are dp *or percent*, so `CornerFull` is genuinely half the height at any size. |
 | **Motion** | A spring animator ported from `animation-core` — analytic, retargetable, velocity-preserving. |
 | **Interaction** | State layers with Material's asymmetric fades, ripples, and the corner-morph press feedback. |
-| **Components** | Button, toggle button, icon button, toggle icon button, FAB and extended FAB, card. |
+| **Components** | Button, toggle button, icon button, toggle icon button, FAB and extended FAB, card, checkbox, radio button, switch, slider, linear and circular progress (including the wavy form). |
 
 ## Getting started
 

@@ -151,6 +151,19 @@
                 </WrapPanel>
             </StackPanel>
 
+            <!-- Slider -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Slider" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Expressive replaced the round thumb with a tall bar and thickened the track to 16dp. Drag one: the handle narrows to 2dp while held, so the value under it stays visible." />
+                <StackPanel Spacing="8" MaxWidth="420" HorizontalAlignment="Left">
+                    <m3:MaterialSlider Value="0.3" />
+                    <m3:MaterialSlider Value="0.75" />
+                    <m3:MaterialSlider Value="0.5" IsEnabled="False" />
+                </StackPanel>
+            </StackPanel>
+
             <!-- Progress -->
             <StackPanel Spacing="12">
                 <TextBlock Classes="headline-medium" Text="Progress" />

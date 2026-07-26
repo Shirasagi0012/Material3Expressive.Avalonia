@@ -68,5 +68,17 @@
                 </ControlTemplate>
             </Setter>
         </ControlTheme>
+        <!-- The slider draws itself entirely; the theme only carries what the control does not
+             set for itself. -->
+        <ControlTheme x:Key="{x:Type m3:MaterialSlider}" TargetType="m3:MaterialSlider">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <!-- A Material slider has a fixed height; stretching it would only inflate the hit
+                 area, since the track and handle stay centred either way. -->
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Maximum" Value="1" />
+            <Setter Property="SmallChange" Value="0.05" />
+            <Setter Property="LargeChange" Value="0.2" />
+        </ControlTheme>
     </Styles.Resources>
 </Styles>

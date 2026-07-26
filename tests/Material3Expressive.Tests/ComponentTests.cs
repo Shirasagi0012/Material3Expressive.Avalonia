@@ -1,6 +1,9 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
@@ -287,6 +290,56 @@ public class ProgressTests
         Assert.False(loop.Tick(System.TimeSpan.FromSeconds(0.25)));
     }
 
+}
+
+public class SliderTests
+{
+    [AvaloniaFact]
+    public void TheHandle_NarrowsWhilePressedSoTheValueStaysVisible()
+    {
+        var tokens = SliderTokens.Default;
+
+        Assert.True(tokens.PressedHandleWidth < tokens.HandleWidth);
+        // And it stands taller than the track it sits on.
+        Assert.True(tokens.HandleHeight > tokens.TrackHeight);
+    }
+
+    [AvaloniaFact]
+    public void ItReservesTheHandlesHeight()
+    {
+        var slider = new MaterialSlider { Width = 200 };
+        ThemeTestHelper.ShowWindow(slider);
+
+        Assert.Equal(SliderTokens.Default.HandleHeight, slider.Bounds.Height, 3);
+    }
+
+    [AvaloniaFact]
+    public void ClickingTheTrack_MovesTheValueThere()
+    {
+        var slider = new MaterialSlider { Width = 200, Minimum = 0, Maximum = 100 };
+        var window = ThemeTestHelper.ShowWindow(slider);
+
+        var middle = slider.TranslatePoint(new Avalonia.Point(100, slider.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(middle, Avalonia.Input.MouseButton.Left);
+
+        // Halfway along a 200px track, allowing for the handle inset at each end.
+        Assert.InRange(slider.Value, 45, 55);
+    }
+
+    [AvaloniaFact]
+    public void ArrowKeys_StepByTheSmallChange()
+    {
+        var slider = new MaterialSlider { Width = 200, Minimum = 0, Maximum = 10, SmallChange = 1, Value = 5 };
+        ThemeTestHelper.ShowWindow(slider);
+
+        slider.RaiseEvent(new Avalonia.Input.KeyEventArgs
+        {
+            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+            Key = Avalonia.Input.Key.Right
+        });
+
+        Assert.Equal(6, slider.Value);
+    }
 }
 
 public class FabTests
