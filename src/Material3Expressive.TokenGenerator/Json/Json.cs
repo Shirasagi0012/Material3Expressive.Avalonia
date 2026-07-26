@@ -258,6 +258,12 @@ internal static class JsonParser
 
                 _index++;
                 SkipTrivia();
+
+                // A repeated key would silently discard the earlier value, which in a token table
+                // means a token quietly taking the wrong one. Refuse it.
+                if (members.ContainsKey(name))
+                    throw Error($"'{name}' is declared twice in the same object.");
+
                 members[name] = ReadValue();
 
                 SkipTrivia();

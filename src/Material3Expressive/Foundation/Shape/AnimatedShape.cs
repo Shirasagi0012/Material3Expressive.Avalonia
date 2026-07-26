@@ -87,6 +87,7 @@ public sealed class AnimatedShape
     }
 
     /// <summary>Starts morphing towards a shape, or reverses if it is the one being left.</summary>
+    /// <param name="shape">The shape to head for.</param>
     /// <param name="spec">A spring to switch to; the current one is kept when omitted.</param>
     public void AnimateTo(RoundedCornerShape shape, SpringSpec? spec = null)
     {

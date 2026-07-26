@@ -32,6 +32,13 @@
     "PressedContainerElevation": { "type": "elevation", "summary": "Elevation while pressed." },
     "DisabledContainerElevation": { "type": "elevation", "summary": "Elevation while disabled." },
 
+    "SelectedContainerColor": { "type": "color", "summary": "The container of a checked toggle button." },
+    "SelectedLabelTextColor": { "type": "color", "summary": "The label of a checked toggle button." },
+    "SelectedIconColor": { "type": "color", "summary": "The icon of a checked toggle button." },
+    "UnselectedContainerColor": { "type": "color", "summary": "The container of an unchecked toggle button." },
+    "UnselectedLabelTextColor": { "type": "color", "summary": "The label of an unchecked toggle button." },
+    "UnselectedIconColor": { "type": "color", "summary": "The icon of an unchecked toggle button." },
+
     "HasOutline": { "type": "bool", "summary": "Whether this variant draws a border at the size's outline width." }
   },
 
@@ -57,6 +64,12 @@
         "FocusedContainerElevation": "@FilledButtonTokens.FocusedContainerElevation",
         "PressedContainerElevation": "@FilledButtonTokens.PressedContainerElevation",
         "DisabledContainerElevation": "@FilledButtonTokens.DisabledContainerElevation",
+        "SelectedContainerColor": "@FilledButtonTokens.SelectedContainerColor",
+        "SelectedLabelTextColor": "@FilledButtonTokens.LabelTextSelectedColor",
+        "SelectedIconColor": "@FilledButtonTokens.SelectedIconColor",
+        "UnselectedContainerColor": "@FilledButtonTokens.UnselectedContainerColor",
+        "UnselectedLabelTextColor": "@FilledButtonTokens.LabelTextUnselectedColor",
+        "UnselectedIconColor": "@FilledButtonTokens.UnselectedIconColor",
         "HasOutline": false
       }
     },
@@ -76,7 +89,13 @@
         "HoveredContainerElevation": "@TonalButtonTokens.HoveredContainerElevation",
         "FocusedContainerElevation": "@TonalButtonTokens.FocusedContainerElevation",
         "PressedContainerElevation": "@TonalButtonTokens.PressedContainerElevation",
-        "DisabledContainerElevation": "@TonalButtonTokens.DisabledContainerElevation"
+        "DisabledContainerElevation": "@TonalButtonTokens.DisabledContainerElevation",
+        "SelectedContainerColor": "@TonalButtonTokens.SelectedContainerColor",
+        "SelectedLabelTextColor": "@TonalButtonTokens.SelectedLabelTextColor",
+        "SelectedIconColor": "@TonalButtonTokens.SelectedIconColor",
+        "UnselectedContainerColor": "@TonalButtonTokens.UnselectedContainerColor",
+        "UnselectedLabelTextColor": "@TonalButtonTokens.UnselectedLabelTextColor",
+        "UnselectedIconColor": "@TonalButtonTokens.UnselectedIconColor"
       }
     },
     {
@@ -95,7 +114,13 @@
         "HoveredContainerElevation": "@ElevatedButtonTokens.HoveredContainerElevation",
         "FocusedContainerElevation": "@ElevatedButtonTokens.FocusedContainerElevation",
         "PressedContainerElevation": "@ElevatedButtonTokens.PressedContainerElevation",
-        "DisabledContainerElevation": "@ElevatedButtonTokens.DisabledContainerElevation"
+        "DisabledContainerElevation": "@ElevatedButtonTokens.DisabledContainerElevation",
+        "SelectedContainerColor": "@ElevatedButtonTokens.SelectedContainerColor",
+        "SelectedLabelTextColor": "@ElevatedButtonTokens.LabelTextSelectedColor",
+        "SelectedIconColor": "@ElevatedButtonTokens.SelectedIconColor",
+        "UnselectedContainerColor": "@ElevatedButtonTokens.UnselectedContainerColor",
+        "UnselectedLabelTextColor": "@ElevatedButtonTokens.LabelTextUnselectedColor",
+        "UnselectedIconColor": "@ElevatedButtonTokens.UnselectedIconColor"
       }
     },
     {
@@ -122,6 +147,14 @@
         "FocusedContainerElevation": "@ElevationTokens.Level0",
         "PressedContainerElevation": "@ElevationTokens.Level0",
         "DisabledContainerElevation": "@ElevationTokens.Level0",
+        "SelectedContainerColor": "@OutlinedButtonTokens.SelectedContainerColor",
+        "SelectedLabelTextColor": "@OutlinedButtonTokens.SelectedLabelTextColor",
+        "SelectedIconColor": "@OutlinedButtonTokens.SelectedIconColor",
+        // The outlined toggle has no unselected container of its own: it stays transparent behind
+        // its outline until it is selected, when it inverts.
+        "UnselectedContainerColor": "#00000000",
+        "UnselectedLabelTextColor": "@OutlinedButtonTokens.UnselectedLabelTextColor",
+        "UnselectedIconColor": "@OutlinedButtonTokens.UnselectedIconColor",
         "HasOutline": true
       }
     },

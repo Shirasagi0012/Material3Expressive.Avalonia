@@ -75,6 +75,28 @@
                 </WrapPanel>
             </StackPanel>
 
+            <!-- Toggles -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Toggles" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Checking a toggle swaps its shape as well as its colours — a round button squares off, and back. It is the same spring morph as the press, so interrupting it mid-flight reverses rather than restarting." />
+                <WrapPanel ItemSpacing="12" LineSpacing="12" VerticalAlignment="Center">
+                    <m3:MaterialToggleButton Variant="Filled">Filled</m3:MaterialToggleButton>
+                    <m3:MaterialToggleButton Variant="Tonal" IsChecked="True">Tonal</m3:MaterialToggleButton>
+                    <m3:MaterialToggleButton Variant="Outlined">Outlined</m3:MaterialToggleButton>
+                    <m3:MaterialToggleIconButton Variant="Standard">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialToggleIconButton>
+                    <m3:MaterialToggleIconButton Variant="Filled" IsChecked="True">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialToggleIconButton>
+                    <m3:MaterialToggleIconButton Variant="Outlined">
+                        <PathIcon Data="{StaticResource StarIcon}" />
+                    </m3:MaterialToggleIconButton>
+                </WrapPanel>
+            </StackPanel>
+
             <!-- FAB -->
             <StackPanel Spacing="12">
                 <TextBlock Classes="headline-medium" Text="Floating action button" />

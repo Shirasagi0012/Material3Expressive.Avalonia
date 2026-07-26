@@ -62,6 +62,60 @@ public class IconButtonTests
     }
 }
 
+public class ToggleTests
+{
+    [AvaloniaFact]
+    public void CheckingAToggleButton_SwitchesItToTheSelectedColours()
+    {
+        var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
+        var toggle = new MaterialToggleButton { Variant = ButtonVariant.Tonal, Content = "On" };
+        var host = new Border { Child = toggle };
+        MaterialThemeScope.SetTheme(host, theme);
+        ThemeTestHelper.ShowWindow(host);
+
+        Assert.Equal(
+            ThemeTestHelper.Expected(theme, SysColorToken.OnSecondaryContainer),
+            ThemeTestHelper.ColorOf(toggle.Foreground));
+
+        toggle.IsChecked = true;
+
+        Assert.Equal(
+            ThemeTestHelper.Expected(theme, SysColorToken.OnSecondary),
+            ThemeTestHelper.ColorOf(toggle.Foreground));
+    }
+
+    [AvaloniaFact]
+    public void AToggleIconButtonsSelectedState_HasItsOwnShapeTokens()
+    {
+        // The icon button does not simply invert round and square: it carries a separate pair of
+        // selected shapes, and at the small size they differ from the unselected pair.
+        var metrics = IconButtonSizeTokens.Small;
+
+        Assert.Equal(ShapeRole.CornerFull, metrics.ContainerShape);
+        Assert.Equal(ShapeRole.CornerMedium, metrics.SelectedContainerShape);
+        Assert.Equal(ShapeRole.CornerMedium, metrics.SquareContainerShape);
+        Assert.Equal(ShapeRole.CornerFull, metrics.SelectedSquareContainerShape);
+    }
+
+    [AvaloniaFact]
+    public void EveryButtonVariant_DefinesItsToggleColours()
+    {
+        foreach (var variant in System.Enum.GetValues<ButtonVariant>())
+        {
+            var tokens = ButtonColorTokens.For(variant);
+
+            // The Filled and Tonal families select towards their own container; nothing should
+            // have silently inherited another variant's toggle colours.
+            Assert.NotEqual(default, tokens.SelectedLabelTextColor);
+            Assert.NotEqual(default, tokens.UnselectedLabelTextColor);
+        }
+
+        Assert.Equal(SysColorToken.OnPrimary, ButtonColorTokens.Filled.SelectedLabelTextColor.RoleToken);
+        Assert.Equal(SysColorToken.OnSecondary, ButtonColorTokens.Tonal.SelectedLabelTextColor.RoleToken);
+        Assert.Equal(SysColorToken.InverseOnSurface, ButtonColorTokens.Outlined.SelectedLabelTextColor.RoleToken);
+    }
+}
+
 public class CardTests
 {
     [AvaloniaFact]

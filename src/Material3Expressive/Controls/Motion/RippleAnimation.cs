@@ -108,7 +108,10 @@ public sealed class RippleAnimation : IAnimation
             IsComplete = true;
     }
 
-    /// <summary>Draws the ripple, clipped to <paramref name="clip" /> for bounded ripples.</summary>
+    /// <summary>
+    /// Draws the ripple at its current radius and opacity. The caller supplies the clip, because
+    /// the state layer under it needs the same one.
+    /// </summary>
     public void Draw(DrawingContext context, IBrush brush, double opacity)
     {
         var alpha = Value * opacity;

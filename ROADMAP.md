@@ -220,22 +220,34 @@ Findings worth carrying forward:
   derive from Avalonia's `Button` and keep content, commands, click modes and
   keyboard activation rather than reimplementing them.
 
-### Phase 4 — First component wave (prove the stack end-to-end)
+### Phase 4 — First component wave — **done 2026-07-26** (one item outstanding)
 
-Token table → generated tokens → templated control → motion → gallery page,
-for each of:
-
-- **Button** — 5 color variants (filled, tonal, outlined, elevated, text),
-  5 sizes (XS–XL), shape morph on press, toggle variant.
-- **IconButton** (+ toggle), **FAB** + Extended FAB, **Card** (3 variants).
-- TextBlock typography restyle ships as the one stock-control package.
-- Demo app graduates into a proper gallery (navigation, light/dark toggle,
-  seed-color picker, per-page theme scoping demo).
-- Settle the API-idiom question here with real code: one control + `Variant`
-  enum vs. separate classes per variant (Compose uses separate composables;
-  pick what's idiomatic in XAML and document the rule).
-- **Exit criteria:** v0.1.0-alpha on NuGet + gallery screenshots vs. Compose
-  side-by-side.
+- ~~**Button** — 5 variants, 5 sizes, press morph, toggle variant.~~ Plus the
+  round/square axis, which Expressive pairs in toggle groups.
+- ~~**IconButton** (+ toggle), **FAB** + Extended FAB, **Card** (3 variants).~~
+  The icon button's width axis (narrow/default/wide) is independent of its size,
+  as upstream has it. Extended and unextended FAB are one control: the
+  difference is only whether a label is present.
+- ~~TextBlock typography restyle ships as the one stock-control package.~~
+  Unchanged from Phase 1, now driven by the generated type scale.
+- ~~Demo app graduates into a proper gallery.~~ Navigation, dark toggle, seed
+  swatches, subtree theming and a retuned-token page.
+- **API idiom settled: one control with a `Variant` enum.** Compose uses a
+  separate composable per variant because a composable is a function; a XAML
+  control is a type, and five types would mean five `ControlTheme`s, five
+  entries in every style sheet, and no way to switch a variant from a binding.
+  The rule: variants that differ only in token values are an enum property;
+  variants that differ in behaviour or content model are separate types — which
+  is why the toggle is `MaterialToggleButton` and not a flag.
+- **Icon slots take content, not a typed icon**, so the Material Symbols package
+  stays out of the library's dependency graph. Verified with plain vector paths
+  in the gallery; a symbol glyph drops into the same slot unchanged.
+- ~~v0.1.0-alpha packaging.~~ `Shirasagi0012.Material3Expressive.Avalonia`,
+  Apache-2.0, README and symbols packed, built into `artifacts/`.
+- **Outstanding: the actual NuGet push, and side-by-side screenshots against
+  Compose.** Both are outward-facing acts that want a human at the keyboard —
+  publishing is irreversible, and a screenshot comparison is only worth
+  anything if someone judges it.
 
 ### Phase 5 — Coverage waves
 
@@ -294,4 +306,9 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
 5. ~~Loose end from Phase 1: `TypeScaleTokens.cs` carries no token-DB stamp.~~
    Done — it is a token table now, stamped `v0_103`, and the emphasized slots
    gained the face and weight they were missing.
-6. Phase 3: spike the spring animator against `MotionScheme`'s six specs.
+6. ~~Phase 3: spike the spring animator.~~ Done — Phase 3 complete.
+7. ~~Phase 4: first component wave.~~ Done, except the two outward-facing items
+   under that phase (NuGet push, Compose screenshots).
+8. Phase 5, wave 2: Checkbox, Switch, RadioButton, Slider, ProgressIndicator,
+   LoadingIndicator. LoadingIndicator and wavy progress are where
+   `modules/MaterialShapes` finally joins the build.

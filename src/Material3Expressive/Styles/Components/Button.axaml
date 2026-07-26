@@ -83,5 +83,28 @@
                 <Setter Property="Opacity" Value="0" />
             </Style>
         </ControlTheme>
+
+        <!-- The toggle shares the button's template; only its colours and resting shape differ. -->
+        <ControlTheme x:Key="{x:Type m3:MaterialToggleButton}" TargetType="m3:MaterialToggleButton">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      RecognizesAccessKey="True"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                      TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                      TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
     </Styles.Resources>
 </Styles>
