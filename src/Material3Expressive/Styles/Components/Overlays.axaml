@@ -1,0 +1,89 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="24" Height="260" Width="420">
+            <Panel>
+                <m3:MaterialSnackbar IsOpen="True" Duration="0" Message="Message archived" Action="Undo"
+                                     VerticalAlignment="Bottom" />
+                <m3:MaterialBadge Count="8" HorizontalAlignment="Right" VerticalAlignment="Top" />
+            </Panel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialDialog}" TargetType="m3:MaterialDialog">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <!-- The presenter is the dialog surface; the control paints the scrim and the
+                         surface behind it, and arranges this in the middle. -->
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      TextElement.Foreground="{TemplateBinding SupportingBrush}"
+                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                      TextElement.FontFamily="{TemplateBinding FontFamily}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialSnackbar}" TargetType="m3:MaterialSnackbar">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid ColumnDefinitions="*,Auto" Margin="{TemplateBinding Padding}">
+                        <ContentPresenter Grid.Column="0"
+                                          VerticalAlignment="Center"
+                                          Content="{TemplateBinding Message}"
+                                          TextElement.Foreground="{TemplateBinding MessageBrush}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}" />
+                        <ContentPresenter Grid.Column="1"
+                                          Margin="16,0,0,0"
+                                          VerticalAlignment="Center"
+                                          Content="{TemplateBinding Action}"
+                                          IsVisible="{TemplateBinding Action, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          TextElement.Foreground="{TemplateBinding ActionBrush}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialBadge}" TargetType="m3:MaterialBadge">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="Center"
+                                      VerticalContentAlignment="Center"
+                                      Content="{TemplateBinding Count}"
+                                      IsVisible="{TemplateBinding HasLabel}"
+                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                      TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                      TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialTooltip}" TargetType="m3:MaterialTooltip">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel Margin="{TemplateBinding Padding}" Spacing="4">
+                        <ContentPresenter Content="{TemplateBinding Title}"
+                                          IsVisible="{TemplateBinding Title, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          TextElement.Foreground="{TemplateBinding TitleBrush}" />
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

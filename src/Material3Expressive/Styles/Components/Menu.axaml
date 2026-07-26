@@ -1,0 +1,105 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <Button Content="Open">
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuItem Header="Cut" />
+                        <MenuItem Header="Copy" />
+                        <Separator />
+                        <MenuItem Header="Paste" />
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <!-- A stock restyle rather than a new control. Avalonia's menu already handles keyboard
+             navigation, submenus, access keys and the popup placement rules, none of which
+             Material changes; what Material specifies is the surface, the shape and the type. -->
+        <ControlTheme x:Key="{x:Type MenuFlyoutPresenter}" TargetType="MenuFlyoutPresenter">
+            <Setter Property="Background" Value="{mcu:MdSysColor SurfaceContainer}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="0,8" />
+            <Setter Property="MinWidth" Value="112" />
+            <Setter Property="MaxWidth" Value="280" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            BoxShadow="0 2 6 0 #33000000">
+                        <ScrollViewer>
+                            <ItemsPresenter ItemsPanel="{TemplateBinding ItemsPanel}" />
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type MenuItem}" TargetType="MenuItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{mcu:MdSysColor OnSurface}" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelLarge" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            MinHeight="{TemplateBinding MinHeight}">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <ContentPresenter Grid.Column="0"
+                                              Width="24" Height="24"
+                                              Margin="0,0,12,0"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Icon}"
+                                              IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <ContentPresenter Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Header}"
+                                              RecognizesAccessKey="True"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                            <TextBlock Grid.Column="2"
+                                       Margin="24,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                       Text="{TemplateBinding InputGesture, Converter={StaticResource KeyGestureConverter}}" />
+                            <Popup Grid.Column="0"
+                                   Name="PART_Popup"
+                                   WindowManagerAddShadowHint="False"
+                                   IsLightDismissEnabled="False"
+                                   IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}"
+                                   Placement="RightEdgeAlignedTop">
+                                <MenuFlyoutPresenter ItemsSource="{TemplateBinding ItemsSource}"
+                                                     ItemTemplate="{TemplateBinding ItemTemplate}" />
+                            </Popup>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+
+            <!-- The state layer is the same 8%/10% Material uses everywhere; a menu row is not a
+                 special case. -->
+            <Style Selector="^:pointerover /template/ Border#Root">
+                <Setter Property="Background" Value="{mcu:MdSysColor OnSurface}" />
+                <Setter Property="Opacity" Value="0.92" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Opacity" Value="0.38" />
+            </Style>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type Separator}" TargetType="Separator">
+            <Setter Property="Background" Value="{mcu:MdSysColor OutlineVariant}" />
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="0,8" />
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

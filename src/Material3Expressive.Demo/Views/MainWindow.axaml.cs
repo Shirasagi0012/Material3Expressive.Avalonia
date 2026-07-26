@@ -48,7 +48,8 @@ public partial class MainWindow : Window
         {
             1 => new ComponentsView(),
             2 => new NavigationView(),
-            3 => new TypographyView(),
+            3 => new OverlaysView(),
+            4 => new TypographyView(),
             _ => new ButtonsView()
         };
     }

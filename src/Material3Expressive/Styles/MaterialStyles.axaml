@@ -19,4 +19,6 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Navigation.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Tabs.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/AppBar.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Components/Overlays.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Components/Menu.axaml" />
 </Styles>

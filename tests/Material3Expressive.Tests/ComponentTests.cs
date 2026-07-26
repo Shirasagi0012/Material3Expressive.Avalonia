@@ -293,6 +293,105 @@ public class ProgressTests
 
 }
 
+public class OverlayTests
+{
+    [AvaloniaFact]
+    public void AClosedOverlay_DoesNotSwallowClicks()
+    {
+        var dialog = new MaterialDialog();
+        var sheet = new MaterialBottomSheet();
+        var snackbar = new MaterialSnackbar();
+        ThemeTestHelper.ShowWindow(new Panel { Children = { dialog, sheet, snackbar } });
+
+        Assert.False(dialog.IsHitTestVisible);
+        Assert.False(sheet.IsHitTestVisible);
+        Assert.False(snackbar.IsHitTestVisible);
+
+        dialog.IsOpen = true;
+        Assert.True(dialog.IsHitTestVisible);
+    }
+
+    [AvaloniaFact]
+    public void ADialogThatMustBeAnswered_IgnoresEscape()
+    {
+        var dialog = new MaterialDialog { IsDismissable = false, IsOpen = true };
+        ThemeTestHelper.ShowWindow(dialog);
+
+        dialog.RaiseEvent(new Avalonia.Input.KeyEventArgs
+        {
+            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+            Key = Avalonia.Input.Key.Escape
+        });
+
+        Assert.True(dialog.IsOpen);
+
+        dialog.IsDismissable = true;
+        dialog.RaiseEvent(new Avalonia.Input.KeyEventArgs
+        {
+            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+            Key = Avalonia.Input.Key.Escape
+        });
+
+        Assert.False(dialog.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void TheSnackbarInverts_SoItReadsAsSeparateFromThePage()
+    {
+        var tokens = SnackbarTokens.Default;
+
+        Assert.Equal(SysColorToken.InverseSurface, tokens.ContainerColor.RoleToken);
+        Assert.Equal(SysColorToken.InverseOnSurface, tokens.SupportingTextColor.RoleToken);
+        // The action has to stay an accent against the inverted surface.
+        Assert.Equal(SysColorToken.InversePrimary, tokens.ActionLabelTextColor.RoleToken);
+    }
+
+    [AvaloniaFact]
+    public void OnlyTheModalSheet_HasAScrim()
+    {
+        Assert.True(BottomSheetTokens.Modal.IsModal);
+        Assert.True(BottomSheetTokens.Modal.ScrimOpacity > 0);
+        Assert.False(BottomSheetTokens.Standard.IsModal);
+        Assert.Equal(0, BottomSheetTokens.Standard.ScrimOpacity);
+    }
+
+    [AvaloniaFact]
+    public void TheSheetsCornersAreRoundedOnlyAlongItsTopEdge()
+    {
+        var shape = new MaterialTheme().Resolved.Shapes.Get(BottomSheetTokens.Modal.ContainerShape);
+
+        Assert.NotEqual(CornerSize.Zero, shape.TopStart);
+        Assert.NotEqual(CornerSize.Zero, shape.TopEnd);
+        Assert.Equal(CornerSize.Zero, shape.BottomStart);
+        Assert.Equal(CornerSize.Zero, shape.BottomEnd);
+    }
+
+    [AvaloniaFact]
+    public void OnlyTheLargeBadge_ShowsItsCount()
+    {
+        var small = new MaterialBadge { Variant = BadgeVariant.Small, Count = 5 };
+        var large = new MaterialBadge { Variant = BadgeVariant.Large, Count = 5 };
+        ThemeTestHelper.ShowWindow(new StackPanel { Children = { small, large } });
+
+        Assert.False(small.HasLabel);
+        Assert.True(large.HasLabel);
+
+        // And an empty large badge is still just a dot.
+        large.Count = null;
+        Assert.False(large.HasLabel);
+    }
+
+    [AvaloniaFact]
+    public void ThePlainTooltipInverts_AndTheRichOneDoesNot()
+    {
+        Assert.Equal(SysColorToken.InverseSurface, TooltipTokens.Plain.ContainerColor.RoleToken);
+        Assert.Equal(SysColorToken.SurfaceContainer, TooltipTokens.Rich.ContainerColor.RoleToken);
+
+        // A rich tooltip has more to say, so it gets more room.
+        Assert.True(TooltipTokens.Rich.MaxWidth > TooltipTokens.Plain.MaxWidth);
+    }
+}
+
 public class NavigationTests
 {
     [AvaloniaFact]

@@ -1,0 +1,46 @@
+{
+  "kind": "component",
+  "name": "BadgeTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "BadgeColors",
+  "version": "v0_103",
+  "source": "androidx compose/material3 tokens/BadgeTokens.kt",
+  "summary": "A badge: a dot, or a dot with a number in it.",
+
+  "variantEnum": "BadgeVariant",
+  "variantEnumSummary": "A small badge says only that something happened; a large one says how much.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The badge." },
+    "LabelTextColor": { "type": "color", "summary": "The count inside a large badge." },
+    "Size": { "type": "dimension", "summary": "The badge height, and its width when it carries no count." },
+    "ContainerShape": { "type": "shape", "summary": "The badge corners." },
+    "HorizontalSpace": { "type": "dimension", "summary": "Padding around the count, which lets a large badge grow wider than it is tall." },
+    "LabelTextStyle": { "type": "typography", "summary": "The count." },
+    "HasLabel": { "type": "bool", "summary": "Whether this size shows a count at all." }
+  },
+
+  "sets": [
+    {
+      "name": "Small",
+      "values": {
+        "ContainerColor": "Error",
+        "LabelTextColor": "OnError",
+        "Size": 6,
+        "ContainerShape": "CornerFull",
+        "HorizontalSpace": 0,
+        "LabelTextStyle": "LabelSmall",
+        "HasLabel": false
+      }
+    },
+    {
+      "name": "Large",
+      "extends": "Small",
+      "values": {
+        "Size": 16,
+        "HorizontalSpace": 4,
+        "HasLabel": true
+      }
+    }
+  ]
+}
