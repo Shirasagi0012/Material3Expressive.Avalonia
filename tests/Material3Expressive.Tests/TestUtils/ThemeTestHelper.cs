@@ -75,7 +75,7 @@ internal sealed class ThemeProbe : MaterialControl
     {
         ObservedTheme = theme;
         ObservedIsDark = isDark;
-        ContainerBrush = theme.GetButtonColors(isDark).Container;
+        ContainerBrush = theme.GetButtonColors(ButtonVariant.Filled, isDark).ContainerColor;
         ChangeCount++;
     }
 }

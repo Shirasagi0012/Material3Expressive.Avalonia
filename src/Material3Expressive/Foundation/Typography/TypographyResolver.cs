@@ -5,8 +5,8 @@ using Material3Expressive.Foundation.Tokens;
 namespace Material3Expressive.Foundation;
 
 /// <summary>
-/// Bindings for the typography markup extensions. Typography has no variant dimension, so these
-/// depend on the theme alone.
+/// Bindings for the typography markup extensions. Typography has no theme-variant dimension, so
+/// these depend on the theme alone.
 /// </summary>
 internal static class TypographyResolver
 {
@@ -21,6 +21,22 @@ internal static class TypographyResolver
     {
         return ThemeBinding.FromTheme<object?>(
             theme => theme.Typography.GetFontWeight(token),
+            AvaloniaProperty.UnsetValue);
+    }
+
+    /// <summary>The face the given slot is set in, which is a token of the slot rather than a choice.</summary>
+    public static BindingBase FontFamily(TypographyRole role)
+    {
+        return ThemeBinding.FromTheme<object?>(
+            theme => theme.Typography.GetFontFamily(role),
+            AvaloniaProperty.UnsetValue);
+    }
+
+    /// <inheritdoc cref="FontFamily(TypographyRole)" />
+    public static BindingBase FontWeight(TypographyRole role)
+    {
+        return ThemeBinding.FromTheme<object?>(
+            theme => theme.Typography.GetFontWeight(role),
             AvaloniaProperty.UnsetValue);
     }
 

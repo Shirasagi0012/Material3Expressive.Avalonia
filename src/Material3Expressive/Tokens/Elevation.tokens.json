@@ -1,0 +1,17 @@
+{
+  "kind": "tokenSet",
+  "name": "ElevationTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_103",
+  "source": "androidx compose/material3 tokens/ElevationTokens.kt",
+  "summary": "The six elevation levels, in logical pixels.",
+
+  "tokens": {
+    "Level0": { "type": "elevation", "value": 0 },
+    "Level1": { "type": "elevation", "value": 1 },
+    "Level2": { "type": "elevation", "value": 3 },
+    "Level3": { "type": "elevation", "value": 6 },
+    "Level4": { "type": "elevation", "value": 8 },
+    "Level5": { "type": "elevation", "value": 12 }
+  }
+}

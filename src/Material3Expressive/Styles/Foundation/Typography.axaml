@@ -220,8 +220,8 @@
     </Styles.Resources>
     <!-- Control-level typography for templated controls -->
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayLarge]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily DisplayLarge}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight DisplayLarge}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayLarge}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayLarge}" />
@@ -234,8 +234,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayMedium]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily DisplayMedium}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight DisplayMedium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayMedium}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayMedium}" />
@@ -248,8 +248,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplaySmall]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily DisplaySmall}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight DisplaySmall}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplaySmall}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplaySmall}" />
@@ -262,8 +262,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineLarge]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily HeadlineLarge}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight HeadlineLarge}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineLarge}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineLarge}" />
@@ -276,8 +276,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineMedium]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily HeadlineMedium}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight HeadlineMedium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineMedium}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineMedium}" />
@@ -290,8 +290,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineSmall]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily HeadlineSmall}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight HeadlineSmall}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineSmall}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineSmall}" />
@@ -304,8 +304,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleLarge]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Brand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily TitleLarge}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight TitleLarge}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleLarge}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleLarge}" />
@@ -318,8 +318,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleMedium]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily TitleMedium}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight TitleMedium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleMedium}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleMedium}" />
@@ -332,8 +332,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleSmall]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily TitleSmall}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight TitleSmall}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleSmall}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleSmall}" />
@@ -346,8 +346,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyLarge]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily BodyLarge}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight BodyLarge}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyLarge}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyLarge}" />
@@ -360,8 +360,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyMedium]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily BodyMedium}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight BodyMedium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyMedium}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyMedium}" />
@@ -374,8 +374,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodySmall]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Regular}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily BodySmall}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight BodySmall}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodySmall}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodySmall}" />
@@ -388,8 +388,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelLarge]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily LabelLarge}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight LabelLarge}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelLarge}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelLarge}" />
@@ -402,8 +402,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelMedium]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily LabelMedium}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight LabelMedium}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelMedium}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelMedium}" />
@@ -416,8 +416,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelSmall]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily Plain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily LabelSmall}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight LabelSmall}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelSmall}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelSmall}" />
@@ -430,8 +430,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayLargeEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily DisplayLargeEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight DisplayLargeEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayLargeEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayLargeEmphasized}" />
@@ -444,8 +444,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplayMediumEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily DisplayMediumEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight DisplayMediumEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplayMediumEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplayMediumEmphasized}" />
@@ -458,8 +458,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=DisplaySmallEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily DisplaySmallEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight DisplaySmallEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize DisplaySmallEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight DisplaySmallEmphasized}" />
@@ -472,8 +472,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineLargeEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily HeadlineLargeEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight HeadlineLargeEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineLargeEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineLargeEmphasized}" />
@@ -486,8 +486,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineMediumEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily HeadlineMediumEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight HeadlineMediumEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineMediumEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineMediumEmphasized}" />
@@ -500,8 +500,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=HeadlineSmallEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily HeadlineSmallEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight HeadlineSmallEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize HeadlineSmallEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight HeadlineSmallEmphasized}" />
@@ -514,8 +514,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleLargeEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedBrand}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily TitleLargeEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight TitleLargeEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleLargeEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleLargeEmphasized}" />
@@ -528,8 +528,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleMediumEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily TitleMediumEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight TitleMediumEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleMediumEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleMediumEmphasized}" />
@@ -542,8 +542,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=TitleSmallEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily TitleSmallEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight TitleSmallEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize TitleSmallEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight TitleSmallEmphasized}" />
@@ -556,8 +556,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyLargeEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily BodyLargeEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight BodyLargeEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyLargeEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyLargeEmphasized}" />
@@ -570,8 +570,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodyMediumEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily BodyMediumEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight BodyMediumEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyMediumEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyMediumEmphasized}" />
@@ -584,8 +584,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=BodySmallEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Medium}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily BodySmallEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight BodySmallEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodySmallEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodySmallEmphasized}" />
@@ -598,8 +598,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelLargeEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily LabelLargeEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight LabelLargeEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelLargeEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelLargeEmphasized}" />
@@ -612,8 +612,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelMediumEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily LabelMediumEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight LabelMediumEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelMediumEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelMediumEmphasized}" />
@@ -626,8 +626,8 @@
     </Style>
 
     <Style Selector=":is(StyledElement)[(m3|TypographyScheme.TextStyle)=LabelSmallEmphasized]">
-        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily EmphasizedPlain}" />
-        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight Bold}" />
+        <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily LabelSmallEmphasized}" />
+        <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight LabelSmallEmphasized}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize LabelSmallEmphasized}" />
         <Style Selector="^ /template/ ContentPresenter TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight LabelSmallEmphasized}" />

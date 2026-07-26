@@ -1,27 +1,27 @@
 using Avalonia.Data;
 using Avalonia.Metadata;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Markups;
 
-/// <summary>A font weight from the theme in scope at the target element.</summary>
+/// <summary>The weight a type scale slot is set in, from the theme in scope at the target.</summary>
+/// <inheritdoc cref="MdTypeFamilyExtension" path="/remarks" />
 public class MdTypeWeightExtension
 {
     public MdTypeWeightExtension()
     {
     }
 
-    public MdTypeWeightExtension(FontWeightToken token)
+    public MdTypeWeightExtension(TypographyRole role)
     {
-        Token = token;
+        Role = role;
     }
 
-    [ConstructorArgument("token")]
-    public FontWeightToken Token { get; set; } = FontWeightToken.Regular;
+    [ConstructorArgument("role")]
+    public TypographyRole Role { get; set; } = TypographyRole.BodyMedium;
 
     public BindingBase ProvideValue()
     {
-        return TypographyResolver.FontWeight(Token);
+        return TypographyResolver.FontWeight(Role);
     }
 }

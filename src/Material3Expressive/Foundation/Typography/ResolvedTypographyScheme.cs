@@ -5,13 +5,21 @@ using Material3Expressive.Foundation.Tokens;
 namespace Material3Expressive.Foundation;
 
 /// <summary>Immutable type-scale lookup carried by a theme snapshot.</summary>
+/// <remarks>
+/// The metrics come from the generated <see cref="TypeScale" /> sets (after any theme overrides);
+/// the faces and weights they name come from the <see cref="TypographyScheme" />. Resolving the
+/// two together here is what lets a slot say "plain, medium" and an app answer that once.
+/// </remarks>
 public sealed class ResolvedTypographyScheme
 {
-    private readonly TypeScaleToken[] _scales;
+    private static readonly int RoleCount = Enum.GetValues<TypographyRole>().Length;
 
-    public ResolvedTypographyScheme(TypographyScheme scheme)
+    private readonly TypeScale[] _scales;
+
+    public ResolvedTypographyScheme(TypographyScheme scheme, Func<TypographyRole, TypeScale> scales)
     {
         ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(scales);
 
         BrandFontFamily = scheme.BrandFontFamily;
         PlainFontFamily = scheme.PlainFontFamily;
@@ -21,13 +29,10 @@ public sealed class ResolvedTypographyScheme
         WeightMedium = scheme.WeightMedium;
         WeightBold = scheme.WeightBold;
 
-        var roles = Enum.GetValues<TypographyRole>();
-        _scales = new TypeScaleToken[roles.Length];
-        foreach (var role in roles)
-            _scales[(int)role] = scheme.GetTypeScale(role);
+        _scales = new TypeScale[RoleCount];
+        for (var i = 0; i < RoleCount; i++)
+            _scales[i] = scales((TypographyRole)i);
     }
-
-    public static ResolvedTypographyScheme Default { get; } = new(new TypographyScheme());
 
     public FontFamily BrandFontFamily { get; }
     public FontFamily PlainFontFamily { get; }
@@ -37,9 +42,21 @@ public sealed class ResolvedTypographyScheme
     public FontWeight WeightMedium { get; }
     public FontWeight WeightBold { get; }
 
-    public TypeScaleToken GetTypeScale(TypographyRole role)
+    public TypeScale GetTypeScale(TypographyRole role)
     {
         return _scales[(int)role];
+    }
+
+    /// <summary>The face a slot is set in, after the scheme's substitutions.</summary>
+    public FontFamily GetFontFamily(TypographyRole role)
+    {
+        return GetFontFamily(GetTypeScale(role).Font);
+    }
+
+    /// <summary>The weight a slot is set in, after the scheme's substitutions.</summary>
+    public FontWeight GetFontWeight(TypographyRole role)
+    {
+        return GetFontWeight(GetTypeScale(role).Weight);
     }
 
     public FontFamily GetFontFamily(FontFamilyToken token)

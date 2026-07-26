@@ -15,6 +15,14 @@
         <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\MaterialColorUtilities.Avalonia.csproj"/>
         <!-- MaterialShapes joins in phase 3, when LoadingIndicator and wavy progress need polygon
              morphing. Button/FAB/Chip press morphs are corner-radius lerps and do not. -->
+        <ProjectReference Include="..\Material3Expressive.TokenGenerator\Material3Expressive.TokenGenerator.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    </ItemGroup>
+
+    <!-- The token tables are the source of truth for every token in the library; the generator
+         turns each into its C# form at build time. -->
+    <ItemGroup>
+        <AdditionalFiles Include="Tokens\**\*.tokens.json"/>
     </ItemGroup>
 
     <ItemGroup>

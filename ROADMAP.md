@@ -140,18 +140,42 @@ Findings worth carrying forward:
 - `Application` is outside every tree, so the app theme is injected at each
   `TopLevel` by a style in `MaterialThemeStyles`, at `Style` priority.
 
-### Phase 2 — Token pipeline (codegen)
+### Phase 2 — Token pipeline (codegen) — **done 2026-07-26**
 
-- Token-table format (JSON) mirroring the M3 token DB / Compose's generated
-  `*Tokens.kt` files: system tokens + per-component tables mapping component
-  tokens → system-token references or literals.
-- Roslyn incremental generator emitting: role enums, component token classes
-  (StyledProperties with role-reference defaults), resolver code. Single source
-  of truth — deletes today's triplicated defaults (ctor / resolver switch /
-  markup fallback).
-- Regenerate `ButtonTokens` from a table as the proof; delete hand-written v2.
-- **Exit criteria:** adding a component token domain = writing one table entry,
-  no hand-written plumbing.
+Format reference: [docs/token-tables.md](docs/token-tables.md). Delivered:
+
+- ~~Token-table format (JSON) mirroring the M3 token DB.~~ Two kinds:
+  `tokenSet` (a verbatim transcription of one upstream `*Tokens.kt`, stamped with
+  its token-DB version) and `component` (a token surface plus one value set per
+  variant, referencing transcriptions with `@Name.Member`). Sets compose with
+  `extends`, so a variant states only what it changes.
+- ~~Roslyn incremental generator.~~ `Material3Expressive.TokenGenerator`, with its
+  own JSON reader — an analyzer that takes a dependency has to ship it, and the
+  tables are read once per build. Comments and trailing commas are accepted
+  because every deviation from upstream is annotated in place.
+- ~~Regenerate `ButtonTokens` from a table.~~ Replaced by `ButtonColorTokens`
+  (5 variants) and `ButtonSizeTokens` (5 sizes) — upstream's own split, and the
+  full Phase 4 matrix rather than just the filled/small pair v2 had.
+- **The type scale moved into a table too**, closing the Phase 1 loose end. It
+  had 30 defaults in a constructor, 30 styled properties, a 30-arm switch, and
+  the face/weight of every slot restated in `Typography.axaml`. It is now one
+  table, and the slots carry their own `Font`/`Weight` — which fixed a real bug:
+  the emphasized styles were rendering at the base weight.
+- **Exit criteria met** — a component domain is one table file. The snapshot
+  accessors (`ResolvedTheme.GetButtonColors(variant, isDark)`), the sparse
+  override bags (`ButtonColorOverrides`) and the theme plumbing are all emitted
+  from the set of tables; `ResolvedTheme` never has to be edited.
+
+Findings worth carrying forward:
+
+- **One source generator cannot see another's output.** `TypographyRole` moved
+  into a table, so `PropertyGenerator.Avalonia` could no longer resolve it in
+  `[GenerateAttachedProperty<…>(DefaultValue = TypographyRole.BodyMedium)]`.
+  `TypographyScheme.TextStyle` is written out by hand for that reason; any
+  attached property whose type comes from a table must be.
+- Component token overrides ride the theme as its content
+  (`MaterialTheme.Components`), keyed by variant. Sparseness comes from
+  `AvaloniaObject.IsSet`, so a bag replaces only what it names.
 
 ### Phase 3 — Motion & interaction foundations
 
@@ -250,8 +274,9 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
    loose end: archive the DesignTokens repo on GitHub with a README pointing here.
 2. ~~Write `docs/architecture.md` for theming core v3.~~ Done.
 3. ~~Implement the core + the three exit-criteria tests.~~ Done — Phase 1 complete.
-4. Spike the token-table JSON format against Button's real token set.
-5. Loose end from Phase 1: `Foundation/Typography/Tokens/TypeScaleTokens.cs`
-   predates the androidx survey and carries no token-DB stamp. Diff it against
-   `tokens/TypeScaleTokens.kt` and stamp it — every other token file in the repo
-   now records its upstream source and version.
+4. ~~Spike the token-table JSON format against Button's real token set.~~ Done —
+   Phase 2 complete, tables cover Button's full variant × size matrix.
+5. ~~Loose end from Phase 1: `TypeScaleTokens.cs` carries no token-DB stamp.~~
+   Done — it is a token table now, stamped `v0_103`, and the emphasized slots
+   gained the face and weight they were missing.
+6. Phase 3: spike the spring animator against `MotionScheme`'s six specs.

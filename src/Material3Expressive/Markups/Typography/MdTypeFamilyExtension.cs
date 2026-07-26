@@ -1,27 +1,31 @@
 using Avalonia.Data;
 using Avalonia.Metadata;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Markups;
 
-/// <summary>A typeface from the theme in scope at the target element.</summary>
+/// <summary>The typeface a type scale slot is set in, from the theme in scope at the target.</summary>
+/// <remarks>
+/// Takes a role rather than a face, because which of the theme's four faces a slot uses is itself
+/// a token — restating it at the call site is how the type scale's data ended up duplicated across
+/// the style sheet.
+/// </remarks>
 public class MdTypeFamilyExtension
 {
     public MdTypeFamilyExtension()
     {
     }
 
-    public MdTypeFamilyExtension(FontFamilyToken token)
+    public MdTypeFamilyExtension(TypographyRole role)
     {
-        Token = token;
+        Role = role;
     }
 
-    [ConstructorArgument("token")]
-    public FontFamilyToken Token { get; set; } = FontFamilyToken.Plain;
+    [ConstructorArgument("role")]
+    public TypographyRole Role { get; set; } = TypographyRole.BodyMedium;
 
     public BindingBase ProvideValue()
     {
-        return TypographyResolver.FontFamily(Token);
+        return TypographyResolver.FontFamily(Role);
     }
 }

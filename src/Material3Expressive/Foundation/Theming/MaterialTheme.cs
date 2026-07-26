@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Specialized;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Media;
+using Avalonia.Metadata;
 using MaterialColorUtilities.Avalonia;
 using PropertyGenerator.Avalonia;
 
@@ -28,11 +31,12 @@ public partial class MaterialTheme : AvaloniaObject
         // the same attach path as any later assignment.
         PropertyChanged += OnSelfPropertyChanged;
 
+        Components.CollectionChanged += OnComponentsChanged;
+
         ColorScheme = new TonalSpotScheme(BaselineSeedColor);
         TypographyScheme = new TypographyScheme();
         ShapeScheme = new ShapeScheme();
         MotionScheme = new MotionScheme();
-        ButtonTokens = new ButtonTokens();
     }
 
     /// <summary>Raised whenever this theme or any of its schemes changes.</summary>
@@ -42,7 +46,13 @@ public partial class MaterialTheme : AvaloniaObject
     [GeneratedStyledProperty] public partial TypographyScheme TypographyScheme { get; set; }
     [GeneratedStyledProperty] public partial ShapeScheme ShapeScheme { get; set; }
     [GeneratedStyledProperty] public partial MotionScheme MotionScheme { get; set; }
-    [GeneratedStyledProperty] public partial ButtonTokens ButtonTokens { get; set; }
+
+    /// <summary>
+    /// Per-component token overrides, layered onto the generated defaults when the snapshot is
+    /// built. This is the theme's content property, so the bags nest directly inside it in XAML.
+    /// </summary>
+    [Content]
+    public AvaloniaList<ComponentTokenOverrides> Components { get; } = new();
 
     /// <summary>The current snapshot, rebuilt on demand after any change.</summary>
     public ResolvedTheme Resolved => _resolved ??= new ResolvedTheme(this);
@@ -57,12 +67,22 @@ public partial class MaterialTheme : AvaloniaObject
         if (e.Property != ColorSchemeProperty
             && e.Property != TypographySchemeProperty
             && e.Property != ShapeSchemeProperty
-            && e.Property != MotionSchemeProperty
-            && e.Property != ButtonTokensProperty)
+            && e.Property != MotionSchemeProperty)
             return;
 
         Detach(e.OldValue);
         Attach(e.NewValue);
+        Invalidate();
+    }
+
+    private void OnComponentsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        foreach (var item in e.OldItems ?? (System.Collections.IList)Array.Empty<object>())
+            Detach(item);
+
+        foreach (var item in e.NewItems ?? (System.Collections.IList)Array.Empty<object>())
+            Attach(item);
+
         Invalidate();
     }
 

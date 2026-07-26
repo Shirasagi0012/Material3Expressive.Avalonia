@@ -1,5 +1,4 @@
 using System;
-using Avalonia.Media;
 using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Foundation;
@@ -14,20 +13,25 @@ namespace Material3Expressive.Foundation;
 /// that depend on the consumer's theme variant cannot be resolved here; those are memoized per
 /// variant instead, mirroring the per-theme-instance default bundles upstream keeps as ~60 fields
 /// on <c>ColorScheme</c>.
+/// <para>
+/// The component token half of this class is generated from the tables under <c>Tokens/</c> — see
+/// <c>ResolvedTheme.Components.g.cs</c> — so adding a component domain costs one table file and no
+/// edit here.
+/// </para>
 /// </remarks>
-public sealed class ResolvedTheme
+public sealed partial class ResolvedTheme
 {
-    private readonly ButtonColors?[] _buttonColors = new ButtonColors?[2];
-
     public ResolvedTheme(MaterialTheme theme)
     {
         ArgumentNullException.ThrowIfNull(theme);
 
         ColorScheme = theme.ColorScheme is { } colorScheme ? new ResolvedColorScheme(colorScheme) : null;
-        Typography = new ResolvedTypographyScheme(theme.TypographyScheme);
         Shapes = new ResolvedShapeScheme(theme.ShapeScheme);
         Motion = new ResolvedMotionScheme(theme.MotionScheme);
-        ButtonTokens = new ResolvedButtonTokens(theme.ButtonTokens);
+
+        // Typography reads the generated type scale, so the component tokens have to exist first.
+        InitializeComponentTokens(theme);
+        Typography = new ResolvedTypographyScheme(theme.TypographyScheme, GetTypeScale);
     }
 
     /// <summary>The theme every element falls back to when no theme has been declared above it.</summary>
@@ -40,36 +44,4 @@ public sealed class ResolvedTheme
     public ResolvedShapeScheme Shapes { get; }
 
     public ResolvedMotionScheme Motion { get; }
-
-    public ResolvedButtonTokens ButtonTokens { get; }
-
-    /// <summary>
-    /// The button's brushes for one theme variant, built once per snapshot and variant.
-    /// </summary>
-    public ButtonColors GetButtonColors(bool isDark)
-    {
-        var slot = isDark ? 1 : 0;
-        return _buttonColors[slot] ??= BuildButtonColors(isDark);
-    }
-
-    private ButtonColors BuildButtonColors(bool isDark)
-    {
-        var tokens = ButtonTokens;
-
-        return new ButtonColors(
-            tokens.ContainerColor.ResolveBrush(ColorScheme, isDark),
-            tokens.LabelTextColor.ResolveBrush(ColorScheme, isDark),
-            tokens.StateLayerColor.ResolveBrush(ColorScheme, isDark),
-            tokens.DisabledContainerColor.ResolveBrush(ColorScheme, isDark, tokens.DisabledContainerOpacity),
-            tokens.DisabledLabelTextColor.ResolveBrush(ColorScheme, isDark, tokens.DisabledLabelTextOpacity));
-    }
 }
-
-/// <summary>A button's brushes, resolved for one theme variant.</summary>
-public sealed record ButtonColors(
-    IImmutableBrush Container,
-    IImmutableBrush LabelText,
-    IImmutableBrush StateLayer,
-    IImmutableBrush DisabledContainer,
-    IImmutableBrush DisabledLabelText
-);

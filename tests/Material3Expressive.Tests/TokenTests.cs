@@ -225,23 +225,31 @@ public class ThemeSnapshotTests
     }
 
     [Fact]
-    public void ButtonColorBundles_AreMemoizedPerVariant()
+    public void ButtonColorBundles_AreMemoizedPerVariantAndThemeVariant()
     {
         var theme = new MaterialTheme();
         var snapshot = theme.Resolved;
 
-        Assert.Same(snapshot.GetButtonColors(isDark: false), snapshot.GetButtonColors(isDark: false));
-        Assert.NotSame(snapshot.GetButtonColors(isDark: false), snapshot.GetButtonColors(isDark: true));
+        Assert.Same(
+            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false),
+            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false));
+        Assert.NotSame(
+            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false),
+            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: true));
+        Assert.NotSame(
+            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false),
+            snapshot.GetButtonColors(ButtonVariant.Tonal, isDark: false));
     }
 
     [Fact]
     public void DisabledColors_CarryTheirTokenOpacity()
     {
         var theme = new MaterialTheme();
-        var colors = theme.Resolved.GetButtonColors(isDark: false);
+        var tokens = theme.Resolved.GetButtonColorTokens(ButtonVariant.Filled);
+        var colors = theme.Resolved.GetButtonColors(ButtonVariant.Filled, isDark: false);
 
         Assert.Equal(
-            (byte)Math.Round(255 * theme.ButtonTokens.DisabledContainerOpacity),
-            ((ISolidColorBrush)colors.DisabledContainer).Color.A);
+            (byte)Math.Round(255 * tokens.DisabledContainerOpacity),
+            ((ISolidColorBrush)colors.DisabledContainerColor).Color.A);
     }
 }
