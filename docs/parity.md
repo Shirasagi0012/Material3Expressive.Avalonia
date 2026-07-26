@@ -16,6 +16,9 @@ This page lists what deliberately differs. Anything not listed here is intended 
 | **Emphasized typefaces** | The emphasized type scale slots reuse `TypefaceTokens.Brand` and `.Plain` with a heavier weight. | Separate `EmphasizedBrand` and `EmphasizedPlain` slots, defaulting to the same faces. | Out of the box the result is identical. The extra slots exist so an app can point the emphasized styles at a distinct face — a Roboto Flex instance, say — which is what the Expressive spec assumes and what a variable-font pipeline will want. |
 | **State layer stacking** | Interactions are an ordered stream; the most recent one shows. | A fixed precedence: dragged over pressed over focused over hovered. | Avalonia reports interaction as independent boolean properties, not as an ordered stream. The fixed order matches the only sequence the interactions can arrive in. |
 | **Spring settling** | `getDurationNanos` from the spring estimator. | The same estimator, same port. | No deviation — noted because the obvious shortcut (stop when the value is close to the target) is *not* what is implemented: an overshoot passing through the target would be mistaken for arrival. |
+| **Switch drag** | The knob can be dragged between states. | Click and keyboard only. | `MaterialSwitch` paints itself, so it derives from `ToggleButton` rather than `ToggleSwitch`, whose required knob template parts it could not satisfy meaningfully. Drag-to-toggle went with them and is not yet reimplemented. |
+| **Menu** | `DropdownMenu`, built from Compose's own primitives. | A restyle of Avalonia's `MenuFlyoutPresenter` and `MenuItem`. | Avalonia's menu already handles keyboard navigation, submenus, access keys and popup placement, none of which Material changes. What Material specifies — the surface, the shape, the type scale, the state layer — is exactly what a restyle can express. |
+| **Carousel metrics** | No generated token file exists upstream. | Item widths and spacing taken from the Material 3 spec page. | Nothing to transcribe. The table records `"version": "spec"` rather than a token-DB stamp, so this is visible wherever the values are read. |
 
 ## Known upstream inconsistencies, transcribed faithfully
 
@@ -33,6 +36,13 @@ These are transcribed as upstream has them, with a comment at the value:
   is used, which is what the spec and `FloatingActionButtonDefaults` call for.
 - `LargeIconButtonTokens` names its middle width `Uniform` where every other size says `Default`.
   Transcribed under the common name so the component table can treat the sizes uniformly.
+
+## Not built
+
+- **Floating toolbars**, listed alongside the app bars in the roadmap's fourth wave.
+- **Adaptive/flexible navigation**, which reshapes the bar and rail by window size. Both exist as
+  fixed forms.
+- **Date and time input** (the typed alternatives to the pickers' dials and grids).
 
 ## Not yet ported
 

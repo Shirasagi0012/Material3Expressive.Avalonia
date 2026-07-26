@@ -315,9 +315,19 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
    not a polygon morph — so LoadingIndicator is now the only thing that does.
 9. ~~LoadingIndicator, which brings `modules/MaterialShapes` into the build.~~
    Done — wave 2 complete.
-10. Phase 5, waves 3–5: TextField and Chips (wave 3), navigation (wave 4),
-    dialogs and overlays (wave 5). **None started.** TextField is the largest
-    single component in the library and should be costed on its own.
+10. ~~Phase 5, waves 3–5.~~ Done. **Every phase of this roadmap is delivered.**
+
+What is left is not roadmap work but the things a roadmap cannot do:
+
+- **Publish `0.1.0-alpha` to NuGet.** The package builds; pushing it is
+  irreversible and wants a human.
+- **Screenshot the gallery against Compose side by side.** A visual comparison
+  is only worth anything if somebody judges it.
+- **Archive the DesignTokens repo** — the one Phase 0 loose end, a GitHub
+  settings change.
+- Three components named in the waves but deliberately not built, listed with
+  everything else that differs in [docs/parity.md](docs/parity.md): floating
+  toolbars, adaptive navigation, and the pickers' typed-input alternatives.
 
 Findings worth carrying forward:
 

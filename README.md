@@ -5,8 +5,9 @@ implementation — pinned to **compose-material3 `1.5.0-alpha25`** — in visual
 fidelity. Every token is transcribed from the Material token database and stamped with the version
 it came from.
 
-> `0.1.0-alpha`. The theming core, the token pipeline, motion and the first component wave are
-> done; most components are not yet. See [ROADMAP.md](ROADMAP.md).
+> `0.1.0-alpha`. Every phase of the [roadmap](ROADMAP.md) is delivered — theming core, token
+> pipeline, motion, and all five component waves. Deliberate deviations from upstream are listed
+> in [docs/parity.md](docs/parity.md).
 
 ## What is here
 
@@ -17,7 +18,7 @@ it came from.
 | **Shape** | Corner sizes that are dp *or percent*, so `CornerFull` is genuinely half the height at any size. |
 | **Motion** | A spring animator ported from `animation-core` — analytic, retargetable, velocity-preserving. |
 | **Interaction** | State layers with Material's asymmetric fades, ripples, and the corner-morph press feedback. |
-| **Components** | Button, toggle button, icon button, toggle icon button, FAB and extended FAB, card, checkbox, radio button, switch, slider, linear and circular progress (including the wavy form), loading indicator. |
+| **Components** | Buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
 
 ## Getting started
 
