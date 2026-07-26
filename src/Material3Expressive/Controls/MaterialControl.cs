@@ -20,6 +20,7 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public abstract class MaterialControl : TemplatedControl
 {
+    private MotionGroup? _motion;
     private bool _isDark;
 
     // Null until the first resolution, so that a control whose theme happens to equal the default
@@ -35,10 +36,41 @@ public abstract class MaterialControl : TemplatedControl
     /// <summary>Whether the control's theme variant resolves to dark.</summary>
     protected bool IsDarkVariant => _isDark;
 
+    /// <summary>
+    /// This control's animations and the frame loop that drives them. Created on first use, so a
+    /// control that never animates never allocates one.
+    /// </summary>
+    protected MotionGroup Motion
+    {
+        get
+        {
+            if (_motion is { } existing)
+                return existing;
+
+            _motion = new MotionGroup(this);
+            _motion.Ticked += (_, _) => OnMotionTick();
+            return _motion;
+        }
+    }
+
+    /// <summary>The spring named by a motion role, from the theme in scope.</summary>
+    protected SpringSpec Spring(MotionRole role)
+    {
+        return ResolvedTheme.Motion.Get(role);
+    }
+
     protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
     {
         base.OnAttachedToLogicalTree(e);
         UpdateTheme();
+    }
+
+    protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromLogicalTree(e);
+
+        // Off the tree there is no render clock, so anything mid-flight would freeze.
+        _motion?.SettleAll();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -56,6 +88,15 @@ public abstract class MaterialControl : TemplatedControl
     /// </summary>
     protected virtual void OnThemeChanged(ResolvedTheme theme, bool isDark)
     {
+    }
+
+    /// <summary>
+    /// Called once per frame while anything in <see cref="Motion" /> is running. Invalidates the
+    /// visual by default, which is what an animated token value almost always needs.
+    /// </summary>
+    protected virtual void OnMotionTick()
+    {
+        InvalidateVisual();
     }
 
     private void UpdateTheme()
