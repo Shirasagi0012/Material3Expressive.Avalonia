@@ -3,11 +3,40 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
     <Design.PreviewWith>
         <Border Padding="20">
-            <Button>Button</Button>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <m3:MaterialButton Variant="Filled">Filled</m3:MaterialButton>
+                <m3:MaterialButton Variant="Outlined">Outlined</m3:MaterialButton>
+                <Button>Stock</Button>
+            </StackPanel>
         </Border>
     </Design.PreviewWith>
 
     <Styles.Resources>
+        <!-- MaterialButton paints its own container in Render, because the corner radius changes
+             every frame during a press and has to resolve against the measured size. The template
+             is therefore only the content. -->
+        <ControlTheme x:Key="{x:Type m3:MaterialButton}" TargetType="m3:MaterialButton">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      RecognizesAccessKey="True"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                      TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                      TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
         <ControlTheme x:Key="{x:Type Button}" TargetType="Button">
             <Setter Property="Background" Value="{m3:MdButtonToken ContainerColor}" />
             <Setter Property="Foreground" Value="{m3:MdButtonToken LabelTextColor}" />

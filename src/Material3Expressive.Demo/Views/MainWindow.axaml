@@ -3,14 +3,54 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="using:Material3Expressive.Demo.Views"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Material3Expressive.Demo.Views.MainWindow"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Material3Expressive.Demo"
-        Background="{mcu:MdSysColor Background}">
+        Title="Material 3 Expressive for Avalonia"
+        Width="1000" Height="700"
+        Background="{mcu:MdSysColor Surface}">
 
-    <views:TypographyView />
+    <Grid ColumnDefinitions="220,*">
 
+        <!-- Navigation -->
+        <Border Grid.Column="0" Background="{mcu:MdSysColor SurfaceContainer}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Bottom" Margin="16" Spacing="12">
+                    <TextBlock Classes="label-medium"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="SEED COLOUR" />
+                    <!-- The whole scheme is derived from one seed, so a row of swatches is a
+                         complete demonstration of dynamic colour. -->
+                    <WrapPanel x:Name="Seeds" ItemSpacing="8" LineSpacing="8">
+                        <Button Tag="#6750A4" Click="OnSeedChosen" Background="#6750A4" Width="32" Height="32" />
+                        <Button Tag="#006874" Click="OnSeedChosen" Background="#006874" Width="32" Height="32" />
+                        <Button Tag="#3E6837" Click="OnSeedChosen" Background="#3E6837" Width="32" Height="32" />
+                        <Button Tag="#8F4C38" Click="OnSeedChosen" Background="#8F4C38" Width="32" Height="32" />
+                        <Button Tag="#B3261E" Click="OnSeedChosen" Background="#B3261E" Width="32" Height="32" />
+                    </WrapPanel>
+                    <ToggleSwitch x:Name="DarkToggle"
+                                  Content="Dark theme"
+                                  IsCheckedChanged="OnDarkToggled" />
+                </StackPanel>
+
+                <StackPanel Margin="8,16" Spacing="4">
+                    <TextBlock Classes="title-medium" Margin="16,0,0,12" Text="Material 3" />
+                    <ListBox x:Name="Pages"
+                             Background="Transparent"
+                             SelectedIndex="0"
+                             SelectionChanged="OnPageChanged">
+                        <ListBoxItem Content="Buttons" />
+                        <ListBoxItem Content="Typography" />
+                    </ListBox>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Content -->
+        <ContentControl Grid.Column="1" x:Name="PageHost">
+            <views:ButtonsView />
+        </ContentControl>
+    </Grid>
 </Window>

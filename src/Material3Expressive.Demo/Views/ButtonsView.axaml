@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             x:Class="Material3Expressive.Demo.Views.ButtonsView">
+    <ScrollViewer Padding="32">
+        <StackPanel Spacing="32">
+
+            <StackPanel Spacing="4">
+                <TextBlock Classes="headline-medium" Text="Button" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Five colour variants and five sizes, all from the token tables. Press and hold to watch the container morph — the corners are spring-driven, so releasing mid-press reverses without restarting." />
+            </StackPanel>
+
+            <!-- Variants -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="Variants" />
+                <WrapPanel ItemSpacing="12" LineSpacing="12">
+                    <m3:MaterialButton Variant="Filled">Filled</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Tonal">Tonal</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Elevated">Elevated</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Outlined">Outlined</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Text">Text</m3:MaterialButton>
+                </WrapPanel>
+            </StackPanel>
+
+            <!-- Disabled -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="Disabled" />
+                <WrapPanel ItemSpacing="12" LineSpacing="12">
+                    <m3:MaterialButton Variant="Filled" IsEnabled="False">Filled</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Tonal" IsEnabled="False">Tonal</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Elevated" IsEnabled="False">Elevated</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Outlined" IsEnabled="False">Outlined</m3:MaterialButton>
+                    <m3:MaterialButton Variant="Text" IsEnabled="False">Text</m3:MaterialButton>
+                </WrapPanel>
+            </StackPanel>
+
+            <!-- Sizes -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="Sizes" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Height, padding, icon size and type scale all move together — one token set per size." />
+                <WrapPanel ItemSpacing="12" LineSpacing="12" VerticalAlignment="Center">
+                    <m3:MaterialButton Size="ExtraSmall">Extra small</m3:MaterialButton>
+                    <m3:MaterialButton Size="Small">Small</m3:MaterialButton>
+                    <m3:MaterialButton Size="Medium">Medium</m3:MaterialButton>
+                    <m3:MaterialButton Size="Large">Large</m3:MaterialButton>
+                    <m3:MaterialButton Size="ExtraLarge">Extra large</m3:MaterialButton>
+                </WrapPanel>
+            </StackPanel>
+
+            <!-- Shape -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="Round and square" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="CornerFull is a percentage, not a large fixed radius, so a pill stays a pill at every size." />
+                <WrapPanel ItemSpacing="12" LineSpacing="12">
+                    <m3:MaterialButton Size="Medium">Round</m3:MaterialButton>
+                    <m3:MaterialButton Size="Medium" IsSquare="True">Square</m3:MaterialButton>
+                    <m3:MaterialButton Size="ExtraLarge">Round</m3:MaterialButton>
+                    <m3:MaterialButton Size="ExtraLarge" IsSquare="True">Square</m3:MaterialButton>
+                </WrapPanel>
+            </StackPanel>
+
+            <!-- Scoped theme -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="A scoped theme" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Setting one attached property re-themes everything below it, including these buttons, which read their tokens in C#." />
+                <Border Padding="16" CornerRadius="16" Background="{mcu:MdSysColor SurfaceContainer}">
+                    <m3:MaterialThemeScope.Theme>
+                        <m3:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#FF6D00'}" />
+                    </m3:MaterialThemeScope.Theme>
+                    <WrapPanel ItemSpacing="12" LineSpacing="12">
+                        <m3:MaterialButton Variant="Filled">Filled</m3:MaterialButton>
+                        <m3:MaterialButton Variant="Tonal">Tonal</m3:MaterialButton>
+                        <m3:MaterialButton Variant="Outlined">Outlined</m3:MaterialButton>
+                    </WrapPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Theme-level token override -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="title-medium" Text="A retuned token" />
+                <TextBlock Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="One entry on the theme overrides a single token; everything it does not name still comes from the table." />
+                <Border Padding="16" CornerRadius="16" Background="{mcu:MdSysColor SurfaceContainer}">
+                    <m3:MaterialThemeScope.Theme>
+                        <m3:MaterialTheme>
+                            <m3:ButtonSizeOverrides Variant="Small" ContainerHeight="56" LeadingSpace="32" TrailingSpace="32" />
+                        </m3:MaterialTheme>
+                    </m3:MaterialThemeScope.Theme>
+                    <WrapPanel ItemSpacing="12" LineSpacing="12">
+                        <m3:MaterialButton Variant="Filled">Taller</m3:MaterialButton>
+                        <m3:MaterialButton Variant="Outlined">Taller</m3:MaterialButton>
+                    </WrapPanel>
+                </Border>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

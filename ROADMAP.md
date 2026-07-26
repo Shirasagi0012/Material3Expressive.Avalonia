@@ -177,33 +177,48 @@ Findings worth carrying forward:
   (`MaterialTheme.Components`), keyed by variant. Sparseness comes from
   `AvaloniaObject.IsSet`, so a bag replaces only what it names.
 
-### Phase 3 — Motion & interaction foundations
+### Phase 3 — Motion & interaction foundations — **done 2026-07-26**
 
-- **Springs:** physics-based (no fixed duration) — Avalonia transitions can't
-  express this. Build a spring animator on the render clock implementing
-  Compose `SpringSpec` semantics (stiffness / damping ratio, initial velocity,
-  mid-flight retargeting, velocity-preserving reversal, visibility threshold),
-  plus the `MotionScheme` token set (spatial vs. effects × default/fast/slow —
-  constants captured in docs/androidx-reference.md).
-- **Interaction primitives:** `StateLayer` (hover 0.08 / focus 0.10 /
-  pressed 0.10 / dragged 0.16), ripple (engine mechanics + timing constants
-  captured in docs/androidx-reference.md from `compose/material/material-ripple`;
-  the M3E wrapper node lives in `compose/material3/material3-ripple`, not yet in
-  the sparse checkout), focus indicator (Expressive inset ring drawn outside the
-  container fill), and a base control class wiring interaction state → animated
-  token values.
-- **Press shape morphing is NOT polygon morphing** (upstream finding): buttons
-  animate `CornerBasedShape` corner sizes with a spring via a small state
-  machine (`internal/AnimatedShape.kt`) + deferred CornerSize lerp. Port that —
-  it's ~200 lines and covers Button/IconButton/FAB/Chip/Menu press morphs.
+- ~~**Springs:** a spring animator on the render clock with Compose `SpringSpec`
+  semantics.~~ `SpringSimulation` and `SpringEstimation` are ports of
+  `animation-core`. The solver is analytic rather than integrated, so a dropped
+  frame changes nothing and 60Hz and 144Hz produce the same trajectory — both
+  are tested. Settling is decided by the estimated duration, not by watching for
+  a small value, so an overshoot passing through the target is not mistaken for
+  arrival.
+- ~~**Interaction primitives.**~~ `StateLayer` encodes what a pile of style
+  triggers cannot: interactions stack but only the topmost shows, and the fades
+  are asymmetric (focus in 45ms / out 15ms, drag in 45ms / out 150ms).
+  `RippleAnimation` includes the fast-tap rule — a press released before the
+  fade-in finishes jumps to full alpha rather than fading from where it was.
+- ~~**Press shape morphing.**~~ `AnimatedShape` ports
+  `internal/AnimatedShapeState.kt`, including the interruption cases: returning
+  to the shape being left flips progress and negates velocity; a new target
+  freezes what is on screen. The freeze avoids nesting a lerp inside the last
+  one, which upstream notes would overflow the stack under repeated toggling.
+- **Not built: a separate focus ring.** The roadmap called for the spec's
+  "inset ring drawn outside the container fill", but compose-material3
+  `1.5.0-alpha25` has no such thing for buttons — focus is the state layer at
+  `FocusStateLayerOpacity`, and the pinned referent wins over the spec page.
 - **Polygon morphing (graphics-shapes): already ported** at
-  `D:\Shirasagi\Avalonia\MaterialShapes` — full 35-shape catalog, Morph
-  pipeline, 73 mirrored tests. Needed only for LoadingIndicator, wavy progress,
-  and the public shape catalog. Before shipping on it: fix the
-  FeatureMapping.cs concave-corner sentinel bug (task chip filed) and the
-  per-frame geometry allocation in MorphShapeView.
-- **Exit criteria:** a demo page showing spring-driven state-layer + shape
-  transitions matching M3E timing on a prototype button.
+  `modules/MaterialShapes` — full 35-shape catalog, Morph pipeline, 80 tests,
+  and the `ShapeUtil.toPath` bridge. Needed only for LoadingIndicator, wavy
+  progress, and the public shape catalog; it joins the build in Wave 2.
+- **Exit criteria met** — the gallery's Buttons page shows spring-driven state
+  layer, ripple and shape morph, and `SquaringItOff_MorphsRatherThanSnapping`
+  drives the whole stack through the headless render clock.
+
+Findings worth carrying forward:
+
+- `TopLevel.RequestAnimationFrame` is single-shot, which is exactly right: the
+  loop exists only while something moves, so an idle control costs nothing.
+- The headless render timer reports a **real** stopwatch, so a test that forces
+  ticks in a tight loop replays the same instant. Frames have to be spaced in
+  real time, and each tick pumped through the dispatcher.
+- Material components are hosted, not inherited: `MaterialThemeWatcher` and
+  `MaterialInteractionHost` attach to any `Control`, so `MaterialButton` can
+  derive from Avalonia's `Button` and keep content, commands, click modes and
+  keyboard activation rather than reimplementing them.
 
 ### Phase 4 — First component wave (prove the stack end-to-end)
 

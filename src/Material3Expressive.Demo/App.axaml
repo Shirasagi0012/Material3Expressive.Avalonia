@@ -18,8 +18,10 @@
     
     <!-- Component tokens default to system-role references, so a theme only has to name its
          colour scheme; the button's container follows Primary, its label OnPrimary, and both
-         re-resolve on a light/dark switch with no wiring here. -->
+         re-resolve on a light/dark switch with no wiring here.
+         A literal seed rather than {DynamicResource SystemAccentColor}, so the gallery's swatches
+         can reseed the live scheme without a resource binding overwriting them again. -->
     <foundation:MaterialThemeScope.Theme>
-        <foundation:MaterialTheme ColorScheme="{mcu:TonalSpotScheme {DynamicResource SystemAccentColor}}" />
+        <foundation:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}" />
     </foundation:MaterialThemeScope.Theme>
 </Application>
