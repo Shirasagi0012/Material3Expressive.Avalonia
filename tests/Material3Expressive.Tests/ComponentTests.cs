@@ -292,6 +292,45 @@ public class ProgressTests
 
 }
 
+public class LoadingIndicatorTests
+{
+    [AvaloniaFact]
+    public void OnlyTheContainedVariant_DrawsAContainer()
+    {
+        Assert.False(LoadingIndicatorTokens.Standard.HasContainer);
+        Assert.True(LoadingIndicatorTokens.Contained.HasContainer);
+
+        Assert.Equal(0, LoadingIndicatorTokens.Standard.ContainerColor.LiteralColor!.Value.A);
+        Assert.Equal(SysColorToken.PrimaryContainer, LoadingIndicatorTokens.Contained.ContainerColor.RoleToken);
+    }
+
+    [AvaloniaFact]
+    public void TheContainedVariant_ReservesTheLargerBox()
+    {
+        var standard = new MaterialLoadingIndicator();
+        var contained = new MaterialLoadingIndicator { Variant = LoadingIndicatorVariant.Contained };
+        ThemeTestHelper.ShowWindow(new StackPanel { Children = { standard, contained } });
+
+        Assert.Equal(LoadingIndicatorTokens.Standard.ActiveSize, standard.Bounds.Width, 3);
+        Assert.Equal(LoadingIndicatorTokens.Contained.ContainerSize, contained.Bounds.Width, 3);
+    }
+
+    [AvaloniaFact]
+    public void ItMorphsRealPolygons()
+    {
+        // The one component that pulls in the graphics-shapes port. If the geometry bridge stops
+        // producing a figure, this is where it shows.
+        var morph = new MaterialShapes.Morph(
+            MaterialShapes.MaterialShapeCatalog.Pentagon,
+            MaterialShapes.MaterialShapeCatalog.Sunny);
+
+        var geometry = MaterialShapes.AvaloniaExtensions.ToGeometry(morph, 0.5);
+
+        Assert.NotNull(geometry);
+        Assert.False(geometry.Bounds.Width == 0 && geometry.Bounds.Height == 0);
+    }
+}
+
 public class SliderTests
 {
     [AvaloniaFact]

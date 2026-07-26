@@ -40,8 +40,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\MaterialColorUtilities.Avalonia.csproj"/>
-        <!-- MaterialShapes joins in phase 3, when LoadingIndicator and wavy progress need polygon
-             morphing. Button/FAB/Chip press morphs are corner-radius lerps and do not. -->
+        <!-- LoadingIndicator is the one component that genuinely morphs polygons. Button, FAB and
+             chip press morphs are corner-radius lerps, and the wavy progress indicator's wave is a
+             sampled sine — none of them need this. -->
+        <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj"/>
         <ProjectReference Include="..\Material3Expressive.TokenGenerator\Material3Expressive.TokenGenerator.csproj"
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>

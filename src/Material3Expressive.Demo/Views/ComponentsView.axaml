@@ -175,11 +175,16 @@
                     <m3:MaterialLinearProgressIndicator Value="0.7" IsWavy="True" />
                     <m3:MaterialLinearProgressIndicator IsIndeterminate="True" />
                     <m3:MaterialLinearProgressIndicator IsIndeterminate="True" IsWavy="True" />
-                    <StackPanel Orientation="Horizontal" Spacing="24">
+                    <StackPanel Orientation="Horizontal" Spacing="24" VerticalAlignment="Center">
                         <m3:MaterialCircularProgressIndicator Value="0.35" />
                         <m3:MaterialCircularProgressIndicator Value="0.75" />
                         <m3:MaterialCircularProgressIndicator IsIndeterminate="True" />
+                        <m3:MaterialLoadingIndicator />
+                        <m3:MaterialLoadingIndicator Variant="Contained" />
                     </StackPanel>
+                    <TextBlock Classes="body-small"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The last two are the loading indicator — the one component that genuinely morphs polygons, cycling the Material shape catalog while it turns." />
                 </StackPanel>
             </StackPanel>
 

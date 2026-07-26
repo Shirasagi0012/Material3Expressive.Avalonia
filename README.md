@@ -17,7 +17,7 @@ it came from.
 | **Shape** | Corner sizes that are dp *or percent*, so `CornerFull` is genuinely half the height at any size. |
 | **Motion** | A spring animator ported from `animation-core` — analytic, retargetable, velocity-preserving. |
 | **Interaction** | State layers with Material's asymmetric fades, ripples, and the corner-morph press feedback. |
-| **Components** | Button, toggle button, icon button, toggle icon button, FAB and extended FAB, card, checkbox, radio button, switch, slider, linear and circular progress (including the wavy form). |
+| **Components** | Button, toggle button, icon button, toggle icon button, FAB and extended FAB, card, checkbox, radio button, switch, slider, linear and circular progress (including the wavy form), loading indicator. |
 
 ## Getting started
 
@@ -89,7 +89,7 @@ src/Material3Expressive              the library
 src/Material3Expressive.TokenGenerator   the token-table source generator
 src/Material3Expressive.Demo         the gallery
 modules/MaterialColorUtilities       dynamic colour (independently useful)
-modules/MaterialShapes               polygon shapes and morphing (joins in wave 2)
+modules/MaterialShapes               polygon shapes and morphing (the loading indicator)
 ```
 
 ## Licence

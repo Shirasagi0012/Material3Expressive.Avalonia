@@ -255,7 +255,7 @@ Grouped by shared primitives, roughly in order:
 
 | Wave | Components |
 |---|---|
-| 2 | ~~Checkbox, Switch, RadioButton, Slider (new track shape), ProgressIndicator (incl. wavy)~~ — **done 2026-07-26**. LoadingIndicator (shape morph) remains: it is the first component that needs `modules/MaterialShapes`, so it also brings that submodule into the build. |
+| 2 | ~~Checkbox, Switch, RadioButton, Slider, ProgressIndicator (incl. wavy), LoadingIndicator~~ — **done 2026-07-26**. LoadingIndicator brought `modules/MaterialShapes` into the build; it is the only component that genuinely morphs polygons. |
 | 3 | TextField (filled/outlined — largest single component), Chips, ButtonGroup (standard + connected), SplitButton, FAB menu |
 | 4 | NavigationBar (flexible), NavigationRail, Drawer, App bars / Toolbars (incl. floating), Tabs |
 | 5 | Dialog, Bottom sheet, Menu, Snackbar, Tooltip, Search, Badge, Date/Time pickers, Carousel |
@@ -313,9 +313,11 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
    Done. The wavy progress indicator turned out **not** to need
    `modules/MaterialShapes` — its wave is a sampled sine along a line or a ring,
    not a polygon morph — so LoadingIndicator is now the only thing that does.
-9. LoadingIndicator, which brings `modules/MaterialShapes` into the build.
+9. ~~LoadingIndicator, which brings `modules/MaterialShapes` into the build.~~
+   Done — wave 2 complete.
 10. Phase 5, waves 3–5: TextField and Chips (wave 3), navigation (wave 4),
-    dialogs and overlays (wave 5). None started.
+    dialogs and overlays (wave 5). **None started.** TextField is the largest
+    single component in the library and should be costed on its own.
 
 Findings worth carrying forward:
 
