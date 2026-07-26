@@ -13,7 +13,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\MaterialColorUtilities.Avalonia.csproj"/>
-        <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj"/>
+        <!-- MaterialShapes joins in phase 3, when LoadingIndicator and wavy progress need polygon
+             morphing. Button/FAB/Chip press morphs are corner-radius lerps and do not. -->
     </ItemGroup>
 
     <ItemGroup>

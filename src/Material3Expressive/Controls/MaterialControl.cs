@@ -26,8 +26,11 @@ public abstract class MaterialControl : TemplatedControl
     // still gets its initial OnThemeChanged call.
     private ResolvedTheme? _theme;
 
-    /// <summary>The theme in scope at this control.</summary>
-    protected ResolvedTheme Theme => _theme ?? ResolvedTheme.Default;
+    /// <summary>
+    /// The theme in scope at this control. Named for its type rather than "Theme", which on
+    /// <see cref="Avalonia.StyledElement" /> already means the control's <c>ControlTheme</c>.
+    /// </summary>
+    protected ResolvedTheme ResolvedTheme => _theme ?? Foundation.ResolvedTheme.Default;
 
     /// <summary>Whether the control's theme variant resolves to dark.</summary>
     protected bool IsDarkVariant => _isDark;

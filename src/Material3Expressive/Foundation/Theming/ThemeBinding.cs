@@ -48,7 +48,7 @@ internal static class ThemeBinding
         return new MultiBinding
         {
             Mode = BindingMode.OneWay,
-            FallbackValue = fallback,
+            FallbackValue = (object?)fallback ?? AvaloniaProperty.UnsetValue,
             Bindings =
             {
                 new CompiledBinding(SelfPath(MaterialThemeScope.ResolvedThemeProperty)) { Mode = BindingMode.OneWay },
