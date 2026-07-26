@@ -151,6 +151,30 @@
                 </WrapPanel>
             </StackPanel>
 
+            <!-- Chips -->
+            <StackPanel Spacing="12">
+                <TextBlock Classes="headline-medium" Text="Chips" />
+                <TextBlock Classes="body-medium"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Four kinds that differ in what they mean rather than how they behave. Selecting one fills it, drops its outline and rounds it fully — the same spring morph the buttons use." />
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                    <m3:MaterialChip Variant="Assist" Content="Assist">
+                        <m3:MaterialChip.LeadingIcon>
+                            <PathIcon Data="{StaticResource StarIcon}" />
+                        </m3:MaterialChip.LeadingIcon>
+                    </m3:MaterialChip>
+                    <m3:MaterialChip Variant="Filter" Content="Filter" />
+                    <m3:MaterialChip Variant="Filter" Content="Selected" IsChecked="True" />
+                    <m3:MaterialChip Variant="Input" Content="Input">
+                        <m3:MaterialChip.TrailingIcon>
+                            <PathIcon Data="{StaticResource CloseIcon}" />
+                        </m3:MaterialChip.TrailingIcon>
+                    </m3:MaterialChip>
+                    <m3:MaterialChip Variant="Suggestion" Content="Suggestion" />
+                    <m3:MaterialChip Variant="Assist" Content="Disabled" IsEnabled="False" />
+                </WrapPanel>
+            </StackPanel>
+
             <!-- Slider -->
             <StackPanel Spacing="12">
                 <TextBlock Classes="headline-medium" Text="Slider" />

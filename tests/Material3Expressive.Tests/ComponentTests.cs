@@ -292,6 +292,56 @@ public class ProgressTests
 
 }
 
+public class ChipTests
+{
+    [AvaloniaFact]
+    public void OnlyFilterAndInputChips_CarryASelectedState()
+    {
+        Assert.True(ChipTokens.Filter.IsSelectable);
+        Assert.True(ChipTokens.Input.IsSelectable);
+        Assert.False(ChipTokens.Assist.IsSelectable);
+        Assert.False(ChipTokens.Suggestion.IsSelectable);
+    }
+
+    [AvaloniaFact]
+    public void CheckingANonSelectableChip_ChangesNothing()
+    {
+        // An assist chip derives from ToggleButton for the sake of one implementation, but it is
+        // not a toggle and must not start looking like one.
+        var chip = new MaterialChip { Variant = ChipVariant.Assist, Content = "Assist" };
+        ThemeTestHelper.ShowWindow(chip);
+
+        var before = ThemeTestHelper.ColorOf(chip.Foreground);
+        chip.IsChecked = true;
+
+        Assert.Equal(before, ThemeTestHelper.ColorOf(chip.Foreground));
+    }
+
+    [AvaloniaFact]
+    public void SelectingAFilterChip_FillsItAndRoundsIt()
+    {
+        var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
+        var chip = new MaterialChip { Variant = ChipVariant.Filter, Content = "Filter" };
+        var host = new Border { Child = chip };
+        MaterialThemeScope.SetTheme(host, theme);
+        ThemeTestHelper.ShowWindow(host);
+
+        Assert.Equal(
+            ThemeTestHelper.Expected(theme, SysColorToken.OnSurfaceVariant),
+            ThemeTestHelper.ColorOf(chip.Foreground));
+
+        chip.IsChecked = true;
+
+        Assert.Equal(
+            ThemeTestHelper.Expected(theme, SysColorToken.OnSecondaryContainer),
+            ThemeTestHelper.ColorOf(chip.Foreground));
+
+        // Unselected it is a small-cornered outline; selected it is a filled pill.
+        Assert.Equal(ShapeRole.CornerSmall, ChipTokens.Filter.ContainerShape);
+        Assert.Equal(ShapeRole.CornerFull, ChipTokens.Filter.SelectedContainerShape);
+    }
+}
+
 public class LoadingIndicatorTests
 {
     [AvaloniaFact]

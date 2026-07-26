@@ -12,4 +12,5 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Fab.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Selection.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Progress.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Components/Chip.axaml" />
 </Styles>
