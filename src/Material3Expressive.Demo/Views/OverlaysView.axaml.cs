@@ -29,4 +29,9 @@ public partial class OverlaysView : UserControl
     {
         Snackbar.IsOpen = true;
     }
+
+    private void OnSearch(object? sender, RoutedEventArgs e)
+    {
+        Search.IsOpen = !Search.IsOpen;
+    }
 }

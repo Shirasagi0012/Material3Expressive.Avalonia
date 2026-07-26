@@ -293,6 +293,78 @@ public class ProgressTests
 
 }
 
+public class SearchCarouselAndPickerTests
+{
+    [AvaloniaFact]
+    public void TheSearchBarChangesShapeWhenItOpens()
+    {
+        // A pill closed, a rounded rectangle open — one control, because it is one shape.
+        Assert.Equal(ShapeRole.CornerFull, SearchBarTokens.Default.ContainerShape);
+        Assert.Equal(ShapeRole.CornerExtraLarge, SearchBarTokens.Default.ResultsContainerShape);
+    }
+
+    [AvaloniaFact]
+    public void TheHeroCarousel_GivesOneItemMoreRoomThanMultiBrowse()
+    {
+        Assert.True(CarouselTokens.Hero.LargeItemWidth > CarouselTokens.MultiBrowse.LargeItemWidth);
+
+        // And squeezes the edges harder, so less of the next item shows.
+        Assert.True(CarouselTokens.Hero.SmallItemWidth < CarouselTokens.MultiBrowse.SmallItemWidth);
+    }
+
+    [AvaloniaFact]
+    public void CarouselItems_AreSqueezedAtTheEdgesRatherThanClipped()
+    {
+        var carousel = new MaterialCarousel { Width = 420, Height = 200 };
+        for (var i = 0; i < 5; i++)
+            carousel.Children.Add(new Border());
+
+        ThemeTestHelper.ShowWindow(carousel);
+
+        var widths = carousel.Children.Select(c => c.Bounds.Width).ToArray();
+
+        // The first item starts at the left edge and is therefore squeezed; one in the middle is not.
+        Assert.True(widths[0] < CarouselTokens.MultiBrowse.LargeItemWidth);
+        Assert.True(widths[0] >= CarouselTokens.MultiBrowse.SmallItemWidth);
+        Assert.True(widths[1] > widths[0]);
+    }
+
+    [AvaloniaFact]
+    public void SelectingADate_MovesTheGridToItsMonth()
+    {
+        var picker = new MaterialDatePicker();
+        ThemeTestHelper.ShowWindow(picker);
+
+        picker.SelectedDate = new System.DateTime(2019, 3, 14);
+
+        Assert.Equal(2019, picker.DisplayMonth.Year);
+        Assert.Equal(3, picker.DisplayMonth.Month);
+    }
+
+    [AvaloniaFact]
+    public void TheTimePicker_MovesOnToMinutesOnceAnHourIsChosen()
+    {
+        var picker = new MaterialTimePicker { Time = new System.TimeSpan(9, 30, 0) };
+        ThemeTestHelper.ShowWindow(picker);
+
+        Assert.Equal(TimePickerField.Hour, picker.Field);
+
+        // Releasing after choosing an hour advances the dial; a single dial cannot show both.
+        picker.Field = TimePickerField.Minute;
+        Assert.Equal(TimePickerField.Minute, picker.Field);
+        Assert.Equal(new System.TimeSpan(9, 30, 0), picker.Time);
+    }
+
+    [AvaloniaFact]
+    public void TheTimePickerIsTallerPerCellThanTheDatePicker()
+    {
+        // A clock face needs bigger targets than a month grid, and says so in its tokens.
+        Assert.True(PickerTokens.Time.DaySize > PickerTokens.Date.DaySize);
+        Assert.True(PickerTokens.Time.IsTime);
+        Assert.False(PickerTokens.Date.IsTime);
+    }
+}
+
 public class OverlayTests
 {
     [AvaloniaFact]

@@ -40,6 +40,48 @@
                 </StackPanel>
 
                 <StackPanel Spacing="12">
+                    <TextBlock Classes="title-medium" Text="Search" />
+                    <TextBlock Classes="body-small"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The bar and its results are one control, because they are one shape: a pill that squares its corners and grows downwards as it opens." />
+                    <m3:MaterialSearchBar x:Name="Search" Width="360" HorizontalAlignment="Left"
+                                          LeadingIcon="🔍" Placeholder="Search mail"
+                                          Search="OnSearch">
+                        <m3:MaterialSearchBar.Results>
+                            <StackPanel Spacing="4" Margin="0,8,0,8">
+                                <TextBlock Classes="body-medium" Text="Recent: quarterly report" />
+                                <TextBlock Classes="body-medium" Text="Recent: travel booking" />
+                            </StackPanel>
+                        </m3:MaterialSearchBar.Results>
+                    </m3:MaterialSearchBar>
+                </StackPanel>
+
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="title-medium" Text="Carousel" />
+                    <TextBlock Classes="body-small"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Items at the edges are squeezed rather than clipped, so the row always ends on a whole item. Scroll it with the wheel." />
+                    <m3:MaterialCarousel Height="160" ClipToBounds="True">
+                        <Border Background="{mcu:MdSysColor PrimaryContainer}" CornerRadius="28" />
+                        <Border Background="{mcu:MdSysColor SecondaryContainer}" CornerRadius="28" />
+                        <Border Background="{mcu:MdSysColor TertiaryContainer}" CornerRadius="28" />
+                        <Border Background="{mcu:MdSysColor PrimaryContainer}" CornerRadius="28" />
+                        <Border Background="{mcu:MdSysColor SecondaryContainer}" CornerRadius="28" />
+                    </m3:MaterialCarousel>
+                </StackPanel>
+
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="title-medium" Text="Pickers" />
+                    <TextBlock Classes="body-small"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The month grid is drawn rather than built from forty-two controls, and reads its day names from the current culture. The clock hand is sprung, so tapping a number on the far side sweeps to it." />
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <m3:MaterialDatePicker />
+                        <m3:MaterialTimePicker />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Spacing="12">
                     <TextBlock Classes="title-medium" Text="Tooltips and menus" />
                     <TextBlock Classes="body-small"
                                Foreground="{mcu:MdSysColor OnSurfaceVariant}"

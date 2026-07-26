@@ -1,0 +1,61 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="24" Width="360">
+            <m3:MaterialSearchBar LeadingIcon="&#x1F50D;" Placeholder="Search mail" />
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialSearchBar}" TargetType="m3:MaterialSearchBar">
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel>
+                        <Grid ColumnDefinitions="Auto,*,Auto"
+                              Height="{TemplateBinding MinHeight}"
+                              Margin="{TemplateBinding Padding}">
+                            <Viewbox Grid.Column="0"
+                                     Width="{TemplateBinding IconSize}"
+                                     Height="{TemplateBinding IconSize}"
+                                     VerticalAlignment="Center"
+                                     Stretch="Uniform"
+                                     IsVisible="{TemplateBinding LeadingIcon, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <ContentPresenter Content="{TemplateBinding LeadingIcon}"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}" />
+                            </Viewbox>
+                            <TextBox x:Name="PART_TextBox"
+                                     Grid.Column="1"
+                                     Margin="16,0"
+                                     VerticalAlignment="Center"
+                                     VerticalContentAlignment="Center"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="0"
+                                     Text="{TemplateBinding Text, Mode=TwoWay}"
+                                     PlaceholderText="{TemplateBinding Placeholder}"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     FontFamily="{TemplateBinding FontFamily}" />
+                            <Viewbox Grid.Column="2"
+                                     Width="{TemplateBinding IconSize}"
+                                     Height="{TemplateBinding IconSize}"
+                                     VerticalAlignment="Center"
+                                     Stretch="Uniform"
+                                     IsVisible="{TemplateBinding TrailingIcon, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <ContentPresenter Content="{TemplateBinding TrailingIcon}"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}" />
+                            </Viewbox>
+                        </Grid>
+
+                        <ContentPresenter x:Name="PART_Results"
+                                          Margin="{TemplateBinding Padding}"
+                                          Content="{TemplateBinding Results}"
+                                          IsVisible="{TemplateBinding IsOpen}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

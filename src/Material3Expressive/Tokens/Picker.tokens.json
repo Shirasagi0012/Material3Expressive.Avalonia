@@ -1,0 +1,73 @@
+{
+  "kind": "component",
+  "name": "PickerTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "PickerColors",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/DatePickerModalTokens.kt and TimePickerTokens.kt",
+  "summary": "The date and time pickers, which share a surface and differ in what they lay out on it.",
+
+  "variantEnum": "PickerVariant",
+  "variantEnumSummary": "Date or time.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The picker surface." },
+    "HeadlineColor": { "type": "color", "summary": "The current selection, shown large at the top." },
+    "SupportingTextColor": { "type": "color", "summary": "The prompt above the headline." },
+    "WeekdayColor": { "type": "color", "summary": "The day-of-week letters." },
+    "DayColor": { "type": "color", "summary": "An unselected day or number." },
+    "SelectedDayColor": { "type": "color", "summary": "The selected day's label." },
+    "SelectedDayContainerColor": { "type": "color", "summary": "The circle behind the selected day." },
+    "TodayOutlineColor": { "type": "color", "summary": "The ring around today, when it is not the selection." },
+    "DividerColor": { "type": "color", "summary": "The rule under the headline." },
+
+    "ContainerElevation": { "type": "elevation", "summary": "The picker shadow." },
+    "ContainerShape": { "type": "shape", "summary": "The picker corners." },
+    "DaySize": { "type": "dimension", "summary": "One day cell." },
+    "DayShape": { "type": "shape", "summary": "The selection circle." },
+    "TodayOutlineWidth": { "type": "dimension", "summary": "The ring around today." },
+    "ContainerWidth": { "type": "dimension", "summary": "The picker width." },
+    "HeadlineTextStyle": { "type": "typography", "summary": "The current selection." },
+    "SupportingTextStyle": { "type": "typography", "summary": "The prompt." },
+    "DayTextStyle": { "type": "typography", "summary": "A day or number." },
+    "IsTime": { "type": "bool", "summary": "Whether this lays out a clock rather than a month." }
+  },
+
+  "sets": [
+    {
+      "name": "Date",
+      "values": {
+        "ContainerColor": "SurfaceContainerHigh",
+        "HeadlineColor": "OnSurface",
+        "SupportingTextColor": "OnSurfaceVariant",
+        "WeekdayColor": "OnSurface",
+        "DayColor": "OnSurface",
+        "SelectedDayColor": "OnPrimary",
+        "SelectedDayContainerColor": "Primary",
+        "TodayOutlineColor": "Primary",
+        "DividerColor": "OutlineVariant",
+
+        "ContainerElevation": "@ElevationTokens.Level3",
+        "ContainerShape": "CornerExtraLarge",
+        "DaySize": 40,
+        "DayShape": "CornerFull",
+        "TodayOutlineWidth": 1,
+        "ContainerWidth": 360,
+        "HeadlineTextStyle": "HeadlineLarge",
+        "SupportingTextStyle": "LabelLarge",
+        "DayTextStyle": "BodyLarge",
+        "IsTime": false
+      }
+    },
+    {
+      "name": "Time",
+      "extends": "Date",
+      "values": {
+        "DaySize": 48,
+        "ContainerWidth": 328,
+        "HeadlineTextStyle": "DisplayLarge",
+        "IsTime": true
+      }
+    }
+  ]
+}

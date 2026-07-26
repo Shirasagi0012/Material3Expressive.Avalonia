@@ -1,0 +1,54 @@
+{
+  "kind": "component",
+  "name": "SearchBarTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "SearchBarColors",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/SearchBarTokens.kt and SearchViewTokens.kt",
+  "summary": "A search bar, and the results surface it opens into.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The bar surface." },
+    "InputTextColor": { "type": "color", "summary": "What the user is typing." },
+    "SupportingTextColor": { "type": "color", "summary": "The placeholder." },
+    "LeadingIconColor": { "type": "color", "summary": "The search or back icon." },
+    "TrailingIconColor": { "type": "color", "summary": "The clear or avatar slot." },
+    "ResultsContainerColor": { "type": "color", "summary": "The results surface." },
+    "DividerColor": { "type": "color", "summary": "The rule between the bar and its results." },
+
+    "ContainerElevation": { "type": "elevation", "summary": "The bar shadow." },
+    "ContainerHeight": { "type": "dimension", "summary": "The bar height." },
+    "ContainerShape": { "type": "shape", "summary": "The bar corners — a pill until it opens." },
+    "ResultsContainerShape": { "type": "shape", "summary": "The docked results surface." },
+    "HorizontalSpace": { "type": "dimension", "summary": "Padding at each end." },
+    "IconSize": { "type": "dimension", "summary": "The leading and trailing icons." },
+    "IconLabelSpace": { "type": "dimension", "summary": "The gap between an icon and the input." },
+    "DividerHeight": { "type": "dimension", "summary": "The rule." },
+    "InputTextStyle": { "type": "typography", "summary": "The input and the placeholder." }
+  },
+
+  "sets": [
+    {
+      "name": "Default",
+      "values": {
+        "ContainerColor": "SurfaceContainerHigh",
+        "InputTextColor": "OnSurface",
+        "SupportingTextColor": "OnSurfaceVariant",
+        "LeadingIconColor": "OnSurface",
+        "TrailingIconColor": "OnSurfaceVariant",
+        "ResultsContainerColor": "SurfaceContainerHigh",
+        "DividerColor": "Outline",
+
+        "ContainerElevation": "@ElevationTokens.Level3",
+        "ContainerHeight": 56,
+        "ContainerShape": "CornerFull",
+        "ResultsContainerShape": "CornerExtraLarge",
+        "HorizontalSpace": 16,
+        "IconSize": 24,
+        "IconLabelSpace": 16,
+        "DividerHeight": 1,
+        "InputTextStyle": "BodyLarge"
+      }
+    }
+  ]
+}

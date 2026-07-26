@@ -1,0 +1,26 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="24">
+            <StackPanel Orientation="Horizontal" Spacing="24">
+                <m3:MaterialDatePicker />
+                <m3:MaterialTimePicker />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <!-- Both pickers draw themselves entirely, so their themes carry only the sizing rules
+             that stop them stretching to fill whatever they are dropped into. -->
+        <ControlTheme x:Key="{x:Type m3:MaterialDatePicker}" TargetType="m3:MaterialDatePicker">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialTimePicker}" TargetType="m3:MaterialTimePicker">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>
