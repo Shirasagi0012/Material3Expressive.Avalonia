@@ -28,6 +28,14 @@
     <File Path="ROADMAP.md" />
     <File Path="VISUAL_TEST_PLAN.md" />
   </Folder>
+  <Folder Name="/Solution Items/docs/">
+    <File Path="docs/androidx-reference.md" />
+    <File Path="docs/architecture.md" />
+    <File Path="docs/parity.md" />
+    <File Path="docs/token-tables.md" />
+    <File Path="docs/visual-parity-test-plan.md" />
+    <File Path="docs/visual-testing.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />
     <Project Path="src/Material3Expressive.TokenGenerator/Material3Expressive.TokenGenerator.csproj" />
