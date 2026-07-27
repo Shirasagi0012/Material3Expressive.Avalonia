@@ -106,7 +106,7 @@ regression/Compose comparison workflow is in
 ```
 src/Material3Expressive              the library
 src/Material3Expressive.TokenGenerator   the token-table source generator
-src/Material3Expressive.Demo         the gallery
+src/Material3Expressive.Catalog         the gallery
 modules/MaterialColorUtilities       dynamic colour (independently useful)
 modules/MaterialShapes               polygon shapes and morphing (the loading indicator)
 modules/MaterialSymbols              variable Material Symbols and bundled font families

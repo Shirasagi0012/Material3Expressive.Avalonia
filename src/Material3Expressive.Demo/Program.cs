@@ -1,6 +1,6 @@
 ﻿using Avalonia;
 using System;
-
+using Avalonia.Media;
 using Material3Expressive;
 using MaterialTypography.Roboto;
 
@@ -19,8 +19,12 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
     {
         var builder = AppBuilder.Configure<App>()
+            .With(new FontManagerOptions
+            {
+                DefaultFamilyName = RobotoFontCollection.FamilyUri
+            })
             .UsePlatformDetect()
-            .UseRobotoFont()
+            .WithRobotoFont()
             .UseMaterial3Expressive();
 
 #if DEBUG

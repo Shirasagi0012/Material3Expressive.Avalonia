@@ -1,0 +1,194 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             xmlns:ms="using:MaterialSymbols.Avalonia"
+             x:Class="Material3Expressive.Catalog.Views.Pages.NavigationPage">
+
+    <ScrollViewer Padding="40,28,40,48">
+        <StackPanel Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
+
+            <m3:MaterialTabs x:Name="Tabs" Variant="Secondary" SelectedIndex="0"
+                             MaxWidth="720" HorizontalAlignment="Center">
+                <m3:MaterialTab Content="App bars" />
+                <m3:MaterialTab Content="Tabs" />
+                <m3:MaterialTab Content="Bar &amp; rail" />
+                <m3:MaterialTab Content="Drawer" />
+            </m3:MaterialTabs>
+
+            <StackPanel Spacing="8">
+                <TextBlock Classes="display-small" Text="Navigation" />
+                <TextBlock Classes="body-large" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Navigation components help users move between destinations. The bar and the rail are one control turned ninety degrees — same items, same indicator, same selection rule." />
+            </StackPanel>
+
+            <!-- App bars -->
+            <StackPanel x:Name="PanelAppBars" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="App bars" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Small keeps the title beside the actions; medium and large give a long title its own line." />
+                    <Border Classes="demo-canvas">
+                        <StackPanel Spacing="12" MaxWidth="520">
+                            <Border ClipToBounds="True" CornerRadius="12">
+                                <m3:MaterialAppBar Title="Inbox">
+                                    <m3:MaterialAppBar.NavigationIcon>
+                                        <ms:MaterialSymbol Symbol="Menu" />
+                                    </m3:MaterialAppBar.NavigationIcon>
+                                    <m3:MaterialAppBar.Actions>
+                                        <ms:MaterialSymbol Symbol="MoreVert" />
+                                    </m3:MaterialAppBar.Actions>
+                                </m3:MaterialAppBar>
+                            </Border>
+                            <Border ClipToBounds="True" CornerRadius="12">
+                                <m3:MaterialAppBar Size="Medium" Title="Settings">
+                                    <m3:MaterialAppBar.NavigationIcon>
+                                        <ms:MaterialSymbol Symbol="ArrowBack" />
+                                    </m3:MaterialAppBar.NavigationIcon>
+                                </m3:MaterialAppBar>
+                            </Border>
+                            <Border ClipToBounds="True" CornerRadius="12">
+                                <m3:MaterialAppBar Size="Large"
+                                                   Title="Photographs"
+                                                   Subtitle="384 items"
+                                                   IsScrolled="True">
+                                    <m3:MaterialAppBar.NavigationIcon>
+                                        <ms:MaterialSymbol Symbol="ArrowBack" />
+                                    </m3:MaterialAppBar.NavigationIcon>
+                                </m3:MaterialAppBar>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Tabs -->
+            <StackPanel x:Name="PanelTabs" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Tabs" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The indicator is drawn by the row, not the tab, because it travels. Centre and width are separate springs, so it stretches as it moves rather than resizing on arrival." />
+                    <Border Classes="demo-canvas">
+                        <StackPanel Spacing="20" MaxWidth="520">
+                            <m3:MaterialTabs SelectedIndex="0">
+                                <m3:MaterialTab Content="Overview" />
+                                <m3:MaterialTab Content="Specifications" />
+                                <m3:MaterialTab Content="Reviews" />
+                            </m3:MaterialTabs>
+                            <m3:MaterialTabs Variant="Secondary" SelectedIndex="1">
+                                <m3:MaterialTab Content="All" />
+                                <m3:MaterialTab Content="Unread" />
+                                <m3:MaterialTab Content="Flagged" />
+                            </m3:MaterialTabs>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Bar & rail -->
+            <StackPanel x:Name="PanelBarRail" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Bar and rail" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The selection is a pill that grows behind the icon, not a colour change alone." />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="32" LineSpacing="32" VerticalAlignment="Center">
+                            <Border ClipToBounds="True" CornerRadius="12" Width="380" Height="80">
+                                <m3:MaterialNavigationBar SelectedIndex="0">
+                                    <m3:MaterialNavigationItem Content="Home">
+                                        <m3:MaterialNavigationItem.Icon>
+                                            <ms:MaterialSymbol Symbol="Home" />
+                                        </m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Saved">
+                                        <m3:MaterialNavigationItem.Icon>
+                                            <ms:MaterialSymbol Symbol="Star" />
+                                        </m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Inbox">
+                                        <m3:MaterialNavigationItem.Icon>
+                                            <ms:MaterialSymbol Symbol="Mail" />
+                                        </m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="More">
+                                        <m3:MaterialNavigationItem.Icon>
+                                            <ms:MaterialSymbol Symbol="Menu" />
+                                        </m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                </m3:MaterialNavigationBar>
+                            </Border>
+                            <Border ClipToBounds="True" CornerRadius="12" Width="96" Height="280">
+                                <m3:MaterialNavigationBar Variant="Rail" SelectedIndex="1">
+                                    <m3:MaterialNavigationItem Content="Home">
+                                        <m3:MaterialNavigationItem.Icon>
+                                            <ms:MaterialSymbol Symbol="Home" />
+                                        </m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Saved">
+                                        <m3:MaterialNavigationItem.Icon>
+                                            <ms:MaterialSymbol Symbol="Star" />
+                                        </m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Inbox">
+                                        <m3:MaterialNavigationItem.Icon>
+                                            <ms:MaterialSymbol Symbol="Mail" />
+                                        </m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                </m3:MaterialNavigationBar>
+                            </Border>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Drawer -->
+            <StackPanel x:Name="PanelDrawer" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Navigation drawer" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="One spring slides the panel and fades the scrim, so dismissing it mid-open reverses from where it is. Tap the scrim to close." />
+                    <Border Classes="demo-canvas">
+                        <StackPanel Spacing="16" HorizontalAlignment="Left">
+                            <m3:MaterialButton Variant="Tonal" Content="Open drawer" Click="OnOpenDrawer" />
+                            <Border ClipToBounds="True" CornerRadius="12" Height="320" Width="460"
+                                    Background="{mcu:MdSysColor SurfaceContainerLowest}">
+                                <Panel>
+                                    <TextBlock Margin="24" VerticalAlignment="Top"
+                                               Classes="body-medium"
+                                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                               Text="Content behind the drawer." />
+                                    <m3:MaterialNavigationDrawer x:Name="Drawer">
+                                        <StackPanel Margin="12,24" Spacing="4">
+                                            <TextBlock Margin="16,0,0,8" Classes="title-small" Text="Mail" />
+                                            <m3:MaterialNavigationItem Content="Inbox" IsChecked="True">
+                                                <m3:MaterialNavigationItem.Icon>
+                                                    <ms:MaterialSymbol Symbol="Mail" />
+                                                </m3:MaterialNavigationItem.Icon>
+                                            </m3:MaterialNavigationItem>
+                                            <m3:MaterialNavigationItem Content="Starred">
+                                                <m3:MaterialNavigationItem.Icon>
+                                                    <ms:MaterialSymbol Symbol="Star" />
+                                                </m3:MaterialNavigationItem.Icon>
+                                            </m3:MaterialNavigationItem>
+                                            <m3:MaterialNavigationItem Content="Archive">
+                                                <m3:MaterialNavigationItem.Icon>
+                                                    <ms:MaterialSymbol Symbol="Archive" />
+                                                </m3:MaterialNavigationItem.Icon>
+                                            </m3:MaterialNavigationItem>
+                                        </StackPanel>
+                                    </m3:MaterialNavigationDrawer>
+                                </Panel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

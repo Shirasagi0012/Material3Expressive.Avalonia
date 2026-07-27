@@ -1,0 +1,233 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             xmlns:ms="using:MaterialSymbols.Avalonia"
+             x:Class="Material3Expressive.Catalog.Views.Pages.ButtonsPage">
+
+    <ScrollViewer Padding="40,28,40,48">
+        <StackPanel Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
+
+            <m3:MaterialTabs x:Name="Tabs" Variant="Secondary" SelectedIndex="0"
+                             MaxWidth="720" HorizontalAlignment="Center">
+                <m3:MaterialTab Content="Common" />
+                <m3:MaterialTab Content="Icon" />
+                <m3:MaterialTab Content="Toggle" />
+                <m3:MaterialTab Content="Groups" />
+            </m3:MaterialTabs>
+
+            <StackPanel Spacing="8">
+                <TextBlock Classes="display-small" Text="Button" />
+                <TextBlock Classes="body-large" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Buttons communicate actions that users can take. Press and hold one to watch the container morph — the corners are spring-driven, so releasing mid-press reverses without restarting." />
+            </StackPanel>
+
+            <!-- Common -->
+            <StackPanel x:Name="PanelCommon" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Variants" />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialButton Variant="Filled">Filled</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Tonal">Tonal</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Elevated">Elevated</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Outlined">Outlined</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Text">Text</m3:MaterialButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Disabled" />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialButton Variant="Filled" IsEnabled="False">Filled</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Tonal" IsEnabled="False">Tonal</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Elevated" IsEnabled="False">Elevated</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Outlined" IsEnabled="False">Outlined</m3:MaterialButton>
+                            <m3:MaterialButton Variant="Text" IsEnabled="False">Text</m3:MaterialButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Sizes" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Height, padding, icon size and type scale all move together — one token set per size." />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialButton Size="ExtraSmall">Extra small</m3:MaterialButton>
+                            <m3:MaterialButton Size="Small">Small</m3:MaterialButton>
+                            <m3:MaterialButton Size="Medium">Medium</m3:MaterialButton>
+                            <m3:MaterialButton Size="Large">Large</m3:MaterialButton>
+                            <m3:MaterialButton Size="ExtraLarge">Extra large</m3:MaterialButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Round and square" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="CornerFull is a percentage, not a large fixed radius, so a pill stays a pill at every size." />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialButton Size="Medium">Round</m3:MaterialButton>
+                            <m3:MaterialButton Size="Medium" IsSquare="True">Square</m3:MaterialButton>
+                            <m3:MaterialButton Size="ExtraLarge">Round</m3:MaterialButton>
+                            <m3:MaterialButton Size="ExtraLarge" IsSquare="True">Square</m3:MaterialButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Icon -->
+            <StackPanel x:Name="PanelIcon" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Variants" />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialIconButton Variant="Standard">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Filled">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Tonal">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Outlined">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Filled" IsEnabled="False">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialIconButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Sizes, and square containers" />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialIconButton Variant="Filled" Size="ExtraSmall">
+                                <ms:MaterialSymbol Symbol="Edit" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Filled" Size="Small">
+                                <ms:MaterialSymbol Symbol="Edit" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Filled" Size="Medium">
+                                <ms:MaterialSymbol Symbol="Edit" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" IsSquare="True">
+                                <ms:MaterialSymbol Symbol="Edit" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Filled" Size="Large">
+                                <ms:MaterialSymbol Symbol="Edit" />
+                            </m3:MaterialIconButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Widths" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Narrow, default and wide are independent of size — two axes, not six token sets." />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Narrow">
+                                <ms:MaterialSymbol Symbol="Close" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Default">
+                                <ms:MaterialSymbol Symbol="Close" />
+                            </m3:MaterialIconButton>
+                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Wide">
+                                <ms:MaterialSymbol Symbol="Close" />
+                            </m3:MaterialIconButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Toggle -->
+            <StackPanel x:Name="PanelToggle" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Toggle buttons" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Checking a toggle swaps its shape as well as its colours — a round button squares off, and back, on the same spring the press uses." />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialToggleButton Variant="Filled">Filled</m3:MaterialToggleButton>
+                            <m3:MaterialToggleButton Variant="Tonal" IsChecked="True">Tonal</m3:MaterialToggleButton>
+                            <m3:MaterialToggleButton Variant="Outlined">Outlined</m3:MaterialToggleButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Toggle icon buttons" />
+                    <Border Classes="demo-canvas">
+                        <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
+                            <m3:MaterialToggleIconButton Variant="Standard">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialToggleIconButton>
+                            <m3:MaterialToggleIconButton Variant="Filled" IsChecked="True">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialToggleIconButton>
+                            <m3:MaterialToggleIconButton Variant="Tonal">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialToggleIconButton>
+                            <m3:MaterialToggleIconButton Variant="Outlined">
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialToggleIconButton>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Groups -->
+            <StackPanel x:Name="PanelGroups" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Connected group" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="A connected group keeps the row's outer corners round and tightens the ones where segments meet — something no button can work out about itself." />
+                    <Border Classes="demo-canvas">
+                        <m3:MaterialButtonGroup Variant="Connected" HorizontalAlignment="Left">
+                            <m3:MaterialToggleButton Variant="Tonal" Content="Day" IsChecked="True" />
+                            <m3:MaterialToggleButton Variant="Tonal" Content="Week" />
+                            <m3:MaterialToggleButton Variant="Tonal" Content="Month" />
+                            <m3:MaterialToggleButton Variant="Tonal" Content="Year" />
+                        </m3:MaterialButtonGroup>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Standard group" />
+                    <Border Classes="demo-canvas">
+                        <m3:MaterialButtonGroup Variant="Standard" HorizontalAlignment="Left">
+                            <m3:MaterialButton Variant="Outlined" Content="Cancel" />
+                            <m3:MaterialButton Variant="Filled" Content="Confirm" />
+                        </m3:MaterialButtonGroup>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Split button" />
+                    <Border Classes="demo-canvas">
+                        <m3:MaterialSplitButton Content="Save" HorizontalAlignment="Left">
+                            <m3:MaterialSplitButton.TrailingIcon>
+                                <ms:MaterialSymbol Symbol="ArrowDropDown" />
+                            </m3:MaterialSplitButton.TrailingIcon>
+                        </m3:MaterialSplitButton>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

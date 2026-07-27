@@ -16,7 +16,7 @@ public class RobotoFontCollection : EmbeddedFontCollection
 
 public static class AppBuilderExtensions
 {
-    public static AppBuilder UseRobotoFont(this AppBuilder builder)
+    public static AppBuilder WithRobotoFont(this AppBuilder builder)
         => builder.ConfigureFonts(manager =>
         {
             manager.AddFontCollection(new RobotoFontCollection());

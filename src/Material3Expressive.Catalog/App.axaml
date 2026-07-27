@@ -1,0 +1,25 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Material3Expressive.Catalog.App"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             RequestedThemeVariant="Default">
+
+    <Application.Styles>
+        <FluentTheme />
+        <m3:MaterialStyles />
+
+        <!-- The catalog's demo canvases: a rounded surface the examples sit on, in the spirit of
+             m3.material.io's component previews. -->
+        <Style Selector="Border.demo-canvas">
+            <Setter Property="Background" Value="{mcu:MdSysColor SurfaceContainerLow}" />
+            <Setter Property="CornerRadius" Value="28" />
+            <Setter Property="Padding" Value="32" />
+        </Style>
+    </Application.Styles>
+
+    <!-- One literal seed feeds every colour role; the rail's theme toggle only flips the variant. -->
+    <m3:MaterialThemeScope.Theme>
+        <m3:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}" />
+    </m3:MaterialThemeScope.Theme>
+</Application>

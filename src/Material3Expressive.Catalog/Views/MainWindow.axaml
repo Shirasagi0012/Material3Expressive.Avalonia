@@ -1,0 +1,88 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+        xmlns:ms="using:MaterialSymbols.Avalonia"
+        xmlns:pages="using:Material3Expressive.Catalog.Views.Pages"
+        mc:Ignorable="d"
+        d:DesignWidth="1440" d:DesignHeight="900"
+        x:Class="Material3Expressive.Catalog.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Material 3 Expressive Catalog"
+        Width="1440" Height="900" MinWidth="1080" MinHeight="680"
+        Background="{mcu:MdSysColor Surface}">
+
+    <Grid ColumnDefinitions="Auto,*">
+        <!-- The rail, m3.material.io style: icon destinations down the side, theme toggle at the
+             bottom. It is the same MaterialNavigationBar the catalog demos, stood on end. -->
+        <Border Grid.Column="0" Background="{mcu:MdSysColor SurfaceContainer}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,16">
+                    <m3:MaterialToggleIconButton x:Name="ThemeToggle"
+                                                 Variant="Standard"
+                                                 HorizontalAlignment="Center"
+                                                 IsCheckedChanged="OnThemeToggled"
+                                                 ToolTip.Tip="Toggle dark theme">
+                        <ms:MaterialSymbol Symbol="DarkMode" />
+                    </m3:MaterialToggleIconButton>
+                </StackPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <m3:MaterialNavigationBar x:Name="Rail" Variant="Rail" SelectedIndex="0">
+                        <m3:MaterialNavigationItem Content="Buttons" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="SmartButton" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="FAB" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="Add" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Selection" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="CheckCircle" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Fields" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="TextFields" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Chips" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="Sell" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Cards" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="Cards" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Progress" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="ProgressActivity" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Navigation" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="Tab" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Overlays" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="Layers" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
+                    </m3:MaterialNavigationBar>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <ContentControl Grid.Column="1" x:Name="PageHost">
+            <pages:ButtonsPage />
+        </ContentControl>
+    </Grid>
+</Window>

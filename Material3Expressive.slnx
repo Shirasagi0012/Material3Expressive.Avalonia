@@ -29,7 +29,7 @@
     <File Path="VISUAL_TEST_PLAN.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Material3Expressive.Demo/Material3Expressive.Demo.csproj" />
+    <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />
     <Project Path="src/Material3Expressive.TokenGenerator/Material3Expressive.TokenGenerator.csproj" />
     <Project Path="src/Material3Expressive/Material3Expressive.csproj" />
   </Folder>

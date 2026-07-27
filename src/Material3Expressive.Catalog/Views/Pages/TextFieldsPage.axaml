@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             xmlns:ms="using:MaterialSymbols.Avalonia"
+             x:Class="Material3Expressive.Catalog.Views.Pages.TextFieldsPage">
+
+    <ScrollViewer Padding="40,28,40,48">
+        <StackPanel Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
+
+            <m3:MaterialTabs x:Name="Tabs" Variant="Secondary" SelectedIndex="0"
+                             MaxWidth="720" HorizontalAlignment="Center">
+                <m3:MaterialTab Content="Text field" />
+                <m3:MaterialTab Content="Search bar" />
+            </m3:MaterialTabs>
+
+            <StackPanel Spacing="8">
+                <TextBlock Classes="display-small" Text="Text field" />
+                <TextBlock Classes="body-large" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Text fields let users enter and edit text. The label is the component: click into one and watch it travel to the top edge and shrink — one sprung fraction drives its position, size and colour together." />
+            </StackPanel>
+
+            <!-- Text field -->
+            <StackPanel x:Name="PanelField" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Filled" />
+                    <Border Classes="demo-canvas">
+                        <StackPanel Spacing="20" MaxWidth="360">
+                            <m3:MaterialTextField Label="Name" />
+                            <m3:MaterialTextField Label="Email" Text="ada@example.com"
+                                                  SupportingText="We will not share this." />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Outlined" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The outlined variant notches its border to let the label through." />
+                    <Border Classes="demo-canvas">
+                        <StackPanel Spacing="20" MaxWidth="360">
+                            <m3:MaterialTextField Label="Full name" Variant="Outlined" />
+                            <m3:MaterialTextField Label="Password" Variant="Outlined" IsError="True"
+                                                  SupportingText="Must be at least 12 characters." />
+                            <m3:MaterialTextField Label="Read only" Variant="Outlined" Text="Locked" IsEnabled="False" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Search bar -->
+            <StackPanel x:Name="PanelSearch" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Search bar" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The bar and its results are one control, because they are one shape: a pill that squares its corners and grows downwards as it opens. Type to open it." />
+                    <Border Classes="demo-canvas" MinHeight="300" VerticalAlignment="Top">
+                        <m3:MaterialSearchBar x:Name="Search"
+                                              Width="400"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Top"
+                                              Placeholder="Search the catalog">
+                            <m3:MaterialSearchBar.LeadingIcon>
+                                <ms:MaterialSymbol Symbol="Search" />
+                            </m3:MaterialSearchBar.LeadingIcon>
+                            <m3:MaterialSearchBar.Results>
+                                <StackPanel Spacing="4" Margin="0,8,0,8">
+                                    <TextBlock Classes="body-medium" Text="Buttons communicate actions" />
+                                    <TextBlock Classes="body-medium" Text="Chips help people filter content" />
+                                    <TextBlock Classes="body-medium" Text="Cards display content about a single subject" />
+                                </StackPanel>
+                            </m3:MaterialSearchBar.Results>
+                        </m3:MaterialSearchBar>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
