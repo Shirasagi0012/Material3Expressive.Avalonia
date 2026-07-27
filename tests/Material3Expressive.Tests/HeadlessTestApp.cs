@@ -33,6 +33,7 @@ public static class HeadlessTestAppBuilder
     public static AppBuilder BuildAvaloniaApp()
     {
         return AppBuilder.Configure<HeadlessTestApplication>()
+            .UseMaterial3Expressive()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions());
     }
 }

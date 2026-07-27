@@ -22,17 +22,17 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <!-- The icon is sized by the token rather than by the content, so a symbol,
-                         a path and a glyph all land at the same size. -->
-                    <Viewbox Width="{TemplateBinding IconSize}"
-                             Height="{TemplateBinding IconSize}"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"
-                             Stretch="Uniform">
-                        <ContentPresenter Content="{TemplateBinding Content}"
-                                          ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          TextElement.Foreground="{TemplateBinding Foreground}" />
-                    </Viewbox>
+                    <!-- Arrange the icon at its token size instead of applying a render transform.
+                         MaterialSymbol reads its Bounds to resolve the variable font's opsz axis. -->
+                    <ContentPresenter Width="{TemplateBinding IconSize}"
+                                      Height="{TemplateBinding IconSize}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      HorizontalContentAlignment="Stretch"
+                                      VerticalContentAlignment="Stretch"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      TextElement.Foreground="{TemplateBinding Foreground}" />
                 </ControlTemplate>
             </Setter>
         </ControlTheme>
@@ -46,15 +46,15 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Viewbox Width="{TemplateBinding IconSize}"
-                             Height="{TemplateBinding IconSize}"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"
-                             Stretch="Uniform">
-                        <ContentPresenter Content="{TemplateBinding Content}"
-                                          ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          TextElement.Foreground="{TemplateBinding Foreground}" />
-                    </Viewbox>
+                    <ContentPresenter Width="{TemplateBinding IconSize}"
+                                      Height="{TemplateBinding IconSize}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      HorizontalContentAlignment="Stretch"
+                                      VerticalContentAlignment="Stretch"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      TextElement.Foreground="{TemplateBinding Foreground}" />
                 </ControlTemplate>
             </Setter>
         </ControlTheme>

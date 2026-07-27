@@ -21,6 +21,7 @@ public static class VisualTestAppBuilder
     public static AppBuilder BuildAvaloniaApp()
     {
         return AppBuilder.Configure<VisualTestApplication>()
+            .UseMaterial3Expressive()
             .UseSkia()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions
             {

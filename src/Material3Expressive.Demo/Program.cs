@@ -1,6 +1,8 @@
 ﻿using Avalonia;
 using System;
 
+using Material3Expressive;
+
 namespace Material3Expressive.Demo;
 
 sealed class Program
@@ -14,9 +16,15 @@ sealed class Program
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
-            .WithDeveloperTools()
+    {
+        var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace();
+            .UseMaterial3Expressive();
+
+#if DEBUG
+        builder = builder.WithDeveloperTools();
+#endif
+
+        return builder.LogToTrace();
+    }
 }

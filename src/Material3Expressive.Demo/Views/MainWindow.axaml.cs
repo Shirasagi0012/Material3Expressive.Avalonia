@@ -46,11 +46,12 @@ public partial class MainWindow : Window
 
         PageHost.Content = Pages.SelectedIndex switch
         {
-            1 => new ComponentsView(),
-            2 => new NavigationView(),
-            3 => new OverlaysView(),
-            4 => new TypographyView(),
-            _ => new ButtonsView()
+            1 => new ButtonsView(),
+            2 => new ComponentsView(),
+            3 => new NavigationView(),
+            4 => new OverlaysView(),
+            5 => new TypographyView(),
+            _ => new GalleryHomeView()
         };
     }
 }

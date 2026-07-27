@@ -22,14 +22,14 @@
             <Setter Property="Template">
                 <ControlTemplate>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
-                        <Viewbox Width="{TemplateBinding IconSize}"
-                                 Height="{TemplateBinding IconSize}"
-                                 HorizontalAlignment="Center"
-                                 Stretch="Uniform"
-                                 IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}">
-                            <ContentPresenter Content="{TemplateBinding Icon}"
-                                              TextElement.Foreground="{TemplateBinding IconBrush}" />
-                        </Viewbox>
+                        <ContentPresenter Width="{TemplateBinding IconSize}"
+                                          Height="{TemplateBinding IconSize}"
+                                          HorizontalAlignment="Center"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"
+                                          IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          Content="{TemplateBinding Icon}"
+                                          TextElement.Foreground="{TemplateBinding IconBrush}" />
                         <ContentPresenter HorizontalAlignment="Center"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"

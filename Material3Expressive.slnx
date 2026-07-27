@@ -14,13 +14,18 @@
       <Platform Solution="*|x64" Project="x64" />
     </Project>
     <Project Path="modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia/MaterialSymbols.Avalonia.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Rounded/MaterialSymbols.Avalonia.Rounded.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Generator/MaterialSymbols.Generator.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path=".gitmodules" />
     <File Path="Directory.Packages.props" />
     <File Path="nuget.config" />
+    <File Path="README.md" />
     <File Path="ROADMAP.md" />
+    <File Path="VISUAL_TEST_PLAN.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Material3Expressive.Demo/Material3Expressive.Demo.csproj" />

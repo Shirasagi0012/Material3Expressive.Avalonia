@@ -16,15 +16,15 @@
                         <Grid ColumnDefinitions="Auto,*,Auto"
                               Height="{TemplateBinding MinHeight}"
                               Margin="{TemplateBinding Padding}">
-                            <Viewbox Grid.Column="0"
-                                     Width="{TemplateBinding IconSize}"
-                                     Height="{TemplateBinding IconSize}"
-                                     VerticalAlignment="Center"
-                                     Stretch="Uniform"
-                                     IsVisible="{TemplateBinding LeadingIcon, Converter={x:Static ObjectConverters.IsNotNull}}">
-                                <ContentPresenter Content="{TemplateBinding LeadingIcon}"
-                                                  TextElement.Foreground="{TemplateBinding Foreground}" />
-                            </Viewbox>
+                            <ContentPresenter Grid.Column="0"
+                                              Width="{TemplateBinding IconSize}"
+                                              Height="{TemplateBinding IconSize}"
+                                              VerticalAlignment="Center"
+                                              HorizontalContentAlignment="Stretch"
+                                              VerticalContentAlignment="Stretch"
+                                              IsVisible="{TemplateBinding LeadingIcon, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                              Content="{TemplateBinding LeadingIcon}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
                             <TextBox x:Name="PART_TextBox"
                                      Grid.Column="1"
                                      Margin="16,0"
@@ -38,15 +38,15 @@
                                      Foreground="{TemplateBinding Foreground}"
                                      FontSize="{TemplateBinding FontSize}"
                                      FontFamily="{TemplateBinding FontFamily}" />
-                            <Viewbox Grid.Column="2"
-                                     Width="{TemplateBinding IconSize}"
-                                     Height="{TemplateBinding IconSize}"
-                                     VerticalAlignment="Center"
-                                     Stretch="Uniform"
-                                     IsVisible="{TemplateBinding TrailingIcon, Converter={x:Static ObjectConverters.IsNotNull}}">
-                                <ContentPresenter Content="{TemplateBinding TrailingIcon}"
-                                                  TextElement.Foreground="{TemplateBinding Foreground}" />
-                            </Viewbox>
+                            <ContentPresenter Grid.Column="2"
+                                              Width="{TemplateBinding IconSize}"
+                                              Height="{TemplateBinding IconSize}"
+                                              VerticalAlignment="Center"
+                                              HorizontalContentAlignment="Stretch"
+                                              VerticalContentAlignment="Stretch"
+                                              IsVisible="{TemplateBinding TrailingIcon, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                              Content="{TemplateBinding TrailingIcon}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
                         </Grid>
 
                         <ContentPresenter x:Name="PART_Results"

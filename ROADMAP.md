@@ -239,9 +239,10 @@ Findings worth carrying forward:
   The rule: variants that differ only in token values are an enum property;
   variants that differ in behaviour or content model are separate types — which
   is why the toggle is `MaterialToggleButton` and not a flag.
-- **Icon slots take content, not a typed icon**, so the Material Symbols package
-  stays out of the library's dependency graph. Verified with plain vector paths
-  in the gallery; a symbol glyph drops into the same slot unchanged.
+- **Icon slots take content, not a typed icon.** Material Symbols Rounded is now the
+  first-party family and a direct dependency, while content slots still allow custom
+  controls. First-party gallery and visual cases use generated symbol codepoints rather
+  than hand-maintained vector paths.
 - ~~v0.1.0-alpha packaging.~~ `Shirasagi0012.Material3Expressive.Avalonia`,
   Apache-2.0, README and symbols packed, built into `artifacts/`.
 - **Outstanding: the actual NuGet push.** Publishing is deliberately deferred.
@@ -288,17 +289,17 @@ Workflow and current findings: [docs/visual-testing.md](docs/visual-testing.md).
 - **Packaging:** `Material3Expressive` (controls + theming),
   `MaterialColorUtilities` stays independently useful on NuGet; shapes port as
   its own package.
-- **Material Symbols icon package (parallel track, separate repo):** variable
+- **Material Symbols icon package (integrated module and first-party dependency):** variable
   Material Symbols rendered via SkiaSharp 4 (`ICustomDrawOperation` +
   `ISkiaSharpApiLeaseFeature` — path verified). One repo, one package per family
   (Outlined/Rounded/Sharp); `Symbol` enum source-generated from Google's
   `.codepoints` file; `Fill`/`Weight`/`Grade`/`OpticalSize` as animatable
   StyledProperties (opsz auto-tracks size 20–48; grade −25 in dark theme).
-  Requires consumers to override SkiaSharp 3.119 → 4.x — pin an exact tested
-  version, CI with the override applied + headless render test. **Publish to
+  The repository deliberately overrides SkiaSharp 3.119 → 4.150.1 and treats variable
+  symbols as a core Material 3 Expressive capability. Keep the managed/native versions
+  pinned together, with CI and headless render tests applied. **Publish to
   NuGet.org early** (avoids the local-feed CI restore trap DesignTokens hit).
-  Core library must never depend on it — components take icon *content*;
-  only demo/gallery references the package. Wanted by Phase 4 (icon slots).
+  Rounded ships with the core component package; Outlined and Sharp remain optional.
 - **Docs:** per-component page in the gallery + a parity table vs. Compose
   (what matches, what deviates and why).
 

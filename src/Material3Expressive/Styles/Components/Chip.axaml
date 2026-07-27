@@ -26,14 +26,14 @@
                                 Margin="{TemplateBinding Padding}"
                                 Spacing="{TemplateBinding IconLabelSpace}"
                                 VerticalAlignment="Center">
-                        <Viewbox Width="{TemplateBinding IconSize}"
-                                 Height="{TemplateBinding IconSize}"
-                                 VerticalAlignment="Center"
-                                 Stretch="Uniform"
-                                 IsVisible="{TemplateBinding LeadingIcon, Converter={x:Static ObjectConverters.IsNotNull}}">
-                            <ContentPresenter Content="{TemplateBinding LeadingIcon}"
-                                              TextElement.Foreground="{TemplateBinding IconBrush}" />
-                        </Viewbox>
+                        <ContentPresenter Width="{TemplateBinding IconSize}"
+                                          Height="{TemplateBinding IconSize}"
+                                          VerticalAlignment="Center"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"
+                                          IsVisible="{TemplateBinding LeadingIcon, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          Content="{TemplateBinding LeadingIcon}"
+                                          TextElement.Foreground="{TemplateBinding IconBrush}" />
                         <ContentPresenter VerticalAlignment="Center"
                                           RecognizesAccessKey="True"
                                           Content="{TemplateBinding Content}"
@@ -42,14 +42,14 @@
                                           TextElement.FontSize="{TemplateBinding FontSize}"
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontWeight="{TemplateBinding FontWeight}" />
-                        <Viewbox Width="{TemplateBinding IconSize}"
-                                 Height="{TemplateBinding IconSize}"
-                                 VerticalAlignment="Center"
-                                 Stretch="Uniform"
-                                 IsVisible="{TemplateBinding TrailingIcon, Converter={x:Static ObjectConverters.IsNotNull}}">
-                            <ContentPresenter Content="{TemplateBinding TrailingIcon}"
-                                              TextElement.Foreground="{TemplateBinding IconBrush}" />
-                        </Viewbox>
+                        <ContentPresenter Width="{TemplateBinding IconSize}"
+                                          Height="{TemplateBinding IconSize}"
+                                          VerticalAlignment="Center"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"
+                                          IsVisible="{TemplateBinding TrailingIcon, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          Content="{TemplateBinding TrailingIcon}"
+                                          TextElement.Foreground="{TemplateBinding IconBrush}" />
                     </StackPanel>
                 </ControlTemplate>
             </Setter>

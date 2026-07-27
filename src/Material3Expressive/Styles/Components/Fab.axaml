@@ -25,14 +25,14 @@
                                 Spacing="{TemplateBinding IconLabelSpace}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
-                        <Viewbox Width="{TemplateBinding IconSize}"
-                                 Height="{TemplateBinding IconSize}"
-                                 VerticalAlignment="Center"
-                                 Stretch="Uniform">
-                            <ContentPresenter Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}"
-                                              TextElement.Foreground="{TemplateBinding Foreground}" />
-                        </Viewbox>
+                        <ContentPresenter Width="{TemplateBinding IconSize}"
+                                          Height="{TemplateBinding IconSize}"
+                                          VerticalAlignment="Center"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
                         <ContentPresenter x:Name="LabelPresenter"
                                           VerticalAlignment="Center"
                                           IsVisible="{TemplateBinding IsExtended}"

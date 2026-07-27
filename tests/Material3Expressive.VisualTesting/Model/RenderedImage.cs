@@ -18,7 +18,7 @@ public sealed record RenderedImage(int Width, int Height, byte[] Pixels)
         using (var canvas = new SKCanvas(converted))
         {
             canvas.Clear(SKColors.Transparent);
-            canvas.DrawBitmap(source, 0, 0);
+            canvas.DrawBitmap(source, 0, 0, SKSamplingOptions.Default, null);
             canvas.Flush();
         }
 

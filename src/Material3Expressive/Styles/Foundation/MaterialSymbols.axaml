@@ -1,0 +1,34 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:ms="using:MaterialSymbols.Avalonia">
+    <!-- Rounded is the first-party Material 3 Expressive family. Applications can still set a
+         symbol to Outlined or Sharp explicitly after registering the corresponding package. -->
+    <Style Selector="ms|MaterialSymbol">
+        <Setter Property="Style" Value="Rounded" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Fill"
+                                  Duration="0:0:0.25"
+                                  Easing="CubicEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- Selection is expressed through the variable font instead of swapping two glyphs. These
+         selectors target only M3E controls; an application remains free to use Fill independently
+         on MaterialSymbol controls elsewhere. -->
+    <Style Selector="m3|MaterialToggleIconButton:checked ms|MaterialSymbol">
+        <Setter Property="Fill" Value="1" />
+    </Style>
+    <Style Selector="m3|MaterialNavigationItem:checked ms|MaterialSymbol">
+        <Setter Property="Fill" Value="1" />
+    </Style>
+    <Style Selector="m3|MaterialTab:checked ms|MaterialSymbol">
+        <Setter Property="Fill" Value="1" />
+    </Style>
+    <Style Selector="m3|MaterialChip:checked ms|MaterialSymbol">
+        <Setter Property="Fill" Value="1" />
+    </Style>
+
+</Styles>

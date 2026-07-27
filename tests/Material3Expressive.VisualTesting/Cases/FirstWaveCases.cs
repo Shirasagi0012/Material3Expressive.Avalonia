@@ -6,20 +6,13 @@ using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.VisualTesting.Model;
 using MaterialColorUtilities.Avalonia.Tokens;
+using MaterialSymbols;
+using MaterialSymbols.Avalonia;
 
 namespace Material3Expressive.VisualTesting.Cases;
 
 internal static class FirstWaveCases
 {
-    private const string StarPath =
-        "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 " +
-        "9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
-
-    private const string EditPath =
-        "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" +
-        "M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 " +
-        "0l-1.83 1.83 3.75 3.75 1.83-1.83z";
-
     public static IReadOnlyList<VisualCase> All { get; } =
     [
         IconVariants(VisualTheme.Light),
@@ -132,7 +125,7 @@ internal static class FirstWaveCases
             Variant = variant,
             Size = IconButtonSize.Medium,
             ButtonWidth = width,
-            Content = Icon(StarPath)
+            Content = Icon(MaterialSymbolCodepoint.Star)
         };
     }
 
@@ -145,7 +138,7 @@ internal static class FirstWaveCases
             Variant = variant,
             Size = IconButtonSize.Medium,
             IsChecked = selected,
-            Content = Icon(StarPath)
+            Content = Icon(MaterialSymbolCodepoint.Star)
         };
     }
 
@@ -175,7 +168,7 @@ internal static class FirstWaveCases
             Size = size,
             Label = label,
             IsLowered = lowered,
-            Content = Icon(EditPath)
+            Content = Icon(MaterialSymbolCodepoint.Edit)
         };
     }
 
@@ -213,11 +206,11 @@ internal static class FirstWaveCases
         };
     }
 
-    private static PathIcon Icon(string path)
+    private static MaterialSymbol Icon(MaterialSymbolCodepoint symbol)
     {
-        return new PathIcon
+        return new MaterialSymbol
         {
-            Data = StreamGeometry.Parse(path)
+            Symbol = symbol
         };
     }
 

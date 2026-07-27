@@ -2,16 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
              xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             xmlns:ms="using:MaterialSymbols.Avalonia"
              x:Class="Material3Expressive.Demo.Views.ComponentsView">
-    <UserControl.Resources>
-        <!-- Icon slots take content, not a typed icon, so the library never has to know what an
-             icon is. These are plain Material paths; a Material Symbols glyph drops into the same
-             slot without the library changing. -->
-        <StreamGeometry x:Key="AddIcon">M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z</StreamGeometry>
-        <StreamGeometry x:Key="StarIcon">M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z</StreamGeometry>
-        <StreamGeometry x:Key="EditIcon">M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z</StreamGeometry>
-        <StreamGeometry x:Key="CloseIcon">M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z</StreamGeometry>
-    </UserControl.Resources>
 
     <ScrollViewer Padding="32">
         <StackPanel Spacing="32">
@@ -26,51 +18,51 @@
                 <TextBlock Classes="title-small" Text="Variants" />
                 <WrapPanel ItemSpacing="12" LineSpacing="12">
                     <m3:MaterialIconButton Variant="Standard">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Filled">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Tonal">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Outlined">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Filled" IsEnabled="False">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialIconButton>
                 </WrapPanel>
 
                 <TextBlock Classes="title-small" Text="Sizes, and square containers" />
                 <WrapPanel ItemSpacing="12" LineSpacing="12" VerticalAlignment="Center">
                     <m3:MaterialIconButton Variant="Filled" Size="ExtraSmall">
-                        <PathIcon Data="{StaticResource EditIcon}" />
+                        <ms:MaterialSymbol Symbol="Edit" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Filled" Size="Small">
-                        <PathIcon Data="{StaticResource EditIcon}" />
+                        <ms:MaterialSymbol Symbol="Edit" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Filled" Size="Medium">
-                        <PathIcon Data="{StaticResource EditIcon}" />
+                        <ms:MaterialSymbol Symbol="Edit" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Tonal" Size="Medium" IsSquare="True">
-                        <PathIcon Data="{StaticResource EditIcon}" />
+                        <ms:MaterialSymbol Symbol="Edit" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Filled" Size="Large">
-                        <PathIcon Data="{StaticResource EditIcon}" />
+                        <ms:MaterialSymbol Symbol="Edit" />
                     </m3:MaterialIconButton>
                 </WrapPanel>
 
                 <TextBlock Classes="title-small" Text="Widths" />
                 <WrapPanel ItemSpacing="12" LineSpacing="12">
                     <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Narrow">
-                        <PathIcon Data="{StaticResource CloseIcon}" />
+                        <ms:MaterialSymbol Symbol="Close" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Default">
-                        <PathIcon Data="{StaticResource CloseIcon}" />
+                        <ms:MaterialSymbol Symbol="Close" />
                     </m3:MaterialIconButton>
                     <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Wide">
-                        <PathIcon Data="{StaticResource CloseIcon}" />
+                        <ms:MaterialSymbol Symbol="Close" />
                     </m3:MaterialIconButton>
                 </WrapPanel>
             </StackPanel>
@@ -86,13 +78,13 @@
                     <m3:MaterialToggleButton Variant="Tonal" IsChecked="True">Tonal</m3:MaterialToggleButton>
                     <m3:MaterialToggleButton Variant="Outlined">Outlined</m3:MaterialToggleButton>
                     <m3:MaterialToggleIconButton Variant="Standard">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialToggleIconButton>
                     <m3:MaterialToggleIconButton Variant="Filled" IsChecked="True">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialToggleIconButton>
                     <m3:MaterialToggleIconButton Variant="Outlined">
-                        <PathIcon Data="{StaticResource StarIcon}" />
+                        <ms:MaterialSymbol Symbol="Star" />
                     </m3:MaterialToggleIconButton>
                 </WrapPanel>
             </StackPanel>
@@ -105,19 +97,19 @@
                            Text="Extended and unextended are one control: setting a label extends it." />
                 <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
                     <m3:MaterialFab>
-                        <PathIcon Data="{StaticResource AddIcon}" />
+                        <ms:MaterialSymbol Symbol="Add" />
                     </m3:MaterialFab>
                     <m3:MaterialFab Size="Medium" Variant="Secondary">
-                        <PathIcon Data="{StaticResource AddIcon}" />
+                        <ms:MaterialSymbol Symbol="Add" />
                     </m3:MaterialFab>
                     <m3:MaterialFab Size="Large" Variant="Tertiary">
-                        <PathIcon Data="{StaticResource AddIcon}" />
+                        <ms:MaterialSymbol Symbol="Add" />
                     </m3:MaterialFab>
                     <m3:MaterialFab Variant="Surface" Label="Compose">
-                        <PathIcon Data="{StaticResource EditIcon}" />
+                        <ms:MaterialSymbol Symbol="Edit" />
                     </m3:MaterialFab>
                     <m3:MaterialFab Label="Lowered" IsLowered="True">
-                        <PathIcon Data="{StaticResource EditIcon}" />
+                        <ms:MaterialSymbol Symbol="Edit" />
                     </m3:MaterialFab>
                 </WrapPanel>
 
@@ -128,15 +120,18 @@
                 <Border Height="300" Padding="16" CornerRadius="16"
                         Background="{mcu:MdSysColor SurfaceContainer}"
                         HorizontalAlignment="Left" Width="320">
-                    <m3:MaterialFabMenu Icon="+">
+                    <m3:MaterialFabMenu>
+                        <m3:MaterialFabMenu.Icon>
+                            <ms:MaterialSymbol Symbol="Add" />
+                        </m3:MaterialFabMenu.Icon>
                         <m3:MaterialFab Label="Reply">
-                            <PathIcon Data="{StaticResource EditIcon}" />
+                            <ms:MaterialSymbol Symbol="Reply" />
                         </m3:MaterialFab>
                         <m3:MaterialFab Label="Star">
-                            <PathIcon Data="{StaticResource StarIcon}" />
+                            <ms:MaterialSymbol Symbol="Star" />
                         </m3:MaterialFab>
                         <m3:MaterialFab Label="Dismiss">
-                            <PathIcon Data="{StaticResource CloseIcon}" />
+                            <ms:MaterialSymbol Symbol="Close" />
                         </m3:MaterialFab>
                     </m3:MaterialFabMenu>
                 </Border>
@@ -205,7 +200,11 @@
                         <m3:MaterialButton Variant="Outlined" Content="Cancel" />
                         <m3:MaterialButton Variant="Filled" Content="Confirm" />
                     </m3:MaterialButtonGroup>
-                    <m3:MaterialSplitButton Content="Save" TrailingIcon="▾" />
+                    <m3:MaterialSplitButton Content="Save">
+                        <m3:MaterialSplitButton.TrailingIcon>
+                            <ms:MaterialSymbol Symbol="ArrowDropDown" />
+                        </m3:MaterialSplitButton.TrailingIcon>
+                    </m3:MaterialSplitButton>
                 </StackPanel>
             </StackPanel>
 
@@ -218,14 +217,14 @@
                 <WrapPanel ItemSpacing="8" LineSpacing="8">
                     <m3:MaterialChip Variant="Assist" Content="Assist">
                         <m3:MaterialChip.LeadingIcon>
-                            <PathIcon Data="{StaticResource StarIcon}" />
+                            <ms:MaterialSymbol Symbol="Star" />
                         </m3:MaterialChip.LeadingIcon>
                     </m3:MaterialChip>
                     <m3:MaterialChip Variant="Filter" Content="Filter" />
                     <m3:MaterialChip Variant="Filter" Content="Selected" IsChecked="True" />
                     <m3:MaterialChip Variant="Input" Content="Input">
                         <m3:MaterialChip.TrailingIcon>
-                            <PathIcon Data="{StaticResource CloseIcon}" />
+                            <ms:MaterialSymbol Symbol="Close" />
                         </m3:MaterialChip.TrailingIcon>
                     </m3:MaterialChip>
                     <m3:MaterialChip Variant="Suggestion" Content="Suggestion" />

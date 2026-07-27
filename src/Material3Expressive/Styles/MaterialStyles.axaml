@@ -6,6 +6,7 @@
          below it resolves against a theme. -->
     <m3:MaterialThemeStyles />
     <StyleInclude Source="avares://Material3Expressive/Styles/Foundation/Typography.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Foundation/MaterialSymbols.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Button.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/IconButton.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Card.axaml" />

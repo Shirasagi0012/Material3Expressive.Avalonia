@@ -26,13 +26,13 @@
                     <StackPanel HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Spacing="{TemplateBinding IconLabelSpace}">
-                        <Viewbox Width="{TemplateBinding IconSize}"
-                                 Height="{TemplateBinding IconSize}"
-                                 HorizontalAlignment="Center"
-                                 Stretch="Uniform">
-                            <ContentPresenter Content="{TemplateBinding Icon}"
-                                              TextElement.Foreground="{TemplateBinding IconBrush}" />
-                        </Viewbox>
+                        <ContentPresenter Width="{TemplateBinding IconSize}"
+                                          Height="{TemplateBinding IconSize}"
+                                          HorizontalAlignment="Center"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"
+                                          Content="{TemplateBinding Icon}"
+                                          TextElement.Foreground="{TemplateBinding IconBrush}" />
                         <ContentPresenter HorizontalAlignment="Center"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
