@@ -1,0 +1,42 @@
+package material3expressive.compose.reference.probes
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.TextLayoutResult
+
+class ProbeRegistry {
+    private val _geometries = linkedMapOf<String, BoundsPx>()
+    private val _textLayouts = linkedMapOf<String, TextLayoutResult>()
+
+    fun geometry(id: String): Modifier =
+        Modifier.onGloballyPositioned { coordinates ->
+            val bounds = coordinates.boundsInRoot()
+            _geometries[id] = BoundsPx(bounds.left, bounds.top, bounds.right, bounds.bottom)
+        }
+
+    fun text(id: String): Modifier = geometry(id)
+
+    fun onTextLayout(id: String): (TextLayoutResult) -> Unit = { result ->
+        recordTextLayout(id, result)
+    }
+
+    fun geometryBounds(id: String): BoundsPx? {
+        val bounds = _geometries[id] ?: return null
+        return bounds.takeUnless { it.right <= it.left || it.bottom <= it.top }
+    }
+
+    fun textLayoutResult(id: String): TextLayoutResult? = _textLayouts[id]
+
+    fun recordTextLayout(id: String, result: TextLayoutResult) {
+        _textLayouts[id] = result
+    }
+}
+
+data class BoundsPx(
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float,
+)

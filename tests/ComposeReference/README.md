@@ -1,57 +1,99 @@
-# Compose reference capture
+# Compose reference producer
 
-This local-only Android instrumentation project renders the fixed parity scenes
-with the released Compose Material 3 `1.5.0-alpha24` artifact. Its build
-verifies the exact `material3-android` AAR SHA-256 before compiling. The reviewed
-`visual-references/compose/1.5.0-alpha24/manifest.json` is staged into the test
-APK with its SHA-256, and is the source of truth for case IDs, viewports, themes,
-images and capture-environment requirements.
+Desktop/JVM command-line tool that renders the parity scenes with the pinned
+Compose Multiplatform Material 3 artifact and writes a fresh expected bundle
+(PNG + layout JSON + manifest) on every invocation.
 
-The alpha24 AAR advertises `minCompileSdk 37`, although the official screenshot
-tests and this contract execute on API 35. To keep the local setup API-35-only,
-the capture shell disables only AGP's AAR metadata preflight. Resource linking,
-Kotlin compilation, D8, installation and the API 35 instrumentation run remain
-active, so a real incompatibility still fails the capture.
+The output is not committed; it is regenerated at the beginning of every parity
+run so the reference version is always cleanly tied to the pinned Compose
+Multiplatform dependency set.
 
-Prerequisites:
+`capture-app/gradle.lockfile` pins the resolved transitive dependency graph.
+`gradle/verification-metadata.xml` records dependency checksums. Refresh either
+only as part of an explicit Compose reference-version update.
 
-- Android Studio JBR 21
-- Android SDK/API 35
-- the local `Pixel_9_Pro` API 35 AVD
+## Pinned versions
 
-Run from the repository root:
+| Dependency | Version |
+|---|---|
+| Compose Multiplatform plugin/runtime | `1.12.0-beta02` |
+| `org.jetbrains.compose.material3` | `1.12.0-alpha03` |
+| Corresponding Jetpack Material 3 | `1.5.0-alpha22` |
+| Kotlin | `2.3.20` |
+| JDK | 17+ |
+| Skiko | `0.150.1` |
+
+## Prerequisites
+
+- JDK 17+
+- The Windows Roboto variable font at the default location
+
+## Usage
+
+From the repository root:
 
 ```powershell
-.\tests\ComposeReference\capture.ps1
+.\tests\ComposeReference\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run"
 ```
 
-The script starts the AVD headlessly when needed, disables system animations,
-runs only `ComposeReferenceCaptureTest`, pulls `capture.json` and its PNGs,
-imports the hash-verified reference set, then writes the local parity report.
-The test stages its output under shell-owned `/data/local/tmp` before AGP
-uninstalls the test APK, so app teardown cannot delete the capture before pull.
-Use `-CaptureOnly` with a unique `-Output` directory for determinism probes or
-inspection without changing the imported reference set.
-The Compose scene overrides `LocalDensity` to 160 dpi and font scale 1.0, so
-the reference pixels remain 1 dp = 1 px even though the Pixel 9 Pro hardware
-profile has a native density of 480 dpi.
+Filter to specific cases:
 
-The instrumentation registry must match the manifest case set exactly. Each
-scene also exposes a tagged component whose non-empty bounds are checked against
-the declared viewport before the screenshot is accepted. This catches missing,
-off-screen and accidentally clipped scene roots at capture time.
+```powershell
+.\tests\ComposeReference\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run --case button/filled/medium/enabled/light"
+```
 
-The current 40-case set includes the original color/button/component probes plus
-the first expansion wave: all 15 standard typography slots on six light/dark
-boards, twelve filled/outlined text-field states, and nine navigation bar, rail
-and tab scenes. Scene identity is keyed by manifest case ID so adjacent input
-states cannot reuse focus or remembered Compose state. Focused fields perform and
-assert the upstream screenshot test's split touch gesture before capture.
+Use wildcard prefix matching:
 
-Component scenes read the shared, hash-pinned Tonal Spot role palette from
-`visual-references/color-contracts`. This avoids treating Compose's static
-parameterless color scheme and Material Color Utilities seed generation as if
-they were the same algorithm. The build also verifies and packages the exact
-Roboto variable-font file used by Avalonia. All 15 standard Compose Typography
-slots use that family, while components request only named weights such as
-Normal, Medium and Bold.
+```powershell
+.\tests\ComposeReference\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run --case button/*"
+```
+
+## Output structure
+
+```
+<output-dir>/
+  expected/
+    manifest.json
+    cases/
+      <case-id>/
+        image.png
+        layout.json
+```
+
+### manifest.json
+
+Records the exact build environment, dependency versions, font hash, theme hash,
+and per-case file hashes. A missing or incompatible manifest is a contract failure
+on the Avalonia comparison side.
+
+### layout.json
+
+Per-case capture result (schema v1) containing:
+- Coordinate space definition (2× scale, root-relative physical pixels)
+- Viewport dimensions in physical pixels
+- Required node bounds as reported by `Modifier.onGloballyPositioned`
+- Text layout metrics, baselines, and per-character advance boxes for registered `Text` nodes
+
+The official `TextField` editable implementation exposes a `TextLayoutResult` through semantics,
+but not its independent root drawing origin. Until a dedicated adapter supplies that origin, input
+text remains covered by the text-field image region; labels and supporting text are fully probed.
+
+## Rendering environment
+
+- Logical scale: `2.0` (1 dp = 2 physical px)
+- Density: `Density(2.0f, 1.0f)` — 320 dpi equivalent
+- Font scale: `1.0`
+- Locale: `en-US`
+- Layout direction: `LTR`
+- Color space: sRGB
+- Background: `MaterialTheme.colorScheme.surface`
+- Font: Repository-pinned Roboto variable font
+- Execution: Headless, offscreen via `ImageComposeScene`
+
+## Adding a new case
+
+1. Add a scene `@Composable (ProbeRegistry) -> Unit` function in the appropriate
+   file under `scenes/`.
+2. Register it in `ReferenceCaseRegistry` with a `CaseContract` describing the
+   viewport, theme, and required node probes.
+3. Rebuild and run.
