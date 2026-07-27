@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Tests.TestUtils;
 using MaterialColorUtilities.Avalonia;
@@ -231,5 +232,61 @@ public class ThemeScopingTests
         Assert.Equal(
             ThemeTestHelper.Expected(scopedTheme, SysColorToken.Primary),
             MaterialColor.GetResolvedScheme(target)!.GetColor(SysColorToken.Primary, isDark: false));
+    }
+
+    [AvaloniaFact]
+    public void ReplacingContentContainingMaterialControls_DoesNotThrow()
+    {
+        using var _ = ThemeTestHelper.AppTheme(ThemeTestHelper.ThemeSeededWith(Colors.Red));
+
+        // Both theme-reading paths: self-painting controls and one hosting the watcher.
+        var page = new StackPanel
+        {
+            Children =
+            {
+                new ThemeProbe(),
+                new MaterialLinearProgressIndicator { Value = 0.5, Width = 200 },
+                new MaterialButton()
+            }
+        };
+        var host = new ContentControl { Content = page };
+        ThemeTestHelper.ShowWindow(host);
+
+        // Detaching reverts the inherited ActualThemeVariant to its unset default — null — and
+        // raises that as a change while the control is still attached. Reading it as a variant
+        // threw; the whole page went down with it.
+        host.Content = new Border();
+
+        Assert.Null(page.Parent);
+    }
+
+    [AvaloniaFact]
+    public void ReattachingAControl_ResolvesTheThemeAtItsNewHome()
+    {
+        var appTheme = ThemeTestHelper.ThemeSeededWith(Colors.Red);
+        var scopedTheme = ThemeTestHelper.ThemeSeededWith(Colors.Blue);
+
+        using var _ = ThemeTestHelper.AppTheme(appTheme);
+
+        var probe = new ThemeProbe();
+        var host = new ContentControl { Content = probe };
+        var scope = new Border();
+        ThemeTestHelper.ShowWindow(new StackPanel { Children = { host, scope } });
+
+        MaterialThemeScope.SetTheme(scope, scopedTheme);
+
+        Assert.Equal(
+            ThemeTestHelper.Expected(appTheme, SysColorToken.Primary),
+            ThemeTestHelper.ColorOf(probe.ContainerBrush));
+
+        // Detaching drops the inherited theme back to the default, so the move has to leave the
+        // control resolved against its new parent rather than against whatever it saw on the way
+        // out.
+        host.Content = null;
+        scope.Child = probe;
+
+        Assert.Equal(
+            ThemeTestHelper.Expected(scopedTheme, SysColorToken.Primary),
+            ThemeTestHelper.ColorOf(probe.ContainerBrush));
     }
 }

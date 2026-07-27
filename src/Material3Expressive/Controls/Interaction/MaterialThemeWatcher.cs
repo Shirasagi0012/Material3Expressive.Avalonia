@@ -70,6 +70,9 @@ public sealed class MaterialThemeWatcher
     private void Update()
     {
         var theme = MaterialThemeScope.GetResolvedTheme(_owner);
+
+        // Null before the first attach and again while the owner detaches — see the note in
+        // MaterialControl.UpdateTheme.
         var isDark = ColorScheme.IsDark(_owner.ActualThemeVariant ?? ThemeVariant.Default);
 
         // Snapshots are immutable and replaced wholesale, so reference equality is enough to know

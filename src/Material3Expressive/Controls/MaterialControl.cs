@@ -102,7 +102,12 @@ public abstract class MaterialControl : TemplatedControl
     private void UpdateTheme()
     {
         var theme = MaterialThemeScope.GetResolvedTheme(this);
-        var isDark = ColorScheme.IsDark(ActualThemeVariant);
+
+        // ActualThemeVariant is typed non-nullable but registered without a default, so it reads
+        // null both before the first attach and while the control is being detached — it inherits,
+        // and the inherited value reverts before OnDetachedFromLogicalTree runs, which is why no
+        // "am I still attached" guard catches that second case.
+        var isDark = ColorScheme.IsDark(ActualThemeVariant ?? ThemeVariant.Default);
 
         // Snapshots are immutable and replaced wholesale, so reference equality is enough to know
         // that nothing can have changed.
