@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
              xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             xmlns:ms="using:MaterialSymbols.Avalonia"
              x:Class="Material3Expressive.Demo.Views.NavigationView">
     <ScrollViewer Padding="32">
         <StackPanel Spacing="32">
@@ -21,14 +22,31 @@
                            Text="Small keeps the title beside the actions; medium and large give a long title its own line." />
                 <StackPanel Spacing="8" Width="460" HorizontalAlignment="Left">
                     <Border ClipToBounds="True" CornerRadius="12">
-                        <m3:MaterialAppBar Title="Inbox" NavigationIcon="≡" Actions="⋯" />
+                        <m3:MaterialAppBar Title="Inbox">
+                            <m3:MaterialAppBar.NavigationIcon>
+                                <ms:MaterialSymbol Symbol="Menu" />
+                            </m3:MaterialAppBar.NavigationIcon>
+                            <m3:MaterialAppBar.Actions>
+                                <ms:MaterialSymbol Symbol="MoreVert" />
+                            </m3:MaterialAppBar.Actions>
+                        </m3:MaterialAppBar>
                     </Border>
                     <Border ClipToBounds="True" CornerRadius="12">
-                        <m3:MaterialAppBar Size="Medium" Title="Settings" NavigationIcon="←" />
+                        <m3:MaterialAppBar Size="Medium" Title="Settings">
+                            <m3:MaterialAppBar.NavigationIcon>
+                                <ms:MaterialSymbol Symbol="ArrowBack" />
+                            </m3:MaterialAppBar.NavigationIcon>
+                        </m3:MaterialAppBar>
                     </Border>
                     <Border ClipToBounds="True" CornerRadius="12">
-                        <m3:MaterialAppBar Size="Large" Title="Photographs" Subtitle="384 items"
-                                           NavigationIcon="←" IsScrolled="True" />
+                        <m3:MaterialAppBar Size="Large"
+                                           Title="Photographs"
+                                           Subtitle="384 items"
+                                           IsScrolled="True">
+                            <m3:MaterialAppBar.NavigationIcon>
+                                <ms:MaterialSymbol Symbol="ArrowBack" />
+                            </m3:MaterialAppBar.NavigationIcon>
+                        </m3:MaterialAppBar>
                     </Border>
                 </StackPanel>
             </StackPanel>
@@ -62,17 +80,45 @@
                 <StackPanel Orientation="Horizontal" Spacing="24">
                     <Border ClipToBounds="True" CornerRadius="12" Width="380" Height="80">
                         <m3:MaterialNavigationBar SelectedIndex="0">
-                            <m3:MaterialNavigationItem Icon="⌂" Content="Home" />
-                            <m3:MaterialNavigationItem Icon="★" Content="Saved" />
-                            <m3:MaterialNavigationItem Icon="✉" Content="Inbox" />
-                            <m3:MaterialNavigationItem Icon="☰" Content="More" />
+                            <m3:MaterialNavigationItem Content="Home">
+                                <m3:MaterialNavigationItem.Icon>
+                                    <ms:MaterialSymbol Symbol="Home" />
+                                </m3:MaterialNavigationItem.Icon>
+                            </m3:MaterialNavigationItem>
+                            <m3:MaterialNavigationItem Content="Saved">
+                                <m3:MaterialNavigationItem.Icon>
+                                    <ms:MaterialSymbol Symbol="Star" />
+                                </m3:MaterialNavigationItem.Icon>
+                            </m3:MaterialNavigationItem>
+                            <m3:MaterialNavigationItem Content="Inbox">
+                                <m3:MaterialNavigationItem.Icon>
+                                    <ms:MaterialSymbol Symbol="Mail" />
+                                </m3:MaterialNavigationItem.Icon>
+                            </m3:MaterialNavigationItem>
+                            <m3:MaterialNavigationItem Content="More">
+                                <m3:MaterialNavigationItem.Icon>
+                                    <ms:MaterialSymbol Symbol="Menu" />
+                                </m3:MaterialNavigationItem.Icon>
+                            </m3:MaterialNavigationItem>
                         </m3:MaterialNavigationBar>
                     </Border>
                     <Border ClipToBounds="True" CornerRadius="12" Width="96" Height="280">
                         <m3:MaterialNavigationBar Variant="Rail" SelectedIndex="1">
-                            <m3:MaterialNavigationItem Icon="⌂" Content="Home" />
-                            <m3:MaterialNavigationItem Icon="★" Content="Saved" />
-                            <m3:MaterialNavigationItem Icon="✉" Content="Inbox" />
+                            <m3:MaterialNavigationItem Content="Home">
+                                <m3:MaterialNavigationItem.Icon>
+                                    <ms:MaterialSymbol Symbol="Home" />
+                                </m3:MaterialNavigationItem.Icon>
+                            </m3:MaterialNavigationItem>
+                            <m3:MaterialNavigationItem Content="Saved">
+                                <m3:MaterialNavigationItem.Icon>
+                                    <ms:MaterialSymbol Symbol="Star" />
+                                </m3:MaterialNavigationItem.Icon>
+                            </m3:MaterialNavigationItem>
+                            <m3:MaterialNavigationItem Content="Inbox">
+                                <m3:MaterialNavigationItem.Icon>
+                                    <ms:MaterialSymbol Symbol="Mail" />
+                                </m3:MaterialNavigationItem.Icon>
+                            </m3:MaterialNavigationItem>
                         </m3:MaterialNavigationBar>
                     </Border>
                 </StackPanel>
@@ -97,9 +143,21 @@
                         <m3:MaterialNavigationDrawer x:Name="Drawer">
                             <StackPanel Margin="12,24" Spacing="4">
                                 <TextBlock Margin="16,0,0,8" Classes="title-small" Text="Mail" />
-                                <m3:MaterialNavigationItem Icon="✉" Content="Inbox" IsChecked="True" />
-                                <m3:MaterialNavigationItem Icon="★" Content="Starred" />
-                                <m3:MaterialNavigationItem Icon="☰" Content="Archive" />
+                                <m3:MaterialNavigationItem Content="Inbox" IsChecked="True">
+                                    <m3:MaterialNavigationItem.Icon>
+                                        <ms:MaterialSymbol Symbol="Mail" />
+                                    </m3:MaterialNavigationItem.Icon>
+                                </m3:MaterialNavigationItem>
+                                <m3:MaterialNavigationItem Content="Starred">
+                                    <m3:MaterialNavigationItem.Icon>
+                                        <ms:MaterialSymbol Symbol="Star" />
+                                    </m3:MaterialNavigationItem.Icon>
+                                </m3:MaterialNavigationItem>
+                                <m3:MaterialNavigationItem Content="Archive">
+                                    <m3:MaterialNavigationItem.Icon>
+                                        <ms:MaterialSymbol Symbol="Archive" />
+                                    </m3:MaterialNavigationItem.Icon>
+                                </m3:MaterialNavigationItem>
                             </StackPanel>
                         </m3:MaterialNavigationDrawer>
                     </Panel>

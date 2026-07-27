@@ -1,10 +1,22 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:ms="using:MaterialSymbols.Avalonia">
     <Design.PreviewWith>
         <StackPanel Width="420">
-            <m3:MaterialAppBar Title="Inbox" NavigationIcon="&#x2261;" Actions="&#x22EF;" />
-            <m3:MaterialAppBar Size="Large" Title="Settings" Subtitle="Account" NavigationIcon="&#x2190;" />
+            <m3:MaterialAppBar Title="Inbox">
+                <m3:MaterialAppBar.NavigationIcon>
+                    <ms:MaterialSymbol Symbol="Menu" />
+                </m3:MaterialAppBar.NavigationIcon>
+                <m3:MaterialAppBar.Actions>
+                    <ms:MaterialSymbol Symbol="MoreVert" />
+                </m3:MaterialAppBar.Actions>
+            </m3:MaterialAppBar>
+            <m3:MaterialAppBar Size="Large" Title="Settings" Subtitle="Account">
+                <m3:MaterialAppBar.NavigationIcon>
+                    <ms:MaterialSymbol Symbol="ArrowBack" />
+                </m3:MaterialAppBar.NavigationIcon>
+            </m3:MaterialAppBar>
         </StackPanel>
     </Design.PreviewWith>
 

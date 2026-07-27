@@ -1,12 +1,25 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:ms="using:MaterialSymbols.Avalonia">
     <Design.PreviewWith>
         <Border Padding="0" Width="420">
             <m3:MaterialNavigationBar SelectedIndex="0">
-                <m3:MaterialNavigationItem Icon="&#x2302;" Content="Home" />
-                <m3:MaterialNavigationItem Icon="&#x2605;" Content="Saved" />
-                <m3:MaterialNavigationItem Icon="&#x2709;" Content="Inbox" />
+                <m3:MaterialNavigationItem Content="Home">
+                    <m3:MaterialNavigationItem.Icon>
+                        <ms:MaterialSymbol Symbol="Home" />
+                    </m3:MaterialNavigationItem.Icon>
+                </m3:MaterialNavigationItem>
+                <m3:MaterialNavigationItem Content="Saved">
+                    <m3:MaterialNavigationItem.Icon>
+                        <ms:MaterialSymbol Symbol="Star" />
+                    </m3:MaterialNavigationItem.Icon>
+                </m3:MaterialNavigationItem>
+                <m3:MaterialNavigationItem Content="Inbox">
+                    <m3:MaterialNavigationItem.Icon>
+                        <ms:MaterialSymbol Symbol="Mail" />
+                    </m3:MaterialNavigationItem.Icon>
+                </m3:MaterialNavigationItem>
             </m3:MaterialNavigationBar>
         </Border>
     </Design.PreviewWith>

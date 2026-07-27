@@ -23,7 +23,12 @@
                                Text="Explore Material components in the places they belong: delightful, responsive product patterns — not a wall of disconnected controls." />
                 </StackPanel>
                 <Border Width="118" Height="118" CornerRadius="36" Background="{StaticResource HeroGradient}" BoxShadow="0 12 24 0 #2A000000">
-                    <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="54" Text="✦" Foreground="#FFFFFF" />
+                    <ms:MaterialSymbol Width="54"
+                                       Height="54"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       Symbol="AutoAwesome"
+                                       Foreground="#FFFFFF" />
                 </Border>
             </Grid>
 
@@ -41,7 +46,13 @@
                         <Border Grid.Row="0" CornerRadius="24,24,0,0" Background="{StaticResource HeroGradient}">
                             <Grid Margin="22">
                                 <TextBlock Classes="label-large" Text="NOW PLAYING" Foreground="#FFFFFF" VerticalAlignment="Top" />
-                                <TextBlock Text="◒" FontSize="82" Opacity="0.34" Foreground="#FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                <ms:MaterialSymbol Width="82"
+                                                   Height="82"
+                                                   Symbol="Orbit"
+                                                   Opacity="0.34"
+                                                   Foreground="#FFFFFF"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                         <Grid Grid.Row="1" Margin="22" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,*" ColumnSpacing="16">
@@ -90,16 +101,76 @@
 
             <WrapPanel ItemWidth="230" ItemHeight="174" ItemSpacing="16" LineSpacing="16">
                 <m3:MaterialCard Variant="Outlined" IsClickable="True" Padding="18">
-                    <StackPanel Spacing="10"><Border Width="42" Height="42" CornerRadius="14" Background="{mcu:MdSysColor PrimaryContainer}"><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="◈" /></Border><TextBlock Classes="title-medium" Text="Foundations" /><TextBlock Classes="body-small" TextWrapping="Wrap" Foreground="{mcu:MdSysColor OnSurfaceVariant}" Text="Color roles, type scale, shape and elevation." /></StackPanel>
+                    <StackPanel Spacing="10">
+                        <Border Width="42"
+                                Height="42"
+                                CornerRadius="14"
+                                Background="{mcu:MdSysColor PrimaryContainer}">
+                            <ms:MaterialSymbol HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Symbol="Palette"
+                                               Foreground="{mcu:MdSysColor OnPrimaryContainer}" />
+                        </Border>
+                        <TextBlock Classes="title-medium" Text="Foundations" />
+                        <TextBlock Classes="body-small"
+                                   TextWrapping="Wrap"
+                                   Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                   Text="Color roles, type scale, shape and elevation." />
+                    </StackPanel>
                 </m3:MaterialCard>
                 <m3:MaterialCard Variant="Outlined" IsClickable="True" Padding="18">
-                    <StackPanel Spacing="10"><Border Width="42" Height="42" CornerRadius="14" Background="{mcu:MdSysColor SecondaryContainer}"><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="✦" /></Border><TextBlock Classes="title-medium" Text="Components" /><TextBlock Classes="body-small" TextWrapping="Wrap" Foreground="{mcu:MdSysColor OnSurfaceVariant}" Text="States, sizes and expressive variants." /></StackPanel>
+                    <StackPanel Spacing="10">
+                        <Border Width="42"
+                                Height="42"
+                                CornerRadius="14"
+                                Background="{mcu:MdSysColor SecondaryContainer}">
+                            <ms:MaterialSymbol HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Symbol="Widgets"
+                                               Foreground="{mcu:MdSysColor OnSecondaryContainer}" />
+                        </Border>
+                        <TextBlock Classes="title-medium" Text="Components" />
+                        <TextBlock Classes="body-small"
+                                   TextWrapping="Wrap"
+                                   Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                   Text="States, sizes and expressive variants." />
+                    </StackPanel>
                 </m3:MaterialCard>
                 <m3:MaterialCard Variant="Outlined" IsClickable="True" Padding="18">
-                    <StackPanel Spacing="10"><Border Width="42" Height="42" CornerRadius="14" Background="{mcu:MdSysColor TertiaryContainer}"><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="↗" /></Border><TextBlock Classes="title-medium" Text="Patterns" /><TextBlock Classes="body-small" TextWrapping="Wrap" Foreground="{mcu:MdSysColor OnSurfaceVariant}" Text="Production-shaped flows to adapt directly." /></StackPanel>
+                    <StackPanel Spacing="10">
+                        <Border Width="42"
+                                Height="42"
+                                CornerRadius="14"
+                                Background="{mcu:MdSysColor TertiaryContainer}">
+                            <ms:MaterialSymbol HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Symbol="Schema"
+                                               Foreground="{mcu:MdSysColor OnTertiaryContainer}" />
+                        </Border>
+                        <TextBlock Classes="title-medium" Text="Patterns" />
+                        <TextBlock Classes="body-small"
+                                   TextWrapping="Wrap"
+                                   Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                   Text="Production-shaped flows to adapt directly." />
+                    </StackPanel>
                 </m3:MaterialCard>
                 <m3:MaterialCard Variant="Outlined" IsClickable="True" Padding="18">
-                    <StackPanel Spacing="10"><Border Width="42" Height="42" CornerRadius="14" Background="{mcu:MdSysColor ErrorContainer}"><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="≈" /></Border><TextBlock Classes="title-medium" Text="Motion" /><TextBlock Classes="body-small" TextWrapping="Wrap" Foreground="{mcu:MdSysColor OnSurfaceVariant}" Text="Springs, morphs and tactile feedback." /></StackPanel>
+                    <StackPanel Spacing="10">
+                        <Border Width="42"
+                                Height="42"
+                                CornerRadius="14"
+                                Background="{mcu:MdSysColor ErrorContainer}">
+                            <ms:MaterialSymbol HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Symbol="Animation"
+                                               Foreground="{mcu:MdSysColor OnErrorContainer}" />
+                        </Border>
+                        <TextBlock Classes="title-medium" Text="Motion" />
+                        <TextBlock Classes="body-small"
+                                   TextWrapping="Wrap"
+                                   Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                   Text="Springs, morphs and tactile feedback." />
+                    </StackPanel>
                 </m3:MaterialCard>
             </WrapPanel>
 

@@ -4,6 +4,8 @@ using Avalonia.Layout;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.VisualTesting.Model;
+using MaterialSymbols;
+using MaterialSymbols.Avalonia;
 
 namespace Material3Expressive.VisualTesting.Cases;
 
@@ -37,27 +39,30 @@ internal static class NavigationCases
                     {
                         Size = AppBarSize.Small,
                         Title = "Inbox",
-                        NavigationIcon = "Back",
-                        Actions = "More"
+                        NavigationIcon = Symbol(MaterialSymbolCodepoint.ArrowBack),
+                        Actions = Symbol(MaterialSymbolCodepoint.MoreVert)
                     },
                     new MaterialAppBar
                     {
                         Size = AppBarSize.Medium,
                         Title = "Settings",
-                        NavigationIcon = "Back"
+                        NavigationIcon = Symbol(MaterialSymbolCodepoint.ArrowBack)
                     },
                     new MaterialAppBar
                     {
                         Size = AppBarSize.Large,
                         Title = "Photographs",
                         Subtitle = "384 items",
-                        NavigationIcon = "Back",
+                        NavigationIcon = Symbol(MaterialSymbolCodepoint.ArrowBack),
                         IsScrolled = true
                     }
                 }
             },
             ComparisonProfile.Exact,
             ["full", "navigation", "app-bar"]);
+
+    private static MaterialSymbol Symbol(MaterialSymbolCodepoint codepoint) =>
+        new() { Symbol = codepoint };
 
     private static VisualCase TabsAndDestinations(VisualTheme theme) =>
         new(
