@@ -1,13 +1,14 @@
 # Material 3 Expressive for Avalonia
 
 A Material 3 Expressive component library for Avalonia that tracks the official AndroidX Compose
-implementation — pinned to **compose-material3 `1.5.0-alpha25`** — in visual, behavioural and API
+implementation — pinned to **compose-material3 `1.5.0-alpha24`** — in visual, behavioural and API
 fidelity. Every token is transcribed from the Material token database and stamped with the version
 it came from.
 
-> `0.1.0-alpha`. Every phase of the [roadmap](ROADMAP.md) is delivered — theming core, token
-> pipeline, motion, and all five component waves. Deliberate deviations from upstream are listed
-> in [docs/parity.md](docs/parity.md).
+> `0.1.0-alpha`. The local roadmap is delivered — theming core, token pipeline, motion,
+> all five component waves, and local visual verification. NuGet publishing and repository
+> archival are deliberately deferred. Deliberate deviations from upstream are listed in
+> [docs/parity.md](docs/parity.md).
 
 ## What is here
 
@@ -81,7 +82,9 @@ override bag and the theme accessors are all generated. See
 [docs/token-tables.md](docs/token-tables.md).
 
 The theming core is documented in [docs/architecture.md](docs/architecture.md); deliberate
-deviations from upstream are listed in [docs/parity.md](docs/parity.md).
+deviations from upstream are listed in [docs/parity.md](docs/parity.md), and the local
+regression/Compose comparison workflow is in
+[docs/visual-testing.md](docs/visual-testing.md).
 
 ## Layout
 

@@ -1,8 +1,15 @@
 # Parity with compose-material3
 
-Referent: **compose-material3 `1.5.0-alpha25`** (androidx @ `ff0a0a99`). Every token file in the
+Executable referent: **compose-material3 `1.5.0-alpha24`**, pinned by the
+`material3-android` AAR SHA-256 in the visual-reference manifest. Every token file in the
 repository records the upstream file it was transcribed from and that file's token-DB stamp, so a
 transcription can be re-checked against the source at any time.
+
+Visual component comparison uses a shared, hash-pinned Tonal Spot role palette rather than
+comparing Compose's static parameterless `lightColorScheme()` with a seed-generated dynamic
+scheme. See [visual-testing.md](visual-testing.md). Differences between those two color-generation
+inputs remain visible in the Foundation color-contract audit and are not classified as component
+deviations.
 
 This page lists what deliberately differs. Anything not listed here is intended to match.
 
@@ -11,9 +18,9 @@ This page lists what deliberately differs. Anything not listed here is intended 
 | Area | Upstream | Here | Why |
 |---|---|---|---|
 | **Elevation** | Two shadows composited from a light source — a tight key shadow and a wide ambient one — through Android's shadow renderer. | One box shadow per level, tuned to read the same at the six Material levels. | Avalonia has a single offset-blur-spread shadow per layer. The two cannot be derived from the same optics, so they are matched by eye at the levels that actually ship. |
-| **Focus indicator** | The Material 3 spec describes an inset ring drawn outside the container fill. | The focus state layer at `FocusStateLayerOpacity`. | compose-material3 `1.5.0-alpha25` has no separate focus ring for buttons — focus *is* the state layer. The pinned referent wins over the spec page. |
+| **Focus indicator** | The Material 3 spec describes an inset ring drawn outside the container fill. | The focus state layer at `FocusStateLayerOpacity`. | compose-material3 `1.5.0-alpha24` has no separate focus ring for buttons — focus *is* the state layer. The pinned referent wins over the spec page. |
 | **Small button vertical padding** | 8dp for precision pointers, 10dp for coarse ones (`ButtonDefaults.smallVerticalPadding`). | 8dp. | Avalonia exposes no equivalent of Android's pointer-precision signal. The desktop value is the default; an app that needs the coarse one can retune the token. |
-| **Emphasized typefaces** | The emphasized type scale slots reuse `TypefaceTokens.Brand` and `.Plain` with a heavier weight. | Separate `EmphasizedBrand` and `EmphasizedPlain` slots, defaulting to the same faces. | Out of the box the result is identical. The extra slots exist so an app can point the emphasized styles at a distinct face — a Roboto Flex instance, say — which is what the Expressive spec assumes and what a variable-font pipeline will want. |
+| **Emphasized typefaces** | The emphasized type scale slots reuse `TypefaceTokens.Brand` and `.Plain` with a heavier preset weight. | Separate `EmphasizedBrand` and `EmphasizedPlain` slots, defaulting to the same Roboto face. | Visual parity uses only named Roboto weights such as Regular, Medium and Bold; it does not depend on continuous variable-font axes. |
 | **State layer stacking** | Interactions are an ordered stream; the most recent one shows. | A fixed precedence: dragged over pressed over focused over hovered. | Avalonia reports interaction as independent boolean properties, not as an ordered stream. The fixed order matches the only sequence the interactions can arrive in. |
 | **Spring settling** | `getDurationNanos` from the spring estimator. | The same estimator, same port. | No deviation — noted because the obvious shortcut (stop when the value is close to the target) is *not* what is implemented: an overshoot passing through the target would be mistaken for arrival. |
 | **Switch drag** | The knob can be dragged between states. | Click and keyboard only. | `MaterialSwitch` paints itself, so it derives from `ToggleButton` rather than `ToggleSwitch`, whose required knob template parts it could not satisfy meaningfully. Drag-to-toggle went with them and is not yet reimplemented. |

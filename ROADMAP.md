@@ -62,9 +62,9 @@ hand-rolled per-domain resolvers in `Foundation/`).
   `internal` under `Tokens/Infrastructure/`; theming core v3 deletes them.
 - Archive the DesignTokens repo (README pointing here). **Still outstanding** —
   needs a GitHub settings change.
-- ~~Pin the Avalonia version~~ (**12.1.0**, see below); parity referent is pinned:
-  **compose-material3 `1.5.0-alpha25`** (androidx @ `ff0a0a99`, checked out at
-  `D:\source\androidx`).
+- ~~Pin the Avalonia version~~ (**12.1.0**, see below); executable parity referent is pinned:
+  **compose-material3 `1.5.0-alpha24`** from Google Maven, with the exact
+  `material3-android` AAR SHA-256 recorded in the visual-reference manifest.
   Survey notes: [docs/androidx-reference.md](docs/androidx-reference.md).
   Note: Expressive APIs are stable upstream — we treat Expressive as the default
   behavior, not a variant.
@@ -92,7 +92,7 @@ binding's fallback rather than throwing.
 |---|---|---|
 | Avalonia | **12.1.0** | `AvaloniaVersion` in all three `Directory.Packages.props` |
 | .NET | `net10.0` (MaterialColorUtilities also targets `net8.0`) | per-project `TargetFramework(s)` |
-| compose-material3 | **1.5.0-alpha25** | androidx @ `ff0a0a99` |
+| compose-material3 | **1.5.0-alpha24** | released AAR; SHA-256 pinned in the visual-reference manifest |
 
 Avalonia 12 migration notes, for anything still on 11.x: `Avalonia.Data.IBinding`
 is gone (use `BindingBase`, which is also what `this[!Property]` now returns);
@@ -198,7 +198,7 @@ Findings worth carrying forward:
   one, which upstream notes would overflow the stack under repeated toggling.
 - **Not built: a separate focus ring.** The roadmap called for the spec's
   "inset ring drawn outside the container fill", but compose-material3
-  `1.5.0-alpha25` has no such thing for buttons — focus is the state layer at
+  `1.5.0-alpha24` has no such thing for buttons — focus is the state layer at
   `FocusStateLayerOpacity`, and the pinned referent wins over the spec page.
 - **Polygon morphing (graphics-shapes): already ported** at
   `modules/MaterialShapes` — full 35-shape catalog, Morph pipeline, 80 tests,
@@ -244,10 +244,9 @@ Findings worth carrying forward:
   in the gallery; a symbol glyph drops into the same slot unchanged.
 - ~~v0.1.0-alpha packaging.~~ `Shirasagi0012.Material3Expressive.Avalonia`,
   Apache-2.0, README and symbols packed, built into `artifacts/`.
-- **Outstanding: the actual NuGet push, and side-by-side screenshots against
-  Compose.** Both are outward-facing acts that want a human at the keyboard —
-  publishing is irreversible, and a screenshot comparison is only worth
-  anything if someone judges it.
+- **Outstanding: the actual NuGet push.** Publishing is deliberately deferred.
+  The local Compose screenshot pipeline and side-by-side diagnostic report now
+  exist; human review of their conclusions remains intentionally manual.
 
 ### Phase 5 — Coverage waves
 
@@ -262,11 +261,30 @@ Grouped by shared primitives, roughly in order:
 
 Each wave: token tables first, then controls, then motion polish, then gallery.
 
+### Phase 6 — Local visual verification — **framework done 2026-07-27**
+
+- 89 deterministic Avalonia candidates cover all public component families,
+  cross-cutting risks, real input states, and manual-clock motion keyframes.
+- Candidate approval is explicit and SHA-256-bound. All 89 remain unapproved
+  until the user reviews them; ordinary tests skip rather than enforce them.
+- The released Compose Material3 `1.5.0-alpha24` reference application captures
+  15 cases on the API 35 `Pixel_9_Pro` AVD. Two independent captures produced
+  identical hashes.
+- Component comparison injects the same hash-pinned Tonal Spot / Spec2021 /
+  Phone role-color contract into both renderers. Default-seed or algorithm
+  drift is audited separately instead of being reported as component color
+  error.
+- The local HTML report provides geometry, text, perceptual color, edge,
+  overlay and heatmap diagnostics. It remains diagnostic until reviewed
+  cross-renderer thresholds are chosen.
+
+Workflow and current findings: [docs/visual-testing.md](docs/visual-testing.md).
+
 ## Cross-cutting
 
 - **Testing:** Avalonia.Headless for token resolution, scoping, and interaction
-  states from Phase 1 onward; visual regression (gallery screenshot diffing)
-  once Phase 4 lands.
+  states from Phase 1 onward; component-scoped Skia visual regression and
+  Compose reference comparison are implemented locally.
 - **Packaging:** `Material3Expressive` (controls + theming),
   `MaterialColorUtilities` stays independently useful on NuGet; shapes port as
   its own package.
@@ -307,8 +325,8 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
    Done — it is a token table now, stamped `v0_103`, and the emphasized slots
    gained the face and weight they were missing.
 6. ~~Phase 3: spike the spring animator.~~ Done — Phase 3 complete.
-7. ~~Phase 4: first component wave.~~ Done, except the two outward-facing items
-   under that phase (NuGet push, Compose screenshots).
+7. ~~Phase 4: first component wave.~~ Done. NuGet publishing remains deferred;
+   the local Compose screenshot and comparison framework is now implemented.
 8. ~~Phase 5, wave 2: Checkbox, Switch, RadioButton, Slider, ProgressIndicator.~~
    Done. The wavy progress indicator turned out **not** to need
    `modules/MaterialShapes` — its wave is a sampled sine along a line or a ring,
@@ -320,11 +338,13 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
 What is left is not roadmap work but the things a roadmap cannot do:
 
 - **Publish `0.1.0-alpha` to NuGet.** The package builds; pushing it is
-  irreversible and wants a human.
-- **Screenshot the gallery against Compose side by side.** A visual comparison
-  is only worth anything if somebody judges it.
+  irreversible and is deliberately deferred.
+- **Review and approve the 89 local candidate baselines.** Approval cannot be
+  granted by automation.
+- **Review the 15-case Compose parity report and decide future diagnostic
+  thresholds.** The report exists locally; judgment remains human.
 - **Archive the DesignTokens repo** — the one Phase 0 loose end, a GitHub
-  settings change.
+  settings change, also deliberately deferred with other online-platform work.
 - Three components named in the waves but deliberately not built, listed with
   everything else that differs in [docs/parity.md](docs/parity.md): floating
   toolbars, adaptive navigation, and the pickers' typed-input alternatives.

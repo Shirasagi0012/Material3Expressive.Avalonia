@@ -315,7 +315,10 @@ public class MaterialTextField : TemplatedControl
         // At rest the label sits on the input's baseline; floated it rides the top edge — inside
         // the field for the filled variant, on the border for the outlined one.
         var restingY = (field.Height - text.Height) / 2;
-        var floatedY = _tokens.IsFilled ? 8 : -text.Height / 2;
+        // Avalonia clips a control's own drawing at its bounds even when a Material outlined
+        // label conceptually straddles the border. Keep the glyph ink inside the field and let
+        // the notched outline meet it, which also preserves the full label at mdpi.
+        var floatedY = _tokens.IsFilled ? 8 : 2;
 
         context.DrawText(text, new Point(
             field.X + _tokens.HorizontalSpace,

@@ -134,9 +134,17 @@ public class MaterialDialog : ContentControl
         using (context.PushOpacity(_tokens.ScrimOpacity * fraction))
             context.FillRectangle(new SolidColorBrush(scrim), new Rect(Bounds.Size));
 
-        if (Presenter is not { Bounds: { Width: > 0 } surface })
+        if (Presenter is not { Bounds.Width: > 0 } presenter)
             return;
 
+        // ContentPresenter.Margin is removed from its Bounds by Avalonia's layout pass. Inflate
+        // the painted surface back around the content so Padding remains actual inner space.
+        var content = presenter.Bounds;
+        var surface = new Rect(
+            content.X - Padding.Left,
+            content.Y - Padding.Top,
+            content.Width + Padding.Left + Padding.Right,
+            content.Height + Padding.Top + Padding.Bottom);
         var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, surface.Size);
         var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
@@ -145,11 +153,11 @@ public class MaterialDialog : ContentControl
         var transform =
             Matrix.CreateTranslation(-surface.Width / 2, -surface.Height / 2)
             * Matrix.CreateScale(scale, scale)
-            * Matrix.CreateTranslation(surface.Center.X, surface.Center.Y);
+            * Matrix.CreateTranslation(surface.Width / 2, surface.Height / 2)
+            * Matrix.CreateTranslation(surface.X, surface.Y);
 
         using (context.PushTransform(transform))
         using (context.PushOpacity(fraction))
-        using (context.PushTransform(Matrix.CreateTranslation(surface.X, surface.Y)))
         {
             MaterialContainer.Draw(
                 context,

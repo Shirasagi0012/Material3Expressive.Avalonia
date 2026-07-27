@@ -81,16 +81,19 @@ public class MaterialBottomSheet : ContentControl
     private SpringAnimation Open =>
         _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
 
-    private Rect SheetArea
-    {
-        get
-        {
-            var width = Math.Min(Bounds.Width, _tokens.MaxWidth);
-            var height = Presenter?.DesiredSize.Height ?? 0;
-            var hidden = height * (1 - OpenFraction);
+    private Rect SheetArea => GetSheetArea(Bounds.Size);
 
-            return new Rect((Bounds.Width - width) / 2, Bounds.Height - height + hidden, width, height);
-        }
+    private Rect GetSheetArea(Size available)
+    {
+        var width = Math.Min(available.Width, _tokens.MaxWidth);
+        var height = Presenter?.DesiredSize.Height ?? 0;
+        var hidden = height * (1 - OpenFraction);
+
+        return new Rect(
+            (available.Width - width) / 2,
+            available.Height - height + hidden,
+            width,
+            height);
     }
 
     public override void Render(DrawingContext context)
@@ -146,7 +149,9 @@ public class MaterialBottomSheet : ContentControl
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        var sheet = SheetArea;
+        // Bounds still contains the previous layout slot while ArrangeOverride runs. Computing
+        // from finalSize prevents the first arrangement from giving the presenter a zero width.
+        var sheet = GetSheetArea(finalSize);
 
         if (Presenter is { } presenter)
             presenter.Arrange(sheet);

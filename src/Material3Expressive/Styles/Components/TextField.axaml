@@ -28,13 +28,26 @@
                                      Height="34"
                                      Background="Transparent"
                                      BorderThickness="0"
+                                     FocusAdorner="{x:Null}"
                                      CornerRadius="0"
                                      Padding="0"
                                      Text="{TemplateBinding Text, Mode=TwoWay}"
                                      PlaceholderText="{TemplateBinding Placeholder}"
                                      Foreground="{TemplateBinding Foreground}"
                                      FontSize="{TemplateBinding FontSize}"
-                                     FontFamily="{TemplateBinding FontFamily}" />
+                                     FontFamily="{TemplateBinding FontFamily}">
+                                <!-- The editor keeps Avalonia's caret, selection, IME and undo
+                                     implementation, but its Fluent focus frame must not sit
+                                     inside Material's own outlined/filled chrome. -->
+                                <TextBox.Resources>
+                                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                                     Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                                     Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                                     Color="Transparent" />
+                                </TextBox.Resources>
+                            </TextBox>
                         </Panel>
                         <TextBlock x:Name="PART_Supporting"
                                    Margin="16,4,16,0"

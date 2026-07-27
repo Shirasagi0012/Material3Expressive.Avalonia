@@ -144,8 +144,10 @@ public class MaterialIconButton : Button
             || change.Property == ButtonWidthProperty
             || change.Property == IsEffectivelyEnabledProperty)
             ApplyTokens();
-        else if (change.Property == IsSquareProperty || change.Property == ContainerShapeOverrideProperty)
+        else if (change.Property == IsSquareProperty)
             UpdateShape();
+        else if (change.Property == ContainerShapeOverrideProperty)
+            UpdateShape(snap: true);
     }
 
     private void ApplyTokens()

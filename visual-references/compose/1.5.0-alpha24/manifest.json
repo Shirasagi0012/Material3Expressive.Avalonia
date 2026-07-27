@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 2,
+  "referenceSetId": "compose-material3-1.5.0-alpha24-api35-mdpi",
+  "composeMaterial3Version": "1.5.0-alpha24",
+  "sourceArtifact": "androidx.compose.material3:material3-android:1.5.0-alpha24",
+  "sourceArtifactSha256": "2D02D84CE0A73B604B6393738C1076B79B97BF33E3B4A4DB80502D75C2BAA09F",
+  "colorContract": {
+    "id": "tonal-spot-spec2021-phone-seed-6750a4",
+    "seed": "#6750A4",
+    "variant": "TonalSpot",
+    "specVersion": "Spec2021",
+    "platform": "Phone",
+    "manifest": "visual-references/color-contracts/tonal-spot-spec2021-phone-seed-6750a4.json",
+    "sha256": "F5EEA9067538EA66A70A3C9197136C13FD330B46E9D5DF484D1BCA4BC23DE39C",
+    "materialColorUtilitiesCommit": "05f04c94555fc8fbaa3f85ea3c899ad948e955cd"
+  },
+  "environment": {
+    "androidApi": 35,
+    "densityDpi": 160,
+    "fontScale": 1.0,
+    "locale": "en-US",
+    "layoutDirection": "ltr",
+    "fontFamily": "Roboto",
+    "fontFileName": "Roboto-VariableFont_wdth,wght.ttf",
+    "fontFileSha256": "B25986D18730960C7B27384AB2BC500856AE7FE9E71C9850019195FF9019F0B2",
+    "fontWeightPolicy": "preset-weights-only",
+    "emulatorProfile": "Pixel_9_Pro-api35-mdpi-override"
+  },
+  "cases": [
+    {
+      "id": "foundation/color/primary-roles/dark",
+      "image": "cases/foundation/color/primary-roles/dark.png",
+      "theme": "dark",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ColorScheme",
+      "sourceGolden": "shared_contract_primary_roles_dark",
+      "regions": [
+        { "id": "primary", "kind": "container", "x": 0, "y": 0, "width": 60, "height": 96 },
+        { "id": "on-primary", "kind": "container", "x": 60, "y": 0, "width": 60, "height": 96 },
+        { "id": "primary-container", "kind": "container", "x": 120, "y": 0, "width": 60, "height": 96 },
+        { "id": "on-primary-container", "kind": "container", "x": 180, "y": 0, "width": 60, "height": 96 }
+      ]
+    },
+    {
+      "id": "foundation/color/primary-roles/light",
+      "image": "cases/foundation/color/primary-roles/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ColorScheme",
+      "sourceGolden": "shared_contract_primary_roles_light",
+      "regions": [
+        { "id": "primary", "kind": "container", "x": 0, "y": 0, "width": 60, "height": 96 },
+        { "id": "on-primary", "kind": "container", "x": 60, "y": 0, "width": 60, "height": 96 },
+        { "id": "primary-container", "kind": "container", "x": 120, "y": 0, "width": 60, "height": 96 },
+        { "id": "on-primary-container", "kind": "container", "x": 180, "y": 0, "width": 60, "height": 96 }
+      ]
+    },
+    {
+      "id": "card/filled/fixed/enabled/light",
+      "image": "cases/card/filled/fixed/enabled/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 128,
+      "sourceTest": "androidx.compose.material3.CardScreenshotTest",
+      "sourceGolden": "filled_card_fixed_light",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 32, "y": 16, "width": 176, "height": 96 }
+      ]
+    },
+    {
+      "id": "fab/primary/small/enabled/light",
+      "image": "cases/fab/primary/small/enabled/light.png",
+      "theme": "light",
+      "width": 160,
+      "height": 120,
+      "sourceTest": "androidx.compose.material3.FloatingActionButtonScreenshotTest",
+      "sourceGolden": "primary_small_fab_light",
+      "regions": [
+        { "id": "component", "kind": "shadow", "x": 40, "y": 20, "width": 80, "height": 80 }
+      ]
+    },
+    {
+      "id": "selection/checkbox/selected/light",
+      "image": "cases/selection/checkbox/selected/light.png",
+      "theme": "light",
+      "width": 96,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.CheckboxScreenshotTest",
+      "sourceGolden": "checkbox_selected_light",
+      "regions": [
+        { "id": "component", "kind": "icon", "x": 24, "y": 24, "width": 48, "height": 48 }
+      ]
+    },
+    {
+      "id": "textfield/outlined/populated/light",
+      "image": "cases/textfield/outlined/populated/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
+      "sourceGolden": "outlined_text_field_populated_light",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 16, "y": 16, "width": 248, "height": 64 },
+        { "id": "label", "kind": "text", "x": 28, "y": 16, "width": 64, "height": 24 },
+        { "id": "input", "kind": "text", "x": 28, "y": 36, "width": 96, "height": 36 }
+      ]
+    },
+    {
+      "id": "navigation/bar/three-items/selected/light",
+      "image": "cases/navigation/bar/three-items/selected/light.png",
+      "theme": "light",
+      "width": 360,
+      "height": 112,
+      "sourceTest": "androidx.compose.material3.NavigationBarScreenshotTest",
+      "sourceGolden": "navigation_bar_three_items_selected_light",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 0, "y": 12, "width": 360, "height": 88 },
+        { "id": "labels", "kind": "text", "x": 20, "y": 60, "width": 320, "height": 36 }
+      ]
+    },
+    {
+      "id": "button/elevated/medium/enabled/light",
+      "image": "cases/button/elevated/medium/enabled/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "elevated_button_light_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    },
+    {
+      "id": "button/filled/medium/disabled/dark",
+      "image": "cases/button/filled/medium/disabled/dark.png",
+      "theme": "dark",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "button_disabled_dark_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    },
+    {
+      "id": "button/filled/medium/disabled/light",
+      "image": "cases/button/filled/medium/disabled/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "button_disabled_light_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    },
+    {
+      "id": "button/filled/medium/enabled/dark",
+      "image": "cases/button/filled/medium/enabled/dark.png",
+      "theme": "dark",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "button_dark_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    },
+    {
+      "id": "button/filled/medium/enabled/light",
+      "image": "cases/button/filled/medium/enabled/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "button_light_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    },
+    {
+      "id": "button/outlined/medium/enabled/light",
+      "image": "cases/button/outlined/medium/enabled/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "outlined_button_light_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    },
+    {
+      "id": "button/text/medium/enabled/light",
+      "image": "cases/button/text/medium/enabled/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "text_button_light_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    },
+    {
+      "id": "button/tonal/medium/enabled/light",
+      "image": "cases/button/tonal/medium/enabled/light.png",
+      "theme": "light",
+      "width": 240,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.ButtonScreenshotTest",
+      "sourceGolden": "filled_tonal_button_light_theme",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 56, "y": 16, "width": 128, "height": 64 },
+        { "id": "label", "kind": "text", "x": 88, "y": 32, "width": 64, "height": 32 }
+      ]
+    }
+  ]
+}

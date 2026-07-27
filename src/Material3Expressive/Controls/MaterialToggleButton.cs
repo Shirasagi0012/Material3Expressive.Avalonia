@@ -117,8 +117,10 @@ public class MaterialToggleButton : ToggleButton
             ApplyTokens();
         else if (change.Property == IsCheckedProperty)
             ApplyChecked();
-        else if (change.Property == IsSquareProperty || change.Property == ContainerShapeOverrideProperty)
+        else if (change.Property == IsSquareProperty)
             UpdateShape();
+        else if (change.Property == ContainerShapeOverrideProperty)
+            UpdateShape(snap: true);
     }
 
     private IImmutableBrush ContainerBrush()

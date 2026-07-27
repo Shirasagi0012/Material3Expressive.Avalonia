@@ -1,4 +1,6 @@
 using System;
+using Avalonia.Controls;
+using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using Xunit;
@@ -261,6 +263,40 @@ public class TweenTests
             Assert.True(value >= previous, $"went backwards at {i}%");
             previous = value;
         }
+    }
+}
+
+public class MotionGroupTests
+{
+    [Fact]
+    public void AManualClockAdvancesByTheExactRequestedDuration()
+    {
+        var group = new MotionGroup(new Border());
+        var tween = group.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
+        group.UseManualClock();
+        tween.AnimateTo(1);
+
+        // A detached production group normally settles. Manual mode must instead wait for the
+        // test-provided delta.
+        group.Start();
+        Assert.Equal(0, tween.Value);
+
+        group.AdvanceBy(TimeSpan.FromMilliseconds(40));
+        Assert.Equal(0.4, tween.Value, 6);
+
+        group.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.Equal(1, tween.Value);
+        Assert.False(tween.IsRunning);
+    }
+
+    [Fact]
+    public void AManualClockRejectsTimeMovingBackwards()
+    {
+        var group = new MotionGroup(new Border());
+        group.UseManualClock();
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => group.AdvanceBy(TimeSpan.FromMilliseconds(-1)));
     }
 }
 

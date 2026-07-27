@@ -77,11 +77,23 @@ public class MaterialNavigationBar : TemplatedControl
     /// <summary>True when the items stack down the side rather than across the bottom.</summary>
     public bool IsVertical => _tokens.IsVertical;
 
+    /// <summary>Rows requested by the template's uniform item grid.</summary>
+    public int ItemRows => IsVertical ? 0 : 1;
+
+    /// <summary>Columns requested by the template's uniform item grid.</summary>
+    public int ItemColumns => IsVertical ? 1 : 0;
+
     public static readonly DirectProperty<MaterialNavigationBar, double> ItemSpacingProperty =
         AvaloniaProperty.RegisterDirect<MaterialNavigationBar, double>(nameof(ItemSpacing), o => o.ItemSpacing);
 
     public static readonly DirectProperty<MaterialNavigationBar, bool> IsVerticalProperty =
         AvaloniaProperty.RegisterDirect<MaterialNavigationBar, bool>(nameof(IsVertical), o => o.IsVertical);
+
+    public static readonly DirectProperty<MaterialNavigationBar, int> ItemRowsProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationBar, int>(nameof(ItemRows), o => o.ItemRows);
+
+    public static readonly DirectProperty<MaterialNavigationBar, int> ItemColumnsProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationBar, int>(nameof(ItemColumns), o => o.ItemColumns);
 
     public override void Render(DrawingContext context)
     {
@@ -174,12 +186,16 @@ public class MaterialNavigationBar : TemplatedControl
     {
         var previousSpacing = ItemSpacing;
         var previousVertical = IsVertical;
+        var previousRows = ItemRows;
+        var previousColumns = ItemColumns;
 
         _tokens = _theme.Theme.GetNavigationTokens(Variant);
         _colors = _theme.Theme.GetNavigationColors(Variant, _theme.IsDark);
 
         RaisePropertyChanged(ItemSpacingProperty, previousSpacing, ItemSpacing);
         RaisePropertyChanged(IsVerticalProperty, previousVertical, IsVertical);
+        RaisePropertyChanged(ItemRowsProperty, previousRows, ItemRows);
+        RaisePropertyChanged(ItemColumnsProperty, previousColumns, ItemColumns);
 
         AttachItems();
         InvalidateVisual();

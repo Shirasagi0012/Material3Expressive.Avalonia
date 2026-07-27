@@ -1,0 +1,23 @@
+{
+  "OperatingSystem": "Microsoft Windows 10.0.26200",
+  "Architecture": "x64",
+  "AvaloniaVersion": "12.1.0.0",
+  "Material3ExpressiveVersion": "0.1.0.0",
+  "SkiaSharpVersion": "3.119.0.0",
+  "Renderer": "Skia",
+  "PixelFormat": "RGBA8888-Premul",
+  "Culture": "en-US",
+  "FontFamily": "Roboto",
+  "FontFiles": [
+    {
+      "FileName": "Roboto-Italic-VariableFont_wdth,wght.ttf",
+      "Length": 497124,
+      "Sha256": "1D3F965EE5C68C007DCF55FD712267D8025F92B6698E8BC13F76F83B9B7842E7"
+    },
+    {
+      "FileName": "Roboto-VariableFont_wdth,wght.ttf",
+      "Length": 468308,
+      "Sha256": "B25986D18730960C7B27384AB2BC500856AE7FE9E71C9850019195FF9019F0B2"
+    }
+  ]
+}

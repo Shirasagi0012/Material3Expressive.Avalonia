@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
@@ -40,8 +41,18 @@ public sealed class MaterialInteractionHost
 
         _owner.PointerEntered += (_, _) => Set(InteractionState.Hovered, true);
         _owner.PointerExited += (_, _) => Set(InteractionState.Hovered, false);
-        _owner.PointerPressed += OnPointerPressed;
-        _owner.PointerReleased += (_, _) => EndPress();
+        // Button-derived controls handle pointer presses in their class handler. Listen on the
+        // tunnel route so Material feedback still sees the physical input before it is consumed.
+        _owner.AddHandler(
+            InputElement.PointerPressedEvent,
+            OnPointerPressed,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+        _owner.AddHandler(
+            InputElement.PointerReleasedEvent,
+            OnPointerReleased,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
         _owner.PointerCaptureLost += (_, _) => EndPress();
         _owner.GotFocus += OnGotFocus;
         _owner.LostFocus += (_, _) => Set(InteractionState.Focused, false);
@@ -182,6 +193,12 @@ public sealed class MaterialInteractionHost
     {
         if (e.GetCurrentPoint(_owner).Properties.IsLeftButtonPressed)
             StartPress(e.GetPosition(_owner));
+    }
+
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.InitialPressMouseButton == MouseButton.Left)
+            EndPress();
     }
 
     private void OnGotFocus(object? sender, FocusChangedEventArgs e)

@@ -40,7 +40,7 @@ tools/
 
 visual-references/
 └── compose/
-    └── 1.5.0-alpha25/
+    └── 1.5.0-alpha24/
 ```
 
 必须创建独立 VisualTests 程序集。Avalonia Headless 是进程级单例，而现有行为测试使用默认 Headless Drawing；视觉测试需要真实 Skia，两者放在同一测试进程中容易发生配置冲突。
@@ -67,6 +67,8 @@ public sealed record VisualCase(
 - 视口尺寸
 - Light/Dark
 - Seed color
+- Color algorithm / variant / spec version / platform
+- Shared color-role contract SHA-256
 - DPI
 - Culture 和 FlowDirection
 - 控件创建方法
@@ -137,10 +139,12 @@ Avalonia 12.1 已提供 `CaptureRenderedFrame`、强制渲染帧、DPI 设置和
 
 字体是最大的不确定因素。
 
-- 回归测试使用测试项目内固定携带的字体文件。
+- 回归测试统一使用 Roboto。Roboto 可变字体可以使用，但仅选择 Avalonia
+  可稳定解析的预设字重（例如 Regular、Medium、Bold），不连续调节 `wght`。
 - 字体文件参与环境指纹。
 - 不依赖操作系统字体 fallback。
-- Compose parity 使用相同的 Roboto/Roboto Flex 静态实例。
+- Compose parity 使用同一份 Roboto 文件（文件 SHA-256 进入采集契约）和相同的预设字重。
+- 不使用 Roboto Flex，也不把可变字体连续轴作为视觉测试输入。
 - Typography 专门测试字体 fallback 和 emphasized slot。
 
 核心库仍然不依赖字体包；这些字体只属于视觉测试资产。
@@ -343,7 +347,14 @@ renderer.Capture();
 
 ## 十、Compose parity
 
-Compose 参考图由固定的 `compose-material3 1.5.0-alpha25` 生成。Android 官方支持 Compose Preview Screenshot Testing，可作为参考图生成入口。[Android Screenshot Testing](https://developer.android.com/training/testing/ui-tests/screenshot)
+Compose 参考图由固定的已发布 `compose-material3 1.5.0-alpha24` 生成。
+参考来源同时固定 Google Maven 坐标和 AAR SHA-256；如果以后改为源码构建，再固定
+AndroidX commit。Android 官方支持 Compose Preview Screenshot Testing，可作为参考图生成入口。[Android Screenshot Testing](https://developer.android.com/training/testing/ui-tests/screenshot)
+
+Compose 的无参数 `lightColorScheme()` / `darkColorScheme()` 是静态基准 token，并不等于
+把 `#6750A4` 作为 seed 运行 Material Color Utilities。组件 parity 必须向两端注入同一份
+哈希固定的 role color contract；动态配色算法/规范版本差异由 Foundation 用例单独审计，
+不能误报成控件差异。
 
 两端共享稳定 Case ID：
 
@@ -355,11 +366,12 @@ button/filled/medium/enabled/light
 
 - mdpi
 - 固定视口
-- 相同 Seed color
+- 相同的 seed、scheme variant、spec version 和 platform
+- 相同且哈希固定的 system-role color contract
 - 相同文案
 - 相同字体资产
 - 相同 Light/Dark
-- 固定 AndroidX commit
+- 固定已发布 AAR 坐标与 SHA-256
 - 禁用系统动画和时间变化
 
 Compose 比较不直接使用严格像素门禁，而分成：
@@ -501,3 +513,25 @@ Compose 比较不直接使用严格像素门禁，而分成：
 - 新增一个组件只需要添加 Case，不需要修改渲染和比较框架。
 
 建议实际实施顺序严格按 Stage 0 → 1 → 2 推进。先把 Button、Typography、Shape 的十几张基线跑到绝对稳定，再扩展组件数量；视觉测试框架最危险的不是覆盖少，而是在基础不稳定时一次生成几百张无法信任的图片。
+
+## 十四、实施状态（2026-07-27）
+
+本地框架主链路已经落地，NuGet、GitHub 和在线 CI 保持在本轮范围之外。
+
+| 阶段 | 状态 | 当前结果 |
+|---|---|---|
+| Stage 0 | 完成 | Windows x64 / Avalonia 12.1 / Skia / Roboto 环境指纹固定；Button 100 次探针无 Hash 漂移。 |
+| Stage 1 | 完成 | 独立 Skia 进程、Case/Renderer/Store/Comparer、Diff/Overlay/Heatmap/HTML、只读 verify 与显式 record 全部可用。 |
+| Stage 2–3 | 完成 | 75 个静态、组件和交叉场景覆盖全部公开组件族，包含 Light/Dark、主要 Variant/Size/状态。 |
+| Stage 4 | 完成 | 7 个真实 Headless 输入场景，以及 RTL、1.25×/2× DPI、长文本、动态 Seed、子树主题。 |
+| Stage 5 | 完成 | 固定 `1.5.0-alpha24` 的 15 个 Compose 参考图；Button、FAB、Card、Selection、TextField、Navigation 和 Foundation 均可生成诊断报告。 |
+| Stage 6 | 完成 | internal 手动时钟显式推进动画；Button hover 0/7/15ms 与 press 0/45/90/225ms 覆盖 StateLayer、Ripple、Spring 和 Shape Morph，报告按 timeline 展示；无真实等待。 |
+| Stage 7 | 完成 | orphan、环境指纹、按 tag/filter、审批 Hash 绑定、Compose manifest/hash 校验、总报告和文档均已实现。 |
+
+当前共有 89 张 Avalonia candidate：75 张静态/交叉场景、7 张稳定交互状态、7 张动画关键帧。一次完整 `record` 后立即执行 `verify`，89 张全部逐字节一致；审批清单仍为 0，严格门禁不会在用户审核前生效。
+
+Compose 侧当前为 15/15 可比较、0 缺失、0 非法。两次独立 API 35 模拟器采集的 15 张 PNG Hash 全部一致。共享颜色契约明确固定 `#6750A4`、Tonal Spot、Spec2021、Phone、MCU commit 和所有 role color，因此组件色差不会再混入“默认 seed/算法版本不同”的误报。
+
+最终本地验证：解决方案构建 0 warning / 0 error；行为测试 172/172、视觉框架测试 21/21 通过；89 个视觉回归用例因尚未审批而按设计跳过强制断言。
+
+后续扩展动画时，只需新增带 `motion` tag 的 Case 并调用 `UseManualMotionClock` / `AdvanceAnimations`；LoadingIndicator、Wavy Progress、FAB Menu、快速 release 和 spring retarget 的更多时间轴属于覆盖扩充，不需要修改框架。

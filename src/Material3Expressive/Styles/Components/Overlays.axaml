@@ -19,12 +19,28 @@
                 <ControlTemplate>
                     <!-- The presenter is the dialog surface; the control paints the scrim and the
                          surface behind it, and arranges this in the middle. -->
-                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="Stretch"
                                       Content="{TemplateBinding Content}"
                                       ContentTemplate="{TemplateBinding ContentTemplate}"
                                       TextElement.Foreground="{TemplateBinding SupportingBrush}"
                                       TextElement.FontSize="{TemplateBinding FontSize}"
                                       TextElement.FontFamily="{TemplateBinding FontFamily}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialBottomSheet}" TargetType="m3:MaterialBottomSheet">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="Stretch"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
                 </ControlTemplate>
             </Setter>
         </ControlTheme>

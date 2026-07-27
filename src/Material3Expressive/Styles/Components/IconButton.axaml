@@ -18,6 +18,7 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
@@ -41,6 +42,7 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>

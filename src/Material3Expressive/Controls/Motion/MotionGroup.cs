@@ -27,6 +27,7 @@ public sealed class MotionGroup
     private readonly Action<TimeSpan> _onFrame;
 
     private TimeSpan? _lastFrame;
+    private bool _manualClock;
     private bool _scheduled;
 
     public MotionGroup(Visual host)
@@ -77,7 +78,7 @@ public sealed class MotionGroup
     /// </summary>
     public void Start()
     {
-        if (_scheduled || !IsRunning)
+        if (_manualClock || _scheduled || !IsRunning)
             return;
 
         if (TopLevel.GetTopLevel(_host) is not { } topLevel)
@@ -110,8 +111,45 @@ public sealed class MotionGroup
             Ticked?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Switches this group from the render clock to explicit test-driven time.
+    /// </summary>
+    /// <remarks>
+    /// Internal on purpose: production controls must use the compositor clock, while visual tests
+    /// need repeatable intermediate frames independent of host speed.
+    /// </remarks>
+    internal void UseManualClock()
+    {
+        _manualClock = true;
+        _scheduled = false;
+        _lastFrame = null;
+    }
+
+    /// <summary>Advances a manually clocked group by an exact duration.</summary>
+    internal void AdvanceBy(TimeSpan delta)
+    {
+        if (!_manualClock)
+            throw new InvalidOperationException("Call UseManualClock before advancing a motion group.");
+        if (delta < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(delta), "Animation time cannot move backwards.");
+
+        // Indexed rather than foreach: a tick handler may add a transient ripple.
+        for (var i = 0; i < _animations.Count; i++)
+            _animations[i].Tick(delta);
+
+        Ticked?.Invoke(this, EventArgs.Empty);
+    }
+
     private void OnFrame(TimeSpan now)
     {
+        // A frame may already have been queued when a visual test takes over the clock.
+        if (_manualClock)
+        {
+            _scheduled = false;
+            _lastFrame = null;
+            return;
+        }
+
         _scheduled = false;
 
         // The clock hands out an absolute time, so a freshly started loop has no delta yet.

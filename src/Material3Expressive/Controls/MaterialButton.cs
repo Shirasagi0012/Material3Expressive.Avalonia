@@ -141,8 +141,13 @@ public class MaterialButton : Button
             || change.Property == SizeProperty
             || change.Property == IsEffectivelyEnabledProperty)
             ApplyTokens();
-        else if (change.Property == IsSquareProperty || change.Property == ContainerShapeOverrideProperty)
+        else if (change.Property == IsSquareProperty)
             UpdateShape();
+        else if (change.Property == ContainerShapeOverrideProperty)
+            // Group/split-button geometry is structural layout, not an interaction transition.
+            // Snapping while idle also prevents an identical override written during a later
+            // arrange pass from leaving the container at a clock-dependent intermediate shape.
+            UpdateShape(snap: true);
     }
 
     /// <summary>Resolves every token this button reads and pushes them onto its properties.</summary>

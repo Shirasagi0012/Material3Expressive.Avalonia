@@ -1,6 +1,10 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
@@ -139,6 +143,29 @@ public class ButtonTests
         Assert.True(previous > 12, $"expected the morph to still be running, already at {previous}");
     }
 
+    [AvaloniaFact]
+    public void AHandledButtonPress_StillStartsAndEndsMaterialFeedback()
+    {
+        var button = new MaterialButton { Content = "Press", Width = 120, Height = 40 };
+        var window = ThemeTestHelper.ShowWindow(button);
+        var point = button.TranslatePoint(new Avalonia.Point(36, 20), window)
+                    ?? throw new InvalidOperationException("Button was not mounted.");
+        var probe = new Probe(button);
+
+        window.MouseMove(point);
+        window.MouseDown(point, MouseButton.Left);
+
+        Assert.True(button.IsPressed);
+        Assert.True(probe.Interaction.Interaction.HasFlag(InteractionState.Pressed));
+        probe.Interaction.Motion.SettleAll();
+        Assert.True(probe.Corners.TopLeft < 20);
+
+        window.MouseUp(point, MouseButton.Left);
+
+        Assert.False(button.IsPressed);
+        Assert.False(probe.Interaction.Interaction.HasFlag(InteractionState.Pressed));
+    }
+
     /// <summary>
     /// Runs one frame of the headless render clock.
     /// </summary>
@@ -181,6 +208,14 @@ public class ButtonTests
             (Avalonia.CornerRadius)typeof(MaterialButton)
                 .GetProperty("ContainerCornerRadius", System.Reflection.BindingFlags.Instance
                                                       | System.Reflection.BindingFlags.NonPublic)!
+                .GetValue(button)!;
+
+        public MaterialInteractionHost Interaction =>
+            (MaterialInteractionHost)typeof(MaterialButton)
+                .GetField(
+                    "_interaction",
+                    System.Reflection.BindingFlags.Instance
+                    | System.Reflection.BindingFlags.NonPublic)!
                 .GetValue(button)!;
     }
 }

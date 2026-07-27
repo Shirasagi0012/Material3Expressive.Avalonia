@@ -1,7 +1,7 @@
 # Theming core v3 — architecture
 
 > Written 2026-07-26 as the Phase 1 specification (see [ROADMAP.md](../ROADMAP.md)).
-> Parity referent: compose-material3 `1.5.0-alpha25`; Avalonia `12.1.0`.
+> Parity referent: compose-material3 `1.5.0-alpha24`; Avalonia `12.1.0`.
 > Reference notes on the upstream design live in [androidx-reference.md](androidx-reference.md).
 
 This replaces both prior generations: the generic `DesignTokens` runtime (vendored under

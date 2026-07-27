@@ -1,9 +1,12 @@
 # AndroidX Material3 — reference notes for the Avalonia port
 
 > Compiled 2026-07-26 from a survey of the local androidx checkout.
-> Checkout: `D:\source\androidx` @ `ff0a0a99` (androidx-main, 2026-07-26).
-> Library version under development: **compose-material3 `1.5.0-alpha25`** — this is our
-> pinned parity referent. Common source root (abbreviated `<m3>` below):
+> Survey source: `D:\source\androidx` @ `ff0a0a99` (androidx-main, 2026-07-26),
+> where the library was one unreleased revision ahead at `1.5.0-alpha25`.
+> Executable visual-parity referent: the released **compose-material3 `1.5.0-alpha24`**
+> AAR pinned in `visual-references/compose/1.5.0-alpha24/manifest.json`. If the small
+> source/release gap becomes observable, it must be reviewed explicitly. Common source root
+> (abbreviated `<m3>` below):
 > `D:\source\androidx\compose\material3\material3\src\commonMain\kotlin\androidx\compose\material3\`
 >
 > Note the checkout is partial: `compose/{animation,foundation,material3,ui}`,
