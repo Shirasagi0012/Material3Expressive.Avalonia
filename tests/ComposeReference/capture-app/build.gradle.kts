@@ -19,6 +19,14 @@ val referenceFontPath =
         ).absolutePath
     )
 val generatedReferenceFontRoot = layout.buildDirectory.dir("generated/reference-font/res")
+val referenceManifest =
+    rootProject.file("../../visual-references/compose/1.5.0-alpha24/manifest.json")
+val referenceManifestSha256 =
+    MessageDigest.getInstance("SHA-256")
+        .digest(referenceManifest.readBytes())
+        .joinToString("") { "%02X".format(it) }
+val generatedReferenceContractRoot =
+    layout.buildDirectory.dir("generated/reference-contract/assets")
 
 android {
     namespace = "material3expressive.compose.reference"
@@ -31,6 +39,19 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "MATERIAL3_VERSION", "\"$material3Version\"")
+        buildConfigField(
+            "String",
+            "MATERIAL3_ARTIFACT",
+            "\"androidx.compose.material3:material3-android:$material3Version\"",
+        )
+        buildConfigField("String", "MATERIAL3_AAR_SHA256", "\"$material3AarSha256\"")
+        buildConfigField("String", "REFERENCE_FONT_SHA256", "\"$referenceFontSha256\"")
+        buildConfigField(
+            "String",
+            "REFERENCE_MANIFEST_SHA256",
+            "\"$referenceManifestSha256\"",
+        )
     }
 
     buildTypes {
@@ -41,6 +62,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -58,6 +80,9 @@ android {
         )
         getByName("androidTest").assets.directories.add(
             rootProject.file("../../visual-references/color-contracts").absolutePath
+        )
+        getByName("androidTest").assets.directories.add(
+            generatedReferenceContractRoot.get().asFile.absolutePath
         )
     }
 }
@@ -97,6 +122,30 @@ val prepareReferenceFont by tasks.registering {
     }
 }
 
+val prepareReferenceManifest by tasks.registering {
+    group = "verification"
+    description = "Stages the exact checked-in Compose reference manifest for instrumentation."
+    val destination = generatedReferenceContractRoot.map {
+        it.file("reference-manifest.json")
+    }
+    inputs.file(referenceManifest)
+    outputs.file(destination)
+
+    doLast {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest(referenceManifest.readBytes())
+            .joinToString("") { "%02X".format(it) }
+        check(digest == referenceManifestSha256) {
+            "Compose reference manifest changed during the build. " +
+                "Expected $referenceManifestSha256, got $digest."
+        }
+        val output = destination.get().asFile
+        output.parentFile.mkdirs()
+        referenceManifest.copyTo(output, overwrite = true)
+        logger.lifecycle("Verified reference manifest SHA-256: $digest")
+    }
+}
+
 val verifyMaterial3ReferenceArtifact by tasks.registering {
     group = "verification"
     description = "Verifies the exact Material3 Android AAR used to produce reference images."
@@ -122,6 +171,7 @@ val verifyMaterial3ReferenceArtifact by tasks.registering {
 tasks.named("preBuild") {
     dependsOn(verifyMaterial3ReferenceArtifact)
     dependsOn(prepareReferenceFont)
+    dependsOn(prepareReferenceManifest)
 }
 
 // alpha24 was published with minCompileSdk 37 metadata, while upstream screenshot tests and this

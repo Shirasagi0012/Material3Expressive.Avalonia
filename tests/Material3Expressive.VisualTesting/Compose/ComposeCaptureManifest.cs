@@ -9,6 +9,7 @@ public sealed record ComposeCaptureManifest(
     string ComposeMaterial3Version,
     string SourceArtifact,
     string SourceArtifactSha256,
+    string ReferenceManifestSha256,
     ComposeColorContract ColorContract,
     ComposeReferenceEnvironment Environment,
     string CaptureId,
@@ -40,9 +41,16 @@ public sealed record ComposeCaptureManifest(
             || string.IsNullOrWhiteSpace(ComposeMaterial3Version)
             || string.IsNullOrWhiteSpace(SourceArtifact)
             || string.IsNullOrWhiteSpace(SourceArtifactSha256)
+            || string.IsNullOrWhiteSpace(ReferenceManifestSha256)
             || string.IsNullOrWhiteSpace(CaptureId))
         {
             throw new ComposeReferenceException("Compose capture provenance is incomplete.");
+        }
+        if (ReferenceManifestSha256.Length != 64
+            || ReferenceManifestSha256.Any(character => !Uri.IsHexDigit(character)))
+        {
+            throw new ComposeReferenceException(
+                "Compose reference-manifest SHA-256 must contain exactly 64 hexadecimal characters.");
         }
 
         ColorContract.Validate();

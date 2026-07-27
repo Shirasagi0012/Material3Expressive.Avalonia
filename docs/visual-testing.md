@@ -73,14 +73,19 @@ animations. The same
 `Roboto-VariableFont_wdth,wght.ttf` used by Avalonia is staged into the Android
 build after verifying SHA-256
 `B25986D18730960C7B27384AB2BC500856AE7FE9E71C9850019195FF9019F0B2`;
-Compose requests only Normal, Medium and Bold presets. `-CaptureOnly -Output
-<unique-directory>` records a determinism probe without importing it.
+all 15 standard Compose Typography slots use that family, and components
+request named weight presets rather than continuous `wght` values.
+`-CaptureOnly -Output <unique-directory>` records a determinism probe without
+importing it.
 
 Compose references are imported only when the AAR, color contract, capture
-environment, dimensions and PNG hashes all match. The color-contract and
-capture-manifest hashes are recorded per imported case, so a partial import
-cannot blur provenance. The current reference set contains 15 valid cases and
-has been independently captured twice with identical PNG hashes.
+environment, dimensions, PNG hashes and staged reference-manifest hash all
+match. The instrumentation registry and captured case set must each match the
+reviewed manifest exactly, and every tagged component must have non-empty bounds
+inside its viewport. The color-contract, reference-manifest and capture-manifest
+hashes are recorded, so a partial import cannot blur provenance. The current
+reference set contains 15 valid cases and has been independently captured twice
+with identical PNG hashes.
 
 ## Color contract
 
@@ -128,14 +133,14 @@ The current 15-case report shows:
 - filled card: exact;
 - selected checkbox edge F1 `0.9919`;
 - small FAB edge F1 `0.9554`, mean ΔE76 `0.262`;
-- navigation bar edge F1 `0.7724`, mean ΔE76 `0.580`;
-- outlined text field edge F1 `0.6677`, mean ΔE76 `1.426`;
+- navigation bar edge F1 `0.7750`, mean ΔE76 `0.561`;
+- outlined text field edge F1 `0.6675`, mean ΔE76 `1.469`;
 - enabled button dominant colors: exact after the shared color contract; and
 - the text-button label is approximately 4 px higher in Avalonia at mdpi.
 
 Those are findings for review, not automatic failures or accepted exceptions.
-The label result remains after both renderers use the exact same Roboto font
-bytes, so it is no longer attributable to a font-file version mismatch.
+The framework records these differences without requiring root-cause
+attribution or changes to the main Avalonia project.
 
 ## Defects exposed while building the suite
 

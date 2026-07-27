@@ -2,7 +2,10 @@
 
 This local-only Android instrumentation project renders the shared 240×96 parity
 cases with the released Compose Material 3 `1.5.0-alpha24` artifact. Its build
-verifies the exact `material3-android` AAR SHA-256 before compiling.
+verifies the exact `material3-android` AAR SHA-256 before compiling. The reviewed
+`visual-references/compose/1.5.0-alpha24/manifest.json` is staged into the test
+APK with its SHA-256, and is the source of truth for case IDs, viewports, themes,
+images and capture-environment requirements.
 
 The alpha24 AAR advertises `minCompileSdk 37`, although the official screenshot
 tests and this contract execute on API 35. To keep the local setup API-35-only,
@@ -33,9 +36,15 @@ The Compose scene overrides `LocalDensity` to 160 dpi and font scale 1.0, so
 the reference pixels remain 1 dp = 1 px even though the Pixel 9 Pro hardware
 profile has a native density of 480 dpi.
 
+The instrumentation registry must match the manifest case set exactly. Each
+scene also exposes a tagged component whose non-empty bounds are checked against
+the declared viewport before the screenshot is accepted. This catches missing,
+off-screen and accidentally clipped scene roots at capture time.
+
 Component scenes read the shared, hash-pinned Tonal Spot role palette from
 `visual-references/color-contracts`. This avoids treating Compose's static
 parameterless color scheme and Material Color Utilities seed generation as if
 they were the same algorithm. The build also verifies and packages the exact
-Roboto variable-font file used by Avalonia, then requests only its named
-Normal, Medium and Bold weights.
+Roboto variable-font file used by Avalonia. All 15 standard Compose Typography
+slots use that family, while components request only named weights such as
+Normal, Medium and Bold.

@@ -11,5 +11,7 @@ that effective density in `capture.json`.
 
 `manifest.json` is the reviewed case plan. `reference-index.json` and
 `cases/**/*.png` are produced by the importer after it verifies the capture
-metadata, dimensions, and SHA-256 hashes. Hand-copying a PNG into this directory
-does not make it a valid reference.
+metadata, dimensions, SHA-256 hashes, the exact manifest hash and an exact match
+between the captured and planned case-ID sets. The Android test reads the same
+staged manifest and refuses an incomplete or extra scene registry. Hand-copying
+a PNG into this directory does not make it a valid reference.

@@ -16,7 +16,10 @@ public sealed class ComposeReferenceImporter(ComposeReferenceStore store)
         var root = Path.GetFullPath(captureRoot);
         var manifest = store.ReadManifest();
         var capture = ComposeCaptureManifest.Read(root);
-        EnsureCaptureMatches(manifest, capture);
+        EnsureCaptureMatches(
+            manifest,
+            capture,
+            ComposeReferenceStore.HashFile(store.ManifestPath));
 
         var capturesById = capture.Cases.ToDictionary(item => item.Id, StringComparer.Ordinal);
         var validated = new List<ValidatedCapture>();
@@ -81,6 +84,7 @@ public sealed class ComposeReferenceImporter(ComposeReferenceStore store)
                 item.Image.Height,
                 capture.CaptureId,
                 captureManifestSha256,
+                capture.ReferenceManifestSha256,
                 capture.ColorContract.Sha256,
                 importedAtUtc);
         }
@@ -90,6 +94,7 @@ public sealed class ComposeReferenceImporter(ComposeReferenceStore store)
             ReferenceSetId = manifest.ReferenceSetId,
             CaptureId = capture.CaptureId,
             CaptureManifestSha256 = captureManifestSha256,
+            ReferenceManifestSha256 = capture.ReferenceManifestSha256,
             ImportedAtUtc = importedAtUtc,
             Cases = importedCases
         };
@@ -99,7 +104,8 @@ public sealed class ComposeReferenceImporter(ComposeReferenceStore store)
 
     private static void EnsureCaptureMatches(
         ComposeReferenceManifest expected,
-        ComposeCaptureManifest actual)
+        ComposeCaptureManifest actual,
+        string expectedManifestSha256)
     {
         var mismatches = new List<string>();
         Match(nameof(expected.ReferenceSetId), expected.ReferenceSetId, actual.ReferenceSetId);
@@ -112,6 +118,10 @@ public sealed class ComposeReferenceImporter(ComposeReferenceStore store)
             nameof(expected.SourceArtifactSha256),
             expected.SourceArtifactSha256,
             actual.SourceArtifactSha256);
+        Match(
+            nameof(actual.ReferenceManifestSha256),
+            expectedManifestSha256,
+            actual.ReferenceManifestSha256);
         Match("ColorContract.Id", expected.ColorContract.Id, actual.ColorContract.Id);
         Match("ColorContract.Seed", expected.ColorContract.Seed, actual.ColorContract.Seed);
         Match("ColorContract.Variant", expected.ColorContract.Variant, actual.ColorContract.Variant);
@@ -166,6 +176,16 @@ public sealed class ComposeReferenceImporter(ComposeReferenceStore store)
             "EmulatorProfile",
             expected.Environment.EmulatorProfile,
             actual.Environment.EmulatorProfile);
+
+        var expectedIds = expected.Cases.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
+        var actualIds = actual.Cases.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
+        if (!expectedIds.SetEquals(actualIds))
+        {
+            mismatches.Add(
+                "Cases differ; missing "
+                + $"[{string.Join(", ", expectedIds.Except(actualIds).Order())}], extra "
+                + $"[{string.Join(", ", actualIds.Except(expectedIds).Order())}]");
+        }
 
         if (mismatches.Count > 0)
         {

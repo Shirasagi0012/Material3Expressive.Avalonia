@@ -16,7 +16,7 @@ public sealed class ComposeReferenceImporterTests
         var paths = CreatePaths(directory.Path);
         var store = new ComposeReferenceStore(paths);
         var referenceCase = WriteReferenceManifest(store, androidApi: 35);
-        var captureRoot = WriteCapture(directory.Path, referenceCase, androidApi: 35);
+        var captureRoot = WriteCapture(directory.Path, store, referenceCase, androidApi: 35);
 
         var imported = new ComposeReferenceImporter(store).Import(captureRoot, [referenceCase]);
 
@@ -24,6 +24,13 @@ public sealed class ComposeReferenceImporterTests
         Assert.Equal(ComposeReferenceState.Ready, store.GetState(referenceCase));
         Assert.True(File.Exists(store.GetImagePath(referenceCase)));
         Assert.True(File.Exists(store.IndexPath));
+        var index = ComposeReferenceIndex.Read(store.IndexPath);
+        var expectedManifestHash = Convert.ToHexString(
+            SHA256.HashData(File.ReadAllBytes(store.ManifestPath)));
+        Assert.Equal(expectedManifestHash, index.ReferenceManifestSha256);
+        Assert.Equal(
+            expectedManifestHash,
+            index.Cases[referenceCase.Id].ReferenceManifestSha256);
     }
 
     [Fact]
@@ -33,7 +40,7 @@ public sealed class ComposeReferenceImporterTests
         var paths = CreatePaths(directory.Path);
         var store = new ComposeReferenceStore(paths);
         var referenceCase = WriteReferenceManifest(store, androidApi: 35);
-        var captureRoot = WriteCapture(directory.Path, referenceCase, androidApi: 36);
+        var captureRoot = WriteCapture(directory.Path, store, referenceCase, androidApi: 36);
 
         var exception = Assert.Throws<ComposeReferenceException>(
             () => new ComposeReferenceImporter(store).Import(captureRoot, [referenceCase]));
@@ -50,7 +57,7 @@ public sealed class ComposeReferenceImporterTests
         var paths = CreatePaths(directory.Path);
         var store = new ComposeReferenceStore(paths);
         var referenceCase = WriteReferenceManifest(store, androidApi: 35);
-        var captureRoot = WriteCapture(directory.Path, referenceCase, androidApi: 35);
+        var captureRoot = WriteCapture(directory.Path, store, referenceCase, androidApi: 35);
         File.AppendAllText(Path.Combine(captureRoot, "case.png"), "tampered");
 
         var exception = Assert.Throws<ComposeReferenceException>(
@@ -58,6 +65,67 @@ public sealed class ComposeReferenceImporterTests
 
         Assert.Contains("hash changed", exception.Message);
         Assert.False(File.Exists(store.GetImagePath(referenceCase)));
+    }
+
+    [Fact]
+    public void CaptureFromADifferentReferenceManifestIsRejected()
+    {
+        using var directory = new TemporaryDirectory();
+        var paths = CreatePaths(directory.Path);
+        var store = new ComposeReferenceStore(paths);
+        var referenceCase = WriteReferenceManifest(store, androidApi: 35);
+        var captureRoot = WriteCapture(directory.Path, store, referenceCase, androidApi: 35);
+        var capturePath = Path.Combine(captureRoot, ComposeCaptureManifest.FileName);
+        var expectedHash = Convert.ToHexString(
+            SHA256.HashData(File.ReadAllBytes(store.ManifestPath)));
+        File.WriteAllText(
+            capturePath,
+            File.ReadAllText(capturePath).Replace(
+                expectedHash,
+                new string('B', 64),
+                StringComparison.Ordinal));
+
+        var exception = Assert.Throws<ComposeReferenceException>(
+            () => new ComposeReferenceImporter(store).Import(captureRoot, [referenceCase]));
+
+        Assert.Contains("ReferenceManifestSha256", exception.Message);
+        Assert.False(File.Exists(store.GetImagePath(referenceCase)));
+    }
+
+    [Fact]
+    public void CaptureCaseSetMustExactlyMatchThePlannedManifest()
+    {
+        using var directory = new TemporaryDirectory();
+        var paths = CreatePaths(directory.Path);
+        var store = new ComposeReferenceStore(paths);
+        var referenceCase = WriteReferenceManifest(store, androidApi: 35);
+        var captureRoot = WriteCapture(
+            directory.Path,
+            store,
+            referenceCase,
+            androidApi: 35,
+            includeExtraCase: true);
+
+        var exception = Assert.Throws<ComposeReferenceException>(
+            () => new ComposeReferenceImporter(store).Import(captureRoot, [referenceCase]));
+
+        Assert.Contains("Cases differ", exception.Message);
+        Assert.False(File.Exists(store.GetImagePath(referenceCase)));
+    }
+
+    [Fact]
+    public void ChangingTheReferenceManifestInvalidatesAnImportedCase()
+    {
+        using var directory = new TemporaryDirectory();
+        var paths = CreatePaths(directory.Path);
+        var store = new ComposeReferenceStore(paths);
+        var referenceCase = WriteReferenceManifest(store, androidApi: 35);
+        var captureRoot = WriteCapture(directory.Path, store, referenceCase, androidApi: 35);
+        new ComposeReferenceImporter(store).Import(captureRoot, [referenceCase]);
+
+        File.AppendAllText(store.ManifestPath, System.Environment.NewLine);
+
+        Assert.Equal(ComposeReferenceState.MissingIndex, store.GetState(referenceCase));
     }
 
     private static RepositoryPaths CreatePaths(string root) =>
@@ -116,32 +184,49 @@ public sealed class ComposeReferenceImporterTests
 
     private static string WriteCapture(
         string root,
+        ComposeReferenceStore store,
         ComposeReferenceCase referenceCase,
-        int androidApi)
+        int androidApi,
+        bool includeExtraCase = false)
     {
         var captureRoot = Path.Combine(root, "capture");
         Directory.CreateDirectory(captureRoot);
         var png = Solid(referenceCase.Width, referenceCase.Height).EncodePng();
         var image = Path.Combine(captureRoot, "case.png");
         File.WriteAllBytes(image, png);
+        var capturedCases = new List<ComposeCapturedCase>
+        {
+            new(
+                referenceCase.Id,
+                "case.png",
+                referenceCase.Width,
+                referenceCase.Height,
+                Convert.ToHexString(SHA256.HashData(png)))
+        };
+        if (includeExtraCase)
+        {
+            capturedCases.Add(
+                new ComposeCapturedCase(
+                    "extra/unplanned/light",
+                    "extra.png",
+                    1,
+                    1,
+                    new string('D', 64)));
+        }
+
         var capture = new ComposeCaptureManifest(
             ComposeReferenceManifest.CurrentSchemaVersion,
             "test-reference",
             "1.5.0-alpha24",
             "test:artifact:1.5.0-alpha24",
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            Convert.ToHexString(
+                SHA256.HashData(File.ReadAllBytes(store.ManifestPath))),
             ColorContract(),
             Environment(androidApi),
             "capture-1",
             DateTimeOffset.Parse("2026-01-01T00:00:00Z"),
-            [
-                new ComposeCapturedCase(
-                    referenceCase.Id,
-                    "case.png",
-                    referenceCase.Width,
-                    referenceCase.Height,
-                    Convert.ToHexString(SHA256.HashData(png)))
-            ]);
+            capturedCases);
         File.WriteAllText(
             Path.Combine(captureRoot, ComposeCaptureManifest.FileName),
             JsonSerializer.Serialize(

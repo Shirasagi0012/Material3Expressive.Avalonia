@@ -81,9 +81,15 @@ $deadline = [DateTimeOffset]::Now.AddMinutes(4)
 do {
     Start-Sleep -Seconds 2
     $serial = Get-BootedEmulator
-    $booted =
-        $serial -and
-        ((& $adb -s $serial shell getprop sys.boot_completed 2>$null).Trim() -eq "1")
+    $bootResponse =
+        if ($serial) {
+            & $adb -s $serial shell getprop sys.boot_completed 2>$null |
+                Select-Object -First 1
+        }
+        else {
+            $null
+        }
+    $booted = $bootResponse -and ($bootResponse.Trim() -eq "1")
 } until ($booted -or [DateTimeOffset]::Now -ge $deadline)
 
 if (-not $booted) {
@@ -91,7 +97,13 @@ if (-not $booted) {
 }
 
 $env:ANDROID_SERIAL = $serial
-$api = (& $adb -s $serial shell getprop ro.build.version.sdk).Trim()
+$apiResponse =
+    & $adb -s $serial shell getprop ro.build.version.sdk 2>$null |
+        Select-Object -First 1
+if (-not $apiResponse) {
+    throw "The '$Avd' emulator stopped responding before API verification."
+}
+$api = $apiResponse.Trim()
 if ($api -ne "35") {
     throw "Compose references require API 35; '$Avd' reported API $api."
 }

@@ -13,6 +13,8 @@ public sealed class ComposeReferenceIndex
 
     public string CaptureManifestSha256 { get; init; } = "";
 
+    public string ReferenceManifestSha256 { get; init; } = "";
+
     public DateTimeOffset ImportedAtUtc { get; init; }
 
     public SortedDictionary<string, ComposeImportedReference> Cases { get; init; } =
@@ -46,6 +48,7 @@ public sealed record ComposeImportedReference(
     int Height,
     string CaptureId,
     string CaptureManifestSha256,
+    string ReferenceManifestSha256,
     string ColorContractSha256,
     DateTimeOffset ImportedAtUtc);
 

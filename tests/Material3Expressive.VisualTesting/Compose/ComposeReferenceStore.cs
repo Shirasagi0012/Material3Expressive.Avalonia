@@ -62,7 +62,16 @@ public sealed class ComposeReferenceStore
         if (!index.Cases.TryGetValue(referenceCase.Id, out var imported))
             return ComposeReferenceState.MissingIndex;
         var manifest = ReadManifest();
+        var manifestSha256 = HashFile(ManifestPath);
         if (!string.Equals(index.ReferenceSetId, manifest.ReferenceSetId, StringComparison.Ordinal)
+            || !string.Equals(
+                index.ReferenceManifestSha256,
+                manifestSha256,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                imported.ReferenceManifestSha256,
+                manifestSha256,
+                StringComparison.Ordinal)
             || !string.Equals(
                 imported.ColorContractSha256,
                 manifest.ColorContract.Sha256,
