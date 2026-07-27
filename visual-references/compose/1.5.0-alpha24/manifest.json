@@ -58,6 +58,102 @@
       ]
     },
     {
+      "id": "foundation/typography/display-headline/light",
+      "image": "cases/foundation/typography/display-headline/light.png",
+      "theme": "light",
+      "width": 480,
+      "height": 320,
+      "sourceTest": "androidx.compose.material3.Typography",
+      "sourceGolden": "typography_display_headline_light",
+      "regions": [
+        { "id": "display-large", "kind": "text", "x": 16, "y": 16, "width": 448, "height": 64 },
+        { "id": "display-medium", "kind": "text", "x": 16, "y": 84, "width": 448, "height": 52 },
+        { "id": "display-small", "kind": "text", "x": 16, "y": 140, "width": 448, "height": 44 },
+        { "id": "headline-large", "kind": "text", "x": 16, "y": 188, "width": 448, "height": 40 },
+        { "id": "headline-medium", "kind": "text", "x": 16, "y": 232, "width": 448, "height": 36 },
+        { "id": "headline-small", "kind": "text", "x": 16, "y": 272, "width": 448, "height": 32 }
+      ]
+    },
+    {
+      "id": "foundation/typography/display-headline/dark",
+      "image": "cases/foundation/typography/display-headline/dark.png",
+      "theme": "dark",
+      "width": 480,
+      "height": 320,
+      "sourceTest": "androidx.compose.material3.Typography",
+      "sourceGolden": "typography_display_headline_dark",
+      "regions": [
+        { "id": "display-large", "kind": "text", "x": 16, "y": 16, "width": 448, "height": 64 },
+        { "id": "display-medium", "kind": "text", "x": 16, "y": 84, "width": 448, "height": 52 },
+        { "id": "display-small", "kind": "text", "x": 16, "y": 140, "width": 448, "height": 44 },
+        { "id": "headline-large", "kind": "text", "x": 16, "y": 188, "width": 448, "height": 40 },
+        { "id": "headline-medium", "kind": "text", "x": 16, "y": 232, "width": 448, "height": 36 },
+        { "id": "headline-small", "kind": "text", "x": 16, "y": 272, "width": 448, "height": 32 }
+      ]
+    },
+    {
+      "id": "foundation/typography/title-body/light",
+      "image": "cases/foundation/typography/title-body/light.png",
+      "theme": "light",
+      "width": 360,
+      "height": 184,
+      "sourceTest": "androidx.compose.material3.Typography",
+      "sourceGolden": "typography_title_body_light",
+      "regions": [
+        { "id": "title-large", "kind": "text", "x": 16, "y": 16, "width": 328, "height": 28 },
+        { "id": "title-medium", "kind": "text", "x": 16, "y": 48, "width": 328, "height": 24 },
+        { "id": "title-small", "kind": "text", "x": 16, "y": 76, "width": 328, "height": 20 },
+        { "id": "body-large", "kind": "text", "x": 16, "y": 100, "width": 328, "height": 24 },
+        { "id": "body-medium", "kind": "text", "x": 16, "y": 128, "width": 328, "height": 20 },
+        { "id": "body-small", "kind": "text", "x": 16, "y": 152, "width": 328, "height": 16 }
+      ]
+    },
+    {
+      "id": "foundation/typography/title-body/dark",
+      "image": "cases/foundation/typography/title-body/dark.png",
+      "theme": "dark",
+      "width": 360,
+      "height": 184,
+      "sourceTest": "androidx.compose.material3.Typography",
+      "sourceGolden": "typography_title_body_dark",
+      "regions": [
+        { "id": "title-large", "kind": "text", "x": 16, "y": 16, "width": 328, "height": 28 },
+        { "id": "title-medium", "kind": "text", "x": 16, "y": 48, "width": 328, "height": 24 },
+        { "id": "title-small", "kind": "text", "x": 16, "y": 76, "width": 328, "height": 20 },
+        { "id": "body-large", "kind": "text", "x": 16, "y": 100, "width": 328, "height": 24 },
+        { "id": "body-medium", "kind": "text", "x": 16, "y": 128, "width": 328, "height": 20 },
+        { "id": "body-small", "kind": "text", "x": 16, "y": 152, "width": 328, "height": 16 }
+      ]
+    },
+    {
+      "id": "foundation/typography/label/light",
+      "image": "cases/foundation/typography/label/light.png",
+      "theme": "light",
+      "width": 320,
+      "height": 92,
+      "sourceTest": "androidx.compose.material3.Typography",
+      "sourceGolden": "typography_label_light",
+      "regions": [
+        { "id": "label-large", "kind": "text", "x": 16, "y": 16, "width": 288, "height": 20 },
+        { "id": "label-medium", "kind": "text", "x": 16, "y": 40, "width": 288, "height": 16 },
+        { "id": "label-small", "kind": "text", "x": 16, "y": 60, "width": 288, "height": 16 }
+      ]
+    },
+    {
+      "id": "foundation/typography/label/dark",
+      "image": "cases/foundation/typography/label/dark.png",
+      "theme": "dark",
+      "width": 320,
+      "height": 92,
+      "sourceTest": "androidx.compose.material3.Typography",
+      "sourceGolden": "typography_label_dark",
+      "regions": [
+        { "id": "label-large", "kind": "text", "x": 16, "y": 16, "width": 288, "height": 20 },
+        { "id": "label-medium", "kind": "text", "x": 16, "y": 40, "width": 288, "height": 16 },
+        { "id": "label-small", "kind": "text", "x": 16, "y": 60, "width": 288, "height": 16 }
+      ]
+    },
+    {
       "id": "card/filled/fixed/enabled/light",
       "image": "cases/card/filled/fixed/enabled/light.png",
       "theme": "light",
@@ -94,17 +190,171 @@
       ]
     },
     {
+      "id": "textfield/filled/empty/light",
+      "image": "cases/textfield/filled/empty/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
+      "sourceGolden": "filled_textField_not_focused",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 30, "width": 120, "height": 32 }
+      ]
+    },
+    {
+      "id": "textfield/filled/populated/light",
+      "image": "cases/textfield/filled/populated/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
+      "sourceGolden": "filled_textField_withInput",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 128, "height": 28 }
+      ]
+    },
+    {
+      "id": "textfield/filled/populated/dark",
+      "image": "cases/textfield/filled/populated/dark.png",
+      "theme": "dark",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
+      "sourceGolden": "filled_textField_withInput_dark",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 128, "height": 28 }
+      ]
+    },
+    {
+      "id": "textfield/filled/focused-empty/light",
+      "image": "cases/textfield/filled/focused-empty/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
+      "sourceGolden": "filled_textField_focused",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 160, "height": 28 }
+      ]
+    },
+    {
+      "id": "textfield/filled/error/light",
+      "image": "cases/textfield/filled/error/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 112,
+      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
+      "sourceGolden": "filled_textField_notFocused_errorState",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 16, "width": 240, "height": 80 },
+        { "id": "label", "kind": "text", "x": 32, "y": 16, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 34, "width": 128, "height": 28 },
+        { "id": "supporting", "kind": "text", "x": 32, "y": 72, "width": 180, "height": 24 }
+      ]
+    },
+    {
+      "id": "textfield/filled/disabled/light",
+      "image": "cases/textfield/filled/disabled/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
+      "sourceGolden": "textField_disabled",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 128, "height": 28 }
+      ]
+    },
+    {
+      "id": "textfield/outlined/empty/light",
+      "image": "cases/textfield/outlined/empty/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.OutlinedTextFieldScreenshotTest",
+      "sourceGolden": "outlined_textField_not_focused",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 30, "width": 120, "height": 32 }
+      ]
+    },
+    {
       "id": "textfield/outlined/populated/light",
       "image": "cases/textfield/outlined/populated/light.png",
       "theme": "light",
       "width": 280,
       "height": 96,
-      "sourceTest": "androidx.compose.material3.TextFieldScreenshotTest",
-      "sourceGolden": "outlined_text_field_populated_light",
+      "sourceTest": "androidx.compose.material3.OutlinedTextFieldScreenshotTest",
+      "sourceGolden": "outlined_textField_withInput",
       "regions": [
-        { "id": "component", "kind": "container", "x": 16, "y": 16, "width": 248, "height": 64 },
-        { "id": "label", "kind": "text", "x": 28, "y": 16, "width": 64, "height": 24 },
-        { "id": "input", "kind": "text", "x": 28, "y": 36, "width": 96, "height": 36 }
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 128, "height": 28 }
+      ]
+    },
+    {
+      "id": "textfield/outlined/populated/dark",
+      "image": "cases/textfield/outlined/populated/dark.png",
+      "theme": "dark",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.OutlinedTextFieldScreenshotTest",
+      "sourceGolden": "outlined_textField_withInput_dark",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 128, "height": 28 }
+      ]
+    },
+    {
+      "id": "textfield/outlined/focused-empty/light",
+      "image": "cases/textfield/outlined/focused-empty/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.OutlinedTextFieldScreenshotTest",
+      "sourceGolden": "outlined_textField_focused",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 160, "height": 28 }
+      ]
+    },
+    {
+      "id": "textfield/outlined/error/light",
+      "image": "cases/textfield/outlined/error/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 112,
+      "sourceTest": "androidx.compose.material3.OutlinedTextFieldScreenshotTest",
+      "sourceGolden": "outlined_textField_notFocused_errorState",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 16, "width": 240, "height": 80 },
+        { "id": "label", "kind": "text", "x": 32, "y": 16, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 34, "width": 128, "height": 28 },
+        { "id": "supporting", "kind": "text", "x": 32, "y": 72, "width": 180, "height": 24 }
+      ]
+    },
+    {
+      "id": "textfield/outlined/disabled/light",
+      "image": "cases/textfield/outlined/disabled/light.png",
+      "theme": "light",
+      "width": 280,
+      "height": 96,
+      "sourceTest": "androidx.compose.material3.OutlinedTextFieldScreenshotTest",
+      "sourceGolden": "outlinedTextField_disabled",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 20, "y": 20, "width": 240, "height": 56 },
+        { "id": "label", "kind": "text", "x": 32, "y": 20, "width": 80, "height": 20 },
+        { "id": "input", "kind": "text", "x": 32, "y": 38, "width": 128, "height": 28 }
       ]
     },
     {
@@ -114,10 +364,114 @@
       "width": 360,
       "height": 112,
       "sourceTest": "androidx.compose.material3.NavigationBarScreenshotTest",
-      "sourceGolden": "navigation_bar_three_items_selected_light",
+      "sourceGolden": "navigationBar_lightTheme_defaultColors",
       "regions": [
-        { "id": "component", "kind": "container", "x": 0, "y": 12, "width": 360, "height": 88 },
-        { "id": "labels", "kind": "text", "x": 20, "y": 60, "width": 320, "height": 36 }
+        { "id": "component", "kind": "container", "x": 0, "y": 16, "width": 360, "height": 80 },
+        { "id": "labels", "kind": "text", "x": 20, "y": 56, "width": 320, "height": 36 }
+      ]
+    },
+    {
+      "id": "navigation/bar/three-items/selected/dark",
+      "image": "cases/navigation/bar/three-items/selected/dark.png",
+      "theme": "dark",
+      "width": 360,
+      "height": 112,
+      "sourceTest": "androidx.compose.material3.NavigationBarScreenshotTest",
+      "sourceGolden": "navigationBar_darkTheme_defaultColors",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 0, "y": 16, "width": 360, "height": 80 },
+        { "id": "labels", "kind": "text", "x": 20, "y": 56, "width": 320, "height": 36 }
+      ]
+    },
+    {
+      "id": "navigation/bar/three-items/selected-second/light",
+      "image": "cases/navigation/bar/three-items/selected-second/light.png",
+      "theme": "light",
+      "width": 360,
+      "height": 112,
+      "sourceTest": "androidx.compose.material3.NavigationBarScreenshotTest",
+      "sourceGolden": "navigationBar_lightTheme_secondItemSelected",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 0, "y": 16, "width": 360, "height": 80 },
+        { "id": "labels", "kind": "text", "x": 20, "y": 56, "width": 320, "height": 36 }
+      ]
+    },
+    {
+      "id": "navigation/rail/three-items/selected/light",
+      "image": "cases/navigation/rail/three-items/selected/light.png",
+      "theme": "light",
+      "width": 128,
+      "height": 312,
+      "sourceTest": "androidx.compose.material3.NavigationRailScreenshotTest",
+      "sourceGolden": "navigationRail_lightTheme_defaultColors",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 16, "y": 16, "width": 96, "height": 280 },
+        { "id": "labels", "kind": "text", "x": 16, "y": 32, "width": 96, "height": 240 }
+      ]
+    },
+    {
+      "id": "navigation/rail/three-items/selected/dark",
+      "image": "cases/navigation/rail/three-items/selected/dark.png",
+      "theme": "dark",
+      "width": 128,
+      "height": 312,
+      "sourceTest": "androidx.compose.material3.NavigationRailScreenshotTest",
+      "sourceGolden": "navigationRail_darkTheme_defaultColors",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 16, "y": 16, "width": 96, "height": 280 },
+        { "id": "labels", "kind": "text", "x": 16, "y": 32, "width": 96, "height": 240 }
+      ]
+    },
+    {
+      "id": "navigation/tab/primary/three-items/selected/light",
+      "image": "cases/navigation/tab/primary/three-items/selected/light.png",
+      "theme": "light",
+      "width": 360,
+      "height": 80,
+      "sourceTest": "androidx.compose.material3.TabScreenshotTest",
+      "sourceGolden": "tabs_lightTheme_primary",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 0, "y": 16, "width": 360, "height": 48 },
+        { "id": "labels", "kind": "text", "x": 16, "y": 24, "width": 328, "height": 32 }
+      ]
+    },
+    {
+      "id": "navigation/tab/primary/three-items/selected/dark",
+      "image": "cases/navigation/tab/primary/three-items/selected/dark.png",
+      "theme": "dark",
+      "width": 360,
+      "height": 80,
+      "sourceTest": "androidx.compose.material3.TabScreenshotTest",
+      "sourceGolden": "tabs_darkTheme_primary",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 0, "y": 16, "width": 360, "height": 48 },
+        { "id": "labels", "kind": "text", "x": 16, "y": 24, "width": 328, "height": 32 }
+      ]
+    },
+    {
+      "id": "navigation/tab/secondary/three-items/selected/light",
+      "image": "cases/navigation/tab/secondary/three-items/selected/light.png",
+      "theme": "light",
+      "width": 360,
+      "height": 80,
+      "sourceTest": "androidx.compose.material3.TabScreenshotTest",
+      "sourceGolden": "tabs_lightTheme_secondary",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 0, "y": 16, "width": 360, "height": 48 },
+        { "id": "labels", "kind": "text", "x": 16, "y": 24, "width": 328, "height": 32 }
+      ]
+    },
+    {
+      "id": "navigation/tab/secondary/three-items/selected/dark",
+      "image": "cases/navigation/tab/secondary/three-items/selected/dark.png",
+      "theme": "dark",
+      "width": 360,
+      "height": 80,
+      "sourceTest": "androidx.compose.material3.TabScreenshotTest",
+      "sourceGolden": "tabs_darkTheme_secondary",
+      "regions": [
+        { "id": "component", "kind": "container", "x": 0, "y": 16, "width": 360, "height": 48 },
+        { "id": "labels", "kind": "text", "x": 16, "y": 24, "width": 328, "height": 32 }
       ]
     },
     {

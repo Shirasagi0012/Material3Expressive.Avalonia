@@ -1,7 +1,7 @@
 # Compose reference capture
 
-This local-only Android instrumentation project renders the shared 240×96 parity
-cases with the released Compose Material 3 `1.5.0-alpha24` artifact. Its build
+This local-only Android instrumentation project renders the fixed parity scenes
+with the released Compose Material 3 `1.5.0-alpha24` artifact. Its build
 verifies the exact `material3-android` AAR SHA-256 before compiling. The reviewed
 `visual-references/compose/1.5.0-alpha24/manifest.json` is staged into the test
 APK with its SHA-256, and is the source of truth for case IDs, viewports, themes,
@@ -40,6 +40,13 @@ The instrumentation registry must match the manifest case set exactly. Each
 scene also exposes a tagged component whose non-empty bounds are checked against
 the declared viewport before the screenshot is accepted. This catches missing,
 off-screen and accidentally clipped scene roots at capture time.
+
+The current 40-case set includes the original color/button/component probes plus
+the first expansion wave: all 15 standard typography slots on six light/dark
+boards, twelve filled/outlined text-field states, and nine navigation bar, rail
+and tab scenes. Scene identity is keyed by manifest case ID so adjacent input
+states cannot reuse focus or remembered Compose state. Focused fields perform and
+assert the upstream screenshot test's split touch gesture before capture.
 
 Component scenes read the shared, hash-pinned Tonal Spot role palette from
 `visual-references/color-contracts`. This avoids treating Compose's static

@@ -14,8 +14,8 @@ import androidx.compose.ui.unit.dp
 
 internal val FoundationReferenceScenes =
     mapOf<String, ReferenceScene>(
-        "foundation/color/primary-roles/light" to { PrimaryRoleSwatches() },
-        "foundation/color/primary-roles/dark" to { PrimaryRoleSwatches() },
+        "foundation/color/primary-roles/light" to referenceScene { PrimaryRoleSwatches() },
+        "foundation/color/primary-roles/dark" to referenceScene { PrimaryRoleSwatches() },
     )
 
 @Composable
@@ -33,4 +33,3 @@ private fun PrimaryRoleSwatches() {
         }
     }
 }
-

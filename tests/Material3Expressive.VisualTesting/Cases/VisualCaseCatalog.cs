@@ -12,6 +12,7 @@ public static class VisualCaseCatalog
         .. FirstWaveCases.All,
         .. ParityCases.All,
         .. ComponentParityCases.All,
+        .. ComposeWaveOneParityCases.All,
         .. SelectionAndProgressCases.All,
         .. InputAndChipCases.All,
         .. NavigationCases.All,

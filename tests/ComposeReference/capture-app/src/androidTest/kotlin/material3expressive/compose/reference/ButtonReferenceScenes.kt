@@ -15,28 +15,28 @@ import androidx.compose.ui.platform.testTag
 
 internal val ButtonReferenceScenes =
     mapOf<String, ReferenceScene>(
-        "button/filled/medium/enabled/light" to {
+        "button/filled/medium/enabled/light" to referenceScene {
             MediumButton(ButtonReferenceVariant.Filled, enabled = true)
         },
-        "button/filled/medium/enabled/dark" to {
+        "button/filled/medium/enabled/dark" to referenceScene {
             MediumButton(ButtonReferenceVariant.Filled, enabled = true)
         },
-        "button/filled/medium/disabled/light" to {
+        "button/filled/medium/disabled/light" to referenceScene {
             MediumButton(ButtonReferenceVariant.Filled, enabled = false)
         },
-        "button/filled/medium/disabled/dark" to {
+        "button/filled/medium/disabled/dark" to referenceScene {
             MediumButton(ButtonReferenceVariant.Filled, enabled = false)
         },
-        "button/tonal/medium/enabled/light" to {
+        "button/tonal/medium/enabled/light" to referenceScene {
             MediumButton(ButtonReferenceVariant.Tonal, enabled = true)
         },
-        "button/elevated/medium/enabled/light" to {
+        "button/elevated/medium/enabled/light" to referenceScene {
             MediumButton(ButtonReferenceVariant.Elevated, enabled = true)
         },
-        "button/outlined/medium/enabled/light" to {
+        "button/outlined/medium/enabled/light" to referenceScene {
             MediumButton(ButtonReferenceVariant.Outlined, enabled = true)
         },
-        "button/text/medium/enabled/light" to {
+        "button/text/medium/enabled/light" to referenceScene {
             MediumButton(ButtonReferenceVariant.Text, enabled = true)
         },
     )

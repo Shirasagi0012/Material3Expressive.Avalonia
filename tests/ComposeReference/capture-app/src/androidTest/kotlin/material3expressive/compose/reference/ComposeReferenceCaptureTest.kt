@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -71,6 +72,10 @@ class ComposeReferenceCaptureTest {
             compose.waitForIdle()
             // A second idle boundary makes component/layout updates settle before raster capture.
             compose.runOnIdle {}
+            visualCase.scene.prepare(compose)
+            compose.waitForIdle()
+            compose.runOnIdle {}
+            visualCase.scene.validate(compose)
             assertComponentInsideViewport(visualCase.contract)
             val png =
                 compose
@@ -127,7 +132,9 @@ class ComposeReferenceCaptureTest {
                         .testTag(CaptureTag),
                 contentAlignment = Alignment.Center,
             ) {
-                visualCase.scene()
+                key(contract.id) {
+                    visualCase.scene.content()
+                }
             }
         }
     }

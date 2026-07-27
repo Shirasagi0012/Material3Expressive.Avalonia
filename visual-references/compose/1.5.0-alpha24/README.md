@@ -9,6 +9,10 @@ the `Pixel_9_Pro` API 35 AVD;
 the capture setup overrides its native 480 dpi density to 160 dpi and records
 that effective density in `capture.json`.
 
+The current reviewed plan contains 40 cases: the original 15 foundation and
+component probes plus 25 first-wave typography, text-field and navigation cases.
+All 40 have been captured twice independently with identical PNG hashes.
+
 `manifest.json` is the reviewed case plan. `reference-index.json` and
 `cases/**/*.png` are produced by the importer after it verifies the capture
 metadata, dimensions, SHA-256 hashes, the exact manifest hash and an exact match

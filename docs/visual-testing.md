@@ -9,7 +9,7 @@ Neither NuGet publishing nor GitHub state is involved.
 
 ## Avalonia regression
 
-The current full set contains 89 deterministic scenes: 75 static/component and
+The current full set contains 114 deterministic scenes: 100 static/component and
 cross-cutting scenes, 7 settled interaction scenes, and 7 exact animation
 keyframes. The standard environment is Windows x64, Avalonia 12.1, real Skia,
 premultiplied RGBA, `en-US`, LTR, Roboto preset weights and grayscale text
@@ -36,8 +36,10 @@ dotnet run --project tools/Material3Expressive.VisualBaseline -- approve --set f
 
 Approval is bound to each PNG's SHA-256. Missing or unapproved candidates are
 reported as pending and skipped by xUnit; they never silently become enforced
-baselines. The current approval manifest is intentionally empty: all 89 images
-are candidates awaiting user review.
+baselines. The current approval manifest is intentionally empty: 89 existing
+images are candidates awaiting user review, while the 25 newly added Compose
+wave-one parity scenes have deliberately not been recorded as Avalonia regression
+candidates.
 
 Useful narrower sets include `smoke`, `interaction`, `parity`, `motion`, and
 component tags such as `button`:
@@ -84,8 +86,21 @@ match. The instrumentation registry and captured case set must each match the
 reviewed manifest exactly, and every tagged component must have non-empty bounds
 inside its viewport. The color-contract, reference-manifest and capture-manifest
 hashes are recorded, so a partial import cannot blur provenance. The current
-reference set contains 15 valid cases and has been independently captured twice
+reference set contains 40 valid cases and has been independently captured twice
 with identical PNG hashes.
+
+The first expanded Compose wave adds:
+
+- six light/dark typography boards covering all 15 standard type-scale slots;
+- twelve single-state filled and outlined text fields covering empty, populated,
+  focused-empty, error, disabled and representative dark output; and
+- nine navigation scenes covering first/second selection in the bar, light/dark
+  rails, and light/dark primary and secondary tabs.
+
+Focused text fields use the same split down/up gesture as the upstream screenshot
+tests. The capture validates the resulting focus semantics before writing the PNG;
+disabled fields validate their disabled semantics instead, because they omit the
+focused semantics property.
 
 ## Color contract
 
@@ -127,7 +142,7 @@ turning asymmetric shadow or size differences into a false offset. Text bounds
 remain raw, so a label baseline shift is visible even when an aligned overlay is
 also generated.
 
-The current 15-case report shows:
+The current 40-case report shows:
 
 - shared primary-role swatches: exact in light and dark;
 - filled card: exact;
@@ -135,6 +150,11 @@ The current 15-case report shows:
 - small FAB edge F1 `0.9554`, mean ΔE76 `0.262`;
 - navigation bar edge F1 `0.7750`, mean ΔE76 `0.561`;
 - outlined text field edge F1 `0.6675`, mean ΔE76 `1.469`;
+- title/body and label type boards at edge F1 `0.9947`–`1.0000`, while the
+  display/headline boards report a `-2 px` vertical alignment proposal;
+- primary and secondary tab boards at edge F1 `0.9997`–`1.0000`;
+- the additional filled/outlined text-field states and navigation rail are recorded
+  as diagnostics, with no cause attribution or automatic acceptance threshold;
 - enabled button dominant colors: exact after the shared color contract; and
 - the text-button label is approximately 4 px higher in Avalonia at mdpi.
 
