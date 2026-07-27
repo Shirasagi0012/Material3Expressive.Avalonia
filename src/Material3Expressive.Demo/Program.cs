@@ -2,6 +2,7 @@
 using System;
 
 using Material3Expressive;
+using MaterialTypography.Roboto;
 
 namespace Material3Expressive.Demo;
 
@@ -19,6 +20,7 @@ sealed class Program
     {
         var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            .UseRobotoFont()
             .UseMaterial3Expressive();
 
 #if DEBUG

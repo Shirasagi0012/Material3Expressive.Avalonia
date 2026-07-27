@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\modules\MaterialTypography.Roboto\MaterialTypography.Roboto.csproj" />
       <ProjectReference Include="..\Material3Expressive\Material3Expressive.csproj" />
     </ItemGroup>
 </Project>

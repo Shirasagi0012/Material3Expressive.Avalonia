@@ -22,6 +22,14 @@
          A literal seed rather than {DynamicResource SystemAccentColor}, so the gallery's swatches
          can reseed the live scheme without a resource binding overwriting them again. -->
     <foundation:MaterialThemeScope.Theme>
-        <foundation:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}" />
+        <foundation:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}">
+            <foundation:MaterialTheme.TypographyScheme>
+                <foundation:TypographyScheme
+                    BrandFontFamily="fonts:Roboto#Roboto"
+                    PlainFontFamily="fonts:Roboto#Roboto"
+                    EmphasizedBrandFontFamily="fonts:Roboto#Roboto"
+                    EmphasizedPlainFontFamily="fonts:Roboto#Roboto" />
+            </foundation:MaterialTheme.TypographyScheme>
+        </foundation:MaterialTheme>
     </foundation:MaterialThemeScope.Theme>
 </Application>

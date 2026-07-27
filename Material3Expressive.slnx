@@ -17,6 +17,7 @@
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia/MaterialSymbols.Avalonia.csproj" />
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Rounded/MaterialSymbols.Avalonia.Rounded.csproj" />
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Generator/MaterialSymbols.Generator.csproj" />
+    <Project Path="modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
