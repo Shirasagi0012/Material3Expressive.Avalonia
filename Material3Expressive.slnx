@@ -46,7 +46,4 @@
     <Project Path="tests/Material3Expressive.VisualTesting/Material3Expressive.VisualTesting.csproj" />
     <Project Path="tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj" />
   </Folder>
-  <Folder Name="/tools/">
-    <Project Path="tools/Material3Expressive.VisualBaseline/Material3Expressive.VisualBaseline.csproj" />
-  </Folder>
 </Solution>

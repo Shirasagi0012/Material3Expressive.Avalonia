@@ -13,9 +13,8 @@ public sealed class ColorContractTests
     [Fact]
     public void SharedComposeContractMatchesThePinnedMaterialColorUtilitiesScheme()
     {
-        var paths = new RepositoryPaths();
         var contractPath = Path.Combine(
-            paths.Root,
+            RepositoryRoot.Find(),
             "visual-references",
             "color-contracts",
             "tonal-spot-spec2021-phone-seed-6750a4.json");
