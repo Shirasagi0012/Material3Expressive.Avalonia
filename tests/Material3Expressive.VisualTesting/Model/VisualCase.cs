@@ -8,22 +8,18 @@ using Material3Expressive.VisualTesting.Rendering;
 namespace Material3Expressive.VisualTesting.Model;
 
 /// <summary>
-/// One deterministic visual scene. The ID is also its baseline path and must remain stable.
+/// One deterministic scene that mirrors a pinned Compose reference case.
 /// </summary>
 public sealed record VisualCase(
     string Id,
     PixelSize Viewport,
     VisualTheme Theme,
     Func<VisualCaseContext, Control> CreateContent,
-    ComparisonProfile Comparison,
-    IReadOnlyList<string> Tags,
     double RenderScaling = 1.0,
     Action<VisualContext>? Prepare = null,
     string Culture = "en-US",
     FlowDirection FlowDirection = FlowDirection.LeftToRight)
 {
-    public bool HasTag(string tag) =>
-        Tags.Contains(tag, StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>Data available while a visual scene is being constructed.</summary>

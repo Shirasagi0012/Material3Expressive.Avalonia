@@ -40,7 +40,6 @@ public sealed class ComposeReferenceContractTests
                 $"#{avaloniaCase.Theme.SeedColor.R:X2}" +
                 $"{avaloniaCase.Theme.SeedColor.G:X2}" +
                 $"{avaloniaCase.Theme.SeedColor.B:X2}");
-            Assert.True(avaloniaCase.HasTag("parity"));
         }
     }
 }

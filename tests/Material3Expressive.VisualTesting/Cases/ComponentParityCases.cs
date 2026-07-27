@@ -31,8 +31,7 @@ internal static class ComponentParityCases
                 Height = 80,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
-            },
-            "card");
+            });
 
     private static VisualCase PrimaryFab() =>
         Scene(
@@ -45,8 +44,7 @@ internal static class ComponentParityCases
                 Content = new Border { Width = 24, Height = 24 },
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
-            },
-            "fab");
+            });
 
     private static VisualCase SelectedCheckbox() =>
         Scene(
@@ -58,8 +56,7 @@ internal static class ComponentParityCases
                 Content = null,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
-            },
-            "selection");
+            });
 
     private static VisualCase OutlinedTextField() =>
         Scene(
@@ -74,8 +71,7 @@ internal static class ComponentParityCases
                 Height = 56,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
-            },
-            "textfield");
+            });
 
     private static VisualCase NavigationBar()
     {
@@ -94,8 +90,7 @@ internal static class ComponentParityCases
         return Scene(
             "navigation/bar/three-items/selected/light",
             new PixelSize(360, 112),
-            navigation,
-            "navigation");
+            navigation);
 
         static MaterialNavigationItem Item(string label) =>
             new()
@@ -108,13 +103,11 @@ internal static class ComponentParityCases
     private static VisualCase Scene(
         string id,
         PixelSize viewport,
-        Control control,
-        string component) =>
+        Control control) =>
         new(
             id,
             viewport,
             VisualTheme.Light,
             _ => new Grid { Children = { control } },
-            ComparisonProfile.Exact,
-            ["full", "parity", component]);
+            RenderScaling: 1.0);
 }

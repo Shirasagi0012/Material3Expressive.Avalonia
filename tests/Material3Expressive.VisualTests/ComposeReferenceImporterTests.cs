@@ -129,11 +129,7 @@ public sealed class ComposeReferenceImporterTests
     }
 
     private static RepositoryPaths CreatePaths(string root) =>
-        new(
-            root,
-            "test",
-            Path.Combine(root, "baselines"),
-            Path.Combine(root, "artifacts"));
+        new(root, useAsRepositoryRoot: true);
 
     private static ComposeReferenceCase WriteReferenceManifest(
         ComposeReferenceStore store,

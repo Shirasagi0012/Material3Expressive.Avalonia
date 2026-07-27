@@ -193,8 +193,7 @@ internal static class ComposeWaveOneParityCases
 
                 return panel;
             },
-            ComparisonProfile.Exact,
-            ["full", "parity", "foundation", "typography"]);
+            RenderScaling: 1.0);
 
     private static VisualCase TextField(
         string id,
@@ -229,8 +228,7 @@ internal static class ComposeWaveOneParityCases
             new PixelSize(280, supportingText is null ? 96 : 112),
             theme,
             _ => new Grid { Children = { field } },
-            ComparisonProfile.Exact,
-            ["full", "parity", "input", "textfield"],
+            RenderScaling: 1.0,
             Prepare: focused
                 ? context =>
                 {
@@ -344,8 +342,7 @@ internal static class ComposeWaveOneParityCases
             viewport,
             theme,
             _ => new Grid { Children = { component } },
-            ComparisonProfile.Exact,
-            ["full", "parity", componentTag]);
+            RenderScaling: 1.0);
 
     private static Point PointIn(Control target, Visual relativeTo) =>
         target.TranslatePoint(

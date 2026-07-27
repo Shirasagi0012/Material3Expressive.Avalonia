@@ -12,8 +12,7 @@ using MaterialColorUtilities.DynamicColors;
 namespace Material3Expressive.VisualTesting.Cases;
 
 /// <summary>
-/// One-component scenes shared verbatim with the Compose capture app. Aggregate visual boards
-/// remain useful for regression, but these fixed 240x96 cases make cross-renderer metrics honest.
+/// One-component scenes shared verbatim with the Compose capture app.
 /// </summary>
 internal static class ParityCases
 {
@@ -75,8 +74,7 @@ internal static class ParityCases
 
                 return grid;
             },
-            ComparisonProfile.Exact,
-            ["full", "parity", "foundation", "color"]);
+            RenderScaling: 1.0);
     }
 
     private static VisualCase Button(ButtonVariant variant, bool enabled, VisualTheme theme)
@@ -114,7 +112,6 @@ internal static class ParityCases
                     }
                 }
             },
-            ComparisonProfile.Exact,
-            ["full", "parity", "button"]);
+            RenderScaling: 1.0);
     }
 }
