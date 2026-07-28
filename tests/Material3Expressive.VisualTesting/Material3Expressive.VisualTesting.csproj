@@ -6,12 +6,16 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!-- This isolated parity host deliberately adapts Avalonia's text-shaping extension point. -->
+        <AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia.Headless" />
+        <PackageReference Include="Avalonia.HarfBuzz" />
         <PackageReference Include="Avalonia.Skia" />
         <PackageReference Include="Avalonia.Themes.Fluent" />
+        <PackageReference Include="HarfBuzzSharp" />
         <PackageReference Include="SkiaSharp" />
     </ItemGroup>
 

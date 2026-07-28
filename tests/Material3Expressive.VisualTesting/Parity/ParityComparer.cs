@@ -15,12 +15,10 @@ public sealed class ParityComparer
         profile ??= ParityComparisonProfiles.ComponentWithText;
         var tolerance = profile.Tolerance;
         var failures = new List<string>();
-        if (profile.CompareGeometry)
-        {
-            CompareViewport(expected, actual, failures);
-            CompareNodes(expected.Nodes, actual.Nodes, tolerance, profile.CompareTextLayout, failures);
-        }
-        var pixels = ComparePixels(expectedImage, actualImage);
+        var matchedTextRasterRegions = profile.CompareGeometry
+            ? CompareGeometryAndGetMatchedTextRegions(expected, actual, tolerance, profile.CompareTextLayout, failures)
+            : [];
+        var pixels = ComparePixels(expectedImage, actualImage, matchedTextRasterRegions, tolerance.TextRasterChannelDelta);
         if (profile.CompareRaster
             && (pixels.DifferentPixels > tolerance.MaxDifferentPixels || pixels.MaximumChannelDelta > tolerance.MaxChannelDelta))
         {
@@ -39,15 +37,17 @@ public sealed class ParityComparer
                          $"actual {actual.ViewportPx.Width}x{actual.ViewportPx.Height}.");
     }
 
-    private static void CompareNodes(
-        IReadOnlyList<ParityNode> expected,
-        IReadOnlyList<ParityNode> actual,
+    private static IReadOnlyList<ParityRect> CompareGeometryAndGetMatchedTextRegions(
+        ParityCaptureResult expected,
+        ParityCaptureResult actual,
         ParityTolerance tolerance,
         bool compareTextLayout,
         ICollection<string> failures)
     {
-        var actualById = actual.ToDictionary(item => item.Id, StringComparer.Ordinal);
-        foreach (var node in expected)
+        CompareViewport(expected, actual, failures);
+        var matchedTextRasterRegions = new List<ParityRect>();
+        var actualById = actual.Nodes.ToDictionary(item => item.Id, StringComparer.Ordinal);
+        foreach (var node in expected.Nodes)
         {
             if (!actualById.TryGetValue(node.Id, out var counterpart))
             {
@@ -63,20 +63,28 @@ public sealed class ParityComparer
                 failures.Add($"Node '{node.Id}' identity differs (kind or parent).");
             CompareOptionalBoolean($"Node '{node.Id}' focused state", node.Focused, counterpart.Focused, failures);
             CompareRect($"Node '{node.Id}' bounds", node.BoundsInRootPx, counterpart.BoundsInRootPx, tolerance.GeometryPx, failures);
-            if (compareTextLayout)
-                CompareText(node, counterpart, tolerance, failures);
+            if (compareTextLayout && CompareText(node, counterpart, tolerance, failures) && node.TextLayout is not null)
+            {
+                matchedTextRasterRegions.AddRange(node.TextLayout.Lines.Select(line => new ParityRect(
+                    line.LeftPx,
+                    line.TopPx,
+                    line.RightPx,
+                    line.BottomPx)));
+            }
         }
+        return matchedTextRasterRegions;
     }
 
-    private static void CompareText(ParityNode expected, ParityNode actual, ParityTolerance tolerance, ICollection<string> failures)
+    private static bool CompareText(ParityNode expected, ParityNode actual, ParityTolerance tolerance, ICollection<string> failures)
     {
         if (expected.TextLayout is null)
-            return;
+            return true;
         if (actual.TextLayout is null)
         {
             failures.Add($"Text layout for '{expected.Id}' is missing from Avalonia capture.");
-            return;
+            return false;
         }
+        var failureCount = failures.Count;
         var left = expected.TextLayout;
         var right = actual.TextLayout;
         if (left.Text != right.Text || left.Encoding != right.Encoding || left.LineCount != right.LineCount)
@@ -137,6 +145,7 @@ public sealed class ParityComparer
                 tolerance.TextPx,
                 failures);
         }
+        return failures.Count == failureCount;
     }
 
     private static void CompareTextStyleSignature(
@@ -265,7 +274,11 @@ public sealed class ParityComparer
             failures.Add($"{label} differs: expected {expected:F3}px, actual {actual:F3}px, tolerance {tolerance:F3}px.");
     }
 
-    private static ParityPixelDifference ComparePixels(RenderedImage expected, RenderedImage actual)
+    private static ParityPixelDifference ComparePixels(
+        RenderedImage expected,
+        RenderedImage actual,
+        IReadOnlyList<ParityRect> matchedTextRasterRegions,
+        byte textRasterChannelDelta)
     {
         if (expected.Width != actual.Width || expected.Height != actual.Height)
             return new ParityPixelDifference(Math.Max(expected.PixelCount, actual.PixelCount), Math.Max(expected.PixelCount, actual.PixelCount), byte.MaxValue);
@@ -273,22 +286,40 @@ public sealed class ParityComparer
         byte maximum = 0;
         for (var pixel = 0; pixel < expected.PixelCount; pixel++)
         {
-            var differentPixel = false;
             var offset = pixel * 4;
+            byte pixelMaximum = 0;
             for (var channel = 0; channel < 4; channel++)
             {
                 var delta = (byte)Math.Abs(expected.Pixels[offset + channel] - actual.Pixels[offset + channel]);
-                maximum = Math.Max(maximum, delta);
-                differentPixel |= delta != 0;
+                pixelMaximum = Math.Max(pixelMaximum, delta);
             }
-            if (differentPixel)
-                different++;
+            if (pixelMaximum == 0)
+                continue;
+            var x = pixel % expected.Width;
+            var y = pixel / expected.Width;
+            if (pixelMaximum <= textRasterChannelDelta && IsInsideMatchedTextRasterRegion(x, y, matchedTextRasterRegions))
+                continue;
+            maximum = Math.Max(maximum, pixelMaximum);
+            different++;
         }
         return new ParityPixelDifference(different, expected.PixelCount, maximum);
     }
+
+    private static bool IsInsideMatchedTextRasterRegion(int x, int y, IReadOnlyList<ParityRect> regions) =>
+        regions.Any(region => x + 0.5f >= region.Left && x + 0.5f < region.Right
+                              && y + 0.5f >= region.Top && y + 0.5f < region.Bottom);
 }
 
-public sealed record ParityTolerance(float GeometryPx, float TextPx, int MaxDifferentPixels, byte MaxChannelDelta);
+/// <summary>
+/// <see cref="TextRasterChannelDelta"/> is a local gray-antialiasing noise floor. It applies
+/// only inside a text line whose layout and resolved text style both compared successfully.
+/// </summary>
+public sealed record ParityTolerance(
+    float GeometryPx,
+    float TextPx,
+    int MaxDifferentPixels,
+    byte MaxChannelDelta,
+    byte TextRasterChannelDelta);
 
 public sealed record ParityPixelDifference(int DifferentPixels, int TotalPixels, byte MaximumChannelDelta);
 

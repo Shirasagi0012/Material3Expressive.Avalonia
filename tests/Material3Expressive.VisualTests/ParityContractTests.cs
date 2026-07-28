@@ -81,6 +81,67 @@ public sealed class ParityContractTests
             Assert.Single(comparison.Failures));
     }
 
+    [Fact]
+    public void ComparerIgnoresSmallRasterDifferencesInsideMatchingTextLayout()
+    {
+        var bounds = new ParityRect(249.728f, 76, 265.896f, 116);
+        var expected = TextLayout(bounds);
+        var actual = TextLayout(bounds);
+        var expectedImage = SolidImage(300, 140, 255);
+        var actualImage = WithPixel(expectedImage, 200, 80, 243);
+
+        var comparison = new ParityComparer().Compare(
+            expected,
+            actual,
+            expectedImage,
+            actualImage,
+            ParityComparisonProfiles.ComponentWithText);
+
+        Assert.True(comparison.IsMatch);
+        Assert.Equal(0, comparison.Pixels.DifferentPixels);
+    }
+
+    [Fact]
+    public void ComparerDoesNotIgnoreSmallRasterDifferencesOutsideMatchingTextLayout()
+    {
+        var bounds = new ParityRect(249.728f, 76, 265.896f, 116);
+        var layout = TextLayout(bounds);
+        var expectedImage = SolidImage(300, 140, 255);
+        var actualImage = WithPixel(expectedImage, 20, 20, 243);
+
+        var comparison = new ParityComparer().Compare(
+            layout,
+            layout,
+            expectedImage,
+            actualImage,
+            ParityComparisonProfiles.ComponentWithText);
+
+        Assert.False(comparison.IsMatch);
+        Assert.Equal(
+            "Raster differs in 1/42000 pixels (max channel delta 12).",
+            Assert.Single(comparison.Failures));
+    }
+
+    [Fact]
+    public void ComparerDoesNotApplyTextRasterToleranceWhenTextLayoutDiffers()
+    {
+        var expected = TextLayout(new ParityRect(249.728f, 76, 265.896f, 116));
+        var actual = TextLayout(new ParityRect(250.528f, 76, 266.896f, 116));
+        var expectedImage = SolidImage(300, 140, 255);
+        var actualImage = WithPixel(expectedImage, 200, 80, 243);
+
+        var comparison = new ParityComparer().Compare(
+            expected,
+            actual,
+            expectedImage,
+            actualImage,
+            ParityComparisonProfiles.ComponentWithText);
+
+        Assert.False(comparison.IsMatch);
+        Assert.Contains(comparison.Failures, failure => failure.StartsWith("Text 'label' character 4 bounding differs", StringComparison.Ordinal));
+        Assert.Contains("Raster differs in 1/42000 pixels (max channel delta 12).", comparison.Failures);
+    }
+
     private static ParityCaptureResult Layout(string id, ParityRect bounds, bool? focused = null) => new(
         ParityCaptureResult.CurrentSchemaVersion,
         "test",
@@ -117,5 +178,19 @@ public sealed class ParityContractTests
     {
         var pixels = Enumerable.Repeat(value, width * height * 4).ToArray();
         return new Material3Expressive.VisualTesting.Model.RenderedImage(width, height, pixels);
+    }
+
+    private static Material3Expressive.VisualTesting.Model.RenderedImage WithPixel(
+        Material3Expressive.VisualTesting.Model.RenderedImage source,
+        int x,
+        int y,
+        byte value)
+    {
+        var pixels = (byte[])source.Pixels.Clone();
+        var offset = (y * source.Width + x) * 4;
+        pixels[offset] = value;
+        pixels[offset + 1] = value;
+        pixels[offset + 2] = value;
+        return source with { Pixels = pixels };
     }
 }

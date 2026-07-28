@@ -160,8 +160,10 @@ public static class FontEnvironment
         var outlineHash = Convert.ToHexString(SHA256.HashData(
             Encoding.UTF8.GetBytes(path.ToSvgPathData())));
         var bounds = path.Bounds;
+        using var advanceProbeFont = new SKFont(typeface, 28);
+        var buttonAdvance = advanceProbeFont.MeasureText("Button");
         return FormattableString.Invariant(
-            $"variationPosition=[{axes}], outlineBounds=({bounds.Left:F3}, {bounds.Top:F3}, {bounds.Right:F3}, {bounds.Bottom:F3}), outlineSha256={outlineHash}");
+            $"variationPosition=[{axes}], outlineBounds=({bounds.Left:F3}, {bounds.Top:F3}, {bounds.Right:F3}, {bounds.Bottom:F3}), outlineSha256={outlineHash}, directAdvance[Button@28px]={buttonAdvance:F6}");
     }
 
     private static LocatedFontFile FindCanonicalRoboto()

@@ -39,7 +39,7 @@ public static class ParityComparisonProfiles
     {
         var path = Path.Combine(RepositoryRoot.Find(), "tests", "VisualParity", "comparison-profiles.json");
         var document = ParityJson.Read<ParityComparisonProfileDocument>(path);
-        if (document.SchemaVersion != 1 || document.Profiles.Count == 0 || document.CaseProfileRules.Count == 0)
+        if (document.SchemaVersion != 2 || document.Profiles.Count == 0 || document.CaseProfileRules.Count == 0)
             throw new InvalidDataException("The visual-parity comparison profile document is incomplete.");
         var ids = document.Profiles.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
         if (document.Profiles.Any(item => string.IsNullOrWhiteSpace(item.Id)

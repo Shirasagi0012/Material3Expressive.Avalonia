@@ -29,6 +29,13 @@ public static class VisualTestAppBuilder
                 UseHeadlessDrawing = false,
                 ShouldRenderOnUIThread = true,
                 Fps = 60
-            });
+            })
+            // UseHeadless() configures the stock HarfBuzz adapter. Override it afterwards so the
+            // parity host forwards variable-font axes to that adapter before it shapes text.
+            .UseTextShapingSubsystem(
+                () => AvaloniaLocator.CurrentMutable
+                    .Bind<Avalonia.Platform.ITextShaperImpl>()
+                    .ToConstant(new VariationAwareHarfBuzzTextShaper()),
+                "HarfBuzz+Variations");
     }
 }
