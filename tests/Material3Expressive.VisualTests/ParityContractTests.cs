@@ -7,6 +7,7 @@ public sealed class ParityContractTests
 {
     [Theory]
     [InlineData("foundation/color/primary-roles/light", "color-swatch")]
+    [InlineData("foundation/elevation/rounded-rectangle/level6/light", "elevation")]
     [InlineData("card/filled/fixed/enabled/light", "container")]
     [InlineData("button/filled/medium/enabled/light", "component-with-text")]
     [InlineData("textfield/filled/empty/light", "text-field")]
@@ -163,12 +164,67 @@ public sealed class ParityContractTests
         Assert.True(comparison.IsMatch);
     }
 
-    private static ParityCaptureResult Layout(string id, ParityRect bounds, bool? focused = null) => new(
+    [Fact]
+    public void ElevationProfileAllowsChannelDeltaOneButRejectsDeltaTwo()
+    {
+        var layout = Layout("component", new ParityRect(10, 10, 30, 20));
+        var expected = SolidImage(40, 30, 255);
+        var deltaOne = WithPixel(expected, 20, 15, 254);
+        var deltaTwo = WithPixel(expected, 20, 15, 253);
+        var profile = ParityComparisonProfiles.ForCase("foundation/elevation/rectangle/level12/light");
+
+        Assert.True(new ParityComparer().Compare(layout, layout, expected, deltaOne, profile).IsMatch);
+        var rejected = new ParityComparer().Compare(layout, layout, expected, deltaTwo, profile);
+        Assert.False(rejected.IsMatch);
+        Assert.Equal(1, rejected.Pixels.DifferentPixels);
+        Assert.Equal(2, rejected.Pixels.MaximumChannelDelta);
+    }
+
+    [Fact]
+    public void ComparerRejectsShadowParameterMismatchEvenWhenRasterMatches()
+    {
+        var shadow = new ParityShadow(
+            "m150",
+            "roundedRectangle",
+            new ParityRect(0, 0, 20, 10),
+            new ParityRect(10, 10, 50, 30),
+            new ParityCornerRadii(4, 4, 4, 4),
+            new ParityAffineTransform(2, 0, 0, 2, 10, 10),
+            12,
+            "#FF000000",
+            "#FF000000",
+            0.039f,
+            0.19f,
+            1,
+            false,
+            new ParityPoint3(40, 0, 80),
+            160,
+            []);
+        var expected = Layout("component", new ParityRect(10, 10, 50, 30), shadow: shadow);
+        var actual = Layout("component", new ParityRect(10, 10, 50, 30), shadow: shadow with { ElevationPx = 13 });
+        var image = SolidImage(60, 40, 255);
+
+        var comparison = new ParityComparer().Compare(
+            expected,
+            actual,
+            image,
+            image,
+            ParityComparisonProfiles.ForCase("foundation/elevation/rounded-rectangle/level6/light"));
+
+        Assert.False(comparison.IsMatch);
+        Assert.Contains(comparison.Failures, failure => failure.StartsWith("Shadow 'component' elevation differs", StringComparison.Ordinal));
+    }
+
+    private static ParityCaptureResult Layout(
+        string id,
+        ParityRect bounds,
+        bool? focused = null,
+        ParityShadow? shadow = null) => new(
         ParityCaptureResult.CurrentSchemaVersion,
         "test",
         new ParityCoordinateSpace("physical-pixel", "root-top-left", "right", "down", 2),
         new ParityViewport(40, 30),
-        [new ParityNode(id, "container", null, bounds, true, Focused: focused)]);
+        [new ParityNode(id, "container", null, bounds, true, Focused: focused, Shadow: shadow)]);
 
     private static ParityCaptureResult TextLayout(ParityRect characterBounds)
     {

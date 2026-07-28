@@ -25,3 +25,8 @@ The managed tessellator is adapted from these Skia m150 sources under Skia's BSD
 
 No custom SkiaSharp native build is required. Rasterization remains in the repository-pinned
 SkiaSharp 4.150.1 native library through `SKVertices` and `SKCanvas.DrawVertices`.
+
+Renderer-level parity covers rectangles, rounded rectangles, circles, fractional pills, isolated
+ambient/spot meshes, parent clipping, layer opacity, high elevation, and 1.5×/2× render scales.
+Every elevation case also emits and compares the complete resolved shadow input contract. Raster
+comparison treats a per-channel delta of one as Skia quantization noise; a delta above one fails.

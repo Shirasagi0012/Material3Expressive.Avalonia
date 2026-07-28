@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.Json
 import material3expressive.compose.reference.*
 import material3expressive.compose.reference.probes.ProbeRegistry
+import material3expressive.compose.reference.probes.ShadowProbeSpec
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import java.nio.file.Path
@@ -70,7 +71,7 @@ class ExpectedProducer(
             val contract = caseRegistry.contract(caseId)
                 ?: error("No contract for case '$caseId'.")
 
-            val scale = 2.0f
+            val scale = contract.renderScale
             val widthPx = (contract.viewportWidthDp * scale).toInt()
             val heightPx = (contract.viewportHeightDp * scale).toInt()
 
@@ -125,7 +126,7 @@ class ExpectedProducer(
                 val pngPath = caseDir.resolve("image.png")
                 pngPath.writeBytes(pngBytes)
 
-                val captureResult = buildCaptureResult(caseId, contract, probeRegistry, widthPx, heightPx)
+                val captureResult = buildCaptureResult(caseId, contract, probeRegistry, widthPx, heightPx, scale)
                 val layoutJson = json.encodeToString(CaptureResult.serializer(), captureResult)
                 val layoutPath = caseDir.resolve("layout.json")
                 layoutPath.writeText(layoutJson)
@@ -199,6 +200,7 @@ class ExpectedProducer(
         probes: ProbeRegistry,
         widthPx: Int,
         heightPx: Int,
+        scale: Float,
     ): CaptureResult {
         val missingNodes = contract.requiredNodes
             .filter { probes.geometryBounds(it.id) == null }
@@ -209,7 +211,7 @@ class ExpectedProducer(
 
         val nodes = contract.requiredNodes.map { spec ->
             val geom = checkNotNull(probes.geometryBounds(spec.id))
-            val textLayout = captureTextLayout(caseId, spec, geom, probes.textLayoutResult(spec.id))
+            val textLayout = captureTextLayout(caseId, spec, geom, probes.textLayoutResult(spec.id), scale)
             val focused = spec.expectedFocused?.let { expectedFocused ->
                 val observedFocused = checkNotNull(probes.focused(spec.id)) {
                     "Capture for '$caseId' did not report the required focus state for '${spec.id}'."
@@ -231,14 +233,57 @@ class ExpectedProducer(
                 visible = true,
                 textLayout = textLayout,
                 focused = focused,
+                shadow = probes.shadow(spec.id)?.let { shadow ->
+                    captureShadow(shadow, geom, probes, widthPx, heightPx, scale)
+                },
             )
         }
 
         return CaptureResult(
             caseId = caseId,
-            coordinateSpace = CoordinateSpace(scale = RENDER_SCALE),
+            coordinateSpace = CoordinateSpace(scale = scale),
             viewportPx = ViewportPx(width = widthPx, height = heightPx),
             nodes = nodes,
+        )
+    }
+
+    private fun captureShadow(
+        spec: ShadowProbeSpec,
+        geometry: material3expressive.compose.reference.probes.BoundsPx,
+        probes: ProbeRegistry,
+        viewportWidthPx: Int,
+        viewportHeightPx: Int,
+        scale: Float,
+    ): CaptureShadow {
+        val widthDp = (geometry.right - geometry.left) / scale
+        val heightDp = (geometry.bottom - geometry.top) / scale
+        val zRatio = minOf(viewportWidthPx, viewportHeightPx) / (450f * scale)
+        val lightZ = 500f * scale * ((zRatio + 2f) / 3f)
+        val clip = spec.clipProbeId?.let { id ->
+            checkNotNull(probes.geometryBounds(id)) { "Shadow clip probe '$id' was not captured." }
+        }
+        val radius = spec.cornerRadiusDp
+        return CaptureShadow(
+            shapeKind = spec.shapeKind,
+            shapeBoundsLocalDp = BoundsPx(0f, 0f, widthDp, heightDp),
+            occluderBoundsDevicePx = BoundsPx(geometry.left, geometry.top, geometry.right, geometry.bottom),
+            cornerRadiiDp = CornerRadiiPx(radius, radius, radius, radius),
+            localToDevice = AffineTransformPx(
+                m11 = scale, m12 = 0f,
+                m21 = 0f, m22 = scale,
+                m31 = geometry.left, m32 = geometry.top,
+            ),
+            elevationPx = spec.elevationDp * scale,
+            ambientColorArgb = spec.ambientColorArgb,
+            spotColorArgb = spec.spotColorArgb,
+            ambientAlpha = 0.039f,
+            spotAlpha = 0.19f,
+            opacity = spec.opacity,
+            transparentOccluder = spec.opacity < 1f,
+            lightPositionPx = Point3Px(viewportWidthPx / 2f, 0f, lightZ),
+            lightRadiusPx = 800f * scale,
+            flags = if (spec.opacity < 1f) listOf("transparentOccluder") else emptyList(),
+            clipBoundsInRootPx = clip?.let { BoundsPx(it.left, it.top, it.right, it.bottom) },
         )
     }
 
@@ -247,6 +292,7 @@ class ExpectedProducer(
         spec: RequiredNodeSpec,
         geometry: material3expressive.compose.reference.probes.BoundsPx,
         result: TextLayoutResult?,
+        scale: Float,
     ): CaptureTextLayout? {
         if (spec.kind != "text") return null
         if (spec.text != null) {
@@ -322,7 +368,7 @@ class ExpectedProducer(
             styleSignature = if (isCustomDrawnTextFieldLabel(caseId, spec)) {
                 null
             } else {
-                captureTextStyleSignature(result.layoutInput.style)
+                captureTextStyleSignature(result.layoutInput.style, scale)
             },
         )
     }
@@ -330,21 +376,21 @@ class ExpectedProducer(
     private fun isCustomDrawnTextFieldLabel(caseId: String, spec: RequiredNodeSpec): Boolean =
         caseId.startsWith("textfield/") && spec.id == "label"
 
-    private fun captureTextStyleSignature(style: TextStyle): CaptureTextStyleSignature {
-        val fontSizePx = style.fontSize.toPhysicalPxOrNull()
+    private fun captureTextStyleSignature(style: TextStyle, scale: Float): CaptureTextStyleSignature {
+        val fontSizePx = style.fontSize.toPhysicalPxOrNull(scale)
         return CaptureTextStyleSignature(
             requestedFontFamily = ReferenceTypography.expectedFontFamily,
             resolvedFontFamily = ReferenceTypography.expectedFontFamily,
             pinnedFontFileSha256 = ReferenceTypography.expectedFontSha256,
             fontWeight = style.fontWeight?.weight ?: 400,
             fontSizePx = fontSizePx,
-            lineHeightPx = style.lineHeight.toPhysicalPxOrNull(fontSizePx),
-            letterSpacingPx = style.letterSpacing.toPhysicalPxOrNull(fontSizePx),
+            lineHeightPx = style.lineHeight.toPhysicalPxOrNull(scale, fontSizePx),
+            letterSpacingPx = style.letterSpacing.toPhysicalPxOrNull(scale, fontSizePx),
         )
     }
 
-    private fun TextUnit.toPhysicalPxOrNull(fontSizePx: Float? = null): Float? = when (type) {
-        TextUnitType.Sp -> value * RENDER_SCALE
+    private fun TextUnit.toPhysicalPxOrNull(scale: Float, fontSizePx: Float? = null): Float? = when (type) {
+        TextUnitType.Sp -> value * scale
         TextUnitType.Em -> fontSizePx?.let { value * it }
         else -> null
     }

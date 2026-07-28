@@ -7,6 +7,7 @@ using Avalonia.VisualTree;
 using Material3Expressive.Controls;
 using Material3Expressive.VisualTesting.Model;
 using Material3Expressive.VisualTesting.Rendering;
+using MaterialSkiaShadow;
 
 namespace Material3Expressive.VisualTesting.Parity;
 
@@ -74,9 +75,99 @@ public sealed class AvaloniaParityCapture
                 bounds,
                 control.IsVisible,
                 text is null ? null : CaptureText(text, context.Root, scale),
-                CaptureFocusedState(node, control, allControls));
+                CaptureFocusedState(node, control, allControls),
+                control is IParityShadowProbe shadowProbe
+                    ? CaptureShadow(context.Root, control, shadowProbe, scale)
+                    : null);
         }).ToArray();
     }
+
+    private static ParityShadow CaptureShadow(
+        Control root,
+        Control control,
+        IParityShadowProbe probe,
+        double scale)
+    {
+        var transform = control.TransformToVisual(root)
+            ?? throw new InvalidOperationException("Shadow probe is not mounted in the capture root.");
+        var shape = probe.ShadowShape;
+        var parameters = probe.ShadowParameters;
+        var lighting = ComposeShadowLighting.ForViewport(root.Bounds.Size, scale);
+        var resolved = ComposeShadowContract.Resolve(shape, parameters, lighting, scale);
+        var corners = shape.Corners;
+        var localBounds = shape.Bounds;
+        var deviceBounds = TransformRectToPhysicalRoot(localBounds, transform, scale);
+        var physicalTransform = new ParityAffineTransform(
+            (float)(transform.M11 * scale),
+            (float)(transform.M12 * scale),
+            (float)(transform.M21 * scale),
+            (float)(transform.M22 * scale),
+            (float)(transform.M31 * scale),
+            (float)(transform.M32 * scale));
+        var clipBounds = FindParentClipBounds(root, control, scale);
+        var flags = resolved.TransparentOccluder
+            ? new[] { "transparentOccluder" }
+            : Array.Empty<string>();
+
+        return new ParityShadow(
+            ComposeShadowContract.SkiaBehaviorVersion,
+            ClassifyShape(shape),
+            new ParityRect(
+                (float)localBounds.Left,
+                (float)localBounds.Top,
+                (float)localBounds.Right,
+                (float)localBounds.Bottom),
+            deviceBounds,
+            new ParityCornerRadii(
+                (float)corners.TopLeft,
+                (float)corners.TopRight,
+                (float)corners.BottomRight,
+                (float)corners.BottomLeft),
+            physicalTransform,
+            resolved.ElevationPx,
+            FormatArgb(resolved.AmbientColor),
+            FormatArgb(resolved.SpotColor),
+            lighting.AmbientAlpha,
+            lighting.SpotAlpha,
+            resolved.Opacity,
+            resolved.TransparentOccluder,
+            new ParityPoint3(lighting.LightX, lighting.LightY, lighting.LightZ),
+            lighting.LightRadius,
+            flags,
+            clipBounds);
+    }
+
+    private static string ClassifyShape(ComposeShadowShape shape)
+    {
+        var corners = shape.Corners;
+        if (corners == default)
+            return "rectangle";
+        var radius = shape.Bounds.Width / 2;
+        if (Math.Abs(shape.Bounds.Width - shape.Bounds.Height) <= 1e-6
+            && Math.Abs(corners.TopLeft - radius) <= 1e-6
+            && Math.Abs(corners.TopRight - radius) <= 1e-6
+            && Math.Abs(corners.BottomRight - radius) <= 1e-6
+            && Math.Abs(corners.BottomLeft - radius) <= 1e-6)
+            return "circle";
+        return "roundedRectangle";
+    }
+
+    private static ParityRect? FindParentClipBounds(
+        Control root,
+        Control control,
+        double scale)
+    {
+        for (var ancestor = control.GetVisualParent(); ancestor is not null && ancestor != root; ancestor = ancestor.GetVisualParent())
+        {
+            if (ancestor is Control parent && parent.ClipToBounds)
+                return BoundsInRoot(root, parent, scale);
+        }
+        return null;
+    }
+
+    private static string FormatArgb(Color color) => color.A == 0
+        ? "#00000000"
+        : $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}";
 
     private static Control? ResolveControl(
         ParityNode expected,

@@ -326,6 +326,7 @@ function renderTextLayout(caseId) {
     var act = state.actualLayouts[caseId];
     var prof = getProfile(caseId);
     var textTol = prof ? prof.tolerance.textPx : 0;
+    var baselineTol = prof ? (prof.tolerance.textBaselinePx != null ? prof.tolerance.textBaselinePx : textTol) : 0;
     var lineTol = prof ? (prof.tolerance.textLineBoundsPx != null ? prof.tolerance.textLineBoundsPx : textTol) : 0;
     var textNodes = (exp&&exp.nodes||[]).filter(function(n){return n.textLayout;});
     if (textNodes.length===0) {
@@ -336,16 +337,16 @@ function renderTextLayout(caseId) {
         var an = act?(act.nodes||[]).find(function(n){return n.id===en.id;}):null;
         var et=en.textLayout, at=an?an.textLayout:null;
         h+='<h3 style="margin:12px 0 6px">Node: <code>'+en.id+'</code> &mdash; '+(et.text||'')+'</h3>';
-        h+='<table><thead><tr><th>Metric</th><th>Expected</th><th>Actual</th><th>Delta (tol='+textTol.toFixed(1)+'px)</th></tr></thead><tbody>';
-        var q=function(l,ev,av){
+        h+='<table><thead><tr><th>Metric</th><th>Expected</th><th>Actual</th><th>Delta (char tol='+textTol.toFixed(1)+'px, baseline tol='+baselineTol.toFixed(1)+'px)</th></tr></thead><tbody>';
+        var qc=function(l,ev,av,tol){
             var d=(ev!=null&&av!=null)?(av-ev):null;
             var ds = d !== null ? d.toFixed(3) : '-';
-            var ok = d !== null && Math.abs(d) <= textTol;
+            var ok = d !== null && Math.abs(d) <= tol;
             h+='<tr class="'+(ok?'match':'mismatch')+'"><td>'+l+'</td><td class="mono">'+(ev!=null?ev.toFixed(3):'-')+'</td><td class="mono">'+(av!=null?av.toFixed(3):'-')+'</td><td class="mono">'+ds+'</td></tr>';
         };
-        q('Line count',et.lineCount,at?at.lineCount:null);
-        q('First baseline',et.firstBaselineInRootPx,at?at.firstBaselineInRootPx:null);
-        q('Last baseline',et.lastBaselineInRootPx,at?at.lastBaselineInRootPx:null);
+        qc('Line count',et.lineCount,at?at.lineCount:null,0);
+        qc('First baseline',et.firstBaselineInRootPx,at?at.firstBaselineInRootPx:null,baselineTol);
+        qc('Last baseline',et.lastBaselineInRootPx,at?at.lastBaselineInRootPx:null,baselineTol);
         h+='</tbody></table>';
         if(et.lines&&et.lines.length>0){
             h+='<h4 style="margin:10px 0 4px;color:#8b949e;font-size:11px">Line Local Bounds (tol='+lineTol.toFixed(1)+'px)</h4>';
@@ -368,7 +369,7 @@ function renderTextLayout(caseId) {
             h+='</tbody></table>';
         }
         if(et.characterBoxes&&et.characterBoxes.length>0){
-            h+='<h4 style="margin:10px 0 4px;color:#8b949e;font-size:11px">Characters ('+et.characterBoxes.length+')</h4>';
+            h+='<h4 style="margin:10px 0 4px;color:#8b949e;font-size:11px">Characters ('+et.characterBoxes.length+') (tol='+textTol.toFixed(1)+'px)</h4>';
             h+='<table><thead><tr><th>Offset</th><th>Code</th><th>Expected Bounds</th><th>Actual Bounds</th><th>Max Delta (tol='+textTol.toFixed(1)+'px)</th></tr></thead><tbody>';
             (et.characterBoxes||[]).forEach(function(eb,i){
                 var ab=(at&&at.characterBoxes)?at.characterBoxes[i]:null;

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,9 @@ import material3expressive.compose.reference.ReferenceCaseRegistry
 import material3expressive.compose.reference.ReferenceScene
 import material3expressive.compose.reference.RequiredNodeSpec
 import material3expressive.compose.reference.probes.ProbeRegistry
+import material3expressive.compose.reference.probes.ShadowProbeSpec
+
+private const val PARENT_CLIP_PROBE = "component-parent-clip"
 
 fun ReferenceCaseRegistry.registerFoundationScenes() {
     register(
@@ -67,6 +71,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         id = "foundation/elevation/pill/level1/fractional-width/light",
         elevation = 1.dp,
         shape = CircleShape,
+        cornerRadius = 28.dp,
         width = 90.5.dp,
         height = 56.dp,
         viewportHeightDp = 96,
@@ -77,6 +82,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         spotColor = Color.Transparent,
         elevation = 1.dp,
         shape = CircleShape,
+        cornerRadius = 28.dp,
         width = 90.5.dp,
         height = 56.dp,
         viewportHeightDp = 96,
@@ -87,6 +93,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         spotColor = Color.Black,
         elevation = 1.dp,
         shape = CircleShape,
+        cornerRadius = 28.dp,
         width = 90.5.dp,
         height = 56.dp,
         viewportHeightDp = 96,
@@ -101,6 +108,13 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         id = "foundation/elevation/rectangle/level12/light",
         elevation = 12.dp,
         shape = RectangleShape,
+        cornerRadius = 0.dp,
+    )
+    registerElevationScene(
+        id = "foundation/elevation/rounded-rectangle/level6/scale-1.5/light",
+        elevation = 6.dp,
+        shape = RoundedCornerShape(20.dp),
+        renderScale = 1.5f,
     )
     registerOpacityElevationScene(
         id = "foundation/elevation/rounded-rectangle/level6/opacity-50/light",
@@ -112,6 +126,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         id = "foundation/elevation/circle/level6/light",
         elevation = 6.dp,
         shape = CircleShape,
+        cornerRadius = 36.dp,
         width = 72.dp,
         height = 72.dp,
     )
@@ -142,6 +157,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         ambientColor = Color.Black,
         spotColor = Color.Transparent,
         shape = RoundedCornerShape(20.dp),
+        cornerRadius = 20.dp,
         width = 96.dp,
         height = 64.dp,
     )
@@ -150,6 +166,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         ambientColor = Color.Transparent,
         spotColor = Color.Black,
         shape = RoundedCornerShape(20.dp),
+        cornerRadius = 20.dp,
         width = 96.dp,
         height = 64.dp,
     )
@@ -159,6 +176,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         spotColor = Color.Transparent,
         drawOccluder = false,
         shape = RoundedCornerShape(20.dp),
+        cornerRadius = 20.dp,
         width = 96.dp,
         height = 64.dp,
     )
@@ -168,6 +186,7 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         spotColor = Color.Black,
         drawOccluder = false,
         shape = RoundedCornerShape(20.dp),
+        cornerRadius = 20.dp,
         width = 96.dp,
         height = 64.dp,
     )
@@ -194,7 +213,7 @@ private fun ReferenceCaseRegistry.registerOpacityElevationScene(
             requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
         ),
         ReferenceScene { probes ->
-            OpacityElevationSurface(probes, elevation, opacity, shape)
+            OpacityElevationSurface(probes, elevation, opacity, shape, 20.dp)
         },
     )
 }
@@ -209,6 +228,7 @@ private fun ReferenceCaseRegistry.registerShadowComponentScene(
     height: Dp = 72.dp,
     elevation: Dp = 6.dp,
     viewportHeightDp: Int = 180,
+    cornerRadius: Dp = 36.dp,
 ) {
     register(
         CaseContract(
@@ -219,6 +239,10 @@ private fun ReferenceCaseRegistry.registerShadowComponentScene(
             requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
         ),
         ReferenceScene { probes ->
+            probes.recordShadow(
+                "component",
+                shadowSpec(width, height, cornerRadius, elevation, ambientColor, spotColor),
+            )
             var modifier = Modifier
                 .requiredSize(width, height)
                 .shadow(
@@ -245,6 +269,8 @@ private fun ReferenceCaseRegistry.registerElevationScene(
     height: Dp = 64.dp,
     parentClipped: Boolean = false,
     viewportHeightDp: Int = 180,
+    renderScale: Float = 2.0f,
+    cornerRadius: Dp = 20.dp,
 ) {
     register(
         CaseContract(
@@ -253,17 +279,20 @@ private fun ReferenceCaseRegistry.registerElevationScene(
             viewportHeightDp = viewportHeightDp,
             dark = dark,
             requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
+            renderScale = renderScale,
         ),
         ReferenceScene { probes ->
             if (parentClipped) {
                 Box(
-                    modifier = Modifier.requiredSize(112.dp, 80.dp).clip(RectangleShape),
+                    modifier = Modifier.requiredSize(112.dp, 80.dp)
+                        .then(probes.geometry(PARENT_CLIP_PROBE))
+                        .clip(RectangleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    ElevationSurface(probes, elevation, shape, width, height)
+                    ElevationSurface(probes, elevation, shape, width, height, cornerRadius, PARENT_CLIP_PROBE)
                 }
             } else {
-                ElevationSurface(probes, elevation, shape, width, height)
+                ElevationSurface(probes, elevation, shape, width, height, cornerRadius)
             }
         },
     )
@@ -276,7 +305,13 @@ private fun ElevationSurface(
     shape: Shape,
     width: Dp,
     height: Dp,
+    cornerRadius: Dp,
+    clipProbeId: String? = null,
 ) {
+    probes.recordShadow(
+        "component",
+        shadowSpec(width, height, cornerRadius, elevation, Color.Black, Color.Black, clipProbeId = clipProbeId),
+    )
     Surface(
         modifier = Modifier.requiredSize(width, height).then(probes.geometry("component")),
         shape = shape,
@@ -293,7 +328,12 @@ private fun OpacityElevationSurface(
     elevation: Dp,
     opacity: Float,
     shape: Shape,
+    cornerRadius: Dp,
 ) {
+    probes.recordShadow(
+        "component",
+        shadowSpec(96.dp, 64.dp, cornerRadius, elevation, Color.Black, Color.Black, opacity),
+    )
     val density = LocalDensity.current
     Box(
         modifier =
@@ -308,6 +348,35 @@ private fun OpacityElevationSurface(
                 .then(probes.geometry("component"))
     )
 }
+
+private fun shadowSpec(
+    width: Dp,
+    height: Dp,
+    cornerRadius: Dp,
+    elevation: Dp,
+    ambientColor: Color,
+    spotColor: Color,
+    opacity: Float = 1f,
+    clipProbeId: String? = null,
+): ShadowProbeSpec {
+    val radius = cornerRadius.value
+    val kind = when {
+        radius == 0f -> "rectangle"
+        width == height && radius == width.value / 2f -> "circle"
+        else -> "roundedRectangle"
+    }
+    return ShadowProbeSpec(
+        shapeKind = kind,
+        cornerRadiusDp = radius,
+        elevationDp = elevation.value,
+        ambientColorArgb = ambientColor.toArgbHex(),
+        spotColorArgb = spotColor.toArgbHex(),
+        opacity = opacity,
+        clipProbeId = clipProbeId,
+    )
+}
+
+private fun Color.toArgbHex(): String = "#%08X".format(toArgb())
 
 @Composable
 private fun PrimaryRoleSwatches(probes: ProbeRegistry) {

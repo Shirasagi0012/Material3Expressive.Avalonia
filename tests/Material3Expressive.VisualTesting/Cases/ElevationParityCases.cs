@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.VisualTesting.Model;
+using Material3Expressive.VisualTesting.Parity;
 using MaterialColorUtilities.Avalonia.Tokens;
 using MaterialSkiaShadow;
 
@@ -30,6 +31,7 @@ internal static class ElevationParityCases
         RoundedRectangle(3, VisualTheme.Light),
         RoundedRectangle(6, VisualTheme.Light),
         Rectangle(12, VisualTheme.Light),
+        RoundedRectangleScale(6, 1.5, VisualTheme.Light),
         RoundedRectangle(6, VisualTheme.Dark),
         RoundedRectangleOpacity(6, 0.5, VisualTheme.Light),
         Circle(6, VisualTheme.Light),
@@ -77,6 +79,19 @@ internal static class ElevationParityCases
                 new CornerRadius(20),
                 elevation,
                 opacity: opacity));
+
+    private static VisualCase RoundedRectangleScale(
+        double elevation,
+        double scale,
+        VisualTheme theme) =>
+        Scene(
+            $"foundation/elevation/rounded-rectangle/level{elevation:0}/scale-{scale:0.0}/{ThemeName(theme)}",
+            theme,
+            context => Surface(
+                context,
+                s_roundedRectangleSize,
+                new CornerRadius(20),
+                elevation));
 
     private static VisualCase Circle(double elevation, VisualTheme theme) =>
         Scene(
@@ -228,7 +243,7 @@ internal static class ElevationParityCases
 
     private static string ThemeName(VisualTheme theme) => theme.IsDark ? "dark" : "light";
 
-    private sealed class ElevationSurface : Control
+    private sealed class ElevationSurface : Control, IParityShadowProbe
     {
         public CornerRadius Corners { get; init; }
 
@@ -242,17 +257,22 @@ internal static class ElevationParityCases
 
         public double LayerOpacity { get; init; } = 1;
 
+        public ComposeShadowShape ShadowShape =>
+            ComposeShadowShape.RoundedRectangle(new Rect(Bounds.Size), Corners);
+
+        public ComposeShadowParameters ShadowParameters => new(
+            Elevation,
+            AmbientShadowColor,
+            SpotShadowColor,
+            LayerOpacity);
+
         public override void Render(DrawingContext context)
         {
             ComposeShadowRenderer.Draw(
                 context,
                 this,
-                ComposeShadowShape.RoundedRectangle(new Rect(Bounds.Size), Corners),
-                new ComposeShadowParameters(
-                    Elevation,
-                    AmbientShadowColor,
-                    SpotShadowColor,
-                    LayerOpacity));
+                ShadowShape,
+                ShadowParameters);
             if (Fill is not null)
                 MaterialContainer.Draw(context, Bounds.Size, Corners, Fill);
         }

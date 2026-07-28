@@ -10,6 +10,7 @@ class ProbeRegistry {
     private val _geometries = linkedMapOf<String, BoundsPx>()
     private val _textLayouts = linkedMapOf<String, TextLayoutResult>()
     private val _focused = linkedMapOf<String, Boolean>()
+    private val _shadows = linkedMapOf<String, ShadowProbeSpec>()
 
     fun geometry(id: String): Modifier =
         Modifier.onGloballyPositioned { coordinates ->
@@ -32,6 +33,8 @@ class ProbeRegistry {
 
     fun focused(id: String): Boolean? = _focused[id]
 
+    fun shadow(id: String): ShadowProbeSpec? = _shadows[id]
+
     fun recordTextLayout(id: String, result: TextLayoutResult) {
         _textLayouts[id] = result
     }
@@ -39,7 +42,21 @@ class ProbeRegistry {
     fun recordFocused(id: String, focused: Boolean) {
         _focused[id] = focused
     }
+
+    fun recordShadow(id: String, shadow: ShadowProbeSpec) {
+        _shadows[id] = shadow
+    }
 }
+
+data class ShadowProbeSpec(
+    val shapeKind: String,
+    val cornerRadiusDp: Float,
+    val elevationDp: Float,
+    val ambientColorArgb: String = "#FF000000",
+    val spotColorArgb: String = "#FF000000",
+    val opacity: Float = 1f,
+    val clipProbeId: String? = null,
+)
 
 data class BoundsPx(
     val left: Float,

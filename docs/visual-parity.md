@@ -19,7 +19,7 @@ decision, not a reason to accept a new image.
 | Compose Material 3 | `1.12.0-alpha03` |
 | Jetpack Material 3 lineage | `1.5.0-alpha22` |
 | Kotlin / JDK | `2.3.20` / 17 |
-| Render scale | 2.0 physical pixels per logical dp/DIP |
+| Render scale | Canonical 2.0 physical pixels per logical dp/DIP; explicit scale cases may override it |
 | Locale and direction | `en-US`, LTR |
 | Font scale and color space | 1.0, sRGB |
 | Font | repository-pinned Roboto variable font, hash-validated on both sides |
@@ -114,9 +114,15 @@ cannot be accepted or mistaken for a parity difference.
 
 [`tests/VisualParity/comparison-profiles.json`](../tests/VisualParity/comparison-profiles.json)
 is the versioned, centralized tolerance policy. It selects a profile by case-ID prefix for color
-swatches, containers, components with text, and text fields. Current profiles use strict raster
-comparison; any later renderer-specific allowance must be narrow, justified, and changed in that
-file rather than embedded in a test.
+swatches, elevation, containers, components with text, and text fields. Elevation uses a local
+8-bit quantization noise floor of one channel value: deltas of `0` or `1` are equivalent, while
+any pixel with a channel delta above `1` fails. Any renderer-specific allowance must be narrow,
+justified, and changed in that file rather than embedded in a test.
+
+Elevation capture schema v4 also compares the fully resolved shadow contract independently of the
+raster: shape and corners, local-to-device matrix, elevation, ambient/spot colors and alpha,
+opacity/transparent-occluder flag, adjusted point light, radius, and parent clip. This separates an
+algorithm mismatch from a component passing the wrong parameters.
 
 The selected profile ID and the SHA-256 of this file are included in the actual manifest. That
 makes a tolerance-policy change visible in every run artifact.

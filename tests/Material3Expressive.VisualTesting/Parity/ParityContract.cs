@@ -67,7 +67,7 @@ public sealed record ParityCaptureResult(
     ParityViewport ViewportPx,
     IReadOnlyList<ParityNode> Nodes)
 {
-    public const int CurrentSchemaVersion = 3;
+    public const int CurrentSchemaVersion = 4;
 }
 
 public sealed record ParityCoordinateSpace(
@@ -92,7 +92,34 @@ public sealed record ParityNode(
     ParityRect? BoundsInRootPx,
     bool Visible,
     ParityTextLayout? TextLayout = null,
-    bool? Focused = null);
+    bool? Focused = null,
+    ParityShadow? Shadow = null);
+
+/// <summary>Resolved Skia m150 inputs sufficient to reconstruct one elevation shadow.</summary>
+public sealed record ParityShadow(
+    string SkiaBehaviorVersion,
+    string ShapeKind,
+    ParityRect ShapeBoundsLocalDp,
+    ParityRect OccluderBoundsDevicePx,
+    ParityCornerRadii CornerRadiiDp,
+    ParityAffineTransform LocalToDevice,
+    float ElevationPx,
+    string AmbientColorArgb,
+    string SpotColorArgb,
+    float AmbientAlpha,
+    float SpotAlpha,
+    float Opacity,
+    bool TransparentOccluder,
+    ParityPoint3 LightPositionPx,
+    float LightRadiusPx,
+    IReadOnlyList<string> Flags,
+    ParityRect? ClipBoundsInRootPx = null);
+
+public sealed record ParityCornerRadii(float TopLeft, float TopRight, float BottomRight, float BottomLeft);
+
+public sealed record ParityAffineTransform(float M11, float M12, float M21, float M22, float M31, float M32);
+
+public sealed record ParityPoint3(float X, float Y, float Z);
 
 public sealed record ParityRect(float Left, float Top, float Right, float Bottom)
 {

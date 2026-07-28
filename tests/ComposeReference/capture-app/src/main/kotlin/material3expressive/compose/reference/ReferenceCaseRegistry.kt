@@ -11,6 +11,9 @@ class ReferenceCaseRegistry {
         require(contract.viewportWidthDp > 0 && contract.viewportHeightDp > 0) {
             "Case '${contract.id}' has an invalid viewport."
         }
+        require(contract.renderScale.isFinite() && contract.renderScale > 0f) {
+            "Case '${contract.id}' has an invalid render scale."
+        }
         require(contract.requiredNodes.map { it.id }.distinct().size == contract.requiredNodes.size) {
             "Case '${contract.id}' has duplicate required node IDs."
         }
@@ -29,7 +32,8 @@ class ReferenceCaseRegistry {
                 appendField(contract.id)
                 append(contract.viewportWidthDp).append(',')
                 append(contract.viewportHeightDp).append(',')
-                append(contract.dark).append(';')
+                append(contract.dark).append(',')
+                append(contract.renderScale).append(';')
                 contract.requiredNodes.forEach { node ->
                     appendField(node.id)
                     appendField(node.kind)

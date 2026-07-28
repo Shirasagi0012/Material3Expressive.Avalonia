@@ -23,7 +23,7 @@ data class ExpectedManifest(
     val themeIdentifier: String,
     val themeSha256: String,
     val caseCatalogSha256: String,
-    val captureSchemaVersion: Int = 3,
+    val captureSchemaVersion: Int = 4,
     val viewportScale: Float,
     val files: List<ManifestFileEntry>,
     val cases: List<ManifestCaseEntry>,
@@ -48,7 +48,7 @@ data class ManifestCaseEntry(
 
 @Serializable
 data class CaptureResult(
-    val schemaVersion: Int = 3,
+    val schemaVersion: Int = 4,
     val caseId: String,
     val coordinateSpace: CoordinateSpace,
     val viewportPx: ViewportPx,
@@ -82,7 +82,51 @@ data class CaptureNode(
     val textLayout: CaptureTextLayout? = null,
     /** The observed semantic focus state when the corresponding node explicitly contracts it. */
     val focused: Boolean? = null,
+    /** Fully resolved Skia m150 shadow inputs for renderer-level elevation probes. */
+    val shadow: CaptureShadow? = null,
 )
+
+@Serializable
+data class CaptureShadow(
+    val skiaBehaviorVersion: String = "m150",
+    val shapeKind: String,
+    val shapeBoundsLocalDp: BoundsPx,
+    val occluderBoundsDevicePx: BoundsPx,
+    val cornerRadiiDp: CornerRadiiPx,
+    val localToDevice: AffineTransformPx,
+    val elevationPx: Float,
+    val ambientColorArgb: String,
+    val spotColorArgb: String,
+    val ambientAlpha: Float,
+    val spotAlpha: Float,
+    val opacity: Float,
+    val transparentOccluder: Boolean,
+    val lightPositionPx: Point3Px,
+    val lightRadiusPx: Float,
+    val flags: List<String>,
+    val clipBoundsInRootPx: BoundsPx? = null,
+)
+
+@Serializable
+data class CornerRadiiPx(
+    val topLeft: Float,
+    val topRight: Float,
+    val bottomRight: Float,
+    val bottomLeft: Float,
+)
+
+@Serializable
+data class AffineTransformPx(
+    val m11: Float,
+    val m12: Float,
+    val m21: Float,
+    val m22: Float,
+    val m31: Float,
+    val m32: Float,
+)
+
+@Serializable
+data class Point3Px(val x: Float, val y: Float, val z: Float)
 
 @Serializable
 data class BoundsPx(

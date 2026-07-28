@@ -68,6 +68,7 @@ public sealed class ParityComparer
                 failures.Add($"Node '{node.Id}' identity differs (kind or parent).");
             CompareOptionalBoolean($"Node '{node.Id}' focused state", node.Focused, counterpart.Focused, failures);
             CompareRect($"Node '{node.Id}' bounds", node.BoundsInRootPx, counterpart.BoundsInRootPx, tolerance.GeometryPx, failures);
+            CompareShadow(node.Id, node.Shadow, counterpart.Shadow, tolerance.GeometryPx, failures);
             if (compareTextLayout && CompareText(node, counterpart, tolerance, failures) && node.TextLayout is not null)
             {
                 matchedTextRasterRegions.AddRange(node.TextLayout.Lines.Select(line => new ParityRect(
@@ -78,6 +79,85 @@ public sealed class ParityComparer
             }
         }
         return matchedTextRasterRegions;
+    }
+
+    private static void CompareShadow(
+        string id,
+        ParityShadow? expected,
+        ParityShadow? actual,
+        float geometryTolerance,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        if (expected is null || actual is null)
+        {
+            failures.Add($"Shadow contract for '{id}' is missing from one capture.");
+            return;
+        }
+
+        if (expected.SkiaBehaviorVersion != actual.SkiaBehaviorVersion
+            || expected.ShapeKind != actual.ShapeKind
+            || expected.AmbientColorArgb != actual.AmbientColorArgb
+            || expected.SpotColorArgb != actual.SpotColorArgb
+            || expected.TransparentOccluder != actual.TransparentOccluder
+            || !expected.Flags.SequenceEqual(actual.Flags, StringComparer.Ordinal))
+        {
+            failures.Add($"Shadow identity for '{id}' differs.");
+        }
+
+        CompareRect($"Shadow '{id}' local shape bounds", expected.ShapeBoundsLocalDp, actual.ShapeBoundsLocalDp, geometryTolerance, failures);
+        CompareRect($"Shadow '{id}' device occluder bounds", expected.OccluderBoundsDevicePx, actual.OccluderBoundsDevicePx, geometryTolerance, failures);
+        CompareOptionalRect($"Shadow '{id}' parent clip bounds", expected.ClipBoundsInRootPx, actual.ClipBoundsInRootPx, geometryTolerance, failures);
+        CompareCornerRadii(id, expected.CornerRadiiDp, actual.CornerRadiiDp, geometryTolerance, failures);
+        CompareTransform(id, expected.LocalToDevice, actual.LocalToDevice, geometryTolerance, failures);
+        CompareNumber($"Shadow '{id}' elevation", expected.ElevationPx, actual.ElevationPx, geometryTolerance, failures);
+        CompareNumber($"Shadow '{id}' light X", expected.LightPositionPx.X, actual.LightPositionPx.X, geometryTolerance, failures);
+        CompareNumber($"Shadow '{id}' light Y", expected.LightPositionPx.Y, actual.LightPositionPx.Y, geometryTolerance, failures);
+        CompareNumber($"Shadow '{id}' light Z", expected.LightPositionPx.Z, actual.LightPositionPx.Z, geometryTolerance, failures);
+        CompareNumber($"Shadow '{id}' light radius", expected.LightRadiusPx, actual.LightRadiusPx, geometryTolerance, failures);
+        CompareScalar($"Shadow '{id}' ambient alpha", expected.AmbientAlpha, actual.AmbientAlpha, failures);
+        CompareScalar($"Shadow '{id}' spot alpha", expected.SpotAlpha, actual.SpotAlpha, failures);
+        CompareScalar($"Shadow '{id}' opacity", expected.Opacity, actual.Opacity, failures);
+    }
+
+    private static void CompareCornerRadii(
+        string id,
+        ParityCornerRadii expected,
+        ParityCornerRadii actual,
+        float tolerance,
+        ICollection<string> failures)
+    {
+        if (MathF.Abs(expected.TopLeft - actual.TopLeft) <= tolerance
+            && MathF.Abs(expected.TopRight - actual.TopRight) <= tolerance
+            && MathF.Abs(expected.BottomRight - actual.BottomRight) <= tolerance
+            && MathF.Abs(expected.BottomLeft - actual.BottomLeft) <= tolerance)
+            return;
+        failures.Add($"Shadow '{id}' corner radii differ.");
+    }
+
+    private static void CompareTransform(
+        string id,
+        ParityAffineTransform expected,
+        ParityAffineTransform actual,
+        float tolerance,
+        ICollection<string> failures)
+    {
+        if (MathF.Abs(expected.M11 - actual.M11) <= tolerance
+            && MathF.Abs(expected.M12 - actual.M12) <= tolerance
+            && MathF.Abs(expected.M21 - actual.M21) <= tolerance
+            && MathF.Abs(expected.M22 - actual.M22) <= tolerance
+            && MathF.Abs(expected.M31 - actual.M31) <= tolerance
+            && MathF.Abs(expected.M32 - actual.M32) <= tolerance)
+            return;
+        failures.Add($"Shadow '{id}' local-to-device transform differs.");
+    }
+
+    private static void CompareScalar(string label, float expected, float actual, ICollection<string> failures)
+    {
+        const float tolerance = 0.00001f;
+        if (MathF.Abs(expected - actual) > tolerance)
+            failures.Add($"{label} differs: expected {expected:F6}, actual {actual:F6}.");
     }
 
     private static bool CompareText(ParityNode expected, ParityNode actual, ParityTolerance tolerance, ICollection<string> failures)

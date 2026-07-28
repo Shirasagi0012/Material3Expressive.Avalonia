@@ -71,8 +71,8 @@ on the Avalonia comparison side.
 
 ### layout.json
 
-Per-case capture result (schema v3) containing:
-- Coordinate space definition (2× scale, root-relative physical pixels)
+Per-case capture result (schema v4) containing:
+- Coordinate space definition (case-specific scale, root-relative physical pixels)
 - Viewport dimensions in physical pixels
 - Required node bounds as reported by `Modifier.onGloballyPositioned`; the custom TextField label
   is a snapped framework layout slot, rather than a floating glyph/line measurement
@@ -81,6 +81,8 @@ Per-case capture result (schema v3) containing:
 - A diagnostic text-style signature (requested/resolved family, pinned font hash, weight, size,
   line height, and letter spacing) wherever both implementations have a direct style probe
 - The observed focus state for nodes that explicitly contract focus
+- For renderer-level elevation nodes, a reconstructible Skia m150 shadow contract: occluder shape,
+  local-to-device transform, elevation, colors/alphas, opacity/flags, point light, and parent clip
 
 The official `TextField` editable implementation exposes a `TextLayoutResult` through semantics,
 but not its independent root drawing origin. Until a dedicated adapter supplies that origin, input
@@ -103,8 +105,8 @@ wall-clock blink phase from being mistaken for a component difference.
 
 ## Rendering environment
 
-- Logical scale: `2.0` (1 dp = 2 physical px)
-- Density: `Density(2.0f, 1.0f)` — 320 dpi equivalent
+- Canonical logical scale: `2.0` (1 dp = 2 physical px); scale-specific cases may override it
+- Density: `Density(case.renderScale, 1.0f)`; the canonical suite uses 320 dpi equivalent
 - Font scale: `1.0`
 - Locale: `en-US`
 - Layout direction: `LTR`

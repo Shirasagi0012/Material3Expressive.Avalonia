@@ -9,6 +9,7 @@ data class CaseContract(
     val viewportHeightDp: Int,
     val dark: Boolean,
     val requiredNodes: List<RequiredNodeSpec>,
+    val renderScale: Float = 2.0f,
 )
 
 data class RequiredNodeSpec(
