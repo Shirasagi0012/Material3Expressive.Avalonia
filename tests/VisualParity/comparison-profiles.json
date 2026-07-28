@@ -60,6 +60,7 @@
   ],
   "caseProfileRules": [
     { "prefix": "foundation/color/", "profileId": "color-swatch" },
+    { "prefix": "foundation/elevation/", "profileId": "container" },
     { "prefix": "card/", "profileId": "container" },
     { "prefix": "fab/", "profileId": "container" },
     { "prefix": "selection/", "profileId": "container" },

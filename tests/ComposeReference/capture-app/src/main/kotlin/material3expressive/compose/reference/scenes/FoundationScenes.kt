@@ -5,10 +5,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import material3expressive.compose.reference.CaseContract
 import material3expressive.compose.reference.ReferenceCaseRegistry
@@ -42,6 +51,81 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
             PrimaryRoleSwatches(probes)
         },
     )
+
+    listOf(1.dp, 3.dp, 6.dp).forEach { elevation ->
+        registerElevationScene(
+            id = "foundation/elevation/rounded-rectangle/level${elevation.value.toInt()}/light",
+            elevation = elevation,
+            shape = RoundedCornerShape(20.dp),
+        )
+    }
+    registerElevationScene(
+        id = "foundation/elevation/rounded-rectangle/level6/dark",
+        elevation = 6.dp,
+        shape = RoundedCornerShape(20.dp),
+        dark = true,
+    )
+    registerElevationScene(
+        id = "foundation/elevation/circle/level6/light",
+        elevation = 6.dp,
+        shape = CircleShape,
+        width = 72.dp,
+        height = 72.dp,
+    )
+    registerElevationScene(
+        id = "foundation/elevation/rounded-rectangle/level6/parent-clipped/light",
+        elevation = 6.dp,
+        shape = RoundedCornerShape(20.dp),
+        parentClipped = true,
+    )
+}
+
+private fun ReferenceCaseRegistry.registerElevationScene(
+    id: String,
+    elevation: Dp,
+    shape: Shape,
+    dark: Boolean = false,
+    width: Dp = 96.dp,
+    height: Dp = 64.dp,
+    parentClipped: Boolean = false,
+) {
+    register(
+        CaseContract(
+            id = id,
+            viewportWidthDp = 240,
+            viewportHeightDp = 180,
+            dark = dark,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
+        ),
+        ReferenceScene { probes ->
+            if (parentClipped) {
+                Box(
+                    modifier = Modifier.requiredSize(112.dp, 80.dp).clip(RectangleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ElevationSurface(probes, elevation, shape, width, height)
+                }
+            } else {
+                ElevationSurface(probes, elevation, shape, width, height)
+            }
+        },
+    )
+}
+
+@Composable
+private fun ElevationSurface(
+    probes: ProbeRegistry,
+    elevation: Dp,
+    shape: Shape,
+    width: Dp,
+    height: Dp,
+) {
+    Surface(
+        modifier = Modifier.requiredSize(width, height).then(probes.geometry("component")),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shadowElevation = elevation,
+    ) {}
 }
 
 @Composable

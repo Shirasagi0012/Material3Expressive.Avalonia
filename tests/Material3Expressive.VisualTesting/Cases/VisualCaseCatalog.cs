@@ -8,6 +8,7 @@ public static class VisualCaseCatalog
     public static IReadOnlyList<VisualCase> All { get; } =
     [
         .. ParityCases.All,
+        .. ElevationParityCases.All,
         .. ComponentParityCases.All,
         .. ComposeWaveOneParityCases.All
     ];
