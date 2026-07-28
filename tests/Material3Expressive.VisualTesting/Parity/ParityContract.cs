@@ -10,6 +10,7 @@ namespace Material3Expressive.VisualTesting.Parity;
 /// </summary>
 public sealed record ParityManifest(
     int SchemaVersion,
+    int CaptureSchemaVersion,
     string ComposeMultiplatformPluginVersion,
     string ComposeRuntimeVersion,
     string ComposeMaterial3Version,
@@ -28,7 +29,7 @@ public sealed record ParityManifest(
     string CaseCatalogSha256,
     IReadOnlyList<ParityManifestCase> Cases)
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 }
 
 public sealed record ParityManifestCase(
@@ -66,7 +67,7 @@ public sealed record ParityCaptureResult(
     ParityViewport ViewportPx,
     IReadOnlyList<ParityNode> Nodes)
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 }
 
 public sealed record ParityCoordinateSpace(
@@ -78,13 +79,20 @@ public sealed record ParityCoordinateSpace(
 
 public sealed record ParityViewport(int Width, int Height);
 
+/// <summary>
+/// A named layout node. The custom Material text-field label is projected onto Compose's snapped
+/// framework layout slot; other text controls retain their framework bounds. Floating line,
+/// baseline, and caret/advance measurements remain in <see cref="TextLayout"/> and are compared
+/// separately.
+/// </summary>
 public sealed record ParityNode(
     string Id,
     string Kind,
     string? ParentId,
     ParityRect? BoundsInRootPx,
     bool Visible,
-    ParityTextLayout? TextLayout = null);
+    ParityTextLayout? TextLayout = null,
+    bool? Focused = null);
 
 public sealed record ParityRect(float Left, float Top, float Right, float Bottom)
 {

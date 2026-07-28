@@ -14,6 +14,7 @@ internal static class ComponentParityCases
     public static IReadOnlyList<VisualCase> All { get; } =
     [
         FilledCard(),
+        ElevatedCard(),
         PrimaryFab(),
         SelectedCheckbox()
     ];
@@ -26,6 +27,20 @@ internal static class ComponentParityCases
             {
                 Name = "component",
                 Variant = CardVariant.Filled,
+                Width = 160,
+                Height = 80,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+    private static VisualCase ElevatedCard() =>
+        Scene(
+            "card/elevated/fixed/enabled/light",
+            new PixelSize(240, 128),
+            _ => new MaterialCard
+            {
+                Name = "component",
+                Variant = CardVariant.Elevated,
                 Width = 160,
                 Height = 80,
                 HorizontalAlignment = HorizontalAlignment.Center,

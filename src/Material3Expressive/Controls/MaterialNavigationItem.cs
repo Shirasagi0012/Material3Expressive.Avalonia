@@ -1,5 +1,7 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
 
@@ -167,4 +169,118 @@ public class MaterialNavigationItem : ToggleButton
 
         InvalidateVisual();
     }
+}
+
+/// <summary>
+/// Arranges a navigation item's icon and label using Compose's physical-pixel placement rules.
+/// </summary>
+/// <remarks>
+/// <para>
+/// NavigationBar.kt and NavigationRail.kt both calculate <c>labelX</c> as
+/// <c>(containerWidth - labelPlaceable.width) / 2</c>, where both operands are integral physical
+/// pixels. The integer division deliberately rounds a half pixel down. Avalonia's general-purpose
+/// centre alignment preserves the fractional coordinate until rendering, which rounds the same
+/// label up on a 2x surface.
+/// </para>
+/// <para>
+/// The panel keeps the shared template but performs that Compose-specific calculation for each
+/// child slot. Measured text extents are rounded up to the integral placeable size Compose uses;
+/// this is a layout rule, not a label- or index-specific correction.
+/// </para>
+/// </remarks>
+public sealed class MaterialNavigationItemContentPanel : Panel
+{
+    /// <summary>The fixed gap between the icon slot and the label slot.</summary>
+    public static readonly StyledProperty<double> SpacingProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, double>(nameof(Spacing));
+
+    static MaterialNavigationItemContentPanel()
+    {
+        AffectsMeasure<MaterialNavigationItemContentPanel>(SpacingProperty);
+    }
+
+    /// <inheritdoc cref="SpacingProperty" />
+    public double Spacing
+    {
+        get => GetValue(SpacingProperty);
+        set => SetValue(SpacingProperty, value);
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
+        if (visibleChildren.Length == 0)
+            return default;
+
+        var availableWidth = availableSize.Width;
+        var desiredWidth = 0d;
+        var desiredHeight = 0d;
+
+        foreach (var child in visibleChildren)
+        {
+            child.Measure(new Size(availableWidth, double.PositiveInfinity));
+            desiredWidth = Math.Max(desiredWidth, child.DesiredSize.Width);
+            desiredHeight += child.DesiredSize.Height;
+        }
+
+        desiredHeight += Spacing * (visibleChildren.Length - 1);
+        return new Size(desiredWidth, desiredHeight);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
+        if (visibleChildren.Length == 0)
+            return finalSize;
+
+        var scale = GetScale();
+        var finalWidth = ToComposePixels(finalSize.Width, scale);
+        var finalHeight = ToComposePixels(finalSize.Height, scale);
+        var spacing = ToComposePixels(Spacing, scale);
+        var childWidths = new int[visibleChildren.Length];
+        var childHeights = new int[visibleChildren.Length];
+        var contentHeight = spacing * (visibleChildren.Length - 1);
+
+        for (var index = 0; index < visibleChildren.Length; index++)
+        {
+            childWidths[index] = ToPlaceablePixels(visibleChildren[index].DesiredSize.Width, scale);
+            childHeights[index] = ToPlaceablePixels(visibleChildren[index].DesiredSize.Height, scale);
+            contentHeight += childHeights[index];
+        }
+
+        // NavigationBar.kt / NavigationRail.kt use roundToInt only when emitting the vertical
+        // placeable position. This is equivalent to rounding the shared pair offset once here.
+        var top = ToComposePixels((finalHeight - contentHeight) / 2d, 1);
+
+        for (var index = 0; index < visibleChildren.Length; index++)
+        {
+            var width = childWidths[index];
+            var height = childHeights[index];
+            var left = Math.Max(0, (finalWidth - width) / 2);
+
+            visibleChildren[index].Arrange(new Rect(
+                ToLogicalPixels(left, scale),
+                ToLogicalPixels(top, scale),
+                ToLogicalPixels(width, scale),
+                ToLogicalPixels(height, scale)));
+
+            top += height + spacing;
+        }
+
+        return finalSize;
+    }
+
+    private double GetScale()
+    {
+        var scale = LayoutHelper.GetLayoutScale(this);
+        return scale > 0 && !double.IsNaN(scale) && !double.IsInfinity(scale) ? scale : 1;
+    }
+
+    private static int ToComposePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Floor(value * scale + 0.5));
+
+    private static int ToPlaceablePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Ceiling(value * scale - 0.000001));
+
+    private static double ToLogicalPixels(int value, double scale) => value / scale;
 }

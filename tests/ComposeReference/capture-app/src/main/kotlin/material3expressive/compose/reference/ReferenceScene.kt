@@ -16,6 +16,11 @@ data class RequiredNodeSpec(
     val kind: String,
     val parentId: String? = null,
     val text: String? = null,
+    /**
+     * The semantic focus state required at capture time. It is deliberately nullable because
+     * focus is only a contract dimension for scenes that explicitly exercise it.
+     */
+    val expectedFocused: Boolean? = null,
 )
 
 data class ReferenceScene(

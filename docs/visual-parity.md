@@ -87,10 +87,12 @@ Checks happen in this order:
 
 1. The producer manifest, versions, environment, font hash, catalog, and image hashes must match
    the contract.
-2. Named component bounds are compared in root-relative physical pixels. Images are never
-   auto-aligned or recentered.
+2. Named component bounds are compared in root-relative physical pixels. `TextBlock` nodes retain
+   their framework bounds; the custom Material text-field label is projected to the equivalent
+   snapped Compose layout slot. Floating line and caret/advance data is compared separately.
+   Images are never auto-aligned or recentered.
 3. Registered text nodes compare content, line ranges, baselines, and one advance/caret box per
-   UTF-16 offset.
+   UTF-16 offset. Nodes that explicitly exercise focus also compare the observed focus state.
 4. The rendered pixels are compared with the profile selected for the case.
 
 For standard Avalonia text, data comes from `TextBlock.TextLayout` and
@@ -98,6 +100,15 @@ For standard Avalonia text, data comes from `TextBlock.TextLayout` and
 `TextLayout` probe so it has the same line and character-box data. The editable Compose text-field
 input has no independent root drawing-origin probe yet; it remains covered by the text-field image
 region, while the label and supporting text are measured structurally.
+
+Focused cases capture the terminal focus state, not a transition frame. Compose requests real
+focus only after the component's own interaction collector has been composed, advances a bounded
+simulated clock until the requested focus state is observed, then advances synchronization,
+terminal, and commit frames (including a 5-second terminal animation tick). Avalonia uses real
+pointer input and settles its control-owned motion. The producer asserts the observed Compose
+interaction-source focus state and the Avalonia scene asserts its editor focus state. Both test
+environments keep the focused caret visibly on without blinking, so a wall-clock blink phase
+cannot be accepted or mistaken for a parity difference.
 
 ## Comparison profiles
 

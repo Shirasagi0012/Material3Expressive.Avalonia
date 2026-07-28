@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Metadata;
@@ -107,6 +108,177 @@ public class MaterialTab : ToggleButton
 
         InvalidateVisual();
     }
+}
+
+/// <summary>
+/// Lays out fixed tabs using the integral-width rule from Compose's TabRow implementation.
+/// </summary>
+/// <remarks>
+/// TabRow.kt calculates <c>tabWidth</c> with integral division of the physical row width, then
+/// places child <c>index</c> at <c>index * tabWidth</c>. A generic UniformGrid keeps fractional
+/// logical widths instead, which makes intrinsic content placement renderer-dependent at high DPI.
+/// </remarks>
+public sealed class MaterialTabItemsPanel : Panel
+{
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
+        if (visibleChildren.Length == 0)
+            return default;
+
+        var scale = GetScale();
+        var hasFiniteWidth = !double.IsInfinity(availableSize.Width);
+        var tabWidth = hasFiniteWidth
+            ? ToLogicalPixels(ToComposePixels(availableSize.Width, scale) / visibleChildren.Length, scale)
+            : double.PositiveInfinity;
+        var desiredWidth = 0d;
+        var desiredHeight = 0d;
+
+        foreach (var child in visibleChildren)
+        {
+            child.Measure(new Size(tabWidth, availableSize.Height));
+            desiredWidth += child.DesiredSize.Width;
+            desiredHeight = Math.Max(desiredHeight, child.DesiredSize.Height);
+        }
+
+        return new Size(hasFiniteWidth ? availableSize.Width : desiredWidth, desiredHeight);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
+        if (visibleChildren.Length == 0)
+            return finalSize;
+
+        var scale = GetScale();
+        var tabWidth = ToComposePixels(finalSize.Width, scale) / visibleChildren.Length;
+
+        for (var index = 0; index < visibleChildren.Length; index++)
+        {
+            visibleChildren[index].Arrange(new Rect(
+                ToLogicalPixels(index * tabWidth, scale),
+                0,
+                ToLogicalPixels(tabWidth, scale),
+                finalSize.Height));
+        }
+
+        return finalSize;
+    }
+
+    private double GetScale()
+    {
+        var scale = LayoutHelper.GetLayoutScale(this);
+        return scale > 0 && !double.IsNaN(scale) && !double.IsInfinity(scale) ? scale : 1;
+    }
+
+    private static int ToComposePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Floor(value * scale + 0.5));
+
+    private static double ToLogicalPixels(int value, double scale) => value / scale;
+}
+
+/// <summary>
+/// Centres a tab's intrinsic content with Compose's physical-pixel rounding semantics.
+/// </summary>
+/// <remarks>
+/// The text-only path follows Tab.kt's <c>TabBaselineLayout</c> inside the enclosing tab Column:
+/// the intrinsic text-and-padding width is centred, then the resulting offset is rounded to an
+/// integral physical pixel. This is intentionally different from the navigation item layout,
+/// whose upstream code uses integer division after measuring its label placeable.
+/// </remarks>
+public sealed class MaterialTabContentPanel : Panel
+{
+    /// <summary>The vertical gap between the icon and text slots.</summary>
+    public static readonly StyledProperty<double> SpacingProperty =
+        AvaloniaProperty.Register<MaterialTabContentPanel, double>(nameof(Spacing));
+
+    static MaterialTabContentPanel()
+    {
+        AffectsMeasure<MaterialTabContentPanel>(SpacingProperty);
+    }
+
+    /// <inheritdoc cref="SpacingProperty" />
+    public double Spacing
+    {
+        get => GetValue(SpacingProperty);
+        set => SetValue(SpacingProperty, value);
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
+        if (visibleChildren.Length == 0)
+            return default;
+
+        var desiredWidth = 0d;
+        var desiredHeight = 0d;
+
+        foreach (var child in visibleChildren)
+        {
+            child.Measure(new Size(availableSize.Width, double.PositiveInfinity));
+            desiredWidth = Math.Max(desiredWidth, child.DesiredSize.Width);
+            desiredHeight += child.DesiredSize.Height;
+        }
+
+        desiredHeight += Spacing * (visibleChildren.Length - 1);
+        return new Size(desiredWidth, desiredHeight);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
+        if (visibleChildren.Length == 0)
+            return finalSize;
+
+        var scale = GetScale();
+        var finalWidth = ToComposePixels(finalSize.Width, scale);
+        var finalHeight = ToComposePixels(finalSize.Height, scale);
+        var spacing = ToComposePixels(Spacing, scale);
+        var childWidths = new int[visibleChildren.Length];
+        var childHeights = new int[visibleChildren.Length];
+        var contentHeight = spacing * (visibleChildren.Length - 1);
+
+        for (var index = 0; index < visibleChildren.Length; index++)
+        {
+            childWidths[index] = ToPlaceablePixels(visibleChildren[index].DesiredSize.Width, scale);
+            childHeights[index] = ToPlaceablePixels(visibleChildren[index].DesiredSize.Height, scale);
+            contentHeight += childHeights[index];
+        }
+
+        var top = ToComposePixels((finalHeight - contentHeight) / 2d, 1);
+
+        for (var index = 0; index < visibleChildren.Length; index++)
+        {
+            // Column's centre alignment rounds the raw intrinsic width, rather than first
+            // truncating the width to the integral placeable bounds used by navigation items.
+            var desiredWidth = visibleChildren[index].DesiredSize.Width * scale;
+            var left = ToComposePixels((finalWidth - desiredWidth) / 2d, 1);
+
+            visibleChildren[index].Arrange(new Rect(
+                ToLogicalPixels(left, scale),
+                ToLogicalPixels(top, scale),
+                ToLogicalPixels(childWidths[index], scale),
+                ToLogicalPixels(childHeights[index], scale)));
+
+            top += childHeights[index] + spacing;
+        }
+
+        return finalSize;
+    }
+
+    private double GetScale()
+    {
+        var scale = LayoutHelper.GetLayoutScale(this);
+        return scale > 0 && !double.IsNaN(scale) && !double.IsInfinity(scale) ? scale : 1;
+    }
+
+    private static int ToComposePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Floor(value * scale + 0.5));
+
+    private static int ToPlaceablePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Ceiling(value * scale - 0.000001));
+
+    private static double ToLogicalPixels(int value, double scale) => value / scale;
 }
 
 /// <summary>

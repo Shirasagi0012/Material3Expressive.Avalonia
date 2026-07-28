@@ -21,6 +21,8 @@ public sealed class ComposeExpectedBundle
         var manifest = ParityJson.Read<ParityManifest>(manifestPath);
         if (manifest.SchemaVersion != ParityManifest.CurrentSchemaVersion)
             throw new InvalidDataException($"Unsupported parity manifest schema {manifest.SchemaVersion}.");
+        if (manifest.CaptureSchemaVersion != ParityCaptureResult.CurrentSchemaVersion)
+            throw new InvalidDataException($"Unsupported parity capture schema {manifest.CaptureSchemaVersion}.");
         if (manifest.ViewportScale != 2f || manifest.Density != 2f || manifest.FontScale != 1f
             || !string.Equals(manifest.Locale, "en-US", StringComparison.OrdinalIgnoreCase)
             || !string.Equals(manifest.LayoutDirection, "ltr", StringComparison.OrdinalIgnoreCase)

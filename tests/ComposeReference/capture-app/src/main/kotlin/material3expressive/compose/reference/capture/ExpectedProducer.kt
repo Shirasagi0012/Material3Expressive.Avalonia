@@ -11,6 +11,7 @@ import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalCursorBlinkEnabled
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Density
@@ -22,6 +23,7 @@ import kotlinx.serialization.json.Json
 import material3expressive.compose.reference.*
 import material3expressive.compose.reference.probes.ProbeRegistry
 import org.jetbrains.skia.EncodedImageFormat
+import org.jetbrains.skia.Image
 import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.io.path.createDirectories
@@ -30,6 +32,17 @@ import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
 private const val RENDER_SCALE = 2.0f
+
+// ImageComposeScene.render() defaults its frame time to 0. Focused Material text fields animate
+// the label, placeholder, and indicator through TextFieldImpl's MotionScheme transitions. A
+// focus request is asynchronous, so a terminal clock tick is only meaningful after the focused
+// input state has been observed and the transition has had a frame to register. Keep every frame
+// simulated and bounded; never use wall-clock sleeps.
+private const val FRAME_INTERVAL_NANOS = 16_666_667L
+private const val MAX_INPUT_STATE_DISPATCH_FRAMES = 16
+private const val POST_INPUT_STATE_SYNCHRONIZATION_FRAMES = 2
+private const val TERMINAL_ANIMATION_DELAY_NANOS = 5_000_000_000L
+private const val POST_TERMINAL_COMMIT_FRAMES = 2
 
 class ExpectedProducer(
     private val outputDir: Path,
@@ -78,6 +91,10 @@ class ExpectedProducer(
                 CompositionLocalProvider(
                     LocalDensity provides Density(density = scale, fontScale = 1.0f),
                     LocalLayoutDirection provides LayoutDirection.Ltr,
+                    // A focused text field's cursor is part of the reference image. Disable only
+                    // the recurring blink, not the cursor: false means a continuously visible
+                    // caret in Compose, which gives this static snapshot a deterministic phase.
+                    LocalCursorBlinkEnabled provides false,
                 ) {
                     MaterialTheme(
                         colorScheme = colorScheme,
@@ -101,8 +118,7 @@ class ExpectedProducer(
             val caseDir = casesDir.resolve(caseId)
             caseDir.createDirectories()
 
-            imageScene.render().close()
-            val skiaImage = imageScene.render()
+            val skiaImage = imageScene.renderSettled(contract, probeRegistry)
             val (pngSha256, layoutSha256) = try {
                 val pngBytes = skiaImage.encodeToData(EncodedImageFormat.PNG, 100)?.bytes
                     ?: error("Failed to encode image to PNG for case '$caseId'.")
@@ -194,6 +210,16 @@ class ExpectedProducer(
         val nodes = contract.requiredNodes.map { spec ->
             val geom = checkNotNull(probes.geometryBounds(spec.id))
             val textLayout = captureTextLayout(caseId, spec, geom, probes.textLayoutResult(spec.id))
+            val focused = spec.expectedFocused?.let { expectedFocused ->
+                val observedFocused = checkNotNull(probes.focused(spec.id)) {
+                    "Capture for '$caseId' did not report the required focus state for '${spec.id}'."
+                }
+                check(observedFocused == expectedFocused) {
+                    "Capture for '$caseId' did not reach focused=$expectedFocused for '${spec.id}' " +
+                        "after the controlled settled-state frame sequence. Observed $observedFocused."
+                }
+                observedFocused
+            }
 
             CaptureNode(
                 id = spec.id,
@@ -204,6 +230,7 @@ class ExpectedProducer(
                 ),
                 visible = true,
                 textLayout = textLayout,
+                focused = focused,
             )
         }
 
@@ -326,4 +353,51 @@ class ExpectedProducer(
         MessageDigest.getInstance("SHA-256")
             .digest(bytes)
             .joinToString("") { "%02X".format(it) }
+
+    /**
+     * Drives composition and input dispatch until the case's requested focus state is visible,
+     * then gives a transition registration frame, a fixed terminal clock tick, and final commit
+     * frames. This is a deterministic simulated clock, never a wall-clock sleep.
+     */
+    private fun ImageComposeScene.renderSettled(
+        contract: CaseContract,
+        probes: ProbeRegistry,
+    ): Image {
+        var frameTimeNanos = 0L
+
+        fun renderFrame() {
+            render(frameTimeNanos).close()
+            frameTimeNanos += FRAME_INTERVAL_NANOS
+        }
+
+        renderFrame()
+        var inputStateReached = contract.hasExpectedFocus(probes)
+        var dispatchedFrames = 0
+        while (!inputStateReached && dispatchedFrames < MAX_INPUT_STATE_DISPATCH_FRAMES) {
+            renderFrame()
+            dispatchedFrames++
+            inputStateReached = contract.hasExpectedFocus(probes)
+        }
+        check(inputStateReached) {
+            val expected = contract.requiredNodes
+                .filter { it.expectedFocused != null }
+                .joinToString { "${it.id}=${it.expectedFocused}" }
+            val actual = contract.requiredNodes
+                .filter { it.expectedFocused != null }
+                .joinToString { "${it.id}=${probes.focused(it.id)}" }
+            "Capture for '${contract.id}' did not reach the requested focus state after " +
+                "$MAX_INPUT_STATE_DISPATCH_FRAMES simulated dispatch frame(s): expected [$expected], actual [$actual]."
+        }
+
+        repeat(POST_INPUT_STATE_SYNCHRONIZATION_FRAMES) { renderFrame() }
+        frameTimeNanos += TERMINAL_ANIMATION_DELAY_NANOS
+        renderFrame()
+        repeat(POST_TERMINAL_COMMIT_FRAMES) { renderFrame() }
+        return render(frameTimeNanos)
+    }
+
+    private fun CaseContract.hasExpectedFocus(probes: ProbeRegistry): Boolean =
+        requiredNodes
+            .filter { it.expectedFocused != null }
+            .all { probes.focused(it.id) == it.expectedFocused }
 }

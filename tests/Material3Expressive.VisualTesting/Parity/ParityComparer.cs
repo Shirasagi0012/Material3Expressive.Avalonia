@@ -61,6 +61,7 @@ public sealed class ParityComparer
             }
             if (node.Kind != counterpart.Kind || node.ParentId != counterpart.ParentId)
                 failures.Add($"Node '{node.Id}' identity differs (kind or parent).");
+            CompareOptionalBoolean($"Node '{node.Id}' focused state", node.Focused, counterpart.Focused, failures);
             CompareRect($"Node '{node.Id}' bounds", node.BoundsInRootPx, counterpart.BoundsInRootPx, tolerance.GeometryPx, failures);
             if (compareTextLayout)
                 CompareText(node, counterpart, tolerance, failures);
@@ -225,6 +226,23 @@ public sealed class ParityComparer
             return;
         }
         CompareNumber(label, expected.Value, actual.Value, tolerance, failures);
+    }
+
+    private static void CompareOptionalBoolean(
+        string label,
+        bool? expected,
+        bool? actual,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        if (expected is null || actual is null)
+        {
+            failures.Add($"{label} is missing.");
+            return;
+        }
+        if (expected != actual)
+            failures.Add($"{label} differs: expected {expected.Value.ToString().ToLowerInvariant()}, actual {actual.Value.ToString().ToLowerInvariant()}.");
     }
 
     private static string FormatRect(ParityRect rect) =>

@@ -336,7 +336,9 @@ For focus, hover, press, and animated states:
 
 - prefer real framework input/focus APIs when the visual depends on an interaction source;
 - advance a controlled clock rather than waiting for wall-clock time;
-- require an explicit capture time in the case contract;
+- define and record the requested semantic terminal state (for example `focused = true`) in the
+  case contract, advance to that observed state within a bounded controlled-clock phase, then
+  capture it after explicit terminal and commit frames;
 - fail if the scene does not settle within a bounded number of frames.
 
 The first implementation may omit interaction and motion cases. It must not capture them using an

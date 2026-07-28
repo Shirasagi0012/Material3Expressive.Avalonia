@@ -35,6 +35,7 @@ class ReferenceCaseRegistry {
                     appendField(node.kind)
                     appendField(node.parentId)
                     appendField(node.text)
+                    appendField(node.expectedFocused?.toString())
                 }
                 append('\n')
             }

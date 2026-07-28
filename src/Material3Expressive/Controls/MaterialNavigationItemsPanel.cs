@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 
 namespace Material3Expressive.Controls;
 
@@ -9,14 +10,22 @@ namespace Material3Expressive.Controls;
 /// <remarks>
 /// <para>
 /// A <c>UniformGrid</c> is close for a bottom bar, but it cannot express Compose's
-/// inter-item spacing, nor a rail's 80dp-wide, 56dp-tall destinations aligned from the top.
-/// Keeping the layout here also means the same item template can serve bar and rail variants.
+/// weighted-item remainder distribution, inter-item spacing, nor a rail's 80dp-wide, 56dp-tall
+/// destinations aligned from the top. Keeping the layout here also means the same item template
+/// can serve bar and rail variants.
 /// </para>
 /// <para>
 /// The figures come from NavigationBar.kt's <c>NavigationBarItemHorizontalPadding</c> and
 /// NavigationRail.kt's <c>NavigationRailVerticalPadding</c>,
 /// <c>NavigationRailItemWidth</c>, and <c>NavigationRailItemHeight</c>. They are expressed in
 /// Avalonia logical pixels, which are dp under the parity test's scale contract.
+/// </para>
+/// <para>
+/// Compose measures layout in integral physical pixels. In particular, RowColumnMeasurePolicy
+/// rounds each weighted share then gives any remainder to the first weighted children. Arranging
+/// equal fractional logical rectangles delegates that decision to Avalonia and shifts centred
+/// labels by a physical pixel at high DPI. This panel performs the same allocation before
+/// converting the resulting pixel slots back to Avalonia coordinates.
 /// </para>
 /// </remarks>
 public sealed class MaterialNavigationItemsPanel : Panel
@@ -60,26 +69,40 @@ public sealed class MaterialNavigationItemsPanel : Panel
 
         if (IsVertical)
         {
+            var verticalScale = GetScale();
+            var railItemSize = new Size(
+                ToLogicalPixels(ToComposePixels(RailItemWidth, verticalScale), verticalScale),
+                ToLogicalPixels(ToComposePixels(RailItemHeight, verticalScale), verticalScale));
+
             foreach (var child in Children)
             {
                 if (child.IsVisible)
-                    child.Measure(new Size(RailItemWidth, RailItemHeight));
+                    child.Measure(railItemSize);
             }
 
             return new Size(
-                RailItemWidth,
-                RailVerticalPadding * 2 + RailItemHeight * visibleCount + ItemSpacing * (visibleCount - 1));
+                railItemSize.Width,
+                ToLogicalPixels(
+                    ToComposePixels(RailVerticalPadding * 2 + RailItemHeight * visibleCount + ItemSpacing * (visibleCount - 1), verticalScale),
+                    verticalScale));
         }
 
-        var width = double.IsInfinity(availableSize.Width)
-            ? 0
-            : Math.Max(0, (availableSize.Width - ItemSpacing * (visibleCount - 1)) / visibleCount);
+        var scale = GetScale();
+        var slots = double.IsInfinity(availableSize.Width)
+            ? Array.Empty<int>()
+            : GetWeightedSlots(availableSize.Width, visibleCount, scale);
         var height = double.IsInfinity(availableSize.Height) ? double.PositiveInfinity : availableSize.Height;
+        var slotIndex = 0;
 
         foreach (var child in Children)
         {
             if (child.IsVisible)
+            {
+                var width = slots.Length == 0
+                    ? 0
+                    : ToLogicalPixels(slots[slotIndex++], scale);
                 child.Measure(new Size(width, height));
+            }
         }
 
         if (!double.IsInfinity(availableSize.Width) && !double.IsInfinity(availableSize.Height))
@@ -99,27 +122,78 @@ public sealed class MaterialNavigationItemsPanel : Panel
 
         if (IsVertical)
         {
-            var x = Math.Max(0, (finalSize.Width - RailItemWidth) / 2);
-            var y = RailVerticalPadding;
+            var scale = GetScale();
+            var finalWidth = ToComposePixels(finalSize.Width, scale);
+            var itemWidth = ToComposePixels(RailItemWidth, scale);
+            var itemHeight = ToComposePixels(RailItemHeight, scale);
+            var x = Math.Max(0, (finalWidth - itemWidth) / 2);
+            var y = ToComposePixels(RailVerticalPadding, scale);
+            var itemSpacing = ToComposePixels(ItemSpacing, scale);
 
             foreach (var child in visibleChildren)
             {
-                child.Arrange(new Rect(x, y, RailItemWidth, RailItemHeight));
-                y += RailItemHeight + ItemSpacing;
+                child.Arrange(new Rect(
+                    ToLogicalPixels(x, scale),
+                    ToLogicalPixels(y, scale),
+                    ToLogicalPixels(itemWidth, scale),
+                    ToLogicalPixels(itemHeight, scale)));
+                y += itemHeight + itemSpacing;
             }
 
             return finalSize;
         }
 
-        var width = Math.Max(0, (finalSize.Width - ItemSpacing * (visibleChildren.Length - 1)) / visibleChildren.Length);
-        var left = 0d;
+        var horizontalScale = GetScale();
+        var slots = GetWeightedSlots(finalSize.Width, visibleChildren.Length, horizontalScale);
+        var itemSpacingPx = ToComposePixels(ItemSpacing, horizontalScale);
+        var left = 0;
 
-        foreach (var child in visibleChildren)
+        for (var index = 0; index < visibleChildren.Length; index++)
         {
-            child.Arrange(new Rect(left, 0, width, finalSize.Height));
-            left += width + ItemSpacing;
+            var width = slots[index];
+            visibleChildren[index].Arrange(new Rect(
+                ToLogicalPixels(left, horizontalScale),
+                0,
+                ToLogicalPixels(width, horizontalScale),
+                finalSize.Height));
+            left += width + itemSpacingPx;
         }
 
         return finalSize;
     }
+
+    /// <summary>
+    /// Gets the same physical-pixel widths as Compose's RowColumnMeasurePolicy for equally
+    /// weighted children. The policy rounds each share and then allocates the rounding remainder
+    /// to the first children in source order.
+    /// </summary>
+    private int[] GetWeightedSlots(double availableWidth, int count, double scale)
+    {
+        var available = ToComposePixels(availableWidth, scale);
+        var spacing = ToComposePixels(ItemSpacing, scale);
+        var target = Math.Max(0, available - spacing * (count - 1));
+        var roundedShare = ToComposePixels(target / (double)count, 1);
+        var remainder = target - roundedShare * count;
+        var slots = new int[count];
+
+        for (var index = 0; index < count; index++)
+        {
+            var adjustment = Math.Sign(remainder);
+            remainder -= adjustment;
+            slots[index] = Math.Max(0, roundedShare + adjustment);
+        }
+
+        return slots;
+    }
+
+    private double GetScale()
+    {
+        var scale = LayoutHelper.GetLayoutScale(this);
+        return scale > 0 && !double.IsNaN(scale) && !double.IsInfinity(scale) ? scale : 1;
+    }
+
+    private static int ToComposePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Floor(value * scale + 0.5));
+
+    private static double ToLogicalPixels(int value, double scale) => value / scale;
 }

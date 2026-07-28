@@ -1,11 +1,14 @@
 package material3expressive.compose.reference.scenes
 
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,7 +62,7 @@ private enum class TextFieldVariant { Filled, Outlined }
 
 private fun textFieldContract(id: String, params: TextFieldParams): CaseContract {
     val nodes = mutableListOf(
-        RequiredNodeSpec(id = "component", kind = "container"),
+        RequiredNodeSpec(id = "component", kind = "container", expectedFocused = params.focused),
         RequiredNodeSpec(id = "label", kind = "text", parentId = "component", text = "Label"),
     )
     if (params.supportingText != null) {
@@ -79,9 +82,12 @@ private fun textFieldContract(id: String, params: TextFieldParams): CaseContract
 private fun TextFieldScene(probes: ProbeRegistry, params: TextFieldParams) {
     var value by remember { mutableStateOf(params.value) }
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(params.focused) {
-        if (params.focused) focusRequester.requestFocus()
-    }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    // This records the state observed through the same InteractionSource supplied to the official
+    // component. ExpectedProducer checks it after the controlled frame sequence rather than
+    // assuming requestFocus() has completed.
+    SideEffect { probes.recordFocused("component", isFocused) }
     val hasSupporting = params.supportingText != null
     val modifier = Modifier
         .requiredSize(width = 240.dp, height = if (hasSupporting) 80.dp else 56.dp)
@@ -116,6 +122,7 @@ private fun TextFieldScene(probes: ProbeRegistry, params: TextFieldParams) {
             isError = params.isError,
             enabled = params.enabled,
             modifier = modifier,
+            interactionSource = interactionSource,
         )
         TextFieldVariant.Outlined -> OutlinedTextField(
             value = value,
@@ -127,6 +134,17 @@ private fun TextFieldScene(probes: ProbeRegistry, params: TextFieldParams) {
             isError = params.isError,
             enabled = params.enabled,
             modifier = modifier,
+            interactionSource = interactionSource,
         )
+    }
+
+    // MutableInteractionSource uses a non-replaying flow. Register this effect after the official
+    // TextField has been composed, so its internal collector is installed before it emits the
+    // FocusInteraction; otherwise the external probe could observe focus while
+    // CommonDecorationBox remains UnfocusedEmpty.
+    LaunchedEffect(params.focused) {
+        if (params.focused) {
+            focusRequester.requestFocus()
+        }
     }
 }

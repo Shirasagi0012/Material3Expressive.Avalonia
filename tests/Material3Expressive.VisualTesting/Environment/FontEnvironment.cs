@@ -118,6 +118,9 @@ public static class FontEnvironment
                 .Append(", resolvedFileSha256=").Append(GetResolvedFaceSha256(glyphTypeface) ?? "unavailable")
                 .AppendLine();
 
+            report.Append("  resolved-instance: ")
+                .AppendLine(DescribeResolvedSkiaInstance(glyphTypeface));
+
             report.Append("  advances: ");
             foreach (var codePoint in GlyphAdvanceProbe)
             {
@@ -133,6 +136,32 @@ public static class FontEnvironment
         }
 
         return report.ToString();
+    }
+
+    /// <summary>
+    /// Captures the concrete Skia variation coordinates and an outline fingerprint of the face
+    /// that Avalonia actually resolved. File bytes alone are insufficient for variable fonts:
+    /// every wght-axis instance has the same stream hash.
+    /// </summary>
+    private static string DescribeResolvedSkiaInstance(GlyphTypeface glyphTypeface)
+    {
+        var property = glyphTypeface.PlatformTypeface.GetType().GetProperty(
+            "SKTypeface",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        if (property?.GetValue(glyphTypeface.PlatformTypeface) is not SKTypeface typeface)
+            return "Skia typeface unavailable";
+
+        var position = typeface.VariationDesignPosition;
+        var axes = position.Length == 0
+            ? "<none>"
+            : string.Join(", ", position.Select(axis => $"{axis.Axis}={axis.Value:F3}"));
+        using var font = new SKFont(typeface, 64);
+        using var path = font.GetTextPath("M3eAaW0", new SKPoint(0, 0));
+        var outlineHash = Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(path.ToSvgPathData())));
+        var bounds = path.Bounds;
+        return FormattableString.Invariant(
+            $"variationPosition=[{axes}], outlineBounds=({bounds.Left:F3}, {bounds.Top:F3}, {bounds.Right:F3}, {bounds.Bottom:F3}), outlineSha256={outlineHash}");
     }
 
     private static LocatedFontFile FindCanonicalRoboto()

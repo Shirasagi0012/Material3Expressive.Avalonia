@@ -21,16 +21,20 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                    <!-- Tab.kt centres TabBaselineLayout in the full tab using a physical-pixel
+                         rounded intrinsic offset. The custom panel owns that placement. -->
+                    <m3:MaterialTabContentPanel Spacing="2">
                         <ContentPresenter Width="{TemplateBinding IconSize}"
                                           Height="{TemplateBinding IconSize}"
-                                          HorizontalAlignment="Center"
+                                          HorizontalAlignment="Stretch"
                                           HorizontalContentAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
                                           VerticalContentAlignment="Stretch"
                                           IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
                                           Content="{TemplateBinding Icon}"
                                           TextElement.Foreground="{TemplateBinding IconBrush}" />
-                        <ContentPresenter HorizontalAlignment="Center"
+                        <ContentPresenter HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
                                           Padding="{TemplateBinding Padding}"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -38,7 +42,7 @@
                                           TextElement.FontSize="{TemplateBinding FontSize}"
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontWeight="{TemplateBinding FontWeight}" />
-                    </StackPanel>
+                    </m3:MaterialTabContentPanel>
                 </ControlTemplate>
             </Setter>
         </ControlTheme>
@@ -49,9 +53,10 @@
                     <ItemsControl ItemsSource="{Binding $parent[m3:MaterialTabs].Items}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <!-- Tabs share the row equally, which is what lets the indicator's
-                                     travel be read off the tab bounds alone. -->
-                                <UniformGrid Rows="1" />
+                                <!-- TabRow.kt uses integral physical tab widths, leaving any
+                                     remainder at the trailing edge rather than retaining
+                                     fractional logical columns. -->
+                                <m3:MaterialTabItemsPanel />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>

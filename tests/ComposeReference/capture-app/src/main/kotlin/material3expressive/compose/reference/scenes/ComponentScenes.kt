@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -27,6 +28,26 @@ fun ReferenceCaseRegistry.registerComponentScenes() {
         ),
         ReferenceScene { probes ->
             Card(
+                Modifier.requiredSize(160.dp, 80.dp).then(probes.geometry("component"))
+            ) {
+                Spacer(Modifier.fillMaxSize())
+            }
+        },
+    )
+
+    // ElevatedCard delegates to Card with ElevatedCardTokens' medium shape, SurfaceContainerLow
+    // color, and Level1 shadow elevation. Keep the content empty so the raster contract isolates
+    // the external shadow rather than font or icon rendering.
+    register(
+        CaseContract(
+            id = "card/elevated/fixed/enabled/light",
+            viewportWidthDp = 240,
+            viewportHeightDp = 128,
+            dark = false,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
+        ),
+        ReferenceScene { probes ->
+            ElevatedCard(
                 Modifier.requiredSize(160.dp, 80.dp).then(probes.geometry("component"))
             ) {
                 Spacer(Modifier.fillMaxSize())

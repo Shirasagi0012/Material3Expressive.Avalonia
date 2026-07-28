@@ -36,24 +36,27 @@
                 <ControlTemplate>
                     <!-- The indicator is painted behind this by the control, so the template only
                          has to stack the icon over the label and centre the pair. -->
-                    <StackPanel HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Spacing="{TemplateBinding IconLabelSpace}">
+                    <!-- NavigationBarItemLayout / NavigationRailItemLayout centre integral
+                         Compose placeables, rather than fractional logical bounds. The custom
+                         panel mirrors that calculation before it arranges these two slots. -->
+                    <m3:MaterialNavigationItemContentPanel Spacing="{TemplateBinding IconLabelSpace}">
                         <ContentPresenter Width="{TemplateBinding IconSize}"
                                           Height="{TemplateBinding IconSize}"
-                                          HorizontalAlignment="Center"
+                                          HorizontalAlignment="Stretch"
                                           HorizontalContentAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
                                           VerticalContentAlignment="Stretch"
                                           Content="{TemplateBinding Icon}"
                                           TextElement.Foreground="{TemplateBinding IconBrush}" />
-                        <ContentPresenter HorizontalAlignment="Center"
+                        <ContentPresenter HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
                                           TextElement.Foreground="{TemplateBinding Foreground}"
                                           TextElement.FontSize="{TemplateBinding FontSize}"
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontWeight="{TemplateBinding FontWeight}" />
-                    </StackPanel>
+                    </m3:MaterialNavigationItemContentPanel>
                 </ControlTemplate>
             </Setter>
         </ControlTheme>

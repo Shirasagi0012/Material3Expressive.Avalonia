@@ -61,12 +61,32 @@ public sealed class ParityContractTests
             failure);
     }
 
-    private static ParityCaptureResult Layout(string id, ParityRect bounds) => new(
+    [Fact]
+    public void ComparerRejectsFocusedStateMismatch()
+    {
+        var expected = Layout("field", new ParityRect(10, 10, 30, 20), focused: true);
+        var actual = Layout("field", new ParityRect(10, 10, 30, 20), focused: false);
+        var image = SolidImage(40, 30, 255);
+
+        var comparison = new ParityComparer().Compare(
+            expected,
+            actual,
+            image,
+            image,
+            ParityComparisonProfiles.TextField);
+
+        Assert.False(comparison.IsMatch);
+        Assert.Equal(
+            "Node 'field' focused state differs: expected true, actual false.",
+            Assert.Single(comparison.Failures));
+    }
+
+    private static ParityCaptureResult Layout(string id, ParityRect bounds, bool? focused = null) => new(
         ParityCaptureResult.CurrentSchemaVersion,
         "test",
         new ParityCoordinateSpace("physical-pixel", "root-top-left", "right", "down", 2),
         new ParityViewport(40, 30),
-        [new ParityNode(id, "container", null, bounds, true)]);
+        [new ParityNode(id, "container", null, bounds, true, Focused: focused)]);
 
     private static ParityCaptureResult TextLayout(ParityRect characterBounds)
     {

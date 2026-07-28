@@ -73,7 +73,8 @@ public sealed class AvaloniaParityCapture
                 node.ParentId,
                 bounds,
                 control.IsVisible,
-                text is null ? null : CaptureText(text, context.Root, scale));
+                text is null ? null : CaptureText(text, context.Root, scale),
+                CaptureFocusedState(node, control, allControls));
         }).ToArray();
     }
 
@@ -115,7 +116,7 @@ public sealed class AvaloniaParityCapture
     {
         var transform = textField.TransformToVisual(root)
             ?? throw new InvalidOperationException("MaterialTextField label probe is not mounted.");
-        var bounds = TransformRectToPhysicalRoot(
+        var bounds = ComposeSnappedTextLayoutSlotBounds(
             new Rect(probe.Origin, new Size(probe.Layout.Width, probe.Layout.Height)),
             transform,
             scale);
@@ -132,6 +133,44 @@ public sealed class AvaloniaParityCapture
                 transform,
                 scale,
                 styleSignature: null));
+    }
+
+    private static bool? CaptureFocusedState(
+        ParityNode expected,
+        Control control,
+        IReadOnlyList<Control> allControls)
+    {
+        if (expected.Focused is null)
+            return null;
+
+        // MaterialTextField delegates focus to its internal editor. Its outer control is
+        // deliberately non-focusable, so Control.IsFocused would not describe the same semantic
+        // state as Compose's interactionSource.collectIsFocusedAsState().
+        if (control is MaterialTextField)
+            return allControls.OfType<TextBox>()
+                .SingleOrDefault(item => item.Name == "PART_TextBox")
+                ?.IsFocused;
+
+        return control.IsFocused;
+    }
+
+    private static ParityRect ComposeSnappedTextLayoutSlotBounds(
+        Rect rawLayoutBounds,
+        Matrix transform,
+        double scale)
+    {
+        var rawBounds = TransformRectToPhysicalRoot(rawLayoutBounds, transform, scale);
+
+        // Modifier.onGloballyPositioned reports Compose Text's integer layout slot (the
+        // TextLayoutResult IntSize), while line and character data is intentionally floating
+        // point. The custom Avalonia text-field label has no framework layout node, so expose the
+        // equivalent minimum enclosing physical-pixel slot here instead of incorrectly using its
+        // floating TextLayout.Width as the node bounds.
+        return new ParityRect(
+            MathF.Floor(rawBounds.Left),
+            MathF.Floor(rawBounds.Top),
+            MathF.Ceiling(rawBounds.Right),
+            MathF.Ceiling(rawBounds.Bottom));
     }
 
     private static ParityTextLayout? CaptureText(

@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ExpectedManifest(
-    val schemaVersion: Int = 2,
+    val schemaVersion: Int = 3,
     val composeMultiplatformPluginVersion: String,
     val composeRuntimeVersion: String,
     val composeMaterial3Version: String,
@@ -23,7 +23,7 @@ data class ExpectedManifest(
     val themeIdentifier: String,
     val themeSha256: String,
     val caseCatalogSha256: String,
-    val captureSchemaVersion: Int = 2,
+    val captureSchemaVersion: Int = 3,
     val viewportScale: Float,
     val files: List<ManifestFileEntry>,
     val cases: List<ManifestCaseEntry>,
@@ -48,7 +48,7 @@ data class ManifestCaseEntry(
 
 @Serializable
 data class CaptureResult(
-    val schemaVersion: Int = 2,
+    val schemaVersion: Int = 3,
     val caseId: String,
     val coordinateSpace: CoordinateSpace,
     val viewportPx: ViewportPx,
@@ -80,6 +80,8 @@ data class CaptureNode(
     val visible: Boolean = true,
     val regionExpansionPx: RegionExpansion? = null,
     val textLayout: CaptureTextLayout? = null,
+    /** The observed semantic focus state when the corresponding node explicitly contracts it. */
+    val focused: Boolean? = null,
 )
 
 @Serializable

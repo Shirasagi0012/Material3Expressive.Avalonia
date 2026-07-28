@@ -246,21 +246,32 @@ internal static class ComposeWaveOneParityCases
                 }
             },
             RenderScaling: 1.0,
-            Prepare: focused
-                ? context =>
+            Prepare: context =>
+            {
+                var target = context.Require<MaterialTextField>("component");
+                var editor = context.Require<TextBox>("PART_TextBox");
+                // Match Compose's test-only LocalCursorBlinkEnabled=false contract: keep the
+                // focused caret visibly on, rather than sampling either toolkit's wall-clock
+                // blink phase. This does not hide the caret or synthesize focus.
+                editor.CaretBlinkInterval = TimeSpan.Zero;
+                if (focused)
                 {
-                    var target = context.Require<MaterialTextField>("component");
                     var point = PointIn(target, context.Window);
                     context.Window.MouseMove(point);
                     context.Window.MouseDown(point, MouseButton.Left);
                     context.Window.MouseUp(point, MouseButton.Left);
-                    context.SettleAnimations();
-
-                    var editor = context.Require<TextBox>("PART_TextBox");
-                    if (!editor.IsFocused)
-                        throw new InvalidOperationException($"'{id}' did not focus its editor.");
                 }
-                : null);
+
+                if (editor.IsFocused != focused)
+                {
+                    throw new InvalidOperationException(
+                        $"'{id}' editor focus state is {editor.IsFocused}, expected {focused}.");
+                }
+
+                // The interaction above is real input. Settling only moves the control-owned
+                // motion to its resulting semantic state, matching Compose's terminal frame.
+                context.SettleAnimations();
+            });
     }
 
     private static VisualCase NavigationBar(

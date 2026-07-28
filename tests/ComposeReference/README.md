@@ -71,18 +71,35 @@ on the Avalonia comparison side.
 
 ### layout.json
 
-Per-case capture result (schema v2) containing:
+Per-case capture result (schema v3) containing:
 - Coordinate space definition (2× scale, root-relative physical pixels)
 - Viewport dimensions in physical pixels
-- Required node bounds as reported by `Modifier.onGloballyPositioned`
+- Required node bounds as reported by `Modifier.onGloballyPositioned`; the custom TextField label
+  is a snapped framework layout slot, rather than a floating glyph/line measurement
 - Text draw origin, local and root-space metrics/baselines, and per-character advance boxes for
   registered `Text` nodes
 - A diagnostic text-style signature (requested/resolved family, pinned font hash, weight, size,
   line height, and letter spacing) wherever both implementations have a direct style probe
+- The observed focus state for nodes that explicitly contract focus
 
 The official `TextField` editable implementation exposes a `TextLayoutResult` through semantics,
 but not its independent root drawing origin. Until a dedicated adapter supplies that origin, input
 text remains covered by the text-field image region; labels and supporting text are fully probed.
+
+## Stable capture protocol
+
+The producer never waits on wall-clock time. `ImageComposeScene.render()` defaults to frame time
+zero, so capture starts at `0ns` and advances in deterministic `16.667ms` steps. For a contracted
+focus state it pumps at most 16 dispatch frames until the real interaction-source state is observed,
+then runs two transition-registration frames, a terminal frame exactly 5 seconds later, two commit
+frames, and a final capture frame. Focus is requested only after the official TextField has been
+composed, so its non-replaying interaction collector cannot miss the focus event. Generation fails
+if the requested semantic state does not arrive within the bounded dispatch phase.
+
+The text cursor remains part of focused screenshots. Blink is disabled only for the capture
+environment (`LocalCursorBlinkEnabled=false`), which means an always-visible caret rather than a
+hidden one; the Avalonia scene uses the equivalent always-visible caret setting. This prevents a
+wall-clock blink phase from being mistaken for a component difference.
 
 ## Rendering environment
 

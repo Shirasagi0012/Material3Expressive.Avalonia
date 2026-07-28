@@ -9,6 +9,7 @@ import androidx.compose.ui.text.TextLayoutResult
 class ProbeRegistry {
     private val _geometries = linkedMapOf<String, BoundsPx>()
     private val _textLayouts = linkedMapOf<String, TextLayoutResult>()
+    private val _focused = linkedMapOf<String, Boolean>()
 
     fun geometry(id: String): Modifier =
         Modifier.onGloballyPositioned { coordinates ->
@@ -29,8 +30,14 @@ class ProbeRegistry {
 
     fun textLayoutResult(id: String): TextLayoutResult? = _textLayouts[id]
 
+    fun focused(id: String): Boolean? = _focused[id]
+
     fun recordTextLayout(id: String, result: TextLayoutResult) {
         _textLayouts[id] = result
+    }
+
+    fun recordFocused(id: String, focused: Boolean) {
+        _focused[id] = focused
     }
 }
 
