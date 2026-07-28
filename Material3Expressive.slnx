@@ -14,6 +14,8 @@
       <Platform Solution="*|x64" Project="x64" />
     </Project>
     <Project Path="modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj" />
+    <Project Path="modules/MaterialSkiaShadow.Tests/MaterialSkiaShadow.Tests.csproj" />
+    <Project Path="modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj" />
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia/MaterialSymbols.Avalonia.csproj" />
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Rounded/MaterialSymbols.Avalonia.Rounded.csproj" />
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Generator/MaterialSymbols.Generator.csproj" />

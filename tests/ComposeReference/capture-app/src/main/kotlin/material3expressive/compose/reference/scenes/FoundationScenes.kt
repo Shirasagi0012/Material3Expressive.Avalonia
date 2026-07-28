@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -72,11 +74,102 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         width = 72.dp,
         height = 72.dp,
     )
+    registerShadowComponentScene(
+        id = "foundation/elevation/circle/level6/ambient-only/light",
+        ambientColor = Color.Black,
+        spotColor = Color.Transparent,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/circle/level6/spot-only/light",
+        ambientColor = Color.Transparent,
+        spotColor = Color.Black,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/circle/level6/ambient-only/shadow-only/light",
+        ambientColor = Color.Black,
+        spotColor = Color.Transparent,
+        drawOccluder = false,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/circle/level6/spot-only/shadow-only/light",
+        ambientColor = Color.Transparent,
+        spotColor = Color.Black,
+        drawOccluder = false,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/rounded-rectangle/level6/ambient-only/light",
+        ambientColor = Color.Black,
+        spotColor = Color.Transparent,
+        shape = RoundedCornerShape(20.dp),
+        width = 96.dp,
+        height = 64.dp,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/rounded-rectangle/level6/spot-only/light",
+        ambientColor = Color.Transparent,
+        spotColor = Color.Black,
+        shape = RoundedCornerShape(20.dp),
+        width = 96.dp,
+        height = 64.dp,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/rounded-rectangle/level6/ambient-only/shadow-only/light",
+        ambientColor = Color.Black,
+        spotColor = Color.Transparent,
+        drawOccluder = false,
+        shape = RoundedCornerShape(20.dp),
+        width = 96.dp,
+        height = 64.dp,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/rounded-rectangle/level6/spot-only/shadow-only/light",
+        ambientColor = Color.Transparent,
+        spotColor = Color.Black,
+        drawOccluder = false,
+        shape = RoundedCornerShape(20.dp),
+        width = 96.dp,
+        height = 64.dp,
+    )
     registerElevationScene(
         id = "foundation/elevation/rounded-rectangle/level6/parent-clipped/light",
         elevation = 6.dp,
         shape = RoundedCornerShape(20.dp),
         parentClipped = true,
+    )
+}
+
+private fun ReferenceCaseRegistry.registerShadowComponentScene(
+    id: String,
+    ambientColor: Color,
+    spotColor: Color,
+    drawOccluder: Boolean = true,
+    shape: Shape = CircleShape,
+    width: Dp = 72.dp,
+    height: Dp = 72.dp,
+) {
+    register(
+        CaseContract(
+            id = id,
+            viewportWidthDp = 240,
+            viewportHeightDp = 180,
+            dark = false,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
+        ),
+        ReferenceScene { probes ->
+            var modifier = Modifier
+                .requiredSize(width, height)
+                .shadow(
+                    elevation = 6.dp,
+                    shape = shape,
+                    clip = false,
+                    ambientColor = ambientColor,
+                    spotColor = spotColor,
+                )
+            if (drawOccluder) {
+                modifier = modifier.background(MaterialTheme.colorScheme.surface, shape)
+            }
+            Box(modifier = modifier.then(probes.geometry("component")))
+        },
     )
 }
 
@@ -123,7 +216,9 @@ private fun ElevationSurface(
     Surface(
         modifier = Modifier.requiredSize(width, height).then(probes.geometry("component")),
         shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        // Match the root background so the opaque occluder still hides the normally invisible
+        // inner shadow mesh without adding a second, contrasting rounded-fill AA comparison.
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = elevation,
     ) {}
 }

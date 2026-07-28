@@ -18,7 +18,12 @@ public sealed class ParityComparer
         var matchedTextRasterRegions = profile.CompareGeometry
             ? CompareGeometryAndGetMatchedTextRegions(expected, actual, tolerance, profile.CompareTextLayout, failures)
             : [];
-        var pixels = ComparePixels(expectedImage, actualImage, matchedTextRasterRegions, tolerance.TextRasterChannelDelta);
+        var pixels = ComparePixels(
+            expectedImage,
+            actualImage,
+            matchedTextRasterRegions,
+            tolerance.RasterChannelDelta,
+            tolerance.TextRasterChannelDelta);
         if (profile.CompareRaster
             && (pixels.DifferentPixels > tolerance.MaxDifferentPixels || pixels.MaximumChannelDelta > tolerance.MaxChannelDelta))
         {
@@ -278,6 +283,7 @@ public sealed class ParityComparer
         RenderedImage expected,
         RenderedImage actual,
         IReadOnlyList<ParityRect> matchedTextRasterRegions,
+        byte rasterChannelDelta,
         byte textRasterChannelDelta)
     {
         if (expected.Width != actual.Width || expected.Height != actual.Height)
@@ -294,6 +300,8 @@ public sealed class ParityComparer
                 pixelMaximum = Math.Max(pixelMaximum, delta);
             }
             if (pixelMaximum == 0)
+                continue;
+            if (pixelMaximum <= rasterChannelDelta)
                 continue;
             var x = pixel % expected.Width;
             var y = pixel / expected.Width;
@@ -316,6 +324,7 @@ public sealed class ParityComparer
 ///
 /// <see cref="TextRasterChannelDelta"/> is a local gray-antialiasing noise floor. It applies
 /// only inside a text line whose layout and resolved text style both compared successfully.
+/// <see cref="RasterChannelDelta"/> is a profile-local 8-bit raster quantization noise floor.
 /// </summary>
 public sealed record ParityTolerance(
     float GeometryPx,
@@ -323,6 +332,7 @@ public sealed record ParityTolerance(
     float TextLineBoundsPx,
     int MaxDifferentPixels,
     byte MaxChannelDelta,
+    byte RasterChannelDelta,
     byte TextRasterChannelDelta);
 
 public sealed record ParityPixelDifference(int DifferentPixels, int TotalPixels, byte MaximumChannelDelta);

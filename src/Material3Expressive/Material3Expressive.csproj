@@ -44,6 +44,7 @@
              chip press morphs are corner-radius lerps, and the wavy progress indicator's wave is a
              sampled sine — none of them need this. -->
         <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj"/>
+        <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
         <!-- Material Symbols Rounded is the first-party icon family for Material 3 Expressive.
              It also moves the resolved render stack onto the repository's pinned SkiaSharp 4
              baseline so variable fill, weight, grade and optical size remain available. -->

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "profiles": [
     {
       "id": "color-swatch",
@@ -9,6 +9,7 @@
         "textLineBoundsPx": 0.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
+        "rasterChannelDelta": 0,
         "textRasterChannelDelta": 0
       },
       "compareGeometry": true,
@@ -23,6 +24,7 @@
         "textLineBoundsPx": 0.5,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
+        "rasterChannelDelta": 0,
         "textRasterChannelDelta": 0
       },
       "compareGeometry": true,
@@ -37,6 +39,7 @@
         "textLineBoundsPx": 1.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
+        "rasterChannelDelta": 0,
         "textRasterChannelDelta": 17
       },
       "compareGeometry": true,
@@ -51,16 +54,48 @@
         "textLineBoundsPx": 1.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
+        "rasterChannelDelta": 0,
         "textRasterChannelDelta": 17
       },
       "compareGeometry": true,
       "compareTextLayout": true,
       "compareRaster": true
+    },
+    {
+      "id": "elevation",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "textLineBoundsPx": 0.5,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0,
+        "rasterChannelDelta": 1,
+        "textRasterChannelDelta": 0
+      },
+      "compareGeometry": true,
+      "compareTextLayout": false,
+      "compareRaster": true
+    },
+    {
+      "id": "elevation-internal-edge",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "textLineBoundsPx": 0.5,
+        "maxDifferentPixels": 24,
+        "maxChannelDelta": 48,
+        "rasterChannelDelta": 1,
+        "textRasterChannelDelta": 0
+      },
+      "compareGeometry": true,
+      "compareTextLayout": false,
+      "compareRaster": true
     }
   ],
   "caseProfileRules": [
     { "prefix": "foundation/color/", "profileId": "color-swatch" },
-    { "prefix": "foundation/elevation/", "profileId": "container" },
+    { "prefix": "foundation/elevation/circle/level6/spot-only/shadow-only/", "profileId": "elevation-internal-edge" },
+    { "prefix": "foundation/elevation/", "profileId": "elevation" },
     { "prefix": "card/", "profileId": "container" },
     { "prefix": "fab/", "profileId": "container" },
     { "prefix": "selection/", "profileId": "container" },
