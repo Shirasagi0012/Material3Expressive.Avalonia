@@ -11,6 +11,10 @@ Multiplatform dependency set.
 For the end-to-end Avalonia comparison command and artifact interpretation, see
 [`docs/visual-parity.md`](../../docs/visual-parity.md).
 
+These versions define the executable parity reference only. The library's newer AndroidX
+implementation source baseline and the rules for handling lineage differences are documented in
+[`docs/upstream-baselines.md`](../../docs/upstream-baselines.md).
+
 `capture-app/gradle.lockfile` pins the resolved transitive dependency graph.
 `gradle/verification-metadata.xml` records dependency checksums. Refresh either
 only as part of an explicit Compose reference-version update.

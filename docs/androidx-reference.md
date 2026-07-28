@@ -5,7 +5,8 @@
 > unreleased revision ahead at `1.5.0-alpha25`. The current executable visual-parity reference is
 > the Compose Multiplatform producer documented in
 > [visual-parity.md](visual-parity.md), pinned to Material 3 `1.5.0-alpha22` lineage. This survey
-> remains useful for implementation research, but is not the versioned test contract. Common
+> remains useful for implementation research, but is not the versioned test contract. The two
+> roles and their update policy are defined in [upstream-baselines.md](upstream-baselines.md). Common
 > source root (abbreviated `<m3>` below):
 > `D:\source\androidx\compose\material3\material3\src\commonMain\kotlin\androidx\compose\material3\`
 >
@@ -15,8 +16,8 @@
 > Still absent: `compose/material3/material3-ripple` — the M3E node
 > (`androidx.compose.material3.ripple` package: `RippleNodeConfiguration`,
 > `createRippleModifierNode`, inset-focus-ring drawing) that material3's
-> `Ripple.kt` delegates to. Add that path to the sparse checkout before building
-> our StateLayer/ripple in Phase 3.
+> `Ripple.kt` delegates to. Add that path to the sparse checkout before revisiting
+> StateLayer/ripple parity.
 
 ## Headline facts
 
@@ -236,7 +237,8 @@ see the ripple config section above; these tweens govern the classic opacity lay
   `iconSizeFor`, `iconSpacingFor`, `textStyleFor` — label sizes: labelLarge →
   titleMedium → headlineSmall → headlineLarge). But **IconButton uses named
   factories** + `IconButtonWidthOption(Narrow/Uniform/Wide)` — two idioms coexist
-  upstream; we must pick one for the C# API (decide in Phase 4).
+  upstream. The Avalonia API adapts both through named size and width properties while retaining
+  upstream's resolved metrics.
 - `PrecisionPointer.kt`: mouse-vs-touch density switch (small button 36dp with
   precision pointers vs 40dp touch) — very relevant for desktop Avalonia.
 - `ButtonColors/ButtonElevation/ButtonShapes`: public `@Immutable` classes with
@@ -265,22 +267,21 @@ ExposedDropdownMenu, ModalBottomSheet, SearchBar, TimePicker, menus, WideNavigat
 PrecisionPointer. `DynamicTonalPalette.android.kt` (Material You wallpaper color) is
 Android-only — our equivalent is the existing `TonalSpotScheme{DynamicResource SystemAccentColor}`.
 
-## Implications mapped to our phases
+## Implications for the Avalonia port
 
-- **Phase 1:** single-theme-property design confirmed by upstream refactor. Mirror
-  `MaterialExpressiveTheme` outer-vs-nested default semantics. Add the theme-instance
-  cache bag. Fix state-layer opacities (pressed 0.10).
-- **Phase 2:** token tables get variant/size file split + per-file version stamps +
-  `provisional` flag for upstream-hard-coded values.
-- **Phase 3:** spring animator must support: damping/stiffness params, initial
-  velocity, mid-flight retarget, velocity-preserving reversal, visibility threshold.
-  AnimatedShape state machine + deferred CornerSize lerp are the port targets.
-  Ripple engine mechanics are captured above (CommonRippleNode + RippleAnimation);
-  fetch `compose/material3/material3-ripple` for the M3E wrapper node (config
-  plumbing + inset focus ring drawing) before finalizing the StateLayer design.
-- **Phase 4:** decide size-selection idiom (Dp-lookup vs named factories); button
-  variants likely separate ControlThemes over one control class or variant enum —
-  settle with real code.
+- **Theming:** the single-theme-property design is confirmed by the upstream refactor. Preserve
+  `MaterialExpressiveTheme` outer-vs-nested default semantics, the theme-instance cache bag, and
+  the upstream state-layer opacities.
+- **Token pipeline:** retain the variant/size split, per-file version stamps, and explicit marking
+  of upstream-hard-coded or provisional values.
+- **Motion and interaction:** springs need damping/stiffness parameters, initial velocity,
+  mid-flight retargeting, velocity-preserving reversal, and visibility thresholds. AnimatedShape
+  and deferred CornerSize interpolation remain the behavioral reference.
+- **Ripple:** the classic engine mechanics are captured above; obtain
+  `compose/material3/material3-ripple` when auditing the M3E wrapper-node configuration and inset
+  focus-ring behavior.
+- **API adaptation:** Compose size resolvers and separate variant composables are adapted to named
+  Avalonia size and variant properties where that produces a coherent XAML API.
 
 ## Pinned paths
 

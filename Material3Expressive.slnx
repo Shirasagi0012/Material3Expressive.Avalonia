@@ -27,14 +27,12 @@
     <File Path="Directory.Packages.props" />
     <File Path="nuget.config" />
     <File Path="README.md" />
-    <File Path="ROADMAP.md" />
   </Folder>
   <Folder Name="/Solution Items/docs/">
     <File Path="docs/androidx-reference.md" />
     <File Path="docs/architecture.md" />
     <File Path="docs/token-tables.md" />
     <File Path="docs/visual-parity.md" />
-    <File Path="docs/visual-parity-test-plan.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />

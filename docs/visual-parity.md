@@ -6,6 +6,10 @@ Visual parity testing compares the Avalonia implementation directly with the pin
 Compose Multiplatform Material 3 implementation. Compose is the only reference: each run creates
 a new expected bundle, then captures and compares the matching Avalonia scenes.
 
+This executable parity reference is intentionally older than the AndroidX implementation source
+baseline. It defines test output, not the complete feature target. See
+[upstream-baselines.md](upstream-baselines.md) for the distinction and version-gap policy.
+
 There are no checked-in Avalonia screenshot baselines, approval manifests, candidate recording,
 or self-regression fallback. A mismatch is a failed parity test even while the job is used as a
 diagnostic during early development. Making that job a required CI gate is a delivery-policy

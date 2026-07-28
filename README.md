@@ -1,15 +1,16 @@
 # Material 3 Expressive for Avalonia
 
 A Material 3 Expressive component library for Avalonia that tracks the official AndroidX Compose
-implementation — currently through Compose Multiplatform Material 3 `1.12.0-alpha03` (Jetpack
-Material 3 `1.5.0-alpha22`) — in visual, behavioural and API
-fidelity. Every token is transcribed from the Material token database and stamped with the version
-it came from.
+implementation in visual, behavioural and API fidelity. The implementation source baseline is
+AndroidX Compose Material3 `1.5.0-alpha25` at commit `ff0a0a99`; the executable desktop visual
+reference is Compose Multiplatform Material3 `1.12.0-alpha03`, corresponding to Jetpack Material3
+`1.5.0-alpha22`. The split is intentional and documented in
+[docs/upstream-baselines.md](docs/upstream-baselines.md). Every token is transcribed from the
+Material token database and stamped with the version it came from.
 
-> `0.1.0-alpha`. The local roadmap is delivered — theming core, token pipeline, motion,
-> all five component waves, and local visual verification. NuGet publishing and repository
-> archival are deliberately deferred. The Compose reference target and parity workflow are
-> documented in [docs/visual-parity.md](docs/visual-parity.md).
+> `0.1.0-alpha` development line. The theming core, token pipeline, motion foundations, broad
+> component coverage, and local visual-parity workflow are implemented. Current completeness work
+> is tracked in [ROADMAP.md](ROADMAP.md); no publication date is currently planned.
 
 ## What is here
 
@@ -98,7 +99,9 @@ override bag and the theme accessors are all generated. See
 [docs/token-tables.md](docs/token-tables.md).
 
 The theming core is documented in [docs/architecture.md](docs/architecture.md). The current
-Compose comparison workflow is in [docs/visual-parity.md](docs/visual-parity.md).
+Compose comparison workflow is in [docs/visual-parity.md](docs/visual-parity.md). Feature-level
+support is tracked in [docs/component-coverage.md](docs/component-coverage.md), while future work
+and its completion criteria live in [ROADMAP.md](ROADMAP.md).
 
 ## Layout
 

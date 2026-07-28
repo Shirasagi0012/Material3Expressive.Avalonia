@@ -3,6 +3,10 @@
 Status: initial harness implemented. This document is the design and migration record; use
 [visual-parity.md](visual-parity.md) for the current commands, artifacts, and contributor workflow.
 
+The pinned Compose Multiplatform artifact is the executable parity reference, not the newer
+AndroidX implementation source baseline. Their separate responsibilities are defined in
+[upstream-baselines.md](upstream-baselines.md).
+
 This document defines the replacement for the existing visual testing system. The official
 Compose Multiplatform Material 3 implementation is the sole executable reference. Avalonia is
 always the implementation under test.

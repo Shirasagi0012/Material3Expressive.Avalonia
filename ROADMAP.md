@@ -1,358 +1,285 @@
 # Material3Expressive.Avalonia — Roadmap
 
-> Drafted 2026-07-26. A living document — revise phase boundaries as reality intrudes.
+Status: active planning
 
-## Vision
+Last updated: 2026-07-29
 
-A Material 3 Expressive component library for Avalonia that tracks the official
-AndroidX Compose implementation in three dimensions:
+This roadmap describes forward work. It is not a release schedule and does not imply a NuGet
+publication date. Completed historical phases are summarized in
+[`docs/roadmap-history.md`](docs/roadmap-history.md).
 
-1. **Visual fidelity** — tokens, color, typography, shape, elevation match the M3E spec.
-2. **Behavioral fidelity** — state layers, springs, shape morphing, interaction states.
-3. **API fidelity** — the theming surface reads like `MaterialTheme(colorScheme, typography, shapes, motionScheme)`, adapted to Avalonia idiom where XAML forces it.
+The library follows two deliberately different upstream pins. API, token, and implementation work
+uses the AndroidX implementation source baseline; executable visual tests use the older Compose
+Multiplatform artifact currently available for desktop. The exact contracts and divergence rules
+are defined in [`docs/upstream-baselines.md`](docs/upstream-baselines.md).
 
-Strong typing throughout: no string-keyed resource lookup on any library-internal path.
+## Goals
 
-## Strategic decisions (2026-07-26)
+1. Track Material3 API, tokens, visuals, and behavior from an exact AndroidX source revision.
+2. Expose those capabilities through coherent Avalonia and XAML APIs rather than copying Kotlin
+   function shapes mechanically.
+3. Treat keyboard, pointer, focus, accessibility, window sizing, and desktop rendering as first-
+   class behavior.
+4. Make every support claim traceable to tests, documentation, and a recorded upstream source.
+5. Keep implementation coverage and executable parity coverage distinct when upstream artifacts
+   are on different lineages.
 
-| Decision | Choice |
+## Non-goals
+
+- Function-for-function Kotlin API compatibility.
+- Android-only system integration without a meaningful Avalonia desktop equivalent.
+- Adjusting the Avalonia implementation solely to make an older parity reference pass.
+- Hiding missing or version-gapped behavior behind raster tolerances.
+- Committing to a release date or stable public API during the current planning period.
+
+## Definition of complete
+
+A control existing in source is **implemented**, but it is not **complete** until all applicable
+delivery dimensions are satisfied.
+
+| Dimension | Completion requirement |
 |---|---|
-| Component strategy | **Custom TemplatedControls** reading tokens in C# from an inherited theme property. Stock-control restyles only where trivially cheap (TextBlock typography). |
-| Motion scope | **Motion/interaction primitives built early** (right after the theming core), before scaling component count. |
-| Token pipeline | **Source generator now**, driven by token tables; Button is the proving ground. |
-| DesignTokens library | **Retired.** Proven ideas (typed hosts, theme-variant resolution chain) fold into this repo's concrete implementation. Archive the repo with a pointer here. |
+| Upstream | Corresponding AndroidX files, APIs, commit, and intentional deviations are recorded. |
+| Tokens | Values and source stamps are transcribed; provisional or hard-coded upstream values are identified. |
+| API | The Avalonia/XAML surface supports the intended scenarios and follows library-wide conventions. |
+| Visual | Light/dark, enabled/disabled, interaction, size, and relevant variant states are covered. |
+| Behavior | Input, state transitions, interruption, animation, and state restoration are defined and tested. |
+| Desktop | Mouse, touch where applicable, keyboard, focus-visible, popup/window, and precision-pointer behavior are addressed. |
+| Accessibility | Role, name, state, focus order, keyboard operation, and reduced-motion implications are addressed. |
+| Tests | Unit/structural tests exist; visual parity is present or explicitly unavailable for the pinned executable reference. |
+| Documentation | Catalog usage, API examples, supported variants, and known differences are documented. |
 
-## Target architecture (theming core v3)
+## Current status
 
-Replaces both prior generations (the generic `DesignTokens` runtime and the
-hand-rolled per-domain resolvers in `Foundation/`).
+The shared theming, token, typography, shape, motion, ripple, and Material Symbols foundations are
+implemented. At the feature-family level, the current inventory contains 19 implemented, 16
+partial, and 15 missing families. These labels describe usable surface area, not strict completion
+under the table above.
 
-- **One inherited attached property** carries the whole `MaterialTheme`
-  (ColorScheme, TypographyScheme, ShapeScheme, MotionScheme, component-token
-  overrides). Scoping a subtree = setting one property. No per-domain host
-  properties, no `[local, app]` MultiBinding fallback — the theme is injected at
-  each `TopLevel` so plain property inheritance suffices.
-- **Components read tokens in code**, Compose-style: subscribe to the inherited
-  theme property, re-resolve on theme/variant change. This structurally fixes
-  the ControlTheme-setter scoping hole (shared parse-time bindings can't do
-  per-target resolution; a control reading its own inherited value can).
-- **Component tokens reference system tokens.** `ButtonTokens.ContainerColor`
-  defaults to `ColorRole.Primary` (an enum reference resolved against the active
-  scheme + variant), not a literal brush. Literal values appear only as user
-  overrides. Dark mode and dynamic color then work with zero app wiring.
-- **Markup extensions are app-author sugar only** (`{m3:SysColor Primary}`,
-  `{m3:TypeStyle TitleLarge}`), reimplemented on the new core. Never used on
-  library-internal paths.
-- **Precedence:** control-local override → nearest subtree theme → TopLevel/app
-  theme → built-in defaults.
+The detailed and auditable matrix lives in
+[`docs/component-coverage.md`](docs/component-coverage.md). Visual parity currently uses the
+alpha22-lineage executable reference and therefore cannot validate every alpha25 source feature.
 
-## Phases
+## Workstreams
 
-### Phase 0 — Stabilize the base — **done 2026-07-26** (one item outstanding)
+### Track A — Baseline and upstream synchronization
 
-- ~~Fix `MaterialColorUtilities.Avalonia` WIP breakage
-  (`ColorTokenResolver.cs` has an incomplete switch arm for `RefPaletteToken.Custom`);
-  finish or cut custom-color support for now. Tests green.~~
-  **Finished** custom key colors rather than cutting them — see below.
-- ~~CI: build + test on push (GitHub Actions), both this repo and the submodule.~~
-  Added to all three repos (`.github/workflows/ci.yml`), ubuntu + windows matrix.
-- ~~Remove the `DesignTokens.Avalonia` package reference as part of Phase 1.~~
-  **Pulled forward into Phase 0**: the package existed only on a local disk feed, so
-  CI could not restore it. The five generic types actually used are now vendored
-  `internal` under `Tokens/Infrastructure/`; theming core v3 deletes them.
-- Archive the DesignTokens repo (README pointing here). **Still outstanding** —
-  needs a GitHub settings change.
-- ~~Pin the Avalonia version~~ (**12.1.0**, see below); executable parity referent is pinned:
-  **compose-material3 `1.5.0-alpha24`** from Google Maven, with the exact
-  `material3-android` AAR SHA-256 recorded in the visual-reference manifest.
-  Survey notes: [docs/androidx-reference.md](docs/androidx-reference.md).
-  Note: Expressive APIs are stable upstream — we treat Expressive as the default
-  behavior, not a variant.
+Purpose: keep every implementation and support claim tied to an exact source or executable
+reference.
 
-#### Custom key colors (delivered)
+Planned work:
 
-`CustomColor` (name + seed color + harmonize flag) is the XAML content property of
-`ColorScheme`, so key colors are declared inline:
+- maintain the dual-baseline contract and unambiguous terminology;
+- audit alpha22-to-alpha25 API, token, visual, and behavior differences;
+- make the feature inventory reproducible from the AndroidX checkout;
+- report added, removed, stabilized, and deprecated Material3 APIs during baseline updates;
+- audit token-table source paths and per-file token-database stamps;
+- identify parity cases blocked solely by Compose Multiplatform release lag.
 
-```xml
-<mcu:TonalSpotScheme Color="#6750A4">
-    <mcu:CustomColor Name="Brand" Color="#FF5722" />
-</mcu:TonalSpotScheme>
-```
+### Track B — Existing component completeness
 
-Each produces a tonal palette — optionally harmonized toward the scheme's source
-color — reachable as `{MdRefPalette Custom, Tone=60, CustomKey=Brand}` and as the
-four `SysColorToken.Custom*` roles at the M3 spec tones (light 40/100/90/10, dark
-80/20/30/90; fixed, i.e. not contrast-responsive). An unknown key resolves to the
-binding's fallback rather than throwing.
+Purpose: close meaningful gaps in controls that applications can already instantiate.
 
-#### Pinned versions
+Initial candidates:
 
-| What | Pin | Where |
-|---|---|---|
-| Avalonia | **12.1.0** | `AvaloniaVersion` in all three `Directory.Packages.props` |
-| .NET | `net10.0` (MaterialColorUtilities also targets `net8.0`) | per-project `TargetFramework(s)` |
-| compose-material3 | **1.5.0-alpha24** | released AAR; SHA-256 pinned in the visual-reference manifest |
+- indeterminate checkbox parity coverage and public usage guidance;
+- range and vertical sliders;
+- circular wavy progress;
+- scrollable tabs and complete indicator/layout variants;
+- app-bar flexible layouts and scroll behavior;
+- complete drawer and bottom-sheet state models;
+- SnackbarHost queue and action results;
+- SearchBar variants and state/scroll behavior;
+- date/time state, formatting, typed input, and dialog forms;
+- carousel keylines, state, and snap/fling behavior.
 
-Avalonia 12 migration notes, for anything still on 11.x: `Avalonia.Data.IBinding`
-is gone (use `BindingBase`, which is also what `this[!Property]` now returns);
-`ConstructorArgumentAttribute` moved to `Avalonia.Metadata`; `BindingPlugins` is
-internal and DataAnnotations validation became opt-in via
-`AppBuilder.WithDataAnnotationsValidation()`; DevTools moved from
-`Avalonia.Diagnostics` to `AvaloniaUI.DiagnosticsSupport`.
+### Track C — Missing application building blocks
 
-### Phase 1 — Theming core v3 — **done 2026-07-26**
+Purpose: add the common components needed to build complete Material desktop pages without falling
+back to unrelated themes.
 
-Spec: [docs/architecture.md](docs/architecture.md). Delivered:
+Initial ordering:
 
-- ~~Single-theme-property model; color system's Avalonia binding layer ported onto it.~~
-  `MaterialThemeScope.Theme` (authoring) → immutable `ResolvedTheme` snapshot →
-  inherited `ResolvedTheme` property. `MaterialColorUtilities.Avalonia` gained
-  the same split (`MaterialColor.Scheme` → `ResolvedColorScheme`) and stays
-  standalone-usable; the vendored `Tokens/Infrastructure` generics are gone.
-- ~~Shape scheme.~~ `CornerSize` is dp-or-percent and resolves against the shape's
-  size, so `CornerFull` is genuinely 50% and Phase 3's deferred lerp drops in
-  unchanged. 8 configurable slots + 15 roles, per upstream `Shapes`/`ShapeKeyTokens`.
-- ~~Typography rides the theme object.~~ `ResolvedTypographyScheme`; `TypographyRole`
-  and the attribute-selector TextBlock theme are unchanged.
-- **MotionScheme** shipped as data (6 springs, expressive by default); no animator.
-- **Component tokens are role references.** `ButtonTokens.ContainerColor` defaults to
-  `SysColorToken.Primary`, not a brush — the demo's whole `ButtonTokens` override
-  block deleted itself. `ColorTokenValue` is the role-or-literal union.
-- **Per-theme memo bag** on the snapshot (`GetButtonColors(isDark)`), mirroring
-  upstream's cached default bundles.
-- `MaterialControl` reads tokens in C# off the inherited snapshot; markup
-  extensions rebuilt as `.Self()`-rooted bindings so they resolve per target.
-- **Exit criteria met** — `tests/Material3Expressive.Tests`, 32 tests:
-  (a) subtree theme override reaches both a ControlTheme-styled `Button` and a
-  C#-reading control, (b) light/dark switch re-resolves live, (c) app-level theme
-  replacement re-resolves live. Plus: live scheme mutation, subtree clearing,
-  and popup inheritance.
+1. Surface and Divider
+2. ListItem and SegmentedListItem
+3. Scaffold
+4. SegmentedButton
+5. SecureTextField
+6. ExposedDropdownMenu
+7. SwipeToDismissBox
+8. PullToRefresh
+9. ScrollField and Material scrollbar
 
-Findings worth carrying forward:
+### Track D — Expressive and adaptive components
 
-- `BindingBase.CreateInstance` is `internal abstract` in Avalonia 12 — custom
-  binding types are impossible; `CompiledBinding.Create(expr)` builds an *unrooted*
-  path (resolves against `DataContext`), so per-target resolution must use
-  `CompiledBindingPathBuilder().Self()`.
-- **Popups inherit subtree themes for free**: `Popup` sets the popup root's logical
-  parent to itself, and that sets `InheritanceParent`. No special handling needed.
-- `Application` is outside every tree, so the app theme is injected at each
-  `TopLevel` by a style in `MaterialThemeStyles`, at `Style` priority.
+Purpose: cover newer expressive components and responsive navigation after the common building
+blocks and their state primitives are established.
 
-### Phase 2 — Token pipeline (codegen) — **done 2026-07-26**
+Candidate scope:
 
-Format reference: [docs/token-tables.md](docs/token-tables.md). Delivered:
+- horizontal and vertical FloatingToolbar;
+- ShortNavigationBar;
+- WideNavigationRail and its expanded/collapsed state;
+- adaptive navigation driven by window size;
+- multi-aspect carousel;
+- coordinated FAB, menu, app-bar, and navigation motion.
 
-- ~~Token-table format (JSON) mirroring the M3 token DB.~~ Two kinds:
-  `tokenSet` (a verbatim transcription of one upstream `*Tokens.kt`, stamped with
-  its token-DB version) and `component` (a token surface plus one value set per
-  variant, referencing transcriptions with `@Name.Member`). Sets compose with
-  `extends`, so a variant states only what it changes.
-- ~~Roslyn incremental generator.~~ `Material3Expressive.TokenGenerator`, with its
-  own JSON reader — an analyzer that takes a dependency has to ship it, and the
-  tables are read once per build. Comments and trailing commas are accepted
-  because every deviation from upstream is annotated in place.
-- ~~Regenerate `ButtonTokens` from a table.~~ Replaced by `ButtonColorTokens`
-  (5 variants) and `ButtonSizeTokens` (5 sizes) — upstream's own split, and the
-  full Phase 4 matrix rather than just the filled/small pair v2 had.
-- **The type scale moved into a table too**, closing the Phase 1 loose end. It
-  had 30 defaults in a constructor, 30 styled properties, a 30-arm switch, and
-  the face/weight of every slot restated in `Typography.axaml`. It is now one
-  table, and the slots carry their own `Font`/`Weight` — which fixed a real bug:
-  the emphasized styles were rendering at the base weight.
-- **Exit criteria met** — a component domain is one table file. The snapshot
-  accessors (`ResolvedTheme.GetButtonColors(variant, isDark)`), the sparse
-  override bags (`ButtonColorOverrides`) and the theme plumbing are all emitted
-  from the set of tables; `ResolvedTheme` never has to be edited.
+Whether adaptive components belong in the core package or a separate package remains an explicit
+design decision.
 
-Findings worth carrying forward:
+### Track E — Cross-component quality
 
-- **One source generator cannot see another's output.** `TypographyRole` moved
-  into a table, so `PropertyGenerator.Avalonia` could no longer resolve it in
-  `[GenerateAttachedProperty<…>(DefaultValue = TypographyRole.BodyMedium)]`.
-  `TypographyScheme.TextStyle` is written out by hand for that reason; any
-  attached property whose type comes from a table must be.
-- Component token overrides ride the theme as its content
-  (`MaterialTheme.Components`), keyed by variant. Sparseness comes from
-  `AvaloniaObject.IsSet`, so a bag replaces only what it names.
+Purpose: apply requirements that cannot be solved component by component in isolation.
 
-### Phase 3 — Motion & interaction foundations — **done 2026-07-26**
+Candidate scope:
 
-- ~~**Springs:** a spring animator on the render clock with Compose `SpringSpec`
-  semantics.~~ `SpringSimulation` and `SpringEstimation` are ports of
-  `animation-core`. The solver is analytic rather than integrated, so a dropped
-  frame changes nothing and 60Hz and 144Hz produce the same trajectory — both
-  are tested. Settling is decided by the estimated duration, not by watching for
-  a small value, so an overshoot passing through the target is not mistaken for
-  arrival.
-- ~~**Interaction primitives.**~~ `StateLayer` encodes what a pile of style
-  triggers cannot: interactions stack but only the topmost shows, and the fades
-  are asymmetric (focus in 45ms / out 15ms, drag in 45ms / out 150ms).
-  `RippleAnimation` includes the fast-tap rule — a press released before the
-  fade-in finishes jumps to full alpha rather than fading from where it was.
-- ~~**Press shape morphing.**~~ `AnimatedShape` ports
-  `internal/AnimatedShapeState.kt`, including the interruption cases: returning
-  to the shape being left flips progress and negates velocity; a new target
-  freezes what is on screen. The freeze avoids nesting a lerp inside the last
-  one, which upstream notes would overflow the stack under repeated toggling.
-- **Not built: a separate focus ring.** The roadmap called for the spec's
-  "inset ring drawn outside the container fill", but compose-material3
-  `1.5.0-alpha24` has no such thing for buttons — focus is the state layer at
-  `FocusStateLayerOpacity`, and the pinned referent wins over the spec page.
-- **Polygon morphing (graphics-shapes): already ported** at
-  `modules/MaterialShapes` — full 35-shape catalog, Morph pipeline, 80 tests,
-  and the `ShapeUtil.toPath` bridge. Needed only for LoadingIndicator, wavy
-  progress, and the public shape catalog; it joins the build in Wave 2.
-- **Exit criteria met** — the gallery's Buttons page shows spring-driven state
-  layer, ripple and shape morph, and `SquaringItOff_MorphsRatherThanSnapping`
-  drives the whole stack through the headless render clock.
+- keyboard navigation and focus-visible consistency;
+- accessibility roles, names, state, and focus order;
+- RTL layout and directional shape behavior;
+- DPI, text scale, and extreme window-size coverage;
+- reduced motion and high-contrast behavior;
+- popup, overlay, and multi-window theme propagation;
+- render, layout, animation, allocation, and startup performance baselines;
+- public API naming and property-pattern consistency;
+- Catalog coverage and contributor-facing component documentation.
 
-Findings worth carrying forward:
+## Milestones
 
-- `TopLevel.RequestAnimationFrame` is single-shot, which is exactly right: the
-  loop exists only while something moves, so an idle control costs nothing.
-- The headless render timer reports a **real** stopwatch, so a test that forces
-  ticks in a tight loop replays the same instant. Frames have to be spaced in
-  real time, and each tick pumped through the dispatcher.
-- Material components are hosted, not inherited: `MaterialThemeWatcher` and
-  `MaterialInteractionHost` attach to any `Control`, so `MaterialButton` can
-  derive from Avalonia's `Button` and keep content, commands, click modes and
-  keyboard activation rather than reimplementing them.
+Milestones express dependency order, not release versions. Their scope can be revised through an
+explicit roadmap decision.
 
-### Phase 4 — First component wave — **done 2026-07-26** (one item outstanding)
+### Milestone 1 — Baseline and inventory
 
-- ~~**Button** — 5 variants, 5 sizes, press morph, toggle variant.~~ Plus the
-  round/square axis, which Expressive pairs in toggle groups.
-- ~~**IconButton** (+ toggle), **FAB** + Extended FAB, **Card** (3 variants).~~
-  The icon button's width axis (narrow/default/wide) is independent of its size,
-  as upstream has it. Extended and unextended FAB are one control: the
-  difference is only whether a label is present.
-- ~~TextBlock typography restyle ships as the one stock-control package.~~
-  Unchanged from Phase 1, now driven by the generated type scale.
-- ~~Demo app graduates into a proper gallery.~~ Navigation, dark toggle, seed
-  swatches, subtree theming and a retuned-token page.
-- **API idiom settled: one control with a `Variant` enum.** Compose uses a
-  separate composable per variant because a composable is a function; a XAML
-  control is a type, and five types would mean five `ControlTheme`s, five
-  entries in every style sheet, and no way to switch a variant from a binding.
-  The rule: variants that differ only in token values are an enum property;
-  variants that differ in behaviour or content model are separate types — which
-  is why the toggle is `MaterialToggleButton` and not a flag.
-- **Icon slots take content, not a typed icon.** Material Symbols Rounded is now the
-  first-party family and a direct dependency, while content slots still allow custom
-  controls. First-party gallery and visual cases use generated symbol codepoints rather
-  than hand-maintained vector paths.
-- ~~v0.1.0-alpha packaging.~~ `Shirasagi0012.Material3Expressive.Avalonia`,
-  Apache-2.0, README and symbols packed, built into `artifacts/`.
-- **Outstanding: the actual NuGet push.** Publishing is deliberately deferred.
-  The local Compose screenshot pipeline and side-by-side diagnostic report now
-  exist; human review of their conclusions remains intentionally manual.
+Status: in progress
 
-### Phase 5 — Coverage waves
+Deliverables:
 
-Grouped by shared primitives, roughly in order:
+- one documented implementation source baseline and one executable parity reference;
+- a current component coverage matrix;
+- an alpha22-to-alpha25 difference audit;
+- a repeatable process for future AndroidX baseline reviews.
 
-| Wave | Components |
-|---|---|
-| 2 | ~~Checkbox, Switch, RadioButton, Slider, ProgressIndicator (incl. wavy), LoadingIndicator~~ — **done 2026-07-26**. LoadingIndicator brought `modules/MaterialShapes` into the build; it is the only component that genuinely morphs polygons. |
-| 3 | ~~TextField (filled/outlined), Chips, ButtonGroup (standard + connected), SplitButton, FAB menu~~ — **done 2026-07-26**. |
-| 4 | ~~NavigationBar, NavigationRail, Drawer, App bars, Tabs~~ — **done 2026-07-26**. The bar and rail are one control; floating toolbars are not built. |
-| 5 | ~~Dialog, Bottom sheet, Menu, Snackbar, Tooltip, Search, Badge, Date/Time pickers, Carousel~~ — **done 2026-07-26**. The menu is a restyle of Avalonia's rather than a new control. |
+Exit criteria:
 
-Each wave: token tables first, then controls, then motion polish, then gallery.
+- no unqualified or contradictory Material3 baseline remains in active documentation;
+- every component family has an Implemented, Partial, or Missing classification;
+- version gaps that affect active parity cases are recorded.
 
-### Phase 6 — Local visual verification — **framework done 2026-07-27**
+### Milestone 2 — Existing component closure
 
-- 89 deterministic Avalonia candidates cover all public component families,
-  cross-cutting risks, real input states, and manual-clock motion keyframes.
-- Candidate approval is explicit and SHA-256-bound. All 89 remain unapproved
-  until the user reviews them; ordinary tests skip rather than enforce them.
-- The released Compose Material3 `1.5.0-alpha24` reference application captures
-  15 cases on the API 35 `Pixel_9_Pro` AVD. Two independent captures produced
-  identical hashes.
-- Component comparison injects the same hash-pinned Tonal Spot / Spec2021 /
-  Phone role-color contract into both renderers. Default-seed or algorithm
-  drift is audited separately instead of being reported as component color
-  error.
-- Each parity execution generates a fresh Compose reference bundle and per-case PNG/JSON/TXT
-  diagnostics. It remains diagnostic until the component work reaches delivery-gate quality.
+Status: planned
 
-Current workflow: [docs/visual-parity.md](docs/visual-parity.md).
+Deliverables:
 
-## Cross-cutting
+- prioritized completion work from Track B;
+- delivery-dimension records for each touched component;
+- expanded structural and executable parity cases where the pinned reference supports them.
 
-- **Testing:** Avalonia.Headless for token resolution, scoping, and interaction
-  states from Phase 1 onward; component-scoped Skia visual regression and
-  Compose reference comparison are implemented locally.
-- **Packaging:** `Material3Expressive` (controls + theming),
-  `MaterialColorUtilities` stays independently useful on NuGet; shapes port as
-  its own package.
-- **Material Symbols icon package (integrated module and first-party dependency):** variable
-  Material Symbols rendered via SkiaSharp 4 (`ICustomDrawOperation` +
-  `ISkiaSharpApiLeaseFeature` — path verified). One repo, one package per family
-  (Outlined/Rounded/Sharp); `Symbol` enum source-generated from Google's
-  `.codepoints` file; `Fill`/`Weight`/`Grade`/`OpticalSize` as animatable
-  StyledProperties (opsz auto-tracks size 20–48; grade −25 in dark theme).
-  The repository deliberately overrides SkiaSharp 3.119 → 4.150.1 and treats variable
-  symbols as a core Material 3 Expressive capability. Keep the managed/native versions
-  pinned together, with CI and headless render tests applied. **Publish to
-  NuGet.org early** (avoids the local-feed CI restore trap DesignTokens hit).
-  Rounded ships with the core component package; Outlined and Sharp remain optional.
-- **Docs:** per-component page in the gallery + a parity table vs. Compose
-  (what matches, what deviates and why).
+Exit criteria:
 
-## Known risks / spikes
+- no P0 component remains partial without a documented deferment;
+- completed components satisfy every applicable definition-of-complete dimension.
 
-1. **Spring animator** — no prior art in Avalonia core; spike early in Phase 3.
-2. **Variable fonts** — M3E leans on Roboto Flex axes; Avalonia's variable-font
-   axis support is limited. Spike during Phase 1 typography work; may constrain
-   emphasized styles to static weights.
-3. **Text metrics** — line-height/letter-spacing semantics differ from Android;
-   accept documented deviation rather than fight the text stack.
-4. **M3E is a moving target** — track a pinned compose-material3 release;
-   upgrade deliberately, not continuously.
+### Milestone 3 — Application building blocks
 
-## Immediate next steps
+Status: planned
 
-1. ~~Phase 0: fix the submodule build break, wire up CI.~~ Done. Remaining Phase 0
-   loose end: archive the DesignTokens repo on GitHub with a README pointing here.
-2. ~~Write `docs/architecture.md` for theming core v3.~~ Done.
-3. ~~Implement the core + the three exit-criteria tests.~~ Done — Phase 1 complete.
-4. ~~Spike the token-table JSON format against Button's real token set.~~ Done —
-   Phase 2 complete, tables cover Button's full variant × size matrix.
-5. ~~Loose end from Phase 1: `TypeScaleTokens.cs` carries no token-DB stamp.~~
-   Done — it is a token table now, stamped `v0_103`, and the emphasized slots
-   gained the face and weight they were missing.
-6. ~~Phase 3: spike the spring animator.~~ Done — Phase 3 complete.
-7. ~~Phase 4: first component wave.~~ Done. NuGet publishing remains deferred;
-   the local Compose screenshot and comparison framework is now implemented.
-8. ~~Phase 5, wave 2: Checkbox, Switch, RadioButton, Slider, ProgressIndicator.~~
-   Done. The wavy progress indicator turned out **not** to need
-   `modules/MaterialShapes` — its wave is a sampled sine along a line or a ring,
-   not a polygon morph — so LoadingIndicator is now the only thing that does.
-9. ~~LoadingIndicator, which brings `modules/MaterialShapes` into the build.~~
-   Done — wave 2 complete.
-10. ~~Phase 5, waves 3–5.~~ Done. **Every phase of this roadmap is delivered.**
+Deliverables:
 
-What is left is not roadmap work but the things a roadmap cannot do:
+- reusable Material surfaces, dividers, list items, and scaffold composition;
+- shared state/layout primitives required by later containers;
+- Catalog pages demonstrating complete desktop page composition.
 
-- **Publish `0.1.0-alpha` to NuGet.** The package builds; pushing it is
-  irreversible and is deliberately deferred.
-- **Review and approve the 89 local candidate baselines.** Approval cannot be
-  granted by automation.
-- **Review the 15-case Compose parity report and decide future diagnostic
-  thresholds.** The report exists locally; judgment remains human.
-- **Archive the DesignTokens repo** — the one Phase 0 loose end, a GitHub
-  settings change, also deliberately deferred with other online-platform work.
-- Three components named in the waves but deliberately not built: floating toolbars, adaptive
-  navigation, and the pickers' typed-input alternatives.
+Exit criteria:
 
-Findings worth carrying forward:
+- a representative application shell can be built without Fluent-themed structural controls;
+- new primitives have light/dark, keyboard, accessibility, and test coverage.
 
-- `ToggleSwitch` declares required template parts for its knob. A control that
-  paints itself cannot satisfy them meaningfully, so `MaterialSwitch` derives
-  from `ToggleButton`; drag-to-toggle went with it and is not reimplemented.
-- Avalonia's headless input helpers (`window.MouseDown(...)`) work and are much
-  less brittle than synthesising `PointerPressedEventArgs` by hand. The slider's
-  click test uses them.
+### Milestone 4 — Advanced input and containers
+
+Status: planned
+
+Deliverables:
+
+- secure and compound input controls;
+- advanced slider and picker forms;
+- host/state APIs for sheets, snackbars, menus, and dismissible content.
+
+Exit criteria:
+
+- state ownership, restoration, cancellation, and interruption behavior are documented and tested;
+- popup and overlay behavior works consistently across supported desktop platforms.
+
+### Milestone 5 — Adaptive and expressive coverage
+
+Status: planned
+
+Deliverables:
+
+- selected Track D components;
+- an adaptive package/namespace decision;
+- responsive Catalog scenes and deterministic layout tests.
+
+Exit criteria:
+
+- adaptive transitions have defined breakpoints and state-preservation behavior;
+- every delivered expressive component has a recorded parity or version-gap status.
+
+## Priority backlog
+
+This is the initial planning order. Priority means user and dependency impact, not a delivery-date
+promise.
+
+| Work item | Priority | Status | Milestone | Principal dependency |
+|---|---|---|---|---|
+| Dual-baseline documentation and terminology | P0 | Complete | 1 | None |
+| Component coverage inventory | P0 | Complete | 1 | Implementation source baseline |
+| Alpha22-to-alpha25 difference audit | P0 | Planned | 1 | Local AndroidX checkout |
+| Existing parity-case version-gap audit | P0 | Planned | 1 | Difference audit |
+| Indeterminate checkbox tests and API guidance | P0 | Planned | 2 | Existing nullable-state behavior |
+| RangeSlider and VerticalSlider | P0 | Planned | 2 | Slider state/layout design |
+| Circular wavy progress | P0 | Planned | 2 | Polygon/path rendering review |
+| Scrollable Tabs and AppBar scroll behavior | P0 | Planned | 2 | Shared scroll-state conventions |
+| Surface, Divider, and ListItem | P1 | Planned | 3 | Token and API review |
+| Scaffold and host coordination | P1 | Planned | 3 | Surface and overlay state primitives |
+| SnackbarHost and BottomSheetScaffold | P1 | Planned | 4 | Host/state conventions |
+| SecureTextField and typed picker inputs | P1 | Planned | 4 | Text input and validation conventions |
+| SegmentedButton and ExposedDropdownMenu | P1 | Planned | 3/4 | Selection and popup primitives |
+| SwipeToDismiss and PullToRefresh | P2 | Planned | 4 | Anchored gesture/state primitive |
+| FloatingToolbar and adaptive navigation | P2 | Planned | 5 | Window-size and package decisions |
+
+Statuses are `Planned`, `In Progress`, `Blocked`, `Complete`, or `Deferred`. A blocked item must name
+the decision, dependency, or external artifact required to unblock it.
+
+## Decisions to make
+
+The following choices affect multiple workstreams and should be resolved before dependent APIs are
+treated as complete:
+
+1. Whether adaptive navigation ships in the core package or a separate package.
+2. A common owned/external state pattern for sheets, snackbars, search, app bars, and pickers.
+3. The boundary between Compose parity and intentional desktop adaptation.
+4. The accessibility abstraction used by custom-drawn controls.
+5. When public APIs begin receiving source-compatibility guarantees.
+6. How parity-unavailable alpha25 features are reported in Catalog and test output.
+
+## Risks
+
+- Compose Multiplatform release lag leaves executable gaps for newer AndroidX behavior.
+- Custom drawing can achieve raster parity while still missing native accessibility semantics.
+- Text measurement, font rasterization, shadows, and popup placement differ across desktop
+  platforms.
+- Large one-off controls can duplicate state and gesture logic unless shared primitives are
+  designed first.
+- A raw component count can overstate readiness; the definition-of-complete dimensions remain the
+  delivery gate.
+
+## Completion record
+
+Only recent roadmap-level outcomes belong here. Detailed chronology lives in
+[`docs/roadmap-history.md`](docs/roadmap-history.md).
+
+- 2026-07-29: replaced the completed phase roadmap with workstreams, milestones, strict completion
+  criteria, and a feature-level coverage inventory.
+- 2026-07-29: separated the alpha25 implementation source baseline from the alpha22 executable
+  parity reference.
