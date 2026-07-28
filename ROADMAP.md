@@ -275,11 +275,10 @@ Each wave: token tables first, then controls, then motion polish, then gallery.
   Phone role-color contract into both renderers. Default-seed or algorithm
   drift is audited separately instead of being reported as component color
   error.
-- The local HTML report provides geometry, text, perceptual color, edge,
-  overlay and heatmap diagnostics. It remains diagnostic until reviewed
-  cross-renderer thresholds are chosen.
+- Each parity execution generates a fresh Compose reference bundle and per-case PNG/JSON/TXT
+  diagnostics. It remains diagnostic until the component work reaches delivery-gate quality.
 
-Workflow and current findings: [docs/visual-testing.md](docs/visual-testing.md).
+Current workflow: [docs/visual-parity.md](docs/visual-parity.md).
 
 ## Cross-cutting
 
@@ -346,9 +345,8 @@ What is left is not roadmap work but the things a roadmap cannot do:
   thresholds.** The report exists locally; judgment remains human.
 - **Archive the DesignTokens repo** — the one Phase 0 loose end, a GitHub
   settings change, also deliberately deferred with other online-platform work.
-- Three components named in the waves but deliberately not built, listed with
-  everything else that differs in [docs/parity.md](docs/parity.md): floating
-  toolbars, adaptive navigation, and the pickers' typed-input alternatives.
+- Three components named in the waves but deliberately not built: floating toolbars, adaptive
+  navigation, and the pickers' typed-input alternatives.
 
 Findings worth carrying forward:
 

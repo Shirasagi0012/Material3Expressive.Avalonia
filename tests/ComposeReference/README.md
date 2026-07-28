@@ -8,6 +8,9 @@ The output is not committed; it is regenerated at the beginning of every parity
 run so the reference version is always cleanly tied to the pinned Compose
 Multiplatform dependency set.
 
+For the end-to-end Avalonia comparison command and artifact interpretation, see
+[`docs/visual-parity.md`](../../docs/visual-parity.md).
+
 `capture-app/gradle.lockfile` pins the resolved transitive dependency graph.
 `gradle/verification-metadata.xml` records dependency checksums. Refresh either
 only as part of an explicit Compose reference-version update.
