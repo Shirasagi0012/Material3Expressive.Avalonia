@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run Visual Parity Tests"
+  short_description: "运行、筛选并诊断 Compose/Avalonia parity tests"
+  default_prompt: "Use $run-visual-parity-tests to run the relevant visual parity cases and diagnose the latest result."

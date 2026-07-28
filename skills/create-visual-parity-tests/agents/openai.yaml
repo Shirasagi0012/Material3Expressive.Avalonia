@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Visual Parity Tests"
+  short_description: "为 Avalonia 组件编写 Compose visual parity tests"
+  default_prompt: "Use $create-visual-parity-tests to author a new component visual parity test, then hand validation to $run-visual-parity-tests."
