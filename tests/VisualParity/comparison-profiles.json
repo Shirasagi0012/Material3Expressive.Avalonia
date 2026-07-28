@@ -1,17 +1,16 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "profiles": [
     {
       "id": "color-swatch",
-      "tolerance": {
-        "geometryPx": 0.0,
-        "textPx": 0.0,
-        "textBaselinePx": 0.0,
-        "textLineBoundsPx": 0.0,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 0,
-        "textRasterChannelDelta": 0
+      "layoutTolerance": { "geometryPx": 0.0, "textPx": 0.0, "textBaselinePx": 0.0, "textLineBoundsPx": 0.0 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8
       },
       "compareGeometry": true,
       "compareTextLayout": false,
@@ -19,15 +18,21 @@
     },
     {
       "id": "container",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textBaselinePx": 0.5,
-        "textLineBoundsPx": 0.5,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 0,
-        "textRasterChannelDelta": 0
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 0.5 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        }
       },
       "compareGeometry": true,
       "compareTextLayout": false,
@@ -35,15 +40,30 @@
     },
     {
       "id": "component-with-text",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textBaselinePx": 0.5,
-        "textLineBoundsPx": 1.0,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 0,
-        "textRasterChannelDelta": 17
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 1.0 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "textInk": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 16384, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 10, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 100000, "maxEnergyPerOwner": 81920, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 20, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 200000, "maxEnergyPerOwner": 163840, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 35, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 1, "pixelsPer10kEligiblePixels": 150, "maxPixelsPerOwner": 24, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 35, "energyPer10kEligiblePixels": 5250, "maxEnergyPerOwner": 840, "maxConnectedComponentPixels": 24, "maxConnectedComponentThicknessPx": 3 }
+          ]
+        },
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        }
       },
       "compareGeometry": true,
       "compareTextLayout": true,
@@ -51,15 +71,21 @@
     },
     {
       "id": "container-with-elevation",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textBaselinePx": 0.5,
-        "textLineBoundsPx": 0.5,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 1,
-        "textRasterChannelDelta": 0
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 0.5 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        }
       },
       "compareGeometry": true,
       "compareTextLayout": false,
@@ -67,31 +93,30 @@
     },
     {
       "id": "component-with-text-and-elevation",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textBaselinePx": 0.5,
-        "textLineBoundsPx": 1.0,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 1,
-        "textRasterChannelDelta": 17
-      },
-      "compareGeometry": true,
-      "compareTextLayout": true,
-      "compareRaster": true
-    },
-    {
-      "id": "known-avalonia-text-baseline-api-gap",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textBaselinePx": 2.0,
-        "textLineBoundsPx": 1.0,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 0,
-        "textRasterChannelDelta": 255
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 1.0 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 4,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "textInk": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 16384, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 10, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 100000, "maxEnergyPerOwner": 81920, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 20, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 200000, "maxEnergyPerOwner": 163840, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 35, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 1, "pixelsPer10kEligiblePixels": 150, "maxPixelsPerOwner": 24, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 35, "energyPer10kEligiblePixels": 5250, "maxEnergyPerOwner": 840, "maxConnectedComponentPixels": 24, "maxConnectedComponentThicknessPx": 3 }
+          ]
+        },
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        }
       },
       "compareGeometry": true,
       "compareTextLayout": true,
@@ -99,15 +124,31 @@
     },
     {
       "id": "text-field",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textBaselinePx": 0.5,
-        "textLineBoundsPx": 1.0,
-        "maxDifferentPixels": 4,
-        "maxChannelDelta": 162,
-        "rasterChannelDelta": 18,
-        "textRasterChannelDelta": 18
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 1.0 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "textInk": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 16384, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 10, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 100000, "maxEnergyPerOwner": 81920, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 20, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 200000, "maxEnergyPerOwner": 163840, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 35, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 1, "pixelsPer10kEligiblePixels": 150, "maxPixelsPerOwner": 24, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 35, "energyPer10kEligiblePixels": 5250, "maxEnergyPerOwner": 840, "maxConnectedComponentPixels": 24, "maxConnectedComponentThicknessPx": 3 }
+          ]
+        },
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 80000, "maxEnergyPerOwner": 131072, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 18, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 180000, "maxEnergyPerOwner": 294912, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 }
+          ]
+        }
       },
       "compareGeometry": true,
       "compareTextLayout": true,
@@ -115,15 +156,33 @@
     },
     {
       "id": "elevation",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textBaselinePx": 0.5,
-        "textLineBoundsPx": 0.5,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 1,
-        "textRasterChannelDelta": 0
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 0.5 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 0,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        },
+        "shadowSupport": {
+          "dilationPx": 2,
+          "budgets": [
+            { "maxChannelDelta": 1, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 16, "pixelsPer10kEligiblePixels": 500, "maxPixelsPerOwner": 4096, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 16, "energyPer10kEligiblePixels": 500, "maxEnergyPerOwner": 4096, "maxConnectedComponentPixels": 4096, "maxConnectedComponentThicknessPx": 4096 }
+          ]
+        },
+        "shadowEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 48, "minimumPixelsPerOwner": 8, "basePixelsPerOwner": 4, "pixelsPer10kEligiblePixels": 100, "maxPixelsPerOwner": 48, "minimumEnergyPerOwner": 384, "baseEnergyPerOwner": 240, "energyPer10kEligiblePixels": 4800, "maxEnergyPerOwner": 2304, "maxConnectedComponentPixels": 12, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        }
       },
       "compareGeometry": true,
       "compareTextLayout": false,
@@ -133,12 +192,10 @@
   "caseProfileRules": [
     { "prefix": "foundation/color/", "profileId": "color-swatch" },
     { "prefix": "foundation/elevation/", "profileId": "elevation" },
-    { "prefix": "foundation/typography/display-headline/", "profileId": "known-avalonia-text-baseline-api-gap" },
     { "prefix": "card/elevated/", "profileId": "container-with-elevation" },
     { "prefix": "fab/", "profileId": "container-with-elevation" },
     { "prefix": "button/elevated/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "card/", "profileId": "container" },
-    { "prefix": "fab/", "profileId": "container" },
     { "prefix": "selection/", "profileId": "container" },
     { "prefix": "textfield/", "profileId": "text-field" },
     { "prefix": "foundation/typography/", "profileId": "component-with-text" },

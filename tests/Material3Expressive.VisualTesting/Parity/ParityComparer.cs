@@ -13,24 +13,24 @@ public sealed class ParityComparer
         ParityComparisonProfile? profile = null)
     {
         profile ??= ParityComparisonProfiles.ComponentWithText;
-        var tolerance = profile.Tolerance;
+        var tolerance = profile.LayoutTolerance;
         var failures = new List<string>();
-        var matchedTextRasterRegions = profile.CompareGeometry
+        var semantic = profile.CompareGeometry
             ? CompareGeometryAndGetMatchedTextRegions(expected, actual, tolerance, profile.CompareTextLayout, failures)
-            : [];
-        var pixels = ComparePixels(
-            expectedImage,
-            actualImage,
-            matchedTextRasterRegions,
-            tolerance.RasterChannelDelta,
-            tolerance.TextRasterChannelDelta);
-        if (profile.CompareRaster
-            && (pixels.DifferentPixels > tolerance.MaxDifferentPixels || pixels.MaximumChannelDelta > tolerance.MaxChannelDelta))
+            : ParityRasterSemanticContext.Empty;
+        var rasterPolicy = profile.RasterPolicy
+            ?? throw new InvalidOperationException($"Visual-parity profile '{profile.Id}' has no semantic raster policy.");
+        var raster = SemanticRasterComparer.Compare(expectedImage, actualImage, rasterPolicy, semantic);
+        var pixels = new ParityPixelDifference(
+            raster.RejectedPixels,
+            Math.Max(expectedImage.PixelCount, actualImage.PixelCount),
+            raster.MaximumRejectedChannelDelta);
+        if (profile.CompareRaster && !raster.IsMatch)
         {
             failures.Add($"Raster differs in {pixels.DifferentPixels}/{pixels.TotalPixels} pixels " +
                          $"(max channel delta {pixels.MaximumChannelDelta}).");
         }
-        return new ParityComparison(profile.Id, failures.Count == 0, failures, pixels);
+        return new ParityComparison(profile.Id, failures.Count == 0, failures, pixels, raster);
     }
 
     private static void CompareViewport(ParityCaptureResult expected, ParityCaptureResult actual, ICollection<string> failures)
@@ -42,18 +42,20 @@ public sealed class ParityComparer
                          $"actual {actual.ViewportPx.Width}x{actual.ViewportPx.Height}.");
     }
 
-    private static IReadOnlyList<ParityRect> CompareGeometryAndGetMatchedTextRegions(
+    private static ParityRasterSemanticContext CompareGeometryAndGetMatchedTextRegions(
         ParityCaptureResult expected,
         ParityCaptureResult actual,
-        ParityTolerance tolerance,
+        ParityLayoutTolerance tolerance,
         bool compareTextLayout,
         ICollection<string> failures)
     {
         CompareViewport(expected, actual, failures);
-        var matchedTextRasterRegions = new List<ParityRect>();
+        var matchedTextNodes = new List<ParityNode>();
+        var matchedShadowNodes = new List<ParityNode>();
         var actualById = actual.Nodes.ToDictionary(item => item.Id, StringComparer.Ordinal);
         foreach (var node in expected.Nodes)
         {
+            var nodeFailureCount = failures.Count;
             if (!actualById.TryGetValue(node.Id, out var counterpart))
             {
                 failures.Add($"Required node '{node.Id}' is missing from Avalonia capture.");
@@ -69,16 +71,15 @@ public sealed class ParityComparer
             CompareOptionalBoolean($"Node '{node.Id}' focused state", node.Focused, counterpart.Focused, failures);
             CompareRect($"Node '{node.Id}' bounds", node.BoundsInRootPx, counterpart.BoundsInRootPx, tolerance.GeometryPx, failures);
             CompareShadow(node.Id, node.Shadow, counterpart.Shadow, tolerance.GeometryPx, failures);
-            if (compareTextLayout && CompareText(node, counterpart, tolerance, failures) && node.TextLayout is not null)
+            var textMatched = compareTextLayout && CompareText(node, counterpart, tolerance, failures);
+            if (failures.Count == nodeFailureCount && textMatched && node.TextLayout is not null)
             {
-                matchedTextRasterRegions.AddRange(node.TextLayout.Lines.Select(line => new ParityRect(
-                    line.LeftPx,
-                    line.TopPx,
-                    line.RightPx,
-                    line.BottomPx)));
+                matchedTextNodes.Add(node);
             }
+            if (failures.Count == nodeFailureCount && node.Shadow is not null)
+                matchedShadowNodes.Add(node);
         }
-        return matchedTextRasterRegions;
+        return new ParityRasterSemanticContext(matchedTextNodes, matchedShadowNodes);
     }
 
     private static void CompareShadow(
@@ -101,6 +102,7 @@ public sealed class ParityComparer
             || expected.AmbientColorArgb != actual.AmbientColorArgb
             || expected.SpotColorArgb != actual.SpotColorArgb
             || expected.TransparentOccluder != actual.TransparentOccluder
+            || expected.OccluderDrawn != actual.OccluderDrawn
             || !expected.Flags.SequenceEqual(actual.Flags, StringComparer.Ordinal))
         {
             failures.Add($"Shadow identity for '{id}' differs.");
@@ -160,7 +162,7 @@ public sealed class ParityComparer
             failures.Add($"{label} differs: expected {expected:F6}, actual {actual:F6}.");
     }
 
-    private static bool CompareText(ParityNode expected, ParityNode actual, ParityTolerance tolerance, ICollection<string> failures)
+    private static bool CompareText(ParityNode expected, ParityNode actual, ParityLayoutTolerance tolerance, ICollection<string> failures)
     {
         if (expected.TextLayout is null)
             return true;
@@ -359,68 +361,41 @@ public sealed class ParityComparer
             failures.Add($"{label} differs: expected {expected:F3}px, actual {actual:F3}px, tolerance {tolerance:F3}px.");
     }
 
-    private static ParityPixelDifference ComparePixels(
-        RenderedImage expected,
-        RenderedImage actual,
-        IReadOnlyList<ParityRect> matchedTextRasterRegions,
-        byte rasterChannelDelta,
-        byte textRasterChannelDelta)
-    {
-        if (expected.Width != actual.Width || expected.Height != actual.Height)
-            return new ParityPixelDifference(Math.Max(expected.PixelCount, actual.PixelCount), Math.Max(expected.PixelCount, actual.PixelCount), byte.MaxValue);
-        var different = 0;
-        byte maximum = 0;
-        for (var pixel = 0; pixel < expected.PixelCount; pixel++)
-        {
-            var offset = pixel * 4;
-            byte pixelMaximum = 0;
-            for (var channel = 0; channel < 4; channel++)
-            {
-                var delta = (byte)Math.Abs(expected.Pixels[offset + channel] - actual.Pixels[offset + channel]);
-                pixelMaximum = Math.Max(pixelMaximum, delta);
-            }
-            if (pixelMaximum == 0)
-                continue;
-            if (pixelMaximum <= rasterChannelDelta)
-                continue;
-            var x = pixel % expected.Width;
-            var y = pixel / expected.Width;
-            if (pixelMaximum <= textRasterChannelDelta && IsInsideMatchedTextRasterRegion(x, y, matchedTextRasterRegions))
-                continue;
-            maximum = Math.Max(maximum, pixelMaximum);
-            different++;
-        }
-        return new ParityPixelDifference(different, expected.PixelCount, maximum);
-    }
-
-    private static bool IsInsideMatchedTextRasterRegion(int x, int y, IReadOnlyList<ParityRect> regions) =>
-        regions.Any(region => x + 0.5f >= region.Left && x + 0.5f < region.Right
-                              && y + 0.5f >= region.Top && y + 0.5f < region.Bottom);
 }
 
 /// <summary>
-/// <see cref="TextLineBoundsPx"/> is limited to the local line box representation. Baselines,
-/// which Avalonia cannot expose with the same native semantics as Compose, use
-/// <see cref="TextBaselinePx"/>. Draw origins and character boxes continue to use
-/// <see cref="TextPx"/>.
-///
-/// <see cref="TextRasterChannelDelta"/> is a local gray-antialiasing noise floor. It applies
-/// only inside a text line whose layout and resolved text style both compared successfully.
-/// <see cref="RasterChannelDelta"/> is a profile-local 8-bit raster quantization noise floor.
+/// Layout-only physical-pixel tolerances. Raster acceptance is deliberately expressed by
+/// <see cref="ParityRasterPolicy"/> so a global pixel allowance cannot accidentally mask a
+/// semantic or geometry defect.
 /// </summary>
-public sealed record ParityTolerance(
+public sealed record ParityLayoutTolerance(
     float GeometryPx,
     float TextPx,
     float TextBaselinePx,
-    float TextLineBoundsPx,
-    int MaxDifferentPixels,
-    byte MaxChannelDelta,
-    byte RasterChannelDelta,
-    byte TextRasterChannelDelta);
+    float TextLineBoundsPx);
 
 public sealed record ParityPixelDifference(int DifferentPixels, int TotalPixels, byte MaximumChannelDelta);
 
-public sealed record ParityComparison(string ProfileId, bool IsMatch, IReadOnlyList<string> Failures, ParityPixelDifference Pixels)
+/// <summary>Whether a passed image was byte-exact or accepted by a semantic raster budget.</summary>
+public enum ParityComparisonKind
 {
+    ExactMatch,
+    SemanticRasterEquivalent,
+    Mismatch
+}
+
+public sealed record ParityComparison(
+    string ProfileId,
+    bool IsMatch,
+    IReadOnlyList<string> Failures,
+    ParityPixelDifference Pixels,
+    ParityRasterComparison? Raster = null)
+{
+    public ParityComparisonKind Kind => !IsMatch
+        ? ParityComparisonKind.Mismatch
+        : Raster is { AllowedPixels: > 0 }
+            ? ParityComparisonKind.SemanticRasterEquivalent
+            : ParityComparisonKind.ExactMatch;
+
     public string Summary => IsMatch ? "Parity match." : string.Join(Environment.NewLine, Failures);
 }

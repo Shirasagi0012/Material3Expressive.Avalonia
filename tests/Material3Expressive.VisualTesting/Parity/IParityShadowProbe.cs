@@ -8,4 +8,7 @@ internal interface IParityShadowProbe
     ComposeShadowShape ShadowShape { get; }
 
     ComposeShadowParameters ShadowParameters { get; }
+
+    /// <summary>Whether an occluder visual is painted over the shadow mesh.</summary>
+    bool OccluderDrawn { get; }
 }

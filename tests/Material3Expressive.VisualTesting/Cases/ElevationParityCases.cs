@@ -201,6 +201,7 @@ internal static class ElevationParityCases
             LayerOpacity = opacity,
             Corners = corners,
             Fill = opacity >= 1 ? fill : null,
+            OccluderDrawn = drawOccluder,
             Elevation = elevation,
             AmbientShadowColor = ambient ? shadowColor : Colors.Transparent,
             SpotShadowColor = spot ? shadowColor : Colors.Transparent
@@ -265,6 +266,8 @@ internal static class ElevationParityCases
             AmbientShadowColor,
             SpotShadowColor,
             LayerOpacity);
+
+        public bool OccluderDrawn { get; init; }
 
         public override void Render(DrawingContext context)
         {

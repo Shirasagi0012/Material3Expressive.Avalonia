@@ -69,7 +69,7 @@ accepts a case ID or a prefix wildcard such as `button/*`.
 
 ## What is compared
 
-The initial catalog contains 40 representative color, typography, button, card, FAB, checkbox,
+The current catalog contains 61 representative color, typography, button, card, FAB, checkbox,
 text-field, navigation, and tab cases. Every case has the same stable ID, viewport, theme, and
 named probe contract on both sides.
 
@@ -110,19 +110,61 @@ interaction-source focus state and the Avalonia scene asserts its editor focus s
 environments keep the focused caret visibly on without blinking, so a wall-clock blink phase
 cannot be accepted or mistaken for a parity difference.
 
-## Comparison profiles
+## Comparison profiles and raster acceptance
 
 [`tests/VisualParity/comparison-profiles.json`](../tests/VisualParity/comparison-profiles.json)
-is the versioned, centralized tolerance policy. It selects a profile by case-ID prefix for color
-swatches, elevation, containers, components with text, and text fields. Elevation uses a local
-8-bit quantization noise floor of one channel value: deltas of `0` or `1` are equivalent, while
-any pixel with a channel delta above `1` fails. Any renderer-specific allowance must be narrow,
-justified, and changed in that file rather than embedded in a test.
+is a version-6, centralized semantic raster policy. It has no viewport-sized allowance and no
+global `Δ<=1` floor. Profile JSON rejects unknown fields, duplicate/unreachable prefix rules, and
+invalid quota ranges so a typo cannot silently make the comparison looser.
 
-Elevation capture schema v4 also compares the fully resolved shadow contract independently of the
-raster: shape and corners, local-to-device matrix, elevation, ambient/spot colors and alpha,
-opacity/transparent-occluder flag, adjusted point light, radius, and parent clip. This separates an
-algorithm mismatch from a component passing the wrong parameters.
+Raster comparison happens only after the structural contract has been evaluated. The comparer
+constructs masks from the expected image plus facts which already matched between Compose and
+Avalonia. A changed pixel can consume one, and only one, region budget, in this priority order:
+
+1. matched text glyph/ink edge;
+2. matched shadow edge;
+3. expected generic shape edge;
+4. matched shadow support;
+5. strict rejection outside those masks.
+
+The comparer never registers, translates, crops, or locally re-matches screenshots. It compares all
+four premultiplied RGBA channels at the same physical coordinate. The pixel quota for each owner
+and delta bin is derived from that owner’s expected mask, not from the screenshot size:
+
+```text
+quota = min(maximum, max(minimum, base + ceil(eligiblePixels * per10k / 10000)))
+```
+
+Thus a matched text node can absorb its own bounded low/mid-delta grayscale anti-aliasing, while a
+large flat color change, a missing glyph, or a difference outside its expected ink boundary still
+fails. Generic shape edges use a separate expected-gradient threshold; the elevated-button profile
+uses the lower threshold `4` solely to cover its low-contrast rounded boundary, with only `Δ<=2`
+receiving the large edge allocation and `Δ<=8` still sparse.
+
+Elevation has two separate allocations, and only receives them after its full `ParityShadow`
+contract matches:
+
+- diffuse support: `Δ<=1`, with `16 + ceil(5% * supportPixels)` pixels, capped at 4096;
+- expected support boundary: `Δ<=48`, with a sparse perimeter-derived allocation capped at 48,
+  component area at most 12px, and component thickness at most 2px.
+
+The capture schema is now v5. Its shadow contract includes `occluderDrawn`, in addition to shape,
+corners, local-to-device matrix, elevation, colors/alpha, opacity/transparent-occluder flag,
+lighting, and clip. This prevents an opaque component interior from consuming shadow allowance,
+while preserving valid `shadow-only` cases where the expected shadow mesh is visible inside the
+shape; `transparentOccluder` continues to describe whether that painted occluder lets the mesh
+remain visible through it.
+
+`comparison.json` reports `exactMatch`, `semanticRasterEquivalent`, or `mismatch` through its
+`kind` field, plus each region’s eligible pixels, observed pixels/energy, dynamic quota, and
+largest connected component. Any renderer-specific allowance must be narrow, justified, and
+changed in the policy file rather than embedded in an individual test.
+
+`foundation/typography/display-headline/*` is deliberately marked as skipped—not passed by a
+tolerance—because Avalonia currently lacks an equivalent baseline API. It remains in both scene
+catalogs and is visible in test output. Conversely,
+`textfield/*/focused-empty/light` remains an active failure when its focused caret endpoints or
+length differ; no broad text-field exception hides that defect.
 
 The selected profile ID and the SHA-256 of this file are included in the actual manifest. That
 makes a tolerance-policy change visible in every run artifact.

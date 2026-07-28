@@ -8,6 +8,7 @@ public sealed class ParityContractTests
     [Theory]
     [InlineData("foundation/color/primary-roles/light", "color-swatch")]
     [InlineData("foundation/elevation/rounded-rectangle/level6/light", "elevation")]
+    [InlineData("foundation/typography/display-headline/light", "component-with-text")]
     [InlineData("card/filled/fixed/enabled/light", "container")]
     [InlineData("button/filled/medium/enabled/light", "component-with-text")]
     [InlineData("textfield/filled/empty/light", "text-field")]
@@ -88,7 +89,7 @@ public sealed class ParityContractTests
         var bounds = new ParityRect(249.728f, 76, 265.896f, 116);
         var expected = TextLayout(bounds);
         var actual = TextLayout(bounds);
-        var expectedImage = SolidImage(300, 140, 255);
+        var expectedImage = WithVerticalLine(SolidImage(300, 140, 255), 201, 80, 110, 0);
         var actualImage = WithPixel(expectedImage, 200, 80, 243);
 
         var comparison = new ParityComparer().Compare(
@@ -167,10 +168,28 @@ public sealed class ParityContractTests
     [Fact]
     public void ElevationProfileAllowsChannelDeltaOneButRejectsDeltaTwo()
     {
-        var layout = Layout("component", new ParityRect(10, 10, 30, 20));
-        var expected = SolidImage(40, 30, 255);
-        var deltaOne = WithPixel(expected, 20, 15, 254);
-        var deltaTwo = WithPixel(expected, 20, 15, 253);
+        var shadow = new ParityShadow(
+            "m150",
+            "rectangle",
+            new ParityRect(0, 0, 20, 10),
+            new ParityRect(10, 10, 30, 20),
+            new ParityCornerRadii(0, 0, 0, 0),
+            new ParityAffineTransform(2, 0, 0, 2, 10, 10),
+            4,
+            "#FF000000",
+            "#FF000000",
+            0.039f,
+            0.19f,
+            1,
+            false,
+            new ParityPoint3(40, 0, 80),
+            160,
+            [],
+            OccluderDrawn: false);
+        var layout = Layout("component", new ParityRect(10, 10, 30, 20), shadow: shadow);
+        var expected = WithRectangle(SolidImage(40, 30, 255), 10, 10, 30, 20, 200);
+        var deltaOne = WithPixel(expected, 20, 15, 199);
+        var deltaTwo = WithPixel(expected, 20, 15, 198);
         var profile = ParityComparisonProfiles.ForCase("foundation/elevation/rectangle/level12/light");
 
         Assert.True(new ParityComparer().Compare(layout, layout, expected, deltaOne, profile).IsMatch);
@@ -269,6 +288,36 @@ public sealed class ParityContractTests
         pixels[offset + 1] = value;
         pixels[offset + 2] = value;
         return source with { Pixels = pixels };
+    }
+
+    private static Material3Expressive.VisualTesting.Model.RenderedImage WithVerticalLine(
+        Material3Expressive.VisualTesting.Model.RenderedImage source,
+        int x,
+        int top,
+        int bottom,
+        byte value)
+    {
+        var result = source;
+        for (var y = top; y < bottom; y++)
+            result = WithPixel(result, x, y, value);
+        return result;
+    }
+
+    private static Material3Expressive.VisualTesting.Model.RenderedImage WithRectangle(
+        Material3Expressive.VisualTesting.Model.RenderedImage source,
+        int left,
+        int top,
+        int right,
+        int bottom,
+        byte value)
+    {
+        var result = source;
+        for (var y = top; y < bottom; y++)
+        {
+            for (var x = left; x < right; x++)
+                result = WithPixel(result, x, y, value);
+        }
+        return result;
     }
 
     private static ParityCaptureResult WithLineLocalBounds(ParityCaptureResult source, ParityRect bounds)

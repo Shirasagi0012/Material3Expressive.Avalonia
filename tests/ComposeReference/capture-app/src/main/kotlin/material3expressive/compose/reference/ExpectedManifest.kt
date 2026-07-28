@@ -23,7 +23,7 @@ data class ExpectedManifest(
     val themeIdentifier: String,
     val themeSha256: String,
     val caseCatalogSha256: String,
-    val captureSchemaVersion: Int = 4,
+    val captureSchemaVersion: Int = 5,
     val viewportScale: Float,
     val files: List<ManifestFileEntry>,
     val cases: List<ManifestCaseEntry>,
@@ -48,7 +48,7 @@ data class ManifestCaseEntry(
 
 @Serializable
 data class CaptureResult(
-    val schemaVersion: Int = 4,
+    val schemaVersion: Int = 5,
     val caseId: String,
     val coordinateSpace: CoordinateSpace,
     val viewportPx: ViewportPx,
@@ -105,6 +105,7 @@ data class CaptureShadow(
     val lightRadiusPx: Float,
     val flags: List<String>,
     val clipBoundsInRootPx: BoundsPx? = null,
+    val occluderDrawn: Boolean,
 )
 
 @Serializable

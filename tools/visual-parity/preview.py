@@ -132,6 +132,12 @@ function getProfile(caseId) {
     return null;
 }
 
+function getProfileLayoutTolerance(prof) {
+    if (!prof) return null;
+    // schema v6+: layoutTolerance.  v5-: tolerance.
+    return prof.layoutTolerance || prof.tolerance || null;
+}
+
 async function loadRuns() {
     var resp = await fetch(API_BASE + '/runs');
     RUNS = await resp.json();
@@ -295,7 +301,8 @@ function renderGeometry(caseId) {
     var exp = state.expectedLayouts[caseId];
     var act = state.actualLayouts[caseId];
     var prof = getProfile(caseId);
-    var tol = prof ? prof.tolerance.geometryPx : 0;
+    var tol = getProfileLayoutTolerance(prof);
+    var geomTol = tol ? (tol.geometryPx != null ? tol.geometryPx : 0) : 0;
     if (!exp) { document.getElementById('geometry-panel').innerHTML = '<div class="empty">No expected layout data</div>'; return; }
     var expMap = {}, actMap = {};
     (exp.nodes || []).forEach(function(n) { expMap[n.id] = n; });
@@ -306,7 +313,7 @@ function renderGeometry(caseId) {
         var eb = n.boundsInRootPx || {};
         var ab = a && a.boundsInRootPx ? a.boundsInRootPx : {};
         var f = function(v) { return v != null ? v.toFixed(1) : '-'; };
-        var ok = function(d) { return a && d !== '-' && Math.abs(parseFloat(d)) <= tol; };
+        var ok = function(d) { return a && d !== '-' && Math.abs(parseFloat(d)) <= geomTol; };
         var dl = a && eb.left != null && ab.left != null ? (ab.left - eb.left).toFixed(1) : '-';
         var dt = a && eb.top != null && ab.top != null ? (ab.top - eb.top).toFixed(1) : '-';
         var dr = a && eb.right != null && ab.right != null ? (ab.right - eb.right).toFixed(1) : '-';
@@ -321,16 +328,17 @@ function renderGeometry(caseId) {
             '<td class="mono"><span class="'+clsL+'">'+dl+'</span> / <span class="'+clsT+'">'+dt+'</span> / <span class="'+clsR+'">'+dr+'</span> / <span class="'+clsB+'">'+db+'</span></td></tr>';
     });
     document.getElementById('geometry-panel').innerHTML =
-        '<table><thead><tr><th>Node</th><th>Expected (px)</th><th>Actual (px)</th><th>Delta L/T/R/B (tol='+tol.toFixed(1)+'px)</th></tr></thead><tbody>'+rows+'</tbody></table>';
+        '<table><thead><tr><th>Node</th><th>Expected (px)</th><th>Actual (px)</th><th>Delta L/T/R/B (tol='+geomTol.toFixed(1)+'px)</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function renderTextLayout(caseId) {
     var exp = state.expectedLayouts[caseId];
     var act = state.actualLayouts[caseId];
     var prof = getProfile(caseId);
-    var textTol = prof ? prof.tolerance.textPx : 0;
-    var baselineTol = prof ? (prof.tolerance.textBaselinePx != null ? prof.tolerance.textBaselinePx : textTol) : 0;
-    var lineTol = prof ? (prof.tolerance.textLineBoundsPx != null ? prof.tolerance.textLineBoundsPx : textTol) : 0;
+    var lt = getProfileLayoutTolerance(prof);
+    var textTol = lt ? (lt.textPx != null ? lt.textPx : 0) : 0;
+    var baselineTol = lt ? (lt.textBaselinePx != null ? lt.textBaselinePx : textTol) : 0;
+    var lineTol = lt ? (lt.textLineBoundsPx != null ? lt.textLineBoundsPx : textTol) : 0;
     var textNodes = (exp&&exp.nodes||[]).filter(function(n){return n.textLayout;});
     if (textNodes.length===0) {
         document.getElementById('textlayout-panel').innerHTML='<div class="empty">No text layout data</div>'; return;
@@ -400,7 +408,8 @@ function renderShadow(caseId) {
         return;
     }
     var prof = getProfile(caseId);
-    var tol = prof ? prof.tolerance.geometryPx : 0.5;
+    var lt = getProfileLayoutTolerance(prof);
+    var tol = lt ? (lt.geometryPx != null ? lt.geometryPx : 0.5) : 0.5;
     var h = '';
     Object.keys(allIds).forEach(function(nid) {
         var en = expNodes.find(function(n){return n.id===nid;});

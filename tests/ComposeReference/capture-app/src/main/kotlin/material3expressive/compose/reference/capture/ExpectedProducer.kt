@@ -284,6 +284,7 @@ class ExpectedProducer(
             lightRadiusPx = 800f * scale,
             flags = if (spec.opacity < 1f) listOf("transparentOccluder") else emptyList(),
             clipBoundsInRootPx = clip?.let { BoundsPx(it.left, it.top, it.right, it.bottom) },
+            occluderDrawn = spec.occluderDrawn,
         )
     }
 

@@ -67,7 +67,7 @@ public sealed record ParityCaptureResult(
     ParityViewport ViewportPx,
     IReadOnlyList<ParityNode> Nodes)
 {
-    public const int CurrentSchemaVersion = 4;
+    public const int CurrentSchemaVersion = 5;
 }
 
 public sealed record ParityCoordinateSpace(
@@ -113,7 +113,8 @@ public sealed record ParityShadow(
     ParityPoint3 LightPositionPx,
     float LightRadiusPx,
     IReadOnlyList<string> Flags,
-    ParityRect? ClipBoundsInRootPx = null);
+    ParityRect? ClipBoundsInRootPx = null,
+    bool OccluderDrawn = true);
 
 public sealed record ParityCornerRadii(float TopLeft, float TopRight, float BottomRight, float BottomLeft);
 

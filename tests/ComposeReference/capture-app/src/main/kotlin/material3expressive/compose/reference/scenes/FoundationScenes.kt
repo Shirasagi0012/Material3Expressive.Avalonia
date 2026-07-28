@@ -241,7 +241,15 @@ private fun ReferenceCaseRegistry.registerShadowComponentScene(
         ReferenceScene { probes ->
             probes.recordShadow(
                 "component",
-                shadowSpec(width, height, cornerRadius, elevation, ambientColor, spotColor),
+                shadowSpec(
+                    width,
+                    height,
+                    cornerRadius,
+                    elevation,
+                    ambientColor,
+                    spotColor,
+                    occluderDrawn = drawOccluder,
+                ),
             )
             var modifier = Modifier
                 .requiredSize(width, height)
@@ -358,6 +366,7 @@ private fun shadowSpec(
     spotColor: Color,
     opacity: Float = 1f,
     clipProbeId: String? = null,
+    occluderDrawn: Boolean = true,
 ): ShadowProbeSpec {
     val radius = cornerRadius.value
     val kind = when {
@@ -373,6 +382,7 @@ private fun shadowSpec(
         spotColorArgb = spotColor.toArgbHex(),
         opacity = opacity,
         clipProbeId = clipProbeId,
+        occluderDrawn = occluderDrawn,
     )
 }
 

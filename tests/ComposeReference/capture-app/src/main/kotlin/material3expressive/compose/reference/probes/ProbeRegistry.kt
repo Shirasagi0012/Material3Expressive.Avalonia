@@ -56,6 +56,7 @@ data class ShadowProbeSpec(
     val spotColorArgb: String = "#FF000000",
     val opacity: Float = 1f,
     val clipProbeId: String? = null,
+    val occluderDrawn: Boolean = true,
 )
 
 data class BoundsPx(

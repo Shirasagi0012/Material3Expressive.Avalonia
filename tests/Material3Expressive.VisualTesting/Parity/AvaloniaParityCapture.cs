@@ -168,7 +168,8 @@ public sealed class AvaloniaParityCapture
             new ParityPoint3(lighting.LightX, lighting.LightY, lighting.LightZ),
             lighting.LightRadius,
             flags,
-            clipBounds);
+            clipBounds,
+            probe.OccluderDrawn);
     }
 
     private static string ClassifyShape(ComposeShadowShape shape)
