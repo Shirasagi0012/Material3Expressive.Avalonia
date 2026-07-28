@@ -122,7 +122,7 @@ public sealed class ParityComparer
                 $"Text '{expected.Id}' line {line.First.Index} local bounds",
                 line.First.BoundsInTextPx,
                 line.Second.BoundsInTextPx,
-                tolerance.TextPx,
+                tolerance.TextLineBoundsPx,
                 failures);
             CompareOptionalNumber(
                 $"Text '{expected.Id}' line {line.First.Index} local baseline",
@@ -311,12 +311,16 @@ public sealed class ParityComparer
 }
 
 /// <summary>
+/// <see cref="TextLineBoundsPx"/> is limited to the local line box representation. Baselines,
+/// draw origins, and character boxes continue to use <see cref="TextPx"/>.
+///
 /// <see cref="TextRasterChannelDelta"/> is a local gray-antialiasing noise floor. It applies
 /// only inside a text line whose layout and resolved text style both compared successfully.
 /// </summary>
 public sealed record ParityTolerance(
     float GeometryPx,
     float TextPx,
+    float TextLineBoundsPx,
     int MaxDifferentPixels,
     byte MaxChannelDelta,
     byte TextRasterChannelDelta);

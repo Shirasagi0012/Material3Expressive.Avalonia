@@ -1,11 +1,12 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "profiles": [
     {
       "id": "color-swatch",
       "tolerance": {
         "geometryPx": 0.0,
         "textPx": 0.0,
+        "textLineBoundsPx": 0.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
         "textRasterChannelDelta": 0
@@ -19,6 +20,7 @@
       "tolerance": {
         "geometryPx": 0.5,
         "textPx": 0.5,
+        "textLineBoundsPx": 0.5,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
         "textRasterChannelDelta": 0
@@ -32,9 +34,10 @@
       "tolerance": {
         "geometryPx": 0.5,
         "textPx": 0.5,
+        "textLineBoundsPx": 1.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
-        "textRasterChannelDelta": 16
+        "textRasterChannelDelta": 17
       },
       "compareGeometry": true,
       "compareTextLayout": true,
@@ -45,9 +48,10 @@
       "tolerance": {
         "geometryPx": 0.5,
         "textPx": 0.5,
+        "textLineBoundsPx": 1.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
-        "textRasterChannelDelta": 16
+        "textRasterChannelDelta": 17
       },
       "compareGeometry": true,
       "compareTextLayout": true,

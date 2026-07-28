@@ -142,6 +142,27 @@ public sealed class ParityContractTests
         Assert.Contains("Raster differs in 1/42000 pixels (max channel delta 12).", comparison.Failures);
     }
 
+    [Fact]
+    public void ComparerAllowsOnePixelLineBoxRepresentationDifferenceWithoutRelaxingCharacterBounds()
+    {
+        var expected = WithLineLocalBounds(
+            TextLayout(new ParityRect(249.728f, 76, 265.896f, 116)),
+            new ParityRect(0, -1, 69, 39));
+        var actual = WithLineLocalBounds(
+            TextLayout(new ParityRect(249.728f, 76, 265.896f, 116)),
+            new ParityRect(0, 0, 69, 40));
+        var image = SolidImage(300, 140, 255);
+
+        var comparison = new ParityComparer().Compare(
+            expected,
+            actual,
+            image,
+            image,
+            ParityComparisonProfiles.ComponentWithText);
+
+        Assert.True(comparison.IsMatch);
+    }
+
     private static ParityCaptureResult Layout(string id, ParityRect bounds, bool? focused = null) => new(
         ParityCaptureResult.CurrentSchemaVersion,
         "test",
@@ -192,5 +213,13 @@ public sealed class ParityContractTests
         pixels[offset + 1] = value;
         pixels[offset + 2] = value;
         return source with { Pixels = pixels };
+    }
+
+    private static ParityCaptureResult WithLineLocalBounds(ParityCaptureResult source, ParityRect bounds)
+    {
+        var node = Assert.Single(source.Nodes);
+        var layout = Assert.IsType<ParityTextLayout>(node.TextLayout);
+        var line = Assert.Single(layout.Lines) with { BoundsInTextPx = bounds };
+        return source with { Nodes = [node with { TextLayout = layout with { Lines = [line] } }] };
     }
 }
