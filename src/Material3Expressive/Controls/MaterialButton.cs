@@ -119,15 +119,18 @@ public class MaterialButton : Button
         var corners = ContainerCornerRadius;
         var enabled = IsEffectivelyEnabled;
         var tokens = _theme.Theme.GetButtonColorTokens(Variant);
+        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         MaterialContainer.Draw(
             context,
+            this,
             Bounds.Size,
             corners,
             enabled ? _colors.ContainerColor : _colors.DisabledContainerColor,
             enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
             tokens.HasOutline ? _metrics.OutlineWidth : 0,
-            CurrentShadows(enabled));
+            CurrentElevation(enabled),
+            shadow);
 
         _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
 
@@ -207,21 +210,15 @@ public class MaterialButton : Button
         return _theme.Theme.Shapes.Get(role);
     }
 
-    private BoxShadows CurrentShadows(bool enabled)
+    private double CurrentElevation(bool enabled)
     {
         var tokens = _theme.Theme.GetButtonColorTokens(Variant);
         var interaction = _interaction.Interaction;
 
-        var elevation = !enabled ? tokens.DisabledContainerElevation
+        return !enabled ? tokens.DisabledContainerElevation
             : interaction.HasFlag(InteractionState.Pressed) ? tokens.PressedContainerElevation
             : interaction.HasFlag(InteractionState.Hovered) ? tokens.HoveredContainerElevation
             : interaction.HasFlag(InteractionState.Focused) ? tokens.FocusedContainerElevation
             : tokens.ContainerElevation;
-
-        if (elevation <= 0)
-            return default;
-
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
-        return Elevation.ToBoxShadows(elevation, shadow);
     }
 }

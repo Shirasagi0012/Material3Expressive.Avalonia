@@ -104,17 +104,17 @@ public sealed class ParityComparer
             $"Text '{expected.Id}' first baseline in text",
             left.FirstBaselineInTextPx,
             right.FirstBaselineInTextPx,
-            tolerance.TextPx,
+            tolerance.TextBaselinePx,
             failures);
         CompareOptionalNumber(
             $"Text '{expected.Id}' last baseline in text",
             left.LastBaselineInTextPx,
             right.LastBaselineInTextPx,
-            tolerance.TextPx,
+            tolerance.TextBaselinePx,
             failures);
         CompareTextStyleSignature(expected.Id, left.StyleSignature, right.StyleSignature, failures);
-        CompareNumber($"Text '{expected.Id}' first baseline", left.FirstBaselineInRootPx, right.FirstBaselineInRootPx, tolerance.TextPx, failures);
-        CompareNumber($"Text '{expected.Id}' last baseline", left.LastBaselineInRootPx, right.LastBaselineInRootPx, tolerance.TextPx, failures);
+        CompareNumber($"Text '{expected.Id}' first baseline", left.FirstBaselineInRootPx, right.FirstBaselineInRootPx, tolerance.TextBaselinePx, failures);
+        CompareNumber($"Text '{expected.Id}' last baseline", left.LastBaselineInRootPx, right.LastBaselineInRootPx, tolerance.TextBaselinePx, failures);
         if (left.Lines.Count != right.Lines.Count)
             failures.Add($"Text '{expected.Id}' line count differs.");
         foreach (var line in left.Lines.Zip(right.Lines))
@@ -122,7 +122,7 @@ public sealed class ParityComparer
             if (line.First.Index != line.Second.Index || line.First.StartUtf16 != line.Second.StartUtf16
                 || line.First.EndUtf16 != line.Second.EndUtf16 || line.First.VisibleEndUtf16 != line.Second.VisibleEndUtf16)
                 failures.Add($"Text '{expected.Id}' line {line.First.Index} UTF-16 range differs.");
-            CompareNumber($"Text '{expected.Id}' line {line.First.Index} baseline", line.First.BaselinePx, line.Second.BaselinePx, tolerance.TextPx, failures);
+            CompareNumber($"Text '{expected.Id}' line {line.First.Index} baseline", line.First.BaselinePx, line.Second.BaselinePx, tolerance.TextBaselinePx, failures);
             CompareOptionalRect(
                 $"Text '{expected.Id}' line {line.First.Index} local bounds",
                 line.First.BoundsInTextPx,
@@ -133,7 +133,7 @@ public sealed class ParityComparer
                 $"Text '{expected.Id}' line {line.First.Index} local baseline",
                 line.First.BaselineInTextPx,
                 line.Second.BaselineInTextPx,
-                tolerance.TextPx,
+                tolerance.TextBaselinePx,
                 failures);
         }
         if (left.CharacterBoxes.Count != right.CharacterBoxes.Count)
@@ -320,7 +320,9 @@ public sealed class ParityComparer
 
 /// <summary>
 /// <see cref="TextLineBoundsPx"/> is limited to the local line box representation. Baselines,
-/// draw origins, and character boxes continue to use <see cref="TextPx"/>.
+/// which Avalonia cannot expose with the same native semantics as Compose, use
+/// <see cref="TextBaselinePx"/>. Draw origins and character boxes continue to use
+/// <see cref="TextPx"/>.
 ///
 /// <see cref="TextRasterChannelDelta"/> is a local gray-antialiasing noise floor. It applies
 /// only inside a text line whose layout and resolved text style both compared successfully.
@@ -329,6 +331,7 @@ public sealed class ParityComparer
 public sealed record ParityTolerance(
     float GeometryPx,
     float TextPx,
+    float TextBaselinePx,
     float TextLineBoundsPx,
     int MaxDifferentPixels,
     byte MaxChannelDelta,

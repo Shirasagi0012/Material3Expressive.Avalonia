@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using MaterialSkiaShadow;
 
 namespace Material3Expressive.Controls;
 
@@ -16,14 +17,39 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public static class MaterialContainer
 {
+    /// <summary>
+    /// Draws a Material container with a Compose-compatible elevation shadow.
+    /// </summary>
+    public static void Draw(
+        DrawingContext context,
+        Visual shadowOwner,
+        Size size,
+        CornerRadius corners,
+        IBrush? fill,
+        IImmutableBrush? outline,
+        double outlineWidth,
+        double elevation,
+        Color shadowColor)
+    {
+        if (size.Width <= 0 || size.Height <= 0)
+            return;
+
+        ComposeShadowRenderer.Draw(
+            context,
+            shadowOwner,
+            ComposeShadowShape.RoundedRectangle(new Rect(size), corners),
+            ComposeShadowParameters.Material(elevation, shadowColor));
+
+        Draw(context, size, corners, fill, outline, outlineWidth);
+    }
+
     public static void Draw(
         DrawingContext context,
         Size size,
         CornerRadius corners,
         IBrush? fill,
         IImmutableBrush? outline = null,
-        double outlineWidth = 0,
-        BoxShadows shadows = default)
+        double outlineWidth = 0)
     {
         if (size.Width <= 0 || size.Height <= 0)
             return;
@@ -34,8 +60,7 @@ public static class MaterialContainer
         context.DrawRectangle(
             fill,
             pen,
-            new RoundedRect(new Rect(size).Deflate(inset), Deflate(corners, inset)),
-            shadows);
+            new RoundedRect(new Rect(size).Deflate(inset), Deflate(corners, inset)));
     }
 
     /// <summary>Shrinks corner radii to match a rectangle that has been inset by the same amount.</summary>

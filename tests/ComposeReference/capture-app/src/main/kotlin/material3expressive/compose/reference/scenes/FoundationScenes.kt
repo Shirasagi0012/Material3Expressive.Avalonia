@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import material3expressive.compose.reference.CaseContract
@@ -62,10 +64,49 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
         )
     }
     registerElevationScene(
+        id = "foundation/elevation/pill/level1/fractional-width/light",
+        elevation = 1.dp,
+        shape = CircleShape,
+        width = 90.5.dp,
+        height = 56.dp,
+        viewportHeightDp = 96,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/pill/level1/fractional-width/ambient-only/light",
+        ambientColor = Color.Black,
+        spotColor = Color.Transparent,
+        elevation = 1.dp,
+        shape = CircleShape,
+        width = 90.5.dp,
+        height = 56.dp,
+        viewportHeightDp = 96,
+    )
+    registerShadowComponentScene(
+        id = "foundation/elevation/pill/level1/fractional-width/spot-only/light",
+        ambientColor = Color.Transparent,
+        spotColor = Color.Black,
+        elevation = 1.dp,
+        shape = CircleShape,
+        width = 90.5.dp,
+        height = 56.dp,
+        viewportHeightDp = 96,
+    )
+    registerElevationScene(
         id = "foundation/elevation/rounded-rectangle/level6/dark",
         elevation = 6.dp,
         shape = RoundedCornerShape(20.dp),
         dark = true,
+    )
+    registerElevationScene(
+        id = "foundation/elevation/rectangle/level12/light",
+        elevation = 12.dp,
+        shape = RectangleShape,
+    )
+    registerOpacityElevationScene(
+        id = "foundation/elevation/rounded-rectangle/level6/opacity-50/light",
+        elevation = 6.dp,
+        opacity = 0.5f,
+        shape = RoundedCornerShape(20.dp),
     )
     registerElevationScene(
         id = "foundation/elevation/circle/level6/light",
@@ -138,14 +179,11 @@ fun ReferenceCaseRegistry.registerFoundationScenes() {
     )
 }
 
-private fun ReferenceCaseRegistry.registerShadowComponentScene(
+private fun ReferenceCaseRegistry.registerOpacityElevationScene(
     id: String,
-    ambientColor: Color,
-    spotColor: Color,
-    drawOccluder: Boolean = true,
-    shape: Shape = CircleShape,
-    width: Dp = 72.dp,
-    height: Dp = 72.dp,
+    elevation: Dp,
+    opacity: Float,
+    shape: Shape,
 ) {
     register(
         CaseContract(
@@ -156,10 +194,35 @@ private fun ReferenceCaseRegistry.registerShadowComponentScene(
             requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
         ),
         ReferenceScene { probes ->
+            OpacityElevationSurface(probes, elevation, opacity, shape)
+        },
+    )
+}
+
+private fun ReferenceCaseRegistry.registerShadowComponentScene(
+    id: String,
+    ambientColor: Color,
+    spotColor: Color,
+    drawOccluder: Boolean = true,
+    shape: Shape = CircleShape,
+    width: Dp = 72.dp,
+    height: Dp = 72.dp,
+    elevation: Dp = 6.dp,
+    viewportHeightDp: Int = 180,
+) {
+    register(
+        CaseContract(
+            id = id,
+            viewportWidthDp = 240,
+            viewportHeightDp = viewportHeightDp,
+            dark = false,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
+        ),
+        ReferenceScene { probes ->
             var modifier = Modifier
                 .requiredSize(width, height)
                 .shadow(
-                    elevation = 6.dp,
+                    elevation = elevation,
                     shape = shape,
                     clip = false,
                     ambientColor = ambientColor,
@@ -181,12 +244,13 @@ private fun ReferenceCaseRegistry.registerElevationScene(
     width: Dp = 96.dp,
     height: Dp = 64.dp,
     parentClipped: Boolean = false,
+    viewportHeightDp: Int = 180,
 ) {
     register(
         CaseContract(
             id = id,
             viewportWidthDp = 240,
-            viewportHeightDp = 180,
+            viewportHeightDp = viewportHeightDp,
             dark = dark,
             requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "shadow")),
         ),
@@ -220,7 +284,29 @@ private fun ElevationSurface(
         // inner shadow mesh without adding a second, contrasting rounded-fill AA comparison.
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = elevation,
-    ) {}
+) {}
+}
+
+@Composable
+private fun OpacityElevationSurface(
+    probes: ProbeRegistry,
+    elevation: Dp,
+    opacity: Float,
+    shape: Shape,
+) {
+    val density = LocalDensity.current
+    Box(
+        modifier =
+            Modifier.requiredSize(96.dp, 64.dp)
+                .graphicsLayer {
+                    alpha = opacity
+                    shadowElevation = with(density) { elevation.toPx() }
+                    this.shape = shape
+                    clip = false
+                }
+                .background(MaterialTheme.colorScheme.surface, shape)
+                .then(probes.geometry("component"))
+    )
 }
 
 @Composable

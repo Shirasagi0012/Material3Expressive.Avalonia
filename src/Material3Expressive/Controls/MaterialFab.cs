@@ -127,13 +127,18 @@ public class MaterialFab : Button
     public override void Render(DrawingContext context)
     {
         var corners = ContainerCornerRadius;
+        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         MaterialContainer.Draw(
             context,
+            this,
             Bounds.Size,
             corners,
             _colors.ContainerColor,
-            shadows: CurrentShadows());
+            null,
+            0,
+            CurrentElevation(),
+            shadow);
 
         _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
 
@@ -198,17 +203,14 @@ public class MaterialFab : Button
         return _theme.Theme.Shapes.Get(_metrics.ContainerShape);
     }
 
-    private BoxShadows CurrentShadows()
+    private double CurrentElevation()
     {
         var interaction = _interaction.Interaction;
 
-        var elevation = IsLowered ? _tokens.LoweredContainerElevation
+        return IsLowered ? _tokens.LoweredContainerElevation
             : interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedContainerElevation
             : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoveredContainerElevation
             : interaction.HasFlag(InteractionState.Focused) ? _tokens.FocusedContainerElevation
             : _tokens.ContainerElevation;
-
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
-        return Elevation.ToBoxShadows(elevation, shadow);
     }
 }

@@ -155,10 +155,14 @@ public class MaterialSearchBar : TemplatedControl
 
         MaterialContainer.Draw(
             context,
+            this,
             Bounds.Size,
             corners,
             IsOpen ? _colors.ResultsContainerColor : _colors.ContainerColor,
-            shadows: Elevation.ToBoxShadows(_tokens.ContainerElevation, shadow));
+            null,
+            0,
+            _tokens.ContainerElevation,
+            shadow);
 
         if (IsOpen)
         {

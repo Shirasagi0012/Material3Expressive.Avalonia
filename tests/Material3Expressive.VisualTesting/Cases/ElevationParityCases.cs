@@ -19,13 +19,19 @@ internal static class ElevationParityCases
     private static readonly PixelSize s_viewport = new(240, 180);
     private static readonly Size s_roundedRectangleSize = new(96, 64);
     private static readonly Size s_circleSize = new(72, 72);
+    private static readonly Size s_fractionalPillSize = new(90.5, 56);
 
     public static IReadOnlyList<VisualCase> All { get; } =
     [
         RoundedRectangle(1, VisualTheme.Light),
+        FractionalPill(1, VisualTheme.Light),
+        FractionalPillShadowComponent(ambient: true, spot: false),
+        FractionalPillShadowComponent(ambient: false, spot: true),
         RoundedRectangle(3, VisualTheme.Light),
         RoundedRectangle(6, VisualTheme.Light),
+        Rectangle(12, VisualTheme.Light),
         RoundedRectangle(6, VisualTheme.Dark),
+        RoundedRectangleOpacity(6, 0.5, VisualTheme.Light),
         Circle(6, VisualTheme.Light),
         CircleShadowComponent(6, VisualTheme.Light, ambient: true, spot: false),
         CircleShadowComponent(6, VisualTheme.Light, ambient: false, spot: true),
@@ -48,6 +54,30 @@ internal static class ElevationParityCases
                 new CornerRadius(20),
                 elevation));
 
+    private static VisualCase Rectangle(double elevation, VisualTheme theme) =>
+        Scene(
+            $"foundation/elevation/rectangle/level{elevation:0}/{ThemeName(theme)}",
+            theme,
+            context => Surface(
+                context,
+                s_roundedRectangleSize,
+                default,
+                elevation));
+
+    private static VisualCase RoundedRectangleOpacity(
+        double elevation,
+        double opacity,
+        VisualTheme theme) =>
+        Scene(
+            $"foundation/elevation/rounded-rectangle/level{elevation:0}/opacity-{opacity * 100:0}/{ThemeName(theme)}",
+            theme,
+            context => Surface(
+                context,
+                s_roundedRectangleSize,
+                new CornerRadius(20),
+                elevation,
+                opacity: opacity));
+
     private static VisualCase Circle(double elevation, VisualTheme theme) =>
         Scene(
             $"foundation/elevation/circle/level{elevation:0}/{ThemeName(theme)}",
@@ -57,6 +87,30 @@ internal static class ElevationParityCases
                 s_circleSize,
                 new CornerRadius(s_circleSize.Width / 2),
                 elevation));
+
+    private static VisualCase FractionalPill(double elevation, VisualTheme theme) =>
+        Scene(
+            $"foundation/elevation/pill/level{elevation:0}/fractional-width/{ThemeName(theme)}",
+            theme,
+            context => Surface(
+                context,
+                s_fractionalPillSize,
+                new CornerRadius(s_fractionalPillSize.Height / 2),
+                elevation),
+            new PixelSize(240, 96));
+
+    private static VisualCase FractionalPillShadowComponent(bool ambient, bool spot) =>
+        Scene(
+            $"foundation/elevation/pill/level1/fractional-width/{(ambient ? "ambient-only" : "spot-only")}/light",
+            VisualTheme.Light,
+            context => Surface(
+                context,
+                s_fractionalPillSize,
+                new CornerRadius(s_fractionalPillSize.Height / 2),
+                1,
+                ambient,
+                spot),
+            new PixelSize(240, 96));
 
     private static VisualCase CircleShadowComponent(
         double elevation,
@@ -117,31 +171,57 @@ internal static class ElevationParityCases
         double elevation,
         bool ambient = true,
         bool spot = true,
-        bool drawOccluder = true)
+        bool drawOccluder = true,
+        double opacity = 1)
     {
         var shadowColor = ((SolidColorBrush)CaseLayout.Brush(context, SysColorToken.Shadow)).Color;
-        return new ElevationSurface
+        var fill = drawOccluder ? CaseLayout.Brush(context, SysColorToken.Surface) : null;
+        var surface = new ElevationSurface
         {
             Name = "component",
             Width = size.Width,
             Height = size.Height,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
+            LayerOpacity = opacity,
             Corners = corners,
-            Fill = drawOccluder ? CaseLayout.Brush(context, SysColorToken.Surface) : null,
+            Fill = opacity >= 1 ? fill : null,
             Elevation = elevation,
             AmbientShadowColor = ambient ? shadowColor : Colors.Transparent,
             SpotShadowColor = spot ? shadowColor : Colors.Transparent
         };
+        if (fill is null || opacity >= 1)
+            return surface;
+
+        var layer = new Grid
+        {
+            Width = size.Width,
+            Height = size.Height,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                surface,
+                new Border
+                {
+                    Background = fill,
+                    CornerRadius = corners,
+                    Opacity = opacity
+                }
+            }
+        };
+        RenderOptions.SetRequiresFullOpacityHandling(layer, true);
+        return layer;
     }
 
     private static VisualCase Scene(
         string id,
         VisualTheme theme,
-        Func<VisualCaseContext, Control> createContent) =>
+        Func<VisualCaseContext, Control> createContent,
+        PixelSize? viewport = null) =>
         new(
             id,
-            s_viewport,
+            viewport ?? s_viewport,
             theme,
             context => new Grid { Children = { createContent(context) } },
             RenderScaling: 1.0);
@@ -160,6 +240,8 @@ internal static class ElevationParityCases
 
         public Color SpotShadowColor { get; init; }
 
+        public double LayerOpacity { get; init; } = 1;
+
         public override void Render(DrawingContext context)
         {
             ComposeShadowRenderer.Draw(
@@ -169,7 +251,8 @@ internal static class ElevationParityCases
                 new ComposeShadowParameters(
                     Elevation,
                     AmbientShadowColor,
-                    SpotShadowColor));
+                    SpotShadowColor,
+                    LayerOpacity));
             if (Fill is not null)
                 MaterialContainer.Draw(context, Bounds.Size, Corners, Fill);
         }

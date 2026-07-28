@@ -114,7 +114,6 @@ public class MaterialBottomSheet : ContentControl
             return;
 
         var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, sheet.Size);
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         using (context.PushTransform(Matrix.CreateTranslation(sheet.X, sheet.Y)))
         {
@@ -122,8 +121,7 @@ public class MaterialBottomSheet : ContentControl
                 context,
                 sheet.Size,
                 corners,
-                _colors.ContainerColor,
-                shadows: Elevation.ToBoxShadows(_tokens.ContainerElevation, shadow));
+                _colors.ContainerColor);
 
             // The drag handle sits in the space the sheet reserves above its content.
             var handle = new Rect(

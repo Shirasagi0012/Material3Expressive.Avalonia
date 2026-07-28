@@ -98,14 +98,11 @@ public class MaterialNavigationBar : TemplatedControl
 
     public override void Render(DrawingContext context)
     {
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
-
         MaterialContainer.Draw(
             context,
             Bounds.Size,
             default,
-            _colors.ContainerColor,
-            shadows: Elevation.ToBoxShadows(_tokens.ContainerElevation, shadow));
+            _colors.ContainerColor);
 
         base.Render(context);
     }

@@ -73,15 +73,18 @@ public class MaterialCard : ContentControl
 
         var enabled = IsEffectivelyEnabled;
         var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         MaterialContainer.Draw(
             context,
+            this,
             Bounds.Size,
             corners,
             enabled ? _colors.ContainerColor : _colors.DisabledContainerColor,
             enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
             _tokens.HasOutline ? _tokens.OutlineWidth : 0,
-            CurrentShadows(enabled));
+            CurrentElevation(enabled),
+            shadow);
 
         if (IsClickable)
             _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
@@ -106,21 +109,15 @@ public class MaterialCard : ContentControl
         InvalidateVisual();
     }
 
-    private BoxShadows CurrentShadows(bool enabled)
+    private double CurrentElevation(bool enabled)
     {
         var interaction = IsClickable ? _interaction.Interaction : InteractionState.None;
 
-        var elevation = !enabled ? _tokens.DisabledContainerElevation
+        return !enabled ? _tokens.DisabledContainerElevation
             : interaction.HasFlag(InteractionState.Dragged) ? _tokens.DraggedContainerElevation
             : interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedContainerElevation
             : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoverContainerElevation
             : interaction.HasFlag(InteractionState.Focused) ? _tokens.FocusContainerElevation
             : _tokens.ContainerElevation;
-
-        if (elevation <= 0)
-            return default;
-
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
-        return Elevation.ToBoxShadows(elevation, shadow);
     }
 }

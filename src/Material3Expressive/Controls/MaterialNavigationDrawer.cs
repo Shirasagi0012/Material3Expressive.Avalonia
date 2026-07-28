@@ -96,7 +96,6 @@ public class MaterialNavigationDrawer : ContentControl
 
         var panel = new Rect(offset, 0, width, Bounds.Height);
         var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, panel.Size);
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         using (context.PushTransform(Matrix.CreateTranslation(panel.X, panel.Y)))
         {
@@ -104,8 +103,7 @@ public class MaterialNavigationDrawer : ContentControl
                 context,
                 panel.Size,
                 corners,
-                _colors.ContainerColor,
-                shadows: Elevation.ToBoxShadows(_tokens.ContainerElevation, shadow));
+                _colors.ContainerColor);
         }
     }
 

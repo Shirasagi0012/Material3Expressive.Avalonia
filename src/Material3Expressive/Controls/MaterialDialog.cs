@@ -146,7 +146,6 @@ public class MaterialDialog : ContentControl
             content.Width + Padding.Left + Padding.Right,
             content.Height + Padding.Top + Padding.Bottom);
         var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, surface.Size);
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         // The surface grows from 90% as it fades in, about its own centre.
         var scale = 0.9 + 0.1 * fraction;
@@ -163,8 +162,7 @@ public class MaterialDialog : ContentControl
                 context,
                 surface.Size,
                 corners,
-                _colors.ContainerColor,
-                shadows: Elevation.ToBoxShadows(_tokens.ContainerElevation, shadow));
+                _colors.ContainerColor);
         }
     }
 

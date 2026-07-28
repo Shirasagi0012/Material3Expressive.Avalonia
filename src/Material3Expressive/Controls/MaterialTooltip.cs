@@ -106,10 +106,14 @@ public class MaterialTooltip : ContentControl
 
         MaterialContainer.Draw(
             context,
+            this,
             Bounds.Size,
             corners,
             _colors.ContainerColor,
-            shadows: Elevation.ToBoxShadows(_tokens.ContainerElevation, shadow));
+            null,
+            0,
+            _tokens.ContainerElevation,
+            shadow);
 
         base.Render(context);
     }

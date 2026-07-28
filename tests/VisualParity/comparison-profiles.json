@@ -1,11 +1,12 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "profiles": [
     {
       "id": "color-swatch",
       "tolerance": {
         "geometryPx": 0.0,
         "textPx": 0.0,
+        "textBaselinePx": 0.0,
         "textLineBoundsPx": 0.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
@@ -21,6 +22,7 @@
       "tolerance": {
         "geometryPx": 0.5,
         "textPx": 0.5,
+        "textBaselinePx": 0.5,
         "textLineBoundsPx": 0.5,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
@@ -36,6 +38,7 @@
       "tolerance": {
         "geometryPx": 0.5,
         "textPx": 0.5,
+        "textBaselinePx": 0.5,
         "textLineBoundsPx": 1.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
@@ -47,10 +50,59 @@
       "compareRaster": true
     },
     {
+      "id": "container-with-elevation",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "textBaselinePx": 0.5,
+        "textLineBoundsPx": 0.5,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0,
+        "rasterChannelDelta": 1,
+        "textRasterChannelDelta": 0
+      },
+      "compareGeometry": true,
+      "compareTextLayout": false,
+      "compareRaster": true
+    },
+    {
+      "id": "component-with-text-and-elevation",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "textBaselinePx": 0.5,
+        "textLineBoundsPx": 1.0,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0,
+        "rasterChannelDelta": 1,
+        "textRasterChannelDelta": 17
+      },
+      "compareGeometry": true,
+      "compareTextLayout": true,
+      "compareRaster": true
+    },
+    {
+      "id": "known-avalonia-text-baseline-api-gap",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "textBaselinePx": 2.0,
+        "textLineBoundsPx": 1.0,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0,
+        "rasterChannelDelta": 0,
+        "textRasterChannelDelta": 255
+      },
+      "compareGeometry": true,
+      "compareTextLayout": true,
+      "compareRaster": true
+    },
+    {
       "id": "text-field",
       "tolerance": {
         "geometryPx": 0.5,
         "textPx": 0.5,
+        "textBaselinePx": 0.5,
         "textLineBoundsPx": 1.0,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
@@ -66,24 +118,10 @@
       "tolerance": {
         "geometryPx": 0.5,
         "textPx": 0.5,
+        "textBaselinePx": 0.5,
         "textLineBoundsPx": 0.5,
         "maxDifferentPixels": 0,
         "maxChannelDelta": 0,
-        "rasterChannelDelta": 1,
-        "textRasterChannelDelta": 0
-      },
-      "compareGeometry": true,
-      "compareTextLayout": false,
-      "compareRaster": true
-    },
-    {
-      "id": "elevation-internal-edge",
-      "tolerance": {
-        "geometryPx": 0.5,
-        "textPx": 0.5,
-        "textLineBoundsPx": 0.5,
-        "maxDifferentPixels": 24,
-        "maxChannelDelta": 48,
         "rasterChannelDelta": 1,
         "textRasterChannelDelta": 0
       },
@@ -94,8 +132,11 @@
   ],
   "caseProfileRules": [
     { "prefix": "foundation/color/", "profileId": "color-swatch" },
-    { "prefix": "foundation/elevation/circle/level6/spot-only/shadow-only/", "profileId": "elevation-internal-edge" },
     { "prefix": "foundation/elevation/", "profileId": "elevation" },
+    { "prefix": "foundation/typography/display-headline/", "profileId": "known-avalonia-text-baseline-api-gap" },
+    { "prefix": "card/elevated/", "profileId": "container-with-elevation" },
+    { "prefix": "fab/", "profileId": "container-with-elevation" },
+    { "prefix": "button/elevated/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "card/", "profileId": "container" },
     { "prefix": "fab/", "profileId": "container" },
     { "prefix": "selection/", "profileId": "container" },
