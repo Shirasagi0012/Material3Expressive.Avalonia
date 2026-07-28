@@ -90,6 +90,7 @@ td.mono { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 11px; }
     <button class="tab active" data-panel="images">Images</button>
     <button class="tab" data-panel="geometry">Geometry</button>
     <button class="tab" data-panel="textlayout">Text Layout</button>
+    <button class="tab" data-panel="shadow">Shadow</button>
     <button class="tab" data-panel="failures">Failures</button>
     <button class="tab" data-panel="raw">Raw JSON</button>
   </div>
@@ -99,6 +100,7 @@ td.mono { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 11px; }
     <div id="images-panel"></div>
     <div id="geometry-panel" style="display:none"></div>
     <div id="textlayout-panel" style="display:none"></div>
+    <div id="shadow-panel" style="display:none"></div>
     <div id="failures-panel" style="display:none"></div>
     <div id="raw-panel" style="display:none"></div>
   </div>
@@ -236,7 +238,7 @@ document.getElementById('tabs').addEventListener('click', function(e) {
     e.target.classList.add('active');
     var panel = e.target.dataset.panel;
     document.getElementById('images-panel').style.display = panel === 'images' ? 'flex' : 'none';
-    ['geometry-panel','textlayout-panel','failures-panel','raw-panel'].forEach(function(id) {
+    ['geometry-panel','textlayout-panel','shadow-panel','failures-panel','raw-panel'].forEach(function(id) {
         document.getElementById(id).style.display = (id === panel + '-panel') ? '' : 'none';
     });
 });
@@ -254,6 +256,7 @@ async function selectCase(caseId) {
     renderImages(caseId);
     renderGeometry(caseId);
     renderTextLayout(caseId);
+    renderShadow(caseId);
     renderFailures(caseId);
     renderRaw(caseId);
 }
@@ -382,6 +385,64 @@ function renderTextLayout(caseId) {
         }
     });
     document.getElementById('textlayout-panel').innerHTML=h;
+}
+
+function renderShadow(caseId) {
+    var exp = state.expectedLayouts[caseId];
+    var act = state.actualLayouts[caseId];
+    var expNodes = (exp&&exp.nodes||[]).filter(function(n){return n.shadow;});
+    var actNodes = (act&&act.nodes||[]).filter(function(n){return n.shadow;});
+    var allIds = {};
+    expNodes.forEach(function(n){allIds[n.id]=true;});
+    actNodes.forEach(function(n){allIds[n.id]=true;});
+    if (Object.keys(allIds).length===0) {
+        document.getElementById('shadow-panel').innerHTML='<div class="empty">No shadow data for this case</div>';
+        return;
+    }
+    var prof = getProfile(caseId);
+    var tol = prof ? prof.tolerance.geometryPx : 0.5;
+    var h = '';
+    Object.keys(allIds).forEach(function(nid) {
+        var en = expNodes.find(function(n){return n.id===nid;});
+        var an = actNodes.find(function(n){return n.id===nid;});
+        var es = en?en.shadow:null, as = an?an.shadow:null;
+        if (!es&&!as) return;
+        h+='<h3 style="margin:12px 0 6px">Node: <code>'+nid+'</code></h3>';
+        var q=function(l,ev,av,t){
+            var ok='<span class="match">OK</span>';
+            var exp='-', act='-';
+            if(es){exp=String(ev!=null?ev:'-');}
+            if(as){act=String(av!=null?av:'-');}
+            if(ev!=null&&av!=null){
+                var d=Math.abs(ev-av);
+                ok=d<=t?'<span class="match">'+d.toFixed(3)+'</span>':'<span class="mismatch">'+d.toFixed(3)+'</span>';
+            } else if(!es||!as) {
+                ok='<span class="mismatch">MISSING</span>';
+            }
+            h+='<tr><td>'+l+'</td><td class="mono">'+exp+'</td><td class="mono">'+act+'</td><td>'+ok+'</td></tr>';
+        };
+        var qs=function(l,ev,av){
+            var ok='<span class="match">OK</span>';
+            if(ev!==av){ok='<span class="mismatch">'+av+'</span>';}
+            h+='<tr><td>'+l+'</td><td class="mono">'+(es?ev:'-')+'</td><td class="mono">'+(as?av:'-')+'</td><td>'+ok+'</td></tr>';
+        };
+        h+='<table><thead><tr><th>Property</th><th>Expected</th><th>Actual</th><th>Delta (tol='+tol.toFixed(1)+'px)</th></tr></thead><tbody>';
+        q('Elevation (px)',es?es.elevationPx:null,as?as.elevationPx:null,tol);
+        q('Opacity',es?es.opacity:null,as?as.opacity:null,0.001);
+        q('Ambient alpha',es?es.ambientAlpha:null,as?as.ambientAlpha:null,0.001);
+        q('Spot alpha',es?es.spotAlpha:null,as?as.spotAlpha:null,0.001);
+        q('Light radius (px)',es?es.lightRadiusPx:null,as?as.lightRadiusPx:null,tol);
+        q('Light position X',es&&es.lightPositionPx?es.lightPositionPx.x:null,as&&as.lightPositionPx?as.lightPositionPx.x:null,tol);
+        q('Light position Y',es&&es.lightPositionPx?es.lightPositionPx.y:null,as&&as.lightPositionPx?as.lightPositionPx.y:null,tol);
+        q('Light position Z',es&&es.lightPositionPx?es.lightPositionPx.z:null,as&&as.lightPositionPx?as.lightPositionPx.z:null,tol);
+        qs('Shape kind',es?es.shapeKind:'-',as?as.shapeKind:'-');
+        qs('Skia behavior',es?es.skiaBehaviorVersion:'-',as?as.skiaBehaviorVersion:'-');
+        qs('Ambient color',es?es.ambientColorArgb:'-',as?as.ambientColorArgb:'-');
+        qs('Spot color',es?es.spotColorArgb:'-',as?as.spotColorArgb:'-');
+        qs('Transparent occluder',es?String(es.transparentOccluder):'-',as?String(as.transparentOccluder):'-');
+        h+='</tbody></table>';
+    });
+    document.getElementById('shadow-panel').innerHTML=h;
 }
 
 function renderFailures(caseId) {
