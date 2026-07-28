@@ -1,18 +1,25 @@
 package material3expressive.compose.reference
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font as ComposeFont
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 import java.nio.file.Path
 
+@OptIn(ExperimentalTextApi::class)
 class ReferenceTypography(fontPath: Path) {
     private val fontFile = fontPath.toFile()
+    private val normalRoboto = referenceFont(FontWeight.Normal)
+    private val mediumRoboto = referenceFont(FontWeight.Medium)
+    private val boldRoboto = referenceFont(FontWeight.Bold)
 
     val roboto: FontFamily = FontFamily(
-        Font(fontFile, FontWeight.Normal),
-        Font(fontFile, FontWeight.Medium),
-        Font(fontFile, FontWeight.Bold),
+        normalRoboto,
+        mediumRoboto,
+        boldRoboto,
     )
 
     private val defaults = Typography()
@@ -52,6 +59,18 @@ class ReferenceTypography(fontPath: Path) {
 
     private fun androidx.compose.ui.text.TextStyle.withReferenceFont() =
         copy(fontFamily = roboto)
+
+    /**
+     * Desktop's three-argument [Font] overload records a requested [FontWeight], but does not
+     * apply that value to a variable font's `wght` axis. Supply the axis explicitly so a selected
+     * Material typography token is rendered at its official 400 / 500 / 700 instance.
+     */
+    private fun referenceFont(weight: FontWeight): ComposeFont =
+        Font(
+            file = fontFile,
+            weight = weight,
+            variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
+        )
 
     companion object {
         const val expectedFontFamily = "Roboto"

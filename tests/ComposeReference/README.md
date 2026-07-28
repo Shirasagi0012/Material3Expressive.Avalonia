@@ -110,7 +110,10 @@ wall-clock blink phase from being mistaken for a component difference.
 - Layout direction: `LTR`
 - Color space: sRGB
 - Background: `MaterialTheme.colorScheme.surface`
-- Font: Repository-pinned Roboto variable font
+- Font: Repository-pinned Roboto variable font, with explicit `wght` instances for
+  Material's 400 (Normal), 500 (Medium), and 700 (Bold) tokens. The explicit axis is
+  required because Compose Desktop's `Font(File, FontWeight)` overload does not apply
+  the requested variable-font weight by itself.
 - Execution: Headless, offscreen via `ImageComposeScene`
 
 ## Adding a new case
