@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Avalonia.Media.TextFormatting;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -287,7 +288,8 @@ public class MaterialTextField : TemplatedControl
 
     private void DrawLabel(DrawingContext context, Rect field, bool enabled, bool focused)
     {
-        if (string.IsNullOrEmpty(Label))
+        var parameters = GetLabelDrawingParameters(field);
+        if (parameters is null)
             return;
 
         var brush = !enabled ? _colors.DisabledLabelColor
@@ -295,34 +297,64 @@ public class MaterialTextField : TemplatedControl
             : focused ? _colors.FocusLabelColor
             : _colors.LabelColor;
 
-        var fraction = FloatFraction;
-        var typography = _theme.Theme.Typography;
-        var restingSize = typography.GetTypeScale(_tokens.InputTextStyle).FontSize;
-        var floatedSize = typography.GetTypeScale(_tokens.FloatingLabelTextStyle).FontSize;
-        var size = restingSize + (floatedSize - restingSize) * fraction;
-
         var text = new FormattedText(
-            Label!,
+            parameters.Text,
             System.Globalization.CultureInfo.CurrentCulture,
             FlowDirection,
-            new Typeface(typography.GetFontFamily(_tokens.InputTextStyle)),
-            size,
+            parameters.Typeface,
+            parameters.FontSize,
             brush);
 
         _labelWidthAtRest = _labelWidthAtRest > 0 ? _labelWidthAtRest : text.Width;
-        _labelWidthFloated = MeasureFloatedLabel(typography, floatedSize);
+        _labelWidthFloated = MeasureFloatedLabel(_theme.Theme.Typography, parameters.FloatedFontSize);
+        context.DrawText(text, parameters.Origin);
+    }
 
-        // At rest the label sits on the input's baseline; floated it rides the top edge — inside
-        // the field for the filled variant, on the border for the outlined one.
-        var restingY = (field.Height - text.Height) / 2;
-        // Avalonia clips a control's own drawing at its bounds even when a Material outlined
-        // label conceptually straddles the border. Keep the glyph ink inside the field and let
-        // the notched outline meet it, which also preserves the full label at mdpi.
+    /// <summary>
+    /// Returns the same shaped label layout and origin used by <see cref="DrawLabel" />.
+    /// It is internal so the visual-parity harness can measure a custom-drawn label without
+    /// guessing from pixels or duplicating the control's float/notch mathematics.
+    /// </summary>
+    internal MaterialTextFieldLabelProbe? GetLabelParityProbe()
+    {
+        var parameters = GetLabelDrawingParameters(FieldArea);
+        if (parameters is null)
+            return null;
+        var layout = new TextLayout(
+            parameters.Text,
+            parameters.Typeface,
+            parameters.FontSize,
+            Brushes.Transparent);
+        return new MaterialTextFieldLabelProbe(parameters.Origin, layout);
+    }
+
+    private LabelDrawingParameters? GetLabelDrawingParameters(Rect field)
+    {
+        if (string.IsNullOrEmpty(Label) || field.Width <= 0 || field.Height <= 0)
+            return null;
+        var typography = _theme.Theme.Typography;
+        var restingSize = typography.GetTypeScale(_tokens.InputTextStyle).FontSize;
+        var floatedSize = typography.GetTypeScale(_tokens.FloatingLabelTextStyle).FontSize;
+        var fraction = FloatFraction;
+        var size = restingSize + (floatedSize - restingSize) * fraction;
+        var typeface = new Typeface(typography.GetFontFamily(_tokens.InputTextStyle));
+        var metrics = new FormattedText(
+            Label,
+            System.Globalization.CultureInfo.CurrentCulture,
+            FlowDirection,
+            typeface,
+            size,
+            Brushes.Transparent);
+        var restingY = (field.Height - metrics.Height) / 2;
         var floatedY = _tokens.IsFilled ? 8 : 2;
-
-        context.DrawText(text, new Point(
-            field.X + _tokens.HorizontalSpace,
-            restingY + (floatedY - restingY) * fraction));
+        return new LabelDrawingParameters(
+            Label,
+            typeface,
+            size,
+            floatedSize,
+            new Point(
+                field.X + _tokens.HorizontalSpace,
+                restingY + (floatedY - restingY) * fraction));
     }
 
     private double MeasureFloatedLabel(ResolvedTypographyScheme typography, double floatedSize)
@@ -383,3 +415,12 @@ public class MaterialTextField : TemplatedControl
         InvalidateVisual();
     }
 }
+
+internal sealed record MaterialTextFieldLabelProbe(Point Origin, TextLayout Layout);
+
+internal sealed record LabelDrawingParameters(
+    string Text,
+    Typeface Typeface,
+    double FontSize,
+    double FloatedFontSize,
+    Point Origin);

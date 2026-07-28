@@ -15,9 +15,7 @@ internal static class ComponentParityCases
     [
         FilledCard(),
         PrimaryFab(),
-        SelectedCheckbox(),
-        OutlinedTextField(),
-        NavigationBar()
+        SelectedCheckbox()
     ];
 
     private static VisualCase FilledCard() =>
@@ -26,6 +24,7 @@ internal static class ComponentParityCases
             new PixelSize(240, 128),
             new MaterialCard
             {
+                Name = "component",
                 Variant = CardVariant.Filled,
                 Width = 160,
                 Height = 80,
@@ -39,6 +38,7 @@ internal static class ComponentParityCases
             new PixelSize(160, 120),
             new MaterialFab
             {
+                Name = "component",
                 Variant = FabVariant.Primary,
                 Size = FabSize.Small,
                 Content = new Border { Width = 24, Height = 24 },
@@ -52,53 +52,12 @@ internal static class ComponentParityCases
             new PixelSize(96, 96),
             new MaterialCheckbox
             {
+                Name = "component",
                 IsChecked = true,
                 Content = null,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             });
-
-    private static VisualCase OutlinedTextField() =>
-        Scene(
-            "textfield/outlined/populated/light",
-            new PixelSize(280, 96),
-            new MaterialTextField
-            {
-                Variant = TextFieldVariant.Outlined,
-                Label = "Label",
-                Text = "Text",
-                Width = 240,
-                Height = 56,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            });
-
-    private static VisualCase NavigationBar()
-    {
-        var navigation = new MaterialNavigationBar
-        {
-            Variant = NavigationVariant.Bar,
-            SelectedIndex = 0,
-            Width = 360,
-            Height = 80,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        navigation.Items.Add(Item("One"));
-        navigation.Items.Add(Item("Two"));
-        navigation.Items.Add(Item("Three"));
-        return Scene(
-            "navigation/bar/three-items/selected/light",
-            new PixelSize(360, 112),
-            navigation);
-
-        static MaterialNavigationItem Item(string label) =>
-            new()
-            {
-                Icon = new Border { Width = 24, Height = 24 },
-                Content = label
-            };
-    }
 
     private static VisualCase Scene(
         string id,

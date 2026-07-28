@@ -23,9 +23,13 @@ public sealed class ComposeExpectedBundle
             throw new InvalidDataException($"Unsupported parity manifest schema {manifest.SchemaVersion}.");
         if (manifest.ViewportScale != 2f || manifest.Density != 2f || manifest.FontScale != 1f
             || !string.Equals(manifest.Locale, "en-US", StringComparison.OrdinalIgnoreCase)
-            || !string.Equals(manifest.LayoutDirection, "ltr", StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(manifest.LayoutDirection, "ltr", StringComparison.OrdinalIgnoreCase)
+            || manifest.ComposeMultiplatformPluginVersion != "1.12.0-beta02"
+            || manifest.ComposeRuntimeVersion != "1.12.0-beta02"
+            || manifest.ComposeMaterial3Version != "1.12.0-alpha03"
+            || manifest.JetpackMaterial3Lineage != "Jetpack Compose Material3 1.5.0-alpha22")
         {
-            throw new InvalidDataException("The Compose expected bundle does not use the canonical 2x/en-US/LTR environment.");
+            throw new InvalidDataException("The Compose expected bundle does not use the pinned Material 3 or canonical 2x/en-US/LTR environment.");
         }
 
         foreach (var item in manifest.Cases)

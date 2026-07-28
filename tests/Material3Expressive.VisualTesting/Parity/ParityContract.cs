@@ -10,6 +10,15 @@ namespace Material3Expressive.VisualTesting.Parity;
 /// </summary>
 public sealed record ParityManifest(
     int SchemaVersion,
+    string ComposeMultiplatformPluginVersion,
+    string ComposeRuntimeVersion,
+    string ComposeMaterial3Version,
+    string JetpackMaterial3Lineage,
+    string KotlinVersion,
+    string JdkVersion,
+    string SkikoVersion,
+    string Os,
+    string Architecture,
     float ViewportScale,
     float Density,
     float FontScale,
@@ -28,6 +37,27 @@ public sealed record ParityManifestCase(
     string LayoutPath,
     string ImageSha256,
     string LayoutSha256);
+
+public sealed record ParityActualManifest(
+    int SchemaVersion,
+    DateTimeOffset CapturedAtUtc,
+    string DotnetVersion,
+    string AvaloniaVersion,
+    string Os,
+    string Architecture,
+    float ViewportScale,
+    string FontFileSha256,
+    string ComparisonProfilesSha256,
+    IReadOnlyList<ParityActualManifestCase> Cases);
+
+public sealed record ParityActualManifestCase(
+    string Id,
+    string ImagePath,
+    string LayoutPath,
+    string ComparisonPath,
+    string ImageSha256,
+    string LayoutSha256,
+    bool IsMatch);
 
 public sealed record ParityCaptureResult(
     int SchemaVersion,

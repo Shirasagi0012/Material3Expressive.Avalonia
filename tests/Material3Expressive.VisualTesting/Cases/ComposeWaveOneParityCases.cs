@@ -123,6 +123,11 @@ internal static class ComposeWaveOneParityCases
             VisualTheme.Light,
             TextFieldVariant.Outlined),
         TextField(
+            "textfield/outlined/populated/light",
+            VisualTheme.Light,
+            TextFieldVariant.Outlined,
+            text: "Text"),
+        TextField(
             "textfield/outlined/populated/dark",
             VisualTheme.Dark,
             TextFieldVariant.Outlined,
@@ -147,6 +152,10 @@ internal static class ComposeWaveOneParityCases
             text: "Text",
             enabled: false),
 
+        NavigationBar(
+            "navigation/bar/three-items/selected/light",
+            VisualTheme.Light,
+            selectedIndex: 0),
         NavigationBar(
             "navigation/bar/three-items/selected/dark",
             VisualTheme.Dark,
@@ -176,6 +185,7 @@ internal static class ComposeWaveOneParityCases
             {
                 var panel = new StackPanel
                 {
+                    Name = "component",
                     Margin = new Thickness(16),
                     Spacing = 4
                 };
@@ -183,8 +193,10 @@ internal static class ComposeWaveOneParityCases
                 {
                     var line = new TextBlock
                     {
+                        Name = TypographyNodeId(sample.Role),
                         Text = sample.Text,
                         MaxLines = 1,
+                        HorizontalAlignment = HorizontalAlignment.Left,
                         Foreground = CaseLayout.Brush(context, SysColorToken.OnSurface)
                     };
                     TypographyScheme.SetTextStyle(line, sample.Role);
@@ -209,7 +221,7 @@ internal static class ComposeWaveOneParityCases
         var height = supportingText is null ? 56 : 80;
         var field = new MaterialTextField
         {
-            Name = "target",
+            Name = "component",
             Variant = variant,
             Label = "Label",
             Text = text,
@@ -232,7 +244,7 @@ internal static class ComposeWaveOneParityCases
             Prepare: focused
                 ? context =>
                 {
-                    var target = context.Require<MaterialTextField>("target");
+                    var target = context.Require<MaterialTextField>("component");
                     var point = PointIn(target, context.Window);
                     context.Window.MouseMove(point);
                     context.Window.MouseDown(point, MouseButton.Left);
@@ -283,6 +295,7 @@ internal static class ComposeWaveOneParityCases
     {
         var tabs = new MaterialTabs
         {
+            Name = "component",
             Variant = variant,
             SelectedIndex = 0,
             Width = 360,
@@ -290,9 +303,9 @@ internal static class ComposeWaveOneParityCases
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-        tabs.Items.Add(new MaterialTab { Content = "One" });
-        tabs.Items.Add(new MaterialTab { Content = "Two" });
-        tabs.Items.Add(new MaterialTab { Content = "Three" });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-0", Text = "One" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-1", Text = "Two" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-2", Text = "Three" } });
 
         return ComponentScene(
             $"navigation/tab/{variant.ToString().ToLowerInvariant()}/three-items/selected/" +
@@ -311,6 +324,7 @@ internal static class ComposeWaveOneParityCases
     {
         var navigation = new MaterialNavigationBar
         {
+            Name = "component",
             Variant = variant,
             SelectedIndex = selectedIndex,
             Width = width,
@@ -318,17 +332,17 @@ internal static class ComposeWaveOneParityCases
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-        navigation.Items.Add(Destination("One"));
-        navigation.Items.Add(Destination("Two"));
-        navigation.Items.Add(Destination("Three"));
+        navigation.Items.Add(Destination("One", "label-0"));
+        navigation.Items.Add(Destination("Two", "label-1"));
+        navigation.Items.Add(Destination("Three", "label-2"));
         return navigation;
     }
 
-    private static MaterialNavigationItem Destination(string label) =>
+    private static MaterialNavigationItem Destination(string label, string nodeId) =>
         new()
         {
             Icon = new Border { Width = 24, Height = 24 },
-            Content = label
+            Content = new TextBlock { Name = nodeId, Text = label }
         };
 
     private static VisualCase ComponentScene(
@@ -351,4 +365,24 @@ internal static class ComposeWaveOneParityCases
         ?? throw new InvalidOperationException($"'{target.Name}' is not mounted.");
 
     private static string ThemeName(VisualTheme theme) => theme.IsDark ? "dark" : "light";
+
+    private static string TypographyNodeId(TypographyRole role) => role switch
+    {
+        TypographyRole.DisplayLarge => "display-large",
+        TypographyRole.DisplayMedium => "display-medium",
+        TypographyRole.DisplaySmall => "display-small",
+        TypographyRole.HeadlineLarge => "headline-large",
+        TypographyRole.HeadlineMedium => "headline-medium",
+        TypographyRole.HeadlineSmall => "headline-small",
+        TypographyRole.TitleLarge => "title-large",
+        TypographyRole.TitleMedium => "title-medium",
+        TypographyRole.TitleSmall => "title-small",
+        TypographyRole.BodyLarge => "body-large",
+        TypographyRole.BodyMedium => "body-medium",
+        TypographyRole.BodySmall => "body-small",
+        TypographyRole.LabelLarge => "label-large",
+        TypographyRole.LabelMedium => "label-medium",
+        TypographyRole.LabelSmall => "label-small",
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
+    };
 }

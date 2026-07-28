@@ -26,7 +26,7 @@ public sealed record VisualCase(
 public sealed record VisualCaseContext(VisualTheme Theme, FontFamily Roboto);
 
 /// <summary>The mounted scene available to input/setup callbacks before capture.</summary>
-public sealed record VisualContext(Window Window, Control Content)
+public sealed record VisualContext(Window Window, Control Content, Control Root)
 {
     public T Require<T>(string name) where T : Control =>
         Content.GetLogicalDescendants()

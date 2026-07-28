@@ -53,6 +53,7 @@ internal static class ParityCases
                 };
                 var grid = new Grid
                 {
+                    Name = "component",
                     ColumnDefinitions =
                     [
                         new ColumnDefinition(60, GridUnitType.Pixel),
@@ -101,7 +102,8 @@ internal static class ParityCases
                 {
                     new MaterialButton
                     {
-                        Content = "Button",
+                        Name = "component",
+                        Content = new TextBlock { Name = "label", Text = "Button" },
                         Variant = variant,
                         Size = ButtonSize.Medium,
                         IsEnabled = enabled,

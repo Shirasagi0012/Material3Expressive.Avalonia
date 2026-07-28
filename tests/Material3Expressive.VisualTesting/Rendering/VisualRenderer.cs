@@ -16,9 +16,17 @@ namespace Material3Expressive.VisualTesting.Rendering;
 /// <summary>Mounts one case in a fixed Skia-backed headless window and captures its pixels.</summary>
 public sealed class VisualRenderer
 {
-    public RenderedImage Render(VisualCase visualCase)
+    public RenderedImage Render(VisualCase visualCase) =>
+        Render(visualCase, static (_, image) => image);
+
+    /// <summary>
+    /// Renders once and lets a caller inspect the mounted Avalonia tree before it is disposed.
+    /// This is used by parity capture to obtain geometry and text-layout facts from the same frame.
+    /// </summary>
+    public T Render<T>(VisualCase visualCase, Func<VisualContext, RenderedImage, T> capture)
     {
         ArgumentNullException.ThrowIfNull(visualCase);
+        ArgumentNullException.ThrowIfNull(capture);
         Validate(visualCase);
 
         var previousCulture = CultureInfo.CurrentCulture;
@@ -68,7 +76,8 @@ public sealed class VisualRenderer
             Dispatcher.UIThread.RunJobs();
             window.Measure(logicalSize);
             window.Arrange(new Rect(logicalSize));
-            visualCase.Prepare?.Invoke(new VisualContext(window, content));
+            var visualContext = new VisualContext(window, content, root);
+            visualCase.Prepare?.Invoke(visualContext);
 
             // The first frame applies layout/template changes; the second is the stable image.
             AvaloniaHeadlessPlatform.ForceRenderTimerTick(2);
@@ -87,7 +96,7 @@ public sealed class VisualRenderer
                     $"pixels but rendered {image.Width}x{image.Height}.");
             }
 
-            return image;
+            return capture(visualContext, image);
         }
         finally
         {

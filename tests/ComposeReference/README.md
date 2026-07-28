@@ -30,22 +30,22 @@ only as part of an explicit Compose reference-version update.
 
 ## Usage
 
-From the repository root:
+From `tests/ComposeReference`:
 
 ```powershell
-.\tests\ComposeReference\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run"
+.\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run"
 ```
 
 Filter to specific cases:
 
 ```powershell
-.\tests\ComposeReference\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run --case button/filled/medium/enabled/light"
+.\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run --case button/filled/medium/enabled/light"
 ```
 
 Use wildcard prefix matching:
 
 ```powershell
-.\tests\ComposeReference\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run --case button/*"
+.\gradlew.bat :capture-app:run --args="--output artifacts/visual-parity/my-run --case button/*"
 ```
 
 ## Output structure

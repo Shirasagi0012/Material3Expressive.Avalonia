@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "id": "color-swatch",
+      "tolerance": {
+        "geometryPx": 0.0,
+        "textPx": 0.0,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0
+      },
+      "compareGeometry": true,
+      "compareTextLayout": false,
+      "compareRaster": true
+    },
+    {
+      "id": "container",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0
+      },
+      "compareGeometry": true,
+      "compareTextLayout": false,
+      "compareRaster": true
+    },
+    {
+      "id": "component-with-text",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0
+      },
+      "compareGeometry": true,
+      "compareTextLayout": true,
+      "compareRaster": true
+    },
+    {
+      "id": "text-field",
+      "tolerance": {
+        "geometryPx": 0.5,
+        "textPx": 0.5,
+        "maxDifferentPixels": 0,
+        "maxChannelDelta": 0
+      },
+      "compareGeometry": true,
+      "compareTextLayout": true,
+      "compareRaster": true
+    }
+  ],
+  "caseProfileRules": [
+    { "prefix": "foundation/color/", "profileId": "color-swatch" },
+    { "prefix": "card/", "profileId": "container" },
+    { "prefix": "fab/", "profileId": "container" },
+    { "prefix": "selection/", "profileId": "container" },
+    { "prefix": "textfield/", "profileId": "text-field" },
+    { "prefix": "foundation/typography/", "profileId": "component-with-text" },
+    { "prefix": "button/", "profileId": "component-with-text" },
+    { "prefix": "navigation/", "profileId": "component-with-text" }
+  ]
+}
