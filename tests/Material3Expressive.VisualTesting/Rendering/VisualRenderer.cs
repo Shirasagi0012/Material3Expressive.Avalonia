@@ -25,6 +25,7 @@ public sealed class VisualRenderer
     /// </summary>
     public T Render<T>(VisualCase visualCase, Func<VisualContext, RenderedImage, T> capture)
     {
+        Dispatcher.UIThread.VerifyAccess();
         ArgumentNullException.ThrowIfNull(visualCase);
         ArgumentNullException.ThrowIfNull(capture);
         Validate(visualCase);

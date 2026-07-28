@@ -219,27 +219,32 @@ internal static class ComposeWaveOneParityCases
         bool enabled = true)
     {
         var height = supportingText is null ? 56 : 80;
-        var field = new MaterialTextField
-        {
-            Name = "component",
-            Variant = variant,
-            Label = "Label",
-            Text = text,
-            Placeholder = placeholder,
-            SupportingText = supportingText,
-            IsError = isError,
-            IsEnabled = enabled,
-            Width = 240,
-            Height = height,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
 
         return new VisualCase(
             id,
             new PixelSize(280, supportingText is null ? 96 : 112),
             theme,
-            _ => new Grid { Children = { field } },
+            _ => new Grid
+            {
+                Children =
+                {
+                    new MaterialTextField
+                    {
+                        Name = "component",
+                        Variant = variant,
+                        Label = "Label",
+                        Text = text,
+                        Placeholder = placeholder,
+                        SupportingText = supportingText,
+                        IsError = isError,
+                        IsEnabled = enabled,
+                        Width = 240,
+                        Height = height,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            },
             RenderScaling: 1.0,
             Prepare: focused
                 ? context =>
@@ -263,35 +268,41 @@ internal static class ComposeWaveOneParityCases
         VisualTheme theme,
         int selectedIndex)
     {
-        var navigation = CreateNavigation(
-            NavigationVariant.Bar,
-            selectedIndex,
-            width: 360,
-            height: 80);
         return ComponentScene(
             id,
             new PixelSize(360, 112),
             theme,
-            navigation,
-            "navigation");
+            _ => CreateNavigation(
+                NavigationVariant.Bar,
+                selectedIndex,
+                width: 360,
+                height: 80));
     }
 
     private static VisualCase NavigationRail(VisualTheme theme)
     {
-        var navigation = CreateNavigation(
-            NavigationVariant.Rail,
-            selectedIndex: 0,
-            width: 96,
-            height: 280);
         return ComponentScene(
             $"navigation/rail/three-items/selected/{ThemeName(theme)}",
             new PixelSize(128, 312),
             theme,
-            navigation,
-            "navigation");
+            _ => CreateNavigation(
+                NavigationVariant.Rail,
+                selectedIndex: 0,
+                width: 96,
+                height: 280));
     }
 
     private static VisualCase Tabs(TabVariant variant, VisualTheme theme)
+    {
+        return ComponentScene(
+            $"navigation/tab/{variant.ToString().ToLowerInvariant()}/three-items/selected/" +
+            ThemeName(theme),
+            new PixelSize(360, 80),
+            theme,
+            _ => CreateTabs(variant));
+    }
+
+    private static MaterialTabs CreateTabs(TabVariant variant)
     {
         var tabs = new MaterialTabs
         {
@@ -306,14 +317,7 @@ internal static class ComposeWaveOneParityCases
         tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-0", Text = "One" } });
         tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-1", Text = "Two" } });
         tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-2", Text = "Three" } });
-
-        return ComponentScene(
-            $"navigation/tab/{variant.ToString().ToLowerInvariant()}/three-items/selected/" +
-            ThemeName(theme),
-            new PixelSize(360, 80),
-            theme,
-            tabs,
-            "navigation");
+        return tabs;
     }
 
     private static MaterialNavigationBar CreateNavigation(
@@ -349,13 +353,12 @@ internal static class ComposeWaveOneParityCases
         string id,
         PixelSize viewport,
         VisualTheme theme,
-        Control component,
-        string componentTag) =>
+        Func<VisualCaseContext, Control> createComponent) =>
         new(
             id,
             viewport,
             theme,
-            _ => new Grid { Children = { component } },
+            context => new Grid { Children = { createComponent(context) } },
             RenderScaling: 1.0);
 
     private static Point PointIn(Control target, Visual relativeTo) =>

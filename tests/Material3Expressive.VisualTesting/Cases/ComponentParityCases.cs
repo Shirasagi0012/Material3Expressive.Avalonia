@@ -22,7 +22,7 @@ internal static class ComponentParityCases
         Scene(
             "card/filled/fixed/enabled/light",
             new PixelSize(240, 128),
-            new MaterialCard
+            _ => new MaterialCard
             {
                 Name = "component",
                 Variant = CardVariant.Filled,
@@ -36,7 +36,7 @@ internal static class ComponentParityCases
         Scene(
             "fab/primary/small/enabled/light",
             new PixelSize(160, 120),
-            new MaterialFab
+            _ => new MaterialFab
             {
                 Name = "component",
                 Variant = FabVariant.Primary,
@@ -50,7 +50,7 @@ internal static class ComponentParityCases
         Scene(
             "selection/checkbox/selected/light",
             new PixelSize(96, 96),
-            new MaterialCheckbox
+            _ => new MaterialCheckbox
             {
                 Name = "component",
                 IsChecked = true,
@@ -62,11 +62,11 @@ internal static class ComponentParityCases
     private static VisualCase Scene(
         string id,
         PixelSize viewport,
-        Control control) =>
+        Func<VisualCaseContext, Control> createControl) =>
         new(
             id,
             viewport,
             VisualTheme.Light,
-            _ => new Grid { Children = { control } },
+            context => new Grid { Children = { createControl(context) } },
             RenderScaling: 1.0);
 }
