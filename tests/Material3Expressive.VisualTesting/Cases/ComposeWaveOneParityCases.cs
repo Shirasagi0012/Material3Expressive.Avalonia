@@ -218,7 +218,11 @@ internal static class ComposeWaveOneParityCases
         string? supportingText = null,
         bool enabled = true)
     {
-        var height = supportingText is null ? 56 : 80;
+        // Compose's outlined field includes an 8dp label-cutout overhang above its visible
+        // 56dp container. Keep the parity scene's outer bounds aligned with that contract.
+        var height = supportingText is null && variant == TextFieldVariant.Outlined ? 64 :
+            supportingText is null ? 56 :
+            variant == TextFieldVariant.Outlined ? 84 : 80;
 
         return new VisualCase(
             id,

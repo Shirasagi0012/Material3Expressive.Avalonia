@@ -89,8 +89,17 @@ private fun TextFieldScene(probes: ProbeRegistry, params: TextFieldParams) {
     // assuming requestFocus() has completed.
     SideEffect { probes.recordFocused("component", isFocused) }
     val hasSupporting = params.supportingText != null
+    // OutlinedTextField reserves half of its minimized 16dp label line above the visible
+    // 56dp outline for the cutout. `requiredSize` constrains the whole composable, so its
+    // standard footprint is 64dp, or 84dp when the 4dp + 16dp supporting slot is present.
+    val componentHeight = when {
+        hasSupporting && params.variant == TextFieldVariant.Outlined -> 84.dp
+        hasSupporting -> 80.dp
+        params.variant == TextFieldVariant.Outlined -> 64.dp
+        else -> 56.dp
+    }
     val modifier = Modifier
-        .requiredSize(width = 240.dp, height = if (hasSupporting) 80.dp else 56.dp)
+        .requiredSize(width = 240.dp, height = componentHeight)
         .focusRequester(focusRequester)
         .then(probes.geometry("component"))
     val label: @Composable () -> Unit = {

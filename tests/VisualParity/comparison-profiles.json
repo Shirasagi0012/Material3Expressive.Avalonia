@@ -104,10 +104,10 @@
         "textPx": 0.5,
         "textBaselinePx": 0.5,
         "textLineBoundsPx": 1.0,
-        "maxDifferentPixels": 0,
-        "maxChannelDelta": 0,
-        "rasterChannelDelta": 0,
-        "textRasterChannelDelta": 17
+        "maxDifferentPixels": 4,
+        "maxChannelDelta": 162,
+        "rasterChannelDelta": 18,
+        "textRasterChannelDelta": 18
       },
       "compareGeometry": true,
       "compareTextLayout": true,

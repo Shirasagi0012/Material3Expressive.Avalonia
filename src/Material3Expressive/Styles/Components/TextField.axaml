@@ -33,6 +33,7 @@
                                      Padding="0"
                                      Text="{TemplateBinding Text, Mode=TwoWay}"
                                      PlaceholderText="{TemplateBinding Placeholder}"
+                                     PlaceholderForeground="{Binding $parent[m3:MaterialTextField].PlaceholderBrush}"
                                      Foreground="{TemplateBinding Foreground}"
                                      FontSize="{TemplateBinding FontSize}"
                                      FontFamily="{TemplateBinding FontFamily}"

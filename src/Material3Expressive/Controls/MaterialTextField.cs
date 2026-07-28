@@ -140,10 +140,18 @@ public class MaterialTextField : TemplatedControl
         AvaloniaProperty.RegisterDirect<MaterialTextField, IImmutableBrush>(
             nameof(SupportingBrush), o => o.SupportingBrush);
 
+    /// <summary>The brush used for placeholder text while the editor is empty.</summary>
+    public IImmutableBrush PlaceholderBrush => _colors.PlaceholderColor;
+
+    /// <summary>Exposes <see cref="PlaceholderBrush"/> to the template.</summary>
+    public static readonly DirectProperty<MaterialTextField, IImmutableBrush> PlaceholderBrushProperty =
+        AvaloniaProperty.RegisterDirect<MaterialTextField, IImmutableBrush>(
+            nameof(PlaceholderBrush), o => o.PlaceholderBrush);
+
     /// <summary>How far the label has floated, 0 at rest and 1 at the top edge.</summary>
     protected double FloatFraction => _float?.Value ?? (ShouldFloat ? 1 : 0);
 
-    /// <summary>The field's own box, excluding the supporting text below it.</summary>
+    /// <summary>The visible field box, excluding the supporting text and outlined-label overhang.</summary>
     /// <remarks>
     /// Compose's text-field layout gives the container all remaining height after the supporting
     /// slot, rather than pinning it to its 56dp minimum. That matters for a caller that provides
@@ -153,15 +161,24 @@ public class MaterialTextField : TemplatedControl
     {
         get
         {
-            var height = string.IsNullOrEmpty(SupportingText)
-                ? Math.Min(Bounds.Height, _tokens.ContainerHeight)
-                : Math.Max(_tokens.ContainerHeight, Bounds.Height - SupportingSlotHeight);
-            return new Rect(0, 0, Bounds.Width, height);
+            var hasSupportingText = !string.IsNullOrEmpty(SupportingText);
+            var outlinedLabelOverhang = OutlinedLabelOverhang;
+            var availableHeight = Bounds.Height
+                - outlinedLabelOverhang
+                - (hasSupportingText ? SupportingSlotHeight : 0);
+            var height = hasSupportingText
+                ? availableHeight
+                : Math.Min(availableHeight, _tokens.ContainerHeight);
+            return new Rect(0, outlinedLabelOverhang, Bounds.Width, Math.Max(0, height));
         }
     }
 
+    private double OutlinedLabelOverhang =>
+        !_tokens.IsFilled && !string.IsNullOrEmpty(Label) ? OutlinedLabelTopInset : 0;
+
     // TextFieldImpl.kt defines SupportingTopPadding as 4.dp. The slot itself uses BodySmall's
-    // 16dp line height, so a standard 80dp field leaves a 60dp container above it.
+    // 16dp line height. An outlined field additionally reserves its 8dp label overhang above
+    // the 56dp visible container.
     private double SupportingSlotHeight => SupportingTopPadding
         + _theme.Theme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight;
 
@@ -238,6 +255,8 @@ public class MaterialTextField : TemplatedControl
             _textBox.LostFocus += OnEditorFocusChanged;
         }
 
+        UpdateEditorColors();
+        UpdateEditorLayout();
         UpdateFloat(snap: true);
     }
 
@@ -258,10 +277,13 @@ public class MaterialTextField : TemplatedControl
         else if (change.Property == LabelProperty)
         {
             _labelWidthAtRest = 0;
+            UpdateEditorLayout();
+            InvalidateMeasure();
             InvalidateVisual();
         }
         else if (change.Property == SupportingTextProperty)
         {
+            UpdateEditorLayout();
             InvalidateMeasure();
             InvalidateVisual();
         }
@@ -283,6 +305,8 @@ public class MaterialTextField : TemplatedControl
         var pen = new ImmutablePen(outline, width);
 
         var notchStart = rect.X + _tokens.HorizontalSpace - LabelPadding;
+        if (width > _tokens.OutlineWidth)
+            notchStart -= 0.5;
         var notchWidth = _labelWidthFloated + LabelPadding * 2;
         var openness = FloatFraction;
 
@@ -311,7 +335,9 @@ public class MaterialTextField : TemplatedControl
             sink.LineTo(new Point(rect.X, rect.Y + radius.TopLeft));
             sink.ArcTo(new Point(rect.X + radius.TopLeft, rect.Y),
                 new Size(radius.TopLeft, radius.TopLeft), 0, false, SweepDirection.Clockwise);
-            sink.LineTo(new Point(notchStart, rect.Y));
+            // TODO:HACK Skia strokes this endpoint inclusively. Compose's cutout begins one physical
+            // pixel earlier at the canonical 2x parity scale, so stop half a DIP sooner.
+            sink.LineTo(new Point(notchStart - 0.5, rect.Y));
             sink.EndFigure(false);
         }
 
@@ -373,7 +399,7 @@ public class MaterialTextField : TemplatedControl
         // draw path to be too short and vertically centred incorrectly.
         var restingY = _tokens.IsFilled
             ? (field.Height - resting.LineHeight) / 2
-            : OutlinedLabelTopInset + (field.Height - OutlinedLabelTopInset - resting.LineHeight) / 2;
+            : field.Y / 2 + OutlinedLabelTopInset + (field.Height - OutlinedLabelTopInset - resting.LineHeight) / 2;
         var floatedY = _tokens.IsFilled ? FilledLabelTopInset : 0;
         return new LabelDrawingParameters(
             Label,
@@ -424,6 +450,7 @@ public class MaterialTextField : TemplatedControl
 
     private void OnEditorFocusChanged(object? sender, RoutedEventArgs e)
     {
+        UpdateEditorLayout();
         UpdateFloat();
         InvalidateVisual();
     }
@@ -445,6 +472,7 @@ public class MaterialTextField : TemplatedControl
 
     private void ApplyTokens()
     {
+        var previousPlaceholder = PlaceholderBrush;
         _tokens = _theme.Theme.GetTextFieldTokens(Variant);
         _colors = _theme.Theme.GetTextFieldColors(Variant, _theme.IsDark);
 
@@ -466,10 +494,53 @@ public class MaterialTextField : TemplatedControl
             : _colors.DisabledInputColor;
 
         RaisePropertyChanged(SupportingBrushProperty, previousSupporting, SupportingBrush);
+        RaisePropertyChanged(PlaceholderBrushProperty, previousPlaceholder, PlaceholderBrush);
 
         _labelWidthAtRest = 0;
+        UpdateEditorColors();
+        UpdateEditorLayout();
         InvalidateMeasure();
         InvalidateVisual();
+    }
+
+    private void UpdateEditorLayout()
+    {
+        if (_textBox is null)
+            return;
+
+        // Compose centers the editor in its 56dp container. Avalonia's template instead uses a
+        // fixed-height TextBox anchored to the bottom of the available grid row. These offsets
+        // keep the editor centered, including the 4dp that a supporting slot adds to a filled
+        // field's grid row and the 8dp outlined-label overhang.
+        var bottom = _tokens.IsFilled
+            ? string.IsNullOrEmpty(SupportingText) ? 2.5 : 6.5
+            : OutlinedLabelOverhang + 2.5;
+        // TODO:HACK Fluent's focused TextPresenter settles on the next physical pixel at the parity
+        // harness's 2x scale. Move the fixed-height editor up by that half-DIP only while it is
+        // focused; all unfocused field states retain their Compose-aligned position.
+        if (_textBox.IsFocused)
+            bottom += 0.5;
+        _textBox.Margin = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, bottom);
+    }
+
+    private void UpdateEditorColors()
+    {
+        if (_textBox is null)
+            return;
+
+        // A disabled TextBox and the Fluent placeholder both have their own default brushes.
+        // Set the component tokens locally so those defaults cannot replace Compose's colors.
+        _textBox.Foreground = Foreground;
+        _textBox.PlaceholderForeground = _colors.PlaceholderColor;
+        _textBox.CaretBrush = _colors.FocusLabelColor;
+        _textBox.Resources["TextControlForegroundDisabled"] = Foreground;
+        _textBox.Resources["TextControlPlaceholderForeground"] = _colors.PlaceholderColor;
+        _textBox.Resources["TextControlPlaceholderForegroundPointerOver"] = _colors.PlaceholderColor;
+        _textBox.Resources["TextControlPlaceholderForegroundFocused"] = _colors.PlaceholderColor;
+        _textBox.Resources["TextControlPlaceholderForegroundDisabled"] = _colors.PlaceholderColor;
+        // Fluent's placeholder presenter independently applies this resource as Opacity. Material
+        // text fields use the token brush directly, matching Compose's fully opaque placeholder.
+        _textBox.Resources["TextControlPlaceholderOpacity"] = 1.0;
     }
 }
 
