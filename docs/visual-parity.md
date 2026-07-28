@@ -121,6 +121,10 @@ is a version-6, centralized semantic raster policy. It has no viewport-sized all
 global `Δ<=1` floor. Profile JSON rejects unknown fields, duplicate/unreachable prefix rules, and
 invalid quota ranges so a typo cannot silently make the comparison looser.
 
+Use [`comparison-profiles.md`](comparison-profiles.md) as the authoring and calibration contract
+when selecting a profile, adding a case-prefix rule, or changing an owner budget. This section is
+the operational overview; the JSON and comparer source remain the runtime authority.
+
 Raster comparison happens only after the structural contract has been evaluated. The comparer
 constructs masks from the expected image plus facts which already matched between Compose and
 Avalonia. A changed pixel can consume one, and only one, region budget, in this priority order:
@@ -221,8 +225,9 @@ Text 'label' character 4 bounding differs (LTRB px): expected (249.728, 76.000, 
 2. Add the matching Avalonia `VisualCase` with the identical ID and scene state. Name every node
    that needs structural comparison. For custom-drawn text, add a direct layout probe instead of
    estimating its bounds from pixels.
-3. If the new case family needs a distinct comparison class, add a reviewed prefix rule and
-   profile to `comparison-profiles.json`; otherwise it must resolve to an existing profile.
+3. Resolve the case to an existing comparison profile whenever possible. If the family has a
+   distinct renderer contract, follow [`comparison-profiles.md`](comparison-profiles.md) to add a
+   reviewed prefix rule, profile, and boundary mutation tests.
 4. Run the parity command and inspect the new artifact directory. Add focused unit tests for any
    new contract, capture adapter, or comparer behavior.
 

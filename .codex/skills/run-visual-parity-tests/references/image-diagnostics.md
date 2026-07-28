@@ -49,27 +49,27 @@ These are hypotheses, not diagnoses. Confirm them with layout JSON, source, and 
 Analyze a case directory containing `expected.png`, `image.png`, and optionally `comparison.json`:
 
 ```powershell
-python skills/run-visual-parity-tests/scripts/analyze_parity_diff.py '<case-dir>'
+python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py '<case-dir>'
 ```
 
 Analyze arbitrary images:
 
 ```powershell
-python skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
+python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
   '<expected.png>' '<actual.png>'
 ```
 
 Write views and machine-readable statistics:
 
 ```powershell
-python skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
+python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
   '<case-dir>' --output-dir '<diagnostics-dir>' --scale 8 --padding 3
 ```
 
 For transparent-image diagnostics, pass the backdrop you want to inspect explicitly:
 
 ```powershell
-python skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
+python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
   '<case-dir>' --backdrop '#FFFFFFFF'
 ```
 

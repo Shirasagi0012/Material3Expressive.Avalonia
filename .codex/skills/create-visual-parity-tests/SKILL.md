@@ -19,6 +19,7 @@ Before editing, read:
 
 - `docs/visual-parity.md` for capture contracts, environment assumptions, and current comparison
   semantics relevant to authoring.
+- `docs/comparison-profiles.md` before selecting, adding, or changing a comparison profile.
 - `docs/visual-parity-test-plan.md` for architectural boundaries and migration decisions.
 - `tests/ComposeReference/README.md` for the producer protocol.
 - `tests/VisualParity/comparison-profiles.json` before adding or changing a profile.
@@ -128,30 +129,13 @@ properties may be overridden by the platform template.
 
 ### 4. Choose the comparison profile
 
-First reuse the nearest existing profile. Add a new profile only when the new family has a distinct,
-reviewable comparison contract. Add a narrow case-prefix rule in
-`tests/VisualParity/comparison-profiles.json`; do not embed tolerances in a test body.
+Follow `docs/comparison-profiles.md`. Reuse the nearest semantic profile first; add a narrow ordered
+prefix rule when an existing contract fits, and create a new profile only for a distinct,
+repeatable renderer difference supported by several representative cases.
 
-The current profile schema is version 6. Keep `strictChannelDelta` at zero, put more-specific prefix
-rules before broader rules, and rely on strict deserialization/validation to reject unknown fields,
-invalid bins, duplicate profiles/prefixes, and unreachable rules.
-
-Default expectations:
-
-- contract, node identity, visibility, parent, viewport, bounds, colors, and geometry are strict;
-- text content, UTF-16 character boxes, line ranges, baselines, origins, and style signatures are
-  compared structurally when the adapter exposes them;
-- raster allowance is generated only from expected-derived text ink, shape edge, or fully matched
-  shadow edge/support owners; every other pixel stays strict;
-- elevation compares the resolved point-light shadow contract, not only the final pixels;
-- a renderer gap needs a focused mutation test proving the intended owner/budget boundary passes
-  and the next larger, wider, thicker, or out-of-mask mutation fails;
-- an unavailable structural API is represented as an explicit narrowly scoped skipped theory row
-  with a reason, not passed through a raster tolerance.
-
-Do not use any of these as a parity strategy: global pixel thresholds, whole-image ignore regions,
-auto-recentering, cropping, resizing, a stored Avalonia baseline, or an allow-list entry created
-only to turn a failure green.
+Do not edit policy until viewport, geometry, text, focus, and shadow contracts pass. Any new owner
+or budget requires focused positive and negative mutation tests. Keep structural defects active;
+use a narrowly reasoned skipped row when the platform cannot expose a required structural fact.
 
 ### 5. Hand off validation
 
@@ -207,11 +191,10 @@ Before considering a new case complete, verify:
       cannot be probed.
 - [ ] Text is measured from the actual layout object and has a verifiable style signature.
 - [ ] Native Avalonia templates and state resources were audited where applicable.
-- [ ] The existing comparison profile was reused or a narrowly justified profile was added.
+- [ ] Profile selection or changes satisfy `docs/comparison-profiles.md`.
 - [ ] Validation was handed to `$run-visual-parity-tests`, with the smallest case and relevant
       broader selections run successfully.
-- [ ] Any allowance is expected-derived, single-owner, bounded by count/energy/components, and
-      covered by pass/fail mutation tests.
+- [ ] Any new allowance has the required positive and negative mutation coverage.
 - [ ] No generated PNG, baseline, or blanket allow-list was added to source control.
 
 For copyable Compose/C# registration skeletons and a state/probe worksheet, read

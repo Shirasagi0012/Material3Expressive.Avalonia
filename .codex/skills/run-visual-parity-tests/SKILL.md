@@ -19,6 +19,8 @@ hand that authoring work to `$create-visual-parity-tests`; return here to valida
 Before running or interpreting results, read:
 
 - `docs/visual-parity.md` for the current environment, commands, and artifact layout;
+- `docs/comparison-profiles.md` when the task involves profile selection, owner budgets, or policy
+  review;
 - `tools/visual-parity/run.ps1` for filter behavior;
 - `tests/VisualParity/comparison-profiles.json` for current policy values and case-prefix rules;
 - `tests/Material3Expressive.VisualTesting/Parity/ParityComparer.cs` for structural comparison;
@@ -163,39 +165,14 @@ bundled image script for raw same-coordinate statistics.
 
 ## Understand semantic raster acceptance
 
-Apply raster budgets only after semantic evidence has been checked. The final case always fails if
-viewport, node identity, bounds, focus, text content/layout/style, or shadow inputs fail, regardless
-of what the raster report says.
+Raster budgets apply only after structural evidence passes. The comparer assigns each non-exact
+pixel to at most one expected-derived owner, then checks its delta bin's count, energy, connected-
+component area, and thickness. Unowned pixels remain exact.
 
-The version-6 policy has no viewport-sized allowance and no global `delta <= 1` floor. The comparer
-derives mutually exclusive owners from the Compose expected image and matched structural facts,
-ordered from specific to general:
-
-1. `text-ink` for expected glyph edges inside matched text lines;
-2. `shadow-edge` for matched shadow support boundaries when configured;
-3. `shape-edge` for expected non-text image edges;
-4. `shadow-support` for diffuse matched shadow support;
-5. strict pixels for everything else.
-
-Each non-strict owner receives profile-defined delta bins. The runtime budget is derived from that
-owner's expected eligible-pixel count, with fixed base/minimum/rate/hard-cap coefficients. Every bin
-checks observed pixel count, total delta energy, maximum delta, largest connected-component area,
-and thickness. Every connected component is checked, not only the largest. A pixel consumes one
-owner and one bin only.
-
-This permits sparse glyph AA, thin shape-edge AA, and broad low-delta shadow quantization while
-rejecting wrong fills, shifted borders, incorrect glyphs, thick blocks, misplaced shadows, and
-out-of-envelope differences. Having text or elevation somewhere in the scene never relaxes the
-whole viewport.
-
-Shadow owners require the full `ParityShadow` contract to match, including `occluderDrawn` and
-`transparentOccluder`. Opaque painted occluders are removed from shadow support/edge masks; explicit
-shadow-only cases can still expose mesh inside the shape.
-
-Read `references/semantic-raster-model.md` when diagnosing a budget. Always use the live profile
-values rather than example numbers. If the requested outcome is to alter a profile or add its
-boundary tests, hand that authoring change to `$create-visual-parity-tests` and return here to run
-the affected selections.
+Read `references/semantic-raster-model.md` to interpret owner and budget fields in a report. Read
+`docs/comparison-profiles.md` for profile design, schema rules, calibration, and mutation-test
+requirements. If policy must change, hand authoring to `$create-visual-parity-tests`, then return
+here to validate the affected cases.
 
 ## Diagnose a failure
 
@@ -216,14 +193,14 @@ Use this sequence:
 Run the diagnostic script on a case artifact directory:
 
 ```powershell
-python skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
+python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
   'artifacts/visual-parity/xunit/<run>/actual/cases/<case-id>'
 ```
 
 Generate reusable visual diagnostics:
 
 ```powershell
-python skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
+python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
   'artifacts/visual-parity/xunit/<run>/actual/cases/<case-id>' `
   --output-dir 'artifacts/visual-parity/diagnostics/<case-name>'
 ```

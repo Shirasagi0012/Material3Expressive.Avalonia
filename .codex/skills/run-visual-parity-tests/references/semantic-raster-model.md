@@ -1,17 +1,15 @@
 # Semantic raster model
 
-Use this reference when reading `comparison.json`, explaining a raster pass/failure, or reviewing a
-profile change. Treat source code and `comparison-profiles.json` as authoritative when they differ.
+Use this reference when reading `comparison.json` or explaining a raster pass/failure. For profile
+selection, schema rules, calibration, and policy review, use `docs/comparison-profiles.md`. Treat
+source code and `comparison-profiles.json` as authoritative when they differ.
 
 ## Contents
 
 - [Decision pipeline](#decision-pipeline)
 - [Expected-derived ownership](#expected-derived-ownership)
-- [Canonical version-6 policy](#canonical-version-6-policy)
-- [Dynamic budget](#dynamic-budget)
 - [Current report interpretation](#current-report-interpretation)
 - [RGBA and visual RGB](#rgba-and-visual-rgb)
-- [Policy review rules](#policy-review-rules)
 
 ## Decision pipeline
 
@@ -71,43 +69,7 @@ allowance for the expected shadow boundary, not the support interior.
 Keep background, fills, shape interiors, and all unowned pixels strict. A scene containing text or
 shadow does not change this default.
 
-## Canonical version-6 policy
-
-Use these as the settled policy shape; read `comparison-profiles.json` for complete coefficients
-and family mappings:
-
-- keep `strictChannelDelta` at zero for every profile;
-- dilate expected text and generic shape edges by one physical pixel;
-- give text ink broad bounded bins through delta 20 and only a sparse tail through delta 35;
-- give generic shape edges broad delta-at-most-2 coverage and sparse delta-at-most-8 coverage;
-- use expected edge-detection delta 16 normally and 4 only for the low-contrast elevated-button
-  boundary profile;
-- let the text-field shape owner cover its renderer-specific edge deltas through 18, only inside
-  the expected shape-edge mask;
-- dilate shadow support by two physical pixels and allow only delta 1, with
-  `16 + ceil(5% * eligible support pixels)` capped at 4096;
-- allow shadow-boundary deltas through 48 only in a sparse perimeter-derived quota capped at 48,
-  with each component at most 12 pixels and 2 pixels thick.
-
-No number grants a whole-frame or whole-line allowance. The expected owner mask, count, energy,
-hard cap, and component constraints all have to pass.
-
-## Dynamic budget
-
-For each owner and delta bin, compute count and energy allowances from the expected mask size:
-
-```text
-scaled = ceil(EligiblePixels * RatePer10k / 10000)
-AllowedCount = min(HardCap, max(Minimum, Base + scaled))
-AllowedEnergy = min(EnergyHardCap, max(EnergyMinimum, EnergyBase + scaledEnergy))
-Energy = sum(max-channel delta for observed pixels in the bin)
-```
-
-The exact rounding and fields come from `SemanticRasterComparer.cs`. Fixed versioned coefficients
-make policy reviewable; expected eligible pixels make the per-case allowance proportional to the
-semantic owner rather than viewport size.
-
-For every bin, inspect:
+For every reported budget bin, inspect:
 
 - `observedPixels` versus `allowedPixels`;
 - `observedEnergy` versus `allowedEnergy`;
@@ -117,7 +79,8 @@ For every bin, inspect:
 
 Count stops a large number of discrepancies. Energy stops many pixels parked just below a delta
 ceiling. Component area and thickness stop a compact missing fill, border segment, or shifted solid
-shape from consuming a dispersed-AA budget.
+shape from consuming a dispersed-AA budget. The exact allowance formula and field constraints are
+documented in `docs/comparison-profiles.md`.
 
 ## Current report interpretation
 
@@ -155,18 +118,3 @@ alpha-only differences.
 The diagnostic script additionally composites decoded images over an explicit backdrop and reports
 visual RGB. Use that result to explain storage/alpha behavior, not to override the official
 four-channel result or `kind`.
-
-## Policy review rules
-
-When changing a profile:
-
-1. state the renderer difference being modeled;
-2. scope it to the smallest semantic owner and case family;
-3. keep geometry/text/shadow contracts enabled;
-4. add a mutation test showing the intended difference passes;
-5. add a boundary mutation showing the next larger/wider/thicker difference fails;
-6. run affected cases, the complete family, comparer unit tests, and the full suite;
-7. review the versioned profile hash in the new manifest.
-
-Keep profile schema validation strict: reject unknown fields, invalid/overlapping bins, duplicate
-profiles, duplicate prefixes, and unreachable prefix rules rather than silently ignoring them.

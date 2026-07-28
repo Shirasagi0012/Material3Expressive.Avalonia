@@ -659,6 +659,10 @@ metric.
 
 ### 11.5 Tolerance policy
 
+This section records the architectural intent. The current schema, owner-selection rules,
+calibration procedure, and review checklist are maintained in
+[`comparison-profiles.md`](comparison-profiles.md).
+
 The repository contains a small versioned set of comparison profiles. The desired shape is:
 
 ```text

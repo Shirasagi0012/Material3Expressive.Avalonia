@@ -84,19 +84,20 @@ silently broaden raster tolerance to compensate.
 
 ## Profile decision
 
-Use the existing profile unless a new semantic category is required. A new profile must state:
+Use the decision table, schema reference, calibration procedure, and review checklist in
+`docs/comparison-profiles.md`. Record only the case-specific conclusion here:
 
-1. which structural channels remain strict;
-2. which renderer difference is known and why it is not an implementation defect;
-3. the exact owner region and numeric budget;
-4. a boundary test where the next larger difference fails.
+```text
+resolved profile: <existing profile ID>
+rule: <existing or proposed case prefix>
+structural status: <all matched, or defect/skip to resolve before policy work>
+renderer evidence: <owner, delta distribution, component shape, representative cases>
+policy action: <none, reuse profile, add prefix, or propose new profile>
+mutation coverage: <intended pass and first failing boundary>
+```
 
-Text antialiasing belongs only to the expected glyph-edge mask of structurally matched text, not the
-whole line rectangle. Shape antialiasing belongs only to a narrow expected shape-edge owner. Shadow
-quantization requires the complete shadow contract, including occluder behavior, before support or
-edge owners exist. Keep caret geometry defects as active failures. If the platform lacks a required
-structural API, use an explicit narrowly scoped skip with a reason instead of a raster exception.
-Never use a whole-frame exception.
+Do not propose a policy action for a structural mismatch. Keep caret, glyph, fill, border, and
+shadow-contract defects active until the implementation or probe is corrected.
 
 ## Failure notes
 
