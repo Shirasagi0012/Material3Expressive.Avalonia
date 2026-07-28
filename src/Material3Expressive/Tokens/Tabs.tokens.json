@@ -38,9 +38,14 @@
         "ActiveIndicatorColor": "Primary",
         "ActiveIconColor": "Primary",
         "ActiveLabelTextColor": "Primary",
-        "InactiveIconColor": "OnSurfaceVariant",
-        "InactiveLabelTextColor": "OnSurfaceVariant",
-        "DividerColor": "SurfaceVariant",
+        // Tab.kt defaults unselectedContentColor to selectedContentColor. A caller who wants
+        // contrasting unselected tabs supplies it explicitly; the default Tab used by
+        // PrimaryTabRow therefore keeps the primary content color for every item.
+        "InactiveIconColor": "Primary",
+        "InactiveLabelTextColor": "Primary",
+        // TabRow's default divider is HorizontalDivider(), whose color token is OutlineVariant,
+        // rather than the row's SurfaceVariant container token.
+        "DividerColor": "OutlineVariant",
         "StateLayerColor": "Primary",
 
         "ContainerHeight": 48,
@@ -61,7 +66,10 @@
       "values": {
         "ActiveLabelTextColor": "OnSurface",
         "ActiveIconColor": "OnSurface",
-        "ActiveIndicatorHeight": 2,
+        "InactiveIconColor": "OnSurface",
+        "InactiveLabelTextColor": "OnSurface",
+        // SecondaryIndicator defaults to PrimaryNavigationTabTokens.ActiveIndicatorHeight.
+        "ActiveIndicatorHeight": 3,
         "ActiveIndicatorCornerRadius": 0,
         "IndicatorSpansLabel": false
       }

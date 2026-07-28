@@ -294,7 +294,7 @@ public sealed class MaterialTabContentPanel : Panel
 /// a token, not a special case.
 /// </para>
 /// </remarks>
-public class MaterialTabs : TemplatedControl
+public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
 {
     public static readonly StyledProperty<TabVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialTabs, TabVariant>(nameof(Variant));
@@ -357,21 +357,35 @@ public class MaterialTabs : TemplatedControl
             new Point(0, dividerY),
             new Point(Bounds.Width, dividerY));
 
-        var width = IndicatorWidth.Value;
-        if (width > 0.5)
+        if (TryGetVisualBounds("indicator", out var rect))
         {
-            var height = _tokens.ActiveIndicatorHeight;
-            var rect = new Rect(IndicatorCentre.Value - width / 2, Bounds.Height - height, width, height);
             var radius = _tokens.ActiveIndicatorCornerRadius;
 
-            // Only the top corners are rounded: the indicator sits on the bottom edge.
+            // PrimaryIndicator applies RoundedCornerShape(3.dp) to all four corners. The
+            // bottom edge touches the row boundary, but Compose still rasterizes both bottom
+            // corner arcs before the surface clip is applied.
             context.DrawRectangle(
                 _colors.ActiveIndicatorColor,
                 null,
-                new RoundedRect(rect, new CornerRadius(radius, radius, 0, 0)));
+                new RoundedRect(rect, new CornerRadius(radius, radius, radius, radius)));
         }
 
         base.Render(context);
+    }
+
+    /// <inheritdoc />
+    public bool TryGetVisualBounds(string id, out Rect bounds)
+    {
+        if (id == "indicator" && IndicatorWidth.Value > 0.5)
+        {
+            var width = IndicatorWidth.Value;
+            var height = _tokens.ActiveIndicatorHeight;
+            bounds = new Rect(IndicatorCentre.Value - width / 2, Bounds.Height - height, width, height);
+            return true;
+        }
+
+        bounds = default;
+        return false;
     }
 
     protected override Size ArrangeOverride(Size finalSize)
@@ -468,8 +482,25 @@ public class MaterialTabs : TemplatedControl
         if (bounds.Width <= 0)
             return;
 
-        var width = _tokens.IndicatorSpansLabel ? Math.Min(bounds.Width, MeasuredLabelWidth(tab)) : bounds.Width;
+        var width = bounds.Width;
         var centre = bounds.Center.X;
+        if (_tokens.IndicatorSpansLabel)
+        {
+            var scale = GetLayoutScale();
+            var tabLeft = ToComposePixels(bounds.X, scale);
+            var tabWidth = ToComposePixels(bounds.Width, scale);
+            // TabRow derives contentWidth from maxIntrinsicWidth, which is an integral physical
+            // pixel value. The indicator is then centred with integer division. TextLayout.Width
+            // is a fractional advance, so preserve the upstream contract here instead of
+            // feeding that fraction directly to Skia's rounded-rectangle rasterizer.
+            var minimumWidth = ToComposePixels(24, scale);
+            var contentWidth = Math.Max(minimumWidth, ToPlaceablePixels(MeasuredLabelWidth(tab), scale));
+            contentWidth = Math.Min(tabWidth, contentWidth);
+            var left = tabLeft + Math.Max(0, (tabWidth - contentWidth) / 2);
+
+            width = ToLogicalPixels(contentWidth, scale);
+            centre = ToLogicalPixels(left + contentWidth / 2d, scale);
+        }
 
         if (snap)
         {
@@ -490,6 +521,12 @@ public class MaterialTabs : TemplatedControl
     /// </summary>
     private double MeasuredLabelWidth(MaterialTab tab)
     {
+        // A consumer may supply a TextBlock instead of a string. Its TextLayout is the same
+        // already-resolved type scale that the tab rendered, so it is the closest Avalonia
+        // equivalent to TabRow.kt's maxIntrinsicWidth minus horizontal text padding.
+        if (tab.Content is TextBlock textBlock)
+            return textBlock.TextLayout.Width;
+
         var text = tab.Content as string;
         if (string.IsNullOrEmpty(text))
             return tab.Bounds.Width;
@@ -505,6 +542,20 @@ public class MaterialTabs : TemplatedControl
 
         return formatted.Width;
     }
+
+    private double GetLayoutScale()
+    {
+        var scale = LayoutHelper.GetLayoutScale(this);
+        return scale > 0 && !double.IsNaN(scale) && !double.IsInfinity(scale) ? scale : 1;
+    }
+
+    private static int ToComposePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Floor(value * scale + 0.5));
+
+    private static int ToPlaceablePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Ceiling(value * scale - 0.000001));
+
+    private static double ToLogicalPixels(double value, double scale) => value / scale;
 
     private void ApplyTokens()
     {

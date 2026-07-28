@@ -77,9 +77,24 @@ public class MaterialNavigationItem : ToggleButton
         {
             var width = _tokens.ActiveIndicatorWidth;
             var height = _tokens.ActiveIndicatorHeight;
-            return new Rect((Bounds.Width - width) / 2, IndicatorTop, width, height);
+            var scale = LayoutHelper.GetLayoutScale(this);
+            if (scale <= 0 || double.IsNaN(scale) || double.IsInfinity(scale))
+                scale = 1;
+
+            // NavigationBarItemLayout places the indicator with integral physical-pixel
+            // arithmetic: (containerWidthPx - indicatorWidthPx) / 2.  Keeping this in logical
+            // coordinates leaves the middle item of an uneven weighted row at a half pixel and
+            // changes its rounded-rectangle antialiasing, even though its text placement is
+            // already correct.
+            var containerWidth = ToComposePixels(Bounds.Width, scale);
+            var indicatorWidth = ToComposePixels(width, scale);
+            var left = Math.Max(0, (containerWidth - indicatorWidth) / 2) / scale;
+            return new Rect(left, IndicatorTop, indicatorWidth / scale, height);
         }
     }
+
+    private static int ToComposePixels(double value, double scale) =>
+        Math.Max(0, (int)Math.Floor(value * scale + 0.5));
 
     private double IndicatorTop =>
         // The label sits under the indicator, so the pair is centred rather than the pill alone.

@@ -12,10 +12,12 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import material3expressive.compose.reference.CaseContract
 import material3expressive.compose.reference.ReferenceCaseRegistry
 import material3expressive.compose.reference.ReferenceScene
@@ -76,7 +78,7 @@ private fun navCase(id: String, dark: Boolean = false) = CaseContract(
 
 private fun tabCase(id: String, dark: Boolean = false) = CaseContract(
     id = id, viewportWidthDp = 360, viewportHeightDp = 80, dark = dark,
-    requiredNodes = navigationNodes(),
+    requiredNodes = navigationNodes() + RequiredNodeSpec(id = "indicator", kind = "container", parentId = "component"),
 )
 
 private fun navigationNodes() = listOf(
@@ -136,6 +138,7 @@ private fun NavRail(probes: ProbeRegistry) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Tabs(probes: ProbeRegistry, primary: Boolean) {
+    val selectedTabIndex = 0
     val content: @Composable () -> Unit = {
         listOf("One", "Two", "Three").forEachIndexed { index, label ->
             Tab(
@@ -154,8 +157,27 @@ private fun Tabs(probes: ProbeRegistry, primary: Boolean) {
     val modifier = Modifier.requiredSize(360.dp, 48.dp).then(probes.geometry("component"))
 
     if (primary) {
-        PrimaryTabRow(selectedTabIndex = 0, modifier = modifier) { content() }
+        PrimaryTabRow(
+            selectedTabIndex = selectedTabIndex,
+            modifier = modifier,
+            indicator = {
+                TabRowDefaults.PrimaryIndicator(
+                    modifier = Modifier.tabIndicatorOffset(selectedTabIndex, matchContentSize = true)
+                        .then(probes.geometry("indicator")),
+                    width = Dp.Unspecified,
+                )
+            },
+        ) { content() }
     } else {
-        SecondaryTabRow(selectedTabIndex = 0, modifier = modifier) { content() }
+        SecondaryTabRow(
+            selectedTabIndex = selectedTabIndex,
+            modifier = modifier,
+            indicator = {
+                TabRowDefaults.SecondaryIndicator(
+                    Modifier.tabIndicatorOffset(selectedTabIndex, matchContentSize = false)
+                        .then(probes.geometry("indicator")),
+                )
+            },
+        ) { content() }
     }
 }

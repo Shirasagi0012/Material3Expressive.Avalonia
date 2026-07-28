@@ -310,7 +310,8 @@ internal static class ComposeWaveOneParityCases
             ThemeName(theme),
             new PixelSize(360, 80),
             theme,
-            _ => CreateTabs(variant));
+            _ => CreateTabs(variant),
+            prepare: context => context.SettleAnimations());
     }
 
     private static MaterialTabs CreateTabs(TabVariant variant)
@@ -364,13 +365,15 @@ internal static class ComposeWaveOneParityCases
         string id,
         PixelSize viewport,
         VisualTheme theme,
-        Func<VisualCaseContext, Control> createComponent) =>
+        Func<VisualCaseContext, Control> createComponent,
+        Action<VisualContext>? prepare = null) =>
         new(
             id,
             viewport,
             theme,
             context => new Grid { Children = { createComponent(context) } },
-            RenderScaling: 1.0);
+            RenderScaling: 1.0,
+            Prepare: prepare);
 
     private static Point PointIn(Control target, Visual relativeTo) =>
         target.TranslatePoint(

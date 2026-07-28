@@ -63,6 +63,8 @@ public sealed class AvaloniaParityCapture
                 if (textField is not null && probe is not null)
                     return CaptureTextFieldLabel(node, context.Root, textField, probe, scale);
             }
+            if (control is null && TryCaptureGeometryProbe(node, context.Root, allControls, scale, out var geometryProbe))
+                return geometryProbe;
             if (control is null)
                 return node with { BoundsInRootPx = null, Visible = false, TextLayout = null };
 
@@ -80,6 +82,38 @@ public sealed class AvaloniaParityCapture
                     ? CaptureShadow(context.Root, control, shadowProbe, scale)
                     : null);
         }).ToArray();
+    }
+
+    private static bool TryCaptureGeometryProbe(
+        ParityNode expected,
+        Control root,
+        IReadOnlyList<Control> allControls,
+        double scale,
+        out ParityNode capture)
+    {
+        foreach (var control in allControls.Prepend(root).Distinct())
+        {
+            if (control is not IVisualBoundsProbe probe || !probe.TryGetVisualBounds(expected.Id, out var localBounds))
+                continue;
+
+            var transform = control.TransformToVisual(root);
+            if (transform is null)
+                continue;
+
+            capture = new ParityNode(
+                expected.Id,
+                expected.Kind,
+                expected.ParentId,
+                TransformRectToPhysicalRoot(localBounds, transform.Value, scale),
+                control.IsVisible,
+                null,
+                null,
+                null);
+            return true;
+        }
+
+        capture = default!;
+        return false;
     }
 
     private static ParityShadow CaptureShadow(
