@@ -18,6 +18,17 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialCheckbox : CheckBox
 {
+    // The pinned Compose reference is Material3 1.5.0-alpha22. In that release Checkbox.kt's
+    // compatibility path uses CheckboxSize (20dp) and CheckboxDefaultPadding (2dp), rather than
+    // the newer CheckboxTokens.ContainerSize (18dp) path. Keep this separate from the generated
+    // current token table so moving the reference lineage is an explicit compatibility decision.
+    private const double ReferenceContainerSize = 20;
+
+    // androidx.compose.foundation.layout.minimumInteractiveComponentSize() supplies the standard
+    // 48dp touch target around Checkbox's 20dp canvas. The 40dp state layer remains centred inside
+    // this larger layout slot.
+    private const double MinimumInteractiveComponentSize = 48;
+
     /// <summary>Puts the checkbox into its error appearance.</summary>
     public static readonly StyledProperty<bool> IsErrorProperty =
         AvaloniaProperty.Register<MaterialCheckbox, bool>(nameof(IsError));
@@ -51,13 +62,17 @@ public class MaterialCheckbox : CheckBox
         set => SetValue(IsErrorProperty, value);
     }
 
-    /// <summary>The state-layer circle, which is also the box's alignment box.</summary>
+    /// <summary>The 40dp state layer centred inside the 48dp interactive layout slot.</summary>
     protected Rect GlyphArea
     {
         get
         {
             var size = _tokens.StateLayerSize;
-            return new Rect(0, (Bounds.Height - size) / 2, size, size);
+            return new Rect(
+                (Bounds.Width - size) / 2,
+                (Bounds.Height - size) / 2,
+                size,
+                size);
         }
     }
 
@@ -74,7 +89,7 @@ public class MaterialCheckbox : CheckBox
             checkedState == true ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
             new CornerRadius(_tokens.StateLayerSize / 2));
 
-        var boxSize = _tokens.ContainerSize;
+        var boxSize = ReferenceContainerSize;
         var box = new Rect(
             area.X + (area.Width - boxSize) / 2,
             area.Y + (area.Height - boxSize) / 2,
@@ -119,7 +134,9 @@ public class MaterialCheckbox : CheckBox
     protected override Size MeasureOverride(Size availableSize)
     {
         var content = base.MeasureOverride(availableSize);
-        return new Size(content.Width, System.Math.Max(content.Height, _tokens.StateLayerSize));
+        return new Size(
+            System.Math.Max(content.Width, MinimumInteractiveComponentSize),
+            System.Math.Max(content.Height, MinimumInteractiveComponentSize));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -141,23 +158,36 @@ public class MaterialCheckbox : CheckBox
     }
 
     /// <summary>
-    /// The checkmark, as a two-segment stroke in fractions of the box.
+    /// The alpha22 checkmark, as a two-segment 2dp square-capped stroke in fractions of the box.
     /// </summary>
     /// <remarks>
-    /// Upstream draws this from a path in <c>Checkbox.kt</c> rather than from a token. The
-    /// proportions here are that path's, expressed as fractions so the mark scales with a retuned
-    /// container size.
+    /// Upstream's compatibility path in <c>Checkbox.kt</c> uses (0.2, 0.5), (0.4, 0.7), and
+    /// (0.8, 0.3) with <c>CheckboxDefaults.StrokeWidth</c> (2dp). Those values differ from the
+    /// newer checkbox-styling-fix path, so retain the pinned reference geometry exactly.
     /// </remarks>
     private void DrawTick(DrawingContext context, Rect box, IImmutableBrush brush)
     {
-        var pen = new ImmutablePen(brush, box.Width * 0.13, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+        var pen = new ImmutablePen(
+            brush,
+            2,
+            lineCap: PenLineCap.Square,
+            lineJoin: PenLineJoin.Miter);
 
-        var start = new Point(box.X + box.Width * 0.22, box.Y + box.Height * 0.52);
-        var corner = new Point(box.X + box.Width * 0.42, box.Y + box.Height * 0.72);
-        var end = new Point(box.X + box.Width * 0.78, box.Y + box.Height * 0.30);
+        var start = new Point(box.X + box.Width * 0.20, box.Y + box.Height * 0.50);
+        var corner = new Point(box.X + box.Width * 0.40, box.Y + box.Height * 0.70);
+        var end = new Point(box.X + box.Width * 0.80, box.Y + box.Height * 0.30);
 
-        context.DrawLine(pen, start, corner);
-        context.DrawLine(pen, corner, end);
+        // Compose strokes one continuous Path. Drawing the two segments independently gives the
+        // shared corner two square caps instead of the path's miter join.
+        var geometry = new StreamGeometry();
+        using (var sink = geometry.Open())
+        {
+            sink.BeginFigure(start, false);
+            sink.LineTo(corner);
+            sink.LineTo(end);
+            sink.EndFigure(false);
+        }
+        context.DrawGeometry(null, pen, geometry);
     }
 
     /// <summary>The indeterminate state is a single horizontal bar.</summary>

@@ -54,6 +54,7 @@ class ReferenceTypography(fontPath: Path) {
         copy(fontFamily = roboto)
 
     companion object {
+        const val expectedFontFamily = "Roboto"
         const val expectedFontSha256 =
             "B25986D18730960C7B27384AB2BC500856AE7FE9E71C9850019195FF9019F0B2"
     }

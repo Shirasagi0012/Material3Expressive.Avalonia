@@ -28,7 +28,7 @@ public sealed record ParityManifest(
     string CaseCatalogSha256,
     IReadOnlyList<ParityManifestCase> Cases)
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 }
 
 public sealed record ParityManifestCase(
@@ -66,7 +66,7 @@ public sealed record ParityCaptureResult(
     ParityViewport ViewportPx,
     IReadOnlyList<ParityNode> Nodes)
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 }
 
 public sealed record ParityCoordinateSpace(
@@ -100,7 +100,28 @@ public sealed record ParityTextLayout(
     int LineCount,
     bool OverflowEllipsis,
     IReadOnlyList<ParityTextLine> Lines,
-    IReadOnlyList<ParityCharacterBox> CharacterBoxes);
+    IReadOnlyList<ParityCharacterBox> CharacterBoxes,
+    ParityPoint? DrawOriginInRootPx = null,
+    float? FirstBaselineInTextPx = null,
+    float? LastBaselineInTextPx = null,
+    ParityTextStyleSignature? StyleSignature = null);
+
+/// <summary>A physical-pixel point in the capture root coordinate space.</summary>
+public sealed record ParityPoint(float X, float Y);
+
+/// <summary>
+/// The resolved text inputs that materially affect shaping. This is diagnostic data, but is
+/// compared exactly when both captures provide it so a font/style mismatch cannot masquerade as a
+/// layout-engine discrepancy.
+/// </summary>
+public sealed record ParityTextStyleSignature(
+    string RequestedFontFamily,
+    string ResolvedFontFamily,
+    string? PinnedFontFileSha256,
+    int FontWeight,
+    float? FontSizePx,
+    float? LineHeightPx,
+    float? LetterSpacingPx);
 
 public sealed record ParityTextLine(
     int Index,
@@ -112,13 +133,16 @@ public sealed record ParityTextLine(
     float TopPx,
     float BottomPx,
     float BaselinePx,
-    bool Ellipsized);
+    bool Ellipsized,
+    ParityRect? BoundsInTextPx = null,
+    float? BaselineInTextPx = null);
 
 public sealed record ParityCharacterBox(
     int Utf16Offset,
     string CodeUnit,
     int LineIndex,
-    ParityRect BoundsInRootPx);
+    ParityRect BoundsInRootPx,
+    ParityRect? BoundsInTextPx = null);
 
 public static class ParityJson
 {

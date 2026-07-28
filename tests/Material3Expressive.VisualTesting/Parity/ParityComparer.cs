@@ -80,6 +80,25 @@ public sealed class ParityComparer
         var right = actual.TextLayout;
         if (left.Text != right.Text || left.Encoding != right.Encoding || left.LineCount != right.LineCount)
             failures.Add($"Text contract for '{expected.Id}' differs.");
+        CompareOptionalPoint(
+            $"Text '{expected.Id}' draw origin",
+            left.DrawOriginInRootPx,
+            right.DrawOriginInRootPx,
+            tolerance.TextPx,
+            failures);
+        CompareOptionalNumber(
+            $"Text '{expected.Id}' first baseline in text",
+            left.FirstBaselineInTextPx,
+            right.FirstBaselineInTextPx,
+            tolerance.TextPx,
+            failures);
+        CompareOptionalNumber(
+            $"Text '{expected.Id}' last baseline in text",
+            left.LastBaselineInTextPx,
+            right.LastBaselineInTextPx,
+            tolerance.TextPx,
+            failures);
+        CompareTextStyleSignature(expected.Id, left.StyleSignature, right.StyleSignature, failures);
         CompareNumber($"Text '{expected.Id}' first baseline", left.FirstBaselineInRootPx, right.FirstBaselineInRootPx, tolerance.TextPx, failures);
         CompareNumber($"Text '{expected.Id}' last baseline", left.LastBaselineInRootPx, right.LastBaselineInRootPx, tolerance.TextPx, failures);
         if (left.Lines.Count != right.Lines.Count)
@@ -90,6 +109,18 @@ public sealed class ParityComparer
                 || line.First.EndUtf16 != line.Second.EndUtf16 || line.First.VisibleEndUtf16 != line.Second.VisibleEndUtf16)
                 failures.Add($"Text '{expected.Id}' line {line.First.Index} UTF-16 range differs.");
             CompareNumber($"Text '{expected.Id}' line {line.First.Index} baseline", line.First.BaselinePx, line.Second.BaselinePx, tolerance.TextPx, failures);
+            CompareOptionalRect(
+                $"Text '{expected.Id}' line {line.First.Index} local bounds",
+                line.First.BoundsInTextPx,
+                line.Second.BoundsInTextPx,
+                tolerance.TextPx,
+                failures);
+            CompareOptionalNumber(
+                $"Text '{expected.Id}' line {line.First.Index} local baseline",
+                line.First.BaselineInTextPx,
+                line.Second.BaselineInTextPx,
+                tolerance.TextPx,
+                failures);
         }
         if (left.CharacterBoxes.Count != right.CharacterBoxes.Count)
             failures.Add($"Text '{expected.Id}' UTF-16 box count differs.");
@@ -98,6 +129,33 @@ public sealed class ParityComparer
             if (pair.First.Utf16Offset != pair.Second.Utf16Offset || pair.First.CodeUnit != pair.Second.CodeUnit)
                 failures.Add($"Text '{expected.Id}' character contract differs at offset {pair.First.Utf16Offset}.");
             CompareRect($"Text '{expected.Id}' character {pair.First.Utf16Offset} bounding", pair.First.BoundsInRootPx, pair.Second.BoundsInRootPx, tolerance.TextPx, failures);
+            CompareOptionalRect(
+                $"Text '{expected.Id}' character {pair.First.Utf16Offset} local bounding",
+                pair.First.BoundsInTextPx,
+                pair.Second.BoundsInTextPx,
+                tolerance.TextPx,
+                failures);
+        }
+    }
+
+    private static void CompareTextStyleSignature(
+        string id,
+        ParityTextStyleSignature? expected,
+        ParityTextStyleSignature? actual,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        if (expected is null || actual is null)
+        {
+            failures.Add($"Text '{id}' style signature is missing from one capture.");
+            return;
+        }
+        if (expected != actual)
+        {
+            failures.Add(
+                $"Text '{id}' style signature differs: expected {FormatStyleSignature(expected)}, " +
+                $"actual {FormatStyleSignature(actual)}.");
         }
     }
 
@@ -118,11 +176,70 @@ public sealed class ParityComparer
             $"tolerance {FormatTolerance(tolerance)}.");
     }
 
+    private static void CompareOptionalRect(
+        string label,
+        ParityRect? expected,
+        ParityRect? actual,
+        float tolerance,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        CompareRect(label, expected, actual, tolerance, failures);
+    }
+
+    private static void CompareOptionalPoint(
+        string label,
+        ParityPoint? expected,
+        ParityPoint? actual,
+        float tolerance,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        if (expected is null || actual is null)
+        {
+            failures.Add($"{label} is missing.");
+            return;
+        }
+        if (MathF.Abs(expected.X - actual.X) > tolerance || MathF.Abs(expected.Y - actual.Y) > tolerance)
+        {
+            failures.Add(
+                $"{label} differs (XY px): expected ({expected.X:F3}, {expected.Y:F3}), " +
+                $"actual ({actual.X:F3}, {actual.Y:F3}), tolerance ({tolerance:F3}, {tolerance:F3}).");
+        }
+    }
+
+    private static void CompareOptionalNumber(
+        string label,
+        float? expected,
+        float? actual,
+        float tolerance,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        if (expected is null || actual is null)
+        {
+            failures.Add($"{label} is missing.");
+            return;
+        }
+        CompareNumber(label, expected.Value, actual.Value, tolerance, failures);
+    }
+
     private static string FormatRect(ParityRect rect) =>
         FormattableString.Invariant($"({rect.Left:F3}, {rect.Top:F3}, {rect.Right:F3}, {rect.Bottom:F3})");
 
     private static string FormatTolerance(float tolerance) =>
         FormattableString.Invariant($"({tolerance:F3}, {tolerance:F3}, {tolerance:F3}, {tolerance:F3})");
+
+    private static string FormatStyleSignature(ParityTextStyleSignature signature) =>
+        FormattableString.Invariant(
+            $"family={signature.RequestedFontFamily}/{signature.ResolvedFontFamily}, fontHash={signature.PinnedFontFileSha256 ?? "none"}, weight={signature.FontWeight}, size={FormatOptionalPixels(signature.FontSizePx)}, lineHeight={FormatOptionalPixels(signature.LineHeightPx)}, letterSpacing={FormatOptionalPixels(signature.LetterSpacingPx)}");
+
+    private static string FormatOptionalPixels(float? value) => value is null
+        ? "unspecified"
+        : FormattableString.Invariant($"{value.Value:F3}px");
 
     private static void CompareNumber(string label, float expected, float actual, float tolerance, ICollection<string> failures)
     {

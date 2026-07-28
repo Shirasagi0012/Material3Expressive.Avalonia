@@ -62,7 +62,7 @@ public sealed class ParityContractTests
     }
 
     private static ParityCaptureResult Layout(string id, ParityRect bounds) => new(
-        1,
+        ParityCaptureResult.CurrentSchemaVersion,
         "test",
         new ParityCoordinateSpace("physical-pixel", "root-top-left", "right", "down", 2),
         new ParityViewport(40, 30),
@@ -86,7 +86,7 @@ public sealed class ParityContractTests
                 new ParityCharacterBox(4, "006C", 0, characterBounds),
             ]);
         return new ParityCaptureResult(
-            1,
+            ParityCaptureResult.CurrentSchemaVersion,
             "test",
             new ParityCoordinateSpace("physical-pixel", "root-top-left", "right", "down", 2),
             new ParityViewport(300, 140),

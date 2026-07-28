@@ -12,8 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.Json
 import material3expressive.compose.reference.*
@@ -232,17 +235,29 @@ class ExpectedProducer(
         }
 
         val lines = (0 until result.lineCount).map { index ->
+            val localLeft = result.getLineLeft(index)
+            val localRight = result.getLineRight(index)
+            val localTop = result.getLineTop(index)
+            val localBottom = result.getLineBottom(index)
+            val localBaseline = result.getLineBaseline(index)
             CaptureTextLine(
                 index = index,
                 startUtf16 = result.getLineStart(index),
                 endUtf16 = result.getLineEnd(index, false),
                 visibleEndUtf16 = result.getLineEnd(index, true),
-                leftPx = geometry.left + result.getLineLeft(index),
-                rightPx = geometry.left + result.getLineRight(index),
-                topPx = geometry.top + result.getLineTop(index),
-                bottomPx = geometry.top + result.getLineBottom(index),
-                baselinePx = geometry.top + result.getLineBaseline(index),
+                leftPx = geometry.left + localLeft,
+                rightPx = geometry.left + localRight,
+                topPx = geometry.top + localTop,
+                bottomPx = geometry.top + localBottom,
+                baselinePx = geometry.top + localBaseline,
                 ellipsized = result.isLineEllipsized(index),
+                boundsInTextPx = material3expressive.compose.reference.BoundsPx(
+                    left = localLeft,
+                    top = localTop,
+                    right = localRight,
+                    bottom = localBottom,
+                ),
+                baselineInTextPx = localBaseline,
             )
         }
         val characters = (0 until text.length).map { offset ->
@@ -257,6 +272,12 @@ class ExpectedProducer(
                     right = geometry.left + bounds.right,
                     bottom = geometry.top + bounds.bottom,
                 ),
+                boundsInTextPx = material3expressive.compose.reference.BoundsPx(
+                    left = bounds.left,
+                    top = bounds.top,
+                    right = bounds.right,
+                    bottom = bounds.bottom,
+                ),
             )
         }
 
@@ -268,7 +289,37 @@ class ExpectedProducer(
             overflowEllipsis = lines.any { it.ellipsized },
             lines = lines,
             characterBoxes = characters,
+            drawOriginInRootPx = PointPx(geometry.left, geometry.top),
+            firstBaselineInTextPx = result.firstBaseline,
+            lastBaselineInTextPx = result.lastBaseline,
+            styleSignature = if (isCustomDrawnTextFieldLabel(caseId, spec)) {
+                null
+            } else {
+                captureTextStyleSignature(result.layoutInput.style)
+            },
         )
+    }
+
+    private fun isCustomDrawnTextFieldLabel(caseId: String, spec: RequiredNodeSpec): Boolean =
+        caseId.startsWith("textfield/") && spec.id == "label"
+
+    private fun captureTextStyleSignature(style: TextStyle): CaptureTextStyleSignature {
+        val fontSizePx = style.fontSize.toPhysicalPxOrNull()
+        return CaptureTextStyleSignature(
+            requestedFontFamily = ReferenceTypography.expectedFontFamily,
+            resolvedFontFamily = ReferenceTypography.expectedFontFamily,
+            pinnedFontFileSha256 = ReferenceTypography.expectedFontSha256,
+            fontWeight = style.fontWeight?.weight ?: 400,
+            fontSizePx = fontSizePx,
+            lineHeightPx = style.lineHeight.toPhysicalPxOrNull(fontSizePx),
+            letterSpacingPx = style.letterSpacing.toPhysicalPxOrNull(fontSizePx),
+        )
+    }
+
+    private fun TextUnit.toPhysicalPxOrNull(fontSizePx: Float? = null): Float? = when (type) {
+        TextUnitType.Sp -> value * RENDER_SCALE
+        TextUnitType.Em -> fontSizePx?.let { value * it }
+        else -> null
     }
 
     private fun sha256(bytes: ByteArray): String =

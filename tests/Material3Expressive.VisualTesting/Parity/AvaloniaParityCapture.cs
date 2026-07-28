@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.VisualTree;
@@ -42,13 +43,7 @@ public sealed class AvaloniaParityCapture
 
     private static void EnsureCanonicalRoboto()
     {
-        const string CanonicalRobotoSha256 = "B25986D18730960C7B27384AB2BC500856AE7FE9E71C9850019195FF9019F0B2";
-        if (!FontEnvironment.CaptureRobotoFiles().Any(file =>
-                string.Equals(file.Sha256, CanonicalRobotoSha256, StringComparison.OrdinalIgnoreCase)))
-        {
-            throw new InvalidOperationException(
-                "Avalonia parity capture requires the same pinned Roboto font file as the Compose producer.");
-        }
+        _ = FontEnvironment.RequireCanonicalRoboto();
     }
 
     private static IReadOnlyList<ParityNode> CaptureNodes(
@@ -78,7 +73,7 @@ public sealed class AvaloniaParityCapture
                 node.ParentId,
                 bounds,
                 control.IsVisible,
-                text is null ? null : CaptureText(text, context.Root, scale, bounds));
+                text is null ? null : CaptureText(text, context.Root, scale));
         }).ToArray();
     }
 
@@ -102,14 +97,13 @@ public sealed class AvaloniaParityCapture
 
     private static ParityRect? BoundsInRoot(Control root, Control control, double scale)
     {
-        var origin = control.TranslatePoint(default, root);
-        if (origin is null)
+        var transform = control.TransformToVisual(root);
+        if (transform is null)
             return null;
-        return new ParityRect(
-            (float)(origin.Value.X * scale),
-            (float)(origin.Value.Y * scale),
-            (float)((origin.Value.X + control.Bounds.Width) * scale),
-            (float)((origin.Value.Y + control.Bounds.Height) * scale));
+        return TransformRectToPhysicalRoot(
+            new Rect(control.Bounds.Size),
+            transform.Value,
+            scale);
     }
 
     private static ParityNode CaptureTextFieldLabel(
@@ -119,41 +113,56 @@ public sealed class AvaloniaParityCapture
         MaterialTextFieldLabelProbe probe,
         double scale)
     {
-        var fieldOrigin = textField.TranslatePoint(default, root)
+        var transform = textField.TransformToVisual(root)
             ?? throw new InvalidOperationException("MaterialTextField label probe is not mounted.");
-        var origin = new Point(fieldOrigin.X + probe.Origin.X, fieldOrigin.Y + probe.Origin.Y);
-        var bounds = new ParityRect(
-            (float)(origin.X * scale),
-            (float)(origin.Y * scale),
-            (float)((origin.X + probe.Layout.Width) * scale),
-            (float)((origin.Y + probe.Layout.Height) * scale));
+        var bounds = TransformRectToPhysicalRoot(
+            new Rect(probe.Origin, new Size(probe.Layout.Width, probe.Layout.Height)),
+            transform,
+            scale);
         return new ParityNode(
             expected.Id,
             expected.Kind,
             expected.ParentId,
             bounds,
             textField.IsVisible,
-            CaptureTextLayout(probe.Layout, expected.TextLayout!.Text, bounds.Left, bounds.Top, scale));
+            CaptureTextLayout(
+                probe.Layout,
+                expected.TextLayout!.Text,
+                probe.Origin,
+                transform,
+                scale,
+                styleSignature: null));
     }
 
     private static ParityTextLayout? CaptureText(
         TextBlock textBlock,
         Control root,
-        double scale,
-        ParityRect? bounds)
+        double scale)
     {
-        if (bounds is null || textBlock.TextLayout is not TextLayout layout)
+        if (textBlock.TextLayout is not TextLayout layout)
             return null;
-        return CaptureTextLayout(layout, textBlock.Text ?? string.Empty, bounds.Left, bounds.Top, scale);
+        var transform = textBlock.TransformToVisual(root);
+        if (transform is null)
+            return null;
+        var drawOrigin = GetTextDrawOrigin(textBlock, layout);
+        return CaptureTextLayout(
+            layout,
+            textBlock.Text ?? string.Empty,
+            drawOrigin,
+            transform.Value,
+            scale,
+            CaptureTextStyleSignature(textBlock, scale));
     }
 
     private static ParityTextLayout CaptureTextLayout(
         TextLayout layout,
         string text,
-        float originLeft,
-        float originTop,
-        double scale)
+        Point drawOrigin,
+        Matrix transform,
+        double scale,
+        ParityTextStyleSignature? styleSignature)
     {
+        var drawOriginInRoot = TransformPointToPhysicalRoot(drawOrigin, transform, scale);
         var lineTop = 0d;
         var textOffset = 0;
         var lines = new List<ParityTextLine>();
@@ -163,33 +172,146 @@ public sealed class AvaloniaParityCapture
             lineTop += line.Height;
             var start = textOffset;
             var end = Math.Min(text.Length, start + line.Length - line.NewLineLength);
+            var localBounds = new Rect(line.Start, top, line.Width, line.Height);
+            var rootBounds = TransformRectToPhysicalRoot(Offset(localBounds, drawOrigin), transform, scale);
+            var localBaseline = top + line.Baseline;
+            var rootBaseline = TransformPointToPhysicalRoot(
+                new Point(drawOrigin.X + line.Start, drawOrigin.Y + localBaseline),
+                transform,
+                scale).Y;
             lines.Add(new ParityTextLine(
                 lines.Count, start, end, end,
-                originLeft + (float)(line.Start * scale),
-                originLeft + (float)((line.Start + line.Width) * scale),
-                originTop + (float)(top * scale),
-                originTop + (float)((top + line.Height) * scale),
-                originTop + (float)((top + line.Baseline) * scale), false));
+                rootBounds.Left,
+                rootBounds.Right,
+                rootBounds.Top,
+                rootBounds.Bottom,
+                rootBaseline,
+                false,
+                ScaleRect(localBounds, scale),
+                (float)(localBaseline * scale)));
             textOffset += line.Length;
         }
         var characters = Enumerable.Range(0, text.Length).Select(offset =>
         {
             var rect = layout.HitTestTextPosition(offset);
             var line = lines.LastOrDefault(item => offset >= item.StartUtf16 && offset < item.EndUtf16)?.Index ?? 0;
+            var localBounds = new Rect(rect.X, rect.Y, rect.Width, rect.Height);
             return new ParityCharacterBox(
                 offset,
                 ((int)text[offset]).ToString("X4"),
                 line,
-                new ParityRect(
-                    originLeft + (float)(rect.X * scale),
-                    originTop + (float)(rect.Y * scale),
-                    originLeft + (float)((rect.X + rect.Width) * scale),
-                    originTop + (float)((rect.Y + rect.Height) * scale)));
+                TransformRectToPhysicalRoot(Offset(localBounds, drawOrigin), transform, scale),
+                ScaleRect(localBounds, scale));
         }).ToArray();
-        var first = lines.FirstOrDefault()?.BaselinePx ?? originTop;
-        var last = lines.LastOrDefault()?.BaselinePx ?? originTop;
-        return new ParityTextLayout(text, "utf-16", first, last, lines.Count, false, lines, characters);
+        var first = lines.FirstOrDefault()?.BaselinePx ?? drawOriginInRoot.Y;
+        var last = lines.LastOrDefault()?.BaselinePx ?? drawOriginInRoot.Y;
+        return new ParityTextLayout(
+            text,
+            "utf-16",
+            first,
+            last,
+            lines.Count,
+            false,
+            lines,
+            characters,
+            drawOriginInRoot,
+            lines.FirstOrDefault()?.BaselineInTextPx,
+            lines.LastOrDefault()?.BaselineInTextPx,
+            styleSignature);
     }
+
+    private static Point GetTextDrawOrigin(TextBlock textBlock, TextLayout layout)
+    {
+        var padding = textBlock.Padding;
+        if (textBlock.UseLayoutRounding)
+        {
+            var layoutScale = LayoutHelper.GetLayoutScale(textBlock);
+            padding = LayoutHelper.RoundLayoutThickness(padding, layoutScale);
+        }
+
+        var top = padding.Top;
+        if (textBlock.Bounds.Height < layout.Height)
+        {
+            top += textBlock.VerticalAlignment switch
+            {
+                VerticalAlignment.Center => (textBlock.Bounds.Height - layout.Height) / 2,
+                VerticalAlignment.Bottom => textBlock.Bounds.Height - layout.Height,
+                _ => 0
+            };
+        }
+
+        return new Point(padding.Left, top);
+    }
+
+    private static ParityTextStyleSignature CaptureTextStyleSignature(TextBlock textBlock, double scale)
+    {
+        var requestedFontFamily = textBlock.FontFamily.Name;
+        var resolvedFontFamily = requestedFontFamily;
+        try
+        {
+            var glyphTypeface = new Typeface(
+                textBlock.FontFamily,
+                textBlock.FontStyle,
+                textBlock.FontWeight,
+                textBlock.FontStretch).GlyphTypeface;
+            resolvedFontFamily = string.IsNullOrWhiteSpace(glyphTypeface.TypographicFamilyName)
+                ? glyphTypeface.FamilyName
+                : glyphTypeface.TypographicFamilyName;
+        }
+        catch (InvalidOperationException)
+        {
+            // The shaped TextLayout remains the source of truth if the platform cannot expose a
+            // glyph typeface. Keep the requested family so the comparison stays diagnostic.
+        }
+
+        var usesPinnedRoboto = string.Equals(requestedFontFamily, FontEnvironment.Roboto.Name, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(resolvedFontFamily, FontEnvironment.Roboto.Name, StringComparison.OrdinalIgnoreCase);
+        return new ParityTextStyleSignature(
+            requestedFontFamily,
+            resolvedFontFamily,
+            usesPinnedRoboto ? FontEnvironment.RequireCanonicalRoboto().Sha256 : null,
+            (int)textBlock.FontWeight,
+            (float)(textBlock.FontSize * scale),
+            ToPhysicalPixelsOrNull(textBlock.LineHeight, scale),
+            (float)(textBlock.LetterSpacing * scale));
+    }
+
+    private static float? ToPhysicalPixelsOrNull(double value, double scale) =>
+        double.IsNaN(value) ? null : (float)(value * scale);
+
+    private static ParityPoint TransformPointToPhysicalRoot(Point point, Matrix transform, double scale)
+    {
+        var rootPoint = point.Transform(transform);
+        return new ParityPoint((float)(rootPoint.X * scale), (float)(rootPoint.Y * scale));
+    }
+
+    private static ParityRect TransformRectToPhysicalRoot(Rect rect, Matrix transform, double scale)
+    {
+        var points = new[]
+        {
+            TransformPointToPhysicalRoot(rect.TopLeft, transform, scale),
+            TransformPointToPhysicalRoot(rect.TopRight, transform, scale),
+            TransformPointToPhysicalRoot(rect.BottomLeft, transform, scale),
+            TransformPointToPhysicalRoot(rect.BottomRight, transform, scale)
+        };
+        return new ParityRect(
+            points.Min(point => point.X),
+            points.Min(point => point.Y),
+            points.Max(point => point.X),
+            points.Max(point => point.Y));
+    }
+
+    private static ParityRect ScaleRect(Rect rect, double scale) => new(
+        (float)(rect.Left * scale),
+        (float)(rect.Top * scale),
+        (float)(rect.Right * scale),
+        (float)(rect.Bottom * scale));
+
+    private static Rect Offset(Rect rect, Point offset) => new(
+        rect.X + offset.X,
+        rect.Y + offset.Y,
+        rect.Width,
+        rect.Height);
 }
 
 public sealed record ParityActualCapture(RenderedImage Image, ParityCaptureResult Layout);

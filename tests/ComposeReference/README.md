@@ -71,11 +71,14 @@ on the Avalonia comparison side.
 
 ### layout.json
 
-Per-case capture result (schema v1) containing:
+Per-case capture result (schema v2) containing:
 - Coordinate space definition (2× scale, root-relative physical pixels)
 - Viewport dimensions in physical pixels
 - Required node bounds as reported by `Modifier.onGloballyPositioned`
-- Text layout metrics, baselines, and per-character advance boxes for registered `Text` nodes
+- Text draw origin, local and root-space metrics/baselines, and per-character advance boxes for
+  registered `Text` nodes
+- A diagnostic text-style signature (requested/resolved family, pinned font hash, weight, size,
+  line height, and letter spacing) wherever both implementations have a direct style probe
 
 The official `TextField` editable implementation exposes a `TextLayoutResult` through semantics,
 but not its independent root drawing origin. Until a dedicated adapter supplies that origin, input

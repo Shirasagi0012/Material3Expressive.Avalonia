@@ -166,6 +166,11 @@ public class MaterialButton : Button
         FontSize = scale.FontSize;
         FontFamily = typography.GetFontFamily(_metrics.LabelTextStyle);
         FontWeight = typography.GetFontWeight(_metrics.LabelTextStyle);
+        // Button.kt provides MaterialTheme.typography.labelLarge to the whole content lambda.
+        // The attached property carries the corresponding line height and letter spacing to
+        // Avalonia TextBlock descendants, rather than leaving them at the inherited BodyMedium
+        // defaults.
+        TypographyScheme.SetTextStyle(this, _metrics.LabelTextStyle);
 
         UpdateShape(snap: true);
         InvalidateVisual();

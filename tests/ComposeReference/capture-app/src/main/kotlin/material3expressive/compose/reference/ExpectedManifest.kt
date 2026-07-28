@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ExpectedManifest(
-    val schemaVersion: Int = 1,
+    val schemaVersion: Int = 2,
     val composeMultiplatformPluginVersion: String,
     val composeRuntimeVersion: String,
     val composeMaterial3Version: String,
@@ -23,7 +23,7 @@ data class ExpectedManifest(
     val themeIdentifier: String,
     val themeSha256: String,
     val caseCatalogSha256: String,
-    val captureSchemaVersion: Int = 1,
+    val captureSchemaVersion: Int = 2,
     val viewportScale: Float,
     val files: List<ManifestFileEntry>,
     val cases: List<ManifestCaseEntry>,
@@ -48,7 +48,7 @@ data class ManifestCaseEntry(
 
 @Serializable
 data class CaptureResult(
-    val schemaVersion: Int = 1,
+    val schemaVersion: Int = 2,
     val caseId: String,
     val coordinateSpace: CoordinateSpace,
     val viewportPx: ViewportPx,
@@ -108,6 +108,27 @@ data class CaptureTextLayout(
     val overflowEllipsis: Boolean = false,
     val lines: List<CaptureTextLine>,
     val characterBoxes: List<CaptureCharacterBox>,
+    val drawOriginInRootPx: PointPx? = null,
+    val firstBaselineInTextPx: Float? = null,
+    val lastBaselineInTextPx: Float? = null,
+    val styleSignature: CaptureTextStyleSignature? = null,
+)
+
+@Serializable
+data class PointPx(
+    val x: Float,
+    val y: Float,
+)
+
+@Serializable
+data class CaptureTextStyleSignature(
+    val requestedFontFamily: String,
+    val resolvedFontFamily: String,
+    val pinnedFontFileSha256: String? = null,
+    val fontWeight: Int,
+    val fontSizePx: Float? = null,
+    val lineHeightPx: Float? = null,
+    val letterSpacingPx: Float? = null,
 )
 
 @Serializable
@@ -122,6 +143,8 @@ data class CaptureTextLine(
     val bottomPx: Float,
     val baselinePx: Float,
     val ellipsized: Boolean = false,
+    val boundsInTextPx: BoundsPx? = null,
+    val baselineInTextPx: Float? = null,
 )
 
 @Serializable
@@ -130,4 +153,5 @@ data class CaptureCharacterBox(
     val codeUnit: String,
     val lineIndex: Int,
     val boundsInRootPx: BoundsPx,
+    val boundsInTextPx: BoundsPx? = null,
 )

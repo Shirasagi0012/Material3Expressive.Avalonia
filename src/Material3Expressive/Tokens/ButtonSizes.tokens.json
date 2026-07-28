@@ -76,7 +76,7 @@
         "IconSize": "@ButtonMediumTokens.IconSize",
         "IconLabelSpace": "@ButtonMediumTokens.IconLabelSpace",
         "OutlineWidth": "@ButtonMediumTokens.OutlinedOutlineWidth",
-        "LabelTextStyle": "TitleMedium"
+        "LabelTextStyle": "LabelLarge"
       }
     },
     {
@@ -93,7 +93,7 @@
         "IconSize": "@ButtonLargeTokens.IconSize",
         "IconLabelSpace": "@ButtonLargeTokens.IconLabelSpace",
         "OutlineWidth": "@ButtonLargeTokens.OutlinedOutlineWidth",
-        "LabelTextStyle": "HeadlineSmall"
+        "LabelTextStyle": "LabelLarge"
       }
     },
     {
@@ -110,7 +110,7 @@
         "IconSize": "@ButtonXLargeTokens.IconSize",
         "IconLabelSpace": "@ButtonXLargeTokens.IconLabelSpace",
         "OutlineWidth": "@ButtonXLargeTokens.OutlinedOutlineWidth",
-        "LabelTextStyle": "HeadlineLarge"
+        "LabelTextStyle": "LabelLarge"
       }
     }
   ]

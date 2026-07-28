@@ -24,7 +24,11 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                    <!-- Compose's Row applies contentPadding inside its measured layout. Using
+                         ContentPresenter.Padding preserves that sizing and centres the 20dp
+                         LabelLarge line inside the 56dp medium button. Margin instead stretched
+                         the child to the remaining 24dp slot. -->
+                    <ContentPresenter Padding="{TemplateBinding Padding}"
                                       HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                       VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                       RecognizesAccessKey="True"
