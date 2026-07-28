@@ -12,8 +12,8 @@
 
   "properties": {
     "ContainerColor": { "type": "color", "summary": "The field's fill. Transparent when outlined." },
-    "DisabledContainerColor": { "type": "color", "opacity": "DisabledContainerOpacity", "summary": "The fill when disabled." },
-    "DisabledContainerOpacity": { "type": "opacity", "summary": "Alpha applied to the disabled fill — 0.04, barely there." },
+    "DisabledContainerColor": { "type": "color", "opacity": "DisabledContainerOpacity", "summary": "The resolved fill when disabled. Filled fields retain their normal container surface; outlined fields remain transparent." },
+    "DisabledContainerOpacity": { "type": "opacity", "summary": "Alpha applied to the resolved disabled fill." },
 
     "InputColor": { "type": "color", "summary": "The text being edited." },
     "PlaceholderColor": { "type": "color", "summary": "The placeholder shown while empty." },
@@ -55,8 +55,11 @@
       "summary": "A tinted surface with an indicator line along its bottom edge.",
       "values": {
         "ContainerColor": "SurfaceContainerHighest",
-        "DisabledContainerColor": "OnSurface",
-        "DisabledContainerOpacity": 0.04,
+        // TextFieldDefaults.defaultTextFieldColors() resolves the default disabled container
+        // from FilledTextFieldTokens.ContainerColor, rather than directly exposing the raw
+        // DisabledContainerColor/Opacity token pair.
+        "DisabledContainerColor": "SurfaceContainerHighest",
+        "DisabledContainerOpacity": 1,
 
         "InputColor": "OnSurface",
         "PlaceholderColor": "OnSurfaceVariant",

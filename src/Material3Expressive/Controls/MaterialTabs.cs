@@ -81,6 +81,17 @@ public class MaterialTab : ToggleButton
         FontSize = typography.GetTypeScale(_tokens.LabelTextStyle).FontSize;
         FontFamily = typography.GetFontFamily(_tokens.LabelTextStyle);
         FontWeight = typography.GetFontWeight(_tokens.LabelTextStyle);
+        // Tab.kt wraps the text slot in ProvideTextStyle(TitleSmall).  Preserve the full
+        // inherited type scale for a supplied TextBlock, not only the three TextElement values
+        // exposed by the control itself.
+        TypographyScheme.SetTextStyle(this, _tokens.LabelTextStyle);
+
+        // Tab.kt copies TitleSmall with TextAlign.Center before it invokes the supplied text
+        // lambda. Existing TextBlock content needs the equivalent local paragraph setting; the
+        // ContentPresenter's text properties only affect string content.
+        if (Content is TextBlock textBlock)
+            textBlock.TextAlignment = TextAlignment.Center;
+
         MinHeight = Icon is null ? _tokens.ContainerHeight : _tokens.IconAndLabelHeight;
 
         ApplyColors();

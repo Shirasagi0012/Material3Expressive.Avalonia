@@ -67,6 +67,7 @@ public class MaterialFab : Button
 
     static MaterialFab()
     {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialFab>(false);
         AffectsRender<MaterialFab>(VariantProperty, IsLoweredProperty);
     }
 

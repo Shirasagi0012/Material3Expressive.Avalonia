@@ -21,6 +21,7 @@
                          from it, which is the direction the reveal runs. -->
                     <StackPanel HorizontalAlignment="Right" Spacing="{TemplateBinding CloseButtonSpacing}">
                         <ItemsControl HorizontalAlignment="Right"
+                                      ClipToBounds="False"
                                       ItemsSource="{Binding $parent[m3:MaterialFabMenu].Items}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>

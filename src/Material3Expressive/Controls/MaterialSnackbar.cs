@@ -59,6 +59,7 @@ public class MaterialSnackbar : TemplatedControl
 
     static MaterialSnackbar()
     {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialSnackbar>(false);
         AffectsRender<MaterialSnackbar>(IsOpenProperty);
     }
 

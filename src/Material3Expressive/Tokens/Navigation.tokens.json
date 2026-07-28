@@ -50,8 +50,12 @@
         "ActiveIndicatorHeight": 32,
         "ActiveIndicatorShape": "CornerFull",
         "IconSize": 24,
-        "IconLabelSpace": 4,
-        "ItemBetweenSpace": 0,
+        // Compose positions the label below the icon by its 4dp indicator padding plus the
+        // 4dp indicator-to-label token gap.  This value is the effective icon-to-label gap used
+        // by the shared Avalonia template.
+        "IconLabelSpace": 8,
+        // NavigationBar.kt uses NavigationBarItemHorizontalPadding (8dp) between weighted items.
+        "ItemBetweenSpace": 8,
         "LabelTextStyle": "LabelMedium",
         "IsVertical": false
       }
@@ -64,7 +68,8 @@
         "ContainerColor": "Surface",
         "ContainerElevation": "@ElevationTokens.Level0",
         "ContainerSize": 96,
-        "ItemBetweenSpace": 6,
+        // NavigationRail.kt uses NavigationRailVerticalPadding (4dp) both around and between items.
+        "ItemBetweenSpace": 4,
         "IsVertical": true
       }
     }

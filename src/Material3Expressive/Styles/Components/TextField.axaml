@@ -17,10 +17,10 @@
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <StackPanel>
+                    <Grid RowDefinitions="*,Auto">
                         <!-- The field's own box. The control paints the container, indicator or
                              border, and the floating label; the TextBox owns the editing. -->
-                        <Panel Height="{TemplateBinding MinHeight}">
+                        <Panel Grid.Row="0">
                             <TextBox x:Name="PART_TextBox"
                                      Margin="{TemplateBinding Padding}"
                                      VerticalAlignment="Bottom"
@@ -35,11 +35,24 @@
                                      PlaceholderText="{TemplateBinding Placeholder}"
                                      Foreground="{TemplateBinding Foreground}"
                                      FontSize="{TemplateBinding FontSize}"
-                                     FontFamily="{TemplateBinding FontFamily}">
+                                     FontFamily="{TemplateBinding FontFamily}"
+                                     FontWeight="{TemplateBinding FontWeight}">
                                 <!-- The editor keeps Avalonia's caret, selection, IME and undo
                                      implementation, but its Fluent focus frame must not sit
                                      inside Material's own outlined/filled chrome. -->
                                 <TextBox.Resources>
+                                    <!-- Fluent supplies a disabled TextBox fill through these
+                                         resources. MaterialTextField paints its own disabled
+                                         container, so the editor must remain transparent in
+                                         every pseudo-class. -->
+                                    <SolidColorBrush x:Key="TextControlBackground"
+                                                     Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                                     Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                                     Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundDisabled"
+                                                     Color="Transparent" />
                                     <SolidColorBrush x:Key="TextControlBorderBrush"
                                                      Color="Transparent" />
                                     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
@@ -50,11 +63,13 @@
                             </TextBox>
                         </Panel>
                         <TextBlock x:Name="PART_Supporting"
+                                   Grid.Row="1"
                                    Margin="16,4,16,0"
+                                   HorizontalAlignment="Left"
                                    Classes="body-small"
                                    Text="{TemplateBinding SupportingText}"
                                    IsVisible="{TemplateBinding SupportingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                    </StackPanel>
+                    </Grid>
                 </ControlTemplate>
             </Setter>
 

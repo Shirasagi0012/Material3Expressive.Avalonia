@@ -147,6 +147,13 @@ public class MaterialNavigationItem : ToggleButton
         FontFamily = typography.GetFontFamily(_tokens.LabelTextStyle);
         FontWeight = typography.GetFontWeight(_tokens.LabelTextStyle);
 
+        // NavigationBarItem and NavigationRailItem both wrap their label in
+        // ProvideContentColorTextStyle.  FontSize alone is not sufficient for a templated
+        // Avalonia control: the supplied TextBlock otherwise retains the inherited BodyMedium
+        // line height, tracking, and weight.  Carry the complete local text-style contract to
+        // the content subtree, matching the Compose composition local.
+        TypographyScheme.SetTextStyle(this, _tokens.LabelTextStyle);
+
         ApplyColors();
         InvalidateMeasure();
     }

@@ -43,7 +43,7 @@ public sealed class AvaloniaParityCapture
 
     private static void EnsureCanonicalRoboto()
     {
-        _ = FontEnvironment.RequireCanonicalRoboto();
+        FontEnvironment.RequirePinnedRobotoFaces();
     }
 
     private static IReadOnlyList<ParityNode> CaptureNodes(
@@ -247,9 +247,10 @@ public sealed class AvaloniaParityCapture
     {
         var requestedFontFamily = textBlock.FontFamily.Name;
         var resolvedFontFamily = requestedFontFamily;
+        GlyphTypeface? glyphTypeface = null;
         try
         {
-            var glyphTypeface = new Typeface(
+            glyphTypeface = new Typeface(
                 textBlock.FontFamily,
                 textBlock.FontStyle,
                 textBlock.FontWeight,
@@ -264,12 +265,13 @@ public sealed class AvaloniaParityCapture
             // glyph typeface. Keep the requested family so the comparison stays diagnostic.
         }
 
-        var usesPinnedRoboto = string.Equals(requestedFontFamily, FontEnvironment.Roboto.Name, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(resolvedFontFamily, FontEnvironment.Roboto.Name, StringComparison.OrdinalIgnoreCase);
+        var pinnedRobotoHash = glyphTypeface is null
+            ? null
+            : FontEnvironment.GetCanonicalRobotoHash(glyphTypeface);
         return new ParityTextStyleSignature(
             requestedFontFamily,
             resolvedFontFamily,
-            usesPinnedRoboto ? FontEnvironment.RequireCanonicalRoboto().Sha256 : null,
+            pinnedRobotoHash,
             (int)textBlock.FontWeight,
             (float)(textBlock.FontSize * scale),
             ToPhysicalPixelsOrNull(textBlock.LineHeight, scale),

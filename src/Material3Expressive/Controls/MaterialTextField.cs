@@ -81,7 +81,11 @@ public class MaterialTextField : TemplatedControl
 
     static MaterialTextField()
     {
-        AffectsRender<MaterialTextField>(VariantProperty, IsErrorProperty, LabelProperty);
+        AffectsRender<MaterialTextField>(
+            VariantProperty,
+            IsErrorProperty,
+            LabelProperty,
+            SupportingTextProperty);
         FocusableProperty.OverrideDefaultValue<MaterialTextField>(false);
     }
 
@@ -140,7 +144,28 @@ public class MaterialTextField : TemplatedControl
     protected double FloatFraction => _float?.Value ?? (ShouldFloat ? 1 : 0);
 
     /// <summary>The field's own box, excluding the supporting text below it.</summary>
-    protected Rect FieldArea => new(0, 0, Bounds.Width, Math.Min(Bounds.Height, _tokens.ContainerHeight));
+    /// <remarks>
+    /// Compose's text-field layout gives the container all remaining height after the supporting
+    /// slot, rather than pinning it to its 56dp minimum. That matters for a caller that provides
+    /// the standard 80dp field-with-supporting-text footprint: the container is then 60dp tall.
+    /// </remarks>
+    protected Rect FieldArea
+    {
+        get
+        {
+            var height = string.IsNullOrEmpty(SupportingText)
+                ? Math.Min(Bounds.Height, _tokens.ContainerHeight)
+                : Math.Max(_tokens.ContainerHeight, Bounds.Height - SupportingSlotHeight);
+            return new Rect(0, 0, Bounds.Width, height);
+        }
+    }
+
+    // TextFieldImpl.kt defines SupportingTopPadding as 4.dp. The slot itself uses BodySmall's
+    // 16dp line height, so a standard 80dp field leaves a 60dp container above it.
+    private double SupportingSlotHeight => SupportingTopPadding
+        + _theme.Theme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight;
+
+    private const double SupportingTopPadding = 4;
 
     private bool ShouldFloat => (_textBox?.IsFocused ?? false) || !string.IsNullOrEmpty(Text);
 
@@ -156,6 +181,9 @@ public class MaterialTextField : TemplatedControl
         var enabled = IsEffectivelyEnabled;
         var focused = _textBox?.IsFocused ?? false;
         var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, field.Size);
+
+        if (!string.IsNullOrEmpty(Label))
+            _labelWidthFloated = MeasureFloatedLabel(_theme.Theme.Typography);
 
         var outlineWidth = focused ? _tokens.FocusOutlineWidth : _tokens.OutlineWidth;
         var outline = !enabled ? _colors.DisabledOutlineColor
@@ -217,7 +245,9 @@ public class MaterialTextField : TemplatedControl
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty || change.Property == IsEffectivelyEnabledProperty)
+        if (change.Property == VariantProperty
+            || change.Property == IsEffectivelyEnabledProperty
+            || change.Property == IsErrorProperty)
         {
             ApplyTokens();
         }
@@ -225,9 +255,14 @@ public class MaterialTextField : TemplatedControl
         {
             UpdateFloat();
         }
-        else if (change.Property == LabelProperty || change.Property == IsErrorProperty)
+        else if (change.Property == LabelProperty)
         {
             _labelWidthAtRest = 0;
+            InvalidateVisual();
+        }
+        else if (change.Property == SupportingTextProperty)
+        {
+            InvalidateMeasure();
             InvalidateVisual();
         }
     }
@@ -297,17 +332,10 @@ public class MaterialTextField : TemplatedControl
             : focused ? _colors.FocusLabelColor
             : _colors.LabelColor;
 
-        var text = new FormattedText(
-            parameters.Text,
-            System.Globalization.CultureInfo.CurrentCulture,
-            FlowDirection,
-            parameters.Typeface,
-            parameters.FontSize,
-            brush);
+        using var text = CreateLabelTextLayout(parameters, brush);
 
         _labelWidthAtRest = _labelWidthAtRest > 0 ? _labelWidthAtRest : text.Width;
-        _labelWidthFloated = MeasureFloatedLabel(_theme.Theme.Typography, parameters.FloatedFontSize);
-        context.DrawText(text, parameters.Origin);
+        text.Draw(context, parameters.Origin);
     }
 
     /// <summary>
@@ -320,11 +348,7 @@ public class MaterialTextField : TemplatedControl
         var parameters = GetLabelDrawingParameters(FieldArea);
         if (parameters is null)
             return null;
-        var layout = new TextLayout(
-            parameters.Text,
-            parameters.Typeface,
-            parameters.FontSize,
-            Brushes.Transparent);
+        var layout = CreateLabelTextLayout(parameters, Brushes.Transparent);
         return new MaterialTextFieldLabelProbe(parameters.Origin, layout);
     }
 
@@ -333,42 +357,70 @@ public class MaterialTextField : TemplatedControl
         if (string.IsNullOrEmpty(Label) || field.Width <= 0 || field.Height <= 0)
             return null;
         var typography = _theme.Theme.Typography;
-        var restingSize = typography.GetTypeScale(_tokens.InputTextStyle).FontSize;
-        var floatedSize = typography.GetTypeScale(_tokens.FloatingLabelTextStyle).FontSize;
+        var resting = typography.GetTypeScale(_tokens.InputTextStyle);
+        var floated = typography.GetTypeScale(_tokens.FloatingLabelTextStyle);
         var fraction = FloatFraction;
-        var size = restingSize + (floatedSize - restingSize) * fraction;
-        var typeface = new Typeface(typography.GetFontFamily(_tokens.InputTextStyle));
-        var metrics = new FormattedText(
-            Label,
-            System.Globalization.CultureInfo.CurrentCulture,
-            FlowDirection,
-            typeface,
-            size,
-            Brushes.Transparent);
-        var restingY = (field.Height - metrics.Height) / 2;
-        var floatedY = _tokens.IsFilled ? 8 : 2;
+        var typeface = new Typeface(
+            typography.GetFontFamily(_tokens.InputTextStyle),
+            FontStyle.Normal,
+            typography.GetFontWeight(_tokens.InputTextStyle));
+        var size = Lerp(resting.FontSize, floated.FontSize, fraction);
+        var lineHeight = Lerp(resting.LineHeight, floated.LineHeight, fraction);
+        var letterSpacing = Lerp(resting.LetterSpacing, floated.LetterSpacing, fraction);
+
+        // TextFieldImpl.kt measures an expanded label with a 24dp minimum line height and a
+        // minimized label with a 16dp one. Using font metrics here caused the custom Avalonia
+        // draw path to be too short and vertically centred incorrectly.
+        var restingY = _tokens.IsFilled
+            ? (field.Height - resting.LineHeight) / 2
+            : OutlinedLabelTopInset + (field.Height - OutlinedLabelTopInset - resting.LineHeight) / 2;
+        var floatedY = _tokens.IsFilled ? FilledLabelTopInset : 0;
         return new LabelDrawingParameters(
             Label,
             typeface,
             size,
-            floatedSize,
+            lineHeight,
+            letterSpacing,
             new Point(
                 field.X + _tokens.HorizontalSpace,
                 restingY + (floatedY - restingY) * fraction));
     }
 
-    private double MeasureFloatedLabel(ResolvedTypographyScheme typography, double floatedSize)
+    private TextLayout CreateLabelTextLayout(LabelDrawingParameters parameters, IBrush brush)
     {
-        var text = new FormattedText(
+        return new TextLayout(
+            parameters.Text,
+            parameters.Typeface,
+            parameters.FontSize,
+            brush,
+            flowDirection: FlowDirection,
+            lineHeight: parameters.LineHeight,
+            letterSpacing: parameters.LetterSpacing);
+    }
+
+    private double MeasureFloatedLabel(ResolvedTypographyScheme typography)
+    {
+        var style = typography.GetTypeScale(_tokens.FloatingLabelTextStyle);
+        using var text = new TextLayout(
             Label ?? string.Empty,
-            System.Globalization.CultureInfo.CurrentCulture,
-            FlowDirection,
-            new Typeface(typography.GetFontFamily(_tokens.FloatingLabelTextStyle)),
-            floatedSize,
-            Brushes.Black);
+            new Typeface(
+                typography.GetFontFamily(_tokens.FloatingLabelTextStyle),
+                FontStyle.Normal,
+                typography.GetFontWeight(_tokens.FloatingLabelTextStyle)),
+            style.FontSize,
+            Brushes.Black,
+            flowDirection: FlowDirection,
+            lineHeight: style.LineHeight,
+            letterSpacing: style.LetterSpacing);
 
         return text.Width;
     }
+
+    private const double FilledLabelTopInset = 8;
+    private const double OutlinedLabelTopInset = 8;
+
+    private static double Lerp(double start, double end, double amount) =>
+        start + (end - start) * amount;
 
     private void OnEditorFocusChanged(object? sender, RoutedEventArgs e)
     {
@@ -400,8 +452,13 @@ public class MaterialTextField : TemplatedControl
 
         Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);
         MinHeight = _tokens.ContainerHeight;
-        FontSize = typography.GetTypeScale(_tokens.InputTextStyle).FontSize;
+        var inputStyle = typography.GetTypeScale(_tokens.InputTextStyle);
+        FontSize = inputStyle.FontSize;
         FontFamily = typography.GetFontFamily(_tokens.InputTextStyle);
+        FontWeight = typography.GetFontWeight(_tokens.InputTextStyle);
+        // TextFieldImpl.kt provides bodyLarge to the editor content. The inherited attached role
+        // carries its line height and tracking through Avalonia's TextBox template as well.
+        TypographyScheme.SetTextStyle(this, _tokens.InputTextStyle);
         var previousSupporting = SupportingBrush;
 
         Foreground = IsEffectivelyEnabled
@@ -422,5 +479,6 @@ internal sealed record LabelDrawingParameters(
     string Text,
     Typeface Typeface,
     double FontSize,
-    double FloatedFontSize,
+    double LineHeight,
+    double LetterSpacing,
     Point Origin);

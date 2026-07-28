@@ -45,6 +45,11 @@ public class MaterialFabMenu : TemplatedControl
     private SpringAnimation? _reveal;
     private FabMenuTokens _tokens = FabMenuTokens.Default;
 
+    static MaterialFabMenu()
+    {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialFabMenu>(false);
+    }
+
     public MaterialFabMenu()
     {
         _theme = new MaterialThemeWatcher(this);

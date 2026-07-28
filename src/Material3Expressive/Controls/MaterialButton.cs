@@ -63,6 +63,7 @@ public class MaterialButton : Button
 
     static MaterialButton()
     {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialButton>(false);
         AffectsRender<MaterialButton>(VariantProperty, IsSquareProperty);
     }
 

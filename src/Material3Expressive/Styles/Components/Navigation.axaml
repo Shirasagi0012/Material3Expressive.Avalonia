@@ -64,12 +64,9 @@
                     <ItemsControl ItemsSource="{Binding $parent[m3:MaterialNavigationBar].Items}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                            <!-- A uniform grid rather than a stack: navigation items share the
-                                 bar equally, which is what keeps the row balanced when the
-                                 labels are different lengths. -->
-                                <UniformGrid
-                                    Rows="{Binding $parent[m3:MaterialNavigationBar].ItemRows}"
-                                    Columns="{Binding $parent[m3:MaterialNavigationBar].ItemColumns}" />
+                                <m3:MaterialNavigationItemsPanel
+                                    IsVertical="{Binding $parent[m3:MaterialNavigationBar].IsVertical}"
+                                    ItemSpacing="{Binding $parent[m3:MaterialNavigationBar].ItemSpacing}" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>

@@ -54,6 +54,7 @@ public class MaterialTooltip : ContentControl
 
     static MaterialTooltip()
     {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialTooltip>(false);
         AffectsRender<MaterialTooltip>(StyleProperty);
         TipProperty.Changed.AddClassHandler<Control>(OnTipChanged);
     }

@@ -37,6 +37,9 @@ public sealed class ParityRun
             profile);
         var caseDir = Path.Combine(artifactRoot, "actual", "cases", caseId.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(caseDir);
+        File.WriteAllText(
+            Path.Combine(artifactRoot, "actual", "font-environment.txt"),
+            FontEnvironment.DescribePinnedRobotoEnvironment());
         File.Copy(
             Path.Combine(artifactRoot, "expected", composeCase.ImagePath.Replace('/', Path.DirectorySeparatorChar)),
             Path.Combine(caseDir, "expected.png"),

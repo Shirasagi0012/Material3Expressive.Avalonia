@@ -76,6 +76,7 @@ public class MaterialSearchBar : TemplatedControl
 
     static MaterialSearchBar()
     {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialSearchBar>(false);
         AffectsRender<MaterialSearchBar>(IsOpenProperty);
     }
 

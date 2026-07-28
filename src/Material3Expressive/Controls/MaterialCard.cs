@@ -44,6 +44,7 @@ public class MaterialCard : ContentControl
 
     static MaterialCard()
     {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialCard>(false);
         AffectsRender<MaterialCard>(VariantProperty, IsClickableProperty);
     }
 

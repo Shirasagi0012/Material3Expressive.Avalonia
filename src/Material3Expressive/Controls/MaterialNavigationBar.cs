@@ -50,6 +50,7 @@ public class MaterialNavigationBar : TemplatedControl
 
     static MaterialNavigationBar()
     {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialNavigationBar>(false);
         AffectsRender<MaterialNavigationBar>(VariantProperty);
     }
 
