@@ -97,7 +97,7 @@ public sealed class ParityComparer
         {
             if (pair.First.Utf16Offset != pair.Second.Utf16Offset || pair.First.CodeUnit != pair.Second.CodeUnit)
                 failures.Add($"Text '{expected.Id}' character contract differs at offset {pair.First.Utf16Offset}.");
-            CompareRect($"Text '{expected.Id}' character {pair.First.Utf16Offset}", pair.First.BoundsInRootPx, pair.Second.BoundsInRootPx, tolerance.TextPx, failures);
+            CompareRect($"Text '{expected.Id}' character {pair.First.Utf16Offset} bounding", pair.First.BoundsInRootPx, pair.Second.BoundsInRootPx, tolerance.TextPx, failures);
         }
     }
 
@@ -108,11 +108,21 @@ public sealed class ParityComparer
             if (expected != actual) failures.Add($"{label} is missing.");
             return;
         }
-        CompareNumber(label + " left", expected.Left, actual.Left, tolerance, failures);
-        CompareNumber(label + " top", expected.Top, actual.Top, tolerance, failures);
-        CompareNumber(label + " right", expected.Right, actual.Right, tolerance, failures);
-        CompareNumber(label + " bottom", expected.Bottom, actual.Bottom, tolerance, failures);
+        if (MathF.Abs(expected.Left - actual.Left) <= tolerance
+            && MathF.Abs(expected.Top - actual.Top) <= tolerance
+            && MathF.Abs(expected.Right - actual.Right) <= tolerance
+            && MathF.Abs(expected.Bottom - actual.Bottom) <= tolerance)
+            return;
+        failures.Add(
+            $"{label} differs (LTRB px): expected {FormatRect(expected)}, actual {FormatRect(actual)}, " +
+            $"tolerance {FormatTolerance(tolerance)}.");
     }
+
+    private static string FormatRect(ParityRect rect) =>
+        FormattableString.Invariant($"({rect.Left:F3}, {rect.Top:F3}, {rect.Right:F3}, {rect.Bottom:F3})");
+
+    private static string FormatTolerance(float tolerance) =>
+        FormattableString.Invariant($"({tolerance:F3}, {tolerance:F3}, {tolerance:F3}, {tolerance:F3})");
 
     private static void CompareNumber(string label, float expected, float actual, float tolerance, ICollection<string> failures)
     {

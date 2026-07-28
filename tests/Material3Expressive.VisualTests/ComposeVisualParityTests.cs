@@ -1,6 +1,6 @@
 using Avalonia.Headless.XUnit;
+using Material3Expressive.VisualTesting.Cases;
 using Material3Expressive.VisualTesting.Parity;
-using Material3Expressive.VisualTesting.Storage;
 using Xunit;
 
 namespace Material3Expressive.VisualTests;
@@ -9,29 +9,36 @@ namespace Material3Expressive.VisualTests;
 /// Cross-process conformance test. The expected images/layout are freshly produced by CMP for this
 /// run; a mismatch is a test failure and is never promotable to an Avalonia baseline.
 /// </summary>
+[Collection(VisualParityCollection.Name)]
 [Trait("Category", "VisualParity")]
-public sealed class ComposeVisualParityTests
+public sealed class ComposeVisualParityTests(ComposeParityFixture fixture)
 {
-    [AvaloniaFact]
-    public void AllRegisteredScenesMatchTheFreshComposeReference()
+    public static TheoryData<string> Cases
     {
-        var root = RepositoryRoot.Find();
-        var runId = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff");
-        var artifactRoot = Path.Combine(root, "artifacts", "visual-parity", "xunit", runId);
-        var expected = new ComposeExpectedRunner().Generate(artifactRoot);
-        ParityRun.ValidateCaseCatalog(expected);
+        get
+        {
+            var result = new TheoryData<string>();
+            foreach (var visualCase in VisualCaseCatalog.All.OrderBy(item => item.Id, StringComparer.Ordinal))
+            {
+                result.Add(new TheoryDataRow<string>(visualCase.Id)
+                    .WithTestDisplayName($"Visual parity: {visualCase.Id}")
+                    .WithTrait("ParityCase", visualCase.Id));
+            }
+            return result;
+        }
+    }
 
-        var runner = new ParityRun();
-        var results = expected.Manifest.Cases
-            .Select(item => runner.CompareCase(expected, item.Id, artifactRoot))
-            .ToArray();
-        ParityRun.WriteActualManifest(artifactRoot, expected, results);
-        var failed = results.Where(item => !item.Comparison.IsMatch).ToArray();
+    [AvaloniaTheory]
+    [MemberData(nameof(Cases))]
+    public void RegisteredSceneMatchesTheFreshComposeReference(string caseId)
+    {
+        var result = new ParityRun().CompareCase(fixture.Expected, caseId, fixture.ArtifactRoot);
+        fixture.RecordResult(result);
 
         Assert.True(
-            failed.Length == 0,
-            "Visual parity mismatch(es):" + Environment.NewLine + string.Join(
-                Environment.NewLine,
-                failed.Select(item => $"- {item.CaseId}: {item.ArtifactDirectory}{Environment.NewLine}{item.Comparison.Summary}")));
+            result.Comparison.IsMatch,
+            $"Visual parity mismatch for '{caseId}'." + Environment.NewLine +
+            $"Artifacts: {result.ArtifactDirectory}" + Environment.NewLine +
+            result.Comparison.Summary);
     }
 }

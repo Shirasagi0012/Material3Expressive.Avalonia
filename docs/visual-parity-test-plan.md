@@ -716,18 +716,18 @@ The integration suite exposes one parameterized xUnit theory row per case. Conce
 ```csharp
 [Collection("Visual parity")]
 [Trait("Category", "VisualParity")]
-public sealed class ComposeParityTests
+public sealed class ComposeParityTests(ComposeParityFixture fixture)
 {
+    public static TheoryData<string> Cases => /* one named, filterable row per case */;
+
     [AvaloniaTheory]
     [MemberData(nameof(Cases))]
-    public async Task MatchesPinnedCompose(string caseId)
+    public void MatchesPinnedCompose(string caseId)
     {
-        var expected = expectedBundle.Load(caseId);
-        var actual = await avaloniaCapture.CaptureAsync(caseId);
-        var result = comparer.Compare(expected, actual);
+        var result = new ParityRun().CompareCase(fixture.Expected, caseId, fixture.ArtifactRoot);
 
-        artifactWriter.Write(result);
-        Assert.True(result.Passed, result.ToAssertionMessage());
+        fixture.RecordResult(result);
+        Assert.True(result.Comparison.IsMatch, result.Comparison.Summary);
     }
 }
 ```
@@ -741,9 +741,9 @@ required:
 - complete artifact output before the assertion;
 - one aggregate assertion after all checks for the case.
 
-Parity tests are categorized separately from fast unit tests. Selecting a parity test without a
-valid expected-bundle environment variable fails immediately with a message that points to the
-authoritative runner; it must not silently skip or use stale output.
+Parity tests are categorized separately from fast unit tests. The collection fixture generates and
+validates the full expected bundle once before the selected Avalonia rows run; it must not silently
+skip generation or use stale output.
 
 ## 13. Authoritative command
 
@@ -756,7 +756,7 @@ The intended developer entry point is:
 Useful optional arguments may include:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "button/*" -Open
+.\tools\visual-parity\run.ps1 -Case "button/*"
 ```
 
 The script:

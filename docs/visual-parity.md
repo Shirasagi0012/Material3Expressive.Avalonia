@@ -43,9 +43,25 @@ dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTest
 ```
 
 The test fixture launches Gradle once, generates the complete fresh Compose bundle, validates its
-manifest and hashes, captures all Avalonia cases, writes artifacts, and then reports the aggregate
-result. A non-zero result caused by visual differences is meaningful: the harness has run
-successfully and found implementation work to do.
+manifest and hashes, and shares it across one independently discoverable xUnit theory row per
+case. Each row captures only its matching Avalonia scene, writes its artifacts and manifest entry,
+and reports its own result. A non-zero result caused by visual differences is meaningful: the
+harness has run successfully and found implementation work to do.
+
+Run one Avalonia case while still generating the complete Compose expected bundle:
+
+```powershell
+.\tools\visual-parity\run.ps1 -Case "button/filled/medium/enabled/light"
+```
+
+Select a family by suffixing the case prefix with `*`:
+
+```powershell
+.\tools\visual-parity\run.ps1 -Case "button/*"
+```
+
+The corresponding xUnit data rows carry a `ParityCase` trait, so IDE and `dotnet test` filtering
+can address the same cases directly.
 
 To inspect only the reference producer, run the commands in
 [`tests/ComposeReference/README.md`](../tests/ComposeReference/README.md). Its `--case` argument
@@ -128,6 +144,12 @@ Use the failure category to start triage:
 
 `comparison.json` contains the complete machine-readable result; `comparison.txt` is the concise
 failure summary emitted with the xUnit assertion.
+
+Rectangle failures use a single `(left, top, right, bottom)` tuple instead of one message per edge:
+
+```text
+Text 'label' character 4 bounding differs (LTRB px): expected (249.728, 76.000, 265.896, 116.000), actual (250.528, 72.000, 266.896, 112.000), tolerance (0.500, 0.500, 0.500, 0.500).
+```
 
 ## Add or change a parity case
 
