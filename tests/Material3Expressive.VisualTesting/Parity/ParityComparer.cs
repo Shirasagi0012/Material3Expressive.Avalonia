@@ -11,7 +11,8 @@ public sealed class ParityComparer
         ParityCaptureResult actual,
         RenderedImage expectedImage,
         RenderedImage actualImage,
-        ParityComparisonProfile? profile = null)
+        ParityComparisonProfile? profile = null,
+        string? profileRulePrefix = null)
     {
         profile ??= ParityComparisonProfiles.ComponentWithText;
         var tolerance = profile.LayoutTolerance;
@@ -57,7 +58,18 @@ public sealed class ParityComparer
                 failures.Add(rasterFailure);
             }
         }
-        return new ParityComparison(profile.Id, failures.Count == 0, failures, pixels, raster, warningRaster, warnings);
+        return new ParityComparison(
+            ParityComparison.CurrentSchemaVersion,
+            ParityComparisonProfiles.CurrentSchemaVersion,
+            profile.Id,
+            profileRulePrefix,
+            profile,
+            failures.Count == 0,
+            failures,
+            pixels,
+            raster,
+            warningRaster,
+            warnings);
     }
 
     private static void CompareMotion(
@@ -443,7 +455,11 @@ public enum ParityComparisonKind
 }
 
 public sealed record ParityComparison(
+    int SchemaVersion,
+    int ProfileSchemaVersion,
     string ProfileId,
+    string? ProfileRulePrefix,
+    ParityComparisonProfile Profile,
     bool IsMatch,
     IReadOnlyList<string> Failures,
     ParityPixelDifference Pixels,
@@ -451,6 +467,8 @@ public sealed record ParityComparison(
     ParityRasterComparison? WarningRaster = null,
     IReadOnlyList<string>? Warnings = null)
 {
+    public const int CurrentSchemaVersion = 9;
+
     [JsonIgnore]
     public IReadOnlyList<string> WarningsOrEmpty => Warnings ?? [];
 
@@ -462,9 +480,56 @@ public sealed record ParityComparison(
                 ? ParityComparisonKind.SemanticRasterEquivalent
                 : ParityComparisonKind.ExactMatch;
 
-    public string Summary => !IsMatch
-        ? string.Join(Environment.NewLine, Failures)
-        : WarningsOrEmpty.Count == 0
-            ? "Parity match."
-            : "Parity match with warning." + Environment.NewLine + string.Join(Environment.NewLine, WarningsOrEmpty);
+    public string RasterDiagnostics => Raster is not { RejectedPixels: > 0 }
+        ? "No pixels were rejected by the normal semantic raster policy."
+        : $"Semantic raster rejection: reasons={string.Join(",", Raster.RejectionReasons.Select(FormatReason))}; " +
+          $"bounds={FormatBounds(Raster.RejectedBounds)}; " +
+          $"owners={string.Join(";", Raster.Regions.Where(region => region.RejectedPixels > 0).Select(FormatRegion))}; " +
+          $"samples={FormatSamples(Raster.RejectedSamples)}.";
+
+    public string Summary
+    {
+        get
+        {
+            var headline = !IsMatch
+                ? string.Join(Environment.NewLine, Failures)
+                : WarningsOrEmpty.Count == 0
+                    ? "Parity match."
+                    : "Parity match with warning." + Environment.NewLine + string.Join(Environment.NewLine, WarningsOrEmpty);
+            return Raster is { RejectedPixels: > 0 }
+                ? headline + Environment.NewLine + RasterDiagnostics
+                : headline;
+        }
+    }
+
+    private static string FormatReason(ParityRasterRejectionReason reason) =>
+        reason.ToString() is { Length: > 0 } value
+            ? char.ToLowerInvariant(value[0]) + value[1..]
+            : string.Empty;
+
+    private static string FormatBounds(ParityPixelBounds? bounds) => bounds is null
+        ? "none"
+        : $"({bounds.Left},{bounds.Top})-({bounds.Right},{bounds.Bottom})";
+
+    private static string FormatSamples(IReadOnlyList<ParityRasterPixelSample> samples) => samples.Count == 0
+        ? "none"
+        : string.Join(",", samples.Select(sample =>
+            $"({sample.X},{sample.Y},d={sample.ChannelDelta},{sample.ExpectedPremultipliedRgba}->{sample.ActualPremultipliedRgba})"));
+
+    private static string FormatRegion(ParityRasterRegionResult region)
+    {
+        var failedBins = region.Budgets
+            .Where(budget => budget.RejectedPixels > 0)
+            .Select(budget =>
+                $"d<={budget.MaxChannelDelta}:count={budget.ObservedPixels}/{budget.AllowedPixels}," +
+                $"energy={budget.ObservedEnergy}/{budget.AllowedEnergy}," +
+                $"component={budget.LargestConnectedComponentPixels}x{budget.LargestConnectedComponentThicknessPx}," +
+                $"reasons={string.Join(",", budget.RejectionReasons.Select(FormatReason))}")
+            .ToArray();
+        return $"{region.Id}(kind={region.Kind},priority={region.Priority},eligible={region.EligiblePixels}," +
+               $"observed={region.ObservedPixels}/{region.ObservedEnergy}," +
+               $"unbudgeted={region.UnbudgetedPixels}/{region.UnbudgetedEnergy}," +
+               $"rejected={region.RejectedPixels},reasons={string.Join(",", region.RejectionReasons.Select(FormatReason))}," +
+               $"failedBins=[{string.Join("|", failedBins)}])";
+    }
 }

@@ -171,6 +171,34 @@ Energy = sum(maximum premultiplied-RGBA channel delta of each observed pixel)
 A bin passes only when count, energy, maximum delta, and every connected component's area and
 thickness all pass. Do not rely on a high delta ceiling alone.
 
+## Read the v9 semantic report
+
+Profile schema v7 defines policy; capture/comparison schema v9 records how that policy was applied.
+Every `comparison.json` snapshots the complete selected profile and ordered `profileRulePrefix`, so
+an artifact remains interpretable after the centralized profile file changes. The normal `raster`
+and optional `warningRaster` reports contain:
+
+- `rawDifferentPixels` and `maximumRawChannelDelta` before semantic classification;
+- `ignoredFloorPixels`, `allowedPixels`, and the official `rejectedPixels` partition;
+- ordered owner regions with explicit `priority`, eligible mask size, observed count/energy, and
+  every calculated bin allowance, plus explicit `unbudgetedPixels/unbudgetedEnergy` above the
+  owner's highest delta bin;
+- rejection reasons: `outsideSemanticMask`, `outsideDeltaBudget`, `pixelCountBudget`,
+  `energyBudget`, `connectedComponentPixels`, or `connectedComponentThickness`;
+- inclusive rejected bounds and up to eight same-coordinate expected/actual premultiplied-RGBA
+  samples.
+
+Pixels outside every expected-derived owner appear as the synthetic
+`strict-outside-semantic-mask` region instead of being hidden in the top-level total. For aggregate
+count or energy failures, the comparer deterministically marks the highest-delta residual pixels
+until the remaining observations fit both quotas. For an over-area or over-thickness connected
+component, the complete violating component is rejected. The union is the official rejected set.
+
+`rejected-mask.png` visualizes exactly that normal-policy set as opaque red over transparency. It
+is generated for every completed case, including an empty mask for exact/semantic passes. A warning
+case keeps the normal-policy rejection mask visible; the accepted `warningRaster` remains separately
+reported. Never use raw `diff.png` pixels or a diagnostic threshold as a substitute for this mask.
+
 ## Author a rule or profile
 
 ### Reuse an existing profile

@@ -1,5 +1,6 @@
 using Material3Expressive.VisualTesting.Model;
 using Material3Expressive.VisualTesting.Parity;
+using System.Text.Json;
 using Xunit;
 
 namespace Material3Expressive.VisualTests;
@@ -56,6 +57,10 @@ public sealed class SemanticRasterBudgetTests
         Assert.True(support.EligiblePixels > 0);
         Assert.False(outside.IsMatch);
         Assert.Equal(1, outside.Pixels.DifferentPixels);
+        Assert.Equal([ParityRasterRejectionReason.OutsideSemanticMask], outside.Raster!.RejectionReasons);
+        var strict = Assert.Single(outside.Raster.Regions, region => region.Kind == "strict-unowned");
+        Assert.Equal(new ParityPixelBounds(1, 1, 1, 1), strict.RejectedBounds);
+        Assert.Equal(1, strict.ObservedPixels);
     }
 
     [Fact]
@@ -86,7 +91,11 @@ public sealed class SemanticRasterBudgetTests
 
         var tooMany = new ParityComparer().Compare(layout, layout, expected, boundaryC, profile);
         Assert.False(tooMany.IsMatch);
-        Assert.True(tooMany.Pixels.DifferentPixels >= 1);
+        Assert.Equal(1, tooMany.Pixels.DifferentPixels);
+        var quota = Assert.Single(
+            Assert.Single(tooMany.Raster!.Regions, region => region.Kind == "shadow-edge").Budgets);
+        Assert.Contains(ParityRasterRejectionReason.PixelCountBudget, quota.RejectionReasons);
+        Assert.Single(tooMany.Raster.RejectedPixelIndices);
 
         var interiorMismatch = new ParityComparer().Compare(layout, layout, expected, interior, profile);
         Assert.False(interiorMismatch.IsMatch);
@@ -189,6 +198,8 @@ public sealed class SemanticRasterBudgetTests
         Assert.False(rejected.WarningRaster!.IsMatch);
         var edge = Assert.Single(rejected.WarningRaster.Regions, region => region.Kind == "shape-edge");
         Assert.Equal(100, Assert.Single(edge.Budgets, budget => budget.MaxChannelDelta == 255).ObservedPixels);
+        Assert.Equal(1, rejected.WarningRaster.RejectedPixels);
+        Assert.Single(rejected.WarningRaster.RejectedPixelIndices);
     }
 
     [Fact]
@@ -236,6 +247,25 @@ public sealed class SemanticRasterBudgetTests
 
         Assert.True(comparison.IsMatch);
         Assert.False(new ParityComparer().Compare(layout, layout, expected, outside, profile).IsMatch);
+    }
+
+    [Fact]
+    public void ComparisonJsonSnapshotsTheSemanticPolicyButNotTheRejectedPixelIndexArray()
+    {
+        var layout = TextScene();
+        var expected = TextImage();
+        var actual = WithPixel(expected, 1, 1, 254);
+        var comparison = new ParityComparer().Compare(layout, layout, expected, actual, TextProfile(), "test/");
+
+        var json = JsonSerializer.Serialize(comparison, ParityJson.Options);
+
+        Assert.Contains("\"schemaVersion\": 9", json, StringComparison.Ordinal);
+        Assert.Contains("\"profileSchemaVersion\": 7", json, StringComparison.Ordinal);
+        Assert.Contains("\"profileRulePrefix\": \"test/\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"strictChannelDelta\": 0", json, StringComparison.Ordinal);
+        Assert.Contains("\"pixelsPer10kEligiblePixels\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"outsideSemanticMask\"", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("rejectedPixelIndices", json, StringComparison.Ordinal);
     }
 
     private static ParityComparisonProfile TextProfile() => Profile(

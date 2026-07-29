@@ -5,9 +5,10 @@ They explain a warning or mismatch; they do not alter the official result.
 
 ## High-value views
 
-Start with the case's existing `diff.png`. The current C# helper uses the maximum same-coordinate
+Start with `rejected-mask.png` when the normal semantic policy rejects: it contains only official
+rejected pixels, rendered opaque red over transparency. Then inspect `diff.png`. The current C# helper uses the maximum same-coordinate
 RGB channel delta and renders an exact-green to high-delta-red overview. Use it to locate the
-affected area quickly; use `comparison.json` and the bundled script when magnitude, ownership,
+raw affected area quickly; use `comparison.json` and the bundled script when magnitude, ownership,
 component shape, alpha, or raw counts matter. The official comparer includes premultiplied alpha;
 the built-in RGB preview does not.
 
@@ -20,6 +21,7 @@ the built-in RGB preview does not.
 | Row/column projection | Reveal one displaced baseline, divider, caret, or vertical edge |
 | Delta bins + energy | Distinguish a few outliers from accumulated low-amplitude error |
 | Connected components | Distinguish dispersed AA from a solid missing/shifted region |
+| Official rejected mask | Separate gate-causing pixels from semantically accepted raw differences |
 | Color transition counts | Find one wrong token/state color or systematic opacity difference |
 | RGBA versus composited RGB | Separate the official stored-channel difference from visual output |
 
@@ -51,6 +53,10 @@ Analyze a case directory containing `expected.png`, `image.png`, and optionally 
 ```powershell
 python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py '<case-dir>'
 ```
+
+For a v9 case directory, the script also reads `rejected-mask.png`, reports its alpha-nonzero pixel
+count and bounds, and verifies that the count equals `raster.rejectedPixels`. A disagreement is an
+artifact/report integrity defect; do not replace either side with the script's raw threshold mask.
 
 Analyze arbitrary images:
 

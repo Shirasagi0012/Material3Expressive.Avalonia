@@ -23,7 +23,7 @@ data class ExpectedManifest(
     val themeIdentifier: String,
     val themeSha256: String,
     val caseCatalogSha256: String,
-    val captureSchemaVersion: Int = 8,
+    val captureSchemaVersion: Int = 9,
     val viewportScale: Float,
     val files: List<ManifestFileEntry>,
     val cases: List<ManifestCaseEntry>,
@@ -48,7 +48,7 @@ data class ManifestCaseEntry(
 
 @Serializable
 data class CaptureResult(
-    val schemaVersion: Int = 8,
+    val schemaVersion: Int = 9,
     val caseId: String,
     val coordinateSpace: CoordinateSpace,
     val viewportPx: ViewportPx,

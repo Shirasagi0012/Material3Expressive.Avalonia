@@ -291,6 +291,7 @@ artifacts/visual-parity/<run-id>/
       result.json
       overlay.png
       diff.png
+      rejected-mask.png
       heatmap.png
   index.html
 ```
@@ -429,7 +430,7 @@ Both implementations serialize the same logical schema. A shortened example is:
 
 ```json
 {
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "caseId": "button/filled/medium/enabled/light",
   "coordinateSpace": {
     "unit": "physical-pixel",
@@ -797,6 +798,8 @@ The xUnit collection fixture and theory rows:
 The console summary may not print accepted `rasterWarning` details. Locate the newest directory
 under `artifacts/visual-parity/xunit/` and inspect `actual/manifest.json` plus each case's
 `comparison.json`; these artifacts are authoritative and are never reused as baselines.
+Capture/comparison schema v9 also writes `rejected-mask.png` for every completed case. It contains
+only the official normal-policy rejected set, not semantically accepted raw differences.
 
 ## 14. Reporting
 
@@ -813,6 +816,8 @@ For each case it contains:
 - node geometry table with signed edge deltas;
 - text line, baseline, and character-box differences;
 - raster metrics by named region;
+- the selected profile snapshot/rule, explicit rejection reasons/bounds/samples, and an official
+  rejected-only mask whose pixel count agrees with the machine report;
 - links to raw PNG and JSON artifacts.
 
 Failures are classified as:
@@ -845,6 +850,7 @@ whether the CI job is required:
 - parity mismatches remain failed xUnit cases;
 - documented raster warnings pass xUnit while remaining visible in the parity command output, the
   actual manifest, and `comparison.json` (and in generated reports when enabled);
+- `rejected-mask.png` remains available for accepted warnings so normal-policy debt is visible;
 - the CI job uploads the complete report;
 - the job may be marked non-required while components are still being brought into parity;
 - infrastructure and contract failures are visually distinguished from product mismatches.

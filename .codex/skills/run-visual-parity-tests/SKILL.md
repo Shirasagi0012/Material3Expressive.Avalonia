@@ -31,7 +31,7 @@ Before running or interpreting results, read:
 - `tests/Material3Expressive.VisualTesting/Parity/SemanticRasterComparer.cs` for raster behavior.
 
 Do this on every policy/debugging task. The formal policy is profile schema version 7 and the
-capture contract is schema version 8. Keep the checked-in profile and source authoritative if a
+capture/comparison contract is schema version 9. Keep the checked-in profile and source authoritative if a
 later schema deliberately changes coefficients, masks, or report fields.
 
 ## Run the tests
@@ -143,6 +143,7 @@ The important files are:
 | `actual/cases/<id>/comparison.txt` | Concise assertion summary |
 | `actual/cases/<id>/comparison.json` | Full structural and raster report |
 | `actual/cases/<id>/diff.png` | Built-in visual diff preview |
+| `actual/cases/<id>/rejected-mask.png` | Official normal-policy rejected pixels only; opaque red over transparency |
 
 The actual manifest can be partial when only some rows ran, a row was skipped, or the process
 stopped early. A skipped row has no official comparison `kind`. An infrastructure/contract failure
@@ -154,10 +155,13 @@ Read results in this order:
 1. test output and `comparison.txt`;
 2. `comparison.json` kind, failures, warnings, and selected profile;
 3. expected and actual `layout.json`, comparing `motion` first when present and then the named node;
-4. normal `raster` and, for warnings, secondary `warningRaster` region/budget reports;
-5. expected, actual, built-in `diff.png`, and optional diagnostic images.
+4. normal `raster` rejection reasons/owners/budgets and, for warnings, secondary `warningRaster`;
+5. `rejected-mask.png`, then expected, actual, built-in `diff.png`, and optional diagnostics.
 
-Inspect `diff.png` first. `ParityRun.CreateDiff` currently maps the largest same-coordinate RGB
+Inspect `rejected-mask.png` first whenever the normal policy rejected pixels. It contains only the
+official normal-policy rejection set, not raw differences accepted by semantic budgets. It is empty
+for exact/semantic passes and remains non-empty for a `rasterWarning` so the temporary debt stays
+visible. Then inspect `diff.png` for context. `ParityRun.CreateDiff` maps the largest same-coordinate RGB
 channel delta to a simple green-to-red preview: exact pixels are green and larger differences move
 toward red. It is deliberately a quick spatial overview, not the semantic acceptance mask or a
 complete statistics report. The official comparer uses all four premultiplied RGBA channels, so
@@ -201,14 +205,21 @@ recovered only when the artifact also contains warning evidence.
 
 Do not interpret `pixels.differentPixels` as the raw number of unequal image pixels. In the current
 model it is based on `raster.rejectedPixels`; accepted semantic differences appear under
-`raster.allowedPixels`, and strict-floor differences under `raster.ignoredFloorPixels`. Use the
-bundled image script for raw same-coordinate statistics.
+`raster.allowedPixels`, strict-floor differences under `raster.ignoredFloorPixels`, and the raw
+count under `raster.rawDifferentPixels`. Use the bundled image script for additional distributions.
 
 ## Understand semantic raster acceptance
 
 Raster budgets apply only after structural evidence passes. The comparer assigns each non-exact
 pixel to at most one expected-derived owner, then checks its delta bin's count, energy, connected-
 component area, and thickness. Unowned pixels remain exact.
+
+In v9, read `profileRulePrefix` and the embedded `profile` snapshot before interpreting the dynamic
+report. Every rejection carries a reason, inclusive bounds, and bounded RGBA samples. Unowned
+differences appear in `strict-outside-semantic-mask`; they are no longer recoverable only by
+subtracting owner totals. Count/energy overages use a deterministic highest-delta residual witness,
+while a component-limit failure rejects the complete violating component. The union is exactly the
+set rendered by `rejected-mask.png`.
 
 The normal `rasterPolicy` decides exact versus semantic equivalence. Only when it rejects and all
 structural checks passed may `warningRasterPolicy` run against the same semantic context. If it
@@ -232,7 +243,9 @@ Use this sequence:
 3. Compare the same named node in expected and actual `layout.json`. Do not infer its position from
    screenshot pixels when a probe exists.
 4. If structure passes, inspect `raster.regions[].budgets[]`: compare observed/allowed count and
-   energy, rejected pixels, maximum rejected delta, largest component area, and thickness.
+   energy, rejection reasons/bounds/samples, maximum rejected delta, largest component area, and
+   thickness. Confirm the alpha-nonzero pixel count in `rejected-mask.png` equals
+   `raster.rejectedPixels`.
 5. For `rasterWarning`, identify exactly why normal `raster` rejected, confirm `warningRaster`
    accepted the same expected-derived owner, record every warning message, and state the profile's
    removal/recalibration condition.
@@ -259,7 +272,8 @@ python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
   --output-dir 'artifacts/visual-parity/diagnostics/<case-name>'
 ```
 
-The script complements the existing `diff.png`; it does not replace it. Its primary statistics use
+The script validates and summarizes `rejected-mask.png` when a v9 case artifact provides it, and
+also complements `diff.png` with raw diagnostics. Its primary statistics use
 the same-coordinate four-channel RGBA delta used by the official comparer. It also reports a
 backdrop-composited visual RGB view to explain alpha/storage behavior. It provides delta histogram,
 energy, bbox, row/column concentration, color transitions, and connected components. With an output
@@ -301,6 +315,8 @@ Summarize a run with:
 - for motion scenarios, the exact timeline-contract verdict, checkpoint counts by official kind,
   the worst warning checkpoint when present, and the two-run hash-repeatability result;
 - for mismatches, the first failing layer and concrete node/metric/budget evidence;
+- for raster rejection, the selected rule/profile snapshot, rejection reasons, rejected bounds,
+  samples, and rejected-mask/report pixel-count agreement;
 - one next hypothesis or smallest rerun command.
 
 If asked only to run or diagnose, do not change implementation or comparison policy without an

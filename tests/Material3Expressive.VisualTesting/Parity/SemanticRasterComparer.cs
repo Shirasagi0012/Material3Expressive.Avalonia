@@ -1,4 +1,5 @@
 using Material3Expressive.VisualTesting.Model;
+using System.Text.Json.Serialization;
 
 namespace Material3Expressive.VisualTesting.Parity;
 
@@ -18,32 +19,52 @@ internal static class SemanticRasterComparer
         if (expected.Width != actual.Width || expected.Height != actual.Height)
         {
             var pixels = Math.Max(expected.PixelCount, actual.PixelCount);
+            var rejected = Enumerable.Range(0, expected.PixelCount).ToArray();
             return new ParityRasterComparison(
+                pixels,
+                byte.MaxValue,
                 0,
                 0,
                 pixels,
                 byte.MaxValue,
                 [new ParityRasterRegionResult(
                     "image-size",
-                    "strict",
+                    "image-size-mismatch",
+                    0,
+                    0,
+                    pixels,
+                    pixels * byte.MaxValue,
+                    0,
                     0,
                     [],
                     pixels,
-                    byte.MaxValue)]);
+                    byte.MaxValue,
+                    [ParityRasterRejectionReason.ImageSizeMismatch],
+                    expected.PixelCount == 0 ? null : new ParityPixelBounds(0, 0, expected.Width - 1, expected.Height - 1),
+                    [])],
+                [ParityRasterRejectionReason.ImageSizeMismatch],
+                expected.PixelCount == 0 ? null : new ParityPixelBounds(0, 0, expected.Width - 1, expected.Height - 1),
+                [],
+                rejected);
         }
 
         var regions = BuildRegions(expected, policy, semantic);
         var owners = AssignOwners(expected.PixelCount, regions);
-        var accumulators = regions.Select(region => new RegionAccumulator(region, expected.Width, expected.Height)).ToArray();
+        var accumulators = regions
+            .Select((region, priority) => new RegionAccumulator(region, priority, expected.Width, expected.Height))
+            .ToArray();
         var ignoredFloor = 0;
-        var outside = 0;
-        byte outsideMaximum = 0;
+        var rawDifferent = 0;
+        byte rawMaximum = 0;
+        var outside = new List<ObservedPixel>();
 
         for (var pixel = 0; pixel < expected.PixelCount; pixel++)
         {
             var delta = VisualChannelDelta(expected, actual, pixel);
             if (delta == 0)
                 continue;
+            rawDifferent++;
+            rawMaximum = Math.Max(rawMaximum, delta);
             if (delta <= policy.StrictChannelDelta)
             {
                 ignoredFloor++;
@@ -53,25 +74,57 @@ internal static class SemanticRasterComparer
             var owner = owners[pixel];
             if (owner < 0)
             {
-                outside++;
-                outsideMaximum = Math.Max(outsideMaximum, delta);
+                outside.Add(new ObservedPixel(pixel, delta));
                 continue;
             }
 
             accumulators[owner].Record(delta, pixel);
         }
 
-        var reports = accumulators.Select(item => item.BuildReport()).ToArray();
-        var rejected = outside;
-        var maximum = outsideMaximum;
-        foreach (var report in reports)
+        var reports = accumulators.Select(item => item.BuildReport(expected, actual)).ToList();
+        if (outside.Count != 0)
         {
-            rejected += report.RejectedPixels;
-            maximum = Math.Max(maximum, report.MaximumRejectedChannelDelta);
+            var outsidePixels = outside.Select(item => item.Pixel).ToArray();
+            reports.Add(new ParityRasterRegionResult(
+                "strict-outside-semantic-mask",
+                "strict-unowned",
+                regions.Count,
+                owners.Count(owner => owner < 0),
+                outside.Count,
+                outside.Sum(item => item.Delta),
+                0,
+                0,
+                [],
+                outside.Count,
+                outside.Max(item => item.Delta),
+                [ParityRasterRejectionReason.OutsideSemanticMask],
+                BoundsOf(outsidePixels, expected.Width),
+                SamplesOf(outsidePixels, expected, actual)));
         }
 
-        var allowed = accumulators.Sum(item => item.AllowedPixels);
-        return new ParityRasterComparison(ignoredFloor, allowed, rejected, maximum, reports);
+        var rejectedPixels = accumulators
+            .SelectMany(item => item.RejectedPixelIndices)
+            .Concat(outside.Select(item => item.Pixel))
+            .Distinct()
+            .Order()
+            .ToArray();
+        var reasons = reports
+            .SelectMany(report => report.RejectionReasons)
+            .Distinct()
+            .ToArray();
+        var allowed = rawDifferent - ignoredFloor - rejectedPixels.Length;
+        return new ParityRasterComparison(
+            rawDifferent,
+            rawMaximum,
+            ignoredFloor,
+            allowed,
+            rejectedPixels.Length,
+            MaximumDelta(rejectedPixels, expected, actual),
+            reports,
+            reasons,
+            BoundsOf(rejectedPixels, expected.Width),
+            SamplesOf(rejectedPixels, expected, actual),
+            rejectedPixels);
     }
 
     private static IReadOnlyList<RasterRegion> BuildRegions(
@@ -435,6 +488,56 @@ internal static class SemanticRasterComparer
     private static byte VisualChannelDelta(RenderedImage expected, RenderedImage actual, int pixel) =>
         ExpectedPixelDelta(expected, pixel, actual, pixel);
 
+    private static byte MaximumDelta(
+        IReadOnlyList<int> pixels,
+        RenderedImage expected,
+        RenderedImage actual)
+    {
+        byte maximum = 0;
+        foreach (var pixel in pixels)
+            maximum = Math.Max(maximum, VisualChannelDelta(expected, actual, pixel));
+        return maximum;
+    }
+
+    private static ParityPixelBounds? BoundsOf(IReadOnlyList<int> pixels, int width)
+    {
+        if (pixels.Count == 0)
+            return null;
+        var left = width;
+        var top = int.MaxValue;
+        var right = -1;
+        var bottom = -1;
+        foreach (var pixel in pixels)
+        {
+            var x = pixel % width;
+            var y = pixel / width;
+            left = Math.Min(left, x);
+            top = Math.Min(top, y);
+            right = Math.Max(right, x);
+            bottom = Math.Max(bottom, y);
+        }
+        return new ParityPixelBounds(left, top, right, bottom);
+    }
+
+    private static IReadOnlyList<ParityRasterPixelSample> SamplesOf(
+        IReadOnlyList<int> pixels,
+        RenderedImage expected,
+        RenderedImage actual) => pixels
+        .Take(8)
+        .Select(pixel => new ParityRasterPixelSample(
+            pixel % expected.Width,
+            pixel / expected.Width,
+            VisualChannelDelta(expected, actual, pixel),
+            PixelRgba(expected, pixel),
+            PixelRgba(actual, pixel)))
+        .ToArray();
+
+    private static string PixelRgba(RenderedImage image, int pixel)
+    {
+        var offset = pixel * 4;
+        return $"#{image.Pixels[offset]:X2}{image.Pixels[offset + 1]:X2}{image.Pixels[offset + 2]:X2}{image.Pixels[offset + 3]:X2}";
+    }
+
     private static byte ExpectedPixelDelta(RenderedImage left, int leftPixel, RenderedImage right, int rightPixel)
     {
         var leftOffset = leftPixel * 4;
@@ -471,6 +574,8 @@ internal static class SemanticRasterComparer
         (-1, 1),  (0, 1),  (1, 1)
     ];
 
+    private readonly record struct ObservedPixel(int Pixel, byte Delta);
+
     private sealed record RasterRegion(string Id, string Kind, bool[] Mask, ParityRasterRegionPolicy Policy)
     {
         public int EligiblePixels => Mask.Count(value => value);
@@ -479,17 +584,19 @@ internal static class SemanticRasterComparer
     private sealed class RegionAccumulator
     {
         private readonly RasterRegion _region;
+        private readonly int _priority;
         private readonly BucketAccumulator[] _buckets;
-        private int _unbudgetedPixels;
-        private byte _unbudgetedMaximum;
+        private readonly List<ObservedPixel> _unbudgeted = [];
+        private IReadOnlyList<int> _rejectedPixelIndices = [];
 
-        public RegionAccumulator(RasterRegion region, int width, int height)
+        public RegionAccumulator(RasterRegion region, int priority, int width, int height)
         {
             _region = region;
+            _priority = priority;
             _buckets = region.Policy.Budgets.Select(budget => new BucketAccumulator(budget, region.EligiblePixels, width, height)).ToArray();
         }
 
-        public int AllowedPixels => _buckets.Sum(bucket => Math.Min(bucket.ObservedPixels, bucket.AllowedPixels));
+        public IReadOnlyList<int> RejectedPixelIndices => _rejectedPixelIndices;
 
         public void Record(byte delta, int pixel)
         {
@@ -501,21 +608,40 @@ internal static class SemanticRasterComparer
                     return;
                 }
             }
-            _unbudgetedPixels++;
-            _unbudgetedMaximum = Math.Max(_unbudgetedMaximum, delta);
+            _unbudgeted.Add(new ObservedPixel(pixel, delta));
         }
 
-        public ParityRasterRegionResult BuildReport()
+        public ParityRasterRegionResult BuildReport(RenderedImage expected, RenderedImage actual)
         {
             var reports = _buckets.Select(bucket => bucket.BuildReport()).ToArray();
-            var rejected = _unbudgetedPixels;
-            var maximum = _unbudgetedMaximum;
-            foreach (var bucket in reports)
-            {
-                rejected += bucket.RejectedPixels;
-                maximum = Math.Max(maximum, bucket.MaximumRejectedChannelDelta);
-            }
-            return new ParityRasterRegionResult(_region.Id, _region.Kind, _region.EligiblePixels, reports, rejected, maximum);
+            _rejectedPixelIndices = _buckets
+                .SelectMany(bucket => bucket.RejectedPixelIndices)
+                .Concat(_unbudgeted.Select(item => item.Pixel))
+                .Distinct()
+                .Order()
+                .ToArray();
+            var reasons = reports
+                .SelectMany(report => report.RejectionReasons)
+                .Concat(_unbudgeted.Count == 0
+                    ? []
+                    : [ParityRasterRejectionReason.OutsideDeltaBudget])
+                .Distinct()
+                .ToArray();
+            return new ParityRasterRegionResult(
+                _region.Id,
+                _region.Kind,
+                _priority,
+                _region.EligiblePixels,
+                _buckets.Sum(bucket => bucket.ObservedPixels) + _unbudgeted.Count,
+                _buckets.Sum(bucket => bucket.ObservedEnergy) + _unbudgeted.Sum(item => item.Delta),
+                _unbudgeted.Count,
+                _unbudgeted.Sum(item => item.Delta),
+                reports,
+                _rejectedPixelIndices.Count,
+                MaximumDelta(_rejectedPixelIndices, expected, actual),
+                reasons,
+                BoundsOf(_rejectedPixelIndices, expected.Width),
+                SamplesOf(_rejectedPixelIndices, expected, actual));
         }
     }
 
@@ -549,53 +675,89 @@ internal static class SemanticRasterComparer
         public int ObservedPixels { get; private set; }
         public int ObservedEnergy { get; private set; }
         public byte MaximumObservedChannelDelta { get; private set; }
-        private readonly List<int> _pixels = [];
+        private readonly List<ObservedPixel> _pixels = [];
+        public IReadOnlyList<int> RejectedPixelIndices { get; private set; } = [];
 
         public void Record(byte delta, int pixel)
         {
             ObservedPixels++;
             ObservedEnergy += delta;
             MaximumObservedChannelDelta = Math.Max(MaximumObservedChannelDelta, delta);
-            _pixels.Add(pixel);
+            _pixels.Add(new ObservedPixel(pixel, delta));
         }
 
         public ParityRasterBudgetResult BuildReport()
         {
-            var countOverage = Math.Max(0, ObservedPixels - AllowedPixels);
-            var energyOverage = Math.Max(0, ObservedEnergy - AllowedEnergy);
-            // Energy is measured in channel-delta units. Convert an energy overage into a
-            // conservative pixel count for the legacy summary while retaining the exact energy
-            // figures in the report.
-            var energyPixels = energyOverage == 0
-                ? 0
-                : Math.Max(1, (int)Math.Ceiling(energyOverage / (double)Math.Max(1, (int)Policy.MaxChannelDelta)));
             var components = FindComponentSummary(_pixels, _width, _height, Policy);
-            var rejected = Math.Max(Math.Max(countOverage, energyPixels), components.RejectedPixels);
+            var quotaRejected = FindQuotaRejectedPixels(_pixels, AllowedPixels, AllowedEnergy);
+            RejectedPixelIndices = quotaRejected
+                .Concat(components.RejectedPixelIndices)
+                .Distinct()
+                .Order()
+                .ToArray();
+            var reasons = new List<ParityRasterRejectionReason>();
+            if (ObservedPixels > AllowedPixels)
+                reasons.Add(ParityRasterRejectionReason.PixelCountBudget);
+            if (ObservedEnergy > AllowedEnergy)
+                reasons.Add(ParityRasterRejectionReason.EnergyBudget);
+            if (components.ExceededPixelArea)
+                reasons.Add(ParityRasterRejectionReason.ConnectedComponentPixels);
+            if (components.ExceededThickness)
+                reasons.Add(ParityRasterRejectionReason.ConnectedComponentThickness);
             return new ParityRasterBudgetResult(
                 Policy.MaxChannelDelta,
                 ObservedPixels,
                 AllowedPixels,
                 ObservedEnergy,
+                MaximumObservedChannelDelta,
                 AllowedEnergy,
-                rejected,
-                rejected == 0 ? (byte)0 : MaximumObservedChannelDelta,
+                RejectedPixelIndices.Count,
+                RejectedPixelIndices.Count == 0
+                    ? (byte)0
+                    : _pixels.Where(item => RejectedPixelIndices.Contains(item.Pixel)).Max(item => item.Delta),
                 components.LargestPixels,
-                components.LargestThicknessPx);
+                components.LargestThicknessPx,
+                reasons,
+                BoundsOf(RejectedPixelIndices, _width));
+        }
+
+        private static IReadOnlyList<int> FindQuotaRejectedPixels(
+            IReadOnlyList<ObservedPixel> pixels,
+            int allowedPixels,
+            int allowedEnergy)
+        {
+            var remainingPixels = pixels.Count;
+            var remainingEnergy = pixels.Sum(item => item.Delta);
+            if (remainingPixels <= allowedPixels && remainingEnergy <= allowedEnergy)
+                return [];
+
+            var rejected = new List<int>();
+            foreach (var item in pixels.OrderByDescending(item => item.Delta).ThenBy(item => item.Pixel))
+            {
+                if (remainingPixels <= allowedPixels && remainingEnergy <= allowedEnergy)
+                    break;
+                rejected.Add(item.Pixel);
+                remainingPixels--;
+                remainingEnergy -= item.Delta;
+            }
+            return rejected;
         }
 
         private static ComponentSummary FindComponentSummary(
-            IReadOnlyList<int> pixels,
+            IReadOnlyList<ObservedPixel> pixels,
             int width,
             int height,
             ParityRasterDeltaBudget policy)
         {
             if (pixels.Count == 0)
-                return default;
+                return new ComponentSummary(0, 0, [], false, false);
 
-            var remaining = pixels.ToHashSet();
+            var remaining = pixels.Select(item => item.Pixel).ToHashSet();
             var largestPixels = 0;
             var largestThickness = 0;
-            var rejectedPixels = 0;
+            var rejectedPixels = new List<int>();
+            var exceededPixelArea = false;
+            var exceededThickness = false;
             var queue = new Queue<int>();
             while (remaining.Count != 0)
             {
@@ -607,9 +769,11 @@ internal static class SemanticRasterComparer
                 var right = -1;
                 var top = height;
                 var bottom = -1;
+                var componentPixels = new List<int>();
                 while (queue.Count != 0)
                 {
                     var pixel = queue.Dequeue();
+                    componentPixels.Add(pixel);
                     count++;
                     var x = pixel % width;
                     var y = pixel / width;
@@ -632,16 +796,27 @@ internal static class SemanticRasterComparer
                 var thickness = Math.Min(right - left + 1, bottom - top + 1);
                 largestPixels = Math.Max(largestPixels, count);
                 largestThickness = Math.Max(largestThickness, thickness);
-                if (count > policy.MaxConnectedComponentPixels || thickness > policy.MaxConnectedComponentThicknessPx)
-                    rejectedPixels += count;
+                var areaExceeded = count > policy.MaxConnectedComponentPixels;
+                var thicknessExceeded = thickness > policy.MaxConnectedComponentThicknessPx;
+                if (areaExceeded || thicknessExceeded)
+                    rejectedPixels.AddRange(componentPixels);
+                exceededPixelArea |= areaExceeded;
+                exceededThickness |= thicknessExceeded;
             }
-            return new ComponentSummary(largestPixels, largestThickness, rejectedPixels);
+            return new ComponentSummary(
+                largestPixels,
+                largestThickness,
+                rejectedPixels,
+                exceededPixelArea,
+                exceededThickness);
         }
 
         private readonly record struct ComponentSummary(
             int LargestPixels,
             int LargestThicknessPx,
-            int RejectedPixels);
+            IReadOnlyList<int> RejectedPixelIndices,
+            bool ExceededPixelArea,
+            bool ExceededThickness);
 
         private static int CalculateBudget(
             int minimum,
@@ -699,11 +874,17 @@ public sealed record ParityRasterDeltaBudget(
     int MaxConnectedComponentThicknessPx);
 
 public sealed record ParityRasterComparison(
+    int RawDifferentPixels,
+    byte MaximumRawChannelDelta,
     int IgnoredFloorPixels,
     int AllowedPixels,
     int RejectedPixels,
     byte MaximumRejectedChannelDelta,
-    IReadOnlyList<ParityRasterRegionResult> Regions)
+    IReadOnlyList<ParityRasterRegionResult> Regions,
+    IReadOnlyList<ParityRasterRejectionReason> RejectionReasons,
+    ParityPixelBounds? RejectedBounds,
+    IReadOnlyList<ParityRasterPixelSample> RejectedSamples,
+    [property: JsonIgnore] IReadOnlyList<int> RejectedPixelIndices)
 {
     public bool IsMatch => RejectedPixels == 0;
 }
@@ -711,18 +892,51 @@ public sealed record ParityRasterComparison(
 public sealed record ParityRasterRegionResult(
     string Id,
     string Kind,
+    int Priority,
     int EligiblePixels,
+    int ObservedPixels,
+    int ObservedEnergy,
+    int UnbudgetedPixels,
+    int UnbudgetedEnergy,
     IReadOnlyList<ParityRasterBudgetResult> Budgets,
     int RejectedPixels,
-    byte MaximumRejectedChannelDelta);
+    byte MaximumRejectedChannelDelta,
+    IReadOnlyList<ParityRasterRejectionReason> RejectionReasons,
+    ParityPixelBounds? RejectedBounds,
+    IReadOnlyList<ParityRasterPixelSample> RejectedSamples);
 
 public sealed record ParityRasterBudgetResult(
     byte MaxChannelDelta,
     int ObservedPixels,
     int AllowedPixels,
     int ObservedEnergy,
+    byte MaximumObservedChannelDelta,
     int AllowedEnergy,
     int RejectedPixels,
     byte MaximumRejectedChannelDelta,
     int LargestConnectedComponentPixels,
-    int LargestConnectedComponentThicknessPx);
+    int LargestConnectedComponentThicknessPx,
+    IReadOnlyList<ParityRasterRejectionReason> RejectionReasons,
+    ParityPixelBounds? RejectedBounds);
+
+public enum ParityRasterRejectionReason
+{
+    ImageSizeMismatch,
+    OutsideSemanticMask,
+    OutsideDeltaBudget,
+    PixelCountBudget,
+    EnergyBudget,
+    ConnectedComponentPixels,
+    ConnectedComponentThickness
+}
+
+/// <summary>Inclusive physical-pixel bounds of one rejected raster set.</summary>
+public sealed record ParityPixelBounds(int Left, int Top, int Right, int Bottom);
+
+/// <summary>A bounded same-coordinate sample from the official rejected-pixel set.</summary>
+public sealed record ParityRasterPixelSample(
+    int X,
+    int Y,
+    byte ChannelDelta,
+    string ExpectedPremultipliedRgba,
+    string ActualPremultipliedRgba);

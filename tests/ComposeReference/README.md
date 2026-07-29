@@ -75,7 +75,7 @@ on the Avalonia comparison side.
 
 ### layout.json
 
-Per-case capture result (schema v8) containing:
+Per-case capture result (schema v9) containing:
 - Coordinate space definition (case-specific scale, root-relative physical pixels)
 - Viewport dimensions in physical pixels
 - Required node bounds as reported by `Modifier.onGloballyPositioned`; the custom TextField label

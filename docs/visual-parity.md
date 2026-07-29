@@ -73,9 +73,9 @@ accepts a case ID or a prefix wildcard such as `button/*`.
 
 ## What is compared
 
-The current catalog contains 75 representative color, typography, motion, button, card, FAB,
-checkbox, text-field, navigation, and tab cases. Every case has the same stable ID, viewport,
-theme, and named probe contract on both sides.
+The current catalog contains 93 representative foundation, button, card, FAB, checkbox, text-field,
+navigation, tab, slider, surface, divider, and ListItem cases. Every case has the same stable ID,
+viewport, theme, and named probe contract on both sides.
 
 ```text
 Compose scene + probes  -->  expected PNG, layout JSON, manifest
@@ -103,7 +103,7 @@ Checks happen in this order:
 
 Motion cases add a structural check between steps 1 and 2. Compose records the trigger, logical
 time origin, complete frame-delivery schedule, capture index, schedule hash, and controlled clock
-coverage in capture schema v8. Avalonia creates a fresh tree and replays that exact schedule through
+coverage in the current capture schema v9. Avalonia creates a fresh tree and replays that exact schedule through
 component-owned `MotionGroup` instances. A timeline mismatch fails before raster classification;
 neither semantic equivalence nor a warning policy can accept it. See
 [animation-parity.md](animation-parity.md) for the lifecycle and authoring rules.
@@ -136,8 +136,8 @@ is a version-7, centralized semantic raster policy. It has no viewport-sized all
 global `Δ<=1` floor. Profile JSON rejects unknown fields, duplicate/unreachable prefix rules, and
 invalid quota ranges so a typo cannot silently make the comparison looser.
 
-The version lines are independent: the top-level capture-result contract is v8, the centralized
-comparison-profile policy is v7, and the new nested motion record starts at v1. A motion field
+The version lines are independent: the top-level capture-result and comparison-report contract is
+v9, the centralized comparison-profile policy is v7, and the nested motion record is v1. A motion field
 change bumps the top-level capture contract even if profile coefficients and policy schema do not
 change.
 
@@ -165,9 +165,11 @@ quota = min(maximum, max(minimum, base + ceil(eligiblePixels * per10k / 10000)))
 
 Thus a matched text node can absorb its own bounded low/mid-delta grayscale anti-aliasing, while a
 large flat color change, a missing glyph, or a difference outside its expected ink boundary still
-fails. Generic shape edges use a separate expected-gradient threshold; the elevated-button profile
-uses the lower threshold `4` solely to cover its low-contrast rounded boundary, with only `Δ<=2`
-receiving the large edge allocation and `Δ<=8` still sparse.
+fails. Generic shape edges use a separate expected-gradient threshold; the
+`component-with-text-and-elevation` profile used by elevated buttons and dragged ListItems uses
+the lower threshold `4` solely to cover its low-contrast rounded boundary, with only `Δ<=2`
+receiving the large edge allocation and `Δ<=8` still sparse. Its shadow allowances still require
+an exact complete shadow contract before they can own a pixel.
 
 Elevation has two separate allocations, and only receives them after its full `ParityShadow`
 contract matches:
@@ -176,20 +178,22 @@ contract matches:
 - expected support boundary: `Δ<=48`, with a sparse perimeter-derived allocation capped at 48,
   component area at most 12px, and component thickness at most 2px.
 
-The capture schema is now v8. Its shadow contract includes `occluderDrawn`, in addition to shape,
+The capture schema is now v9. The shadow contract introduced before v9 includes `occluderDrawn`, in addition to shape,
 corners, local-to-device matrix, elevation, colors/alpha, opacity/transparent-occluder flag,
 lighting, and clip. This prevents an opaque component interior from consuming shadow allowance,
 while preserving valid `shadow-only` cases where the expected shadow mesh is visible inside the
 shape; `transparentOccluder` continues to describe whether that painted occluder lets the mesh
 remain visible through it.
 
-Schema v8 also adds optional motion metadata. Static cases omit it. Motion cases compare scenario,
+Schema v8 introduced optional motion metadata, retained unchanged by v9. Static cases omit it. Motion cases compare scenario,
 checkpoint, event, origin/unit/scale, elapsed time, every frame timestamp, capture index, schedule
 hash, and clock coverage exactly before geometry or raster comparison.
 
-`comparison.json` reports `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or
-`mismatch` through its `kind` field, plus each region’s eligible pixels, observed pixels/energy,
-dynamic quota, and largest connected component. A `rasterWarning` means the normal semantic
+The v9 `comparison.json` snapshots the selected profile, matched rule prefix, and profile schema,
+then reports `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or `mismatch` through its
+`kind` field. It separates raw, floor-ignored, allowed, and rejected pixels; records owner priority,
+eligible/observed pixels and energy, dynamic quotas, rejection reasons, rejected bounds, and bounded
+same-coordinate RGBA samples. A `rasterWarning` means the normal semantic
 policy rejected an otherwise structurally valid case, but a narrowly scoped temporary warning
 policy accepted it; the strict and warning diagnostics are both retained. Any renderer-specific
 allowance must be narrow, justified, and changed in the policy file rather than embedded in an
@@ -210,8 +214,9 @@ catalogs and is visible in test output. Conversely,
 `textfield/*/focused-empty/light` remains an active failure when its focused caret endpoints or
 length differ; no broad text-field exception hides that defect.
 
-The selected profile ID and the SHA-256 of this file are included in the actual manifest. That
-makes a tolerance-policy change visible in every run artifact.
+The selected profile ID, complete selected-profile snapshot, ordered matching rule, and the
+SHA-256 of the centralized profile file are retained across `comparison.json` and the actual
+manifest. This makes a tolerance-policy change both visible and reconstructable from every run.
 
 ## Find the artifacts
 
@@ -230,6 +235,7 @@ artifacts/visual-parity/xunit/<timestamp>/
       image.png
       layout.json
       diff.png
+      rejected-mask.png
       comparison.json
       comparison.txt
 ```
@@ -242,11 +248,16 @@ Use the failure category to start triage:
 - `Infrastructure` or `Contract`: producer environment, manifest, catalog, or probe mismatch.
 - `Geometry`: container, icon, or child placement/size is wrong.
 - `TextLayout`: typography, line breaking, baseline, or character advance differs.
-- `Raster`: inspect `expected.png`, `image.png`, and `diff.png` for paint, shape, color, shadow,
-  or glyph rendering differences.
+- `Raster`: inspect `rejected-mask.png` first for the official normal-policy rejection set, then
+  use `expected.png`, `image.png`, and `diff.png` to explain its paint, shape, color, shadow, or
+  glyph context.
 
 `comparison.json` contains the complete machine-readable result; `comparison.txt` is the concise
-failure summary emitted with the xUnit assertion.
+failure summary emitted with the xUnit assertion. `rejected-mask.png` is always generated at the
+expected viewport size: rejected pixels are opaque red and every other pixel is transparent. It is
+empty for exact and normal semantic passes. For `rasterWarning`, it preserves the pixels rejected by
+the normal policy even though the secondary warning policy accepts the case. It never contains raw
+differences which the normal semantic policy accepted.
 
 Rectangle failures use a single `(left, top, right, bottom)` tuple instead of one message per edge:
 

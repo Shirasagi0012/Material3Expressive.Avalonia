@@ -20,6 +20,8 @@ public sealed record ParityComparisonProfile(
 
 public static class ParityComparisonProfiles
 {
+    public const int CurrentSchemaVersion = 7;
+
     private static readonly Lazy<ParityComparisonProfileDocument> Document = new(Load);
 
     public static ParityComparisonProfile ColorSwatch => Get("color-swatch");
@@ -28,11 +30,14 @@ public static class ParityComparisonProfiles
     public static ParityComparisonProfile TextField => Get("text-field");
 
     public static ParityComparisonProfile ForCase(string caseId)
+        => ResolveForCase(caseId).Profile;
+
+    public static ParityComparisonProfileSelection ResolveForCase(string caseId)
     {
         var rule = Document.Value.CaseProfileRules
             .FirstOrDefault(item => caseId.StartsWith(item.Prefix, StringComparison.Ordinal));
         if (rule is not null)
-            return Get(rule.ProfileId);
+            return new ParityComparisonProfileSelection(rule.Prefix, Get(rule.ProfileId));
         throw new InvalidOperationException($"No visual-parity comparison profile is registered for '{caseId}'.");
     }
 
@@ -44,7 +49,7 @@ public static class ParityComparisonProfiles
     {
         var path = Path.Combine(RepositoryRoot.Find(), "tests", "VisualParity", "comparison-profiles.json");
         var document = ReadDocument(path);
-        if (document.SchemaVersion != 7 || document.Profiles.Count == 0 || document.CaseProfileRules.Count == 0)
+        if (document.SchemaVersion != CurrentSchemaVersion || document.Profiles.Count == 0 || document.CaseProfileRules.Count == 0)
             throw new InvalidDataException("The visual-parity comparison profile document is incomplete.");
         var ids = document.Profiles.Select(item => item.Id).ToArray();
         var idSet = ids.ToHashSet(StringComparer.Ordinal);
@@ -172,3 +177,7 @@ public sealed record ParityComparisonProfileDocument(
     IReadOnlyList<ParityCaseProfileRule> CaseProfileRules);
 
 public sealed record ParityCaseProfileRule(string Prefix, string ProfileId);
+
+public sealed record ParityComparisonProfileSelection(
+    string RulePrefix,
+    ParityComparisonProfile Profile);

@@ -92,16 +92,24 @@ documented in `docs/comparison-profiles.md`.
 
 - `profileId`: profile selected by the first matching ordered case-prefix rule; validation rejects
   a later rule shadowed by an earlier broader prefix;
+- `schemaVersion`: current capture/comparison report schema, now `9`;
+- `profileSchemaVersion`, `profileRulePrefix`, and `profile`: the v7 policy identity, ordered rule,
+  and complete selected-profile snapshot used by this run;
 - `kind`: official `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or `mismatch`
   classification;
 - `isMatch`: execution-gate result; true for exact, semantic-equivalent, and warning outcomes;
 - `failures`: structural and/or raster failure messages;
 - `warnings`: temporary-acceptance reasons; present for `rasterWarning`;
-- `pixels.differentPixels`: currently rejected pixel accounting, not raw unequal pixels;
+- `pixels.differentPixels`: official rejected-pixel count, not raw unequal pixels;
+- `raster.rawDifferentPixels` and `maximumRawChannelDelta`: raw same-coordinate RGBA differences;
 - `raster.ignoredFloorPixels`: nonzero deltas at or below the strict floor;
 - `raster.allowedPixels`: pixels accepted inside semantic budgets;
 - `raster.rejectedPixels`: rejected accounting used by raster pass/fail;
-- `raster.regions`: owner-level eligible-pixel and bin reports.
+- `raster.rejectionReasons`, `rejectedBounds`, and `rejectedSamples`: why and where the normal
+  policy rejected, with bounded premultiplied-RGBA evidence;
+- `raster.regions`: owner priority, eligible/observed count and energy, dynamic bin budgets, and
+  owner-level rejection diagnostics. `unbudgetedPixels/unbudgetedEnergy` identify observations
+  above the owner's highest delta bin; unowned pixels use `strict-outside-semantic-mask`;
 - `warningRaster`: secondary policy report; present when warning policy was evaluated.
 
 Interpret reporting labels directly:
@@ -118,12 +126,17 @@ field reports rejected accounting and accepted semantic differences also produce
 For a warning, read `raster` and `warningRaster` together: the first explains the durable semantic
 boundary that was exceeded, and the second explains the temporary boundary that accepted it.
 
+`rejected-mask.png` is the image form of `raster`'s exact rejected set. Rejected pixels are opaque
+red; every other pixel is transparent. A count/energy overage marks a deterministic highest-delta
+residual until both quotas fit. A connected-component limit marks every pixel in the violating
+component. The mask is empty for exact/semantic outcomes and remains populated for a warning.
+
 ## RGBA and visual RGB
 
-The formal version-7 comparer takes the maximum same-coordinate delta across all four premultiplied
+The formal `semantic-raster-v1` comparer takes the maximum same-coordinate delta across all four premultiplied
 RGBA channels. It does not composite onto a backdrop and does not search neighboring pixels. The
-built-in `diff.png` visualizes RGB only, so consult `comparison.json` or the diagnostic script for
-alpha-only differences.
+built-in `diff.png` visualizes RGB only; `rejected-mask.png` is driven by the official four-channel
+result, so consult it and `comparison.json` for alpha-only rejection.
 
 The diagnostic script additionally composites decoded images over an explicit backdrop and reports
 visual RGB. Use that result to explain storage/alpha behavior, not to override the official

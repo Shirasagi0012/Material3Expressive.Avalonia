@@ -28,13 +28,15 @@ public sealed class ParityRun
         }
 
         var actual = _capture.Capture(avaloniaCase, expectedLayout);
-        var profile = ParityComparisonProfiles.ForCase(caseId);
+        var profileSelection = ParityComparisonProfiles.ResolveForCase(caseId);
+        var expectedImage = expectedBundle.ReadImage(composeCase);
         var comparison = _comparer.Compare(
             expectedLayout,
             actual.Layout,
-            expectedBundle.ReadImage(composeCase),
+            expectedImage,
             actual.Image,
-            profile);
+            profileSelection.Profile,
+            profileSelection.RulePrefix);
         var caseDir = Path.Combine(artifactRoot, "actual", "cases", caseId.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(caseDir);
         File.WriteAllText(
@@ -45,7 +47,10 @@ public sealed class ParityRun
             Path.Combine(caseDir, "expected.png"),
             overwrite: true);
         File.WriteAllBytes(Path.Combine(caseDir, "image.png"), actual.Image.EncodePng());
-        File.WriteAllBytes(Path.Combine(caseDir, "diff.png"), CreateDiff(expectedBundle.ReadImage(composeCase), actual.Image).EncodePng());
+        File.WriteAllBytes(Path.Combine(caseDir, "diff.png"), CreateDiff(expectedImage, actual.Image).EncodePng());
+        File.WriteAllBytes(
+            Path.Combine(caseDir, "rejected-mask.png"),
+            CreateRejectedMask(expectedImage, comparison.Raster).EncodePng());
         ParityJson.Write(Path.Combine(caseDir, "layout.json"), actual.Layout);
         ParityJson.Write(Path.Combine(caseDir, "comparison.json"), comparison);
         File.WriteAllText(Path.Combine(caseDir, "comparison.txt"), comparison.Summary);
@@ -121,6 +126,26 @@ public sealed class ParityRun
                 delta = Math.Max(delta, Math.Abs(expected.Pixels[offset + channel] - actual.Pixels[offset + channel]));
             pixels[offset] = (byte)Math.Min(255, delta * 3);
             pixels[offset + 1] = (byte)Math.Max(0, 255 - delta * 2);
+            pixels[offset + 2] = 0;
+            pixels[offset + 3] = 255;
+        }
+        return new RenderedImage(expected.Width, expected.Height, pixels);
+    }
+
+    private static RenderedImage CreateRejectedMask(
+        RenderedImage expected,
+        ParityRasterComparison? raster)
+    {
+        var pixels = new byte[expected.Pixels.Length];
+        if (raster is null)
+            return new RenderedImage(expected.Width, expected.Height, pixels);
+        foreach (var pixel in raster.RejectedPixelIndices)
+        {
+            if ((uint)pixel >= (uint)expected.PixelCount)
+                continue;
+            var offset = pixel * 4;
+            pixels[offset] = 255;
+            pixels[offset + 1] = 0;
             pixels[offset + 2] = 0;
             pixels[offset + 3] = 255;
         }

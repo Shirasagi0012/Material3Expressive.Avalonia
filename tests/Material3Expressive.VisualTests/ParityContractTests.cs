@@ -59,10 +59,15 @@ public sealed class ParityContractTests
     [InlineData("progress/loading-indicator/indeterminate/spring-mid/light", "container")]
     [InlineData("foundation/motion/linear-tween/mid/light", "container")]
     [InlineData("button/filled/medium/enabled/light", "component-with-text")]
+    [InlineData("listitem/click/enabled/light", "component-with-text")]
+    [InlineData("listitem/click/dragged/light", "component-with-text-and-elevation")]
+    [InlineData("listitem/click/disabled-dragged/light", "component-with-text-and-elevation")]
     [InlineData("textfield/filled/empty/light", "text-field")]
     public void EveryCaseFamilySelectsAnExplicitComparisonProfile(string caseId, string profileId)
     {
-        Assert.Equal(profileId, ParityComparisonProfiles.ForCase(caseId).Id);
+        var selection = ParityComparisonProfiles.ResolveForCase(caseId);
+        Assert.Equal(profileId, selection.Profile.Id);
+        Assert.StartsWith(selection.RulePrefix, caseId, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -170,6 +175,19 @@ public sealed class ParityContractTests
         Assert.Equal(
             "Raster differs in 1/42000 pixels (max channel delta 12).",
             Assert.Single(comparison.Failures));
+        Assert.Equal(ParityComparison.CurrentSchemaVersion, comparison.SchemaVersion);
+        Assert.Equal(9, comparison.SchemaVersion);
+        Assert.Equal(ParityComparisonProfiles.CurrentSchemaVersion, comparison.ProfileSchemaVersion);
+        Assert.Equal(1, comparison.Raster!.RawDifferentPixels);
+        Assert.Equal(0, comparison.Raster.AllowedPixels);
+        Assert.Equal([ParityRasterRejectionReason.OutsideSemanticMask], comparison.Raster.RejectionReasons);
+        Assert.Equal(new ParityPixelBounds(20, 20, 20, 20), comparison.Raster.RejectedBounds);
+        var strict = Assert.Single(comparison.Raster.Regions, region => region.Kind == "strict-unowned");
+        Assert.Equal(1, strict.ObservedPixels);
+        Assert.Equal(12, strict.ObservedEnergy);
+        var sample = Assert.Single(strict.RejectedSamples);
+        Assert.Equal((20, 20, (byte)12), (sample.X, sample.Y, sample.ChannelDelta));
+        Assert.Contains("outsideSemanticMask", comparison.Summary, StringComparison.Ordinal);
     }
 
     [Fact]

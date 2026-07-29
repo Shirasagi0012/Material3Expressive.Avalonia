@@ -177,6 +177,8 @@ Treat `exactMatch` and `semanticRasterEquivalent` as fully accepted parity outco
 `rasterWarning` may be integrated because xUnit accepts it, but it remains visible implementation
 debt and does not close the underlying parity work unless the roadmap explicitly records that
 temporary disposition. A `mismatch` remains incomplete; a skipped row remains unevaluated.
+For any normal-policy rejection, require the v9 report's owner/reason/bounds evidence and confirm
+`rejected-mask.png` contains exactly `raster.rejectedPixels`; do not calibrate from raw `diff.png`.
 
 For motion, record two conclusions instead of compressing them into one label: the timeline
 contract either matches exactly or structurally fails, and only then does the captured frame receive
@@ -241,6 +243,7 @@ Before considering a new case complete, verify:
 - [ ] Validation was handed to `$run-visual-parity-tests`, with the smallest case and relevant
       broader selections run successfully.
 - [ ] Any new allowance has the required positive and negative mutation coverage.
+- [ ] Any raster rejection has a v9 reason and rejected-mask/report count agreement.
 - [ ] No generated PNG, baseline, or blanket allow-list was added to source control.
 
 For copyable Compose/C# registration skeletons and a state/probe worksheet, read

@@ -87,7 +87,8 @@ commit drawing, but cannot advance a manually owned group.
 
 ## Capture contract
 
-Capture schema version 8 adds an optional `motion` object. Static cases omit it. Motion cases emit
+Capture schema version 8 introduced the optional `motion` object; the current capture/report
+contract is v9 and retains motion schema v1 unchanged. Static cases omit it. Motion cases emit
 the same values on both sides:
 
 - motion schema version;

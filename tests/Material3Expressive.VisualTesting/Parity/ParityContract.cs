@@ -73,7 +73,7 @@ public sealed record ParityCaptureResult(
     IReadOnlyList<ParityNode> Nodes,
     ParityMotionCapture? Motion = null)
 {
-    public const int CurrentSchemaVersion = 8;
+    public const int CurrentSchemaVersion = 9;
 }
 
 /// <summary>A source-produced logical motion history replayed by the Avalonia capture.</summary>

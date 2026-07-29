@@ -62,7 +62,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def resolve_paths(source_value: str, actual_value: str | None) -> tuple[Path, Path, Path | None]:
+def resolve_paths(
+    source_value: str, actual_value: str | None
+) -> tuple[Path, Path, Path | None, Path | None]:
     source = Path(source_value).resolve()
     if not source.exists():
         raise FileNotFoundError(source)
@@ -72,11 +74,17 @@ def resolve_paths(source_value: str, actual_value: str | None) -> tuple[Path, Pa
         expected = source / "expected.png"
         actual = source / "image.png"
         comparison = source / "comparison.json"
-        return expected, actual, comparison if comparison.is_file() else None
+        rejected_mask = source / "rejected-mask.png"
+        return (
+            expected,
+            actual,
+            comparison if comparison.is_file() else None,
+            rejected_mask if rejected_mask.is_file() else None,
+        )
 
     if actual_value is None:
         raise ValueError("Provide the actual PNG path when source is an expected image.")
-    return source, Path(actual_value).resolve(), None
+    return source, Path(actual_value).resolve(), None, None
 
 
 def parse_backdrop(value: str) -> tuple[int, int, int]:
@@ -236,7 +244,11 @@ def read_official_report(path: Path | None, storage_exact: bool) -> dict[str, An
         )
     return {
         "path": str(path),
+        "schemaVersion": comparison.get("schemaVersion"),
+        "profileSchemaVersion": comparison.get("profileSchemaVersion"),
         "profileId": comparison.get("profileId"),
+        "profileRulePrefix": comparison.get("profileRulePrefix"),
+        "profile": comparison.get("profile"),
         "isMatch": is_match,
         "kind": kind,
         "kindSource": kind_source,
@@ -366,6 +378,11 @@ def print_report(report: dict[str, Any], top: int) -> None:
             f"Official: isMatch={official['isMatch']}, profile={official['profileId']}, "
             f"kind={official['kind']} ({official['kindSource']})"
         )
+        print(
+            f"  report schema={official.get('schemaVersion')}, "
+            f"profile schema={official.get('profileSchemaVersion')}, "
+            f"rule={official.get('profileRulePrefix')}"
+        )
         if official["kind"] == "mismatch":
             print(f"  first inferred failure layer: {official['failureLayer']}")
         elif official["kind"] == "rasterWarning":
@@ -377,8 +394,13 @@ def print_report(report: dict[str, Any], top: int) -> None:
         raster = official.get("raster") or {}
         print(
             "  normal raster: "
+            f"raw={raster.get('rawDifferentPixels')}, rawMax={raster.get('maximumRawChannelDelta')}, "
             f"floor={raster.get('ignoredFloorPixels')}, allowed={raster.get('allowedPixels')}, "
             f"rejected={raster.get('rejectedPixels')}, maxRejected={raster.get('maximumRejectedChannelDelta')}"
+        )
+        print(
+            f"  rejection reasons={raster.get('rejectionReasons')}, "
+            f"bounds={raster.get('rejectedBounds')}, samples={raster.get('rejectedSamples')}"
         )
         warning_raster = official.get("warningRaster")
         if warning_raster is not None:
@@ -392,6 +414,14 @@ def print_report(report: dict[str, Any], top: int) -> None:
     else:
         print("Official: no comparison.json supplied; diagnostics do not determine pass/fail.")
 
+    rejected_mask = report.get("officialRejectedMask")
+    if rejected_mask is not None:
+        print(
+            "Official rejected mask: "
+            f"pixels={rejected_mask['pixels']}, bbox={rejected_mask['bbox']}, "
+            f"matchesReport={rejected_mask['matchesReport']}"
+        )
+
 
 def main() -> int:
     args = parse_args()
@@ -400,7 +430,9 @@ def main() -> int:
     if args.top < 1 or args.scale < 1 or args.padding < 0:
         raise ValueError("Top and scale must be positive; padding must be non-negative.")
 
-    expected_path, actual_path, comparison_path = resolve_paths(args.source, args.actual)
+    expected_path, actual_path, comparison_path, rejected_mask_path = resolve_paths(
+        args.source, args.actual
+    )
     backdrop = parse_backdrop(args.backdrop)
     bins = parse_bins(args.bins)
     expected_rgba = load_rgba(expected_path)
@@ -425,8 +457,25 @@ def main() -> int:
     stored_different_pixels = int(stored_mask.sum())
     visual_different_pixels = int(visual_mask.sum())
 
+    official = read_official_report(comparison_path, storage_exact)
+    official_rejected_mask = None
+    if rejected_mask_path is not None:
+        rejected_rgba = load_rgba(rejected_mask_path)
+        if rejected_rgba.shape != expected_rgba.shape:
+            raise ValueError(
+                "Official rejected-mask dimensions differ from the expected/actual images."
+            )
+        rejected_mask = rejected_rgba[..., 3] > 0
+        reported = ((official or {}).get("raster") or {}).get("rejectedPixels")
+        official_rejected_mask = {
+            "path": str(rejected_mask_path),
+            "pixels": int(rejected_mask.sum()),
+            "bbox": bounding_box(rejected_mask),
+            "matchesReport": reported is None or int(rejected_mask.sum()) == int(reported),
+        }
+
     report: dict[str, Any] = {
-        "schemaVersion": 3,
+        "schemaVersion": 4,
         "diagnosticOnly": True,
         "image": {
             "expectedPath": str(expected_path),
@@ -475,7 +524,8 @@ def main() -> int:
             "expectedRgb",
             "actualRgb",
         ),
-        "official": read_official_report(comparison_path, storage_exact),
+        "official": official,
+        "officialRejectedMask": official_rejected_mask,
     }
 
     print_report(report, args.top)
