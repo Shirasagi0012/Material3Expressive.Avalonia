@@ -1,6 +1,6 @@
 # D008 — Segmented list grouping API
 
-Status: Accepted  
+Status: Accepted
 Date: 2026-07-30
 
 Use `MaterialSegmentedList`, which infers positions from visible direct `MaterialListItem`

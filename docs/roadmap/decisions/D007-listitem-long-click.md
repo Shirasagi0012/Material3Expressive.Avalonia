@@ -1,6 +1,6 @@
 # D007 — ListItem long-click contract
 
-Status: Accepted  
+Status: Accepted
 Date: 2026-07-30
 
 Use the existing `InteractionMode` API. Interactive rows expose `LongClick`, `LongClickCommand`,

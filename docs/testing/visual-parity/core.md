@@ -18,7 +18,7 @@ or the routing table requires them.
 
 ## Conditional routing
 
-| Task signal | Load | 
+| Task signal | Load |
 |---|---|
 | `parity: motion` or an intermediate frame | `docs/testing/visual-parity/animation.md` |
 | `comparison-profile: new` or `change` | `docs/testing/visual-parity/comparison-profiles.md` and the JSON registry |

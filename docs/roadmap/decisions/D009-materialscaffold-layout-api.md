@@ -1,6 +1,6 @@
 # D009 — MaterialScaffold layout API
 
-Status: Accepted  
+Status: Accepted
 Date: 2026-07-30
 
 `MaterialScaffold` exposes `TopBar`, `BottomBar`, `SnackbarHost`, `FloatingActionButton`, inherited

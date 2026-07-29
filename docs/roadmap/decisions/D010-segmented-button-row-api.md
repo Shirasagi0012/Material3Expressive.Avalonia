@@ -1,6 +1,6 @@
 # D010 — SegmentedButton row API
 
-Status: Accepted  
+Status: Accepted
 Date: 2026-07-30
 
 Adapt Compose's `SingleChoiceSegmentedButtonRow` and `MultiChoiceSegmentedButtonRow` through one

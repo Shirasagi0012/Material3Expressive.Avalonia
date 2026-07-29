@@ -6,7 +6,7 @@ priority: P1
 status: Complete
 milestone: M3
 dependencies: [M3-LISTITEM-001]
-decisions: [D003, D008]
+decisions: [D003, D008, D010]
 parity: static
 comparison-profile: existing
 docs: [docs/testing/visual-parity/core.md]
@@ -42,7 +42,7 @@ visual parity or an explicit version-gap record.
 
 ## API and behavior
 
-Decision [D010](../decisions.md#d010--segmentedbutton-row-api) adapts the two Compose row scopes
+Decision [D010](../decisions/D010-segmented-button-row-api.md) adapts the two Compose row scopes
 through one `MaterialSegmentedButtonRow.SelectionMode`. The row accepts visible direct
 `MaterialSegmentedButton` children, distributes physical-pixel widths equally, overlaps adjacent
 1dp outlines, infers single/first/middle/last shapes, and coordinates single selection without

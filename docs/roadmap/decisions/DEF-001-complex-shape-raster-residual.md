@@ -1,8 +1,8 @@
 # DEF-001 — Complex-shape raster residual
 
-Status: Deferred  
-Authorized by: User  
-Date: 2026-07-29  
+Status: Deferred
+Authorized by: User
+Date: 2026-07-29
 Affects: `progress/circular-wavy/*`
 
 The renderer-difference warning is limited to the `complex-shape` expected-edge profile and is

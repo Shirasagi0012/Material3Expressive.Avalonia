@@ -1,6 +1,6 @@
 # D003 — Compose parity versus desktop adaptation
 
-Status: Open  
+Status: Open
 Blocks: cross-component parity and API review
 
 Question: Where is the boundary between executable Compose parity and an intentional Avalonia
