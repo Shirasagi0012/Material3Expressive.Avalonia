@@ -23,7 +23,7 @@ data class ExpectedManifest(
     val themeIdentifier: String,
     val themeSha256: String,
     val caseCatalogSha256: String,
-    val captureSchemaVersion: Int = 9,
+    val captureSchemaVersion: Int = 10,
     val viewportScale: Float,
     val files: List<ManifestFileEntry>,
     val cases: List<ManifestCaseEntry>,
@@ -48,7 +48,7 @@ data class ManifestCaseEntry(
 
 @Serializable
 data class CaptureResult(
-    val schemaVersion: Int = 9,
+    val schemaVersion: Int = 10,
     val caseId: String,
     val coordinateSpace: CoordinateSpace,
     val viewportPx: ViewportPx,
@@ -192,6 +192,7 @@ data class CaptureTextLayout(
     val firstBaselineInTextPx: Float? = null,
     val lastBaselineInTextPx: Float? = null,
     val styleSignature: CaptureTextStyleSignature? = null,
+    val paintSignature: CaptureTextPaintSignature? = null,
 )
 
 @Serializable
@@ -209,6 +210,13 @@ data class CaptureTextStyleSignature(
     val fontSizePx: Float? = null,
     val lineHeightPx: Float? = null,
     val letterSpacingPx: Float? = null,
+)
+
+@Serializable
+data class CaptureTextPaintSignature(
+    val kind: String,
+    val foregroundArgb: String? = null,
+    val opacity: Float = 1f,
 )
 
 @Serializable

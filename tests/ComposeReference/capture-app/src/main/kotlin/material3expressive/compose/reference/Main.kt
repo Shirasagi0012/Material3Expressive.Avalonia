@@ -4,6 +4,7 @@ import material3expressive.compose.reference.capture.ExpectedProducer
 import material3expressive.compose.reference.scenes.registerButtonScenes
 import material3expressive.compose.reference.scenes.registerComponentMotionScenes
 import material3expressive.compose.reference.scenes.registerComponentScenes
+import material3expressive.compose.reference.scenes.registerDividerScenes
 import material3expressive.compose.reference.scenes.registerFoundationScenes
 import material3expressive.compose.reference.scenes.registerMotionProbeScenes
 import material3expressive.compose.reference.scenes.registerNavigationScenes
@@ -41,6 +42,7 @@ fun main(args: Array<String>) {
         registerMotionProbeScenes()
         registerTypographyScenes()
         registerComponentScenes()
+        registerDividerScenes()
         registerComponentMotionScenes()
         registerButtonScenes()
         registerTextFieldScenes()

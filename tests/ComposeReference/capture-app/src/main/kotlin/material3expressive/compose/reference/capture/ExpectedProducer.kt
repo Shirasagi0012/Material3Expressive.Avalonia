@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.MotionDurationScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalCursorBlinkEnabled
@@ -36,6 +38,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
+import kotlin.math.roundToInt
 
 private const val RENDER_SCALE = 2.0f
 
@@ -500,6 +503,7 @@ class ExpectedProducer(
             } else {
                 captureTextStyleSignature(result.layoutInput.style, scale)
             },
+            paintSignature = captureTextPaintSignature(result.layoutInput.style),
         )
     }
 
@@ -518,6 +522,27 @@ class ExpectedProducer(
             letterSpacingPx = style.letterSpacing.toPhysicalPxOrNull(scale, fontSizePx),
         )
     }
+
+    private fun captureTextPaintSignature(style: TextStyle): CaptureTextPaintSignature {
+        val color = style.color
+        val argb = color.takeUnless { it == Color.Unspecified }?.toArgb()
+        return CaptureTextPaintSignature(
+            kind = when {
+                style.brush != null -> "brush"
+                argb != null -> "solid"
+                else -> "unspecified"
+            },
+            foregroundArgb = argb?.let { "#FF%06X".format(it and 0x00FFFFFF) },
+            opacity = if (argb != null) {
+                ((argb ushr 24) and 0xFF) / 255f
+            } else {
+                quantizeOpacity(style.alpha.takeUnless(Float::isNaN) ?: 1f)
+            },
+        )
+    }
+
+    private fun quantizeOpacity(opacity: Float): Float =
+        (opacity.coerceIn(0f, 1f) * 255f).roundToInt() / 255f
 
     private fun TextUnit.toPhysicalPxOrNull(scale: Float, fontSizePx: Float? = null): Float? = when (type) {
         TextUnitType.Sp -> value * scale

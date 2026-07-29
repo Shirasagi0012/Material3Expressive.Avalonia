@@ -353,10 +353,7 @@ public class MaterialTextField : TemplatedControl
         if (parameters is null)
             return;
 
-        var brush = !enabled ? _colors.DisabledLabelColor
-            : IsError ? _colors.ErrorColor
-            : focused ? _colors.FocusLabelColor
-            : _colors.LabelColor;
+        var brush = ResolveLabelBrush(enabled, focused);
 
         using var text = CreateLabelTextLayout(parameters, brush);
 
@@ -374,9 +371,16 @@ public class MaterialTextField : TemplatedControl
         var parameters = GetLabelDrawingParameters(FieldArea);
         if (parameters is null)
             return null;
-        var layout = CreateLabelTextLayout(parameters, Brushes.Transparent);
-        return new MaterialTextFieldLabelProbe(parameters.Origin, layout);
+        var brush = ResolveLabelBrush(IsEffectivelyEnabled, _textBox?.IsFocused ?? false);
+        var layout = CreateLabelTextLayout(parameters, brush);
+        return new MaterialTextFieldLabelProbe(parameters.Origin, layout, brush);
     }
+
+    private IImmutableBrush ResolveLabelBrush(bool enabled, bool focused) =>
+        !enabled ? _colors.DisabledLabelColor
+        : IsError ? _colors.ErrorColor
+        : focused ? _colors.FocusLabelColor
+        : _colors.LabelColor;
 
     private LabelDrawingParameters? GetLabelDrawingParameters(Rect field)
     {
@@ -544,7 +548,7 @@ public class MaterialTextField : TemplatedControl
     }
 }
 
-internal sealed record MaterialTextFieldLabelProbe(Point Origin, TextLayout Layout);
+internal sealed record MaterialTextFieldLabelProbe(Point Origin, TextLayout Layout, IBrush Foreground);
 
 internal sealed record LabelDrawingParameters(
     string Text,
