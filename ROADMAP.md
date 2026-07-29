@@ -173,6 +173,9 @@ The roadmap is complete only when:
 - 2026-07-30: MaterialScaffold layout, ListItem grouping, long-click behavior, and related parity
   evidence were completed; SegmentedButton then closed M3. Details are in
   [`history.md`](docs/roadmap/history.md).
+- 2026-07-30: SegmentedButton's default `Icons.Filled.Check` is exposed as bindable
+  `SelectionIcon` geometry and rendered through `PathIcon`, preserving the AndroidX ImageVector
+  viewport/path while allowing XAML replacement.
 - 2026-07-29: the alpha22 executable reference was separated from the alpha25 implementation
   source baseline.
 - 2026-07-29: the baseline and active parity-case audit satisfied M1 exit criteria.
