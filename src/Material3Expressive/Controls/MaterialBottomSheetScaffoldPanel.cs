@@ -52,9 +52,11 @@ internal sealed class MaterialBottomSheetScaffoldPanel : Panel
         var fraction = slots.Sheet is MaterialBottomSheetScaffoldSheet sheetControl
             ? sheetControl.SheetFraction
             : owner.EffectiveState.CurrentValue == BottomSheetValue.Expanded ? 0 : 1;
-        var sheetTop = height - (int)Math.Round(
-            sheetHeight - ((sheetHeight - peek) * fraction),
-            MidpointRounding.AwayFromZero);
+        var sheetTop = fraction >= 2
+            ? height
+            : height - (int)Math.Round(
+                sheetHeight - ((sheetHeight - peek) * fraction),
+                MidpointRounding.AwayFromZero);
         var sheetLeft = (width - sheetWidth) / 2;
 
         slots.Content.Arrange(new Rect(0, 0, finalSize.Width, finalSize.Height));

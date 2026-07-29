@@ -46,6 +46,9 @@ public sealed class MaterialBottomSheetScaffoldTests
         Assert.False(rejected.Expand());
         Assert.Equal(BottomSheetValue.PartiallyExpanded, rejected.CurrentValue);
         Assert.Equal(BottomSheetValue.PartiallyExpanded, rejected.TargetValue);
+
+        Assert.True(accepted.Hide());
+        Assert.Equal(BottomSheetValue.Hidden, accepted.CurrentValue);
     }
 
     [AvaloniaFact]

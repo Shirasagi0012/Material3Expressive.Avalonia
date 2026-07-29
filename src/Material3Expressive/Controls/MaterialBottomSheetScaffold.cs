@@ -381,5 +381,10 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
     }
 
     private static double ValueFraction(BottomSheetValue value) =>
-        value == BottomSheetValue.Expanded ? 0 : 1;
+        value switch
+        {
+            BottomSheetValue.Expanded => 0,
+            BottomSheetValue.Hidden => 2,
+            _ => 1
+        };
 }
