@@ -25,4 +25,5 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/SearchBar.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Pickers.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/SurfaceList.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Components/Scaffold.axaml" />
 </Styles>

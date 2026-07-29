@@ -1,15 +1,18 @@
 // Implementation-source basis: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/{ListItem,ListItemDefaults}.kt
-// and tokens/ListTokens.kt (VERSION 29.0.0). The matching Compose scenes use the pinned
+// and Scaffold.kt, plus tokens/ListTokens.kt (VERSION 29.0.0). The matching Compose scenes use the pinned
 // Material3 1.5.0-alpha22 executable interaction overloads at explicit 56/72/88dp sizes.
 // Alpha22 has no alpha25 non-interactive ListItem(content) overload, and alpha25's text-line-height
-// minimum-height behavior is intentionally parity unavailable here.
+// minimum-height behavior is intentionally parity unavailable here. Scaffold geometry is executable
+// against alpha22; alpha25's additional explicit slot z-indices are locked structurally.
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
@@ -192,7 +195,9 @@ internal static class ComposeWaveOneParityCases
         ListItemSingleSelectionSelected(VisualTheme.Dark),
         ListItemMultiSelectionSelected(),
         SegmentedListThreeItemsSelectedMiddle(),
-        SegmentedListSingleDark()
+        SegmentedListSingleDark(),
+        ScaffoldBarsFabSnackbar(),
+        ScaffoldEndOverlayRtlDark()
     ];
 
     private static VisualCase Typography(
@@ -512,6 +517,96 @@ internal static class ComposeWaveOneParityCases
             VisualTheme.Dark,
             ["Appearance"],
             selectedIndex: 0);
+
+    private static VisualCase ScaffoldBarsFabSnackbar() =>
+        ScaffoldScene(
+            "scaffold/bars-fab-snackbar/light",
+            VisualTheme.Light,
+            ScaffoldFabPosition.End,
+            showTopBar: true,
+            showSnackbar: true,
+            rightToLeft: false);
+
+    private static VisualCase ScaffoldEndOverlayRtlDark() =>
+        ScaffoldScene(
+            "scaffold/end-overlay/rtl/dark",
+            VisualTheme.Dark,
+            ScaffoldFabPosition.EndOverlay,
+            showTopBar: false,
+            showSnackbar: false,
+            rightToLeft: true);
+
+    private static VisualCase ScaffoldScene(
+        string id,
+        VisualTheme theme,
+        ScaffoldFabPosition fabPosition,
+        bool showTopBar,
+        bool showSnackbar,
+        bool rightToLeft) =>
+        new(
+            id,
+            new PixelSize(360, 400),
+            theme,
+            context =>
+            {
+                var paddedBody = new Border
+                {
+                    Name = "padded-body",
+                    Background = CaseLayout.Brush(context, SysColorToken.SurfaceVariant)
+                };
+                var body = new Border
+                {
+                    Name = "body",
+                    Background = CaseLayout.Brush(context, SysColorToken.Surface),
+                    Child = paddedBody
+                };
+                var scaffold = new MaterialScaffold
+                {
+                    Name = "component",
+                    Width = 360,
+                    Height = 400,
+                    FlowDirection = rightToLeft
+                        ? FlowDirection.RightToLeft
+                        : FlowDirection.LeftToRight,
+                    ContentWindowInsets = new Thickness(10, 12, 14, 16),
+                    FloatingActionButtonPosition = fabPosition,
+                    Content = body,
+                    TopBar = showTopBar
+                        ? Slot("top-bar", 360, 48, CaseLayout.Brush(context, SysColorToken.PrimaryContainer))
+                        : null,
+                    BottomBar = Slot(
+                        "bottom-bar",
+                        360,
+                        80,
+                        CaseLayout.Brush(context, SysColorToken.SecondaryContainer)),
+                    SnackbarHost = showSnackbar
+                        ? Slot("snackbar", 240, 48, CaseLayout.Brush(context, SysColorToken.InverseSurface))
+                        : null,
+                    FloatingActionButton = Slot(
+                        "fab",
+                        56,
+                        56,
+                        CaseLayout.Brush(context, SysColorToken.TertiaryContainer))
+                };
+                paddedBody.Bind(
+                    Layoutable.MarginProperty,
+                    new Binding(nameof(MaterialScaffold.ContentPadding))
+                    {
+                        Source = scaffold
+                    });
+
+                return scaffold;
+            },
+            RenderScaling: 1.0);
+
+    private static Border Slot(string name, double width, double height, IBrush background) =>
+        new()
+        {
+            Name = name,
+            Width = width,
+            Height = height,
+            Background = background
+        };
 
     private static VisualCase SegmentedListScene(
         string id,

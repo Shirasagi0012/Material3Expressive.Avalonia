@@ -1,21 +1,27 @@
 // Implementation-source basis: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/{ListItem,ListItemDefaults}.kt
-// and tokens/{ListTokens,ReorderListTokens,StateTokens}.kt (VERSION 29.0.0).  The executable scenes below intentionally use only
+// and Scaffold.kt, plus tokens/{ListTokens,ReorderListTokens,StateTokens}.kt (VERSION 29.0.0).
+// The executable scenes below intentionally use only
 // interaction overloads present in the pinned Compose Multiplatform Material3 1.12.0-alpha03 / Jetpack
 // Material3 1.5.0-alpha22 reference. Alpha22 does not expose alpha25's non-interactive
 // `ListItem(content = ...)` overload, so InteractionMode.None is parity unavailable. Their explicit
 // 56/72/88dp sizes also keep the alpha25 expressive text-line-height flag out of this executable
-// comparison; that newer behavior is likewise parity unavailable.
+// comparison; that newer behavior is likewise parity unavailable. Alpha22 Scaffold has the same
+// slot geometry and resulting draw order as alpha25, but alpha25 makes each slot z-index explicit.
 
 package material3expressive.compose.reference.scenes
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,18 +35,23 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import material3expressive.compose.reference.CaseContract
 import material3expressive.compose.reference.ReferenceCaseRegistry
 import material3expressive.compose.reference.ReferenceScene
@@ -308,6 +319,121 @@ fun ReferenceCaseRegistry.registerNavigationScenes() {
             )
         },
     )
+    register(
+        scaffoldCase("scaffold/bars-fab-snackbar/light"),
+        ReferenceScene { probes ->
+            ScaffoldScene(probes)
+        },
+    )
+    register(
+        scaffoldCase(
+            id = "scaffold/end-overlay/rtl/dark",
+            dark = true,
+            requiredNodes = listOf(
+                RequiredNodeSpec(id = "component", kind = "container"),
+                RequiredNodeSpec(id = "body", kind = "container", parentId = "component"),
+                RequiredNodeSpec(id = "padded-body", kind = "container", parentId = "component"),
+                RequiredNodeSpec(id = "bottom-bar", kind = "container", parentId = "component"),
+                RequiredNodeSpec(id = "fab", kind = "container", parentId = "component"),
+            ),
+        ),
+        ReferenceScene { probes ->
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                ScaffoldScene(
+                    probes = probes,
+                    fabPosition = FabPosition.EndOverlay,
+                    showTopBar = false,
+                    showSnackbar = false,
+                )
+            }
+        },
+    )
+}
+
+private fun scaffoldCase(
+    id: String,
+    dark: Boolean = false,
+    requiredNodes: List<RequiredNodeSpec> = listOf(
+        RequiredNodeSpec(id = "component", kind = "container"),
+        RequiredNodeSpec(id = "body", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "padded-body", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "top-bar", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "bottom-bar", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "snackbar", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "fab", kind = "container", parentId = "component"),
+    ),
+) = CaseContract(
+    id = id,
+    viewportWidthDp = 360,
+    viewportHeightDp = 400,
+    dark = dark,
+    requiredNodes = requiredNodes,
+)
+
+@Composable
+private fun ScaffoldScene(
+    probes: ProbeRegistry,
+    fabPosition: FabPosition = FabPosition.End,
+    showTopBar: Boolean = true,
+    showSnackbar: Boolean = true,
+) {
+    Scaffold(
+        modifier = Modifier.requiredSize(360.dp, 400.dp).then(probes.geometry("component")),
+        contentWindowInsets = WindowInsets(10.dp, 12.dp, 14.dp, 16.dp),
+        floatingActionButtonPosition = fabPosition,
+        topBar = {
+            if (showTopBar) {
+                Box(
+                    Modifier
+                        .requiredSize(360.dp, 48.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .then(probes.geometry("top-bar")),
+                )
+            }
+        },
+        bottomBar = {
+            Box(
+                Modifier
+                    .requiredSize(360.dp, 80.dp)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .then(probes.geometry("bottom-bar")),
+            )
+        },
+        snackbarHost = {
+            if (showSnackbar) {
+                Box(
+                    Modifier
+                        .requiredSize(240.dp, 48.dp)
+                        .background(MaterialTheme.colorScheme.inverseSurface)
+                        .then(probes.geometry("snackbar")),
+                )
+            }
+        },
+        floatingActionButton = {
+            Box(
+                Modifier
+                    .requiredSize(56.dp, 56.dp)
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .then(probes.geometry("fab")),
+            )
+        },
+    ) { contentPadding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .then(probes.geometry("body")),
+        ) {
+            Box(Modifier.padding(contentPadding)) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .then(probes.geometry("padded-body")),
+                )
+            }
+        }
+    }
 }
 
 private fun listItemCase(

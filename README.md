@@ -22,7 +22,7 @@ Material token database and stamped with the version it came from.
 | **Motion** | A spring animator ported from `animation-core` — analytic, retargetable, velocity-preserving. |
 | **Interaction** | State layers with Material's asymmetric fades, ripples, and the corner-morph press feedback. |
 | **Symbols** | Material Symbols Rounded as the first-party icon family, including animatable fill, weight, grade and optical-size axes. |
-| **Components** | Surface and divider primitives; list rows; buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
+| **Components** | Surface, divider, list-row, segmented-list, and scaffold primitives; buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
 
 ## Getting started
 
@@ -98,6 +98,39 @@ infers single/first/middle/last shapes from its visible direct `MaterialListItem
 the 2dp token gap and segmented container colour, and leaves each row's `InteractionMode` and
 selection ownership unchanged. See [docs/component-coverage.md](docs/component-coverage.md) for
 the executable-reference and alpha25 version-gap status.
+
+## Scaffold layout
+
+`MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and
+`FloatingActionButton`. The body always fills the complete scaffold. Apply the read-only
+`ContentPadding` to the body child; for scrolling content, apply it inside the `ScrollViewer`
+rather than to the viewer itself.
+
+```xml
+<m3:MaterialScaffold x:Name="Scaffold"
+                     FloatingActionButtonPosition="End">
+    <m3:MaterialScaffold.TopBar>
+        <m3:MaterialAppBar Content="Inbox" />
+    </m3:MaterialScaffold.TopBar>
+    <m3:MaterialScaffold.BottomBar>
+        <m3:MaterialNavigationBar />
+    </m3:MaterialScaffold.BottomBar>
+    <m3:MaterialScaffold.FloatingActionButton>
+        <m3:MaterialFab><ms:MaterialSymbol Symbol="Add" /></m3:MaterialFab>
+    </m3:MaterialScaffold.FloatingActionButton>
+
+    <ScrollViewer>
+        <StackPanel Margin="{Binding ContentPadding, ElementName=Scaffold}">
+            <!-- scrolling body -->
+        </StackPanel>
+    </ScrollViewer>
+</m3:MaterialScaffold>
+```
+
+`ContentWindowInsets` defaults to `null`, which observes the containing `TopLevel` safe area and
+updates when it changes. Set an explicit `Thickness` to replace that source; use `0` when an
+ancestor already consumed the safe area. The scaffold positions a snackbar host but deliberately
+does not own its queue, timeout, or result state.
 
 Material Symbols use the Rounded family by default. Toggle, navigation, tab and chip selection
 states drive the variable font's `Fill` axis instead of swapping glyphs. The current tested render

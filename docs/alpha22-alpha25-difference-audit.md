@@ -13,7 +13,7 @@ in [upstream-baselines.md](upstream-baselines.md).
 | alpha25 implementation source | `D:\source\androidx` at `ff0a0a99c4f0cfe95d75d5df615e51d399575922`; `libraryversions.toml` declares `COMPOSE_MATERIAL3 = "1.5.0-alpha25"` |
 | alpha22 source comparison | Official Android Maven `androidx.compose.material3:material3:1.5.0-alpha22:sources`, common source root `commonMain/androidx/compose/material3` |
 | executable reference | Compose Multiplatform Material3 `1.12.0-alpha03`, Jetpack Material3 `1.5.0-alpha22` lineage |
-| active parity catalog | the 96 cases registered by `tests/ComposeReference/capture-app/.../ReferenceCaseRegistry.kt` and `tests/Material3Expressive.VisualTesting/Cases` |
+| active parity catalog | the 98 cases registered by `tests/ComposeReference/capture-app/.../ReferenceCaseRegistry.kt` and `tests/Material3Expressive.VisualTesting/Cases` |
 
 For a future baseline review, download the exact previous release source JAR, compare its
 `commonMain/androidx/compose/material3` tree with the pinned AndroidX tree, then inspect each
@@ -33,12 +33,13 @@ the library version.
 | Slider / range slider | `Slider.kt` strengthens state/Saver inputs, exposes drag state, separates internal raw-delta dispatch, and documents `onValueChangeFinished` for keyboard steps. Vertical and range overloads remain source targets. | `MaterialSlider.Orientation="Vertical"` and `MaterialRangeSlider` implement the alpha25 layout/token model. Alpha22 static `VerticalSlider` and `RangeSlider` cases pass; the alpha25-only state/Saver and keyboard-completion paths remain parity unavailable and require source review plus deterministic Avalonia tests. |
 | Tonal elevation | `ColorScheme.kt` exposes `LocalTonalElevationEnabled` publicly. | The library retains its alpha25 tonal-elevation implementation. Existing color/elevation parity cases test the alpha22 rendering contract only; they are not proof of this public alpha25 composition-local surface. |
 | Divider and `Dp.Hairline` | `Divider.kt` / `DividerTokens.kt` retain the same default color/thickness, horizontal/vertical APIs, and `Dp.Hairline` drawing semantics between the executable alpha22 lineage and alpha25 source. | Default, custom-thickness, horizontal, vertical, and hairline reference scenes are executable at alpha22. Their accepted parity is normal alpha22 conformance evidence; there is no alpha25-only Divider version gap. |
+| Scaffold layout | `Scaffold.kt` retains the same five slots, caller-applied `PaddingValues`, insets, FAB positions, 16dp spacing, and snackbar/FAB geometry. Alpha25 adds explicit z-indices for content/top/snackbar/bottom/FAB (0/1/2/3/4); alpha22 obtains the same visual order from placement order. | `MaterialScaffold` exposes the five slots, read-only bindable `ContentPadding`, nullable TopLevel-safe-area adaptation, and all four FAB positions. The light full-slot and dark RTL EndOverlay cases are executable alpha22 conformance and both exact. Alpha25's explicit z-index constants are additionally locked by deterministic Avalonia template tests rather than misreported as an alpha22-only structural observation. |
 | Existing static parity families | For `Button.kt`, `Card.kt`, `FloatingActionButton.kt`, `Checkbox.kt`, `TextField.kt`, `OutlinedTextField.kt`, `NavigationBar.kt`, `NavigationRail.kt`, and `TabRow.kt`, the alpha22→alpha25 changes exercised by the current scene inputs are API visibility/signature stabilization or non-selected paths, not a changed default static scene. In particular, `ButtonDefaults.textStyleFor` keeps its 32/40 → LabelLarge, 56 → TitleMedium, 96 → HeadlineSmall, and 136dp → HeadlineLarge thresholds, and `Checkbox.kt` retains the styling-fix flag default of `false` on both sides. | Current cases remain valid alpha22 executable conformance cases. They have no implied alpha25 parity claim. |
 
 ## Active executable-reference audit
 
 The current catalog covers foundation color/elevation/typography, buttons, cards, FAB, selected
-checkbox, text fields, navigation bar/rail, vertical slider, range slider, tabs, Surface/Divider,
+checkbox, text fields, navigation bar/rail, vertical slider, range slider, tabs, Surface/Divider, Scaffold,
 and alpha22-compatible ListItem click, selection, and externally supplied drag states. Every
 accepted case invokes an API or interaction path present in alpha22. The original seven
 direct-content ListItem cases have accepted verdicts in
@@ -68,6 +69,14 @@ zero rejected pixels; the complete 13-case `listitem/` family has the same accep
 at `artifacts/visual-parity/xunit/20260729-181521-644`. Deterministic tests
 separately lock resting single/first/middle/last corners, hidden/removal reflow, the 2dp gap, child
 validation, and the non-selecting List automation role.
+
+The pinned alpha22 Scaffold has the same slot geometry and resulting visual order as alpha25.
+`scaffold/bars-fab-snackbar/light` exercises full-body content, caller-applied padding, both bars,
+snackbar and an End FAB; `scaffold/end-overlay/rtl/dark` exercises asymmetric insets, logical RTL
+placement, caller-applied padding, and FAB-over-bottom-bar layering. Both are `exactMatch` with
+zero differing, warning, or rejected pixels at
+`artifacts/visual-parity/xunit/20260729-184928-620`. The alpha25-only source difference is the
+explicit z-index declaration, which is covered by deterministic template structure tests.
 
 The following features are explicitly unavailable for Compose parity at the pinned reference until
 the reference is upgraded: alpha25-only ToggleButton border-transition behavior, alpha25 ListItem
@@ -109,6 +118,13 @@ two explicit typography skips, and only the same two TextField endpoint failures
 `artifacts/visual-parity/xunit/20260729-173456-880`. The accepted 11-case `listitem/` family has
 no warnings; this is an alpha22 conformance result, not alpha25 executable parity.
 
+After segmented ListItem and Scaffold coverage brought the catalog to 98 cases, the complete
+direct `dotnet test` parity run recorded 94 accepted rows (35 `exactMatch`, 55
+`semanticRasterEquivalent`, and the same four documented circular-wavy `rasterWarning` rows),
+the same two explicit display/headline skips, and only the same two focused TextField caret
+endpoint mismatches at `artifacts/visual-parity/xunit/20260729-185007-119`. Both Scaffold rows are
+exact. No version-gap or tolerance disposition was added for either TextField failure.
+
 ## Source files inspected
 
 The delta review used the complete common source trees and specifically inspected:
@@ -119,7 +135,7 @@ The delta review used the complete common source trees and specifically inspecte
   current action and selection coverage;
 - `TextField.kt`, `OutlinedTextField.kt`, `NavigationBar.kt`, `NavigationRail.kt`, and
   `TabRow.kt` for active parity coverage;
-- `ListItem.kt`, `ListItemDefaults.kt`, `tokens/ListTokens.kt`, `tokens/ElevationTokens.kt`,
+- `ListItem.kt`, `ListItemDefaults.kt`, `Scaffold.kt`, `tokens/ListTokens.kt`, `tokens/ElevationTokens.kt`,
   `tokens/ShapeTokens.kt`, alpha22 `internal/ripple/Ripple.kt`, alpha25 `material3-ripple/Ripple.kt`,
   `Slider.kt`, `AppBar.kt`, `FloatingToolbar.kt`, `ExposedDropdownMenu.kt`,
   `Menu.kt`, `ScrollField.kt`, `ShortNavigationBar.kt`, `TimePicker.kt`, `Tooltip.kt`, and

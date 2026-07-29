@@ -245,3 +245,27 @@ structural-test evidence because that state has no visible colour edge; the dark
 uses a selected single row and does not pretend renderer dither is shape evidence.
 The subsequent full 13-case `listitem/` family passed with the same classification at
 `artifacts/visual-parity/xunit/20260729-181521-644`.
+
+## 2026-07-30 — MaterialScaffold layout
+
+Reviewed alpha25 `Scaffold.kt:87-380` and its pinned alpha22 counterpart. Added
+`MaterialScaffold` with body, top bar, bottom bar, external snackbar-host and FAB slots;
+`ScaffoldFabPosition` supports Start, Center, End and EndOverlay. The body remains full-size and
+the read-only bindable `ContentPadding` is caller-applied, including logical RTL values. Null
+`ContentWindowInsets` observes live `TopLevel` safe-area padding, while explicit `Thickness`
+overrides it and explicit zero supports already-consumed nested layouts. Snackbar queue/timeouts
+remain outside this layout control.
+
+Sixteen deterministic tests cover bars versus insets, zero-height slot presence, theme roles, all FAB
+positions, RTL, EndOverlay, snackbar stacking, binding, z-order, validation, safe-area ownership,
+and neutral Pane automation. The full-slot light scene and dark RTL EndOverlay scene are both
+`exactMatch` with zero differing pixels and no warnings at
+`artifacts/visual-parity/xunit/20260729-184928-620`. Alpha22 has identical slot geometry and
+resulting visual order; alpha25 additionally names explicit slot z-indices, which the Avalonia
+template test records.
+
+The subsequent full 98-case run at
+`artifacts/visual-parity/xunit/20260729-185007-119` accepted 94 rows (35 exact, 55 semantic, and
+four previously documented circular-wavy warnings), skipped the two known unavailable
+display/headline rows, and retained only the two pre-existing focused TextField caret-endpoint
+mismatches. Both new Scaffold rows remained exact.

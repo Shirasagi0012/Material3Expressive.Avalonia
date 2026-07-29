@@ -277,6 +277,32 @@ the same `InteractionMode`, long-click contract, and application-owned selection
 adds only a List automation role. The pinned alpha22 executable contains the same segmented
 overloads/defaults, so focused light/dark scenes provide normal alpha22 conformance evidence.
 
+## Scaffold layout and caller-applied content padding
+
+`Scaffold.kt:87-305` owns five slots: top bar, body content, snackbar host, floating action button,
+and bottom bar. The body is measured and placed at `(0,0)` against the full scaffold; the
+`PaddingValues` callback is output for the caller to apply. Top and bottom bars replace only their
+corresponding inset in that output, while logical start/end remain the resolved window insets.
+The snackbar is centered inside horizontal insets. FAB `Start`, `Center`, `End`, and `EndOverlay`
+use logical direction, a 16dp edge/bar gap, and integer physical-pixel placement. A snackbar
+stacks above the FAB, otherwise above the bottom bar or bottom inset.
+
+`MaterialScaffold` maps those lambdas to `TopBar`, inherited body `Content`, `SnackbarHost`,
+`FloatingActionButton`, and `BottomBar`. `ContentPadding` is a read-only bindable `Thickness`;
+the application applies it to the body child, preserving the upstream ScrollViewer rule rather
+than silently moving the viewport. In RTL, its horizontal values are emitted in logical
+Avalonia coordinates so normal `FlowDirection` mirroring produces the same physical safe-area
+edges. `ContentWindowInsets=null` observes `TopLevel.InsetsManager.SafeAreaPadding` and disables
+Avalonia's automatic direct-child safe-area padding to avoid applying the same inset twice.
+An explicit `Thickness`, including zero, replaces that source; nested hosts whose ancestor already
+consumed insets should use explicit zero.
+
+The scaffold uses `Background` / `OnBackground`, exposes a neutral Pane automation peer, and owns
+no snackbar queue or timeout state. Alpha25 explicitly draws content/top/snackbar/bottom/FAB at
+z-indices `0/1/2/3/4`; the alpha22 executable source relies on placement order but yields the same
+static order. Two alpha22 cases therefore provide exact geometry/raster evidence, while the
+explicit alpha25 z-index values are locked separately by deterministic template tests.
+
 ## Press shape morphing (buttons et al.)
 
 - `ButtonShapes(shape, pressedShape)` — 2 slots; `ToggleButtonShapes` adds

@@ -82,7 +82,7 @@ represent them.
 | Navigation | ShortNavigationBar and WideNavigationRail | None | Missing | Adaptive and expanded/collapsed navigation forms are absent. |
 | Navigation | Modal, dismissible, and permanent drawers | `MaterialNavigationDrawer` | Partial | Compose state and sheet variants are not fully represented. |
 | Navigation | Top/Bottom/Flexible AppBar families | `MaterialAppBar` | Partial | Flexible layouts, app-bar DSL, and scroll behaviors are incomplete. |
-| Layout | Scaffold | None | Missing | Coordinated app bar, snackbar, FAB, and content insets are absent. |
+| Layout | Scaffold | `MaterialScaffold` | Implemented | Five slots coordinate body, top/bottom bars, external snackbar host, and FAB. Read-only bindable `ContentPadding` preserves Compose's caller-applies-padding contract; null `ContentWindowInsets` observes TopLevel safe area and explicit `Thickness` overrides it. Start/Center/End/EndOverlay, RTL, physical-pixel placement, alpha25 z-order, and neutral Pane automation are deterministic-test covered. Two alpha22-compatible light/dark cases are `exactMatch` with zero warnings/rejected pixels. Snackbar queue/timeouts remain the separate host-state row below. |
 | Overlays | AlertDialog and BasicAlertDialog | `MaterialDialog` | Partial | General overlay exists; typed confirm/dismiss and Compose dialog contracts are incomplete. |
 | Overlays | BottomSheet and ModalBottomSheet | `MaterialBottomSheet` | Partial | Core open/drag behavior exists; state and modality variants are incomplete. |
 | Overlays | BottomSheetScaffold | None | Missing | Coordinated sheet/body/snackbar state is absent. |

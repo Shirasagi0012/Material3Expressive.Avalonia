@@ -1,0 +1,54 @@
+<!-- Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+     compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Scaffold.kt:87-305.
+     The five presenters follow alpha25 focus placement order while their explicit ZIndex values
+     preserve content/top/snackbar/bottom/FAB drawing order. The alpha22 executable reference has
+     the same resulting visual order but uses placement order instead of explicit z-indices. -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia">
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialScaffold}" TargetType="m3:MaterialScaffold">
+            <Setter Property="Background" Value="{mcu:MdSysColor Background}" />
+            <Setter Property="Foreground" Value="{mcu:MdSysColor OnBackground}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            ClipToBounds="True">
+                        <m3:MaterialScaffoldPanel>
+                            <ContentPresenter x:Name="PART_TopBar"
+                                              ZIndex="1"
+                                              Content="{TemplateBinding TopBar}"
+                                              IsVisible="{TemplateBinding TopBar, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                              HorizontalContentAlignment="Stretch"
+                                              VerticalContentAlignment="Stretch" />
+                            <ContentPresenter x:Name="PART_Content"
+                                              ZIndex="0"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                            <ContentPresenter x:Name="PART_SnackbarHost"
+                                              ZIndex="2"
+                                              Content="{TemplateBinding SnackbarHost}"
+                                              IsVisible="{TemplateBinding SnackbarHost, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <ContentPresenter x:Name="PART_FloatingActionButton"
+                                              ZIndex="4"
+                                              Content="{TemplateBinding FloatingActionButton}"
+                                              IsVisible="{TemplateBinding FloatingActionButton, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <ContentPresenter x:Name="PART_BottomBar"
+                                              ZIndex="3"
+                                              Content="{TemplateBinding BottomBar}"
+                                              IsVisible="{TemplateBinding BottomBar, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                              HorizontalContentAlignment="Stretch"
+                                              VerticalContentAlignment="Stretch" />
+                        </m3:MaterialScaffoldPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

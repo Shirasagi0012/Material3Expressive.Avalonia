@@ -241,7 +241,7 @@ promise.
 | Circular wavy progress | P0 | Blocked | 2 | Decision 4: custom-drawn progress accessibility model; static complex-shape residual is covered by the documented temporary warning below |
 | Scrollable Tabs and AppBar scroll behavior | P0 | Blocked | 2 | Scrollable tab rows are complete; AppBar scroll state/ownership awaits Decision 2: shared scroll-state conventions. |
 | Surface, Divider, and ListItem | P1 | Complete | 3 | None; alpha25-only ListItem height/None parity gaps are explicitly recorded. |
-| Scaffold and host coordination | P1 | Planned | 3 | Surface and overlay state primitives |
+| Scaffold and host coordination | P1 | Complete | 3 | None; Snackbar queue/state remains the separate Milestone 4 host item. |
 | SnackbarHost and BottomSheetScaffold | P1 | Planned | 4 | Host/state conventions |
 | SecureTextField and typed picker inputs | P1 | Planned | 4 | Text input and validation conventions |
 | SegmentedButton and ExposedDropdownMenu | P1 | Planned | 3/4 | Selection and popup primitives |
@@ -284,6 +284,12 @@ treated as complete:
   position is deliberately internal rather than a public row `Variant`/`Position` property, so
   shape indices and the 2dp group gap cannot drift. Rows retain the same public `InteractionMode`;
   the container adds a List automation role but no owned selection model.
+- 2026-07-30, Decision 9: `MaterialScaffold` exposes `TopBar`, `BottomBar`, `SnackbarHost`,
+  `FloatingActionButton`, and inherited body `Content`, plus `ScaffoldFabPosition`. Its read-only,
+  bindable `ContentPadding` is layout output which the application explicitly applies to the body
+  child; the scaffold never pads or moves the body implicitly. `ContentWindowInsets=null` observes
+  the current `TopLevel` safe area, while any explicit `Thickness` (including zero) overrides it.
+  Snackbar queue/timeouts and other host state are deliberately outside this layout control.
 
 ## Risks
 
@@ -336,6 +342,12 @@ Only recent roadmap-level outcomes belong here. Detailed chronology lives in
   at both a 240dp scrolling viewport and 600dp all-items viewport. The AppBar scroll portion is
   blocked pending Decision 2; it requires a library-wide owned/external scroll-state API, so no
   public AppBar scroll API has been guessed.
+- 2026-07-30: completed the Milestone 3 `MaterialScaffold` layout slice. Five slots, caller-applied
+  `ContentPadding`, nullable TopLevel safe-area observation, all four FAB positions, snackbar/FAB
+  stacking, RTL physical placement, and alpha25 z-order are covered by 16 deterministic tests.
+  Both alpha22-compatible static parity cases are exact with no warnings at
+  `artifacts/visual-parity/xunit/20260729-184928-620`; the alpha22 implementation has matching
+  geometry/draw order, while alpha25 alone expresses that order through explicit z-indices.
 - 2026-07-29: completed the current standard ListItem parity/input slice without closing the
   broader P1 work item. Direct `TextBlock` and ContentPresenter-generated string slots receive
   their upstream token typography; the full alpha22 Click/SingleSelection/MultiSelection family

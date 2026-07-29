@@ -195,6 +195,67 @@
                 </Border>
             </StackPanel>
 
+            <StackPanel Spacing="10">
+                <TextBlock Classes="title-large" Text="Scaffold" />
+                <TextBlock Classes="body-medium" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="MaterialScaffold coordinates top bar, bottom bar, snackbar host and FAB while the body still fills the whole surface. ContentPadding is read-only layout output: apply it to the body child, not to the ScrollViewer. Null ContentWindowInsets follows the TopLevel safe area; an explicit Thickness overrides it." />
+                <Border Classes="demo-canvas">
+                    <m3:MaterialScaffold x:Name="ScaffoldDemo"
+                                         Width="520"
+                                         Height="360"
+                                         ContentWindowInsets="12,16,18,20"
+                                         FloatingActionButtonPosition="End">
+                        <m3:MaterialScaffold.TopBar>
+                            <Border Height="56"
+                                    Background="{mcu:MdSysColor PrimaryContainer}">
+                                <TextBlock Classes="title-medium"
+                                           Margin="20,0"
+                                           VerticalAlignment="Center"
+                                           Text="Scaffold preview" />
+                            </Border>
+                        </m3:MaterialScaffold.TopBar>
+                        <m3:MaterialScaffold.BottomBar>
+                            <Border Height="64"
+                                    Background="{mcu:MdSysColor SecondaryContainer}">
+                                <TextBlock Classes="label-large"
+                                           Margin="20,0"
+                                           VerticalAlignment="Center"
+                                           Text="Bottom app region" />
+                            </Border>
+                        </m3:MaterialScaffold.BottomBar>
+                        <m3:MaterialScaffold.SnackbarHost>
+                            <Border Width="280"
+                                    Height="48"
+                                    Padding="16,0"
+                                    Background="{mcu:MdSysColor InverseSurface}">
+                                <TextBlock Classes="body-medium"
+                                           VerticalAlignment="Center"
+                                           Foreground="{mcu:MdSysColor InverseOnSurface}"
+                                           Text="Snackbar host is externally owned." />
+                            </Border>
+                        </m3:MaterialScaffold.SnackbarHost>
+                        <m3:MaterialScaffold.FloatingActionButton>
+                            <m3:MaterialFab>
+                                <ms:MaterialSymbol Symbol="Add" />
+                            </m3:MaterialFab>
+                        </m3:MaterialScaffold.FloatingActionButton>
+
+                        <Border Margin="{Binding ContentPadding, ElementName=ScaffoldDemo}"
+                                Padding="20"
+                                Background="{mcu:MdSysColor SurfaceContainerLowest}">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="title-medium" Text="Caller-padded body" />
+                                <TextBlock Classes="body-medium"
+                                           TextWrapping="Wrap"
+                                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                           Text="The body occupies the full scaffold before this ContentPadding binding is applied." />
+                            </StackPanel>
+                        </Border>
+                    </m3:MaterialScaffold>
+                </Border>
+            </StackPanel>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>
