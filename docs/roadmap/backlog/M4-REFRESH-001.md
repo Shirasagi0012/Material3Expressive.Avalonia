@@ -6,6 +6,11 @@ priority: P2
 status: Planned
 milestone: M4
 dependencies: [M4-DISMISS-001]
+decisions: [D002, D003]
+parity: motion
+comparison-profile: existing
+docs: [docs/visual-parity-core.md, docs/animation-parity.md]
+source-baseline: [PullToRefresh.kt]
 ---
 
 # PullToRefresh

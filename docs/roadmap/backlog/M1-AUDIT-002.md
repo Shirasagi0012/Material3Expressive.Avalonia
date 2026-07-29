@@ -6,6 +6,11 @@ priority: P0
 status: Complete
 milestone: M1
 dependencies: [M1-AUDIT-001]
+decisions: [D003, D006]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md, docs/upstream-baselines.md]
+source-baseline: [Compose parity case catalog]
 ---
 
 # Existing parity-case version-gap audit

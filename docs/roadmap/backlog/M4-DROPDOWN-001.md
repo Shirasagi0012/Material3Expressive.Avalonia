@@ -6,6 +6,11 @@ priority: P1
 status: Planned
 milestone: M4
 dependencies: [D002, M3-SEGMENTED-001]
+decisions: [D002, D003, D008]
+parity: motion
+comparison-profile: existing
+docs: [docs/visual-parity-core.md, docs/animation-parity.md]
+source-baseline: [ExposedDropdownMenu.kt]
 ---
 
 # ExposedDropdownMenu

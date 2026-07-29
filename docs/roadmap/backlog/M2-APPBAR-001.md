@@ -6,6 +6,11 @@ priority: P0
 status: Blocked
 milestone: M2
 dependencies: [D002]
+decisions: [D002, D003]
+parity: motion
+comparison-profile: existing
+docs: [docs/visual-parity-core.md, docs/animation-parity.md]
+source-baseline: [AppBar.kt]
 ---
 
 # AppBar scroll behavior
@@ -22,4 +27,4 @@ structural, interaction, accessibility, and parity evidence where supported.
 
 ## Blocked by
 
-[`D002`](../decisions.md#d002--shared-ownedexternal-state-convention)
+[`D002`](../decisions/D002-shared-owned-external-state.md)

@@ -6,6 +6,11 @@ priority: P1
 status: Complete
 milestone: M3
 dependencies: [M3-LISTITEM-001]
+decisions: [D003, D008]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [SegmentedButton.kt]
 ---
 
 # SegmentedButton

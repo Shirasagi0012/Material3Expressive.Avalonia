@@ -6,6 +6,11 @@ priority: P0
 status: Blocked
 milestone: M2
 dependencies: [D004]
+decisions: [D003, D004]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [RangeSlider.kt]
 ---
 
 # RangeSlider
@@ -22,7 +27,7 @@ abstraction. Alpha25-only gaps are recorded as parity unavailable.
 
 ## Blocked by
 
-[`D004`](../decisions.md#d004--custom-drawn-control-accessibility-abstraction)
+[`D004`](../decisions/D004-custom-drawn-accessibility.md)
 
 ## Evidence
 

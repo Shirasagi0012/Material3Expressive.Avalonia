@@ -6,6 +6,11 @@ priority: P1
 status: Complete
 milestone: M3
 dependencies: [M3-SURFACE-001]
+decisions: [D003, D007, D008]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [ListItem.kt]
 ---
 
 # ListItem and segmented grouping
@@ -23,6 +28,6 @@ and parity/version-gap evidence.
 ## Evidence
 
 - [`docs/component-coverage.md`](../../component-coverage.md)
-- [`docs/roadmap/decisions.md`](../decisions.md#d007--listitem-long-click-contract)
-- [`docs/roadmap/decisions.md`](../decisions.md#d008--segmented-list-grouping-api)
+- [`D007`](../decisions/D007-listitem-long-click.md)
+- [`D008`](../decisions/D008-segmented-list-grouping.md)
 - [`docs/roadmap/history.md`](../history.md)

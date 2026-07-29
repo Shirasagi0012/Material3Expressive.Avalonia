@@ -6,6 +6,11 @@ priority: P1
 status: Complete
 milestone: M3
 dependencies: []
+decisions: [D003]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [Surface.kt]
 ---
 
 # Surface

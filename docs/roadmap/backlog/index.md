@@ -14,7 +14,7 @@ stable ordering, and the selection rules; it intentionally does not duplicate ta
 6. A `Blocked` task remains blocked until its named dependency, decision, or external artifact is
    resolved. It cannot be silently treated as Complete or Deferred.
 7. A `Deferred` task requires a matching authorized record in
-   [`../decisions.md`](../decisions.md).
+   [`../decisions/`](../decisions/).
 8. Close a task only after its task-specific exit criteria and all applicable Definition of
    complete dimensions have evidence.
 

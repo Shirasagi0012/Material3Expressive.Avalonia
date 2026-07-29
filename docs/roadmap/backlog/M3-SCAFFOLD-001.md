@@ -6,6 +6,11 @@ priority: P1
 status: Complete
 milestone: M3
 dependencies: [M3-SURFACE-001]
+decisions: [D003, D009]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [Scaffold.kt]
 ---
 
 # Scaffold and layout coordination
@@ -23,5 +28,5 @@ delivered slots and positions.
 ## Evidence
 
 - [`docs/component-coverage.md`](../../component-coverage.md)
-- [`docs/roadmap/decisions.md`](../decisions.md#d009--materialscaffold-layout-api)
+- [`D009`](../decisions/D009-materialscaffold-layout-api.md)
 - [`docs/roadmap/history.md`](../history.md)

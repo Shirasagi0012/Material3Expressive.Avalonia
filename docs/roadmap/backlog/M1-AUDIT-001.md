@@ -6,6 +6,11 @@ priority: P0
 status: Complete
 milestone: M1
 dependencies: [M1-BASELINE-001, M1-INVENTORY-001]
+decisions: [D003, D006]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md, docs/upstream-baselines.md]
+source-baseline: [AndroidX Material3 component sources]
 ---
 
 # Alpha22-to-alpha25 difference audit

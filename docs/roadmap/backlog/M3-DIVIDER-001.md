@@ -6,6 +6,11 @@ priority: P1
 status: Complete
 milestone: M3
 dependencies: [M3-SURFACE-001]
+decisions: [D003]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [Divider.kt]
 ---
 
 # Divider

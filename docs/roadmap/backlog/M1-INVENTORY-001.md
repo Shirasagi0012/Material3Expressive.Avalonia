@@ -6,6 +6,11 @@ priority: P0
 status: Complete
 milestone: M1
 dependencies: [M1-BASELINE-001]
+decisions: [D003]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [Material3 component inventory]
 ---
 
 # Component coverage inventory

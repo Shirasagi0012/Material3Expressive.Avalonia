@@ -6,6 +6,11 @@ priority: P0
 status: Complete
 milestone: M2
 dependencies: [M1-AUDIT-002]
+decisions: [D003]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [TabRow.kt]
 ---
 
 # Scrollable Tabs

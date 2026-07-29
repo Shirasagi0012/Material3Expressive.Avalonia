@@ -6,6 +6,11 @@ priority: P0
 status: Complete
 milestone: M2
 dependencies: [M1-INVENTORY-001]
+decisions: [D003]
+parity: static
+comparison-profile: existing
+docs: [docs/visual-parity-core.md]
+source-baseline: [Checkbox.kt]
 ---
 
 # Indeterminate Checkbox tests and API guidance

@@ -6,6 +6,11 @@ priority: P1
 status: Planned
 milestone: M4
 dependencies: [D002, M3-SCAFFOLD-001]
+decisions: [D002, D003, D009]
+parity: motion
+comparison-profile: existing
+docs: [docs/visual-parity-core.md, docs/animation-parity.md]
+source-baseline: [BottomSheetScaffold.kt]
 ---
 
 # BottomSheetScaffold

@@ -6,7 +6,7 @@ Last updated: 2026-07-30
 This document is the project entry point and control plane. It describes direction, completion
 contracts, current focus, milestone state, and task-selection rules. It is not a release schedule.
 Detailed tasks live in [`docs/roadmap/backlog/index.md`](docs/roadmap/backlog/index.md); decisions
-live in [`docs/roadmap/decisions.md`](docs/roadmap/decisions.md); implementation history lives in
+live in [`docs/roadmap/decisions/`](docs/roadmap/decisions/); implementation history lives in
 [`docs/roadmap/history.md`](docs/roadmap/history.md).
 
 The library uses two upstream pins. API, token, and implementation work follows the AndroidX
@@ -63,7 +63,7 @@ Unrecorded dimensions do not count as complete.
    evidence are recorded.
 8. Every implementation task closes the investigation, upstream review, implementation, tests,
    visual verification, documentation, and status-update loop.
-9. Decisions and Deferred records use stable IDs from `decisions.md`.
+9. Decisions and Deferred records use stable IDs from `decisions/index.md` and their linked records.
 10. A parity case may be marked `raster-only skipped` only when all structural contracts pass,
     the only failure is raster pixel mismatch, and three materially different fixes have failed.
 11. A raster-only skip is a scheduling disposition, not a parity pass. Record it in the task
@@ -179,7 +179,7 @@ The roadmap is complete only when:
 ## Canonical references
 
 - Task selection and task state: [`docs/roadmap/backlog/index.md`](docs/roadmap/backlog/index.md)
-- Open decisions and Deferred authorization: [`docs/roadmap/decisions.md`](docs/roadmap/decisions.md)
+- Open decisions and Deferred authorization: [`docs/roadmap/decisions/`](docs/roadmap/decisions/)
 - Component completion evidence: [`docs/component-coverage.md`](docs/component-coverage.md)
 - Upstream baseline contract: [`docs/upstream-baselines.md`](docs/upstream-baselines.md)
 - Visual parity contract: [`docs/visual-parity.md`](docs/visual-parity.md)
