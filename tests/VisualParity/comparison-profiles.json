@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "profiles": [
     {
       "id": "color-swatch",
@@ -31,6 +31,45 @@
           "budgets": [
             { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
             { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        }
+      },
+      "compareGeometry": true,
+      "compareTextLayout": false,
+      "compareRaster": true
+    },
+    {
+      "id": "complex-shape",
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 0.5 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        }
+      },
+      "warningReason": "Deferred: circular-wavy path raster residual pending geometry calibration.",
+      "warningRasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 16,
+        "shadowSignalChannelDelta": 1,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 96, "maxConnectedComponentThicknessPx": 96 },
+            { "maxChannelDelta": 255, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 99, "pixelsPer10kEligiblePixels": 0, "maxPixelsPerOwner": 99, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 25245, "energyPer10kEligiblePixels": 0, "maxEnergyPerOwner": 25245, "maxConnectedComponentPixels": 99, "maxConnectedComponentThicknessPx": 99 }
           ]
         }
       },
@@ -197,6 +236,8 @@
     { "prefix": "button/elevated/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "card/", "profileId": "container" },
     { "prefix": "selection/", "profileId": "container" },
+    { "prefix": "progress/circular-wavy/", "profileId": "complex-shape" },
+    { "prefix": "progress/", "profileId": "container" },
     { "prefix": "textfield/", "profileId": "text-field" },
     { "prefix": "foundation/typography/", "profileId": "component-with-text" },
     { "prefix": "button/", "profileId": "component-with-text" },

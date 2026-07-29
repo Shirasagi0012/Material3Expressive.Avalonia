@@ -62,6 +62,25 @@
                     </ItemsControl>
                 </ControlTemplate>
             </Setter>
+            <Style Selector="^:scrollable">
+                <Setter Property="Template">
+                    <ControlTemplate>
+                        <ScrollViewer x:Name="PART_ScrollViewer"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding $parent[m3:MaterialTabs].Items}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <m3:MaterialScrollableTabItemsPanel
+                                            EdgePadding="{Binding $parent[m3:MaterialTabs].ScrollableEdgePadding}"
+                                            MinimumTabWidth="{Binding $parent[m3:MaterialTabs].ScrollableMinimumTabWidth}" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </Setter>
+            </Style>
         </ControlTheme>
     </Styles.Resources>
 </Styles>

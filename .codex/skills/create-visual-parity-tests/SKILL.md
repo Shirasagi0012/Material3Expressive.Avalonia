@@ -1,6 +1,6 @@
 ---
 name: create-visual-parity-tests
-description: Create, extend, migrate, and review component visual-parity test definitions in the Avalonia Material3Expressive repository by mirroring pinned Compose Multiplatform Material 3 scenes, defining structural probes, choosing deterministic animation states, and authoring narrowly justified semantic comparison profiles. Use when adding coverage for a control or state, migrating a remaining Material component, modifying a Compose reference or Avalonia VisualCase, adding probes, or reviewing test authoring against D:\source\androidx and D:\source\compose-multiplatform-core. Use run-visual-parity-tests instead when the task is primarily test execution, artifact inspection, or failure diagnosis.
+description: Create, extend, migrate, and review component visual-parity test definitions in the Avalonia Material3Expressive repository by mirroring pinned Compose Multiplatform Material 3 scenes, defining structural probes, choosing deterministic animation states, and authoring narrowly justified semantic or temporary warning comparison profiles. Use when adding coverage for a control or state, migrating a remaining Material component, modifying a Compose reference or Avalonia VisualCase, adding probes, or reviewing test authoring against D:\source\androidx and D:\source\compose-multiplatform-core. Use run-visual-parity-tests instead when the task is primarily test execution, artifact inspection, or failure diagnosis.
 ---
 
 # Create Visual Parity Tests
@@ -137,11 +137,21 @@ Do not edit policy until viewport, geometry, text, focus, and shadow contracts p
 or budget requires focused positive and negative mutation tests. Keep structural defects active;
 use a narrowly reasoned skipped row when the platform cannot expose a required structural fact.
 
+Treat the normal `rasterPolicy` as the durable semantic-equivalence boundary. Add a
+`warningRasterPolicy` only for an explicitly accepted Deferred issue: keep its prefix narrow,
+provide `warningReason`, record a removal or recalibration condition, and prove that the first
+out-of-warning mutation still fails. Never use warning policy to downgrade a structural defect.
+
 ### 5. Hand off validation
 
 Once the Compose scene, Avalonia case, probes, and any required profile tests are complete, invoke
 `$run-visual-parity-tests` to run the smallest case, its family, and the full suite as appropriate.
 Use that skill to locate fresh artifacts, classify `comparison.json.kind`, and diagnose failures.
+
+Treat `exactMatch` and `semanticRasterEquivalent` as fully accepted parity outcomes. A
+`rasterWarning` may be integrated because xUnit accepts it, but it remains visible implementation
+debt and does not close the underlying parity work unless the roadmap explicitly records that
+temporary disposition. A `mismatch` remains incomplete; a skipped row remains unevaluated.
 
 If validation reveals an authoring defect—such as mismatched scene input, missing probes, an
 incorrect viewport, nondeterministic state, or an unjustified profile—return here, change one
@@ -192,6 +202,8 @@ Before considering a new case complete, verify:
 - [ ] Text is measured from the actual layout object and has a verifiable style signature.
 - [ ] Native Avalonia templates and state resources were audited where applicable.
 - [ ] Profile selection or changes satisfy `docs/comparison-profiles.md`.
+- [ ] The expected outcome is recorded as exact, semantic, warning, mismatch, or skipped; warning
+      cases include a reason, narrow scope, and removal/recalibration condition.
 - [ ] Validation was handed to `$run-visual-parity-tests`, with the smallest case and relevant
       broader selections run successfully.
 - [ ] Any new allowance has the required positive and negative mutation coverage.

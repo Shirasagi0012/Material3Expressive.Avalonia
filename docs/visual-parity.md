@@ -117,7 +117,7 @@ cannot be accepted or mistaken for a parity difference.
 ## Comparison profiles and raster acceptance
 
 [`tests/VisualParity/comparison-profiles.json`](../tests/VisualParity/comparison-profiles.json)
-is a version-6, centralized semantic raster policy. It has no viewport-sized allowance and no
+is a version-7, centralized semantic raster policy. It has no viewport-sized allowance and no
 global `Δ<=1` floor. Profile JSON rejects unknown fields, duplicate/unreachable prefix rules, and
 invalid quota ranges so a typo cannot silently make the comparison looser.
 
@@ -163,10 +163,22 @@ while preserving valid `shadow-only` cases where the expected shadow mesh is vis
 shape; `transparentOccluder` continues to describe whether that painted occluder lets the mesh
 remain visible through it.
 
-`comparison.json` reports `exactMatch`, `semanticRasterEquivalent`, or `mismatch` through its
-`kind` field, plus each region’s eligible pixels, observed pixels/energy, dynamic quota, and
-largest connected component. Any renderer-specific allowance must be narrow, justified, and
-changed in the policy file rather than embedded in an individual test.
+`comparison.json` reports `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or
+`mismatch` through its `kind` field, plus each region’s eligible pixels, observed pixels/energy,
+dynamic quota, and largest connected component. A `rasterWarning` means the normal semantic
+policy rejected an otherwise structurally valid case, but a narrowly scoped temporary warning
+policy accepted it; the strict and warning diagnostics are both retained. Any renderer-specific
+allowance must be narrow, justified, and changed in the policy file rather than embedded in an
+individual test.
+
+The currently user-authorized temporary `complex-shape` profile is an explicit exception to the
+normal sparse-edge calibration: it is selected only by `progress/circular-wavy/*`, preserves all
+structural checks, and assigns only expected shape-edge pixels. Its normal policy keeps the
+bounded `Δ<=8` container-edge budget; a secondary warning policy may then accept a capped
+`Δ<=255` residual of at most 99 pixels, with a 99-pixel/99-thickness component cap. The 99/100
+boundary is covered by a comparer mutation test. It is not a global tolerance, is reported as a
+warning rather than semantic equivalence, and is recorded as Deferred in the roadmap pending a
+user decision to recalibrate or remove it.
 
 `foundation/typography/display-headline/*` is deliberately marked as skipped—not passed by a
 tolerance—because Avalonia currently lacks an equivalent baseline API. It remains in both scene

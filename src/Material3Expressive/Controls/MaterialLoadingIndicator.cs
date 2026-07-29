@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
+using Material3Expressive.Controls.Motion;
 using MaterialShapes;
 
 namespace Material3Expressive.Controls;
@@ -36,11 +37,8 @@ public class MaterialLoadingIndicator : MaterialControl
     public static readonly StyledProperty<bool> IsIndeterminateProperty =
         AvaloniaProperty.Register<MaterialLoadingIndicator, bool>(nameof(IsIndeterminate), true);
 
-    /// <summary>One full pass through the shape list.</summary>
-    private static readonly TimeSpan MorphPeriod = TimeSpan.FromSeconds(4.5);
-
-    /// <summary>One full turn.</summary>
-    private static readonly TimeSpan RotationPeriod = TimeSpan.FromSeconds(3);
+    /// <summary>AndroidX's independent, linear global rotation period.</summary>
+    private static readonly TimeSpan GlobalRotationPeriod = TimeSpan.FromMilliseconds(4666);
 
     /// <summary>Transcribed from <c>LoadingIndicatorDefaults.IndeterminateIndicatorPolygons</c>.</summary>
     private static readonly RoundedPolygon[] IndeterminateShapes =
@@ -63,8 +61,8 @@ public class MaterialLoadingIndicator : MaterialControl
 
     private static readonly Dictionary<(int List, int Index), Morph> MorphCache = new();
 
-    private LoopingAnimation? _morph;
-    private LoopingAnimation? _rotation;
+    private LoadingIndicatorMorphAnimation? _morph;
+    private LoopingAnimation? _globalRotation;
     private SpringAnimation? _progress;
 
     private LoadingIndicatorTokens _tokens = LoadingIndicatorTokens.Standard;
@@ -72,7 +70,7 @@ public class MaterialLoadingIndicator : MaterialControl
 
     static MaterialLoadingIndicator()
     {
-        AffectsRender<MaterialLoadingIndicator>(VariantProperty, IsIndeterminateProperty);
+        AffectsRender<MaterialLoadingIndicator>(VariantProperty, IsIndeterminateProperty, ValueProperty);
     }
 
     /// <summary>Whether the shape sits on a container of its own.</summary>
@@ -96,9 +94,11 @@ public class MaterialLoadingIndicator : MaterialControl
         set => SetValue(IsIndeterminateProperty, value);
     }
 
-    private LoopingAnimation MorphPhase => _morph ??= Motion.Add(new LoopingAnimation(MorphPeriod));
+    private LoadingIndicatorMorphAnimation MorphPhase =>
+        _morph ??= Motion.Add(new LoadingIndicatorMorphAnimation(IndeterminateShapes.Length));
 
-    private LoopingAnimation Rotation => _rotation ??= Motion.Add(new LoopingAnimation(RotationPeriod));
+    private LoopingAnimation GlobalRotation =>
+        _globalRotation ??= Motion.Add(new LoopingAnimation(GlobalRotationPeriod));
 
     private SpringAnimation Progress =>
         _progress ??= Motion.AddSpring(Clamp(Value), Spring(MotionRole.DefaultSpatial));
@@ -124,8 +124,9 @@ public class MaterialLoadingIndicator : MaterialControl
             }
         }
 
-        var shapes = IsIndeterminate ? IndeterminateShapes : DeterminateShapes;
-        var (morph, progress) = CurrentMorph(shapes);
+        var (morph, progress, rotationDegrees) = IsIndeterminate
+            ? CurrentIndeterminateMorph()
+            : CurrentDeterminateMorph();
 
         // The catalog's shapes are normalised into a 1×1 box, so the geometry scales straight up to
         // the active size.
@@ -135,7 +136,7 @@ public class MaterialLoadingIndicator : MaterialControl
         var transform =
             Matrix.CreateScale(active, active)
             * Matrix.CreateTranslation(-active / 2, -active / 2)
-            * Matrix.CreateRotation(Rotation.Value * Math.PI * 2)
+            * Matrix.CreateRotation(rotationDegrees * Math.PI / 180)
             * Matrix.CreateTranslation(centre.X, centre.Y);
 
         using (context.PushTransform(transform))
@@ -170,7 +171,7 @@ public class MaterialLoadingIndicator : MaterialControl
         {
             OnThemeChanged(ResolvedTheme, IsDarkVariant);
         }
-        else if (change.Property == ValueProperty)
+        else if (change.Property == ValueProperty && !IsIndeterminate)
         {
             Progress.AnimateTo(Clamp(Value), Spring(MotionRole.DefaultSpatial));
             Motion.Start();
@@ -182,26 +183,47 @@ public class MaterialLoadingIndicator : MaterialControl
     }
 
     /// <summary>
-    /// Which pair of shapes to morph between, and how far through that pair we are.
+    /// The indeterminate sequence advances to a fresh morph every 650ms. Its spring makes each
+    /// shape transition accelerate and settle, while the global rotation remains deliberately
+    /// linear as in AndroidX LoadingIndicator.kt.
     /// </summary>
     /// <remarks>
     /// Morphs are cached because building one matches every feature of both polygons — real work
     /// to redo sixty times a second for a fixed list of shapes.
     /// </remarks>
-    private (Morph Morph, double Progress) CurrentMorph(RoundedPolygon[] shapes)
+    private (Morph Morph, double Progress, double RotationDegrees) CurrentIndeterminateMorph()
     {
-        var phase = IsIndeterminate ? MorphPhase.Value : Progress.Value;
-        var scaled = Math.Clamp(phase, 0, 0.999999) * shapes.Length;
-        var index = (int)scaled;
-
-        var listKey = IsIndeterminate ? 0 : 1;
-        if (!MorphCache.TryGetValue((listKey, index), out var morph))
+        var phase = MorphPhase;
+        if (!MorphCache.TryGetValue((0, phase.MorphIndex), out var morph))
         {
-            morph = new Morph(shapes[index], shapes[(index + 1) % shapes.Length]);
-            MorphCache[(listKey, index)] = morph;
+            morph = new Morph(
+                IndeterminateShapes[phase.MorphIndex],
+                IndeterminateShapes[(phase.MorphIndex + 1) % IndeterminateShapes.Length]);
+            MorphCache[(0, phase.MorphIndex)] = morph;
         }
 
-        return (morph, scaled - index);
+        return (morph, phase.Value, phase.MorphRotationDegrees + phase.Value * 90 + GlobalRotation.Value * 360);
+    }
+
+    /// <summary>
+    /// Determinate Compose uses only consecutive morphs (not a circular sequence) and rotates
+    /// counter-clockwise by half a turn across the supplied progress.
+    /// </summary>
+    private (Morph Morph, double Progress, double RotationDegrees) CurrentDeterminateMorph()
+    {
+        var phase = Clamp(Progress.Value);
+        var morphCount = DeterminateShapes.Length - 1;
+        var scaled = phase * morphCount;
+        var index = Math.Min((int)scaled, morphCount - 1);
+        var adjustedProgress = phase == 1 ? 1 : scaled - index;
+
+        if (!MorphCache.TryGetValue((1, index), out var morph))
+        {
+            morph = new Morph(DeterminateShapes[index], DeterminateShapes[index + 1]);
+            MorphCache[(1, index)] = morph;
+        }
+
+        return (morph, adjustedProgress, -phase * 180);
     }
 
     private void UpdateLoops()
@@ -209,12 +231,12 @@ public class MaterialLoadingIndicator : MaterialControl
         if (IsIndeterminate)
         {
             MorphPhase.Resume();
-            Rotation.Resume();
+            GlobalRotation.Resume();
         }
         else
         {
             MorphPhase.Settle();
-            Rotation.Settle();
+            GlobalRotation.Settle();
         }
 
         Motion.Start();

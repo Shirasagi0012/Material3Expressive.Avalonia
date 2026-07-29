@@ -10,6 +10,7 @@ public sealed class ParityContractTests
     [InlineData("foundation/elevation/rounded-rectangle/level6/light", "elevation")]
     [InlineData("foundation/typography/display-headline/light", "component-with-text")]
     [InlineData("card/filled/fixed/enabled/light", "container")]
+    [InlineData("progress/circular-wavy/determinate/light", "complex-shape")]
     [InlineData("button/filled/medium/enabled/light", "component-with-text")]
     [InlineData("textfield/filled/empty/light", "text-field")]
     public void EveryCaseFamilySelectsAnExplicitComparisonProfile(string caseId, string profileId)

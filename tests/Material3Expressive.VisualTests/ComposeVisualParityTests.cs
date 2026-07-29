@@ -42,6 +42,13 @@ public sealed class ComposeVisualParityTests(ComposeParityFixture fixture)
         var result = new ParityRun().CompareCase(fixture.Expected, caseId, fixture.ArtifactRoot);
         fixture.RecordResult(result);
 
+        if (result.Comparison.Kind == ParityComparisonKind.RasterWarning)
+        {
+            Console.WriteLine(
+                $"Visual parity warning for '{caseId}'. Artifacts: {result.ArtifactDirectory}" + Environment.NewLine +
+                result.Comparison.Summary);
+        }
+
         Assert.True(
             result.Comparison.IsMatch,
             $"Visual parity mismatch for '{caseId}'." + Environment.NewLine +

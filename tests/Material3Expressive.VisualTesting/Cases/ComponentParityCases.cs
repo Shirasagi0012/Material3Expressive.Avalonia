@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.VisualTesting.Model;
+using Material3Expressive.VisualTesting.Rendering;
 
 namespace Material3Expressive.VisualTesting.Cases;
 
@@ -16,7 +17,11 @@ internal static class ComponentParityCases
         FilledCard(),
         ElevatedCard(),
         PrimaryFab(),
-        SelectedCheckbox()
+        SelectedCheckbox(),
+        IndeterminateCheckbox(),
+        VerticalSlider(),
+        RangeSlider(),
+        CircularWavyProgress()
     ];
 
     private static VisualCase FilledCard() =>
@@ -74,14 +79,77 @@ internal static class ComponentParityCases
                 VerticalAlignment = VerticalAlignment.Center
             });
 
+    private static VisualCase IndeterminateCheckbox() =>
+        Scene(
+            "selection/checkbox/indeterminate/light",
+            new PixelSize(96, 96),
+            _ => new MaterialCheckbox
+            {
+                Name = "component",
+                IsThreeState = true,
+                IsChecked = null,
+                Content = null,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+    private static VisualCase VerticalSlider() =>
+        Scene(
+            "selection/slider/vertical/default/light",
+            new PixelSize(112, 240),
+            _ => new MaterialSlider
+            {
+                Name = "component",
+                Orientation = Orientation.Vertical,
+                Width = 48,
+                Height = 160,
+                Value = 0.65,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+    private static VisualCase RangeSlider() =>
+        Scene(
+            "selection/range-slider/default/light",
+            new PixelSize(288, 96),
+            _ => new MaterialRangeSlider
+            {
+                Name = "component",
+                Width = 240,
+                Height = 48,
+                Minimum = 0,
+                Maximum = 1,
+                StartValue = .25,
+                EndValue = .75,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+    private static VisualCase CircularWavyProgress() =>
+        Scene(
+            "progress/circular-wavy/determinate/light",
+            new PixelSize(112, 112),
+            _ => new MaterialCircularProgressIndicator
+            {
+                    Name = "component",
+                    Value = .5,
+                    IsWavy = true,
+                    WaveSpeed = 0,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            },
+            context => VisualMotionSettler.UseManualClock(context.Content));
+
     private static VisualCase Scene(
         string id,
         PixelSize viewport,
-        Func<VisualCaseContext, Control> createControl) =>
+        Func<VisualCaseContext, Control> createControl,
+        Action<VisualContext>? prepare = null) =>
         new(
             id,
             viewport,
             VisualTheme.Light,
             context => new Grid { Children = { createControl(context) } },
-            RenderScaling: 1.0);
+            RenderScaling: 1.0,
+            Prepare: prepare);
 }

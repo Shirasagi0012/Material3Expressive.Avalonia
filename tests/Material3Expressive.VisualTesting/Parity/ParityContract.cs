@@ -58,7 +58,9 @@ public sealed record ParityActualManifestCase(
     string ComparisonPath,
     string ImageSha256,
     string LayoutSha256,
-    bool IsMatch);
+    bool IsMatch,
+    ParityComparisonKind ComparisonKind,
+    IReadOnlyList<string>? Warnings = null);
 
 public sealed record ParityCaptureResult(
     int SchemaVersion,

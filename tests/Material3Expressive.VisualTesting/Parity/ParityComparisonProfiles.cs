@@ -14,7 +14,9 @@ public sealed record ParityComparisonProfile(
     bool CompareGeometry = true,
     bool CompareTextLayout = true,
     bool CompareRaster = true,
-    ParityRasterPolicy? RasterPolicy = null);
+    ParityRasterPolicy? RasterPolicy = null,
+    ParityRasterPolicy? WarningRasterPolicy = null,
+    string? WarningReason = null);
 
 public static class ParityComparisonProfiles
 {
@@ -42,7 +44,7 @@ public static class ParityComparisonProfiles
     {
         var path = Path.Combine(RepositoryRoot.Find(), "tests", "VisualParity", "comparison-profiles.json");
         var document = ReadDocument(path);
-        if (document.SchemaVersion != 6 || document.Profiles.Count == 0 || document.CaseProfileRules.Count == 0)
+        if (document.SchemaVersion != 7 || document.Profiles.Count == 0 || document.CaseProfileRules.Count == 0)
             throw new InvalidDataException("The visual-parity comparison profile document is incomplete.");
         var ids = document.Profiles.Select(item => item.Id).ToArray();
         var idSet = ids.ToHashSet(StringComparer.Ordinal);
@@ -99,12 +101,19 @@ public static class ParityComparisonProfiles
             || !float.IsFinite(profile.LayoutTolerance.TextBaselinePx)
             || profile.LayoutTolerance.TextLineBoundsPx < 0
             || !float.IsFinite(profile.LayoutTolerance.TextLineBoundsPx)
-            || profile.RasterPolicy is null)
+            || profile.RasterPolicy is null
+            || (profile.WarningRasterPolicy is not null && !profile.CompareRaster)
+            || (profile.WarningRasterPolicy is null) != string.IsNullOrWhiteSpace(profile.WarningReason))
         {
             return false;
         }
 
-        var policy = profile.RasterPolicy;
+        return IsValidRasterPolicy(profile, profile.RasterPolicy)
+               && (profile.WarningRasterPolicy is null || IsValidRasterPolicy(profile, profile.WarningRasterPolicy));
+    }
+
+    private static bool IsValidRasterPolicy(ParityComparisonProfile profile, ParityRasterPolicy policy)
+    {
         if (!string.Equals(policy.Algorithm, "semantic-raster-v1", StringComparison.Ordinal)
             || policy.StrictChannelDelta != 0
             || policy.EdgeDetectionChannelDelta == 0

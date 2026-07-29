@@ -154,6 +154,66 @@ public sealed class SemanticRasterBudgetTests
     }
 
     [Fact]
+    public void WarningRasterPolicyLetsNinetyNineExpectedEdgePixelsPassButLeavesAWarning()
+    {
+        var expected = Solid(24, 24, 255);
+        var edgePixels = new List<(int X, int Y)>();
+        foreach (var x in new[] { 4, 8, 12, 16, 20 })
+        {
+            for (var y = 2; y < 22; y++)
+            {
+                expected = WithPixel(expected, x, y, 0);
+                edgePixels.Add((x, y));
+            }
+        }
+
+        var ninetyNine = expected;
+        foreach (var (x, y) in edgePixels.Take(99))
+            ninetyNine = WithPixel(ninetyNine, x, y, 255);
+
+        var oneHundred = WithPixel(ninetyNine, edgePixels[99].X, edgePixels[99].Y, 255);
+        var layout = Layout("component", new ParityRect(0, 0, 24, 24));
+        var profile = ComplexShapeProfile();
+
+        var warning = new ParityComparer().Compare(layout, layout, expected, ninetyNine, profile);
+
+        Assert.True(warning.IsMatch);
+        Assert.Equal(ParityComparisonKind.RasterWarning, warning.Kind);
+        Assert.False(warning.Raster!.IsMatch);
+        Assert.True(warning.WarningRaster!.IsMatch);
+        Assert.Single(warning.WarningsOrEmpty);
+
+        var rejected = new ParityComparer().Compare(layout, layout, expected, oneHundred, profile);
+        Assert.False(rejected.IsMatch);
+        Assert.Equal(ParityComparisonKind.Mismatch, rejected.Kind);
+        Assert.False(rejected.WarningRaster!.IsMatch);
+        var edge = Assert.Single(rejected.WarningRaster.Regions, region => region.Kind == "shape-edge");
+        Assert.Equal(100, Assert.Single(edge.Budgets, budget => budget.MaxChannelDelta == 255).ObservedPixels);
+    }
+
+    [Fact]
+    public void WarningRasterPolicyCannotDowngradeAStructuralMismatch()
+    {
+        var expected = Solid(24, 24, 255);
+        expected = WithPixel(expected, 4, 12, 0);
+        var actual = WithPixel(expected, 4, 12, 255);
+        var profile = ComplexShapeProfile();
+
+        var comparison = new ParityComparer().Compare(
+            Layout("component", new ParityRect(0, 0, 24, 24)),
+            Layout("component", new ParityRect(1, 0, 25, 24)),
+            expected,
+            actual,
+            profile);
+
+        Assert.False(comparison.IsMatch);
+        Assert.Equal(ParityComparisonKind.Mismatch, comparison.Kind);
+        Assert.Null(comparison.WarningRaster);
+        Assert.Empty(comparison.WarningsOrEmpty);
+        Assert.Contains(comparison.Failures, failure => failure.StartsWith("Node 'component' bounds differs", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void LowContrastExpectedBoundaryCanAbsorbOneChannelOfAntialiasing()
     {
         var expected = Solid(24, 24, 255);
@@ -204,6 +264,27 @@ public sealed class SemanticRasterBudgetTests
         ShadowSupport: null,
         ShadowEdge: null);
 
+    private static ParityComparisonProfile ComplexShapeProfile() => Profile(
+        "complex-shape",
+        new ParityRasterPolicy(
+            "semantic-raster-v1", 0, 16, 1, 4, 8,
+            TextInk: null,
+            ShapeEdge: Region(1,
+                Budget(2, 16_384, 32_768, 16_384, 16_384),
+                Budget(8, 96, 768, 16, 2)),
+            ShadowSupport: null,
+            ShadowEdge: null),
+        warningPolicy: new ParityRasterPolicy(
+            "semantic-raster-v1", 0, 16, 1, 4, 8,
+            TextInk: null,
+            ShapeEdge: Region(1,
+                Budget(2, 16_384, 32_768, 16_384, 16_384),
+                Budget(8, 96, 768, 96, 96),
+                Budget(255, 99, 99 * 255, 99, 99)),
+            ShadowSupport: null,
+            ShadowEdge: null),
+        warningReason: "Deferred complex-shape calibration.");
+
     private static ParityRasterRegionPolicy Region(int dilationPx, params ParityRasterDeltaBudget[] budgets) =>
         new(dilationPx, budgets);
 
@@ -228,13 +309,17 @@ public sealed class SemanticRasterBudgetTests
     private static ParityComparisonProfile Profile(
         string id,
         ParityRasterPolicy policy,
-        bool compareTextLayout = false) => new(
+        bool compareTextLayout = false,
+        ParityRasterPolicy? warningPolicy = null,
+        string? warningReason = null) => new(
         id,
         new ParityLayoutTolerance(0, 0, 0, 0),
         CompareGeometry: true,
         CompareTextLayout: compareTextLayout,
         CompareRaster: true,
-        RasterPolicy: policy);
+        RasterPolicy: policy,
+        WarningRasterPolicy: warningPolicy,
+        WarningReason: warningReason);
 
     private static ParityCaptureResult Layout(string id, ParityRect bounds) => new(
         ParityCaptureResult.CurrentSchemaVersion,

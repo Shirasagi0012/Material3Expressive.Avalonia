@@ -185,6 +185,17 @@ public class SelectionTests
     }
 
     [AvaloniaFact]
+    public void ACheckbox_UsesAvaloniaTriStateForTheMaterialIndeterminateState()
+    {
+        var checkbox = new MaterialCheckbox { IsThreeState = true, IsChecked = null };
+        ThemeTestHelper.ShowWindow(checkbox);
+
+        Assert.True(checkbox.IsThreeState);
+        Assert.Null(checkbox.IsChecked);
+        Assert.True(checkbox.Bounds.Width >= CheckboxTokens.Default.StateLayerSize);
+    }
+
+    [AvaloniaFact]
     public void ARadioButtonsRing_FitsInsideItsIconBox()
     {
         var tokens = RadioButtonTokens.Default;
@@ -270,6 +281,18 @@ public class ProgressTests
 
         Assert.True(wavy.Bounds.Height > flat.Bounds.Height);
         Assert.Equal(ProgressTokens.Linear.WaveSize, wavy.Bounds.Height, 3);
+    }
+
+    [AvaloniaFact]
+    public void ACircularWavyIndicator_UsesTheWaveContainerAndKeepsTheAlpha25AmplitudeRule()
+    {
+        var flat = new MaterialCircularProgressIndicator { Value = .5 };
+        var wavy = new MaterialCircularProgressIndicator { Value = .5, IsWavy = true };
+        ThemeTestHelper.ShowWindow(new StackPanel { Children = { flat, wavy } });
+
+        Assert.Equal(ProgressTokens.Circular.Size, flat.Bounds.Width, 3);
+        Assert.Equal(ProgressTokens.Circular.WaveSize, wavy.Bounds.Width, 3);
+        Assert.True(wavy.Bounds.Width > flat.Bounds.Width);
     }
 
     [AvaloniaFact]
@@ -547,6 +570,28 @@ public class TabTests
 
         Assert.False(tabs.Items[0].IsChecked);
         Assert.True(tabs.Items[1].IsChecked);
+    }
+
+    [AvaloniaFact]
+    public void ScrollableTabs_UseTheComposeMinimumWidthEndPaddingAndSelectedTabCentredViewport()
+    {
+        var tabs = new MaterialTabs { Width = 240, IsScrollable = true };
+        tabs.Items.Add(new MaterialTab { Content = "Overview" });
+        tabs.Items.Add(new MaterialTab { Content = "Specifications" });
+        tabs.Items.Add(new MaterialTab { Content = "Reviews" });
+        tabs.Items.Add(new MaterialTab { Content = "Related items" });
+        ThemeTestHelper.ShowWindow(tabs);
+
+        var viewer = Assert.Single(tabs.GetVisualDescendants().OfType<ScrollViewer>());
+        var panel = Assert.Single(tabs.GetVisualDescendants().OfType<MaterialScrollableTabItemsPanel>());
+
+        Assert.Equal(52, panel.EdgePadding);
+        Assert.Equal(90, panel.MinimumTabWidth);
+        Assert.All(tabs.Items, tab => Assert.True(tab.Bounds.Width >= 90));
+
+        tabs.SelectedIndex = 3;
+
+        Assert.True(viewer.Offset.X > 0);
     }
 }
 
@@ -835,6 +880,32 @@ public class ChipTests
 
 public class LoadingIndicatorTests
 {
+    [Fact]
+    public void IndeterminateMorph_UsesTheUpstreamSpringRatherThanAUniformLoop()
+    {
+        var morph = new Material3Expressive.Controls.Motion.LoadingIndicatorMorphAnimation(7);
+
+        morph.Tick(TimeSpan.FromMilliseconds(100));
+
+        // A 100ms slice of the 650ms interval would be .154 for a linear loop. AndroidX starts
+        // each segment with spring(.6, 200, visibilityThreshold=.1), so it is already well ahead.
+        Assert.True(morph.Value > 0.4, "The loading-indicator morph must use the upstream spring curve.");
+        Assert.Equal(0, morph.MorphIndex);
+        Assert.Equal(90, morph.MorphRotationDegrees);
+    }
+
+    [Fact]
+    public void IndeterminateMorph_AdvancesShapesAndQuarterTurnsAtThe650msCadence()
+    {
+        var morph = new Material3Expressive.Controls.Motion.LoadingIndicatorMorphAnimation(7);
+
+        morph.Tick(Material3Expressive.Controls.Motion.LoadingIndicatorMorphAnimation.Interval);
+
+        Assert.Equal(1, morph.MorphIndex);
+        Assert.Equal(180, morph.MorphRotationDegrees);
+        Assert.Equal(0, morph.Value, 3);
+    }
+
     [AvaloniaFact]
     public void OnlyTheContainedVariant_DrawsAContainer()
     {
@@ -890,7 +961,7 @@ public class SliderTests
         var slider = new MaterialSlider { Width = 200 };
         ThemeTestHelper.ShowWindow(slider);
 
-        Assert.Equal(SliderTokens.Default.HandleHeight, slider.Bounds.Height, 3);
+        Assert.Equal(Math.Max(SliderTokens.Default.HandleHeight, 48), slider.Bounds.Height, 3);
     }
 
     [AvaloniaFact]
@@ -919,6 +990,78 @@ public class SliderTests
         });
 
         Assert.Equal(6, slider.Value);
+    }
+
+    [AvaloniaFact]
+    public void AVerticalSlider_UsesHeightForItsTravelAndTopToBottomValues()
+    {
+        var slider = new MaterialSlider
+        {
+            Orientation = Avalonia.Layout.Orientation.Vertical,
+            Height = 200,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Minimum = 0,
+            Maximum = 100
+        };
+        var window = ThemeTestHelper.ShowWindow(slider);
+
+        var nearBottom = slider.TranslatePoint(new Avalonia.Point(slider.Bounds.Width / 2, 180), window)!.Value;
+        window.MouseDown(nearBottom, Avalonia.Input.MouseButton.Left);
+
+        Assert.InRange(slider.Value, 80, 100);
+        Assert.Equal(Math.Max(SliderTokens.Default.HandleHeight, 48), slider.Bounds.Width, 3);
+    }
+
+    [AvaloniaFact]
+    public void AVerticalSlider_UsesDownToIncreaseAndUpToDecrease()
+    {
+        var slider = new MaterialSlider
+        {
+            Orientation = Avalonia.Layout.Orientation.Vertical,
+            Height = 200,
+            Minimum = 0,
+            Maximum = 10,
+            SmallChange = 1,
+            Value = 5
+        };
+        ThemeTestHelper.ShowWindow(slider);
+
+        slider.RaiseEvent(new Avalonia.Input.KeyEventArgs
+        {
+            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+            Key = Avalonia.Input.Key.Down
+        });
+
+        Assert.Equal(6, slider.Value);
+    }
+
+    [AvaloniaFact]
+    public void ARangedSlider_KeepsTheTwoValuesOrderedAndWithinItsRange()
+    {
+        var slider = new MaterialRangeSlider { Minimum = 0, Maximum = 100, StartValue = 25, EndValue = 75 };
+
+        slider.StartValue = 90;
+        Assert.Equal(75, slider.StartValue);
+        Assert.Equal(75, slider.EndValue);
+
+        slider.EndValue = -10;
+        Assert.Equal(75, slider.StartValue);
+        Assert.Equal(75, slider.EndValue);
+    }
+
+    [AvaloniaFact]
+    public void ARangedSlider_KeyboardChangesTheMostRecentlySelectedThumb()
+    {
+        var slider = new MaterialRangeSlider { Width = 200, Minimum = 0, Maximum = 10, StartValue = 2, EndValue = 8, SmallChange = 1 };
+        ThemeTestHelper.ShowWindow(slider);
+        slider.RaiseEvent(new Avalonia.Input.KeyEventArgs
+        {
+            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+            Key = Avalonia.Input.Key.Right
+        });
+
+        Assert.Equal(3, slider.StartValue);
+        Assert.Equal(8, slider.EndValue);
     }
 }
 

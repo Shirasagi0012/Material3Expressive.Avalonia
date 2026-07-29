@@ -1,4 +1,5 @@
 using Material3Expressive.VisualTesting.Model;
+using System.Text.Json.Serialization;
 
 namespace Material3Expressive.VisualTesting.Parity;
 
@@ -25,12 +26,37 @@ public sealed class ParityComparer
             raster.RejectedPixels,
             Math.Max(expectedImage.PixelCount, actualImage.PixelCount),
             raster.MaximumRejectedChannelDelta);
+        ParityRasterComparison? warningRaster = null;
+        IReadOnlyList<string> warnings = [];
         if (profile.CompareRaster && !raster.IsMatch)
         {
-            failures.Add($"Raster differs in {pixels.DifferentPixels}/{pixels.TotalPixels} pixels " +
-                         $"(max channel delta {pixels.MaximumChannelDelta}).");
+            var rasterFailure = $"Raster differs in {pixels.DifferentPixels}/{pixels.TotalPixels} pixels " +
+                                $"(max channel delta {pixels.MaximumChannelDelta}).";
+            if (failures.Count == 0 && profile.WarningRasterPolicy is not null)
+            {
+                warningRaster = SemanticRasterComparer.Compare(
+                    expectedImage,
+                    actualImage,
+                    profile.WarningRasterPolicy,
+                    semantic);
+                if (warningRaster.IsMatch)
+                {
+                    warnings =
+                    [
+                        $"{rasterFailure} Warning accepted by profile '{profile.Id}': {profile.WarningReason}"
+                    ];
+                }
+                else
+                {
+                    failures.Add(rasterFailure);
+                }
+            }
+            else
+            {
+                failures.Add(rasterFailure);
+            }
         }
-        return new ParityComparison(profile.Id, failures.Count == 0, failures, pixels, raster);
+        return new ParityComparison(profile.Id, failures.Count == 0, failures, pixels, raster, warningRaster, warnings);
     }
 
     private static void CompareViewport(ParityCaptureResult expected, ParityCaptureResult actual, ICollection<string> failures)
@@ -376,11 +402,12 @@ public sealed record ParityLayoutTolerance(
 
 public sealed record ParityPixelDifference(int DifferentPixels, int TotalPixels, byte MaximumChannelDelta);
 
-/// <summary>Whether a passed image was byte-exact or accepted by a semantic raster budget.</summary>
+/// <summary>Whether a comparison was exact, semantically equivalent, warning-accepted, or failed.</summary>
 public enum ParityComparisonKind
 {
     ExactMatch,
     SemanticRasterEquivalent,
+    RasterWarning,
     Mismatch
 }
 
@@ -389,13 +416,24 @@ public sealed record ParityComparison(
     bool IsMatch,
     IReadOnlyList<string> Failures,
     ParityPixelDifference Pixels,
-    ParityRasterComparison? Raster = null)
+    ParityRasterComparison? Raster = null,
+    ParityRasterComparison? WarningRaster = null,
+    IReadOnlyList<string>? Warnings = null)
 {
+    [JsonIgnore]
+    public IReadOnlyList<string> WarningsOrEmpty => Warnings ?? [];
+
     public ParityComparisonKind Kind => !IsMatch
         ? ParityComparisonKind.Mismatch
-        : Raster is { AllowedPixels: > 0 }
-            ? ParityComparisonKind.SemanticRasterEquivalent
-            : ParityComparisonKind.ExactMatch;
+        : WarningsOrEmpty.Count > 0
+            ? ParityComparisonKind.RasterWarning
+            : Raster is { AllowedPixels: > 0 }
+                ? ParityComparisonKind.SemanticRasterEquivalent
+                : ParityComparisonKind.ExactMatch;
 
-    public string Summary => IsMatch ? "Parity match." : string.Join(Environment.NewLine, Failures);
+    public string Summary => !IsMatch
+        ? string.Join(Environment.NewLine, Failures)
+        : WarningsOrEmpty.Count == 0
+            ? "Parity match."
+            : "Parity match with warning." + Environment.NewLine + string.Join(Environment.NewLine, WarningsOrEmpty);
 }

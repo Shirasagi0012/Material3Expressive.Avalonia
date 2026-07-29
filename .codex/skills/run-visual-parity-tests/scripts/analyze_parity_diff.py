@@ -219,12 +219,16 @@ def read_official_report(path: Path | None, storage_exact: bool) -> dict[str, An
     with path.open("r", encoding="utf-8-sig") as stream:
         comparison = json.load(stream)
     is_match = bool(comparison.get("isMatch"))
+    failures = comparison.get("failures") or []
+    warnings = comparison.get("warnings") or []
     kind = comparison.get("kind")
     kind_source = "comparison.json"
     if kind is None:
         kind_source = "legacy-derived"
         kind = (
-            "exactMatch"
+            "rasterWarning"
+            if is_match and warnings
+            else "exactMatch"
             if is_match and storage_exact
             else "semanticRasterEquivalent"
             if is_match
@@ -236,10 +240,12 @@ def read_official_report(path: Path | None, storage_exact: bool) -> dict[str, An
         "isMatch": is_match,
         "kind": kind,
         "kindSource": kind_source,
-        "failureLayer": infer_failure_layer(comparison.get("failures", [])),
-        "failures": comparison.get("failures", []),
+        "failureLayer": "RasterWarning" if kind == "rasterWarning" else infer_failure_layer(failures),
+        "failures": failures,
+        "warnings": warnings,
         "pixels": comparison.get("pixels"),
         "raster": comparison.get("raster"),
+        "warningRaster": comparison.get("warningRaster"),
     }
 
 
@@ -362,14 +368,27 @@ def print_report(report: dict[str, Any], top: int) -> None:
         )
         if official["kind"] == "mismatch":
             print(f"  first inferred failure layer: {official['failureLayer']}")
+        elif official["kind"] == "rasterWarning":
+            print("  normal raster policy rejected; secondary warning policy accepted")
         for failure in official["failures"]:
             print(f"  failure: {failure}")
+        for warning in official["warnings"]:
+            print(f"  warning: {warning}")
         raster = official.get("raster") or {}
         print(
-            "  raster: "
+            "  normal raster: "
             f"floor={raster.get('ignoredFloorPixels')}, allowed={raster.get('allowedPixels')}, "
             f"rejected={raster.get('rejectedPixels')}, maxRejected={raster.get('maximumRejectedChannelDelta')}"
         )
+        warning_raster = official.get("warningRaster")
+        if warning_raster is not None:
+            print(
+                "  warning raster: "
+                f"floor={warning_raster.get('ignoredFloorPixels')}, "
+                f"allowed={warning_raster.get('allowedPixels')}, "
+                f"rejected={warning_raster.get('rejectedPixels')}, "
+                f"maxRejected={warning_raster.get('maximumRejectedChannelDelta')}"
+            )
     else:
         print("Official: no comparison.json supplied; diagnostics do not determine pass/fail.")
 
@@ -407,7 +426,7 @@ def main() -> int:
     visual_different_pixels = int(visual_mask.sum())
 
     report: dict[str, Any] = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "diagnosticOnly": True,
         "image": {
             "expectedPath": str(expected_path),

@@ -169,7 +169,8 @@ internal static class ComposeWaveOneParityCases
         Tabs(TabVariant.Primary, VisualTheme.Light),
         Tabs(TabVariant.Primary, VisualTheme.Dark),
         Tabs(TabVariant.Secondary, VisualTheme.Light),
-        Tabs(TabVariant.Secondary, VisualTheme.Dark)
+        Tabs(TabVariant.Secondary, VisualTheme.Dark),
+        ScrollablePrimaryTabs()
     ];
 
     private static VisualCase Typography(
@@ -333,6 +334,36 @@ internal static class ComposeWaveOneParityCases
         tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-0", Text = "One" } });
         tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-1", Text = "Two" } });
         tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-2", Text = "Three" } });
+        return tabs;
+    }
+
+    private static VisualCase ScrollablePrimaryTabs()
+    {
+        return ComponentScene(
+            "navigation/tab/primary/scrollable/selected-last/light",
+            new PixelSize(240, 80),
+            VisualTheme.Light,
+            _ => CreateScrollablePrimaryTabs(),
+            prepare: context => context.SettleAnimations());
+    }
+
+    private static MaterialTabs CreateScrollablePrimaryTabs()
+    {
+        var tabs = new MaterialTabs
+        {
+            Name = "component",
+            Variant = TabVariant.Primary,
+            IsScrollable = true,
+            SelectedIndex = 3,
+            Width = 240,
+            Height = 48,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-0", Text = "Overview" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-1", Text = "Specifications" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-2", Text = "Reviews" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-3", Text = "Related items" } });
         return tabs;
     }
 

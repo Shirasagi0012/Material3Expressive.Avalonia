@@ -150,7 +150,7 @@ explicit roadmap decision.
 
 ### Milestone 1 — Baseline and inventory
 
-Status: in progress
+Status: complete
 
 Deliverables:
 
@@ -167,7 +167,7 @@ Exit criteria:
 
 ### Milestone 2 — Existing component closure
 
-Status: planned
+Status: in progress
 
 Deliverables:
 
@@ -234,11 +234,11 @@ promise.
 |---|---|---|---|---|
 | Dual-baseline documentation and terminology | P0 | Complete | 1 | None |
 | Component coverage inventory | P0 | Complete | 1 | Implementation source baseline |
-| Alpha22-to-alpha25 difference audit | P0 | Planned | 1 | Local AndroidX checkout |
-| Existing parity-case version-gap audit | P0 | Planned | 1 | Difference audit |
-| Indeterminate checkbox tests and API guidance | P0 | Planned | 2 | Existing nullable-state behavior |
-| RangeSlider and VerticalSlider | P0 | Planned | 2 | Slider state/layout design |
-| Circular wavy progress | P0 | Planned | 2 | Polygon/path rendering review |
+| Alpha22-to-alpha25 difference audit | P0 | Complete | 1 | Local AndroidX checkout |
+| Existing parity-case version-gap audit | P0 | Complete | 1 | Difference audit |
+| Indeterminate checkbox tests and API guidance | P0 | Complete | 2 | Existing nullable-state behavior |
+| RangeSlider and VerticalSlider | P0 | Blocked | 2 | Decision 4: range-thumb automation model |
+| Circular wavy progress | P0 | Blocked | 2 | Decision 4: custom-drawn progress accessibility model; static complex-shape residual is covered by the documented temporary warning below |
 | Scrollable Tabs and AppBar scroll behavior | P0 | Planned | 2 | Shared scroll-state conventions |
 | Surface, Divider, and ListItem | P1 | Planned | 3 | Token and API review |
 | Scaffold and host coordination | P1 | Planned | 3 | Surface and overlay state primitives |
@@ -263,6 +263,17 @@ treated as complete:
 5. When public APIs begin receiving source-compatibility guarantees.
 6. How parity-unavailable alpha25 features are reported in Catalog and test output.
 
+## Recorded temporary deferments and decisions
+
+- 2026-07-29: the user authorized a temporary renderer-difference warning for complex Material
+  shapes, non-rounded-rectangle paths, and complex wave lines. It is implemented only by the
+  `complex-shape` expected-edge profile and currently selected only for
+  `progress/circular-wavy/*`: the normal policy still rejects the residual, while its secondary
+  warning policy is strictly capped below 100 high-delta pixels (99), with no whole-frame mask,
+  ignored region, or structural relaxation. Recalibrating or removing that warning is
+  **Deferred** until the user revisits the tolerance policy. It does not make a component
+  otherwise complete.
+
 ## Risks
 
 - Compose Multiplatform release lag leaves executable gaps for newer AndroidX behavior.
@@ -283,3 +294,28 @@ Only recent roadmap-level outcomes belong here. Detailed chronology lives in
   criteria, and a feature-level coverage inventory.
 - 2026-07-29: separated the alpha25 implementation source baseline from the alpha22 executable
   parity reference.
+- 2026-07-29: completed the alpha22→alpha25 source and active parity-catalog audit; alpha25-only
+  ToggleButton border, ListItem height, and Slider state behavior are explicitly parity
+  unavailable under the pinned alpha22 executable reference.
+- 2026-07-29: Milestone 1 exit criteria met. The full parity audit run keeps two focused TextField
+  caret-endpoint mismatches as active implementation defects; they are not version-gap passes.
+- 2026-07-29: completed indeterminate Checkbox parity and guidance. The alpha22 compatibility
+  glyph is a 2dp stroked 20%–80% path whose visible terminal bar spans 15%–85%; Avalonia draws
+  that settled result as a deterministic filled rectangle.
+- 2026-07-29: added `MaterialSlider.Orientation="Vertical"` and `MaterialRangeSlider` with
+  alpha22 static parity for the supported vertical and range scenes. Alpha25 Slider state/Saver
+  and keyboard-completion paths remain parity unavailable; strict completion is blocked on the
+  custom-drawn range slider's native automation-thumb model (Decision 4).
+- 2026-07-29: added alpha25 `CircularWavyProgressIndicator` support through
+  `MaterialCircularProgressIndicator.IsWavy` and `WaveSpeed`. Source review covered
+  `WavyProgressIndicator.kt` and `internal/CircularWavyProgressModifiers.kt` at AndroidX
+  `ff0a0a99`; the alpha22 determinate reference case emits the narrowed complex-shape warning.
+  Initial wavy/indeterminate loops now wait for the visual tree's `TopLevel` instead of settling
+  before the first visible frame, and a deterministic two-frame test proves default wave travel.
+  Strict completion remains blocked on the shared custom-drawn accessibility decision.
+- 2026-07-29: corrected `MaterialLoadingIndicator` against alpha25
+  `LoadingIndicator.kt` at AndroidX `ff0a0a99`: indeterminate shape changes now use the upstream
+  650ms `spring(.6, 200, visibilityThreshold=.1)` cadence and quarter-turn sequence, while only
+  the 4666ms global rotation is linear. Deterministic curve and cadence tests provide evidence;
+  no animated alpha22 visual-parity pass is claimed because the executable catalog has no such
+  scenario.

@@ -82,7 +82,7 @@ td.mono { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 11px; }
   <input id="filter" placeholder="Filter cases..." autofocus>
   <div id="case-list"></div>
   <div id="legend">
-    <span>&check; pass</span><span>&#10005; fail</span>
+    <span>&#10003; exact</span><span style="color:#7ee060">~ equivalent</span><span style="color:#d2991d">&#9888; warning</span><span>&#10005; fail</span>
   </div>
 </div>
 <div id="main">
@@ -189,12 +189,21 @@ async function loadRunData(runName) {
     document.getElementById('loading').style.display = 'none';
     var cases = am.cases || [];
     cases.forEach(function(c) { state.caseMap[c.id] = c; });
-    var pass = 0, fail = 0;
-    cases.forEach(function(c) { c.isMatch ? pass++ : fail++; });
-    document.getElementById('stats').innerHTML =
-        '<span class="stat stat-pass">PASS ' + pass + '</span>' +
-        '<span class="stat stat-fail">FAIL ' + fail + '</span>' +
-        '<span class="stat stat-total">TOTAL ' + cases.length + '</span>';
+    var pass = 0, exact = 0, sem = 0, warn = 0, fail = 0;
+    cases.forEach(function(c) {
+        if (c.isMatch) pass++;
+        else fail++;
+        var k = c.comparisonKind || '';
+        if (k === 'exactMatch') exact++;
+        else if (k === 'semanticRasterEquivalent') sem++;
+        else if (k === 'rasterWarning') warn++;
+    });
+    var stats = '<span class="stat stat-pass">PASS ' + pass + '</span>';
+    if (sem > 0) stats += '<span class="stat stat-pass" style="background:#1a3520;color:#7ee060">~' + sem + '</span>';
+    if (warn > 0) stats += '<span class="stat" style="background:#2a2010;color:#d2991d">WARN ' + warn + '</span>';
+    if (fail > 0) stats += '<span class="stat stat-fail">FAIL ' + fail + '</span>';
+    stats += '<span class="stat stat-total">TOTAL ' + cases.length + '</span>';
+    document.getElementById('stats').innerHTML = stats;
     renderCaseList('');
     if (cases.length > 0) selectCase(cases[0].id);
 }
@@ -202,9 +211,14 @@ async function loadRunData(runName) {
 var listEl = document.getElementById('case-list');
 var filterEl = document.getElementById('filter');
 
-function getFailureIcon(caseId) {
+function getStatusIcon(caseId) {
     var c = state.caseMap[caseId];
-    if (!c || c.isMatch) return '<span class="icon match">&#10003;</span>';
+    if (!c || c.isMatch) {
+        var k = c ? (c.comparisonKind || '') : '';
+        if (k === 'semanticRasterEquivalent') return '<span class="icon" style="color:#7ee060">~</span>';
+        if (k === 'rasterWarning') return '<span class="icon" style="color:#d2991d">\u26A0</span>';
+        return '<span class="icon match">&#10003;</span>';
+    }
     return '<span class="icon mismatch">&#10005;</span>';
 }
 
@@ -219,7 +233,7 @@ function renderCaseList(filter) {
     ids.forEach(function(id) {
         var family = id.split('/')[0];
         html += '<div class="case-item" data-id="' + id + '">' +
-            getFailureIcon(id) +
+            getStatusIcon(id) +
             '<span class="case-id" title="' + id + '">' +
             '<span class="family">' + family + '/</span>' + id.substring(family.length + 1) +
             '</span></div>';
@@ -256,8 +270,16 @@ async function selectCase(caseId) {
     });
     var c = state.caseMap[caseId];
     document.getElementById('detail-header').style.display = '';
+    var kind = c ? (c.comparisonKind || 'N/A') : 'N/A';
+    var warnings = (c && c.warnings && c.warnings.length > 0) ? c.warnings.join('; ') : '';
+    var kindCls = c && c.isMatch ? 'match' : 'mismatch';
+    if (c && kind === 'semanticRasterEquivalent') kindCls = 'match';
+    var meta = '<span class="' + kindCls + '">' + kind + '</span>';
+    if (kind === 'semanticRasterEquivalent') meta += ' (acceptable, within tolerance)';
+    if (kind === 'rasterWarning') meta += ' (passes with warnings)';
+    if (warnings) meta += ' \u2022 ' + warnings;
     document.getElementById('detail-header').innerHTML =
-        '<h2>' + caseId + '</h2><div class="meta">Match: ' + (c.isMatch ? 'YES' : 'NO') + '</div>';
+        '<h2>' + caseId + '</h2><div class="meta">' + meta + '</div>';
     await loadCaseData(caseId);
     renderImages(caseId);
     renderGeometry(caseId);
@@ -283,11 +305,19 @@ async function loadCaseData(caseId) {
 function renderImages(caseId) {
     var comp = state.comparisons[caseId];
     var px = comp ? comp.pixels : null;
-    var scale = (state.expectedManifest || {}).viewportScale || 2.0;
-    var rasterFail = comp && !comp.isMatch && px && px.differentPixels > 0;
-    var diffLabel = rasterFail
-        ? '<h3 style="color:#f85149">Diff (' + px.differentPixels + ' px, channels up to ' + px.maximumChannelDelta + ')</h3>'
-        : '<h3>Diff' + (px&&px.differentPixels>0 ? ' (' + px.differentPixels + ' px)' : '') + '</h3>';
+    var c = state.caseMap[caseId];
+    var kind = c ? (c.comparisonKind || '') : '';
+    var isSemantic = kind === 'semanticRasterEquivalent' || kind === 'rasterWarning';
+    var diffLabel;
+    if (comp && !comp.isMatch) {
+        diffLabel = '<h3 style="color:#f85149">FAIL &mdash; Diff (' + px.differentPixels + ' px, channels up to ' + px.maximumChannelDelta + ')</h3>';
+    } else if (comp && isSemantic && px && px.differentPixels > 0) {
+        diffLabel = '<h3 style="color:#7ee060">Acceptable &mdash; Diff (' + px.differentPixels + ' px, within semantic tolerance)</h3>';
+    } else if (px && px.differentPixels > 0) {
+        diffLabel = '<h3>Diff (' + px.differentPixels + ' px)</h3>';
+    } else {
+        diffLabel = '<h3 class="match">Exact match</h3>';
+    }
     var imgs = '<div class="img-card"><h3>Expected (Compose)</h3>' +
         '<img src="' + CASES_BASE + '/' + CURRENT_RUN + '/expected/cases/' + caseId + '/image.png" alt="expected"></div>' +
         '<div class="img-card"><h3>Actual (Avalonia)</h3>' +

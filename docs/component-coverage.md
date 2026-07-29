@@ -33,6 +33,15 @@ The theming, color, typography, shape, motion, ripple, token-generation, and Mat
 foundations are outside this component count. They are shared infrastructure rather than
 one-to-one component families.
 
+## Baseline-audit status
+
+The [alpha22→alpha25 difference audit](alpha22-alpha25-difference-audit.md) confirms that all 63
+active executable parity cases use alpha22-supported static APIs. They remain alpha22 conformance
+evidence only; none is an implicit alpha25 parity pass. Alpha25-specific ToggleButton border
+transitions, expressive ListItem text-line-height behavior, and Slider/RangeSlider state and
+keyboard-completion behavior are recorded as parity unavailable until the executable reference
+can represent them.
+
 ## Component matrix
 
 | Area | Compose feature family | Avalonia counterpart | Status | Principal gap or adaptation |
@@ -47,14 +56,14 @@ one-to-one component families.
 | Actions | FloatingActionButton and extended/size variants | `MaterialFab` | Implemented | Label presence selects extended presentation. |
 | Actions | FloatingActionButtonMenu | `MaterialFabMenu` | Partial | Compose menu-item and toggle APIs are not fully represented. |
 | Actions | Horizontal/Vertical FloatingToolbar | None | Missing | Includes toolbar state, scroll behavior, and FAB integration. |
-| Selection | Checkbox and TriStateCheckbox | `MaterialCheckbox` | Implemented | Nullable `IsChecked` uses Avalonia's tri-state API; dedicated parity coverage and usage guidance remain. |
+| Selection | Checkbox and TriStateCheckbox | `MaterialCheckbox` | Implemented | Use `IsThreeState="True"` with `IsChecked="{x:Null}"` for Compose `ToggleableState.Indeterminate`; selected and indeterminate alpha22 parity cases pass. |
 | Selection | RadioButton | `MaterialRadioButton` | Implemented | Uses Avalonia radio grouping behavior. |
 | Selection | Switch | `MaterialSwitch` | Implemented | Desktop control derives from `ToggleButton`; drag-to-toggle is not provided. |
-| Selection | Slider, VerticalSlider, RangeSlider | `MaterialSlider` | Partial | Horizontal single-value slider only. |
+| Selection | Slider, VerticalSlider, RangeSlider | `MaterialSlider`, `MaterialRangeSlider` | Partial | `MaterialSlider.Orientation="Vertical"` adapts Compose top-to-bottom VerticalSlider; `MaterialRangeSlider` provides ordered, bindable `StartValue`/`EndValue`. Alpha22 static vertical/range parity passes; alpha25 state/Saver and keyboard-completion behavior is parity unavailable, and native automation peers for both range thumbs await the custom-control accessibility decision. |
 | Progress | LinearProgressIndicator | `MaterialLinearProgressIndicator` | Implemented | Determinate and indeterminate forms exist. |
 | Progress | CircularProgressIndicator | `MaterialCircularProgressIndicator` | Implemented | Determinate and indeterminate forms exist. |
-| Progress | Linear/CircularWavyProgressIndicator | `MaterialLinearProgressIndicator.IsWavy` | Partial | Circular wavy progress is missing. |
-| Progress | LoadingIndicator and contained form | `MaterialLoadingIndicator` | Implemented | Compose overloads map to variants/properties. |
+| Progress | Linear/CircularWavyProgressIndicator | `MaterialLinearProgressIndicator.IsWavy`; `MaterialCircularProgressIndicator.IsWavy` / `WaveSpeed` | Partial | Circular wavy follows alpha25 `WavyProgressIndicator.kt` and `internal/CircularWavyProgressModifiers.kt`: determinate alpha22 parity emits a documented, expected-edge-only temporary complex-shape warning and default wave motion has a deterministic two-frame test. Dark/indeterminate parity and native progress automation semantics remain incomplete; strict closure is blocked on the custom-drawn accessibility decision. |
+| Progress | LoadingIndicator and contained form | `MaterialLoadingIndicator` | Implemented | Compose overloads map to variants/properties. Source review: alpha25 `LoadingIndicator.kt` uses a 650ms `spring(.6, 200, visibilityThreshold=.1)` for each indeterminate morph and a separate 4666ms linear global rotation; deterministic unit tests cover the curve and interval boundary. No executable alpha22 animated-parity claim is made. |
 | Inputs | Assist, Filter, Input, and Suggestion chips | `MaterialChip` | Partial | Families are consolidated; some family-specific semantics and defaults are absent. |
 | Inputs | TextField | `MaterialTextField` | Implemented | Filled form is selected by `Variant`. |
 | Inputs | OutlinedTextField | `MaterialTextField` | Implemented | Outlined form is selected by `Variant`. |

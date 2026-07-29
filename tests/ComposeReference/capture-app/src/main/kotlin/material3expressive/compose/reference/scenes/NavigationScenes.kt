@@ -10,6 +10,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
@@ -69,6 +70,10 @@ fun ReferenceCaseRegistry.registerNavigationScenes() {
         tabCase("navigation/tab/secondary/three-items/selected/dark", dark = true),
         ReferenceScene { probes -> Tabs(probes, primary = false) },
     )
+    register(
+        scrollableTabCase("navigation/tab/primary/scrollable/selected-last/light"),
+        ReferenceScene { probes -> ScrollableTabs(probes) },
+    )
 }
 
 private fun navCase(id: String, dark: Boolean = false) = CaseContract(
@@ -79,6 +84,16 @@ private fun navCase(id: String, dark: Boolean = false) = CaseContract(
 private fun tabCase(id: String, dark: Boolean = false) = CaseContract(
     id = id, viewportWidthDp = 360, viewportHeightDp = 80, dark = dark,
     requiredNodes = navigationNodes() + RequiredNodeSpec(id = "indicator", kind = "container", parentId = "component"),
+)
+
+private fun scrollableTabCase(id: String) = CaseContract(
+    id = id, viewportWidthDp = 240, viewportHeightDp = 80, dark = false,
+    requiredNodes = listOf(
+        RequiredNodeSpec(id = "component", kind = "container"),
+        RequiredNodeSpec(id = "indicator", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "label-2", kind = "text", parentId = "component", text = "Reviews"),
+        RequiredNodeSpec(id = "label-3", kind = "text", parentId = "component", text = "Related items"),
+    ),
 )
 
 private fun navigationNodes() = listOf(
@@ -179,5 +194,38 @@ private fun Tabs(probes: ProbeRegistry, primary: Boolean) {
                 )
             },
         ) { content() }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ScrollableTabs(probes: ProbeRegistry) {
+    val selectedTabIndex = 3
+    PrimaryScrollableTabRow(
+        selectedTabIndex = selectedTabIndex,
+        modifier = Modifier.requiredSize(240.dp, 48.dp).then(probes.geometry("component")),
+        edgePadding = 52.dp,
+        minTabWidth = 90.dp,
+        indicator = {
+            TabRowDefaults.PrimaryIndicator(
+                Modifier.tabIndicatorOffset(selectedTabIndex, matchContentSize = true)
+                    .then(probes.geometry("indicator")),
+                width = Dp.Unspecified,
+            )
+        },
+    ) {
+        listOf("Overview", "Specifications", "Reviews", "Related items").forEachIndexed { index, label ->
+            Tab(
+                selected = index == selectedTabIndex,
+                onClick = {},
+                text = {
+                    Text(
+                        text = label,
+                        modifier = probes.text("label-$index"),
+                        onTextLayout = probes.onTextLayout("label-$index"),
+                    )
+                },
+            )
+        }
     }
 }

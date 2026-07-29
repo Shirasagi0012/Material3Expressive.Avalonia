@@ -20,8 +20,12 @@ pinned environment + expected bundle + hashes
   -> text content/layout/style and shadow input contract
   -> same-coordinate raster comparison
      -> exact
-     -> expected-derived semantic budgets
-        -> equivalent or raster mismatch
+     -> normal expected-derived semantic budgets
+        -> semantic equivalent
+        -> rejected
+           -> optional warning budgets, only with no structural failures
+              -> warning accepted
+              -> mismatch
 ```
 
 A structural failure remains a failure even if the raster happens to be close. Raster budgets
@@ -88,29 +92,35 @@ documented in `docs/comparison-profiles.md`.
 
 - `profileId`: profile selected by the first matching ordered case-prefix rule; validation rejects
   a later rule shadowed by an earlier broader prefix;
-- `kind`: official `exactMatch`, `semanticRasterEquivalent`, or `mismatch` classification;
-- `isMatch`: official case result after all structural and enabled raster checks;
+- `kind`: official `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or `mismatch`
+  classification;
+- `isMatch`: execution-gate result; true for exact, semantic-equivalent, and warning outcomes;
 - `failures`: structural and/or raster failure messages;
+- `warnings`: temporary-acceptance reasons; present for `rasterWarning`;
 - `pixels.differentPixels`: currently rejected pixel accounting, not raw unequal pixels;
 - `raster.ignoredFloorPixels`: nonzero deltas at or below the strict floor;
 - `raster.allowedPixels`: pixels accepted inside semantic budgets;
 - `raster.rejectedPixels`: rejected accounting used by raster pass/fail;
 - `raster.regions`: owner-level eligible-pixel and bin reports.
+- `warningRaster`: secondary policy report; present when warning policy was evaluated.
 
 Interpret reporting labels directly:
 
 ```text
 kind=exactMatch                -> structural contract passed and no raster budget was consumed
 kind=semanticRasterEquivalent  -> structural contract passed and allowedPixels > 0
+kind=rasterWarning             -> normal raster rejected, warningRaster accepted; temporary debt
 kind=mismatch                  -> structural and/or raster failure; classify the first failing layer
 ```
 
 Keep `kind` authoritative. Do not infer exactness from `pixels.differentPixels == 0`, because that
 field reports rejected accounting and accepted semantic differences also produce zero there.
+For a warning, read `raster` and `warningRaster` together: the first explains the durable semantic
+boundary that was exceeded, and the second explains the temporary boundary that accepted it.
 
 ## RGBA and visual RGB
 
-The formal version-6 comparer takes the maximum same-coordinate delta across all four premultiplied
+The formal version-7 comparer takes the maximum same-coordinate delta across all four premultiplied
 RGBA channels. It does not composite onto a backdrop and does not search neighboring pixels. The
 built-in `diff.png` visualizes RGB only, so consult `comparison.json` or the diagnostic script for
 alpha-only differences.

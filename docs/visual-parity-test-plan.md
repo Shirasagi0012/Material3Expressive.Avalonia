@@ -792,6 +792,7 @@ The HTML report starts with the actionable result, not a single similarity perce
 For each case it contains:
 
 - pass/fail and failure categories;
+- warning status and both normal/temporary raster diagnostics when a case is warning-accepted;
 - the exact reference and runtime versions;
 - environment and font hashes;
 - expected and actual images side by side;
@@ -810,6 +811,11 @@ Failures are classified as:
 - `Raster`;
 - `UnregisteredDeviation`.
 
+An explicit `RasterWarning` is not a failure: it means all structural checks passed, the normal
+raster policy rejected the image, and a documented temporary warning policy accepted the same
+expected-derived owners. Warnings remain visible in the report and artifacts and are never
+classified as semantic raster equivalence.
+
 The report must remain useful when every case is failing during early development.
 
 ## 15. Development and CI policy
@@ -820,6 +826,8 @@ whether the CI job is required:
 ### Diagnostic stage
 
 - parity mismatches remain failed xUnit cases;
+- documented raster warnings pass xUnit while remaining visible in the parity command output, the
+  actual manifest, and `comparison.json` (and in generated reports when enabled);
 - the CI job uploads the complete report;
 - the job may be marked non-required while components are still being brought into parity;
 - infrastructure and contract failures are visually distinguished from product mismatches.
@@ -832,6 +840,8 @@ whether the CI job is required:
 - every remaining renderer-specific tolerance is narrow, global by node kind, and justified;
 - intentional product deviations are tracked explicitly; they are never represented by an
   approved Avalonia image baseline.
+- temporary raster warnings are reviewed and removed or converted to a justified normal policy
+  before the affected family is considered strictly closed.
 
 Changing from diagnostic to gate mode must not regenerate or approve any baseline. It is a CI
 policy change only.

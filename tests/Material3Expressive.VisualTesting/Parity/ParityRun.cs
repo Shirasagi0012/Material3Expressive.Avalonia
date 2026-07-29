@@ -87,7 +87,9 @@ public sealed class ParityRun
                 relative.Replace(Path.DirectorySeparatorChar, '/') + "/comparison.json",
                 ParityJson.Sha256(image),
                 ParityJson.Sha256(layout),
-                result.Comparison.IsMatch);
+                result.Comparison.IsMatch,
+                result.Comparison.Kind,
+                result.Comparison.WarningsOrEmpty);
         }).ToArray();
         var manifest = new ParityActualManifest(
             ParityManifest.CurrentSchemaVersion,

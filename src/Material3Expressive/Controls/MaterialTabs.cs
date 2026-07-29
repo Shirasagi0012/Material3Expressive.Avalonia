@@ -178,6 +178,78 @@ public sealed class MaterialTabItemsPanel : Panel
 }
 
 /// <summary>
+/// Lays out a scrollable Material tab row with the fixed leading/trailing affordance prescribed
+/// by Compose's <c>ScrollableTabRowImpl</c>.
+/// </summary>
+/// <remarks>
+/// Unlike <see cref="MaterialTabItemsPanel"/>, tabs retain their intrinsic width (subject to the
+/// upstream 90dp minimum) and the panel's extent contains 52dp of space at either end. The owning
+/// <see cref="MaterialTabs"/> centres a newly-selected tab in its <see cref="ScrollViewer"/>
+/// viewport when possible.
+/// </remarks>
+public sealed class MaterialScrollableTabItemsPanel : Panel
+{
+    public static readonly StyledProperty<double> EdgePaddingProperty =
+        AvaloniaProperty.Register<MaterialScrollableTabItemsPanel, double>(nameof(EdgePadding), 52);
+
+    public static readonly StyledProperty<double> MinimumTabWidthProperty =
+        AvaloniaProperty.Register<MaterialScrollableTabItemsPanel, double>(nameof(MinimumTabWidth), 90);
+
+    static MaterialScrollableTabItemsPanel()
+    {
+        AffectsMeasure<MaterialScrollableTabItemsPanel>(EdgePaddingProperty, MinimumTabWidthProperty);
+    }
+
+    /// <summary>Space at both ends of the scrollable extent.</summary>
+    public double EdgePadding
+    {
+        get => GetValue(EdgePaddingProperty);
+        set => SetValue(EdgePaddingProperty, value);
+    }
+
+    /// <summary>The Compose Material3 minimum tab width.</summary>
+    public double MinimumTabWidth
+    {
+        get => GetValue(MinimumTabWidthProperty);
+        set => SetValue(MinimumTabWidthProperty, value);
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
+        var edgePadding = Math.Max(0, EdgePadding);
+        var minimumWidth = Math.Max(0, MinimumTabWidth);
+        var desiredWidth = edgePadding * 2;
+        var desiredHeight = 0d;
+
+        foreach (var child in visibleChildren)
+        {
+            child.Measure(new Size(double.PositiveInfinity, availableSize.Height));
+            desiredWidth += Math.Max(minimumWidth, child.DesiredSize.Width);
+            desiredHeight = Math.Max(desiredHeight, child.DesiredSize.Height);
+        }
+
+        return new Size(desiredWidth, desiredHeight);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        var edgePadding = Math.Max(0, EdgePadding);
+        var minimumWidth = Math.Max(0, MinimumTabWidth);
+        var left = edgePadding;
+
+        foreach (var child in Children.Where(child => child.IsVisible))
+        {
+            var width = Math.Max(minimumWidth, child.DesiredSize.Width);
+            child.Arrange(new Rect(left, 0, width, finalSize.Height));
+            left += width;
+        }
+
+        return finalSize;
+    }
+}
+
+/// <summary>
 /// Centres a tab's intrinsic content with Compose's physical-pixel rounding semantics.
 /// </summary>
 /// <remarks>
@@ -304,6 +376,18 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
         AvaloniaProperty.Register<MaterialTabs, int>(
             nameof(SelectedIndex), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
+    /// <inheritdoc cref="IsScrollable" />
+    public static readonly StyledProperty<bool> IsScrollableProperty =
+        AvaloniaProperty.Register<MaterialTabs, bool>(nameof(IsScrollable));
+
+    /// <inheritdoc cref="ScrollableEdgePadding" />
+    public static readonly StyledProperty<double> ScrollableEdgePaddingProperty =
+        AvaloniaProperty.Register<MaterialTabs, double>(nameof(ScrollableEdgePadding), 52);
+
+    /// <inheritdoc cref="ScrollableMinimumTabWidth" />
+    public static readonly StyledProperty<double> ScrollableMinimumTabWidthProperty =
+        AvaloniaProperty.Register<MaterialTabs, double>(nameof(ScrollableMinimumTabWidth), 90);
+
     private readonly MaterialThemeWatcher _theme;
     private readonly MotionGroup _motion;
 
@@ -312,6 +396,8 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
     private TabTokens _tokens = TabTokens.Primary;
     private TabColors _colors = TabTokens.Primary.Resolve(null, false);
     private bool _updatingSelection;
+    private ScrollViewer? _scrollViewer;
+    private bool _scrollSelectedTab;
 
     public MaterialTabs()
     {
@@ -327,7 +413,8 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
 
     static MaterialTabs()
     {
-        AffectsRender<MaterialTabs>(VariantProperty, SelectedIndexProperty);
+        AffectsRender<MaterialTabs>(VariantProperty, SelectedIndexProperty, IsScrollableProperty);
+        AffectsMeasure<MaterialTabs>(IsScrollableProperty, ScrollableEdgePaddingProperty, ScrollableMinimumTabWidthProperty);
     }
 
     public TabVariant Variant
@@ -341,6 +428,30 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
     {
         get => GetValue(SelectedIndexProperty);
         set => SetValue(SelectedIndexProperty, value);
+    }
+
+    /// <summary>
+    /// Uses the scrollable TabRow layout: intrinsic tabs, a 52dp end affordance, and selected-tab
+    /// centring. The default remains the fixed, evenly divided TabRow.
+    /// </summary>
+    public bool IsScrollable
+    {
+        get => GetValue(IsScrollableProperty);
+        set => SetValue(IsScrollableProperty, value);
+    }
+
+    /// <summary>Leading and trailing space in a scrollable row. Defaults to Compose's 52dp.</summary>
+    public double ScrollableEdgePadding
+    {
+        get => GetValue(ScrollableEdgePaddingProperty);
+        set => SetValue(ScrollableEdgePaddingProperty, value);
+    }
+
+    /// <summary>Intrinsic tab-width floor in a scrollable row. Defaults to Compose's 90dp.</summary>
+    public double ScrollableMinimumTabWidth
+    {
+        get => GetValue(ScrollableMinimumTabWidthProperty);
+        set => SetValue(ScrollableMinimumTabWidthProperty, value);
     }
 
     [Content]
@@ -391,8 +502,25 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
     protected override Size ArrangeOverride(Size finalSize)
     {
         var size = base.ArrangeOverride(finalSize);
+
+        ScrollSelectedTabIntoView();
         UpdateIndicator(snap: IndicatorWidth.Value <= 0);
         return size;
+    }
+
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+
+        if (_scrollViewer is { })
+            _scrollViewer.ScrollChanged -= OnScrollChanged;
+
+        _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+        if (_scrollViewer is { })
+            _scrollViewer.ScrollChanged += OnScrollChanged;
+
+        if (IsScrollable)
+            _scrollSelectedTab = true;
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -403,6 +531,11 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
             ApplyTokens();
         else if (change.Property == SelectedIndexProperty)
             SyncSelection();
+        else if (change.Property == IsScrollableProperty)
+        {
+            PseudoClasses.Set(":scrollable", IsScrollable);
+            _scrollSelectedTab = IsScrollable;
+        }
     }
 
     private SpringAnimation IndicatorCentre =>
@@ -457,6 +590,7 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
             _updatingSelection = false;
         }
 
+        _scrollSelectedTab |= IsScrollable;
         UpdateIndicator();
     }
 
@@ -478,7 +612,7 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
         }
 
         var tab = Items[SelectedIndex];
-        var bounds = tab.Bounds;
+        var bounds = TabBoundsInThis(tab);
         if (bounds.Width <= 0)
             return;
 
@@ -514,6 +648,42 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
         IndicatorCentre.AnimateTo(centre, spring);
         IndicatorWidth.AnimateTo(width, spring);
         _motion.Start();
+    }
+
+    private void ScrollSelectedTabIntoView()
+    {
+        if (!_scrollSelectedTab || !IsScrollable || _scrollViewer is null
+            || SelectedIndex < 0 || SelectedIndex >= Items.Count)
+            return;
+
+        var tab = Items[SelectedIndex];
+        var transform = tab.TransformToVisual(_scrollViewer);
+        if (transform is null || _scrollViewer.Viewport.Width <= 0)
+            return;
+
+        var tabLeft = transform.Value.Transform(default).X;
+        var target = _scrollViewer.Offset.X + tabLeft - (_scrollViewer.Viewport.Width - tab.Bounds.Width) / 2;
+        var maximum = Math.Max(0, _scrollViewer.Extent.Width - _scrollViewer.Viewport.Width);
+        _scrollViewer.Offset = new Vector(Math.Clamp(target, 0, maximum), _scrollViewer.Offset.Y);
+        _scrollSelectedTab = false;
+    }
+
+    private void OnScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        if (e.OffsetDelta.X == 0)
+            return;
+
+        // The indicator lives in the row's drawing layer, not the ScrollViewer content, so update
+        // its coordinates immediately rather than springing behind a user drag.
+        UpdateIndicator(snap: true);
+    }
+
+    private Rect TabBoundsInThis(MaterialTab tab)
+    {
+        var transform = tab.TransformToVisual(this);
+        return transform is { } matrix
+            ? new Rect(matrix.Transform(default), tab.Bounds.Size)
+            : tab.Bounds;
     }
 
     /// <summary>

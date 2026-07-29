@@ -23,6 +23,24 @@ token, glyph, fill, border, caret, or shadow contract pass.
 - Scope policy by reusable semantic profile and ordered case prefix, not by individual test-body
   tolerances or stored Avalonia screenshots.
 - Prove every new allowance with a passing intended mutation and a failing boundary mutation.
+- A `warningRasterPolicy` is a temporary, second-level decision only. It runs only after the
+  normal raster policy rejects a structurally valid case; it records a warning rather than turning
+  that residual into semantic equivalence.
+
+## Temporary complex-shape warning
+
+On 2026-07-29 the user authorized a temporary, narrowly scoped exception for unavoidable desktop
+raster residuals on complex Material paths (including non-rounded-rectangle shapes and wave
+lines). The `complex-shape` profile preserves the normal structural gates and derives its only
+owner from the expected `shapeEdge` mask. Its normal policy is the ordinary bounded container-edge
+policy. Only after that policy rejects can its warning policy accept up to 99 high-delta pixels,
+25,245 energy, and a 99-pixel/99-thickness connected component. It is currently mapped
+exclusively to `progress/circular-wavy/*`. `SemanticRasterBudgetTests` proves that 99 high-delta
+expected-edge pixels produce `rasterWarning` and 100 still fail.
+
+This is a user-recorded Deferred calibration decision, not a generic profile-selection shortcut.
+Do not add other prefixes without renewed evidence and an explicit roadmap decision; do not use
+it for fills, missing content, geometry, or pixels outside the expected edge.
 
 ## Decide whether policy should change
 
@@ -96,7 +114,7 @@ The root object contains:
 
 | Field | Contract |
 |---|---|
-| `schemaVersion` | Must match the loader's current version; currently `6`. |
+| `schemaVersion` | Must match the loader's current version; currently `7`. |
 | `profiles` | Unique profile definitions. Unknown fields are rejected. |
 | `caseProfileRules` | Ordered first-prefix-match mapping from case ID to profile. |
 
@@ -108,6 +126,8 @@ Each profile contains:
 | `layoutTolerance` | Non-negative finite physical-pixel tolerances for `geometryPx`, `textPx`, `textBaselinePx`, and `textLineBoundsPx`. |
 | `rasterPolicy.algorithm` | Must be `semantic-raster-v1`. |
 | `rasterPolicy.strictChannelDelta` | Must remain `0`. |
+| `warningRasterPolicy` | Optional secondary semantic policy. It is evaluated only when the normal raster policy fails and every structural check passed. |
+| `warningReason` | Required non-empty Deferred/review reason whenever `warningRasterPolicy` is present; forbidden otherwise. |
 | `edgeDetectionChannelDelta` | Non-zero threshold used to derive expected edge masks. Lower only with evidence for a repeatable low-contrast boundary. |
 | `shadowSignalChannelDelta` | Expected shadow-signal threshold used when deriving shadow masks. |
 | `shadowPaddingPerElevationPx` | Non-negative finite envelope padding per elevation unit. |
@@ -221,6 +241,8 @@ Mutation coverage must demonstrate both sides of the boundary:
 - the next larger delta, wider/thicker component, excess count/energy, or out-of-mask mutation
   fails;
 - structural mutations still fail before raster acceptance;
+- a warning policy cannot downgrade a structural mismatch, and its first over-budget mutation
+  still fails;
 - owner overlap consumes only the documented higher-priority owner.
 
 ## Review checklist
@@ -236,5 +258,7 @@ Mutation coverage must demonstrate both sides of the boundary:
 - [ ] Delta bins are increasing and bounded by count, energy, component area, and thickness.
 - [ ] Positive and negative mutation tests prove the intended boundary.
 - [ ] Focused comparer tests, affected family tests, and the full suite pass.
+- [ ] Any warning policy has a specific removal/recalibration reason and is visible as
+      `rasterWarning` in run artifacts; it is not counted as semantic equivalence.
 - [ ] No baseline image, whole-frame ignore region, per-case tolerance, recentering, cropping, or
       diagnostic-only metric was added to acceptance.

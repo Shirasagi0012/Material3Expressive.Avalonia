@@ -1,14 +1,14 @@
 ---
 name: run-visual-parity-tests
-description: Run, filter, inspect, and diagnose the Compose-versus-Avalonia visual-parity suite in the Material3Expressive repository. Use when executing the complete suite, one case, or a component family; locating fresh expected/actual artifacts; interpreting contract, geometry, text-layout, shadow, and semantic-raster results; or performing same-coordinate image-difference analysis without changing the official acceptance policy.
+description: Run, filter, inspect, and diagnose the Compose-versus-Avalonia visual-parity suite in the Material3Expressive repository. Use when executing the complete suite, one case, or a component family; locating fresh expected/actual artifacts; interpreting exact, semantic-equivalent, warning-accepted, mismatch, contract, geometry, text-layout, shadow, and raster results; or performing same-coordinate image-difference analysis without changing the official acceptance policy.
 ---
 
 # Run Visual Parity Tests
 
 Run the smallest relevant parity selection, locate the artifact root created by that invocation,
 and diagnose failures in contract-first order. Treat the repository's C# comparer and versioned
-profile file as the only authority for pass/fail. Use Python image analysis only to explain a
-result, never to replace it.
+profile file as the only authority for classification and acceptance. Use Python image analysis
+only to explain a result, never to replace it.
 
 Keep this skill focused on execution and evidence-based diagnosis. If the task is to add or modify
 a Compose reference scene, Avalonia `VisualCase`, structural probe, or comparison-profile test,
@@ -26,7 +26,7 @@ Before running or interpreting results, read:
 - `tests/Material3Expressive.VisualTesting/Parity/ParityComparer.cs` for structural comparison;
 - `tests/Material3Expressive.VisualTesting/Parity/SemanticRasterComparer.cs` for raster behavior.
 
-Do this on every policy/debugging task. The formal policy is profile schema version 6 and the
+Do this on every policy/debugging task. The formal policy is profile schema version 7 and the
 capture contract is schema version 5. Keep the checked-in profile and source authoritative if a
 later schema deliberately changes coefficients, masks, or report fields.
 
@@ -83,6 +83,8 @@ to Gradle. That verifies Compose capture; it does not run the Avalonia compariso
 
 A non-zero process exit caused by a parity mismatch means the harness ran successfully and found
 a conformance failure. Distinguish that from build, Gradle, manifest, font, or catalog failures.
+`rasterWarning` keeps `isMatch=true` and therefore does not fail xUnit, but it must remain visible
+and separately reported as temporary implementation debt.
 Treat an xUnit skipped row separately from both pass and mismatch. The current display/headline
 baseline cases are explicitly skipped because the required Avalonia structural API is unavailable;
 they are not tolerance-approved passes.
@@ -122,9 +124,9 @@ manifest rather than searching for a missing raster report.
 Read results in this order:
 
 1. test output and `comparison.txt`;
-2. `comparison.json` failures and selected profile;
+2. `comparison.json` kind, failures, warnings, and selected profile;
 3. expected and actual `layout.json` for the named node;
-4. raster region/budget report;
+4. normal `raster` and, for warnings, secondary `warningRaster` region/budget reports;
 5. expected, actual, built-in `diff.png`, and optional diagnostic images.
 
 Inspect `diff.png` first. `ParityRun.CreateDiff` currently maps the largest same-coordinate RGB
@@ -139,14 +141,18 @@ Use `comparison.json.kind` as the official completed-case classification:
 
 - **`exactMatch`**: every same-coordinate premultiplied RGBA pixel is exact and all contracts pass;
 - **`semanticRasterEquivalent`**: contracts pass and every non-exact pixel is accepted by its
-  expected-derived semantic mask and budget;
+  normal expected-derived semantic mask and budget; treat this as fully accepted parity;
+- **`rasterWarning`**: every structural check passes and the normal raster policy rejects, but a
+  narrowly scoped secondary warning policy accepts; xUnit accepts it, while the issue remains
+  visible Deferred work;
 - **`mismatch`**: one or more structural or raster checks fail.
 
 Keep **skipped** outside this enum: it is an xUnit discovery/execution status with an explicit
 reason, not a comparer result.
 
-Use `comparison.json.isMatch` as the boolean pass/fail projection. Classify the first failing layer
-within `mismatch` as:
+Use `comparison.json.isMatch` only as the execution-gate projection: it is true for exact,
+semantic-equivalent, and warning outcomes, and false for mismatch. Do not use it as the quality
+classification. Classify the first failing layer within `mismatch` as:
 
 - **Infrastructure / Contract failure**: environment, manifest, font, catalog, viewport, identity,
   or required probe is invalid;
@@ -156,7 +162,8 @@ within `mismatch` as:
   outside a delta bin, over count/energy budget, or over connected-component limits.
 
 Do not derive a different outcome from a diagnostic image statistic when `kind` is present. For
-older artifacts without `kind`, derive only a clearly marked legacy fallback.
+older artifacts without `kind`, derive only a clearly marked legacy fallback; a warning can be
+recovered only when the artifact also contains warning evidence.
 
 Do not interpret `pixels.differentPixels` as the raw number of unequal image pixels. In the current
 model it is based on `raster.rejectedPixels`; accepted semantic differences appear under
@@ -169,12 +176,17 @@ Raster budgets apply only after structural evidence passes. The comparer assigns
 pixel to at most one expected-derived owner, then checks its delta bin's count, energy, connected-
 component area, and thickness. Unowned pixels remain exact.
 
+The normal `rasterPolicy` decides exact versus semantic equivalence. Only when it rejects and all
+structural checks passed may `warningRasterPolicy` run against the same semantic context. If it
+accepts, inspect the rejected normal raster report, accepted warning raster report, and documented
+warning reason together; do not describe the result as semantic equivalence.
+
 Read `references/semantic-raster-model.md` to interpret owner and budget fields in a report. Read
 `docs/comparison-profiles.md` for profile design, schema rules, calibration, and mutation-test
 requirements. If policy must change, hand authoring to `$create-visual-parity-tests`, then return
 here to validate the affected cases.
 
-## Diagnose a failure
+## Diagnose a mismatch or warning
 
 Use this sequence:
 
@@ -186,8 +198,11 @@ Use this sequence:
    screenshot pixels when a probe exists.
 4. If structure passes, inspect `raster.regions[].budgets[]`: compare observed/allowed count and
    energy, rejected pixels, maximum rejected delta, largest component area, and thickness.
-5. Run the bundled image diagnostic for raw pixel distribution and visual evidence.
-6. Form one hypothesis, inspect the relevant AndroidX/Avalonia/rendering source, change one variable,
+5. For `rasterWarning`, identify exactly why normal `raster` rejected, confirm `warningRaster`
+   accepted the same expected-derived owner, record every warning message, and state the profile's
+   removal/recalibration condition.
+6. Run the bundled image diagnostic for raw pixel distribution and visual evidence.
+7. Form one hypothesis, inspect the relevant AndroidX/Avalonia/rendering source, change one variable,
    rerun the smallest case, then rerun the family.
 
 Run the diagnostic script on a case artifact directory:
@@ -228,7 +243,7 @@ Read `references/image-diagnostics.md` for visual patterns and image-comparison 
 - Use a blink view to reveal displacement; use a heatmap and bbox to reveal magnitude and extent.
 - Treat SSIM, perceptual hashes, PSNR, or feature matching as optional exploration only. Never use
   them as a parity gate; a high score can hide a wrong token color, missing border, or shifted icon.
-- For transparent scenes, remember that the formal version-6 comparer compares all four
+- For transparent scenes, remember that the formal version-7 comparer compares all four
   premultiplied RGBA channels directly. Use backdrop-composited visual RGB only as a supplemental
   explanation; it does not override `kind`.
 - Do not add a baseline, ignore rectangle, or broader profile merely because the diff looks small.
@@ -239,10 +254,12 @@ Summarize a run with:
 
 - the exact command and artifact root;
 - selected and completed case counts;
-- skipped case count and reasons, separately from pass/fail;
-- official pass/fail results;
-- the official `kind` (`exactMatch`, `semanticRasterEquivalent`, or `mismatch`);
-- the first failing layer and concrete node/metric/budget evidence;
+- separate counts for `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, `mismatch`, and
+  skipped rows;
+- the official `kind` for every non-exact or non-accepted case;
+- for warnings, the normal-policy rejection, warning-policy acceptance, warning reason, and
+  removal/recalibration condition;
+- for mismatches, the first failing layer and concrete node/metric/budget evidence;
 - one next hypothesis or smallest rerun command.
 
 If asked only to run or diagnose, do not change implementation or comparison policy without an

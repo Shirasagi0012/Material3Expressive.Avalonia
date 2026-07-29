@@ -1,7 +1,7 @@
 # Image diagnostics
 
 Use these techniques after contract, geometry, text layout, and shadow inputs have been checked.
-They explain a mismatch; they do not alter the official result.
+They explain a warning or mismatch; they do not alter the official result.
 
 ## High-value views
 
