@@ -176,7 +176,7 @@ public sealed class ParityContractTests
             "Raster differs in 1/42000 pixels (max channel delta 12).",
             Assert.Single(comparison.Failures));
         Assert.Equal(ParityComparison.CurrentSchemaVersion, comparison.SchemaVersion);
-        Assert.Equal(9, comparison.SchemaVersion);
+        Assert.Equal(10, comparison.SchemaVersion);
         Assert.Equal(ParityComparisonProfiles.CurrentSchemaVersion, comparison.ProfileSchemaVersion);
         Assert.Equal(1, comparison.Raster!.RawDifferentPixels);
         Assert.Equal(0, comparison.Raster.AllowedPixels);

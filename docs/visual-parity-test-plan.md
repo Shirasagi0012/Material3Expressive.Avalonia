@@ -430,7 +430,7 @@ Both implementations serialize the same logical schema. A shortened example is:
 
 ```json
 {
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "caseId": "button/filled/medium/enabled/light",
   "coordinateSpace": {
     "unit": "physical-pixel",
@@ -798,7 +798,7 @@ The xUnit collection fixture and theory rows:
 The console summary may not print accepted `rasterWarning` details. Locate the newest directory
 under `artifacts/visual-parity/xunit/` and inspect `actual/manifest.json` plus each case's
 `comparison.json`; these artifacts are authoritative and are never reused as baselines.
-Capture/comparison schema v9 also writes `rejected-mask.png` for every completed case. It contains
+Capture/comparison schema v10 also writes `rejected-mask.png` for every completed case. It contains
 only the official normal-policy rejected set, not semantically accepted raw differences.
 
 ## 14. Reporting

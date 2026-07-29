@@ -27,6 +27,62 @@ public sealed class SemanticRasterBudgetTests
     }
 
     [Fact]
+    public void TextInkFullRangeAllowsOpaqueGlyphDisplacementButNotBlankLinePixels()
+    {
+        var layout = TextScene();
+        var expected = TextImage();
+        var displaced = Solid(24, 24, 255);
+        for (var y = 5; y < 15; y++)
+            displaced = WithPixel(displaced, 9, y, 0);
+        var blankLineBoxNoise = WithPixel(expected, 14, 5, 0);
+
+        var accepted = new ParityComparer().Compare(
+            layout,
+            layout,
+            expected,
+            displaced,
+            ParityComparisonProfiles.ComponentWithText);
+        var rejected = new ParityComparer().Compare(
+            layout,
+            layout,
+            expected,
+            blankLineBoxNoise,
+            ParityComparisonProfiles.ComponentWithText);
+
+        Assert.True(accepted.IsMatch);
+        Assert.Equal(ParityComparisonKind.SemanticRasterEquivalent, accepted.Kind);
+        Assert.Equal(255, accepted.Raster!.MaximumRawChannelDelta);
+        var text = Assert.Single(accepted.Raster.Regions, region => region.Kind == "text-ink");
+        Assert.Equal(20, Assert.Single(text.Budgets, budget => budget.MaxChannelDelta == 255).ObservedPixels);
+
+        Assert.False(rejected.IsMatch);
+        Assert.Equal([ParityRasterRejectionReason.OutsideSemanticMask], rejected.Raster!.RejectionReasons);
+    }
+
+    [Fact]
+    public void TextInkFullRangeCannotAcceptAWrongPaintSignature()
+    {
+        var expectedLayout = TextScene(
+            paint: new ParityTextPaintSignature("solid", "#FF000000", 1));
+        var actualLayout = TextScene(
+            paint: new ParityTextPaintSignature("solid", "#FFFFFFFF", 1));
+        var image = TextImage();
+
+        var comparison = new ParityComparer().Compare(
+            expectedLayout,
+            actualLayout,
+            image,
+            image,
+            ParityComparisonProfiles.ComponentWithText);
+
+        Assert.False(comparison.IsMatch);
+        Assert.Contains(
+            "Text 'label' paint signature differs",
+            Assert.Single(comparison.Failures),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TextInkBudgetRequiresMatchingTextLayout()
     {
         var expected = TextScene();
@@ -259,7 +315,7 @@ public sealed class SemanticRasterBudgetTests
 
         var json = JsonSerializer.Serialize(comparison, ParityJson.Options);
 
-        Assert.Contains("\"schemaVersion\": 9", json, StringComparison.Ordinal);
+        Assert.Contains("\"schemaVersion\": 10", json, StringComparison.Ordinal);
         Assert.Contains("\"profileSchemaVersion\": 7", json, StringComparison.Ordinal);
         Assert.Contains("\"profileRulePrefix\": \"test/\"", json, StringComparison.Ordinal);
         Assert.Contains("\"strictChannelDelta\": 0", json, StringComparison.Ordinal);
@@ -358,7 +414,9 @@ public sealed class SemanticRasterBudgetTests
         new ParityViewport(24, 24),
         [new ParityNode(id, "container", null, bounds, true)]);
 
-    private static ParityCaptureResult TextScene(float characterOffset = 0)
+    private static ParityCaptureResult TextScene(
+        float characterOffset = 0,
+        ParityTextPaintSignature? paint = null)
     {
         var text = new ParityTextLayout(
             "A",
@@ -368,7 +426,8 @@ public sealed class SemanticRasterBudgetTests
             1,
             false,
             [new ParityTextLine(0, 0, 1, 1, 5, 15, 4, 16, 12, false)],
-            [new ParityCharacterBox(0, "0041", 0, new ParityRect(7 + characterOffset, 4, 10 + characterOffset, 16))]);
+            [new ParityCharacterBox(0, "0041", 0, new ParityRect(7 + characterOffset, 4, 10 + characterOffset, 16))],
+            PaintSignature: paint);
         return new ParityCaptureResult(
             ParityCaptureResult.CurrentSchemaVersion,
             "test",

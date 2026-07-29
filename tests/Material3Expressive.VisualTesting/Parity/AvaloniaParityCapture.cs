@@ -116,10 +116,33 @@ public sealed class AvaloniaParityCapture
                 control.IsVisible,
                 text is null ? null : CaptureText(text, context.Root, scale),
                 CaptureFocusedState(node, control, allControls),
-                control is IParityShadowProbe shadowProbe
+                ResolveShadowProbe(control) is { } shadowProbe
                     ? CaptureShadow(context.Root, control, shadowProbe, scale)
                     : null);
         }).ToArray();
+    }
+
+    private static IParityShadowProbe? ResolveShadowProbe(Control control) => control switch
+    {
+        IParityShadowProbe probe => probe,
+        // A resting ListItem uses 0dp elevation and has no shadow contract in either capture.
+        // Keep the wrapper limited to the positive animated elevation that InteractiveListItem
+        // passes to graphicsLayer during a drag.
+        MaterialListItem listItem when listItem.ParityShadowParameters.Elevation > 0 =>
+            new MaterialListItemShadowProbe(listItem),
+        _ => null
+    };
+
+    // MaterialListItem belongs to the production assembly, so it cannot directly implement the
+    // visual-testing-only interface. The internal values below are the exact MaterialContainer
+    // inputs used for its shadow render; AssemblyInfo grants this test project read-only access.
+    private sealed class MaterialListItemShadowProbe(MaterialListItem listItem) : IParityShadowProbe
+    {
+        public ComposeShadowShape ShadowShape => listItem.ParityShadowShape;
+
+        public ComposeShadowParameters ShadowParameters => listItem.ParityShadowParameters;
+
+        public bool OccluderDrawn => listItem.ParityShadowOccluderDrawn;
     }
 
     private static bool TryCaptureGeometryProbe(
@@ -250,6 +273,9 @@ public sealed class AvaloniaParityCapture
         var named = all.Prepend(content).FirstOrDefault(item => item.Name == expected.Id);
         if (named is not null)
             return named;
+        var generatedListItemText = ResolveGeneratedListItemStringSlot(expected, all);
+        if (generatedListItemText is not null)
+            return generatedListItemText;
         if (expected.TextLayout is null)
             return expected.Id == "component" ? content : null;
 
@@ -259,6 +285,53 @@ public sealed class AvaloniaParityCapture
             return all.FirstOrDefault(item => item.Name == "PART_Supporting");
         return null;
     }
+
+    private static TextBlock? ResolveGeneratedListItemStringSlot(
+        ParityNode expected,
+        IReadOnlyList<Control> all)
+    {
+        if (expected.TextLayout is null || expected.Id is not ("headline" or "supporting" or "trailing" or "overline"))
+            return null;
+
+        // A ContentPresenter creates the TextBlock only after its parent ListItem is styled, so
+        // Avalonia forbids setting StyledElement.Name during VisualCase.Prepare. For a declared
+        // string slot, both the slot value and expected text are stable parity inputs; resolve
+        // the generated TextBlock from those exact facts and reject ambiguity rather than using
+        // template order or a broad text-tree heuristic.
+        var candidates = all.OfType<MaterialListItem>()
+            .Where(item => string.Equals(
+                ListItemStringSlot(item, expected.Id),
+                expected.TextLayout.Text,
+                StringComparison.Ordinal))
+            .ToArray();
+        if (candidates.Length == 0)
+            return null;
+        if (candidates.Length != 1)
+        {
+            throw new InvalidOperationException(
+                $"Expected one MaterialListItem string slot for parity node '{expected.Id}', found {candidates.Length}.");
+        }
+
+        var textBlocks = candidates[0].GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(textBlock => string.Equals(textBlock.Text, expected.TextLayout.Text, StringComparison.Ordinal))
+            .ToArray();
+        return textBlocks.Length switch
+        {
+            1 => textBlocks[0],
+            _ => throw new InvalidOperationException(
+                $"Expected one generated TextBlock for ListItem parity node '{expected.Id}', found {textBlocks.Length}.")
+        };
+    }
+
+    private static string? ListItemStringSlot(MaterialListItem item, string nodeId) => nodeId switch
+    {
+        "headline" => item.Content as string,
+        "supporting" => item.SupportingContent as string,
+        "trailing" => item.TrailingContent as string,
+        "overline" => item.OverlineContent as string,
+        _ => null
+    };
 
     private static ParityRect? BoundsInRoot(Control root, Control control, double scale)
     {
@@ -296,7 +369,8 @@ public sealed class AvaloniaParityCapture
                 probe.Origin,
                 transform,
                 scale,
-                styleSignature: null));
+                styleSignature: null,
+                paintSignature: CaptureTextPaintSignature(probe.Foreground)));
     }
 
     private static bool? CaptureFocusedState(
@@ -354,7 +428,8 @@ public sealed class AvaloniaParityCapture
             drawOrigin,
             transform.Value,
             scale,
-            CaptureTextStyleSignature(textBlock, scale));
+            CaptureTextStyleSignature(textBlock, scale),
+            CaptureTextPaintSignature(textBlock.Foreground));
     }
 
     private static ParityTextLayout CaptureTextLayout(
@@ -363,7 +438,8 @@ public sealed class AvaloniaParityCapture
         Point drawOrigin,
         Matrix transform,
         double scale,
-        ParityTextStyleSignature? styleSignature)
+        ParityTextStyleSignature? styleSignature,
+        ParityTextPaintSignature? paintSignature)
     {
         var drawOriginInRoot = TransformPointToPhysicalRoot(drawOrigin, transform, scale);
         var lineTop = 0d;
@@ -420,7 +496,8 @@ public sealed class AvaloniaParityCapture
             drawOriginInRoot,
             lines.FirstOrDefault()?.BaselineInTextPx,
             lines.LastOrDefault()?.BaselineInTextPx,
-            styleSignature);
+            styleSignature,
+            paintSignature);
     }
 
     private static Point GetTextDrawOrigin(TextBlock textBlock, TextLayout layout)
@@ -480,6 +557,21 @@ public sealed class AvaloniaParityCapture
             ToPhysicalPixelsOrNull(textBlock.LineHeight, scale),
             (float)(textBlock.LetterSpacing * scale));
     }
+
+    private static ParityTextPaintSignature CaptureTextPaintSignature(IBrush? foreground) =>
+        foreground switch
+        {
+            ISolidColorBrush solid => new(
+                "solid",
+                FormattableString.Invariant(
+                    $"#FF{solid.Color.R:X2}{solid.Color.G:X2}{solid.Color.B:X2}"),
+                QuantizeOpacity((solid.Color.A / 255d) * solid.Opacity)),
+            null => new("unspecified", null, 1),
+            _ => new("brush", null, QuantizeOpacity(foreground.Opacity))
+        };
+
+    private static float QuantizeOpacity(double opacity) =>
+        (float)(Math.Round(Math.Clamp(opacity, 0, 1) * 255, MidpointRounding.AwayFromZero) / 255);
 
     private static float? ToPhysicalPixelsOrNull(double value, double scale) =>
         double.IsNaN(value) ? null : (float)(value * scale);

@@ -103,7 +103,7 @@ Checks happen in this order:
 
 Motion cases add a structural check between steps 1 and 2. Compose records the trigger, logical
 time origin, complete frame-delivery schedule, capture index, schedule hash, and controlled clock
-coverage in the current capture schema v9. Avalonia creates a fresh tree and replays that exact schedule through
+coverage in the current capture schema v10. Avalonia creates a fresh tree and replays that exact schedule through
 component-owned `MotionGroup` instances. A timeline mismatch fails before raster classification;
 neither semantic equivalence nor a warning policy can accept it. See
 [animation-parity.md](animation-parity.md) for the lifecycle and authoring rules.
@@ -137,7 +137,7 @@ global `Δ<=1` floor. Profile JSON rejects unknown fields, duplicate/unreachable
 invalid quota ranges so a typo cannot silently make the comparison looser.
 
 The version lines are independent: the top-level capture-result and comparison-report contract is
-v9, the centralized comparison-profile policy is v7, and the nested motion record is v1. A motion field
+v10, the centralized comparison-profile policy is v7, and the nested motion record is v1. A motion field
 change bumps the top-level capture contract even if profile coefficients and policy schema do not
 change.
 
@@ -163,9 +163,10 @@ and delta bin is derived from that owner’s expected mask, not from the screens
 quota = min(maximum, max(minimum, base + ceil(eligiblePixels * per10k / 10000)))
 ```
 
-Thus a matched text node can absorb its own bounded low/mid-delta grayscale anti-aliasing, while a
-large flat color change, a missing glyph, or a difference outside its expected ink boundary still
-fails. Generic shape edges use a separate expected-gradient threshold; the
+Thus a matched text node can absorb any channel delta inside its expected-derived glyph owner,
+while a wrong text/style/paint contract or a difference outside that owner still fails. This
+deliberately favors avoiding false mismatches and can accept a raster-only glyph defect contained
+entirely by the owner. Generic shape edges use a separate expected-gradient threshold; the
 `component-with-text-and-elevation` profile used by elevated buttons and dragged ListItems uses
 the lower threshold `4` solely to cover its low-contrast rounded boundary, with only `Δ<=2`
 receiving the large edge allocation and `Δ<=8` still sparse. Its shadow allowances still require
@@ -178,18 +179,23 @@ contract matches:
 - expected support boundary: `Δ<=48`, with a sparse perimeter-derived allocation capped at 48,
   component area at most 12px, and component thickness at most 2px.
 
-The capture schema is now v9. The shadow contract introduced before v9 includes `occluderDrawn`, in addition to shape,
+The capture schema is now v10. The shadow contract introduced before v9 includes `occluderDrawn`, in addition to shape,
 corners, local-to-device matrix, elevation, colors/alpha, opacity/transparent-occluder flag,
 lighting, and clip. This prevents an opaque component interior from consuming shadow allowance,
 while preserving valid `shadow-only` cases where the expected shadow mesh is visible inside the
 shape; `transparentOccluder` continues to describe whether that painted occluder lets the mesh
 remain visible through it.
 
-Schema v8 introduced optional motion metadata, retained unchanged by v9. Static cases omit it. Motion cases compare scenario,
+Schema v8 introduced optional motion metadata, retained unchanged by v10. Static cases omit it. Motion cases compare scenario,
 checkpoint, event, origin/unit/scale, elapsed time, every frame timestamp, capture index, schedule
 hash, and clock coverage exactly before geometry or raster comparison.
 
-The v9 `comparison.json` snapshots the selected profile, matched rule prefix, and profile schema,
+Schema v10 adds an exact text paint signature containing paint kind, opaque foreground RGB, and
+8-bit-quantized effective opacity. Normalizing color alpha and brush opacity this way makes
+equivalent paint representations compare equally. The signature is compared before the
+expected-derived text owner becomes eligible.
+
+The v10 `comparison.json` snapshots the selected profile, matched rule prefix, and profile schema,
 then reports `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or `mismatch` through its
 `kind` field. It separates raw, floor-ignored, allowed, and rejected pixels; records owner priority,
 eligible/observed pixels and energy, dynamic quotas, rejection reasons, rejected bounds, and bounded
@@ -198,6 +204,11 @@ policy rejected an otherwise structurally valid case, but a narrowly scoped temp
 policy accepted it; the strict and warning diagnostics are both retained. Any renderer-specific
 allowance must be narrow, justified, and changed in the policy file rather than embedded in an
 individual test.
+
+The standard text profiles use a full-range `Δ<=255` final bin inside the matched expected glyph
+edge mask. This intentionally accepts high-contrast antialiasing and one-physical-pixel glyph phase
+differences after text layout, shaping inputs, and paint match exactly. It is not a line-rectangle
+allowance: pixels outside the expected glyph owner remain strict.
 
 The currently user-authorized temporary `complex-shape` profile is an explicit exception to the
 normal sparse-edge calibration: it is selected only by `progress/circular-wavy/*`, preserves all
