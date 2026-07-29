@@ -15,12 +15,14 @@ public sealed class LoopingAnimation : IAnimation
 {
     private double _elapsedSeconds;
 
-    public LoopingAnimation(TimeSpan period)
+    public LoopingAnimation(TimeSpan period, double initialValue = 0)
     {
         if (period <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(period), period, "A loop needs a positive period.");
 
         Period = period;
+        Value = initialValue - Math.Floor(initialValue);
+        _elapsedSeconds = Value * Period.TotalSeconds;
         IsRunning = true;
     }
 

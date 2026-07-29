@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.LogicalTree;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
 using MaterialColorUtilities.Avalonia;
 
@@ -71,6 +72,16 @@ public abstract class MaterialControl : TemplatedControl
 
         // Off the tree there is no render clock, so anything mid-flight would freeze.
         _motion?.SettleAll();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+
+        // A logical-tree attachment can precede the point at which TopLevel.GetTopLevel resolves.
+        // Retry here so initial indeterminate and wavy states begin their loops instead of being
+        // stranded before their first visible frame.
+        _motion?.Start();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

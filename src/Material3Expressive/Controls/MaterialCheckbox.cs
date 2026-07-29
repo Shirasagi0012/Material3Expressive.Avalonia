@@ -190,14 +190,15 @@ public class MaterialCheckbox : CheckBox
         context.DrawGeometry(null, pen, geometry);
     }
 
-    /// <summary>The indeterminate state is a single horizontal bar.</summary>
+    /// <summary>
+    /// The indeterminate state is a single horizontal bar. Compose first creates its 20%–80%
+    /// path, then its 2dp stroke expands the visible endpoints by 1dp; capture therefore observes
+    /// a 15%–85% filled segment at the settled state.
+    /// </summary>
     private void DrawIndeterminate(DrawingContext context, Rect box, IImmutableBrush brush)
     {
-        var pen = new ImmutablePen(brush, box.Width * 0.13, lineCap: PenLineCap.Round);
-
-        context.DrawLine(
-            pen,
-            new Point(box.X + box.Width * 0.22, box.Center.Y),
-            new Point(box.X + box.Width * 0.78, box.Center.Y));
+        context.FillRectangle(
+            brush,
+            new Rect(box.X + box.Width * 0.15, box.Center.Y - 1, box.Width * 0.70, 2));
     }
 }

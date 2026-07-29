@@ -55,6 +55,8 @@
                             <m3:MaterialCircularProgressIndicator Value="0.35" />
                             <m3:MaterialCircularProgressIndicator Value="0.75" />
                             <m3:MaterialCircularProgressIndicator IsIndeterminate="True" />
+                            <m3:MaterialCircularProgressIndicator Value="0.5" IsWavy="True" />
+                            <m3:MaterialCircularProgressIndicator IsIndeterminate="True" IsWavy="True" />
                         </WrapPanel>
                     </Border>
                 </StackPanel>

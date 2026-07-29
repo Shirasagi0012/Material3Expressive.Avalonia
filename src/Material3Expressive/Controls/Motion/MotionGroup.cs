@@ -83,8 +83,10 @@ public sealed class MotionGroup
 
         if (TopLevel.GetTopLevel(_host) is not { } topLevel)
         {
-            // No clock to run on. Settle rather than freeze part-way.
-            SettleAll();
+            // Initial styled-property values are commonly assigned before the control reaches a
+            // visual tree. Keep their running state intact: MaterialControl will retry Start as
+            // soon as a TopLevel exists, while its logical-detach path remains responsible for
+            // settling a genuinely detached control.
             return;
         }
 
