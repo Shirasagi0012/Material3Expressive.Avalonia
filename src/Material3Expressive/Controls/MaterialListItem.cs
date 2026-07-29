@@ -1,3 +1,26 @@
+// Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// ListItem.kt:262-847, 1216-1225, 1291-1388, 1450-1669, 1557-1602, 1937-1990;
+// ListItemDefaults.kt:40-64, 246-399, 438-556, 1135-1159; and
+// tokens/{ListTokens,ReorderListTokens}.kt (VERSION 29.0.0).
+// Compose supplies separate non-interactive, click, radio-like, and checkbox-like overloads.
+// Avalonia intentionally consolidates them through InteractionMode and keeps IsSelected as the
+// single bindable selection state. The inherited ToggleButton.IsChecked remains a compatibility
+// mirror for selection modes only; InteractionMode, rather than that implementation detail,
+// defines public behaviour and accessibility. The alpha22 executable reference can verify static
+// click/selection and segmented visuals, but cannot execute the alpha25 no-interaction overload or
+// its text-line-aware 56/72/88dp layout. Those paths are parity unavailable and are covered by
+// source review plus deterministic Avalonia behavior/layout tests.
+// ListItemDefaults.ListItemColors resolves disabled before dragged before selected, while
+// ListItemShapes.shapeForInteraction and InteractiveListItem's dragged elevation deliberately do
+// not gate those states by enabled. InteractiveListItem also gives every positive animated shadow
+// elevation zIndex = 1, keeps an externally supplied dragged state layer visible when disabled,
+// and clips slot content (but not its shadow) to the current animated shape. Compose supplies the
+// optional onLongClick/onLongClickLabel pair consistently on every interactive overload. Avalonia
+// keeps the same consistency through InteractionMode: LongClick, LongClickCommand, and
+// LongClickLabel are available only when the mode is not None. Holding is enabled for mouse as
+// the deliberate desktop counterpart and suppresses the following primary Click. The companion
+// MaterialSegmentedList owns group position; this row keeps that derived value internal.
+
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
@@ -45,27 +68,18 @@ public enum ListItemInteractionMode
     MultiSelection
 }
 
-// Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
-// ListItem.kt:262-544, 1216-1225, 1291-1388, 1450-1669, 1557-1602, 1937-1990; ListItemDefaults.kt:40-64, 508-556,
-// 1135-1159; and tokens/{ListTokens,ReorderListTokens}.kt (VERSION 29.0.0).
-// Compose supplies separate non-interactive, click, radio-like, and checkbox-like overloads.
-// Avalonia intentionally consolidates them through InteractionMode and keeps IsSelected as the
-// single bindable selection state. The inherited ToggleButton.IsChecked remains a compatibility
-// mirror for selection modes only; InteractionMode, rather than that implementation detail,
-// defines public behaviour and accessibility. The alpha22 executable reference can verify static
-// click/selection visuals, but cannot execute the alpha25 no-interaction overload or its
-// text-line-aware 56/72/88dp layout. Those paths are parity unavailable and are covered by source
-// review plus deterministic Avalonia behavior/layout tests. ListItemDefaults.ListItemColors resolves
-// disabled before dragged before selected, while ListItemShapes.shapeForInteraction and
-// InteractiveListItem's dragged elevation deliberately do not gate those states by enabled.
-// InteractiveListItem also gives every positive animated shadow elevation zIndex = 1, keeps an
-// externally supplied dragged state layer visible even when the row is disabled, and clips slot
-// content (but not its shadow) to the current animated shape. Compose supplies the optional
-// onLongClick/onLongClickLabel pair consistently on every interactive overload. Avalonia keeps
-// the same consistency through this control's InteractionMode: LongClick, LongClickCommand, and
-// LongClickLabel are available only when the mode is not None. Holding is the platform gesture;
-// it is enabled for mouse as the deliberate desktop counterpart and suppresses the following
-// primary Click just as combinedClickable consumes a successful long press.
+/// <summary>
+/// Internal position assigned by <see cref="MaterialSegmentedList" />. The container owns this
+/// derived value so applications cannot create contradictory index/count combinations.
+/// </summary>
+internal enum MaterialListItemSegmentPosition
+{
+    None,
+    Single,
+    First,
+    Middle,
+    Last
+}
 
 /// <summary>A Material list row with leading, headline, overline, supporting and trailing slots.</summary>
 public sealed class MaterialListItem : ToggleButton
@@ -94,6 +108,10 @@ public sealed class MaterialListItem : ToggleButton
     /// </summary>
     public static readonly StyledProperty<bool> IsDraggedProperty =
         AvaloniaProperty.Register<MaterialListItem, bool>(nameof(IsDragged));
+
+    internal static readonly StyledProperty<MaterialListItemSegmentPosition> SegmentPositionProperty =
+        AvaloniaProperty.Register<MaterialListItem, MaterialListItemSegmentPosition>(
+            nameof(SegmentPosition));
 
     /// <summary>Defines an optional command invoked by a successful long press on an interactive row.</summary>
     public static readonly StyledProperty<ICommand?> LongClickCommandProperty =
@@ -209,6 +227,12 @@ public sealed class MaterialListItem : ToggleButton
         set => SetValue(IsDraggedProperty, value);
     }
 
+    internal MaterialListItemSegmentPosition SegmentPosition
+    {
+        get => GetValue(SegmentPositionProperty);
+        set => SetValue(SegmentPositionProperty, value);
+    }
+
     /// <summary>Gets or sets the optional command invoked by a long press on an interactive row.</summary>
     public ICommand? LongClickCommand
     {
@@ -295,6 +319,8 @@ public sealed class MaterialListItem : ToggleButton
 
     private bool EffectiveDragged => IsInteractive && IsDragged;
 
+    private bool IsSegmented => SegmentPosition != MaterialListItemSegmentPosition.None;
+
     internal bool HasLongClickAction => _longClickHandlerCount > 0 || LongClickCommand is not null;
 
     private bool CanInvokeLongClick =>
@@ -339,6 +365,7 @@ public sealed class MaterialListItem : ToggleButton
             InteractionModeProperty,
             IsSelectedProperty,
             IsDraggedProperty,
+            SegmentPositionProperty,
             IsEnabledProperty);
         AffectsMeasure<MaterialListItem>(
             LeadingContentProperty,
@@ -642,6 +669,14 @@ public sealed class MaterialListItem : ToggleButton
         {
             _interaction.Set(InteractionState.Dragged, EffectiveDragged);
             ApplyVisualState();
+        }
+        else if (change.Property == SegmentPositionProperty)
+        {
+            // ListItemDefaults.segmentedShapes(index, count) returns a new shape set when the
+            // group structure changes. Compose keys its remembered animated shape by that set,
+            // so the new resting shape begins at its resolved target instead of morphing from a
+            // now-invalid former position.
+            ApplyVisualState(snapShape: true);
         }
         else if (change.Property == IsEffectivelyEnabledProperty)
         {
@@ -986,7 +1021,35 @@ public sealed class MaterialListItem : ToggleButton
         _elevatedZIndexLease = null;
     }
 
-    private RoundedCornerShape RestingShape() => _theme.Theme.Shapes.Get(_tokens.RestingShape);
+    private RoundedCornerShape RestingShape()
+    {
+        var shape = _theme.Theme.Shapes.Get(_tokens.RestingShape);
+        if (SegmentPosition is MaterialListItemSegmentPosition.None or MaterialListItemSegmentPosition.Middle)
+            return shape;
+
+        var outer = _theme.Theme.Shapes.Get(_tokens.SegmentedOuterShape);
+        return SegmentPosition switch
+        {
+            MaterialListItemSegmentPosition.Single => shape with
+            {
+                TopStart = outer.TopStart,
+                TopEnd = outer.TopEnd,
+                BottomEnd = outer.BottomEnd,
+                BottomStart = outer.BottomStart
+            },
+            MaterialListItemSegmentPosition.First => shape with
+            {
+                TopStart = outer.TopStart,
+                TopEnd = outer.TopEnd
+            },
+            MaterialListItemSegmentPosition.Last => shape with
+            {
+                BottomEnd = outer.BottomEnd,
+                BottomStart = outer.BottomStart
+            },
+            _ => shape
+        };
+    }
 
     private RoundedCornerShape ShapeForCurrentState()
     {
@@ -994,13 +1057,15 @@ public sealed class MaterialListItem : ToggleButton
             return RestingShape();
 
         var interaction = _interaction.Interaction;
-        var role = interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedShape
+        ShapeRole? role = interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedShape
             : EffectiveDragged ? _tokens.DraggedShape
             : EffectiveSelected ? _tokens.SelectedShape
             : interaction.HasFlag(InteractionState.Focused) ? _tokens.FocusedShape
             : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoveredShape
-            : _tokens.RestingShape;
-        return _theme.Theme.Shapes.Get(role);
+            : null;
+        return role is { } activeRole
+            ? _theme.Theme.Shapes.Get(activeRole)
+            : RestingShape();
     }
 
     private void UpdateAnimatedColors(bool snap)
@@ -1085,11 +1150,15 @@ public sealed class MaterialListItem : ToggleButton
     private IBrush TargetContainerBrush()
     {
         if (!IsEffectivelyEnabled)
-            return _colors.DisabledContainerColor;
+            return IsSegmented ? _colors.SegmentedContainerColor : _colors.DisabledContainerColor;
         if (EffectiveDragged)
             return _colors.DraggedContainerColor;
-        return EffectiveSelected ? _colors.SelectedContainerColor : _colors.ContainerColor;
+        if (EffectiveSelected)
+            return _colors.SelectedContainerColor;
+        return IsSegmented ? _colors.SegmentedContainerColor : _colors.ContainerColor;
     }
+
+    internal void ClearSegmentPosition() => ClearValue(SegmentPositionProperty);
 
     private IBrush TargetContentBrush()
     {

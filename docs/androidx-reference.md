@@ -268,9 +268,14 @@ as a visual-parity result.
 `SegmentedListItem` is not just a differently colored ordinary row. It requires caller-supplied
 `ListItemShapes`; `ListItemDefaults.segmentedShapes(index, count)` rounds only the outer group
 corners, `segmentedColors()` begins from `ItemSegmentedContainerColor`, and the group gap is 2dp
-(`ListItemDefaults.kt:246-399,438-536`, `ListTokens.kt:87,143`). A future Avalonia segmented API
-must expose that group-position contract explicitly; it must not silently claim the standard row
-as a segmented counterpart merely because `InteractionMode` is shared.
+(`ListItemDefaults.kt:246-399,438-536`, `ListTokens.kt:87,143`). `MaterialSegmentedList` is the
+explicit Avalonia/XAML adaptation: it accepts only direct `MaterialListItem` children, infers
+single/first/middle/last from visible rows, applies the tokenised segmented colour and
+physical-pixel-rounded 2dp gap, and clears an internal position when a row leaves the group.
+Position is not a public row variant, so group indices and layout cannot drift. Each child keeps
+the same `InteractionMode`, long-click contract, and application-owned selection; the container
+adds only a List automation role. The pinned alpha22 executable contains the same segmented
+overloads/defaults, so focused light/dark scenes provide normal alpha22 conformance evidence.
 
 ## Press shape morphing (buttons et al.)
 

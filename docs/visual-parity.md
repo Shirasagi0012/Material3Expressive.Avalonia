@@ -73,8 +73,8 @@ accepts a case ID or a prefix wildcard such as `button/*`.
 
 ## What is compared
 
-The current catalog contains 94 representative foundation, button, card, FAB, checkbox, text-field,
-navigation, tab, slider, surface, divider, and ListItem cases. Every case has the same stable ID,
+The current catalog contains 96 representative foundation, button, card, FAB, checkbox, text-field,
+navigation, tab, slider, surface, divider, ListItem, and segmented-list cases. Every case has the same stable ID,
 viewport, theme, and named probe contract on both sides.
 
 ```text

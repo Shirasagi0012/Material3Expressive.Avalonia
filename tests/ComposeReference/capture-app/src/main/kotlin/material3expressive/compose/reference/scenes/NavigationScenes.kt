@@ -10,6 +10,8 @@
 package material3expressive.compose.reference.scenes
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.requiredSize
@@ -23,10 +25,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
@@ -272,6 +276,38 @@ fun ReferenceCaseRegistry.registerNavigationScenes() {
             )
         },
     )
+    // Both segmented APIs exist in the pinned alpha22 executable reference. Keep this matrix
+    // intentionally narrow: the three-row scene covers first/middle/last geometry plus selected
+    // state precedence, while the selected one-row dark scene independently covers the single-row
+    // layout and dark segmentedColors() resolution. Resting single-shape corners are locked by the
+    // deterministic Avalonia structural tests because Surface-on-Surface has no visible edge.
+    register(
+        segmentedListCase(
+            id = "listitem/segmented/three-items/selected-middle/light",
+            labels = listOf("Account", "Notifications", "Privacy"),
+        ),
+        ReferenceScene { probes ->
+            SegmentedList(
+                probes = probes,
+                labels = listOf("Account", "Notifications", "Privacy"),
+                selectedIndex = 1,
+            )
+        },
+    )
+    register(
+        segmentedListCase(
+            id = "listitem/segmented/single-selected/dark",
+            labels = listOf("Appearance"),
+            dark = true,
+        ),
+        ReferenceScene { probes ->
+            SegmentedList(
+                probes = probes,
+                labels = listOf("Appearance"),
+                selectedIndex = 0,
+            )
+        },
+    )
 }
 
 private fun listItemCase(
@@ -294,6 +330,75 @@ private fun listItemTextNodes(headline: String, shadow: Boolean = false) = listO
 
 private fun listItemModifier(probes: ProbeRegistry, height: Dp): Modifier =
     Modifier.requiredSize(360.dp, height).then(probes.geometry("component"))
+
+private fun segmentedListCase(
+    id: String,
+    labels: List<String>,
+    dark: Boolean = false,
+) = CaseContract(
+    id = id,
+    viewportWidthDp = 360,
+    viewportHeightDp = labels.size * 56 + (labels.size - 1) * 2 + 24,
+    dark = dark,
+    requiredNodes = listOf(
+        RequiredNodeSpec(id = "component", kind = "container"),
+        *labels.flatMapIndexed { index, label ->
+            listOf(
+                RequiredNodeSpec(
+                    id = "item-$index",
+                    kind = "container",
+                    parentId = "component",
+                ),
+                RequiredNodeSpec(
+                    id = "headline-$index",
+                    kind = "text",
+                    parentId = "item-$index",
+                    text = label,
+                ),
+            )
+        }.toTypedArray(),
+    ),
+)
+
+@Composable
+private fun SegmentedList(
+    probes: ProbeRegistry,
+    labels: List<String>,
+    selectedIndex: Int? = null,
+) {
+    val count = labels.size
+    Column(
+        modifier = Modifier
+            .requiredSize(360.dp, (count * 56 + (count - 1) * 2).dp)
+            .then(probes.geometry("component")),
+        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+    ) {
+        labels.forEachIndexed { index, label ->
+            val modifier = Modifier
+                .requiredSize(360.dp, 56.dp)
+                .then(probes.geometry("item-$index"))
+            val content = @Composable {
+                ListItemText(label, "headline-$index", probes)
+            }
+            if (index == selectedIndex) {
+                SegmentedListItem(
+                    selected = true,
+                    onClick = {},
+                    shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
+                    modifier = modifier,
+                    content = content,
+                )
+            } else {
+                SegmentedListItem(
+                    onClick = {},
+                    shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
+                    modifier = modifier,
+                    content = content,
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun ListItemText(

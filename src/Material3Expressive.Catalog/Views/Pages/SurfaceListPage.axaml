@@ -162,6 +162,39 @@
                            Text="Choose an interactive list item." />
             </StackPanel>
 
+            <StackPanel Spacing="10">
+                <TextBlock Classes="title-large" Text="Segmented list" />
+                <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="MaterialSegmentedList owns the 2dp group gaps and infers single, first, middle, and last shapes from visible rows. Each row still declares its own InteractionMode and the application still owns selection coordination." />
+                <Border Classes="demo-canvas" Padding="0">
+                    <m3:MaterialSegmentedList Width="520">
+                        <m3:MaterialListItem InteractionMode="Click"
+                                             Content="Account"
+                                             SupportingContent="An ordinary action in the first segment.">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Person" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialListItem InteractionMode="MultiSelection"
+                                             IsSelected="True"
+                                             Content="Offline notifications"
+                                             SupportingContent="An independent selected middle segment.">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Download" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialListItem InteractionMode="Click"
+                                             Content="Privacy"
+                                             SupportingContent="The final visible row receives the lower outer corners.">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Info" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                    </m3:MaterialSegmentedList>
+                </Border>
+            </StackPanel>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>

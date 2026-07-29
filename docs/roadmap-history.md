@@ -223,3 +223,25 @@ accessibility text. The
 pinned alpha22 reference already accepts long-click callbacks, but a static screenshot cannot
 observe invocation, so no visual-parity pass is claimed. `SegmentedListItem` geometry/colours/gap
 remain outstanding and the broader P1 item stays In Progress.
+
+## 2026-07-30 — MaterialSegmentedList container
+
+Reviewed AndroidX `ListItem.kt:552-855`, `ListItemDefaults.kt:246-399,438-536,1135-1159`, and
+`tokens/ListTokens.kt` (VERSION `29.0.0`) at `ff0a0a99` / Material3 `1.5.0-alpha25`.
+`MaterialSegmentedList` is the chosen XAML API: the vertical container owns visible-row position
+inference, the 2dp token gap, segmented container colour, and first/middle/last/single resting
+corners. Position remains internal so callers cannot create a mismatch between row shape and
+group order; rows retain the unified `InteractionMode`, long-click behavior, and application-owned
+selection. Its automation peer is a List without an owned selection provider.
+
+Seven deterministic tests cover 16/4dp resting and selected-state corners, visible/hidden position
+inference, removal cleanup, physical-pixel gap rounding, direct-child validation, and automation.
+The executable alpha22
+reference was verified to contain `SegmentedListItem`, `segmentedShapes`, `segmentedColors`, and
+`SegmentedGap`. The two-case segmented family passed as `semanticRasterEquivalent`, with no
+warnings or rejected pixels, at
+`artifacts/visual-parity/xunit/20260729-180816-107`. Resting Surface-on-Surface single corners are
+structural-test evidence because that state has no visible colour edge; the dark executable case
+uses a selected single row and does not pretend renderer dither is shape evidence.
+The subsequent full 13-case `listitem/` family passed with the same classification at
+`artifacts/visual-parity/xunit/20260729-181521-644`.

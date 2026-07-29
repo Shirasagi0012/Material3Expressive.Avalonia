@@ -4,11 +4,12 @@
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "ListItemColors",
   "version": "29.0.0",
-  "source": "androidx compose/material3 tokens/{ListTokens,ReorderListTokens}.kt and ListItemDefaults.kt",
+  "source": "AndroidX ff0a0a99 / Material3 1.5.0-alpha25: compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/{ListItemDefaults.kt,tokens/ListTokens.kt,tokens/ReorderListTokens.kt}",
   "summary": "The alpha25 expressive list item: slot typography, line-aware layout, colours, shapes, elevation, and motion roles. Retained SelectedDisabled* entries are legacy generated-token compatibility data; ListItemColors' alpha25 resolver does not select them.",
 
   "properties": {
     "ContainerColor": { "type": "color", "summary": "The resting list-item surface." },
+    "SegmentedContainerColor": { "type": "color", "summary": "The resting and disabled segmented-list-item surface." },
     "ContentColor": { "type": "color", "summary": "The headline colour." },
     "LeadingContentColor": { "type": "color", "summary": "The leading icon or avatar colour." },
     "TrailingContentColor": { "type": "color", "summary": "The trailing icon or supporting label colour." },
@@ -55,6 +56,7 @@
     "DraggedSupportingContentColor": { "type": "color", "summary": "The reorder-drag supporting-content colour." },
 
     "RestingShape": { "type": "shape", "summary": "The expressive resting shape." },
+    "SegmentedOuterShape": { "type": "shape", "summary": "The outer group corners applied to first, last, and single segmented items." },
     "SelectedShape": { "type": "shape", "summary": "The selected shape." },
     "PressedShape": { "type": "shape", "summary": "The pressed shape." },
     "FocusedShape": { "type": "shape", "summary": "The keyboard-focused shape." },
@@ -71,6 +73,7 @@
     "TopSpace": { "type": "dimension", "summary": "The default top inset." },
     "BottomSpace": { "type": "dimension", "summary": "The default bottom inset." },
     "BetweenSpace": { "type": "dimension", "summary": "The conditional gap between a side slot and main content." },
+    "SegmentedGap": { "type": "dimension", "summary": "The vertical gap between segmented list items." },
     "ContentTextStyle": { "type": "typography", "summary": "The headline typography role." },
     "SupportingTextStyle": { "type": "typography", "summary": "The supporting-text typography role." },
     "OverlineTextStyle": { "type": "typography", "summary": "The overline typography role." },
@@ -86,6 +89,7 @@
       "name": "Default",
       "values": {
         "ContainerColor": "Surface",
+        "SegmentedContainerColor": "Surface",
         "ContentColor": "OnSurface",
         "LeadingContentColor": "OnSurfaceVariant",
         "TrailingContentColor": "OnSurfaceVariant",
@@ -132,6 +136,7 @@
         "DraggedSupportingContentColor": "OnTertiaryContainer",
 
         "RestingShape": "CornerExtraSmall",
+        "SegmentedOuterShape": "CornerLarge",
         "SelectedShape": "CornerLarge",
         "PressedShape": "CornerLarge",
         "FocusedShape": "CornerLarge",
@@ -148,6 +153,7 @@
         "TopSpace": 10,
         "BottomSpace": 10,
         "BetweenSpace": 12,
+        "SegmentedGap": 2,
         "ContentTextStyle": "BodyLarge",
         "SupportingTextStyle": "BodyMedium",
         "OverlineTextStyle": "LabelSmall",

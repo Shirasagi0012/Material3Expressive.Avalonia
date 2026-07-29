@@ -78,6 +78,14 @@ overloads:
 
 <m3:MaterialDivider Orientation="Horizontal" />
 <m3:MaterialDivider Orientation="Vertical" IsHairline="True" />
+
+<m3:MaterialSegmentedList>
+    <m3:MaterialListItem InteractionMode="Click" Content="Account" />
+    <m3:MaterialListItem InteractionMode="MultiSelection"
+                         IsSelected="True"
+                         Content="Offline notifications" />
+    <m3:MaterialListItem InteractionMode="Click" Content="Privacy" />
+</m3:MaterialSegmentedList>
 ```
 
 `None` is enabled static content: it neither consumes pointer/keyboard activation nor lets an
@@ -85,9 +93,11 @@ inherited `Command.CanExecute` disable the row. `Click` invokes an action, `Sing
 radio-like, and `MultiSelection` toggles `IsSelected`. A host owns single-selection coordination and an owning
 reorder surface may report `IsDragged`; disabled rows retain disabled colours but receive the
 upstream dragged shape, elevation, and state layer. The control does not invent a drag/drop system. The
-segmented-list group geometry API remains outstanding, so `SegmentedListItem` is not yet claimed
-as supported. See [docs/component-coverage.md](docs/component-coverage.md) for the current
-partial-completion and parity status.
+`MaterialSegmentedList` container is the XAML adaptation of Compose segmented-list grouping: it
+infers single/first/middle/last shapes from its visible direct `MaterialListItem` children, applies
+the 2dp token gap and segmented container colour, and leaves each row's `InteractionMode` and
+selection ownership unchanged. See [docs/component-coverage.md](docs/component-coverage.md) for
+the executable-reference and alpha25 version-gap status.
 
 Material Symbols use the Rounded family by default. Toggle, navigation, tab and chip selection
 states drive the variable font's `Fill` axis instead of swapping glyphs. The current tested render

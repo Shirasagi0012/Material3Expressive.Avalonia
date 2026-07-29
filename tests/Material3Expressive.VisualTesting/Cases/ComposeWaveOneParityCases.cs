@@ -190,7 +190,9 @@ internal static class ComposeWaveOneParityCases
         ListItemClickThreeLineOverlineSupporting(),
         ListItemSingleSelectionSelected(VisualTheme.Light),
         ListItemSingleSelectionSelected(VisualTheme.Dark),
-        ListItemMultiSelectionSelected()
+        ListItemMultiSelectionSelected(),
+        SegmentedListThreeItemsSelectedMiddle(),
+        SegmentedListSingleDark()
     ];
 
     private static VisualCase Typography(
@@ -496,6 +498,64 @@ internal static class ComposeWaveOneParityCases
         headline: "Sync over Wi-Fi",
         interactionMode: ListItemInteractionMode.MultiSelection,
         selected: true);
+
+    private static VisualCase SegmentedListThreeItemsSelectedMiddle() =>
+        SegmentedListScene(
+            "listitem/segmented/three-items/selected-middle/light",
+            VisualTheme.Light,
+            ["Account", "Notifications", "Privacy"],
+            selectedIndex: 1);
+
+    private static VisualCase SegmentedListSingleDark() =>
+        SegmentedListScene(
+            "listitem/segmented/single-selected/dark",
+            VisualTheme.Dark,
+            ["Appearance"],
+            selectedIndex: 0);
+
+    private static VisualCase SegmentedListScene(
+        string id,
+        VisualTheme theme,
+        IReadOnlyList<string> labels,
+        int? selectedIndex = null)
+    {
+        var height = labels.Count * 56 + (labels.Count - 1) * 2;
+        return ComponentScene(
+            id,
+            new PixelSize(360, height + 24),
+            theme,
+            _ =>
+            {
+                var list = new MaterialSegmentedList
+                {
+                    Name = "component",
+                    Width = 360,
+                    Height = height,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                for (var index = 0; index < labels.Count; index++)
+                {
+                    var selected = index == selectedIndex;
+                    list.Children.Add(new MaterialListItem
+                    {
+                        Name = $"item-{index}",
+                        Height = 56,
+                        InteractionMode = selected
+                            ? ListItemInteractionMode.SingleSelection
+                            : ListItemInteractionMode.Click,
+                        IsSelected = selected,
+                        Content = new TextBlock
+                        {
+                            Name = $"headline-{index}",
+                            Text = labels[index]
+                        }
+                    });
+                }
+
+                return list;
+            });
+    }
 
     private static VisualCase ListItemScene(
         string id,

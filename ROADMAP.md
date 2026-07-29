@@ -240,7 +240,7 @@ promise.
 | RangeSlider and VerticalSlider | P0 | Blocked | 2 | Decision 4: range-thumb automation model |
 | Circular wavy progress | P0 | Blocked | 2 | Decision 4: custom-drawn progress accessibility model; static complex-shape residual is covered by the documented temporary warning below |
 | Scrollable Tabs and AppBar scroll behavior | P0 | Blocked | 2 | Scrollable tab rows are complete; AppBar scroll state/ownership awaits Decision 2: shared scroll-state conventions. |
-| Surface, Divider, and ListItem | P1 | In Progress | 3 | Token and API review; SegmentedListItem group-position API remains to be resolved explicitly. |
+| Surface, Divider, and ListItem | P1 | Complete | 3 | None; alpha25-only ListItem height/None parity gaps are explicitly recorded. |
 | Scaffold and host coordination | P1 | Planned | 3 | Surface and overlay state primitives |
 | SnackbarHost and BottomSheetScaffold | P1 | Planned | 4 | Host/state conventions |
 | SecureTextField and typed picker inputs | P1 | Planned | 4 | Text input and validation conventions |
@@ -279,6 +279,11 @@ treated as complete:
   remains gesture-free. Avalonia `Holding` (including mouse) is the desktop gesture and consumes
   the following primary click. Its label is fallback automation help text because UI Automation
   has no secondary-invoke pattern.
+- 2026-07-30, Decision 8: segmented grouping is exposed as `MaterialSegmentedList`, a vertical
+  container that infers positions from visible direct `MaterialListItem` children. Segment
+  position is deliberately internal rather than a public row `Variant`/`Position` property, so
+  shape indices and the 2dp group gap cannot drift. Rows retain the same public `InteractionMode`;
+  the container adds a List automation role but no owned selection model.
 
 ## Risks
 
@@ -357,3 +362,11 @@ Only recent roadmap-level outcomes belong here. Detailed chronology lives in
   reference now waits for the interaction collector before emitting one drag start and records
   the terminal `onTertiaryContainer` text paint, restoring its structural/raster comparison
   contract without weakening the profile.
+- 2026-07-30: completed the Surface/Divider/ListItem P1 item by adding
+  `MaterialSegmentedList`. It owns visible-position inference, alpha25 segmented colours and
+  outer-corner shapes, and the physical-pixel-rounded 2dp gap without adding a second row mode
+  API or selection owner. Seven structural tests pass. The pinned alpha22 executable exposes
+  `SegmentedListItem`, `segmentedShapes`, `segmentedColors`, and `SegmentedGap`; both focused
+  light/dark segmented cases and the full 13-case ListItem family are
+  `semanticRasterEquivalent` with no warning at
+  `artifacts/visual-parity/xunit/20260729-181521-644`.
