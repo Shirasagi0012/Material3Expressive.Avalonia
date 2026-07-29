@@ -19,6 +19,8 @@ hand that authoring work to `$create-visual-parity-tests`; return here to valida
 Before running or interpreting results, read:
 
 - `docs/visual-parity.md` for the current environment, commands, and artifact layout;
+- `docs/upstream-baselines.md` for the implementation-source baseline versus executable parity
+  reference boundary;
 - `docs/animation-parity.md` for motion-origin, replay, clock-coverage, and unsupported-path rules;
 - `docs/comparison-profiles.md` when the task involves profile selection, owner budgets, or policy
   review;
@@ -33,6 +35,11 @@ Before running or interpreting results, read:
 Do this on every policy/debugging task. The formal policy is profile schema version 7 and the
 capture/comparison contract is schema version 10. Keep the checked-in profile and source authoritative if a
 later schema deliberately changes coefficients, masks, or report fields.
+
+When the run is part of a ROADMAP task, read `ROADMAP.md`, the active task document under
+`docs/roadmap/backlog/`, and referenced records in `docs/roadmap/decisions.md`. Use those documents
+to label the result as task evidence. Do not choose a task, change Current focus, or close a task
+from this diagnostic skill.
 
 ## Run the tests
 
@@ -116,6 +123,11 @@ and separately reported as temporary implementation debt.
 Treat an xUnit skipped row separately from both pass and mismatch. The current display/headline
 baseline cases are explicitly skipped because the required Avalonia structural API is unavailable;
 they are not tolerance-approved passes.
+
+Remember the dual-baseline distinction in every report: parity results describe the pinned
+Compose Multiplatform executable reference, while implementation completeness is assessed against
+the AndroidX source baseline and the active roadmap task. Do not report an alpha22 parity pass as
+completion of an alpha25-only behavior.
 
 ## Locate the fresh result
 
@@ -307,6 +319,10 @@ Read `references/image-diagnostics.md` for visual patterns and image-comparison 
   premultiplied RGBA channels directly. Use backdrop-composited visual RGB only as a supplemental
   explanation; it does not override `kind`.
 - Do not add a baseline, ignore rectangle, or broader profile merely because the diff looks small.
+
+For roadmap-scoped runs, hand the artifact path, official kind, structural/raster evidence, and
+remaining failure list back to the active task. Leave task status and Current focus unchanged;
+the Goal/roadmap orchestration workflow owns those transitions.
 
 ## Report back
 

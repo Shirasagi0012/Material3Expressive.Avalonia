@@ -19,6 +19,8 @@ Before editing, read:
 
 - `docs/visual-parity.md` for capture contracts, environment assumptions, and current comparison
   semantics relevant to authoring.
+- `docs/upstream-baselines.md` for the implementation-source baseline versus executable parity
+  reference boundary.
 - `docs/animation-parity.md` whenever an intermediate animation frame, delay, repeated phase, or
   motion-clock declaration is involved.
 - `docs/comparison-profiles.md` before selecting, adding, or changing a comparison profile.
@@ -28,9 +30,14 @@ Before editing, read:
 - The existing nearest-neighbor case in `tests/Material3Expressive.VisualTesting/Cases/` and its
   Compose scene under `tests/ComposeReference/capture-app/src/main/kotlin/.../scenes/`.
 
-Use the exact repository paths above; do not infer the current architecture from stale roadmap text.
-The two registries are currently separate and the stable case ID is their matching key. Do not
-introduce a third registry or a checked-in screenshot baseline for one new case.
+When the case belongs to a ROADMAP task, also read `ROADMAP.md`, the task document under
+`docs/roadmap/backlog/`, and every referenced record in `docs/roadmap/decisions.md`. `ROADMAP.md`
+controls task selection and status; the task document controls scope, dependencies, exit criteria,
+and evidence. The parity documents control parity architecture. Do not treat one as a substitute
+for another, and do not select or close a different roadmap task from this skill.
+
+The two parity registries are currently separate and the stable case ID is their matching key. Do
+not introduce a third registry or a checked-in screenshot baseline for one new case.
 
 ## Workflow
 
@@ -173,6 +180,11 @@ Once the Compose scene, Avalonia case, probes, and any required profile tests ar
 `$run-visual-parity-tests` to run the smallest case, its family, and the full suite as appropriate.
 Use that skill to locate fresh artifacts, classify `comparison.json.kind`, and diagnose failures.
 
+If this work is attached to a roadmap task, return the command, artifact, classification, and
+remaining gaps as task evidence. Do not mark the task complete from parity alone: the task's other
+completion dimensions and exit criteria still apply. A passing alpha22 executable case is parity
+evidence for the pinned reference, not proof that an alpha25-only implementation behavior is complete.
+
 Treat `exactMatch` and `semanticRasterEquivalent` as fully accepted parity outcomes. A
 `rasterWarning` may be integrated because xUnit accepts it, but it remains visible implementation
 debt and does not close the underlying parity work unless the roadmap explicitly records that
@@ -248,6 +260,8 @@ Before considering a new case complete, verify:
       signatures.
 - [ ] Native Avalonia templates and state resources were audited where applicable.
 - [ ] Profile selection or changes satisfy `docs/comparison-profiles.md`.
+- [ ] If roadmap-scoped, the active task, referenced decisions, and task-specific evidence are
+      updated without changing task status beyond the task's actual completion.
 - [ ] The expected outcome is recorded as exact, semantic, warning, mismatch, or skipped; warning
       cases include a reason, narrow scope, and removal/recalibration condition.
 - [ ] Validation was handed to `$run-visual-parity-tests`, with the smallest case and relevant

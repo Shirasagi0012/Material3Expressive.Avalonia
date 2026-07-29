@@ -1,7 +1,7 @@
 # Roadmap history
 
 This is a compact historical record, not an active task list. Current priorities and completion
-criteria live in [`ROADMAP.md`](../ROADMAP.md).
+criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
 ## 2026-07-26 — Foundations and initial component coverage
 
@@ -23,7 +23,7 @@ became enum properties on one control; behaviorally different components remaine
 The repository replaced self-approved Avalonia screenshot baselines with an executable Compose
 Multiplatform reference producer. Each run now generates a fresh expected bundle and compares
 matching scene structure, geometry, text information, shadows, and raster output. The current
-workflow is documented in [`visual-parity.md`](visual-parity.md).
+workflow is documented in [`visual-parity.md`](../visual-parity.md).
 
 ## 2026-07-29 — Roadmap reset
 
@@ -39,7 +39,7 @@ for implementation chronology and individual delivery findings.
 
 Compared the official Material3 `1.5.0-alpha22` common source with the pinned AndroidX
 `ff0a0a99` / `1.5.0-alpha25` source, then checked every active executable parity case against the
-older reference. The record is in [alpha22-alpha25-difference-audit.md](alpha22-alpha25-difference-audit.md).
+older reference. The record is in [alpha22-alpha25-difference-audit.md](../alpha22-alpha25-difference-audit.md).
 No active case invokes an alpha25-only path. ToggleButton border motion, expressive ListItem
 line-dependent height, and Slider/RangeSlider state behavior are explicitly parity unavailable,
 not represented as passing alpha25 parity.
@@ -78,9 +78,9 @@ and matching Catalog examples. The motion loop now starts only once its host rea
 The static alpha22 case passes with a temporary user-authorized `complex-shape` warning. Its normal
 policy still rejects the residual; the warning retains structure and expected-edge comparison and
 permits fewer than 100 additional high-delta pixels. 99 and 100 pixel mutation coverage defines
-the boundary. Removing or recalibrating that warning
-is Deferred. Native accessibility semantics and broader dark/indeterminate closure remain blocked
-by the existing custom-control accessibility decision.
+the boundary. Removing or recalibrating that warning is Deferred. Native accessibility semantics
+and broader dark/indeterminate closure remain blocked by the existing custom-control accessibility
+decision.
 
 ## 2026-07-29 — Loading indicator animation alignment
 
@@ -106,8 +106,8 @@ unit contract; their difference is span/shape rather than height.
 
 Added alpha22 executable scenes for a 240dp scrolling viewport and a 600dp all-items viewport,
 with tab-container probes. During that work the reference producer's `boundsInRoot()` probes were
-found to report scroll-clipped rectangles while Avalonia correctly reports raw visual bounds.
-The producer now records `positionInRoot + measured size`, so parity compares matching un-clipped
+found to report scroll-clipped rectangles while Avalonia correctly reports raw visual bounds. The
+producer now records `positionInRoot + measured size`, so parity compares matching un-clipped
 root-relative geometry. Targeted `TabTests` (3/3) and `navigation/tab/*` parity (6/6) pass. The
 remaining AppBar scroll API is intentionally blocked on the roadmap's shared state-ownership
 decision rather than being silently invented.
@@ -120,8 +120,8 @@ non-interactive `onClick = null` path and the shared `InteractiveListItem` body.
 `BodyLarge`, supporting `BodyMedium`, and overline/trailing `LabelSmall`, including the correct
 letter spacing. This resolves the two-line supporting and three-line overline/supporting text
 tracking discrepancy without overriding explicit caller typography. A direct slot now also
-refreshes its non-local metrics when a caller adds or changes an explicit `TextStyle` binding
-after attachment.
+refreshes its non-local metrics when a caller adds or changes an explicit `TextStyle` binding after
+attachment.
 
 `MaterialListItem.InteractionMode=None` is now an enabled static row: it does not consume pointer
 or keyboard activation, emit hover/press/focus/ripple feedback, or inherit a disabled
@@ -181,29 +181,28 @@ the one-physical-pixel 1x/2x footprint, orientation, theme brush, and non-intera
 
 ## 2026-07-30 — Button size typography and dragged ListItem probe
 
-Reviewed alpha25 `Button.kt:1661-1677` and its alpha22 counterpart
-`Button.kt:1652-1670`. `MaterialButton.Size` now follows the common
-`ButtonDefaults.textStyleFor` thresholds: ExtraSmall/Small use `LabelLarge`, Medium uses
-`TitleMedium`, Large uses `HeadlineSmall`, and ExtraLarge uses `HeadlineLarge`. A five-size
-theory validates role, font size, line height, and tracking; `ButtonTests` passed 17/17. The new
-alpha22-compatible `button/filled/large/enabled/light` reference scene explicitly applies the
-same `textStyleFor` role and passed exactly; the complete `button/` family passed 9/9.
+Reviewed alpha25 `Button.kt:1661-1677` and its alpha22 counterpart `Button.kt:1652-1670`.
+`MaterialButton.Size` now follows the common `ButtonDefaults.textStyleFor` thresholds:
+ExtraSmall/Small use `LabelLarge`, Medium uses `TitleMedium`, Large uses `HeadlineSmall`, and
+ExtraLarge uses `HeadlineLarge`. A five-size theory validates role, font size, line height, and
+tracking; `ButtonTests` passed 17/17. The new alpha22-compatible
+`button/filled/large/enabled/light` reference scene explicitly applies the same `textStyleFor`
+role and passed exactly; the complete `button/` family passed 9/9.
 
 The dragged ListItem raster already had the correct terminal colour, but the Compose structural
-text probe could retain its initial inherited `onSurface` paint because changing only the
-inherited content colour does not necessarily rerun `onTextLayout`. The reference now yields once
-for the `MutableInteractionSource` collector before one `DragInteraction.Start`, then explicitly
-records the enabled terminal `onTertiaryContainer` text colour used by alpha25
-`ReorderListTokens`. The focused dragged case is `semanticRasterEquivalent` with no warning at
+text probe could retain its initial inherited `onSurface` paint because changing only the inherited
+content colour does not necessarily rerun `onTextLayout`. The reference now yields once for the
+`MutableInteractionSource` collector before one `DragInteraction.Start`, then explicitly records the
+enabled terminal `onTertiaryContainer` text colour used by alpha25 `ReorderListTokens`. The focused
+dragged case is `semanticRasterEquivalent` with no warning at
 `artifacts/visual-parity/xunit/20260729-173310-765`, and the full 11-case ListItem family passed
 with no warnings. This is a reference-observation correction, not a tolerance or component-token
 change.
 
-A fresh full 94-case parity run at
-`artifacts/visual-parity/xunit/20260729-173456-880` accepted 90 rows (34 exact, 52 semantic, and
-four documented circular-wavy warnings), skipped the two unavailable display-headline rows, and
-retained only the two known focused TextField caret-endpoint mismatches. No ListItem or Button
-failure remains.
+A fresh full 94-case parity run at `artifacts/visual-parity/xunit/20260729-173456-880` accepted
+90 rows (34 exact, 52 semantic, and four documented circular-wavy warnings), skipped the two
+unavailable display-headline rows, and retained only the two known focused TextField caret-endpoint
+mismatches. No ListItem or Button failure remains.
 
 ## 2026-07-30 — Unified ListItem long-click contract
 
@@ -212,17 +211,16 @@ and `1450-1602`. Each interactive standard/segmented overload delegates its opti
 `onLongClick`/`onLongClickLabel` pair to `combinedClickable`. Decision 7 is now resolved: the
 existing Avalonia `InteractionMode` remains the single mode selector, while its three interactive
 values uniformly admit `LongClick`, `LongClickCommand`, `LongClickCommandParameter`, and
-`LongClickLabel`; `None` remains input-free. The desktop gesture is Avalonia `Holding`, with
-mouse enabled deliberately, and a completed long press consumes the later primary click.
+`LongClickLabel`; `None` remains input-free. The desktop gesture is Avalonia `Holding`, with mouse
+enabled deliberately, and a completed long press consumes the later primary click.
 
 `LongClickLabel` supplements fallback automation help text without replacing an application's
 explicit help description; UI Automation has no secondary-invoke pattern to expose. The focused
 `MaterialListItemLongClickTests` pass 8/8, including all modes, command/event dispatch,
 `CanExecute` gating, held pointer click suppression, selection preservation, disabled `None`, and
-accessibility text. The
-pinned alpha22 reference already accepts long-click callbacks, but a static screenshot cannot
-observe invocation, so no visual-parity pass is claimed. `SegmentedListItem` geometry/colours/gap
-remain outstanding and the broader P1 item stays In Progress.
+accessibility text. The pinned alpha22 reference already accepts long-click callbacks, but a static
+screenshot cannot observe invocation, so no visual-parity pass is claimed. `SegmentedListItem`
+geometry/colours/gap remain outstanding and the broader P1 item stays In Progress.
 
 ## 2026-07-30 — MaterialSegmentedList container
 
@@ -230,20 +228,19 @@ Reviewed AndroidX `ListItem.kt:552-855`, `ListItemDefaults.kt:246-399,438-536,11
 `tokens/ListTokens.kt` (VERSION `29.0.0`) at `ff0a0a99` / Material3 `1.5.0-alpha25`.
 `MaterialSegmentedList` is the chosen XAML API: the vertical container owns visible-row position
 inference, the 2dp token gap, segmented container colour, and first/middle/last/single resting
-corners. Position remains internal so callers cannot create a mismatch between row shape and
-group order; rows retain the unified `InteractionMode`, long-click behavior, and application-owned
+corners. Position remains internal so callers cannot create a mismatch between row shape and group
+order; rows retain the unified `InteractionMode`, long-click behavior, and application-owned
 selection. Its automation peer is a List without an owned selection provider.
 
 Seven deterministic tests cover 16/4dp resting and selected-state corners, visible/hidden position
 inference, removal cleanup, physical-pixel gap rounding, direct-child validation, and automation.
-The executable alpha22
-reference was verified to contain `SegmentedListItem`, `segmentedShapes`, `segmentedColors`, and
-`SegmentedGap`. The two-case segmented family passed as `semanticRasterEquivalent`, with no
-warnings or rejected pixels, at
+The executable alpha22 reference was verified to contain `SegmentedListItem`, `segmentedShapes`,
+`segmentedColors`, and `SegmentedGap`. The two-case segmented family passed as
+`semanticRasterEquivalent`, with no warnings or rejected pixels, at
 `artifacts/visual-parity/xunit/20260729-180816-107`. Resting Surface-on-Surface single corners are
 structural-test evidence because that state has no visible colour edge; the dark executable case
-uses a selected single row and does not pretend renderer dither is shape evidence.
-The subsequent full 13-case `listitem/` family passed with the same classification at
+uses a selected single row and does not pretend renderer dither is shape evidence. The subsequent
+full 13-case `listitem/` family passed with the same classification at
 `artifacts/visual-parity/xunit/20260729-181521-644`.
 
 ## 2026-07-30 — MaterialScaffold layout
@@ -256,16 +253,15 @@ the read-only bindable `ContentPadding` is caller-applied, including logical RTL
 overrides it and explicit zero supports already-consumed nested layouts. Snackbar queue/timeouts
 remain outside this layout control.
 
-Sixteen deterministic tests cover bars versus insets, zero-height slot presence, theme roles, all FAB
-positions, RTL, EndOverlay, snackbar stacking, binding, z-order, validation, safe-area ownership,
-and neutral Pane automation. The full-slot light scene and dark RTL EndOverlay scene are both
-`exactMatch` with zero differing pixels and no warnings at
+Sixteen deterministic tests cover bars versus insets, zero-height slot presence, theme roles, all
+FAB positions, RTL, EndOverlay, snackbar stacking, binding, z-order, validation, safe-area
+ownership, and neutral Pane automation. The full-slot light scene and dark RTL EndOverlay scene are
+both `exactMatch` with zero differing pixels and no warnings at
 `artifacts/visual-parity/xunit/20260729-184928-620`. Alpha22 has identical slot geometry and
 resulting visual order; alpha25 additionally names explicit slot z-indices, which the Avalonia
 template test records.
 
-The subsequent full 98-case run at
-`artifacts/visual-parity/xunit/20260729-185007-119` accepted 94 rows (35 exact, 55 semantic, and
-four previously documented circular-wavy warnings), skipped the two known unavailable
-display/headline rows, and retained only the two pre-existing focused TextField caret-endpoint
-mismatches. Both new Scaffold rows remained exact.
+The subsequent full 98-case run at `artifacts/visual-parity/xunit/20260729-185007-119` accepted
+94 rows (35 exact, 55 semantic, and four previously documented circular-wavy warnings), skipped
+the two known unavailable display/headline rows, and retained only the two pre-existing focused
+TextField caret-endpoint mismatches. Both new Scaffold rows remained exact.
