@@ -10,14 +10,6 @@
 > source root (abbreviated `<m3>` below):
 > `D:\source\androidx\compose\material3\material3\src\commonMain\kotlin\androidx\compose\material3\`
 >
-> Note the checkout is partial: `compose/{animation,foundation,material3,ui}`,
-> `compose/material/material-ripple` (added 2026-07-26 — the classic drawn-ripple
-> engine, surveyed below), and `graphics/graphics-shapes` are present.
-> Still absent: `compose/material3/material3-ripple` — the M3E node
-> (`androidx.compose.material3.ripple` package: `RippleNodeConfiguration`,
-> `createRippleModifierNode`, inset-focus-ring drawing) that material3's
-> `Ripple.kt` delegates to. Add that path to the sparse checkout before revisiting
-> StateLayer/ripple parity.
 
 ## Headline facts
 

@@ -8,9 +8,9 @@ checkpoint is an ordinary parity case with an additional, structurally compared 
 
 The first vertical slice is `foundation/motion/linear-tween/{start,mid,end}/light`. It proves exact
 0ms, 100ms, and 200ms replay through the Compose frame clock, the Avalonia `MotionGroup` manual
-clock, the shared manifest, and the normal image/geometry comparer. The first diagnostic component
-families extend that contract to circular wavy progress at 0ms/500ms/1000ms and indeterminate
-Loading Indicator at 0ms/150ms/650ms.
+clock, the shared manifest, and the normal image/geometry comparer. The first component families
+extend that contract to circular wavy progress at 0ms/500ms/1000ms and indeterminate Loading
+Indicator at 0ms/150ms/650ms.
 
 Supported in the first version:
 
@@ -161,21 +161,39 @@ For a mismatch, inspect `motion` in expected and actual `layout.json` before pix
 then use the ordinary contract-first order: geometry, text/shadow facts, normal raster policy, and
 only then any authorized warning policy.
 
-Two same-input producer runs must produce identical PNGs, motion JSON, schedule hashes, and layout
-hashes. A new motion family should pass that repeatability check before implementation differences
-are analyzed.
+Report motion cases on two independent axes:
+
+1. **Timeline contract**: scenario, checkpoint, trigger, origin, elapsed ticks, delivery schedule,
+   schedule hash, capture index, and clock coverage match exactly or the case is a structural
+   mismatch.
+2. **Captured-frame result**: after the timeline and other structural facts pass, the ordinary
+   `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or `mismatch` classification applies.
+
+A `rasterWarning` therefore means an exactly matched tested timeline with Deferred frame-rendering
+debt. It is not a warning about timestamp alignment, easing, duration, or clock control.
+
+Two same-input end-to-end parity invocations must produce identical expected and actual PNGs,
+motion JSON, schedule hashes, and layout hashes for every selected checkpoint. A new motion family
+should pass that repeatability check before implementation differences are analyzed. If a warning
+policy is proposed for a motion scenario, inspect every registered checkpoint, calibrate against
+the worst observed residual rather than one convenient frame, and keep one shared Deferred owner,
+reason, and removal/recalibration condition for the scenario.
 
 ## Diagnostic component coverage
 
-Circular wavy progress and Loading Indicator are registered as truthful diagnostic motion cases,
-not as pre-approved passing coverage. Circular wavy progress samples the initial frame, half of one
-resolved wavelength, and the first one-wavelength phase boundary. Loading Indicator samples
-the initial soft-burst frame, an in-flight spring morph, and the 650ms coroutine-delay boundary
-which starts the next morph.
+Circular wavy progress and Loading Indicator are registered as the first component-level motion
+coverage. Circular wavy progress samples the initial frame, half of one resolved wavelength, and
+the first one-wavelength phase boundary. Loading Indicator samples the initial soft-burst frame,
+an in-flight spring morph, and the 650ms coroutine-delay boundary which starts the next morph.
 
 Their custom-drawn paths have no independent layout node on either platform, so the public component
-bounds are structural and the moving path remains raster evidence. In particular, the Loading
-Indicator scene deliberately does not force Avalonia's natural size to Compose's public 48dp slot;
-that existing 38 DIP versus 48dp layout difference must remain visible. These cases may therefore
-fail while the motion timeline itself passes. Do not weaken the motion contract or comparison
-profiles to turn those implementation differences into clock acceptance.
+bounds and exact motion metadata are structural while the moving path remains raster evidence. This
+limitation is explicit; neither side invents a surrogate path-layout probe or presents the outer
+bounds as if they measured the path itself.
+
+Loading Indicator now uses the same public 48dp container slot on both sides, and its three current
+checkpoints are accepted by the normal `container` policy as `semanticRasterEquivalent`. Circular
+wavy progress passes the strict motion and geometry contracts, while its current path residual is
+temporarily classified as `rasterWarning` by the narrowly mapped `complex-shape` profile. These are
+current visual classifications, not weaker motion-clock rules: implementation improvements may
+move a frame from warning to semantic or exact without changing the timeline contract.

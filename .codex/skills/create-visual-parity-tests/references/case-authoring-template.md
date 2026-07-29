@@ -66,8 +66,10 @@ new VisualCase(
 
 Register the case in the appropriate `*ParityCases.cs` file and ensure that file is included by
 `VisualCaseCatalog.All`. Do not duplicate the ID. If the control has no matching Visual for an
-internal drawing, extend the capture adapter with a named probe instead of approximating the node
-from the screenshot.
+internal drawing, extend the capture adapter with a named probe when it can expose a stable
+renderer-independent structural fact. For a continuously changing path with no independent
+`LayoutNode`/`Visual`, document why it is raster-only; do not invent surrogate geometry or present
+the outer control bounds as if they measured the path.
 
 ## Motion checkpoint worksheet
 
@@ -84,6 +86,8 @@ Read `docs/animation-parity.md` before filling this section. Use one fresh case 
 | Avalonia `MotionGroup` | `controlled` |
 | Avalonia `Transition` / composition | `forbidden` |
 | input timestamp | `insensitive` or unsupported |
+| timeline verdict | exact structural match or mismatch |
+| frame verdicts | one official comparer kind per checkpoint |
 
 Compose skeleton:
 
@@ -199,10 +203,15 @@ warning owner and caps: <expected-derived owner, delta/count/energy/component li
 warning reason: <Deferred issue and evidence>
 scope: <narrow case-prefix rule>
 removal condition: <implementation fix or recalibration evidence>
+motion scenario checkpoints: <all checkpoint IDs and official kinds, if applicable>
+worst repeatable checkpoint: <checkpoint and observed count/energy/component evidence>
+repeatability: <two runs; expected/actual PNG, motion, schedule, and layout hashes stable>
 ```
 
 A warning policy is considered only after all structural checks pass. It must not hide geometry,
-text-layout, focus, content, or shadow-contract defects.
+text-layout, focus, content, motion-timeline, or shadow-contract defects. For motion, record the
+exact timeline verdict separately from the frame-level warning and review every checkpoint in the
+scenario before proposing the warning boundary.
 
 ## Failure notes
 

@@ -26,6 +26,9 @@ token, glyph, fill, border, caret, or shadow contract pass.
 - A `warningRasterPolicy` is a temporary, second-level decision only. It runs only after the
   normal raster policy rejects a structurally valid case; it records a warning rather than turning
   that residual into semantic equivalence.
+- For motion, warning scope belongs to the scenario rather than a convenient checkpoint. The
+  timeline contract remains exact, every registered checkpoint must be reviewed, and the worst
+  repeatable frame must fit the documented warning boundary.
 
 ## Temporary complex-shape warning
 
@@ -206,8 +209,12 @@ owners that the family needs; omitted owners remain strict.
 ### Calibrate budgets
 
 1. Run repeated identical captures to confirm determinism and establish the renderer noise floor.
+   For motion, run the same selected scenario at least twice and verify identical expected and
+   actual PNG, motion JSON, schedule, and layout hashes at every checkpoint.
 2. Confirm all structural contracts pass before collecting raster evidence.
-3. Inspect several representative cases, including small and large eligible masks.
+3. Inspect several representative cases, including small and large eligible masks. For a motion
+   scenario, inspect every registered checkpoint and use the worst observed residual when setting
+   the boundary; do not calibrate from only the cleanest frame.
 4. Choose the narrowest owner and lowest delta bins that contain the repeatable difference.
 5. Set proportional rates from expected eligible pixels; use base/minimum values only for genuine
    small-owner behavior and hard caps to prevent growth on large cases.
@@ -235,6 +242,11 @@ dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTest
 Then run the full parity suite before treating a profile change as complete. Review the selected
 profile ID and profile SHA-256 in the new actual manifest.
 
+When the affected prefix contains a motion scenario, run that complete scenario twice before the
+full suite. Confirm all checkpoints select the intended profile, their structural motion contracts
+pass exactly, their expected and actual image/layout hashes repeat, and any warning has one shared
+Deferred owner, reason, and removal/recalibration condition.
+
 Mutation coverage must demonstrate both sides of the boundary:
 
 - the intended backend difference passes inside the expected owner;
@@ -260,5 +272,7 @@ Mutation coverage must demonstrate both sides of the boundary:
 - [ ] Focused comparer tests, affected family tests, and the full suite pass.
 - [ ] Any warning policy has a specific removal/recalibration reason and is visible as
       `rasterWarning` in run artifacts; it is not counted as semantic equivalence.
+- [ ] A motion warning was reviewed across every checkpoint in the scenario, calibrated from the
+      worst repeatable frame, and reported separately from the exact timeline-contract result.
 - [ ] No baseline image, whole-frame ignore region, per-case tolerance, recentering, cropping, or
       diagnostic-only metric was added to acceptance.

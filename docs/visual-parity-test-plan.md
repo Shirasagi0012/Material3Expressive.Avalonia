@@ -826,6 +826,10 @@ raster policy rejected the image, and a documented temporary warning policy acce
 expected-derived owners. Warnings remain visible in the report and artifacts and are never
 classified as semantic raster equivalence.
 
+For motion cases, reporting keeps the exact timeline-contract result separate from the captured-
+frame raster result. A frame-level `RasterWarning` cannot soften a timestamp, schedule, trigger,
+capture-index, or clock-coverage mismatch and must not be described as approximate clock parity.
+
 The report must remain useful when every case is failing during early development.
 
 ## 15. Development and CI policy

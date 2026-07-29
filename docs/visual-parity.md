@@ -106,6 +106,12 @@ component-owned `MotionGroup` instances. A timeline mismatch fails before raster
 neither semantic equivalence nor a warning policy can accept it. See
 [animation-parity.md](animation-parity.md) for the lifecycle and authoring rules.
 
+Report a motion case with separate timeline and captured-frame conclusions. The timeline contract
+is exact structural evidence; the captured frame then receives the ordinary raster classification.
+Consequently, `rasterWarning` means the tested timeline matched exactly but the frame retains a
+Deferred rendering residual. It does not mean that timestamp alignment or clock coverage was
+accepted approximately.
+
 For standard Avalonia text, data comes from `TextBlock.TextLayout` and
 `HitTestTextPosition`. The custom Material text-field label uses its dedicated internal
 `TextLayout` probe so it has the same line and character-box data. The editable Compose text-field

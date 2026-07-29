@@ -59,6 +59,13 @@ Run the deterministic motion prototype:
 .\tools\visual-parity\run.ps1 -Case "foundation/motion/linear-tween/*"
 ```
 
+Run the component motion families:
+
+```powershell
+.\tools\visual-parity\run.ps1 -Case "progress/circular-wavy/motion/*"
+.\tools\visual-parity\run.ps1 -Case "progress/loading-indicator/indeterminate/*"
+```
+
 Use the equivalent direct xUnit filter only when extra `dotnet test` options are needed:
 
 ```powershell
@@ -157,6 +164,12 @@ Use `comparison.json.kind` as the official completed-case classification:
 Keep **skipped** outside this enum: it is an xUnit discovery/execution status with an explicit
 reason, not a comparer result.
 
+For a motion case, report the timeline and frame result separately. Scenario/checkpoint identity,
+trigger, origin, elapsed ticks, delivery timestamps, capture index, schedule hash, and clock
+coverage are an exact structural verdict. Only after that verdict passes does `kind` classify the
+captured frame. A `rasterWarning` is therefore Deferred rendering debt on an exactly matched tested
+timeline, not approximate animation-clock acceptance.
+
 Use `comparison.json.isMatch` only as the execution-gate projection: it is true for exact,
 semantic-equivalent, and warning outcomes, and false for mismatch. Do not use it as the quality
 classification. Classify the first failing layer within `mismatch` as:
@@ -209,8 +222,12 @@ Use this sequence:
 5. For `rasterWarning`, identify exactly why normal `raster` rejected, confirm `warningRaster`
    accepted the same expected-derived owner, record every warning message, and state the profile's
    removal/recalibration condition.
-6. Run the bundled image diagnostic for raw pixel distribution and visual evidence.
-7. Form one hypothesis, inspect the relevant AndroidX/Avalonia/rendering source, change one variable,
+6. For a motion warning, inspect every checkpoint in the scenario and identify the worst residual;
+   do not infer scenario-wide acceptability from one clean frame. Before accepting calibration
+   evidence, run the complete scenario twice and confirm identical expected and actual PNG,
+   motion, schedule, and layout hashes.
+7. Run the bundled image diagnostic for raw pixel distribution and visual evidence.
+8. Form one hypothesis, inspect the relevant AndroidX/Avalonia/rendering source, change one variable,
    rerun the smallest case, then rerun the family.
 
 Run the diagnostic script on a case artifact directory:
@@ -267,6 +284,8 @@ Summarize a run with:
 - the official `kind` for every non-exact or non-accepted case;
 - for warnings, the normal-policy rejection, warning-policy acceptance, warning reason, and
   removal/recalibration condition;
+- for motion scenarios, the exact timeline-contract verdict, checkpoint counts by official kind,
+  the worst warning checkpoint when present, and the two-run hash-repeatability result;
 - for mismatches, the first failing layer and concrete node/metric/budget evidence;
 - one next hypothesis or smallest rerun command.
 

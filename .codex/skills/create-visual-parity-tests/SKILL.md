@@ -88,8 +88,10 @@ Use `ProbeRegistry` rather than estimating geometry from pixels:
 - add `onTextLayout(id)` for text content, lines, baselines, origins, and character boxes;
 - record focus only after the requested semantic state is actually observed;
 - record a shadow contract for renderer-level elevation cases;
-- probe custom-drawn elements that have no `LayoutNode`/Visual counterpart, such as an indicator,
-  notch, floating label, caret, divider, or selection marker.
+- probe custom-drawn elements such as an indicator, notch, floating label, caret, divider, or
+  selection marker whenever a stable renderer-independent structural fact can be exposed. If a
+  continuously changing path has no independent layout node or stable capture adapter, document
+  that limitation instead of inventing surrogate geometry.
 
 For static cases, capture a deterministic settled state. For motion parity, author one case per
 checkpoint with `MotionCaseContract`: keep the initial target at rest, give every checkpoint the
@@ -133,9 +135,11 @@ timestamp, schedule hash, or coverage declaration remains a mismatch and cannot 
 `semanticRasterEquivalent` or `rasterWarning`.
 
 If the component draws an important element without a child `Visual`, add a named internal probe
-or capture adapter for that element. Do not replace it with the outer control bounds. This is the
-difference between diagnosing an indicator width/position bug and merely seeing a whole-component
-raster diff.
+or capture adapter when it can expose a stable renderer-independent structural fact. Never invent
+a surrogate probe or present the outer control bounds as if they measured the internal path. When
+a continuously changing path has no independent `LayoutNode`/`Visual` counterpart, record the
+reason explicitly, keep the public component bounds and exact motion metadata structural, and
+treat only the moving path as raster evidence.
 
 When using a native Avalonia control inside a Material template, audit its resolved template and
 pseudo-class/resource setters. Check `Foreground`, placeholder color and opacity, caret brush,
@@ -157,6 +161,12 @@ Treat the normal `rasterPolicy` as the durable semantic-equivalence boundary. Ad
 provide `warningReason`, record a removal or recalibration condition, and prove that the first
 out-of-warning mutation still fails. Never use warning policy to downgrade a structural defect.
 
+For a motion scenario, evaluate a proposed warning across every registered checkpoint and
+calibrate against the worst repeatable residual rather than one convenient frame. Run the same
+selected scenario twice first; expected and actual PNGs, motion JSON, schedule hashes, and layout
+hashes must repeat. Keep one coherent Deferred owner, reason, scope, and removal/recalibration
+condition for the scenario.
+
 ### 5. Hand off validation
 
 Once the Compose scene, Avalonia case, probes, and any required profile tests are complete, invoke
@@ -167,6 +177,11 @@ Treat `exactMatch` and `semanticRasterEquivalent` as fully accepted parity outco
 `rasterWarning` may be integrated because xUnit accepts it, but it remains visible implementation
 debt and does not close the underlying parity work unless the roadmap explicitly records that
 temporary disposition. A `mismatch` remains incomplete; a skipped row remains unevaluated.
+
+For motion, record two conclusions instead of compressing them into one label: the timeline
+contract either matches exactly or structurally fails, and only then does the captured frame receive
+its raster classification. Never describe `rasterWarning` as approximate timestamp, duration,
+easing, or clock parity.
 
 If validation reveals an authoring defect—such as mismatched scene input, missing probes, an
 incorrect viewport, nondeterministic state, or an unjustified profile—return here, change one
@@ -214,6 +229,10 @@ Before considering a new case complete, verify:
       sides.
 - [ ] Every diagnostically important non-Visual element has a named probe or explicit reason why it
       cannot be probed.
+- [ ] Every motion scenario reports the exact timeline-contract result separately from each
+      checkpoint's captured-frame classification.
+- [ ] A proposed motion warning was checked at every checkpoint, calibrated from the worst
+      repeatable frame, and verified by two same-input scenario runs with stable hashes.
 - [ ] Text is measured from the actual layout object and has a verifiable style signature.
 - [ ] Native Avalonia templates and state resources were audited where applicable.
 - [ ] Profile selection or changes satisfy `docs/comparison-profiles.md`.
