@@ -265,3 +265,31 @@ The subsequent full 98-case run at `artifacts/visual-parity/xunit/20260729-18500
 94 rows (35 exact, 55 semantic, and four previously documented circular-wavy warnings), skipped
 the two known unavailable display/headline rows, and retained only the two pre-existing focused
 TextField caret-endpoint mismatches. Both new Scaffold rows remained exact.
+
+## 2026-07-30 — SegmentedButton completes M3
+
+Reviewed alpha25 `SegmentedButton.kt`, `internal/Icons.kt`,
+`tokens/OutlinedSegmentedButtonTokens.kt` (VERSION `v0_162`), and foundation `Border.kt` at
+AndroidX `ff0a0a99`. Added `MaterialSegmentedButton` and `MaterialSegmentedButtonRow`; D010 adapts
+the separate Compose single/multi row scopes through explicit `SelectionMode` while preserving
+bindable child `IsChecked`, content, command, optional icon, and shape override.
+
+The row distributes equal physical-pixel widths, overlaps 1dp borders, infers outer shapes,
+coordinates single selection, and owns RTL-aware arrow/Home/End navigation. Automation exposes a
+List selection container plus RadioButton/selection-item peers in single mode, and independent
+CheckBox/toggle peers in multiple mode. The default selected icon is the exact fixed 24×24
+AndroidX Filled Check vector. Rendering follows Compose's asymmetric outer-minus-inner border
+path, and the disabled border correctly resolves `Outline` at 12% opacity over the full selected
+container.
+
+Twelve deterministic tests pass, including RTL/disabled keyboard traversal and visible-child
+position inference. Four executable alpha22-compatible single/multiple,
+light/dark/disabled cases all passed as `semanticRasterEquivalent`, with no warnings or rejected
+pixels, at `artifacts/visual-parity/xunit/20260729-203455-835`. README, Catalog, coverage,
+baseline audit, AndroidX reference, and parity catalog documentation were updated. This closes the
+last M3 work item and satisfies the Application building blocks milestone exit criteria.
+
+The full 102-case regression at `artifacts/visual-parity/xunit/20260729-204124-131` kept all four
+new rows accepted and produced the existing global disposition: 98 accepted (35 exact, 59
+semantic, four circular-wavy warnings), two explicit display/headline skips, and two focused
+TextField endpoint mismatches.

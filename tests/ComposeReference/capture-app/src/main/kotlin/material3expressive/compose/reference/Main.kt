@@ -8,6 +8,7 @@ import material3expressive.compose.reference.scenes.registerDividerScenes
 import material3expressive.compose.reference.scenes.registerFoundationScenes
 import material3expressive.compose.reference.scenes.registerMotionProbeScenes
 import material3expressive.compose.reference.scenes.registerNavigationScenes
+import material3expressive.compose.reference.scenes.registerSegmentedButtonScenes
 import material3expressive.compose.reference.scenes.registerTextFieldScenes
 import material3expressive.compose.reference.scenes.registerTypographyScenes
 import java.nio.file.Path
@@ -45,6 +46,7 @@ fun main(args: Array<String>) {
         registerDividerScenes()
         registerComponentMotionScenes()
         registerButtonScenes()
+        registerSegmentedButtonScenes()
         registerTextFieldScenes()
         registerNavigationScenes()
     }

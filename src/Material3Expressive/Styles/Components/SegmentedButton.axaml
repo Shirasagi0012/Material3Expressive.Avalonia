@@ -1,0 +1,64 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <m3:MaterialSegmentedButtonRow>
+                <m3:MaterialSegmentedButton Content="Day" />
+                <m3:MaterialSegmentedButton Content="Month" IsChecked="True" />
+                <m3:MaterialSegmentedButton Content="Week" />
+            </m3:MaterialSegmentedButtonRow>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialSegmentedButton}"
+                      TargetType="m3:MaterialSegmentedButton">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:MaterialSegmentedButtonContentPanel
+                        IconSize="{TemplateBinding IconSize}"
+                        IconSpacing="{TemplateBinding IconSpacing}"
+                        ContentPadding="{TemplateBinding ContentPadding}"
+                        HasVisibleIcon="{TemplateBinding HasVisibleIcon}"
+                        IconScale="{TemplateBinding IconScale}"
+                        IconOpacity="{TemplateBinding IconOpacity}"
+                        ContentOffset="{TemplateBinding ContentOffset}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                        <Grid Width="{TemplateBinding IconSize}"
+                              Height="{TemplateBinding IconSize}">
+                            <ContentPresenter HorizontalContentAlignment="Stretch"
+                                              VerticalContentAlignment="Stretch"
+                                              IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                              Content="{TemplateBinding Icon}"
+                                              TextElement.Foreground="{TemplateBinding IconBrush}" />
+                            <Viewbox Width="{TemplateBinding IconSize}"
+                                     Height="{TemplateBinding IconSize}"
+                                     IsVisible="{TemplateBinding IsDefaultIconVisible}">
+                                <!-- AndroidX internal Icons.Filled.Check is a fixed 24x24
+                                     ImageVector. Preserve its viewport and path verbatim. -->
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M 9,16.17 L 4.83,12 L 3.41,13.41 L 9,19 L 21,7 L 19.59,5.59 Z"
+                                          Fill="{TemplateBinding IconBrush}" />
+                                </Canvas>
+                            </Viewbox>
+                        </Grid>
+                        <ContentPresenter RecognizesAccessKey="True"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                          TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                    </m3:MaterialSegmentedButtonContentPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

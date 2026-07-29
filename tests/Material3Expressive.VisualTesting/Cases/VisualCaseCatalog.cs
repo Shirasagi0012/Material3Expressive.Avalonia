@@ -13,7 +13,8 @@ public static class VisualCaseCatalog
         .. ComponentParityCases.All,
         .. ComponentMotionParityCases.All,
         .. ComposeWaveOneParityCases.All,
-        .. DividerParityCases.All
+        .. DividerParityCases.All,
+        .. SegmentedButtonParityCases.All
     ];
 
     public static VisualCase Get(string id) =>

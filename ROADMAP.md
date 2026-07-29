@@ -79,8 +79,8 @@ Work item: None
 Status: Idle
 Started: —
 
-No task is currently authorized as the active implementation focus. The next Goal run must select
-the first eligible `Planned` item using the rules above and update this section immediately.
+M3-SEGMENTED-001 completed on 2026-07-30. The next Goal run selects the first eligible Planned
+item using the backlog dependency, priority, and order rules.
 
 ## Workstreams
 
@@ -117,7 +117,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 |---|---|---|---|
 | M1 | Baseline and inventory | Complete | Verified |
 | M2 | Existing component closure | Blocked | D002 and D004 block remaining P0 work |
-| M3 | Application building blocks | In Progress | SegmentedButton remains |
+| M3 | Application building blocks | Complete | Verified |
 | M4 | Advanced input and containers | Planned | Depends on M3 primitives and state conventions |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
 
@@ -170,7 +170,8 @@ The roadmap is complete only when:
 ## Recent roadmap outcomes
 
 - 2026-07-30: MaterialScaffold layout, ListItem grouping, long-click behavior, and related parity
-  evidence were completed; details are in [`history.md`](docs/roadmap/history.md).
+  evidence were completed; SegmentedButton then closed M3. Details are in
+  [`history.md`](docs/roadmap/history.md).
 - 2026-07-29: the alpha22 executable reference was separated from the alpha25 implementation
   source baseline.
 - 2026-07-29: the baseline and active parity-case audit satisfied M1 exit criteria.

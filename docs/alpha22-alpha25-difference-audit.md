@@ -13,7 +13,7 @@ in [upstream-baselines.md](upstream-baselines.md).
 | alpha25 implementation source | `D:\source\androidx` at `ff0a0a99c4f0cfe95d75d5df615e51d399575922`; `libraryversions.toml` declares `COMPOSE_MATERIAL3 = "1.5.0-alpha25"` |
 | alpha22 source comparison | Official Android Maven `androidx.compose.material3:material3:1.5.0-alpha22:sources`, common source root `commonMain/androidx/compose/material3` |
 | executable reference | Compose Multiplatform Material3 `1.12.0-alpha03`, Jetpack Material3 `1.5.0-alpha22` lineage |
-| active parity catalog | the 98 cases registered by `tests/ComposeReference/capture-app/.../ReferenceCaseRegistry.kt` and `tests/Material3Expressive.VisualTesting/Cases` |
+| active parity catalog | the 102 cases registered by `tests/ComposeReference/capture-app/.../ReferenceCaseRegistry.kt` and `tests/Material3Expressive.VisualTesting/Cases` |
 
 For a future baseline review, download the exact previous release source JAR, compare its
 `commonMain/androidx/compose/material3` tree with the pinned AndroidX tree, then inspect each
@@ -34,12 +34,14 @@ the library version.
 | Tonal elevation | `ColorScheme.kt` exposes `LocalTonalElevationEnabled` publicly. | The library retains its alpha25 tonal-elevation implementation. Existing color/elevation parity cases test the alpha22 rendering contract only; they are not proof of this public alpha25 composition-local surface. |
 | Divider and `Dp.Hairline` | `Divider.kt` / `DividerTokens.kt` retain the same default color/thickness, horizontal/vertical APIs, and `Dp.Hairline` drawing semantics between the executable alpha22 lineage and alpha25 source. | Default, custom-thickness, horizontal, vertical, and hairline reference scenes are executable at alpha22. Their accepted parity is normal alpha22 conformance evidence; there is no alpha25-only Divider version gap. |
 | Scaffold layout | `Scaffold.kt` retains the same five slots, caller-applied `PaddingValues`, insets, FAB positions, 16dp spacing, and snackbar/FAB geometry. Alpha25 adds explicit z-indices for content/top/snackbar/bottom/FAB (0/1/2/3/4); alpha22 obtains the same visual order from placement order. | `MaterialScaffold` exposes the five slots, read-only bindable `ContentPadding`, nullable TopLevel-safe-area adaptation, and all four FAB positions. The light full-slot and dark RTL EndOverlay cases are executable alpha22 conformance and both exact. Alpha25's explicit z-index constants are additionally locked by deterministic Avalonia template tests rather than misreported as an alpha22-only structural observation. |
+| Segmented buttons | `SegmentedButton.kt` keeps the single- and multi-choice row scopes, equal weighted widths, negative border-width spacing, `itemShape`, state colours, 18dp icon slot, and animated label displacement in both alpha22 and alpha25. Alpha25's default disabled border is still `Outline` at 12% opacity, despite the generated token table also naming `DisabledOutlineColor`. | `MaterialSegmentedButtonRow.SelectionMode` is the explicit XAML adaptation. Four single/multiple, light/dark, and disabled cases execute against alpha22 and pass; the source review additionally prevents the tempting but incorrect `OnSurface` disabled-border mapping. There is no alpha25-only visual gap for the covered states. |
 | Existing static parity families | For `Button.kt`, `Card.kt`, `FloatingActionButton.kt`, `Checkbox.kt`, `TextField.kt`, `OutlinedTextField.kt`, `NavigationBar.kt`, `NavigationRail.kt`, and `TabRow.kt`, the alpha22→alpha25 changes exercised by the current scene inputs are API visibility/signature stabilization or non-selected paths, not a changed default static scene. In particular, `ButtonDefaults.textStyleFor` keeps its 32/40 → LabelLarge, 56 → TitleMedium, 96 → HeadlineSmall, and 136dp → HeadlineLarge thresholds, and `Checkbox.kt` retains the styling-fix flag default of `false` on both sides. | Current cases remain valid alpha22 executable conformance cases. They have no implied alpha25 parity claim. |
 
 ## Active executable-reference audit
 
 The current catalog covers foundation color/elevation/typography, buttons, cards, FAB, selected
 checkbox, text fields, navigation bar/rail, vertical slider, range slider, tabs, Surface/Divider, Scaffold,
+SegmentedButton,
 and alpha22-compatible ListItem click, selection, and externally supplied drag states. Every
 accepted case invokes an API or interaction path present in alpha22. The original seven
 direct-content ListItem cases have accepted verdicts in

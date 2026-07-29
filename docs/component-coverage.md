@@ -24,9 +24,9 @@ are defined in [`ROADMAP.md`](../ROADMAP.md).
 
 | Status | Feature families | Share |
 |---|---:|---:|
-| Implemented | 19 | 38% |
+| Implemented | 20 | 40% |
 | Partial | 18 | 36% |
-| Missing | 13 | 26% |
+| Missing | 12 | 24% |
 | Total | 50 | 100% |
 
 The theming, color, typography, shape, motion, ripple, token-generation, and Material Symbols
@@ -75,7 +75,7 @@ represent them.
 | Menus | DropdownMenu and menu items | Avalonia menu styles | Partial | This is a restyle of Avalonia menus, not a full Compose-style state API. |
 | Menus | ExposedDropdownMenu | None | Missing | Anchor box, trailing icon, and exposed-menu behavior are absent. |
 | Lists | ListItem and SegmentedListItem | `MaterialListItem`, `MaterialSegmentedList` | Implemented | Standard one-, two-, and three-line rows expose slots plus unified `InteractionMode`; direct and generated string slots receive Compose typography. Interactive modes uniformly support long-click; `None` has deterministic input/automation evidence. The segmented container infers single/first/middle/last positions from visible direct rows, applies alpha25 segmented colours and outer-corner shapes, and physical-pixel-rounds the 2dp gap without owning selection. Thirteen alpha22-compatible cases pass with no warnings, including two segmented light/dark cases; dragged rows additionally require the exact 16dp/8dp shadow contract. Alpha25 line-aware height and modern None executable parity remain unavailable, while long-click action semantics use deterministic tests because a static screenshot cannot observe invocation. |
-| Selection | SegmentedButton rows | None | Missing | Single- and multi-choice row semantics are absent. |
+| Selection | SegmentedButton rows | `MaterialSegmentedButton`, `MaterialSegmentedButtonRow` | Implemented | One XAML row adapts Compose single/multi scope APIs through `SelectionMode`; visible direct children receive equal physical-pixel widths, 1dp outline overlap, inferred outer shapes, and checked-state z-order. `IsChecked`, optional `Icon`, `ShowSelectionIcon`, padding/size, and shape override remain bindable. Single mode exposes radio/selection automation and RTL-aware arrow/Home/End navigation; multiple mode exposes independent toggle automation. Twelve deterministic tests pass, and four alpha22-compatible light/dark/disabled/single/multiple cases are `semanticRasterEquivalent` with zero warnings or rejected pixels. |
 | Navigation | Tab and TabRow families | `MaterialTab`, `MaterialTabs` | Partial | `IsScrollable` adapts `PrimaryScrollableTabRow`: 52dp edges, 90dp minimum intrinsic tabs, and physical-pixel selected-tab centring. Alpha22 executable parity passes at 240dp and 600dp. Complete indicator/layout variants, icon permutations, and richer accessibility/keyboard coverage remain. |
 | Navigation | NavigationBar | `MaterialNavigationBar` | Implemented | Bar and rail share one Avalonia control. |
 | Navigation | NavigationRail | `MaterialNavigationBar` | Implemented | Selected through the navigation variant. |

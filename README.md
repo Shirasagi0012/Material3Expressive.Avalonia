@@ -22,7 +22,7 @@ Material token database and stamped with the version it came from.
 | **Motion** | A spring animator ported from `animation-core` — analytic, retargetable, velocity-preserving. |
 | **Interaction** | State layers with Material's asymmetric fades, ripples, and the corner-morph press feedback. |
 | **Symbols** | Material Symbols Rounded as the first-party icon family, including animatable fill, weight, grade and optical-size axes. |
-| **Components** | Surface, divider, list-row, segmented-list, and scaffold primitives; buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
+| **Components** | Surface, divider, list-row, segmented-list, and scaffold primitives; buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split, and segmented), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
 
 ## Getting started
 
@@ -56,6 +56,32 @@ no further wiring.
 <m3:MaterialFab Label="Compose"><ms:MaterialSymbol Symbol="Edit" /></m3:MaterialFab>
 <m3:MaterialCard Variant="Outlined">…</m3:MaterialCard>
 ```
+
+## Segmented buttons
+
+`MaterialSegmentedButtonRow` adapts Compose's separate single- and multi-choice row scopes through
+one XAML container with an explicit `SelectionMode`. Children bind their ordinary nullable
+`IsChecked` state. Single mode keeps at most one checked item and exposes radio/selection
+automation; multiple mode leaves each item independent and exposes toggle automation.
+
+```xml
+<m3:MaterialSegmentedButtonRow Width="300">
+    <m3:MaterialSegmentedButton Content="Day" />
+    <m3:MaterialSegmentedButton Content="Month" IsChecked="True" />
+    <m3:MaterialSegmentedButton Content="Week" />
+</m3:MaterialSegmentedButtonRow>
+
+<m3:MaterialSegmentedButtonRow SelectionMode="Multiple" Width="300">
+    <m3:MaterialSegmentedButton Content="Email" IsChecked="True" />
+    <m3:MaterialSegmentedButton Content="Calendar" />
+    <m3:MaterialSegmentedButton Content="Tasks" IsChecked="True" />
+</m3:MaterialSegmentedButtonRow>
+```
+
+Visible direct children receive equal widths, one-outline overlap, and inferred first/middle/last
+shapes. A checked item without custom `Icon` content uses the same fixed 24×24 Filled Check vector
+as AndroidX; `ShowSelectionIcon="False"` disables it. Arrow, Home, and End keys move and select in
+single mode, while Space retains ordinary toggle behavior in multiple mode.
 
 ## Surfaces and list rows
 

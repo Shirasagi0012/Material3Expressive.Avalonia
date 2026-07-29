@@ -51,6 +51,33 @@
                         </WrapPanel>
                     </Border>
                 </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Segmented buttons" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Single mode coordinates one checked item and supports arrow, Home and End navigation. Multiple mode leaves each segment independently toggleable." />
+                    <Border Classes="demo-canvas">
+                        <StackPanel Spacing="20" MaxWidth="520">
+                            <m3:MaterialSegmentedButtonRow Width="360">
+                                <m3:MaterialSegmentedButton Content="Day" />
+                                <m3:MaterialSegmentedButton Content="Month" IsChecked="True" />
+                                <m3:MaterialSegmentedButton Content="Week" />
+                            </m3:MaterialSegmentedButtonRow>
+                            <m3:MaterialSegmentedButtonRow Width="360"
+                                                           SelectionMode="Multiple">
+                                <m3:MaterialSegmentedButton Content="Email" IsChecked="True" />
+                                <m3:MaterialSegmentedButton Content="Calendar" />
+                                <m3:MaterialSegmentedButton Content="Tasks" IsChecked="True" />
+                            </m3:MaterialSegmentedButtonRow>
+                            <m3:MaterialSegmentedButtonRow Width="360"
+                                                           IsEnabled="False">
+                                <m3:MaterialSegmentedButton Content="Compact" />
+                                <m3:MaterialSegmentedButton Content="Comfortable" IsChecked="True" />
+                            </m3:MaterialSegmentedButtonRow>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </StackPanel>
 
             <!-- Slider -->

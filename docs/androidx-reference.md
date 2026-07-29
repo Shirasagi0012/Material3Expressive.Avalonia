@@ -212,6 +212,29 @@ contract; `Thickness=0` is intentionally not overloaded to mean hairline and rem
 The alpha22 executable reference can exercise the default, custom-thickness, orientation, and
 hairline paths, so those rows have normal Compose parity evidence rather than a version-gap claim.
 
+## Segmented buttons
+
+`SegmentedButton.kt` exposes separate single- and multi-choice row scopes, but both share the same
+weighted `Row`, negative `BorderWidth` spacing, `itemShape`, state colours, 40dp minimum height,
+LabelLarge text, 18dp icon slot, 8dp icon spacing, and animated content-displacement policy.
+`SegmentedButtonContentMeasurePolicy` always measures the icon slot plus label; when no icon is
+visible it offsets the label by half of `(IconSize + IconSpacing)` so the label remains centred.
+
+The default active icon is `internal.Icons.Filled.Check`, a fixed 24×24 `ImageVector`, not a
+Material Symbols font glyph. Avalonia preserves that viewport/path for the built-in icon while
+still allowing arbitrary `Icon` content. The first/last item shapes are asymmetric rounded
+rectangles, so Compose foundation `Border.kt` fills the difference between outer and inset paths
+instead of using the simple stroked-round-rect branch; the Avalonia renderer mirrors this to keep
+the pill ends and translucent disabled borders correct.
+
+`OutlinedSegmentedButtonTokens.kt` is VERSION `v0_162`. A non-obvious default is important:
+`SegmentedButtonDefaults.defaultSegmentedButtonColors` uses `OutlineColor` with
+`DisabledOutlineOpacity` for disabled borders, even though the generated token table also exposes
+`DisabledOutlineColor`. The implementation follows the defaults function, not the unused token
+role. `MaterialSegmentedButtonRow.SelectionMode` is the explicit XAML adaptation of the two scope
+types; its single mode supplies radio/selection automation and desktop arrow navigation, while
+multiple mode retains independent toggle semantics.
+
 ## List items, segmentation, and interaction modes
 
 `<m3>ListItem.kt` at the implementation-source baseline contains four standard and four
