@@ -9,7 +9,7 @@ namespace Material3Expressive.Catalog.Views;
 public partial class MainWindow : Window
 {
     // Pages are kept alive once visited, so switching back restores scroll and control state.
-    private readonly UserControl?[] _pages = new UserControl?[9];
+    private readonly UserControl?[] _pages = new UserControl?[10];
 
     public MainWindow()
     {
@@ -41,6 +41,7 @@ public partial class MainWindow : Window
         6 => new ProgressPage(),
         7 => new Pages.NavigationPage(),
         8 => new OverlaysPage(),
+        9 => new SurfaceListPage(),
         _ => new ButtonsPage()
     };
 }

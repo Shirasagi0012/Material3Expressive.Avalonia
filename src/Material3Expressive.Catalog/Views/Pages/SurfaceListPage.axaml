@@ -1,0 +1,167 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
+             xmlns:ms="using:MaterialSymbols.Avalonia"
+             x:Class="Material3Expressive.Catalog.Views.Pages.SurfaceListPage">
+
+    <ScrollViewer Padding="40,28,40,48">
+        <StackPanel Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
+
+            <StackPanel Spacing="8">
+                <TextBlock Classes="display-small" Text="Surfaces &amp; lists" />
+                <TextBlock Classes="body-large" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Surfaces establish a Material background, dividers separate related content, and list items put each row's interaction contract next to its content rather than hiding it in a template." />
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+                <TextBlock Classes="title-large" Text="Surface elevation" />
+                <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="TonalElevation tints the theme Surface and accumulates through nested MaterialSurface values. ShadowElevation is independent point-light depth." />
+                <Border Classes="demo-canvas">
+                    <WrapPanel ItemSpacing="20" LineSpacing="20">
+                        <m3:MaterialSurface Width="248" Padding="20" CornerRadius="20">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="title-medium" Text="Resting surface" />
+                                <TextBlock Classes="body-small" TextWrapping="Wrap"
+                                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                           Text="No tonal or shadow elevation." />
+                            </StackPanel>
+                        </m3:MaterialSurface>
+                        <m3:MaterialSurface Width="248" Padding="20" CornerRadius="20"
+                                            TonalElevation="3" ShadowElevation="3">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="title-medium" Text="Raised tonal surface" />
+                                <TextBlock Classes="body-small" TextWrapping="Wrap"
+                                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                           Text="3dp tonal tint and 3dp shadow." />
+                            </StackPanel>
+                        </m3:MaterialSurface>
+                    </WrapPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+                <TextBlock Classes="title-large" Text="Dividers" />
+                <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="One MaterialDivider adapts HorizontalDivider and VerticalDivider through Orientation. Its 1dp OutlineVariant stroke is centred on the requested axis." />
+                <Border Classes="demo-canvas">
+                    <StackPanel Spacing="16" MaxWidth="520">
+                        <TextBlock Classes="body-medium" Text="A horizontal divider" />
+                        <m3:MaterialDivider />
+                        <StackPanel Orientation="Horizontal" Height="56" Spacing="16">
+                            <StackPanel Width="208" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Classes="title-small" Text="Before" />
+                                <TextBlock Classes="body-small" Text="Related controls stay together." />
+                            </StackPanel>
+                            <m3:MaterialDivider Orientation="Vertical" Height="56" />
+                            <StackPanel Width="208" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Classes="title-small" Text="After" />
+                                <TextBlock Classes="body-small" Text="A vertical divider separates columns." />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+                <TextBlock Classes="title-large" Text="One, two and three lines" />
+                <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="The list layout uses alpha25's line-aware 56, 72 and 88dp minimum heights, then grows for real content. Leading, overline, supporting and trailing content are independent slots." />
+                <Border Classes="demo-canvas" Padding="0">
+                    <StackPanel Width="520">
+                        <m3:MaterialListItem InteractionMode="None" Content="One line">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Inbox" />
+                            </m3:MaterialListItem.LeadingContent>
+                            <m3:MaterialListItem.TrailingContent>
+                                <TextBlock Text="Today" />
+                            </m3:MaterialListItem.TrailingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialDivider />
+                        <m3:MaterialListItem InteractionMode="None" Content="Two lines"
+                                             SupportingContent="Supporting content adds a second text line.">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Mail" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialDivider />
+                        <m3:MaterialListItem InteractionMode="None" Content="Three lines" OverlineContent="OVERLINE"
+                                             SupportingContent="Overline and supporting content use the three-line minimum.">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Star" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+                <TextBlock Classes="title-large" Text="InteractionMode" />
+                <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="None is inert, Click is an action, SingleSelection is radio-like, and MultiSelection is checkbox-like. Interactive modes can also expose one optional long-press action; SingleSelection remains application-owned, and this page coordinates its two rows in code. IsDragged is an owner-driven reorder state, not an implicit desktop drag-and-drop system." />
+                <Border Classes="demo-canvas" Padding="0">
+                    <StackPanel Width="520">
+                        <m3:MaterialListItem InteractionMode="None" Content="None — static information">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Info" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialDivider />
+                        <m3:MaterialListItem InteractionMode="Click" Content="Click — invoke an action"
+                                             SupportingContent="Click this row to update the status below."
+                                             Click="OnClickItem" LongClick="OnLongClickItem"
+                                             LongClickLabel="Show secondary list-item action">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="PlayArrow" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialDivider />
+                        <m3:MaterialListItem x:Name="PersonalListItem" InteractionMode="SingleSelection"
+                                             IsSelected="True" Content="Single selection — Personal"
+                                             SupportingContent="The host owns which row is selected."
+                                             Click="OnSingleSelectionClick">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Person" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialDivider />
+                        <m3:MaterialListItem x:Name="WorkListItem" InteractionMode="SingleSelection"
+                                             Content="Single selection — Work"
+                                             SupportingContent="Choose this row to move the app-owned selection."
+                                             Click="OnSingleSelectionClick">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Work" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialDivider />
+                        <m3:MaterialListItem InteractionMode="MultiSelection" IsSelected="True"
+                                             Content="Multi-selection — keep offline"
+                                             SupportingContent="Click toggles this independent selected state.">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="Download" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                        <m3:MaterialDivider />
+                        <m3:MaterialListItem InteractionMode="Click" IsDragged="True"
+                                             Content="Owner-reported reorder state"
+                                             SupportingContent="IsDragged previews a drag state supplied by the owning surface.">
+                            <m3:MaterialListItem.LeadingContent>
+                                <ms:MaterialSymbol Symbol="DragHandle" />
+                            </m3:MaterialListItem.LeadingContent>
+                        </m3:MaterialListItem>
+                    </StackPanel>
+                </Border>
+                <TextBlock x:Name="InteractionStatus" Classes="body-small"
+                           Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                           Text="Choose an interactive list item." />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

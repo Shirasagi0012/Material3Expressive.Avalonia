@@ -5,6 +5,15 @@ using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
+// Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// compose/material3/material3-ripple/src/commonMain/kotlin/androidx/compose/material3/ripple/
+// {RippleAnimation,CommonRipple}.kt:62-67, 144-152; executable Compose Multiplatform Material3
+// 1.12.0-alpha03 / Jetpack Material3 1.5.0-alpha22 uses the equivalent
+// material3/src/commonMain/kotlin/androidx/compose/material3/internal/ripple/
+// {RippleAnimation,CommonRipple}.kt:58-67, 122-152. Compose supplies a Color with its state
+// alpha replaced before Skia compositing; MaterialInteractionHost.ComposeOpacity preserves that
+// nearest-8-bit behavior for Avalonia's opacity stack.
+
 /// <summary>
 /// One press ripple: a circle growing from the pointer and fading away on release.
 /// </summary>
@@ -118,7 +127,7 @@ public sealed class RippleAnimation : IAnimation
         if (alpha <= 0)
             return;
 
-        using (context.PushOpacity(alpha))
+        using (context.PushOpacity(MaterialInteractionHost.ComposeOpacity(alpha)))
             context.DrawEllipse(brush, null, Center, Radius, Radius);
     }
 

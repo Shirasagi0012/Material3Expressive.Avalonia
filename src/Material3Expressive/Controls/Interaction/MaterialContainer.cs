@@ -26,7 +26,7 @@ public static class MaterialContainer
         Size size,
         CornerRadius corners,
         IBrush? fill,
-        IImmutableBrush? outline,
+        IBrush? outline,
         double outlineWidth,
         double elevation,
         Color shadowColor)
@@ -48,13 +48,13 @@ public static class MaterialContainer
         Size size,
         CornerRadius corners,
         IBrush? fill,
-        IImmutableBrush? outline = null,
+        IBrush? outline = null,
         double outlineWidth = 0)
     {
         if (size.Width <= 0 || size.Height <= 0)
             return;
 
-        var pen = outline is { } && outlineWidth > 0 ? new ImmutablePen(outline, outlineWidth) : null;
+        var pen = outline is { } && outlineWidth > 0 ? new Pen(outline, outlineWidth) : null;
         var inset = pen is { } ? outlineWidth / 2 : 0;
 
         context.DrawRectangle(

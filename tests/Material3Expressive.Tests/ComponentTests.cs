@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -634,10 +635,130 @@ public class SurfaceListItemTests
 
         item.IsChecked = false;
         Assert.False(item.IsSelected);
-        Assert.Equal(72, item.MinHeight);
 
         item.InteractionMode = ListItemInteractionMode.None;
         Assert.False(item.Focusable);
+    }
+
+    [AvaloniaFact]
+    public void ListItemTemplate_MeasuresTheAlpha25OneTwoAndThreeLineMinimumHeights()
+    {
+        // Fixed-size slot probes keep this integration check about ListItemPanel's 56/72/88dp
+        // minimum-height contract rather than a platform text renderer's glyph metrics.
+        var oneLine = new MaterialListItem { Content = SlotProbe(80, 20), Width = 240 };
+        var twoLine = new MaterialListItem
+        {
+            Content = SlotProbe(80, 20),
+            SupportingContent = SlotProbe(80, 20),
+            Width = 240
+        };
+        var threeLine = new MaterialListItem
+        {
+            Content = SlotProbe(80, 20),
+            OverlineContent = SlotProbe(80, 12),
+            SupportingContent = SlotProbe(80, 20),
+            Width = 240
+        };
+        var host = new StackPanel { Width = 240, Children = { oneLine, twoLine, threeLine } };
+
+        ThemeTestHelper.ShowWindow(host);
+
+        Assert.Equal(56, TemplatePanel(oneLine).DesiredSize.Height);
+        Assert.Equal(72, TemplatePanel(twoLine).DesiredSize.Height);
+        Assert.Equal(88, TemplatePanel(threeLine).DesiredSize.Height);
+        Assert.Equal(56, oneLine.Bounds.Height);
+        Assert.Equal(72, twoLine.Bounds.Height);
+        Assert.Equal(88, threeLine.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void ListItemTemplate_MapsSlotVisibilityAndTypographyAfterLoading()
+    {
+        var item = new MaterialListItem
+        {
+            LeadingContent = "Leading",
+            Content = "Headline",
+            OverlineContent = "Overline",
+            SupportingContent = "Supporting",
+            TrailingContent = "Trailing",
+            Width = 240
+        };
+
+        ThemeTestHelper.ShowWindow(item);
+        var slots = TemplateSlots(item);
+
+        Assert.Equal(5, slots.Count);
+        Assert.All(slots.Values, slot => Assert.True(slot.IsVisible));
+        Assert.Equal(TypographyRole.TitleMedium, TypographyScheme.GetTextStyle(slots[MaterialListItemSlot.Leading]));
+        Assert.Equal(TypographyRole.LabelSmall, TypographyScheme.GetTextStyle(slots[MaterialListItemSlot.Trailing]));
+        Assert.Equal(TypographyRole.LabelSmall, TypographyScheme.GetTextStyle(slots[MaterialListItemSlot.Overline]));
+        Assert.Equal(TypographyRole.BodyLarge, TypographyScheme.GetTextStyle(slots[MaterialListItemSlot.Headline]));
+        Assert.Equal(TypographyRole.BodyMedium, TypographyScheme.GetTextStyle(slots[MaterialListItemSlot.Supporting]));
+
+        item.LeadingContent = null;
+        item.TrailingContent = null;
+        item.OverlineContent = null;
+        item.SupportingContent = null;
+
+        Assert.False(slots[MaterialListItemSlot.Leading].IsVisible);
+        Assert.False(slots[MaterialListItemSlot.Trailing].IsVisible);
+        Assert.False(slots[MaterialListItemSlot.Overline].IsVisible);
+        Assert.False(slots[MaterialListItemSlot.Supporting].IsVisible);
+        Assert.True(slots[MaterialListItemSlot.Headline].IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void MultiSelectionActivation_SetsTheFinalStateBeforeClickAndCommand()
+    {
+        var clickStates = new List<bool>();
+        var commandStates = new List<bool>();
+        var item = new MaterialListItem
+        {
+            InteractionMode = ListItemInteractionMode.MultiSelection,
+            Content = "Headline",
+            Width = 240
+        };
+        item.Click += (_, _) => clickStates.Add(item.IsSelected);
+        item.CommandParameter = item;
+        item.Command = new RecordingCommand(parameter => commandStates.Add(((MaterialListItem)parameter!).IsSelected));
+        var window = ThemeTestHelper.ShowWindow(item);
+        var point = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), window)
+                    ?? throw new InvalidOperationException("List item was not mounted.");
+
+        window.MouseDown(point, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(point, Avalonia.Input.MouseButton.Left);
+
+        Assert.True(item.IsSelected);
+        Assert.Equal(new[] { true }, clickStates);
+        Assert.Equal(new[] { true }, commandStates);
+
+        window.MouseDown(point, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(point, Avalonia.Input.MouseButton.Left);
+
+        Assert.False(item.IsSelected);
+        Assert.Equal(new[] { true, false }, clickStates);
+        Assert.Equal(new[] { true, false }, commandStates);
+    }
+
+    private static MaterialListItemPanel TemplatePanel(MaterialListItem item) =>
+        Assert.Single(item.GetVisualDescendants().OfType<MaterialListItemPanel>());
+
+    private static IReadOnlyDictionary<MaterialListItemSlot, Control> TemplateSlots(MaterialListItem item) =>
+        TemplatePanel(item).Children.ToDictionary(MaterialListItemPanel.GetSlot);
+
+    private static Border SlotProbe(double width, double height) => new() { Width = width, Height = height };
+
+    private sealed class RecordingCommand(Action<object?> execute) : ICommand
+    {
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => execute(parameter);
     }
 }
 

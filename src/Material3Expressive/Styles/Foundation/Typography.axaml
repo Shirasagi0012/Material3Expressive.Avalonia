@@ -1,6 +1,15 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <!-- Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+         compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt:
+         1216-1225 and 1291-1388, which apply a distinct ProvideTextStyleFromToken decorator to
+         each ListItem slot; tokens/ListTokens.kt (VERSION 29.0.0) supplies the slot roles.
+         The executable Compose reference remains Material3 1.5.0-alpha22 lineage, so it can
+         verify static interactive slot visuals but cannot verify alpha25-only layout behavior.
+         Avalonia's MaterialListItem template contains several ContentPresenters: a parent
+         BodyLarge selector must therefore constrain its generated TextBlock selector to a
+         BodyLarge presenter, rather than overriding supporting/overline/trailing slot metrics. -->
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type TextBlock}" TargetType="TextBlock">
             <Style Selector="^[(m3|TypographyScheme.TextStyle)=DisplayLarge]">
@@ -349,7 +358,7 @@
         <Setter Property="TextElement.FontFamily" Value="{m3:MdTypeFamily BodyLarge}" />
         <Setter Property="TextElement.FontWeight" Value="{m3:MdTypeWeight BodyLarge}" />
         <Setter Property="TextElement.FontSize" Value="{m3:MdTypeSize BodyLarge}" />
-        <Style Selector="^ /template/ ContentPresenter TextBlock">
+        <Style Selector="^ /template/ ContentPresenter[(m3|TypographyScheme.TextStyle)=BodyLarge] TextBlock">
             <Setter Property="LineHeight" Value="{m3:MdTypeLineHeight BodyLarge}" />
             <Setter Property="LetterSpacing" Value="{m3:MdTypeTracking BodyLarge}" />
         </Style>

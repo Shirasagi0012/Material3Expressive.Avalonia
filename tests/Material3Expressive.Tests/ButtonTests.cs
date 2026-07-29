@@ -52,17 +52,28 @@ public class ButtonTests
             ThemeTestHelper.ColorOf(button.Foreground));
     }
 
-    [AvaloniaFact]
-    public void ChangingSize_RetunesEveryMetricTogether()
+    [AvaloniaTheory]
+    [InlineData(ButtonSize.ExtraSmall, TypographyRole.LabelLarge, 14d)]
+    [InlineData(ButtonSize.Small, TypographyRole.LabelLarge, 14d)]
+    [InlineData(ButtonSize.Medium, TypographyRole.TitleMedium, 16d)]
+    [InlineData(ButtonSize.Large, TypographyRole.HeadlineSmall, 24d)]
+    [InlineData(ButtonSize.ExtraLarge, TypographyRole.HeadlineLarge, 32d)]
+    public void ChangingSize_RetunesEveryMetricTogether(
+        ButtonSize size,
+        TypographyRole expectedTextStyle,
+        double expectedFontSize)
     {
         var button = new MaterialButton { Content = "Press" };
         ThemeTestHelper.ShowWindow(button);
 
-        button.Size = ButtonSize.Large;
+        button.Size = size;
 
-        Assert.Equal(ButtonLargeTokens.ContainerHeight, button.MinHeight);
-        Assert.Equal(ButtonLargeTokens.LeadingSpace, button.Padding.Left);
-        Assert.Equal(TypeScale.HeadlineSmall.FontSize, button.FontSize);
+        var metrics = ButtonSizeTokens.For(size);
+
+        Assert.Equal(metrics.ContainerHeight, button.MinHeight);
+        Assert.Equal(metrics.LeadingSpace, button.Padding.Left);
+        Assert.Equal(expectedTextStyle, TypographyScheme.GetTextStyle(button));
+        Assert.Equal(expectedFontSize, button.FontSize);
     }
 
     [AvaloniaFact]

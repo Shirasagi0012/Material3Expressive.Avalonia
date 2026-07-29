@@ -76,6 +76,11 @@
                                 <ms:MaterialSymbol Symbol="Layers" />
                             </m3:MaterialNavigationItem.Icon>
                         </m3:MaterialNavigationItem>
+                        <m3:MaterialNavigationItem Content="Surfaces &amp; lists" IsCheckedChanged="OnRailItemChecked">
+                            <m3:MaterialNavigationItem.Icon>
+                                <ms:MaterialSymbol Symbol="Layers" />
+                            </m3:MaterialNavigationItem.Icon>
+                        </m3:MaterialNavigationItem>
                     </m3:MaterialNavigationBar>
                 </ScrollViewer>
             </DockPanel>

@@ -22,7 +22,7 @@ Material token database and stamped with the version it came from.
 | **Motion** | A spring animator ported from `animation-core` — analytic, retargetable, velocity-preserving. |
 | **Interaction** | State layers with Material's asymmetric fades, ripples, and the corner-morph press feedback. |
 | **Symbols** | Material Symbols Rounded as the first-party icon family, including animatable fill, weight, grade and optical-size axes. |
-| **Components** | Buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
+| **Components** | Surface and divider primitives; list rows; buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
 
 ## Getting started
 
@@ -56,6 +56,38 @@ no further wiring.
 <m3:MaterialFab Label="Compose"><ms:MaterialSymbol Symbol="Edit" /></m3:MaterialFab>
 <m3:MaterialCard Variant="Outlined">…</m3:MaterialCard>
 ```
+
+## Surfaces and list rows
+
+`MaterialSurface` separates Material tonal and shadow elevation; `MaterialDivider` supplies the
+one control adaptation of horizontal and vertical dividers through `Orientation`. Set
+`IsHairline="True"` when the Compose `Dp.Hairline` contract is required: it paints one physical
+pixel while retaining zero cross-axis layout size. `Thickness="0"` deliberately remains no line.
+A standard
+`MaterialListItem` has named leading, headline (`Content`), overline, supporting, and trailing
+slots. Its `InteractionMode` is the explicit Avalonia/XAML adaptation of the four Compose
+overloads:
+
+```xml
+<m3:MaterialSurface TonalElevation="3" ShadowElevation="3" Padding="16">
+    <m3:MaterialListItem InteractionMode="MultiSelection"
+                         IsSelected="True"
+                         Content="Keep offline"
+                         SupportingContent="Download new content automatically." />
+</m3:MaterialSurface>
+
+<m3:MaterialDivider Orientation="Horizontal" />
+<m3:MaterialDivider Orientation="Vertical" IsHairline="True" />
+```
+
+`None` is enabled static content: it neither consumes pointer/keyboard activation nor lets an
+inherited `Command.CanExecute` disable the row. `Click` invokes an action, `SingleSelection` is
+radio-like, and `MultiSelection` toggles `IsSelected`. A host owns single-selection coordination and an owning
+reorder surface may report `IsDragged`; disabled rows retain disabled colours but receive the
+upstream dragged shape, elevation, and state layer. The control does not invent a drag/drop system. The
+segmented-list group geometry API remains outstanding, so `SegmentedListItem` is not yet claimed
+as supported. See [docs/component-coverage.md](docs/component-coverage.md) for the current
+partial-completion and parity status.
 
 Material Symbols use the Rounded family by default. Toggle, navigation, tab and chip selection
 states drive the variable font's `Fill` axis instead of swapping glyphs. The current tested render

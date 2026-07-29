@@ -196,6 +196,82 @@ incoming hover 15 ms, focus 45 ms, drag 45 ms; outgoing drag 150 ms, others 15 m
 all linear. (The M3E-era focus *ring* animates with motionScheme springs instead —
 see the ripple config section above; these tweens govern the classic opacity layers.)
 
+## Surface and Divider primitives
+
+`Surface.kt` separates tonal elevation from shadow elevation: nested surface color resolution
+uses accumulated tonal elevation, while drawing elevation stays independent. `Divider.kt` exposes
+`HorizontalDivider` and `VerticalDivider`, both defaulting to `DividerTokens.Thickness` and
+`DividerTokens.Color`; the pinned token file is `tokens/DividerTokens.kt` (VERSION `v0_117`).
+`Dp.Hairline` is a special stroke-width input, not a 1dp layout measurement: it reserves zero
+cross-axis layout size and paints one physical pixel centred on the canvas boundary
+(`Divider.kt`, `DividerTest.kt`, and `DividerScreenshotTest.kt`).
+
+Avalonia adapts the horizontal/vertical composables through `MaterialDivider.Orientation` and
+exposes the special case explicitly through `IsHairline`. This preserves the zero-layout
+contract; `Thickness=0` is intentionally not overloaded to mean hairline and remains no line.
+The alpha22 executable reference can exercise the default, custom-thickness, orientation, and
+hairline paths, so those rows have normal Compose parity evidence rather than a version-gap claim.
+
+## List items, segmentation, and interaction modes
+
+`<m3>ListItem.kt` at the implementation-source baseline contains four standard and four
+segmented overloads: no interaction, an action click, radio-like single selection, and
+checkbox-like multi-selection (`ListItem.kt:262-544` and `552-847`). Each has the same five
+content slots: leading, trailing, overline, supporting, and headline/content. The Avalonia API
+therefore adapts those overloads through one explicit `MaterialListItem.InteractionMode`
+(`None`, `Click`, `SingleSelection`, `MultiSelection`) rather than exposing an unrelated control
+for each Kotlin function. This is an intentional XAML API decision, not an omitted overload.
+
+Every interactive Compose overload also accepts optional `onLongClick` and `onLongClickLabel`.
+The same `InteractionMode` decision now governs Avalonia's optional `LongClick` routed event,
+`LongClickCommand`/`LongClickCommandParameter`, and `LongClickLabel`: `Click`,
+`SingleSelection`, and `MultiSelection` support the secondary action, while `None` keeps no
+gesture path. Avalonia maps this to `Holding` (including deliberate mouse holding support) and
+uses the label as fallback automation help text because UI Automation has no secondary-invoke
+pattern. A successful hold consumes the following primary click, matching `combinedClickable`.
+
+The shared `InteractiveListItem` body (`ListItem.kt:1450-1669`) is the behavioral reference:
+
+- it collects pressed, focused, hovered, and dragged interactions; `dragged` selects reorder
+  colors, shape, state layer, and elevation;
+- its `updateTransition(InteractiveListColorState)` animates all resolved colors with
+  `MotionSchemeKeyTokens.DefaultEffects`, while shape and dragged elevation use
+  `FastSpatial` (`ListItem.kt:1492-1588`);
+- `ListItemDefaults.ListItemColors` resolves disabled before dragged before selected, but
+  `ListItemShapes.shapeForInteraction` and the dragged elevation are not enabled-gated:
+  `ListTokens` selects `CornerLarge` (16dp) and `ElevationTokens.Level4` (8dp) while the row
+  has a drag interaction (`ListItemDefaults.kt:750-835`, `ListTokens.kt:48-49`);
+- `InteractiveListItem` lifts every positive animated dragged elevation with `zIndex(1f)`, leaves
+  the outer shadow unclipped, and clips row content to the animated shape. Its ripple path uses
+  `color.copy(alpha = animatedAlpha)`, so a disabled dragged state layer replaces alpha with the
+  drag opacity instead of multiplying the 38% disabled content alpha (`ListItem.kt:1563-1587`,
+  `material3-ripple/Ripple.kt:377-388`);
+- the alpha25 height fix maps one/two/three text lines to `56/72/88dp`; the interactive measure
+  policy uses the text baseline test for multiline supporting text and aligns the remaining inner
+  content at the top above its 60dp breakpoint (`ListItem.kt:1650-1990`);
+- `ListItemDefaults.ContentPadding` resolves to logical `16dp` start/end, `10dp` top/bottom, and
+  `ListTokens.ItemBetweenSpace` supplies the conditional `12dp` side-slot gap
+  (`ListItemDefaults.kt:40-64`, `ListTokens.kt`, VERSION `29.0.0`).
+
+The desktop executable reference has an important limitation here: its alpha22 Compose
+Multiplatform implementation cannot execute alpha25's modern no-interaction overload or its
+expressive line-height flag. It can execute the older click/selection overloads and inject the
+same external `DragInteraction`, including disabled drag; use those cases as alpha22 conformance
+evidence only. Record the alpha25 height behavior as **parity unavailable** and prove it with
+source review plus deterministic Avalonia layout and motion tests.
+
+The pinned alpha22 interactive overloads also accept the long-click parameters, but a static
+reference image has no observable post-invocation state. Long-click behavior is therefore covered
+by source review and deterministic Avalonia pointer/command/automation tests rather than claimed
+as a visual-parity result.
+
+`SegmentedListItem` is not just a differently colored ordinary row. It requires caller-supplied
+`ListItemShapes`; `ListItemDefaults.segmentedShapes(index, count)` rounds only the outer group
+corners, `segmentedColors()` begins from `ItemSegmentedContainerColor`, and the group gap is 2dp
+(`ListItemDefaults.kt:246-399,438-536`, `ListTokens.kt:87,143`). A future Avalonia segmented API
+must expose that group-position contract explicitly; it must not silently claim the standard row
+as a segmented counterpart merely because `InteractionMode` is shared.
+
 ## Press shape morphing (buttons et al.)
 
 - `ButtonShapes(shape, pressedShape)` — 2 slots; `ToggleButtonShapes` adds
@@ -226,8 +302,8 @@ see the ripple config section above; these tweens govern the classic opacity lay
   are identical inlined `Surface → Row` structures differing only in defaults.
 - **Sizes are not an enum**: caller sets height, and `ButtonDefaults` resolvers map
   `Dp → x` (`shapesFor`, `contentPaddingFor(height, hasStartIcon, hasEndIcon)`,
-  `iconSizeFor`, `iconSpacingFor`, `textStyleFor` — label sizes: labelLarge →
-  titleMedium → headlineSmall → headlineLarge). But **IconButton uses named
+  `iconSizeFor`, `iconSpacingFor`, `textStyleFor`: 32/40dp → `LabelLarge`, 56dp →
+  `TitleMedium`, 96dp → `HeadlineSmall`, 136dp → `HeadlineLarge`). But **IconButton uses named
   factories** + `IconButtonWidthOption(Narrow/Uniform/Wide)` — two idioms coexist
   upstream. The Avalonia API adapts both through named size and width properties while retaining
   upstream's resolved metrics.

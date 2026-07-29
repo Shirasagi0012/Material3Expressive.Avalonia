@@ -1,14 +1,29 @@
+// Implementation-source basis: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/{ListItem,ListItemDefaults}.kt
+// and tokens/{ListTokens,ReorderListTokens,StateTokens}.kt (VERSION 29.0.0).  The executable scenes below intentionally use only
+// interaction overloads present in the pinned Compose Multiplatform Material3 1.12.0-alpha03 / Jetpack
+// Material3 1.5.0-alpha22 reference. Alpha22 does not expose alpha25's non-interactive
+// `ListItem(content = ...)` overload, so InteractionMode.None is parity unavailable. Their explicit
+// 56/72/88dp sizes also keep the alpha25 expressive text-line-height flag out of this executable
+// comparison; that newer behavior is likewise parity unavailable.
+
 package material3expressive.compose.reference.scenes
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
@@ -16,7 +31,10 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import material3expressive.compose.reference.CaseContract
@@ -24,7 +42,10 @@ import material3expressive.compose.reference.ReferenceCaseRegistry
 import material3expressive.compose.reference.ReferenceScene
 import material3expressive.compose.reference.RequiredNodeSpec
 import material3expressive.compose.reference.probes.ProbeRegistry
+import material3expressive.compose.reference.probes.ShadowProbeSpec
+import kotlinx.coroutines.yield
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun ReferenceCaseRegistry.registerNavigationScenes() {
     register(
         navCase("navigation/bar/three-items/selected/light"),
@@ -78,6 +99,260 @@ fun ReferenceCaseRegistry.registerNavigationScenes() {
         scrollableTabWideCase("navigation/tab/primary/scrollable/all-items/selected-last/light"),
         ReferenceScene { probes -> ScrollableTabs(probes, width = 600.dp) },
     )
+    register(
+        listItemCase(
+            id = "listitem/click/enabled/light",
+            requiredNodes = listItemTextNodes("Settings"),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                onClick = {},
+                modifier = listItemModifier(probes, 56.dp),
+                content = { ListItemText("Settings", "headline", probes) },
+            )
+        },
+    )
+    register(
+        listItemCase(
+            id = "listitem/click/disabled/light",
+            requiredNodes = listItemTextNodes("Offline"),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                onClick = {},
+                enabled = false,
+                modifier = listItemModifier(probes, 56.dp),
+                content = { ListItemText("Offline", "headline", probes) },
+            )
+        },
+    )
+    register(
+        listItemCase(
+            id = "listitem/single-selection/selected-disabled/light",
+            requiredNodes = listItemTextNodes("Default network"),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                selected = true,
+                onClick = {},
+                enabled = false,
+                modifier = listItemModifier(probes, 56.dp),
+                content = { ListItemText("Default network", "headline", probes) },
+            )
+        },
+    )
+    register(
+        listItemCase(
+            id = "listitem/click/dragged/light",
+            requiredNodes = listItemTextNodes("Reorder item", shadow = true),
+        ),
+        ReferenceScene { probes -> DraggedListItem(probes, enabled = true) },
+    )
+    register(
+        listItemCase(
+            id = "listitem/click/disabled-dragged/light",
+            requiredNodes = listItemTextNodes("Reorder item", shadow = true),
+        ),
+        ReferenceScene { probes -> DraggedListItem(probes, enabled = false) },
+    )
+    register(
+        listItemCase(
+            id = "listitem/click/two-line/slots/light",
+            height = 72.dp,
+            requiredNodes = listOf(
+                RequiredNodeSpec(id = "component", kind = "container"),
+                RequiredNodeSpec(id = "leading", kind = "container", parentId = "component"),
+                RequiredNodeSpec(id = "headline", kind = "text", parentId = "component", text = "Network"),
+                RequiredNodeSpec(id = "supporting", kind = "text", parentId = "component", text = "Wi-Fi, mobile data"),
+                RequiredNodeSpec(id = "trailing", kind = "text", parentId = "component", text = "On"),
+            ),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                onClick = {},
+                modifier = listItemModifier(probes, 72.dp),
+                leadingContent = {
+                    Spacer(Modifier.size(24.dp).then(probes.geometry("leading")))
+                },
+                trailingContent = { ListItemText("On", "trailing", probes) },
+                supportingContent = { ListItemText("Wi-Fi, mobile data", "supporting", probes) },
+                content = { ListItemText("Network", "headline", probes) },
+            )
+        },
+    )
+    // Compose ListItem accepts composable slot lambdas rather than Avalonia-style string content.
+    // Keep the same alpha22 Text nodes and 72dp Click overload here; the matching Avalonia case
+    // deliberately reaches them through ContentPresenter-generated TextBlocks.
+    register(
+        listItemCase(
+            id = "listitem/click/two-line/string-slots/light",
+            height = 72.dp,
+            requiredNodes = listOf(
+                RequiredNodeSpec(id = "component", kind = "container"),
+                RequiredNodeSpec(id = "leading", kind = "container", parentId = "component"),
+                RequiredNodeSpec(id = "headline", kind = "text", parentId = "component", text = "Network"),
+                RequiredNodeSpec(id = "supporting", kind = "text", parentId = "component", text = "Wi-Fi, mobile data"),
+                RequiredNodeSpec(id = "trailing", kind = "text", parentId = "component", text = "On"),
+            ),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                onClick = {},
+                modifier = listItemModifier(probes, 72.dp),
+                leadingContent = {
+                    Spacer(Modifier.size(24.dp).then(probes.geometry("leading")))
+                },
+                trailingContent = { ListItemText("On", "trailing", probes) },
+                supportingContent = { ListItemText("Wi-Fi, mobile data", "supporting", probes) },
+                content = { ListItemText("Network", "headline", probes) },
+            )
+        },
+    )
+    register(
+        listItemCase(
+            id = "listitem/click/three-line/overline-supporting/light",
+            height = 88.dp,
+            requiredNodes = listOf(
+                RequiredNodeSpec(id = "component", kind = "container"),
+                RequiredNodeSpec(id = "overline", kind = "text", parentId = "component", text = "Storage"),
+                RequiredNodeSpec(id = "headline", kind = "text", parentId = "component", text = "Cloud backup"),
+                RequiredNodeSpec(id = "supporting", kind = "text", parentId = "component", text = "Back up photos and videos"),
+            ),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                onClick = {},
+                modifier = listItemModifier(probes, 88.dp),
+                overlineContent = { ListItemText("Storage", "overline", probes) },
+                supportingContent = { ListItemText("Back up photos and videos", "supporting", probes) },
+                content = { ListItemText("Cloud backup", "headline", probes) },
+            )
+        },
+    )
+    register(
+        listItemCase(
+            id = "listitem/single-selection/selected/light",
+            requiredNodes = listItemTextNodes("Default network"),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                selected = true,
+                onClick = {},
+                modifier = listItemModifier(probes, 56.dp),
+                content = { ListItemText("Default network", "headline", probes) },
+            )
+        },
+    )
+    register(
+        listItemCase(
+            id = "listitem/single-selection/selected/dark",
+            dark = true,
+            requiredNodes = listItemTextNodes("Default network"),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                selected = true,
+                onClick = {},
+                modifier = listItemModifier(probes, 56.dp),
+                content = { ListItemText("Default network", "headline", probes) },
+            )
+        },
+    )
+    register(
+        listItemCase(
+            id = "listitem/multi-selection/selected/light",
+            requiredNodes = listItemTextNodes("Sync over Wi-Fi"),
+        ),
+        ReferenceScene { probes ->
+            ListItem(
+                checked = true,
+                onCheckedChange = {},
+                modifier = listItemModifier(probes, 56.dp),
+                content = { ListItemText("Sync over Wi-Fi", "headline", probes) },
+            )
+        },
+    )
+}
+
+private fun listItemCase(
+    id: String,
+    height: Dp = 56.dp,
+    dark: Boolean = false,
+    requiredNodes: List<RequiredNodeSpec>,
+) = CaseContract(
+    id = id,
+    viewportWidthDp = 360,
+    viewportHeightDp = height.value.toInt() + 24,
+    dark = dark,
+    requiredNodes = requiredNodes,
+)
+
+private fun listItemTextNodes(headline: String, shadow: Boolean = false) = listOf(
+    RequiredNodeSpec(id = "component", kind = if (shadow) "shadow" else "container"),
+    RequiredNodeSpec(id = "headline", kind = "text", parentId = "component", text = headline),
+)
+
+private fun listItemModifier(probes: ProbeRegistry, height: Dp): Modifier =
+    Modifier.requiredSize(360.dp, height).then(probes.geometry("component"))
+
+@Composable
+private fun ListItemText(
+    text: String,
+    id: String,
+    probes: ProbeRegistry,
+    color: Color = Color.Unspecified,
+) {
+    Text(
+        text = text,
+        color = color,
+        modifier = probes.text(id),
+        onTextLayout = probes.onTextLayout(id),
+    )
+}
+
+@Composable
+private fun DraggedListItem(probes: ProbeRegistry, enabled: Boolean) {
+    val interactionSource = remember { MutableInteractionSource() }
+    // AndroidX alpha25 ListTokens maps a dragged row to CornerLarge (16dp) and Elevation.Level4
+    // (8dp). The alpha22 executable implementation has the same external DragInteraction path,
+    // so record the renderer-level contract while the scene verifies its pixels.
+    probes.recordShadow(
+        "component",
+        ShadowProbeSpec(
+            shapeKind = "roundedRectangle",
+            cornerRadiusDp = 16f,
+            elevationDp = 8f,
+        ),
+    )
+    ListItem(
+        onClick = {},
+        enabled = enabled,
+        modifier = listItemModifier(probes, 56.dp),
+        interactionSource = interactionSource,
+        // onTextLayout is not reinvoked when only the inherited content color changes. Use the
+        // source-resolved terminal color explicitly so the structural paint probe describes the
+        // same settled frame as the screenshot: ReorderListTokens.ItemLabelTextColor.
+        content = {
+            ListItemText(
+                "Reorder item",
+                "headline",
+                probes,
+                // ListItemColors resolves disabled before dragged. Its disabled color is already
+                // present at the first composition, while only the enabled dragged target needs
+                // an explicit terminal probe color.
+                color = if (enabled) MaterialTheme.colorScheme.onTertiaryContainer else Color.Unspecified,
+            )
+        },
+    )
+
+    // MutableInteractionSource has no replay, and Compose does not expose a subscription-ready
+    // signal for its internal collector. The parent effect yields so the child collector starts
+    // and suspends on the shared flow before this single Start is emitted. Unlike retrying Start
+    // on later render frames, that preserves the final state layer instead of restarting its fade.
+    LaunchedEffect(interactionSource) {
+        yield()
+        interactionSource.emit(DragInteraction.Start())
+    }
 }
 
 private fun navCase(id: String, dark: Boolean = false) = CaseContract(

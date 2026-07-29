@@ -27,7 +27,8 @@ internal static class ParityCases
         Button(ButtonVariant.Tonal, enabled: true, VisualTheme.Light),
         Button(ButtonVariant.Elevated, enabled: true, VisualTheme.Light),
         Button(ButtonVariant.Outlined, enabled: true, VisualTheme.Light),
-        Button(ButtonVariant.Text, enabled: true, VisualTheme.Light)
+        Button(ButtonVariant.Text, enabled: true, VisualTheme.Light),
+        Button(ButtonVariant.Filled, enabled: true, VisualTheme.Light, ButtonSize.Large)
     ];
 
     private static VisualCase PrimaryColorRoles(VisualTheme theme)
@@ -78,7 +79,11 @@ internal static class ParityCases
             RenderScaling: 1.0);
     }
 
-    private static VisualCase Button(ButtonVariant variant, bool enabled, VisualTheme theme)
+    private static VisualCase Button(
+        ButtonVariant variant,
+        bool enabled,
+        VisualTheme theme,
+        ButtonSize size = ButtonSize.Medium)
     {
         var variantName = variant switch
         {
@@ -89,12 +94,18 @@ internal static class ParityCases
             ButtonVariant.Text => "text",
             _ => throw new ArgumentOutOfRangeException(nameof(variant))
         };
+        var sizeName = size switch
+        {
+            ButtonSize.Medium => "medium",
+            ButtonSize.Large => "large",
+            _ => throw new ArgumentOutOfRangeException(nameof(size))
+        };
         var state = enabled ? "enabled" : "disabled";
         var themeName = theme.IsDark ? "dark" : "light";
 
         return new VisualCase(
-            $"button/{variantName}/medium/{state}/{themeName}",
-            new PixelSize(240, 96),
+            $"button/{variantName}/{sizeName}/{state}/{themeName}",
+            new PixelSize(240, size == ButtonSize.Large ? 160 : 96),
             theme,
             _ => new Grid
             {
@@ -105,7 +116,7 @@ internal static class ParityCases
                         Name = "component",
                         Content = new TextBlock { Name = "label", Text = "Button" },
                         Variant = variant,
-                        Size = ButtonSize.Medium,
+                        Size = size,
                         IsEnabled = enabled,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,

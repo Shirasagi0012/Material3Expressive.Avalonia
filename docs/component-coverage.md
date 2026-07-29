@@ -25,8 +25,8 @@ are defined in [`ROADMAP.md`](../ROADMAP.md).
 | Status | Feature families | Share |
 |---|---:|---:|
 | Implemented | 19 | 38% |
-| Partial | 16 | 32% |
-| Missing | 15 | 30% |
+| Partial | 18 | 36% |
+| Missing | 13 | 26% |
 | Total | 50 | 100% |
 
 The theming, color, typography, shape, motion, ripple, token-generation, and Material Symbols
@@ -35,18 +35,20 @@ one-to-one component families.
 
 ## Baseline-audit status
 
-The [alpha22→alpha25 difference audit](alpha22-alpha25-difference-audit.md) confirms that all 63
-active executable parity cases use alpha22-supported static APIs. They remain alpha22 conformance
-evidence only; none is an implicit alpha25 parity pass. Alpha25-specific ToggleButton border
-transitions, expressive ListItem text-line-height behavior, and Slider/RangeSlider state and
-keyboard-completion behavior are recorded as parity unavailable until the executable reference
-can represent them.
+The [alpha22→alpha25 difference audit](alpha22-alpha25-difference-audit.md) confirms that every
+accepted executable parity case is alpha22 conformance evidence only; none is an implicit alpha25
+parity pass. The accepted alpha22-compatible `MaterialListItem` click/selection cases likewise do
+not prove alpha25's text-line-height behavior or its modern no-interaction overload. Those paths
+remain parity unavailable and use source review plus deterministic Avalonia layout/input tests.
+Alpha25-specific ToggleButton border transitions and Slider/RangeSlider state and
+keyboard-completion behavior are recorded the same way until the executable reference can
+represent them.
 
 ## Component matrix
 
 | Area | Compose feature family | Avalonia counterpart | Status | Principal gap or adaptation |
 |---|---|---|---|---|
-| Buttons | Button variants and sizes | `MaterialButton` | Implemented | Compose composables are represented by `Variant` and `Size`. |
+| Buttons | Button variants and sizes | `MaterialButton` | Implemented | Compose composables are represented by `Variant` and `Size`; the alpha25 `textStyleFor` mapping is explicit: ExtraSmall/Small → LabelLarge, Medium → TitleMedium, Large → HeadlineSmall, ExtraLarge → HeadlineLarge. The executable alpha22 large-button scene passes. |
 | Buttons | ToggleButton variants | `MaterialToggleButton` | Implemented | Variants are consolidated into one XAML control. |
 | Buttons | IconButton variants and sizes | `MaterialIconButton` | Implemented | Width and size are Avalonia properties. |
 | Buttons | IconToggleButton variants | `MaterialToggleIconButton` | Implemented | Variants are consolidated into one control. |
@@ -72,7 +74,7 @@ can represent them.
 | Search | SearchBar family | `MaterialSearchBar` | Partial | Docked/full-screen/top variants and scroll behaviors are incomplete. |
 | Menus | DropdownMenu and menu items | Avalonia menu styles | Partial | This is a restyle of Avalonia menus, not a full Compose-style state API. |
 | Menus | ExposedDropdownMenu | None | Missing | Anchor box, trailing icon, and exposed-menu behavior are absent. |
-| Lists | ListItem and SegmentedListItem | None | Missing | One-, two-, and three-line/list segment layouts are absent. |
+| Lists | ListItem and SegmentedListItem | `MaterialListItem` | Partial | Standard one-, two-, and three-line rows expose slots plus unified `InteractionMode`; both direct `TextBlock` slots and ContentPresenter-generated string slots receive their Compose token typography. `Click`/single/multi modes uniformly support `LongClick`, `LongClickCommand`, and `LongClickLabel`; Holding (including mouse) consumes the following primary click, and its label is fallback automation help text. Eleven alpha22-compatible Click/SingleSelection/MultiSelection cases pass: static/selection rows use `component-with-text`, while dragged and disabled-dragged rows also require an exact 16dp-corner / 8dp-elevation shadow contract under `component-with-text-and-elevation`. `None` has source-reviewed deterministic pointer, keyboard, command, and automation coverage because alpha22 cannot execute its modern overload. Alpha25 line-height and None-mode executable parity remain unavailable; long-click has deterministic behavior coverage because a static parity screenshot cannot observe its action. `SegmentedListItem` still lacks its required group-position shapes, segmented colours, and 2dp gap. |
 | Selection | SegmentedButton rows | None | Missing | Single- and multi-choice row semantics are absent. |
 | Navigation | Tab and TabRow families | `MaterialTab`, `MaterialTabs` | Partial | `IsScrollable` adapts `PrimaryScrollableTabRow`: 52dp edges, 90dp minimum intrinsic tabs, and physical-pixel selected-tab centring. Alpha22 executable parity passes at 240dp and 600dp. Complete indicator/layout variants, icon permutations, and richer accessibility/keyboard coverage remain. |
 | Navigation | NavigationBar | `MaterialNavigationBar` | Implemented | Bar and rail share one Avalonia control. |
@@ -95,7 +97,7 @@ can represent them.
 | Gestures | SwipeToDismissBox | None | Missing | Anchored dismiss state and direction behavior are absent. |
 | Gestures | PullToRefresh | None | Missing | Pull state, threshold, and indicator container are absent. |
 | Desktop | Material scrollbar | None | Missing | No Material non-interactive scrollbar counterpart. |
-| Primitives | Surface, Divider, and Label | None as public component APIs | Missing | Internal controls draw surfaces and labels, but reusable public primitives are absent. |
+| Primitives | Surface, Divider, and Label | `MaterialSurface`, `MaterialDivider` | Partial | Public Surface tonal/shadow elevation and horizontal/vertical Divider are available. `MaterialDivider.IsHairline` is the explicit `Dp.Hairline` adaptation: a zero-layout cross axis with a one-physical-pixel retained stroke; `Thickness=0` remains no line. Alpha22 default/custom/horizontal/vertical/hairline parity passes. The separate Material label primitive remains absent, so this grouped family is not complete. |
 
 ## Interpretation notes
 

@@ -1,3 +1,8 @@
+// Upstream behavior reference: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// Button.kt:1661-1677 (ButtonDefaults.textStyleFor) and 978-1013 (size paddings), plus
+// tokens/Button{XSmall,Small,Medium,Large,XLarge}Tokens.kt (VERSION v0_11_0). The executable
+// Compose Multiplatform Material3 1.5.0-alpha22 lineage has the same textStyleFor thresholds at
+// Button.kt:1652-1670, so the size-to-typography adaptation is executable visual-parity scope.
 {
   "kind": "component",
   "name": "ButtonSizeTokens",
@@ -76,7 +81,7 @@
         "IconSize": "@ButtonMediumTokens.IconSize",
         "IconLabelSpace": "@ButtonMediumTokens.IconLabelSpace",
         "OutlineWidth": "@ButtonMediumTokens.OutlinedOutlineWidth",
-        "LabelTextStyle": "LabelLarge"
+        "LabelTextStyle": "TitleMedium"
       }
     },
     {
@@ -93,7 +98,7 @@
         "IconSize": "@ButtonLargeTokens.IconSize",
         "IconLabelSpace": "@ButtonLargeTokens.IconLabelSpace",
         "OutlineWidth": "@ButtonLargeTokens.OutlinedOutlineWidth",
-        "LabelTextStyle": "LabelLarge"
+        "LabelTextStyle": "HeadlineSmall"
       }
     },
     {
@@ -110,7 +115,7 @@
         "IconSize": "@ButtonXLargeTokens.IconSize",
         "IconLabelSpace": "@ButtonXLargeTokens.IconLabelSpace",
         "OutlineWidth": "@ButtonXLargeTokens.OutlinedOutlineWidth",
-        "LabelTextStyle": "LabelLarge"
+        "LabelTextStyle": "HeadlineLarge"
       }
     }
   ]

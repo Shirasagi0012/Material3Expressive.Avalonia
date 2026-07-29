@@ -111,3 +111,115 @@ The producer now records `positionInRoot + measured size`, so parity compares ma
 root-relative geometry. Targeted `TabTests` (3/3) and `navigation/tab/*` parity (6/6) pass. The
 remaining AppBar scroll API is intentionally blocked on the roadmap's shared state-ownership
 decision rather than being silently invented.
+
+## 2026-07-29 — ListItem typography and non-interactive contract
+
+Reviewed AndroidX `ListItem.kt` at `ff0a0a99` / Material3 `1.5.0-alpha25`, including the
+non-interactive `onClick = null` path and the shared `InteractiveListItem` body. Direct caller
+`TextBlock` slot content now receives the same token roles as Compose decorators: headline
+`BodyLarge`, supporting `BodyMedium`, and overline/trailing `LabelSmall`, including the correct
+letter spacing. This resolves the two-line supporting and three-line overline/supporting text
+tracking discrepancy without overriding explicit caller typography. A direct slot now also
+refreshes its non-local metrics when a caller adds or changes an explicit `TextStyle` binding
+after attachment.
+
+`MaterialListItem.InteractionMode=None` is now an enabled static row: it does not consume pointer
+or keyboard activation, emit hover/press/focus/ripple feedback, or inherit a disabled
+`Command.CanExecute` result from its `ToggleButton` implementation. Switching modes also clears
+the implementation-only checked state outside selection modes. Focused deterministic tests cover
+pointer/keyboard routing, command state, mid-gesture mode changes, selection compatibility,
+automation, layout, typography, and motion: `MaterialListItemInteractionModeTests` (4/4),
+`MaterialListItemTypographyTests` (4/4), and the full ListItem unit-test filter (34/34) passed.
+
+The direct alpha22 visual command passed all seven `listitem/` rows. Artifact
+`artifacts/visual-parity/xunit/20260729-111300-423` records each as
+`semanticRasterEquivalent`, with zero warnings and unchanged profile SHA-256
+`0B6B42D4B676FBF23D01AB6D49569BB406EE3A77131442922856F5BF5BDB3694`. A follow-up
+`listitem/click/two-line/string-slots/light` case verified the Avalonia-specific
+ContentPresenter-generated string-slot path after the nested `BodyLarge` selector was restricted
+to its own presenter. Its expected and actual headline/supporting/trailing style signatures match
+at `32/48/1.0px`, `28/40/0.4px`, and `22/32/1.0px`, respectively; it and the full five-row click
+family passed as `semanticRasterEquivalent` with zero warnings at
+`artifacts/visual-parity/xunit/20260729-123015-203`. `MaterialListItemTypographyTests` is now
+5/5, including this generated-string path. This is alpha22 Click/SingleSelection/MultiSelection
+conformance only: alpha25's line-height and modern None overload remain **parity unavailable**.
+`SegmentedListItem` group geometry/colours/gap and a uniform long-click public API remain open
+work, so the broader P1 ListItem item stays Partial.
+
+The following state-precedence slice reviewed alpha25 `ListItemDefaults.kt`, `ListTokens.kt`,
+`ElevationTokens.kt`, `ShapeTokens.kt`, `ListItem.kt`, and the alpha25/alpha22 Ripple paths.
+Disabled resolves ahead of dragged and selected colours, but dragged shape/elevation do not depend
+on enabled; the resolved targets are 16dp corners and 8dp elevation. The Avalonia adapter keeps
+that split, temporarily raises a dragged row for its animated elevation, clips only the content,
+and replaces (rather than multiplies) disabled brush alpha for Compose's externally supplied drag
+state layer. Added selected-disabled, dragged, and disabled-dragged alpha22 scenes. The full
+11-case ListItem family passed with no warnings at
+`artifacts/visual-parity/xunit/20260729-145840-218`; `MaterialListItemMotionTests` passed 6/6 and
+the parity-contract tests passed 23/23. This remains alpha22 conformance evidence and does not
+close SegmentedListItem or the long-click API decision.
+
+The subsequent full 93-case parity run at
+`artifacts/visual-parity/xunit/20260729-150636-496` accepted 89 rows (33 exact, 52 semantic, and
+four already documented circular-wavy warning rows), skipped the two unavailable display-headline
+rows, and retained exactly the two known focused TextField caret-endpoint mismatches. The ListItem
+changes introduced no new full-suite failures.
+
+## 2026-07-29 — Divider `Dp.Hairline` parity
+
+Reviewed `Divider.kt`, `tokens/DividerTokens.kt` (token database stamp `v0_117`),
+`DividerTest.kt`, and `DividerScreenshotTest.kt` at AndroidX `ff0a0a99` / Material3
+`1.5.0-alpha25`. `MaterialDivider.IsHairline` is the explicit Avalonia/XAML adaptation of
+Compose `Dp.Hairline`: it retains the zero cross-axis layout size, while a visual-only child draws
+a `1 / RenderScaling` DIP pen at the zero-coordinate origin. That produces Compose's two
+anti-aliased half-coverage physical-pixel rows/columns rather than inflating layout or accepting
+a tolerance. `Thickness=0` deliberately remains no rendered line.
+
+The alpha22 executable reference supports the same Divider API. The dedicated horizontal,
+vertical, default, custom-thickness, and both hairline cases passed as `exactMatch` at
+`artifacts/visual-parity/xunit/20260729-120350-802`; focused `DividerTests` additionally prove
+the one-physical-pixel 1x/2x footprint, orientation, theme brush, and non-interactive semantics.
+
+## 2026-07-30 — Button size typography and dragged ListItem probe
+
+Reviewed alpha25 `Button.kt:1661-1677` and its alpha22 counterpart
+`Button.kt:1652-1670`. `MaterialButton.Size` now follows the common
+`ButtonDefaults.textStyleFor` thresholds: ExtraSmall/Small use `LabelLarge`, Medium uses
+`TitleMedium`, Large uses `HeadlineSmall`, and ExtraLarge uses `HeadlineLarge`. A five-size
+theory validates role, font size, line height, and tracking; `ButtonTests` passed 17/17. The new
+alpha22-compatible `button/filled/large/enabled/light` reference scene explicitly applies the
+same `textStyleFor` role and passed exactly; the complete `button/` family passed 9/9.
+
+The dragged ListItem raster already had the correct terminal colour, but the Compose structural
+text probe could retain its initial inherited `onSurface` paint because changing only the
+inherited content colour does not necessarily rerun `onTextLayout`. The reference now yields once
+for the `MutableInteractionSource` collector before one `DragInteraction.Start`, then explicitly
+records the enabled terminal `onTertiaryContainer` text colour used by alpha25
+`ReorderListTokens`. The focused dragged case is `semanticRasterEquivalent` with no warning at
+`artifacts/visual-parity/xunit/20260729-173310-765`, and the full 11-case ListItem family passed
+with no warnings. This is a reference-observation correction, not a tolerance or component-token
+change.
+
+A fresh full 94-case parity run at
+`artifacts/visual-parity/xunit/20260729-173456-880` accepted 90 rows (34 exact, 52 semantic, and
+four documented circular-wavy warnings), skipped the two unavailable display-headline rows, and
+retained only the two known focused TextField caret-endpoint mismatches. No ListItem or Button
+failure remains.
+
+## 2026-07-30 — Unified ListItem long-click contract
+
+Reviewed alpha25 `ListItem.kt:325-372`, `403-454`, `487-538`, `642-687`, `722-771`, `806-855`,
+and `1450-1602`. Each interactive standard/segmented overload delegates its optional
+`onLongClick`/`onLongClickLabel` pair to `combinedClickable`. Decision 7 is now resolved: the
+existing Avalonia `InteractionMode` remains the single mode selector, while its three interactive
+values uniformly admit `LongClick`, `LongClickCommand`, `LongClickCommandParameter`, and
+`LongClickLabel`; `None` remains input-free. The desktop gesture is Avalonia `Holding`, with
+mouse enabled deliberately, and a completed long press consumes the later primary click.
+
+`LongClickLabel` supplements fallback automation help text without replacing an application's
+explicit help description; UI Automation has no secondary-invoke pattern to expose. The focused
+`MaterialListItemLongClickTests` pass 8/8, including all modes, command/event dispatch,
+`CanExecute` gating, held pointer click suppression, selection preservation, disabled `None`, and
+accessibility text. The
+pinned alpha22 reference already accepts long-click callbacks, but a static screenshot cannot
+observe invocation, so no visual-parity pass is claimed. `SegmentedListItem` geometry/colours/gap
+remain outstanding and the broader P1 item stays In Progress.

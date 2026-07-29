@@ -1,8 +1,16 @@
+// Implementation-source basis: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/{ListItem,ListItemDefaults}.kt
+// and tokens/ListTokens.kt (VERSION 29.0.0). The matching Compose scenes use the pinned
+// Material3 1.5.0-alpha22 executable interaction overloads at explicit 56/72/88dp sizes.
+// Alpha22 has no alpha25 non-interactive ListItem(content) overload, and alpha25's text-line-height
+// minimum-height behavior is intentionally parity unavailable here.
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.VisualTree;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.VisualTesting.Model;
@@ -171,7 +179,18 @@ internal static class ComposeWaveOneParityCases
         Tabs(TabVariant.Secondary, VisualTheme.Light),
         Tabs(TabVariant.Secondary, VisualTheme.Dark),
         ScrollablePrimaryTabs(),
-        ScrollablePrimaryTabsAllItems()
+        ScrollablePrimaryTabsAllItems(),
+        ListItemClickEnabled(),
+        ListItemClickDisabled(),
+        ListItemSingleSelectionSelectedDisabled(),
+        ListItemClickDragged(),
+        ListItemClickDisabledDragged(),
+        ListItemClickTwoLineSlots(),
+        ListItemClickTwoLineStringSlots(),
+        ListItemClickThreeLineOverlineSupporting(),
+        ListItemSingleSelectionSelected(VisualTheme.Light),
+        ListItemSingleSelectionSelected(VisualTheme.Dark),
+        ListItemMultiSelectionSelected()
     ];
 
     private static VisualCase Typography(
@@ -376,6 +395,156 @@ internal static class ComposeWaveOneParityCases
         tabs.Items.Add(new MaterialTab { Name = "tab-2", Content = new TextBlock { Name = "label-2", Text = "Reviews" } });
         tabs.Items.Add(new MaterialTab { Name = "tab-3", Content = new TextBlock { Name = "label-3", Text = "Related items" } });
         return tabs;
+    }
+
+    private static VisualCase ListItemClickEnabled() => ListItemScene(
+        "listitem/click/enabled/light",
+        VisualTheme.Light,
+        headline: "Settings",
+        interactionMode: ListItemInteractionMode.Click);
+
+    private static VisualCase ListItemClickDisabled() => ListItemScene(
+        "listitem/click/disabled/light",
+        VisualTheme.Light,
+        headline: "Offline",
+        interactionMode: ListItemInteractionMode.Click,
+        enabled: false);
+
+    private static VisualCase ListItemSingleSelectionSelectedDisabled() => ListItemScene(
+        "listitem/single-selection/selected-disabled/light",
+        VisualTheme.Light,
+        headline: "Default network",
+        interactionMode: ListItemInteractionMode.SingleSelection,
+        enabled: false,
+        selected: true);
+
+    private static VisualCase ListItemClickDragged() => ListItemScene(
+        "listitem/click/dragged/light",
+        VisualTheme.Light,
+        headline: "Reorder item",
+        interactionMode: ListItemInteractionMode.Click,
+        dragged: true);
+
+    private static VisualCase ListItemClickDisabledDragged() => ListItemScene(
+        "listitem/click/disabled-dragged/light",
+        VisualTheme.Light,
+        headline: "Reorder item",
+        interactionMode: ListItemInteractionMode.Click,
+        enabled: false,
+        dragged: true);
+
+    private static VisualCase ListItemClickTwoLineSlots() => ListItemScene(
+        "listitem/click/two-line/slots/light",
+        VisualTheme.Light,
+        height: 72,
+        headline: "Network",
+        interactionMode: ListItemInteractionMode.Click,
+        leading: true,
+        trailing: "On",
+        supporting: "Wi-Fi, mobile data");
+
+    // AndroidX alpha22's ListItem takes composable slot lambdas, so the Compose scene has the
+    // same Text nodes as the direct-TextBlock case. This Avalonia-specific construction path
+    // exercises ContentPresenter-generated TextBlocks for string Content/Supporting/Trailing
+    // values. StyledElement.Name is immutable after styling, so Prepare instead verifies every
+    // generated text control is uniquely resolvable; the parity adapter resolves these declared
+    // string slots by that same exact contract text rather than by visual-tree order.
+    private static VisualCase ListItemClickTwoLineStringSlots() => ComponentScene(
+        "listitem/click/two-line/string-slots/light",
+        new PixelSize(360, 96),
+        VisualTheme.Light,
+        _ => new MaterialListItem
+        {
+            Name = "component",
+            Width = 360,
+            Height = 72,
+            InteractionMode = ListItemInteractionMode.Click,
+            LeadingContent = new Border { Name = "leading", Width = 24, Height = 24 },
+            TrailingContent = "On",
+            SupportingContent = "Wi-Fi, mobile data",
+            Content = "Network",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        },
+        prepare: context =>
+        {
+            var item = context.Require<MaterialListItem>("component");
+            _ = RequireGeneratedListItemText(item, "Network");
+            _ = RequireGeneratedListItemText(item, "Wi-Fi, mobile data");
+            _ = RequireGeneratedListItemText(item, "On");
+        });
+
+    private static VisualCase ListItemClickThreeLineOverlineSupporting() => ListItemScene(
+        "listitem/click/three-line/overline-supporting/light",
+        VisualTheme.Light,
+        height: 88,
+        headline: "Cloud backup",
+        interactionMode: ListItemInteractionMode.Click,
+        overline: "Storage",
+        supporting: "Back up photos and videos");
+
+    private static VisualCase ListItemSingleSelectionSelected(VisualTheme theme) => ListItemScene(
+        $"listitem/single-selection/selected/{ThemeName(theme)}",
+        theme,
+        headline: "Default network",
+        interactionMode: ListItemInteractionMode.SingleSelection,
+        selected: true);
+
+    private static VisualCase ListItemMultiSelectionSelected() => ListItemScene(
+        "listitem/multi-selection/selected/light",
+        VisualTheme.Light,
+        headline: "Sync over Wi-Fi",
+        interactionMode: ListItemInteractionMode.MultiSelection,
+        selected: true);
+
+    private static VisualCase ListItemScene(
+        string id,
+        VisualTheme theme,
+        string headline,
+        int height = 56,
+        ListItemInteractionMode interactionMode = ListItemInteractionMode.None,
+        bool enabled = true,
+        bool selected = false,
+        bool dragged = false,
+        bool leading = false,
+        string? trailing = null,
+        string? overline = null,
+        string? supporting = null) => ComponentScene(
+        id,
+        new PixelSize(360, height + 24),
+        theme,
+        _ => new MaterialListItem
+        {
+            Name = "component",
+            Width = 360,
+            Height = height,
+            IsEnabled = enabled,
+            InteractionMode = interactionMode,
+            IsSelected = selected,
+            IsDragged = dragged,
+            LeadingContent = leading ? new Border { Name = "leading", Width = 24, Height = 24 } : null,
+            TrailingContent = trailing is null ? null : new TextBlock { Name = "trailing", Text = trailing },
+            OverlineContent = overline is null ? null : new TextBlock { Name = "overline", Text = overline },
+            SupportingContent = supporting is null ? null : new TextBlock { Name = "supporting", Text = supporting },
+            Content = new TextBlock { Name = "headline", Text = headline },
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        },
+        prepare: dragged ? context => context.SettleAnimations() : null);
+
+    private static TextBlock RequireGeneratedListItemText(MaterialListItem item, string text)
+    {
+        var matches = item.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(candidate => string.Equals(candidate.Text, text, StringComparison.Ordinal))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                $"Expected one generated ListItem TextBlock for '{text}', found {matches.Length}.");
+        }
+
+        return matches[0];
     }
 
     private static MaterialNavigationBar CreateNavigation(

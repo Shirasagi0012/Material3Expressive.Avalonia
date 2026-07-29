@@ -52,8 +52,8 @@ delivery dimensions are satisfied.
 ## Current status
 
 The shared theming, token, typography, shape, motion, ripple, and Material Symbols foundations are
-implemented. At the feature-family level, the current inventory contains 19 implemented, 16
-partial, and 15 missing families. These labels describe usable surface area, not strict completion
+implemented. At the feature-family level, the current inventory contains 19 implemented, 18
+partial, and 13 missing families. These labels describe usable surface area, not strict completion
 under the table above.
 
 The detailed and auditable matrix lives in
@@ -182,7 +182,7 @@ Exit criteria:
 
 ### Milestone 3 — Application building blocks
 
-Status: planned
+Status: in progress
 
 Deliverables:
 
@@ -240,7 +240,7 @@ promise.
 | RangeSlider and VerticalSlider | P0 | Blocked | 2 | Decision 4: range-thumb automation model |
 | Circular wavy progress | P0 | Blocked | 2 | Decision 4: custom-drawn progress accessibility model; static complex-shape residual is covered by the documented temporary warning below |
 | Scrollable Tabs and AppBar scroll behavior | P0 | Blocked | 2 | Scrollable tab rows are complete; AppBar scroll state/ownership awaits Decision 2: shared scroll-state conventions. |
-| Surface, Divider, and ListItem | P1 | Planned | 3 | Token and API review |
+| Surface, Divider, and ListItem | P1 | In Progress | 3 | Token and API review; SegmentedListItem group-position API remains to be resolved explicitly. |
 | Scaffold and host coordination | P1 | Planned | 3 | Surface and overlay state primitives |
 | SnackbarHost and BottomSheetScaffold | P1 | Planned | 4 | Host/state conventions |
 | SecureTextField and typed picker inputs | P1 | Planned | 4 | Text input and validation conventions |
@@ -273,6 +273,12 @@ treated as complete:
   ignored region, or structural relaxation. Recalibrating or removing that warning is
   **Deferred** until the user revisits the tolerance policy. It does not make a component
   otherwise complete.
+- 2026-07-30, Decision 7: ListItem long-click is exposed uniformly through the existing
+  `InteractionMode` API rather than as a separate mode: interactive rows optionally provide
+  `LongClick`, `LongClickCommand`, `LongClickCommandParameter`, and `LongClickLabel`; `None`
+  remains gesture-free. Avalonia `Holding` (including mouse) is the desktop gesture and consumes
+  the following primary click. Its label is fallback automation help text because UI Automation
+  has no secondary-invoke pattern.
 
 ## Risks
 
@@ -325,3 +331,29 @@ Only recent roadmap-level outcomes belong here. Detailed chronology lives in
   at both a 240dp scrolling viewport and 600dp all-items viewport. The AppBar scroll portion is
   blocked pending Decision 2; it requires a library-wide owned/external scroll-state API, so no
   public AppBar scroll API has been guessed.
+- 2026-07-29: completed the current standard ListItem parity/input slice without closing the
+  broader P1 work item. Direct `TextBlock` and ContentPresenter-generated string slots receive
+  their upstream token typography; the full alpha22 Click/SingleSelection/MultiSelection family
+  now passes in 11 cases, including disabled-over-selected priority plus dragged and
+  disabled-dragged rows. The original seven are recorded at
+  `artifacts/visual-parity/xunit/20260729-111300-423`; the string-slot regression case is in
+  `artifacts/visual-parity/xunit/20260729-123015-203`; the full final family is
+  `artifacts/visual-parity/xunit/20260729-145840-218`. All are `semanticRasterEquivalent` with
+  no warning. The drag cases structurally require Compose's 16dp corner / 8dp elevation shadow,
+  disabled-first colour priority, and alpha-replaced external state layer; no public shadow or
+  drag/drop API was added. The alpha25 None overload has deterministic pointer, keyboard, command,
+  selection-state, and automation evidence instead because the pinned alpha22 reference cannot
+  execute it; alpha25 line-height parity remains unavailable. Segmented grouping and the
+  long-click public API remain open decisions.
+- 2026-07-29: completed the Divider `Dp.Hairline` slice without closing the broader P1 item.
+  `MaterialDivider.IsHairline` keeps Compose's zero cross-axis layout contract and paints a
+  one-physical-pixel retained stroke; `Thickness=0` remains an explicit no-line value. The six
+  alpha22 horizontal/vertical/default/custom/hairline parity rows are `exactMatch` at
+  `artifacts/visual-parity/xunit/20260729-120350-802`; focused divider tests cover 1x/2x
+  footprint, theme, orientation, and hit-testing.
+- 2026-07-30: aligned `MaterialButton.Size` with alpha25 `ButtonDefaults.textStyleFor`: 32/40dp
+  resolve `LabelLarge`, 56dp `TitleMedium`, 96dp `HeadlineSmall`, and 136dp `HeadlineLarge`.
+  The added alpha22 large-button scene and all nine button parity rows pass. The ListItem dragged
+  reference now waits for the interaction collector before emitting one drag start and records
+  the terminal `onTertiaryContainer` text paint, restoring its structural/raster comparison
+  contract without weakening the profile.
