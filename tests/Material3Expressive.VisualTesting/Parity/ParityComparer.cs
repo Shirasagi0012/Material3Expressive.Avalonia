@@ -264,6 +264,7 @@ public sealed class ParityComparer
             tolerance.TextBaselinePx,
             failures);
         CompareTextStyleSignature(expected.Id, left.StyleSignature, right.StyleSignature, failures);
+        CompareTextPaintSignature(expected.Id, left.PaintSignature, right.PaintSignature, failures);
         CompareNumber($"Text '{expected.Id}' first baseline", left.FirstBaselineInRootPx, right.FirstBaselineInRootPx, tolerance.TextBaselinePx, failures);
         CompareNumber($"Text '{expected.Id}' last baseline", left.LastBaselineInRootPx, right.LastBaselineInRootPx, tolerance.TextBaselinePx, failures);
         if (left.Lines.Count != right.Lines.Count)
@@ -322,6 +323,27 @@ public sealed class ParityComparer
             failures.Add(
                 $"Text '{id}' style signature differs: expected {FormatStyleSignature(expected)}, " +
                 $"actual {FormatStyleSignature(actual)}.");
+        }
+    }
+
+    private static void CompareTextPaintSignature(
+        string id,
+        ParityTextPaintSignature? expected,
+        ParityTextPaintSignature? actual,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        if (expected is null || actual is null)
+        {
+            failures.Add($"Text '{id}' paint signature is missing from one capture.");
+            return;
+        }
+        if (expected != actual)
+        {
+            failures.Add(
+                $"Text '{id}' paint signature differs: expected {FormatPaintSignature(expected)}, " +
+                $"actual {FormatPaintSignature(actual)}.");
         }
     }
 
@@ -420,6 +442,10 @@ public sealed class ParityComparer
         FormattableString.Invariant(
             $"family={signature.RequestedFontFamily}/{signature.ResolvedFontFamily}, fontHash={signature.PinnedFontFileSha256 ?? "none"}, weight={signature.FontWeight}, size={FormatOptionalPixels(signature.FontSizePx)}, lineHeight={FormatOptionalPixels(signature.LineHeightPx)}, letterSpacing={FormatOptionalPixels(signature.LetterSpacingPx)}");
 
+    private static string FormatPaintSignature(ParityTextPaintSignature signature) =>
+        FormattableString.Invariant(
+            $"kind={signature.Kind}, foreground={signature.ForegroundArgb ?? "none"}, opacity={signature.Opacity:F3}");
+
     private static string FormatOptionalPixels(float? value) => value is null
         ? "unspecified"
         : FormattableString.Invariant($"{value.Value:F3}px");
@@ -467,7 +493,7 @@ public sealed record ParityComparison(
     ParityRasterComparison? WarningRaster = null,
     IReadOnlyList<string>? Warnings = null)
 {
-    public const int CurrentSchemaVersion = 9;
+    public const int CurrentSchemaVersion = 10;
 
     [JsonIgnore]
     public IReadOnlyList<string> WarningsOrEmpty => Warnings ?? [];

@@ -31,7 +31,7 @@ Before running or interpreting results, read:
 - `tests/Material3Expressive.VisualTesting/Parity/SemanticRasterComparer.cs` for raster behavior.
 
 Do this on every policy/debugging task. The formal policy is profile schema version 7 and the
-capture/comparison contract is schema version 9. Keep the checked-in profile and source authoritative if a
+capture/comparison contract is schema version 10. Keep the checked-in profile and source authoritative if a
 later schema deliberately changes coefficients, masks, or report fields.
 
 ## Run the tests
@@ -199,6 +199,13 @@ classification. Classify the first failing layer within `mismatch` as:
 - **RasterMismatch**: structure passes but one or more pixel differences are outside a mask,
   outside a delta bin, over count/energy budget, or over connected-component limits.
 
+For text, a high channel delta is not independently suspicious when it is assigned to a matched
+`text-ink` owner: the standard final `Δ<=255` bin intentionally accepts opaque foreground versus
+background transitions caused by a one-physical-pixel glyph phase difference. Confirm that the
+text geometry, shaping/style inputs, and normalized paint signature all pass, and that
+`rejectedPixels` is zero. A wrong glyph color or opacity must appear as a paint-signature failure;
+a changed pixel outside the expected-derived glyph owner must remain rejected.
+
 Do not derive a different outcome from a diagnostic image statistic when `kind` is present. For
 older artifacts without `kind`, derive only a clearly marked legacy fallback; a warning can be
 recovered only when the artifact also contains warning evidence.
@@ -214,7 +221,7 @@ Raster budgets apply only after structural evidence passes. The comparer assigns
 pixel to at most one expected-derived owner, then checks its delta bin's count, energy, connected-
 component area, and thickness. Unowned pixels remain exact.
 
-In v9, read `profileRulePrefix` and the embedded `profile` snapshot before interpreting the dynamic
+In v10, read `profileRulePrefix` and the embedded `profile` snapshot before interpreting the dynamic
 report. Every rejection carries a reason, inclusive bounds, and bounded RGBA samples. Unowned
 differences appear in `strict-outside-semantic-mask`; they are no longer recoverable only by
 subtracting owner totals. Count/energy overages use a deterministic highest-delta residual witness,
@@ -272,7 +279,7 @@ python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py `
   --output-dir 'artifacts/visual-parity/diagnostics/<case-name>'
 ```
 
-The script validates and summarizes `rejected-mask.png` when a v9 case artifact provides it, and
+The script validates and summarizes `rejected-mask.png` when a v10 case artifact provides it, and
 also complements `diff.png` with raw diagnostics. Its primary statistics use
 the same-coordinate four-channel RGBA delta used by the official comparer. It also reports a
 backdrop-composited visual RGB view to explain alpha/storage behavior. It provides delta histogram,

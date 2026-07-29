@@ -177,7 +177,7 @@ Treat `exactMatch` and `semanticRasterEquivalent` as fully accepted parity outco
 `rasterWarning` may be integrated because xUnit accepts it, but it remains visible implementation
 debt and does not close the underlying parity work unless the roadmap explicitly records that
 temporary disposition. A `mismatch` remains incomplete; a skipped row remains unevaluated.
-For any normal-policy rejection, require the v9 report's owner/reason/bounds evidence and confirm
+For any normal-policy rejection, require the v10 report's owner/reason/bounds evidence and confirm
 `rejected-mask.png` contains exactly `raster.rejectedPixels`; do not calibrate from raw `diff.png`.
 
 For motion, record two conclusions instead of compressing them into one label: the timeline
@@ -204,11 +204,20 @@ fractional coordinates. Reproduce the Compose rounding explicitly at the render 
   dividers, and notches.
 
 Treat text as two contracts. First compare the font hash, requested/resolved family, weight, size,
-line height, letter spacing, draw origin, line bounds, baseline, UTF-16 caret/advance boxes, and
-content. Only then permit a local raster tolerance for glyph antialiasing. Do not move an entire
-text run to hide a caret endpoint difference. Record a precise case-level gap when an Avalonia API
-cannot express the reference line-height or baseline semantics, and quarantine that case as an
-explicit skip until a structural probe exists.
+line height, letter spacing, draw origin, line bounds, baseline, UTF-16 caret/advance boxes,
+content, and normalized paint signature. The paint signature uses paint kind, opaque foreground
+RGB, and 8-bit-quantized effective opacity so color alpha and brush opacity compare by rendered
+meaning. Only then permit the standard full-range `Δ<=255` raster allowance inside the matched
+expected glyph-edge owner. This accommodates high-contrast antialiasing and a one-physical-pixel
+glyph phase difference; it is not permission to use the whole line/control rectangle. Do not move
+an entire text run to hide a caret endpoint difference. Record a precise case-level gap when an
+Avalonia API cannot express the reference line-height or baseline semantics, and quarantine that
+case as an explicit skip until a structural probe exists.
+
+Recognize the intentional false-negative tradeoff: a raster-only missing or malformed stroke can
+be accepted when all residual pixels stay inside the expected-derived glyph owner. Do not claim
+that this policy proves glyph coverage identity; it proves the captured text/layout/paint contract
+and constrains renderer differences to the expected ink neighborhood.
 
 Measure the actual laid-out text object (`TextLayout`, `TextLayoutResult`, or the framework adapter)
 rather than assuming all content is a `string` or substituting an outer control width for intrinsic
@@ -235,7 +244,8 @@ Before considering a new case complete, verify:
       checkpoint's captured-frame classification.
 - [ ] A proposed motion warning was checked at every checkpoint, calibrated from the worst
       repeatable frame, and verified by two same-input scenario runs with stable hashes.
-- [ ] Text is measured from the actual layout object and has a verifiable style signature.
+- [ ] Text is measured from the actual layout object and has verifiable style and normalized paint
+      signatures.
 - [ ] Native Avalonia templates and state resources were audited where applicable.
 - [ ] Profile selection or changes satisfy `docs/comparison-profiles.md`.
 - [ ] The expected outcome is recorded as exact, semantic, warning, mismatch, or skipped; warning
@@ -243,7 +253,7 @@ Before considering a new case complete, verify:
 - [ ] Validation was handed to `$run-visual-parity-tests`, with the smallest case and relevant
       broader selections run successfully.
 - [ ] Any new allowance has the required positive and negative mutation coverage.
-- [ ] Any raster rejection has a v9 reason and rejected-mask/report count agreement.
+- [ ] Any raster rejection has a v10 reason and rejected-mask/report count agreement.
 - [ ] No generated PNG, baseline, or blanket allow-list was added to source control.
 
 For copyable Compose/C# registration skeletons and a state/probe worksheet, read

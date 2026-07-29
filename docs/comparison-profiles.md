@@ -6,8 +6,8 @@ visual-parity comparison profiles. The live policy is
 the C# loader/comparer remains authoritative for exact validation and runtime behavior.
 
 Profiles model narrowly understood renderer differences after the Compose and Avalonia scenes have
-already matched structurally. They are not regression baselines and must not make a wrong layout,
-token, glyph, fill, border, caret, or shadow contract pass.
+already matched structurally. They are not regression baselines: wrong layout, text/style/paint,
+fill, border, caret, or shadow contracts must remain failures.
 
 ## Non-negotiable invariants
 
@@ -56,7 +56,8 @@ Classify the difference before editing JSON:
 | Structure matches and differences form a thin expected non-text edge | Reuse or calibrate `shapeEdge`. |
 | The full shadow contract matches and differences are diffuse, low-delta shadow signal | Reuse or calibrate `shadowSupport`. |
 | The full shadow contract matches and rare higher deltas stay on the expected shadow perimeter | Reuse or calibrate `shadowEdge`. |
-| A fill, glyph, border, or shadow is shifted, missing, too thick, or outside the expected mask | Fix the implementation. Do not add an allowance. |
+| A text raster displacement remains inside a structurally matched expected glyph owner | Reuse the full-range `textInk` allowance. |
+| A fill, border, shadow, structurally mismatched glyph, or any residual outside its expected owner is shifted, missing, or too thick | Fix the implementation. Do not add an allowance. |
 | A required structural fact cannot be observed on Avalonia | Add a narrowly scoped skipped theory row with a reason until a probe/API exists. |
 
 Use this order of preference:
@@ -87,10 +88,23 @@ Earlier owners win overlaps. This is allocation priority, not UI paint order.
 
 ### `textInk`
 
-Use only for backend glyph rasterization and antialiasing differences. The comparer clips to
+Use only after the text layout, shaping inputs, and paint signature match. The comparer clips to
 matched expected text lines, detects expected glyph/ink edges, and applies the configured physical-
 pixel dilation. `compareGeometry` and `compareTextLayout` must both be enabled. Do not use an entire
 line rectangle or text control rectangle as an allowance.
+
+The standard text profiles deliberately end with a full-range `Δ<=255` bin. A one-physical-pixel
+glyph phase difference can compare an opaque foreground pixel with an opaque background pixel, so
+any lower ceiling would make acceptance depend on theme contrast rather than semantic severity.
+The full-range bin may consume every pixel and all possible energy in its expected-derived owner;
+the exact text/paint contract and glyph-edge mask are its safety boundary. Lower delta bins remain
+present for diagnostics. Pixels elsewhere in the line rectangle remain strict.
+
+This policy deliberately prefers avoiding false mismatches over detecting every possible
+raster-only glyph defect. A missing or malformed rasterized stroke can be accepted if all of its
+residual pixels remain inside the expected-derived owner despite matching text/layout/paint
+captures. The glyph-edge mask limits that tradeoff to the expected ink neighborhood; detecting
+that narrower failure mode would require an additional glyph-coverage or glyph-identity contract.
 
 ### `shapeEdge`
 
@@ -171,9 +185,13 @@ Energy = sum(maximum premultiplied-RGBA channel delta of each observed pixel)
 A bin passes only when count, energy, maximum delta, and every connected component's area and
 thickness all pass. Do not rely on a high delta ceiling alone.
 
-## Read the v9 semantic report
+## Read the v10 semantic report
 
-Profile schema v7 defines policy; capture/comparison schema v9 records how that policy was applied.
+Profile schema v7 defines policy; capture/comparison schema v10 records how that policy was applied.
+Schema v10 adds an exact text paint signature (`kind`, opaque foreground RGB, and 8-bit-quantized
+effective opacity) so the full-range glyph allowance cannot turn an incorrect text color or
+opacity into raster equivalence. Color alpha and brush opacity are normalized into the same
+effective-opacity representation before comparison.
 Every `comparison.json` snapshots the complete selected profile and ordered `profileRulePrefix`, so
 an artifact remains interpretable after the centralized profile file changes. The normal `raster`
 and optional `warningRaster` reports contain:

@@ -34,8 +34,8 @@ the viewer does not introduce smoothing that resembles antialiasing.
 |---|---|---|
 | Two opposite-color lobes around one shape | Translation or size mismatch | named bounds, physical rounding, centering remainder |
 | Thin parallel lines along a border | 1px shift or different stroke inclusion | stroke width, half-pixel endpoint, scale |
-| Only glyph edge speckles | rasterizer/hinting difference | text layout and style signature must already match |
-| Glyph interior or whole text uniformly different | wrong color, opacity, font weight, or glyph | resolved text style and token |
+| Only glyph edge speckles or one-pixel opposite lobes | rasterizer/hinting/phase difference | text layout, style, normalized paint signature, and `text-ink` ownership |
+| Glyph interior or whole text uniformly different | wrong color, opacity, font weight, or glyph | normalized paint signature, resolved text style, and token |
 | One horizontal concentration | baseline, divider, indicator, caret endpoint | row projection and named probe |
 | One vertical concentration | width, notch endpoint, caret, or centering | column projection and physical pixel math |
 | Broad diffuse halo, mostly delta 1 | shadow quantization | `ParityShadow`, support owner, clip |
@@ -54,7 +54,7 @@ Analyze a case directory containing `expected.png`, `image.png`, and optionally 
 python .codex/skills/run-visual-parity-tests/scripts/analyze_parity_diff.py '<case-dir>'
 ```
 
-For a v9 case directory, the script also reads `rejected-mask.png`, reports its alpha-nonzero pixel
+For a v10 case directory, the script also reads `rejected-mask.png`, reports its alpha-nonzero pixel
 count and bounds, and verifies that the count equals `raster.rejectedPixels`. A disagreement is an
 artifact/report integrity defect; do not replace either side with the script's raw threshold mask.
 

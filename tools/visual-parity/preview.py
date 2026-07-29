@@ -328,8 +328,34 @@ function renderImages(caseId) {
         '<div class="img-card"><h3>Actual (Avalonia)</h3>' +
         '<img src="' + CASES_BASE + '/' + CURRENT_RUN + '/actual/cases/' + caseId + '/image.png" alt="actual"></div>' +
         '<div class="img-card">' + diffLabel +
-        '<img src="' + CASES_BASE + '/' + CURRENT_RUN + '/actual/cases/' + caseId + '/diff.png" alt="diff" style="background:#0d1117"></div>';
+        '<img src="' + CASES_BASE + '/' + CURRENT_RUN + '/actual/cases/' + caseId + '/diff.png" alt="diff" style="background:#0d1117"></div>' +
+        '<div class="img-card" id="rejected-mask-card"><h3>Rejected Mask</h3>' +
+        '<img src="' + CASES_BASE + '/' + CURRENT_RUN + '/actual/cases/' + caseId + '/rejected-mask.png" alt="rejected-mask" style="background:#0d1117" onerror="this.parentElement.style.display=' + "'none'" + '"></div>';
     document.getElementById('images-panel').innerHTML = imgs;
+
+    // Raster diagnostics section
+    var rd = '';
+    if (comp && comp.raster && comp.raster.rejectedPixels > 0) {
+        var r = comp.raster;
+        rd += '<div style="margin-top:12px;padding:10px;background:#161b22;border-radius:6px;border:1px solid #30363d">';
+        rd += '<h4 style="margin:0 0 6px;color:#f85149">Raster Diagnostics</h4>';
+        rd += '<div style="font-size:11px;color:#c9d1d9">';
+        rd += 'Rejected: <b>' + r.rejectedPixels + '</b> px ';
+        if (r.rejectionReasons && r.rejectionReasons.length > 0) rd += '(reasons: ' + r.rejectionReasons.join(', ') + ') ';
+        if (r.rejectedBounds) rd += 'bounds: (' + r.rejectedBounds.left + ',' + r.rejectedBounds.top + ')-(' + r.rejectedBounds.right + ',' + r.rejectedBounds.bottom + ')';
+        rd += '</div>';
+        if (r.regions && r.regions.length > 0) {
+            rd += '<table style="margin-top:6px;font-size:11px"><thead><tr><th>Region</th><th>Kind</th><th>Eligible</th><th>Observed</th><th>Rejected</th></tr></thead><tbody>';
+            r.regions.forEach(function(reg) {
+                if (reg.rejectedPixels > 0) {
+                    rd += '<tr class="mismatch"><td>' + reg.id + '</td><td>' + reg.kind + '</td><td>' + (reg.eligiblePixels||0) + '</td><td>' + (reg.observedPixels||0) + '</td><td>' + reg.rejectedPixels + '</td></tr>';
+                }
+            });
+            rd += '</tbody></table>';
+        }
+        rd += '</div>';
+    }
+    document.getElementById('images-panel').innerHTML += rd;
 }
 
 function renderGeometry(caseId) {

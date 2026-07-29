@@ -73,7 +73,7 @@ public sealed record ParityCaptureResult(
     IReadOnlyList<ParityNode> Nodes,
     ParityMotionCapture? Motion = null)
 {
-    public const int CurrentSchemaVersion = 9;
+    public const int CurrentSchemaVersion = 10;
 }
 
 /// <summary>A source-produced logical motion history replayed by the Avalonia capture.</summary>
@@ -206,7 +206,8 @@ public sealed record ParityTextLayout(
     ParityPoint? DrawOriginInRootPx = null,
     float? FirstBaselineInTextPx = null,
     float? LastBaselineInTextPx = null,
-    ParityTextStyleSignature? StyleSignature = null);
+    ParityTextStyleSignature? StyleSignature = null,
+    ParityTextPaintSignature? PaintSignature = null);
 
 /// <summary>A physical-pixel point in the capture root coordinate space.</summary>
 public sealed record ParityPoint(float X, float Y);
@@ -224,6 +225,14 @@ public sealed record ParityTextStyleSignature(
     float? FontSizePx,
     float? LineHeightPx,
     float? LetterSpacingPx);
+
+/// <summary>
+/// Resolved text paint inputs compared exactly before a glyph raster allowance can apply.
+/// </summary>
+public sealed record ParityTextPaintSignature(
+    string Kind,
+    string? ForegroundArgb,
+    float Opacity);
 
 public sealed record ParityTextLine(
     int Index,

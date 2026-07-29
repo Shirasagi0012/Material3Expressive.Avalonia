@@ -93,7 +93,7 @@
             { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 16384, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
             { "maxChannelDelta": 10, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 100000, "maxEnergyPerOwner": 81920, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
             { "maxChannelDelta": 20, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 200000, "maxEnergyPerOwner": 163840, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
-            { "maxChannelDelta": 35, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 1, "pixelsPer10kEligiblePixels": 150, "maxPixelsPerOwner": 24, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 35, "energyPer10kEligiblePixels": 5250, "maxEnergyPerOwner": 840, "maxConnectedComponentPixels": 24, "maxConnectedComponentThicknessPx": 3 }
+            { "maxChannelDelta": 255, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 1000000, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 2550000, "maxEnergyPerOwner": 255000000, "maxConnectedComponentPixels": 1000000, "maxConnectedComponentThicknessPx": 1000000 }
           ]
         },
         "shapeEdge": {
@@ -146,7 +146,7 @@
             { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 16384, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
             { "maxChannelDelta": 10, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 100000, "maxEnergyPerOwner": 81920, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
             { "maxChannelDelta": 20, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 200000, "maxEnergyPerOwner": 163840, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
-            { "maxChannelDelta": 35, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 1, "pixelsPer10kEligiblePixels": 150, "maxPixelsPerOwner": 24, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 35, "energyPer10kEligiblePixels": 5250, "maxEnergyPerOwner": 840, "maxConnectedComponentPixels": 24, "maxConnectedComponentThicknessPx": 3 }
+            { "maxChannelDelta": 255, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 1000000, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 2550000, "maxEnergyPerOwner": 255000000, "maxConnectedComponentPixels": 1000000, "maxConnectedComponentThicknessPx": 1000000 }
           ]
         },
         "shapeEdge": {
@@ -154,6 +154,18 @@
           "budgets": [
             { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
             { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        },
+        "shadowSupport": {
+          "dilationPx": 2,
+          "budgets": [
+            { "maxChannelDelta": 1, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 16, "pixelsPer10kEligiblePixels": 500, "maxPixelsPerOwner": 4096, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 16, "energyPer10kEligiblePixels": 500, "maxEnergyPerOwner": 4096, "maxConnectedComponentPixels": 4096, "maxConnectedComponentThicknessPx": 4096 }
+          ]
+        },
+        "shadowEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 48, "minimumPixelsPerOwner": 8, "basePixelsPerOwner": 4, "pixelsPer10kEligiblePixels": 100, "maxPixelsPerOwner": 48, "minimumEnergyPerOwner": 384, "baseEnergyPerOwner": 240, "energyPer10kEligiblePixels": 4800, "maxEnergyPerOwner": 2304, "maxConnectedComponentPixels": 12, "maxConnectedComponentThicknessPx": 2 }
           ]
         }
       },
@@ -177,7 +189,7 @@
             { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 16384, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
             { "maxChannelDelta": 10, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 100000, "maxEnergyPerOwner": 81920, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
             { "maxChannelDelta": 20, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 200000, "maxEnergyPerOwner": 163840, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
-            { "maxChannelDelta": 35, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 1, "pixelsPer10kEligiblePixels": 150, "maxPixelsPerOwner": 24, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 35, "energyPer10kEligiblePixels": 5250, "maxEnergyPerOwner": 840, "maxConnectedComponentPixels": 24, "maxConnectedComponentThicknessPx": 3 }
+            { "maxChannelDelta": 255, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 1000000, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 2550000, "maxEnergyPerOwner": 255000000, "maxConnectedComponentPixels": 1000000, "maxConnectedComponentThicknessPx": 1000000 }
           ]
         },
         "shapeEdge": {
@@ -236,12 +248,16 @@
     { "prefix": "fab/", "profileId": "container-with-elevation" },
     { "prefix": "button/elevated/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "card/", "profileId": "container" },
+    { "prefix": "divider/", "profileId": "container" },
     { "prefix": "selection/", "profileId": "container" },
     { "prefix": "progress/circular-wavy/", "profileId": "complex-shape" },
     { "prefix": "progress/", "profileId": "container" },
     { "prefix": "textfield/", "profileId": "text-field" },
     { "prefix": "foundation/typography/", "profileId": "component-with-text" },
     { "prefix": "button/", "profileId": "component-with-text" },
+    { "prefix": "listitem/click/dragged/", "profileId": "component-with-text-and-elevation" },
+    { "prefix": "listitem/click/disabled-dragged/", "profileId": "component-with-text-and-elevation" },
+    { "prefix": "listitem/", "profileId": "component-with-text" },
     { "prefix": "navigation/", "profileId": "component-with-text" }
   ]
 }
