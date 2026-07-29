@@ -49,8 +49,9 @@ through one `MaterialSegmentedButtonRow.SelectionMode`. The row accepts visible 
 replacing bindable child state.
 
 The child derives from `ToggleButton`, retaining `IsChecked`, command, content, optional `Icon`,
-`ShowSelectionIcon`, padding/size, and shape override. The default checked icon preserves the
-official 24×24 Filled Check vector and viewport. Label displacement, icon scale, and icon opacity
+`SelectionIcon` geometry, `ShowSelectionIcon`, padding/size, and shape override. The default
+checked icon preserves the official 24×24 Filled Check vector and viewport through Avalonia's
+`PathIcon`/`Geometry` vector-icon equivalent. Label displacement, icon scale, and icon opacity
 use controlled Material springs; unchecking uses the upstream immediate icon exit. Single mode
 supports RTL-aware arrow navigation plus Home/End and exposes radio/selection automation.
 Multiple mode retains ordinary independent toggle semantics and automation.
@@ -66,7 +67,7 @@ Multiple mode retains ordinary independent toggle semantics and automation.
 | Behavior | Deterministic tests cover single/multiple state, no selected-item toggle-off, initial normalization, official icon slot, controlled motion, and shape override. |
 | Desktop | Pointer/click follows `ToggleButton`; single-mode arrow/Home/End navigation is row-owned and RTL-aware; disabled children are skipped. |
 | Accessibility | Row is a List and exposes `ISelectionProvider` only in single mode; children expose RadioButton/`ISelectionItemProvider` or CheckBox/`IToggleProvider` according to mode, with names derived from content. |
-| Tests | `MaterialSegmentedButtonTests`: 12/12, including RTL/disabled keyboard traversal and visible-child position inference. Parity family: 4/4 at `artifacts/visual-parity/xunit/20260729-203455-835`. |
+| Tests | `MaterialSegmentedButtonTests`: 13/13, including RTL/disabled keyboard traversal, visible-child position inference, and ImageVector-equivalent selection geometry. Parity family: 4/4 at `artifacts/visual-parity/xunit/20260729-203455-835`. |
 | Documentation | README usage, Catalog single/multiple/disabled examples, component coverage, AndroidX reference, difference audit, parity catalog count, roadmap decision, and history updated. |
 
 ## Validation
@@ -79,11 +80,12 @@ dotnet test tests\Material3Expressive.VisualTests\Material3Expressive.VisualTest
   --filter 'Category=VisualParity&ParityCase~segmentedbutton/' --no-restore
 ```
 
-Results: 12/12 deterministic tests and 4/4 parity rows passed. The parity artifact is
-`artifacts/visual-parity/xunit/20260729-203455-835`; every row is
+Results: 13/13 deterministic tests and 4/4 parity rows passed. The parity artifact is
+`artifacts/visual-parity/xunit/20260729-212418-253`; every row is
 `semanticRasterEquivalent`, with no warning and `rejectedPixels=0`.
 
-The complete non-parity suites also passed (286 main tests and 45 comparer/infrastructure tests).
+The complete non-parity suite also passed (290 main tests; the comparer/infrastructure suite was
+not rerun for this API-only refinement).
 The Catalog built successfully through isolated output
 (`dotnet build ... --artifacts-path artifacts\build-catalog`) while the user's running Catalog
 held the normal output directory. The full 102-case parity run at

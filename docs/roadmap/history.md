@@ -294,6 +294,15 @@ new rows accepted and produced the existing global disposition: 98 accepted (35 
 semantic, four circular-wavy warnings), two explicit display/headline skips, and two focused
 TextField endpoint mismatches.
 
+## 2026-07-30 — SegmentedButton vector-icon API refinement
+
+The alpha25 `SegmentedButtonDefaults.ActiveIcon` uses `Icons.Filled.Check`, an `ImageVector` with a
+24×24 viewport. The Avalonia control now exposes `SelectionIcon` as bindable `Geometry` and renders
+it through `PathIcon`; the default geometry preserves the upstream path data, while
+`ShowSelectionIcon` and a null geometry retain the documented no-icon behavior. The focused
+deterministic suite is now 13/13; the existing four alpha22-compatible parity cases remain the
+visual evidence because this change preserves their rendered vector.
+
 ## 2026-07-30 — BottomSheetScaffold core
 
 Started M4-BOTTOM-SHEET-001 from the alpha25 `BottomSheetScaffold.kt` and `SheetDefaults.kt`

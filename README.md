@@ -80,8 +80,10 @@ automation; multiple mode leaves each item independent and exposes toggle automa
 
 Visible direct children receive equal widths, one-outline overlap, and inferred first/middle/last
 shapes. A checked item without custom `Icon` content uses the same fixed 24×24 Filled Check vector
-as AndroidX; `ShowSelectionIcon="False"` disables it. Arrow, Home, and End keys move and select in
-single mode, while Space retains ordinary toggle behavior in multiple mode.
+as AndroidX; `SelectionIcon` accepts a replacement Avalonia `Geometry` (the XAML equivalent of
+Compose's `ImageVector`), and `ShowSelectionIcon="False"` disables the default. Arrow, Home, and
+End keys move and select in single mode, while Space retains ordinary toggle behavior in multiple
+mode.
 
 ## Surfaces and list rows
 

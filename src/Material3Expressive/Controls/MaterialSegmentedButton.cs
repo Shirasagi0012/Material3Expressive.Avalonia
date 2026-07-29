@@ -29,8 +29,22 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialSegmentedButton : ToggleButton
 {
+    /// <summary>
+    /// The 24x24 Filled.Check vector from AndroidX <c>internal/Icons.kt</c>.
+    /// Avalonia's <see cref="Geometry"/> is the closest XAML representation of Compose's
+    /// <c>ImageVector</c>: it preserves the upstream viewport and path data while remaining
+    /// bindable through <see cref="SelectionIcon"/>.
+    /// </summary>
+    public static Geometry DefaultSelectionIcon { get; } =
+        Geometry.Parse("M 9,16.17 L 4.83,12 L 3.41,13.41 L 9,19 L 21,7 L 19.59,5.59 Z");
+
     public static readonly StyledProperty<object?> IconProperty =
         AvaloniaProperty.Register<MaterialSegmentedButton, object?>(nameof(Icon));
+
+    public static readonly StyledProperty<Geometry?> SelectionIconProperty =
+        AvaloniaProperty.Register<MaterialSegmentedButton, Geometry?>(
+            nameof(SelectionIcon),
+            DefaultSelectionIcon);
 
     public static readonly StyledProperty<bool> ShowSelectionIconProperty =
         AvaloniaProperty.Register<MaterialSegmentedButton, bool>(
@@ -128,6 +142,7 @@ public class MaterialSegmentedButton : ToggleButton
         AffectsRender<MaterialSegmentedButton>(
             IsCheckedProperty,
             ShowSelectionIconProperty,
+            SelectionIconProperty,
             ContainerShapeOverrideProperty);
         FocusableProperty.OverrideDefaultValue<MaterialSegmentedButton>(true);
     }
@@ -137,6 +152,18 @@ public class MaterialSegmentedButton : ToggleButton
     {
         get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the vector geometry used for the default checked icon.
+    /// Set to <see langword="null"/> together with <see cref="ShowSelectionIcon"/> to reserve no
+    /// default icon; callers may provide an Avalonia <see cref="Geometry"/> equivalent to a
+    /// Compose <c>ImageVector</c>.
+    /// </summary>
+    public Geometry? SelectionIcon
+    {
+        get => GetValue(SelectionIconProperty);
+        set => SetValue(SelectionIconProperty, value);
     }
 
     /// <summary>
@@ -449,7 +476,9 @@ public class MaterialSegmentedButton : ToggleButton
             InvalidateMeasure();
             InvalidateVisual();
         }
-        else if (change.Property == IconProperty || change.Property == ShowSelectionIconProperty)
+        else if (change.Property == IconProperty
+            || change.Property == ShowSelectionIconProperty
+            || change.Property == SelectionIconProperty)
         {
             var previousVisible = HasVisibleIcon;
             var previousDefault = IsDefaultIconVisible;
@@ -471,12 +500,16 @@ public class MaterialSegmentedButton : ToggleButton
     }
 
     private bool HasVisibleIconValue =>
-        Icon is not null || (ShowSelectionIcon && IsChecked == true);
+        Icon is not null
+        || (ShowSelectionIcon && SelectionIcon is not null && IsChecked == true);
 
     private void UpdateVisibleIcon()
     {
         _hasVisibleIcon = HasVisibleIconValue;
-        _isDefaultIconVisible = Icon is null && ShowSelectionIcon && IsChecked == true;
+        _isDefaultIconVisible = Icon is null
+            && ShowSelectionIcon
+            && SelectionIcon is not null
+            && IsChecked == true;
     }
 
     private void UpdateSelectionMotion(bool snap)

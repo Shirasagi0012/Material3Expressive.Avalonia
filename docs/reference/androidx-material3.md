@@ -221,7 +221,8 @@ LabelLarge text, 18dp icon slot, 8dp icon spacing, and animated content-displace
 visible it offsets the label by half of `(IconSize + IconSpacing)` so the label remains centred.
 
 The default active icon is `internal.Icons.Filled.Check`, a fixed 24×24 `ImageVector`, not a
-Material Symbols font glyph. Avalonia preserves that viewport/path for the built-in icon while
+Material Symbols font glyph. Avalonia preserves that viewport/path through the bindable
+`SelectionIcon` `Geometry` and `PathIcon` template (the XAML equivalent of an `ImageVector`) while
 still allowing arbitrary `Icon` content. The first/last item shapes are asymmetric rounded
 rectangles, so Compose foundation `Border.kt` fills the difference between outer and inset paths
 instead of using the simple stroked-round-rect branch; the Avalonia renderer mirrors this to keep

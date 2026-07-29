@@ -12,6 +12,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Tests.TestUtils;
@@ -237,6 +238,24 @@ public sealed class MaterialSegmentedButtonTests
 
         Assert.True(button.HasVisibleIcon);
         Assert.True(button.IsDefaultIconVisible);
+    }
+
+    [AvaloniaFact]
+    public void DefaultSelectionIconUsesTheOfficialImageVectorGeometry()
+    {
+        var button = new MaterialSegmentedButton { Content = "Month", IsChecked = true };
+        ThemeTestHelper.ShowWindow(button);
+
+        Assert.Same(MaterialSegmentedButton.DefaultSelectionIcon, button.SelectionIcon);
+        Assert.Equal(new Rect(3.41, 5.59, 17.59, 13.41), button.SelectionIcon!.Bounds);
+
+        button.SelectionIcon = Geometry.Parse("M0,0 L1,0 L0,1 Z");
+        Assert.True(button.IsDefaultIconVisible);
+        Assert.Equal(new Rect(0, 0, 1, 1), button.SelectionIcon.Bounds);
+
+        button.SelectionIcon = null;
+        Assert.False(button.IsDefaultIconVisible);
+        Assert.False(button.HasVisibleIcon);
     }
 
     [AvaloniaFact]
