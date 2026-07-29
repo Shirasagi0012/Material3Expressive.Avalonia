@@ -74,6 +74,10 @@ fun ReferenceCaseRegistry.registerNavigationScenes() {
         scrollableTabCase("navigation/tab/primary/scrollable/selected-last/light"),
         ReferenceScene { probes -> ScrollableTabs(probes) },
     )
+    register(
+        scrollableTabWideCase("navigation/tab/primary/scrollable/all-items/selected-last/light"),
+        ReferenceScene { probes -> ScrollableTabs(probes, width = 600.dp) },
+    )
 }
 
 private fun navCase(id: String, dark: Boolean = false) = CaseContract(
@@ -91,10 +95,29 @@ private fun scrollableTabCase(id: String) = CaseContract(
     requiredNodes = listOf(
         RequiredNodeSpec(id = "component", kind = "container"),
         RequiredNodeSpec(id = "indicator", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "tab-2", kind = "container", parentId = "component"),
+        RequiredNodeSpec(id = "tab-3", kind = "container", parentId = "component"),
         RequiredNodeSpec(id = "label-2", kind = "text", parentId = "component", text = "Reviews"),
         RequiredNodeSpec(id = "label-3", kind = "text", parentId = "component", text = "Related items"),
     ),
 )
+
+private fun scrollableTabWideCase(id: String) = CaseContract(
+    id = id, viewportWidthDp = 600, viewportHeightDp = 80, dark = false,
+    requiredNodes = listOf(
+        RequiredNodeSpec(id = "component", kind = "container"),
+        RequiredNodeSpec(id = "indicator", kind = "container", parentId = "component"),
+        *scrollableTabNodes().toTypedArray(),
+        RequiredNodeSpec(id = "label-0", kind = "text", parentId = "component", text = "Overview"),
+        RequiredNodeSpec(id = "label-1", kind = "text", parentId = "component", text = "Specifications"),
+        RequiredNodeSpec(id = "label-2", kind = "text", parentId = "component", text = "Reviews"),
+        RequiredNodeSpec(id = "label-3", kind = "text", parentId = "component", text = "Related items"),
+    ),
+)
+
+private fun scrollableTabNodes() = List(4) { index ->
+    RequiredNodeSpec(id = "tab-$index", kind = "container", parentId = "component")
+}
 
 private fun navigationNodes() = listOf(
     RequiredNodeSpec(id = "component", kind = "container"),
@@ -199,11 +222,11 @@ private fun Tabs(probes: ProbeRegistry, primary: Boolean) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ScrollableTabs(probes: ProbeRegistry) {
+private fun ScrollableTabs(probes: ProbeRegistry, width: Dp = 240.dp) {
     val selectedTabIndex = 3
     PrimaryScrollableTabRow(
         selectedTabIndex = selectedTabIndex,
-        modifier = Modifier.requiredSize(240.dp, 48.dp).then(probes.geometry("component")),
+        modifier = Modifier.requiredSize(width, 48.dp).then(probes.geometry("component")),
         edgePadding = 52.dp,
         minTabWidth = 90.dp,
         indicator = {
@@ -218,6 +241,7 @@ private fun ScrollableTabs(probes: ProbeRegistry) {
             Tab(
                 selected = index == selectedTabIndex,
                 onClick = {},
+                modifier = probes.geometry("tab-$index"),
                 text = {
                     Text(
                         text = label,

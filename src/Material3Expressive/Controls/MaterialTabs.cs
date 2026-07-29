@@ -11,9 +11,21 @@ using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
+// Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// TabRow.kt (ScrollableTabData.calculateTabOffset and ScrollableTabRowWithSubcomposeImpl).
+// The executable Compose parity reference is alpha22, whose matching tab-row behavior is used
+// only as a visual conformance observation; alpha25 remains the implementation source baseline.
+
 /// <summary>One tab in a <see cref="MaterialTabs" />.</summary>
 public class MaterialTab : ToggleButton
 {
+    // Compose's pinned Roboto reference shapes the Material tab label without discretionary
+    // standard/contextual ligatures. Retain a caller-provided feature set, but make Avalonia's
+    // otherwise implicit liga/clig defaults explicit for the Material default. Source: AndroidX
+    // ff0a0a99 / Material3 1.5.0-alpha25, Tab.kt:Tab and TabBaselineLayout.
+    private static readonly FontFeatureCollection s_defaultLabelFontFeatures =
+        FontFeatureCollection.Parse("liga=0, clig=0");
+
     /// <inheritdoc cref="Icon" />
     public static readonly StyledProperty<object?> IconProperty =
         AvaloniaProperty.Register<MaterialTab, object?>(nameof(Icon));
@@ -91,7 +103,10 @@ public class MaterialTab : ToggleButton
         // lambda. Existing TextBlock content needs the equivalent local paragraph setting; the
         // ContentPresenter's text properties only affect string content.
         if (Content is TextBlock textBlock)
+        {
             textBlock.TextAlignment = TextAlignment.Center;
+            textBlock.FontFeatures ??= s_defaultLabelFontFeatures;
+        }
 
         MinHeight = Icon is null ? _tokens.ContainerHeight : _tokens.IconAndLabelHeight;
 
@@ -661,10 +676,21 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
         if (transform is null || _scrollViewer.Viewport.Width <= 0)
             return;
 
-        var tabLeft = transform.Value.Transform(default).X;
-        var target = _scrollViewer.Offset.X + tabLeft - (_scrollViewer.Viewport.Width - tab.Bounds.Width) / 2;
-        var maximum = Math.Max(0, _scrollViewer.Extent.Width - _scrollViewer.Viewport.Width);
-        _scrollViewer.Offset = new Vector(Math.Clamp(target, 0, maximum), _scrollViewer.Offset.Y);
+        // Compose does not centre in fractional Dp. ScrollableTabData.calculateTabOffset first
+        // rounds the total extent, tab left and width to physical px, then uses integer division
+        // for both the viewport and the tab half-width. Preserve that sequence exactly: keeping
+        // the calculation in Avalonia DIPs moves an off-screen preceding label by 3 DIP at 2x.
+        var scale = GetLayoutScale();
+        var totalWidth = ToComposePixels(_scrollViewer.Extent.Width, scale);
+        var availableSpace = Math.Max(0, totalWidth - ToComposePixels(_scrollViewer.Viewport.Width, scale));
+        var visibleWidth = totalWidth - availableSpace;
+        var tabLeft = ToComposePixels(
+            _scrollViewer.Offset.X + transform.Value.Transform(default).X,
+            scale);
+        var tabWidth = ToComposePixels(tab.Bounds.Width, scale);
+        var centredTabOffset = tabLeft - (visibleWidth / 2 - tabWidth / 2);
+        var target = Math.Clamp(centredTabOffset, 0, availableSpace);
+        _scrollViewer.Offset = new Vector(ToLogicalPixels(target, scale), _scrollViewer.Offset.Y);
         _scrollSelectedTab = false;
     }
 

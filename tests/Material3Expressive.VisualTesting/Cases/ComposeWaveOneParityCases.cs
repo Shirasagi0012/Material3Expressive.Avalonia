@@ -170,7 +170,8 @@ internal static class ComposeWaveOneParityCases
         Tabs(TabVariant.Primary, VisualTheme.Dark),
         Tabs(TabVariant.Secondary, VisualTheme.Light),
         Tabs(TabVariant.Secondary, VisualTheme.Dark),
-        ScrollablePrimaryTabs()
+        ScrollablePrimaryTabs(),
+        ScrollablePrimaryTabsAllItems()
     ];
 
     private static VisualCase Typography(
@@ -343,11 +344,21 @@ internal static class ComposeWaveOneParityCases
             "navigation/tab/primary/scrollable/selected-last/light",
             new PixelSize(240, 80),
             VisualTheme.Light,
-            _ => CreateScrollablePrimaryTabs(),
+            _ => CreateScrollablePrimaryTabs(240),
             prepare: context => context.SettleAnimations());
     }
 
-    private static MaterialTabs CreateScrollablePrimaryTabs()
+    private static VisualCase ScrollablePrimaryTabsAllItems()
+    {
+        return ComponentScene(
+            "navigation/tab/primary/scrollable/all-items/selected-last/light",
+            new PixelSize(600, 80),
+            VisualTheme.Light,
+            _ => CreateScrollablePrimaryTabs(600),
+            prepare: context => context.SettleAnimations());
+    }
+
+    private static MaterialTabs CreateScrollablePrimaryTabs(double width)
     {
         var tabs = new MaterialTabs
         {
@@ -355,15 +366,15 @@ internal static class ComposeWaveOneParityCases
             Variant = TabVariant.Primary,
             IsScrollable = true,
             SelectedIndex = 3,
-            Width = 240,
+            Width = width,
             Height = 48,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-0", Text = "Overview" } });
-        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-1", Text = "Specifications" } });
-        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-2", Text = "Reviews" } });
-        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Name = "label-3", Text = "Related items" } });
+        tabs.Items.Add(new MaterialTab { Name = "tab-0", Content = new TextBlock { Name = "label-0", Text = "Overview" } });
+        tabs.Items.Add(new MaterialTab { Name = "tab-1", Content = new TextBlock { Name = "label-1", Text = "Specifications" } });
+        tabs.Items.Add(new MaterialTab { Name = "tab-2", Content = new TextBlock { Name = "label-2", Text = "Reviews" } });
+        tabs.Items.Add(new MaterialTab { Name = "tab-3", Content = new TextBlock { Name = "label-3", Text = "Related items" } });
         return tabs;
     }
 

@@ -70,7 +70,7 @@
                     <TextBlock Classes="title-large" Text="Tabs" />
                     <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
                                Foreground="{mcu:MdSysColor OnSurfaceVariant}"
-                               Text="The indicator is drawn by the row, not the tab, because it travels. Centre and width are separate springs, so it stretches as it moves rather than resizing on arrival." />
+                               Text="The indicator is drawn by the row, not the tab, because it travels. Centre and width are separate springs, so it stretches as it moves rather than resizing on arrival. Scrollable rows keep 52dp end affordances and centre the selected tab when space permits." />
                     <Border Classes="demo-canvas">
                         <StackPanel Spacing="20" MaxWidth="520">
                             <m3:MaterialTabs SelectedIndex="0">
@@ -83,6 +83,14 @@
                                 <m3:MaterialTab Content="Unread" />
                                 <m3:MaterialTab Content="Flagged" />
                             </m3:MaterialTabs>
+                            <Border Width="240" HorizontalAlignment="Left" ClipToBounds="True">
+                                <m3:MaterialTabs IsScrollable="True" SelectedIndex="3">
+                                    <m3:MaterialTab Content="Overview" />
+                                    <m3:MaterialTab Content="Specifications" />
+                                    <m3:MaterialTab Content="Reviews" />
+                                    <m3:MaterialTab Content="Related items" />
+                                </m3:MaterialTabs>
+                            </Border>
                         </StackPanel>
                     </Border>
                 </StackPanel>

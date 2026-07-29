@@ -74,7 +74,7 @@ can represent them.
 | Menus | ExposedDropdownMenu | None | Missing | Anchor box, trailing icon, and exposed-menu behavior are absent. |
 | Lists | ListItem and SegmentedListItem | None | Missing | One-, two-, and three-line/list segment layouts are absent. |
 | Selection | SegmentedButton rows | None | Missing | Single- and multi-choice row semantics are absent. |
-| Navigation | Tab and TabRow families | `MaterialTab`, `MaterialTabs` | Partial | Scrollable rows and the complete indicator/layout API are absent. |
+| Navigation | Tab and TabRow families | `MaterialTab`, `MaterialTabs` | Partial | `IsScrollable` adapts `PrimaryScrollableTabRow`: 52dp edges, 90dp minimum intrinsic tabs, and physical-pixel selected-tab centring. Alpha22 executable parity passes at 240dp and 600dp. Complete indicator/layout variants, icon permutations, and richer accessibility/keyboard coverage remain. |
 | Navigation | NavigationBar | `MaterialNavigationBar` | Implemented | Bar and rail share one Avalonia control. |
 | Navigation | NavigationRail | `MaterialNavigationBar` | Implemented | Selected through the navigation variant. |
 | Navigation | ShortNavigationBar and WideNavigationRail | None | Missing | Adaptive and expanded/collapsed navigation forms are absent. |

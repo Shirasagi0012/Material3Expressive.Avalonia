@@ -2,8 +2,8 @@ package material3expressive.compose.reference.probes
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.TextLayoutResult
 
 class ProbeRegistry {
@@ -14,8 +14,17 @@ class ProbeRegistry {
 
     fun geometry(id: String): Modifier =
         Modifier.onGloballyPositioned { coordinates ->
-            val bounds = coordinates.boundsInRoot()
-            _geometries[id] = BoundsPx(bounds.left, bounds.top, bounds.right, bounds.bottom)
+            // boundsInRoot() calls localBoundingBoxOf() with clipping enabled. That truncates an
+            // otherwise valid tab/text probe at a scroll viewport edge, while Avalonia reports
+            // the visual's raw root-relative bounds. Capture the layout origin and measured size
+            // instead so the cross-toolkit structural contract describes the same un-clipped box.
+            val position = coordinates.positionInRoot()
+            _geometries[id] = BoundsPx(
+                position.x,
+                position.y,
+                position.x + coordinates.size.width,
+                position.y + coordinates.size.height,
+            )
         }
 
     fun text(id: String): Modifier = geometry(id)

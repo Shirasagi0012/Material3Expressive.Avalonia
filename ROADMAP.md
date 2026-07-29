@@ -239,7 +239,7 @@ promise.
 | Indeterminate checkbox tests and API guidance | P0 | Complete | 2 | Existing nullable-state behavior |
 | RangeSlider and VerticalSlider | P0 | Blocked | 2 | Decision 4: range-thumb automation model |
 | Circular wavy progress | P0 | Blocked | 2 | Decision 4: custom-drawn progress accessibility model; static complex-shape residual is covered by the documented temporary warning below |
-| Scrollable Tabs and AppBar scroll behavior | P0 | Planned | 2 | Shared scroll-state conventions |
+| Scrollable Tabs and AppBar scroll behavior | P0 | Blocked | 2 | Scrollable tab rows are complete; AppBar scroll state/ownership awaits Decision 2: shared scroll-state conventions. |
 | Surface, Divider, and ListItem | P1 | Planned | 3 | Token and API review |
 | Scaffold and host coordination | P1 | Planned | 3 | Surface and overlay state primitives |
 | SnackbarHost and BottomSheetScaffold | P1 | Planned | 4 | Host/state conventions |
@@ -319,3 +319,9 @@ Only recent roadmap-level outcomes belong here. Detailed chronology lives in
   the 4666ms global rotation is linear. Deterministic curve and cadence tests provide evidence;
   no animated alpha22 visual-parity pass is claimed because the executable catalog has no such
   scenario.
+- 2026-07-29: completed the scrollable primary-tab-row subset of the P0 Tabs/AppBar item. The
+  Avalonia `IsScrollable` adaptation follows alpha25 `TabRow.kt`'s 52dp edge padding, 90dp
+  minimum tab width, and physical-pixel selected-tab centring. Alpha22 executable parity passes
+  at both a 240dp scrolling viewport and 600dp all-items viewport. The AppBar scroll portion is
+  blocked pending Decision 2; it requires a library-wide owned/external scroll-state API, so no
+  public AppBar scroll API has been guessed.

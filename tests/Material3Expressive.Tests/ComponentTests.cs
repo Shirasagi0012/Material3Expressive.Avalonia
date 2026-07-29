@@ -552,8 +552,12 @@ public class TabTests
         Assert.True(TabTokens.Primary.IndicatorSpansLabel);
         Assert.False(TabTokens.Secondary.IndicatorSpansLabel);
 
-        // The primary indicator is also thicker and rounded; the secondary is a plain rule.
-        Assert.True(TabTokens.Primary.ActiveIndicatorHeight > TabTokens.Secondary.ActiveIndicatorHeight);
+        // TabRowDefaults.SecondaryIndicator deliberately takes its default height from
+        // PrimaryNavigationTabTokens.ActiveIndicatorHeight (3dp). The primary/secondary
+        // distinction is therefore content-width and shape, not thickness. Source:
+        // AndroidX ff0a0a99 / Material3 1.5.0-alpha25, TabRow.kt:PrimaryIndicator,
+        // SecondaryIndicator and PrimaryNavigationTabTokens.kt (VERSION v0_162).
+        Assert.Equal(TabTokens.Primary.ActiveIndicatorHeight, TabTokens.Secondary.ActiveIndicatorHeight);
         Assert.True(TabTokens.Primary.ActiveIndicatorCornerRadius > 0);
         Assert.Equal(0, TabTokens.Secondary.ActiveIndicatorCornerRadius);
     }
@@ -576,10 +580,10 @@ public class TabTests
     public void ScrollableTabs_UseTheComposeMinimumWidthEndPaddingAndSelectedTabCentredViewport()
     {
         var tabs = new MaterialTabs { Width = 240, IsScrollable = true };
-        tabs.Items.Add(new MaterialTab { Content = "Overview" });
-        tabs.Items.Add(new MaterialTab { Content = "Specifications" });
-        tabs.Items.Add(new MaterialTab { Content = "Reviews" });
-        tabs.Items.Add(new MaterialTab { Content = "Related items" });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Text = "Overview" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Text = "Specifications" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Text = "Reviews" } });
+        tabs.Items.Add(new MaterialTab { Content = new TextBlock { Text = "Related items" } });
         ThemeTestHelper.ShowWindow(tabs);
 
         var viewer = Assert.Single(tabs.GetVisualDescendants().OfType<ScrollViewer>());
@@ -592,6 +596,8 @@ public class TabTests
         tabs.SelectedIndex = 3;
 
         Assert.True(viewer.Offset.X > 0);
+        Assert.InRange(viewer.Offset.X, 0, viewer.Extent.Width - viewer.Viewport.Width);
+        Assert.True(tabs.Items[tabs.SelectedIndex].Bounds.Right > viewer.Offset.X);
     }
 }
 

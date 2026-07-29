@@ -91,7 +91,9 @@ Checks happen in this order:
 
 1. The producer manifest, versions, environment, font hash, catalog, and image hashes must match
    the contract.
-2. Named component bounds are compared in root-relative physical pixels. `TextBlock` nodes retain
+2. Named component bounds are compared as un-clipped root-relative physical pixels. The Compose
+   producer records each probe's `positionInRoot` plus its measured size, rather than the
+   scroll-clipped `boundsInRoot()` rectangle, so it matches Avalonia visual bounds. `TextBlock` nodes retain
    their framework bounds; the custom Material text-field label is projected to the equivalent
    snapped Compose layout slot. Floating line and caret/advance data is compared separately.
    Images are never auto-aligned or recentered.

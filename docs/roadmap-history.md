@@ -94,3 +94,20 @@ the source's non-circular consecutive morph and counter-clockwise half-turn rule
 Focused unit tests prove the non-linear early curve and the 650ms shape/rotation boundary. The
 pinned alpha22 executable catalog contains no animated LoadingIndicator case, so this record is
 source review plus deterministic Avalonia evidence, not a parity pass.
+
+## 2026-07-29 — Scrollable primary-tab-row closure
+
+Reviewed AndroidX `TabRow.kt`, `Tab.kt`, `PrimaryNavigationTabTokens.kt`, and
+`SecondaryNavigationTabTokens.kt` at `ff0a0a99` / Material3 `1.5.0-alpha25`. The existing
+`MaterialTabs.IsScrollable` adaptation now explicitly follows `ScrollableTabData`'s
+physical-pixel/integer-centred offset sequence and preserves the upstream 52dp edge padding and
+90dp minimum width. The 3dp primary and secondary default indicators were also corrected in the
+unit contract; their difference is span/shape rather than height.
+
+Added alpha22 executable scenes for a 240dp scrolling viewport and a 600dp all-items viewport,
+with tab-container probes. During that work the reference producer's `boundsInRoot()` probes were
+found to report scroll-clipped rectangles while Avalonia correctly reports raw visual bounds.
+The producer now records `positionInRoot + measured size`, so parity compares matching un-clipped
+root-relative geometry. Targeted `TabTests` (3/3) and `navigation/tab/*` parity (6/6) pass. The
+remaining AppBar scroll API is intentionally blocked on the roadmap's shared state-ownership
+decision rather than being silently invented.
