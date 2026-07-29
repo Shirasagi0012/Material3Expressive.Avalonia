@@ -50,8 +50,15 @@ They require source review plus unit, structural, and deterministic Avalonia tes
 
 ## Verification evidence
 
-`./tools/visual-parity/run.ps1` was run on 2026-07-29 after this audit. The fresh artifact root
-was `artifacts/visual-parity/xunit/20260728-194358-136`: 57 cases passed, 2 were explicitly
+The following command was run on 2026-07-29 after this audit:
+
+```powershell
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity"
+```
+
+The fresh artifact root was `artifacts/visual-parity/xunit/20260728-194358-136`: 57 cases passed,
+2 were explicitly
 skipped (`foundation/typography/display-headline/{light,dark}` because Avalonia has no equivalent
 baseline API), and 2 focused TextField cases failed.
 

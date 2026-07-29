@@ -150,7 +150,7 @@ tests/
 
 tools/
   visual-parity/
-    run.ps1
+    preview.py
 ```
 
 Responsibilities are intentionally narrow:
@@ -160,7 +160,8 @@ Responsibilities are intentionally narrow:
 - `Material3Expressive.VisualTesting` captures Avalonia and compares two result bundles.
 - `Material3Expressive.VisualTests/Unit` tests the harness without starting Compose.
 - `Material3Expressive.VisualTests/Parity` exposes one xUnit case per conformance scene.
-- `tools/visual-parity/run.ps1` is the authoritative end-to-end entry point.
+- `dotnet test` is the authoritative end-to-end entry point; the collection fixture launches the
+  Compose producer and writes the fresh expected/actual artifact bundle.
 
 ## 5. Case catalog and scene identity
 
@@ -770,30 +771,32 @@ skip generation or use stale output.
 The intended developer entry point is:
 
 ```powershell
-.\tools\visual-parity\run.ps1
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity"
 ```
 
-Useful optional arguments may include:
+Useful case filters include:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "button/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase=button/filled/medium/enabled/light"
+
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~button/"
 ```
 
-The script:
+The xUnit collection fixture and theory rows:
 
-1. resolves and validates the repository root;
-2. creates a unique run directory;
-3. validates the exact dependency and environment contract;
-4. invokes Gradle once to generate the requested Compose expected bundle;
-5. validates the completed expected manifest and hashes;
-6. passes the expected and run directories to the .NET process;
-7. runs the selected xUnit parity cases;
-8. builds the HTML index even when one or more cases fail;
-9. returns the original test exit code;
-10. optionally opens the report.
+1. resolve the repository root and create a unique run directory;
+2. launch Gradle once to generate the complete fresh Compose expected bundle;
+3. validate the expected manifest, hashes, and case catalog;
+4. run the selected Avalonia theory rows against the shared expected bundle;
+5. write per-case images, layouts, comparisons, and the actual manifest;
+6. return the original xUnit test result.
 
-The script must not delete or overwrite a broad artifact directory. Cleanup, when requested, is
-limited to an explicitly resolved run directory.
+The console summary may not print accepted `rasterWarning` details. Locate the newest directory
+under `artifacts/visual-parity/xunit/` and inspect `actual/manifest.json` plus each case's
+`comparison.json`; these artifacts are authoritative and are never reused as baselines.
 
 ## 14. Reporting
 

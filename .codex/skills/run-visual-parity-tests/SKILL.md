@@ -22,8 +22,11 @@ Before running or interpreting results, read:
 - `docs/animation-parity.md` for motion-origin, replay, clock-coverage, and unsupported-path rules;
 - `docs/comparison-profiles.md` when the task involves profile selection, owner budgets, or policy
   review;
-- `tools/visual-parity/run.ps1` for filter behavior;
 - `tests/VisualParity/comparison-profiles.json` for current policy values and case-prefix rules;
+- `tests/Material3Expressive.VisualTests/ComposeParityFixture.cs` for fresh bundle and artifact
+  lifecycle;
+- `tests/Material3Expressive.VisualTests/ComposeVisualParityTests.cs` for xUnit case traits and
+  warning reporting;
 - `tests/Material3Expressive.VisualTesting/Parity/ParityComparer.cs` for structural comparison;
 - `tests/Material3Expressive.VisualTesting/Parity/SemanticRasterComparer.cs` for raster behavior.
 
@@ -38,35 +41,41 @@ Run all commands from the repository root.
 Run the complete parity suite:
 
 ```powershell
-.\tools\visual-parity\run.ps1
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity"
 ```
 
 Run one exact case ID:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "button/filled/medium/enabled/light"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase=button/filled/medium/enabled/light"
 ```
 
-Run a case family by prefix:
+Run a case family by xUnit substring matching:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "button/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~button/"
 ```
 
 Run the deterministic motion prototype:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "foundation/motion/linear-tween/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~foundation/motion/linear-tween/"
 ```
 
 Run the component motion families:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "progress/circular-wavy/motion/*"
-.\tools\visual-parity\run.ps1 -Case "progress/loading-indicator/indeterminate/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~progress/circular-wavy/motion/"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~progress/loading-indicator/indeterminate/"
 ```
 
-Use the equivalent direct xUnit filter only when extra `dotnet test` options are needed:
+Use an exact direct xUnit filter when extra `dotnet test` options are needed:
 
 ```powershell
 dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
@@ -91,6 +100,11 @@ One xUnit invocation creates one fresh Compose expected bundle and shares it acr
 theory rows. Filtering to one Avalonia case still generates and validates the complete Compose
 bundle in the fixture. Prefer a family invocation over many separate case invocations when the
 same expected bundle can be reused.
+
+The `dotnet test` console summary may not print accepted `rasterWarning` details. After every run,
+locate the newest `artifacts/visual-parity/xunit/<timestamp>/` directory and inspect the actual
+manifest and per-case comparison reports. Do not rely on an older console log or infer warning
+status from the xUnit pass count.
 
 To debug only the reference producer, follow `tests/ComposeReference/README.md` and pass `--case`
 to Gradle. That verifies Compose capture; it does not run the Avalonia comparison.

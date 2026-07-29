@@ -236,7 +236,8 @@ dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTest
 dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
   --filter 'FullyQualifiedName~ParityContractTests'
 
-.\tools\visual-parity\run.ps1 -Case "affected-family/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter 'Category=VisualParity&ParityCase~affected-family/'
 ```
 
 Then run the full parity suite before treating a profile change as complete. Review the selected

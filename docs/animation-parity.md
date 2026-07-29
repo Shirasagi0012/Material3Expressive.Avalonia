@@ -147,14 +147,17 @@ parity contract.
 Run the prototype family:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "foundation/motion/linear-tween/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~foundation/motion/linear-tween/"
 ```
 
 Run the diagnostic Material component families:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "progress/circular-wavy/motion/*"
-.\tools\visual-parity\run.ps1 -Case "progress/loading-indicator/indeterminate/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~progress/circular-wavy/motion/"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~progress/loading-indicator/indeterminate/"
 ```
 
 For a mismatch, inspect `motion` in expected and actual `layout.json` before pixels. If it matches,

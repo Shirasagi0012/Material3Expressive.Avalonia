@@ -37,13 +37,8 @@ changes, not baseline refreshes.
 From the repository root:
 
 ```powershell
-.\tools\visual-parity\run.ps1
-```
-
-This is equivalent to:
-
-```powershell
-dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj --filter Category=VisualParity
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity"
 ```
 
 The test fixture launches Gradle once, generates the complete fresh Compose bundle, validates its
@@ -55,17 +50,22 @@ harness has run successfully and found implementation work to do.
 Run one Avalonia case while still generating the complete Compose expected bundle:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "button/filled/medium/enabled/light"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase=button/filled/medium/enabled/light"
 ```
 
-Select a family by suffixing the case prefix with `*`:
+Select a family with xUnit substring matching:
 
 ```powershell
-.\tools\visual-parity\run.ps1 -Case "button/*"
+dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj `
+  --filter "Category=VisualParity&ParityCase~button/"
 ```
 
 The corresponding xUnit data rows carry a `ParityCase` trait, so IDE and `dotnet test` filtering
 can address the same cases directly.
+
+The `dotnet test` console summary may not print accepted `rasterWarning` details. Treat the fresh
+`actual/manifest.json` and per-case `comparison.json` artifacts as the authoritative warning report.
 
 To inspect only the reference producer, run the commands in
 [`tests/ComposeReference/README.md`](../tests/ComposeReference/README.md). Its `--case` argument
