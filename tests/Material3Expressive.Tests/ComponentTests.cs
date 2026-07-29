@@ -601,6 +601,46 @@ public class TabTests
     }
 }
 
+public class SurfaceListItemTests
+{
+    [AvaloniaFact]
+    public void SurfaceAndDivider_UseThemeSurfaceAndOutlineVariantDefaults()
+    {
+        var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
+        var surface = new MaterialSurface { Width = 120, Height = 40 };
+        var divider = new MaterialDivider { Width = 120 };
+        var host = new StackPanel { Children = { surface, divider } };
+        MaterialThemeScope.SetTheme(host, theme);
+        ThemeTestHelper.ShowWindow(host);
+
+        Assert.Equal(ThemeTestHelper.Expected(theme, SysColorToken.OnSurface), ThemeTestHelper.ColorOf(surface.Foreground));
+        Assert.Equal(ThemeTestHelper.Expected(theme, SysColorToken.OutlineVariant), ThemeTestHelper.ColorOf(divider.DividerBrush));
+        Assert.Equal(1, divider.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void ListItem_UsesInteractionModeToSynchronizeThePublicSelectionState()
+    {
+        var item = new MaterialListItem
+        {
+            InteractionMode = ListItemInteractionMode.MultiSelection,
+            Content = "Headline",
+            SupportingContent = "Supporting"
+        };
+        ThemeTestHelper.ShowWindow(item);
+
+        item.IsSelected = true;
+        Assert.True(item.IsChecked);
+
+        item.IsChecked = false;
+        Assert.False(item.IsSelected);
+        Assert.Equal(72, item.MinHeight);
+
+        item.InteractionMode = ListItemInteractionMode.None;
+        Assert.False(item.Focusable);
+    }
+}
+
 public class AppBarTests
 {
     [AvaloniaFact]
