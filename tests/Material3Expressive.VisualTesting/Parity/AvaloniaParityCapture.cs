@@ -29,7 +29,17 @@ public sealed class AvaloniaParityCapture
             FlowDirection = FlowDirection.LeftToRight
         };
 
-        return _renderer.Render(physical, (context, image) =>
+        var replay = expected.Motion is null
+            ? null
+            : new VisualMotionReplay(
+                expected.Motion.Origin,
+                expected.Motion.TimeUnit,
+                expected.Motion.DurationScale,
+                expected.Motion.DeliveryFrameTicks,
+                expected.Motion.CaptureFrameIndex,
+                expected.Motion.ScheduleSha256);
+
+        return _renderer.Render(physical, replay, (context, image) =>
         {
             var nodes = CaptureNodes(context, expected.Nodes, physical.RenderScaling);
             var layout = new ParityCaptureResult(
@@ -37,9 +47,37 @@ public sealed class AvaloniaParityCapture
                 expected.CaseId,
                 new ParityCoordinateSpace("physical-pixel", "root-top-left", "right", "down", (float)physical.RenderScaling),
                 new ParityViewport(image.Width, image.Height),
-                nodes);
+                nodes,
+                CaptureMotion(physical, context));
             return new ParityActualCapture(image, layout);
         });
+    }
+
+    private static ParityMotionCapture? CaptureMotion(VisualCase source, VisualContext context)
+    {
+        if (source.Motion is not { } motion)
+            return null;
+
+        var delivered = context.DeliveredMotionFrameTicks
+            ?? throw new InvalidOperationException($"Avalonia parity scene '{source.Id}' did not record delivered motion frames.");
+        var captureIndex = context.MotionCaptureFrameIndex
+            ?? throw new InvalidOperationException($"Avalonia parity scene '{source.Id}' did not record its capture frame.");
+        if (captureIndex < 0 || captureIndex >= delivered.Count)
+            throw new InvalidOperationException($"Avalonia parity scene '{source.Id}' recorded an invalid capture frame.");
+
+        return new ParityMotionCapture(
+            ParityMotionCapture.CurrentSchemaVersion,
+            motion.ScenarioId,
+            motion.CheckpointId,
+            "first-controlled-motion-frame",
+            "100ns-ticks",
+            1,
+            delivered[captureIndex],
+            [new ParityMotionEvent(0, motion.TriggerAction)],
+            delivered,
+            captureIndex,
+            ParityMotionTimeline.ScheduleSha256(delivered),
+            motion.ClockCoverage);
     }
 
     private static void EnsureCanonicalRoboto()

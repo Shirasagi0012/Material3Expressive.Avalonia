@@ -59,7 +59,7 @@ new VisualCase(
     Prepare: context =>
     {
         var component = context.Require<MaterialComponent>("component");
-        // Set focus/input state after mounting; settle or advance motion deterministically.
+        // Static/terminal case only: set focus/input state and settle component-owned motion.
         context.SettleAnimations();
     });
 ```
@@ -68,6 +68,69 @@ Register the case in the appropriate `*ParityCases.cs` file and ensure that file
 `VisualCaseCatalog.All`. Do not duplicate the ID. If the control has no matching Visual for an
 internal drawing, extend the capture adapter with a named probe instead of approximating the node
 from the screenshot.
+
+## Motion checkpoint worksheet
+
+Read `docs/animation-parity.md` before filling this section. Use one fresh case per checkpoint.
+
+| Field | Value |
+|---|---|
+| scenario ID | `component/variant/motion/theme` |
+| checkpoint ID / elapsed ticks | `start / 0`, `mid / ...`, `end / ...` |
+| trigger action | one stable semantic action |
+| why this checkpoint exists | duration/easing/delay/overshoot/terminal boundary |
+| Compose frame clock | `controlled` |
+| Compose coroutine clock | `controlled` or `unused` |
+| Avalonia `MotionGroup` | `controlled` |
+| Avalonia `Transition` / composition | `forbidden` |
+| input timestamp | `insensitive` or unsupported |
+
+Compose skeleton:
+
+```kotlin
+val triggered = mutableStateOf(false)
+register(
+    CaseContract(
+        id = "component/variant/motion/mid/light",
+        viewportWidthDp = 240,
+        viewportHeightDp = 96,
+        dark = false,
+        requiredNodes = listOf(RequiredNodeSpec("component", "container")),
+        motion = MotionCaseContract(
+            scenarioId = "component/variant/motion/light",
+            checkpointId = "mid",
+            elapsedTicks = 1_000_000, // 100ms
+            triggerAction = "activate",
+            usesComposeCoroutineClock = false,
+        ),
+    ),
+    ReferenceScene(trigger = { triggered.value = true }) { probes ->
+        ComponentScene(probes, triggered.value)
+    },
+)
+```
+
+Avalonia skeleton:
+
+```csharp
+new VisualCase(
+    Id: "component/variant/motion/mid/light",
+    Viewport: new PixelSize(240, 96),
+    Theme: VisualTheme.Light,
+    CreateContent: _ => CreateInitialComponent(),
+    Motion: new VisualMotionSpec(
+        ScenarioId: "component/variant/motion/light",
+        CheckpointId: "mid",
+        TriggerAction: "activate",
+        Trigger: context => context.Require<MaterialComponent>("component").Activate(),
+        ClockCoverage: VisualMotionClockCoverage.ComponentOwned(false)));
+```
+
+Do not put the trigger in `Prepare`, calculate a second schedule, or call
+`UseManualMotionClock`/`AdvanceAnimations` in a first-class motion case. The renderer enters the
+manual scope before scene creation and consumes the Compose manifest. If any captured Avalonia
+animation uses native `Transition`, composition, a wall-clock timer, or MaterialSymbol
+`DoubleTransition`, mark the case unsupported until that time source is controlled.
 
 ## Probe worksheet
 

@@ -269,6 +269,29 @@ public class TweenTests
 public class MotionGroupTests
 {
     [Fact]
+    public void ATestClockScopeOwnsGroupsCreatedAfterActivation()
+    {
+        using var clock = new MotionTestClockScope();
+        var group = new MotionGroup(new Border());
+        var tween = group.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
+        tween.AnimateTo(1);
+        group.Start();
+
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(40));
+
+        Assert.Equal(1, clock.GroupCount);
+        Assert.Equal(0.4, tween.Value, 6);
+    }
+
+    [Fact]
+    public void ATestClockScopeRejectsNestedOwners()
+    {
+        using var clock = new MotionTestClockScope();
+
+        Assert.Throws<InvalidOperationException>(() => new MotionTestClockScope());
+    }
+
+    [Fact]
     public void AManualClockAdvancesByTheExactRequestedDuration()
     {
         var group = new MotionGroup(new Border());

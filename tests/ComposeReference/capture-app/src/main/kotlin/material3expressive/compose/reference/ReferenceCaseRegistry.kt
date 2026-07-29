@@ -17,6 +17,20 @@ class ReferenceCaseRegistry {
         require(contract.requiredNodes.map { it.id }.distinct().size == contract.requiredNodes.size) {
             "Case '${contract.id}' has duplicate required node IDs."
         }
+        contract.motion?.let { motion ->
+            require(motion.scenarioId.isNotBlank() && motion.checkpointId.isNotBlank()) {
+                "Case '${contract.id}' has an invalid motion identity."
+            }
+            require(motion.elapsedTicks >= 0 && motion.triggerAction.isNotBlank()) {
+                "Case '${contract.id}' has an invalid motion checkpoint or trigger."
+            }
+            require(scene.trigger != null) {
+                "Motion case '${contract.id}' must provide a trigger which establishes time zero."
+            }
+        }
+        require(contract.motion != null || scene.trigger == null) {
+            "Static case '${contract.id}' must not provide a motion trigger."
+        }
         check(contract.id !in contracts) { "Case '${contract.id}' is registered more than once." }
         scenes[contract.id] = scene
         contracts[contract.id] = contract
@@ -34,6 +48,13 @@ class ReferenceCaseRegistry {
                 append(contract.viewportHeightDp).append(',')
                 append(contract.dark).append(',')
                 append(contract.renderScale).append(';')
+                contract.motion?.let { motion ->
+                    appendField(motion.scenarioId)
+                    appendField(motion.checkpointId)
+                    append(motion.elapsedTicks).append(',')
+                    appendField(motion.triggerAction)
+                    append(motion.usesComposeCoroutineClock).append(';')
+                } ?: appendField(null)
                 contract.requiredNodes.forEach { node ->
                     appendField(node.id)
                     appendField(node.kind)

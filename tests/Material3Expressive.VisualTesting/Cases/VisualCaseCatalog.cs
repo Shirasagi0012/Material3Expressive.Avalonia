@@ -9,7 +9,9 @@ public static class VisualCaseCatalog
     [
         .. ParityCases.All,
         .. ElevationParityCases.All,
+        .. MotionParityCases.All,
         .. ComponentParityCases.All,
+        .. ComponentMotionParityCases.All,
         .. ComposeWaveOneParityCases.All
     ];
 

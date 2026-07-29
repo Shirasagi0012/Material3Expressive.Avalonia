@@ -23,7 +23,7 @@ data class ExpectedManifest(
     val themeIdentifier: String,
     val themeSha256: String,
     val caseCatalogSha256: String,
-    val captureSchemaVersion: Int = 5,
+    val captureSchemaVersion: Int = 8,
     val viewportScale: Float,
     val files: List<ManifestFileEntry>,
     val cases: List<ManifestCaseEntry>,
@@ -48,11 +48,44 @@ data class ManifestCaseEntry(
 
 @Serializable
 data class CaptureResult(
-    val schemaVersion: Int = 5,
+    val schemaVersion: Int = 8,
     val caseId: String,
     val coordinateSpace: CoordinateSpace,
     val viewportPx: ViewportPx,
     val nodes: List<CaptureNode>,
+    val motion: CaptureMotion? = null,
+)
+
+@Serializable
+data class CaptureMotion(
+    val schemaVersion: Int = 1,
+    val scenarioId: String,
+    val checkpointId: String,
+    val origin: String = "first-controlled-motion-frame",
+    val timeUnit: String = "100ns-ticks",
+    val durationScale: Float = 1.0f,
+    val elapsedTicks: Long,
+    val events: List<CaptureMotionEvent>,
+    val deliveryFrameTicks: List<Long>,
+    val captureFrameIndex: Int,
+    val scheduleSha256: String,
+    val clockCoverage: CaptureMotionClockCoverage,
+)
+
+@Serializable
+data class CaptureMotionEvent(
+    val atTicks: Long,
+    val action: String,
+)
+
+@Serializable
+data class CaptureMotionClockCoverage(
+    val composeFrameClock: String = "controlled",
+    val composeCoroutineClock: String,
+    val avaloniaMotionGroup: String = "controlled",
+    val avaloniaTransition: String = "forbidden",
+    val avaloniaComposition: String = "forbidden",
+    val inputTimestamp: String = "insensitive",
 )
 
 @Serializable

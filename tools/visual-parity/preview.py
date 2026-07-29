@@ -91,6 +91,7 @@ td.mono { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 11px; }
     <button class="tab" data-panel="geometry">Geometry</button>
     <button class="tab" data-panel="textlayout">Text Layout</button>
     <button class="tab" data-panel="shadow">Shadow</button>
+    <button class="tab" data-panel="motion">Motion</button>
     <button class="tab" data-panel="failures">Failures</button>
     <button class="tab" data-panel="raw">Raw JSON</button>
   </div>
@@ -101,6 +102,7 @@ td.mono { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 11px; }
     <div id="geometry-panel" style="display:none"></div>
     <div id="textlayout-panel" style="display:none"></div>
     <div id="shadow-panel" style="display:none"></div>
+    <div id="motion-panel" style="display:none"></div>
     <div id="failures-panel" style="display:none"></div>
     <div id="raw-panel" style="display:none"></div>
   </div>
@@ -167,6 +169,8 @@ async function selectRun(runName) {
     document.getElementById('images-panel').innerHTML = '';
     document.getElementById('geometry-panel').style.display = 'none';
     document.getElementById('textlayout-panel').style.display = 'none';
+    document.getElementById('shadow-panel').style.display = 'none';
+    document.getElementById('motion-panel').style.display = 'none';
     document.getElementById('failures-panel').style.display = 'none';
     document.getElementById('raw-panel').style.display = 'none';
     document.getElementById('stats').innerHTML = '';
@@ -258,7 +262,7 @@ document.getElementById('tabs').addEventListener('click', function(e) {
     e.target.classList.add('active');
     var panel = e.target.dataset.panel;
     document.getElementById('images-panel').style.display = panel === 'images' ? 'flex' : 'none';
-    ['geometry-panel','textlayout-panel','shadow-panel','failures-panel','raw-panel'].forEach(function(id) {
+    ['geometry-panel','textlayout-panel','shadow-panel','motion-panel','failures-panel','raw-panel'].forEach(function(id) {
         document.getElementById(id).style.display = (id === panel + '-panel') ? '' : 'none';
     });
 });
@@ -285,6 +289,7 @@ async function selectCase(caseId) {
     renderGeometry(caseId);
     renderTextLayout(caseId);
     renderShadow(caseId);
+    renderMotion(caseId);
     renderFailures(caseId);
     renderRaw(caseId);
 }
@@ -482,6 +487,63 @@ function renderShadow(caseId) {
         h+='</tbody></table>';
     });
     document.getElementById('shadow-panel').innerHTML=h;
+}
+
+function renderMotion(caseId) {
+    var exp = state.expectedLayouts[caseId];
+    var act = state.actualLayouts[caseId];
+    var em = exp ? exp.motion : null;
+    var am = act ? act.motion : null;
+    if (!em && !am) {
+        document.getElementById('motion-panel').innerHTML='<div class="empty">No motion data for this case</div>';
+        return;
+    }
+    var h = '';
+    var q=function(l,ev,av){
+        var ok=ev===av?'<span class="match">OK</span>':'<span class="mismatch">'+av+'</span>';
+        h+='<tr><td>'+l+'</td><td class="mono">'+(em!=null?String(ev):'-')+'</td><td class="mono">'+(am!=null?String(av):'-')+'</td><td>'+ok+'</td></tr>';
+    };
+    var ql=function(l,ev,av){
+        var d=ev!=null&&av!=null?('j'.repeat(Math.min(20,ev.length===av.length?1:0))):'?';
+        // just show length comparison
+        var ok=true;
+        if(Array.isArray(ev)&&Array.isArray(av)){
+            ok=ev.length===av.length;
+            if(ok){
+                var allMatch=ev.every(function(e,i){return JSON.stringify(e)===JSON.stringify(av[i]);});
+                ok=allMatch;
+            }
+        }
+        var cls=ok?'match':'mismatch';
+        h+='<tr class="'+cls+'"><td>'+l+'</td><td class="mono">'+JSON.stringify(ev)+'</td><td class="mono">'+JSON.stringify(av)+'</td><td class="mono '+cls+'">'+(ok?'OK':'DIFFERS')+'</td></tr>';
+    };
+    h+='<h3 style="margin:12px 0 6px">Motion Capture</h3>';
+    h+='<table><thead><tr><th>Property</th><th>Expected</th><th>Actual</th><th>Status</th></tr></thead><tbody>';
+    q('Schema version',em?em.schemaVersion:'-',am?am.schemaVersion:'-');
+    q('Scenario',em?em.scenarioId:'-',am?am.scenarioId:'-');
+    q('Checkpoint',em?em.checkpointId:'-',am?am.checkpointId:'-');
+    q('Origin',em?em.origin:'-',am?am.origin:'-');
+    q('Time unit',em?em.timeUnit:'-',am?am.timeUnit:'-');
+    q('Duration scale',em?em.durationScale:'-',am?am.durationScale:'-');
+    q('Elapsed ticks',em?em.elapsedTicks:'-',am?am.elapsedTicks:'-');
+    q('Capture frame index',em?em.captureFrameIndex:'-',am?am.captureFrameIndex:'-');
+    q('Schedule SHA-256',em?(em.scheduleSha256||'').substring(0,16)+'...':'N/A',am?(am.scheduleSha256||'').substring(0,16)+'...':'N/A');
+    ql('Events',em?em.events:'-',am?am.events:'-');
+    ql('Delivery frame ticks',em?em.deliveryFrameTicks:'-',am?am.deliveryFrameTicks:'-');
+    h+='</tbody></table>';
+    if(em&&em.clockCoverage){
+        h+='<h4 style="margin:10px 0 4px;color:#8b949e;font-size:11px">Clock Coverage</h4>';
+        h+='<table><thead><tr><th>Clock</th><th>Expected</th><th>Actual</th><th>Match</th></tr></thead><tbody>';
+        var cc=em.clockCoverage;
+        var ac=am&&am.clockCoverage?am.clockCoverage:{};
+        Object.keys(cc).forEach(function(key){
+            var ev=cc[key],av=ac[key]||'N/A';
+            var cls2=ev===av?'match':'mismatch';
+            h+='<tr class="'+cls2+'"><td>'+key+'</td><td class="mono">'+ev+'</td><td class="mono">'+av+'</td><td class="mono '+cls2+'">'+(ev===av?'OK':'DIFFERS')+'</td></tr>';
+        });
+        h+='</tbody></table>';
+    }
+    document.getElementById('motion-panel').innerHTML=h;
 }
 
 function renderFailures(caseId) {

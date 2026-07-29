@@ -917,13 +917,13 @@ public class LoadingIndicatorTests
     }
 
     [AvaloniaFact]
-    public void TheContainedVariant_ReservesTheLargerBox()
+    public void BothVariants_ReserveTheUpstreamPublicContainerBox()
     {
         var standard = new MaterialLoadingIndicator();
         var contained = new MaterialLoadingIndicator { Variant = LoadingIndicatorVariant.Contained };
         ThemeTestHelper.ShowWindow(new StackPanel { Children = { standard, contained } });
 
-        Assert.Equal(LoadingIndicatorTokens.Standard.ActiveSize, standard.Bounds.Width, 3);
+        Assert.Equal(LoadingIndicatorTokens.Standard.ContainerSize, standard.Bounds.Width, 3);
         Assert.Equal(LoadingIndicatorTokens.Contained.ContainerSize, contained.Bounds.Width, 3);
     }
 

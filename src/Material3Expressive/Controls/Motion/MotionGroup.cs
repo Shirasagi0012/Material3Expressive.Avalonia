@@ -34,6 +34,7 @@ public sealed class MotionGroup
     {
         _host = host ?? throw new ArgumentNullException(nameof(host));
         _onFrame = OnFrame;
+        MotionTestClockScope.Register(this);
     }
 
     /// <summary>Raised once per frame, after every animation in the group has advanced.</summary>

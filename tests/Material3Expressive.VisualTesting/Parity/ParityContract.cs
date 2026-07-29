@@ -1,6 +1,9 @@
 using System.Security.Cryptography;
+using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Material3Expressive.VisualTesting.Model;
 
 namespace Material3Expressive.VisualTesting.Parity;
 
@@ -67,9 +70,70 @@ public sealed record ParityCaptureResult(
     string CaseId,
     ParityCoordinateSpace CoordinateSpace,
     ParityViewport ViewportPx,
-    IReadOnlyList<ParityNode> Nodes)
+    IReadOnlyList<ParityNode> Nodes,
+    ParityMotionCapture? Motion = null)
 {
-    public const int CurrentSchemaVersion = 5;
+    public const int CurrentSchemaVersion = 8;
+}
+
+/// <summary>A source-produced logical motion history replayed by the Avalonia capture.</summary>
+public sealed record ParityMotionCapture(
+    int SchemaVersion,
+    string ScenarioId,
+    string CheckpointId,
+    string Origin,
+    string TimeUnit,
+    float DurationScale,
+    long ElapsedTicks,
+    IReadOnlyList<ParityMotionEvent> Events,
+    IReadOnlyList<long> DeliveryFrameTicks,
+    int CaptureFrameIndex,
+    string ScheduleSha256,
+    VisualMotionClockCoverage ClockCoverage)
+{
+    public const int CurrentSchemaVersion = 1;
+}
+
+public sealed record ParityMotionEvent(long AtTicks, string Action);
+
+public static class ParityMotionTimeline
+{
+    public static string ScheduleSha256(IEnumerable<long> ticks)
+    {
+        var canonical = string.Join(",", ticks.Select(value => value.ToString(CultureInfo.InvariantCulture)));
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+    }
+
+    public static void Validate(ParityMotionCapture motion, string caseId)
+    {
+        if (motion.SchemaVersion != ParityMotionCapture.CurrentSchemaVersion)
+            throw new InvalidDataException($"Unsupported motion schema {motion.SchemaVersion} for parity case '{caseId}'.");
+        if (string.IsNullOrWhiteSpace(motion.ScenarioId)
+            || string.IsNullOrWhiteSpace(motion.CheckpointId)
+            || motion.Origin != "first-controlled-motion-frame"
+            || motion.TimeUnit != "100ns-ticks"
+            || motion.DurationScale != 1f)
+            throw new InvalidDataException($"Invalid motion identity or time contract for parity case '{caseId}'.");
+        if (motion.Events.Count != 1
+            || motion.Events[0].AtTicks != 0
+            || string.IsNullOrWhiteSpace(motion.Events[0].Action))
+            throw new InvalidDataException($"Parity case '{caseId}' must declare one semantic trigger at motion time zero.");
+        if (motion.DeliveryFrameTicks.Count == 0
+            || motion.DeliveryFrameTicks[0] != 0
+            || motion.CaptureFrameIndex != motion.DeliveryFrameTicks.Count - 1
+            || motion.ElapsedTicks != motion.DeliveryFrameTicks[motion.CaptureFrameIndex])
+            throw new InvalidDataException($"Invalid motion delivery/capture frame contract for parity case '{caseId}'.");
+        for (var index = 1; index < motion.DeliveryFrameTicks.Count; index++)
+        {
+            if (motion.DeliveryFrameTicks[index] <= motion.DeliveryFrameTicks[index - 1])
+                throw new InvalidDataException($"Motion frame timestamps for parity case '{caseId}' are not strictly increasing.");
+        }
+        if (!string.Equals(
+                motion.ScheduleSha256,
+                ScheduleSha256(motion.DeliveryFrameTicks),
+                StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException($"Motion schedule hash does not match for parity case '{caseId}'.");
+    }
 }
 
 public sealed record ParityCoordinateSpace(

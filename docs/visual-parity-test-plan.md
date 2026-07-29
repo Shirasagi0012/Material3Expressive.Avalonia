@@ -72,12 +72,12 @@ The first implementation will not provide:
 - automatic image registration or best-fit alignment;
 - a full matrix of operating systems and densities;
 - glyph-outline or glyph-ID comparison;
-- motion-curve parity;
+- exhaustive video/per-display-frame motion comparison;
 - arbitrary screenshots of application windows;
 - a committed library of generated expected images.
 
-Static states are the first priority. Deterministic interaction and motion frames can be added
-after the static pipeline is trustworthy.
+Static states remain the broad coverage priority. Deterministic motion is represented by a small
+set of source-authored checkpoints with an exact shared timeline, not by recording a live video.
 
 ### Complexity guardrails
 
@@ -345,8 +345,13 @@ For focus, hover, press, and animated states:
   capture it after explicit terminal and commit frames;
 - fail if the scene does not settle within a bounded number of frames.
 
-The first implementation may omit interaction and motion cases. It must not capture them using an
-arbitrary delay such as “sleep for 500 ms.”
+Motion cases use the protocol in [animation-parity.md](animation-parity.md): one fresh scene per
+checkpoint, one trigger at logical time zero, a producer-owned frame schedule replayed from the
+beginning, and an exact final capture timestamp. Compose frame and coroutine clocks are controlled;
+Avalonia component-owned `MotionGroup` instances are manual before scene construction. Native
+Avalonia transitions, composition animations, and wall-clock timers are unsupported unless a
+future adapter explicitly places them under the same contract. No case may use an arbitrary delay
+such as “sleep for 500 ms.”
 
 ### 8.3 Geometry probes
 
@@ -423,7 +428,7 @@ Both implementations serialize the same logical schema. A shortened example is:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 8,
   "caseId": "button/filled/medium/enabled/light",
   "coordinateSpace": {
     "unit": "physical-pixel",
@@ -508,6 +513,11 @@ Both implementations serialize the same logical schema. A shortened example is:
 
 The JSON schema is versioned. Unknown schema versions fail with an upgrade message; fields are not
 silently ignored when they influence comparison.
+
+Schema v8 also permits an optional `motion` object. It records the scenario/checkpoint, trigger
+events, `first-controlled-motion-frame` origin, 100ns unit, duration scale, elapsed time, complete
+delivery-frame list, final capture index, schedule SHA-256, and clock-coverage declarations. Both
+sides compare those fields exactly before geometry or raster policy runs. Static cases omit it.
 
 ## 10. Avalonia actual capture
 
@@ -911,9 +921,20 @@ Add representative:
 - RTL and additional locale/text probes;
 - popup and overlay components where their host geometry is deterministic.
 
-Motion sequences remain a separate extension using explicit frame times.
+Motion sequences use the separate deterministic-checkpoint extension below.
 
-### Phase 5: required delivery gate
+### Phase 5: deterministic motion extension
+
+- Add the versioned motion contract to capture schema v8.
+- Make Compose the canonical schedule producer with controlled frame and coroutine clocks.
+- Enter an Avalonia `MotionTestClockScope` before constructing each motion scene and replay the
+  complete Compose schedule from zero.
+- Prove the vertical slice with exact start/middle/end linear-tween checkpoints.
+- Add component animation checkpoints only after their static geometry is already trustworthy.
+- Record native Avalonia transitions/composition and MaterialSymbol `DoubleTransition` as
+  unsupported until they have a controlled-clock adapter.
+
+### Phase 6: required delivery gate
 
 - calibrate and review comparison profiles;
 - close or explicitly document all deviations;
@@ -933,6 +954,9 @@ The replacement system is complete when:
 - all comparison occurs in root physical-pixel coordinates without automatic alignment;
 - the xUnit suite exposes one truthful result per case;
 - unit tests prove the schema, adapters, comparer, and failure reporting;
+- supported motion cases replay a manifest-backed timeline from a fresh tree and compare its
+  metadata before raster output;
+- unsupported animation time sources are declared rather than sampled from wall-clock execution;
 - CI always publishes an actionable report;
 - no Avalonia baseline, approval manifest, or candidate workflow remains;
 - final delivery runs the parity suite as a required gate.

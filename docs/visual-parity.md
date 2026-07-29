@@ -73,9 +73,9 @@ accepts a case ID or a prefix wildcard such as `button/*`.
 
 ## What is compared
 
-The current catalog contains 61 representative color, typography, button, card, FAB, checkbox,
-text-field, navigation, and tab cases. Every case has the same stable ID, viewport, theme, and
-named probe contract on both sides.
+The current catalog contains 75 representative color, typography, motion, button, card, FAB,
+checkbox, text-field, navigation, and tab cases. Every case has the same stable ID, viewport,
+theme, and named probe contract on both sides.
 
 ```text
 Compose scene + probes  -->  expected PNG, layout JSON, manifest
@@ -99,6 +99,13 @@ Checks happen in this order:
    UTF-16 offset. Nodes that explicitly exercise focus also compare the observed focus state.
 4. The rendered pixels are compared with the profile selected for the case.
 
+Motion cases add a structural check between steps 1 and 2. Compose records the trigger, logical
+time origin, complete frame-delivery schedule, capture index, schedule hash, and controlled clock
+coverage in capture schema v8. Avalonia creates a fresh tree and replays that exact schedule through
+component-owned `MotionGroup` instances. A timeline mismatch fails before raster classification;
+neither semantic equivalence nor a warning policy can accept it. See
+[animation-parity.md](animation-parity.md) for the lifecycle and authoring rules.
+
 For standard Avalonia text, data comes from `TextBlock.TextLayout` and
 `HitTestTextPosition`. The custom Material text-field label uses its dedicated internal
 `TextLayout` probe so it has the same line and character-box data. The editable Compose text-field
@@ -120,6 +127,11 @@ cannot be accepted or mistaken for a parity difference.
 is a version-7, centralized semantic raster policy. It has no viewport-sized allowance and no
 global `Δ<=1` floor. Profile JSON rejects unknown fields, duplicate/unreachable prefix rules, and
 invalid quota ranges so a typo cannot silently make the comparison looser.
+
+The version lines are independent: the top-level capture-result contract is v8, the centralized
+comparison-profile policy is v7, and the new nested motion record starts at v1. A motion field
+change bumps the top-level capture contract even if profile coefficients and policy schema do not
+change.
 
 Use [`comparison-profiles.md`](comparison-profiles.md) as the authoring and calibration contract
 when selecting a profile, adding a case-prefix rule, or changing an owner budget. This section is
@@ -156,12 +168,16 @@ contract matches:
 - expected support boundary: `Δ<=48`, with a sparse perimeter-derived allocation capped at 48,
   component area at most 12px, and component thickness at most 2px.
 
-The capture schema is now v5. Its shadow contract includes `occluderDrawn`, in addition to shape,
+The capture schema is now v8. Its shadow contract includes `occluderDrawn`, in addition to shape,
 corners, local-to-device matrix, elevation, colors/alpha, opacity/transparent-occluder flag,
 lighting, and clip. This prevents an opaque component interior from consuming shadow allowance,
 while preserving valid `shadow-only` cases where the expected shadow mesh is visible inside the
 shape; `transparentOccluder` continues to describe whether that painted occluder lets the mesh
 remain visible through it.
+
+Schema v8 also adds optional motion metadata. Static cases omit it. Motion cases compare scenario,
+checkpoint, event, origin/unit/scale, elapsed time, every frame timestamp, capture index, schedule
+hash, and clock coverage exactly before geometry or raster comparison.
 
 `comparison.json` reports `exactMatch`, `semanticRasterEquivalent`, `rasterWarning`, or
 `mismatch` through its `kind` field, plus each region’s eligible pixels, observed pixels/energy,
@@ -237,6 +253,9 @@ Text 'label' character 4 bounding differs (LTRB px): expected (249.728, 76.000, 
 2. Add the matching Avalonia `VisualCase` with the identical ID and scene state. Name every node
    that needs structural comparison. For custom-drawn text, add a direct layout probe instead of
    estimating its bounds from pixels.
+   For intermediate animation frames, follow [animation-parity.md](animation-parity.md): author one
+   case per checkpoint with `MotionCaseContract` and `VisualMotionSpec`, and let the producer-owned
+   schedule drive both sides.
 3. Resolve the case to an existing comparison profile whenever possible. If the family has a
    distinct renderer contract, follow [`comparison-profiles.md`](comparison-profiles.md) to add a
    reviewed prefix rule, profile, and boundary mutation tests.

@@ -19,6 +19,7 @@ hand that authoring work to `$create-visual-parity-tests`; return here to valida
 Before running or interpreting results, read:
 
 - `docs/visual-parity.md` for the current environment, commands, and artifact layout;
+- `docs/animation-parity.md` for motion-origin, replay, clock-coverage, and unsupported-path rules;
 - `docs/comparison-profiles.md` when the task involves profile selection, owner budgets, or policy
   review;
 - `tools/visual-parity/run.ps1` for filter behavior;
@@ -27,7 +28,7 @@ Before running or interpreting results, read:
 - `tests/Material3Expressive.VisualTesting/Parity/SemanticRasterComparer.cs` for raster behavior.
 
 Do this on every policy/debugging task. The formal policy is profile schema version 7 and the
-capture contract is schema version 5. Keep the checked-in profile and source authoritative if a
+capture contract is schema version 8. Keep the checked-in profile and source authoritative if a
 later schema deliberately changes coefficients, masks, or report fields.
 
 ## Run the tests
@@ -50,6 +51,12 @@ Run a case family by prefix:
 
 ```powershell
 .\tools\visual-parity\run.ps1 -Case "button/*"
+```
+
+Run the deterministic motion prototype:
+
+```powershell
+.\tools\visual-parity\run.ps1 -Case "foundation/motion/linear-tween/*"
 ```
 
 Use the equivalent direct xUnit filter only when extra `dotnet test` options are needed:
@@ -125,7 +132,7 @@ Read results in this order:
 
 1. test output and `comparison.txt`;
 2. `comparison.json` kind, failures, warnings, and selected profile;
-3. expected and actual `layout.json` for the named node;
+3. expected and actual `layout.json`, comparing `motion` first when present and then the named node;
 4. normal `raster` and, for warnings, secondary `warningRaster` region/budget reports;
 5. expected, actual, built-in `diff.png`, and optional diagnostic images.
 
@@ -192,8 +199,9 @@ Use this sequence:
 
 1. If no case artifact exists, diagnose Gradle/.NET startup, manifest/schema, version, font hash,
    catalog, or case selection first.
-2. Read every structural failure. Fix or explain input/viewport/node/focus/layout/text/shadow facts
-   before studying raster thresholds.
+2. Read every structural failure. For motion cases, compare scenario/checkpoint, event, origin,
+   elapsed ticks, every delivery timestamp, capture index, schedule hash, and clock coverage before
+   input/viewport/node/focus/layout/text/shadow facts. Fix those before studying raster thresholds.
 3. Compare the same named node in expected and actual `layout.json`. Do not infer its position from
    screenshot pixels when a probe exists.
 4. If structure passes, inspect `raster.regions[].budgets[]`: compare observed/allowed count and

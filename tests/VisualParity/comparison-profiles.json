@@ -231,6 +231,7 @@
   "caseProfileRules": [
     { "prefix": "foundation/color/", "profileId": "color-swatch" },
     { "prefix": "foundation/elevation/", "profileId": "elevation" },
+    { "prefix": "foundation/motion/", "profileId": "container" },
     { "prefix": "card/elevated/", "profileId": "container-with-elevation" },
     { "prefix": "fab/", "profileId": "container-with-elevation" },
     { "prefix": "button/elevated/", "profileId": "component-with-text-and-elevation" },

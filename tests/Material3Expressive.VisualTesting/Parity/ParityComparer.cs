@@ -16,6 +16,7 @@ public sealed class ParityComparer
         profile ??= ParityComparisonProfiles.ComponentWithText;
         var tolerance = profile.LayoutTolerance;
         var failures = new List<string>();
+        CompareMotion(expected.Motion, actual.Motion, failures);
         var semantic = profile.CompareGeometry
             ? CompareGeometryAndGetMatchedTextRegions(expected, actual, tolerance, profile.CompareTextLayout, failures)
             : ParityRasterSemanticContext.Empty;
@@ -57,6 +58,36 @@ public sealed class ParityComparer
             }
         }
         return new ParityComparison(profile.Id, failures.Count == 0, failures, pixels, raster, warningRaster, warnings);
+    }
+
+    private static void CompareMotion(
+        ParityMotionCapture? expected,
+        ParityMotionCapture? actual,
+        ICollection<string> failures)
+    {
+        if (expected is null && actual is null)
+            return;
+        if (expected is null || actual is null)
+        {
+            failures.Add("Motion timeline contract is missing from one capture.");
+            return;
+        }
+
+        if (expected.SchemaVersion != actual.SchemaVersion
+            || expected.ScenarioId != actual.ScenarioId
+            || expected.CheckpointId != actual.CheckpointId
+            || expected.Origin != actual.Origin
+            || expected.TimeUnit != actual.TimeUnit
+            || expected.DurationScale != actual.DurationScale
+            || expected.ElapsedTicks != actual.ElapsedTicks
+            || expected.CaptureFrameIndex != actual.CaptureFrameIndex
+            || !string.Equals(expected.ScheduleSha256, actual.ScheduleSha256, StringComparison.OrdinalIgnoreCase)
+            || expected.ClockCoverage != actual.ClockCoverage
+            || !expected.Events.SequenceEqual(actual.Events)
+            || !expected.DeliveryFrameTicks.SequenceEqual(actual.DeliveryFrameTicks))
+        {
+            failures.Add("Motion timeline contract differs.");
+        }
     }
 
     private static void CompareViewport(ParityCaptureResult expected, ParityCaptureResult actual, ICollection<string> failures)

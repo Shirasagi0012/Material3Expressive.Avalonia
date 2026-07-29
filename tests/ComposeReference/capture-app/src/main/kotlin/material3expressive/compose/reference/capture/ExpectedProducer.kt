@@ -9,6 +9,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalCursorBlinkEnabled
@@ -20,6 +21,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import material3expressive.compose.reference.*
 import material3expressive.compose.reference.probes.ProbeRegistry
 import material3expressive.compose.reference.probes.ShadowProbeSpec
@@ -27,6 +31,7 @@ import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import java.nio.file.Path
 import java.security.MessageDigest
+import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.createDirectories
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
@@ -44,6 +49,36 @@ private const val MAX_INPUT_STATE_DISPATCH_FRAMES = 16
 private const val POST_INPUT_STATE_SYNCHRONIZATION_FRAMES = 2
 private const val TERMINAL_ANIMATION_DELAY_NANOS = 5_000_000_000L
 private const val POST_TERMINAL_COMMIT_FRAMES = 2
+private const val MOTION_FRAME_RATE = 60L
+private const val TICKS_PER_SECOND = 10_000_000L
+private const val NANOS_PER_TICK = 100L
+private const val MOTION_RAW_EPOCH_NANOS = 1_000_000_000L
+private const val MOTION_BOOTSTRAP_FRAMES = 2
+private const val MOTION_REGISTRATION_LEAD_NANOS = 1L
+
+private object ReferenceMotionDurationScale : MotionDurationScale {
+    override val scaleFactor: Float = 1.0f
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private class ReferenceMotionClock {
+    val scheduler = TestCoroutineScheduler()
+    val coroutineContext: CoroutineContext =
+        UnconfinedTestDispatcher(scheduler) + ReferenceMotionDurationScale
+
+    fun runCurrent() = scheduler.runCurrent()
+
+    fun advanceTo(elapsedTicks: Long) {
+        val targetMillis = elapsedTicks / TimeSpanTicksPerMillisecond
+        check(targetMillis >= scheduler.currentTime) { "Motion coroutine time cannot move backwards." }
+        scheduler.advanceTimeBy(targetMillis - scheduler.currentTime)
+        scheduler.runCurrent()
+    }
+
+    private companion object {
+        const val TimeSpanTicksPerMillisecond = 10_000L
+    }
+}
 
 class ExpectedProducer(
     private val outputDir: Path,
@@ -82,11 +117,21 @@ class ExpectedProducer(
                 colorContract.lightScheme()
             }
 
-            val imageScene = ImageComposeScene(
-                width = widthPx,
-                height = heightPx,
-                density = Density(density = scale, fontScale = 1.0f),
-            )
+            val motionClock = contract.motion?.let { ReferenceMotionClock() }
+            val imageScene = if (motionClock == null) {
+                ImageComposeScene(
+                    width = widthPx,
+                    height = heightPx,
+                    density = Density(density = scale, fontScale = 1.0f),
+                )
+            } else {
+                ImageComposeScene(
+                    width = widthPx,
+                    height = heightPx,
+                    density = Density(density = scale, fontScale = 1.0f),
+                    coroutineContext = motionClock.coroutineContext,
+                )
+            }
 
             imageScene.setContent {
                 CompositionLocalProvider(
@@ -119,14 +164,27 @@ class ExpectedProducer(
             val caseDir = casesDir.resolve(caseId)
             caseDir.createDirectories()
 
-            val skiaImage = imageScene.renderSettled(contract, probeRegistry)
+            val motionCapture = contract.motion?.let(::buildMotionCapture)
+            val skiaImage = if (motionCapture == null) {
+                imageScene.renderSettled(contract, probeRegistry)
+            } else {
+                imageScene.renderMotion(scene, motionCapture, checkNotNull(motionClock))
+            }
             val (pngSha256, layoutSha256) = try {
                 val pngBytes = skiaImage.encodeToData(EncodedImageFormat.PNG, 100)?.bytes
                     ?: error("Failed to encode image to PNG for case '$caseId'.")
                 val pngPath = caseDir.resolve("image.png")
                 pngPath.writeBytes(pngBytes)
 
-                val captureResult = buildCaptureResult(caseId, contract, probeRegistry, widthPx, heightPx, scale)
+                val captureResult = buildCaptureResult(
+                    caseId,
+                    contract,
+                    probeRegistry,
+                    widthPx,
+                    heightPx,
+                    scale,
+                    motionCapture,
+                )
                 val layoutJson = json.encodeToString(CaptureResult.serializer(), captureResult)
                 val layoutPath = caseDir.resolve("layout.json")
                 layoutPath.writeText(layoutJson)
@@ -201,6 +259,7 @@ class ExpectedProducer(
         widthPx: Int,
         heightPx: Int,
         scale: Float,
+        motion: CaptureMotion?,
     ): CaptureResult {
         val missingNodes = contract.requiredNodes
             .filter { probes.geometryBounds(it.id) == null }
@@ -244,7 +303,77 @@ class ExpectedProducer(
             coordinateSpace = CoordinateSpace(scale = scale),
             viewportPx = ViewportPx(width = widthPx, height = heightPx),
             nodes = nodes,
+            motion = motion,
         )
+    }
+
+    private fun buildMotionCapture(contract: MotionCaseContract): CaptureMotion {
+        val frames = deliveryFrameTicks(contract.elapsedTicks)
+        return CaptureMotion(
+            scenarioId = contract.scenarioId,
+            checkpointId = contract.checkpointId,
+            elapsedTicks = contract.elapsedTicks,
+            events = listOf(CaptureMotionEvent(atTicks = 0, action = contract.triggerAction)),
+            deliveryFrameTicks = frames,
+            captureFrameIndex = frames.lastIndex,
+            scheduleSha256 = scheduleSha256(frames),
+            clockCoverage = CaptureMotionClockCoverage(
+                composeCoroutineClock = if (contract.usesComposeCoroutineClock) "controlled" else "unused",
+            ),
+        )
+    }
+
+    private fun deliveryFrameTicks(elapsedTicks: Long): List<Long> {
+        require(elapsedTicks >= 0) { "Motion elapsed time cannot be negative." }
+        require(elapsedTicks <= Long.MAX_VALUE / NANOS_PER_TICK) { "Motion elapsed time is too large." }
+        if (elapsedTicks == 0L) return listOf(0L)
+
+        val result = mutableListOf(0L)
+        var frame = 1L
+        while (true) {
+            val ticks = (frame * TICKS_PER_SECOND + MOTION_FRAME_RATE / 2) / MOTION_FRAME_RATE
+            if (ticks >= elapsedTicks) break
+            result += ticks
+            frame++
+        }
+        result += elapsedTicks
+        return result
+    }
+
+    private fun scheduleSha256(ticks: List<Long>): String =
+        sha256(ticks.joinToString(",").toByteArray(Charsets.UTF_8))
+
+    private fun ImageComposeScene.renderMotion(
+        scene: ReferenceScene,
+        motion: CaptureMotion,
+        clock: ReferenceMotionClock,
+    ): Image {
+        repeat(MOTION_BOOTSTRAP_FRAMES) { index ->
+            val frameTime = MOTION_RAW_EPOCH_NANOS -
+                (MOTION_BOOTSTRAP_FRAMES - index).toLong() * FRAME_INTERVAL_NANOS
+            clock.runCurrent()
+            render(frameTime).close()
+            clock.runCurrent()
+        }
+
+        checkNotNull(scene.trigger) { "Motion scene '${motion.scenarioId}' has no trigger." }.invoke()
+        clock.runCurrent()
+
+        // The trigger changes Compose state, but modifier nodes and their animation coroutines are
+        // not installed until a render transaction applies that state. Keep this mount-only frame
+        // outside the logical timeline, then let t=0 be the first frame delivered to both the
+        // newly registered Compose animations and Avalonia's already mounted MotionGroups.
+        render(MOTION_RAW_EPOCH_NANOS - MOTION_REGISTRATION_LEAD_NANOS).close()
+        clock.runCurrent()
+
+        var captured: Image? = null
+        motion.deliveryFrameTicks.forEachIndexed { index, elapsedTicks ->
+            clock.advanceTo(elapsedTicks)
+            val image = render(MOTION_RAW_EPOCH_NANOS + elapsedTicks * NANOS_PER_TICK)
+            clock.runCurrent()
+            if (index == motion.captureFrameIndex) captured = image else image.close()
+        }
+        return checkNotNull(captured) { "Motion scene '${motion.scenarioId}' produced no capture frame." }
     }
 
     private fun captureShadow(

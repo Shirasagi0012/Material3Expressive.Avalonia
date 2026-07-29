@@ -53,6 +53,8 @@ public sealed class ComposeExpectedBundle
         var layout = ParityJson.Read<ParityCaptureResult>(Resolve(item.LayoutPath));
         if (layout.SchemaVersion != ParityCaptureResult.CurrentSchemaVersion || layout.CaseId != item.Id)
             throw new InvalidDataException($"Invalid layout contract for parity case '{item.Id}'.");
+        if (layout.Motion is not null)
+            ParityMotionTimeline.Validate(layout.Motion, item.Id);
         return layout;
     }
 

@@ -194,14 +194,12 @@ public class MaterialCircularProgressIndicator : MaterialControl
         var progress = IsIndeterminate ? IndeterminateProgress() : IsWavy ? Clamp(Value) : Progress.Value;
         var amplitude = IsIndeterminate ? 1d : IndicatorAmplitude(progress);
         var vertices = Math.Max(5, (int)Math.Round(2 * Math.PI * radius / _tokens.WaveWavelength));
-        var waveCubics = BuildWaveCubics(centre, radius * 2, vertices, amplitude, verticalOffset: -.425);
-        var wavePath = SampleCubics(waveCubics);
-        var trackPath = BuildWavePath(centre, diameter: radius * 2, vertices, 0);
-        CentrePathBounds(trackPath, centre);
+        var waveCubics = BuildWaveCubics(centre, radius * 2, vertices, amplitude);
+        var trackCubics = BuildWaveCubics(centre, diameter: radius * 2, vertices, 0);
 
         // CircularWavyProgressModifiers trims the circle track by its rounded-cap clearance plus
         // the token gap. The active shape is intentionally left untrimmed at its own endpoints.
-        var trackLength = ClosedPathLength(trackPath);
+        var trackLength = CubicPathLength(trackCubics);
         var activeLength = progress * trackLength;
         var capClearance = Math.Min(activeLength, thickness / 2) * 2;
         var gapClearance = Math.Min(activeLength, _tokens.TrackActiveSpace);
@@ -210,34 +208,42 @@ public class MaterialCircularProgressIndicator : MaterialControl
         var trackEnd = 1 - trackInset;
         if (trackEnd > trackStart)
         {
-            var track = TrimClosedPath(trackPath, trackStart, trackEnd - trackStart, centre, 0);
+            var track = TrimCubicPath(trackCubics, trackStart, trackEnd - trackStart);
             if (track is not null)
                 context.DrawGeometry(null, new ImmutablePen(_colors.TrackColor, _tokens.TrackThickness,
                     lineCap: PenLineCap.Round), track);
         }
 
-        if (wavePath.Count < 2 || progress <= 0)
+        if (waveCubics.Count == 0 || progress <= 0)
             return;
 
         // The upstream modifier offsets the repeated wave then rotates it back, keeping the
         // progress endpoint fixed while the star lobes travel beneath it.
-        var phase = amplitude > 0 && HasWaveMotion ? ConfigureWave(vertices).Value : 0;
+        // Compose's PathMeasure inputs and wave offset state are Floats. Preserve that precision at
+        // the segment boundary: one-wave lands exactly on a lobe boundary, where carrying the
+        // calculation in double precision selects a measurably different sub-pixel slice.
+        var phase = amplitude > 0 && HasWaveMotion ? (double)(float)ConfigureWave(vertices).Value : 0;
         var active = phase == 0
-            ? TrimCubicPath(waveCubics, progress)
-            : TrimClosedPath(wavePath, phase, progress, centre, -phase * Math.PI * 2);
-        if (active is not null)
-            context.DrawGeometry(null, new ImmutablePen(_colors.ActiveIndicatorColor, thickness,
-                lineCap: PenLineCap.Round), active);
-    }
+            ? TrimCubicPath(waveCubics, 0, progress)
+            : TrimRepeatedCubicPath(waveCubics, phase, progress);
+        if (active is null)
+            return;
 
-    private static List<Point> BuildWavePath(Point centre, double diameter, int vertices, double amplitude)
-    {
-        var cubics = BuildWaveCubics(centre, diameter, vertices, amplitude);
-        return SampleCubics(cubics);
+        var pen = new ImmutablePen(_colors.ActiveIndicatorColor, thickness, lineCap: PenLineCap.Round);
+        // The shifted segment is rotated back around the complete path's measured centre, exactly
+        // as CircularProgressDrawingCache.updateDrawPaths() does upstream.
+        var rotation = -(double)((float)phase * 360f) * Math.PI / 180;
+        using (context.PushTransform(
+                   Matrix.CreateTranslation(-centre.X, -centre.Y)
+                   * Matrix.CreateRotation(rotation)
+                   * Matrix.CreateTranslation(centre.X, centre.Y)))
+        {
+            context.DrawGeometry(null, pen, active);
+        }
     }
 
     private static List<CubicBezier> BuildWaveCubics(
-        Point centre, double diameter, int vertices, double amplitude, double verticalOffset = 0)
+        Point centre, double diameter, int vertices, double amplitude)
     {
         var circle = RoundedPolygon.CreateCircle(vertices).Normalized();
         var star = RoundedPolygon.CreateStar(
@@ -261,172 +267,102 @@ public class MaterialCircularProgressIndicator : MaterialControl
             .Select(cubic => TransformCubic(cubic, point =>
                 Scale(RotateAroundOrigin(point, rotateToTwelveOClock), centre, diameter)))
             .ToList();
-        var points = SampleCubics(transformed);
-        var boundsCentre = BoundsCentre(points);
-        var shift = new Vector(centre.X - boundsCentre.X, centre.Y + verticalOffset - boundsCentre.Y);
+        // processPath() centers Compose Path.getBounds(), which is Skia's cached bounds over path
+        // anchors and controls. A sampled/tight curve bound shifts this odd-sided star and makes
+        // the error rotate with a non-zero wave phase.
+        var boundsCentre = CubicPointBoundsCentre(transformed);
+        var shift = new Vector(centre.X - boundsCentre.X, centre.Y - boundsCentre.Y);
         return transformed.Select(cubic => TransformCubic(cubic, point => point + shift)).ToList();
     }
 
-    private static List<Point> SampleCubics(IReadOnlyList<CubicBezier> cubics)
+    private static Point CubicPointBoundsCentre(IReadOnlyList<CubicBezier> cubics)
     {
-        const int samplesPerCubic = 64;
-        var points = new List<Point>(cubics.Count * samplesPerCubic);
+        var first = cubics[0].Anchor0;
+        var minX = first.X;
+        var maxX = first.X;
+        var minY = first.Y;
+        var maxY = first.Y;
         foreach (var cubic in cubics)
-            for (var sample = 0; sample <= samplesPerCubic; sample++)
-            {
-                if (points.Count > 0 && sample == 0)
-                    continue;
-                points.Add(PointOnCubic(cubic, sample / (double)samplesPerCubic));
-            }
-        if (points.Count > 1 && Distance(points[0], points[^1]) < .001)
-            points.RemoveAt(points.Count - 1);
-        return points;
-    }
-
-    private static StreamGeometry? TrimClosedPath(
-        IReadOnlyList<Point> path,
-        double startFraction,
-        double lengthFraction,
-        Point centre,
-        double rotation)
-    {
-        if (path.Count < 2 || lengthFraction <= 0)
-            return null;
-
-        var lengths = new double[path.Count + 1];
-        for (var index = 0; index < path.Count; index++)
-            lengths[index + 1] = lengths[index] + Distance(path[index], path[(index + 1) % path.Count]);
-        var total = lengths[^1];
-        if (total <= 0)
-            return null;
-
-        var start = (startFraction - Math.Floor(startFraction)) * total;
-        var end = start + Math.Min(1, lengthFraction) * total;
-        var points = new List<Point>();
-        for (var distance = start; distance <= end;)
         {
-            points.Add(Rotate(PointAt(path, lengths, distance % total), centre, rotation));
-            var nextIndex = SegmentIndex(lengths, distance % total);
-            var nextBoundary = distance - (distance % total) + lengths[nextIndex + 1];
-            if (nextBoundary <= distance + .0001)
-                nextBoundary += total;
-            distance = Math.Min(end, nextBoundary);
-            if (distance >= end)
-            {
-                points.Add(Rotate(PointAt(path, lengths, end % total), centre, rotation));
-                break;
-            }
+            Include(cubic.Anchor0);
+            Include(cubic.Control0);
+            Include(cubic.Control1);
+            Include(cubic.Anchor1);
         }
 
-        if (points.Count < 2)
-            return null;
-        var geometry = new StreamGeometry();
-        using var sink = geometry.Open();
-        sink.BeginFigure(points[0], false);
-        for (var index = 1; index < points.Count; index++)
-            sink.LineTo(points[index]);
-        sink.EndFigure(false);
-        return geometry;
+        return new Point((minX + maxX) / 2, (minY + maxY) / 2);
+
+        void Include(Point point)
+        {
+            minX = Math.Min(minX, point.X);
+            maxX = Math.Max(maxX, point.X);
+            minY = Math.Min(minY, point.Y);
+            maxY = Math.Max(maxY, point.Y);
+        }
     }
 
-    private static double ClosedPathLength(IReadOnlyList<Point> path)
-    {
-        var length = 0d;
-        for (var index = 0; index < path.Count; index++)
-            length += Distance(path[index], path[(index + 1) % path.Count]);
-        return length;
-    }
-
-    private static Geometry? TrimCubicPath(IReadOnlyList<CubicBezier> cubics, double lengthFraction)
+    private static Geometry? TrimRepeatedCubicPath(
+        IReadOnlyList<CubicBezier> cubics,
+        double startFraction,
+        double lengthFraction)
     {
         if (cubics.Count == 0 || lengthFraction <= 0)
             return null;
 
-        var geometry = new StreamGeometry();
-        using var sink = geometry.Open();
-        sink.BeginFigure(cubics[0].Anchor0, false);
-        foreach (var cubic in cubics)
-            sink.CubicBezierTo(cubic.Control0, cubic.Control1, cubic.Anchor1);
-        sink.EndFigure(true);
+        var geometry = CreateCubicPath(cubics, repeatPath: true);
+        var singleLength = (float)(geometry.ContourLength / 2);
+        if (singleLength <= 0)
+            return null;
 
-        return geometry.TryGetSegment(0, Math.Min(1, lengthFraction) * geometry.ContourLength,
-            startOnBeginFigure: true, out var segment)
+        var start = (float)Math.Clamp(startFraction, 0, 1) * singleLength;
+        var end = start + (float)Math.Min(1, lengthFraction) * singleLength;
+        return geometry.TryGetSegment(start, end, startOnBeginFigure: true, out var segment)
             ? segment
             : null;
     }
 
-    // Compose scales a normalized Shapes path and then translates its measured bounds to the
-    // draw scope centre. This matters for an odd-sided star, whose geometric bounds are not
-    // centred on its nominal polygon origin.
-    private static void CentrePathBounds(IList<Point> path, Point centre)
+    private static double CubicPathLength(IReadOnlyList<CubicBezier> cubics)
     {
-        if (path.Count == 0)
-            return;
-
-        var minX = path[0].X;
-        var maxX = minX;
-        var minY = path[0].Y;
-        var maxY = minY;
-        for (var index = 1; index < path.Count; index++)
-        {
-            minX = Math.Min(minX, path[index].X);
-            maxX = Math.Max(maxX, path[index].X);
-            minY = Math.Min(minY, path[index].Y);
-            maxY = Math.Max(maxY, path[index].Y);
-        }
-
-        var shift = new Vector(centre.X - (minX + maxX) / 2, centre.Y - (minY + maxY) / 2);
-        for (var index = 0; index < path.Count; index++)
-            path[index] += shift;
+        return CreateCubicPath(cubics, repeatPath: false).ContourLength;
     }
 
-    private static Point BoundsCentre(IReadOnlyList<Point> path)
+    private static Geometry? TrimCubicPath(
+        IReadOnlyList<CubicBezier> cubics,
+        double startFraction,
+        double lengthFraction)
     {
-        var minX = path.Min(point => point.X);
-        var maxX = path.Max(point => point.X);
-        var minY = path.Min(point => point.Y);
-        var maxY = path.Max(point => point.Y);
-        return new Point((minX + maxX) / 2, (minY + maxY) / 2);
+        if (cubics.Count == 0 || lengthFraction <= 0)
+            return null;
+
+        var geometry = CreateCubicPath(cubics, repeatPath: false);
+        var length = geometry.ContourLength;
+        var start = Math.Clamp(startFraction, 0, 1) * length;
+        var end = Math.Min(length, start + Math.Min(1, lengthFraction) * length);
+        return geometry.TryGetSegment(start, end, startOnBeginFigure: true, out var segment)
+            ? segment
+            : null;
+    }
+
+    private static StreamGeometry CreateCubicPath(
+        IReadOnlyList<CubicBezier> cubics,
+        bool repeatPath)
+    {
+        var geometry = new StreamGeometry();
+        using var sink = geometry.Open();
+        sink.BeginFigure(cubics[0].Anchor0, false);
+        for (var pass = 0; pass < (repeatPath ? 2 : 1); pass++)
+        {
+            if (pass != 0)
+                sink.LineTo(cubics[0].Anchor0);
+            foreach (var cubic in cubics)
+                sink.CubicBezierTo(cubic.Control0, cubic.Control1, cubic.Anchor1);
+        }
+        sink.EndFigure(true);
+        return geometry;
     }
 
     private static CubicBezier TransformCubic(CubicBezier cubic, Func<Point, Point> transform) =>
         new(transform(cubic.Anchor0), transform(cubic.Control0), transform(cubic.Control1), transform(cubic.Anchor1));
-
-    private static int SegmentIndex(IReadOnlyList<double> lengths, double distance)
-    {
-        for (var index = 0; index < lengths.Count - 1; index++)
-            // A point exactly at a segment boundary belongs to the following segment. Otherwise
-            // TrimClosedPath would see the same boundary twice and jump straight to the end.
-            if (distance < lengths[index + 1] - .0001 || index == lengths.Count - 2)
-                return index;
-        return lengths.Count - 2;
-    }
-
-    private static Point PointAt(IReadOnlyList<Point> path, IReadOnlyList<double> lengths, double distance)
-    {
-        var index = SegmentIndex(lengths, distance);
-        var segmentLength = lengths[index + 1] - lengths[index];
-        var fraction = segmentLength <= 0 ? 0 : (distance - lengths[index]) / segmentLength;
-        var from = path[index];
-        var to = path[(index + 1) % path.Count];
-        return new Point(from.X + (to.X - from.X) * fraction, from.Y + (to.Y - from.Y) * fraction);
-    }
-
-    private static Point Rotate(Point point, Point centre, double radians)
-    {
-        var cosine = Math.Cos(radians);
-        var sine = Math.Sin(radians);
-        var x = point.X - centre.X;
-        var y = point.Y - centre.Y;
-        return new Point(centre.X + x * cosine - y * sine, centre.Y + x * sine + y * cosine);
-    }
-
-    private static double Distance(Point first, Point second)
-    {
-        var x = first.X - second.X;
-        var y = first.Y - second.Y;
-        return Math.Sqrt(x * x + y * y);
-    }
 
     private double IndeterminateProgress()
     {
@@ -529,18 +465,6 @@ public class MaterialCircularProgressIndicator : MaterialControl
     private static double Clamp(double value)
     {
         return double.IsNaN(value) ? 0 : Math.Clamp(value, 0, 1);
-    }
-
-    private static Point PointOnCubic(CubicBezier cubic, double t)
-    {
-        var inverse = 1 - t;
-        return new Point(
-            cubic.Anchor0.X * inverse * inverse * inverse +
-            cubic.Control0.X * 3 * t * inverse * inverse +
-            cubic.Control1.X * 3 * t * t * inverse + cubic.Anchor1.X * t * t * t,
-            cubic.Anchor0.Y * inverse * inverse * inverse +
-            cubic.Control0.Y * 3 * t * inverse * inverse +
-            cubic.Control1.Y * 3 * t * t * inverse + cubic.Anchor1.Y * t * t * t);
     }
 
     private static Point Scale(Point point, Point centre, double diameter) =>

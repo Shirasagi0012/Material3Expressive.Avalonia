@@ -1,16 +1,63 @@
 using Material3Expressive.VisualTesting.Parity;
+using Material3Expressive.VisualTesting.Model;
 using Xunit;
 
 namespace Material3Expressive.VisualTests;
 
 public sealed class ParityContractTests
 {
+    [Fact]
+    public void MotionTimelineUsesAStableCanonicalScheduleHash()
+    {
+        Assert.Equal(
+            "5FECEB66FFC86F38D952786C6D696C79C2DBC239DD4E91B46729D73A27FB57E9",
+            ParityMotionTimeline.ScheduleSha256([0]));
+    }
+
+    [Fact]
+    public void MotionTimelineRejectsAFrameMovingBackwards()
+    {
+        var motion = Motion([0, 166667, 160000], elapsedTicks: 160000) with
+        {
+            ScheduleSha256 = ParityMotionTimeline.ScheduleSha256([0, 166667, 160000])
+        };
+
+        Assert.Throws<InvalidDataException>(() => ParityMotionTimeline.Validate(motion, "motion/test"));
+    }
+
+    [Fact]
+    public void ComparerRejectsMotionTimeEvenWhenPixelsAndGeometryMatch()
+    {
+        var image = SolidImage(40, 30, 255);
+        var expected = Layout("component", new ParityRect(10, 10, 30, 20)) with
+        {
+            Motion = Motion([0, 166667], 166667)
+        };
+        var actual = expected with
+        {
+            Motion = Motion([0, 166667, 333333], 333333)
+        };
+
+        var comparison = new ParityComparer().Compare(
+            expected,
+            actual,
+            image,
+            image,
+            ParityComparisonProfiles.Container);
+
+        Assert.False(comparison.IsMatch);
+        Assert.Contains("Motion timeline contract differs.", comparison.Failures);
+    }
+
     [Theory]
     [InlineData("foundation/color/primary-roles/light", "color-swatch")]
     [InlineData("foundation/elevation/rounded-rectangle/level6/light", "elevation")]
     [InlineData("foundation/typography/display-headline/light", "component-with-text")]
     [InlineData("card/filled/fixed/enabled/light", "container")]
     [InlineData("progress/circular-wavy/determinate/light", "complex-shape")]
+    [InlineData("progress/circular-wavy/motion/half-wave/light", "complex-shape")]
+    [InlineData("progress/loading-indicator/indeterminate/spring-mid/light", "container")]
+    [InlineData("foundation/motion/linear-tween/mid/light", "container")]
     [InlineData("button/filled/medium/enabled/light", "component-with-text")]
     [InlineData("textfield/filled/empty/light", "text-field")]
     public void EveryCaseFamilySelectsAnExplicitComparisonProfile(string caseId, string profileId)
@@ -245,6 +292,20 @@ public sealed class ParityContractTests
         new ParityCoordinateSpace("physical-pixel", "root-top-left", "right", "down", 2),
         new ParityViewport(40, 30),
         [new ParityNode(id, "container", null, bounds, true, Focused: focused, Shadow: shadow)]);
+
+    private static ParityMotionCapture Motion(IReadOnlyList<long> frames, long elapsedTicks) => new(
+        ParityMotionCapture.CurrentSchemaVersion,
+        "motion/test",
+        "checkpoint",
+        "first-controlled-motion-frame",
+        "100ns-ticks",
+        1,
+        elapsedTicks,
+        [new ParityMotionEvent(0, "mount")],
+        frames,
+        frames.Count - 1,
+        ParityMotionTimeline.ScheduleSha256(frames),
+        VisualMotionClockCoverage.ComponentOwned(usesComposeCoroutineClock: false));
 
     private static ParityCaptureResult TextLayout(ParityRect characterBounds)
     {

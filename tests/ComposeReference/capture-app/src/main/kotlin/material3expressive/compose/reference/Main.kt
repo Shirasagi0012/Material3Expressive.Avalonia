@@ -2,8 +2,10 @@ package material3expressive.compose.reference
 
 import material3expressive.compose.reference.capture.ExpectedProducer
 import material3expressive.compose.reference.scenes.registerButtonScenes
+import material3expressive.compose.reference.scenes.registerComponentMotionScenes
 import material3expressive.compose.reference.scenes.registerComponentScenes
 import material3expressive.compose.reference.scenes.registerFoundationScenes
+import material3expressive.compose.reference.scenes.registerMotionProbeScenes
 import material3expressive.compose.reference.scenes.registerNavigationScenes
 import material3expressive.compose.reference.scenes.registerTextFieldScenes
 import material3expressive.compose.reference.scenes.registerTypographyScenes
@@ -36,8 +38,10 @@ fun main(args: Array<String>) {
     val typography = ReferenceTypography(referenceFontPath())
     val registry = ReferenceCaseRegistry().apply {
         registerFoundationScenes()
+        registerMotionProbeScenes()
         registerTypographyScenes()
         registerComponentScenes()
+        registerComponentMotionScenes()
         registerButtonScenes()
         registerTextFieldScenes()
         registerNavigationScenes()

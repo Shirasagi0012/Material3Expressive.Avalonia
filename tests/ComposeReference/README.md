@@ -75,7 +75,7 @@ on the Avalonia comparison side.
 
 ### layout.json
 
-Per-case capture result (schema v4) containing:
+Per-case capture result (schema v8) containing:
 - Coordinate space definition (case-specific scale, root-relative physical pixels)
 - Viewport dimensions in physical pixels
 - Required node bounds as reported by `Modifier.onGloballyPositioned`; the custom TextField label
@@ -87,6 +87,9 @@ Per-case capture result (schema v4) containing:
 - The observed focus state for nodes that explicitly contract focus
 - For renderer-level elevation nodes, a reconstructible Skia m150 shadow contract: occluder shape,
   local-to-device transform, elevation, colors/alphas, opacity/flags, point light, and parent clip
+- For motion cases, the scenario/checkpoint, trigger event, logical origin/unit/duration scale,
+  requested elapsed time, complete delivery-frame schedule, capture index, schedule hash, and
+  controlled-clock coverage
 
 The official `TextField` editable implementation exposes a `TextLayoutResult` through semantics,
 but not its independent root drawing origin. Until a dedicated adapter supplies that origin, input
@@ -106,6 +109,14 @@ The text cursor remains part of focused screenshots. Blink is disabled only for 
 environment (`LocalCursorBlinkEnabled=false`), which means an always-visible caret rather than a
 hidden one; the Avalonia scene uses the equivalent always-visible caret setting. This prevents a
 wall-clock blink phase from being mistaken for a component difference.
+
+First-class motion cases use a separate protocol documented in
+[`docs/animation-parity.md`](../../docs/animation-parity.md). After bounded bootstrap frames, the
+declared trigger is invoked and one mount-only render transaction installs newly composed animation
+nodes/coroutines. Logical `t=0` is then the first frame delivered to the animation. The producer
+records a rational 60Hz schedule in 100ns ticks, replays every timestamp from zero, and captures
+the final one. A `TestCoroutineScheduler` controls Material coroutine delays at duration scale 1;
+the Avalonia side consumes the producer's recorded schedule rather than calculating another one.
 
 ## Rendering environment
 
@@ -128,4 +139,6 @@ wall-clock blink phase from being mistaken for a component difference.
    file under `scenes/`.
 2. Register it in `ReferenceCaseRegistry` with a `CaseContract` describing the
    viewport, theme, and required node probes.
-3. Rebuild and run.
+3. For motion, add `MotionCaseContract` and a deterministic `ReferenceScene.trigger`; author one
+   case per checkpoint and do not sleep or render frames from scene code.
+4. Rebuild and run.

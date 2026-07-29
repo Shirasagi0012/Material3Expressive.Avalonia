@@ -1,6 +1,6 @@
 ---
 name: create-visual-parity-tests
-description: Create, extend, migrate, and review component visual-parity test definitions in the Avalonia Material3Expressive repository by mirroring pinned Compose Multiplatform Material 3 scenes, defining structural probes, choosing deterministic animation states, and authoring narrowly justified semantic or temporary warning comparison profiles. Use when adding coverage for a control or state, migrating a remaining Material component, modifying a Compose reference or Avalonia VisualCase, adding probes, or reviewing test authoring against D:\source\androidx and D:\source\compose-multiplatform-core. Use run-visual-parity-tests instead when the task is primarily test execution, artifact inspection, or failure diagnosis.
+description: Create, extend, migrate, and review component visual-parity test definitions in the Avalonia Material3Expressive repository by mirroring pinned Compose Multiplatform Material 3 scenes, defining structural probes and deterministic animation checkpoints, and authoring narrowly justified semantic or temporary warning comparison profiles. Use when adding coverage for a control or state, migrating a remaining Material component, modifying a Compose reference or Avalonia VisualCase, adding probes, or reviewing test authoring against D:\source\androidx and D:\source\compose-multiplatform-core. Use run-visual-parity-tests instead when the task is primarily test execution, artifact inspection, or failure diagnosis.
 ---
 
 # Create Visual Parity Tests
@@ -19,6 +19,8 @@ Before editing, read:
 
 - `docs/visual-parity.md` for capture contracts, environment assumptions, and current comparison
   semantics relevant to authoring.
+- `docs/animation-parity.md` whenever an intermediate animation frame, delay, repeated phase, or
+  motion-clock declaration is involved.
 - `docs/comparison-profiles.md` before selecting, adding, or changing a comparison profile.
 - `docs/visual-parity-test-plan.md` for architectural boundaries and migration decisions.
 - `tests/ComposeReference/README.md` for the producer protocol.
@@ -89,9 +91,13 @@ Use `ProbeRegistry` rather than estimating geometry from pixels:
 - probe custom-drawn elements that have no `LayoutNode`/Visual counterpart, such as an indicator,
   notch, floating label, caret, divider, or selection marker.
 
-For static cases, capture a deterministic settled state. For motion parity, disable dependence on
-the host clock: use the existing controlled frame protocol and specify the exact animation time or
-terminal state. Never make a case pass by sleeping or relying on test execution speed.
+For static cases, capture a deterministic settled state. For motion parity, author one case per
+checkpoint with `MotionCaseContract`: keep the initial target at rest, give every checkpoint the
+same scenario ID and trigger action, select an exact elapsed time in 100ns ticks, and supply one
+deterministic `ReferenceScene.trigger`. Set `usesComposeCoroutineClock=true` when `delay` or another
+coroutine-time operation contributes to the frame. Do not call `ImageComposeScene.render`, advance
+a private clock, sleep, or calculate another frame schedule in scene code; the producer owns the
+registration transaction and complete replay schedule.
 
 Keep reference colors and typography complete. Construct both themes from the same full token
 contract; an omitted role can silently fall back to a framework default. Resolve defaults from
@@ -109,13 +115,22 @@ Mirror the Compose contract exactly:
   do not paste the expected PNG dimensions into the case;
 - use the same theme, locale, flow direction, text, slots, enabled/focus state, and background;
 - name every control or internal element that the contract compares;
-- use `Prepare` for input setup, focus, manual animation time, and settling;
+- use `Prepare` for static input/focus setup and settled-state capture;
 - use `VisualContext.Require<T>` to target controls instead of searching by incidental visual order.
 
 For a stable terminal state, call `context.SettleAnimations()` before capture when the component
-owns motion. For an exact intermediate frame, call `UseManualMotionClock()`, send the input, and
-call `AdvanceAnimations(...)` by the contract's duration. The Compose and Avalonia captures must
-represent the same animation instant.
+owns motion. For a first-class intermediate frame, add `VisualMotionSpec` with the exact matching
+scenario/checkpoint/trigger action and put the state change or input in its `Trigger`. The renderer
+enters `MotionTestClockScope` before `CreateContent` and replays the Compose-produced schedule; do
+not call `UseManualMotionClock()` or `AdvanceAnimations(...)` from that case. Those helpers remain
+valid for focused unit tests and legacy static setup, not for manifest-backed motion parity.
+
+Every animated Avalonia value in a motion case must be owned by `MotionGroup`. Native Avalonia
+`Transition`, composition animations, wall-clock timers, and MaterialSymbol `DoubleTransition`
+are unsupported until a controlled-clock adapter exists. Declare the limitation or refactor the
+component instead of claiming clock coverage. Motion metadata is structural: a changed event,
+timestamp, schedule hash, or coverage declaration remains a mismatch and cannot be accepted by
+`semanticRasterEquivalent` or `rasterWarning`.
 
 If the component draws an important element without a child `Visual`, add a named internal probe
 or capture adapter for that element. Do not replace it with the outer control bounds. This is the

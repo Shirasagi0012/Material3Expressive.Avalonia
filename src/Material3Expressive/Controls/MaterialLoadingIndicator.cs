@@ -59,6 +59,9 @@ public class MaterialLoadingIndicator : MaterialControl
         MaterialShapeCatalog.SoftBurst
     ];
 
+    private static readonly double IndeterminateShapeScale = CalculateScaleFactor(IndeterminateShapes);
+    private static readonly double DeterminateShapeScale = CalculateScaleFactor(DeterminateShapes);
+
     private static readonly Dictionary<(int List, int Index), Morph> MorphCache = new();
 
     private LoadingIndicatorMorphAnimation? _morph;
@@ -128,14 +131,22 @@ public class MaterialLoadingIndicator : MaterialControl
             ? CurrentIndeterminateMorph()
             : CurrentDeterminateMorph();
 
-        // The catalog's shapes are normalised into a 1×1 box, so the geometry scales straight up to
-        // the active size.
-        var active = Math.Min(box, _tokens.ActiveSize);
+        // LoadingIndicator.kt first reserves the public 48dp container, then scales the normalized
+        // path by calculateScaleFactor(polygons) * ActiveIndicatorScale. The first factor keeps all
+        // rotating shapes inside their slot; the second is the token ratio (38dp / 48dp).
+        var polygonScale = IsIndeterminate ? IndeterminateShapeScale : DeterminateShapeScale;
+        var activeIndicatorScale = _tokens.ContainerSize <= 0
+            ? 0
+            : _tokens.ActiveSize / _tokens.ContainerSize;
+        var active = box * polygonScale * activeIndicatorScale;
+        var cubics = morph.AsCubics(progress);
         var geometry = morph.ToGeometry(progress);
-
+        // Compose's Path.getBounds() is Skia's cached path-point bounds (anchors and controls),
+        // not the mathematically tight Bézier bounds exposed by Avalonia Geometry.Bounds.
+        var geometryCentre = CalculatePathPointBounds(cubics).Center;
         var transform =
             Matrix.CreateScale(active, active)
-            * Matrix.CreateTranslation(-active / 2, -active / 2)
+            * Matrix.CreateTranslation(-geometryCentre.X * active, -geometryCentre.Y * active)
             * Matrix.CreateRotation(rotationDegrees * Math.PI / 180)
             * Matrix.CreateTranslation(centre.X, centre.Y);
 
@@ -145,7 +156,9 @@ public class MaterialLoadingIndicator : MaterialControl
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var size = _tokens.HasContainer ? _tokens.ContainerSize : _tokens.ActiveSize;
+        // Both upstream overloads own the same public ContainerWidth × ContainerHeight slot. The
+        // standard variant simply paints that slot with Color.Unspecified/transparent.
+        var size = _tokens.ContainerSize;
         return new Size(size, size);
     }
 
@@ -247,4 +260,55 @@ public class MaterialLoadingIndicator : MaterialControl
     {
         return double.IsNaN(value) ? 0 : Math.Clamp(value, 0, 1);
     }
+
+    /// <summary>
+    /// Port of LoadingIndicator.kt calculateScaleFactor(): compare each polygon's occupied bounds
+    /// with the axis-aligned maximum bounds needed while it rotates, and retain the tightest scale.
+    /// </summary>
+    private static double CalculateScaleFactor(IReadOnlyList<RoundedPolygon> polygons)
+    {
+        var scaleFactor = 1d;
+        foreach (var polygon in polygons)
+        {
+            var bounds = polygon.CalculateBounds();
+            var maxBounds = polygon.CalculateMaxBounds();
+            if (maxBounds.Width <= 0 || maxBounds.Height <= 0)
+                continue;
+
+            var scaleX = bounds.Width / maxBounds.Width;
+            var scaleY = bounds.Height / maxBounds.Height;
+            scaleFactor = Math.Min(scaleFactor, Math.Max(scaleX, scaleY));
+        }
+
+        return scaleFactor;
+    }
+
+    private static Rect CalculatePathPointBounds(IReadOnlyList<CubicBezier> cubics)
+    {
+        if (cubics.Count == 0)
+            return default;
+
+        var minX = double.MaxValue;
+        var minY = double.MaxValue;
+        var maxX = double.MinValue;
+        var maxY = double.MinValue;
+        foreach (var cubic in cubics)
+        {
+            Include(cubic.Anchor0);
+            Include(cubic.Control0);
+            Include(cubic.Control1);
+            Include(cubic.Anchor1);
+        }
+
+        return new Rect(minX, minY, maxX - minX, maxY - minY);
+
+        void Include(Point point)
+        {
+            minX = Math.Min(minX, point.X);
+            minY = Math.Min(minY, point.Y);
+            maxX = Math.Max(maxX, point.X);
+            maxY = Math.Max(maxY, point.Y);
+        }
+    }
+
 }

@@ -10,6 +10,15 @@ data class CaseContract(
     val dark: Boolean,
     val requiredNodes: List<RequiredNodeSpec>,
     val renderScale: Float = 2.0f,
+    val motion: MotionCaseContract? = null,
+)
+
+data class MotionCaseContract(
+    val scenarioId: String,
+    val checkpointId: String,
+    val elapsedTicks: Long,
+    val triggerAction: String = "mount",
+    val usesComposeCoroutineClock: Boolean = false,
 )
 
 data class RequiredNodeSpec(
@@ -25,5 +34,6 @@ data class RequiredNodeSpec(
 )
 
 data class ReferenceScene(
+    val trigger: (() -> Unit)? = null,
     val content: @Composable (ProbeRegistry) -> Unit,
 )
