@@ -75,12 +75,13 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-Work item: None
-Status: Idle
-Started: —
+Work item: M4-BOTTOM-SHEET-001 — BottomSheetScaffold
+Status: In Progress
+Started: 2026-07-30
 
-M3-SEGMENTED-001 completed on 2026-07-30. The next Goal run selects the first eligible Planned
-item using the backlog dependency, priority, and order rules.
+Implementation follows AndroidX `ff0a0a99` / Material3 1.5.0-alpha25. The executable Compose
+reference remains Material3 1.5.0-alpha22; motion parity must report any unsupported reference
+states as unavailable rather than treating them as passes.
 
 ## Workstreams
 

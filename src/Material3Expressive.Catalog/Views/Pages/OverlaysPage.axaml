@@ -124,6 +124,36 @@
                     </StackPanel>
                 </StackPanel>
 
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Bottom sheet scaffold" />
+                    <TextBlock Classes="body-medium"
+                               MaxWidth="720"
+                               TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="The standard scaffold keeps the body interactive while a persistent sheet settles between its 56dp peek and expanded anchors." />
+                    <Border Classes="demo-canvas" Padding="16">
+                        <m3:MaterialBottomSheetScaffold Height="280"
+                                                        SheetPeekHeight="56">
+                            <m3:MaterialBottomSheetScaffold.TopBar>
+                                <TextBlock Classes="title-medium" Text="Inbox" />
+                            </m3:MaterialBottomSheetScaffold.TopBar>
+                            <m3:MaterialBottomSheetScaffold.Content>
+                                <TextBlock Classes="body-large"
+                                           Margin="0,20,0,0"
+                                           Text="Body content remains available above the sheet." />
+                            </m3:MaterialBottomSheetScaffold.Content>
+                            <m3:MaterialBottomSheetScaffold.SheetContent>
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="title-medium" Text="Filters" />
+                                    <TextBlock Classes="body-medium"
+                                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                               Text="Drag the handle to expand or return to the peek anchor." />
+                                </StackPanel>
+                            </m3:MaterialBottomSheetScaffold.SheetContent>
+                        </m3:MaterialBottomSheetScaffold>
+                    </Border>
+                </StackPanel>
+
             </StackPanel>
         </ScrollViewer>
 

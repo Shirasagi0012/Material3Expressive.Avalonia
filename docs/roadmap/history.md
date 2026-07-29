@@ -293,3 +293,12 @@ The full 102-case regression at `artifacts/visual-parity/xunit/20260729-204124-1
 new rows accepted and produced the existing global disposition: 98 accepted (35 exact, 59
 semantic, four circular-wavy warnings), two explicit display/headline skips, and two focused
 TextField endpoint mismatches.
+
+## 2026-07-30 — BottomSheetScaffold core
+
+Started M4-BOTTOM-SHEET-001 from the alpha25 `BottomSheetScaffold.kt` and `SheetDefaults.kt`
+contract. Added `MaterialBottomSheetScaffold`, `BottomSheetState`, and the template panel with
+standard two-anchor placement, 56dp peek/640dp max-width tokens, vetoable state commands, and
+interrupted spring settling. Three deterministic Avalonia tests pass. Nested-scroll ownership,
+snackbar queue/restoration, automation actions, and executable motion parity remain open, so the
+roadmap task stays In Progress.

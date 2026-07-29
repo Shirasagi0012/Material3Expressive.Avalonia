@@ -132,6 +132,13 @@ the executable-reference and alpha25 version-gap status.
 `ContentPadding` to the body child; for scrolling content, apply it inside the `ScrollViewer`
 rather than to the viewer itself.
 
+`MaterialBottomSheetScaffold` adds the standard persistent sheet contract around the same slots.
+Its `BottomSheetState` starts at `PartiallyExpanded`, exposes vetoable `Expand()`,
+`PartiallyExpand()`, and `Hide()` commands, and retains the alpha25 `56dp` peek and `640dp`
+maximum width defaults. `SheetContent` is measured at full height and clipped by the partial
+anchor; `SheetSwipeEnabled` controls pointer settling. The current implementation does not yet
+claim Compose nested-scroll handoff, snackbar queue state, or motion parity.
+
 ```xml
 <m3:MaterialScaffold x:Name="Scaffold"
                      FloatingActionButtonPosition="End">
