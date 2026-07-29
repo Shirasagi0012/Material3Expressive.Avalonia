@@ -4,7 +4,7 @@
 > `D:\source\androidx` @ `ff0a0a99` (androidx-main, 2026-07-26), where the library was one
 > unreleased revision ahead at `1.5.0-alpha25`. The current executable visual-parity reference is
 > the Compose Multiplatform producer documented in
-> [visual-parity.md](visual-parity.md), pinned to Material 3 `1.5.0-alpha22` lineage. This survey
+> [visual-parity/README.md](../testing/visual-parity/README.md), pinned to Material 3 `1.5.0-alpha22` lineage. This survey
 > remains useful for implementation research, but is not the versioned test contract. The two
 > roles and their update policy are defined in [upstream-baselines.md](upstream-baselines.md). Common
 > source root (abbreviated `<m3>` below):

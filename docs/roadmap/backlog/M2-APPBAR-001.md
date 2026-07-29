@@ -9,7 +9,7 @@ dependencies: [D002]
 decisions: [D002, D003]
 parity: motion
 comparison-profile: existing
-docs: [docs/visual-parity-core.md, docs/animation-parity.md]
+docs: [docs/testing/visual-parity/core.md, docs/testing/visual-parity/animation.md]
 source-baseline: [AppBar.kt]
 ---
 

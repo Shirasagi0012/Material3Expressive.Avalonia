@@ -20,7 +20,7 @@ D:\source\androidx\compose\material3\material3\src\commonMain\kotlin\androidx\co
 ```
 
 The exact executable dependency graph and checksums are pinned under
-[`tests/ComposeReference`](../tests/ComposeReference).
+[`tests/ComposeReference`](../../tests/ComposeReference).
 
 ## Terminology
 
@@ -68,7 +68,7 @@ An update must record:
 - the `COMPOSE_MATERIAL3` version declared by that checkout;
 - added, removed, stabilized, and behaviorally changed Material3 APIs;
 - affected token tables and components;
-- changes to [`component-coverage.md`](component-coverage.md).
+- changes to [`component-matrix.md`](../coverage/component-matrix.md).
 
 ### Executable parity reference
 
@@ -81,8 +81,8 @@ result.
 
 | Information | Authoritative location |
 |---|---|
-| AndroidX implementation survey | [`androidx-reference.md`](androidx-reference.md) |
-| Executable parity workflow and environment | [`visual-parity.md`](visual-parity.md) |
-| Compose dependency pins | [`tests/ComposeReference`](../tests/ComposeReference) |
-| Feature-level port status | [`component-coverage.md`](component-coverage.md) |
-| Forward work and priorities | [`ROADMAP.md`](../ROADMAP.md) |
+| AndroidX implementation survey | [`androidx-material3.md`](androidx-material3.md) |
+| Executable parity workflow and environment | [`visual-parity/README.md`](../testing/visual-parity/README.md) |
+| Compose dependency pins | [`tests/ComposeReference`](../../tests/ComposeReference) |
+| Feature-level port status | [`component-matrix.md`](../coverage/component-matrix.md) |
+| Forward work and priorities | [`ROADMAP.md`](../../ROADMAP.md) |

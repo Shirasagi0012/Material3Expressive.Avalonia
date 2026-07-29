@@ -9,7 +9,7 @@ dependencies: [D004]
 decisions: [D003, D004]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md]
+docs: [docs/testing/visual-parity/core.md]
 source-baseline: [RangeSlider.kt]
 ---
 

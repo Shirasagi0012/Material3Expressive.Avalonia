@@ -5,7 +5,7 @@ implementation in visual, behavioural and API fidelity. The implementation sourc
 AndroidX Compose Material3 `1.5.0-alpha25` at commit `ff0a0a99`; the executable desktop visual
 reference is Compose Multiplatform Material3 `1.12.0-alpha03`, corresponding to Jetpack Material3
 `1.5.0-alpha22`. The split is intentional and documented in
-[docs/upstream-baselines.md](docs/upstream-baselines.md). Every token is transcribed from the
+[docs/reference/upstream-baselines.md](docs/reference/upstream-baselines.md). Every token is transcribed from the
 Material token database and stamped with the version it came from.
 
 > `0.1.0-alpha` development line. The theming core, token pipeline, motion foundations, broad
@@ -122,7 +122,7 @@ upstream dragged shape, elevation, and state layer. The control does not invent 
 `MaterialSegmentedList` container is the XAML adaptation of Compose segmented-list grouping: it
 infers single/first/middle/last shapes from its visible direct `MaterialListItem` children, applies
 the 2dp token gap and segmented container colour, and leaves each row's `InteractionMode` and
-selection ownership unchanged. See [docs/component-coverage.md](docs/component-coverage.md) for
+selection ownership unchanged. See [docs/coverage/component-matrix.md](docs/coverage/component-matrix.md) for
 the executable-reference and alpha25 version-gap status.
 
 ## Scaffold layout
@@ -197,11 +197,11 @@ Every token in the library is defined once, in a JSON table under
 [`src/Material3Expressive/Tokens`](src/Material3Expressive/Tokens), and turned into C# at build
 time. Adding a component token domain is one table file — the value record, the variant enum, the
 override bag and the theme accessors are all generated. See
-[docs/token-tables.md](docs/token-tables.md).
+[docs/reference/token-tables.md](docs/reference/token-tables.md).
 
-The theming core is documented in [docs/architecture.md](docs/architecture.md). The current
-Compose comparison workflow is in [docs/visual-parity.md](docs/visual-parity.md). Feature-level
-support is tracked in [docs/component-coverage.md](docs/component-coverage.md), while future work
+The theming core is documented in [docs/architecture/theming.md](docs/architecture/theming.md). The current
+Compose comparison workflow is in [docs/testing/visual-parity/README.md](docs/testing/visual-parity/README.md). Feature-level
+support is tracked in [docs/coverage/component-matrix.md](docs/coverage/component-matrix.md), while future work
 and its completion criteria live in [ROADMAP.md](ROADMAP.md).
 
 ## Layout

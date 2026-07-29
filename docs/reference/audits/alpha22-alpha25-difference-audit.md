@@ -4,7 +4,7 @@ Audited: 2026-07-29
 
 This is the implementation-source delta record for Milestone 1. It deliberately does not turn
 the older executable reference into the implementation target. Terminology and pins are defined
-in [upstream-baselines.md](upstream-baselines.md).
+in [upstream-baselines.md](../upstream-baselines.md).
 
 ## Inputs and repeatable method
 
@@ -25,7 +25,7 @@ the library version.
 
 | Area | alpha25 source delta | Avalonia / parity consequence |
 |---|---|---|
-| Expressive API maturity | The alpha22 `Material3ExpressiveApi` annotations have been removed from the now-stable expressive surfaces. `WavyProgressIndicator.kt`, `AppBar.kt`, `FloatingToolbar.kt`, `ListItem.kt`, `ShortNavigationBar.kt`, and related defaults are affected. `MaterialShapes` and `LoadingIndicator` remain experimental as documented in [androidx-reference.md](androidx-reference.md). | API maturity changes do not alter the currently captured static pixels. Continue implementing the alpha25 behavior; do not use the alpha22 producer as evidence that a newer expressive API is complete. |
+| Expressive API maturity | The alpha22 `Material3ExpressiveApi` annotations have been removed from the now-stable expressive surfaces. `WavyProgressIndicator.kt`, `AppBar.kt`, `FloatingToolbar.kt`, `ListItem.kt`, `ShortNavigationBar.kt`, and related defaults are affected. `MaterialShapes` and `LoadingIndicator` remain experimental as documented in [androidx-material3.md](../androidx-material3.md). | API maturity changes do not alter the currently captured static pixels. Continue implementing the alpha25 behavior; do not use the alpha22 producer as evidence that a newer expressive API is complete. |
 | Loading indicator motion | `LoadingIndicator.kt` remains an experimental expressive API. Its indeterminate implementation is a per-morph spring (`dampingRatio=.6`, `stiffness=200`, `visibilityThreshold=.1`) restarted every 650ms, plus a separate 4666ms linear global rotation; it is not one linear shape-list loop. | The Avalonia control follows the alpha25 source timing and has deterministic curve/cadence tests. The executable alpha22 catalog has no animated LoadingIndicator comparison, so this is source-and-test evidence rather than an alpha22 visual-parity pass. |
 | Component override API | alpha22 exposes `ExperimentalMaterial3ComponentOverrideApi` and override composition locals in component files; alpha25 removes this override surface. | No Avalonia public API is derived from this transient Compose extension point. No active parity case depends on it. |
 | Toggle buttons | `ToggleButton.kt` adds `FilledTonalToggleButton`, retains `TonalToggleButton` as a deprecated forwarding alias, renames the default color cache, and animates `BorderStroke` changes. | `MaterialToggleButton` must use the filled-tonal naming/semantics if it exposes a corresponding variant, and border transitions are an alpha25 behavior. There is no toggle-button parity case, so this is **parity unavailable** rather than passed. |

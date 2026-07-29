@@ -1,7 +1,7 @@
 # Compose Material3 component coverage
 
 This inventory compares the Avalonia library with the
-[implementation source baseline](upstream-baselines.md). It groups related Kotlin overloads,
+[implementation source baseline](../reference/upstream-baselines.md). It groups related Kotlin overloads,
 `Defaults` objects, and state factories into user-facing feature families; it is not a count of
 individual Compose functions.
 
@@ -18,7 +18,7 @@ Last audited: 2026-07-29 against AndroidX
 
 Strict completion additionally requires token provenance, API review, visual and behavioral
 coverage, desktop interaction, accessibility, tests, and documentation. Those delivery dimensions
-are defined in [`ROADMAP.md`](../ROADMAP.md).
+are defined in [`ROADMAP.md`](../../ROADMAP.md).
 
 ## Summary
 
@@ -35,7 +35,7 @@ one-to-one component families.
 
 ## Baseline-audit status
 
-The [alpha22→alpha25 difference audit](alpha22-alpha25-difference-audit.md) confirms that every
+The [alpha22→alpha25 difference audit](../reference/audits/alpha22-alpha25-difference-audit.md) confirms that every
 accepted executable parity case is alpha22 conformance evidence only; none is an implicit alpha25
 parity pass. The accepted alpha22-compatible `MaterialListItem` click/selection cases likewise do
 not prove alpha25's text-line-height behavior or its modern no-interaction overload. Those paths
@@ -109,4 +109,4 @@ represent them.
   Avalonia desktop equivalent.
 - The executable alpha22 parity reference cannot render every alpha25 feature. That limitation is
   tracked separately from implementation status according to
-  [`upstream-baselines.md`](upstream-baselines.md).
+  [`upstream-baselines.md`](../reference/upstream-baselines.md).

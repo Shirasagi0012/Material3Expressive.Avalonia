@@ -12,7 +12,7 @@ live in [`docs/roadmap/decisions/`](docs/roadmap/decisions/); implementation his
 The library uses two upstream pins. API, token, and implementation work follows the AndroidX
 implementation source baseline. Executable visual tests use the older Compose Multiplatform
 desktop artifact currently available. The contract is defined in
-[`docs/upstream-baselines.md`](docs/upstream-baselines.md).
+[`docs/reference/upstream-baselines.md`](docs/reference/upstream-baselines.md).
 
 ## Goals
 
@@ -180,7 +180,7 @@ The roadmap is complete only when:
 
 - Task selection and task state: [`docs/roadmap/backlog/index.md`](docs/roadmap/backlog/index.md)
 - Open decisions and Deferred authorization: [`docs/roadmap/decisions/`](docs/roadmap/decisions/)
-- Component completion evidence: [`docs/component-coverage.md`](docs/component-coverage.md)
-- Upstream baseline contract: [`docs/upstream-baselines.md`](docs/upstream-baselines.md)
-- Visual parity contract: [`docs/visual-parity.md`](docs/visual-parity.md)
+- Component completion evidence: [`docs/coverage/component-matrix.md`](docs/coverage/component-matrix.md)
+- Upstream baseline contract: [`docs/reference/upstream-baselines.md`](docs/reference/upstream-baselines.md)
+- Visual parity contract: [`docs/testing/visual-parity/README.md`](docs/testing/visual-parity/README.md)
 - Append-only implementation history: [`docs/roadmap/history.md`](docs/roadmap/history.md)

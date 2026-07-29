@@ -9,7 +9,7 @@ dependencies: []
 decisions: [D003]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md]
+docs: [docs/testing/visual-parity/core.md]
 source-baseline: [Surface.kt]
 ---
 
@@ -25,5 +25,5 @@ Surface behavior and documentation satisfy the completion dimensions used by the
 
 ## Evidence
 
-- [`docs/component-coverage.md`](../../component-coverage.md)
+- [`docs/coverage/component-matrix.md`](../../coverage/component-matrix.md)
 - [`docs/roadmap/history.md`](../history.md)

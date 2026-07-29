@@ -1,7 +1,7 @@
 # Semantic raster model
 
 Use this reference when reading `comparison.json` or explaining a raster pass/failure. For profile
-selection, schema rules, calibration, and policy review, use `docs/comparison-profiles.md`. Treat
+selection, schema rules, calibration, and policy review, use `docs/testing/visual-parity/comparison-profiles.md`. Treat
 source code and `comparison-profiles.json` as authoritative when they differ.
 
 ## Contents
@@ -84,7 +84,7 @@ For every reported budget bin, inspect:
 Count stops a large number of discrepancies. Energy stops many pixels parked just below a delta
 ceiling. Component area and thickness stop a compact missing fill, border segment, or shifted solid
 shape from consuming a dispersed-AA budget. The exact allowance formula and field constraints are
-documented in `docs/comparison-profiles.md`.
+documented in `docs/testing/visual-parity/comparison-profiles.md`.
 
 ## Current report interpretation
 

@@ -23,7 +23,7 @@ became enum properties on one control; behaviorally different components remaine
 The repository replaced self-approved Avalonia screenshot baselines with an executable Compose
 Multiplatform reference producer. Each run now generates a fresh expected bundle and compares
 matching scene structure, geometry, text information, shadows, and raster output. The current
-workflow is documented in [`visual-parity.md`](../visual-parity.md).
+workflow is documented in [`visual-parity/README.md`](../testing/visual-parity/README.md).
 
 ## 2026-07-29 — Roadmap reset
 
@@ -39,7 +39,7 @@ for implementation chronology and individual delivery findings.
 
 Compared the official Material3 `1.5.0-alpha22` common source with the pinned AndroidX
 `ff0a0a99` / `1.5.0-alpha25` source, then checked every active executable parity case against the
-older reference. The record is in [alpha22-alpha25-difference-audit.md](../alpha22-alpha25-difference-audit.md).
+older reference. The record is in [alpha22-alpha25-difference-audit.md](../reference/audits/alpha22-alpha25-difference-audit.md).
 No active case invokes an alpha25-only path. ToggleButton border motion, expressive ListItem
 line-dependent height, and Slider/RangeSlider state behavior are explicitly parity unavailable,
 not represented as passing alpha25 parity.

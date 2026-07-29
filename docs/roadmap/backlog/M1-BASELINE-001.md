@@ -9,7 +9,7 @@ dependencies: []
 decisions: [D003, D006]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md, docs/upstream-baselines.md]
+docs: [docs/testing/visual-parity/core.md, docs/reference/upstream-baselines.md]
 source-baseline: [AndroidX and pinned Compose versions]
 ---
 
@@ -26,5 +26,5 @@ All active documentation uses unambiguous baseline terminology and links to the 
 
 ## Evidence
 
-- [`docs/upstream-baselines.md`](../../upstream-baselines.md)
+- [`docs/reference/upstream-baselines.md`](../../reference/upstream-baselines.md)
 - [`docs/roadmap/history.md`](../history.md)

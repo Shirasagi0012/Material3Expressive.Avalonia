@@ -9,7 +9,7 @@ dependencies: [M1-INVENTORY-001]
 decisions: [D003]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md]
+docs: [docs/testing/visual-parity/core.md]
 source-baseline: [Checkbox.kt]
 ---
 
@@ -25,5 +25,5 @@ Indeterminate rendering, state behavior, test evidence, and public guidance are 
 
 ## Evidence
 
-- [`docs/component-coverage.md`](../../component-coverage.md)
+- [`docs/coverage/component-matrix.md`](../../coverage/component-matrix.md)
 - [`docs/roadmap/history.md`](../history.md)

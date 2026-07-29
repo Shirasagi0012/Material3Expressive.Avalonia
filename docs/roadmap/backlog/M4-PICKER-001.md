@@ -9,7 +9,7 @@ dependencies: [D002]
 decisions: [D002, D003]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md]
+docs: [docs/testing/visual-parity/core.md]
 source-baseline: [Picker input sources]
 ---
 

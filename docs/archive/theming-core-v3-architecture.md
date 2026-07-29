@@ -2,10 +2,10 @@
 
 > Historical architecture specification, written 2026-07-26 during the first roadmap. Phase
 > labels and then-future scope notes are preserved as design history; see
-> [roadmap history](roadmap/history.md). The current implementation source baseline and older
+> [roadmap history](../roadmap/history.md). The current implementation source baseline and older
 > executable parity reference are defined separately in
-> [upstream-baselines.md](upstream-baselines.md). The tested Avalonia baseline is `12.1.0`.
-> Reference notes on the upstream design live in [androidx-reference.md](androidx-reference.md).
+> [upstream-baselines.md](../reference/upstream-baselines.md). The tested Avalonia baseline is `12.1.0`.
+> Reference notes on the upstream design live in [androidx-material3.md](../reference/androidx-material3.md).
 
 This replaces both prior generations: the generic `DesignTokens` runtime (vendored under
 `Tokens/Infrastructure/`) and the hand-rolled per-domain resolvers in `Foundation/`.

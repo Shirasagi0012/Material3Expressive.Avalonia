@@ -1,11 +1,11 @@
 # Visual parity testing plan
 
 Status: initial harness implemented. This document is the design and migration record; use
-[visual-parity.md](visual-parity.md) for the current commands, artifacts, and contributor workflow.
+[README.md](README.md) for the current commands, artifacts, and contributor workflow.
 
 The pinned Compose Multiplatform artifact is the executable parity reference, not the newer
 AndroidX implementation source baseline. Their separate responsibilities are defined in
-[upstream-baselines.md](upstream-baselines.md).
+[../../reference/upstream-baselines.md](../../reference/upstream-baselines.md).
 
 This document defines the replacement for the existing visual testing system. The official
 Compose Multiplatform Material 3 implementation is the sole executable reference. Avalonia is
@@ -347,7 +347,7 @@ For focus, hover, press, and animated states:
   capture it after explicit terminal and commit frames;
 - fail if the scene does not settle within a bounded number of frames.
 
-Motion cases use the protocol in [animation-parity.md](animation-parity.md): one fresh scene per
+Motion cases use the protocol in [animation.md](animation.md): one fresh scene per
 checkpoint, one trigger at logical time zero, a producer-owned frame schedule replayed from the
 beginning, and an exact final capture timestamp. Compose frame and coroutine clocks are controlled;
 Avalonia component-owned `MotionGroup` instances are manual before scene construction. Native

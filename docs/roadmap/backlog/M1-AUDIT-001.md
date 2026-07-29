@@ -9,7 +9,7 @@ dependencies: [M1-BASELINE-001, M1-INVENTORY-001]
 decisions: [D003, D006]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md, docs/upstream-baselines.md]
+docs: [docs/testing/visual-parity/core.md, docs/reference/upstream-baselines.md]
 source-baseline: [AndroidX Material3 component sources]
 ---
 
@@ -27,5 +27,5 @@ recorded.
 
 ## Evidence
 
-- [`docs/alpha22-alpha25-difference-audit.md`](../../alpha22-alpha25-difference-audit.md)
+- [`docs/reference/audits/alpha22-alpha25-difference-audit.md`](../../reference/audits/alpha22-alpha25-difference-audit.md)
 - [`docs/roadmap/history.md`](../history.md)

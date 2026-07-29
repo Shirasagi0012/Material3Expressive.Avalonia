@@ -9,7 +9,7 @@ dependencies: [M1-AUDIT-002]
 decisions: [D003]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md]
+docs: [docs/testing/visual-parity/core.md]
 source-baseline: [TabRow.kt]
 ---
 
@@ -27,5 +27,5 @@ evidence.
 
 ## Evidence
 
-- [`docs/component-coverage.md`](../../component-coverage.md)
+- [`docs/coverage/component-matrix.md`](../../coverage/component-matrix.md)
 - [`docs/roadmap/history.md`](../history.md)

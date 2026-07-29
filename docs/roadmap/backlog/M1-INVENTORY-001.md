@@ -9,7 +9,7 @@ dependencies: [M1-BASELINE-001]
 decisions: [D003]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md]
+docs: [docs/testing/visual-parity/core.md]
 source-baseline: [Material3 component inventory]
 ---
 
@@ -25,5 +25,5 @@ Every component family has a current classification and the classification rules
 
 ## Evidence
 
-- [`docs/component-coverage.md`](../../component-coverage.md)
+- [`docs/coverage/component-matrix.md`](../../coverage/component-matrix.md)
 - [`docs/roadmap/history.md`](../history.md)

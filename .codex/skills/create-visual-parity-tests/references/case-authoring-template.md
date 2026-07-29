@@ -73,7 +73,7 @@ the outer control bounds as if they measured the path.
 
 ## Motion checkpoint worksheet
 
-Read `docs/animation-parity.md` before filling this section. Use one fresh case per checkpoint.
+Read `docs/testing/visual-parity/animation.md` before filling this section. Use one fresh case per checkpoint.
 
 | Field | Value |
 |---|---|
@@ -175,7 +175,7 @@ not a replacement for declaring elevation.
 ## Profile decision
 
 Use the decision table, schema reference, calibration procedure, and review checklist in
-`docs/comparison-profiles.md`. Record only the case-specific conclusion here:
+`docs/testing/visual-parity/comparison-profiles.md`. Record only the case-specific conclusion here:
 
 ```text
 resolved profile: <existing profile ID>

@@ -2,7 +2,7 @@
 
 This document is the repository authority for designing, selecting, calibrating, and reviewing
 visual-parity comparison profiles. The live policy is
-[`tests/VisualParity/comparison-profiles.json`](../tests/VisualParity/comparison-profiles.json), and
+[`tests/VisualParity/comparison-profiles.json`](../../../tests/VisualParity/comparison-profiles.json), and
 the C# loader/comparer remains authoritative for exact validation and runtime behavior.
 
 Profiles model narrowly understood renderer differences after the Compose and Avalonia scenes have

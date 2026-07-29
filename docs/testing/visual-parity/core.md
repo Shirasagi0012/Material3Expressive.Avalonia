@@ -20,10 +20,10 @@ or the routing table requires them.
 
 | Task signal | Load | 
 |---|---|
-| `parity: motion` or an intermediate frame | `docs/animation-parity.md` |
-| `comparison-profile: new` or `change` | `docs/comparison-profiles.md` and the JSON registry |
-| baseline conflict or version-gap question | `docs/upstream-baselines.md` |
-| infrastructure, schema, or comparer change | `docs/visual-parity-test-plan.md` |
+| `parity: motion` or an intermediate frame | `docs/testing/visual-parity/animation.md` |
+| `comparison-profile: new` or `change` | `docs/testing/visual-parity/comparison-profiles.md` and the JSON registry |
+| baseline conflict or version-gap question | `docs/reference/upstream-baselines.md` |
+| infrastructure, schema, or comparer change | `docs/testing/visual-parity/architecture.md` |
 | ordinary static case | no additional topic document |
 
 The active task's `decisions`, `docs`, and `source-baseline` fields are the default route. Expand

@@ -8,7 +8,7 @@ a new expected bundle, then captures and compares the matching Avalonia scenes.
 
 This executable parity reference is intentionally older than the AndroidX implementation source
 baseline. It defines test output, not the complete feature target. See
-[upstream-baselines.md](upstream-baselines.md) for the distinction and version-gap policy.
+[../../reference/upstream-baselines.md](../../reference/upstream-baselines.md) for the distinction and version-gap policy.
 
 There are no checked-in Avalonia screenshot baselines, approval manifests, candidate recording,
 or self-regression fallback. A mismatch is a failed parity test even while the job is used as a
@@ -29,7 +29,7 @@ decision, not a reason to accept a new image.
 | Font | repository-pinned Roboto variable font, hash-validated on both sides |
 
 The Compose dependency lock file and checksum metadata live in
-[`tests/ComposeReference`](../tests/ComposeReference). Version upgrades are intentional source
+[`tests/ComposeReference`](../../../tests/ComposeReference). Version upgrades are intentional source
 changes, not baseline refreshes.
 
 ## Run the suite
@@ -68,7 +68,7 @@ The `dotnet test` console summary may not print accepted `rasterWarning` details
 `actual/manifest.json` and per-case `comparison.json` artifacts as the authoritative warning report.
 
 To inspect only the reference producer, run the commands in
-[`tests/ComposeReference/README.md`](../tests/ComposeReference/README.md). Its `--case` argument
+[`docs/testing/compose-reference.md`](../compose-reference.md). Its `--case` argument
 accepts a case ID or a prefix wildcard such as `button/*`.
 
 ## What is compared
@@ -106,7 +106,7 @@ time origin, complete frame-delivery schedule, capture index, schedule hash, and
 coverage in the current capture schema v10. Avalonia creates a fresh tree and replays that exact schedule through
 component-owned `MotionGroup` instances. A timeline mismatch fails before raster classification;
 neither semantic equivalence nor a warning policy can accept it. See
-[animation-parity.md](animation-parity.md) for the lifecycle and authoring rules.
+[animation.md](animation.md) for the lifecycle and authoring rules.
 
 Report a motion case with separate timeline and captured-frame conclusions. The timeline contract
 is exact structural evidence; the captured frame then receives the ordinary raster classification.
@@ -131,7 +131,7 @@ cannot be accepted or mistaken for a parity difference.
 
 ## Comparison profiles and raster acceptance
 
-[`tests/VisualParity/comparison-profiles.json`](../tests/VisualParity/comparison-profiles.json)
+[`tests/VisualParity/comparison-profiles.json`](../../../tests/VisualParity/comparison-profiles.json)
 is a version-7, centralized semantic raster policy. It has no viewport-sized allowance and no
 global `Δ<=1` floor. Profile JSON rejects unknown fields, duplicate/unreachable prefix rules, and
 invalid quota ranges so a typo cannot silently make the comparison looser.
@@ -283,7 +283,7 @@ Text 'label' character 4 bounding differs (LTRB px): expected (249.728, 76.000, 
 2. Add the matching Avalonia `VisualCase` with the identical ID and scene state. Name every node
    that needs structural comparison. For custom-drawn text, add a direct layout probe instead of
    estimating its bounds from pixels.
-   For intermediate animation frames, follow [animation-parity.md](animation-parity.md): author one
+   For intermediate animation frames, follow [animation.md](animation.md): author one
    case per checkpoint with `MotionCaseContract` and `VisualMotionSpec`, and let the producer-owned
    schedule drive both sides.
 3. Resolve the case to an existing comparison profile whenever possible. If the family has a
@@ -301,5 +301,5 @@ metadata, and the expected-version validation in the .NET bundle loader together
 full suite: it will generate the new Compose expected bundle automatically. Review the resulting
 systematic differences and update the Avalonia implementation and case contracts as needed.
 
-See [visual-parity-test-plan.md](visual-parity-test-plan.md) for the architectural rationale and
+See [architecture.md](architecture.md) for the architectural rationale and
 the remaining coverage roadmap.

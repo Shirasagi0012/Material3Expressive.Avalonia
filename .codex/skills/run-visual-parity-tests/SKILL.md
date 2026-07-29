@@ -13,12 +13,12 @@ order. The C# comparer and checked-in profile JSON are the only acceptance autho
 Always read:
 
 1. the active backlog task;
-2. `docs/visual-parity-core.md`;
+2. `docs/testing/visual-parity/core.md`;
 3. the relevant fixture, test, comparer, and case files for the selected run.
 
-Follow the task's `decisions` and `docs` fields. Additionally read `docs/animation-parity.md` only
-for motion, `docs/comparison-profiles.md` plus the profile JSON for policy work,
-`docs/upstream-baselines.md` for baseline conflicts, and `docs/visual-parity-test-plan.md` for
+Follow the task's `decisions` and `docs` fields. Additionally read `docs/testing/visual-parity/animation.md` only
+for motion, `docs/testing/visual-parity/comparison-profiles.md` plus the profile JSON for policy work,
+`docs/reference/upstream-baselines.md` for baseline conflicts, and `docs/testing/visual-parity/architecture.md` for
 infrastructure/schema changes. Do not read ROADMAP or all decision history merely because a run is
 roadmap-scoped; the task is the evidence boundary.
 

@@ -13,7 +13,7 @@ AndroidX remains the implementation-source baseline. Keep this Skill focused on 
 Always read:
 
 1. the active `docs/roadmap/backlog/<task>.md`;
-2. `docs/visual-parity-core.md`;
+2. `docs/testing/visual-parity/core.md`;
 3. the nearest existing Compose scene, Avalonia `VisualCase`, and their relevant tests/source.
 
 The task front matter is the route. Read its `decisions`, `docs`, and `source-baseline` entries.
@@ -21,10 +21,10 @@ Then apply these conditional loads:
 
 | Condition | Additional material |
 |---|---|
-| `parity: motion` or an intermediate frame | `docs/animation-parity.md` |
-| `comparison-profile: new` or `change` | `docs/comparison-profiles.md` and `tests/VisualParity/comparison-profiles.json` |
-| baseline/version conflict | `docs/upstream-baselines.md` |
-| infrastructure, schema, comparer, or registry change | `docs/visual-parity-test-plan.md` |
+| `parity: motion` or an intermediate frame | `docs/testing/visual-parity/animation.md` |
+| `comparison-profile: new` or `change` | `docs/testing/visual-parity/comparison-profiles.md` and `tests/VisualParity/comparison-profiles.json` |
+| baseline/version conflict | `docs/reference/upstream-baselines.md` |
+| infrastructure, schema, comparer, or registry change | `docs/testing/visual-parity/architecture.md` |
 | producer protocol change | `tests/ComposeReference/README.md` |
 
 Do not load the full ROADMAP, complete decision history, animation, profile, or architecture

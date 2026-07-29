@@ -9,7 +9,7 @@ dependencies: [M3-SURFACE-001]
 decisions: [D003, D009]
 parity: static
 comparison-profile: existing
-docs: [docs/visual-parity-core.md]
+docs: [docs/testing/visual-parity/core.md]
 source-baseline: [Scaffold.kt]
 ---
 
@@ -27,6 +27,6 @@ delivered slots and positions.
 
 ## Evidence
 
-- [`docs/component-coverage.md`](../../component-coverage.md)
+- [`docs/coverage/component-matrix.md`](../../coverage/component-matrix.md)
 - [`D009`](../decisions/D009-materialscaffold-layout-api.md)
 - [`docs/roadmap/history.md`](../history.md)
