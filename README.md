@@ -138,8 +138,14 @@ rather than to the viewer itself.
 Its `BottomSheetState` starts at `PartiallyExpanded`, exposes vetoable `Expand()`,
 `PartiallyExpand()`, and `Hide()` commands, and retains the alpha25 `56dp` peek and `640dp`
 maximum width defaults. `SheetContent` is measured at full height and clipped by the partial
-anchor; `SheetSwipeEnabled` controls pointer settling. The current implementation does not yet
-claim Compose nested-scroll handoff, snackbar queue state, or motion parity.
+anchor. `SheetSwipeEnabled` coordinates delayed pointer capture, precision-wheel input, and
+`ScrollViewer` chaining: upward motion expands the sheet before scrolling its content, while
+downward motion returns to the peek anchor only after the child reaches its top boundary. A null
+`State` uses an internally owned state that remains connected to the templated sheet; assign a
+`BottomSheetState` when the application needs external ownership or restoration. Snackbar queue
+state remains the separate `SnackbarHost` responsibility. Static and expressive-spring parity
+contracts are present; the current light-theme result retains a documented one-channel shadow
+framework-parameter mismatch.
 
 ```xml
 <m3:MaterialScaffold x:Name="Scaffold"

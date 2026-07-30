@@ -37,6 +37,116 @@ public sealed class MaterialBottomSheetScaffoldTests
     }
 
     [AvaloniaFact]
+    public void OwnedStateIsConnectedToTheTemplatedSheetAndReplacementStateFollows()
+    {
+        var scaffold = new MaterialBottomSheetScaffold
+        {
+            Content = new Border { Height = 320 },
+            SheetContent = new Border { Height = 180 }
+        };
+
+        ThemeTestHelper.ShowWindow(scaffold);
+
+        var sheet = Assert.Single(
+            scaffold.GetVisualDescendants().OfType<MaterialBottomSheetScaffoldSheet>());
+        Assert.Same(scaffold.EffectiveState, sheet.State);
+        Assert.True(scaffold.EffectiveState.Expand());
+        Assert.Equal(0, sheet.SheetTargetFraction, precision: 6);
+
+        var replacement = new BottomSheetState(BottomSheetValue.Expanded);
+        scaffold.State = replacement;
+
+        Assert.Same(replacement, scaffold.EffectiveState);
+        Assert.Same(replacement, sheet.State);
+        Assert.Equal(0, sheet.SheetFraction, precision: 6);
+    }
+
+    [AvaloniaFact]
+    public void NestedScrollConsumesSheetTravelBeforeChildAndOnlyCollapsesAfterChildBoundary()
+    {
+        var state = new BottomSheetState();
+        var scaffold = new MaterialBottomSheetScaffold
+        {
+            State = state,
+            Width = 360,
+            Height = 320,
+            Content = new Border(),
+            SheetContent = new Border { Height = 180 }
+        };
+        ThemeTestHelper.ShowWindow(scaffold);
+        var sheet = Assert.Single(
+            scaffold.GetVisualDescendants().OfType<MaterialBottomSheetScaffoldSheet>());
+
+        var expandConsumed = sheet.ConsumeNestedScrollDelta(40, childConsumed: true);
+        Assert.Equal(40, expandConsumed, precision: 6);
+        Assert.InRange(sheet.SheetFraction, 0, 1);
+        var expandedFraction = sheet.SheetFraction;
+
+        Assert.Equal(0, sheet.ConsumeNestedScrollDelta(-20, childConsumed: true));
+        Assert.Equal(expandedFraction, sheet.SheetFraction, precision: 6);
+
+        var collapseConsumed = sheet.ConsumeNestedScrollDelta(-20, childConsumed: false);
+        Assert.Equal(-20, collapseConsumed, precision: 6);
+        Assert.True(sheet.SheetFraction > expandedFraction);
+
+        sheet.SwipeEnabled = false;
+        Assert.Equal(0, sheet.ConsumeNestedScrollDelta(20, childConsumed: false));
+    }
+
+    [AvaloniaFact]
+    public void GestureVetoRestoresTheExistingLogicalAnchor()
+    {
+        var state = new BottomSheetState(
+            BottomSheetValue.Expanded,
+            value => value != BottomSheetValue.PartiallyExpanded);
+        var scaffold = new MaterialBottomSheetScaffold
+        {
+            State = state,
+            Width = 360,
+            Height = 320,
+            Content = new Border(),
+            SheetContent = new Border { Height = 180 }
+        };
+        ThemeTestHelper.ShowWindow(scaffold);
+        var sheet = Assert.Single(
+            scaffold.GetVisualDescendants().OfType<MaterialBottomSheetScaffoldSheet>());
+
+        Assert.True(sheet.ConsumeNestedScrollDelta(-100, childConsumed: false) < 0);
+        Assert.True(sheet.SheetFraction > 0.5);
+        sheet.EndNestedScrollGesture();
+
+        Assert.Equal(BottomSheetValue.Expanded, state.CurrentValue);
+        Assert.Equal(0, sheet.SheetTargetFraction, precision: 6);
+    }
+
+    [AvaloniaFact]
+    public void SnackbarPlacementTracksTheSettledSheetState()
+    {
+        static (MaterialBottomSheetScaffold Scaffold, Border Snackbar) Create(
+            BottomSheetValue value)
+        {
+            var snackbar = new Border { Width = 80, Height = 20 };
+            var scaffold = new MaterialBottomSheetScaffold
+            {
+                State = new BottomSheetState(value),
+                Width = 360,
+                Height = 320,
+                Content = new Border(),
+                SheetContent = new Border { Height = 180 },
+                SnackbarHost = snackbar
+            };
+            ThemeTestHelper.ShowWindow(scaffold);
+            return (scaffold, snackbar);
+        }
+
+        var partial = Create(BottomSheetValue.PartiallyExpanded);
+        var expanded = Create(BottomSheetValue.Expanded);
+
+        Assert.Equal(244, partial.Snackbar.TranslatePoint(default, partial.Scaffold)!.Value.Y);
+        Assert.Equal(300, expanded.Snackbar.TranslatePoint(default, expanded.Scaffold)!.Value.Y);
+    }
+
+    [AvaloniaFact]
     public void StateCommandsAreVetoableAndTrackTarget()
     {
         var accepted = new BottomSheetState();

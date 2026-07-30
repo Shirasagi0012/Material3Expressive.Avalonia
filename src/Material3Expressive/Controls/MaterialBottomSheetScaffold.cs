@@ -11,6 +11,7 @@ using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -123,6 +124,7 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
 
     private BottomSheetState _state = new();
     private Thickness _contentPadding;
+    private MaterialBottomSheetScaffoldSheet? _sheet;
 
     public MaterialBottomSheetScaffold()
     {
@@ -191,6 +193,8 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
             _state.PropertyChanged -= OnStateChanged;
             _state = State ?? new BottomSheetState();
             _state.PropertyChanged += OnStateChanged;
+            if (_sheet is not null)
+                _sheet.State = _state;
             InvalidateMeasure();
             InvalidateVisual();
         }
@@ -202,6 +206,15 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
         {
             InvalidateMeasure();
         }
+    }
+
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+        _sheet = e.NameScope.Find<MaterialBottomSheetScaffoldSheet>("PART_Sheet")
+            ?? throw new InvalidOperationException(
+                "MaterialBottomSheetScaffold template is missing 'PART_Sheet'.");
+        _sheet.State = _state;
     }
 
     private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
@@ -230,6 +243,9 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
     private BottomSheetColors _colors = BottomSheetTokens.Standard.Resolve(null, false);
     private Point? _dragStart;
     private double _dragStartFraction;
+    private bool _dragging;
+    private ScrollViewer? _dragScrollViewer;
+    private int? _nestedGestureId;
     private double _fraction = 1;
     private BottomSheetState? _observedState;
 
@@ -244,6 +260,21 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
             InvalidateVisual();
         };
         _theme.Changed += (_, _) => ApplyTheme();
+        AddHandler(
+            InputElement.ScrollGestureEvent,
+            OnNestedScrollGesture,
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
+        AddHandler(
+            InputElement.ScrollGestureEndedEvent,
+            OnNestedScrollGestureEnded,
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
+        AddHandler(
+            InputElement.PointerWheelChangedEvent,
+            OnNestedPointerWheelChanged,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
         ApplyTheme();
     }
 
@@ -272,6 +303,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
         _fraction;
 
     internal double SheetFraction => _fraction;
+
+    internal double SheetTargetFraction => _motionFraction?.Target ?? _fraction;
 
     // The parity adapter consumes the same shape and shadow inputs used by Render. This is
     // structural evidence for the standard sheet's asymmetric CornerExtraLargeTop elevation.
@@ -323,9 +356,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
 
         _dragStart = e.GetPosition(this);
         _dragStartFraction = Fraction;
-        _motionFraction?.SnapTo(_dragStartFraction);
-        e.Pointer.Capture(this);
-        e.Handled = true;
+        _dragScrollViewer = FindScrollViewer(e.Source);
+        _dragging = false;
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -333,23 +365,175 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
         base.OnPointerMoved(e);
         if (_dragStart is not { } start || Bounds.Height <= 0)
             return;
+
         var delta = e.GetPosition(this).Y - start.Y;
-        var fraction = Math.Clamp(_dragStartFraction + delta / Math.Max(1, Bounds.Height), 0, 1);
-        _motionFraction?.SnapTo(fraction);
-        _fraction = fraction;
-        (this.GetVisualParent() as Control)?.InvalidateArrange();
-        InvalidateVisual();
+        if (!_dragging)
+        {
+            if (Math.Abs(delta) < 4)
+                return;
+
+            var canMoveUp = delta < 0 && _dragStartFraction > 0;
+            var canMoveDown =
+                delta > 0
+                && _dragStartFraction < 1
+                && (_dragScrollViewer is null || _dragScrollViewer.Offset.Y <= 0.5);
+            if (!canMoveUp && !canMoveDown)
+                return;
+
+            _dragging = true;
+            _motionFraction?.SnapTo(_dragStartFraction);
+            e.Pointer.Capture(this);
+        }
+
+        SetFraction(_dragStartFraction + delta / TravelDistance);
+        e.Handled = true;
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        var wasDragging = _dragging;
+        _dragging = false;
         _dragStart = null;
+        _dragScrollViewer = null;
+        if (!wasDragging)
+            return;
+
         e.Pointer.Capture(null);
-        if (Fraction < 0.5)
-            State?.Expand();
-        else
-            State?.PartiallyExpand();
+        CommitGestureTarget();
+        e.Handled = true;
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        var wasDragging = _dragging;
+        _dragging = false;
+        _dragStart = null;
+        _dragScrollViewer = null;
+        if (wasDragging)
+            CommitGestureTarget();
+    }
+
+    internal double ConsumeNestedScrollDelta(double deltaY, bool childConsumed)
+    {
+        if (!SwipeEnabled || State is null || Math.Abs(deltaY) < double.Epsilon)
+            return 0;
+
+        var consumed = 0d;
+        if (deltaY > 0 && Fraction > 0)
+        {
+            consumed = Math.Min(deltaY, Fraction * TravelDistance);
+        }
+        else if (deltaY < 0 && Fraction < 1 && !childConsumed)
+        {
+            consumed = -Math.Min(-deltaY, (1 - Fraction) * TravelDistance);
+        }
+
+        if (consumed == 0)
+            return 0;
+
+        _motionFraction?.SnapTo(Fraction);
+        SetFraction(Fraction - consumed / TravelDistance);
+        return consumed;
+    }
+
+    internal void EndNestedScrollGesture() =>
+        CommitGestureTarget();
+
+    private double TravelDistance =>
+        Math.Max(1, Bounds.Height - Math.Clamp(PeekHeight, 0, Bounds.Height));
+
+    private void SetFraction(double fraction)
+    {
+        fraction = Math.Clamp(fraction, 0, 1);
+        _motionFraction ??= _motion.AddSpring(fraction, _theme.Spring(MotionRole.DefaultSpatial));
+        _motionFraction.SnapTo(fraction);
+        _fraction = fraction;
+        (this.GetVisualParent() as Control)?.InvalidateArrange();
+        InvalidateVisual();
+    }
+
+    private void CommitGestureTarget()
+    {
+        if (State is not { } state)
+            return;
+
+        var target = Fraction < 0.5
+            ? BottomSheetValue.Expanded
+            : BottomSheetValue.PartiallyExpanded;
+        if (!state.TrySet(target))
+            target = state.CurrentValue;
+
+        // TrySet does not raise when an interrupted animation is recommitted to its existing
+        // logical target. Explicitly resume the spring from the gesture's current fraction.
+        AnimateTo(ValueFraction(target), snap: false);
+    }
+
+    private void OnNestedScrollGesture(object? sender, ScrollGestureEventArgs e)
+    {
+        var viewer = FindScrollViewer(e.Source);
+        var childConsumed = e.Handled && viewer is not null;
+        var consumed = ConsumeNestedScrollDelta(e.Delta.Y, childConsumed);
+        if (consumed == 0)
+            return;
+
+        // Compose pre-consumes upward motion while the sheet can expand. Avalonia's scroll event
+        // bubbles after ScrollViewer, so undo only the portion transferred to the sheet.
+        if (consumed > 0 && childConsumed && viewer is not null)
+        {
+            viewer.SetCurrentValue(
+                ScrollViewer.OffsetProperty,
+                viewer.Offset.WithY(Math.Max(0, viewer.Offset.Y - consumed)));
+        }
+
+        _nestedGestureId = e.Id;
+        e.Handled = true;
+    }
+
+    private void OnNestedScrollGestureEnded(object? sender, ScrollGestureEndedEventArgs e)
+    {
+        if (_nestedGestureId != e.Id)
+            return;
+
+        _nestedGestureId = null;
+        EndNestedScrollGesture();
+        e.Handled = true;
+    }
+
+    private void OnNestedPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (!SwipeEnabled || State is null || e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+            return;
+
+        var viewer = FindScrollViewer(e.Source);
+        BottomSheetValue? target = null;
+        if (e.Delta.Y > 0 && Fraction > 0)
+            target = BottomSheetValue.Expanded;
+        else if (e.Delta.Y < 0
+                 && Fraction < 1
+                 && (viewer is null || viewer.Offset.Y <= 0.5))
+            target = BottomSheetValue.PartiallyExpanded;
+
+        if (target is not { } value || !State.TrySet(value))
+            return;
+
+        AnimateTo(ValueFraction(value), snap: false);
+        e.Handled = true;
+    }
+
+    private ScrollViewer? FindScrollViewer(object? source)
+    {
+        if (source is ScrollViewer viewer)
+            return viewer;
+        if (source is not Visual visual)
+            return null;
+
+        return visual
+            .GetVisualAncestors()
+            .TakeWhile(ancestor => !ReferenceEquals(ancestor, this))
+            .OfType<ScrollViewer>()
+            .FirstOrDefault();
     }
 
     private void ApplyTheme()

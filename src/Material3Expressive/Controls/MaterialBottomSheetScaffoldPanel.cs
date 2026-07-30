@@ -66,11 +66,16 @@ internal sealed class MaterialBottomSheetScaffoldPanel : Panel
             finalSize.Width,
             Math.Max(0, (height - topHeight) / scale)));
         slots.Top.Arrange(new Rect(0, 0, finalSize.Width, topHeight / scale));
+        var snackbarWidth = Pixels(slots.Snackbar.DesiredSize.Width, scale);
+        var snackbarHeight = Pixels(slots.Snackbar.DesiredSize.Height, scale);
+        var snackbarTop = owner.EffectiveState.CurrentValue == BottomSheetValue.PartiallyExpanded
+            ? Math.Max(0, sheetTop - snackbarHeight)
+            : Math.Max(0, height - snackbarHeight);
         slots.Snackbar.Arrange(new Rect(
-            (finalSize.Width - slots.Snackbar.DesiredSize.Width) / 2,
-            Math.Max(0, sheetTop / scale - slots.Snackbar.DesiredSize.Height - 16),
-            slots.Snackbar.DesiredSize.Width,
-            slots.Snackbar.DesiredSize.Height));
+            (width - snackbarWidth) / 2 / scale,
+            snackbarTop / scale,
+            snackbarWidth / scale,
+            snackbarHeight / scale));
         slots.Sheet.Arrange(new Rect(
             sheetLeft / scale,
             sheetTop / scale,

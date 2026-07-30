@@ -34,7 +34,17 @@ consistent on supported desktop platforms.
   56dp/640dp defaults, physical-pixel sheet placement, and interrupted spring motion.
 - The scaffold exposes Avalonia's `IExpandCollapseProvider`: UIA states map Hidden to Collapsed,
   PartiallyExpanded directly, and Expanded directly; actions retain the state owner's veto.
-- Deterministic tests: `MaterialBottomSheetScaffoldTests` (5/5 passed).
+- A null public `State` is now connected to the template's internally owned state; replacing it
+  transfers the sheet observer without losing the selected anchor.
+- Pointer drag capture is delayed until directional intent is known. Upward nested scroll is
+  pre-consumed by the sheet (with Avalonia `ScrollViewer` offset compensation), downward motion is
+  consumed only after the child reaches its top boundary, precision-wheel input follows the same
+  ownership order, and `SheetSwipeEnabled=false` removes the sheet from that handoff.
+- Snackbar placement matches `BottomSheetScaffoldLayout`: above the partial anchor, but at the
+  scaffold bottom for Expanded/Hidden.
+- Deterministic tests: `MaterialBottomSheetScaffoldTests` (9/9 passed), including owned/external
+  state wiring, nested-scroll consumption, disabled gestures, veto restoration, and snackbar
+  placement.
 - Static and motion parity now cover partial/expanded light states, partial dark, and the
   expressive partial-to-expanded spring at 0ms/150ms/1000ms. The scene explicitly selects the
   official `MotionScheme.expressive()` because this library uses that scheme as its default while
@@ -45,5 +55,5 @@ consistent on supported desktop platforms.
   the current shadow-edge policy rejects a continuous 594–596 pixel, channel-delta-1 residual.
   The user confirmed this is a visual-parity framework parameter issue and will adjust that
   infrastructure separately; no component tolerance was widened here.
-- Remaining: nested-scroll handoff and integration with the separately planned SnackbarHost state
-  and restoration contract.
+- Remaining: integration with the separately planned SnackbarHost state/restoration contract and
+  resolution of shared state-ownership decision D002.

@@ -311,3 +311,12 @@ standard two-anchor placement, 56dp peek/640dp max-width tokens, vetoable state 
 interrupted spring settling. Three deterministic Avalonia tests pass. Nested-scroll ownership,
 snackbar queue/restoration, automation actions, and executable motion parity remain open, so the
 roadmap task stays In Progress.
+
+## 2026-07-30 — BottomSheetScaffold nested input and owned-state wiring
+
+Connected the scaffold's null/default state to its templated sheet, added delayed pointer capture,
+precision-wheel and nested `ScrollViewer` handoff, preserved veto restoration after interrupted
+gestures, and aligned snackbar placement with alpha25's settled-state rules. Nine focused
+deterministic tests now pass. The six static/motion parity cases have exact structural and timeline
+contracts; the remaining light-theme channel-delta-1 shadow raster rejection is recorded as the
+user-confirmed parity-framework parameter issue rather than hidden by a wider component tolerance.

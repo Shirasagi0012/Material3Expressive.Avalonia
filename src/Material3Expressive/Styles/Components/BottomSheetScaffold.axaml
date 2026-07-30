@@ -35,7 +35,6 @@
                                 IsVisible="{TemplateBinding SheetContent, Converter={x:Static ObjectConverters.IsNotNull}}"
                                 PeekHeight="{TemplateBinding SheetPeekHeight}"
                                 SwipeEnabled="{TemplateBinding SheetSwipeEnabled}"
-                                State="{TemplateBinding State}"
                                 Content="{TemplateBinding SheetContent}" />
                         </m3:MaterialBottomSheetScaffoldPanel>
                     </Border>
