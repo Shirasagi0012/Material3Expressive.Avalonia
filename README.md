@@ -328,6 +328,32 @@ Arrow keys move among visible actions along the current axis, Home/End select th
 reverses horizontal traversal, and Tab remains ordinary desktop navigation. UI Automation exposes
 a ToolBar with ExpandCollapse while the action controls retain their native peers.
 
+## Short navigation bar
+
+`MaterialShortNavigationBar` reuses `MaterialNavigationItem` destinations and keeps selection in
+the two-way `SelectedIndex`. `Arrangement="EqualWeight"` matches compact screens;
+`Arrangement="Centered"` groups three to six destinations for medium widths. The default `Auto`
+switches at 600dp without replacing items or selection, and `ResponsiveBreakpoint` can override
+that boundary. Set `IconPosition="Start"` on items for the medium-width horizontal presentation.
+
+```xml
+<m3:MaterialShortNavigationBar Arrangement="Auto"
+                               SelectedIndex="{Binding DestinationIndex}">
+    <m3:MaterialNavigationItem Content="Home">
+        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Home" /></m3:MaterialNavigationItem.Icon>
+    </m3:MaterialNavigationItem>
+    <m3:MaterialNavigationItem Content="Saved">
+        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Star" /></m3:MaterialNavigationItem.Icon>
+    </m3:MaterialNavigationItem>
+</m3:MaterialShortNavigationBar>
+```
+
+Horizontal arrows select and focus adjacent enabled destinations, Home/End move to the endpoints,
+RTL reverses horizontal direction, and Tab keeps ordinary desktop traversal. UI Automation exposes
+a Tab selection container with real TabItem children. The pinned alpha22 desktop reference has an
+item-width measurement defect, so this alpha25 layout is source-and-deterministic-test verified;
+its static Compose parity is explicitly unavailable.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and

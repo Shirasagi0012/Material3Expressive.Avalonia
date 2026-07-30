@@ -103,7 +103,7 @@
                     <TextBlock Classes="title-large" Text="Bar and rail" />
                     <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
                                Foreground="{mcu:MdSysColor OnSurfaceVariant}"
-                               Text="The selection is a pill that grows behind the icon, not a colour change alone." />
+                               Text="The selection is a pill that grows behind the icon, not a colour change alone. Short navigation adds EqualWeight and Centered layouts; its alpha25 geometry is source-and-test verified because the pinned alpha22 desktop producer measures every item at the full bar width." />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="32" LineSpacing="32" VerticalAlignment="Center">
                             <Border ClipToBounds="True" CornerRadius="12" Width="380" Height="80">
@@ -148,6 +148,32 @@
                                         </m3:MaterialNavigationItem.Icon>
                                     </m3:MaterialNavigationItem>
                                 </m3:MaterialNavigationBar>
+                            </Border>
+                            <Border ClipToBounds="True" CornerRadius="12" Width="380" Height="80">
+                                <m3:MaterialShortNavigationBar SelectedIndex="0" Arrangement="EqualWeight">
+                                    <m3:MaterialNavigationItem Content="Home">
+                                        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Home" /></m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Saved">
+                                        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Star" /></m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Inbox">
+                                        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Mail" /></m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                </m3:MaterialShortNavigationBar>
+                            </Border>
+                            <Border ClipToBounds="True" CornerRadius="12" Width="600" Height="80">
+                                <m3:MaterialShortNavigationBar SelectedIndex="1" Arrangement="Centered">
+                                    <m3:MaterialNavigationItem Content="Home" IconPosition="Start">
+                                        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Home" /></m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Saved" IconPosition="Start">
+                                        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Star" /></m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                    <m3:MaterialNavigationItem Content="Inbox" IconPosition="Start">
+                                        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Mail" /></m3:MaterialNavigationItem.Icon>
+                                    </m3:MaterialNavigationItem>
+                                </m3:MaterialShortNavigationBar>
                             </Border>
                         </WrapPanel>
                     </Border>

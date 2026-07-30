@@ -32,3 +32,16 @@ bind the upstream 16dp `ScreenOffset`. Avalonia has no public equivalent of Comp
 touch-exploration service flag, so the control does not globally force expansion when a screen
 reader attaches; its ExpandCollapse provider keeps both states directly recoverable. This
 authorization is narrow and does not resolve the broader D003 question.
+
+## Authorized component-specific adaptation — ShortNavigationBar responsiveness and focus
+
+Compose leaves EqualWeight/Centered and Top/Start choices to the caller's window-size logic.
+Avalonia preserves both explicit policies and adds `Arrangement=Auto`, resolving below 600dp to
+EqualWeight and at/above 600dp to Centered without replacing destination controls or selection
+state. Icon position remains explicit per item, so Auto does not silently rewrite application
+content. The breakpoint is configurable and `ResolvedArrangement` is observable.
+
+Compose items use Tab semantics and platform focus behavior. Avalonia exposes a Tab/TabItem UIA
+selection tree and adds conventional horizontal arrow plus Home/End selection, including RTL
+reversal. Tab is left to ordinary desktop traversal. This authorization is narrow and does not
+resolve the broader D003 question.

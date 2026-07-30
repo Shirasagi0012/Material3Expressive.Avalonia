@@ -39,7 +39,14 @@
                     <!-- NavigationBarItemLayout / NavigationRailItemLayout centre integral
                          Compose placeables, rather than fractional logical bounds. The custom
                          panel mirrors that calculation before it arranges these two slots. -->
-                    <m3:MaterialNavigationItemContentPanel Spacing="{TemplateBinding IconLabelSpace}">
+                    <m3:MaterialNavigationItemContentPanel x:Name="PART_ContentPanel"
+                                                           IconPosition="{TemplateBinding IconPosition}"
+                                                           Spacing="{TemplateBinding IconLabelSpace}"
+                                                           TopVerticalPadding="{TemplateBinding TopItemVerticalPadding}"
+                                                           TopIndicatorVerticalPadding="{TemplateBinding TopIndicatorVerticalPadding}"
+                                                           AnchorTop="{TemplateBinding IsShortNavigationItem}"
+                                                           StartHorizontalPadding="{TemplateBinding StartIndicatorHorizontalPadding}"
+                                                           StartVerticalPadding="{TemplateBinding StartIndicatorVerticalPadding}">
                         <ContentPresenter Width="{TemplateBinding IconSize}"
                                           Height="{TemplateBinding IconSize}"
                                           HorizontalAlignment="Stretch"
@@ -70,6 +77,21 @@
                                 <m3:MaterialNavigationItemsPanel
                                     IsVertical="{Binding $parent[m3:MaterialNavigationBar].IsVertical}"
                                     ItemSpacing="{Binding $parent[m3:MaterialNavigationBar].ItemSpacing}" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialShortNavigationBar}" TargetType="m3:MaterialShortNavigationBar">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ItemsControl ItemsSource="{Binding $parent[m3:MaterialShortNavigationBar].Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <m3:MaterialShortNavigationItemsPanel
+                                    Arrangement="{Binding $parent[m3:MaterialShortNavigationBar].ResolvedArrangement}" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>

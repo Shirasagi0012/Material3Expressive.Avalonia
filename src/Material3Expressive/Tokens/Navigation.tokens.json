@@ -4,7 +4,7 @@
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "NavigationColors",
   "version": "v0_11_0",
-  "source": "androidx compose/material3 tokens/NavigationBarTokens.kt, NavigationBarVerticalItemTokens.kt, NavigationRailCollapsedTokens.kt",
+  "source": "androidx compose/material3 tokens/NavigationBarTokens.kt, NavigationBarHorizontalItemTokens.kt, NavigationBarVerticalItemTokens.kt, NavigationRailCollapsedTokens.kt",
   "summary": "A navigation surface and its items, whether it runs along the bottom or up the side.",
 
   "variantEnum": "NavigationVariant",
@@ -26,6 +26,10 @@
     "ActiveIndicatorShape": { "type": "shape", "summary": "The indicator's corners." },
     "IconSize": { "type": "dimension", "summary": "An item's icon." },
     "IconLabelSpace": { "type": "dimension", "summary": "The gap between the indicator and the label under it." },
+    "StartActiveIndicatorHeight": { "type": "dimension", "summary": "The active indicator height when the icon leads the label." },
+    "StartIndicatorHorizontalPadding": { "type": "dimension", "summary": "Padding on each horizontal side of a leading-icon indicator." },
+    "StartIndicatorVerticalPadding": { "type": "dimension", "summary": "Padding on each vertical side of a leading-icon indicator." },
+    "TopItemVerticalPadding": { "type": "dimension", "summary": "Padding above and below a top-icon item." },
     "ItemBetweenSpace": { "type": "dimension", "summary": "The gap between items." },
     "LabelTextStyle": { "type": "typography", "summary": "An item's label." },
     "IsVertical": { "type": "bool", "summary": "Whether items stack down the side rather than across the bottom." }
@@ -54,6 +58,10 @@
         // 4dp indicator-to-label token gap.  This value is the effective icon-to-label gap used
         // by the shared Avalonia template.
         "IconLabelSpace": 8,
+        "StartActiveIndicatorHeight": 40,
+        "StartIndicatorHorizontalPadding": 16,
+        "StartIndicatorVerticalPadding": 8,
+        "TopItemVerticalPadding": 6,
         // NavigationBar.kt uses NavigationBarItemHorizontalPadding (8dp) between weighted items.
         "ItemBetweenSpace": 8,
         "LabelTextStyle": "LabelMedium",

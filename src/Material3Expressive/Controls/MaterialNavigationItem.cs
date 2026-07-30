@@ -1,8 +1,12 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Automation.Peers;
+using Avalonia.VisualTree;
+using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -17,6 +21,11 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialNavigationItem : ToggleButton
 {
+    public static readonly StyledProperty<NavigationItemIconPosition> IconPositionProperty =
+        AvaloniaProperty.Register<MaterialNavigationItem, NavigationItemIconPosition>(
+            nameof(IconPosition),
+            NavigationItemIconPosition.Top);
+
     /// <inheritdoc cref="Icon" />
     public static readonly StyledProperty<object?> IconProperty =
         AvaloniaProperty.Register<MaterialNavigationItem, object?>(nameof(Icon));
@@ -32,12 +41,33 @@ public class MaterialNavigationItem : ToggleButton
     public static readonly DirectProperty<MaterialNavigationItem, IImmutableBrush> IconBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialNavigationItem, IImmutableBrush>(nameof(IconBrush), o => o.IconBrush);
 
+    public static readonly DirectProperty<MaterialNavigationItem, double> TopItemVerticalPaddingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(
+            nameof(TopItemVerticalPadding), o => o.TopItemVerticalPadding);
+
+    public static readonly DirectProperty<MaterialNavigationItem, double> StartIndicatorHorizontalPaddingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(
+            nameof(StartIndicatorHorizontalPadding), o => o.StartIndicatorHorizontalPadding);
+
+    public static readonly DirectProperty<MaterialNavigationItem, double> StartIndicatorVerticalPaddingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(
+            nameof(StartIndicatorVerticalPadding), o => o.StartIndicatorVerticalPadding);
+
+    public static readonly DirectProperty<MaterialNavigationItem, double> TopIndicatorVerticalPaddingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(
+            nameof(TopIndicatorVerticalPadding), o => o.TopIndicatorVerticalPadding);
+
+    public static readonly DirectProperty<MaterialNavigationItem, bool> IsShortNavigationItemProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
+            nameof(IsShortNavigationItem), o => o.IsShortNavigationItem);
+
     private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
 
     private SpringAnimation? _indicator;
     private NavigationTokens _tokens = NavigationTokens.Bar;
     private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
+    private MaterialNavigationItemContentPanel? _contentPanel;
 
     public MaterialNavigationItem()
     {
@@ -57,11 +87,34 @@ public class MaterialNavigationItem : ToggleButton
         set => SetValue(IconProperty, value);
     }
 
+    /// <summary>Places the icon above the label or at its logical start.</summary>
+    public NavigationItemIconPosition IconPosition
+    {
+        get => GetValue(IconPositionProperty);
+        set => SetValue(IconPositionProperty, value);
+    }
+
     /// <summary>The size the icon should be drawn at.</summary>
     public double IconSize => _tokens.IconSize;
 
     /// <summary>The gap between the indicator and the label under it.</summary>
     public double IconLabelSpace => _tokens.IconLabelSpace;
+
+    /// <summary>Vertical content padding for a top-icon destination.</summary>
+    public double TopItemVerticalPadding => _tokens.TopItemVerticalPadding;
+
+    /// <summary>Horizontal padding inside a leading-icon indicator.</summary>
+    public double StartIndicatorHorizontalPadding => _tokens.StartIndicatorHorizontalPadding;
+
+    /// <summary>Vertical padding inside a leading-icon indicator.</summary>
+    public double StartIndicatorVerticalPadding => _tokens.StartIndicatorVerticalPadding;
+
+    /// <summary>Padding between a top indicator and its icon.</summary>
+    public double TopIndicatorVerticalPadding =>
+        (_tokens.ActiveIndicatorHeight - _tokens.IconSize) / 2;
+
+    /// <summary>Whether the item is currently owned by a short navigation bar.</summary>
+    public bool IsShortNavigationItem => OwnerShortNavigationBar is not null;
 
     /// <summary>The colour the icon should take right now.</summary>
     public IImmutableBrush IconBrush =>
@@ -70,13 +123,32 @@ public class MaterialNavigationItem : ToggleButton
     /// <summary>Which navigation surface this item belongs to; set by the parent.</summary>
     internal NavigationVariant Surface { get; set; } = NavigationVariant.Bar;
 
+    internal MaterialShortNavigationBar? OwnerShortNavigationBar { get; set; }
+
+    internal void SetShortNavigationOwner(MaterialShortNavigationBar? owner)
+    {
+        var previous = IsShortNavigationItem;
+        OwnerShortNavigationBar = owner;
+        RaisePropertyChanged(IsShortNavigationItemProperty, previous, IsShortNavigationItem);
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
     /// <summary>The pill behind the icon, in control coordinates.</summary>
     protected Rect IndicatorArea
     {
         get
         {
-            var width = _tokens.ActiveIndicatorWidth;
-            var height = _tokens.ActiveIndicatorHeight;
+            var startIcon = IconPosition == NavigationItemIconPosition.Start && Content is not null;
+            _contentPanel ??= this.GetVisualDescendants()
+                .OfType<MaterialNavigationItemContentPanel>()
+                .FirstOrDefault();
+            var width = startIcon
+                ? Math.Min(Bounds.Width, _contentPanel?.StartIndicatorWidth ?? _tokens.ActiveIndicatorWidth)
+                : _tokens.ActiveIndicatorWidth;
+            var height = startIcon
+                ? _tokens.StartActiveIndicatorHeight
+                : _tokens.ActiveIndicatorHeight;
             var scale = LayoutHelper.GetLayoutScale(this);
             if (scale <= 0 || double.IsNaN(scale) || double.IsInfinity(scale))
                 scale = 1;
@@ -89,16 +161,20 @@ public class MaterialNavigationItem : ToggleButton
             var containerWidth = ToComposePixels(Bounds.Width, scale);
             var indicatorWidth = ToComposePixels(width, scale);
             var left = Math.Max(0, (containerWidth - indicatorWidth) / 2) / scale;
-            return new Rect(left, IndicatorTop, indicatorWidth / scale, height);
+            return new Rect(left, IndicatorTop(height, startIcon), indicatorWidth / scale, height);
         }
     }
 
     private static int ToComposePixels(double value, double scale) =>
         Math.Max(0, (int)Math.Floor(value * scale + 0.5));
 
-    private double IndicatorTop =>
-        // The label sits under the indicator, so the pair is centred rather than the pill alone.
-        (Bounds.Height - _tokens.ActiveIndicatorHeight - _tokens.IconLabelSpace - LabelHeight) / 2;
+    private double IndicatorTop(double indicatorHeight, bool startIcon) =>
+        startIcon
+            ? (Bounds.Height - indicatorHeight) / 2
+            : IsShortNavigationItem
+                ? TopItemVerticalPadding
+            // The label sits under the indicator, so the pair is centred rather than the pill alone.
+                : (Bounds.Height - indicatorHeight - _tokens.IconLabelSpace - LabelHeight) / 2;
 
     private double LabelHeight =>
         Content is null ? 0 : _theme.Theme.Typography.GetTypeScale(_tokens.LabelTextStyle).LineHeight;
@@ -145,18 +221,49 @@ public class MaterialNavigationItem : ToggleButton
         {
             ApplyTokens();
         }
+        else if (change.Property == IconPositionProperty || change.Property == ContentProperty)
+        {
+            InvalidateMeasure();
+            InvalidateVisual();
+        }
     }
+
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+        _contentPanel = e.NameScope.Find<MaterialNavigationItemContentPanel>("PART_ContentPanel");
+    }
+
+    protected override AutomationPeer OnCreateAutomationPeer() =>
+        new MaterialNavigationItemAutomationPeer(this);
 
     internal void ApplyTokens()
     {
         var previousIconSize = IconSize;
         var previousSpace = IconLabelSpace;
+        var previousTopPadding = TopItemVerticalPadding;
+        var previousStartHorizontalPadding = StartIndicatorHorizontalPadding;
+        var previousStartVerticalPadding = StartIndicatorVerticalPadding;
+        var previousTopIndicatorVerticalPadding = TopIndicatorVerticalPadding;
 
         _tokens = _theme.Theme.GetNavigationTokens(Surface);
         _colors = _theme.Theme.GetNavigationColors(Surface, _theme.IsDark);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);
+        RaisePropertyChanged(TopItemVerticalPaddingProperty, previousTopPadding, TopItemVerticalPadding);
+        RaisePropertyChanged(
+            StartIndicatorHorizontalPaddingProperty,
+            previousStartHorizontalPadding,
+            StartIndicatorHorizontalPadding);
+        RaisePropertyChanged(
+            StartIndicatorVerticalPaddingProperty,
+            previousStartVerticalPadding,
+            StartIndicatorVerticalPadding);
+        RaisePropertyChanged(
+            TopIndicatorVerticalPaddingProperty,
+            previousTopIndicatorVerticalPadding,
+            TopIndicatorVerticalPadding);
 
         var typography = _theme.Theme.Typography;
         FontSize = typography.GetTypeScale(_tokens.LabelTextStyle).FontSize;
@@ -204,13 +311,40 @@ public class MaterialNavigationItem : ToggleButton
 /// </remarks>
 public sealed class MaterialNavigationItemContentPanel : Panel
 {
+    public static readonly StyledProperty<NavigationItemIconPosition> IconPositionProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, NavigationItemIconPosition>(
+            nameof(IconPosition),
+            NavigationItemIconPosition.Top);
+
     /// <summary>The fixed gap between the icon slot and the label slot.</summary>
     public static readonly StyledProperty<double> SpacingProperty =
         AvaloniaProperty.Register<MaterialNavigationItemContentPanel, double>(nameof(Spacing));
 
+    public static readonly StyledProperty<double> TopVerticalPaddingProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, double>(nameof(TopVerticalPadding));
+
+    public static readonly StyledProperty<double> StartHorizontalPaddingProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, double>(nameof(StartHorizontalPadding));
+
+    public static readonly StyledProperty<double> StartVerticalPaddingProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, double>(nameof(StartVerticalPadding));
+
+    public static readonly StyledProperty<double> TopIndicatorVerticalPaddingProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, double>(nameof(TopIndicatorVerticalPadding));
+
+    public static readonly StyledProperty<bool> AnchorTopProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, bool>(nameof(AnchorTop));
+
     static MaterialNavigationItemContentPanel()
     {
-        AffectsMeasure<MaterialNavigationItemContentPanel>(SpacingProperty);
+        AffectsMeasure<MaterialNavigationItemContentPanel>(
+            IconPositionProperty,
+            SpacingProperty,
+            TopVerticalPaddingProperty,
+            StartHorizontalPaddingProperty,
+            StartVerticalPaddingProperty,
+            TopIndicatorVerticalPaddingProperty,
+            AnchorTopProperty);
     }
 
     /// <inheritdoc cref="SpacingProperty" />
@@ -220,11 +354,70 @@ public sealed class MaterialNavigationItemContentPanel : Panel
         set => SetValue(SpacingProperty, value);
     }
 
+    public NavigationItemIconPosition IconPosition
+    {
+        get => GetValue(IconPositionProperty);
+        set => SetValue(IconPositionProperty, value);
+    }
+
+    public double TopVerticalPadding
+    {
+        get => GetValue(TopVerticalPaddingProperty);
+        set => SetValue(TopVerticalPaddingProperty, value);
+    }
+
+    public double StartHorizontalPadding
+    {
+        get => GetValue(StartHorizontalPaddingProperty);
+        set => SetValue(StartHorizontalPaddingProperty, value);
+    }
+
+    public double StartVerticalPadding
+    {
+        get => GetValue(StartVerticalPaddingProperty);
+        set => SetValue(StartVerticalPaddingProperty, value);
+    }
+
+    public double TopIndicatorVerticalPadding
+    {
+        get => GetValue(TopIndicatorVerticalPaddingProperty);
+        set => SetValue(TopIndicatorVerticalPaddingProperty, value);
+    }
+
+    public bool AnchorTop
+    {
+        get => GetValue(AnchorTopProperty);
+        set => SetValue(AnchorTopProperty, value);
+    }
+
+    internal double StartIndicatorWidth { get; private set; }
+
     protected override Size MeasureOverride(Size availableSize)
     {
         var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
         if (visibleChildren.Length == 0)
             return default;
+
+        if (IconPosition == NavigationItemIconPosition.Start && visibleChildren.Length > 1)
+        {
+            visibleChildren[0].Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var labelWidth = double.IsFinite(availableSize.Width)
+                ? Math.Max(
+                    0,
+                    availableSize.Width
+                    - StartHorizontalPadding * 2
+                    - visibleChildren[0].DesiredSize.Width
+                    - Spacing * (visibleChildren.Length - 1))
+                : double.PositiveInfinity;
+            for (var index = 1; index < visibleChildren.Length; index++)
+                visibleChildren[index].Measure(new Size(labelWidth, double.PositiveInfinity));
+
+            var contentWidth = visibleChildren.Sum(static child => child.DesiredSize.Width)
+                + Spacing * (visibleChildren.Length - 1);
+            StartIndicatorWidth = StartHorizontalPadding * 2 + contentWidth;
+            var contentHeight = visibleChildren.Max(static child => child.DesiredSize.Height);
+            return new Size(StartIndicatorWidth, StartVerticalPadding * 2 + contentHeight);
+        }
 
         var availableWidth = availableSize.Width;
         var desiredWidth = 0d;
@@ -238,7 +431,9 @@ public sealed class MaterialNavigationItemContentPanel : Panel
         }
 
         desiredHeight += Spacing * (visibleChildren.Length - 1);
-        return new Size(desiredWidth, desiredHeight);
+        return new Size(
+            desiredWidth,
+            desiredHeight + TopVerticalPadding * 2 + (AnchorTop ? TopIndicatorVerticalPadding : 0));
     }
 
     protected override Size ArrangeOverride(Size finalSize)
@@ -246,6 +441,36 @@ public sealed class MaterialNavigationItemContentPanel : Panel
         var visibleChildren = Children.Where(child => child.IsVisible).ToArray();
         if (visibleChildren.Length == 0)
             return finalSize;
+
+        if (IconPosition == NavigationItemIconPosition.Start && visibleChildren.Length > 1)
+        {
+            var startScale = GetScale();
+            var widths = visibleChildren.Select(child => ToPlaceablePixels(child.DesiredSize.Width, startScale)).ToArray();
+            var heights = visibleChildren.Select(child => ToPlaceablePixels(child.DesiredSize.Height, startScale)).ToArray();
+            var startSpacing = ToComposePixels(Spacing, startScale);
+            var totalWidth = widths.Sum() + startSpacing * (visibleChildren.Length - 1);
+            var startFinalWidth = ToComposePixels(finalSize.Width, startScale);
+            var startFinalHeight = ToComposePixels(finalSize.Height, startScale);
+            var x = Math.Max(0, (startFinalWidth - totalWidth) / 2);
+
+            for (var index = 0; index < visibleChildren.Length; index++)
+            {
+                var childIndex = FlowDirection == FlowDirection.RightToLeft
+                    ? visibleChildren.Length - 1 - index
+                    : index;
+                var width = widths[childIndex];
+                var height = heights[childIndex];
+                var y = Math.Max(0, (startFinalHeight - height) / 2);
+                visibleChildren[childIndex].Arrange(new Rect(
+                    ToLogicalPixels(x, startScale),
+                    ToLogicalPixels(y, startScale),
+                    ToLogicalPixels(width, startScale),
+                    ToLogicalPixels(height, startScale)));
+                x += width + startSpacing;
+            }
+
+            return finalSize;
+        }
 
         var scale = GetScale();
         var finalWidth = ToComposePixels(finalSize.Width, scale);
@@ -264,7 +489,9 @@ public sealed class MaterialNavigationItemContentPanel : Panel
 
         // NavigationBar.kt / NavigationRail.kt use roundToInt only when emitting the vertical
         // placeable position. This is equivalent to rounding the shared pair offset once here.
-        var top = ToComposePixels((finalHeight - contentHeight) / 2d, 1);
+        var top = AnchorTop
+            ? ToComposePixels(TopVerticalPadding + TopIndicatorVerticalPadding, scale)
+            : ToComposePixels((finalHeight - contentHeight) / 2d, 1);
 
         for (var index = 0; index < visibleChildren.Length; index++)
         {
@@ -297,4 +524,11 @@ public sealed class MaterialNavigationItemContentPanel : Panel
         Math.Max(0, (int)Math.Ceiling(value * scale - 0.000001));
 
     private static double ToLogicalPixels(int value, double scale) => value / scale;
+}
+
+/// <summary>Position of a navigation destination icon relative to its label.</summary>
+public enum NavigationItemIconPosition
+{
+    Top,
+    Start
 }

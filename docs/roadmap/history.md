@@ -535,3 +535,19 @@ action peers. Twelve deterministic tests pass. Both alpha22-compatible expanded 
 `artifacts/visual-parity/xunit/20260730-172847-129`; no comparison tolerance changed.
 The complete regression at `artifacts/visual-parity/xunit/20260730-174443-784` passed 136 accepted
 rows and two explicit typography skips, retaining only the four authorized circular-wavy warnings.
+
+## 2026-07-31 — ShortNavigationBar
+
+Closed `M5-NAV-001` with the D012 `MaterialShortNavigationBar` API, reusing real
+`MaterialNavigationItem` controls and stable `SelectedIndex` state across EqualWeight, Centered,
+and configurable 600dp Auto layout. Top and Start item geometry follows alpha25 v0_11_0 tokens;
+multiline labels can grow the 80dp minimum height. Desktop arrows/Home/End coordinate focus and
+selection with RTL reversal while Tab remains ordinary traversal. Automation exposes a Tab
+selection container with TabItem children.
+
+Eight focused tests and the 415-test full unit suite pass. Existing NavigationBar/Rail parity
+remained 5/5, and the complete artifact `artifacts/visual-parity/xunit/20260730-181624-722` retained
+136 accepted rows, two typography skips, and only four authorized circular-wavy warnings. A direct
+alpha22 diagnostic at `artifacts/visual-parity/xunit/20260730-180515-872` exposed its desktop
+full-width-per-item measurement defect, so ShortNavigationBar static parity is recorded as
+unavailable instead of weakening alpha25 layout or comparison policy.

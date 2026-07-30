@@ -330,6 +330,21 @@ both standard expanded axes with the same settled geometry. Alpha25-only API mat
 motion, responsive, keyboard, and accessibility claims use source review plus deterministic tests,
 not extra visual-parity claims.
 
+## Short navigation bar
+
+`ShortNavigationBar.kt` defines an 80dp-minimum selectable group with two container-owned measure
+policies. EqualWeight divides the complete width among the items. Centered uses 20/15/10/5%
+padding per side for three/four/five/six items, lets intrinsic content grow each item up to its
+equal-width maximum, and keeps the resulting group centered. Top-icon items use the vertical
+56×32dp indicator geometry; Start-icon items use a content-width indicator with 16dp horizontal
+and 8dp vertical padding. Labels are always present when supplied.
+
+`MaterialShortNavigationBar` follows those alpha25 policies and adds the D012 Auto policy at the
+Material 600dp compact-to-medium boundary. Items remain `MaterialNavigationItem` instances, so
+selection survives responsive changes. The pinned alpha22 desktop producer exposes the API but
+measures every item at the full bar width, unlike alpha25 and its tests; executable static parity
+is therefore unavailable for this family rather than reported as a pass.
+
 ## Scaffold layout and caller-applied content padding
 
 `Scaffold.kt:87-305` owns five slots: top bar, body content, snackbar host, floating action button,

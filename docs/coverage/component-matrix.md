@@ -25,8 +25,8 @@ are defined in [`ROADMAP.md`](../../ROADMAP.md).
 | Status | Feature families | Share |
 |---|---:|---:|
 | Implemented | 22 | 44% |
-| Partial | 18 | 36% |
-| Missing | 10 | 20% |
+| Partial | 19 | 38% |
+| Missing | 9 | 18% |
 | Total | 50 | 100% |
 
 The theming, color, typography, shape, motion, ripple, token-generation, and Material Symbols
@@ -79,7 +79,7 @@ represent them.
 | Navigation | Tab and TabRow families | `MaterialTab`, `MaterialTabs` | Partial | `IsScrollable` adapts `PrimaryScrollableTabRow`: 52dp edges, 90dp minimum intrinsic tabs, and physical-pixel selected-tab centring. Alpha22 executable parity passes at 240dp and 600dp. Complete indicator/layout variants, icon permutations, and richer accessibility/keyboard coverage remain. |
 | Navigation | NavigationBar | `MaterialNavigationBar` | Implemented | Bar and rail share one Avalonia control. |
 | Navigation | NavigationRail | `MaterialNavigationBar` | Implemented | Selected through the navigation variant. |
-| Navigation | ShortNavigationBar and WideNavigationRail | None | Missing | Adaptive and expanded/collapsed navigation forms are absent. |
+| Navigation | ShortNavigationBar and WideNavigationRail | `MaterialShortNavigationBar`, `MaterialNavigationItem` | Partial | ShortNavigationBar is complete under D012: EqualWeight/Centered plus 600dp Auto resolution preserve item instances and `SelectedIndex`; Top/Start item geometry, intrinsic height, RTL-aware arrow/Home/End navigation, ordinary Tab traversal, and Tab/TabItem selection automation are deterministic-test covered. The pinned alpha22 desktop producer has a full-width-per-item measurement defect, so alpha25 static parity is unavailable. WideNavigationRail remains absent. |
 | Navigation | Modal, dismissible, and permanent drawers | `MaterialNavigationDrawer` | Partial | Compose state and sheet variants are not fully represented. |
 | Navigation | Top/Bottom/Flexible AppBar families | `MaterialAppBar` | Partial | Standard and alpha25 flexible Small/Medium/Large top app bars provide non-null/reset external state, Pinned/EnterAlways/ExitUntilCollapsed behavior, `ScrollViewer` and logical-delta coordination, controlled title transitions, and `IExpandCollapseProvider`; 15 focused tests pass, and the supported alpha22 standard-Medium expanded endpoint passes three times reproducibly with exact probes and zero rejected pixels. Flexible variants and alpha25 collapsed color are reference-version unavailable; `BottomAppBar`/`FlexibleBottomAppBar` remain absent. |
 | Layout | Scaffold | `MaterialScaffold` | Implemented | Five slots coordinate body, top/bottom bars, external snackbar host, and FAB. Read-only bindable `ContentPadding` preserves Compose's caller-applies-padding contract; null `ContentWindowInsets` observes TopLevel safe area and explicit `Thickness` overrides it. Start/Center/End/EndOverlay, RTL, physical-pixel placement, alpha25 z-order, and neutral Pane automation are deterministic-test covered. Two alpha22-compatible light/dark cases are `exactMatch` with zero warnings/rejected pixels. Snackbar queue/timeouts remain the separate host-state row below. |
