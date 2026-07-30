@@ -101,5 +101,210 @@
             <Setter Property="Height" Value="1" />
             <Setter Property="Margin" Value="0,8" />
         </ControlTheme>
+
+        <!-- ExposedDropdownMenuBox owns coordination and sizing in Compose. On Avalonia the
+             MaterialExposedDropdownMenu maps those policies onto ComboBox so native selection,
+             text input, popup dismissal, keyboard navigation, and automation stay intact. -->
+        <ControlTheme x:Key="{x:Type m3:MaterialExposedDropdownMenu}"
+                      TargetType="m3:MaterialExposedDropdownMenu">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="ItemContainerTheme"
+                    Value="{DynamicResource {x:Type m3:MaterialExposedDropdownMenuItem}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid RowDefinitions="Auto,Auto">
+                        <Panel Grid.Row="0"
+                               Height="{TemplateBinding AnchorLayoutHeight}">
+                            <!-- Transparent hit target: the control paints the Material field
+                                 behind it, while ComboBox owns the pointer gesture. -->
+                            <Border x:Name="PART_Anchor"
+                                    Margin="{TemplateBinding AnchorMargin}"
+                                    Height="56"
+                                    Background="Transparent" />
+
+                            <TextBlock x:Name="PART_Placeholder"
+                                       Height="34"
+                                       Margin="{TemplateBinding AnchorContentMargin}"
+                                       VerticalAlignment="Bottom"
+                                       Foreground="{TemplateBinding PlaceholderBrush}"
+                                       Text="{TemplateBinding PlaceholderText}">
+                                <TextBlock.IsVisible>
+                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                        <Binding Path="SelectionBoxItem"
+                                                 RelativeSource="{RelativeSource TemplatedParent}"
+                                                 Converter="{x:Static ObjectConverters.IsNull}" />
+                                        <Binding Path="!IsEditable"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                    </MultiBinding>
+                                </TextBlock.IsVisible>
+                            </TextBlock>
+
+                            <ContentControl x:Name="PART_Selection"
+                                            Height="34"
+                                            Margin="{TemplateBinding AnchorContentMargin}"
+                                            VerticalAlignment="Bottom"
+                                            VerticalContentAlignment="Center"
+                                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            Content="{TemplateBinding SelectionBoxItem}"
+                                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                            IsVisible="{TemplateBinding IsEditable, Converter={x:Static BoolConverters.Not}}"
+                                            TextElement.Foreground="{TemplateBinding Foreground}" />
+
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Height="34"
+                                     Margin="{TemplateBinding AnchorContentMargin}"
+                                     VerticalAlignment="Bottom"
+                                     VerticalContentAlignment="Center"
+                                     HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     CornerRadius="0"
+                                     FocusAdorner="{x:Null}"
+                                     Padding="0"
+                                     Text="{TemplateBinding Text, Mode=TwoWay}"
+                                     PlaceholderText="{TemplateBinding PlaceholderText}"
+                                     PlaceholderForeground="{TemplateBinding PlaceholderBrush}"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     FontFamily="{TemplateBinding FontFamily}"
+                                     FontWeight="{TemplateBinding FontWeight}"
+                                     IsVisible="{TemplateBinding IsEditable}">
+                                <TextBox.Resources>
+                                    <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent" />
+                                </TextBox.Resources>
+                            </TextBox>
+
+                            <Canvas x:Name="PART_TrailingIcon"
+                                    Width="24"
+                                    Height="24"
+                                    Margin="{TemplateBinding TrailingIconMargin}"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    IsHitTestVisible="False"
+                                    RenderTransformOrigin="50%,50%">
+                                <Canvas.RenderTransform>
+                                    <RotateTransform Angle="{TemplateBinding ArrowAngle}" />
+                                </Canvas.RenderTransform>
+                                <!-- Keep the Material vector's 24dp viewport. Stretching its
+                                     10x5 path bounds would incorrectly turn it into a 24dp-wide
+                                     triangle. -->
+                                <Path Fill="{mcu:MdSysColor OnSurfaceVariant}"
+                                      Data="M7,10 L12,15 L17,10 Z" />
+                            </Canvas>
+
+                            <Popup x:Name="PART_Popup"
+                                   WindowManagerAddShadowHint="False"
+                                   IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+                                   PlacementTarget="PART_Anchor"
+                                   Placement="BottomEdgeAlignedLeft"
+                                   HorizontalOffset="-8"
+                                   VerticalOffset="-8"
+                                   IsLightDismissEnabled="True"
+                                   ShouldUseOverlayLayer="True"
+                                   InheritsTransform="True">
+                                <!-- Reserve unclipped paint space inside the popup root. The
+                                     placement offsets keep the surface itself aligned to the
+                                     anchor while MaterialContainer paints the level-2 shadow
+                                     into this transparent gutter. -->
+                                <Border Margin="8">
+                                    <m3:MaterialSurface x:Name="PART_MenuSurface"
+                                                        Width="{TemplateBinding PopupWidth}"
+                                                        MinWidth="{TemplateBinding PopupMinWidth}"
+                                                        MaxWidth="{TemplateBinding PopupMaxWidth}"
+                                                        MaxHeight="{TemplateBinding EffectiveMenuMaxHeight}"
+                                                        Background="{mcu:MdSysColor SurfaceContainer}"
+                                                        CornerRadius="4"
+                                                        Padding="0,8"
+                                                        ShadowElevation="3"
+                                                        Opacity="{TemplateBinding MenuOpacity}"
+                                                        RenderTransformOrigin="50%,0%">
+                                        <m3:MaterialSurface.RenderTransform>
+                                            <ScaleTransform ScaleX="{TemplateBinding MenuScale}"
+                                                            ScaleY="{TemplateBinding MenuScale}" />
+                                        </m3:MaterialSurface.RenderTransform>
+                                        <ScrollViewer HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                                      VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                                      IsScrollChainingEnabled="False">
+                                            <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                                            ItemsPanel="{TemplateBinding ItemsPanel}" />
+                                        </ScrollViewer>
+                                    </m3:MaterialSurface>
+                                </Border>
+                            </Popup>
+                        </Panel>
+
+                        <TextBlock x:Name="PART_Supporting"
+                                   Grid.Row="1"
+                                   Margin="16,4,16,0"
+                                   HorizontalAlignment="Left"
+                                   Classes="body-small"
+                                   Foreground="{TemplateBinding SupportingBrush}"
+                                   Text="{TemplateBinding SupportingText}"
+                                   IsVisible="{TemplateBinding SupportingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
+
+            <Style Selector="^:disabled /template/ Canvas#PART_TrailingIcon">
+                <Setter Property="Opacity" Value="0.38" />
+            </Style>
+
+            <Style Selector="^[IsEditable=true]">
+                <Setter Property="IsTabStop" Value="False" />
+                <Setter Property="KeyboardNavigation.TabNavigation" Value="Local" />
+            </Style>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialExposedDropdownMenuItem}"
+                      TargetType="m3:MaterialExposedDropdownMenuItem">
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Foreground" Value="{mcu:MdSysColor OnSurface}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="m3:TypographyScheme.TextStyle" Value="LabelLarge" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      MinHeight="{TemplateBinding MinHeight}"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      Background="{TemplateBinding Background}"
+                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}"
+                                      CornerRadius="{TemplateBinding CornerRadius}"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      TextElement.Foreground="{TemplateBinding Foreground}" />
+                </ControlTemplate>
+            </Setter>
+
+            <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="{mcu:MdSysColor SurfaceContainerHigh}" />
+            </Style>
+            <Style Selector="^:focus /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="{mcu:MdSysColor SurfaceContainerHigh}" />
+            </Style>
+            <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="{mcu:MdSysColor SecondaryContainer}" />
+                <Setter Property="TextElement.Foreground" Value="{mcu:MdSysColor OnSecondaryContainer}" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Opacity" Value="0.38" />
+            </Style>
+        </ControlTheme>
     </Styles.Resources>
 </Styles>

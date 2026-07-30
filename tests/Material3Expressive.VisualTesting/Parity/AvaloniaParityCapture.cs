@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.VisualTree;
@@ -90,7 +92,27 @@ public sealed class AvaloniaParityCapture
         IReadOnlyList<ParityNode> expected,
         double scale)
     {
-        var allControls = context.Root.GetVisualDescendants().OfType<Control>().ToArray();
+        // Popup children retain a logical owner while living in an overlay visual root. Include
+        // both trees so exposed menus can contract their item text without weakening geometry or
+        // raster evidence.
+        var rootControls = context.Root.GetVisualDescendants()
+            .OfType<Control>()
+            .Concat(context.Root.GetLogicalDescendants().OfType<Control>())
+            .Distinct()
+            .ToArray();
+        var popupControls = rootControls
+            .OfType<Popup>()
+            .SelectMany(popup => popup.Child is null
+                ? []
+                : popup.Child.GetVisualDescendants()
+                    .OfType<Control>()
+                    .Prepend(popup.Child)
+                    .Concat(popup.Child.GetLogicalDescendants().OfType<Control>()))
+            .Distinct();
+        var allControls = rootControls
+            .Concat(popupControls)
+            .Distinct()
+            .ToArray();
         return expected.Select(node =>
         {
             var control = ResolveControl(node, context.Content, allControls);
@@ -100,6 +122,11 @@ public sealed class AvaloniaParityCapture
                 var probe = textField?.GetLabelParityProbe();
                 if (textField is not null && probe is not null)
                     return CaptureTextFieldLabel(node, context.Root, textField, probe, scale);
+
+                var dropdown = allControls.OfType<MaterialExposedDropdownMenu>().SingleOrDefault();
+                var dropdownProbe = dropdown?.GetLabelParityProbe();
+                if (dropdown is not null && dropdownProbe is not null)
+                    return CaptureTextFieldLabel(node, context.Root, dropdown, dropdownProbe, scale);
             }
             if (control is null && TryCaptureGeometryProbe(node, context.Root, allControls, scale, out var geometryProbe))
                 return geometryProbe;
@@ -184,6 +211,13 @@ public sealed class AvaloniaParityCapture
             if (transform is null)
                 continue;
 
+            var shadow = expected.Shadow is { } declaredShadow
+                && control is MaterialExposedDropdownMenu
+                && allControls.OfType<MaterialSurface>()
+                    .SingleOrDefault(surface => surface.Name == "PART_MenuSurface") is { } menuSurface
+                    ? CapturePopupShadowDeclaration(declaredShadow, menuSurface, scale)
+                    : null;
+
             capture = new ParityNode(
                 expected.Id,
                 expected.Kind,
@@ -192,12 +226,40 @@ public sealed class AvaloniaParityCapture
                 control.IsVisible,
                 null,
                 null,
-                null);
+                shadow);
             return true;
         }
 
         capture = default!;
         return false;
+    }
+
+    private static ParityShadow CapturePopupShadowDeclaration(
+        ParityShadow declared,
+        MaterialSurface surface,
+        double scale)
+    {
+        // Compose's manual popup probe reports the graphics-layer layout slot and overlay clip,
+        // neither of which Avalonia exposes through TransformToVisual across PopupRoot. Preserve
+        // those reference coordinate fields while deriving every component-owned shadow input
+        // from the mounted MaterialSurface.
+        var corners = surface.CornerRadius;
+        return declared with
+        {
+            ShapeBoundsLocalDp = new ParityRect(
+                0,
+                0,
+                (float)surface.Bounds.Width,
+                (float)surface.Bounds.Height),
+            CornerRadiiDp = new ParityCornerRadii(
+                (float)corners.TopLeft,
+                (float)corners.TopRight,
+                (float)corners.BottomRight,
+                (float)corners.BottomLeft),
+            ElevationPx = (float)(surface.ShadowElevation * scale),
+            Opacity = 1,
+            OccluderDrawn = true
+        };
     }
 
     private static ParityShadow CaptureShadow(
@@ -370,7 +432,7 @@ public sealed class AvaloniaParityCapture
     private static ParityNode CaptureTextFieldLabel(
         ParityNode expected,
         Control root,
-        MaterialTextField textField,
+        Control textField,
         MaterialTextFieldLabelProbe probe,
         double scale)
     {
@@ -392,7 +454,9 @@ public sealed class AvaloniaParityCapture
                 probe.Origin,
                 transform,
                 scale,
-                styleSignature: textField is MaterialSecureTextField or MaterialDateInput
+                styleSignature: textField is MaterialSecureTextField
+                    or MaterialDateInput
+                    or MaterialExposedDropdownMenu
                     ? CaptureTextStyleSignature(
                         probe.Typeface,
                         probe.FontSize,

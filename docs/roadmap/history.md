@@ -3,6 +3,25 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — ExposedDropdownMenu closure
+
+Closed `M4-DROPDOWN-001` with a filled/outlined `MaterialExposedDropdownMenu` that preserves
+Avalonia ComboBox ownership of selection, editable text, keyboard behavior, dismissal, and
+automation. Material coordination adds exact/intrinsic popup widths, the 48dp visible-window
+margin, live height constraints, edge flipping, focus retention/return, immediate indicator
+rotation, FastSpatial/FastEffects entrance motion, a level-2 shadow, and live accessible
+name/help/invalid metadata. Focused tests passed 7/7, the full unit project passed 344/344,
+parity-contract tests passed 47/47, and the isolated Catalog build completed without errors.
+
+Three alpha22-compatible checkpoints passed in consecutive runs at
+`artifacts/visual-parity/xunit/20260730-074523-576` and
+`artifacts/visual-parity/xunit/20260730-074632-137`, with identical timeline hashes and zero
+rejected pixels. All checkpoints retain full raster; the 100ms row sets elevation to zero in both
+frameworks so it contracts the live scale/alpha/text transition independently of backend-specific
+scaled-shadow mesh rasterization, while tick zero and settled retain the real 3dp shadow.
+Alpha25's newer selectable/grouped menu-item appearance is not executable in the alpha22 producer;
+native selection behavior is covered deterministically instead.
+
 ## 2026-07-30 — SecureTextField closure
 
 Closed `M4-SECURE-TEXT-001` with filled/outlined `MaterialSecureTextField`, native Avalonia

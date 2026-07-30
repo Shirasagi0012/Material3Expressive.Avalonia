@@ -7,6 +7,7 @@ import material3expressive.compose.reference.scenes.registerBottomSheetScenes
 import material3expressive.compose.reference.scenes.registerComponentMotionScenes
 import material3expressive.compose.reference.scenes.registerComponentScenes
 import material3expressive.compose.reference.scenes.registerDividerScenes
+import material3expressive.compose.reference.scenes.registerExposedDropdownMenuScenes
 import material3expressive.compose.reference.scenes.registerFoundationScenes
 import material3expressive.compose.reference.scenes.registerMotionProbeScenes
 import material3expressive.compose.reference.scenes.registerNavigationScenes
@@ -57,6 +58,7 @@ fun main(args: Array<String>) {
         registerTextFieldScenes()
         registerPickerInputScenes()
         registerNavigationScenes()
+        registerExposedDropdownMenuScenes()
     }
 
     val allIds = registry.allIds()

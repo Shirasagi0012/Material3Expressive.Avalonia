@@ -113,9 +113,26 @@
                         <TextBlock Classes="title-large" Text="Tooltips and menus" />
                         <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
                                    Foreground="{mcu:MdSysColor OnSurfaceVariant}"
-                                   Text="The tooltip attaches to a control rather than wrapping it, so it does not change the layout. The menu is a restyle of Avalonia's, which already handles keyboard navigation, submenus and placement." />
+                                   Text="The tooltip attaches to a control rather than wrapping it, so it does not change the layout. Stock menus retain Avalonia's submenu behavior; exposed dropdowns coordinate a Material text-field anchor, selection, editable input, popup placement, and focus." />
                         <Border Classes="demo-canvas">
                             <WrapPanel ItemSpacing="16" LineSpacing="16">
+                                <m3:MaterialExposedDropdownMenu Width="240"
+                                                                Label="Color"
+                                                                PlaceholderText="Choose a color"
+                                                                SelectedIndex="1">
+                                    <x:String>Red</x:String>
+                                    <x:String>Green</x:String>
+                                    <x:String>Blue</x:String>
+                                </m3:MaterialExposedDropdownMenu>
+                                <m3:MaterialExposedDropdownMenu Width="240"
+                                                                Label="Editable color"
+                                                                Variant="Outlined"
+                                                                IsEditable="True"
+                                                                Text="Violet">
+                                    <x:String>Violet</x:String>
+                                    <x:String>Indigo</x:String>
+                                    <x:String>Blue</x:String>
+                                </m3:MaterialExposedDropdownMenu>
                                 <m3:MaterialButton Variant="Tonal" Content="Hover me"
                                                    m3:MaterialTooltip.Tip="Archives the conversation" />
                                 <m3:MaterialButton Variant="Tonal" Content="Rich tooltip"

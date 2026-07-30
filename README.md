@@ -186,6 +186,32 @@ values through state constructors. Raw text is a cancelable control transaction,
 application state. For range state, use `UpdateRange(start, end)` when replacing both endpoints
 atomically.
 
+## Exposed dropdown menus
+
+`MaterialExposedDropdownMenu` combines Material filled or outlined text-field chrome with
+Avalonia's native `ComboBox` behavior. Bind the inherited `SelectedItem`, `SelectedIndex`,
+`IsDropDownOpen`, and—when `IsEditable="True"`—`Text` properties. These are ordinary scalar
+application state under D002; there is no second dropdown state object to keep synchronized.
+
+```xml
+<m3:MaterialExposedDropdownMenu Label="Color"
+                                Width="240"
+                                SelectedItem="{Binding Color, Mode=TwoWay}">
+    <x:String>Red</x:String>
+    <x:String>Green</x:String>
+    <x:String>Blue</x:String>
+</m3:MaterialExposedDropdownMenu>
+```
+
+The popup matches the anchor width by default. Set `MatchAnchorWidth="False"` to use Material's
+112–280dp intrinsic menu range, or use inherited `MaxDropDownHeight` to add a stricter application
+limit. The control also reserves AndroidX's 48dp visible-window margin and lets Avalonia's popup
+positioner flip or slide at an edge. Enter/Space opens a non-editable anchor; Enter opens an
+editable one without consuming typed spaces. Arrow keys enter the choices, Escape closes, and
+selection returns focus to the anchor. The inherited ComboBox automation peer retains
+ExpandCollapse, Selection, and editable Value patterns while `Label`, `SupportingText`, and
+`IsError` supply the accessible name, help text, and invalid status.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and
