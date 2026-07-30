@@ -31,9 +31,9 @@ public class MaterialSegmentedButton : ToggleButton
 {
     /// <summary>
     /// The 24x24 Filled.Check vector from AndroidX <c>internal/Icons.kt</c>.
-    /// Avalonia's <see cref="Geometry"/> is the closest XAML representation of Compose's
-    /// <c>ImageVector</c>: it preserves the upstream viewport and path data while remaining
-    /// bindable through <see cref="SelectionIcon"/>.
+    /// Avalonia's <see cref="Geometry"/> preserves the upstream path data while remaining
+    /// bindable through <see cref="SelectionIcon"/>; the control template supplies the fixed
+    /// 24×24 viewport that a geometry does not carry by itself.
     /// </summary>
     public static Geometry DefaultSelectionIcon { get; } =
         Geometry.Parse("M 9,16.17 L 4.83,12 L 3.41,13.41 L 9,19 L 21,7 L 19.59,5.59 Z");

@@ -164,6 +164,9 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-30: The full-suite audit repaired SegmentedButton's selection icon viewport: the
+  official Filled Check now retains its 24×24 ImageVector padding inside the 18dp slot. All four
+  rows again pass the unchanged comparison contract with zero warnings or rejected pixels.
 - 2026-07-30: PullToRefresh closed M4 with application-owned refresh lifetime, replaceable
   non-null state, desktop pull/nested-scroll/keyboard behavior, UI Automation, 12 focused tests,
   and reproducible start/mid/settled retraction parity. The indicator host now applies the

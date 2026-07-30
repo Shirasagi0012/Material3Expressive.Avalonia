@@ -3,6 +3,15 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — SegmentedButton viewport regression repair
+
+The program-level parity audit found that Avalonia `PathIcon` fitted the Filled Check geometry's
+ink bounds and discarded the official ImageVector's transparent 24×24 viewport. The selection
+glyph was therefore enlarged inside its 18dp slot. The template now retains the fixed viewport
+with an explicit `Viewbox` child. All 13 focused tests pass, and all four unchanged parity rows at
+`artifacts/visual-parity/xunit/20260730-095933-695` are `semanticRasterEquivalent` with zero
+warnings and rejected pixels.
+
 ## 2026-07-30 — PullToRefresh closure
 
 Closed `M4-REFRESH-001` with `MaterialPullToRefreshBox` and replaceable non-null
