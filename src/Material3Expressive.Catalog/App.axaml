@@ -20,6 +20,10 @@
 
     <!-- One literal seed feeds every colour role; the rail's theme toggle only flips the variant. -->
     <m3:MaterialThemeScope.Theme>
-        <m3:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}" />
+        <m3:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}">
+            <m3:MaterialTheme.RippleTheme>
+                <m3:RippleThemeConfiguration FocusIndication="InsetRing" />
+            </m3:MaterialTheme.RippleTheme>
+        </m3:MaterialTheme>
     </m3:MaterialThemeScope.Theme>
 </Application>

@@ -56,36 +56,22 @@
                     <Border Background="{TemplateBinding Background}"
                             CornerRadius="{m3:MdButtonToken ContainerCornerRadius}">
                         <Grid ClipToBounds="True">
-                            <Border x:Name="StateLayer"
-                                    Background="{m3:MdButtonToken StateLayerColor}"
-                                    CornerRadius="{m3:MdButtonToken ContainerCornerRadius}"
-                                    Opacity="0" />
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                               RecognizesAccessKey="True"
                                               Content="{TemplateBinding Content}"
                                               TextElement.Foreground="{TemplateBinding Foreground}" />
+                            <m3:MaterialRipplePresenter StateLayerBrush="{m3:MdButtonToken StateLayerColor}"
+                                                       CornerRadius="{m3:MdButtonToken ContainerCornerRadius}" />
                         </Grid>
                     </Border>
                 </ControlTemplate>
             </Setter>
 
-            <Style Selector="^:pointerover /template/ Border#StateLayer">
-                <Setter Property="Opacity" Value="{m3:MdButtonToken HoverStateLayerOpacity}" />
-            </Style>
-            <Style Selector="^:focus-visible /template/ Border#StateLayer">
-                <Setter Property="Opacity" Value="{m3:MdButtonToken FocusStateLayerOpacity}" />
-            </Style>
-            <Style Selector="^:pressed /template/ Border#StateLayer">
-                <Setter Property="Opacity" Value="{m3:MdButtonToken PressedStateLayerOpacity}" />
-            </Style>
             <Style Selector="^:disabled">
                 <Setter Property="Background" Value="{m3:MdButtonToken DisabledContainerColor}" />
                 <Setter Property="Foreground" Value="{m3:MdButtonToken DisabledLabelTextColor}" />
-            </Style>
-            <Style Selector="^:disabled /template/ Border#StateLayer">
-                <Setter Property="Opacity" Value="0" />
             </Style>
         </ControlTheme>
 

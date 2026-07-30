@@ -140,7 +140,14 @@ public class MaterialSlider : RangeBase
             crossLength / 2 - stateLayerSize / 2,
             stateLayerSize,
             stateLayerSize);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, new CornerRadius(stateLayerSize / 2));
+        var focusRingArea = RectOnAxis(
+            renderedHandlePosition - handleWidth / 2,
+            crossLength / 2 - _tokens.HandleHeight / 2,
+            handleWidth,
+            _tokens.HandleHeight).Inflate(4);
+        _interaction.FocusRingArea = focusRingArea;
+        _interaction.FocusRingCornerRadius =
+            new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2);
 
         var handleBrush = enabled ? _colors.HandleColor : _colors.DisabledHandleColor;
         var handle = RectOnAxis(
@@ -150,6 +157,8 @@ public class MaterialSlider : RangeBase
             _tokens.HandleHeight);
 
         context.DrawRectangle(handleBrush, null, new RoundedRect(handle, new CornerRadius(handleWidth / 2)));
+        base.Render(context);
+        _interaction.DrawLayers(context, _colors.StateLayerColor, new CornerRadius(stateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)

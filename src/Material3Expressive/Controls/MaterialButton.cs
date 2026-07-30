@@ -132,9 +132,8 @@ public class MaterialButton : Button
             CurrentElevation(enabled),
             shadow);
 
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
-
         base.Render(context);
+        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

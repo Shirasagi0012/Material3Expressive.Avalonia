@@ -70,8 +70,8 @@ public class MaterialTab : ToggleButton
 
     public override void Render(DrawingContext context)
     {
-        _interaction.DrawLayers(context, _colors.StateLayerColor, default);
         base.Render(context);
+        _interaction.DrawLayers(context, _colors.StateLayerColor, default);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

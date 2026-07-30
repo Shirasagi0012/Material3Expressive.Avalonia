@@ -45,16 +45,21 @@ public sealed class RippleAnimation : IAnimation
     private readonly Point _center;
     private readonly double _startRadius;
     private readonly double _endRadius;
+    private readonly bool _bounded;
 
-    private bool _fadedIn;
-    private bool _releaseRequested;
+    private bool _finishedFadingIn;
+    private bool _finishRequested;
+    private bool _fadingOut;
 
-    public RippleAnimation(Point origin, Size bounds, bool bounded = true)
+    public RippleAnimation(Point origin, Size bounds, bool bounded = true, double? radius = null)
     {
-        _origin = origin;
+        _bounded = bounded;
         _center = new Point(bounds.Width / 2, bounds.Height / 2);
+        // CommonRipple deliberately discards the press position for an unbounded ripple. It
+        // starts in the centre and therefore has no centre drift at all.
+        _origin = bounded ? origin : _center;
         _startRadius = StartRadius(bounds);
-        _endRadius = EndRadius(bounds, bounded);
+        _endRadius = radius ?? EndRadius(bounds, bounded);
 
         _alpha = new TweenAnimation(0, FadeIn, Easings.Linear);
         _radiusFraction = new TweenAnimation(0, RadiusGrowth, Easings.FastOutSlowIn);
@@ -66,12 +71,18 @@ public sealed class RippleAnimation : IAnimation
     }
 
     /// <summary>The ripple's opacity multiplier, before the state layer's own opacity.</summary>
-    public double Value => _releaseRequested && !_fadedIn ? 1 : _alpha.Value;
+    public double Value => _finishRequested && !_finishedFadingIn ? 1 : _alpha.Value;
 
     public bool IsRunning => _alpha.IsRunning || _radiusFraction.IsRunning || _centerFraction.IsRunning;
 
     /// <summary>True once the ripple has faded out and can be dropped.</summary>
     public bool IsComplete { get; private set; }
+
+    /// <summary>Whether this ripple is clipped to its target layout.</summary>
+    public bool IsBounded => _bounded;
+
+    /// <summary>The fully expanded radius, including an explicit per-call-site override.</summary>
+    public double TargetRadius => _endRadius;
 
     public double Radius => _startRadius + (_endRadius - _startRadius) * _radiusFraction.Value;
 
@@ -79,15 +90,21 @@ public sealed class RippleAnimation : IAnimation
         _origin.X + (_center.X - _origin.X) * _centerFraction.Value,
         _origin.Y + (_center.Y - _origin.Y) * _centerFraction.Value);
 
-    /// <summary>Begins the fade-out. Safe to call more than once.</summary>
-    public void Release()
+    /// <summary>
+    /// Requests completion. The fade-out starts only after all three fade-in animations finish.
+    /// </summary>
+    public void Finish()
     {
-        if (_releaseRequested)
+        if (_finishRequested)
             return;
 
-        _releaseRequested = true;
-        _alpha.AnimateTo(0, FadeOut, Easings.Linear);
+        _finishRequested = true;
+        if (_finishedFadingIn)
+            BeginFadeOut();
     }
+
+    /// <summary>Compatibility name for ending the ripple associated with a released press.</summary>
+    public void Release() => Finish();
 
     public bool Tick(TimeSpan delta)
     {
@@ -95,10 +112,20 @@ public sealed class RippleAnimation : IAnimation
         var radiusRunning = _radiusFraction.Tick(delta);
         var centerRunning = _centerFraction.Tick(delta);
 
-        if (!alphaRunning && !_releaseRequested)
-            _fadedIn = true;
+        // RippleAnimation.fadeIn() uses coroutineScope, so the phase completes only when alpha,
+        // radius, and centre have all arrived. Alpha reaches one at 75ms but radius/centre take
+        // 225ms. Starting fade-out at 75ms makes quick taps visibly collapse too early.
+        if (!_finishedFadingIn && !alphaRunning && !radiusRunning && !centerRunning)
+        {
+            _finishedFadingIn = true;
+            if (_finishRequested)
+            {
+                BeginFadeOut();
+                return true;
+            }
+        }
 
-        if (_releaseRequested && !alphaRunning)
+        if (_fadingOut && !alphaRunning)
         {
             IsComplete = true;
             return false;
@@ -113,13 +140,23 @@ public sealed class RippleAnimation : IAnimation
         _radiusFraction.Settle();
         _centerFraction.Settle();
 
-        if (_releaseRequested)
+        _finishedFadingIn = true;
+        if (_finishRequested)
             IsComplete = true;
     }
 
+    private void BeginFadeOut()
+    {
+        if (_fadingOut || IsComplete)
+            return;
+
+        _fadingOut = true;
+        _alpha.AnimateTo(0, FadeOut, Easings.Linear);
+    }
+
     /// <summary>
-    /// Draws the ripple at its current radius and opacity. The caller supplies the clip, because
-    /// the state layer under it needs the same one.
+    /// Draws the ripple at its current radius and opacity. The caller supplies a clip for a
+    /// bounded node and deliberately omits it for an unbounded one.
     /// </summary>
     public void Draw(DrawingContext context, IBrush brush, double opacity)
     {

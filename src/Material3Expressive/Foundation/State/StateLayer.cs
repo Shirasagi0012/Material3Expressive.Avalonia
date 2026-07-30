@@ -12,8 +12,8 @@ namespace Material3Expressive.Foundation;
 /// triggers:
 /// <list type="number">
 /// <item>
-/// Interactions stack, but only the most recent one is shown. A button that is hovered and then
-/// focused shows the focus layer; unfocusing it returns to hover, not to nothing.
+/// Interactions stack, but only the most recent one is shown. The ordered stack lives in
+/// <c>MaterialInteractionHost</c>; this type supplies the token and transition lookup.
 /// </item>
 /// <item>
 /// The fades are not symmetric. Focus arrives over 45ms and leaves over 15; a drag arrives over 45
@@ -36,9 +36,8 @@ public static class StateLayer
     /// The interaction the layer should show, or <see cref="InteractionState.None" />.
     /// </summary>
     /// <remarks>
-    /// "Most recent" in upstream terms; here it is a fixed precedence, because Avalonia reports
-    /// interaction as independent boolean properties rather than as an ordered stream. Drag over
-    /// press over focus over hover matches the order the interactions can only ever arrive in.
+    /// This compatibility helper resolves an unordered flag set. The interaction host itself
+    /// retains arrival order, matching AndroidX's <c>interactions.lastOrNull()</c>.
     /// </remarks>
     public static InteractionState Topmost(InteractionState state)
     {

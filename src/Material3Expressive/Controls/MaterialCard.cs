@@ -86,10 +86,10 @@ public class MaterialCard : ContentControl
             CurrentElevation(enabled),
             shadow);
 
+        base.Render(context);
+
         if (IsClickable)
             _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
-
-        base.Render(context);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

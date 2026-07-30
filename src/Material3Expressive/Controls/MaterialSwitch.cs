@@ -35,7 +35,7 @@ public class MaterialSwitch : ToggleButton
     public MaterialSwitch()
     {
         _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
+        _interaction = new MaterialInteractionHost(this) { IsRippleBounded = false };
 
         _theme.Changed += (_, _) => ApplyTokens();
         _interaction.InteractionChanged += (_, _) => UpdateHandleSize();
@@ -73,6 +73,8 @@ public class MaterialSwitch : ToggleButton
             : enabled ? _colors.UnselectedTrackOutlineColor : _colors.DisabledUnselectedTrackOutlineColor;
 
         var radius = track.Height / 2;
+        _interaction.FocusRingArea = track;
+        _interaction.FocusRingCornerRadius = new CornerRadius(radius);
         var pen = trackOutline is { } ? new ImmutablePen(trackOutline, _tokens.TrackOutlineWidth) : null;
         var inset = pen is { } ? _tokens.TrackOutlineWidth / 2 : 0;
 
@@ -97,11 +99,6 @@ public class MaterialSwitch : ToggleButton
             stateLayerSize,
             stateLayerSize);
 
-        _interaction.DrawLayers(
-            context,
-            IsSelected ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
-            new CornerRadius(stateLayerSize / 2));
-
         var handleFill = enabled
             ? IsSelected ? _colors.SelectedHandleColor : _colors.UnselectedHandleColor
             : IsSelected ? _colors.DisabledSelectedHandleColor : _colors.DisabledUnselectedHandleColor;
@@ -109,6 +106,10 @@ public class MaterialSwitch : ToggleButton
         context.DrawEllipse(handleFill, null, centre, handleRadius, handleRadius);
 
         base.Render(context);
+        _interaction.DrawLayers(
+            context,
+            IsSelected ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
+            new CornerRadius(stateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -138,6 +139,7 @@ public class MaterialSwitch : ToggleButton
     {
         _tokens = _theme.Theme.SwitchTokens;
         _colors = _theme.Theme.GetSwitchColors(_theme.IsDark);
+        _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         Padding = new Thickness(_tokens.TrackWidth + 12, 0, 0, 0);
         InvalidateMeasure();

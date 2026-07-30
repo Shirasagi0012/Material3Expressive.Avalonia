@@ -185,8 +185,8 @@ Module layout: `androidMain` is the hardware-accelerated `RippleDrawable`/
   calls `finish()` on all existing ripples (multi-touch and rapid taps overlap
   gracefully). Interactions arriving before first measure are queued
   (`pendingInteractions`) and flushed in `onRemeasured`.
-- Draw order per frame: content → state layer → ripples; press alpha is applied
-  at draw time (`color.copy(alpha = pressedAlpha)`).
+- Draw order per frame in the current node: content → press ripples → non-press state layer /
+  focus ring; press alpha is applied at draw time (`color.copy(alpha = pressedAlpha)`).
 
 **State layer** (non-press states, `Ripple.kt:433`): a single `Animatable` alpha —
 deliberately *one* layer, not incoming+outgoing pairs (upstream comment: outgoing

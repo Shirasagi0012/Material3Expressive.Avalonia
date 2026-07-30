@@ -267,14 +267,13 @@ public class MaterialSegmentedButton : ToggleButton
             _tokens.OutlineWidth);
 
         _interaction.InteractionArea = new Rect(Bounds.Size);
+        base.Render(context);
         _interaction.DrawLayers(
             context,
             enabled
                 ? active ? _colors.ActiveContentColor : _colors.InactiveContentColor
                 : active ? _colors.DisabledActiveContentColor : _colors.DisabledInactiveContentColor,
             ContainerCornerRadius);
-
-        base.Render(context);
     }
 
     private static void DrawContainer(

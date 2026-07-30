@@ -37,6 +37,7 @@ public partial class MaterialTheme : AvaloniaObject
         TypographyScheme = new TypographyScheme();
         ShapeScheme = new ShapeScheme();
         MotionScheme = new MotionScheme();
+        RippleTheme = new RippleThemeConfiguration();
     }
 
     /// <summary>Raised whenever this theme or any of its schemes changes.</summary>
@@ -46,6 +47,7 @@ public partial class MaterialTheme : AvaloniaObject
     [GeneratedStyledProperty] public partial TypographyScheme TypographyScheme { get; set; }
     [GeneratedStyledProperty] public partial ShapeScheme ShapeScheme { get; set; }
     [GeneratedStyledProperty] public partial MotionScheme MotionScheme { get; set; }
+    [GeneratedStyledProperty] public partial RippleThemeConfiguration RippleTheme { get; set; }
 
     /// <summary>
     /// Per-component token overrides, layered onto the generated defaults when the snapshot is
@@ -67,7 +69,8 @@ public partial class MaterialTheme : AvaloniaObject
         if (e.Property != ColorSchemeProperty
             && e.Property != TypographySchemeProperty
             && e.Property != ShapeSchemeProperty
-            && e.Property != MotionSchemeProperty)
+            && e.Property != MotionSchemeProperty
+            && e.Property != RippleThemeProperty)
             return;
 
         Detach(e.OldValue);

@@ -392,13 +392,13 @@ public sealed class MaterialListItem : ToggleButton
             elevation: CurrentElevation(),
             shadowColor: ShadowColor);
 
+        base.Render(context);
+
         // A disabled row does not originate pointer/keyboard feedback, but an owning reorder
         // surface can still supply DragInteraction. Compose keeps that dragged state layer active
         // through the same interaction source even though combinedClickable itself is disabled.
         if (IsInteractive && (IsEffectivelyEnabled || EffectiveDragged))
             _interaction.DrawLayers(context, ContentBrush(), corners);
-
-        base.Render(context);
     }
 
     /// <summary>

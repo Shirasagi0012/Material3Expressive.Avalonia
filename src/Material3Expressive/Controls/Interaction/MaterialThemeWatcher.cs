@@ -34,10 +34,12 @@ public sealed class MaterialThemeWatcher
         _owner.AttachedToLogicalTree += OnAttached;
         _owner.PropertyChanged += OnPropertyChanged;
 
-        // Deliberately not resolving here: a control has no ActualThemeVariant until it is in a
-        // tree, and an owner's constructor has not finished running either. Consumers read
-        // ResolvedTheme.Default until the first attach, which is the same contract a control
-        // reading the theme itself has.
+        // Before attachment a control has no ActualThemeVariant and its constructor may not have
+        // finished, so consumers read ResolvedTheme.Default until the first attach. A template
+        // overlay can instead be materialized after its templated parent has already attached; in
+        // that case there will be no future AttachedToLogicalTree event for this watcher.
+        if (((ILogical)_owner).IsAttachedToLogicalTree)
+            Update();
     }
 
     /// <summary>Raised whenever the theme or the element's theme variant changes.</summary>

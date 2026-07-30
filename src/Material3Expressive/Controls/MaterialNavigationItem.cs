@@ -127,9 +127,8 @@ public class MaterialNavigationItem : ToggleButton
         }
 
         _interaction.InteractionArea = area;
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
-
         base.Render(context);
+        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

@@ -28,6 +28,7 @@ public sealed partial class ResolvedTheme
         ColorScheme = theme.ColorScheme is { } colorScheme ? new ResolvedColorScheme(colorScheme) : null;
         Shapes = new ResolvedShapeScheme(theme.ShapeScheme);
         Motion = new ResolvedMotionScheme(theme.MotionScheme);
+        Ripple = new ResolvedRippleThemeConfiguration(theme.RippleTheme);
 
         // Typography reads the generated type scale, so the component tokens have to exist first.
         InitializeComponentTokens(theme);
@@ -44,4 +45,6 @@ public sealed partial class ResolvedTheme
     public ResolvedShapeScheme Shapes { get; }
 
     public ResolvedMotionScheme Motion { get; }
+
+    public ResolvedRippleThemeConfiguration Ripple { get; }
 }

@@ -42,7 +42,7 @@ public class MaterialCheckbox : CheckBox
     public MaterialCheckbox()
     {
         _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
+        _interaction = new MaterialInteractionHost(this) { IsRippleBounded = false };
 
         _theme.Changed += (_, _) => ApplyTokens();
         _interaction.InteractionChanged += (_, _) => InvalidateVisual();
@@ -84,11 +84,6 @@ public class MaterialCheckbox : CheckBox
         var enabled = IsEffectivelyEnabled;
         var checkedState = IsChecked;
 
-        _interaction.DrawLayers(
-            context,
-            checkedState == true ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
-            new CornerRadius(_tokens.StateLayerSize / 2));
-
         var boxSize = ReferenceContainerSize;
         var box = new Rect(
             area.X + (area.Width - boxSize) / 2,
@@ -129,6 +124,10 @@ public class MaterialCheckbox : CheckBox
         }
 
         base.Render(context);
+        _interaction.DrawLayers(
+            context,
+            checkedState == true ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
+            new CornerRadius(_tokens.StateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -151,6 +150,7 @@ public class MaterialCheckbox : CheckBox
     {
         _tokens = _theme.Theme.CheckboxTokens;
         _colors = _theme.Theme.GetCheckboxColors(_theme.IsDark);
+        _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         Padding = new Thickness(_tokens.StateLayerSize, 0, 0, 0);
         InvalidateMeasure();

@@ -307,6 +307,24 @@ C#:
 Precedence runs control-local override → nearest subtree theme → application theme → built-in
 defaults. Popups inherit the theme of the subtree that opened them.
 
+The interaction layer uses the portable AndroidX `material3-ripple` algorithm: bounded ripples
+grow from the pointer, selection-control ripples are unbounded and grow from the centre, and quick
+taps finish the complete 225ms expansion before their 150ms fade-out. Animated inset focus rings
+are the framework default:
+
+```xml
+<m3:MaterialTheme>
+    <m3:MaterialTheme.RippleTheme>
+        <m3:RippleThemeConfiguration FocusIndication="InsetRing" />
+    </m3:MaterialTheme.RippleTheme>
+</m3:MaterialTheme>
+```
+
+Inset rings use AndroidX's two-stroke defaults (outer: 0dp inset/2dp width; inner: 1dp inset/3dp
+width), the theme's `Secondary` and `OnSecondary` colours, and the current motion scheme's
+`FastSpatial`/`FastEffects` springs. Set `FocusIndication="Opacity"` on
+`RippleThemeConfiguration` when compatibility with the older focus state layer is required.
+
 ## Retuning a token
 
 Overrides ride the theme as its content and are sparse: only what they name replaces the generated

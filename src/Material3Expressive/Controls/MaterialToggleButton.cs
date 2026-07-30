@@ -102,9 +102,8 @@ public class MaterialToggleButton : ToggleButton
             enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
             _tokens.HasOutline ? _metrics.OutlineWidth : 0);
 
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
-
         base.Render(context);
+        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

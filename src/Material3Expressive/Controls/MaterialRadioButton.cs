@@ -27,7 +27,7 @@ public class MaterialRadioButton : RadioButton
     public MaterialRadioButton()
     {
         _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
+        _interaction = new MaterialInteractionHost(this) { IsRippleBounded = false };
 
         _theme.Changed += (_, _) => ApplyTokens();
         _interaction.InteractionChanged += (_, _) => InvalidateVisual();
@@ -62,8 +62,6 @@ public class MaterialRadioButton : RadioButton
             ? selected ? _colors.SelectedColor : _colors.UnselectedColor
             : selected ? _colors.DisabledSelectedColor : _colors.DisabledUnselectedColor;
 
-        _interaction.DrawLayers(context, color, new CornerRadius(_tokens.StateLayerSize / 2));
-
         var centre = area.Center;
         var ringRadius = (_tokens.IconSize - _tokens.RingWidth) / 2;
         context.DrawEllipse(null, new ImmutablePen(color, _tokens.RingWidth), centre, ringRadius, ringRadius);
@@ -76,6 +74,7 @@ public class MaterialRadioButton : RadioButton
         }
 
         base.Render(context);
+        _interaction.DrawLayers(context, color, new CornerRadius(_tokens.StateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -104,6 +103,7 @@ public class MaterialRadioButton : RadioButton
     {
         _tokens = _theme.Theme.RadioButtonTokens;
         _colors = _theme.Theme.GetRadioButtonColors(_theme.IsDark);
+        _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         Padding = new Thickness(_tokens.StateLayerSize, 0, 0, 0);
         InvalidateMeasure();

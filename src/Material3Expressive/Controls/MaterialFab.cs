@@ -140,9 +140,8 @@ public class MaterialFab : Button
             CurrentElevation(),
             shadow);
 
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
-
         base.Render(context);
+        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
