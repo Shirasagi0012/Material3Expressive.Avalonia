@@ -5,7 +5,7 @@ This inventory compares the Avalonia library with the
 `Defaults` objects, and state factories into user-facing feature families; it is not a count of
 individual Compose functions.
 
-Last audited: 2026-07-30 against AndroidX
+Last audited: 2026-07-31 against AndroidX
 `ff0a0a99c4f0cfe95d75d5df615e51d399575922` / Material3 `1.5.0-alpha25`.
 
 ## Status model
@@ -24,9 +24,9 @@ are defined in [`ROADMAP.md`](../../ROADMAP.md).
 
 | Status | Feature families | Share |
 |---|---:|---:|
-| Implemented | 21 | 42% |
+| Implemented | 22 | 44% |
 | Partial | 18 | 36% |
-| Missing | 11 | 22% |
+| Missing | 10 | 20% |
 | Total | 50 | 100% |
 
 The theming, color, typography, shape, motion, ripple, token-generation, and Material Symbols
@@ -57,7 +57,7 @@ represent them.
 | Containers | Card, ElevatedCard, OutlinedCard | `MaterialCard` | Implemented | Compose variants map to `CardVariant`. |
 | Actions | FloatingActionButton and extended/size variants | `MaterialFab` | Implemented | Label presence selects extended presentation. |
 | Actions | FloatingActionButtonMenu | `MaterialFabMenu` | Partial | Compose menu-item and toggle APIs are not fully represented. |
-| Actions | Horizontal/Vertical FloatingToolbar | None | Missing | Includes toolbar state, scroll behavior, and FAB integration. |
+| Actions | Horizontal/Vertical FloatingToolbar | `MaterialFloatingToolbar`, `FloatingToolbarScrollState` | Implemented | One D011 XAML items control adapts both axes and with/without-FAB overloads through Orientation/Auto, leading/trailing/FAB slots, logical FAB position, FastSpatial collapse, 56–80dp FAB sizing, non-null/reset ExitAlways state, ScrollViewer/custom-delta coordination, host-owned 16dp anchoring, desktop arrow/Home/End focus, non-trapping Tab, hidden-focus removal, and ToolBar/ExpandCollapse automation. Two alpha22-compatible horizontal/vertical scenes are exact with zero raster difference. |
 | Selection | Checkbox and TriStateCheckbox | `MaterialCheckbox` | Implemented | Use `IsThreeState="True"` with `IsChecked="{x:Null}"` for Compose `ToggleableState.Indeterminate`; selected and indeterminate alpha22 parity cases pass. |
 | Selection | RadioButton | `MaterialRadioButton` | Implemented | Uses Avalonia radio grouping behavior. |
 | Selection | Switch | `MaterialSwitch` | Implemented | Desktop control derives from `ToggleButton`; drag-to-toggle is not provided. |

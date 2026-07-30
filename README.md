@@ -299,6 +299,35 @@ cancel application-owned refresh work. UI Automation exposes Pane, Invoke, and a
 clamped RangeValue progress pattern. `PullEnabled="False"` disables gesture ownership while
 leaving keyboard and automation refresh actions available.
 
+## Floating toolbar
+
+`MaterialFloatingToolbar` presents real Avalonia controls in horizontal, vertical, or
+aspect-driven `Auto` layout. Main actions belong in `Items`; optional `LeadingContent`,
+`TrailingContent`, and `FloatingActionButton` slots preserve the Material 64dp container and
+logical FAB placement.
+
+```xml
+<m3:MaterialFloatingToolbar Orientation="Auto"
+                            Variant="Vibrant"
+                            IsExpanded="{Binding IsToolbarExpanded}"
+                            FabPosition="End"
+                            ScrollBehavior="ExitAlways"
+                            ScrollTarget="{Binding #ContentScroll}">
+    <Button Content="Edit" />
+    <Button Content="Share" />
+    <m3:MaterialFloatingToolbar.FloatingActionButton>
+        <m3:MaterialFab Content="Add" />
+    </m3:MaterialFloatingToolbar.FloatingActionButton>
+</m3:MaterialFloatingToolbar>
+```
+
+Without a FAB, collapse retracts only the auxiliary slots. With a FAB, collapse clips the toolbar
+and grows the FAB from 56dp to 80dp. The replaceable, non-null `State` can be shown, hidden, or
+reset explicitly; custom scrolling hosts can forward logical deltas through `ApplyScrollDelta`.
+Arrow keys move among visible actions along the current axis, Home/End select the endpoints, RTL
+reverses horizontal traversal, and Tab remains ordinary desktop navigation. UI Automation exposes
+a ToolBar with ExpandCollapse while the action controls retain their native peers.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and

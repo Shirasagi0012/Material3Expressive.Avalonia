@@ -1,0 +1,64 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Design.PreviewWith>
+        <Border Padding="24">
+            <m3:MaterialFloatingToolbar>
+                <m3:MaterialIconButton Content="A" />
+                <m3:MaterialIconButton Content="B" Variant="Filled" />
+                <m3:MaterialIconButton Content="C" />
+            </m3:MaterialFloatingToolbar>
+        </Border>
+    </Design.PreviewWith>
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:MaterialFloatingToolbar}"
+                      TargetType="m3:MaterialFloatingToolbar">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:MaterialFloatingToolbarLayoutPanel
+                        RenderTransformOrigin="0.5,0.5">
+                        <m3:MaterialFloatingToolbarLayoutPanel.RenderTransform>
+                            <TranslateTransform X="{TemplateBinding ScrollOffsetX}"
+                                                Y="{TemplateBinding ScrollOffsetY}" />
+                        </m3:MaterialFloatingToolbarLayoutPanel.RenderTransform>
+
+                        <Grid>
+                            <m3:MaterialFloatingToolbarShadow Elevation="{TemplateBinding CurrentElevation}" />
+                            <Border
+                                Padding="8"
+                                MinWidth="{TemplateBinding ContainerSize}"
+                                MinHeight="{TemplateBinding ContainerSize}"
+                                Background="{TemplateBinding ToolbarBrush}"
+                                CornerRadius="32"
+                                ClipToBounds="True">
+                                <m3:MaterialFloatingToolbarContentPanel
+                                    Orientation="{TemplateBinding ResolvedOrientation}"
+                                    ExpansionProgress="{TemplateBinding ExpansionProgress}"
+                                    HasFab="{Binding FloatingActionButton, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                    <ContentPresenter Content="{TemplateBinding LeadingContent}"
+                                                      TextElement.Foreground="{TemplateBinding ToolbarContentBrush}" />
+                                    <ItemsControl ItemsSource="{Binding Items, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  TextElement.Foreground="{TemplateBinding ToolbarContentBrush}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <m3:MaterialFloatingToolbarItemsPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                    <ContentPresenter Content="{TemplateBinding TrailingContent}"
+                                                      TextElement.Foreground="{TemplateBinding ToolbarContentBrush}" />
+                                </m3:MaterialFloatingToolbarContentPanel>
+                            </Border>
+                        </Grid>
+
+                        <ContentPresenter Content="{TemplateBinding FloatingActionButton}"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch" />
+                    </m3:MaterialFloatingToolbarLayoutPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

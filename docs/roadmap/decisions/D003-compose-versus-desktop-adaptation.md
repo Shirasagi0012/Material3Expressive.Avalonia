@@ -17,3 +17,18 @@ leaves. This synchronizes the active endpoint with automation focus and draws a 
 focus indicator without trapping ordinary desktop navigation. Both endpoints must remain
 fully keyboard-operable and deterministically tested. This authorization is narrow and does not
 resolve the broader D003 question.
+
+## Authorized component-specific adaptation — FloatingToolbar desktop focus and anchoring
+
+Compose places toolbar children in ordinary Row/Column scopes and exposes accessibility custom
+actions for expansion. Avalonia keeps each supplied action as a real focusable control, exposes the
+container as ToolBar + ExpandCollapse, and adds conventional axis-arrow plus Home/End traversal;
+Tab remains ordinary non-trapping desktop traversal. Content that is retracted or translated away
+is removed from the Tab sequence, because desktop focus must not land on clipped actions.
+
+`Orientation=Auto` resolves from the constrained host aspect ratio, but the control does not move
+itself to a window edge or overwrite alignment/margins. The application owns that placement and can
+bind the upstream 16dp `ScreenOffset`. Avalonia has no public equivalent of Compose's
+touch-exploration service flag, so the control does not globally force expansion when a screen
+reader attaches; its ExpandCollapse provider keeps both states directly recoverable. This
+authorization is narrow and does not resolve the broader D003 question.

@@ -314,6 +314,22 @@ the same `InteractionMode`, long-click contract, and application-owned selection
 adds only a List automation role. The pinned alpha22 executable contains the same segmented
 overloads/defaults, so focused light/dark scenes provide normal alpha22 conformance evidence.
 
+## Floating toolbar family
+
+`FloatingToolbar.kt` provides horizontal and vertical entry points, each in forms with and without
+an adjacent FAB. They share a 64dp container, 8dp content padding, 48dp action targets, an 8dp FAB
+gap, logical Start/End placement, and generated standard/vibrant colours. The no-FAB form retracts
+only leading/trailing content; the FAB form clips the toolbar content as it collapses and grows the
+FAB from 56dp to 80dp. Expansion uses FastSpatial motion and exit-always scrolling is represented
+by separately owned state.
+
+`MaterialFloatingToolbar` is the deliberate XAML consolidation recorded by D011: one control
+selects Horizontal, Vertical, or aspect-driven Auto layout, accepts direct action children and
+optional slots, and leaves screen-edge anchoring to its host. The pinned alpha22 producer executes
+both standard expanded axes with the same settled geometry. Alpha25-only API maturity, scroll,
+motion, responsive, keyboard, and accessibility claims use source review plus deterministic tests,
+not extra visual-parity claims.
+
 ## Scaffold layout and caller-applied content padding
 
 `Scaffold.kt:87-305` owns five slots: top bar, body content, snackbar host, floating action button,

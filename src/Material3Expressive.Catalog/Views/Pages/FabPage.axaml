@@ -12,6 +12,7 @@
                              MaxWidth="720" HorizontalAlignment="Center">
                 <m3:MaterialTab Content="FAB" />
                 <m3:MaterialTab Content="FAB menu" />
+                <m3:MaterialTab Content="Floating toolbar" />
             </m3:MaterialTabs>
 
             <StackPanel Spacing="8">
@@ -104,6 +105,85 @@
                             </m3:MaterialFab>
                         </m3:MaterialFabMenu>
                     </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Floating toolbar -->
+            <StackPanel x:Name="PanelToolbar" IsVisible="False" Spacing="24">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Floating toolbar" />
+                    <TextBlock Classes="body-medium" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Horizontal, vertical, and aspect-adaptive layouts share one action collection. Leading and trailing slots retract around the main actions; an adjacent FAB instead retracts the complete toolbar and grows from 56dp to 80dp." />
+                    <m3:MaterialButton HorizontalAlignment="Left"
+                                       Variant="Tonal"
+                                       Content="Expand / collapse"
+                                       Click="OnToggleToolbars" />
+                    <Border Classes="demo-canvas">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="48">
+                            <StackPanel Spacing="28" VerticalAlignment="Center">
+                                <m3:MaterialFloatingToolbar x:Name="HorizontalToolbar"
+                                                            HorizontalAlignment="Left">
+                                    <m3:MaterialFloatingToolbar.LeadingContent>
+                                        <m3:MaterialIconButton Variant="Tonal">
+                                            <ms:MaterialSymbol Symbol="Create" />
+                                        </m3:MaterialIconButton>
+                                    </m3:MaterialFloatingToolbar.LeadingContent>
+                                    <m3:MaterialIconButton>
+                                        <ms:MaterialSymbol Symbol="Check" />
+                                    </m3:MaterialIconButton>
+                                    <m3:MaterialIconButton Variant="Filled">
+                                        <ms:MaterialSymbol Symbol="Favorite" />
+                                    </m3:MaterialIconButton>
+                                    <m3:MaterialIconButton>
+                                        <ms:MaterialSymbol Symbol="Edit" />
+                                    </m3:MaterialIconButton>
+                                    <m3:MaterialFloatingToolbar.TrailingContent>
+                                        <m3:MaterialIconButton Variant="Tonal">
+                                            <ms:MaterialSymbol Symbol="Delete" />
+                                        </m3:MaterialIconButton>
+                                    </m3:MaterialFloatingToolbar.TrailingContent>
+                                </m3:MaterialFloatingToolbar>
+
+                                <m3:MaterialFloatingToolbar FloatingActionButtonPosition="End"
+                                                            HorizontalAlignment="Left">
+                                    <m3:MaterialFloatingToolbar.FloatingActionButton>
+                                        <m3:MaterialFab>
+                                            <ms:MaterialSymbol Symbol="Add" />
+                                        </m3:MaterialFab>
+                                    </m3:MaterialFloatingToolbar.FloatingActionButton>
+                                    <m3:MaterialIconButton>
+                                        <ms:MaterialSymbol Symbol="Check" />
+                                    </m3:MaterialIconButton>
+                                    <m3:MaterialIconButton>
+                                        <ms:MaterialSymbol Symbol="Edit" />
+                                    </m3:MaterialIconButton>
+                                    <m3:MaterialIconButton>
+                                        <ms:MaterialSymbol Symbol="Favorite" />
+                                    </m3:MaterialIconButton>
+                                </m3:MaterialFloatingToolbar>
+                            </StackPanel>
+
+                            <m3:MaterialFloatingToolbar x:Name="VerticalToolbar"
+                                                        Grid.Column="1"
+                                                        Orientation="Vertical"
+                                                        Variant="Vibrant"
+                                                        VerticalAlignment="Top">
+                                <m3:MaterialIconButton>
+                                    <ms:MaterialSymbol Symbol="Check" />
+                                </m3:MaterialIconButton>
+                                <m3:MaterialIconButton Variant="Filled">
+                                    <ms:MaterialSymbol Symbol="Favorite" />
+                                </m3:MaterialIconButton>
+                                <m3:MaterialIconButton>
+                                    <ms:MaterialSymbol Symbol="Edit" />
+                                </m3:MaterialIconButton>
+                            </m3:MaterialFloatingToolbar>
+                        </Grid>
+                    </Border>
+                    <TextBlock Classes="body-small" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Use Orientation=Auto inside a constrained host to select horizontal for wide regions and vertical for tall regions. Screen-edge anchoring remains the host layout's responsibility; use the 16dp Material screen offset." />
                 </StackPanel>
             </StackPanel>
 

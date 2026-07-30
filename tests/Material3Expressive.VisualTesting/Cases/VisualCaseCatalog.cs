@@ -19,6 +19,7 @@ public static class VisualCaseCatalog
         .. BottomSheetParityCases.All,
         .. SnackbarParityCases.All,
         .. AppBarParityCases.All,
+        .. FloatingToolbarParityCases.All,
         .. SecureTextFieldParityCases.All,
         .. PickerInputParityCases.All,
         .. ExposedDropdownMenuParityCases.All,

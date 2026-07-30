@@ -518,3 +518,20 @@ gestures, and aligned snackbar placement with alpha25's settled-state rules. Nin
 deterministic tests now pass. The six static/motion parity cases have exact structural and timeline
 contracts; the remaining light-theme channel-delta-1 shadow raster rejection is recorded as the
 user-confirmed parity-framework parameter issue rather than hidden by a wider component tolerance.
+
+## 2026-07-30 — FloatingToolbar
+
+Closed `M5-TOOLBAR-001` with one XAML-oriented `MaterialFloatingToolbar` API for the four AndroidX
+entry points. Horizontal, vertical, and aspect-driven Auto layout share the generated standard and
+vibrant token sets, direct action items, auxiliary slots, logical FAB placement, and a replaceable
+non-null scroll state. No-FAB and FAB collapse preserve their distinct upstream behavior, and the
+FastSpatial transition can reverse without snapping.
+
+Desktop adaptation keeps every action as a real Avalonia control: axis arrows and Home/End move
+focus, horizontal traversal is RTL-aware, Tab is not trapped, and clipped or off-screen actions
+leave the Tab sequence. Automation exposes ToolBar + ExpandCollapse without replacing native
+action peers. Twelve deterministic tests pass. Both alpha22-compatible expanded scenes are strict
+`exactMatch` with zero different pixels or warnings at
+`artifacts/visual-parity/xunit/20260730-172847-129`; no comparison tolerance changed.
+The complete regression at `artifacts/visual-parity/xunit/20260730-174443-784` passed 136 accepted
+rows and two explicit typography skips, retaining only the four authorized circular-wavy warnings.
