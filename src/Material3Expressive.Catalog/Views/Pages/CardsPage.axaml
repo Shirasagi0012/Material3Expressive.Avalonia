@@ -13,8 +13,8 @@
         </LinearGradientBrush>
     </UserControl.Resources>
 
-    <ScrollViewer Padding="40,28,40,48">
-        <StackPanel Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
+    <ScrollViewer Padding="40,0">
+        <StackPanel Margin="0,28,0,48" Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
 
             <m3:MaterialTabs x:Name="Tabs" Variant="Secondary" SelectedIndex="0"
                              MaxWidth="720" HorizontalAlignment="Center">

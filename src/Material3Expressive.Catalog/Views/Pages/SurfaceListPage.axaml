@@ -5,8 +5,8 @@
              xmlns:ms="using:MaterialSymbols.Avalonia"
              x:Class="Material3Expressive.Catalog.Views.Pages.SurfaceListPage">
 
-    <ScrollViewer Padding="40,28,40,48">
-        <StackPanel Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
+    <ScrollViewer Padding="40,0">
+        <StackPanel Margin="0,28,0,48" Spacing="28" MaxWidth="1160" HorizontalAlignment="Center">
 
             <StackPanel Spacing="8">
                 <TextBlock Classes="display-small" Text="Surfaces &amp; lists" />
