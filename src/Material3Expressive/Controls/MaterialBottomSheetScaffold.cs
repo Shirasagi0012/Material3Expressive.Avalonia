@@ -7,6 +7,7 @@
 
 using System.ComponentModel;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -14,7 +15,9 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
+using Material3Expressive.Controls.Automation;
 using MaterialColorUtilities.Avalonia.Tokens;
+using MaterialSkiaShadow;
 
 namespace Material3Expressive.Controls;
 
@@ -206,6 +209,9 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
         InvalidateMeasure();
         InvalidateVisual();
     }
+
+    protected override AutomationPeer OnCreateAutomationPeer() =>
+        new MaterialBottomSheetScaffoldAutomationPeer(this);
 }
 
 /// <summary>Internal themed surface used by the scaffold template.</summary>

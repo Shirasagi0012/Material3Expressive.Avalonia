@@ -32,6 +32,7 @@ consistent on supported desktop platforms.
 - `MaterialBottomSheetScaffold` now provides standard body/top/snackbar/sheet slots,
   `BottomSheetState` (`Hidden`, `PartiallyExpanded`, `Expanded`), vetoable commands, the
   56dp/640dp defaults, physical-pixel sheet placement, and interrupted spring motion.
-- Deterministic tests: `MaterialBottomSheetScaffoldTests` (3/3 passed).
-- Remaining: nested-scroll handoff, snackbar host state/restore, full automation expand/collapse
-  actions, and Compose motion parity case.
+- The scaffold exposes Avalonia's `IExpandCollapseProvider`: UIA states map Hidden to Collapsed,
+  PartiallyExpanded directly, and Expanded directly; actions retain the state owner's veto.
+- Deterministic tests: `MaterialBottomSheetScaffoldTests` (5/5 passed).
+- Remaining: nested-scroll handoff, snackbar host state/restore, and Compose motion parity case.

@@ -4,6 +4,9 @@
 // controls expose event-loop animations rather than coroutine jobs.
 
 using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
@@ -71,5 +74,70 @@ public sealed class MaterialBottomSheetScaffoldTests
         Assert.Contains(
             scaffold.GetVisualDescendants().OfType<Control>(),
             item => item is not MaterialBottomSheetScaffold);
+    }
+
+    [AvaloniaFact]
+    public void AutomationExposesTheThreeStateExpandCollapseContract()
+    {
+        var state = new BottomSheetState();
+        var scaffold = new MaterialBottomSheetScaffold
+        {
+            State = state,
+            Content = new TextBlock { Text = "Body" },
+            SheetContent = new TextBlock { Text = "Sheet" }
+        };
+        ThemeTestHelper.ShowWindow(scaffold);
+
+        var peer = ControlAutomationPeer.CreatePeerForElement(scaffold);
+        var provider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
+            peer.GetProvider<IExpandCollapseProvider>());
+        Assert.False(provider.ShowsMenu);
+        Assert.Equal(ExpandCollapseState.PartiallyExpanded, provider.ExpandCollapseState);
+
+        AutomationPropertyChangedEventArgs? changed = null;
+        peer.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == ExpandCollapsePatternIdentifiers.ExpandCollapseStateProperty)
+                changed = e;
+        };
+
+        provider.Expand();
+        Assert.Equal(BottomSheetValue.Expanded, state.CurrentValue);
+        Assert.Equal(ExpandCollapseState.Expanded, provider.ExpandCollapseState);
+        Assert.NotNull(changed);
+        Assert.Equal(ExpandCollapseState.PartiallyExpanded, changed!.OldValue);
+        Assert.Equal(ExpandCollapseState.Expanded, changed.NewValue);
+
+        provider.Collapse();
+        Assert.Equal(BottomSheetValue.PartiallyExpanded, state.CurrentValue);
+        Assert.Equal(ExpandCollapseState.PartiallyExpanded, provider.ExpandCollapseState);
+
+        state.Hide();
+        Assert.Equal(ExpandCollapseState.Collapsed, provider.ExpandCollapseState);
+    }
+
+    [AvaloniaFact]
+    public void AutomationTracksReplacementStateAndHonorsVeto()
+    {
+        var rejected = new BottomSheetState(
+            confirmValueChange: value => value != BottomSheetValue.Expanded);
+        var scaffold = new MaterialBottomSheetScaffold
+        {
+            State = rejected,
+            Content = new TextBlock { Text = "Body" },
+            SheetContent = new TextBlock { Text = "Sheet" }
+        };
+        ThemeTestHelper.ShowWindow(scaffold);
+
+        var peer = ControlAutomationPeer.CreatePeerForElement(scaffold);
+        var provider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
+            peer.GetProvider<IExpandCollapseProvider>());
+
+        provider.Expand();
+        Assert.Equal(BottomSheetValue.PartiallyExpanded, rejected.CurrentValue);
+        Assert.Equal(ExpandCollapseState.PartiallyExpanded, provider.ExpandCollapseState);
+
+        scaffold.State = new BottomSheetState(BottomSheetValue.Expanded);
+        Assert.Equal(ExpandCollapseState.Expanded, provider.ExpandCollapseState);
     }
 }
