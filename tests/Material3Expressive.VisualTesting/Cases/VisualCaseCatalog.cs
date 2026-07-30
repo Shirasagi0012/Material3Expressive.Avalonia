@@ -12,6 +12,7 @@ public static class VisualCaseCatalog
         .. MotionParityCases.All,
         .. ComponentParityCases.All,
         .. ComponentMotionParityCases.All,
+        .. CheckboxMotionParityCases.All,
         .. ComposeWaveOneParityCases.All,
         .. DividerParityCases.All,
         .. SegmentedButtonParityCases.All,

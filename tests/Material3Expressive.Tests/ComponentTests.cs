@@ -181,7 +181,7 @@ public class SelectionTests
         var checkbox = new MaterialCheckbox { Content = "Label" };
         ThemeTestHelper.ShowWindow(checkbox);
 
-        Assert.Equal(CheckboxTokens.Default.StateLayerSize, checkbox.Padding.Left);
+        Assert.Equal(48, checkbox.Padding.Left);
         Assert.True(checkbox.Bounds.Height >= CheckboxTokens.Default.StateLayerSize);
     }
 

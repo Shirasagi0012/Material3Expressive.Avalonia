@@ -1,8 +1,9 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Media.Immutable;
+using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
@@ -19,6 +20,7 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialCheckbox : CheckBox
 {
+    private const double SnapAnimationDelayMilliseconds = 100;
     // The pinned Compose reference is Material3 1.5.0-alpha22. In that release Checkbox.kt's
     // compatibility path uses CheckboxSize (20dp) and CheckboxDefaultPadding (2dp), rather than
     // the newer CheckboxTokens.ContainerSize (18dp) path. Keep this separate from the generated
@@ -39,13 +41,22 @@ public class MaterialCheckbox : CheckBox
 
     private CheckboxTokens _tokens = CheckboxTokens.Default;
     private CheckboxColors _colors = CheckboxTokens.Default.Resolve(null, false);
+    private SpringAnimation? _checkDrawFraction;
+    private SpringAnimation? _checkCenterGravitation;
+    private SpringAnimation? _checkOpacity;
+    private AnimatedBrush? _boxBrush;
+    private AnimatedBrush? _borderBrush;
+    private IBrush _checkColor = Brushes.Transparent;
+    private DelayedSnapAnimation? _delayedCheckClear;
+    private bool? _visualState;
+    private bool _hasVisualState;
 
     public MaterialCheckbox()
     {
         _theme = new MaterialThemeWatcher(this);
         _interaction = new MaterialInteractionHost(this) { IsRippleBounded = false };
 
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme.Changed += (_, _) => ApplyTokens(snap: !this.IsAttachedToVisualTree());
         _interaction.InteractionChanged += (_, _) => InvalidateVisual();
 
         ApplyTokens();
@@ -82,8 +93,7 @@ public class MaterialCheckbox : CheckBox
         var area = GlyphArea;
         _interaction.InteractionArea = area;
 
-        var enabled = IsEffectivelyEnabled;
-        var checkedState = IsChecked;
+        EnsureVisualState(snap: true);
 
         var boxSize = ReferenceContainerSize;
         var box = new Rect(
@@ -93,41 +103,18 @@ public class MaterialCheckbox : CheckBox
             boxSize);
         var corners = new CornerRadius(_tokens.ContainerCornerRadius);
 
-        if (checkedState == false)
-        {
-            var outline = !enabled ? _colors.DisabledOutlineColor
-                : IsError ? _colors.ErrorOutlineColor
-                : _colors.UnselectedOutlineColor;
-
-            // The border is inside the box, so inset by half its width.
-            var inset = _tokens.OutlineWidth / 2;
-            context.DrawRectangle(
-                null,
-                new ImmutablePen(outline, _tokens.OutlineWidth),
-                new RoundedRect(box.Deflate(inset), MaterialContainer.Deflate(corners, inset)));
-        }
-        else
-        {
-            var fill = !enabled ? _colors.DisabledSelectedContainerColor
-                : IsError ? _colors.ErrorContainerColor
-                : _colors.SelectedContainerColor;
-
-            var mark = !enabled ? _colors.DisabledSelectedIconColor
-                : IsError ? _colors.ErrorIconColor
-                : _colors.SelectedIconColor;
-
-            context.DrawRectangle(fill, null, new RoundedRect(box, corners));
-
-            if (checkedState == true)
-                DrawTick(context, box, mark);
-            else
-                DrawIndeterminate(context, box, mark);
-        }
+        DrawBox(context, box, corners, _boxBrush!.Brush, _borderBrush!.Brush);
+        DrawCheck(
+            context,
+            box,
+            CheckBrush,
+            _checkDrawFraction!.Value,
+            _checkCenterGravitation!.Value);
 
         base.Render(context);
         _interaction.DrawLayers(
             context,
-            checkedState == true ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
+            IsChecked == true ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
             new CornerRadius(_tokens.StateLayerSize / 2));
     }
 
@@ -143,11 +130,16 @@ public class MaterialCheckbox : CheckBox
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == IsEffectivelyEnabledProperty)
-            ApplyTokens();
+        if (change.Property == IsEffectivelyEnabledProperty || change.Property == IsErrorProperty)
+            ApplyTokens(snap: !this.IsAttachedToVisualTree());
+        else if (change.Property == IsCheckedProperty)
+            UpdateVisualState(
+                snap: !this.IsAttachedToVisualTree(),
+                previousState: change.GetOldValue<bool?>(),
+                hasPreviousState: true);
     }
 
-    private void ApplyTokens()
+    private void ApplyTokens(bool snap = true)
     {
         _tokens = _theme.Theme.CheckboxTokens;
         _colors = _theme.Theme.GetCheckboxColors(_theme.IsDark);
@@ -158,52 +150,261 @@ public class MaterialCheckbox : CheckBox
         Padding = new Thickness(MinimumInteractiveComponentSize, 0, 0, 0);
         Foreground = new SolidColorBrush(
             _theme.Theme.ColorScheme?.GetColor(SysColorToken.OnSurface, _theme.IsDark) ?? Colors.Black);
+        UpdateVisualState(snap: snap || !_hasVisualState);
         InvalidateMeasure();
         InvalidateVisual();
     }
 
-    /// <summary>
-    /// The alpha22 checkmark, as a two-segment 2dp square-capped stroke in fractions of the box.
-    /// </summary>
-    /// <remarks>
-    /// Upstream's compatibility path in <c>Checkbox.kt</c> uses (0.2, 0.5), (0.4, 0.7), and
-    /// (0.8, 0.3) with <c>CheckboxDefaults.StrokeWidth</c> (2dp). Those values differ from the
-    /// newer checkbox-styling-fix path, so retain the pinned reference geometry exactly.
-    /// </remarks>
-    private void DrawTick(DrawingContext context, Rect box, IImmutableBrush brush)
+    private void EnsureVisualState(bool snap)
     {
-        var pen = new ImmutablePen(
-            brush,
-            2,
-            lineCap: PenLineCap.Square,
-            lineJoin: PenLineJoin.Miter);
+        if (_checkDrawFraction is not null)
+            return;
 
-        var start = new Point(box.X + box.Width * 0.20, box.Y + box.Height * 0.50);
-        var corner = new Point(box.X + box.Width * 0.40, box.Y + box.Height * 0.70);
-        var end = new Point(box.X + box.Width * 0.80, box.Y + box.Height * 0.30);
+        var targets = VisualTargets(IsChecked);
+        _checkDrawFraction = _interaction.Motion.AddSpring(targets.DrawFraction, _theme.Spring(MotionRole.DefaultSpatial));
+        _checkCenterGravitation = _interaction.Motion.AddSpring(targets.Gravitation, _theme.Spring(MotionRole.DefaultSpatial));
+        _checkOpacity = _interaction.Motion.AddSpring(targets.DrawFraction, _theme.Spring(MotionRole.DefaultEffects));
+        _boxBrush = _interaction.Motion.Add(new AnimatedBrush(targets.Box));
+        _borderBrush = _interaction.Motion.Add(new AnimatedBrush(targets.Border));
+        _delayedCheckClear = _interaction.Motion.Add(new DelayedSnapAnimation());
 
-        // Compose strokes one continuous Path. Drawing the two segments independently gives the
-        // shared corner two square caps instead of the path's miter join.
+        if (snap)
+            SnapVisualState(targets);
+    }
+
+    private void UpdateVisualState(bool snap) => UpdateVisualState(snap, _visualState, _hasVisualState);
+
+    private void UpdateVisualState(bool snap, bool? previousState, bool hasPreviousState)
+    {
+        // Checkbox.kt selects the colour spring from the *initial* ToggleableState: leaving
+        // Off uses FastEffects, while every other origin uses DefaultEffects. The target alone
+        // cannot encode that distinction (notably Indeterminate -> Off fades more slowly).
+        var startedOff = hasPreviousState && previousState is false;
+        EnsureVisualState(snap);
+        var targets = VisualTargets(IsChecked);
+        if (snap)
+        {
+            SnapVisualState(targets);
+            _visualState = IsChecked;
+            _hasVisualState = true;
+            return;
+        }
+
+        // Checkbox.kt uses the standard Material3 DefaultSpatial token, independently of this
+        // library's expressive component defaults.
+        var spatial = MotionTokens.Standard.DefaultSpatial;
+        var effects = _theme.Spring(startedOff ? MotionRole.FastEffects : MotionRole.DefaultEffects);
+        _boxBrush!.AnimateTo(targets.Box, effects);
+        _borderBrush!.AnimateTo(targets.Border, effects);
+        if (IsChecked is false)
+        {
+            _checkColor = VisualTargets(true).Check;
+            _checkOpacity!.SnapTo(1);
+        }
+        if (IsChecked is not false)
+            _checkColor = targets.Check;
+        _checkOpacity!.AnimateTo(targets.DrawFraction, effects);
+
+        if (IsChecked is false)
+        {
+            _delayedCheckClear!.Schedule(
+                TimeSpan.FromMilliseconds(SnapAnimationDelayMilliseconds),
+                () =>
+                {
+                    _checkDrawFraction!.SnapTo(0);
+                    _checkCenterGravitation!.SnapTo(0);
+                });
+        }
+        else
+        {
+            _delayedCheckClear!.Cancel();
+            _checkDrawFraction!.AnimateTo(targets.DrawFraction, spatial);
+            _checkCenterGravitation!.AnimateTo(targets.Gravitation, spatial);
+        }
+
+        _interaction.Motion.Start();
+        _visualState = IsChecked;
+        _hasVisualState = true;
+        InvalidateVisual();
+    }
+
+    private void SnapVisualState(CheckboxVisualTargets targets)
+    {
+        _delayedCheckClear?.Cancel();
+        _checkDrawFraction?.SnapTo(targets.DrawFraction);
+        _checkCenterGravitation?.SnapTo(targets.Gravitation);
+        _checkOpacity?.SnapTo(targets.DrawFraction);
+        _boxBrush?.SnapTo(targets.Box);
+        _borderBrush?.SnapTo(targets.Border);
+        _checkColor = targets.Check;
+    }
+
+    private CheckboxVisualTargets VisualTargets(bool? state)
+    {
+        var enabled = IsEffectivelyEnabled;
+        var selected = state is not false;
+        var box = !enabled ? selected ? _colors.DisabledSelectedContainerColor : Brushes.Transparent
+            : IsError ? selected ? _colors.ErrorContainerColor : Brushes.Transparent
+            : selected ? _colors.SelectedContainerColor : Brushes.Transparent;
+        var border = !enabled ? selected ? _colors.DisabledSelectedContainerColor : _colors.DisabledOutlineColor
+            : IsError ? selected ? _colors.ErrorContainerColor : _colors.ErrorOutlineColor
+            : selected ? _colors.SelectedContainerColor : _colors.UnselectedOutlineColor;
+        var check = !enabled ? selected ? _colors.DisabledSelectedIconColor : Brushes.Transparent
+            : IsError ? selected ? _colors.ErrorIconColor : Brushes.Transparent
+            : selected ? _colors.SelectedIconColor : Brushes.Transparent;
+        return new CheckboxVisualTargets(
+            box,
+            border,
+            check,
+            selected ? 1 : 0,
+            state is null ? 1 : 0);
+    }
+
+    private void DrawBox(
+        DrawingContext context,
+        Rect box,
+        CornerRadius corners,
+        IBrush fill,
+        IBrush border)
+    {
+        var fillColor = EffectiveColor(fill);
+        var borderColor = EffectiveColor(border);
+        if (fillColor == borderColor)
+        {
+            context.DrawRectangle(fill, null, new RoundedRect(box, corners));
+            return;
+        }
+
+        if (fillColor.A > 0)
+        {
+            context.DrawRectangle(
+                fill,
+                null,
+                new RoundedRect(box.Deflate(_tokens.OutlineWidth), MaterialContainer.Deflate(corners, _tokens.OutlineWidth)));
+        }
+
+        if (borderColor.A == 0)
+            return;
+
+        var inset = _tokens.OutlineWidth / 2;
+        context.DrawRectangle(
+            null,
+            new Pen(border, _tokens.OutlineWidth),
+            new RoundedRect(box.Deflate(inset), MaterialContainer.Deflate(corners, inset)));
+    }
+
+    private static void DrawCheck(
+        DrawingContext context,
+        Rect box,
+        IBrush brush,
+        double fraction,
+        double gravitation)
+    {
+        if (fraction <= 0 || EffectiveColor(brush).A == 0)
+            return;
+
+        var start = new Point(box.X + box.Width * .20, box.Y + box.Height * .50);
+        var corner = new Point(
+            box.X + box.Width * Lerp(.40, .50, gravitation),
+            box.Y + box.Height * Lerp(.70, .50, gravitation));
+        var end = new Point(box.X + box.Width * .80, box.Y + box.Height * Lerp(.30, .50, gravitation));
+        var firstLength = Distance(start, corner);
+        var secondLength = Distance(corner, end);
+        var length = (firstLength + secondLength) * Math.Clamp(fraction, 0, 1);
         var geometry = new StreamGeometry();
         using (var sink = geometry.Open())
         {
             sink.BeginFigure(start, false);
-            sink.LineTo(corner);
-            sink.LineTo(end);
+            if (length <= firstLength)
+                sink.LineTo(Interpolate(start, corner, length / firstLength));
+            else
+            {
+                sink.LineTo(corner);
+                sink.LineTo(Interpolate(corner, end, (length - firstLength) / secondLength));
+            }
             sink.EndFigure(false);
         }
-        context.DrawGeometry(null, pen, geometry);
+        context.DrawGeometry(
+            null,
+            new Pen(brush, 2, lineCap: PenLineCap.Square, lineJoin: PenLineJoin.Miter),
+            geometry);
     }
 
-    /// <summary>
-    /// The indeterminate state is a single horizontal bar. Compose first creates its 20%–80%
-    /// path, then its 2dp stroke expands the visible endpoints by 1dp; capture therefore observes
-    /// a 15%–85% filled segment at the settled state.
-    /// </summary>
-    private void DrawIndeterminate(DrawingContext context, Rect box, IImmutableBrush brush)
+    private static Color EffectiveColor(IBrush brush) => brush is ISolidColorBrush solid
+        ? Color.FromArgb(
+            (byte)Math.Round(solid.Color.A * Math.Clamp(solid.Opacity, 0, 1), MidpointRounding.AwayFromZero),
+            solid.Color.R,
+            solid.Color.G,
+            solid.Color.B)
+        : Colors.Transparent;
+
+    private IBrush CheckBrush
     {
-        context.FillRectangle(
-            brush,
-            new Rect(box.X + box.Width * 0.15, box.Center.Y - 1, box.Width * 0.70, 2));
+        get
+        {
+            var color = EffectiveColor(_checkColor);
+            if (color.A == 0 || _checkOpacity is not { Value: > 0 } opacity)
+                return Brushes.Transparent;
+
+            return new SolidColorBrush(color, Math.Clamp(opacity.Value, 0, 1));
+        }
+    }
+
+    private static Point Interpolate(Point from, Point to, double fraction) => new(
+        Lerp(from.X, to.X, fraction),
+        Lerp(from.Y, to.Y, fraction));
+
+    private static double Distance(Point from, Point to) => Math.Sqrt(
+        Math.Pow(to.X - from.X, 2) + Math.Pow(to.Y - from.Y, 2));
+
+    private static double Lerp(double from, double to, double fraction) => from + (to - from) * fraction;
+
+    private sealed record CheckboxVisualTargets(
+        IBrush Box,
+        IBrush Border,
+        IBrush Check,
+        double DrawFraction,
+        double Gravitation);
+
+    private sealed class DelayedSnapAnimation : IAnimation
+    {
+        private TimeSpan _delay;
+        private TimeSpan _elapsed;
+        private Action? _completion;
+
+        public double Value => _elapsed.TotalMilliseconds;
+
+        public bool IsRunning => _completion is not null;
+
+        public void Schedule(TimeSpan delay, Action completion)
+        {
+            _delay = delay;
+            _elapsed = TimeSpan.Zero;
+            _completion = completion;
+        }
+
+        public void Cancel() => _completion = null;
+
+        public bool Tick(TimeSpan delta)
+        {
+            if (_completion is null)
+                return false;
+
+            _elapsed += delta;
+            if (_elapsed < _delay)
+                return true;
+
+            Complete();
+            return false;
+        }
+
+        public void Settle() => Complete();
+
+        private void Complete()
+        {
+            var completion = _completion;
+            _completion = null;
+            completion?.Invoke();
+        }
     }
 }
