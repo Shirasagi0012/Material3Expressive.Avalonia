@@ -3,6 +3,25 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — SecureTextField closure
+
+Closed `M4-SECURE-TEXT-001` with filled/outlined `MaterialSecureTextField`, native Avalonia
+single-line password editing, Password/Sensitive input hints, cut/copy and incoming-drop
+suppression, customizable masking, explicit full reveal/hide state, scalar D002 restoration,
+validation/focus behavior, and an Edit/Value automation peer that accepts input without returning
+the secret and announces supporting/error status. Focused deterministic coverage passed 5/5 and
+the Catalog integration built without errors.
+
+Filled Hidden and outlined Visible cases passed twice as `semanticRasterEquivalent` with exact
+component/label contracts and zero rejected pixels at
+`artifacts/visual-parity/xunit/20260730-053717-117` and
+`artifacts/visual-parity/xunit/20260730-054018-328`; expected/actual raster, layout, comparison,
+mask, and diff hashes were identical across runs. The secure label scope completed the custom
+label style probe, and its longer label exposed a physical-pixel notch endpoint that was corrected
+without changing comparison policy. Alpha25 RevealLastTyped safely maps to fully hidden on desktop
+because Avalonia's native editor cannot reveal one codepoint without revealing the whole secret;
+that explicit adaptation can be removed when a native per-codepoint obfuscation API exists.
+
 ## 2026-07-30 — AppBar scroll behavior closure
 
 Closed `M2-APPBAR-001` with standard and alpha25 flexible Small/Medium/Large top-app-bar layouts,

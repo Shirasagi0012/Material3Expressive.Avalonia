@@ -79,5 +79,9 @@
                 <Setter Property="Foreground" Value="{Binding $parent[m3:MaterialTextField].SupportingBrush}" />
             </Style>
         </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialSecureTextField}"
+                      TargetType="m3:MaterialSecureTextField"
+                      BasedOn="{StaticResource {x:Type m3:MaterialTextField}}" />
     </Styles.Resources>
 </Styles>

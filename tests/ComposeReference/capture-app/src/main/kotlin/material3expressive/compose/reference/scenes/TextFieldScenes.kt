@@ -4,8 +4,13 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedSecureTextField
+import androidx.compose.material3.SecureTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldLabelScope
+import androidx.compose.foundation.text.input.TextObfuscationMode
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -45,6 +50,23 @@ fun ReferenceCaseRegistry.registerTextFieldScenes() {
     (filledContracts + outlinedContracts).forEach { (id, params) ->
         register(textFieldContract(id, params), ReferenceScene { probes -> TextFieldScene(probes, params) })
     }
+
+    val secureContracts = mapOf(
+        "secure-textfield/filled/hidden/light" to SecureTextFieldParams(
+            variant = TextFieldVariant.Filled,
+            obfuscationMode = TextObfuscationMode.Hidden,
+        ),
+        "secure-textfield/outlined/visible/light" to SecureTextFieldParams(
+            variant = TextFieldVariant.Outlined,
+            obfuscationMode = TextObfuscationMode.Visible,
+        ),
+    )
+    secureContracts.forEach { (id, params) ->
+        register(
+            secureTextFieldContract(id, params),
+            ReferenceScene { probes -> SecureTextFieldScene(probes, params) },
+        )
+    }
 }
 
 private data class TextFieldParams(
@@ -59,6 +81,11 @@ private data class TextFieldParams(
 )
 
 private enum class TextFieldVariant { Filled, Outlined }
+
+private data class SecureTextFieldParams(
+    val variant: TextFieldVariant,
+    val obfuscationMode: TextObfuscationMode,
+)
 
 private fun textFieldContract(id: String, params: TextFieldParams): CaseContract {
     val nodes = mutableListOf(
@@ -76,6 +103,55 @@ private fun textFieldContract(id: String, params: TextFieldParams): CaseContract
         dark = params.dark,
         requiredNodes = nodes,
     )
+}
+
+private fun secureTextFieldContract(id: String, params: SecureTextFieldParams) = CaseContract(
+    id = id,
+    viewportWidthDp = 280,
+    viewportHeightDp = 96,
+    dark = false,
+    requiredNodes = listOf(
+        RequiredNodeSpec(id = "component", kind = "container", expectedFocused = false),
+        RequiredNodeSpec(id = "label", kind = "text", parentId = "component", text = "Password"),
+    ),
+)
+
+@Composable
+private fun SecureTextFieldScene(probes: ProbeRegistry, params: SecureTextFieldParams) {
+    val state = rememberTextFieldState("Secret")
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    SideEffect { probes.recordFocused("component", isFocused) }
+    val modifier = Modifier
+        .requiredSize(
+            width = 240.dp,
+            height = if (params.variant == TextFieldVariant.Outlined) 64.dp else 56.dp,
+        )
+        .then(probes.geometry("component"))
+    val label: @Composable TextFieldLabelScope.() -> Unit = {
+        Text(
+            text = "Password",
+            modifier = probes.text("label"),
+            onTextLayout = probes.onTextLayout("label"),
+        )
+    }
+
+    when (params.variant) {
+        TextFieldVariant.Filled -> SecureTextField(
+            state = state,
+            label = label,
+            textObfuscationMode = params.obfuscationMode,
+            modifier = modifier,
+            interactionSource = interactionSource,
+        )
+        TextFieldVariant.Outlined -> OutlinedSecureTextField(
+            state = state,
+            label = label,
+            textObfuscationMode = params.obfuscationMode,
+            modifier = modifier,
+            interactionSource = interactionSource,
+        )
+    }
 }
 
 @Composable

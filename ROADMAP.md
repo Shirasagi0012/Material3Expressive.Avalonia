@@ -75,8 +75,7 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-Current focus: none. M2's remaining P0 work is blocked by open decision D004; select the next
-eligible task from M4.
+Current focus: none. SecureTextField is complete; select the next eligible task from M4.
 
 ## Workstreams
 
@@ -114,7 +113,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | M1 | Baseline and inventory | Complete | Verified |
 | M2 | Existing component closure | Blocked | AppBar scrolling is complete; D004 still blocks RangeSlider and circular-wavy accessibility |
 | M3 | Application building blocks | Complete | Verified |
-| M4 | Advanced input and containers | In Progress | SnackbarHost and BottomSheetScaffold complete; remaining M4 controls are planned |
+| M4 | Advanced input and containers | In Progress | SnackbarHost, BottomSheetScaffold, and SecureTextField complete; remaining M4 controls are planned |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
 
 ### M1 — Baseline and inventory
@@ -165,6 +164,10 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-30: SecureTextField closed with native sensitive single-line editing, scalar
+  restore/reveal state, non-leaking/error-aware automation, 5 focused tests, and two reproducible
+  alpha22-compatible parity states. RevealLastTyped safely follows the documented desktop-hidden
+  fallback until Avalonia exposes per-codepoint obfuscation.
 - 2026-07-30: AppBar scrolling closed with standard/flexible top layouts, D002 non-null/reset state,
   three desktop scroll behaviors, UI Automation, 15 focused tests, and reproducible supported
   alpha22 parity. Bottom-app-bar variants remain a recorded family gap.

@@ -186,6 +186,9 @@ public class MaterialTextField : TemplatedControl
 
     private bool ShouldFloat => (_textBox?.IsFocused ?? false) || !string.IsNullOrEmpty(Text);
 
+    /// <summary>The Avalonia editor used by specialized text-field variants.</summary>
+    protected TextBox? Editor => _textBox;
+
     private SpringAnimation Float =>
         _float ??= _motion.AddSpring(ShouldFloat ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
 
@@ -322,7 +325,10 @@ public class MaterialTextField : TemplatedControl
         using (var sink = geometry.Open())
         {
             // Start just past the notch and go all the way round back to just before it.
-            sink.BeginFigure(new Point(notchStart + gap, rect.Y), false);
+            // Compose's cutout resumes on a physical-pixel boundary. Snap this endpoint using the
+            // active render scale so the first outline pixel is neither half-covered nor skipped.
+            var notchEnd = RoundToPhysicalPixel(notchStart + gap);
+            sink.BeginFigure(new Point(notchEnd, rect.Y), false);
             sink.LineTo(new Point(rect.Right - radius.TopRight, rect.Y));
             sink.ArcTo(new Point(rect.Right, rect.Y + radius.TopRight),
                 new Size(radius.TopRight, radius.TopRight), 0, false, SweepDirection.Clockwise);
@@ -342,6 +348,12 @@ public class MaterialTextField : TemplatedControl
         }
 
         context.DrawGeometry(null, pen, geometry);
+    }
+
+    private double RoundToPhysicalPixel(double value)
+    {
+        var scale = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
+        return Math.Round(value * scale, MidpointRounding.AwayFromZero) / scale;
     }
 
     /// <summary>The breathing room the notch leaves on each side of the label.</summary>
@@ -373,7 +385,14 @@ public class MaterialTextField : TemplatedControl
             return null;
         var brush = ResolveLabelBrush(IsEffectivelyEnabled, _textBox?.IsFocused ?? false);
         var layout = CreateLabelTextLayout(parameters, brush);
-        return new MaterialTextFieldLabelProbe(parameters.Origin, layout, brush);
+        return new MaterialTextFieldLabelProbe(
+            parameters.Origin,
+            layout,
+            brush,
+            parameters.Typeface,
+            parameters.FontSize,
+            parameters.LineHeight,
+            parameters.LetterSpacing);
     }
 
     private IImmutableBrush ResolveLabelBrush(bool enabled, bool focused) =>
@@ -548,7 +567,14 @@ public class MaterialTextField : TemplatedControl
     }
 }
 
-internal sealed record MaterialTextFieldLabelProbe(Point Origin, TextLayout Layout, IBrush Foreground);
+internal sealed record MaterialTextFieldLabelProbe(
+    Point Origin,
+    TextLayout Layout,
+    IBrush Foreground,
+    Typeface Typeface,
+    double FontSize,
+    double LineHeight,
+    double LetterSpacing);
 
 internal sealed record LabelDrawingParameters(
     string Text,

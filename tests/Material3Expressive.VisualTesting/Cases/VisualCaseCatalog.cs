@@ -17,7 +17,8 @@ public static class VisualCaseCatalog
         .. SegmentedButtonParityCases.All,
         .. BottomSheetParityCases.All,
         .. SnackbarParityCases.All,
-        .. AppBarParityCases.All
+        .. AppBarParityCases.All,
+        .. SecureTextFieldParityCases.All
     ];
 
     public static VisualCase Get(string id) =>

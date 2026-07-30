@@ -69,7 +69,7 @@ represent them.
 | Inputs | Assist, Filter, Input, and Suggestion chips | `MaterialChip` | Partial | Families are consolidated; some family-specific semantics and defaults are absent. |
 | Inputs | TextField | `MaterialTextField` | Implemented | Filled form is selected by `Variant`. |
 | Inputs | OutlinedTextField | `MaterialTextField` | Implemented | Outlined form is selected by `Variant`. |
-| Inputs | SecureTextField and OutlinedSecureTextField | None | Missing | Password-specific state and reveal behavior are absent. |
+| Inputs | SecureTextField and OutlinedSecureTextField | `MaterialSecureTextField` | Implemented | Filled/outlined secure editing reuses the native single-line editor with password/sensitive input hints, cut/copy and incoming-drop suppression, customizable masking, explicit visible/hidden state, scalar restoration, validation chrome, and non-leaking Edit automation. Five focused tests pass. Alpha25 `RevealLastTyped` safely falls back to desktop-hidden because Avalonia can only reveal the complete value; two alpha22-compatible hidden/visible cases pass twice reproducibly as `semanticRasterEquivalent` with exact component/label contracts and zero rejected pixels. |
 | Inputs | ScrollField | None | Missing | Option state, scrolling, and item API are absent. |
 | Search | SearchBar family | `MaterialSearchBar` | Partial | Docked/full-screen/top variants and scroll behaviors are incomplete. |
 | Menus | DropdownMenu and menu items | Avalonia menu styles | Partial | This is a restyle of Avalonia menus, not a full Compose-style state API. |

@@ -42,9 +42,26 @@
                     <Border Classes="demo-canvas">
                         <StackPanel Spacing="20" MaxWidth="360">
                             <m3:MaterialTextField Label="Full name" Variant="Outlined" />
-                            <m3:MaterialTextField Label="Password" Variant="Outlined" IsError="True"
-                                                  SupportingText="Must be at least 12 characters." />
                             <m3:MaterialTextField Label="Read only" Variant="Outlined" Text="Locked" IsEnabled="False" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="title-large" Text="Secure" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Secure fields use the native password editor, disable cut and copy, and expose an application-bindable reveal state without returning the secret through UI Automation." />
+                    <Border Classes="demo-canvas">
+                        <StackPanel Spacing="20" MaxWidth="360">
+                            <m3:MaterialSecureTextField Label="Password"
+                                                        Text="correct horse"
+                                                        IsError="True"
+                                                        SupportingText="Must be at least 12 characters." />
+                            <m3:MaterialSecureTextField Label="Visible password"
+                                                        Variant="Outlined"
+                                                        Text="correct horse"
+                                                        IsPasswordVisible="True" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

@@ -392,7 +392,14 @@ public sealed class AvaloniaParityCapture
                 probe.Origin,
                 transform,
                 scale,
-                styleSignature: null,
+                styleSignature: textField is MaterialSecureTextField
+                    ? CaptureTextStyleSignature(
+                        probe.Typeface,
+                        probe.FontSize,
+                        probe.LineHeight,
+                        probe.LetterSpacing,
+                        scale)
+                    : null,
                 paintSignature: CaptureTextPaintSignature(probe.Foreground)));
     }
 
@@ -547,17 +554,30 @@ public sealed class AvaloniaParityCapture
     }
 
     private static ParityTextStyleSignature CaptureTextStyleSignature(TextBlock textBlock, double scale)
+        => CaptureTextStyleSignature(
+            new Typeface(
+                textBlock.FontFamily,
+                textBlock.FontStyle,
+                textBlock.FontWeight,
+                textBlock.FontStretch),
+            textBlock.FontSize,
+            textBlock.LineHeight,
+            textBlock.LetterSpacing,
+            scale);
+
+    private static ParityTextStyleSignature CaptureTextStyleSignature(
+        Typeface typeface,
+        double fontSize,
+        double lineHeight,
+        double letterSpacing,
+        double scale)
     {
-        var requestedFontFamily = textBlock.FontFamily.Name;
+        var requestedFontFamily = typeface.FontFamily.Name;
         var resolvedFontFamily = requestedFontFamily;
         GlyphTypeface? glyphTypeface = null;
         try
         {
-            glyphTypeface = new Typeface(
-                textBlock.FontFamily,
-                textBlock.FontStyle,
-                textBlock.FontWeight,
-                textBlock.FontStretch).GlyphTypeface;
+            glyphTypeface = typeface.GlyphTypeface;
             resolvedFontFamily = string.IsNullOrWhiteSpace(glyphTypeface.TypographicFamilyName)
                 ? glyphTypeface.FamilyName
                 : glyphTypeface.TypographicFamilyName;
@@ -575,10 +595,10 @@ public sealed class AvaloniaParityCapture
             requestedFontFamily,
             resolvedFontFamily,
             pinnedRobotoHash,
-            (int)textBlock.FontWeight,
-            (float)(textBlock.FontSize * scale),
-            ToPhysicalPixelsOrNull(textBlock.LineHeight, scale),
-            (float)(textBlock.LetterSpacing * scale));
+            (int)typeface.Weight,
+            (float)(fontSize * scale),
+            ToPhysicalPixelsOrNull(lineHeight, scale),
+            (float)(letterSpacing * scale));
     }
 
     private static ParityTextPaintSignature CaptureTextPaintSignature(IBrush? foreground) =>

@@ -127,6 +127,29 @@ the 2dp token gap and segmented container colour, and leaves each row's `Interac
 selection ownership unchanged. See [docs/coverage/component-matrix.md](docs/coverage/component-matrix.md) for
 the executable-reference and alpha25 version-gap status.
 
+## Secure text fields
+
+`MaterialSecureTextField` adds password-specific behavior to the filled/outlined Material text
+field chrome while retaining Avalonia's native caret, selection, IME, undo, and focus handling.
+It is single-line, marks the input as password/sensitive, disables cut and copy, and keeps paste
+available. Bind `Text`, `TextObfuscationMode`, and `IsPasswordVisible` as ordinary application
+state; D002 does not introduce a separate state object for these scalar values.
+
+```xml
+<m3:MaterialSecureTextField Label="Password"
+                            Text="{Binding Password, Mode=TwoWay}"
+                            IsPasswordVisible="{Binding ShowPassword, Mode=TwoWay}"
+                            IsError="{Binding HasPasswordError}"
+                            SupportingText="{Binding PasswordError}" />
+```
+
+`Visible`, `Hidden`, and desktop `System` masking are supported. Alpha25's
+`RevealLastTyped` request safely falls back to fully hidden on Avalonia because its native editor
+can reveal either the complete value or none of it; the library never substitutes a timed
+full-password reveal. The wrapper exposes an Edit automation role and accepts automation value
+input, but intentionally returns an empty automation value so assistive clients do not receive the
+secret.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and
