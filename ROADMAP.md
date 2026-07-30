@@ -75,13 +75,8 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-Work item: M4-BOTTOM-SHEET-001 — BottomSheetScaffold
-Status: In Progress
-Started: 2026-07-30
-
-Implementation follows AndroidX `ff0a0a99` / Material3 1.5.0-alpha25. The executable Compose
-reference remains Material3 1.5.0-alpha22; motion parity must report any unsupported reference
-states as unavailable rather than treating them as passes.
+None. M4-BOTTOM-SHEET-001 completed all decision-independent implementation and verification work
+but is Blocked on D002, the shared owned/external state convention.
 
 ## Workstreams
 
@@ -119,7 +114,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | M1 | Baseline and inventory | Complete | Verified |
 | M2 | Existing component closure | Blocked | D002 and D004 block remaining P0 work |
 | M3 | Application building blocks | Complete | Verified |
-| M4 | Advanced input and containers | Planned | Depends on M3 primitives and state conventions |
+| M4 | Advanced input and containers | Blocked | D002 must establish the shared state convention |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
 
 ### M1 — Baseline and inventory

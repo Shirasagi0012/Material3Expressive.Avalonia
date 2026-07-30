@@ -3,7 +3,7 @@ id: M4-BOTTOM-SHEET-001
 order: 420
 work_item: BottomSheetScaffold
 priority: P1
-status: In Progress
+status: Blocked
 milestone: M4
 dependencies: [D002, M3-SCAFFOLD-001]
 decisions: [D002, D003, D009]
@@ -57,3 +57,10 @@ consistent on supported desktop platforms.
   infrastructure separately; no component tolerance was widened here.
 - Remaining: integration with the separately planned SnackbarHost state/restoration contract and
   resolution of shared state-ownership decision D002.
+
+## Blocker
+
+D002 must choose the public owned/external state convention before the provisional nullable
+`BottomSheetState` API can be declared complete and reused by SnackbarHost and later M4 controls.
+All local BottomSheet implementation, deterministic tests, structural parity, and documentation
+work that does not depend on that decision has been completed.
