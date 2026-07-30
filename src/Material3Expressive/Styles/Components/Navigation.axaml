@@ -44,7 +44,8 @@
                                                            Spacing="{TemplateBinding IconLabelSpace}"
                                                            TopVerticalPadding="{TemplateBinding TopItemVerticalPadding}"
                                                            TopIndicatorVerticalPadding="{TemplateBinding TopIndicatorVerticalPadding}"
-                                                           AnchorTop="{TemplateBinding IsShortNavigationItem}"
+                                                           AnchorTop="{TemplateBinding AnchorTopIcon}"
+                                                           AlignStart="{TemplateBinding IsWideNavigationExpandedItem}"
                                                            StartHorizontalPadding="{TemplateBinding StartIndicatorHorizontalPadding}"
                                                            StartVerticalPadding="{TemplateBinding StartIndicatorVerticalPadding}">
                         <ContentPresenter Width="{TemplateBinding IconSize}"
@@ -95,6 +96,23 @@
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialWideNavigationRail}" TargetType="m3:MaterialWideNavigationRail">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:MaterialWideNavigationRailLayoutPanel>
+                        <ContentPresenter Content="{TemplateBinding Header}" />
+                        <ItemsControl ItemsSource="{Binding $parent[m3:MaterialWideNavigationRail].Items}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <m3:MaterialWideNavigationRailItemsPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </m3:MaterialWideNavigationRailLayoutPanel>
                 </ControlTemplate>
             </Setter>
         </ControlTheme>

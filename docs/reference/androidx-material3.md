@@ -345,6 +345,25 @@ selection survives responsive changes. The pinned alpha22 desktop producer expos
 measures every item at the full bar width, unlike alpha25 and its tests; executable static parity
 is therefore unavailable for this family rather than reported as a pass.
 
+## Wide navigation rail
+
+`WideNavigationRail.kt` and `WideNavigationRailState.kt` define a retained selectable group whose
+default state is Collapsed. The container is 96dp collapsed, 220dp minimum expanded, and 360dp
+maximum expanded, with 44dp top/bottom content padding. A header remains at the top and has a
+40dp minimum gap before Top-arranged destinations. Center arrangement uses the complete rail
+height; Bottom leaves the 44dp bottom padding. Collapsed items use 64dp minimum height, 4dp
+inter-item spacing, LabelMedium, and the 56×32dp top indicator. Expanded items use a 56dp
+content-width indicator, LabelLarge, 16dp indicator padding, and no inter-item gap.
+
+`MaterialWideNavigationRail` maps the hoistable Compose state to two-way `IsExpanded` plus
+read-only `ExpansionProgress`, preserving direct `MaterialNavigationItem` controls and
+`SelectedIndex`. The default item mapping follows Collapsed→Top and Expanded→Start; the per-item
+`FollowWideRailExpansion` switch retains explicit icon placement when required. The Avalonia
+desktop adaptation adds vertical arrows/Home/End and Tab/TabItem selection plus ExpandCollapse
+automation while leaving ordinary Tab traversal unchanged. Automatic window-size selection is
+intentionally owned by the separate adaptive-coordination task rather than hidden inside this
+component.
+
 ## Scaffold layout and caller-applied content padding
 
 `Scaffold.kt:87-305` owns five slots: top bar, body content, snackbar host, floating action button,

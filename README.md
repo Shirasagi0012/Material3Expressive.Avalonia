@@ -354,6 +354,36 @@ a Tab selection container with real TabItem children. The pinned alpha22 desktop
 item-width measurement defect, so this alpha25 layout is source-and-deterministic-test verified;
 its static Compose parity is explicitly unavailable.
 
+## Wide navigation rail
+
+`MaterialWideNavigationRail` reuses the same `MaterialNavigationItem` instances in both states.
+`IsExpanded` is two-way: collapsed uses the 96dp top-icon layout, while expanded uses a leading
+icon and grows intrinsically from 220dp up to 360dp. `SelectedIndex`, focus, and item instances
+survive every transition. `Header` stays at the top; `Arrangement="Top|Center|Bottom"` positions
+the destination group.
+
+```xml
+<m3:MaterialWideNavigationRail IsExpanded="{Binding IsNavigationExpanded}"
+                               SelectedIndex="{Binding DestinationIndex}">
+    <m3:MaterialWideNavigationRail.Header>
+        <m3:MaterialIconButton Content="Menu" />
+    </m3:MaterialWideNavigationRail.Header>
+    <m3:MaterialNavigationItem Content="Home">
+        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Home" /></m3:MaterialNavigationItem.Icon>
+    </m3:MaterialNavigationItem>
+    <m3:MaterialNavigationItem Content="Saved">
+        <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Star" /></m3:MaterialNavigationItem.Icon>
+    </m3:MaterialNavigationItem>
+</m3:MaterialWideNavigationRail>
+```
+
+Items follow the rail's Top/Start icon-position default. Set
+`FollowWideRailExpansion="False"` to retain an explicit item `IconPosition`. Up/Down and Home/End
+select and focus enabled destinations; Tab remains ordinary desktop traversal. UI Automation
+exposes a Tab selection container with stable TabItem children plus ExpandCollapse on the rail.
+Five collapsed/expanded, light/dark, and disabled alpha22 parity scenes pass the existing
+comparison contract with zero rejected pixels.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and

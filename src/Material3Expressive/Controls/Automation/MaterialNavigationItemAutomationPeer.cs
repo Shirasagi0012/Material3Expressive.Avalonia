@@ -19,14 +19,16 @@ internal sealed class MaterialNavigationItemAutomationPeer :
     private new MaterialNavigationItem Owner => (MaterialNavigationItem)base.Owner;
 
     protected override AutomationControlType GetAutomationControlTypeCore() =>
-        Owner.OwnerShortNavigationBar is null
+        Owner.OwnerShortNavigationBar is null && Owner.OwnerWideNavigationRail is null
             ? base.GetAutomationControlTypeCore()
             : AutomationControlType.TabItem;
 
     protected override object? GetProviderCore(Type providerType)
     {
         if (providerType == typeof(ISelectionItemProvider))
-            return Owner.OwnerShortNavigationBar is null ? null : this;
+            return Owner.OwnerShortNavigationBar is null && Owner.OwnerWideNavigationRail is null
+                ? null
+                : this;
         return base.GetProviderCore(providerType);
     }
 
@@ -35,7 +37,9 @@ internal sealed class MaterialNavigationItemAutomationPeer :
     ISelectionProvider? ISelectionItemProvider.SelectionContainer =>
         Owner.OwnerShortNavigationBar is { } bar
             ? ControlAutomationPeer.CreatePeerForElement(bar)?.GetProvider<ISelectionProvider>()
-            : null;
+            : Owner.OwnerWideNavigationRail is { } rail
+                ? ControlAutomationPeer.CreatePeerForElement(rail)?.GetProvider<ISelectionProvider>()
+                : null;
 
     void ISelectionItemProvider.AddToSelection()
     {
@@ -53,7 +57,10 @@ internal sealed class MaterialNavigationItemAutomationPeer :
     void ISelectionItemProvider.Select()
     {
         EnsureEnabled();
-        Owner.OwnerShortNavigationBar?.SelectFromAutomation(Owner);
+        if (Owner.OwnerShortNavigationBar is { } bar)
+            bar.SelectFromAutomation(Owner);
+        else
+            Owner.OwnerWideNavigationRail?.SelectFromAutomation(Owner);
     }
 
     private void OwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)

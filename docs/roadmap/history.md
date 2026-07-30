@@ -551,3 +551,20 @@ remained 5/5, and the complete artifact `artifacts/visual-parity/xunit/20260730-
 alpha22 diagnostic at `artifacts/visual-parity/xunit/20260730-180515-872` exposed its desktop
 full-width-per-item measurement defect, so ShortNavigationBar static parity is recorded as
 unavailable instead of weakening alpha25 layout or comparison policy.
+
+## 2026-07-31 — WideNavigationRail
+
+Closed `M5-NAV-002` under D013 with a retained-item `MaterialWideNavigationRail`: two-way
+`IsExpanded`, read-only reversible DefaultSpatial `ExpansionProgress`, stable `SelectedIndex`,
+optional Header, Top/Center/Bottom arrangements, automatic collapsed Top/expanded Start item
+geometry, and an explicit per-item opt-out. Layout follows alpha25's 96dp collapsed and intrinsic
+220–360dp expanded widths, 44dp content padding, 40dp header gap, 64/56dp item heights, and
+4/0dp spacing while respecting narrower host constraints.
+
+Desktop Up/Down/Home/End coordinate focus and selection without trapping Tab; RTL preserves
+logical-start placement. Automation exposes Tab/TabItem selection plus rail ExpandCollapse and
+native header ordering. Twelve focused tests and the 427-test full unit suite pass. Five executable
+alpha22 parity states cover collapsed/expanded, light/dark, and disabled appearance with exact
+structural contracts and zero rejected pixels. The complete artifact
+`artifacts/visual-parity/xunit/20260730-185231-469` contains 141 accepted rows, two typography
+skips, and only the four existing authorized circular-wavy warnings.

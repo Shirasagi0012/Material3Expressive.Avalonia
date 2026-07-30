@@ -45,3 +45,16 @@ Compose items use Tab semantics and platform focus behavior. Avalonia exposes a 
 selection tree and adds conventional horizontal arrow plus Home/End selection, including RTL
 reversal. Tab is left to ordinary desktop traversal. This authorization is narrow and does not
 resolve the broader D003 question.
+
+## Authorized component-specific adaptation — WideNavigationRail state and focus
+
+Compose hoists expansion through a suspendable `WideNavigationRailState`; Avalonia maps its single
+Boolean target to two-way `IsExpanded` and a read-only animated `ExpansionProgress`, making normal
+XAML binding and UI Automation direct. The component deliberately has no internal breakpoint:
+adaptive window-size coordination binds this property in M5-NAV-003.
+
+Compose destinations retain Tab semantics and platform focus behavior. Avalonia exposes the rail
+as Tab/ISelectionProvider with stable TabItem children, adds ExpandCollapse for the bindable rail
+state, and uses conventional vertical Up/Down plus Home/End selection/focus. Tab remains ordinary
+non-trapping traversal, and header controls retain their native peer before destinations. This
+authorization is narrow and does not resolve the broader D003 question.

@@ -30,6 +30,10 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.WideNavigationRail
+import androidx.compose.material3.WideNavigationRailItem
+import androidx.compose.material3.WideNavigationRailValue
+import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -89,6 +93,37 @@ fun ReferenceCaseRegistry.registerNavigationScenes() {
             requiredNodes = navigationNodes(),
         ),
         ReferenceScene { probes -> NavRail(probes) },
+    )
+    register(
+        wideRailCase("navigation/wide-rail/collapsed/three-items/selected/light", expanded = false),
+        ReferenceScene { probes -> WideNavRail(probes, expanded = false) },
+    )
+    register(
+        wideRailCase("navigation/wide-rail/expanded/three-items/selected/light", expanded = true),
+        ReferenceScene { probes -> WideNavRail(probes, expanded = true) },
+    )
+    register(
+        wideRailCase(
+            "navigation/wide-rail/collapsed/three-items/selected/dark",
+            expanded = false,
+            dark = true,
+        ),
+        ReferenceScene { probes -> WideNavRail(probes, expanded = false) },
+    )
+    register(
+        wideRailCase(
+            "navigation/wide-rail/expanded/three-items/selected/dark",
+            expanded = true,
+            dark = true,
+        ),
+        ReferenceScene { probes -> WideNavRail(probes, expanded = true) },
+    )
+    register(
+        wideRailCase(
+            "navigation/wide-rail/collapsed/three-items/disabled/light",
+            expanded = false,
+        ),
+        ReferenceScene { probes -> WideNavRail(probes, expanded = false, enabled = false) },
     )
     register(
         tabCase("navigation/tab/primary/three-items/selected/light"),
@@ -591,6 +626,14 @@ private fun navCase(id: String, dark: Boolean = false) = CaseContract(
     requiredNodes = navigationNodes(),
 )
 
+private fun wideRailCase(id: String, expanded: Boolean, dark: Boolean = false) = CaseContract(
+    id = id,
+    viewportWidthDp = if (expanded) 252 else 128,
+    viewportHeightDp = 312,
+    dark = dark,
+    requiredNodes = navigationNodes(),
+)
+
 private fun tabCase(id: String, dark: Boolean = false) = CaseContract(
     id = id, viewportWidthDp = 360, viewportHeightDp = 80, dark = dark,
     requiredNodes = navigationNodes() + RequiredNodeSpec(id = "indicator", kind = "container", parentId = "component"),
@@ -674,6 +717,37 @@ private fun NavRail(probes: ProbeRegistry) {
                         onTextLayout = probes.onTextLayout("label-$index"),
                     )
                 },
+            )
+        }
+    }
+}
+
+@Composable
+private fun WideNavRail(probes: ProbeRegistry, expanded: Boolean, enabled: Boolean = true) {
+    val state = rememberWideNavigationRailState(
+        if (expanded) WideNavigationRailValue.Expanded else WideNavigationRailValue.Collapsed
+    )
+    WideNavigationRail(
+        modifier = Modifier
+            .requiredSize(if (expanded) 220.dp else 96.dp, 280.dp)
+            .then(probes.geometry("component")),
+        state = state,
+        windowInsets = WindowInsets(0, 0, 0, 0),
+    ) {
+        listOf("One", "Two", "Three").forEachIndexed { index, label ->
+            WideNavigationRailItem(
+                selected = index == 0,
+                onClick = {},
+                enabled = enabled,
+                icon = { Spacer(Modifier.size(24.dp)) },
+                label = {
+                    Text(
+                        text = label,
+                        modifier = probes.text("label-$index"),
+                        onTextLayout = probes.onTextLayout("label-$index"),
+                    )
+                },
+                railExpanded = expanded,
             )
         }
     }

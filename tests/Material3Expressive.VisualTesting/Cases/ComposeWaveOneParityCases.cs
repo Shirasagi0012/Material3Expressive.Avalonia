@@ -177,6 +177,11 @@ internal static class ComposeWaveOneParityCases
             selectedIndex: 1),
         NavigationRail(VisualTheme.Light),
         NavigationRail(VisualTheme.Dark),
+        WideNavigationRail(expanded: false, theme: VisualTheme.Light),
+        WideNavigationRail(expanded: true, theme: VisualTheme.Light),
+        WideNavigationRail(expanded: false, theme: VisualTheme.Dark),
+        WideNavigationRail(expanded: true, theme: VisualTheme.Dark),
+        WideNavigationRail(expanded: false, theme: VisualTheme.Light, enabled: false),
         Tabs(TabVariant.Primary, VisualTheme.Light),
         Tabs(TabVariant.Primary, VisualTheme.Dark),
         Tabs(TabVariant.Secondary, VisualTheme.Light),
@@ -333,6 +338,45 @@ internal static class ComposeWaveOneParityCases
                 selectedIndex: 0,
                 width: 96,
                 height: 280));
+    }
+
+    private static VisualCase WideNavigationRail(
+        bool expanded,
+        VisualTheme theme,
+        bool enabled = true)
+    {
+        var state = enabled ? "selected" : "disabled";
+        return ComponentScene(
+            $"navigation/wide-rail/{(expanded ? "expanded" : "collapsed")}/three-items/" +
+            $"{state}/{ThemeName(theme)}",
+            new PixelSize(expanded ? 252 : 128, 312),
+            theme,
+            _ => CreateWideNavigationRail(expanded, enabled));
+    }
+
+    private static MaterialWideNavigationRail CreateWideNavigationRail(bool expanded, bool enabled)
+    {
+        var rail = new MaterialWideNavigationRail
+        {
+            Name = "component",
+            IsExpanded = expanded,
+            SelectedIndex = 0,
+            Width = expanded ? 220 : 96,
+            Height = 280,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        foreach (var (label, index) in new[] { "One", "Two", "Three" }.Select((label, index) => (label, index)))
+        {
+            rail.Items.Add(
+                new MaterialNavigationItem
+                {
+                    IsEnabled = enabled,
+                    Icon = new Border { Width = 24, Height = 24 },
+                    Content = new TextBlock { Name = $"label-{index}", Text = label }
+                });
+        }
+        return rail;
     }
 
     private static VisualCase Tabs(TabVariant variant, VisualTheme theme)

@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Automation.Peers;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls.Automation;
@@ -21,6 +22,11 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialNavigationItem : ToggleButton
 {
+    public static readonly StyledProperty<bool> FollowWideRailExpansionProperty =
+        AvaloniaProperty.Register<MaterialNavigationItem, bool>(
+            nameof(FollowWideRailExpansion),
+            true);
+
     public static readonly StyledProperty<NavigationItemIconPosition> IconPositionProperty =
         AvaloniaProperty.Register<MaterialNavigationItem, NavigationItemIconPosition>(
             nameof(IconPosition),
@@ -61,6 +67,18 @@ public class MaterialNavigationItem : ToggleButton
         AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
             nameof(IsShortNavigationItem), o => o.IsShortNavigationItem);
 
+    public static readonly DirectProperty<MaterialNavigationItem, bool> IsWideNavigationItemProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
+            nameof(IsWideNavigationItem), o => o.IsWideNavigationItem);
+
+    public static readonly DirectProperty<MaterialNavigationItem, bool> IsWideNavigationExpandedItemProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
+            nameof(IsWideNavigationExpandedItem), o => o.IsWideNavigationExpandedItem);
+
+    public static readonly DirectProperty<MaterialNavigationItem, bool> AnchorTopIconProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
+            nameof(AnchorTopIcon), o => o.AnchorTopIcon);
+
     private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
 
@@ -94,6 +112,16 @@ public class MaterialNavigationItem : ToggleButton
         set => SetValue(IconPositionProperty, value);
     }
 
+    /// <summary>
+    /// Whether a wide navigation rail automatically maps collapsed to Top and expanded to Start.
+    /// Set this to false to keep an explicitly supplied <see cref="IconPosition"/>.
+    /// </summary>
+    public bool FollowWideRailExpansion
+    {
+        get => GetValue(FollowWideRailExpansionProperty);
+        set => SetValue(FollowWideRailExpansionProperty, value);
+    }
+
     /// <summary>The size the icon should be drawn at.</summary>
     public double IconSize => _tokens.IconSize;
 
@@ -107,7 +135,8 @@ public class MaterialNavigationItem : ToggleButton
     public double StartIndicatorHorizontalPadding => _tokens.StartIndicatorHorizontalPadding;
 
     /// <summary>Vertical padding inside a leading-icon indicator.</summary>
-    public double StartIndicatorVerticalPadding => _tokens.StartIndicatorVerticalPadding;
+    public double StartIndicatorVerticalPadding =>
+        IsWideNavigationExpandedItem ? 16 : _tokens.StartIndicatorVerticalPadding;
 
     /// <summary>Padding between a top indicator and its icon.</summary>
     public double TopIndicatorVerticalPadding =>
@@ -116,22 +145,76 @@ public class MaterialNavigationItem : ToggleButton
     /// <summary>Whether the item is currently owned by a short navigation bar.</summary>
     public bool IsShortNavigationItem => OwnerShortNavigationBar is not null;
 
+    /// <summary>Whether the item is currently owned by a wide navigation rail.</summary>
+    public bool IsWideNavigationItem => OwnerWideNavigationRail is not null;
+
+    /// <summary>Whether the owning wide navigation rail is targeting its expanded state.</summary>
+    public bool IsWideNavigationExpandedItem => OwnerWideNavigationRail?.IsExpanded == true;
+
+    /// <summary>Whether the top-icon geometry uses its token-defined top anchor.</summary>
+    public bool AnchorTopIcon => IsShortNavigationItem || (IsWideNavigationItem && !IsWideNavigationExpandedItem);
+
     /// <summary>The colour the icon should take right now.</summary>
     public IImmutableBrush IconBrush =>
-        IsChecked == true ? _colors.ActiveIconColor : _colors.InactiveIconColor;
+        IsEffectivelyEnabled
+            ? IsChecked == true
+                ? _colors.ActiveIconColor
+                : _colors.InactiveIconColor
+            : WithOpacity(_colors.InactiveIconColor, 0.38);
 
     /// <summary>Which navigation surface this item belongs to; set by the parent.</summary>
     internal NavigationVariant Surface { get; set; } = NavigationVariant.Bar;
 
     internal MaterialShortNavigationBar? OwnerShortNavigationBar { get; set; }
 
+    internal MaterialWideNavigationRail? OwnerWideNavigationRail { get; set; }
+
     internal void SetShortNavigationOwner(MaterialShortNavigationBar? owner)
     {
         var previous = IsShortNavigationItem;
+        var previousAnchor = AnchorTopIcon;
         OwnerShortNavigationBar = owner;
         RaisePropertyChanged(IsShortNavigationItemProperty, previous, IsShortNavigationItem);
+        RaisePropertyChanged(AnchorTopIconProperty, previousAnchor, AnchorTopIcon);
         InvalidateMeasure();
         InvalidateVisual();
+    }
+
+    internal void SetWideNavigationOwner(MaterialWideNavigationRail? owner)
+    {
+        var previousWide = IsWideNavigationItem;
+        var previousExpanded = IsWideNavigationExpandedItem;
+        var previousAnchor = AnchorTopIcon;
+        var previousVerticalPadding = StartIndicatorVerticalPadding;
+        OwnerWideNavigationRail = owner;
+        RaisePropertyChanged(IsWideNavigationItemProperty, previousWide, IsWideNavigationItem);
+        RaisePropertyChanged(
+            IsWideNavigationExpandedItemProperty,
+            previousExpanded,
+            IsWideNavigationExpandedItem);
+        RaisePropertyChanged(AnchorTopIconProperty, previousAnchor, AnchorTopIcon);
+        RaisePropertyChanged(
+            StartIndicatorVerticalPaddingProperty,
+            previousVerticalPadding,
+            StartIndicatorVerticalPadding);
+        ApplyTokens();
+    }
+
+    internal void UpdateWideNavigationState()
+    {
+        var previous = !IsWideNavigationExpandedItem;
+        var previousAnchor = IsShortNavigationItem || (IsWideNavigationItem && previous);
+        var previousVerticalPadding = previous ? 16 : _tokens.StartIndicatorVerticalPadding;
+        RaisePropertyChanged(
+            IsWideNavigationExpandedItemProperty,
+            previous,
+            IsWideNavigationExpandedItem);
+        RaisePropertyChanged(AnchorTopIconProperty, previousAnchor, AnchorTopIcon);
+        RaisePropertyChanged(
+            StartIndicatorVerticalPaddingProperty,
+            previousVerticalPadding,
+            StartIndicatorVerticalPadding);
+        ApplyTokens();
     }
 
     /// <summary>The pill behind the icon, in control coordinates.</summary>
@@ -147,7 +230,9 @@ public class MaterialNavigationItem : ToggleButton
                 ? Math.Min(Bounds.Width, _contentPanel?.StartIndicatorWidth ?? _tokens.ActiveIndicatorWidth)
                 : _tokens.ActiveIndicatorWidth;
             var height = startIcon
-                ? _tokens.StartActiveIndicatorHeight
+                ? IsWideNavigationExpandedItem
+                    ? 56
+                    : _tokens.StartActiveIndicatorHeight
                 : _tokens.ActiveIndicatorHeight;
             var scale = LayoutHelper.GetLayoutScale(this);
             if (scale <= 0 || double.IsNaN(scale) || double.IsInfinity(scale))
@@ -160,7 +245,11 @@ public class MaterialNavigationItem : ToggleButton
             // already correct.
             var containerWidth = ToComposePixels(Bounds.Width, scale);
             var indicatorWidth = ToComposePixels(width, scale);
-            var left = Math.Max(0, (containerWidth - indicatorWidth) / 2) / scale;
+            var left = IsWideNavigationExpandedItem && startIcon
+                ? FlowDirection == FlowDirection.RightToLeft
+                    ? Math.Max(0, containerWidth - ToComposePixels(20, scale) - indicatorWidth) / scale
+                    : ToComposePixels(20, scale) / scale
+                : Math.Max(0, (containerWidth - indicatorWidth) / 2) / scale;
             return new Rect(left, IndicatorTop(height, startIcon), indicatorWidth / scale, height);
         }
     }
@@ -171,13 +260,16 @@ public class MaterialNavigationItem : ToggleButton
     private double IndicatorTop(double indicatorHeight, bool startIcon) =>
         startIcon
             ? (Bounds.Height - indicatorHeight) / 2
-            : IsShortNavigationItem
+            : AnchorTopIcon
                 ? TopItemVerticalPadding
             // The label sits under the indicator, so the pair is centred rather than the pill alone.
                 : (Bounds.Height - indicatorHeight - _tokens.IconLabelSpace - LabelHeight) / 2;
 
+    private TypographyRole LabelTextStyle =>
+        IsWideNavigationExpandedItem ? TypographyRole.LabelLarge : _tokens.LabelTextStyle;
+
     private double LabelHeight =>
-        Content is null ? 0 : _theme.Theme.Typography.GetTypeScale(_tokens.LabelTextStyle).LineHeight;
+        Content is null ? 0 : _theme.Theme.Typography.GetTypeScale(LabelTextStyle).LineHeight;
 
     private SpringAnimation Indicator =>
         _indicator ??= _interaction.Motion.AddSpring(
@@ -226,6 +318,14 @@ public class MaterialNavigationItem : ToggleButton
             InvalidateMeasure();
             InvalidateVisual();
         }
+        else if (change.Property == FollowWideRailExpansionProperty
+                 && FollowWideRailExpansion
+                 && OwnerWideNavigationRail is { } rail)
+        {
+            IconPosition = rail.IsExpanded
+                ? NavigationItemIconPosition.Start
+                : NavigationItemIconPosition.Top;
+        }
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -266,16 +366,16 @@ public class MaterialNavigationItem : ToggleButton
             TopIndicatorVerticalPadding);
 
         var typography = _theme.Theme.Typography;
-        FontSize = typography.GetTypeScale(_tokens.LabelTextStyle).FontSize;
-        FontFamily = typography.GetFontFamily(_tokens.LabelTextStyle);
-        FontWeight = typography.GetFontWeight(_tokens.LabelTextStyle);
+        FontSize = typography.GetTypeScale(LabelTextStyle).FontSize;
+        FontFamily = typography.GetFontFamily(LabelTextStyle);
+        FontWeight = typography.GetFontWeight(LabelTextStyle);
 
         // NavigationBarItem and NavigationRailItem both wrap their label in
         // ProvideContentColorTextStyle.  FontSize alone is not sufficient for a templated
         // Avalonia control: the supplied TextBlock otherwise retains the inherited BodyMedium
         // line height, tracking, and weight.  Carry the complete local text-style contract to
         // the content subtree, matching the Compose composition local.
-        TypographyScheme.SetTextStyle(this, _tokens.LabelTextStyle);
+        TypographyScheme.SetTextStyle(this, LabelTextStyle);
 
         ApplyColors();
         InvalidateMeasure();
@@ -285,11 +385,20 @@ public class MaterialNavigationItem : ToggleButton
     {
         var previousIconBrush = IconBrush;
 
-        Foreground = IsChecked == true ? _colors.ActiveLabelTextColor : _colors.InactiveLabelTextColor;
+        Foreground = IsEffectivelyEnabled
+            ? IsChecked == true
+                ? _colors.ActiveLabelTextColor
+                : _colors.InactiveLabelTextColor
+            : WithOpacity(_colors.InactiveLabelTextColor, 0.38);
         RaisePropertyChanged(IconBrushProperty, previousIconBrush, IconBrush);
 
         InvalidateVisual();
     }
+
+    private static IImmutableBrush WithOpacity(IImmutableBrush brush, double opacity) =>
+        brush is ImmutableSolidColorBrush solid
+            ? new ImmutableSolidColorBrush(solid.Color, solid.Opacity * opacity)
+            : brush;
 }
 
 /// <summary>
@@ -335,6 +444,9 @@ public sealed class MaterialNavigationItemContentPanel : Panel
     public static readonly StyledProperty<bool> AnchorTopProperty =
         AvaloniaProperty.Register<MaterialNavigationItemContentPanel, bool>(nameof(AnchorTop));
 
+    public static readonly StyledProperty<bool> AlignStartProperty =
+        AvaloniaProperty.Register<MaterialNavigationItemContentPanel, bool>(nameof(AlignStart));
+
     static MaterialNavigationItemContentPanel()
     {
         AffectsMeasure<MaterialNavigationItemContentPanel>(
@@ -344,7 +456,8 @@ public sealed class MaterialNavigationItemContentPanel : Panel
             StartHorizontalPaddingProperty,
             StartVerticalPaddingProperty,
             TopIndicatorVerticalPaddingProperty,
-            AnchorTopProperty);
+            AnchorTopProperty,
+            AlignStartProperty);
     }
 
     /// <inheritdoc cref="SpacingProperty" />
@@ -388,6 +501,12 @@ public sealed class MaterialNavigationItemContentPanel : Panel
     {
         get => GetValue(AnchorTopProperty);
         set => SetValue(AnchorTopProperty, value);
+    }
+
+    public bool AlignStart
+    {
+        get => GetValue(AlignStartProperty);
+        set => SetValue(AlignStartProperty, value);
     }
 
     internal double StartIndicatorWidth { get; private set; }
@@ -451,7 +570,15 @@ public sealed class MaterialNavigationItemContentPanel : Panel
             var totalWidth = widths.Sum() + startSpacing * (visibleChildren.Length - 1);
             var startFinalWidth = ToComposePixels(finalSize.Width, startScale);
             var startFinalHeight = ToComposePixels(finalSize.Height, startScale);
-            var x = Math.Max(0, (startFinalWidth - totalWidth) / 2);
+            var x = AlignStart
+                ? FlowDirection == FlowDirection.RightToLeft
+                    ? Math.Max(
+                        0,
+                        startFinalWidth
+                        - ToComposePixels(20 + StartHorizontalPadding, startScale)
+                        - totalWidth)
+                    : ToComposePixels(20 + StartHorizontalPadding, startScale)
+                : Math.Max(0, (startFinalWidth - totalWidth) / 2);
 
             for (var index = 0; index < visibleChildren.Length; index++)
             {

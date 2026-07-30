@@ -114,7 +114,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | M2 | Existing component closure | Blocked | RangeSlider is complete; circular-wavy still requires DEF-001 disposition |
 | M3 | Application building blocks | Complete | Verified |
 | M4 | Advanced input and containers | Complete | Verified |
-| M5 | Adaptive and expressive coverage | In Progress | FloatingToolbar and ShortNavigationBar complete; WideNavigationRail remains |
+| M5 | Adaptive and expressive coverage | In Progress | FloatingToolbar, ShortNavigationBar, and WideNavigationRail complete; adaptive coordination remains |
 
 ### M1 — Baseline and inventory
 
@@ -164,6 +164,10 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-31: WideNavigationRail closed under D013 with retained destinations/selection,
+  reversible collapsed/expanded state, 96dp and intrinsic 220–360dp layouts, Header and three
+  arrangements, desktop navigation, Tab/TabItem plus ExpandCollapse automation, 12 focused tests,
+  and five accepted alpha22 parity states with zero rejected pixels.
 - 2026-07-31: ShortNavigationBar closed under D012 with EqualWeight/Centered/600dp Auto layout,
   stable selection and item instances, Top/Start item geometry, RTL desktop traversal, Tab/TabItem
   UIA selection, and 8 focused tests. Static parity is accurately unavailable because the pinned
