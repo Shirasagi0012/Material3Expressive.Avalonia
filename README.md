@@ -145,8 +145,8 @@ state follows the shared complex-state contract: the getter exposes the non-null
 `BottomSheetState`, each instance creates a default, and assigning an external state transfers
 observation. Applications restore an anchor by constructing `BottomSheetState` with its initial
 value; reset uses the control's explicit reset operation. Snackbar queue state remains the separate
-`SnackbarHost` responsibility. Static and expressive-spring parity contracts are present; the
-current light-theme result retains a documented one-channel shadow framework-parameter mismatch.
+`SnackbarHost` responsibility. Six supported static and expressive-spring parity cases pass
+reproducibly with exact structural/motion contracts and zero rejected pixels.
 
 `MaterialSnackbarHost` provides the queue boundary used by a scaffold's snackbar slot. Call
 `SnackbarHostState.ShowSnackbarAsync(...)` to enqueue a message; the returned task completes with
@@ -157,11 +157,22 @@ the settled message, generated `Undo` action, and short-timeout appearance/disap
 have executable alpha22 parity. Platform recommended accessibility timeout calculation is
 explicitly Deferred by `DEF-002`; use `Indefinite` when application content must remain available.
 
+`MaterialAppBar` supports standard and alpha25 flexible `Small`, `Medium`, and `Large` layouts.
+Set `ScrollBehavior` to `Pinned`, `EnterAlways`, or `ExitUntilCollapsed` and connect a
+`ScrollViewer` through `ScrollTarget`; custom scrolling containers can forward positive collapse
+and negative expand deltas through `ApplyScrollDelta`. Each bar exposes a non-null
+`AppBarScrollState`, accepts an application-owned replacement, restores through `ResetState()`,
+and exposes collapse state through UI Automation. Flexible medium/large heights and typography
+follow alpha25; the older alpha22 executable reference covers only the standard expanded endpoint.
+
 ```xml
 <m3:MaterialScaffold x:Name="Scaffold"
                      FloatingActionButtonPosition="End">
     <m3:MaterialScaffold.TopBar>
-        <m3:MaterialAppBar Content="Inbox" />
+        <m3:MaterialAppBar Title="Inbox"
+                           Size="Medium"
+                           ScrollBehavior="ExitUntilCollapsed"
+                           ScrollTarget="{Binding ElementName=ContentScroll}" />
     </m3:MaterialScaffold.TopBar>
     <m3:MaterialScaffold.BottomBar>
         <m3:MaterialNavigationBar />
@@ -173,7 +184,7 @@ explicitly Deferred by `DEF-002`; use `Indefinite` when application content must
         <m3:MaterialSnackbarHost x:Name="SnackbarHost" />
     </m3:MaterialScaffold.SnackbarHost>
 
-    <ScrollViewer>
+    <ScrollViewer x:Name="ContentScroll">
         <StackPanel Margin="{Binding ContentPadding, ElementName=Scaffold}">
             <!-- scrolling body -->
         </StackPanel>

@@ -2,6 +2,7 @@ package material3expressive.compose.reference
 
 import material3expressive.compose.reference.capture.ExpectedProducer
 import material3expressive.compose.reference.scenes.registerButtonScenes
+import material3expressive.compose.reference.scenes.registerAppBarScenes
 import material3expressive.compose.reference.scenes.registerBottomSheetScenes
 import material3expressive.compose.reference.scenes.registerComponentMotionScenes
 import material3expressive.compose.reference.scenes.registerComponentScenes
@@ -48,6 +49,7 @@ fun main(args: Array<String>) {
         registerDividerScenes()
         registerComponentMotionScenes()
         registerButtonScenes()
+        registerAppBarScenes()
         registerBottomSheetScenes()
         registerSegmentedButtonScenes()
         registerSnackbarScenes()

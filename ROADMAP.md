@@ -75,7 +75,8 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-Current focus: none.
+Current focus: none. M2's remaining P0 work is blocked by open decision D004; select the next
+eligible task from M4.
 
 ## Workstreams
 
@@ -111,7 +112,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | ID | Milestone | Status | Exit status |
 |---|---|---|---|
 | M1 | Baseline and inventory | Complete | Verified |
-| M2 | Existing component closure | Blocked | D004 blocks remaining P0 accessibility work; D002 state-contract migration remains |
+| M2 | Existing component closure | Blocked | AppBar scrolling is complete; D004 still blocks RangeSlider and circular-wavy accessibility |
 | M3 | Application building blocks | Complete | Verified |
 | M4 | Advanced input and containers | In Progress | SnackbarHost and BottomSheetScaffold complete; remaining M4 controls are planned |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
@@ -164,6 +165,9 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-30: AppBar scrolling closed with standard/flexible top layouts, D002 non-null/reset state,
+  three desktop scroll behaviors, UI Automation, 15 focused tests, and reproducible supported
+  alpha22 parity. Bottom-app-bar variants remain a recorded family gap.
 - 2026-07-30: BottomSheetScaffold closed with the D002 non-null/reset state contract, desktop
   nested-input behavior, UI Automation, and reproducible six-case static/motion parity.
 - 2026-07-30: MaterialScaffold layout, ListItem grouping, long-click behavior, and related parity

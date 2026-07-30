@@ -26,7 +26,9 @@
                 <ControlTemplate>
                     <!-- The small bar puts the title between the navigation icon and the actions;
                          the taller two drop it onto its own line underneath. -->
-                    <Grid RowDefinitions="Auto,*" Margin="{TemplateBinding Padding}">
+                    <Grid RowDefinitions="64,*"
+                          Margin="{TemplateBinding Padding}"
+                          ClipToBounds="True">
                         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Height="64">
                             <ContentPresenter Grid.Column="0"
                                               VerticalAlignment="Center"
@@ -36,15 +38,10 @@
                                         Grid.Column="1"
                                         Margin="16,0"
                                         VerticalAlignment="Center"
-                                        IsVisible="{TemplateBinding IsStacked, Converter={x:Static BoolConverters.Not}}">
-                                <ContentPresenter Content="{TemplateBinding Title}"
-                                                  TextElement.Foreground="{TemplateBinding TitleBrush}"
-                                                  TextElement.FontSize="{TemplateBinding FontSize}"
-                                                  TextElement.FontFamily="{TemplateBinding FontFamily}"
-                                                  TextElement.FontWeight="{TemplateBinding FontWeight}" />
-                                <ContentPresenter Content="{TemplateBinding Subtitle}"
-                                                  IsVisible="{TemplateBinding Subtitle, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                                  TextElement.Foreground="{TemplateBinding SubtitleBrush}" />
+                                        Opacity="{TemplateBinding InlineTitleOpacity}">
+                                <ContentPresenter x:Name="PART_InlineTitlePresenter"
+                                                  Content="{TemplateBinding InlineTitleContent}"
+                                                  TextElement.Foreground="{TemplateBinding TitleBrush}" />
                             </StackPanel>
                             <ContentPresenter Grid.Column="2"
                                               VerticalAlignment="Center"
@@ -53,16 +50,18 @@
                         </Grid>
 
                         <StackPanel x:Name="PART_StackedTitle"
-                                    Grid.Row="1"
-                                    Margin="0,0,0,16"
+                                    Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    Margin="{TemplateBinding StackedTitleMargin}"
                                     VerticalAlignment="Bottom"
-                                    IsVisible="{TemplateBinding IsStacked}">
-                            <ContentPresenter Content="{TemplateBinding Title}"
+                                    IsVisible="{TemplateBinding IsStacked}"
+                                    Opacity="{TemplateBinding StackedTitleOpacity}">
+                            <ContentPresenter x:Name="PART_StackedTitlePresenter"
+                                              Content="{TemplateBinding StackedTitleContent}"
                                               TextElement.Foreground="{TemplateBinding TitleBrush}"
-                                              TextElement.FontSize="{TemplateBinding FontSize}"
-                                              TextElement.FontFamily="{TemplateBinding FontFamily}"
-                                              TextElement.FontWeight="{TemplateBinding FontWeight}" />
-                            <ContentPresenter Content="{TemplateBinding Subtitle}"
+                                              />
+                            <ContentPresenter x:Name="PART_SubtitlePresenter"
+                                              Content="{TemplateBinding Subtitle}"
                                               IsVisible="{TemplateBinding Subtitle, Converter={x:Static ObjectConverters.IsNotNull}}"
                                               TextElement.Foreground="{TemplateBinding SubtitleBrush}" />
                         </StackPanel>

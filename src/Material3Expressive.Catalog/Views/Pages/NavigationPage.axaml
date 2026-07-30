@@ -29,7 +29,7 @@
                     <TextBlock Classes="title-large" Text="App bars" />
                     <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
                                Foreground="{mcu:MdSysColor OnSurfaceVariant}"
-                               Text="Small keeps the title beside the actions; medium and large give a long title its own line." />
+                               Text="Standard and flexible sizes share Pinned, EnterAlways, and ExitUntilCollapsed scrolling. Small keeps the title inline; medium and large expand it onto a second line." />
                     <Border Classes="demo-canvas">
                         <StackPanel Spacing="12" MaxWidth="520">
                             <Border ClipToBounds="True" CornerRadius="12">
@@ -51,6 +51,7 @@
                             </Border>
                             <Border ClipToBounds="True" CornerRadius="12">
                                 <m3:MaterialAppBar Size="Large"
+                                                   Variant="Flexible"
                                                    Title="Photographs"
                                                    Subtitle="384 items"
                                                    IsScrolled="True">

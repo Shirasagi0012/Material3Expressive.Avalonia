@@ -311,6 +311,7 @@
     { "prefix": "listitem/", "profileId": "component-with-text" },
     { "prefix": "segmentedbutton/", "profileId": "component-with-text" },
     { "prefix": "bottomsheet/scaffold/", "profileId": "component-with-text-and-elevation" },
+    { "prefix": "appbar/", "profileId": "component-with-text" },
     { "prefix": "snackbar/host/motion/", "profileId": "component-with-text-and-elevation-motion" },
     { "prefix": "snackbar/host/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "scaffold/", "profileId": "container" },

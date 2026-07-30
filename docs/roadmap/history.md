@@ -3,6 +3,25 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — AppBar scroll behavior closure
+
+Closed `M2-APPBAR-001` with standard and alpha25 flexible Small/Medium/Large top-app-bar layouts,
+the D002 option 1A non-null/replaceable/reset `AppBarScrollState`, Pinned/EnterAlways/
+ExitUntilCollapsed behavior, attached `ScrollViewer` and explicit logical-delta coordination,
+controlled spring/title transitions, interruption semantics, and `IExpandCollapseProvider`.
+Focused deterministic coverage passed 15/15 and the Catalog integration built without errors.
+
+The alpha22 executable reference supports the standard Medium expanded endpoint. It passed three
+as `semanticRasterEquivalent` with exact geometry/text contracts and zero rejected pixels at
+`artifacts/visual-parity/xunit/20260730-051351-712` and
+`artifacts/visual-parity/xunit/20260730-051846-243`, with final-source validation at
+`artifacts/visual-parity/xunit/20260730-052253-535`; expected/actual raster, layout, comparison,
+mask, and diff hashes were identical across all runs. Alpha25 flexible variants and its collapsed
+`SurfaceContainer` color are explicitly reference-version unavailable, while live desktop
+scroll-input behavior remains deterministic interaction evidence because the producer has no
+matching protocol. `BottomAppBar`/`FlexibleBottomAppBar` remain absent, so the family stays
+Partial. M2 returns to Blocked because open decision D004 still blocks its two remaining P0 tasks.
+
 ## 2026-07-30 — BottomSheetScaffold closure
 
 Closed `M4-BOTTOM-SHEET-001` after verifying the D002 option 1A migration: each scaffold exposes a
