@@ -59,8 +59,13 @@ internal sealed class MaterialBottomSheetScaffoldPanel : Panel
                 MidpointRounding.AwayFromZero);
         var sheetLeft = (width - sheetWidth) / 2;
 
-        slots.Content.Arrange(new Rect(0, 0, finalSize.Width, finalSize.Height));
-        slots.Top.Arrange(new Rect(0, 0, finalSize.Width, slots.Top.DesiredSize.Height));
+        var topHeight = Math.Min(height, Pixels(slots.Top.DesiredSize.Height, scale));
+        slots.Content.Arrange(new Rect(
+            0,
+            topHeight / scale,
+            finalSize.Width,
+            Math.Max(0, (height - topHeight) / scale)));
+        slots.Top.Arrange(new Rect(0, 0, finalSize.Width, topHeight / scale));
         slots.Snackbar.Arrange(new Rect(
             (finalSize.Width - slots.Snackbar.DesiredSize.Width) / 2,
             Math.Max(0, sheetTop / scale - slots.Snackbar.DesiredSize.Height - 16),

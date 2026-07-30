@@ -247,6 +247,9 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
         ApplyTheme();
     }
 
+    static MaterialBottomSheetScaffoldSheet() =>
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialBottomSheetScaffoldSheet>(false);
+
     public double PeekHeight
     {
         get => GetValue(PeekHeightProperty);
@@ -270,26 +273,40 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
 
     internal double SheetFraction => _fraction;
 
+    // The parity adapter consumes the same shape and shadow inputs used by Render. This is
+    // structural evidence for the standard sheet's asymmetric CornerExtraLargeTop elevation.
+    internal ComposeShadowShape ParityShadowShape =>
+        ComposeShadowShape.RoundedRectangle(new Rect(Bounds.Size), ContainerCornerRadius);
+
+    internal ComposeShadowParameters ParityShadowParameters =>
+        ComposeShadowParameters.Material(_tokens.ContainerElevation, ShadowColor);
+
+    internal bool ParityShadowOccluderDrawn => true;
+
     private SpringAnimation? _motionFraction;
+
+    private CornerRadius ContainerCornerRadius =>
+        _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+
+    private Color ShadowColor =>
+        _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
     public override void Render(DrawingContext context)
     {
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
         MaterialContainer.Draw(
             context,
             this,
             Bounds.Size,
-            corners,
+            ContainerCornerRadius,
             _colors.ContainerColor,
             outline: null,
             outlineWidth: 0,
             elevation: _tokens.ContainerElevation,
-            shadowColor: _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark)
-                         ?? Colors.Black);
+            shadowColor: ShadowColor);
         base.Render(context);
         var handle = new Rect(
             (Bounds.Width - _tokens.DragHandleWidth) / 2,
-            (_tokens.DragHandleSpace - _tokens.DragHandleHeight) / 2,
+            _tokens.DragHandleSpace,
             _tokens.DragHandleWidth,
             _tokens.DragHandleHeight);
         context.DrawRectangle(
@@ -339,7 +356,12 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
     {
         _tokens = BottomSheetTokens.Standard;
         _colors = _tokens.Resolve(_theme.Theme.ColorScheme, _theme.IsDark);
-        Padding = new Thickness(0, _tokens.DragHandleSpace, 0, 0);
+        // DragHandle uses 22dp vertical padding on both sides around its 4dp stroke.
+        Padding = new Thickness(
+            0,
+            _tokens.DragHandleSpace * 2 + _tokens.DragHandleHeight,
+            0,
+            0);
         ObserveState(State);
         InvalidateVisual();
     }

@@ -60,6 +60,10 @@ class ProbeRegistry {
 data class ShadowProbeSpec(
     val shapeKind: String,
     val cornerRadiusDp: Float,
+    val topLeftCornerRadiusDp: Float = cornerRadiusDp,
+    val topRightCornerRadiusDp: Float = cornerRadiusDp,
+    val bottomRightCornerRadiusDp: Float = cornerRadiusDp,
+    val bottomLeftCornerRadiusDp: Float = cornerRadiusDp,
     val elevationDp: Float,
     val ambientColorArgb: String = "#FF000000",
     val spotColorArgb: String = "#FF000000",

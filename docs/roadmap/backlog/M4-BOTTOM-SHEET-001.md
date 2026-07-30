@@ -35,4 +35,15 @@ consistent on supported desktop platforms.
 - The scaffold exposes Avalonia's `IExpandCollapseProvider`: UIA states map Hidden to Collapsed,
   PartiallyExpanded directly, and Expanded directly; actions retain the state owner's veto.
 - Deterministic tests: `MaterialBottomSheetScaffoldTests` (5/5 passed).
-- Remaining: nested-scroll handoff, snackbar host state/restore, and Compose motion parity case.
+- Static and motion parity now cover partial/expanded light states, partial dark, and the
+  expressive partial-to-expanded spring at 0ms/150ms/1000ms. The scene explicitly selects the
+  official `MotionScheme.expressive()` because this library uses that scheme as its default while
+  the producer's outer legacy theme remains standard.
+- Parity artifact `artifacts/visual-parity/xunit/20260730-004901-477`: all six cases have exact
+  geometry, text, shadow contracts, and (where applicable) motion metadata. Partial dark is
+  `semanticRasterEquivalent`; the five light cases are truthful `mismatch` results solely because
+  the current shadow-edge policy rejects a continuous 594–596 pixel, channel-delta-1 residual.
+  The user confirmed this is a visual-parity framework parameter issue and will adjust that
+  infrastructure separately; no component tolerance was widened here.
+- Remaining: nested-scroll handoff and integration with the separately planned SnackbarHost state
+  and restoration contract.

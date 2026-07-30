@@ -130,6 +130,8 @@ public sealed class AvaloniaParityCapture
         // passes to graphicsLayer during a drag.
         MaterialListItem listItem when listItem.ParityShadowParameters.Elevation > 0 =>
             new MaterialListItemShadowProbe(listItem),
+        MaterialBottomSheetScaffoldSheet sheet =>
+            new MaterialBottomSheetScaffoldShadowProbe(sheet),
         _ => null
     };
 
@@ -143,6 +145,16 @@ public sealed class AvaloniaParityCapture
         public ComposeShadowParameters ShadowParameters => listItem.ParityShadowParameters;
 
         public bool OccluderDrawn => listItem.ParityShadowOccluderDrawn;
+    }
+
+    private sealed class MaterialBottomSheetScaffoldShadowProbe(
+        MaterialBottomSheetScaffoldSheet sheet) : IParityShadowProbe
+    {
+        public ComposeShadowShape ShadowShape => sheet.ParityShadowShape;
+
+        public ComposeShadowParameters ShadowParameters => sheet.ParityShadowParameters;
+
+        public bool OccluderDrawn => sheet.ParityShadowOccluderDrawn;
     }
 
     private static bool TryCaptureGeometryProbe(

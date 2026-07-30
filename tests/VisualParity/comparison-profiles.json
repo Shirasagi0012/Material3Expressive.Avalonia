@@ -259,6 +259,7 @@
     { "prefix": "listitem/click/disabled-dragged/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "listitem/", "profileId": "component-with-text" },
     { "prefix": "segmentedbutton/", "profileId": "component-with-text" },
+    { "prefix": "bottomsheet/scaffold/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "scaffold/", "profileId": "container" },
     { "prefix": "navigation/", "profileId": "component-with-text" }
   ]

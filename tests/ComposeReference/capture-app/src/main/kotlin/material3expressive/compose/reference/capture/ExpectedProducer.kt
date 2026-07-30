@@ -394,12 +394,16 @@ class ExpectedProducer(
         val clip = spec.clipProbeId?.let { id ->
             checkNotNull(probes.geometryBounds(id)) { "Shadow clip probe '$id' was not captured." }
         }
-        val radius = spec.cornerRadiusDp
         return CaptureShadow(
             shapeKind = spec.shapeKind,
             shapeBoundsLocalDp = BoundsPx(0f, 0f, widthDp, heightDp),
             occluderBoundsDevicePx = BoundsPx(geometry.left, geometry.top, geometry.right, geometry.bottom),
-            cornerRadiiDp = CornerRadiiPx(radius, radius, radius, radius),
+            cornerRadiiDp = CornerRadiiPx(
+                spec.topLeftCornerRadiusDp,
+                spec.topRightCornerRadiusDp,
+                spec.bottomRightCornerRadiusDp,
+                spec.bottomLeftCornerRadiusDp,
+            ),
             localToDevice = AffineTransformPx(
                 m11 = scale, m12 = 0f,
                 m21 = 0f, m22 = scale,
