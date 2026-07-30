@@ -3,7 +3,7 @@ id: M4-BOTTOM-SHEET-001
 order: 420
 work_item: BottomSheetScaffold
 priority: P1
-status: In Progress
+status: Complete
 milestone: M4
 dependencies: [D002, M3-SCAFFOLD-001]
 decisions: [D002, D003, D009]
@@ -34,34 +34,48 @@ consistent on supported desktop platforms.
   56dp/640dp defaults, physical-pixel sheet placement, and interrupted spring motion.
 - The scaffold exposes Avalonia's `IExpandCollapseProvider`: UIA states map Hidden to Collapsed,
   PartiallyExpanded directly, and Expanded directly; actions retain the state owner's veto.
-- The current nullable public `State` is a provisional implementation: null is connected to the
-  template's internally owned state and replacement transfers the sheet observer. It must migrate
-  to D002 option 1A's non-null getter and explicit reset operation before this task is complete.
+- D002 option 1A is implemented: the public `State` getter always returns the per-instance
+  effective state, replacement transfers the sheet and automation observers, `ResetState()`
+  installs a fresh partial state, and a runtime null from an older binding is immediately
+  normalized to that same reset behavior.
 - Pointer drag capture is delayed until directional intent is known. Upward nested scroll is
   pre-consumed by the sheet (with Avalonia `ScrollViewer` offset compensation), downward motion is
   consumed only after the child reaches its top boundary, precision-wheel input follows the same
   ownership order, and `SheetSwipeEnabled=false` removes the sheet from that handoff.
 - Snackbar placement matches `BottomSheetScaffoldLayout`: above the partial anchor, but at the
   scaffold bottom for Expanded/Hidden.
-- Deterministic tests: `MaterialBottomSheetScaffoldTests` (9/9 passed), including owned/external
-  state wiring, nested-scroll consumption, disabled gestures, veto restoration, and snackbar
-  placement.
+- Deterministic tests: `MaterialBottomSheetScaffoldTests` (10/10 passed), including non-null/reset
+  state ownership, owned/external replacement wiring, nested-scroll consumption, disabled
+  gestures, veto restoration, snackbar placement, and UI Automation.
 - Static and motion parity now cover partial/expanded light states, partial dark, and the
   expressive partial-to-expanded spring at 0ms/150ms/1000ms. The scene explicitly selects the
   official `MotionScheme.expressive()` because this library uses that scheme as its default while
   the producer's outer legacy theme remains standard.
-- Parity artifact `artifacts/visual-parity/xunit/20260730-004901-477`: all six cases have exact
-  geometry, text, shadow contracts, and (where applicable) motion metadata. Partial dark is
-  `semanticRasterEquivalent`; the five light cases are truthful `mismatch` results solely because
-  the current shadow-edge policy rejects a continuous 594–596 pixel, channel-delta-1 residual.
-  The user confirmed this is a visual-parity framework parameter issue and will adjust that
-  infrastructure separately; no component tolerance was widened here.
-- Remaining: migration to D002 option 1A's non-null getter/reset contract and integration with the
-  separately planned SnackbarHost state/restoration contract.
+- Fresh parity artifacts `artifacts/visual-parity/xunit/20260730-044603-016` and
+  `artifacts/visual-parity/xunit/20260730-044647-922`: all six cases are
+  `semanticRasterEquivalent` with zero rejected pixels and exact geometry, text, shadow, and
+  motion contracts. Expected and actual PNG, layout, and comparison hashes are identical across
+  the two runs. The 0ms, 150ms, and 1000ms checkpoints exactly match scenario, trigger, elapsed
+  ticks, delivery schedule, capture index, schedule hash, and clock coverage.
+- `MaterialSnackbarHost` and `SnackbarHostState` now own the separately completed queue, timeout,
+  cancellation, restoration, and accessibility contract; this scaffold retains only the external
+  host slot and its upstream placement behavior.
 
-## Blocker
+## Completion evidence
 
-D002 option 1A is accepted. The provisional nullable `BottomSheetState` API now needs migration
-to a non-null getter and explicit reset path before it can be declared complete and reused by
-SnackbarHost and later M4 controls. All other local BottomSheet implementation, deterministic
-tests, structural parity, and documentation work is complete.
+| Dimension | Evidence |
+|---|---|
+| Upstream | AndroidX `ff0a0a99` `BottomSheetScaffold.kt:116-340,453-620` and `SheetDefaults.kt:90-260,496-540`; synchronous vetoable commands and the external Snackbar host are recorded Avalonia adaptations. |
+| Tokens | `BottomSheetTokens` v0_210 records `SheetBottomTokens.kt`; standard shape, surface color, Level1 elevation, 32×4dp handle, 22dp handle space, 56dp peek, and 640dp maximum width are represented. |
+| API | Body, top-bar, snackbar, and sheet slots; non-null/reset `BottomSheetState`; peek/max-width/swipe properties; and recoverable initial anchors are public and XAML-compatible. |
+| Visual | Light/dark partial, expanded, and three expressive-spring checkpoints pass the centralized comparison contract with exact structural probes and no rejected pixels. |
+| Behavior | Vetoable expand/partial/hide, replacement/reset, interrupted spring settling, nested-scroll handoff, precision wheel, and snackbar placement are deterministic-test covered. |
+| Desktop | Delayed pointer capture, `ScrollViewer` boundary ownership, physical-pixel placement, and supported in-window overlay ordering are covered. The scaffold adds no keyboard focus stop because slotted content owns focus; state actions are exposed through UIA. This persistent sheet does not create a popup. |
+| Accessibility | `IExpandCollapseProvider` maps Hidden/PartiallyExpanded/Expanded to the three UIA states, raises state changes, follows replacement, and retains veto semantics. |
+| Tests | Focused deterministic suite passes 10/10. Six static/motion parity rows pass twice reproducibly at the artifact roots above. |
+| Documentation | README usage, Catalog example, component matrix, roadmap history, and this task record describe ownership, restoration, gestures, parity, and known adaptations. |
+
+The exit criteria are satisfied: transitions, interruption, restoration, placement, and supported
+desktop input/automation behavior are documented and tested. D003 remains a cross-component
+policy question, but this task introduces no unrecorded visual divergence or comparison-profile
+exception and is not blocked by it.

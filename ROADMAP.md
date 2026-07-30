@@ -75,10 +75,7 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-Current focus: M4-BOTTOM-SHEET-001. D002 is accepted as option 1A. SnackbarHost is complete with
-deterministic queue/timeout behavior, Polite automation, full-shadow motion parity, and
-Scaffold/Catalog integration; platform accessibility recommended-timeout adaptation is
-user-authorized Deferred under DEF-002.
+Current focus: none.
 
 ## Workstreams
 
@@ -116,7 +113,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | M1 | Baseline and inventory | Complete | Verified |
 | M2 | Existing component closure | Blocked | D004 blocks remaining P0 accessibility work; D002 state-contract migration remains |
 | M3 | Application building blocks | Complete | Verified |
-| M4 | Advanced input and containers | In Progress | D002 accepted; BottomSheet/Snackbar state-contract migration remains |
+| M4 | Advanced input and containers | In Progress | SnackbarHost and BottomSheetScaffold complete; remaining M4 controls are planned |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
 
 ### M1 — Baseline and inventory
@@ -167,6 +164,8 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-30: BottomSheetScaffold closed with the D002 non-null/reset state contract, desktop
+  nested-input behavior, UI Automation, and reproducible six-case static/motion parity.
 - 2026-07-30: MaterialScaffold layout, ListItem grouping, long-click behavior, and related parity
   evidence were completed; SegmentedButton then closed M3. Details are in
   [`history.md`](docs/roadmap/history.md).

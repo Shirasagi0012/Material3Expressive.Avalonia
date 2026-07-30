@@ -3,6 +3,22 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — BottomSheetScaffold closure
+
+Closed `M4-BOTTOM-SHEET-001` after verifying the D002 option 1A migration: each scaffold exposes a
+non-null per-instance `BottomSheetState`, transfers sheet and automation observation on external
+replacement, restores a fresh partial anchor through `ResetState()`, and normalizes runtime null
+bindings to that explicit reset behavior. The separately completed Snackbar host owns queue,
+timeout, cancellation, restoration, and accessibility policy; BottomSheetScaffold retains the
+external slot and upstream placement contract.
+
+The focused deterministic suite passed 10/10. All six alpha22-compatible static and
+partial-to-expanded spring cases passed as `semanticRasterEquivalent` with exact geometry, text,
+shadow, and motion contracts and zero rejected pixels in consecutive runs at
+`artifacts/visual-parity/xunit/20260730-044603-016` and
+`artifacts/visual-parity/xunit/20260730-044647-922`. Expected and actual PNG, layout, and comparison
+hashes were identical between runs; the 0ms, 150ms, and 1000ms timeline metadata matched exactly.
+
 ## 2026-07-30 — SnackbarHost motion closure
 
 Closed `M4-SNACKBAR-001` with FIFO queue and timeout behavior, overlapping FastEffects/FastSpatial
