@@ -115,9 +115,9 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
     public static readonly StyledProperty<bool> SheetSwipeEnabledProperty =
         AvaloniaProperty.Register<MaterialBottomSheetScaffold, bool>(
             nameof(SheetSwipeEnabled), true);
-    public static readonly StyledProperty<BottomSheetState?> StateProperty =
-        AvaloniaProperty.Register<MaterialBottomSheetScaffold, BottomSheetState?>(
-            nameof(State), defaultValue: null);
+    public static readonly DirectProperty<MaterialBottomSheetScaffold, BottomSheetState> StateProperty =
+        AvaloniaProperty.RegisterDirect<MaterialBottomSheetScaffold, BottomSheetState>(
+            nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
     public static readonly DirectProperty<MaterialBottomSheetScaffold, Thickness> ContentPaddingProperty =
         AvaloniaProperty.RegisterDirect<MaterialBottomSheetScaffold, Thickness>(
             nameof(ContentPadding), owner => owner.ContentPadding);
@@ -167,16 +167,19 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
         set => SetValue(SheetSwipeEnabledProperty, value);
     }
 
-    /// <summary>Gets or sets the persistent sheet state. Null restores a fresh partial state.</summary>
-    public BottomSheetState? State
+    /// <summary>Gets or sets the persistent sheet state. The getter is always non-null.</summary>
+    public BottomSheetState State
     {
-        get => GetValue(StateProperty);
-        set => SetValue(StateProperty, value);
+        get => _state;
+        set => SetState(value);
     }
 
     public Thickness ContentPadding => _contentPadding;
 
     internal BottomSheetState EffectiveState => _state;
+
+    /// <summary>Replaces the current state with a fresh default partial state.</summary>
+    public void ResetState() => SetState(null);
 
     internal void SetContentPadding(Thickness value)
     {
@@ -188,17 +191,7 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == StateProperty)
-        {
-            _state.PropertyChanged -= OnStateChanged;
-            _state = State ?? new BottomSheetState();
-            _state.PropertyChanged += OnStateChanged;
-            if (_sheet is not null)
-                _sheet.State = _state;
-            InvalidateMeasure();
-            InvalidateVisual();
-        }
-        else if (change.Property == SheetPeekHeightProperty
+        if (change.Property == SheetPeekHeightProperty
                  || change.Property == SheetMaxWidthProperty
                  || change.Property == SheetContentProperty
                  || change.Property == TopBarProperty
@@ -223,6 +216,21 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
         InvalidateVisual();
     }
 
+    private void SetState(BottomSheetState? value)
+    {
+        var next = value ?? new BottomSheetState();
+        if (ReferenceEquals(_state, next))
+            return;
+
+        _state.PropertyChanged -= OnStateChanged;
+        SetAndRaise(StateProperty, ref _state, next);
+        _state.PropertyChanged += OnStateChanged;
+        if (_sheet is not null)
+            _sheet.State = _state;
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
     protected override AutomationPeer OnCreateAutomationPeer() =>
         new MaterialBottomSheetScaffoldAutomationPeer(this);
 }
@@ -234,8 +242,9 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
         AvaloniaProperty.Register<MaterialBottomSheetScaffoldSheet, double>(nameof(PeekHeight), 56);
     public static readonly StyledProperty<bool> SwipeEnabledProperty =
         AvaloniaProperty.Register<MaterialBottomSheetScaffoldSheet, bool>(nameof(SwipeEnabled), true);
-    public static readonly StyledProperty<BottomSheetState?> StateProperty =
-        AvaloniaProperty.Register<MaterialBottomSheetScaffoldSheet, BottomSheetState?>(nameof(State));
+    public static readonly DirectProperty<MaterialBottomSheetScaffoldSheet, BottomSheetState> StateProperty =
+        AvaloniaProperty.RegisterDirect<MaterialBottomSheetScaffoldSheet, BottomSheetState>(
+            nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
 
     private readonly MaterialThemeWatcher _theme;
     private readonly MotionGroup _motion;
@@ -247,6 +256,7 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
     private ScrollViewer? _dragScrollViewer;
     private int? _nestedGestureId;
     private double _fraction = 1;
+    private BottomSheetState _state = new();
     private BottomSheetState? _observedState;
 
     public MaterialBottomSheetScaffoldSheet()
@@ -293,10 +303,10 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
         set => SetValue(SwipeEnabledProperty, value);
     }
 
-    public BottomSheetState? State
+    public BottomSheetState State
     {
-        get => GetValue(StateProperty);
-        set => SetValue(StateProperty, value);
+        get => _state;
+        set => SetState(value);
     }
 
     private double Fraction =>
@@ -351,7 +361,7 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (!SwipeEnabled || State is null)
+        if (!SwipeEnabled)
             return;
 
         _dragStart = e.GetPosition(this);
@@ -417,7 +427,7 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
 
     internal double ConsumeNestedScrollDelta(double deltaY, bool childConsumed)
     {
-        if (!SwipeEnabled || State is null || Math.Abs(deltaY) < double.Epsilon)
+        if (!SwipeEnabled || Math.Abs(deltaY) < double.Epsilon)
             return 0;
 
         var consumed = 0d;
@@ -503,7 +513,7 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
 
     private void OnNestedPointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {
-        if (!SwipeEnabled || State is null || e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        if (!SwipeEnabled || e.KeyModifiers.HasFlag(KeyModifiers.Shift))
             return;
 
         var viewer = FindScrollViewer(e.Source);
@@ -554,10 +564,10 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
     {
         base.OnPropertyChanged(change);
         if (change.Property == StateProperty)
-            ObserveState(change.GetNewValue<BottomSheetState?>());
+            ObserveState(change.GetNewValue<BottomSheetState>());
     }
 
-    private void ObserveState(BottomSheetState? state)
+    private void ObserveState(BottomSheetState state)
     {
         if (ReferenceEquals(_observedState, state))
             return;
@@ -569,6 +579,15 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
             _observedState.PropertyChanged += OnStateChanged;
             AnimateTo(ValueFraction(_observedState.CurrentValue), snap: true);
         }
+    }
+
+    private void SetState(BottomSheetState? value)
+    {
+        var next = value ?? new BottomSheetState();
+        if (ReferenceEquals(_state, next))
+            return;
+        SetAndRaise(StateProperty, ref _state, next);
+        ObserveState(next);
     }
 
     private void OnStateChanged(object? sender, PropertyChangedEventArgs e)

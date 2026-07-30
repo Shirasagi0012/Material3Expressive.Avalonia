@@ -37,6 +37,26 @@ public sealed class MaterialBottomSheetScaffoldTests
     }
 
     [AvaloniaFact]
+    public void StateGetterIsAlwaysNonNullAndResetCreatesAFreshDefault()
+    {
+        var scaffold = new MaterialBottomSheetScaffold();
+        var initial = scaffold.State;
+
+        Assert.NotNull(initial);
+        Assert.Equal(BottomSheetValue.PartiallyExpanded, initial.CurrentValue);
+
+        scaffold.ResetState();
+        var reset = scaffold.State;
+        Assert.NotSame(initial, reset);
+        Assert.Equal(BottomSheetValue.PartiallyExpanded, reset.CurrentValue);
+
+        // A binding can still deliver null at runtime; it is treated as an immediate reset.
+        scaffold.State = null!;
+        Assert.NotNull(scaffold.State);
+        Assert.NotSame(reset, scaffold.State);
+    }
+
+    [AvaloniaFact]
     public void OwnedStateIsConnectedToTheTemplatedSheetAndReplacementStateFollows()
     {
         var scaffold = new MaterialBottomSheetScaffold

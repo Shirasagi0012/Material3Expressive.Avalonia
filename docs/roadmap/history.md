@@ -3,6 +3,15 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — D002 option 1A accepted
+
+Accepted the shared complex-state contract: only queue, cancellation, gesture-anchor,
+asynchronous-transaction, or cross-control coordination behavior receives an independent state
+object. Such controls expose a non-null effective `State`, create a per-instance default, detach
+and attach observers on replacement, and define in-flight operation handling per concrete state
+type. Persistence remains application-owned through recoverable constructors. Simple scalar state
+stays on Avalonia properties; null denotes a genuinely absent feature, and reset is explicit.
+
 ## 2026-07-26 — Foundations and initial component coverage
 
 The first roadmap established the architecture used by the current library:

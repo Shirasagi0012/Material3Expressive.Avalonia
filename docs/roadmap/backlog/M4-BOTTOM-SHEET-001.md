@@ -3,7 +3,7 @@ id: M4-BOTTOM-SHEET-001
 order: 420
 work_item: BottomSheetScaffold
 priority: P1
-status: Blocked
+status: In Progress
 milestone: M4
 dependencies: [D002, M3-SCAFFOLD-001]
 decisions: [D002, D003, D009]
@@ -34,8 +34,9 @@ consistent on supported desktop platforms.
   56dp/640dp defaults, physical-pixel sheet placement, and interrupted spring motion.
 - The scaffold exposes Avalonia's `IExpandCollapseProvider`: UIA states map Hidden to Collapsed,
   PartiallyExpanded directly, and Expanded directly; actions retain the state owner's veto.
-- A null public `State` is now connected to the template's internally owned state; replacing it
-  transfers the sheet observer without losing the selected anchor.
+- The current nullable public `State` is a provisional implementation: null is connected to the
+  template's internally owned state and replacement transfers the sheet observer. It must migrate
+  to D002 option 1A's non-null getter and explicit reset operation before this task is complete.
 - Pointer drag capture is delayed until directional intent is known. Upward nested scroll is
   pre-consumed by the sheet (with Avalonia `ScrollViewer` offset compensation), downward motion is
   consumed only after the child reaches its top boundary, precision-wheel input follows the same
@@ -55,12 +56,12 @@ consistent on supported desktop platforms.
   the current shadow-edge policy rejects a continuous 594–596 pixel, channel-delta-1 residual.
   The user confirmed this is a visual-parity framework parameter issue and will adjust that
   infrastructure separately; no component tolerance was widened here.
-- Remaining: integration with the separately planned SnackbarHost state/restoration contract and
-  resolution of shared state-ownership decision D002.
+- Remaining: migration to D002 option 1A's non-null getter/reset contract and integration with the
+  separately planned SnackbarHost state/restoration contract.
 
 ## Blocker
 
-D002 must choose the public owned/external state convention before the provisional nullable
-`BottomSheetState` API can be declared complete and reused by SnackbarHost and later M4 controls.
-All local BottomSheet implementation, deterministic tests, structural parity, and documentation
-work that does not depend on that decision has been completed.
+D002 option 1A is accepted. The provisional nullable `BottomSheetState` API now needs migration
+to a non-null getter and explicit reset path before it can be declared complete and reused by
+SnackbarHost and later M4 controls. All other local BottomSheet implementation, deterministic
+tests, structural parity, and documentation work is complete.

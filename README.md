@@ -140,12 +140,13 @@ Its `BottomSheetState` starts at `PartiallyExpanded`, exposes vetoable `Expand()
 maximum width defaults. `SheetContent` is measured at full height and clipped by the partial
 anchor. `SheetSwipeEnabled` coordinates delayed pointer capture, precision-wheel input, and
 `ScrollViewer` chaining: upward motion expands the sheet before scrolling its content, while
-downward motion returns to the peek anchor only after the child reaches its top boundary. A null
-`State` uses an internally owned state that remains connected to the templated sheet; assign a
-`BottomSheetState` when the application needs external ownership or restoration. Snackbar queue
-state remains the separate `SnackbarHost` responsibility. Static and expressive-spring parity
-contracts are present; the current light-theme result retains a documented one-channel shadow
-framework-parameter mismatch.
+downward motion returns to the peek anchor only after the child reaches its top boundary. Its
+state follows the shared complex-state contract: the getter exposes the non-null effective
+`BottomSheetState`, each instance creates a default, and assigning an external state transfers
+observation. Applications restore an anchor by constructing `BottomSheetState` with its initial
+value; reset uses the control's explicit reset operation. Snackbar queue state remains the separate
+`SnackbarHost` responsibility. Static and expressive-spring parity contracts are present; the
+current light-theme result retains a documented one-channel shadow framework-parameter mismatch.
 
 ```xml
 <m3:MaterialScaffold x:Name="Scaffold"

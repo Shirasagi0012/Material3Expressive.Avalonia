@@ -75,8 +75,9 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-None. M4-BOTTOM-SHEET-001 completed all decision-independent implementation and verification work
-but is Blocked on D002, the shared owned/external state convention.
+Current focus: M4-BOTTOM-SHEET-001. D002 is accepted as option 1A. BottomSheet's state getter/reset
+migration is implemented and verified; the remaining work is the separately planned SnackbarHost
+state/restoration contract.
 
 ## Workstreams
 
@@ -112,9 +113,9 @@ Milestones express dependency order, not release versions. Their detailed work i
 | ID | Milestone | Status | Exit status |
 |---|---|---|---|
 | M1 | Baseline and inventory | Complete | Verified |
-| M2 | Existing component closure | Blocked | D002 and D004 block remaining P0 work |
+| M2 | Existing component closure | Blocked | D004 blocks remaining P0 accessibility work; D002 state-contract migration remains |
 | M3 | Application building blocks | Complete | Verified |
-| M4 | Advanced input and containers | Blocked | D002 must establish the shared state convention |
+| M4 | Advanced input and containers | In Progress | D002 accepted; BottomSheet/Snackbar state-contract migration remains |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
 
 ### M1 — Baseline and inventory
