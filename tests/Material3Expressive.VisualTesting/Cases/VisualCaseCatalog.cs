@@ -21,7 +21,8 @@ public static class VisualCaseCatalog
         .. SecureTextFieldParityCases.All,
         .. PickerInputParityCases.All,
         .. ExposedDropdownMenuParityCases.All,
-        .. SwipeToDismissBoxParityCases.All
+        .. SwipeToDismissBoxParityCases.All,
+        .. PullToRefreshBoxParityCases.All
     ];
 
     public static VisualCase Get(string id) =>

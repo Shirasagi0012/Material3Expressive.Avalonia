@@ -75,6 +75,36 @@
                             </m3:MaterialSwipeToDismissBox>
                         </Border>
                     </StackPanel>
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="title-large" Text="Pull to refresh" />
+                        <TextBlock Classes="body-medium"
+                                   MaxWidth="720"
+                                   HorizontalAlignment="Left"
+                                   TextWrapping="Wrap"
+                                   Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                   Text="Pull downward after the list reaches its top. F5 and Ctrl+R provide the same refresh request without a drag; application state owns when refreshing finishes." />
+                        <Border Classes="demo-canvas" Padding="16">
+                            <m3:MaterialPullToRefreshBox x:Name="PullRefresh"
+                                                         Width="420"
+                                                         Height="180"
+                                                         HorizontalAlignment="Left"
+                                                         RefreshRequested="OnRefreshRequested">
+                                <ScrollViewer>
+                                    <StackPanel>
+                                        <m3:MaterialListItem Content="Morning briefing"
+                                                             SupportingContent="Pull down when this list is at the top."
+                                                             InteractionMode="None" />
+                                        <m3:MaterialListItem Content="Design review"
+                                                             SupportingContent="Refresh is application-owned state."
+                                                             InteractionMode="None" />
+                                        <m3:MaterialListItem Content="Release notes"
+                                                             SupportingContent="F5 and Ctrl+R are desktop alternatives."
+                                                             InteractionMode="None" />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </m3:MaterialPullToRefreshBox>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Badges -->

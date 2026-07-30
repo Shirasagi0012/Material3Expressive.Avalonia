@@ -3,6 +3,25 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — PullToRefresh closure
+
+Closed `M4-REFRESH-001` with `MaterialPullToRefreshBox` and replaceable non-null
+`PullToRefreshState`. The implementation preserves alpha25's half-distance pull, strict 80dp
+threshold, nonlinear capped overshoot, child-at-top downward ownership, upward pre-scroll
+retraction, downward fling consumption, application-owned refresh lifetime, default 40dp
+IndicatorBox with top-only clipping and Level2 elevation, and exact default Animatable spring.
+F5, Ctrl+R, Escape, Pane/Invoke, and read-only RangeValue are explicit D003 desktop adaptations.
+
+Twelve focused tests cover state, restoration, thresholds, nested scrolling, velocity,
+interruption, replacement, keyboard, automation, layout, and default elevation. Three
+alpha22-compatible controlled retract checkpoints establish state and animation at the same
+trigger time zero and pass through the unchanged
+`component-with-text-and-elevation-motion` profile. Final full-suite counts and consecutive
+artifact paths are recorded in `M4-REFRESH-001`: the full unit project passes 380/380,
+non-parity visual/contract tests pass 53/53, the isolated Catalog build has zero errors, and
+consecutive parity runs at `artifacts/visual-parity/xunit/20260730-095023-984` and
+`artifacts/visual-parity/xunit/20260730-095103-709` accept all three rows without warnings.
+
 ## 2026-07-30 — SwipeToDismissBox closure
 
 Closed `M4-DISMISS-001` with `MaterialSwipeToDismissBox` and replaceable non-null

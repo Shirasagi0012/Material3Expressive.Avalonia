@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
@@ -31,5 +33,14 @@ public partial class OverlaysPage : UserControl
         _ = SnackbarHost.State.ShowSnackbarAsync(
             "Conversation archived",
             actionLabel: "Undo");
+    }
+
+    private async void OnRefreshRequested(object? sender, EventArgs e)
+    {
+        if (PullRefresh.IsRefreshing)
+            return;
+        PullRefresh.IsRefreshing = true;
+        await Task.Delay(1200);
+        PullRefresh.IsRefreshing = false;
     }
 }

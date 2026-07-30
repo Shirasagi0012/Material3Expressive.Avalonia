@@ -75,7 +75,7 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-Current focus: none. Select the next eligible task by the deterministic backlog rules.
+Current focus: none.
 
 ## Workstreams
 

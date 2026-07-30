@@ -12,6 +12,7 @@ import material3expressive.compose.reference.scenes.registerFoundationScenes
 import material3expressive.compose.reference.scenes.registerMotionProbeScenes
 import material3expressive.compose.reference.scenes.registerNavigationScenes
 import material3expressive.compose.reference.scenes.registerPickerInputScenes
+import material3expressive.compose.reference.scenes.registerPullToRefreshBoxScenes
 import material3expressive.compose.reference.scenes.registerSegmentedButtonScenes
 import material3expressive.compose.reference.scenes.registerSnackbarScenes
 import material3expressive.compose.reference.scenes.registerSwipeToDismissBoxScenes
@@ -61,6 +62,7 @@ fun main(args: Array<String>) {
         registerNavigationScenes()
         registerExposedDropdownMenuScenes()
         registerSwipeToDismissBoxScenes()
+        registerPullToRefreshBoxScenes()
     }
 
     val allIds = registry.allIds()

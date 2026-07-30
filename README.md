@@ -245,6 +245,36 @@ requires edge clipping. On desktop, Delete invokes `EndToStart`, Shift+Delete in
 `StartToEnd`, and Escape resets. UI Automation exposes a ListItem with Invoke for the common
 EndToStart action (falling back to StartToEnd when it is the only enabled direction).
 
+## Pull to refresh
+
+`MaterialPullToRefreshBox` overlays its content with the Material 40dp refresh indicator. Raw
+downward travel is halved, the adjusted threshold defaults to 80dp, and overshoot follows
+AndroidX's capped nonlinear tension. Downward nested motion is accepted only after a child
+`ScrollViewer` reaches its top; upward motion retracts the indicator before the child scrolls.
+
+```xml
+<m3:MaterialPullToRefreshBox x:Name="RefreshBox"
+                             Height="320"
+                             IsRefreshing="{Binding IsRefreshing}"
+                             RefreshRequested="OnRefreshRequested">
+    <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Messages}" />
+    </ScrollViewer>
+</m3:MaterialPullToRefreshBox>
+```
+
+`RefreshRequested` asks the application to refresh; it does not own completion. Set
+`IsRefreshing="True"` while work is active and return it to `False` when the work completes. Each
+box creates a non-null `PullToRefreshState`, accepts a replacement, and exposes `ResetState()`.
+Persist `DistanceFraction` and pass it to the state constructor when restoring custom indicator
+progress. `State.SnapTo(...)`, `AnimateToThreshold()`, and `AnimateToHidden()` remain
+interruptible through the exact upstream Animatable spring.
+
+F5 and Ctrl+R request refresh without a pointer gesture. Escape hides a pending pull but does not
+cancel application-owned refresh work. UI Automation exposes Pane, Invoke, and a read-only,
+clamped RangeValue progress pattern. `PullEnabled="False"` disables gesture ownership while
+leaving keyboard and automation refresh actions available.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and

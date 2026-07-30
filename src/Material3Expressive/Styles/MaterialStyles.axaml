@@ -29,4 +29,5 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Scaffold.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/BottomSheetScaffold.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/SwipeToDismissBox.axaml" />
+    <StyleInclude Source="avares://Material3Expressive/Styles/Components/PullToRefreshBox.axaml" />
 </Styles>

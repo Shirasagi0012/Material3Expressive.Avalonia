@@ -161,6 +161,9 @@ public sealed class AvaloniaParityCapture
             new MaterialBottomSheetScaffoldShadowProbe(sheet),
         MaterialSnackbar snackbar =>
             new MaterialSnackbarShadowProbe(snackbar),
+        MaterialPullToRefreshIndicator indicator
+            when indicator.ParityShadowParameters.Elevation > 0 =>
+            new MaterialPullToRefreshIndicatorShadowProbe(indicator),
         _ => null
     };
 
@@ -193,6 +196,16 @@ public sealed class AvaloniaParityCapture
         public ComposeShadowParameters ShadowParameters => snackbar.ParityShadowParameters;
 
         public bool OccluderDrawn => snackbar.ParityShadowOccluderDrawn;
+    }
+
+    private sealed class MaterialPullToRefreshIndicatorShadowProbe(
+        MaterialPullToRefreshIndicator indicator) : IParityShadowProbe
+    {
+        public ComposeShadowShape ShadowShape => indicator.ParityShadowShape;
+
+        public ComposeShadowParameters ShadowParameters => indicator.ParityShadowParameters;
+
+        public bool OccluderDrawn => indicator.ParityShadowOccluderDrawn;
     }
 
     private static bool TryCaptureGeometryProbe(
