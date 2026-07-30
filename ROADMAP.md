@@ -113,7 +113,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | M1 | Baseline and inventory | Complete | Verified |
 | M2 | Existing component closure | Blocked | AppBar scrolling is complete; D004 still blocks RangeSlider and circular-wavy accessibility |
 | M3 | Application building blocks | Complete | Verified |
-| M4 | Advanced input and containers | In Progress | SnackbarHost, BottomSheetScaffold, SecureTextField, typed picker inputs, and ExposedDropdownMenu complete; remaining M4 controls are planned |
+| M4 | Advanced input and containers | Complete | Verified |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
 
 ### M1 — Baseline and inventory
@@ -164,6 +164,12 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-30: PullToRefresh closed M4 with application-owned refresh lifetime, replaceable
+  non-null state, desktop pull/nested-scroll/keyboard behavior, UI Automation, 12 focused tests,
+  and reproducible start/mid/settled retraction parity. The indicator host now applies the
+  upstream-compatible top-only clip without clipping its horizontal shadow.
+- 2026-07-30: SwipeToDismissBox closed with three logical anchors, direction and RTL handling,
+  desktop pointer/keyboard behavior, UI Automation, and reproducible static/motion parity.
 - 2026-07-30: ExposedDropdownMenu closed on native ComboBox state/selection, editable and
   non-editable keyboard/focus behavior, live viewport constraints, edge-aware popup placement,
   live UI Automation metadata, 7 focused tests, and reproducible start/mid/settled alpha22 parity.
