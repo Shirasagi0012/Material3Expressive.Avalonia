@@ -16,3 +16,4 @@ navigation and one-line summaries; the linked files are authoritative.
 | D009 | [MaterialScaffold layout API](D009-materialscaffold-layout-api.md) | Define scaffold slots, content padding, insets, and snackbar ownership. |
 | D010 | [SegmentedButton row API](D010-segmented-button-row-api.md) | Adapt single- and multi-choice segmented rows through one explicit-selection container. |
 | DEF-001 | [Complex-shape raster residual](DEF-001-complex-shape-raster-residual.md) | Keep the authorized complex-shape warning narrow and temporary. |
+| DEF-002 | [Snackbar accessibility recommended timeout](DEF-002-snackbar-accessibility-timeout.md) | Defer platform recommended-timeout adaptation until a suitable accessibility preference source exists. |

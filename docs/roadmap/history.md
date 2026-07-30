@@ -3,6 +3,21 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — SnackbarHost motion closure
+
+Closed `M4-SNACKBAR-001` with FIFO queue and timeout behavior, overlapping FastEffects/FastSpatial
+transitions, Polite Pane/Invoke automation, complete retained-shadow invalidation, and six
+short-timeout motion checkpoints. The eight Snackbar host parity cases passed in two consecutive
+runs at `artifacts/visual-parity/xunit/20260730-043234-180` and
+`artifacts/visual-parity/xunit/20260730-043308-724`; all 48 corresponding
+image/layout/comparison artifacts had identical SHA-256 hashes. Focused host tests passed 9/9,
+shadow tests passed 7/7, and comparison-contract/mutation tests passed 46/46.
+
+The user authorized `DEF-002`: platform accessibility recommended-timeout adaptation is Deferred
+until Avalonia or a library-wide abstraction exposes a suitable accessibility preference source.
+The alpha25 Short/Long/Indefinite defaults, application-selected `Indefinite`, and delivered Polite
+live-region semantics remain the supported boundary.
+
 ## 2026-07-30 — D002 option 1A accepted
 
 Accepted the shared complex-state contract: only queue, cancellation, gesture-anchor,
