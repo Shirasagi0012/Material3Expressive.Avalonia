@@ -18,10 +18,12 @@ internal static class ComponentParityCases
         ElevatedCard(),
         PrimaryFab(),
         SelectedCheckbox(),
+        CheckboxWithLabel(),
         IndeterminateCheckbox(),
         VerticalSlider(),
         RangeSlider(),
-        CircularWavyProgress()
+        CircularWavyProgress(),
+        SelectedTonalToggleButton()
     ];
 
     private static VisualCase FilledCard() =>
@@ -93,6 +95,22 @@ internal static class ComponentParityCases
                 VerticalAlignment = VerticalAlignment.Center
             });
 
+    private static VisualCase CheckboxWithLabel() =>
+        Scene(
+            "selection/checkbox/label/unchecked/light",
+            new PixelSize(160, 96),
+            _ => new MaterialCheckbox
+            {
+                Name = "component",
+                Content = new TextBlock
+                {
+                    Name = "label",
+                    Text = "Unchecked"
+                },
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
     private static VisualCase VerticalSlider() =>
         Scene(
             "selection/slider/vertical/default/light",
@@ -139,6 +157,25 @@ internal static class ComponentParityCases
                 VerticalAlignment = VerticalAlignment.Center
             },
             context => VisualMotionSettler.UseManualClock(context.Content));
+
+    private static VisualCase SelectedTonalToggleButton() =>
+        Scene(
+            "togglebutton/tonal/selected/light",
+            new PixelSize(160, 96),
+            _ => new MaterialToggleButton
+            {
+                Name = "component",
+                Variant = ButtonVariant.Tonal,
+                IsChecked = true,
+                Content = new TextBlock
+                {
+                    Name = "label",
+                    Text = "Tonal"
+                },
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            },
+            context => context.SettleAnimations());
 
     private static VisualCase Scene(
         string id,

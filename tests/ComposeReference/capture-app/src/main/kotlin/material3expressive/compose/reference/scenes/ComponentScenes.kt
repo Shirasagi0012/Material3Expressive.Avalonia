@@ -1,6 +1,7 @@
 package material3expressive.compose.reference.scenes
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -9,11 +10,15 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.TonalToggleButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.VerticalSlider
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
@@ -96,6 +101,41 @@ fun ReferenceCaseRegistry.registerComponentScenes() {
         },
     )
 
+    // Checkbox has no label slot in Compose. The Catalog's Content contract corresponds to a
+    // 48dp checkbox touch target followed by an adjacent BodyMedium label; keeping both probes
+    // makes any indicator/label overlap structural rather than a screenshot-only observation.
+    register(
+        CaseContract(
+            id = "selection/checkbox/label/unchecked/light",
+            viewportWidthDp = 160,
+            viewportHeightDp = 96,
+            dark = false,
+            requiredNodes = listOf(
+                RequiredNodeSpec(id = "component", kind = "container"),
+                RequiredNodeSpec(
+                    id = "label",
+                    kind = "text",
+                    parentId = "component",
+                    text = "Unchecked",
+                ),
+            ),
+        ),
+        ReferenceScene { probes ->
+            Row(
+                modifier = Modifier.then(probes.geometry("component")),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = false, onCheckedChange = {})
+                Text(
+                    text = "Unchecked",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = probes.text("label"),
+                    onTextLayout = probes.onTextLayout("label"),
+                )
+            }
+        },
+    )
+
     // Checkbox.kt (alpha22 and alpha25) maps Indeterminate to the selected container and the
     // dedicated indeterminate glyph. This is static terminal state, so no host-clock advance is
     // involved in capture.
@@ -165,6 +205,39 @@ fun ReferenceCaseRegistry.registerComponentScenes() {
                 waveSpeed = 0.dp,
                 modifier = Modifier.then(probes.geometry("component")),
             )
+        },
+    )
+
+    // The checked tonal form is the middle control in the Catalog's Toggle buttons sample.
+    // Probe its text layout so centring remains a structural contract, not merely raster parity.
+    register(
+        CaseContract(
+            id = "togglebutton/tonal/selected/light",
+            viewportWidthDp = 160,
+            viewportHeightDp = 96,
+            dark = false,
+            requiredNodes = listOf(
+                RequiredNodeSpec(id = "component", kind = "container"),
+                RequiredNodeSpec(
+                    id = "label",
+                    kind = "text",
+                    parentId = "component",
+                    text = "Tonal",
+                ),
+            ),
+        ),
+        ReferenceScene { probes ->
+            TonalToggleButton(
+                checked = true,
+                onCheckedChange = {},
+                modifier = Modifier.then(probes.geometry("component")),
+            ) {
+                Text(
+                    text = "Tonal",
+                    modifier = probes.text("label"),
+                    onTextLayout = probes.onTextLayout("label"),
+                )
+            }
         },
     )
 }

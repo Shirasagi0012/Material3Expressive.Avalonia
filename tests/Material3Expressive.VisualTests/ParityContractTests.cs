@@ -59,6 +59,8 @@ public sealed class ParityContractTests
     [InlineData("progress/loading-indicator/indeterminate/spring-mid/light", "container")]
     [InlineData("foundation/motion/linear-tween/mid/light", "container")]
     [InlineData("button/filled/medium/enabled/light", "component-with-text")]
+    [InlineData("togglebutton/tonal/selected/light", "component-with-text")]
+    [InlineData("selection/checkbox/label/unchecked/light", "component-with-text")]
     [InlineData("listitem/click/enabled/light", "component-with-text")]
     [InlineData("listitem/click/dragged/light", "component-with-text-and-elevation")]
     [InlineData("listitem/click/disabled-dragged/light", "component-with-text-and-elevation")]
