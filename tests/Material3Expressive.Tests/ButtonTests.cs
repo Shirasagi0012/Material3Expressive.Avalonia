@@ -129,6 +129,30 @@ public class ButtonTests
     }
 
     [AvaloniaFact]
+    public void SquareShapeSetBeforeAttach_ContinuesItsInitialTransition()
+    {
+        var button = new MaterialButton
+        {
+            Content = "Press",
+            Width = 120,
+            Height = 40,
+            IsSquare = true
+        };
+
+        ThemeTestHelper.ShowWindow(button);
+        var pill = CornerRadiusOf(button).TopLeft;
+
+        // The XAML-style value was applied before a TopLevel existed. Attaching must restart
+        // the pending spring; otherwise it remains at the original pill until some input event.
+        for (var frame = 0; frame < 4; frame++)
+            PumpFrame();
+
+        Assert.True(
+            CornerRadiusOf(button).TopLeft < pill,
+            "The initial square-shape transition did not advance after attaching to the window.");
+    }
+
+    [AvaloniaFact]
     public void SquaringItOff_MorphsRatherThanSnapping()
     {
         var button = new MaterialButton { Content = "Press", Width = 120, Height = 40 };

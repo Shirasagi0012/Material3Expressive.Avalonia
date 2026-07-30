@@ -103,6 +103,11 @@ public sealed class MaterialInteractionHost
             Set(InteractionState.Focused, false);
         };
 
+        // Styled properties are commonly assigned before the owner reaches a TopLevel. Shape
+        // changes may already be running at that point, but MotionGroup cannot request a frame
+        // yet; retrying here lets their initial transition complete without waiting for input.
+        _owner.AttachedToVisualTree += (_, _) => Motion.Start();
+
         // Off the tree there is no render clock, so anything mid-flight would freeze.
         _owner.DetachedFromLogicalTree += OnDetached;
     }
