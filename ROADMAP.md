@@ -75,7 +75,7 @@ Unrecorded dimensions do not count as complete.
 
 ## Current focus
 
-Current focus: none. SecureTextField is complete; select the next eligible task from M4.
+Current focus: none. Select the next eligible task by the deterministic backlog rules.
 
 ## Workstreams
 

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls.Primitives;
@@ -29,10 +30,17 @@ public enum TimePickerField
 /// </remarks>
 public class MaterialTimePicker : TemplatedControl
 {
+    /// <inheritdoc cref="State" />
+    public static readonly DirectProperty<MaterialTimePicker, MaterialTimePickerState> StateProperty =
+        AvaloniaProperty.RegisterDirect<MaterialTimePicker, MaterialTimePickerState>(
+            nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
+
     /// <inheritdoc cref="Time" />
     public static readonly StyledProperty<TimeSpan> TimeProperty =
         AvaloniaProperty.Register<MaterialTimePicker, TimeSpan>(
-            nameof(Time), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
+            nameof(Time),
+            defaultBindingMode: Avalonia.Data.BindingMode.TwoWay,
+            validate: static value => value >= TimeSpan.Zero && value < TimeSpan.FromDays(1));
 
     /// <inheritdoc cref="Field" />
     public static readonly StyledProperty<TimePickerField> FieldProperty =
@@ -43,6 +51,8 @@ public class MaterialTimePicker : TemplatedControl
 
     private readonly MaterialThemeWatcher _theme;
     private readonly MotionGroup _motion;
+    private MaterialTimePickerState _state = new();
+    private bool _updatingFromState;
 
     private SpringAnimation? _hand;
     private PickerTokens _tokens = PickerTokens.Time;
@@ -56,8 +66,18 @@ public class MaterialTimePicker : TemplatedControl
         _motion.Ticked += (_, _) => InvalidateVisual();
 
         _theme.Changed += (_, _) => ApplyTokens();
+        _state.PropertyChanged += OnStateChanged;
         Focusable = true;
         ApplyTokens();
+    }
+
+    /// <summary>
+    /// The non-null state shared with a <see cref="MaterialTimeInput"/> when both edit one value.
+    /// </summary>
+    public MaterialTimePickerState State
+    {
+        get => _state;
+        set => SetState(value);
     }
 
     static MaterialTimePicker()
@@ -78,6 +98,9 @@ public class MaterialTimePicker : TemplatedControl
         get => GetValue(FieldProperty);
         set => SetValue(FieldProperty, value);
     }
+
+    /// <summary>Replaces external state with a fresh, control-owned default.</summary>
+    public void ResetState() => SetState(null);
 
     /// <summary>The dial's box, below the headline.</summary>
     protected Rect DialArea
@@ -149,10 +172,56 @@ public class MaterialTimePicker : TemplatedControl
     {
         base.OnPropertyChanged(change);
 
+        if (!_updatingFromState)
+        {
+            if (change.Property == TimeProperty)
+                _state.Time = Time;
+            else if (change.Property == FieldProperty)
+                _state.Field = Field;
+        }
+
         if (change.Property == TimeProperty || change.Property == FieldProperty)
         {
             Hand.AnimateTo(TargetAngle(), _theme.Spring(MotionRole.FastSpatial));
             _motion.Start();
+        }
+    }
+
+    private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        _updatingFromState = true;
+        try
+        {
+            if (e.PropertyName == nameof(MaterialTimePickerState.Time))
+                SetCurrentValue(TimeProperty, _state.Time);
+            if (e.PropertyName == nameof(MaterialTimePickerState.Field))
+                SetCurrentValue(FieldProperty, _state.Field);
+        }
+        finally
+        {
+            _updatingFromState = false;
+        }
+    }
+
+    private void SetState(MaterialTimePickerState? value)
+    {
+        var next = value ?? new MaterialTimePickerState();
+        if (ReferenceEquals(_state, next))
+            return;
+
+        _state.PropertyChanged -= OnStateChanged;
+        SetAndRaise(StateProperty, ref _state, next);
+        _state.PropertyChanged += OnStateChanged;
+
+        _updatingFromState = true;
+        try
+        {
+            SetCurrentValue(TimeProperty, _state.Time);
+            SetCurrentValue(FieldProperty, _state.Field);
+        }
+        finally
+        {
+            _updatingFromState = false;
         }
     }
 

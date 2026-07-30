@@ -150,6 +150,42 @@ full-password reveal. The wrapper exposes an Edit automation role and accepts au
 input, but intentionally returns an empty automation value so assistive clients do not receive the
 secret.
 
+## Picker inputs
+
+`MaterialDateInput`, `MaterialDateRangeInput`, and `MaterialTimeInput` provide native desktop text
+editing alongside the graphical `MaterialDatePicker` and `MaterialTimePicker`. Date parsing uses
+`Culture` and its short-date pattern unless `DateFormat` supplies an exact pattern. Time input
+supports 24-hour fields and 12-hour AM/PM entry. Invalid or incomplete drafts never overwrite the
+last committed value.
+
+Enter or leaving the input commits; Escape restores the value present when editing began.
+`FocusInput()` moves focus to the first native editor after a dialog opens. Escape is deliberately
+left available to the parent route after canceling, so a dismissible `MaterialDialog` cancels the
+draft and closes in the same key gesture.
+
+Graphical and typed surfaces coordinate by sharing the appropriate non-null state object:
+
+```csharp
+var state = new MaterialDatePickerState(
+    selectedDate: restoredDate,
+    displayMode: DatePickerDisplayMode.Input);
+
+calendar.State = state;
+dateInput.State = state;
+
+if (dateInput.CommitEdit())
+    dialog.IsOpen = false;
+else
+    dateInput.FocusInput();
+```
+
+`MaterialDatePickerState`, `MaterialDateRangePickerState`, and `MaterialTimePickerState` follow the
+D002 complex-state convention: each control creates a private default, external replacement
+transfers observation, `ResetState()` creates a fresh default, and applications restore committed
+values through state constructors. Raw text is a cancelable control transaction, not persisted
+application state. For range state, use `UpdateRange(start, end)` when replacing both endpoints
+atomically.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and

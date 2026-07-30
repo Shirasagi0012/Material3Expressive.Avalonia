@@ -10,6 +10,7 @@ import material3expressive.compose.reference.scenes.registerDividerScenes
 import material3expressive.compose.reference.scenes.registerFoundationScenes
 import material3expressive.compose.reference.scenes.registerMotionProbeScenes
 import material3expressive.compose.reference.scenes.registerNavigationScenes
+import material3expressive.compose.reference.scenes.registerPickerInputScenes
 import material3expressive.compose.reference.scenes.registerSegmentedButtonScenes
 import material3expressive.compose.reference.scenes.registerSnackbarScenes
 import material3expressive.compose.reference.scenes.registerTextFieldScenes
@@ -54,6 +55,7 @@ fun main(args: Array<String>) {
         registerSegmentedButtonScenes()
         registerSnackbarScenes()
         registerTextFieldScenes()
+        registerPickerInputScenes()
         registerNavigationScenes()
     }
 

@@ -392,7 +392,7 @@ public sealed class AvaloniaParityCapture
                 probe.Origin,
                 transform,
                 scale,
-                styleSignature: textField is MaterialSecureTextField
+                styleSignature: textField is MaterialSecureTextField or MaterialDateInput
                     ? CaptureTextStyleSignature(
                         probe.Typeface,
                         probe.FontSize,

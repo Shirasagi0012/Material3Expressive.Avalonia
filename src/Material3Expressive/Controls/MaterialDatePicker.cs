@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls.Primitives;
@@ -24,6 +25,11 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialDatePicker : TemplatedControl
 {
+    /// <inheritdoc cref="State" />
+    public static readonly DirectProperty<MaterialDatePicker, MaterialDatePickerState> StateProperty =
+        AvaloniaProperty.RegisterDirect<MaterialDatePicker, MaterialDatePickerState>(
+            nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
+
     /// <inheritdoc cref="SelectedDate" />
     public static readonly StyledProperty<DateTime?> SelectedDateProperty =
         AvaloniaProperty.Register<MaterialDatePicker, DateTime?>(
@@ -41,6 +47,8 @@ public class MaterialDatePicker : TemplatedControl
     private const int MaxWeeks = 6;
 
     private readonly MaterialThemeWatcher _theme;
+    private MaterialDatePickerState _state = new();
+    private bool _updatingFromState;
 
     private PickerTokens _tokens = PickerTokens.Date;
     private PickerColors _colors = PickerTokens.Date.Resolve(null, false);
@@ -49,9 +57,21 @@ public class MaterialDatePicker : TemplatedControl
     {
         _theme = new MaterialThemeWatcher(this);
         _theme.Changed += (_, _) => ApplyTokens();
+        _state.PropertyChanged += OnStateChanged;
+        SetCurrentValue(SelectedDateProperty, _state.SelectedDate);
+        SetCurrentValue(DisplayMonthProperty, _state.DisplayMonth);
 
         Focusable = true;
         ApplyTokens();
+    }
+
+    /// <summary>
+    /// The non-null state shared with a <see cref="MaterialDateInput"/> when both edit one value.
+    /// </summary>
+    public MaterialDatePickerState State
+    {
+        get => _state;
+        set => SetState(value);
     }
 
     static MaterialDatePicker()
@@ -79,6 +99,9 @@ public class MaterialDatePicker : TemplatedControl
         get => GetValue(HeadlineProperty);
         set => SetValue(HeadlineProperty, value);
     }
+
+    /// <summary>Replaces external state with a fresh, control-owned default.</summary>
+    public void ResetState() => SetState(null);
 
     /// <summary>The area the month grid occupies, below the headline.</summary>
     protected Rect GridArea => new(
@@ -121,8 +144,51 @@ public class MaterialDatePicker : TemplatedControl
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == SelectedDateProperty && SelectedDate is { } selected)
-            DisplayMonth = new DateTime(selected.Year, selected.Month, 1);
+        if (_updatingFromState)
+            return;
+
+        if (change.Property == SelectedDateProperty)
+            _state.SelectedDate = SelectedDate;
+        else if (change.Property == DisplayMonthProperty)
+            _state.DisplayMonth = DisplayMonth;
+    }
+
+    private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        _updatingFromState = true;
+        try
+        {
+            if (e.PropertyName == nameof(MaterialDatePickerState.SelectedDate))
+                SetCurrentValue(SelectedDateProperty, _state.SelectedDate);
+            if (e.PropertyName == nameof(MaterialDatePickerState.DisplayMonth))
+                SetCurrentValue(DisplayMonthProperty, _state.DisplayMonth);
+        }
+        finally
+        {
+            _updatingFromState = false;
+        }
+    }
+
+    private void SetState(MaterialDatePickerState? value)
+    {
+        var next = value ?? new MaterialDatePickerState();
+        if (ReferenceEquals(_state, next))
+            return;
+
+        _state.PropertyChanged -= OnStateChanged;
+        SetAndRaise(StateProperty, ref _state, next);
+        _state.PropertyChanged += OnStateChanged;
+
+        _updatingFromState = true;
+        try
+        {
+            SetCurrentValue(SelectedDateProperty, _state.SelectedDate);
+            SetCurrentValue(DisplayMonthProperty, _state.DisplayMonth);
+        }
+        finally
+        {
+            _updatingFromState = false;
+        }
     }
 
     private void DrawHeadline(DrawingContext context)

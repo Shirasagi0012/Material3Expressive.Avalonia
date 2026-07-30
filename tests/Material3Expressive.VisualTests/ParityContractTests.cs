@@ -63,6 +63,7 @@ public sealed class ParityContractTests
     [InlineData("listitem/click/dragged/light", "component-with-text-and-elevation")]
     [InlineData("listitem/click/disabled-dragged/light", "component-with-text-and-elevation")]
     [InlineData("textfield/filled/empty/light", "text-field")]
+    [InlineData("picker-input/date/populated/light", "text-field")]
     [InlineData("bottomsheet/scaffold/partial/light", "component-with-text-and-elevation")]
     [InlineData("snackbar/host/motion/enter-mid/light", "component-with-text-and-elevation-motion")]
     [InlineData("snackbar/host/message/light", "component-with-text-and-elevation")]

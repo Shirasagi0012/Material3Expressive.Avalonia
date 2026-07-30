@@ -246,16 +246,16 @@ public class MaterialTextField : TemplatedControl
 
         if (_textBox is { })
         {
-            _textBox.GotFocus -= OnEditorFocusChanged;
-            _textBox.LostFocus -= OnEditorFocusChanged;
+            _textBox.GotFocus -= HandleEditorFocusChanged;
+            _textBox.LostFocus -= HandleEditorFocusChanged;
         }
 
         _textBox = e.NameScope.Find<TextBox>(TextBoxPartName);
 
         if (_textBox is { })
         {
-            _textBox.GotFocus += OnEditorFocusChanged;
-            _textBox.LostFocus += OnEditorFocusChanged;
+            _textBox.GotFocus += HandleEditorFocusChanged;
+            _textBox.LostFocus += HandleEditorFocusChanged;
         }
 
         UpdateEditorColors();
@@ -327,7 +327,9 @@ public class MaterialTextField : TemplatedControl
             // Start just past the notch and go all the way round back to just before it.
             // Compose's cutout resumes on a physical-pixel boundary. Snap this endpoint using the
             // active render scale so the first outline pixel is neither half-covered nor skipped.
-            var notchEnd = RoundToPhysicalPixel(notchStart + gap);
+            // Compose floors the cutout width to the preceding physical-pixel boundary. Rounding
+            // can skip the first outline pixel for short labels such as "Date".
+            var notchEnd = FloorToPhysicalPixel(notchStart + gap);
             sink.BeginFigure(new Point(notchEnd, rect.Y), false);
             sink.LineTo(new Point(rect.Right - radius.TopRight, rect.Y));
             sink.ArcTo(new Point(rect.Right, rect.Y + radius.TopRight),
@@ -350,10 +352,10 @@ public class MaterialTextField : TemplatedControl
         context.DrawGeometry(null, pen, geometry);
     }
 
-    private double RoundToPhysicalPixel(double value)
+    private double FloorToPhysicalPixel(double value)
     {
         var scale = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
-        return Math.Round(value * scale, MidpointRounding.AwayFromZero) / scale;
+        return Math.Floor(value * scale) / scale;
     }
 
     /// <summary>The breathing room the notch leaves on each side of the label.</summary>
@@ -471,11 +473,23 @@ public class MaterialTextField : TemplatedControl
     private static double Lerp(double start, double end, double amount) =>
         start + (end - start) * amount;
 
-    private void OnEditorFocusChanged(object? sender, RoutedEventArgs e)
+    /// <summary>Moves keyboard focus to the native editor hosted by the text-field template.</summary>
+    protected bool FocusEditor() => _textBox?.Focus() == true;
+
+    /// <summary>Moves keyboard focus to the native editor for a composite control in this assembly.</summary>
+    internal bool FocusHostedEditor() => FocusEditor();
+
+    /// <summary>Called when the hosted native editor gains or loses keyboard focus.</summary>
+    protected virtual void OnEditorFocusChanged(bool isFocused)
+    {
+    }
+
+    private void HandleEditorFocusChanged(object? sender, RoutedEventArgs e)
     {
         UpdateEditorLayout();
         UpdateFloat();
         InvalidateVisual();
+        OnEditorFocusChanged(_textBox?.IsFocused == true);
     }
 
     private void UpdateFloat(bool snap = false)

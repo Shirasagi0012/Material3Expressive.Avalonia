@@ -72,11 +72,17 @@
                         <TextBlock Classes="title-large" Text="Date and time pickers" />
                         <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
                                    Foreground="{mcu:MdSysColor OnSurfaceVariant}"
-                                   Text="The month grid is drawn rather than built from forty-two controls, and reads its day names from the current culture. The clock hand is sprung, so tapping a number on the far side sweeps to it." />
+                                   Text="Calendar and clock surfaces can share their non-null state with typed date, date-range, and time inputs. Typed drafts use the current culture, commit on Enter or focus loss, and cancel with Escape." />
                         <Border Classes="demo-canvas">
                             <WrapPanel ItemSpacing="28" LineSpacing="28">
                                 <m3:MaterialDatePicker />
                                 <m3:MaterialTimePicker />
+                                <StackPanel Spacing="16">
+                                    <m3:MaterialDateInput Width="240" />
+                                    <m3:MaterialDateRangeInput />
+                                    <m3:MaterialTimeInput />
+                                    <m3:MaterialTimeInput Use24HourClock="False" />
+                                </StackPanel>
                             </WrapPanel>
                         </Border>
                     </StackPanel>

@@ -305,6 +305,7 @@
     { "prefix": "progress/", "profileId": "container" },
     { "prefix": "textfield/", "profileId": "text-field" },
     { "prefix": "secure-textfield/", "profileId": "text-field" },
+    { "prefix": "picker-input/", "profileId": "text-field" },
     { "prefix": "foundation/typography/", "profileId": "component-with-text" },
     { "prefix": "button/", "profileId": "component-with-text" },
     { "prefix": "listitem/click/dragged/", "profileId": "component-with-text-and-elevation" },

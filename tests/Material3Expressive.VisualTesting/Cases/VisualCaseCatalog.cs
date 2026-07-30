@@ -18,7 +18,8 @@ public static class VisualCaseCatalog
         .. BottomSheetParityCases.All,
         .. SnackbarParityCases.All,
         .. AppBarParityCases.All,
-        .. SecureTextFieldParityCases.All
+        .. SecureTextFieldParityCases.All,
+        .. PickerInputParityCases.All
     ];
 
     public static VisualCase Get(string id) =>
