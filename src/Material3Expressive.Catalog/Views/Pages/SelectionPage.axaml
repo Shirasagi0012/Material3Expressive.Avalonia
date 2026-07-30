@@ -86,7 +86,7 @@
                     <TextBlock Classes="title-large" Text="Slider" />
                     <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
                                Foreground="{mcu:MdSysColor OnSurfaceVariant}"
-                               Text="Expressive replaced the round thumb with a tall bar and thickened the track to 16dp. Vertical sliders use top-to-bottom values; range sliders expose two bindable values that cannot cross. Drag one: the handle narrows to 2dp while held, so the value under it stays visible." />
+                               Text="Expressive replaced the round thumb with a tall bar and thickened the track to 16dp. Vertical sliders use top-to-bottom values; range sliders expose two bindable values that cannot cross. Tab and Shift+Tab traverse the Start and End endpoints before leaving; arrows, PageUp/PageDown, Home and End operate the focused endpoint." />
                     <Border Classes="demo-canvas">
                         <StackPanel Spacing="20" MaxWidth="480">
                             <m3:MaterialSlider Value="0.3" />

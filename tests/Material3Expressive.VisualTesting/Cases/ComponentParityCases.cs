@@ -22,6 +22,8 @@ internal static class ComponentParityCases
         IndeterminateCheckbox(),
         VerticalSlider(),
         RangeSlider(),
+        RangeSliderDark(),
+        RangeSliderDisabled(),
         CircularWavyProgress(),
         SelectedTonalToggleButton()
     ];
@@ -127,8 +129,17 @@ internal static class ComponentParityCases
             });
 
     private static VisualCase RangeSlider() =>
+        RangeSliderScene("selection/range-slider/default/light", dark: false, enabled: true);
+
+    private static VisualCase RangeSliderDark() =>
+        RangeSliderScene("selection/range-slider/default/dark", dark: true, enabled: true);
+
+    private static VisualCase RangeSliderDisabled() =>
+        RangeSliderScene("selection/range-slider/disabled/light", dark: false, enabled: false);
+
+    private static VisualCase RangeSliderScene(string id, bool dark, bool enabled) =>
         Scene(
-            "selection/range-slider/default/light",
+            id,
             new PixelSize(288, 96),
             _ => new MaterialRangeSlider
             {
@@ -139,9 +150,11 @@ internal static class ComponentParityCases
                 Maximum = 1,
                 StartValue = .25,
                 EndValue = .75,
+                IsEnabled = enabled,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
-            });
+            },
+            dark: dark);
 
     private static VisualCase CircularWavyProgress() =>
         Scene(
@@ -181,11 +194,12 @@ internal static class ComponentParityCases
         string id,
         PixelSize viewport,
         Func<VisualCaseContext, Control> createControl,
-        Action<VisualContext>? prepare = null) =>
+        Action<VisualContext>? prepare = null,
+        bool dark = false) =>
         new(
             id,
             viewport,
-            VisualTheme.Light,
+            dark ? VisualTheme.Dark : VisualTheme.Light,
             context => new Grid { Children = { createControl(context) } },
             RenderScaling: 1.0,
             Prepare: prepare);

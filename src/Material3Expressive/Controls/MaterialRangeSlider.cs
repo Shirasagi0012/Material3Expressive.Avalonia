@@ -1,8 +1,11 @@
 using System;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
+using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -13,7 +16,8 @@ namespace Material3Expressive.Controls;
 /// intentionally separate instead of overloading <see cref="Avalonia.Controls.Primitives.RangeBase.Value"/>:
 /// <see cref="StartValue"/> and <see cref="EndValue"/> are independently bindable, clamped to the
 /// configured range, and never cross. Pointer input selects the nearer thumb; keyboard input
-/// operates that selected thumb.
+/// operates that selected thumb. Tab moves from the Start endpoint to the End endpoint before
+/// leaving the control; Shift+Tab traverses the two endpoints in reverse.
 /// </remarks>
 public sealed class MaterialRangeSlider : Control
 {
@@ -33,6 +37,7 @@ public sealed class MaterialRangeSlider : Control
         AvaloniaProperty.Register<MaterialRangeSlider, double>(nameof(LargeChange), 10d);
 
     private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialInteractionHost _interaction;
     private SliderTokens _tokens = SliderTokens.Default;
     private SliderColors _colors = SliderTokens.Default.Resolve(null, false);
     private bool _updating;
@@ -41,6 +46,7 @@ public sealed class MaterialRangeSlider : Control
     public MaterialRangeSlider()
     {
         _theme = new MaterialThemeWatcher(this);
+        _interaction = new MaterialInteractionHost(this);
         _theme.Changed += (_, _) => ApplyTokens();
         Focusable = true;
         ApplyTokens();
@@ -69,16 +75,18 @@ public sealed class MaterialRangeSlider : Control
         var handleWidth = _tokens.HandleWidth;
         var start = PositionFor(StartValue, width, handleWidth);
         var end = PositionFor(EndValue, width, handleWidth);
+        var low = Math.Min(start, end);
+        var high = Math.Max(start, end);
         var radius = _tokens.TrackHeight / 2;
         var enabled = IsEffectivelyEnabled;
         var active = enabled ? _colors.ActiveTrackColor : _colors.DisabledActiveTrackColor;
         var inactive = enabled ? _colors.InactiveTrackColor : _colors.DisabledInactiveTrackColor;
         var trackStart = handleWidth / 2;
         var trackEnd = width - handleWidth / 2;
-        var startTrackEnd = start - handleWidth / 2 - _tokens.HandlePadding;
-        var activeStart = start + handleWidth / 2 + _tokens.HandlePadding;
-        var activeEnd = end - handleWidth / 2 - _tokens.HandlePadding;
-        var endTrackStart = end + handleWidth / 2 + _tokens.HandlePadding;
+        var startTrackEnd = low - handleWidth / 2 - _tokens.HandlePadding;
+        var activeStart = low + handleWidth / 2 + _tokens.HandlePadding;
+        var activeEnd = high - handleWidth / 2 - _tokens.HandlePadding;
+        var endTrackStart = high + handleWidth / 2 + _tokens.HandlePadding;
 
         DrawTrack(context, inactive, trackStart, startTrackEnd, center, radius, TrackInsideCornerSize);
         DrawTrack(context, active, activeStart, activeEnd, center, TrackInsideCornerSize, TrackInsideCornerSize);
@@ -93,6 +101,23 @@ public sealed class MaterialRangeSlider : Control
         var brush = enabled ? _colors.HandleColor : _colors.DisabledHandleColor;
         DrawHandle(context, start, center, handleWidth, brush);
         DrawHandle(context, end, center, handleWidth, brush);
+
+        var activePosition = _startActive ? start : end;
+        var stateLayerSize = _tokens.HandleHeight;
+        _interaction.InteractionArea = new Rect(
+            activePosition - stateLayerSize / 2,
+            center - stateLayerSize / 2,
+            stateLayerSize,
+            stateLayerSize);
+        var focusRingArea = new Rect(
+            activePosition - handleWidth / 2,
+            center - _tokens.HandleHeight / 2,
+            handleWidth,
+            _tokens.HandleHeight).Inflate(4);
+        _interaction.FocusRingArea = focusRingArea;
+        _interaction.FocusRingCornerRadius =
+            new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2);
+        _interaction.DrawLayers(context, _colors.StateLayerColor, new CornerRadius(stateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize) =>
@@ -106,7 +131,9 @@ public sealed class MaterialRangeSlider : Control
         var width = Bounds.Width;
         var handle = _tokens.HandleWidth;
         var x = e.GetPosition(this).X;
-        _startActive = Math.Abs(x - PositionFor(StartValue, width, handle)) <= Math.Abs(x - PositionFor(EndValue, width, handle));
+        SetActiveEndpoint(
+            Math.Abs(x - PositionFor(StartValue, width, handle)) <=
+            Math.Abs(x - PositionFor(EndValue, width, handle)));
         e.Pointer.Capture(this);
         SetActiveFrom(x);
         Focus();
@@ -130,19 +157,53 @@ public sealed class MaterialRangeSlider : Control
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        if (!IsEffectivelyEnabled)
+            return;
+
+        if (e.Key == Key.Tab &&
+            !e.KeyModifiers.HasFlag(KeyModifiers.Control) &&
+            !e.KeyModifiers.HasFlag(KeyModifiers.Alt) &&
+            !e.KeyModifiers.HasFlag(KeyModifiers.Meta))
+        {
+            var reverse = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+            if ((!reverse && _startActive) || (reverse && !_startActive))
+            {
+                SetActiveEndpoint(reverse);
+                e.Handled = true;
+            }
+
+            return;
+        }
+
         var step = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? LargeChange : SmallChange;
+        var direction = FlowDirection == FlowDirection.RightToLeft ? -1 : 1;
         switch (e.Key)
         {
             case Key.Left:
-                ChangeActive(-step); e.Handled = true; break;
+                ChangeActive(-step * direction); e.Handled = true; break;
             case Key.Right:
-                ChangeActive(step); e.Handled = true; break;
+                ChangeActive(step * direction); e.Handled = true; break;
+            case Key.PageDown:
+                ChangeActive(-LargeChange); e.Handled = true; break;
+            case Key.PageUp:
+                ChangeActive(LargeChange); e.Handled = true; break;
             case Key.Home:
                 SetActive(Minimum); e.Handled = true; break;
             case Key.End:
                 SetActive(Maximum); e.Handled = true; break;
         }
     }
+
+    protected override void OnGotFocus(FocusChangedEventArgs e)
+    {
+        base.OnGotFocus(e);
+
+        if (e.NavigationMethod == NavigationMethod.Tab)
+            SetActiveEndpoint(!e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+    }
+
+    protected override AutomationPeer OnCreateAutomationPeer() =>
+        new MaterialRangeSliderAutomationPeer(this);
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -195,7 +256,8 @@ public sealed class MaterialRangeSlider : Control
     {
         var travel = Bounds.Width - _tokens.HandleWidth;
         if (travel <= 0) return;
-        SetActive(Minimum + (Maximum - Minimum) * Math.Clamp((x - _tokens.HandleWidth / 2) / travel, 0, 1));
+        var fraction = Math.Clamp((x - _tokens.HandleWidth / 2) / travel, 0, 1);
+        SetActive(Minimum + (Maximum - Minimum) * fraction);
     }
 
     private void ChangeActive(double delta) => SetActive((_startActive ? StartValue : EndValue) + delta);
@@ -211,7 +273,42 @@ public sealed class MaterialRangeSlider : Control
     private double PositionFor(double value, double width, double handleWidth)
     {
         var range = Maximum - Minimum;
-        return handleWidth / 2 + (width - handleWidth) * (range <= 0 ? 0 : Math.Clamp((value - Minimum) / range, 0, 1));
+        var fraction = range <= 0 ? 0 : Math.Clamp((value - Minimum) / range, 0, 1);
+        return handleWidth / 2 + (width - handleWidth) * fraction;
+    }
+
+    internal bool IsStartEndpointActive => _startActive;
+
+    internal Rect? EndpointFocusRingArea => _interaction.FocusRingArea;
+
+    internal bool IsEndpointFocusIndicatorActive =>
+        _interaction.Interaction.HasFlag(InteractionState.Focused);
+
+    internal Rect GetThumbBounds(bool startEndpoint)
+    {
+        var handleWidth = _tokens.HandleWidth;
+        var center = Bounds.Height / 2;
+        var position = PositionFor(startEndpoint ? StartValue : EndValue, Bounds.Width, handleWidth);
+        return new Rect(
+            position - handleWidth / 2,
+            center - _tokens.HandleHeight / 2,
+            handleWidth,
+            _tokens.HandleHeight);
+    }
+
+    internal void FocusEndpoint(bool startEndpoint)
+    {
+        Focus(NavigationMethod.Tab);
+        SetActiveEndpoint(startEndpoint);
+    }
+
+    private void SetActiveEndpoint(bool startEndpoint)
+    {
+        if (_startActive == startEndpoint)
+            return;
+
+        _startActive = startEndpoint;
+        InvalidateVisual();
     }
 
     private void DrawTrack(

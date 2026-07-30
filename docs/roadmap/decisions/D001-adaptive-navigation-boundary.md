@@ -1,6 +1,7 @@
 # D001 — Adaptive navigation package boundary
 
-Status: Open
+Status: Accepted
+Date: 2026-07-30
 Blocks: M5 adaptive navigation tasks
 Decision owner: User
 
@@ -51,6 +52,10 @@ Choose **A: core package and `Material3Expressive.Controls`**. Treat adaptive as
 capability, not a deployment boundary. Revisit a package split only if a concrete optional
 dependency, platform restriction, or independent release cadence appears.
 
-## Confirmation required
+## Decision — option A
 
-The owner must select A, B, or C. Do not infer acceptance from this recommendation.
+Adaptive controls remain in the existing `Shirasagi0012.Material3Expressive.Avalonia` NuGet
+package and assembly. Public controls continue to use `Material3Expressive.Controls`; no
+`.Adaptive` public namespace is introduced. Responsive calculations, breakpoint helpers, and
+coordination implementation types remain `internal` wherever they are not required application
+state or public control API.

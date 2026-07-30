@@ -1,7 +1,7 @@
 # Material3Expressive.Avalonia — Roadmap
 
 Status: active planning
-Last updated: 2026-07-30
+Last updated: 2026-07-31
 
 This document is the project entry point and control plane. It describes direction, completion
 contracts, current focus, milestone state, and task-selection rules. It is not a release schedule.
@@ -111,7 +111,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | ID | Milestone | Status | Exit status |
 |---|---|---|---|
 | M1 | Baseline and inventory | Complete | Verified |
-| M2 | Existing component closure | Blocked | AppBar scrolling is complete; D004 still blocks RangeSlider and circular-wavy accessibility |
+| M2 | Existing component closure | Blocked | RangeSlider is complete; circular-wavy still requires DEF-001 disposition |
 | M3 | Application building blocks | Complete | Verified |
 | M4 | Advanced input and containers | Complete | Verified |
 | M5 | Adaptive and expressive coverage | Planned | Depends on D001 and responsive primitives |
@@ -163,6 +163,10 @@ The roadmap is complete only when:
 - Component counts can overstate readiness; the completion dimensions remain the delivery gate.
 
 ## Recent roadmap outcomes
+
+- 2026-07-31: RangeSlider closed under D004 with a Group/two-Slider UIA tree, dynamic endpoint
+  ranges, non-trapping Start/End Tab traversal, RTL input, active-endpoint focus indication,
+  11 focused tests, native Windows UIA verification, and exact/accepted light-dark-disabled parity.
 
 - 2026-07-30: The completion audit closed both supported focused-empty TextField failures with a
   complete CMP Desktop 1dp caret rectangle driven by native Avalonia caret position and desktop

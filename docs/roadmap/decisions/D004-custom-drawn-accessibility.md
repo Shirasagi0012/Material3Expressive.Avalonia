@@ -1,6 +1,7 @@
 # D004 — Custom-drawn control accessibility abstraction
 
-Status: Open
+Status: Accepted
+Date: 2026-07-30
 Blocks: M2 RangeSlider and CircularWavyProgress
 Decision owner: User
 
@@ -76,6 +77,54 @@ focus switching, constrained values, provider lookup, property-change notificati
 behavior, and owner detach/reconnect. Also validate the resulting tree through the Windows UIA
 bridge; document platform mapping differences rather than replacing the two-thumb semantics.
 
-## Confirmation required
+## Decision — option A with complete RangeSlider and progress contracts
 
-The owner must select A, B, or C. Do not infer acceptance from this recommendation.
+The accepted automation tree is:
+
+```text
+RangeSlider — Group, structural node, no RangeValue
+├─ Start range — Slider + IRangeValueProvider
+└─ End range   — Slider + IRangeValueProvider
+
+ProgressBar — ProgressBar + zero children
+```
+
+The RangeSlider parent never exposes a third RangeValue. Its two child peers are cached for the
+owner lifetime and use distinct stable names, automation IDs, and thumb bounds. They derive from
+`ControlAutomationPeer`, share the RangeSlider owner for Avalonia root/screen-coordinate support,
+and override part identity, bounds, focus, and provider behavior.
+
+The child range contracts are dynamic:
+
+| Peer | Minimum | Maximum | Value |
+|---|---:|---:|---:|
+| Start | `Minimum` | `EndValue` | `StartValue` |
+| End | `StartValue` | `Maximum` | `EndValue` |
+
+- Changing `StartValue` raises Start Value and End Minimum automation changes.
+- Changing `EndValue` raises End Value and Start Maximum automation changes.
+- Minimum, Maximum, SmallChange, LargeChange, enabled, and bounds changes raise their applicable
+  peer events.
+- Disabled peers reject `SetValue`; values outside a peer's current public range follow the UIA
+  RangeValue contract rather than silently creating an invalid range.
+- Automation can independently focus and operate both virtual sliders.
+
+Virtual peers are not Avalonia `IInputElement` instances and therefore do not create two physical
+Tab stops. This limitation is an explicit D003 desktop adaptation: the owner remains the actual
+focus element, while a documented keyboard gesture switches the active endpoint and a visible
+focus indicator identifies it. Endpoint switching, focus synchronization, and operation of both
+thumbs are required deterministic tests. A future demand for two independent Tab stops would
+require real lightweight focus-proxy controls and a new decision.
+
+All Material linear/circular, smooth/wavy progress variants use one automation rule independent
+of rendering shape:
+
+- Determinate: one non-focusable `ProgressBar`, no children, read-only `IRangeValueProvider`
+  with range `0..1`.
+- Indeterminate: one non-focusable `ProgressBar`, no children, no fabricated RangeValue; use
+  item status/help text to communicate ongoing activity.
+- Progress peers are never writable.
+
+The implementation must validate stable peer identity/order, names/IDs, dynamic bounds and
+ranges, cross-peer property notifications, disabled rejection, endpoint keyboard navigation,
+focus indication, owner detach/reconnect, and Windows UIA bridge shape.

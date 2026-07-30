@@ -3,6 +3,21 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-31 — RangeSlider automation and desktop endpoint navigation
+
+Closed `M2-SLIDER-002` under accepted D004. `MaterialRangeSlider` now exposes one structural Group
+with two cached Slider/RangeValue children, dynamic cross-constrained ranges, stable names/IDs and
+thumb bounds, cross-peer property notifications, provider validation, and owner-lifetime identity.
+The D003 physical-focus adaptation uses Start→End→leave Tab traversal (reversed for Shift+Tab),
+active-endpoint inset focus indication, Page/Home/End/arrows, pointer selection, and RTL behavior.
+
+Eleven focused tests pass; the full unit suite passes 395/395 and non-parity visual/contract tests
+pass 55/55. Native Windows UIA inspection confirmed the expected zero/2-child bridge shape and
+live ranges. The three light/dark/disabled alpha22-compatible rows at
+`artifacts/visual-parity/xunit/20260730-164847-666` are accepted with zero differing or rejected
+pixels and no warnings. Alpha25 state/Saver and keyboard-completion surfaces remain explicitly
+reference-version unavailable rather than being inferred from those static rows.
+
 ## 2026-07-30 — TextField desktop caret parity closure
 
 Closed `M2-TEXTFIELD-001` after the program-level audit reproduced the two long-standing

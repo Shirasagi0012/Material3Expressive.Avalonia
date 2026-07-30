@@ -189,6 +189,41 @@ fun ReferenceCaseRegistry.registerComponentScenes() {
         },
     )
 
+    register(
+        CaseContract(
+            id = "selection/range-slider/default/dark",
+            viewportWidthDp = 288,
+            viewportHeightDp = 96,
+            dark = true,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "container")),
+        ),
+        ReferenceScene { probes ->
+            RangeSlider(
+                value = 0.25f..0.75f,
+                onValueChange = {},
+                modifier = Modifier.requiredSize(240.dp, 44.dp).then(probes.geometry("component")),
+            )
+        },
+    )
+
+    register(
+        CaseContract(
+            id = "selection/range-slider/disabled/light",
+            viewportWidthDp = 288,
+            viewportHeightDp = 96,
+            dark = false,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "container")),
+        ),
+        ReferenceScene { probes ->
+            RangeSlider(
+                value = 0.25f..0.75f,
+                onValueChange = {},
+                enabled = false,
+                modifier = Modifier.requiredSize(240.dp, 44.dp).then(probes.geometry("component")),
+            )
+        },
+    )
+
     // Freeze wave travel with waveSpeed=0.dp. This preserves the alpha22 default morphology,
     // token values, and determinate semantics while making the raster contract clock-independent.
     register(

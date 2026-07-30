@@ -85,6 +85,28 @@ the same fixed viewport as Compose's `ImageVector`, and `ShowSelectionIcon="Fals
 default. Arrow, Home, and End keys move and select in single mode, while Space retains ordinary
 toggle behavior in multiple mode.
 
+## Range sliders
+
+`MaterialRangeSlider` exposes its ordered endpoints as ordinary bindable `StartValue` and
+`EndValue` properties. Pointer input selects the nearer thumb. For desktop keyboard access, Tab
+moves from Start to End before leaving the control; Shift+Tab follows the reverse order. Arrow
+keys make `SmallChange` adjustments, Shift+Arrow and PageUp/PageDown use `LargeChange`, and
+Home/End move the active endpoint to its current legal limit.
+
+```xml
+<m3:MaterialRangeSlider Minimum="0"
+                        Maximum="100"
+                        StartValue="25"
+                        EndValue="75"
+                        SmallChange="1"
+                        LargeChange="10" />
+```
+
+UI Automation exposes a structural Group with two independently writable Slider children named
+`Start range` and `End range`. Their legal RangeValue limits update as the opposite endpoint
+moves. Avalonia still has one physical focus owner; the active endpoint's inset focus ring makes
+that deliberate desktop adaptation visible.
+
 ## Surfaces and list rows
 
 `MaterialSurface` separates Material tonal and shadow elevation; `MaterialDivider` supplies the
