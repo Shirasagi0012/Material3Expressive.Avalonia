@@ -3,6 +3,24 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — SwipeToDismissBox closure
+
+Closed `M4-DISMISS-001` with `MaterialSwipeToDismissBox` and replaceable non-null
+`SwipeToDismissBoxState`. The implementation preserves alpha25's three logical anchors,
+application-restored current value, direction gating, 56dp position and 125dp/s velocity
+thresholds, RTL physical reversal, one-shot dismissal notification, and the foundation default
+300ms FastOutSlowIn tween. Pointer cancellation, mid-flight reset, state replacement, and
+direction removal are deterministic. Delete, Shift+Delete, Escape, and ListItem/Invoke automation
+are explicit desktop adaptations under D003.
+
+Eleven focused tests cover state, restoration, pointer, keyboard, automation, interruption, and
+layout; the full unit project passes 368/368, non-parity visual/contract tests pass 53/53, and the
+Catalog builds with zero errors. Three alpha22-compatible start/100ms/settled cases pass through
+the unchanged `component-with-text` comparison profile with exact motion schedules and transformed
+geometry, no warnings, and zero rejected pixels in consecutive runs at
+`artifacts/visual-parity/xunit/20260730-085844-908` and
+`artifacts/visual-parity/xunit/20260730-090520-424`.
+
 ## 2026-07-30 — ExposedDropdownMenu closure
 
 Closed `M4-DROPDOWN-001` with a filled/outlined `MaterialExposedDropdownMenu` that preserves

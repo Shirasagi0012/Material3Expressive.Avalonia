@@ -5,7 +5,7 @@ This inventory compares the Avalonia library with the
 `Defaults` objects, and state factories into user-facing feature families; it is not a count of
 individual Compose functions.
 
-Last audited: 2026-07-29 against AndroidX
+Last audited: 2026-07-30 against AndroidX
 `ff0a0a99c4f0cfe95d75d5df615e51d399575922` / Material3 `1.5.0-alpha25`.
 
 ## Status model
@@ -24,9 +24,9 @@ are defined in [`ROADMAP.md`](../../ROADMAP.md).
 
 | Status | Feature families | Share |
 |---|---:|---:|
-| Implemented | 20 | 40% |
+| Implemented | 21 | 42% |
 | Partial | 18 | 36% |
-| Missing | 12 | 24% |
+| Missing | 11 | 22% |
 | Total | 50 | 100% |
 
 The theming, color, typography, shape, motion, ripple, token-generation, and Material Symbols
@@ -94,7 +94,7 @@ represent them.
 | Pickers | DateInput and DateRangeInput | `MaterialDateInput`, `MaterialDateRangeInput` | Implemented | Exact culture/pattern formatting, min/max and ordered-range validation, native focus, Enter/focus-loss commit, Escape cancellation, state restoration/replacement, and dialog dismissal routing are deterministic-test covered. The populated date-input surface passes supported static parity exactly and reproducibly. |
 | Pickers | TimePicker, TimeInput, and dialogs | `MaterialTimePicker`, `MaterialTimeInput`, `MaterialTimePickerState` | Partial | Clock dial and 12/24-hour typed input share non-null/reset state; field validation, auto-advance, commit/cancel, restoration, and generic dialog composition are covered. Rich time picker/scroll variants and a specialized dialog wrapper remain absent. |
 | Collections | Carousel families | `MaterialCarousel` | Partial | Compose keylines, snap/fling behavior, state, and multi-aspect API are incomplete. |
-| Gestures | SwipeToDismissBox | None | Missing | Anchored dismiss state and direction behavior are absent. |
+| Gestures | SwipeToDismissBox | `MaterialSwipeToDismissBox`, `SwipeToDismissBoxState` | Implemented | Three logical anchors, application-restored initial values, non-null/reset external state, direction gating, 56dp position and 125dp/s velocity thresholds, RTL physical reversal, foreground overflow, one-shot dismissal notification, 300ms FastOutSlowIn anchored motion, and mid-flight reset/replacement are implemented. Delete/Shift+Delete/Escape and ListItem/Invoke automation are explicit D003 desktop adaptations. Eleven deterministic tests cover pointer, keyboard, restoration, interruption, layout, and accessibility. Three alpha22-compatible motion checkpoints pass through the existing `component-with-text` profile with exact transformed geometry/timeline contracts and zero warnings. |
 | Gestures | PullToRefresh | None | Missing | Pull state, threshold, and indicator container are absent. |
 | Desktop | Material scrollbar | None | Missing | No Material non-interactive scrollbar counterpart. |
 | Primitives | Surface, Divider, and Label | `MaterialSurface`, `MaterialDivider` | Partial | Public Surface tonal/shadow elevation and horizontal/vertical Divider are available. `MaterialDivider.IsHairline` is the explicit `Dp.Hairline` adaptation: a zero-layout cross axis with a one-physical-pixel retained stroke; `Thickness=0` remains no line. Alpha22 default/custom/horizontal/vertical/hairline parity passes. The separate Material label primitive remains absent, so this grouped family is not complete. |

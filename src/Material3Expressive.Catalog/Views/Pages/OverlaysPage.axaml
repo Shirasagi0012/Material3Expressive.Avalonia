@@ -46,6 +46,35 @@
                             </WrapPanel>
                         </Border>
                     </StackPanel>
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="title-large" Text="Swipe to dismiss" />
+                        <TextBlock Classes="body-medium"
+                                   MaxWidth="720"
+                                   HorizontalAlignment="Left"
+                                   TextWrapping="Wrap"
+                                   Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                                   Text="Drag past 56dp or fling past 125dp/s. Delete dismisses toward the reading start, Shift+Delete toward the reading end, and Escape resets the focused row." />
+                        <Border Classes="demo-canvas">
+                            <m3:MaterialSwipeToDismissBox Width="420"
+                                                          Height="72"
+                                                          HorizontalAlignment="Left">
+                                <m3:MaterialSwipeToDismissBox.BackgroundContent>
+                                    <Border Background="{mcu:MdSysColor ErrorContainer}"
+                                            Padding="16,0">
+                                        <TextBlock Classes="label-large"
+                                                   Text="Delete"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{mcu:MdSysColor OnErrorContainer}" />
+                                    </Border>
+                                </m3:MaterialSwipeToDismissBox.BackgroundContent>
+                                <m3:MaterialListItem Content="Archived message"
+                                                     SupportingContent="Swipe horizontally or use the keyboard."
+                                                     InteractionMode="None"
+                                                     Background="{mcu:MdSysColor SurfaceContainer}" />
+                            </m3:MaterialSwipeToDismissBox>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Badges -->

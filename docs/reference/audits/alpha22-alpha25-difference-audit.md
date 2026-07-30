@@ -35,6 +35,7 @@ the library version.
 | Divider and `Dp.Hairline` | `Divider.kt` / `DividerTokens.kt` retain the same default color/thickness, horizontal/vertical APIs, and `Dp.Hairline` drawing semantics between the executable alpha22 lineage and alpha25 source. | Default, custom-thickness, horizontal, vertical, and hairline reference scenes are executable at alpha22. Their accepted parity is normal alpha22 conformance evidence; there is no alpha25-only Divider version gap. |
 | Scaffold layout | `Scaffold.kt` retains the same five slots, caller-applied `PaddingValues`, insets, FAB positions, 16dp spacing, and snackbar/FAB geometry. Alpha25 adds explicit z-indices for content/top/snackbar/bottom/FAB (0/1/2/3/4); alpha22 obtains the same visual order from placement order. | `MaterialScaffold` exposes the five slots, read-only bindable `ContentPadding`, nullable TopLevel-safe-area adaptation, and all four FAB positions. The light full-slot and dark RTL EndOverlay cases are executable alpha22 conformance and both exact. Alpha25's explicit z-index constants are additionally locked by deterministic Avalonia template tests rather than misreported as an alpha22-only structural observation. |
 | Snackbar host | `SnackbarHost.kt` keeps the same fair single-current queue, cancellation, result, Short/Long/Indefinite duration, live-region/dismiss semantics, and fade/scale host transition between alpha22 and alpha25. | `SnackbarHostState` adapts the suspend queue to cancellable Tasks and D002's non-null state contract. Settled message and generated-action cases are executable alpha22 conformance and accepted, including the official TextButton geometry, inverse-primary paint, and LabelLarge text contract. Appearance/disappearance motion capture and Avalonia accessibility-timeout adaptation remain open and are not implied by those static passes. |
+| Swipe to dismiss | `SwipeToDismissBox.kt` retains the three logical anchors, direction switches, recoverable current-value Saver, 56dp positional threshold, 125dp/s fling threshold, RTL mapping, and `AnchoredDraggableDefaults.SnapAnimationSpec` between the executable alpha22 lineage and alpha25. Alpha25 adds the `onDismiss` callback overload and removes `confirmValueChange` from the preferred state constructor. | `MaterialSwipeToDismissBox` implements the shared gesture/motion contract and exposes `Dismissed` after the 300ms FastOutSlowIn anchor tween settles. D002 supplies replaceable non-null state, while Delete/Shift+Delete/Escape and Invoke automation are documented D003 desktop adaptations. Start, 100ms, and settled alpha22 motion cases pass through the existing profile; alpha25's new overload shape is source/test evidence rather than an executable alpha25 claim. |
 | Segmented buttons | `SegmentedButton.kt` keeps the single- and multi-choice row scopes, equal weighted widths, negative border-width spacing, `itemShape`, state colours, 18dp icon slot, and animated label displacement in both alpha22 and alpha25. Alpha25's default disabled border is still `Outline` at 12% opacity, despite the generated token table also naming `DisabledOutlineColor`. | `MaterialSegmentedButtonRow.SelectionMode` is the explicit XAML adaptation. Four single/multiple, light/dark, and disabled cases execute against alpha22 and pass; the source review additionally prevents the tempting but incorrect `OnSurface` disabled-border mapping. There is no alpha25-only visual gap for the covered states. |
 | Existing static parity families | For `Button.kt`, `Card.kt`, `FloatingActionButton.kt`, `Checkbox.kt`, `TextField.kt`, `OutlinedTextField.kt`, `NavigationBar.kt`, `NavigationRail.kt`, and `TabRow.kt`, the alpha22→alpha25 changes exercised by the current scene inputs are API visibility/signature stabilization or non-selected paths, not a changed default static scene. In particular, `ButtonDefaults.textStyleFor` keeps its 32/40 → LabelLarge, 56 → TitleMedium, 96 → HeadlineSmall, and 136dp → HeadlineLarge thresholds, and `Checkbox.kt` retains the styling-fix flag default of `false` on both sides. | Current cases remain valid alpha22 executable conformance cases. They have no implied alpha25 parity claim. |
 
@@ -85,6 +86,14 @@ The following features are explicitly unavailable for Compose parity at the pinn
 the reference is upgraded: alpha25-only ToggleButton border-transition behavior, alpha25 ListItem
 text-line-height behavior, and alpha25 Slider/RangeSlider state and keyboard-completion behavior.
 They require source review plus unit, structural, and deterministic Avalonia tests when delivered.
+
+The catalog now includes 126 executable-reference cases. The three
+`swipe-to-dismiss/end-to-start/{start,mid,settled}/light` rows exercise alpha22's public state and
+component APIs, including the coroutine clock, the default 300ms anchored tween, transformed
+foreground overflow, background reveal, and settled anchor. All three are accepted as
+`semanticRasterEquivalent` with no warnings in consecutive runs at
+`artifacts/visual-parity/xunit/20260730-085844-908` and
+`artifacts/visual-parity/xunit/20260730-090520-424`.
 
 ## Verification evidence
 
@@ -141,7 +150,7 @@ The delta review used the complete common source trees and specifically inspecte
 - `ListItem.kt`, `ListItemDefaults.kt`, `Scaffold.kt`, `tokens/ListTokens.kt`, `tokens/ElevationTokens.kt`,
   `tokens/ShapeTokens.kt`, alpha22 `internal/ripple/Ripple.kt`, alpha25 `material3-ripple/Ripple.kt`,
   `Slider.kt`, `AppBar.kt`, `FloatingToolbar.kt`, `ExposedDropdownMenu.kt`,
-  `Menu.kt`, `ScrollField.kt`, `ShortNavigationBar.kt`, `TimePicker.kt`, `Tooltip.kt`, and
+  `Menu.kt`, `ScrollField.kt`, `ShortNavigationBar.kt`, `SwipeToDismissBox.kt`, `TimePicker.kt`, `Tooltip.kt`, and
   `WideNavigationRail.kt` for forward component-matrix impact.
 
 The per-file generated token sources were included in the tree comparison. No token value change

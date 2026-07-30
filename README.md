@@ -22,7 +22,7 @@ Material token database and stamped with the version it came from.
 | **Motion** | A spring animator ported from `animation-core` — analytic, retargetable, velocity-preserving. |
 | **Interaction** | State layers with Material's asymmetric fades, ripples, and the corner-morph press feedback. |
 | **Symbols** | Material Symbols Rounded as the first-party icon family, including animatable fill, weight, grade and optical-size axes. |
-| **Components** | Surface, divider, list-row, segmented-list, and scaffold primitives; buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split, and segmented), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
+| **Components** | Surface, divider, list-row, segmented-list, scaffold, and swipe-to-dismiss primitives; buttons (5 variants × 5 sizes, plus toggle, icon, toggle icon, group, split, and segmented), FAB and FAB menu, card, checkbox, radio button, switch, slider, progress (linear, circular, wavy) and loading indicator, chips, text field, navigation bar and rail, tabs, app bar, drawer, dialog, bottom sheet, snackbar, tooltip, badge, menu, search, carousel, date and time pickers. |
 
 ## Getting started
 
@@ -211,6 +211,39 @@ editable one without consuming typed spaces. Arrow keys enter the choices, Escap
 selection returns focus to the anchor. The inherited ComboBox automation peer retains
 ExpandCollapse, Selection, and editable Value patterns while `Label`, `SupportingText`, and
 `IsError` supply the accessible name, help text, and invalid status.
+
+## Swipe to dismiss
+
+`MaterialSwipeToDismissBox` stacks `BackgroundContent` behind its ordinary foreground `Content`.
+Its non-null `SwipeToDismissBoxState` has logical `Settled`, `StartToEnd`, and `EndToStart`
+anchors, so application persistence stores `CurrentValue` and restores it through the state
+constructor. `ResetState()` replaces the state owner; `State.Reset()`, `State.Dismiss(...)`, and
+`State.SnapTo(...)` manipulate the existing owner.
+
+```xml
+<m3:MaterialSwipeToDismissBox Width="360"
+                              Height="72"
+                              Dismissed="OnMessageDismissed">
+    <m3:MaterialSwipeToDismissBox.BackgroundContent>
+        <Border Background="{mcu:MdSysColor ErrorContainer}" Padding="16">
+            <TextBlock Text="Delete"
+                       HorizontalAlignment="Right"
+                       Foreground="{mcu:MdSysColor OnErrorContainer}" />
+        </Border>
+    </m3:MaterialSwipeToDismissBox.BackgroundContent>
+
+    <m3:MaterialListItem Content="Message"
+                         SupportingContent="Swipe in either direction."
+                         InteractionMode="None" />
+</m3:MaterialSwipeToDismissBox>
+```
+
+Pointer release uses AndroidX's 56dp positional and 125dp/s velocity thresholds. Logical
+directions remain stable in RTL while the physical offset reverses. Compose leaves the translated
+foreground unclipped; set `ClipToBounds="True"` on an owning list viewport when an application
+requires edge clipping. On desktop, Delete invokes `EndToStart`, Shift+Delete invokes
+`StartToEnd`, and Escape resets. UI Automation exposes a ListItem with Invoke for the common
+EndToStart action (falling back to StartToEnd when it is the only enabled direction).
 
 ## Scaffold layout
 
