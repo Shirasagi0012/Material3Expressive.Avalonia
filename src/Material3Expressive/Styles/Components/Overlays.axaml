@@ -67,6 +67,19 @@
             </Setter>
         </ControlTheme>
 
+        <ControlTheme x:Key="{x:Type m3:MaterialSnackbarHost}" TargetType="m3:MaterialSnackbarHost">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalContentAlignment="Center"
+                                      VerticalContentAlignment="Bottom" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
         <ControlTheme x:Key="{x:Type m3:MaterialBadge}" TargetType="m3:MaterialBadge">
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />

@@ -148,6 +148,14 @@ value; reset uses the control's explicit reset operation. Snackbar queue state r
 `SnackbarHost` responsibility. Static and expressive-spring parity contracts are present; the
 current light-theme result retains a documented one-channel shadow framework-parameter mismatch.
 
+`MaterialSnackbarHost` provides the queue boundary used by a scaffold's snackbar slot. Call
+`SnackbarHostState.ShowSnackbarAsync(...)` to enqueue a message; the returned task completes with
+`SnackbarResult.ActionPerformed` or `SnackbarResult.Dismissed`. The host creates a per-instance
+non-null state by default, accepts an application-owned replacement, and exposes `ResetState()` for
+restoration to a fresh queue. Short, long, and indefinite durations follow the alpha25 defaults;
+the settled message visual has executable alpha22 parity, while action/motion parity and
+recommended accessibility timeout calculation remain documented gaps.
+
 ```xml
 <m3:MaterialScaffold x:Name="Scaffold"
                      FloatingActionButtonPosition="End">

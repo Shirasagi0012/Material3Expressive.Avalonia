@@ -132,6 +132,8 @@ public sealed class AvaloniaParityCapture
             new MaterialListItemShadowProbe(listItem),
         MaterialBottomSheetScaffoldSheet sheet =>
             new MaterialBottomSheetScaffoldShadowProbe(sheet),
+        MaterialSnackbar snackbar =>
+            new MaterialSnackbarShadowProbe(snackbar),
         _ => null
     };
 
@@ -155,6 +157,15 @@ public sealed class AvaloniaParityCapture
         public ComposeShadowParameters ShadowParameters => sheet.ParityShadowParameters;
 
         public bool OccluderDrawn => sheet.ParityShadowOccluderDrawn;
+    }
+
+    private sealed class MaterialSnackbarShadowProbe(MaterialSnackbar snackbar) : IParityShadowProbe
+    {
+        public ComposeShadowShape ShadowShape => snackbar.ParityShadowShape;
+
+        public ComposeShadowParameters ShadowParameters => snackbar.ParityShadowParameters;
+
+        public bool OccluderDrawn => snackbar.ParityShadowOccluderDrawn;
     }
 
     private static bool TryCaptureGeometryProbe(

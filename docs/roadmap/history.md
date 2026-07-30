@@ -12,6 +12,18 @@ and attach observers on replacement, and define in-flight operation handling per
 type. Persistence remains application-owned through recoverable constructors. Simple scalar state
 stays on Avalonia properties; null denotes a genuinely absent feature, and reset is explicit.
 
+## 2026-07-30 — SnackbarHost queue and state core
+
+Reviewed alpha25 `SnackbarHost.kt` at `ff0a0a99` and added `SnackbarHostState`, `SnackbarVisuals`,
+`SnackbarData`, `SnackbarDuration`, `SnackbarResult`, and `MaterialSnackbarHost`. FIFO queueing,
+action/dismiss results, current/queued cancellation, non-null per-instance state, reset semantics,
+generated MaterialSnackbar content/action, and Pane/Invoke dismissal are covered by six
+deterministic tests. The settled message case passed as `semanticRasterEquivalent` with zero
+rejected pixels at
+`artifacts/visual-parity/xunit/20260730-021438-111`. Action/motion parity, a Catalog external-slot
+example, and AccessibilityManager timeout recommendations remain open; the invalid Compose
+raster that placed a naked action text over the message was discarded rather than counted.
+
 ## 2026-07-26 — Foundations and initial component coverage
 
 The first roadmap established the architecture used by the current library:

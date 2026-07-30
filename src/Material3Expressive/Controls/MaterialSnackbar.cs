@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
 using MaterialColorUtilities.Avalonia.Tokens;
+using MaterialSkiaShadow;
 
 namespace Material3Expressive.Controls;
 
@@ -106,17 +107,28 @@ public class MaterialSnackbar : TemplatedControl
     /// <summary>How far open the snackbar is, 0 hidden and 1 shown.</summary>
     protected double OpenFraction => _open?.Value ?? (IsOpen ? 1 : 0);
 
+    internal ComposeShadowShape ParityShadowShape =>
+        ComposeShadowShape.RoundedRectangle(new Rect(Bounds.Size), ContainerCornerRadius);
+
+    internal ComposeShadowParameters ParityShadowParameters =>
+        ComposeShadowParameters.Material(_tokens.ContainerElevation, ShadowColor);
+
+    internal bool ParityShadowOccluderDrawn => true;
+
     private SpringAnimation Open =>
         _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
+
+    private CornerRadius ContainerCornerRadius =>
+        _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+
+    private Color ShadowColor =>
+        _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
     public override void Render(DrawingContext context)
     {
         var fraction = OpenFraction;
         if (fraction <= 0.001)
             return;
-
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         // Rises as it fades in: eight pixels is enough to read as arriving from below.
         using (context.PushTransform(Matrix.CreateTranslation(0, (1 - fraction) * 8)))
@@ -126,12 +138,12 @@ public class MaterialSnackbar : TemplatedControl
                 context,
                 this,
                 Bounds.Size,
-                corners,
+                ContainerCornerRadius,
                 _colors.ContainerColor,
                 null,
                 0,
                 _tokens.ContainerElevation,
-                shadow);
+                ShadowColor);
         }
     }
 
