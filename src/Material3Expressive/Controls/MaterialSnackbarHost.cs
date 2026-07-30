@@ -1,7 +1,8 @@
 // Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SnackbarHost.kt:49-177,
-// 260-314. Compose's suspending Mutex queue is adapted to a FIFO task queue; cancellation removes
-// the current or queued request, while Avalonia exposes the current state through notifications.
+// 260-314 and Snackbar.kt:222-281. Compose's suspending Mutex queue is adapted to a FIFO task
+// queue; cancellation removes the current or queued request. The generated action mirrors the
+// default SnackbarData TextButton's 58x40dp minimum and 12dp horizontal content inset.
 
 using System.ComponentModel;
 using Avalonia;
@@ -299,7 +300,7 @@ public sealed class MaterialSnackbarHost : ContentControl
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left
             }
         };
-        snackbar.Action = CreateAction(data, snackbar.ActionBrush);
+        snackbar.Action = CreateAction(data, snackbar);
         _snackbar = snackbar;
         _snackbar.PropertyChanged += OnSnackbarPropertyChanged;
         Content = _snackbar;
@@ -316,27 +317,31 @@ public sealed class MaterialSnackbarHost : ContentControl
         }
     }
 
-    private object? CreateAction(SnackbarData data, Avalonia.Media.IBrush actionBrush)
+    private object? CreateAction(SnackbarData data, MaterialSnackbar snackbar)
     {
         var label = data.Visuals.ActionLabel;
         if (label is null && !data.Visuals.WithDismissAction)
             return null;
+        var actionBrush = snackbar.ActionBrush;
+        var text = new TextBlock
+        {
+            Name = "action",
+            Text = label ?? "Dismiss",
+            Foreground = actionBrush,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+        };
         return new Button
         {
             Name = "action-button",
             Background = Avalonia.Media.Brushes.Transparent,
             BorderThickness = default,
-            Padding = default,
-            MinWidth = 0,
-            MinHeight = 0,
+            // Avalonia centers content inside MinHeight; adding Compose's separate 8dp vertical
+            // content padding here would apply that inset twice in the stock Button template.
+            Padding = new Thickness(12, 0),
+            MinWidth = 58,
+            MinHeight = 40,
             Foreground = actionBrush,
-            Content = new TextBlock
-            {
-                Name = "action",
-                Text = label ?? "Dismiss",
-                Foreground = actionBrush,
-                Classes = { "label-large" }
-            },
+            Content = text,
             Command = new ActionCommand(
                 label is null ? data.Dismiss : data.PerformAction)
         };

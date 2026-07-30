@@ -20,9 +20,17 @@ action/dismiss results, current/queued cancellation, non-null per-instance state
 generated MaterialSnackbar content/action, and Pane/Invoke dismissal are covered by six
 deterministic tests. The settled message case passed as `semanticRasterEquivalent` with zero
 rejected pixels at
-`artifacts/visual-parity/xunit/20260730-021438-111`. Action/motion parity, a Catalog external-slot
-example, and AccessibilityManager timeout recommendations remain open; the invalid Compose
-raster that placed a naked action text over the message was discarded rather than counted.
+`artifacts/visual-parity/xunit/20260730-021438-111`.
+
+The follow-up action audit found that the overlapping Compose raster came from applying an exact
+344dp width directly to alpha22's legacy Snackbar row, which forced the action child to measure at
+the full row minimum. Moving that constraint to the parent restored the real host contract.
+Avalonia now mirrors the generated TextButton's 58×40dp minimum, 12dp horizontal padding,
+asymmetric row padding, inverse-primary paint, and LabelLarge metrics. The corrected
+`snackbar/host/action/light` case passed as `semanticRasterEquivalent` with zero raster
+differences, warnings, or rejected pixels at
+`artifacts/visual-parity/xunit/20260730-023515-362`. Motion parity, a Catalog external-slot
+example, and AccessibilityManager timeout recommendations remain open.
 
 ## 2026-07-26 — Foundations and initial component coverage
 

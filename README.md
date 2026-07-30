@@ -153,8 +153,9 @@ current light-theme result retains a documented one-channel shadow framework-par
 `SnackbarResult.ActionPerformed` or `SnackbarResult.Dismissed`. The host creates a per-instance
 non-null state by default, accepts an application-owned replacement, and exposes `ResetState()` for
 restoration to a fresh queue. Short, long, and indefinite durations follow the alpha25 defaults;
-the settled message visual has executable alpha22 parity, while action/motion parity and
-recommended accessibility timeout calculation remain documented gaps.
+the settled message and generated `Undo` action visuals have executable alpha22 parity, while
+appearance/disappearance motion parity and recommended accessibility timeout calculation remain
+documented gaps.
 
 ```xml
 <m3:MaterialScaffold x:Name="Scaffold"

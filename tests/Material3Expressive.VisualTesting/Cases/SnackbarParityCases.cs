@@ -16,12 +16,19 @@ internal static class SnackbarParityCases
             "snackbar/host/message/light",
             new PixelSize(360, 96),
             VisualTheme.Light,
-            _ => Scene(),
+            _ => Scene(withAction: false),
+            RenderScaling: 1,
+            Prepare: context => context.SettleAnimations()),
+        new(
+            "snackbar/host/action/light",
+            new PixelSize(360, 96),
+            VisualTheme.Light,
+            _ => Scene(withAction: true),
             RenderScaling: 1,
             Prepare: context => context.SettleAnimations())
     ];
 
-    private static MaterialSnackbarHost Scene()
+    private static MaterialSnackbarHost Scene(bool withAction)
     {
         var state = new SnackbarHostState();
         var host = new MaterialSnackbarHost
@@ -33,6 +40,7 @@ internal static class SnackbarParityCases
         };
         _ = state.ShowSnackbarAsync(
             "Message archived",
+            actionLabel: withAction ? "Undo" : null,
             duration: SnackbarDuration.Indefinite);
         return host;
     }

@@ -10,7 +10,7 @@ decisions: [D002, D003, D009]
 parity: motion
 comparison-profile: existing
 docs: [docs/testing/visual-parity/core.md, docs/testing/visual-parity/animation.md]
-source-baseline: [SnackbarHost.kt]
+source-baseline: [SnackbarHost.kt, Snackbar.kt]
 ---
 
 # SnackbarHost
@@ -38,18 +38,23 @@ desktop overlay behavior has tests and supported parity evidence.
   supports action and dismiss-action buttons.
 - Deterministic tests: `MaterialSnackbarHostTests` (6/6 passed), covering FIFO results, current
   and queued cancellation, recoverable visuals, non-null/reset state, generated content, and
-  generated action plus automation dismissal.
-- The alpha22-compatible settled message scene `snackbar/host/message/light` matches the same
-  344×48 container, BodyMedium message, CornerExtraSmall shape, and Level3 shadow. It passed as
-  `semanticRasterEquivalent` with zero rejected pixels at
-  `artifacts/visual-parity/xunit/20260730-021438-111`.
+  generated action plus automation dismissal. The action test also locks the upstream 58×40dp
+  TextButton minimum, 12dp horizontal content padding, asymmetric Snackbar edge padding, and
+  LabelLarge metrics.
+- The alpha22-compatible settled message and generated-action scenes match the same 344×48
+  container, BodyMedium message, CornerExtraSmall shape, Level3 shadow, inverse-primary action,
+  and official TextButton placement. `snackbar/host/action/light` passed as
+  `semanticRasterEquivalent` with zero raster differences, warnings, or rejected pixels at
+  `artifacts/visual-parity/xunit/20260730-023515-362`; the message case passed in the same family
+  run with the same zero-difference result.
 
 ## Remaining
 
-Action-slot and appearance/disappearance motion parity, accessibility timeout recommendations,
-and a Catalog example wired through the external Scaffold slot remain open. The attempted action scene was
-removed because the Compose capture rendered a naked action `Text` over the message, while the
-official `TextButton` path reports unusable child root coordinates; that invalid raster is not
-parity evidence. Avalonia has no direct equivalent of Compose's `AccessibilityManager` timeout
-calculation, so the current host records the alpha25 Short/Long/Indefinite defaults and this gap
-must not be treated as an alpha22 visual pass.
+Appearance/disappearance motion parity, accessibility timeout recommendations, and a Catalog
+example wired through the external Scaffold slot remain open. The earlier overlapping action
+capture was traced to applying an exact-width modifier directly to alpha22's legacy Snackbar row,
+which incorrectly gave the action a 344dp minimum constraint; the corrected scene constrains the
+parent and lets Snackbar receive the host's normal loose width range. Avalonia has no direct
+equivalent of Compose's `AccessibilityManager` timeout calculation, so the current host records
+the alpha25 Short/Long/Indefinite defaults and this gap must not be treated as an alpha22 visual
+pass.

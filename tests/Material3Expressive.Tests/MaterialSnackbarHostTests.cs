@@ -2,11 +2,13 @@
 // SnackbarHost.kt. The tests cover the Avalonia FIFO/cancellation adaptation and the host's
 // pane/dismiss semantics; Compose's coroutine suspension is represented by Task results.
 
+using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using Material3Expressive.Controls;
 using Material3Expressive.Tests.TestUtils;
 using Xunit;
@@ -123,6 +125,18 @@ public sealed class MaterialSnackbarHostTests
             cancellationToken: TestContext.Current.CancellationToken);
         var snackbar = Assert.IsType<MaterialSnackbar>(host.Content);
         var action = Assert.IsType<Button>(snackbar.Action);
+        var label = Assert.IsType<TextBlock>(action.Content);
+
+        Assert.Equal(new Thickness(16, 0, 8, 0), snackbar.Padding);
+        Assert.Equal(new Thickness(12, 0), action.Padding);
+        Assert.Equal(58, action.MinWidth);
+        Assert.Equal(40, action.MinHeight);
+        Assert.Equal(14, label.FontSize);
+        Assert.Equal(20, label.LineHeight);
+        Assert.Equal(0.1, label.LetterSpacing);
+        Assert.Equal(FontWeight.Medium, label.FontWeight);
+        Assert.Same(snackbar.ActionBrush, label.Foreground);
+
         action.Command!.Execute(null);
 
         Assert.Equal(SnackbarResult.ActionPerformed, await pending);

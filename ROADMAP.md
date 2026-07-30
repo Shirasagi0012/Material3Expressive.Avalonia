@@ -76,8 +76,8 @@ Unrecorded dimensions do not count as complete.
 ## Current focus
 
 Current focus: M4-SNACKBAR-001. D002 is accepted as option 1A. BottomSheet's state getter/reset
-migration is implemented and verified; SnackbarHost now has its queue/state core and awaits visual
-parity and Scaffold integration.
+migration is implemented and verified; SnackbarHost now has its queue/state core plus settled
+message/action parity and awaits motion, accessibility-timeout, and Scaffold/Catalog integration.
 
 ## Workstreams
 

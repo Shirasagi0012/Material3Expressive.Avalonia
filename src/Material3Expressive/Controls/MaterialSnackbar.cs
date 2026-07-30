@@ -1,5 +1,11 @@
+// Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt:101-177,
+// 291-462 and tokens/SnackbarTokens.kt. The Avalonia template adapts the one-row slot layout;
+// generated host actions retain the upstream TextButton size, padding, and LabelLarge typography.
+
 using System;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
@@ -167,6 +173,10 @@ public class MaterialSnackbar : TemplatedControl
             _motion.Start();
             IsHitTestVisible = IsOpen;
         }
+        else if (change.Property == ActionProperty)
+        {
+            ApplyActionTypography();
+        }
     }
 
     /// <summary>
@@ -202,13 +212,37 @@ public class MaterialSnackbar : TemplatedControl
 
         var typography = _theme.Theme.Typography;
 
-        Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);
+        // Snackbar.kt's one-row layout uses 16dp at the message edge and 8dp at the action edge.
+        // Keep that asymmetric contract even without an action; it also leaves the generated
+        // TextButton's own 12dp horizontal content padding at the official final position.
+        Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace / 2, 0);
         MinHeight = _tokens.SingleLineHeight;
         FontSize = typography.GetTypeScale(_tokens.SupportingTextStyle).FontSize;
         FontFamily = typography.GetFontFamily(_tokens.SupportingTextStyle);
         IsHitTestVisible = IsOpen;
 
+        ApplyActionTypography();
         InvalidateMeasure();
         InvalidateVisual();
+    }
+
+    private void ApplyActionTypography()
+    {
+        var text = Action switch
+        {
+            TextBlock direct => direct,
+            ContentControl { Content: TextBlock nested } => nested,
+            _ => null
+        };
+        if (text is null)
+            return;
+
+        var typography = _theme.Theme.Typography;
+        var scale = typography.GetTypeScale(_tokens.ActionTextStyle);
+        text.FontFamily = typography.GetFontFamily(_tokens.ActionTextStyle);
+        text.FontWeight = typography.GetFontWeight(_tokens.ActionTextStyle);
+        text.FontSize = scale.FontSize;
+        text.LineHeight = scale.LineHeight;
+        text.LetterSpacing = scale.LetterSpacing;
     }
 }
