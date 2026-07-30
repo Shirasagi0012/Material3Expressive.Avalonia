@@ -364,6 +364,33 @@ automation while leaving ordinary Tab traversal unchanged. Automatic window-size
 intentionally owned by the separate adaptive-coordination task rather than hidden inside this
 component.
 
+## Adaptive navigation suite
+
+AndroidX `material3-adaptive-navigation-suite` at `ff0a0a99` exposes
+`NavigationSuiteScaffold.kt`, `WindowSizeClassHelper.kt`, `NavigationSuiteScaffoldTest.kt`, and
+`NavigationSuiteScaffoldDeviceTest.kt`. Its preferred type resolver chooses
+ShortNavigationBarCompact for compact width, ShortNavigationBarMedium for non-compact width with
+compact height or tabletop posture, and WideNavigationRailCollapsed otherwise. Window Core's
+medium lower bounds are 600dp wide and 480dp high. WideNavigationRailExpanded and None remain
+explicit types. The layout gives horizontal navigation the bottom edge, vertical navigation the
+logical start edge, places an optional primary action 16dp above a bar or inside the rail header,
+and animates show/hide with the default spatial spring.
+
+`MaterialNavigationSuiteScaffold` implements those preferred short/wide/none types under D014. Its
+internal resolver uses the 600×480dp rule; desktop fold posture has no global service, so
+applications with posture or custom policies set explicit `LayoutType`. The scaffold moves the
+same real `MaterialNavigationItem` controls between its internal short bar and wide rail, retaining
+`SelectedIndex`, enabled state, automation identity, and focused destination. It exposes two-way
+`IsNavigationVisible`, read-only `NavigationVisibilityProgress`, `PrimaryAction`, and
+`VerticalArrangement`; body content is never recreated.
+
+The pinned Compose Multiplatform alpha22 producer does not include the separate adaptive
+navigation-suite artifact, and its ShortNavigationBar endpoint has the separately documented
+full-width item defect. Compact/medium adaptive executable parity is therefore unavailable.
+Light/dark wide endpoint composition is executable from alpha22's WideNavigationRail and passes
+the existing profile with exact geometry/text contracts and zero rejected pixels; all breakpoint
+boundaries and state transitions are covered deterministically.
+
 ## Scaffold layout and caller-applied content padding
 
 `Scaffold.kt:87-305` owns five slots: top bar, body content, snackbar host, floating action button,

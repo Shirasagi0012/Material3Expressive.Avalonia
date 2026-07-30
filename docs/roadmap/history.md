@@ -568,3 +568,26 @@ alpha22 parity states cover collapsed/expanded, light/dark, and disabled appeara
 structural contracts and zero rejected pixels. The complete artifact
 `artifacts/visual-parity/xunit/20260730-185231-469` contains 141 accepted rows, two typography
 skips, and only the four existing authorized circular-wavy warnings.
+
+## 2026-07-31 — Adaptive navigation coordination
+
+Closed `M5-NAV-003` under D014 with `MaterialNavigationSuiteScaffold` in the existing assembly and
+namespace selected by D001. Auto layout applies AndroidX `ff0a0a99`'s preferred 600×480dp rule for
+compact short bar, medium short bar, and collapsed wide rail, while explicit expanded-wide and
+none layouts support application policy without introducing a global posture service.
+
+The scaffold transfers one collection of real `MaterialNavigationItem` instances between its
+short bar and wide rail, preserving selection, enabled state, automation identity, and focused
+destination. It lays navigation at bottom or logical start, mirrors in RTL, places the primary
+action 16dp above a bar or in the rail header, and animates visibility with a reversible
+DefaultSpatial spring. Automation is a neutral Pane containing the active native Tab/TabItem
+subtree.
+
+Thirteen focused tests and the 440-test full unit suite pass; the non-parity visual/contract suite
+is 55/55. The pinned alpha22 producer lacks the separate adaptive artifact and cannot represent
+the corrected compact/medium endpoint, while two manually composable collapsed-wide light/dark
+suite cases pass as `semanticRasterEquivalent` with exact structural contracts and zero rejected
+pixels at `artifacts/visual-parity/xunit/20260730-191815-054`. No comparison policy changed.
+The full artifact `artifacts/visual-parity/xunit/20260730-192549-954` contains 143 accepted rows,
+two explicit typography skips, and only the four existing authorized circular-wavy warnings.
+README, Catalog, coverage, AndroidX reference, and decision records were updated. This closes M5.

@@ -384,6 +384,40 @@ exposes a Tab selection container with stable TabItem children plus ExpandCollap
 Five collapsed/expanded, light/dark, and disabled alpha22 parity scenes pass the existing
 comparison contract with zero rejected pixels.
 
+## Adaptive navigation suite
+
+`MaterialNavigationSuiteScaffold` keeps one `Items` collection and `SelectedIndex` while selecting
+the appropriate navigation component from its own constrained size. `LayoutType="Auto"` follows
+the Material window-size rule: widths below 600dp use `ShortNavigationBarCompact`; wider windows
+below 480dp tall use `ShortNavigationBarMedium`; all other windows use
+`WideNavigationRailCollapsed`. Set an explicit layout type, including
+`WideNavigationRailExpanded` or `None`, to apply an application-specific policy.
+
+```xml
+<m3:MaterialNavigationSuiteScaffold SelectedIndex="{Binding DestinationIndex}">
+    <m3:MaterialNavigationSuiteScaffold.PrimaryAction>
+        <m3:MaterialIconButton Content="Create" />
+    </m3:MaterialNavigationSuiteScaffold.PrimaryAction>
+    <m3:MaterialNavigationSuiteScaffold.Items>
+        <m3:MaterialNavigationItem Content="Home">
+            <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Home" /></m3:MaterialNavigationItem.Icon>
+        </m3:MaterialNavigationItem>
+        <m3:MaterialNavigationItem Content="Saved">
+            <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Star" /></m3:MaterialNavigationItem.Icon>
+        </m3:MaterialNavigationItem>
+    </m3:MaterialNavigationSuiteScaffold.Items>
+    <m3:MaterialNavigationSuiteScaffold.Content>
+        <views:ApplicationBody />
+    </m3:MaterialNavigationSuiteScaffold.Content>
+</m3:MaterialNavigationSuiteScaffold>
+```
+
+The body remains the implicit `Content` slot, so destinations use the explicit `Items` property
+element. `PrimaryAction` sits 16dp above horizontal bars and becomes the wide-rail header.
+`IsNavigationVisible` is two-way and animates with DefaultSpatial motion. Type changes are atomic;
+selection, destination instances, enabled state, UI Automation peers, and the focused destination
+are retained. The API remains in `Material3Expressive.Controls` and the existing NuGet assembly.
+
 ## Scaffold layout
 
 `MaterialScaffold` coordinates body `Content`, `TopBar`, `BottomBar`, `SnackbarHost`, and

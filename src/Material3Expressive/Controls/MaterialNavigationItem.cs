@@ -1,11 +1,17 @@
+using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
+using Avalonia.Diagnostics;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Automation.Peers;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
@@ -63,6 +69,14 @@ public class MaterialNavigationItem : ToggleButton
         AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(
             nameof(TopIndicatorVerticalPadding), o => o.TopIndicatorVerticalPadding);
 
+    public static readonly DirectProperty<MaterialNavigationItem, double> LabelLineHeightProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(
+            nameof(LabelLineHeight), o => o.LabelLineHeight);
+
+    public static readonly DirectProperty<MaterialNavigationItem, double> LabelLetterSpacingProperty =
+        AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(
+            nameof(LabelLetterSpacing), o => o.LabelLetterSpacing);
+
     public static readonly DirectProperty<MaterialNavigationItem, bool> IsShortNavigationItemProperty =
         AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
             nameof(IsShortNavigationItem), o => o.IsShortNavigationItem);
@@ -86,6 +100,8 @@ public class MaterialNavigationItem : ToggleButton
     private NavigationTokens _tokens = NavigationTokens.Bar;
     private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
     private MaterialNavigationItemContentPanel? _contentPanel;
+    private ContentPresenter? _labelPresenter;
+    private readonly List<Action> _restoreLabelMetrics = new();
 
     public MaterialNavigationItem()
     {
@@ -141,6 +157,14 @@ public class MaterialNavigationItem : ToggleButton
     /// <summary>Padding between a top indicator and its icon.</summary>
     public double TopIndicatorVerticalPadding =>
         (_tokens.ActiveIndicatorHeight - _tokens.IconSize) / 2;
+
+    /// <summary>The resolved line height for label content.</summary>
+    public double LabelLineHeight =>
+        _theme.Theme.Typography.GetTypeScale(LabelTextStyle).LineHeight;
+
+    /// <summary>The resolved letter spacing for label content.</summary>
+    public double LabelLetterSpacing =>
+        _theme.Theme.Typography.GetTypeScale(LabelTextStyle).LetterSpacing;
 
     /// <summary>Whether the item is currently owned by a short navigation bar.</summary>
     public bool IsShortNavigationItem => OwnerShortNavigationBar is not null;
@@ -315,6 +339,8 @@ public class MaterialNavigationItem : ToggleButton
         }
         else if (change.Property == IconPositionProperty || change.Property == ContentProperty)
         {
+            if (change.Property == ContentProperty)
+                Dispatcher.UIThread.Post(RefreshLabelTypography, DispatcherPriority.Loaded);
             InvalidateMeasure();
             InvalidateVisual();
         }
@@ -332,6 +358,8 @@ public class MaterialNavigationItem : ToggleButton
     {
         base.OnApplyTemplate(e);
         _contentPanel = e.NameScope.Find<MaterialNavigationItemContentPanel>("PART_ContentPanel");
+        _labelPresenter = e.NameScope.Find<ContentPresenter>("PART_LabelPresenter");
+        Dispatcher.UIThread.Post(RefreshLabelTypography, DispatcherPriority.Loaded);
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() =>
@@ -345,6 +373,8 @@ public class MaterialNavigationItem : ToggleButton
         var previousStartHorizontalPadding = StartIndicatorHorizontalPadding;
         var previousStartVerticalPadding = StartIndicatorVerticalPadding;
         var previousTopIndicatorVerticalPadding = TopIndicatorVerticalPadding;
+        var previousLabelLineHeight = LabelLineHeight;
+        var previousLabelLetterSpacing = LabelLetterSpacing;
 
         _tokens = _theme.Theme.GetNavigationTokens(Surface);
         _colors = _theme.Theme.GetNavigationColors(Surface, _theme.IsDark);
@@ -364,6 +394,14 @@ public class MaterialNavigationItem : ToggleButton
             TopIndicatorVerticalPaddingProperty,
             previousTopIndicatorVerticalPadding,
             TopIndicatorVerticalPadding);
+        RaisePropertyChanged(
+            LabelLineHeightProperty,
+            previousLabelLineHeight,
+            LabelLineHeight);
+        RaisePropertyChanged(
+            LabelLetterSpacingProperty,
+            previousLabelLetterSpacing,
+            LabelLetterSpacing);
 
         var typography = _theme.Theme.Typography;
         FontSize = typography.GetTypeScale(LabelTextStyle).FontSize;
@@ -376,9 +414,62 @@ public class MaterialNavigationItem : ToggleButton
         // line height, tracking, and weight.  Carry the complete local text-style contract to
         // the content subtree, matching the Compose composition local.
         TypographyScheme.SetTextStyle(this, LabelTextStyle);
+        RefreshLabelTypography();
 
         ApplyColors();
         InvalidateMeasure();
+    }
+
+    private void RefreshLabelTypography()
+    {
+        ClearLabelTypography();
+        var textBlock = Content as TextBlock ?? _labelPresenter?.Child as TextBlock;
+        if (textBlock is null)
+            return;
+
+        var hasExplicitRole =
+            textBlock.GetBaseValue(TypographyScheme.TextStyleProperty).HasValue;
+        var role = hasExplicitRole
+            ? TypographyScheme.GetTextStyle(textBlock)
+            : LabelTextStyle;
+        var scale = _theme.Theme.Typography.GetTypeScale(role);
+        OverrideLabelMetric(
+            textBlock,
+            TextBlock.LineHeightProperty,
+            scale.LineHeight);
+        OverrideLabelMetric(
+            textBlock,
+            TextBlock.LetterSpacingProperty,
+            scale.LetterSpacing);
+    }
+
+    private void OverrideLabelMetric<T>(
+        TextBlock textBlock,
+        StyledProperty<T> property,
+        T value)
+    {
+        var diagnostic = textBlock.GetDiagnostic(property);
+        if (diagnostic.Priority <= BindingPriority.LocalValue)
+            return;
+
+        textBlock.SetCurrentValue(property, value);
+        _restoreLabelMetrics.Add(() =>
+        {
+            var current = textBlock.GetDiagnostic(property);
+            if (current.IsOverriddenCurrentValue
+                && current.Priority > BindingPriority.LocalValue
+                && Equals(current.Value, value))
+            {
+                textBlock.ClearValue(property);
+            }
+        });
+    }
+
+    private void ClearLabelTypography()
+    {
+        foreach (var restore in _restoreLabelMetrics)
+            restore();
+        _restoreLabelMetrics.Clear();
     }
 
     private void ApplyColors()

@@ -203,6 +203,38 @@
                             </Border>
                         </WrapPanel>
                     </Border>
+                    <TextBlock Classes="title-medium" Text="Adaptive navigation suite" />
+                    <TextBlock Classes="body-medium" MaxWidth="720" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Foreground="{mcu:MdSysColor OnSurfaceVariant}"
+                               Text="Resize the Catalog window. Below 600dp this sample uses a compact short bar; at 600dp or wider and at least 480dp tall it moves the same destination controls and selection into a collapsed wide rail." />
+                    <Border Classes="demo-canvas" Height="520" MinWidth="320" MaxWidth="900">
+                        <m3:MaterialNavigationSuiteScaffold SelectedIndex="1">
+                            <m3:MaterialNavigationSuiteScaffold.PrimaryAction>
+                                <m3:MaterialIconButton>
+                                    <ms:MaterialSymbol Symbol="Add" />
+                                </m3:MaterialIconButton>
+                            </m3:MaterialNavigationSuiteScaffold.PrimaryAction>
+                            <m3:MaterialNavigationSuiteScaffold.Items>
+                                <m3:MaterialNavigationItem Content="Home">
+                                    <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Home" /></m3:MaterialNavigationItem.Icon>
+                                </m3:MaterialNavigationItem>
+                                <m3:MaterialNavigationItem Content="Saved">
+                                    <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Star" /></m3:MaterialNavigationItem.Icon>
+                                </m3:MaterialNavigationItem>
+                                <m3:MaterialNavigationItem Content="Inbox">
+                                    <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Mail" /></m3:MaterialNavigationItem.Icon>
+                                </m3:MaterialNavigationItem>
+                            </m3:MaterialNavigationSuiteScaffold.Items>
+                            <m3:MaterialNavigationSuiteScaffold.Content>
+                                <Border Background="{mcu:MdSysColor SurfaceContainerLowest}">
+                                    <TextBlock HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Classes="headline-small"
+                                               Text="Retained application content" />
+                                </Border>
+                            </m3:MaterialNavigationSuiteScaffold.Content>
+                        </m3:MaterialNavigationSuiteScaffold>
+                    </Border>
                 </StackPanel>
             </StackPanel>
 

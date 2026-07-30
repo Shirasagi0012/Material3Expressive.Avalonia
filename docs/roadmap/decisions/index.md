@@ -18,5 +18,6 @@ navigation and one-line summaries; the linked files are authoritative.
 | D011 | [FloatingToolbar XAML API](D011-floating-toolbar-xaml-api.md) | Consolidate horizontal/vertical and with/without-FAB overloads into one adaptive items control. |
 | D012 | [ShortNavigationBar XAML API](D012-short-navigation-bar-api.md) | Reuse navigation items in one responsive EqualWeight/Centered bar with stable selection. |
 | D013 | [WideNavigationRail XAML API](D013-wide-navigation-rail-api.md) | Reuse stable navigation items across a bindable collapsed/expanded rail. |
+| D014 | [Adaptive navigation suite XAML API](D014-adaptive-navigation-suite-api.md) | Retain navigation state while selecting short-bar or wide-rail layout from window size. |
 | DEF-001 | [Complex-shape raster residual](DEF-001-complex-shape-raster-residual.md) | Keep the authorized complex-shape warning narrow and temporary. |
 | DEF-002 | [Snackbar accessibility recommended timeout](DEF-002-snackbar-accessibility-timeout.md) | Defer platform recommended-timeout adaptation until a suitable accessibility preference source exists. |

@@ -182,6 +182,8 @@ internal static class ComposeWaveOneParityCases
         WideNavigationRail(expanded: false, theme: VisualTheme.Dark),
         WideNavigationRail(expanded: true, theme: VisualTheme.Dark),
         WideNavigationRail(expanded: false, theme: VisualTheme.Light, enabled: false),
+        NavigationSuite(VisualTheme.Light),
+        NavigationSuite(VisualTheme.Dark),
         Tabs(TabVariant.Primary, VisualTheme.Light),
         Tabs(TabVariant.Primary, VisualTheme.Dark),
         Tabs(TabVariant.Secondary, VisualTheme.Light),
@@ -377,6 +379,40 @@ internal static class ComposeWaveOneParityCases
                 });
         }
         return rail;
+    }
+
+    private static VisualCase NavigationSuite(VisualTheme theme)
+    {
+        return ComponentScene(
+            $"navigation/suite/wide-collapsed/selected/{ThemeName(theme)}",
+            new PixelSize(752, 512),
+            theme,
+            _ => CreateNavigationSuite());
+    }
+
+    private static MaterialNavigationSuiteScaffold CreateNavigationSuite()
+    {
+        var suite = new MaterialNavigationSuiteScaffold
+        {
+            Name = "component",
+            LayoutType = NavigationSuiteLayoutType.WideNavigationRailCollapsed,
+            Width = 720,
+            Height = 480,
+            SelectedIndex = 0,
+            Content = new Border { Name = "content" },
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        foreach (var (label, index) in new[] { "One", "Two", "Three" }.Select((label, index) => (label, index)))
+        {
+            suite.Items.Add(
+                new MaterialNavigationItem
+                {
+                    Icon = new Border { Width = 24, Height = 24 },
+                    Content = new TextBlock { Name = $"label-{index}", Text = label }
+                });
+        }
+        return suite;
     }
 
     private static VisualCase Tabs(TabVariant variant, VisualTheme theme)

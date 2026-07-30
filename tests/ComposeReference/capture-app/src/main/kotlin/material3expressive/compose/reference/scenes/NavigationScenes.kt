@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -124,6 +125,14 @@ fun ReferenceCaseRegistry.registerNavigationScenes() {
             expanded = false,
         ),
         ReferenceScene { probes -> WideNavRail(probes, expanded = false, enabled = false) },
+    )
+    register(
+        navigationSuiteCase("navigation/suite/wide-collapsed/selected/light"),
+        ReferenceScene { probes -> NavigationSuiteWideEndpoint(probes) },
+    )
+    register(
+        navigationSuiteCase("navigation/suite/wide-collapsed/selected/dark", dark = true),
+        ReferenceScene { probes -> NavigationSuiteWideEndpoint(probes) },
     )
     register(
         tabCase("navigation/tab/primary/three-items/selected/light"),
@@ -634,6 +643,16 @@ private fun wideRailCase(id: String, expanded: Boolean, dark: Boolean = false) =
     requiredNodes = navigationNodes(),
 )
 
+private fun navigationSuiteCase(id: String, dark: Boolean = false) = CaseContract(
+    id = id,
+    viewportWidthDp = 752,
+    viewportHeightDp = 512,
+    dark = dark,
+    requiredNodes =
+        navigationNodes() +
+            RequiredNodeSpec(id = "content", kind = "container", parentId = "component"),
+)
+
 private fun tabCase(id: String, dark: Boolean = false) = CaseContract(
     id = id, viewportWidthDp = 360, viewportHeightDp = 80, dark = dark,
     requiredNodes = navigationNodes() + RequiredNodeSpec(id = "indicator", kind = "container", parentId = "component"),
@@ -750,6 +769,44 @@ private fun WideNavRail(probes: ProbeRegistry, expanded: Boolean, enabled: Boole
                 railExpanded = expanded,
             )
         }
+    }
+}
+
+@Composable
+private fun NavigationSuiteWideEndpoint(probes: ProbeRegistry) {
+    Row(
+        Modifier
+            .requiredSize(720.dp, 480.dp)
+            .then(probes.geometry("component"))
+    ) {
+        val state = rememberWideNavigationRailState(WideNavigationRailValue.Collapsed)
+        WideNavigationRail(
+            modifier = Modifier.requiredSize(96.dp, 480.dp),
+            state = state,
+            windowInsets = WindowInsets(0, 0, 0, 0),
+        ) {
+            listOf("One", "Two", "Three").forEachIndexed { index, label ->
+                WideNavigationRailItem(
+                    selected = index == 0,
+                    onClick = {},
+                    icon = { Spacer(Modifier.size(24.dp)) },
+                    label = {
+                        Text(
+                            text = label,
+                            modifier = probes.text("label-$index"),
+                            onTextLayout = probes.onTextLayout("label-$index"),
+                        )
+                    },
+                    railExpanded = false,
+                )
+            }
+        }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .then(probes.geometry("content"))
+        )
     }
 }
 

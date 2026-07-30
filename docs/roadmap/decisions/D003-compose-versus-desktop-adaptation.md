@@ -58,3 +58,14 @@ as Tab/ISelectionProvider with stable TabItem children, adds ExpandCollapse for 
 state, and uses conventional vertical Up/Down plus Home/End selection/focus. Tab remains ordinary
 non-trapping traversal, and header controls retain their native peer before destinations. This
 authorization is narrow and does not resolve the broader D003 question.
+
+## Authorized component-specific adaptation — NavigationSuite window and focus continuity
+
+Compose resolves from WindowAdaptiveInfo, including fold posture, and retains item declarations
+through `movableContentOf`. Avalonia has no global fold-posture service, so Auto follows the same
+600dp medium-width and 480dp medium-height boundaries while custom posture policies set explicit
+`LayoutType`. One collection of real `MaterialNavigationItem` controls moves between the short bar
+and wide rail. Selection, enabled state, automation peer identity, and a focused destination are
+retained; type changes are atomic, while show/hide and wide expansion keep their upstream spatial
+springs. Tab behavior remains owned by the active navigation component. This authorization is
+narrow and does not resolve the broader D003 question.

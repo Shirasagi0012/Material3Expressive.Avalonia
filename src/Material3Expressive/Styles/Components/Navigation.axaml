@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
         xmlns:ms="using:MaterialSymbols.Avalonia">
     <Design.PreviewWith>
         <Border Padding="0" Width="420">
@@ -56,14 +57,17 @@
                                           VerticalContentAlignment="Stretch"
                                           Content="{TemplateBinding Icon}"
                                           TextElement.Foreground="{TemplateBinding IconBrush}" />
-                        <ContentPresenter HorizontalAlignment="Stretch"
+                        <ContentPresenter x:Name="PART_LabelPresenter"
+                                          HorizontalAlignment="Stretch"
                                           VerticalAlignment="Stretch"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
                                           TextElement.Foreground="{TemplateBinding Foreground}"
                                           TextElement.FontSize="{TemplateBinding FontSize}"
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
-                                          TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                                          TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                          LineHeight="{TemplateBinding LabelLineHeight}"
+                                          LetterSpacing="{TemplateBinding LabelLetterSpacing}" />
                     </m3:MaterialNavigationItemContentPanel>
                 </ControlTemplate>
             </Setter>
@@ -113,6 +117,33 @@
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
                     </m3:MaterialWideNavigationRailLayoutPanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialNavigationSuiteScaffold}" TargetType="m3:MaterialNavigationSuiteScaffold">
+            <Setter Property="Background" Value="{mcu:MdSysColor Background}" />
+            <Setter Property="Foreground" Value="{mcu:MdSysColor OnBackground}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            ClipToBounds="True">
+                        <m3:MaterialNavigationSuitePanel>
+                            <ContentPresenter x:Name="PART_Navigation"
+                                              ZIndex="1" />
+                            <ContentPresenter x:Name="PART_PrimaryAction"
+                                              ZIndex="2" />
+                            <ContentPresenter x:Name="PART_Content"
+                                              ZIndex="0"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </m3:MaterialNavigationSuitePanel>
+                    </Border>
                 </ControlTemplate>
             </Setter>
         </ControlTheme>
