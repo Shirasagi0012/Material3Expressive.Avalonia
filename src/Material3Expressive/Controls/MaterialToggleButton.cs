@@ -39,6 +39,10 @@ public class MaterialToggleButton : ToggleButton
     private ButtonColors _colors = ButtonColorTokens.Filled.Resolve(null, false);
     private ButtonSizeTokens _metrics = ButtonSizeTokens.Small;
 
+    // Compose retains a 48dp interactive layout node around the default 40dp toggle container.
+    // Keep that outer node in Avalonia too, without inflating the visible pill.
+    private const double MinimumInteractiveComponentSize = 48;
+
     public MaterialToggleButton()
     {
         _theme = new MaterialThemeWatcher(this);
@@ -82,7 +86,16 @@ public class MaterialToggleButton : ToggleButton
     }
 
     protected CornerRadius ContainerCornerRadius =>
-        Shape.ToCornerRadius(Bounds.Size, FlowDirection == FlowDirection.RightToLeft);
+        Shape.ToCornerRadius(ContainerBounds.Size, FlowDirection == FlowDirection.RightToLeft);
+
+    private Rect ContainerBounds
+    {
+        get
+        {
+            var height = Math.Min(Bounds.Height, _metrics.ContainerHeight);
+            return new Rect(0, (Bounds.Height - height) / 2, Bounds.Width, height);
+        }
+    }
 
     private bool IsSelected => IsChecked == true;
 
@@ -93,16 +106,23 @@ public class MaterialToggleButton : ToggleButton
     {
         var enabled = IsEffectivelyEnabled;
         var corners = ContainerCornerRadius;
+        var bounds = ContainerBounds;
 
-        MaterialContainer.Draw(
-            context,
-            Bounds.Size,
-            corners,
-            enabled ? ContainerBrush() : _colors.DisabledContainerColor,
-            enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
-            _tokens.HasOutline ? _metrics.OutlineWidth : 0);
+        using (context.PushTransform(Matrix.CreateTranslation(bounds.X, bounds.Y)))
+        {
+            MaterialContainer.Draw(
+                context,
+                bounds.Size,
+                corners,
+                enabled ? ContainerBrush() : _colors.DisabledContainerColor,
+                enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
+                _tokens.HasOutline ? _metrics.OutlineWidth : 0);
+        }
 
         base.Render(context);
+        _interaction.InteractionArea = bounds;
+        _interaction.FocusRingArea = bounds;
+        _interaction.FocusRingCornerRadius = corners;
         _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
     }
 
@@ -138,10 +158,11 @@ public class MaterialToggleButton : ToggleButton
 
         Padding = new Thickness(
             _metrics.LeadingSpace, _metrics.VerticalSpace, _metrics.TrailingSpace, _metrics.VerticalSpace);
-        MinHeight = _metrics.ContainerHeight;
+        MinHeight = Math.Max(MinimumInteractiveComponentSize, _metrics.ContainerHeight);
         FontSize = scale.FontSize;
         FontFamily = typography.GetFontFamily(_metrics.LabelTextStyle);
         FontWeight = typography.GetFontWeight(_metrics.LabelTextStyle);
+        TypographyScheme.SetTextStyle(this, _metrics.LabelTextStyle);
 
         ApplyChecked(snap: true);
     }

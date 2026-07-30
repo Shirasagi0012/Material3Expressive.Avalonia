@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
+using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -62,14 +63,14 @@ public class MaterialCheckbox : CheckBox
         set => SetValue(IsErrorProperty, value);
     }
 
-    /// <summary>The 40dp state layer centred inside the 48dp interactive layout slot.</summary>
+    /// <summary>The 40dp state layer centred inside the leading 48dp interactive layout slot.</summary>
     protected Rect GlyphArea
     {
         get
         {
             var size = _tokens.StateLayerSize;
             return new Rect(
-                (Bounds.Width - size) / 2,
+                (MinimumInteractiveComponentSize - size) / 2,
                 (Bounds.Height - size) / 2,
                 size,
                 size);
@@ -152,7 +153,11 @@ public class MaterialCheckbox : CheckBox
         _colors = _theme.Theme.GetCheckboxColors(_theme.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
-        Padding = new Thickness(_tokens.StateLayerSize, 0, 0, 0);
+        // Compose keeps a fixed 48dp interactive checkbox slot ahead of an optional label.
+        // Centre the 40dp state layer inside that slot, then start the content after the slot.
+        Padding = new Thickness(MinimumInteractiveComponentSize, 0, 0, 0);
+        Foreground = new SolidColorBrush(
+            _theme.Theme.ColorScheme?.GetColor(SysColorToken.OnSurface, _theme.IsDark) ?? Colors.Black);
         InvalidateMeasure();
         InvalidateVisual();
     }
