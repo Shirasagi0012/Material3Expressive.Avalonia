@@ -165,6 +165,7 @@
         "shadowEdge": {
           "dilationPx": 1,
           "budgets": [
+            { "maxChannelDelta": 1, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 2000, "maxPixelsPerOwner": 2048, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 2000, "maxEnergyPerOwner": 2048, "maxConnectedComponentPixels": 640, "maxConnectedComponentThicknessPx": 4 },
             { "maxChannelDelta": 48, "minimumPixelsPerOwner": 8, "basePixelsPerOwner": 4, "pixelsPer10kEligiblePixels": 100, "maxPixelsPerOwner": 48, "minimumEnergyPerOwner": 384, "baseEnergyPerOwner": 240, "energyPer10kEligiblePixels": 4800, "maxEnergyPerOwner": 2304, "maxConnectedComponentPixels": 12, "maxConnectedComponentThicknessPx": 2 }
           ]
         }

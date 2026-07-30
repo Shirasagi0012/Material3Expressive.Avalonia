@@ -159,6 +159,47 @@ public sealed class SemanticRasterBudgetTests
     }
 
     [Fact]
+    public void ComponentShadowEdgeAllowsContinuousDeltaOneQuantizationButStillRejectsDeltaTwo()
+    {
+        var layout = ShadowScene();
+        var expected = ShadowImage();
+        var deltaOne = expected;
+        var deltaTwo = expected;
+        for (var x = 6; x < 34; x++)
+        {
+            deltaOne = WithPixel(deltaOne, x, 4, 254);
+            deltaTwo = WithPixel(deltaTwo, x, 4, 253);
+        }
+
+        var accepted = new ParityComparer().Compare(
+            layout,
+            layout,
+            expected,
+            deltaOne,
+            ParityComparisonProfiles.ForCase("bottomsheet/scaffold/partial/light"));
+        var rejected = new ParityComparer().Compare(
+            layout,
+            layout,
+            expected,
+            deltaTwo,
+            ParityComparisonProfiles.ForCase("bottomsheet/scaffold/partial/light"));
+
+        Assert.True(accepted.IsMatch);
+        Assert.Equal(ParityComparisonKind.SemanticRasterEquivalent, accepted.Kind);
+        var acceptedEdge = Assert.Single(accepted.Raster!.Regions, region => region.Kind == "shadow-edge");
+        var lowDelta = Assert.Single(acceptedEdge.Budgets, budget => budget.MaxChannelDelta == 1);
+        Assert.Equal(28, lowDelta.ObservedPixels);
+        Assert.Empty(lowDelta.RejectionReasons);
+
+        Assert.False(rejected.IsMatch);
+        var rejectedEdge = Assert.Single(rejected.Raster!.Regions, region => region.Kind == "shadow-edge");
+        var higherDelta = Assert.Single(rejectedEdge.Budgets, budget => budget.MaxChannelDelta == 48);
+        Assert.Equal(28, higherDelta.ObservedPixels);
+        Assert.Contains(ParityRasterRejectionReason.PixelCountBudget, higherDelta.RejectionReasons);
+        Assert.Contains(ParityRasterRejectionReason.ConnectedComponentPixels, higherDelta.RejectionReasons);
+    }
+
+    [Fact]
     public void ShadowBoundaryRejectsAThickBlockEvenWhenTheCountBudgetWouldAllowIt()
     {
         var layout = ShadowScene();

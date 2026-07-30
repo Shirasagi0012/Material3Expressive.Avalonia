@@ -125,6 +125,13 @@ Use only when a separate sparse budget is needed at the expected shadow boundary
 `compareGeometry` and `shadowSupport`. Keep component area and thickness small so a shifted or
 solid shadow cannot consume a perimeter budget.
 
+The `component-with-text-and-elevation` profile has a separate `Δ<=1` edge bin for continuous
+Skia quantization after the complete shadow contract matches. It is capped at 20% of the
+expected-derived edge owner, 2,048 pixels, a 640-pixel component, and 4px thickness. Higher deltas
+still enter the original sparse `Δ<=48` bin, so a `Δ>=2` shifted or solid edge remains a mismatch.
+This split was calibrated from the 2x BottomSheet Level1 top-edge residual; recalibrate it if a
+passing case exceeds those bounds, and do not raise the higher-delta limits to compensate.
+
 ## Schema reference
 
 The root object contains:
