@@ -3,6 +3,20 @@
 This is a compact historical record, not an active task list. Current priorities and completion
 criteria live in [`ROADMAP.md`](../../ROADMAP.md).
 
+## 2026-07-30 — TextField desktop caret parity closure
+
+Closed `M2-TEXTFIELD-001` after the program-level audit reproduced the two long-standing
+focused-empty TextField failures. CMP Desktop draws a complete 1dp cursor from the native text
+layout top through its bottom; Avalonia 12.1 inset both endpoints by 0.5dp. `MaterialTextField`
+now retains native editing, selection, IME, undo, scrolling, and caret position while drawing the
+complete Material cursor with collapsed-selection, blink, focus, clip, and detach handling.
+
+Three focused tests pass, the complete unit suite passes 383/383, and non-parity visual/contract
+tests pass 53/53. The unchanged full parity suite at
+`artifacts/visual-parity/xunit/20260730-101407-403` now has zero failures: 127 accepted rows
+(38 exact, 85 semantic, four authorized circular-wavy warnings) and two explicit
+display-headline skips. Both repaired TextField rows have zero warnings and rejected pixels.
+
 ## 2026-07-30 — SegmentedButton viewport regression repair
 
 The program-level parity audit found that Avalonia `PathIcon` fitted the Filled Check geometry's

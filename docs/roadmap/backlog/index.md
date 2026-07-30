@@ -39,6 +39,7 @@ stable ordering, and the selection rules; it intentionally does not duplicate ta
 | M2-PROGRESS-001 | 240 | Circular wavy progress | [task](M2-PROGRESS-001.md) |
 | M2-TABS-001 | 250 | Scrollable Tabs | [task](M2-TABS-001.md) |
 | M2-APPBAR-001 | 260 | AppBar scroll behavior | [task](M2-APPBAR-001.md) |
+| M2-TEXTFIELD-001 | 270 | TextField desktop caret parity closure | [task](M2-TEXTFIELD-001.md) |
 
 ### M3 — Application building blocks
 

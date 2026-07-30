@@ -196,6 +196,19 @@ incoming hover 15 ms, focus 45 ms, drag 45 ms; outgoing drag 150 ms, others 15 m
 all linear. (The M3E-era focus *ring* animates with motionScheme springs instead —
 see the ripple config section above; these tweens govern the classic opacity layers.)
 
+## Text field desktop cursor
+
+AndroidX `foundation/text/TextFieldCursor.kt` draws from `cursorRect.top` through
+`cursorRect.bottom`; the pinned CMP Desktop actual uses a 1dp
+`DefaultCursorThickness`. Avalonia 12.1's native `TextPresenter` retains the correct editor,
+layout, selection, IME, and caret-position authority but draws its flat-capped caret from
+`top + 0.5dp` to `bottom - 0.5dp`.
+
+`MaterialTextField` therefore makes only the native caret stroke transparent and draws the
+complete 1dp desktop rectangle from the presenter's current cursor layout. It follows collapsed
+selection, the native blink interval, focus, and editor clipping; it does not replace text editing
+or expose a second public caret state.
+
 ## Surface and Divider primitives
 
 `Surface.kt` separates tonal elevation from shadow elevation: nested surface color resolution

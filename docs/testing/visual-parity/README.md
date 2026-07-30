@@ -221,9 +221,10 @@ user decision to recalibrate or remove it.
 
 `foundation/typography/display-headline/*` is deliberately marked as skipped—not passed by a
 tolerance—because Avalonia currently lacks an equivalent baseline API. It remains in both scene
-catalogs and is visible in test output. Conversely,
-`textfield/*/focused-empty/light` remains an active failure when its focused caret endpoints or
-length differ; no broad text-field exception hides that defect.
+catalogs and is visible in test output. The former
+`textfield/*/focused-empty/light` endpoint defect is now closed by the implementation's complete
+CMP Desktop cursor rectangle; both rows pass the unchanged `text-field` profile with zero
+rejected pixels. No broad text-field exception was added.
 
 The selected profile ID, complete selected-profile snapshot, ordered matching rule, and the
 SHA-256 of the centralized profile file are retained across `comparison.json` and the actual

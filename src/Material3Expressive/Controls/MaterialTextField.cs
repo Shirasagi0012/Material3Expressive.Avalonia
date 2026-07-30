@@ -1,12 +1,16 @@
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Media.TextFormatting;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -63,6 +67,8 @@ public class MaterialTextField : TemplatedControl
 
     private SpringAnimation? _float;
     private TextBox? _textBox;
+    private DispatcherTimer? _caretTimer;
+    private bool _caretVisible;
     private double _labelWidthAtRest;
     private double _labelWidthFloated;
 
@@ -189,6 +195,12 @@ public class MaterialTextField : TemplatedControl
     /// <summary>The Avalonia editor used by specialized text-field variants.</summary>
     protected TextBox? Editor => _textBox;
 
+    internal bool IsMaterialCaretVisible => _caretVisible && CanDrawCaret;
+
+    internal bool IsMaterialCaretBlinking => _caretTimer?.IsEnabled == true;
+
+    internal Rect? MaterialCaretBounds => ResolveCaretBounds();
+
     private SpringAnimation Float =>
         _float ??= _motion.AddSpring(ShouldFloat ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
 
@@ -232,12 +244,20 @@ public class MaterialTextField : TemplatedControl
         }
 
         DrawLabel(context, field, enabled, focused);
+        DrawCaret(context);
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
         var size = base.MeasureOverride(availableSize);
         return new Size(size.Width, Math.Max(size.Height, _tokens.ContainerHeight));
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _caretTimer?.Stop();
+        _caretVisible = false;
+        base.OnDetachedFromVisualTree(e);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -248,6 +268,7 @@ public class MaterialTextField : TemplatedControl
         {
             _textBox.GotFocus -= HandleEditorFocusChanged;
             _textBox.LostFocus -= HandleEditorFocusChanged;
+            _textBox.PropertyChanged -= HandleEditorPropertyChanged;
         }
 
         _textBox = e.NameScope.Find<TextBox>(TextBoxPartName);
@@ -256,11 +277,13 @@ public class MaterialTextField : TemplatedControl
         {
             _textBox.GotFocus += HandleEditorFocusChanged;
             _textBox.LostFocus += HandleEditorFocusChanged;
+            _textBox.PropertyChanged += HandleEditorPropertyChanged;
         }
 
         UpdateEditorColors();
         UpdateEditorLayout();
         UpdateFloat(snap: true);
+        ResetCaretBlink();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -276,6 +299,7 @@ public class MaterialTextField : TemplatedControl
         else if (change.Property == TextProperty)
         {
             UpdateFloat();
+            ResetCaretBlink();
         }
         else if (change.Property == LabelProperty)
         {
@@ -488,8 +512,19 @@ public class MaterialTextField : TemplatedControl
     {
         UpdateEditorLayout();
         UpdateFloat();
-        InvalidateVisual();
+        ResetCaretBlink();
         OnEditorFocusChanged(_textBox?.IsFocused == true);
+    }
+
+    private void HandleEditorPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == TextBox.CaretIndexProperty
+            || e.Property == TextBox.SelectionStartProperty
+            || e.Property == TextBox.SelectionEndProperty
+            || e.Property == TextBox.CaretBlinkIntervalProperty)
+        {
+            ResetCaretBlink();
+        }
     }
 
     private void UpdateFloat(bool snap = false)
@@ -569,7 +604,9 @@ public class MaterialTextField : TemplatedControl
         // Set the component tokens locally so those defaults cannot replace Compose's colors.
         _textBox.Foreground = Foreground;
         _textBox.PlaceholderForeground = _colors.PlaceholderColor;
-        _textBox.CaretBrush = _colors.FocusLabelColor;
+        // MaterialTextField draws the cursor from the native presenter's layout rectangle. Keep
+        // TextBox responsible for editing and caret placement, but hide its endpoint-inset line.
+        _textBox.CaretBrush = Brushes.Transparent;
         _textBox.Resources["TextControlForegroundDisabled"] = Foreground;
         _textBox.Resources["TextControlPlaceholderForeground"] = _colors.PlaceholderColor;
         _textBox.Resources["TextControlPlaceholderForegroundPointerOver"] = _colors.PlaceholderColor;
@@ -578,6 +615,83 @@ public class MaterialTextField : TemplatedControl
         // Fluent's placeholder presenter independently applies this resource as Opacity. Material
         // text fields use the token brush directly, matching Compose's fully opaque placeholder.
         _textBox.Resources["TextControlPlaceholderOpacity"] = 1.0;
+    }
+
+    private void ResetCaretBlink()
+    {
+        _caretTimer?.Stop();
+        _caretVisible = CanDrawCaret;
+
+        if (_caretVisible && _textBox!.CaretBlinkInterval > TimeSpan.Zero)
+        {
+            _caretTimer ??= CreateCaretTimer();
+            _caretTimer.Interval = _textBox.CaretBlinkInterval;
+            _caretTimer.Start();
+        }
+
+        InvalidateVisual();
+    }
+
+    private DispatcherTimer CreateCaretTimer()
+    {
+        var timer = new DispatcherTimer();
+        timer.Tick += (_, _) =>
+        {
+            if (!CanDrawCaret)
+            {
+                timer.Stop();
+                _caretVisible = false;
+            }
+            else
+            {
+                _caretVisible = !_caretVisible;
+            }
+
+            InvalidateVisual();
+        };
+        return timer;
+    }
+
+    private bool CanDrawCaret =>
+        _textBox is { IsFocused: true }
+        && _textBox.SelectionStart == _textBox.SelectionEnd;
+
+    private void DrawCaret(DrawingContext context)
+    {
+        if (!IsMaterialCaretVisible || _textBox is null)
+            return;
+
+        var caret = ResolveCaretBounds();
+        var editorOrigin = _textBox.TranslatePoint(default, this);
+        if (caret is null || editorOrigin is null)
+            return;
+
+        using (context.PushClip(new Rect(editorOrigin.Value, _textBox.Bounds.Size)))
+            context.FillRectangle(_colors.FocusLabelColor, caret.Value);
+    }
+
+    private Rect? ResolveCaretBounds()
+    {
+        if (_textBox is null)
+            return null;
+
+        var presenter = _textBox.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault();
+        if (presenter is null)
+            return null;
+
+        // Compose Desktop's TextFieldCursor draws a 1dp flat-capped line from cursorRect.top
+        // through cursorRect.bottom. Filling the equivalent rectangle preserves both endpoint
+        // rows; Avalonia TextPresenter instead moves each endpoint inward by 0.5dp.
+        var hit = presenter.TextLayout.HitTestTextPosition(presenter.CaretIndex);
+        var localTopLeft = new Point(Math.Floor(hit.Left), Math.Floor(hit.Top));
+        var localBottomRight = new Point(localTopLeft.X + 1, Math.Ceiling(hit.Bottom));
+        var topLeft = presenter.TranslatePoint(localTopLeft, this);
+        var bottomRight = presenter.TranslatePoint(localBottomRight, this);
+        if (topLeft is null || bottomRight is null)
+            return null;
+
+        var caret = new Rect(topLeft.Value, bottomRight.Value);
+        return caret.Width > 0 && caret.Height > 0 ? caret : null;
     }
 }
 

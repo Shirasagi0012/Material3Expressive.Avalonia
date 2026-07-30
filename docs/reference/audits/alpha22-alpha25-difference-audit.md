@@ -122,6 +122,13 @@ the corresponding endpoint pixels at the field background. This is an existing i
 defect to fix under TextField completion work, not evidence for changing a tolerance or the
 reference version.
 
+That implementation defect was closed by `M2-TEXTFIELD-001` on 2026-07-30. Avalonia's native
+caret position and editing stack now drive a complete CMP Desktop 1dp cursor rectangle rather
+than the endpoint-inset native stroke. In the fresh full run at
+`artifacts/visual-parity/xunit/20260730-101407-403`, both focused-empty rows are
+`semanticRasterEquivalent` with zero warnings and rejected pixels. The `text-field` profile,
+producer, and raster policy were unchanged.
+
 Post-audit validation on 2026-07-30 registered the 94th case,
 `button/filled/large/enabled/light`, and corrected the Compose dragged-ListItem structural text
 probe to report its final `onTertiaryContainer` colour after the externally supplied drag state.

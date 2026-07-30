@@ -164,6 +164,10 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-30: The completion audit closed both supported focused-empty TextField failures with a
+  complete CMP Desktop 1dp caret rectangle driven by native Avalonia caret position and desktop
+  blink state. The full suite now has zero parity failures: 127 accepted rows and two explicit
+  typography skips; four authorized circular-wavy warnings remain visible.
 - 2026-07-30: The full-suite audit repaired SegmentedButton's selection icon viewport: the
   official Filled Check now retains its 24×24 ImageVector padding inside the 18dp slot. All four
   rows again pass the unchanged comparison contract with zero warnings or rejected pixels.

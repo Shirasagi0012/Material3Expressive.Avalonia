@@ -130,10 +130,12 @@ the executable-reference and alpha25 version-gap status.
 ## Secure text fields
 
 `MaterialSecureTextField` adds password-specific behavior to the filled/outlined Material text
-field chrome while retaining Avalonia's native caret, selection, IME, undo, and focus handling.
-It is single-line, marks the input as password/sensitive, disables cut and copy, and keeps paste
-available. Bind `Text`, `TextObfuscationMode`, and `IsPasswordVisible` as ordinary application
-state; D002 does not introduce a separate state object for these scalar values.
+field chrome while retaining Avalonia's native caret placement, selection, IME, undo, and focus
+handling. The visual caret follows CMP Desktop's complete 1dp cursor rectangle and the native
+editor's blink interval. The field is single-line, marks the input as password/sensitive, disables
+cut and copy, and keeps paste available. Bind `Text`, `TextObfuscationMode`, and
+`IsPasswordVisible` as ordinary application state; D002 does not introduce a separate state object
+for these scalar values.
 
 ```xml
 <m3:MaterialSecureTextField Label="Password"
