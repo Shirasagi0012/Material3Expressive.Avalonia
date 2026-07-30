@@ -36,6 +36,9 @@ desktop overlay behavior has tests and supported parity evidence.
 - Added `MaterialSnackbarHost`, which materializes the current data as `MaterialSnackbar`, maps
   Short/Long/Indefinite timing, exposes an automation Pane with an Invoke dismiss action, and
   supports action and dismiss-action buttons.
+- The Catalog overlays page now places `MaterialSnackbarHost` in the external
+  `MaterialScaffold.SnackbarHost` slot and queues its `Undo` example through the public non-null
+  state. The Catalog project builds successfully with that XAML integration.
 - Deterministic tests: `MaterialSnackbarHostTests` (6/6 passed), covering FIFO results, current
   and queued cancellation, recoverable visuals, non-null/reset state, generated content, and
   generated action plus automation dismissal. The action test also locks the upstream 58×40dp
@@ -50,8 +53,8 @@ desktop overlay behavior has tests and supported parity evidence.
 
 ## Remaining
 
-Appearance/disappearance motion parity, accessibility timeout recommendations, and a Catalog
-example wired through the external Scaffold slot remain open. The earlier overlapping action
+Appearance/disappearance motion parity and accessibility timeout recommendations remain open.
+The earlier overlapping action
 capture was traced to applying an exact-width modifier directly to alpha22's legacy Snackbar row,
 which incorrectly gave the action a 344dp minimum constraint; the corrected scene constrains the
 parent and lets Snackbar receive the host's normal loose width range. Avalonia has no direct

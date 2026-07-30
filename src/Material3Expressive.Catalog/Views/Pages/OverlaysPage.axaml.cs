@@ -28,6 +28,8 @@ public partial class OverlaysPage : UserControl
 
     private void OnShowSnackbar(object? sender, RoutedEventArgs e)
     {
-        Snackbar.IsOpen = true;
+        _ = SnackbarHost.State.ShowSnackbarAsync(
+            "Conversation archived",
+            actionLabel: "Undo");
     }
 }

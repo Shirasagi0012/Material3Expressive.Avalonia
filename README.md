@@ -169,6 +169,9 @@ documented gaps.
     <m3:MaterialScaffold.FloatingActionButton>
         <m3:MaterialFab><ms:MaterialSymbol Symbol="Add" /></m3:MaterialFab>
     </m3:MaterialScaffold.FloatingActionButton>
+    <m3:MaterialScaffold.SnackbarHost>
+        <m3:MaterialSnackbarHost x:Name="SnackbarHost" />
+    </m3:MaterialScaffold.SnackbarHost>
 
     <ScrollViewer>
         <StackPanel Margin="{Binding ContentPadding, ElementName=Scaffold}">
@@ -176,6 +179,10 @@ documented gaps.
         </StackPanel>
     </ScrollViewer>
 </m3:MaterialScaffold>
+```
+
+```csharp
+_ = SnackbarHost.State.ShowSnackbarAsync("Conversation archived", actionLabel: "Undo");
 ```
 
 `ContentWindowInsets` defaults to `null`, which observes the containing `TopLevel` safe area and

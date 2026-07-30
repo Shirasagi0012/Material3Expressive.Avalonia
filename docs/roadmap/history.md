@@ -32,6 +32,12 @@ differences, warnings, or rejected pixels at
 `artifacts/visual-parity/xunit/20260730-023515-362`. Motion parity, a Catalog external-slot
 example, and AccessibilityManager timeout recommendations remain open.
 
+The Catalog overlays page now demonstrates the public queue through a
+`MaterialSnackbarHost` placed in `MaterialScaffold.SnackbarHost`, replacing the page-local
+standalone Snackbar. The README example uses the same external slot and non-null state API; the
+Catalog project build verifies the XAML integration. Motion parity and AccessibilityManager
+timeout recommendations remain open.
+
 ## 2026-07-26 — Foundations and initial component coverage
 
 The first roadmap established the architecture used by the current library:
