@@ -12,6 +12,8 @@ namespace MaterialSkiaShadow;
 /// <summary>Draws Compose-compatible elevation shadows through Avalonia's Skia backend.</summary>
 public static class ComposeShadowRenderer
 {
+    private const double ConservativeShadowSupportPerElevation = 4;
+
     /// <summary>
     /// Adds a shadow custom draw operation at the current drawing-context transform.
     /// Call this immediately before drawing the occluder fill.
@@ -31,13 +33,19 @@ public static class ComposeShadowRenderer
             ?? throw new InvalidOperationException("A Compose shadow can only be drawn by a visual attached to a TopLevel.");
         var lighting = ComposeShadowLighting.ForViewport(topLevel.ClientSize, topLevel.RenderScaling);
 
-        // The operation may cast outside the owner. Use the top-level rectangle expressed in the
-        // owner's local coordinates as a conservative first-stage scene-graph bound. The actual
-        // mesh remains tightly bounded and the current parent clip is preserved by Skia.
-        var topLevelOrigin = topLevel.TranslatePoint(default, owner) ?? default;
-        var operationBounds = new Rect(topLevelOrigin, topLevel.ClientSize);
+        // ICustomDrawOperation.Bounds participates in Avalonia's retained subtree bounds and
+        // old/new dirty-region calculation. Keep it local to the owner: using a translated
+        // TopLevel-sized rectangle here makes an ancestor scale/opacity layer damage the wrong
+        // strips, leaving newly exposed or removed out-of-bounds shadow pixels stale.
+        //
+        var operationBounds = GetOperationBounds(shape, parameters);
         context.Custom(new ShadowDrawOperation(operationBounds, shape, parameters, lighting, topLevel.RenderScaling));
     }
+
+    internal static Rect GetOperationBounds(
+        ComposeShadowShape shape,
+        ComposeShadowParameters parameters) =>
+        shape.Bounds.Inflate(parameters.Elevation * ConservativeShadowSupportPerElevation);
 
     private sealed class ShadowDrawOperation : ICustomDrawOperation
     {

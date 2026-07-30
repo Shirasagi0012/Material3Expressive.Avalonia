@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Material3Expressive.Controls;
+using Material3Expressive.Foundation;
 using Material3Expressive.Tests.TestUtils;
 using Xunit;
 
@@ -100,16 +101,20 @@ public sealed class MaterialSnackbarHostTests
         ThemeTestHelper.ShowWindow(host);
 
         var pending = state.ShowSnackbarAsync("Archived");
-        var snackbar = Assert.IsType<MaterialSnackbar>(host.Content);
+        Assert.False(host.ClipToBounds);
+        var snackbar = Assert.IsType<MaterialSnackbar>(host.CurrentSnackbar);
         Assert.True(snackbar.IsOpen);
 
         var peer = ControlAutomationPeer.CreatePeerForElement(host);
+        Assert.Equal(AutomationLiveSetting.Polite, peer.GetLiveSetting());
+        Assert.Equal("Archived", peer.GetName());
         var provider = Assert.IsAssignableFrom<IInvokeProvider>(
             peer.GetProvider<IInvokeProvider>());
         provider.Invoke();
 
         Assert.Equal(SnackbarResult.Dismissed, await pending);
-        Assert.Null(host.Content);
+        Assert.Null(host.CurrentSnackbar);
+        Assert.Equal("Snackbar", peer.GetName());
     }
 
     [AvaloniaFact]
@@ -123,10 +128,11 @@ public sealed class MaterialSnackbarHostTests
             "Saved",
             "Undo",
             cancellationToken: TestContext.Current.CancellationToken);
-        var snackbar = Assert.IsType<MaterialSnackbar>(host.Content);
+        var snackbar = Assert.IsType<MaterialSnackbar>(host.CurrentSnackbar);
         var action = Assert.IsType<Button>(snackbar.Action);
         var label = Assert.IsType<TextBlock>(action.Content);
 
+        Assert.Equal(new Thickness(12), snackbar.Margin);
         Assert.Equal(new Thickness(16, 0, 8, 0), snackbar.Padding);
         Assert.Equal(new Thickness(12, 0), action.Padding);
         Assert.Equal(58, action.MinWidth);
@@ -140,6 +146,88 @@ public sealed class MaterialSnackbarHostTests
         action.Command!.Execute(null);
 
         Assert.Equal(SnackbarResult.ActionPerformed, await pending);
+        Assert.Null(host.CurrentSnackbar);
+    }
+
+    [AvaloniaFact]
+    public async Task HostUsesFastSpringsAndRetainsOutgoingItemUntilExitSettles()
+    {
+        using var clock = new MotionTestClockScope();
+        var state = new SnackbarHostState();
+        var host = new MaterialSnackbarHost { State = state };
+        var pending = state.ShowSnackbarAsync(
+            "Archived",
+            duration: SnackbarDuration.Indefinite,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, host.CurrentOpacity);
+        Assert.Equal(.8, host.CurrentScale);
+        Assert.Equal(1, host.TransitionItemCount);
+
+        var expectedOpacity = new SpringAnimation(
+            0,
+            ResolvedMotionScheme.Default.Get(MotionRole.FastEffects));
+        var expectedScale = new SpringAnimation(
+            .8,
+            ResolvedMotionScheme.Default.Get(MotionRole.FastSpatial));
+        expectedOpacity.AnimateTo(1);
+        expectedScale.AnimateTo(1);
+        var elapsed = TimeSpan.FromMilliseconds(100);
+        expectedOpacity.Tick(elapsed);
+        expectedScale.Tick(elapsed);
+        clock.AdvanceBy(elapsed);
+
+        Assert.Equal(expectedOpacity.Value, host.CurrentOpacity, 12);
+        Assert.Equal(expectedScale.Value, host.CurrentScale, 12);
+
+        state.CurrentSnackbarData!.Dismiss();
+        Assert.Null(host.CurrentSnackbar);
+        Assert.Equal(1, host.TransitionItemCount);
+        Assert.Equal(SnackbarResult.Dismissed, await pending);
+
+        clock.AdvanceBy(TimeSpan.FromSeconds(1));
+        Assert.Equal(0, host.TransitionItemCount);
         Assert.Null(host.Content);
+    }
+
+    [AvaloniaFact]
+    public async Task ShortTimeoutUsesTheComponentClockAndStartsExitAtFourSeconds()
+    {
+        using var clock = new MotionTestClockScope();
+        var state = new SnackbarHostState();
+        var host = new MaterialSnackbarHost { State = state };
+        var pending = state.ShowSnackbarAsync(
+            "Saved",
+            duration: SnackbarDuration.Short,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(3999));
+        Assert.NotNull(state.CurrentSnackbarData);
+
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(1));
+        Assert.Null(state.CurrentSnackbarData);
+        Assert.Null(host.CurrentSnackbar);
+        Assert.Equal(1, host.TransitionItemCount);
+        Assert.Equal(SnackbarResult.Dismissed, await pending);
+    }
+
+    [AvaloniaFact]
+    public void QueueTransitionOverlapsOutgoingAndIncomingItems()
+    {
+        using var clock = new MotionTestClockScope();
+        var state = new SnackbarHostState();
+        var host = new MaterialSnackbarHost { State = state };
+        _ = state.ShowSnackbarAsync("First", duration: SnackbarDuration.Indefinite);
+        _ = state.ShowSnackbarAsync("Second", duration: SnackbarDuration.Indefinite);
+        clock.SettleAll();
+
+        state.CurrentSnackbarData!.Dismiss();
+
+        Assert.Equal("Second", state.CurrentSnackbarData!.Visuals.Message);
+        Assert.Equal(2, host.TransitionItemCount);
+        Assert.Equal("Second", Assert.IsType<TextBlock>(host.CurrentSnackbar!.Message).Text);
+
+        clock.SettleAll();
+        Assert.Equal(1, host.TransitionItemCount);
     }
 }

@@ -132,13 +132,28 @@ still enter the original sparse `Δ<=48` bin, so a `Δ>=2` shifted or solid edge
 This split was calibrated from the 2x BottomSheet Level1 top-edge residual; recalibrate it if a
 passing case exceeds those bounds, and do not raise the higher-delta limits to compensate.
 
+### `shadowOccluder`
+
+Use only for low-delta whole-layer composition differences inside the opaque occluder of a matched
+shadow contract. It requires `compareGeometry`, `occluderDrawn=true`, and
+`transparentOccluder=false`; the owner is the expected transformed occluder shape rather than the
+component's rectangular bounds. Ordinary static fills do not receive this owner.
+
+`component-with-text-and-elevation-motion` is scoped to Snackbar host motion. Compose applies
+spring alpha to a graphics layer containing both the surface and its shadow, while Avalonia applies
+opacity to the equivalent retained subtree. At matching timeline, geometry, text, and complete
+shadow contracts, the two Skia composition paths leave repeatable `Δ<=1` pixels across the
+occluder and diffuse shadow. This profile permits all such pixels in the expected-derived
+`shadowOccluder`, `shadowSupport`, and `shadowEdge` owners, but provides no `Δ>=2` support or
+occluder bin. The existing sparse higher-delta shadow-edge rule remains unchanged.
+
 ## Schema reference
 
 The root object contains:
 
 | Field | Contract |
 |---|---|
-| `schemaVersion` | Must match the loader's current version; currently `7`. |
+| `schemaVersion` | Must match the loader's current version; currently `8`. |
 | `profiles` | Unique profile definitions. Unknown fields are rejected. |
 | `caseProfileRules` | Ordered first-prefix-match mapping from case ID to profile. |
 
@@ -156,8 +171,8 @@ Each profile contains:
 | `shadowSignalChannelDelta` | Expected shadow-signal threshold used when deriving shadow masks. |
 | `shadowPaddingPerElevationPx` | Non-negative finite envelope padding per elevation unit. |
 | `minimumShadowPaddingPx` | Non-negative minimum shadow-envelope padding. |
-| `textInk`, `shapeEdge`, `shadowSupport`, `shadowEdge` | Optional owner policies containing `dilationPx` and one or more ordered budgets. |
-| `compareGeometry` | Enables structural geometry comparison; required by `textInk`, `shadowSupport`, and `shadowEdge`. Keep it enabled for normal component profiles. |
+| `textInk`, `shapeEdge`, `shadowSupport`, `shadowEdge`, `shadowOccluder` | Optional owner policies containing `dilationPx` and one or more ordered budgets. |
+| `compareGeometry` | Enables structural geometry comparison; required by `textInk`, `shadowSupport`, `shadowEdge`, and `shadowOccluder`. Keep it enabled for normal component profiles. |
 | `compareTextLayout` | Enables text structure/style comparison; required by `textInk`. |
 | `compareRaster` | Enables the official same-coordinate raster gate. |
 

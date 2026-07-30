@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "profiles": [
     {
       "id": "color-swatch",
@@ -175,6 +175,56 @@
       "compareRaster": true
     },
     {
+      "id": "component-with-text-and-elevation-motion",
+      "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 1.0 },
+      "rasterPolicy": {
+        "algorithm": "semantic-raster-v1",
+        "strictChannelDelta": 0,
+        "edgeDetectionChannelDelta": 4,
+        "shadowSignalChannelDelta": 0,
+        "shadowPaddingPerElevationPx": 4.0,
+        "minimumShadowPaddingPx": 8,
+        "textInk": {
+          "dilationPx": 3,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 16384, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 10, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 100000, "maxEnergyPerOwner": 81920, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 20, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 8192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 200000, "maxEnergyPerOwner": 163840, "maxConnectedComponentPixels": 8192, "maxConnectedComponentThicknessPx": 8192 },
+            { "maxChannelDelta": 255, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 1000000, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 2550000, "maxEnergyPerOwner": 255000000, "maxConnectedComponentPixels": 1000000, "maxConnectedComponentThicknessPx": 1000000 }
+          ]
+        },
+        "shapeEdge": {
+          "dilationPx": 1,
+          "budgets": [
+            { "maxChannelDelta": 2, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 16384, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 20000, "maxEnergyPerOwner": 32768, "maxConnectedComponentPixels": 16384, "maxConnectedComponentThicknessPx": 16384 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 800, "maxPixelsPerOwner": 96, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 6400, "maxEnergyPerOwner": 768, "maxConnectedComponentPixels": 16, "maxConnectedComponentThicknessPx": 2 }
+          ]
+        },
+        "shadowSupport": {
+          "dilationPx": 4,
+          "budgets": [
+            { "maxChannelDelta": 1, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 262144, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 10000, "maxEnergyPerOwner": 262144, "maxConnectedComponentPixels": 262144, "maxConnectedComponentThicknessPx": 262144 }
+          ]
+        },
+        "shadowOccluder": {
+          "dilationPx": 0,
+          "budgets": [
+            { "maxChannelDelta": 1, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 262144, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 10000, "maxEnergyPerOwner": 262144, "maxConnectedComponentPixels": 262144, "maxConnectedComponentThicknessPx": 262144 }
+          ]
+        },
+        "shadowEdge": {
+          "dilationPx": 4,
+          "budgets": [
+            { "maxChannelDelta": 1, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 0, "pixelsPer10kEligiblePixels": 10000, "maxPixelsPerOwner": 262144, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 0, "energyPer10kEligiblePixels": 10000, "maxEnergyPerOwner": 262144, "maxConnectedComponentPixels": 262144, "maxConnectedComponentThicknessPx": 262144 },
+            { "maxChannelDelta": 8, "minimumPixelsPerOwner": 0, "basePixelsPerOwner": 32, "pixelsPer10kEligiblePixels": 250, "maxPixelsPerOwner": 192, "minimumEnergyPerOwner": 0, "baseEnergyPerOwner": 256, "energyPer10kEligiblePixels": 2000, "maxEnergyPerOwner": 1536, "maxConnectedComponentPixels": 96, "maxConnectedComponentThicknessPx": 4 }
+          ]
+        }
+      },
+      "compareGeometry": true,
+      "compareTextLayout": true,
+      "compareRaster": true
+    },
+    {
       "id": "text-field",
       "layoutTolerance": { "geometryPx": 0.5, "textPx": 0.5, "textBaselinePx": 0.5, "textLineBoundsPx": 1.0 },
       "rasterPolicy": {
@@ -261,6 +311,7 @@
     { "prefix": "listitem/", "profileId": "component-with-text" },
     { "prefix": "segmentedbutton/", "profileId": "component-with-text" },
     { "prefix": "bottomsheet/scaffold/", "profileId": "component-with-text-and-elevation" },
+    { "prefix": "snackbar/host/motion/", "profileId": "component-with-text-and-elevation-motion" },
     { "prefix": "snackbar/host/", "profileId": "component-with-text-and-elevation" },
     { "prefix": "scaffold/", "profileId": "container" },
     { "prefix": "navigation/", "profileId": "component-with-text" }

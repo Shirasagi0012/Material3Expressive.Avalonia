@@ -124,6 +124,15 @@ public class MaterialSnackbar : TemplatedControl
     private SpringAnimation Open =>
         _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
 
+    internal void SnapOpenState(bool isOpen)
+    {
+        IsOpen = isOpen;
+        Open.SnapTo(isOpen ? 1 : 0);
+        _shownFor = TimeSpan.Zero;
+        IsHitTestVisible = isOpen;
+        InvalidateVisual();
+    }
+
     private CornerRadius ContainerCornerRadius =>
         _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
 

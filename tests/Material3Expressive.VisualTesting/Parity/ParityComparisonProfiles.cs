@@ -20,7 +20,7 @@ public sealed record ParityComparisonProfile(
 
 public static class ParityComparisonProfiles
 {
-    public const int CurrentSchemaVersion = 7;
+    public const int CurrentSchemaVersion = 8;
 
     private static readonly Lazy<ParityComparisonProfileDocument> Document = new(Load);
 
@@ -126,7 +126,9 @@ public static class ParityComparisonProfiles
             || !float.IsFinite(policy.ShadowPaddingPerElevationPx)
             || policy.ShadowPaddingPerElevationPx < 0
             || (policy.TextInk is not null && (!profile.CompareGeometry || !profile.CompareTextLayout))
-            || ((policy.ShadowSupport is not null || policy.ShadowEdge is not null) && !profile.CompareGeometry)
+            || ((policy.ShadowSupport is not null
+                 || policy.ShadowEdge is not null
+                 || policy.ShadowOccluder is not null) && !profile.CompareGeometry)
             || (policy.ShadowEdge is not null && policy.ShadowSupport is null))
         {
             return false;
@@ -135,7 +137,8 @@ public static class ParityComparisonProfiles
         return IsValidRegion(policy.TextInk)
                && IsValidRegion(policy.ShapeEdge)
                && IsValidRegion(policy.ShadowSupport)
-               && IsValidRegion(policy.ShadowEdge);
+               && IsValidRegion(policy.ShadowEdge)
+               && IsValidRegion(policy.ShadowOccluder);
     }
 
     private static bool IsValidRegion(ParityRasterRegionPolicy? region)

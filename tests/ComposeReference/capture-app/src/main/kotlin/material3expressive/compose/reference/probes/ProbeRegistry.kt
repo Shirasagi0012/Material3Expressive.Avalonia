@@ -2,6 +2,7 @@ package material3expressive.compose.reference.probes
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.TextLayoutResult
@@ -11,6 +12,7 @@ class ProbeRegistry {
     private val _textLayouts = linkedMapOf<String, TextLayoutResult>()
     private val _focused = linkedMapOf<String, Boolean>()
     private val _shadows = linkedMapOf<String, ShadowProbeSpec>()
+    private val _visualScales = linkedMapOf<String, VisualScale>()
 
     fun geometry(id: String): Modifier =
         Modifier.onGloballyPositioned { coordinates ->
@@ -25,9 +27,33 @@ class ProbeRegistry {
                 position.x + coordinates.size.width,
                 position.y + coordinates.size.height,
             )
+            _visualScales[id] = VisualScale(1f, 1f)
         }
 
     fun text(id: String): Modifier = geometry(id)
+
+    fun transformedGeometry(id: String): Modifier =
+        Modifier.onGloballyPositioned { coordinates ->
+            val width = coordinates.size.width.toFloat()
+            val height = coordinates.size.height.toFloat()
+            val corners =
+                listOf(
+                    coordinates.localToRoot(Offset.Zero),
+                    coordinates.localToRoot(Offset(width, 0f)),
+                    coordinates.localToRoot(Offset(0f, height)),
+                    coordinates.localToRoot(Offset(width, height)),
+                )
+            val left = corners.minOf { it.x }
+            val top = corners.minOf { it.y }
+            val right = corners.maxOf { it.x }
+            val bottom = corners.maxOf { it.y }
+            _geometries[id] = BoundsPx(left, top, right, bottom)
+            _visualScales[id] =
+                VisualScale(
+                    x = if (width == 0f) 1f else (right - left) / width,
+                    y = if (height == 0f) 1f else (bottom - top) / height,
+                )
+        }
 
     fun onTextLayout(id: String): (TextLayoutResult) -> Unit = { result ->
         recordTextLayout(id, result)
@@ -43,6 +69,8 @@ class ProbeRegistry {
     fun focused(id: String): Boolean? = _focused[id]
 
     fun shadow(id: String): ShadowProbeSpec? = _shadows[id]
+
+    fun visualScale(id: String): VisualScale = _visualScales[id] ?: VisualScale(1f, 1f)
 
     fun recordTextLayout(id: String, result: TextLayoutResult) {
         _textLayouts[id] = result
@@ -78,3 +106,5 @@ data class BoundsPx(
     val right: Float,
     val bottom: Float,
 )
+
+data class VisualScale(val x: Float, val y: Float)

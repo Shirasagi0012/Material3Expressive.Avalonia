@@ -200,6 +200,122 @@ public sealed class SemanticRasterBudgetTests
     }
 
     [Fact]
+    public void SnackbarMotionShadowAcceptsCompleteDeltaOneSupportButRejectsDeltaTwo()
+    {
+        var layout = ShadowScene();
+        var expected = ShadowImage();
+        var deltaOne = expected;
+        var deltaTwo = expected;
+        for (var y = 4; y < 26; y++)
+        {
+            for (var x = 4; x < 36; x++)
+            {
+                var outsideOccluder = x < 8 || x >= 32 || y < 8 || y >= 22;
+                if (!outsideOccluder)
+                    continue;
+
+                var expectedValue = x is >= 6 and < 34 && y is >= 6 and < 24 ? (byte)200 : (byte)255;
+                deltaOne = WithPixel(deltaOne, x, y, (byte)(expectedValue - 1));
+                deltaTwo = WithPixel(deltaTwo, x, y, (byte)(expectedValue - 2));
+            }
+        }
+
+        var profile = ParityComparisonProfiles.ForCase("snackbar/host/motion/enter-mid/light");
+        var accepted = new ParityComparer().Compare(layout, layout, expected, deltaOne, profile);
+        var rejected = new ParityComparer().Compare(layout, layout, expected, deltaTwo, profile);
+
+        Assert.True(accepted.IsMatch);
+        Assert.Equal(ParityComparisonKind.SemanticRasterEquivalent, accepted.Kind);
+        Assert.False(rejected.IsMatch);
+        Assert.Contains(
+            rejected.Raster!.RejectionReasons,
+            reason => reason is ParityRasterRejectionReason.OutsideDeltaBudget
+                or ParityRasterRejectionReason.PixelCountBudget);
+    }
+
+    [Fact]
+    public void SnackbarMotionShadowOccluderAcceptsDeltaOneButRejectsDeltaTwo()
+    {
+        var layout = ShadowScene(occluderDrawn: true);
+        var expected = ShadowImage();
+        var deltaOne = expected;
+        var deltaTwo = expected;
+        for (var y = 8; y < 22; y++)
+        {
+            for (var x = 8; x < 32; x++)
+            {
+                deltaOne = WithPixel(deltaOne, x, y, 254);
+                deltaTwo = WithPixel(deltaTwo, x, y, 253);
+            }
+        }
+
+        var profile = ParityComparisonProfiles.ForCase("snackbar/host/motion/enter-mid/light");
+        var accepted = new ParityComparer().Compare(layout, layout, expected, deltaOne, profile);
+        var rejected = new ParityComparer().Compare(layout, layout, expected, deltaTwo, profile);
+
+        Assert.True(accepted.IsMatch);
+        var occluder = Assert.Single(
+            accepted.Raster!.Regions,
+            region => region.Kind == "shadow-occluder");
+        Assert.True(Assert.Single(occluder.Budgets).ObservedPixels > 0);
+        Assert.Equal(14 * 24, accepted.Raster.RawDifferentPixels);
+        Assert.False(rejected.IsMatch);
+        Assert.Contains(
+            rejected.Raster!.RejectionReasons,
+            reason => reason == ParityRasterRejectionReason.OutsideDeltaBudget);
+    }
+
+    [Fact]
+    public void SnackbarMotionShadowEdgeAcceptsFourPixelPhaseBandButRejectsThickerOrHigherDelta()
+    {
+        var layout = ShadowScene(occluderDrawn: true);
+        var expected = ShadowImage();
+        var fourPixelsThick = expected;
+        var fivePixelsThick = expected;
+        for (var y = 6; y < 11; y++)
+        {
+            for (var x = 6; x < 16; x++)
+            {
+                var expectedValue = x is >= 8 and < 32 && y is >= 8 and < 22 ? (byte)255 : (byte)200;
+                fivePixelsThick = WithPixel(fivePixelsThick, x, y, (byte)(expectedValue - 7));
+                if (y < 10)
+                    fourPixelsThick = WithPixel(fourPixelsThick, x, y, (byte)(expectedValue - 7));
+            }
+        }
+        var aboveDeltaCeiling = WithPixel(expected, 6, 6, 191);
+        var profile = ParityComparisonProfiles.ForCase("snackbar/host/motion/exit-mid/light");
+
+        var accepted = new ParityComparer().Compare(
+            layout,
+            layout,
+            expected,
+            fourPixelsThick,
+            profile);
+        var tooThick = new ParityComparer().Compare(
+            layout,
+            layout,
+            expected,
+            fivePixelsThick,
+            profile);
+        var tooLarge = new ParityComparer().Compare(
+            layout,
+            layout,
+            expected,
+            aboveDeltaCeiling,
+            profile);
+
+        Assert.True(accepted.IsMatch, string.Join(Environment.NewLine, accepted.Failures));
+        Assert.False(tooThick.IsMatch);
+        Assert.Contains(
+            tooThick.Raster!.RejectionReasons,
+            reason => reason == ParityRasterRejectionReason.ConnectedComponentThickness);
+        Assert.False(tooLarge.IsMatch);
+        Assert.Contains(
+            tooLarge.Raster!.RejectionReasons,
+            reason => reason == ParityRasterRejectionReason.OutsideDeltaBudget);
+    }
+
+    [Fact]
     public void ShadowBoundaryRejectsAThickBlockEvenWhenTheCountBudgetWouldAllowIt()
     {
         var layout = ShadowScene();
@@ -357,7 +473,7 @@ public sealed class SemanticRasterBudgetTests
         var json = JsonSerializer.Serialize(comparison, ParityJson.Options);
 
         Assert.Contains("\"schemaVersion\": 10", json, StringComparison.Ordinal);
-        Assert.Contains("\"profileSchemaVersion\": 7", json, StringComparison.Ordinal);
+        Assert.Contains("\"profileSchemaVersion\": 8", json, StringComparison.Ordinal);
         Assert.Contains("\"profileRulePrefix\": \"test/\"", json, StringComparison.Ordinal);
         Assert.Contains("\"strictChannelDelta\": 0", json, StringComparison.Ordinal);
         Assert.Contains("\"pixelsPer10kEligiblePixels\"", json, StringComparison.Ordinal);

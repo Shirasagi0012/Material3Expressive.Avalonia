@@ -117,7 +117,7 @@ public static class ComposeShadowContract
             parameters.AmbientColor,
             parameters.SpotColor,
             opacity,
-            parameters.TransparentOccluder || opacity < 1f,
+            parameters.TransparentOccluder || parameters.Opacity < 1,
             renderScaling);
     }
 }

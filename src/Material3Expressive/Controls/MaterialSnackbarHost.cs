@@ -1,14 +1,18 @@
 // Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SnackbarHost.kt:49-177,
-// 260-314 and Snackbar.kt:222-281. Compose's suspending Mutex queue is adapted to a FIFO task
-// queue; cancellation removes the current or queued request. The generated action mirrors the
-// default SnackbarData TextButton's 58x40dp minimum and 12dp horizontal content inset.
+// 217-239, 298-419 and Snackbar.kt:222-281. Compose's suspending Mutex queue is adapted to a FIFO
+// task queue; cancellation removes the current or queued request. Host items retain the upstream
+// FastEffects opacity plus FastSpatial 0.8-to-1 scale transition, and their timeout is driven by
+// the same component clock so animation, dismissal, and deterministic replay remain coordinated.
 
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
-using Avalonia.Threading;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.VisualTree;
+using Material3Expressive.Foundation;
 using Material3Expressive.Controls.Automation;
 
 namespace Material3Expressive.Controls;
@@ -227,14 +231,22 @@ public sealed class MaterialSnackbarHost : ContentControl
         AvaloniaProperty.RegisterDirect<MaterialSnackbarHost, SnackbarHostState>(
             nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
 
-    private readonly DispatcherTimer _timer = new();
+    private readonly MaterialThemeWatcher _theme;
+    private readonly Grid _transitionLayer = new();
+    private readonly List<TransitionItem> _items = [];
     private SnackbarHostState _state = new();
     private SnackbarData? _current;
-    private MaterialSnackbar? _snackbar;
+    private TransitionItem? _currentItem;
+    private bool _completingTimeout;
+
+    static MaterialSnackbarHost()
+    {
+        ClipToBoundsProperty.OverrideDefaultValue<MaterialSnackbarHost>(false);
+    }
 
     public MaterialSnackbarHost()
     {
-        _timer.Tick += OnTimerTick;
+        _theme = new MaterialThemeWatcher(this);
         _state.PropertyChanged += OnStateChanged;
         UpdateCurrent(_state.CurrentSnackbarData);
     }
@@ -246,6 +258,14 @@ public sealed class MaterialSnackbarHost : ContentControl
     }
 
     public void ResetState() => SetState(null);
+
+    internal MaterialSnackbar? CurrentSnackbar => _currentItem?.Snackbar;
+
+    internal int TransitionItemCount => _items.Count;
+
+    internal double CurrentOpacity => _currentItem?.OpacityValue ?? 0;
+
+    internal double CurrentScale => _currentItem?.ScaleValue ?? .8;
 
     protected override AutomationPeer OnCreateAutomationPeer() =>
         new MaterialSnackbarHostAutomationPeer(this);
@@ -276,21 +296,21 @@ public sealed class MaterialSnackbarHost : ContentControl
 
     private void UpdateCurrent(SnackbarData? data)
     {
-        _timer.Stop();
         _current = data;
-        if (_snackbar is not null)
-            _snackbar.PropertyChanged -= OnSnackbarPropertyChanged;
+        if (_currentItem is not null)
+        {
+            _currentItem.Snackbar.PropertyChanged -= OnSnackbarPropertyChanged;
+            _currentItem.Hide(_completingTimeout);
+            _currentItem = null;
+        }
 
         if (data is null)
-        {
-            _snackbar = null;
-            Content = null;
             return;
-        }
 
         var snackbar = new MaterialSnackbar
         {
             Name = "snackbar",
+            Margin = new Thickness(12),
             IsOpen = true,
             Duration = TimeSpan.Zero,
             Message = new TextBlock
@@ -301,20 +321,27 @@ public sealed class MaterialSnackbarHost : ContentControl
             }
         };
         snackbar.Action = CreateAction(data, snackbar);
-        _snackbar = snackbar;
-        _snackbar.PropertyChanged += OnSnackbarPropertyChanged;
-        Content = _snackbar;
+        snackbar.SnapOpenState(true);
+
         var duration = data.Visuals.Duration switch
         {
             SnackbarDuration.Long => TimeSpan.FromSeconds(10),
             SnackbarDuration.Indefinite => Timeout.InfiniteTimeSpan,
             _ => TimeSpan.FromSeconds(4)
         };
-        if (duration != Timeout.InfiniteTimeSpan)
-        {
-            _timer.Interval = duration;
-            _timer.Start();
-        }
+        var item = new TransitionItem(
+            snackbar,
+            _theme.Spring(MotionRole.FastEffects),
+            _theme.Spring(MotionRole.FastSpatial),
+            duration,
+            () => OnTimeout(data),
+            RemoveItem);
+        _items.Add(item);
+        _transitionLayer.Children.Add(item);
+        _currentItem = item;
+        snackbar.PropertyChanged += OnSnackbarPropertyChanged;
+        Content = _transitionLayer;
+        item.Show();
     }
 
     private object? CreateAction(SnackbarData data, MaterialSnackbar snackbar)
@@ -349,11 +376,231 @@ public sealed class MaterialSnackbarHost : ContentControl
 
     private void OnSnackbarPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == MaterialSnackbar.IsOpenProperty && _snackbar?.IsOpen == false)
+        if (e.Property == MaterialSnackbar.IsOpenProperty &&
+            sender is MaterialSnackbar snackbar &&
+            snackbar.IsOpen == false)
             _current?.Dismiss();
     }
 
-    private void OnTimerTick(object? sender, EventArgs e) => _current?.Dismiss();
+    private void OnTimeout(SnackbarData data)
+    {
+        if (ReferenceEquals(_current, data))
+        {
+            _completingTimeout = true;
+            try
+            {
+                data.Dismiss();
+            }
+            finally
+            {
+                _completingTimeout = false;
+            }
+        }
+    }
+
+    private void RemoveItem(TransitionItem item)
+    {
+        item.Snackbar.PropertyChanged -= OnSnackbarPropertyChanged;
+        item.Child = null;
+        _items.Remove(item);
+        _transitionLayer.Children.Remove(item);
+        if (_items.Count == 0)
+            Content = null;
+    }
+
+    private sealed class TransitionItem : Decorator
+    {
+        private readonly MotionGroup _motion;
+        private readonly SpringAnimation _opacity;
+        private readonly SpringAnimation _scale;
+        private readonly DelayAnimation _exitFrameDelay;
+        private readonly DelayAnimation? _timeout;
+        private readonly Action _timedOut;
+        private readonly Action<TransitionItem> _remove;
+        private readonly ScaleTransform _scaleTransform = new(.8, .8);
+        private bool _isVisible;
+        private bool _hideOnNextFrame;
+        private bool _timeoutRaised;
+
+        public TransitionItem(
+            MaterialSnackbar snackbar,
+            SpringSpec opacitySpec,
+            SpringSpec scaleSpec,
+            TimeSpan duration,
+            Action timedOut,
+            Action<TransitionItem> remove)
+        {
+            Snackbar = snackbar;
+            _timedOut = timedOut;
+            _remove = remove;
+            HorizontalAlignment = HorizontalAlignment.Center;
+            VerticalAlignment = VerticalAlignment.Bottom;
+            RenderTransformOrigin = RelativePoint.Center;
+            RenderTransform = _scaleTransform;
+            Child = snackbar;
+
+            _motion = new MotionGroup(this);
+            _opacity = _motion.AddSpring(0, opacitySpec);
+            _scale = _motion.AddSpring(.8, scaleSpec);
+            _exitFrameDelay = _motion.Add(new DelayAnimation(TimeSpan.FromTicks(1)));
+            if (duration != Timeout.InfiniteTimeSpan)
+                _timeout = _motion.Add(new DelayAnimation(duration));
+            _motion.Ticked += OnTicked;
+            ApplyValues();
+        }
+
+        public MaterialSnackbar Snackbar { get; }
+
+        public double OpacityValue => _opacity.Value;
+
+        public double ScaleValue => _scale.Value;
+
+        public void Show()
+        {
+            _isVisible = true;
+            _opacity.AnimateTo(1);
+            _scale.AnimateTo(1);
+            _timeout?.Start();
+            _motion.Start();
+            ApplyValues();
+        }
+
+        public void Hide(bool deferAnimationOneFrame)
+        {
+            if (!_isVisible)
+                return;
+
+            _isVisible = false;
+            _timeout?.Stop();
+            if (deferAnimationOneFrame)
+            {
+                _hideOnNextFrame = true;
+                _exitFrameDelay.Start();
+                _motion.Start();
+                return;
+            }
+
+            BeginHide();
+        }
+
+        private void BeginHide()
+        {
+            _opacity.AnimateTo(0);
+            _scale.AnimateTo(.8);
+            _motion.Start();
+            ApplyValues();
+            if (!_opacity.IsRunning && !_scale.IsRunning)
+                _remove(this);
+        }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            _motion.Start();
+        }
+
+        private void OnTicked(object? sender, EventArgs e)
+        {
+            ApplyValues();
+            if (_hideOnNextFrame && _exitFrameDelay.HasElapsed)
+            {
+                _hideOnNextFrame = false;
+                BeginHide();
+                return;
+            }
+
+            if (!_timeoutRaised && _isVisible && _timeout?.HasElapsed == true)
+            {
+                _timeoutRaised = true;
+                _timedOut();
+            }
+
+            if (_hideOnNextFrame)
+                return;
+
+            if (!_isVisible && !_opacity.IsRunning && !_scale.IsRunning)
+                _remove(this);
+        }
+
+        private void ApplyValues()
+        {
+            if (_isVisible &&
+                !_opacity.IsRunning &&
+                !_scale.IsRunning &&
+                _opacity.Value == 1 &&
+                _scale.Value == 1)
+            {
+                ClearValue(OpacityProperty);
+                ClearValue(RenderTransformProperty);
+                return;
+            }
+
+            Opacity = Math.Clamp(_opacity.Value, 0, 1);
+            if (!ReferenceEquals(RenderTransform, _scaleTransform))
+                RenderTransform = _scaleTransform;
+            var scale = _scale.Value;
+            _scaleTransform.ScaleX = scale;
+            _scaleTransform.ScaleY = scale;
+        }
+    }
+
+    private sealed class DelayAnimation(TimeSpan duration) : IAnimation
+    {
+        private TimeSpan _elapsed;
+
+        public double Value { get; private set; }
+
+        public bool IsRunning { get; private set; }
+
+        public bool HasElapsed { get; private set; }
+
+        public void Start()
+        {
+            _elapsed = TimeSpan.Zero;
+            Value = 0;
+            HasElapsed = false;
+            if (duration <= TimeSpan.Zero)
+            {
+                Value = 1;
+                HasElapsed = true;
+                IsRunning = false;
+            }
+            else
+                IsRunning = true;
+        }
+
+        public void Stop()
+        {
+            IsRunning = false;
+        }
+
+        public bool Tick(TimeSpan delta)
+        {
+            if (!IsRunning)
+                return false;
+
+            _elapsed += delta;
+            if (_elapsed < duration)
+            {
+                Value = _elapsed.TotalSeconds / duration.TotalSeconds;
+                return true;
+            }
+
+            _elapsed = duration;
+            Value = 1;
+            HasElapsed = true;
+            IsRunning = false;
+            return false;
+        }
+
+        public void Settle()
+        {
+            // A timeout is an operation deadline, not a visual interpolation. MotionGroup settles
+            // visual springs when a control detaches or a static test asks for terminal visuals;
+            // completing the deadline there would dismiss a snackbar merely because it left the
+            // visual tree. Keep elapsed time paused and resume it on reattachment instead.
+        }
+    }
 
     private sealed class ActionCommand(Action execute) : System.Windows.Input.ICommand
     {

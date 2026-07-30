@@ -149,7 +149,10 @@ internal static class SemanticRasterComparer
         // Shadow-edge comes before generic shape-edge so the rare high-delta quantization
         // allowance can only be spent on a matched shadow's expected boundary.
         var shadowSupportRegions = new List<RasterRegion>();
-        if (policy.ShadowEdge is not null || policy.ShadowSupport is not null)
+        var shadowOccluderRegions = new List<RasterRegion>();
+        if (policy.ShadowEdge is not null
+            || policy.ShadowSupport is not null
+            || policy.ShadowOccluder is not null)
         {
             var background = FindDominantPixel(expected);
             foreach (var node in semantic.MatchedShadowNodes)
@@ -169,12 +172,43 @@ internal static class SemanticRasterComparer
                         policy.ShadowEdge.DilationPx);
                     Intersect(edge, envelope);
                     if (node.Shadow!.OccluderDrawn && !node.Shadow.TransparentOccluder)
-                        Except(edge, occluder);
+                    {
+                        if (policy.ShadowOccluder is null)
+                        {
+                            Except(edge, occluder);
+                        }
+                        else
+                        {
+                            var occluderEdge = BuildBinaryBoundary(
+                                occluder,
+                                expected.Width,
+                                expected.Height,
+                                policy.ShadowEdge.DilationPx);
+                            Intersect(occluderEdge, envelope);
+                            Union(edge, occluderEdge);
+                        }
+                    }
                     if (HasPixels(edge))
                         regions.Add(new RasterRegion($"shadow-edge:{node.Id}", "shadow-edge", edge, policy.ShadowEdge));
                 }
                 if (policy.ShadowSupport is not null)
                     shadowSupportRegions.Add(new RasterRegion($"shadow:{node.Id}", "shadow-support", support, policy.ShadowSupport));
+                if (policy.ShadowOccluder is not null
+                    && node.Shadow!.OccluderDrawn
+                    && !node.Shadow.TransparentOccluder)
+                {
+                    var ownedOccluder = Dilate(
+                        occluder,
+                        expected.Width,
+                        expected.Height,
+                        policy.ShadowOccluder.DilationPx);
+                    Intersect(ownedOccluder, envelope);
+                    shadowOccluderRegions.Add(new RasterRegion(
+                        $"shadow-occluder:{node.Id}",
+                        "shadow-occluder",
+                        ownedOccluder,
+                        policy.ShadowOccluder));
+                }
             }
         }
 
@@ -189,9 +223,10 @@ internal static class SemanticRasterComparer
                 regions.Add(new RasterRegion("shape-edge", "shape-edge", edge, policy.ShapeEdge));
         }
 
-        // Diffuse shadow support is deliberately the least-specific region. A pixel that also
-        // belongs to a text, shadow-boundary, or generic shape edge consumes that stricter
-        // region's budget instead.
+        // The opaque occluder and diffuse support are deliberately less specific than text and
+        // edges. The occluder owner is only present in motion profiles that explicitly model
+        // whole-layer alpha composition; ordinary component fills remain strict.
+        regions.AddRange(shadowOccluderRegions);
         regions.AddRange(shadowSupportRegions);
 
         return regions;
@@ -458,6 +493,12 @@ internal static class SemanticRasterComparer
     {
         for (var pixel = 0; pixel < target.Length; pixel++)
             target[pixel] &= !excluded[pixel];
+    }
+
+    private static void Union(bool[] target, bool[] source)
+    {
+        for (var pixel = 0; pixel < target.Length; pixel++)
+            target[pixel] |= source[pixel];
     }
 
     private static bool HasPixels(bool[] mask) => mask.Any(value => value);
@@ -854,7 +895,8 @@ public sealed record ParityRasterPolicy(
     ParityRasterRegionPolicy? TextInk = null,
     ParityRasterRegionPolicy? ShapeEdge = null,
     ParityRasterRegionPolicy? ShadowSupport = null,
-    ParityRasterRegionPolicy? ShadowEdge = null);
+    ParityRasterRegionPolicy? ShadowEdge = null,
+    ParityRasterRegionPolicy? ShadowOccluder = null);
 
 public sealed record ParityRasterRegionPolicy(
     int DilationPx,

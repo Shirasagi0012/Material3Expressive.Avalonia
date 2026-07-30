@@ -296,7 +296,15 @@ class ExpectedProducer(
                 textLayout = textLayout,
                 focused = focused,
                 shadow = probes.shadow(spec.id)?.let { shadow ->
-                    captureShadow(shadow, geom, probes, widthPx, heightPx, scale)
+                    captureShadow(
+                        shadow,
+                        geom,
+                        probes.visualScale(spec.id),
+                        probes,
+                        widthPx,
+                        heightPx,
+                        scale,
+                    )
                 },
             )
         }
@@ -382,13 +390,14 @@ class ExpectedProducer(
     private fun captureShadow(
         spec: ShadowProbeSpec,
         geometry: material3expressive.compose.reference.probes.BoundsPx,
+        visualScale: material3expressive.compose.reference.probes.VisualScale,
         probes: ProbeRegistry,
         viewportWidthPx: Int,
         viewportHeightPx: Int,
         scale: Float,
     ): CaptureShadow {
-        val widthDp = (geometry.right - geometry.left) / scale
-        val heightDp = (geometry.bottom - geometry.top) / scale
+        val widthDp = (geometry.right - geometry.left) / (scale * visualScale.x)
+        val heightDp = (geometry.bottom - geometry.top) / (scale * visualScale.y)
         val zRatio = minOf(viewportWidthPx, viewportHeightPx) / (450f * scale)
         val lightZ = 500f * scale * ((zRatio + 2f) / 3f)
         val clip = spec.clipProbeId?.let { id ->
@@ -405,8 +414,8 @@ class ExpectedProducer(
                 spec.bottomLeftCornerRadiusDp,
             ),
             localToDevice = AffineTransformPx(
-                m11 = scale, m12 = 0f,
-                m21 = 0f, m22 = scale,
+                m11 = scale * visualScale.x, m12 = 0f,
+                m21 = 0f, m22 = scale * visualScale.y,
                 m31 = geometry.left, m32 = geometry.top,
             ),
             elevationPx = spec.elevationDp * scale,
@@ -438,6 +447,12 @@ class ExpectedProducer(
         result ?: return null
 
         val text = result.layoutInput.text.text
+        val visualScaleX =
+            if (result.size.width == 0) 1f
+            else (geometry.right - geometry.left) / result.size.width
+        val visualScaleY =
+            if (result.size.height == 0) 1f
+            else (geometry.bottom - geometry.top) / result.size.height
         if (spec.text != null) {
             check(text == spec.text) {
                 "Text probe '${spec.id}' in '$caseId' reported '$text', expected '${spec.text}'."
@@ -455,11 +470,11 @@ class ExpectedProducer(
                 startUtf16 = result.getLineStart(index),
                 endUtf16 = result.getLineEnd(index, false),
                 visibleEndUtf16 = result.getLineEnd(index, true),
-                leftPx = geometry.left + localLeft,
-                rightPx = geometry.left + localRight,
-                topPx = geometry.top + localTop,
-                bottomPx = geometry.top + localBottom,
-                baselinePx = geometry.top + localBaseline,
+                leftPx = geometry.left + localLeft * visualScaleX,
+                rightPx = geometry.left + localRight * visualScaleX,
+                topPx = geometry.top + localTop * visualScaleY,
+                bottomPx = geometry.top + localBottom * visualScaleY,
+                baselinePx = geometry.top + localBaseline * visualScaleY,
                 ellipsized = result.isLineEllipsized(index),
                 boundsInTextPx = material3expressive.compose.reference.BoundsPx(
                     left = localLeft,
@@ -477,10 +492,10 @@ class ExpectedProducer(
                 codeUnit = text[offset].code.toString(16).padStart(4, '0').uppercase(),
                 lineIndex = result.getLineForOffset(offset),
                 boundsInRootPx = material3expressive.compose.reference.BoundsPx(
-                    left = geometry.left + bounds.left,
-                    top = geometry.top + bounds.top,
-                    right = geometry.left + bounds.right,
-                    bottom = geometry.top + bounds.bottom,
+                    left = geometry.left + bounds.left * visualScaleX,
+                    top = geometry.top + bounds.top * visualScaleY,
+                    right = geometry.left + bounds.right * visualScaleX,
+                    bottom = geometry.top + bounds.bottom * visualScaleY,
                 ),
                 boundsInTextPx = material3expressive.compose.reference.BoundsPx(
                     left = bounds.left,
@@ -493,8 +508,8 @@ class ExpectedProducer(
 
         return CaptureTextLayout(
             text = text,
-            firstBaselineInRootPx = geometry.top + result.firstBaseline,
-            lastBaselineInRootPx = geometry.top + result.lastBaseline,
+            firstBaselineInRootPx = geometry.top + result.firstBaseline * visualScaleY,
+            lastBaselineInRootPx = geometry.top + result.lastBaseline * visualScaleY,
             lineCount = result.lineCount,
             overflowEllipsis = lines.any { it.ellipsized },
             lines = lines,
