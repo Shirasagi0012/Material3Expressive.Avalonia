@@ -9,6 +9,23 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackageId>Shirasagi0012.Material3Expressive.Avalonia.Shadow</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Shirasagi0012</Authors>
+        <Description>Material 3 Expressive for Avalonia, ported from androidx.compose.material3</Description>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>avalonia;material-design;material3;material-you;expressive;theming;dynamic-color</PackageTags>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts</PackageOutputPath>
+        <PackageProjectUrl>https://github.com/Shirasagi0012/Material3Expressive.Avalonia</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Shirasagi0012/Material3Expressive.Avalonia</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia" />
         <PackageReference Include="Avalonia.Skia" />
