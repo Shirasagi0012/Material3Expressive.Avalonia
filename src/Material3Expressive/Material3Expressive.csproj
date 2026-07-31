@@ -10,7 +10,6 @@
     <PropertyGroup>
         <PackageId>Shirasagi0012.Material3Expressive.Avalonia</PackageId>
         <Version>0.1.0-alpha</Version>
-        <PackageVersion Condition="'$(CiPackageVersion)' != ''">$(CiPackageVersion)</PackageVersion>
         <Authors>Shirasagi0012</Authors>
         <Description>Material 3 Expressive for Avalonia, ported from androidx.compose.material3</Description>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -35,17 +34,26 @@
         <PackageReference Include="PropertyGenerator.Avalonia"/>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
         <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\MaterialColorUtilities.Avalonia.csproj"/>
         <!-- LoadingIndicator is the one component that genuinely morphs polygons. Button, FAB and
              chip press morphs are corner-radius lerps, and the wavy progress indicator's wave is a
              sampled sine — none of them need this. -->
         <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj"/>
-        <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
         <!-- Material Symbols Rounded is the first-party icon family for Material 3 Expressive.
              It also moves the resolved render stack onto the repository's pinned SkiaSharp 4
              baseline so variable fill, weight, grade and optical size remain available. -->
         <ProjectReference Include="..\..\modules\MaterialSymbols\MaterialSymbols.Avalonia.Rounded\MaterialSymbols.Avalonia.Rounded.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
+        <PackageReference Include="Shirasagi0012.MaterialColorUtilities.Avalonia" />
+        <PackageReference Include="Shirasagi0012.MaterialShapes" />
+        <PackageReference Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
         <ProjectReference Include="..\Material3Expressive.TokenGenerator\Material3Expressive.TokenGenerator.csproj"
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>

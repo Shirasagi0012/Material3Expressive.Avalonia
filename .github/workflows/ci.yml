@@ -20,6 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
+    outputs:
+      material_color_utilities_package_version: ${{ steps.versions.outputs.material_color_utilities_package_version }}
+      material_shapes_package_version: ${{ steps.versions.outputs.material_shapes_package_version }}
+      material_symbols_package_version: ${{ steps.versions.outputs.material_symbols_package_version }}
+      root_package_version: ${{ steps.versions.outputs.root_package_version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +35,60 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Authenticate GitHub Packages
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dotnet nuget update source github \
+            --username "${{ github.actor }}" \
+            --password "$GITHUB_TOKEN" \
+            --store-password-in-clear-text \
+            --configfile nuget.config
+
+      - name: Resolve package versions
+        id: versions
+        shell: bash
+        run: |
+          main_base_version="$(dotnet msbuild src/Material3Expressive/Material3Expressive.csproj -getProperty:Version -nologo)"
+          shadow_base_version="$(dotnet msbuild modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj -getProperty:Version -nologo)"
+          roboto_base_version="$(dotnet msbuild modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj -getProperty:Version -nologo)"
+          color_base_version="$(dotnet msbuild modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/MaterialColorUtilities.Avalonia.csproj -getProperty:Version -nologo)"
+          shapes_base_version="$(dotnet msbuild modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj -getProperty:Version -nologo)"
+          symbols_base_version="$(dotnet msbuild modules/MaterialSymbols/MaterialSymbols.Avalonia.Rounded/MaterialSymbols.Avalonia.Rounded.csproj -getProperty:Version -nologo)"
+
+          if [[ "$shadow_base_version" != "$main_base_version" || "$roboto_base_version" != "$main_base_version" ]]; then
+            echo "Root-owned packages must share one base version."
+            exit 1
+          fi
+
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == refs/tags/v* ]]; then
+            root_package_version="${GITHUB_REF_NAME#v}"
+            if [[ "$root_package_version" != "$main_base_version" ]]; then
+              echo "Tag version $root_package_version does not match the package version $main_base_version."
+              exit 1
+            fi
+
+            color_package_version="$color_base_version"
+            shapes_package_version="$shapes_base_version"
+            symbols_package_version="$symbols_base_version"
+          else
+            root_package_version="${main_base_version}.ci.g${GITHUB_SHA}"
+            color_package_version="${color_base_version}.ci.g$(git -C modules/MaterialColorUtilities rev-parse HEAD)"
+            shapes_package_version="${shapes_base_version}.ci.g$(git -C modules/MaterialShapes rev-parse HEAD)"
+            symbols_package_version="${symbols_base_version}.ci.g$(git -C modules/MaterialSymbols rev-parse HEAD)"
+          fi
+
+          echo "MaterialColorUtilitiesPackageVersion=$color_package_version" >> "$GITHUB_ENV"
+          echo "MaterialShapesPackageVersion=$shapes_package_version" >> "$GITHUB_ENV"
+          echo "MaterialSymbolsPackageVersion=$symbols_package_version" >> "$GITHUB_ENV"
+          echo "RootPackageVersion=$root_package_version" >> "$GITHUB_ENV"
+
+          echo "material_color_utilities_package_version=$color_package_version" >> "$GITHUB_OUTPUT"
+          echo "material_shapes_package_version=$shapes_package_version" >> "$GITHUB_OUTPUT"
+          echo "material_symbols_package_version=$symbols_package_version" >> "$GITHUB_OUTPUT"
+          echo "root_package_version=$root_package_version" >> "$GITHUB_OUTPUT"
 
       - name: Restore
         run: dotnet restore Material3Expressive.slnx
@@ -50,6 +110,12 @@ jobs:
     needs: build
     permissions:
       contents: read
+      packages: read
+    env:
+      MaterialColorUtilitiesPackageVersion: ${{ needs.build.outputs.material_color_utilities_package_version }}
+      MaterialShapesPackageVersion: ${{ needs.build.outputs.material_shapes_package_version }}
+      MaterialSymbolsPackageVersion: ${{ needs.build.outputs.material_symbols_package_version }}
+      RootPackageVersion: ${{ needs.build.outputs.root_package_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,75 +125,41 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Authenticate GitHub Packages
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dotnet nuget update source github \
+            --username "${{ github.actor }}" \
+            --password "$GITHUB_TOKEN" \
+            --store-password-in-clear-text \
+            --configfile nuget.config
+
       - name: Restore
         run: dotnet restore Material3Expressive.slnx
-
-      - name: Resolve package version
-        id: version
-        shell: bash
-        run: |
-          main_base_version="$(dotnet msbuild src/Material3Expressive/Material3Expressive.csproj -getProperty:Version -nologo)"
-          shadow_base_version="$(dotnet msbuild modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj -getProperty:Version -nologo)"
-          roboto_base_version="$(dotnet msbuild modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj -getProperty:Version -nologo)"
-
-          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == refs/tags/v* ]]; then
-            main_version="${GITHUB_REF_NAME#v}"
-            if [[ "$main_version" != "$main_base_version" ]]; then
-              echo "Tag version $main_version does not match the main package version $main_base_version."
-              exit 1
-            fi
-          else
-            main_version="${main_base_version}.ci.${GITHUB_RUN_ID}"
-            shadow_base_version="${shadow_base_version}.ci.${GITHUB_RUN_ID}"
-            roboto_base_version="${roboto_base_version}.ci.${GITHUB_RUN_ID}"
-          fi
-
-          echo "main=$main_version" >> "$GITHUB_OUTPUT"
-          echo "shadow=$shadow_base_version" >> "$GITHUB_OUTPUT"
-          echo "roboto=$roboto_base_version" >> "$GITHUB_OUTPUT"
-          echo "Resolved main package version: $main_version"
-          echo "Resolved Shadow package version: $shadow_base_version"
-          echo "Resolved Roboto package version: $roboto_base_version"
 
       - name: Pack root-owned packages
         shell: bash
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == refs/tags/v* ]]; then
-            dotnet pack src/Material3Expressive/Material3Expressive.csproj \
-              -c Release \
-              --no-restore \
-              -p:GeneratePackageOnBuild=false \
-              -o artifacts/packages
-            dotnet pack modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj \
-              -c Release \
-              --no-restore \
-              -p:GeneratePackageOnBuild=false \
-              -o artifacts/packages
-            dotnet pack modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj \
-              -c Release \
-              --no-restore \
-              -p:GeneratePackageOnBuild=false \
-              -o artifacts/packages
-          else
-            dotnet pack src/Material3Expressive/Material3Expressive.csproj \
-              -c Release \
-              --no-restore \
-              -p:GeneratePackageOnBuild=false \
-              -p:CiPackageVersion="${{ steps.version.outputs.main }}" \
-              -o artifacts/packages
-            dotnet pack modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj \
-              -c Release \
-              --no-restore \
-              -p:GeneratePackageOnBuild=false \
-              -p:PackageVersion="${{ steps.version.outputs.shadow }}" \
-              -o artifacts/packages
-            dotnet pack modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj \
-              -c Release \
-              --no-restore \
-              -p:GeneratePackageOnBuild=false \
-              -p:PackageVersion="${{ steps.version.outputs.roboto }}" \
-              -o artifacts/packages
-          fi
+          dotnet pack src/Material3Expressive/Material3Expressive.csproj \
+            -c Release \
+            --no-restore \
+            -p:GeneratePackageOnBuild=false \
+            -p:PackageVersion="$RootPackageVersion" \
+            -o artifacts/packages
+          dotnet pack modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj \
+            -c Release \
+            --no-restore \
+            -p:GeneratePackageOnBuild=false \
+            -p:PackageVersion="$RootPackageVersion" \
+            -o artifacts/packages
+          dotnet pack modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj \
+            -c Release \
+            --no-restore \
+            -p:GeneratePackageOnBuild=false \
+            -p:PackageVersion="$RootPackageVersion" \
+            -o artifacts/packages
 
       - uses: actions/upload-artifact@v4
         with:
