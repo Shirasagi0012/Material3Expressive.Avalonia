@@ -42,14 +42,10 @@ jobs:
       - name: Test
         shell: bash
         run: |
-          mapfile -t projects < <(find . \( -name '*Tests.csproj' -o -name '*Test.csproj' \) -not -path '*/bin/*' -not -path '*/obj/*')
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects found — skipping."
-            exit 0
-          fi
-          for project in "${projects[@]}"; do
-            dotnet test "$project" -c Release --verbosity normal
-          done
+          dotnet test modules/MaterialSkiaShadow.Tests/MaterialSkiaShadow.Tests.csproj \
+            -c Release --no-build --verbosity normal
+          dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj \
+            -c Release --no-build --verbosity normal
 
   pack:
     name: Pack

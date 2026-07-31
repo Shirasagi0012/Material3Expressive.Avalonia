@@ -35,6 +35,8 @@
         <PackageReference Include="Avalonia" />
         <PackageReference Include="Avalonia.Skia" />
         <PackageReference Include="SkiaSharp" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
+        <PackageReference Include="SkiaSharp.NativeAssets.WebAssembly" />
     </ItemGroup>
 
 </Project>
