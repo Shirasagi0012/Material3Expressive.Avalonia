@@ -1,6 +1,6 @@
 # Material3Expressive.Avalonia — Roadmap
 
-Status: active planning
+Status: complete
 Last updated: 2026-07-31
 
 This document is the project entry point and control plane. It describes direction, completion
@@ -111,7 +111,7 @@ Milestones express dependency order, not release versions. Their detailed work i
 | ID | Milestone | Status | Exit status |
 |---|---|---|---|
 | M1 | Baseline and inventory | Complete | Verified |
-| M2 | Existing component closure | Blocked | RangeSlider is complete; circular-wavy still requires DEF-001 disposition |
+| M2 | Existing component closure | Complete | RangeSlider and circular-wavy closure verified; DEF-001 renewed for the bounded renderer residual |
 | M3 | Application building blocks | Complete | Verified |
 | M4 | Advanced input and containers | Complete | Verified |
 | M5 | Adaptive and expressive coverage | Complete | Breakpoints/state preservation defined; delivered components have parity or recorded version-gap status |
@@ -154,6 +154,10 @@ The roadmap is complete only when:
 - no work item remains `In Progress` or `Blocked` without a final disposition;
 - final risks and Deferred records are reported.
 
+Program status: **Complete**. All milestone-selected tasks are Complete, the full non-parity and
+parity suites pass, reference-version gaps are recorded, and the remaining complex-shape renderer
+residual has the explicit user-authorized DEF-001 disposition.
+
 ## Top-level risks
 
 - Compose Multiplatform release lag leaves executable gaps for newer AndroidX behavior.
@@ -164,6 +168,11 @@ The roadmap is complete only when:
 
 ## Recent roadmap outcomes
 
+- 2026-07-31: CircularWavyProgress closed M2 after D004 ProgressBar automation,
+  alpha25's 6000ms indeterminate sweep/rotation, deterministic cycle tests, and seven accepted
+  light/dark/determinate/indeterminate/motion parity rows. Full regression is 445 unit, 57
+  non-parity, and 146 accepted parity cases with zero failures. The user renewed DEF-001 for all
+  seven rows without changing comparison policy, completing M2 and the roadmap program.
 - 2026-07-31: Adaptive navigation coordination closed under D014 with 600×480dp Auto
   resolution, explicit layout policy, one retained destination collection and selection, body and
   primary-action placement, reversible navigation visibility, RTL, focus and automation identity

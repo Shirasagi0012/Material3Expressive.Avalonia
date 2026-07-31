@@ -128,3 +128,15 @@ of rendering shape:
 The implementation must validate stable peer identity/order, names/IDs, dynamic bounds and
 ranges, cross-peer property notifications, disabled rejection, endpoint keyboard navigation,
 focus indication, owner detach/reconnect, and Windows UIA bridge shape.
+
+## Progress implementation evidence
+
+`MaterialLinearProgressIndicator` and `MaterialCircularProgressIndicator` now share one internal
+automation peer independent of smooth/wavy rendering. Determinate peers provide read-only
+RangeValue `0..1`; indeterminate peers remove that provider and resolve an application-owned
+ItemStatus before the default `In progress` status. All peers are non-focusable ProgressBar
+controls with zero children. Focused tests cover every shape combination, clamping, provider
+identity across mode changes, property notifications, explicit status ownership, and rejected
+writes. Native Windows UIA inspection confirms the expected 4/2/2 Catalog bridge shape: four
+zero-child progress nodes, two read-only determinate RangeValue providers, and two indeterminate
+status-only nodes.

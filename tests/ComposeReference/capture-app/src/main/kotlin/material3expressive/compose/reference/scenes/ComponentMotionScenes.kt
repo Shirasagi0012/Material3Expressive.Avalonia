@@ -22,10 +22,47 @@ fun ReferenceCaseRegistry.registerComponentMotionScenes() {
     registerCircularWavyCheckpoint("start", elapsedTicks = 0)
     registerCircularWavyCheckpoint("half-wave", elapsedTicks = 5_000_000)
     registerCircularWavyCheckpoint("one-wave", elapsedTicks = 10_000_000)
+    registerCircularWavyIndeterminateStart(dark = false)
+    registerCircularWavyIndeterminateStart(dark = true)
 
     registerLoadingIndicatorCheckpoint("start", elapsedTicks = 0)
     registerLoadingIndicatorCheckpoint("spring-mid", elapsedTicks = 1_500_000)
     registerLoadingIndicatorCheckpoint("next-morph", elapsedTicks = 6_500_000)
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun ReferenceCaseRegistry.registerCircularWavyIndeterminateStart(dark: Boolean) {
+    val started = mutableStateOf(false)
+    val theme = if (dark) "dark" else "light"
+    register(
+        CaseContract(
+            id = "progress/circular-wavy/indeterminate/start/$theme",
+            viewportWidthDp = 112,
+            viewportHeightDp = 112,
+            dark = dark,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "container")),
+            motion = MotionCaseContract(
+                scenarioId = "progress/circular-wavy/indeterminate/$theme",
+                checkpointId = "start",
+                elapsedTicks = 0,
+                triggerAction = "start-indeterminate",
+                usesComposeCoroutineClock = true,
+            ),
+        ),
+        ReferenceScene(trigger = { started.value = true }) { probes ->
+            Box(
+                modifier = Modifier.requiredSize(48.dp).then(probes.geometry("component")),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (started.value) {
+                    CircularWavyProgressIndicator(
+                        waveSpeed = 0.dp,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

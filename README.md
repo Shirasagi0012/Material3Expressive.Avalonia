@@ -299,6 +299,23 @@ cancel application-owned refresh work. UI Automation exposes Pane, Invoke, and a
 clamped RangeValue progress pattern. `PullEnabled="False"` disables gesture ownership while
 leaving keyboard and automation refresh actions available.
 
+## Progress indicators
+
+`MaterialLinearProgressIndicator` and `MaterialCircularProgressIndicator` support determinate and
+indeterminate rendering; set `IsWavy="True"` for the expressive waveform. Circular wave travel is
+controlled by `WaveSpeed`, whose default is one resolved wavelength per second.
+
+```xml
+<m3:MaterialLinearProgressIndicator Value="{Binding Completion}" IsWavy="True" />
+<m3:MaterialCircularProgressIndicator IsIndeterminate="True" IsWavy="True"
+                                      AutomationProperties.Name="Downloading" />
+```
+
+All smooth and wavy variants expose the same UI Automation tree: one non-focusable ProgressBar
+with no children. Determinate indicators provide a read-only RangeValue from 0 to 1. Indeterminate
+indicators deliberately provide no numeric RangeValue and report `ItemStatus="In progress"` by
+default; set `AutomationProperties.ItemStatus` to supply application-specific wording.
+
 ## Floating toolbar
 
 `MaterialFloatingToolbar` presents real Avalonia controls in horizontal, vertical, or

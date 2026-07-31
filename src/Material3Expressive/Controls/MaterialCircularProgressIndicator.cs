@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
 using MaterialShapes;
 
@@ -38,14 +40,20 @@ public class MaterialCircularProgressIndicator : MaterialControl
     public static readonly StyledProperty<double> WaveSpeedProperty =
         AvaloniaProperty.Register<MaterialCircularProgressIndicator, double>(nameof(WaveSpeed), 15);
 
-    private static readonly TimeSpan RotationPeriod = TimeSpan.FromSeconds(1.5);
-    private static readonly TimeSpan SweepPeriod = TimeSpan.FromSeconds(2.5);
+    private static readonly TimeSpan RotationPeriod = TimeSpan.FromSeconds(6);
+    private static readonly TimeSpan SweepPeriod = TimeSpan.FromSeconds(6);
     // Used only until the first arrange resolves the actual vertex count. The default 48dp wave
     // size resolves to nine vertices, so this preserves the alpha25 default before then.
     private static readonly TimeSpan InitialWavePeriod = TimeSpan.FromSeconds(9);
 
     /// <summary>Twelve o'clock, which is where a Material arc starts.</summary>
     private const double StartAngle = -90;
+    private const double IndeterminateMinimumProgress = .1;
+    private const double IndeterminateMaximumProgress = .87;
+    private static readonly Easing IndeterminateProgressEasing =
+        Easings.CubicBezier(.2, 0, 0, 1);
+    private static readonly Easing IndeterminateRotationEasing =
+        Easings.CubicBezier(.05, .7, .1, 1);
 
     private LoopingAnimation? _rotation;
     private LoopingAnimation? _sweep;
@@ -170,20 +178,19 @@ public class MaterialCircularProgressIndicator : MaterialControl
         UpdateLoops();
     }
 
+    protected override AutomationPeer OnCreateAutomationPeer() =>
+        new MaterialProgressIndicatorAutomationPeer(this);
+
     /// <summary>The active arc's start angle and sweep, in degrees.</summary>
     private (double Start, double Sweep) ActiveArc()
     {
         if (!IsIndeterminate)
             return (StartAngle, 360 * Progress.Value);
 
-        // Two loops at different periods: one spins the arc, the other grows and shrinks it. Their
-        // periods are deliberately not multiples of each other, so the pattern does not visibly
-        // repeat.
-        var spin = Rotation.Value * 360;
-        var breath = Math.Sin(Sweep.Value * Math.PI * 2) * 0.5 + 0.5;
-        var sweep = 20 + breath * 250;
-
-        return (StartAngle + spin, sweep);
+        // Alpha25 drives both the arc rotation and its grow/shrink progress over one 6000ms cycle.
+        return (
+            StartAngle + IndeterminateRotationDegrees(),
+            IndeterminateProgress() * 360);
     }
 
     private void DrawWavy(DrawingContext context, Point centre, double radius, double thickness)
@@ -206,39 +213,41 @@ public class MaterialCircularProgressIndicator : MaterialControl
         var trackInset = trackLength <= 0 ? 0 : (capClearance + gapClearance) / trackLength;
         var trackStart = progress + trackInset;
         var trackEnd = 1 - trackInset;
-        if (trackEnd > trackStart)
-        {
-            var track = TrimCubicPath(trackCubics, trackStart, trackEnd - trackStart);
-            if (track is not null)
-                context.DrawGeometry(null, new ImmutablePen(_colors.TrackColor, _tokens.TrackThickness,
-                    lineCap: PenLineCap.Round), track);
-        }
-
-        if (waveCubics.Count == 0 || progress <= 0)
-            return;
-
-        // The upstream modifier offsets the repeated wave then rotates it back, keeping the
-        // progress endpoint fixed while the star lobes travel beneath it.
-        // Compose's PathMeasure inputs and wave offset state are Floats. Preserve that precision at
-        // the segment boundary: one-wave lands exactly on a lobe boundary, where carrying the
-        // calculation in double precision selects a measurably different sub-pixel slice.
-        var phase = amplitude > 0 && HasWaveMotion ? (double)(float)ConfigureWave(vertices).Value : 0;
-        var active = phase == 0
-            ? TrimCubicPath(waveCubics, 0, progress)
-            : TrimRepeatedCubicPath(waveCubics, phase, progress);
-        if (active is null)
-            return;
-
-        var pen = new ImmutablePen(_colors.ActiveIndicatorColor, thickness, lineCap: PenLineCap.Round);
-        // The shifted segment is rotated back around the complete path's measured centre, exactly
-        // as CircularProgressDrawingCache.updateDrawPaths() does upstream.
-        var rotation = -(double)((float)phase * 360f) * Math.PI / 180;
         using (context.PushTransform(
-                   Matrix.CreateTranslation(-centre.X, -centre.Y)
-                   * Matrix.CreateRotation(rotation)
-                   * Matrix.CreateTranslation(centre.X, centre.Y)))
+                   RotationAround(
+                       centre,
+                       IsIndeterminate ? IndeterminateRotationDegrees() + 90 : 0)))
         {
-            context.DrawGeometry(null, pen, active);
+            if (trackEnd > trackStart)
+            {
+                var track = TrimCubicPath(trackCubics, trackStart, trackEnd - trackStart);
+                if (track is not null)
+                    context.DrawGeometry(null, new ImmutablePen(_colors.TrackColor, _tokens.TrackThickness,
+                        lineCap: PenLineCap.Round), track);
+            }
+
+            if (waveCubics.Count == 0 || progress <= 0)
+                return;
+
+            // The upstream modifier offsets the repeated wave then rotates it back, keeping the
+            // progress endpoint fixed while the star lobes travel beneath it.
+            // Compose's PathMeasure inputs and wave offset state are Floats. Preserve that precision at
+            // the segment boundary: one-wave lands exactly on a lobe boundary, where carrying the
+            // calculation in double precision selects a measurably different sub-pixel slice.
+            var phase = amplitude > 0 && HasWaveMotion ? (double)(float)ConfigureWave(vertices).Value : 0;
+            var active = phase == 0
+                ? TrimCubicPath(waveCubics, 0, progress)
+                : TrimRepeatedCubicPath(waveCubics, phase, progress);
+            if (active is null)
+                return;
+
+            var pen = new ImmutablePen(_colors.ActiveIndicatorColor, thickness, lineCap: PenLineCap.Round);
+            // The shifted segment is rotated back around the complete path's measured centre, exactly
+            // as CircularProgressDrawingCache.updateDrawPaths() does upstream.
+            using (context.PushTransform(RotationAround(centre, -(double)((float)phase * 360f))))
+            {
+                context.DrawGeometry(null, pen, active);
+            }
         }
     }
 
@@ -366,8 +375,35 @@ public class MaterialCircularProgressIndicator : MaterialControl
 
     private double IndeterminateProgress()
     {
-        var breath = Math.Sin(Sweep.Value * Math.PI * 2) * .5 + .5;
-        return .08 + breath * .62;
+        var phase = Sweep.Value;
+        if (phase <= .5)
+        {
+            var fraction = IndeterminateProgressEasing(phase * 2);
+            return Interpolate(
+                IndeterminateMinimumProgress,
+                IndeterminateMaximumProgress,
+                fraction);
+        }
+
+        return Interpolate(
+            IndeterminateMaximumProgress,
+            IndeterminateMinimumProgress,
+            (phase - .5) * 2);
+    }
+
+    private double IndeterminateRotationDegrees()
+    {
+        var phase = Rotation.Value;
+        var globalRotation = phase * 1080;
+        var milliseconds = phase * RotationPeriod.TotalMilliseconds;
+        var segment = Math.Min(3, (int)(milliseconds / 1500));
+        var segmentTime = milliseconds - segment * 1500;
+        var additional = segment * 90d;
+        if (segmentTime < 300)
+            additional += 90 * IndeterminateRotationEasing(segmentTime / 300);
+        else
+            additional += 90;
+        return globalRotation + additional;
     }
 
     private static double IndicatorAmplitude(double progress) => progress is > .1 and < .95 ? 1 : 0;
@@ -476,4 +512,12 @@ public class MaterialCircularProgressIndicator : MaterialControl
         var sine = Math.Sin(radians);
         return new Point(point.X * cosine - point.Y * sine, point.X * sine + point.Y * cosine);
     }
+
+    private static Matrix RotationAround(Point centre, double degrees) =>
+        Matrix.CreateTranslation(-centre.X, -centre.Y)
+        * Matrix.CreateRotation(degrees * Math.PI / 180)
+        * Matrix.CreateTranslation(centre.X, centre.Y);
+
+    private static double Interpolate(double start, double end, double fraction) =>
+        start + (end - start) * Math.Clamp(fraction, 0, 1);
 }

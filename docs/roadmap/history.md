@@ -591,3 +591,44 @@ pixels at `artifacts/visual-parity/xunit/20260730-191815-054`. No comparison pol
 The full artifact `artifacts/visual-parity/xunit/20260730-192549-954` contains 143 accepted rows,
 two explicit typography skips, and only the four existing authorized circular-wavy warnings.
 README, Catalog, coverage, AndroidX reference, and decision records were updated. This closes M5.
+
+## 2026-07-31 — Circular wavy progress technical closure
+
+Implemented D004's shared progress automation contract for all linear/circular and smooth/wavy
+variants. Determinate controls now expose one non-focusable ProgressBar with a read-only `0..1`
+RangeValue provider; indeterminate controls expose the same zero-child ProgressBar without a fake
+numeric value and use an overridable ItemStatus. Five focused tests cover all variants, clamping,
+read-only behavior, provider transitions, and status notifications.
+
+Circular wavy indeterminate rendering now follows alpha25's 6000ms `0.10..0.87` sweep, 1080-degree
+global rotation, stepped additional rotation, and fixed drawing offset. A deterministic visual
+test covers midpoint motion and cycle return. Alpha22 parity now covers determinate light/dark,
+indeterminate-start light/dark, and three determinate motion frames; all seven exact
+structure/timeline contracts pass at `artifacts/visual-parity/xunit/20260730-193839-549`.
+
+The only remaining M2-PROGRESS-001 decision is DEF-001: the same narrow complex-shape
+expected-edge warning accepts these renderer residuals, but its original authorization named the
+four pre-existing rows. The task remains Blocked until that authorization is explicitly renewed
+for all seven rows or renderer calibration removes the residual.
+
+The complete regression passed 445/445 unit tests and 57/57 non-parity visual/contract tests.
+`artifacts/visual-parity/xunit/20260730-194258-796` contains 146 accepted rows, two explicit
+typography skips, 44 exact matches, 95 semantic raster equivalents, the seven circular-wavy
+warnings, and zero failures.
+
+Native Windows UIA inspection of the Catalog Linear page confirmed four zero-child ProgressBar
+nodes: two read-only determinate RangeValue providers with their live values and two indeterminate
+status-only nodes. The peer caches mode for provider-availability queries because Avalonia's
+Win32 bridge performs those queries from its COM thread.
+
+## 2026-07-31 — DEF-001 renewal and program completion
+
+The user selected option A and renewed the unchanged `complex-shape` expected-edge warning for all
+seven CircularWavyProgress parity rows, including the three new determinate-dark and
+indeterminate-start rows. No profile, threshold, mask, ignored region, structural contract, or
+timeline contract changed.
+
+This final disposition closes `M2-PROGRESS-001`, satisfies M2's existing-component closure exit
+criteria, and completes the roadmap program. Final validation remains 445/445 unit tests, 57/57
+non-parity visual/contract tests, and 146 accepted parity rows plus two explicit typography skips
+with zero failures at `artifacts/visual-parity/xunit/20260730-194258-796`.

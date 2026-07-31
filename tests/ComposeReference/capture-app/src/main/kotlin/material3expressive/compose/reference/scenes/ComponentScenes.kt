@@ -243,6 +243,23 @@ fun ReferenceCaseRegistry.registerComponentScenes() {
         },
     )
 
+    register(
+        CaseContract(
+            id = "progress/circular-wavy/determinate/dark",
+            viewportWidthDp = 112,
+            viewportHeightDp = 112,
+            dark = true,
+            requiredNodes = listOf(RequiredNodeSpec(id = "component", kind = "container")),
+        ),
+        ReferenceScene { probes ->
+            CircularWavyProgressIndicator(
+                progress = { 0.5f },
+                waveSpeed = 0.dp,
+                modifier = Modifier.then(probes.geometry("component")),
+            )
+        },
+    )
+
     // The checked tonal form is the middle control in the Catalog's Toggle buttons sample.
     // Probe its text layout so centring remains a structural contract, not merely raster parity.
     register(

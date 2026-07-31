@@ -1,7 +1,9 @@
 using System;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -146,6 +148,9 @@ public class MaterialLinearProgressIndicator : MaterialControl
         base.OnAttachedToLogicalTree(e);
         UpdateLoops();
     }
+
+    protected override AutomationPeer OnCreateAutomationPeer() =>
+        new MaterialProgressIndicatorAutomationPeer(this);
 
     /// <summary>Where the active indicator starts and ends, in pixels.</summary>
     private (double Start, double End) ActiveSpan(double width)

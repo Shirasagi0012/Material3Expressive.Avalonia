@@ -29,6 +29,24 @@ public sealed class CircularWavyProgressMotionTests
         Assert.True(changedPixels > 0, "The default circular wave must visibly advance between deterministic frames.");
     }
 
+    [AvaloniaFact]
+    public void IndeterminateSweepChangesAndReturnsAtTheSixSecondBoundary()
+    {
+        var renderer = new VisualRenderer();
+        var initial = renderer.Render(IndeterminateCase(TimeSpan.Zero));
+        var halfway = renderer.Render(IndeterminateCase(TimeSpan.FromSeconds(3)));
+        var complete = renderer.Render(IndeterminateCase(TimeSpan.FromSeconds(6)));
+
+        var halfwayChanged = ChangedPixels(initial.Pixels, halfway.Pixels);
+        var completeChanged = ChangedPixels(initial.Pixels, complete.Pixels);
+
+        Assert.True(halfwayChanged > 100);
+        Assert.True(
+            completeChanged < halfwayChanged / 2,
+            "The six-second endpoint should return substantially closer to the initial phase; " +
+            $"halfway={halfwayChanged}, complete={completeChanged}.");
+    }
+
     private static VisualCase Case(TimeSpan elapsed) => new(
         "progress/circular-wavy/motion/light",
         new PixelSize(112, 112),
@@ -52,4 +70,35 @@ public sealed class CircularWavyProgressMotionTests
             context.UseManualMotionClock();
             context.AdvanceAnimations(elapsed);
         });
+
+    private static VisualCase IndeterminateCase(TimeSpan elapsed) => new(
+        "progress/circular-wavy/indeterminate-motion/light",
+        new PixelSize(112, 112),
+        VisualTheme.Light,
+        _ => new Grid
+        {
+            Children =
+            {
+                new MaterialCircularProgressIndicator
+                {
+                    Name = "component",
+                    IsIndeterminate = true,
+                    IsWavy = true,
+                    WaveSpeed = 0,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            }
+        },
+        Prepare: context =>
+        {
+            context.UseManualMotionClock();
+            context.AdvanceAnimations(elapsed);
+        });
+
+    private static int ChangedPixels(byte[] first, byte[] second) =>
+        first
+            .Chunk(4)
+            .Zip(second.Chunk(4))
+            .Count(pair => !pair.First.SequenceEqual(pair.Second));
 }

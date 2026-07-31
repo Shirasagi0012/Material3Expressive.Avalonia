@@ -24,7 +24,8 @@ internal static class ComponentParityCases
         RangeSlider(),
         RangeSliderDark(),
         RangeSliderDisabled(),
-        CircularWavyProgress(),
+        CircularWavyProgress("determinate/light", dark: false),
+        CircularWavyProgress("determinate/dark", dark: true),
         SelectedTonalToggleButton()
     ];
 
@@ -156,20 +157,24 @@ internal static class ComponentParityCases
             },
             dark: dark);
 
-    private static VisualCase CircularWavyProgress() =>
+    private static VisualCase CircularWavyProgress(
+        string state,
+        bool dark) =>
         Scene(
-            "progress/circular-wavy/determinate/light",
+            $"progress/circular-wavy/{state}",
             new PixelSize(112, 112),
             _ => new MaterialCircularProgressIndicator
             {
-                    Name = "component",
-                    Value = .5,
-                    IsWavy = true,
-                    WaveSpeed = 0,
+                Name = "component",
+                Value = .5,
+                IsIndeterminate = false,
+                IsWavy = true,
+                WaveSpeed = 0,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             },
-            context => VisualMotionSettler.UseManualClock(context.Content));
+            context => VisualMotionSettler.UseManualClock(context.Content),
+            dark);
 
     private static VisualCase SelectedTonalToggleButton() =>
         Scene(

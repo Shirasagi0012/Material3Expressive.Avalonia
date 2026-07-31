@@ -55,6 +55,7 @@ public sealed class ParityContractTests
     [InlineData("foundation/typography/display-headline/light", "component-with-text")]
     [InlineData("card/filled/fixed/enabled/light", "container")]
     [InlineData("progress/circular-wavy/determinate/light", "complex-shape")]
+    [InlineData("progress/circular-wavy/indeterminate/start/dark", "complex-shape")]
     [InlineData("progress/circular-wavy/motion/half-wave/light", "complex-shape")]
     [InlineData("progress/loading-indicator/indeterminate/spring-mid/light", "container")]
     [InlineData("foundation/motion/linear-tween/mid/light", "container")]

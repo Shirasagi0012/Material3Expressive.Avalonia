@@ -196,6 +196,26 @@ incoming hover 15 ms, focus 45 ms, drag 45 ms; outgoing drag 150 ms, others 15 m
 all linear. (The M3E-era focus *ring* animates with motionScheme springs instead —
 see the ripple config section above; these tweens govern the classic opacity layers.)
 
+## Progress indicators and circular wavy motion
+
+AndroidX `WavyProgressIndicator.kt` and
+`internal/CircularWavyProgressModifiers.kt` at `ff0a0a99` define the expressive circular shape,
+track trimming, wave offset, and indeterminate animation. The indeterminate node runs a 6000ms
+cycle with progress from `0.10` to `0.87` and back, 1080 degrees of linear global rotation, four
+300ms emphasized-decelerate 90-degree rotations separated by holds, and a fixed 90-degree drawing
+offset. Wave offset remains a separate vertex-count/wavelength-derived loop.
+
+`MaterialCircularProgressIndicator` reproduces that cycle with component-owned deterministic
+motion. The pinned alpha22 executable reference covers determinate light/dark, indeterminate start
+light/dark, and three determinate motion checkpoints. Geometry and timeline probes are exact; the
+seven raster rows retain the existing renderer-specific `complex-shape` expected-edge warning.
+
+Compose attaches numeric progress semantics only to determinate indicators and exposes an
+indeterminate progress semantic without a fabricated current value. D004 maps both linear and
+circular, smooth and wavy variants to one Avalonia ProgressBar peer with no children. Determinate
+peers expose read-only RangeValue `0..1`; indeterminate peers omit RangeValue and use ItemStatus.
+Rendering shape never changes the automation tree.
+
 ## Text field desktop cursor
 
 AndroidX `foundation/text/TextFieldCursor.kt` draws from `cursorRect.top` through
