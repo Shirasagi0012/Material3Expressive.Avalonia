@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -16,6 +17,8 @@ jobs:
   build:
     name: Build & test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -39,11 +42,139 @@ jobs:
       - name: Test
         shell: bash
         run: |
-          mapfile -t projects < <(find src tests -name '*.Tests.csproj' -not -path '*/bin/*' -not -path '*/obj/*')
+          mapfile -t projects < <(find . \( -name '*Tests.csproj' -o -name '*Test.csproj' \) -not -path '*/bin/*' -not -path '*/obj/*')
           if [ ${#projects[@]} -eq 0 ]; then
             echo "No test projects found — skipping."
             exit 0
           fi
           for project in "${projects[@]}"; do
-            dotnet test "$project" -c Release --no-build --verbosity normal
+            dotnet test "$project" -c Release --verbosity normal
+          done
+
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Material3Expressive.slnx
+
+      - name: Resolve package version
+        id: version
+        shell: bash
+        run: |
+          main_base_version="$(dotnet msbuild src/Material3Expressive/Material3Expressive.csproj -getProperty:Version -nologo)"
+          shadow_base_version="$(dotnet msbuild modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj -getProperty:Version -nologo)"
+          roboto_base_version="$(dotnet msbuild modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj -getProperty:Version -nologo)"
+
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == refs/tags/v* ]]; then
+            main_version="${GITHUB_REF_NAME#v}"
+            if [[ "$main_version" != "$main_base_version" ]]; then
+              echo "Tag version $main_version does not match the main package version $main_base_version."
+              exit 1
+            fi
+          else
+            main_version="${main_base_version}.ci.${GITHUB_RUN_ID}"
+            shadow_base_version="${shadow_base_version}.ci.${GITHUB_RUN_ID}"
+            roboto_base_version="${roboto_base_version}.ci.${GITHUB_RUN_ID}"
+          fi
+
+          echo "main=$main_version" >> "$GITHUB_OUTPUT"
+          echo "shadow=$shadow_base_version" >> "$GITHUB_OUTPUT"
+          echo "roboto=$roboto_base_version" >> "$GITHUB_OUTPUT"
+          echo "Resolved main package version: $main_version"
+          echo "Resolved Shadow package version: $shadow_base_version"
+          echo "Resolved Roboto package version: $roboto_base_version"
+
+      - name: Pack root-owned packages
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == refs/tags/v* ]]; then
+            dotnet pack src/Material3Expressive/Material3Expressive.csproj \
+              -c Release \
+              --no-restore \
+              -p:GeneratePackageOnBuild=false \
+              -o artifacts/packages
+            dotnet pack modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj \
+              -c Release \
+              --no-restore \
+              -p:GeneratePackageOnBuild=false \
+              -o artifacts/packages
+            dotnet pack modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj \
+              -c Release \
+              --no-restore \
+              -p:GeneratePackageOnBuild=false \
+              -o artifacts/packages
+          else
+            dotnet pack src/Material3Expressive/Material3Expressive.csproj \
+              -c Release \
+              --no-restore \
+              -p:GeneratePackageOnBuild=false \
+              -p:CiPackageVersion="${{ steps.version.outputs.main }}" \
+              -o artifacts/packages
+            dotnet pack modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj \
+              -c Release \
+              --no-restore \
+              -p:GeneratePackageOnBuild=false \
+              -p:PackageVersion="${{ steps.version.outputs.shadow }}" \
+              -o artifacts/packages
+            dotnet pack modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj \
+              -c Release \
+              --no-restore \
+              -p:GeneratePackageOnBuild=false \
+              -p:PackageVersion="${{ steps.version.outputs.roboto }}" \
+              -o artifacts/packages
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ github.run_id }}
+          path: artifacts/packages/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    needs: pack
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-${{ github.run_id }}
+          path: artifacts/packages
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish NuGet packages
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s nullglob
+          packages=(artifacts/packages/*.nupkg)
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "No NuGet packages were produced."
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            dotnet nuget push "$package" \
+              --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+              --api-key "$GITHUB_TOKEN" \
+              --skip-duplicate
           done
