@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Public API XML documentation is generated, but undocumented members are intentional during the alpha line. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>
