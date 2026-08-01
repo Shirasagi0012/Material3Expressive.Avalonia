@@ -40,9 +40,15 @@
                                    Text="The dialog scales up from 90% as its scrim fades in, from one spring. The sheet can be dragged by its handle — let go past 40% and it keeps going." />
                         <Border Classes="demo-canvas">
                             <WrapPanel ItemSpacing="16" LineSpacing="16">
-                                <m3:MaterialButton Variant="Filled" Content="Show dialog" Click="OnShowDialog" />
-                                <m3:MaterialButton Variant="Tonal" Content="Show sheet" Click="OnShowSheet" />
-                                <m3:MaterialButton Variant="Outlined" Content="Show snackbar" Click="OnShowSnackbar" />
+                                <Button m3:ButtonAssist.Variant="Filled"
+                                        Content="Show dialog"
+                                        Click="OnShowDialog" />
+                                <Button m3:ButtonAssist.Variant="Tonal"
+                                        Content="Show sheet"
+                                        Click="OnShowSheet" />
+                                <Button m3:ButtonAssist.Variant="Outlined"
+                                        Content="Show snackbar"
+                                        Click="OnShowSnackbar" />
                             </WrapPanel>
                         </Border>
                     </StackPanel>
@@ -192,11 +198,13 @@
                                     <x:String>Indigo</x:String>
                                     <x:String>Blue</x:String>
                                 </m3:MaterialExposedDropdownMenu>
-                                <m3:MaterialButton Variant="Tonal" Content="Hover me"
-                                                   m3:MaterialTooltip.Tip="Archives the conversation" />
-                                <m3:MaterialButton Variant="Tonal" Content="Rich tooltip"
-                                                   m3:MaterialTooltip.Variant="Rich"
-                                                   m3:MaterialTooltip.Tip="Moves this to the archive, where it stays searchable." />
+                                <Button m3:ButtonAssist.Variant="Tonal"
+                                        Content="Hover me"
+                                        m3:MaterialTooltip.Tip="Archives the conversation" />
+                                <Button m3:ButtonAssist.Variant="Tonal"
+                                        Content="Rich tooltip"
+                                        m3:MaterialTooltip.Variant="Rich"
+                                        m3:MaterialTooltip.Tip="Moves this to the archive, where it stays searchable." />
                                 <Button Content="Open menu">
                                     <Button.Flyout>
                                         <MenuFlyout>
@@ -262,8 +270,12 @@
                 <TextBlock Classes="body-medium" TextWrapping="Wrap"
                            Text="The draft and everything in it will be removed. This cannot be undone." />
                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                    <m3:MaterialButton Variant="Text" Content="Cancel" Click="OnCloseDialog" />
-                    <m3:MaterialButton Variant="Filled" Content="Delete" Click="OnCloseDialog" />
+                    <Button m3:ButtonAssist.Variant="Text"
+                            Content="Cancel"
+                            Click="OnCloseDialog" />
+                    <Button m3:ButtonAssist.Variant="Filled"
+                            Content="Delete"
+                            Click="OnCloseDialog" />
                 </StackPanel>
             </StackPanel>
         </m3:MaterialDialog>

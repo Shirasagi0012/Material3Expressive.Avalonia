@@ -23,7 +23,7 @@ namespace Material3Expressive.Controls;
 /// buttons that happen to be adjacent.
 /// </para>
 /// </remarks>
-[TemplatePart(LeadingPartName, typeof(MaterialButton))]
+[TemplatePart(LeadingPartName, typeof(Button))]
 [TemplatePart(TrailingPartName, typeof(MaterialToggleButton))]
 public class MaterialSplitButton : TemplatedControl
 {
@@ -50,7 +50,7 @@ public class MaterialSplitButton : TemplatedControl
     public static readonly RoutedEvent<RoutedEventArgs> ClickEvent =
         RoutedEvent.Register<MaterialSplitButton, RoutedEventArgs>(nameof(Click), RoutingStrategies.Bubble);
 
-    private MaterialButton? _leading;
+    private Button? _leading;
     private MaterialToggleButton? _trailing;
 
     static MaterialSplitButton()
@@ -110,7 +110,7 @@ public class MaterialSplitButton : TemplatedControl
         if (_leading is { })
             _leading.Click -= OnLeadingClick;
 
-        _leading = e.NameScope.Find<MaterialButton>(LeadingPartName);
+        _leading = e.NameScope.Find<Button>(LeadingPartName);
         _trailing = e.NameScope.Find<MaterialToggleButton>(TrailingPartName);
 
         if (_leading is { })
@@ -155,7 +155,7 @@ public class MaterialSplitButton : TemplatedControl
             : new RoundedCornerShape(inner, outer, outer, inner);
 
         if (_leading is { })
-            _leading.ContainerShapeOverride = leadingShape;
+            ButtonAssist.SetContainerShapeOverride(_leading, leadingShape);
 
         if (_trailing is { })
             _trailing.ContainerShapeOverride = trailingShape;

@@ -24,6 +24,11 @@ public class ElevationClippingTests
             new MaterialFabMenu()
         ];
 
+        var host = new StackPanel();
+        foreach (var control in controls)
+            host.Children.Add(control);
+        ThemeTestHelper.ShowWindow(host);
+
         Assert.All(controls, control => Assert.False(control.ClipToBounds));
     }
 

@@ -980,7 +980,8 @@ public class ButtonGroupTests
         var split = new MaterialSplitButton { Content = "Save", TrailingIcon = "v" };
         ThemeTestHelper.ShowWindow(split);
 
-        var leading = split.GetVisualDescendants().OfType<MaterialButton>().FirstOrDefault();
+        var leading = split.GetVisualDescendants().OfType<Button>()
+            .FirstOrDefault(button => button.Name == "PART_Leading");
         var trailing = split.GetVisualDescendants().OfType<MaterialToggleButton>().FirstOrDefault();
 
         Assert.NotNull(leading);
@@ -988,8 +989,9 @@ public class ButtonGroupTests
 
         var inner = CornerSize.Absolute(SplitButtonSmallTokens.InnerCornerSize);
 
-        Assert.Equal(CornerSize.Full, leading!.ContainerShapeOverride!.TopStart);
-        Assert.Equal(inner, leading.ContainerShapeOverride!.TopEnd);
+        var leadingShape = ButtonAssist.GetContainerShapeOverride(leading!);
+        Assert.Equal(CornerSize.Full, leadingShape!.TopStart);
+        Assert.Equal(inner, leadingShape.TopEnd);
         Assert.Equal(inner, trailing!.ContainerShapeOverride!.TopStart);
         Assert.Equal(CornerSize.Full, trailing.ContainerShapeOverride!.TopEnd);
     }

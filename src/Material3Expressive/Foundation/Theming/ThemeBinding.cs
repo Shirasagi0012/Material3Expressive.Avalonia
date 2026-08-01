@@ -65,9 +65,102 @@ internal static class ThemeBinding
         };
     }
 
+    /// <summary>A value that depends on the theme and one live property on the target.</summary>
+    public static BindingBase FromThemeProperty<TProperty, TValue>(
+        AvaloniaProperty property,
+        Func<ResolvedTheme, TProperty, TValue> select,
+        TProperty propertyFallback,
+        TValue fallback)
+    {
+        return new MultiBinding
+        {
+            Mode = BindingMode.OneWay,
+            FallbackValue = (object?)fallback ?? AvaloniaProperty.UnsetValue,
+            Bindings =
+            {
+                new CompiledBinding(SelfPath(MaterialThemeScope.ResolvedThemeProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(property)) { Mode = BindingMode.OneWay }
+            },
+            Converter = new FuncMultiValueConverter<object?, object?>(values =>
+            {
+                if (Value<ResolvedTheme>(values, 0) is not { } theme)
+                    return fallback;
+
+                return select(theme, ValueOr(values, 1, propertyFallback));
+            })
+        };
+    }
+
+    /// <summary>A value that depends on the theme and two live properties on the target.</summary>
+    public static BindingBase FromThemeProperties<TFirst, TSecond, TValue>(
+        AvaloniaProperty firstProperty,
+        AvaloniaProperty secondProperty,
+        Func<ResolvedTheme, TFirst, TSecond, TValue> select,
+        TFirst firstFallback,
+        TSecond secondFallback,
+        TValue fallback)
+    {
+        return new MultiBinding
+        {
+            Mode = BindingMode.OneWay,
+            FallbackValue = (object?)fallback ?? AvaloniaProperty.UnsetValue,
+            Bindings =
+            {
+                new CompiledBinding(SelfPath(MaterialThemeScope.ResolvedThemeProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(firstProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(secondProperty)) { Mode = BindingMode.OneWay }
+            },
+            Converter = new FuncMultiValueConverter<object?, object?>(values =>
+            {
+                if (Value<ResolvedTheme>(values, 0) is not { } theme)
+                    return fallback;
+
+                return select(
+                    theme,
+                    ValueOr(values, 1, firstFallback),
+                    ValueOr(values, 2, secondFallback));
+            })
+        };
+    }
+
+    /// <summary>
+    /// A value that depends on the theme, the effective light/dark variant and one target property.
+    /// </summary>
+    public static BindingBase FromThemeVariantProperty<TProperty, TValue>(
+        AvaloniaProperty property,
+        Func<ResolvedTheme, bool, TProperty, TValue> select,
+        TProperty propertyFallback,
+        TValue fallback)
+    {
+        return new MultiBinding
+        {
+            Mode = BindingMode.OneWay,
+            FallbackValue = (object?)fallback ?? AvaloniaProperty.UnsetValue,
+            Bindings =
+            {
+                new CompiledBinding(SelfPath(MaterialThemeScope.ResolvedThemeProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(ThemeVariantScope.ActualThemeVariantProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(property)) { Mode = BindingMode.OneWay }
+            },
+            Converter = new FuncMultiValueConverter<object?, object?>(values =>
+            {
+                if (Value<ResolvedTheme>(values, 0) is not { } theme)
+                    return fallback;
+
+                var isDark = ColorScheme.IsDark(Value<ThemeVariant>(values, 1) ?? ThemeVariant.Default);
+                return select(theme, isDark, ValueOr(values, 2, propertyFallback));
+            })
+        };
+    }
+
     private static T? Value<T>(IReadOnlyList<object?> values, int index) where T : class
     {
         return index < values.Count ? values[index] as T : null;
+    }
+
+    private static T ValueOr<T>(IReadOnlyList<object?> values, int index, T fallback)
+    {
+        return index < values.Count && values[index] is T value ? value : fallback;
     }
 
     private static CompiledBindingPath SelfPath(AvaloniaProperty property)

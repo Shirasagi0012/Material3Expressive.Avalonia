@@ -29,6 +29,7 @@ public enum ButtonToken
     IconSize,
     IconLabelSpace,
     OutlineWidth,
+    ContainerOutlineThickness,
     LabelTextStyle,
 
     HoverStateLayerOpacity,

@@ -115,10 +115,10 @@
                     <TextBlock Classes="body-medium" MaxWidth="760" HorizontalAlignment="Left" TextWrapping="Wrap"
                                Foreground="{mcu:MdSysColor OnSurfaceVariant}"
                                Text="Horizontal, vertical, and aspect-adaptive layouts share one action collection. Leading and trailing slots retract around the main actions; an adjacent FAB instead retracts the complete toolbar and grows from 56dp to 80dp." />
-                    <m3:MaterialButton HorizontalAlignment="Left"
-                                       Variant="Tonal"
-                                       Content="Expand / collapse"
-                                       Click="OnToggleToolbars" />
+                    <Button HorizontalAlignment="Left"
+                            m3:ButtonAssist.Variant="Tonal"
+                            Content="Expand / collapse"
+                            Click="OnToggleToolbars" />
                     <Border Classes="demo-canvas">
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="48">
                             <StackPanel Spacing="28" VerticalAlignment="Center">

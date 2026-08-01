@@ -52,6 +52,14 @@ follows `Primary`, its label `OnPrimary` — so dark mode and a change of seed c
 no further wiring.
 
 ```xml
+<!-- Native-first: a bare Button is Filled once MaterialStyles is loaded. -->
+<Button m3:ButtonAssist.Variant="Tonal"
+        m3:ButtonAssist.Size="Medium">Send</Button>
+
+<!-- Named themes select a default variant and remain overridable by ButtonAssist. -->
+<Button Theme="{StaticResource MaterialOutlinedButtonTheme}">Cancel</Button>
+
+<!-- Optional CLR facade: the same attached properties with shorter CLR/XAML syntax. -->
 <m3:MaterialButton Variant="Tonal" Size="Medium">Send</m3:MaterialButton>
 <m3:MaterialFab Label="Compose"><ms:MaterialSymbol Symbol="Edit" /></m3:MaterialFab>
 <m3:MaterialCard Variant="Outlined">…</m3:MaterialCard>

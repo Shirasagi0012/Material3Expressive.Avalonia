@@ -8,8 +8,9 @@ namespace Material3Expressive.Markups;
 /// Resolves a button token against the theme in scope at the target element.
 /// </summary>
 /// <remarks>
-/// App-author sugar only: the library's own controls read their tokens in C#. The variant and size
-/// default to the filled small button, which is what a bare <c>&lt;Button/&gt;</c> renders as.
+/// The returned binding observes <see cref="ButtonAssist.VariantProperty" /> and
+/// <see cref="ButtonAssist.SizeProperty" /> on its target, so attached-property changes remain
+/// live and there is no second variant or size source in markup.
 /// </remarks>
 public class MdButtonTokenExtension
 {
@@ -25,12 +26,8 @@ public class MdButtonTokenExtension
     [ConstructorArgument("token")]
     public ButtonToken Token { get; set; } = ButtonToken.ContainerColor;
 
-    public ButtonVariant Variant { get; set; } = ButtonVariant.Filled;
-
-    public ButtonSize Size { get; set; } = ButtonSize.Small;
-
     public BindingBase ProvideValue()
     {
-        return ButtonTokenResolver.Resolve(Token, Variant, Size);
+        return ButtonTokenResolver.Resolve(Token);
     }
 }

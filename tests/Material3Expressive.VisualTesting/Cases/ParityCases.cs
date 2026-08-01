@@ -107,23 +107,22 @@ internal static class ParityCases
             $"button/{variantName}/{sizeName}/{state}/{themeName}",
             new PixelSize(240, size == ButtonSize.Large ? 160 : 96),
             theme,
-            _ => new Grid
+            _ =>
             {
-                Children =
+                var button = new Button
                 {
-                    new MaterialButton
-                    {
-                        Name = "component",
-                        Content = new TextBlock { Name = "label", Text = "Button" },
-                        Variant = variant,
-                        Size = size,
-                        IsEnabled = enabled,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        HorizontalContentAlignment = HorizontalAlignment.Center,
-                        VerticalContentAlignment = VerticalAlignment.Center
-                    }
-                }
+                    Name = "component",
+                    Content = new TextBlock { Name = "label", Text = "Button" },
+                    IsEnabled = enabled,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    VerticalContentAlignment = VerticalAlignment.Center
+                };
+                ButtonAssist.SetVariant(button, variant);
+                ButtonAssist.SetSize(button, size);
+
+                return new Grid { Children = { button } };
             },
             RenderScaling: 1.0);
     }

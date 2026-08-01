@@ -157,14 +157,14 @@ public class MaterialButtonGroup : Panel
 
         switch (child)
         {
-            case MaterialButton button:
-                button.ContainerShapeOverride = shape;
-                break;
             case MaterialToggleButton toggle:
                 toggle.ContainerShapeOverride = shape;
                 break;
             case MaterialIconButton icon:
                 icon.ContainerShapeOverride = shape;
+                break;
+            case Button button:
+                ButtonAssist.SetContainerShapeOverride(button, shape);
                 break;
         }
     }

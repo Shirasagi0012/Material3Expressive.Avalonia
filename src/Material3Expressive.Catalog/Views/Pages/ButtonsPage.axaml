@@ -33,7 +33,7 @@
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="20" LineSpacing="20" VerticalAlignment="Center">
                             <!-- <Button Content="Template button" /> -->
-                            <m3:MaterialButton Variant="Filled">Material button</m3:MaterialButton>
+                            <Button m3:ButtonAssist.Variant="Filled">Native button</Button>
                             <m3:MaterialIconButton Variant="Tonal">
                                 <ms:MaterialSymbol Symbol="TouchApp" />
                             </m3:MaterialIconButton>
@@ -47,11 +47,11 @@
                     <TextBlock Classes="title-large" Text="Variants" />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialButton Variant="Filled">Filled</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Tonal">Tonal</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Elevated">Elevated</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Outlined">Outlined</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Text">Text</m3:MaterialButton>
+                            <Button m3:ButtonAssist.Variant="Filled">Filled</Button>
+                            <Button m3:ButtonAssist.Variant="Tonal">Tonal</Button>
+                            <Button m3:ButtonAssist.Variant="Elevated">Elevated</Button>
+                            <Button m3:ButtonAssist.Variant="Outlined">Outlined</Button>
+                            <Button m3:ButtonAssist.Variant="Text">Text</Button>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -60,11 +60,11 @@
                     <TextBlock Classes="title-large" Text="Disabled" />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialButton Variant="Filled" IsEnabled="False">Filled</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Tonal" IsEnabled="False">Tonal</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Elevated" IsEnabled="False">Elevated</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Outlined" IsEnabled="False">Outlined</m3:MaterialButton>
-                            <m3:MaterialButton Variant="Text" IsEnabled="False">Text</m3:MaterialButton>
+                            <Button m3:ButtonAssist.Variant="Filled" IsEnabled="False">Filled</Button>
+                            <Button m3:ButtonAssist.Variant="Tonal" IsEnabled="False">Tonal</Button>
+                            <Button m3:ButtonAssist.Variant="Elevated" IsEnabled="False">Elevated</Button>
+                            <Button m3:ButtonAssist.Variant="Outlined" IsEnabled="False">Outlined</Button>
+                            <Button m3:ButtonAssist.Variant="Text" IsEnabled="False">Text</Button>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -76,11 +76,11 @@
                                Text="Height, padding, icon size and type scale all move together — one token set per size." />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialButton Size="ExtraSmall">Extra small</m3:MaterialButton>
-                            <m3:MaterialButton Size="Small">Small</m3:MaterialButton>
-                            <m3:MaterialButton Size="Medium">Medium</m3:MaterialButton>
-                            <m3:MaterialButton Size="Large">Large</m3:MaterialButton>
-                            <m3:MaterialButton Size="ExtraLarge">Extra large</m3:MaterialButton>
+                            <Button m3:ButtonAssist.Size="ExtraSmall">Extra small</Button>
+                            <Button m3:ButtonAssist.Size="Small">Small</Button>
+                            <Button m3:ButtonAssist.Size="Medium">Medium</Button>
+                            <Button m3:ButtonAssist.Size="Large">Large</Button>
+                            <Button m3:ButtonAssist.Size="ExtraLarge">Extra large</Button>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -92,10 +92,12 @@
                                Text="CornerFull is a percentage, not a large fixed radius, so a pill stays a pill at every size." />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialButton Size="Medium">Round</m3:MaterialButton>
-                            <m3:MaterialButton Size="Medium" IsSquare="True">Square</m3:MaterialButton>
-                            <m3:MaterialButton Size="ExtraLarge">Round</m3:MaterialButton>
-                            <m3:MaterialButton Size="ExtraLarge" IsSquare="True">Square</m3:MaterialButton>
+                            <Button m3:ButtonAssist.Size="Medium">Round</Button>
+                            <Button m3:ButtonAssist.Size="Medium"
+                                    m3:ButtonAssist.IsSquare="True">Square</Button>
+                            <Button m3:ButtonAssist.Size="ExtraLarge">Round</Button>
+                            <Button m3:ButtonAssist.Size="ExtraLarge"
+                                    m3:ButtonAssist.IsSquare="True">Square</Button>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -228,8 +230,8 @@
                     <TextBlock Classes="title-large" Text="Standard group" />
                     <Border Classes="demo-canvas">
                         <m3:MaterialButtonGroup Variant="Standard" HorizontalAlignment="Left">
-                            <m3:MaterialButton Variant="Outlined" Content="Cancel" />
-                            <m3:MaterialButton Variant="Filled" Content="Confirm" />
+                            <Button m3:ButtonAssist.Variant="Outlined" Content="Cancel" />
+                            <Button m3:ButtonAssist.Variant="Filled" Content="Confirm" />
                         </m3:MaterialButtonGroup>
                     </Border>
                 </StackPanel>

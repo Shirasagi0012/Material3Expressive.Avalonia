@@ -71,14 +71,23 @@ public sealed class MaterialRipplePresenter : Control
     {
         base.OnAttachedToVisualTree(e);
 
-        if (_interaction is not null)
-            return;
-
         var owner = TemplatedParent as Control ?? this;
-        _interaction = new MaterialInteractionHost(owner);
-        _interaction.Ticked += (_, _) => InvalidateVisual();
-        _interaction.InteractionChanged += (_, _) => InvalidateVisual();
+        _interaction = MaterialInteraction.GetOrCreate(owner);
+        _interaction.Ticked += OnInteractionChanged;
+        _interaction.InteractionChanged += OnInteractionChanged;
         ApplyConfiguration();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_interaction is { })
+        {
+            _interaction.Ticked -= OnInteractionChanged;
+            _interaction.InteractionChanged -= OnInteractionChanged;
+        }
+
+        _interaction = null;
+        base.OnDetachedFromVisualTree(e);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -104,4 +113,6 @@ public sealed class MaterialRipplePresenter : Control
         interaction.IsRippleBounded = IsBounded;
         interaction.RippleRadius = double.IsFinite(RippleRadius) ? RippleRadius : null;
     }
+
+    private void OnInteractionChanged(object? sender, EventArgs e) => InvalidateVisual();
 }

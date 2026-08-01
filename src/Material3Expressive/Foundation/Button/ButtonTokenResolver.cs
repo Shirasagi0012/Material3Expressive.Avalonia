@@ -15,30 +15,43 @@ namespace Material3Expressive.Foundation;
 /// </remarks>
 internal static class ButtonTokenResolver
 {
-    public static BindingBase Resolve(ButtonToken token, ButtonVariant variant, ButtonSize size)
+    public static BindingBase Resolve(ButtonToken token)
     {
         return token switch
         {
-            ButtonToken.ContainerColor => Color(variant, static colors => colors.ContainerColor),
-            ButtonToken.LabelTextColor => Color(variant, static colors => colors.LabelTextColor),
-            ButtonToken.IconColor => Color(variant, static colors => colors.IconColor),
-            ButtonToken.OutlineColor => Color(variant, static colors => colors.OutlineColor),
-            ButtonToken.StateLayerColor => Color(variant, static colors => colors.StateLayerColor),
-            ButtonToken.DisabledContainerColor => Color(variant, static colors => colors.DisabledContainerColor),
-            ButtonToken.DisabledLabelTextColor => Color(variant, static colors => colors.DisabledLabelTextColor),
-            ButtonToken.DisabledIconColor => Color(variant, static colors => colors.DisabledIconColor),
-            ButtonToken.DisabledOutlineColor => Color(variant, static colors => colors.DisabledOutlineColor),
+            ButtonToken.ContainerColor => Color(static colors => colors.ContainerColor),
+            ButtonToken.LabelTextColor => Color(static colors => colors.LabelTextColor),
+            ButtonToken.IconColor => Color(static colors => colors.IconColor),
+            ButtonToken.OutlineColor => Color(static colors => colors.OutlineColor),
+            ButtonToken.StateLayerColor => Color(static colors => colors.StateLayerColor),
+            ButtonToken.DisabledContainerColor => Color(static colors => colors.DisabledContainerColor),
+            ButtonToken.DisabledLabelTextColor => Color(static colors => colors.DisabledLabelTextColor),
+            ButtonToken.DisabledIconColor => Color(static colors => colors.DisabledIconColor),
+            ButtonToken.DisabledOutlineColor => Color(static colors => colors.DisabledOutlineColor),
 
             ButtonToken.ContainerCornerRadius =>
-                Metric(theme => CornerRadius(theme, size, Metrics(theme, size).ContainerShape)),
+                Metric((theme, size) => CornerRadius(theme, size, Metrics(theme, size).ContainerShape)),
             ButtonToken.PressedContainerCornerRadius =>
-                Metric(theme => CornerRadius(theme, size, Metrics(theme, size).PressedContainerShape)),
-            ButtonToken.ContentPadding => Metric(theme => ContentPadding(Metrics(theme, size))),
-            ButtonToken.ContainerHeight => Metric(theme => Metrics(theme, size).ContainerHeight),
-            ButtonToken.IconSize => Metric(theme => Metrics(theme, size).IconSize),
-            ButtonToken.IconLabelSpace => Metric(theme => Metrics(theme, size).IconLabelSpace),
-            ButtonToken.OutlineWidth => Metric(theme => Metrics(theme, size).OutlineWidth),
-            ButtonToken.LabelTextStyle => Metric(theme => Metrics(theme, size).LabelTextStyle),
+                Metric((theme, size) => CornerRadius(theme, size, Metrics(theme, size).PressedContainerShape)),
+            ButtonToken.ContentPadding => Metric((theme, size) => ContentPadding(Metrics(theme, size))),
+            ButtonToken.ContainerHeight => Metric((theme, size) => Metrics(theme, size).ContainerHeight),
+            ButtonToken.IconSize => Metric((theme, size) => Metrics(theme, size).IconSize),
+            ButtonToken.IconLabelSpace => Metric((theme, size) => Metrics(theme, size).IconLabelSpace),
+            ButtonToken.OutlineWidth => Metric((theme, size) => Metrics(theme, size).OutlineWidth),
+            ButtonToken.ContainerOutlineThickness => ThemeBinding.FromThemeProperties<
+                ButtonVariant,
+                ButtonSize,
+                object?>(
+                ButtonAssist.VariantProperty,
+                ButtonAssist.SizeProperty,
+                (theme, variant, size) => new Thickness(
+                    theme.GetButtonColorTokens(variant).HasOutline
+                        ? Metrics(theme, size).OutlineWidth
+                        : 0),
+                ButtonVariant.Filled,
+                ButtonSize.Small,
+                AvaloniaProperty.UnsetValue),
+            ButtonToken.LabelTextStyle => Metric((theme, size) => Metrics(theme, size).LabelTextStyle),
 
             ButtonToken.HoverStateLayerOpacity => Constant(StateTokens.HoverStateLayerOpacity),
             ButtonToken.FocusStateLayerOpacity => Constant(StateTokens.FocusStateLayerOpacity),
@@ -70,16 +83,22 @@ internal static class ButtonTokenResolver
         return theme.Shapes.GetCornerRadius(role, new Size(height, height));
     }
 
-    private static BindingBase Color(ButtonVariant variant, Func<ButtonColors, object?> select)
+    private static BindingBase Color(Func<ButtonColors, object?> select)
     {
-        return ThemeBinding.FromThemeVariant(
-            (theme, isDark) => select(theme.GetButtonColors(variant, isDark)),
+        return ThemeBinding.FromThemeVariantProperty<ButtonVariant, object?>(
+            ButtonAssist.VariantProperty,
+            (theme, isDark, variant) => select(theme.GetButtonColors(variant, isDark)),
+            ButtonVariant.Filled,
             AvaloniaProperty.UnsetValue);
     }
 
-    private static BindingBase Metric(Func<ResolvedTheme, object?> select)
+    private static BindingBase Metric(Func<ResolvedTheme, ButtonSize, object?> select)
     {
-        return ThemeBinding.FromTheme(select, AvaloniaProperty.UnsetValue);
+        return ThemeBinding.FromThemeProperty<ButtonSize, object?>(
+            ButtonAssist.SizeProperty,
+            select,
+            ButtonSize.Small,
+            AvaloniaProperty.UnsetValue);
     }
 
     /// <summary>

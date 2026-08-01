@@ -247,7 +247,9 @@
                                Text="One spring slides the panel and fades the scrim, so dismissing it mid-open reverses from where it is. Tap the scrim to close." />
                     <Border Classes="demo-canvas">
                         <StackPanel Spacing="16" HorizontalAlignment="Left">
-                            <m3:MaterialButton Variant="Tonal" Content="Open drawer" Click="OnOpenDrawer" />
+                            <Button m3:ButtonAssist.Variant="Tonal"
+                                    Content="Open drawer"
+                                    Click="OnOpenDrawer" />
                             <Border ClipToBounds="True" CornerRadius="12" Height="320" Width="460"
                                     Background="{mcu:MdSysColor SurfaceContainerLowest}">
                                 <Panel>

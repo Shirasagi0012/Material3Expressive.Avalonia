@@ -21,9 +21,10 @@
             <Setter Property="Template">
                 <ControlTemplate>
                     <StackPanel Orientation="Horizontal" Spacing="{TemplateBinding BetweenSpace}">
-                        <m3:MaterialButton x:Name="PART_Leading"
-                                           Variant="{TemplateBinding Variant}"
-                                           Content="{TemplateBinding Content}" />
+                        <Button x:Name="PART_Leading"
+                                Theme="{StaticResource MaterialFilledButtonTheme}"
+                                m3:ButtonAssist.Variant="{TemplateBinding Variant}"
+                                Content="{TemplateBinding Content}" />
                         <m3:MaterialToggleButton x:Name="PART_Trailing"
                                                  Variant="{TemplateBinding Variant}"
                                                  Content="{TemplateBinding TrailingIcon}"

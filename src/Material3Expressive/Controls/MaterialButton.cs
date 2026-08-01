@@ -1,71 +1,34 @@
-using System;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
 /// <summary>
-/// A Material 3 Expressive button: five colour variants, five sizes, and a container that morphs
-/// while pressed.
+/// An ergonomic CLR facade over a native <see cref="Button" /> with the Material button theme.
 /// </summary>
 /// <remarks>
-/// Derives from Avalonia's <see cref="Button" /> rather than from a Material base class, so
-/// content, commands, click modes and keyboard activation keep working exactly as they do
-/// everywhere else. What Material adds — token resolution, the state layer, ripples and the shape
-/// morph — is hosted, not inherited.
-/// <para>
-/// The container is drawn in <see cref="Render" /> rather than by a templated <c>Border</c>,
-/// because its corner radius changes every frame during a press and resolves against the control's
-/// real bounds. Percentage corners need the measured size: <c>CornerFull</c> is genuinely half the
-/// height, which is what makes a pill a pill at any size.
-/// </para>
+/// This type adds no rendering, interaction or token logic. Its CLR properties own the same
+/// attached properties used by an ordinary Button, so the facade and native APIs cannot diverge.
 /// </remarks>
-public class MaterialButton : Button
+public sealed class MaterialButton : Button
 {
-    public static readonly StyledProperty<ButtonVariant> VariantProperty =
-        AvaloniaProperty.Register<MaterialButton, ButtonVariant>(nameof(Variant));
+    public static readonly AttachedProperty<ButtonVariant> VariantProperty =
+        ButtonAssist.VariantProperty.AddOwner<MaterialButton>();
 
-    public static readonly StyledProperty<ButtonSize> SizeProperty =
-        AvaloniaProperty.Register<MaterialButton, ButtonSize>(nameof(Size), ButtonSize.Small);
+    public static readonly AttachedProperty<ButtonSize> SizeProperty =
+        ButtonAssist.SizeProperty.AddOwner<MaterialButton>();
 
     /// <summary>
     /// Squares the resting container off. Material pairs a round button with a square one in
     /// toggle groups, so the two shapes are a property rather than two variants.
     /// </summary>
-    public static readonly StyledProperty<bool> IsSquareProperty =
-        AvaloniaProperty.Register<MaterialButton, bool>(nameof(IsSquare));
+    public static readonly AttachedProperty<bool> IsSquareProperty =
+        ButtonAssist.IsSquareProperty.AddOwner<MaterialButton>();
 
     /// <inheritdoc cref="ContainerShapeOverride" />
-    public static readonly StyledProperty<RoundedCornerShape?> ContainerShapeOverrideProperty =
-        AvaloniaProperty.Register<MaterialButton, RoundedCornerShape?>(nameof(ContainerShapeOverride));
-
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
-
-    private AnimatedShape? _shape;
-    private ButtonColors _colors = ButtonColorTokens.Filled.Resolve(null, false);
-    private ButtonSizeTokens _metrics = ButtonSizeTokens.Small;
-
-    public MaterialButton()
-    {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => UpdateShape();
-
-        ApplyTokens();
-    }
-
-    static MaterialButton()
-    {
-        ClipToBoundsProperty.OverrideDefaultValue<MaterialButton>(false);
-        AffectsRender<MaterialButton>(VariantProperty, IsSquareProperty);
-    }
+    public static readonly AttachedProperty<RoundedCornerShape?> ContainerShapeOverrideProperty =
+        ButtonAssist.ContainerShapeOverrideProperty.AddOwner<MaterialButton>();
 
     /// <summary>The colour variant: filled, tonal, elevated, outlined or text.</summary>
     public ButtonVariant Variant
@@ -103,121 +66,4 @@ public class MaterialButton : Button
         set => SetValue(ContainerShapeOverrideProperty, value);
     }
 
-    /// <summary>The corner radii the container is currently drawn with, morph included.</summary>
-    protected CornerRadius ContainerCornerRadius =>
-        Shape.ToCornerRadius(Bounds.Size, FlowDirection == FlowDirection.RightToLeft);
-
-    private AnimatedShape Shape =>
-        _shape ??= _interaction.CreateAnimatedShape(RestingShape(), _theme.Spring(MotionRole.DefaultEffects));
-
-    public override void Render(DrawingContext context)
-    {
-        var bounds = new Rect(Bounds.Size);
-        if (bounds.Width <= 0 || bounds.Height <= 0)
-            return;
-
-        var corners = ContainerCornerRadius;
-        var enabled = IsEffectivelyEnabled;
-        var tokens = _theme.Theme.GetButtonColorTokens(Variant);
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
-
-        MaterialContainer.Draw(
-            context,
-            this,
-            Bounds.Size,
-            corners,
-            enabled ? _colors.ContainerColor : _colors.DisabledContainerColor,
-            enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
-            tokens.HasOutline ? _metrics.OutlineWidth : 0,
-            CurrentElevation(enabled),
-            shadow);
-
-        base.Render(context);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-
-        if (change.Property == VariantProperty
-            || change.Property == SizeProperty
-            || change.Property == IsEffectivelyEnabledProperty)
-            ApplyTokens();
-        else if (change.Property == IsSquareProperty)
-            UpdateShape();
-        else if (change.Property == ContainerShapeOverrideProperty)
-            // Group/split-button geometry is structural layout, not an interaction transition.
-            // Snapping while idle also prevents an identical override written during a later
-            // arrange pass from leaving the container at a clock-dependent intermediate shape.
-            UpdateShape(snap: true);
-    }
-
-    /// <summary>Resolves every token this button reads and pushes them onto its properties.</summary>
-    private void ApplyTokens()
-    {
-        _colors = _theme.Theme.GetButtonColors(Variant, _theme.IsDark);
-        _metrics = _theme.Theme.GetButtonSizeTokens(Size);
-
-        var typography = _theme.Theme.Typography;
-        var scale = typography.GetTypeScale(_metrics.LabelTextStyle);
-
-        Foreground = IsEffectivelyEnabled ? _colors.LabelTextColor : _colors.DisabledLabelTextColor;
-        Padding = new Thickness(
-            _metrics.LeadingSpace, _metrics.VerticalSpace, _metrics.TrailingSpace, _metrics.VerticalSpace);
-        MinHeight = _metrics.ContainerHeight;
-        FontSize = scale.FontSize;
-        FontFamily = typography.GetFontFamily(_metrics.LabelTextStyle);
-        FontWeight = typography.GetFontWeight(_metrics.LabelTextStyle);
-        // Button.kt provides MaterialTheme.typography.labelLarge to the whole content lambda.
-        // The attached property carries the corresponding line height and letter spacing to
-        // Avalonia TextBlock descendants, rather than leaving them at the inherited BodyMedium
-        // defaults.
-        TypographyScheme.SetTextStyle(this, _metrics.LabelTextStyle);
-
-        UpdateShape(snap: true);
-        InvalidateVisual();
-    }
-
-    private void UpdateShape(bool snap = false)
-    {
-        var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? ShapeFor(_metrics.PressedContainerShape)
-            : RestingShape();
-
-        if (snap && !Shape.IsRunning)
-        {
-            Shape.SnapTo(target);
-            InvalidateVisual();
-            return;
-        }
-
-        // DefaultEffects, not a spatial spring: upstream picks it deliberately so the container
-        // does not bounce on release.
-        Shape.AnimateTo(target, _theme.Spring(MotionRole.DefaultEffects));
-        _interaction.Motion.Start();
-    }
-
-    private RoundedCornerShape RestingShape()
-    {
-        return ContainerShapeOverride
-               ?? ShapeFor(IsSquare ? _metrics.SquareContainerShape : _metrics.ContainerShape);
-    }
-
-    private RoundedCornerShape ShapeFor(ShapeRole role)
-    {
-        return _theme.Theme.Shapes.Get(role);
-    }
-
-    private double CurrentElevation(bool enabled)
-    {
-        var tokens = _theme.Theme.GetButtonColorTokens(Variant);
-        var interaction = _interaction.Interaction;
-
-        return !enabled ? tokens.DisabledContainerElevation
-            : interaction.HasFlag(InteractionState.Pressed) ? tokens.PressedContainerElevation
-            : interaction.HasFlag(InteractionState.Hovered) ? tokens.HoveredContainerElevation
-            : interaction.HasFlag(InteractionState.Focused) ? tokens.FocusedContainerElevation
-            : tokens.ContainerElevation;
-    }
 }

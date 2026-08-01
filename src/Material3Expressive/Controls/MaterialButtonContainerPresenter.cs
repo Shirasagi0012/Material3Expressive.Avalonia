@@ -1,0 +1,239 @@
+using System;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+using Avalonia.Media.Immutable;
+using Avalonia.VisualTree;
+using Material3Expressive.Foundation;
+using MaterialColorUtilities.Avalonia.Tokens;
+
+namespace Material3Expressive.Controls;
+
+/// <summary>Draws the animated container chrome for a Material-themed native button.</summary>
+/// <remarks>
+/// The templated <see cref="Button" /> remains responsible for commands, input, automation and
+/// content. This leaf presenter owns only the geometry that cannot be expressed by a static
+/// Border: elevation and the interruptible pressed-shape morph.
+/// </remarks>
+public sealed class MaterialButtonContainerPresenter : Control
+{
+    public static readonly DirectProperty<MaterialButtonContainerPresenter, CornerRadius>
+        CurrentCornerRadiusProperty = AvaloniaProperty.RegisterDirect<
+            MaterialButtonContainerPresenter,
+            CornerRadius>(nameof(CurrentCornerRadius), presenter => presenter.CurrentCornerRadius);
+
+    private readonly MaterialThemeWatcher _theme;
+
+    private Button? _owner;
+    private MaterialInteractionHost? _interaction;
+    private AnimatedShape? _shape;
+    private ButtonColorTokens _tokens = ButtonColorTokens.Filled;
+    private ButtonSizeTokens _metrics = ButtonSizeTokens.Small;
+    private CornerRadius _currentCornerRadius;
+
+    public MaterialButtonContainerPresenter()
+    {
+        IsHitTestVisible = false;
+        Focusable = false;
+        _theme = new MaterialThemeWatcher(this);
+        _theme.Changed += OnThemeChanged;
+    }
+
+    /// <summary>The live, bounds-resolved corners used by the ripple overlay.</summary>
+    public CornerRadius CurrentCornerRadius
+    {
+        get => _currentCornerRadius;
+        private set => SetAndRaise(CurrentCornerRadiusProperty, ref _currentCornerRadius, value);
+    }
+
+    internal MaterialInteractionHost? InteractionHost => _interaction;
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+
+        if (_owner is not { } owner || Bounds.Width <= 0 || Bounds.Height <= 0)
+            return;
+
+        UpdateCurrentCornerRadius();
+
+        var enabled = owner.IsEffectivelyEnabled;
+        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark)
+                     ?? Colors.Black;
+
+        MaterialContainer.Draw(
+            context,
+            owner,
+            Bounds.Size,
+            CurrentCornerRadius,
+            owner.Background,
+            owner.BorderBrush,
+            Uniform(owner.BorderThickness),
+            CurrentElevation(enabled),
+            shadow);
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+
+        _owner = TemplatedParent as Button
+                 ?? throw new InvalidOperationException(
+                     $"{nameof(MaterialButtonContainerPresenter)} must be used in a Button template.");
+        _interaction = MaterialInteraction.GetOrCreate(_owner);
+        _owner.PropertyChanged += OnOwnerPropertyChanged;
+        _interaction.InteractionChanged += OnInteractionChanged;
+        _interaction.Ticked += OnInteractionTicked;
+
+        ApplyTokens(snapShape: true);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_owner is { })
+            _owner.PropertyChanged -= OnOwnerPropertyChanged;
+
+        if (_interaction is { } interaction)
+        {
+            interaction.InteractionChanged -= OnInteractionChanged;
+            interaction.Ticked -= OnInteractionTicked;
+            if (_shape is { })
+                interaction.Motion.Remove(_shape.Progress);
+        }
+
+        _shape = null;
+        _interaction = null;
+        _owner = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == BoundsProperty || change.Property == FlowDirectionProperty)
+            UpdateCurrentCornerRadius();
+    }
+
+    private AnimatedShape Shape => _shape ??= CreateShape();
+
+    private AnimatedShape CreateShape()
+    {
+        var interaction = _interaction
+                          ?? throw new InvalidOperationException("The presenter is not attached.");
+        return interaction.CreateAnimatedShape(
+            RestingShape(),
+            _theme.Spring(MotionRole.DefaultEffects));
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        ApplyTokens(snapShape: true);
+    }
+
+    private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == ButtonAssist.VariantProperty
+            || change.Property == ButtonAssist.SizeProperty)
+        {
+            ApplyTokens(snapShape: true);
+        }
+        else if (change.Property == ButtonAssist.IsSquareProperty
+                 || change.Property == ButtonAssist.ContainerShapeOverrideProperty)
+        {
+            UpdateShape(change.Property == ButtonAssist.ContainerShapeOverrideProperty);
+        }
+        else if (change.Property == IsEffectivelyEnabledProperty
+                 || change.Property == Button.BackgroundProperty
+                 || change.Property == Button.BorderBrushProperty
+                 || change.Property == Button.BorderThicknessProperty)
+        {
+            InvalidateVisual();
+        }
+    }
+
+    private void OnInteractionChanged(object? sender, EventArgs e) => UpdateShape();
+
+    private void OnInteractionTicked(object? sender, EventArgs e)
+    {
+        UpdateCurrentCornerRadius();
+        InvalidateVisual();
+    }
+
+    private void ApplyTokens(bool snapShape)
+    {
+        if (_owner is not { } owner)
+            return;
+
+        _tokens = _theme.Theme.GetButtonColorTokens(ButtonAssist.GetVariant(owner));
+        _metrics = _theme.Theme.GetButtonSizeTokens(ButtonAssist.GetSize(owner));
+        UpdateShape(snapShape);
+        InvalidateVisual();
+    }
+
+    private void UpdateShape(bool snap = false)
+    {
+        if (_owner is null || _interaction is null)
+            return;
+
+        var shape = Shape;
+        var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
+            ? ShapeFor(_metrics.PressedContainerShape)
+            : RestingShape();
+
+        if (snap && !shape.IsRunning)
+            shape.SnapTo(target);
+        else
+        {
+            shape.AnimateTo(target, _theme.Spring(MotionRole.DefaultEffects));
+            _interaction.Motion.Start();
+        }
+
+        UpdateCurrentCornerRadius();
+        InvalidateVisual();
+    }
+
+    private void UpdateCurrentCornerRadius()
+    {
+        if (_owner is null || _shape is null)
+            return;
+
+        CurrentCornerRadius = Shape.ToCornerRadius(
+            Bounds.Size,
+            FlowDirection == FlowDirection.RightToLeft);
+    }
+
+    private RoundedCornerShape RestingShape()
+    {
+        if (_owner is not { } owner)
+            return ShapeFor(_metrics.ContainerShape);
+
+        return ButtonAssist.GetContainerShapeOverride(owner)
+               ?? ShapeFor(
+                   ButtonAssist.GetIsSquare(owner)
+                       ? _metrics.SquareContainerShape
+                       : _metrics.ContainerShape);
+    }
+
+    private RoundedCornerShape ShapeFor(ShapeRole role) => _theme.Theme.Shapes.Get(role);
+
+    private double CurrentElevation(bool enabled)
+    {
+        var interaction = _interaction?.Interaction ?? InteractionState.None;
+
+        return !enabled ? _tokens.DisabledContainerElevation
+            : interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedContainerElevation
+            : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoveredContainerElevation
+            : interaction.HasFlag(InteractionState.Focused) ? _tokens.FocusedContainerElevation
+            : _tokens.ContainerElevation;
+    }
+
+    private static double Uniform(Thickness thickness)
+    {
+        return thickness.Left.Equals(thickness.Top)
+               && thickness.Left.Equals(thickness.Right)
+               && thickness.Left.Equals(thickness.Bottom)
+            ? thickness.Left
+            : 0;
+    }
+}
