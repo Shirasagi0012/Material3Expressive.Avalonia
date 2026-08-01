@@ -32,7 +32,7 @@
                                Text="Press and hold to watch the 225ms wave expand from the pointer, then release for its 150ms fade. Use Tab and Space or Enter to see the centred keyboard ripple and the animated two-stroke inset focus ring." />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="20" LineSpacing="20" VerticalAlignment="Center">
-                            <Button Content="Template button" />
+                            <!-- <Button Content="Template button" /> -->
                             <m3:MaterialButton Variant="Filled">Material button</m3:MaterialButton>
                             <m3:MaterialIconButton Variant="Tonal">
                                 <ms:MaterialSymbol Symbol="TouchApp" />
