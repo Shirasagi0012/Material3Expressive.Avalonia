@@ -39,7 +39,7 @@ public sealed class MaterialThemeWatcher
         // overlay can instead be materialized after its templated parent has already attached; in
         // that case there will be no future AttachedToLogicalTree event for this watcher.
         if (((ILogical)_owner).IsAttachedToLogicalTree)
-            Update();
+            Refresh();
     }
 
     /// <summary>Raised whenever the theme or the element's theme variant changes.</summary>
@@ -59,22 +59,27 @@ public sealed class MaterialThemeWatcher
 
     private void OnAttached(object? sender, LogicalTreeAttachmentEventArgs e)
     {
-        Update();
+        Refresh();
     }
 
     private void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == MaterialThemeScope.ResolvedThemeProperty
             || e.Property == ThemeVariantScope.ActualThemeVariantProperty)
-            Update();
+            Refresh();
     }
 
-    private void Update()
+    /// <summary>
+    /// Re-resolves the owner's theme immediately. MaterialControl uses this to preserve its
+    /// protected hook ordering; the later owner event is harmless because unchanged snapshots are
+    /// suppressed below.
+    /// </summary>
+    internal void Refresh()
     {
         var theme = MaterialThemeScope.GetResolvedTheme(_owner);
 
-        // Null before the first attach and again while the owner detaches — see the note in
-        // MaterialControl.UpdateTheme.
+        // Null before the first attach and again while the owner detaches: inherited values revert
+        // before the logical-tree detach callback runs.
         var isDark = ColorScheme.IsDark(_owner.ActualThemeVariant ?? ThemeVariant.Default);
 
         // Snapshots are immutable and replaced wholesale, so reference equality is enough to know

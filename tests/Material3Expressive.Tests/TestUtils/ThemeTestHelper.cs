@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Controls;
@@ -77,5 +78,31 @@ internal sealed class ThemeProbe : MaterialControl
         ObservedIsDark = isDark;
         ContainerBrush = theme.GetButtonColors(ButtonVariant.Filled, isDark).ContainerColor;
         ChangeCount++;
+    }
+}
+
+/// <summary>Records the protected callback ordering promised by MaterialControl.</summary>
+internal sealed class ThemeOrderingProbe : MaterialControl
+{
+    public List<string> Events { get; } = new();
+
+    protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToLogicalTree(e);
+        Events.Add("derived-attach");
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == MaterialThemeScope.ResolvedThemeProperty
+            || change.Property == ThemeVariantScope.ActualThemeVariantProperty)
+            Events.Add("derived-property");
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        Events.Add("theme");
     }
 }

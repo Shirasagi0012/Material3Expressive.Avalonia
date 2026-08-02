@@ -2,10 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.LogicalTree;
-using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia;
 
 namespace Material3Expressive.Controls;
 
@@ -22,20 +20,22 @@ namespace Material3Expressive.Controls;
 public abstract class MaterialControl : TemplatedControl
 {
     private MotionGroup? _motion;
-    private bool _isDark;
+    private readonly MaterialThemeWatcher? _themeWatcher;
 
-    // Null until the first resolution, so that a control whose theme happens to equal the default
-    // still gets its initial OnThemeChanged call.
-    private ResolvedTheme? _theme;
+    public MaterialControl()
+    {
+        _themeWatcher = new MaterialThemeWatcher(this);
+        _themeWatcher.Changed += OnThemeWatcherChanged;
+    }
 
     /// <summary>
     /// The theme in scope at this control. Named for its type rather than "Theme", which on
     /// <see cref="Avalonia.StyledElement" /> already means the control's <c>ControlTheme</c>.
     /// </summary>
-    protected ResolvedTheme ResolvedTheme => _theme ?? Foundation.ResolvedTheme.Default;
+    protected ResolvedTheme ResolvedTheme => _themeWatcher?.Theme ?? Foundation.ResolvedTheme.Default;
 
     /// <summary>Whether the control's theme variant resolves to dark.</summary>
-    protected bool IsDarkVariant => _isDark;
+    protected bool IsDarkVariant => _themeWatcher?.IsDark ?? false;
 
     /// <summary>
     /// This control's animations and the frame loop that drives them. Created on first use, so a
@@ -63,7 +63,7 @@ public abstract class MaterialControl : TemplatedControl
     protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
     {
         base.OnAttachedToLogicalTree(e);
-        UpdateTheme();
+        _themeWatcher?.Refresh();
     }
 
     protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
@@ -90,7 +90,7 @@ public abstract class MaterialControl : TemplatedControl
 
         if (change.Property == MaterialThemeScope.ResolvedThemeProperty
             || change.Property == ThemeVariantScope.ActualThemeVariantProperty)
-            UpdateTheme();
+            _themeWatcher?.Refresh();
     }
 
     /// <summary>
@@ -110,23 +110,9 @@ public abstract class MaterialControl : TemplatedControl
         InvalidateVisual();
     }
 
-    private void UpdateTheme()
+    private void OnThemeWatcherChanged(object? sender, EventArgs e)
     {
-        var theme = MaterialThemeScope.GetResolvedTheme(this);
-
-        // ActualThemeVariant is typed non-nullable but registered without a default, so it reads
-        // null both before the first attach and while the control is being detached — it inherits,
-        // and the inherited value reverts before OnDetachedFromLogicalTree runs, which is why no
-        // "am I still attached" guard catches that second case.
-        var isDark = ColorScheme.IsDark(ActualThemeVariant ?? ThemeVariant.Default);
-
-        // Snapshots are immutable and replaced wholesale, so reference equality is enough to know
-        // that nothing can have changed.
-        if (_theme is { } current && ReferenceEquals(theme, current) && isDark == _isDark)
-            return;
-
-        _theme = theme;
-        _isDark = isDark;
-        OnThemeChanged(theme, isDark);
+        if (_themeWatcher is { } watcher)
+            OnThemeChanged(watcher.Theme, watcher.IsDark);
     }
 }

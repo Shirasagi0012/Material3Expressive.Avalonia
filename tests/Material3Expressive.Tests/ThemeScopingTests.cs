@@ -289,4 +289,28 @@ public class ThemeScopingTests
             ThemeTestHelper.Expected(scopedTheme, SysColorToken.Primary),
             ThemeTestHelper.ColorOf(probe.ContainerBrush));
     }
+
+    [AvaloniaFact]
+    public void MaterialControl_ResolvesThemeBeforeDerivedAttachLogic()
+    {
+        var probe = new ThemeOrderingProbe();
+
+        ThemeTestHelper.ShowWindow(probe);
+
+        Assert.True(
+            probe.Events.IndexOf("theme") < probe.Events.IndexOf("derived-attach"),
+            $"Observed callback order: {string.Join(", ", probe.Events)}");
+    }
+
+    [AvaloniaFact]
+    public void MaterialControl_ResolvesThemeBeforeDerivedPropertyLogic()
+    {
+        var probe = new ThemeOrderingProbe();
+        ThemeTestHelper.ShowWindow(probe);
+        probe.Events.Clear();
+
+        MaterialThemeScope.SetTheme(probe, ThemeTestHelper.ThemeSeededWith(Colors.Blue));
+
+        Assert.Equal(["theme", "derived-property"], probe.Events);
+    }
 }
