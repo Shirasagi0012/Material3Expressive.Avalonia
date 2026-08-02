@@ -381,7 +381,7 @@ public sealed class MaterialTabContentPanel : Panel
 /// a token, not a special case.
 /// </para>
 /// </remarks>
-public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
+public class MaterialTabs : MaterialControl, IVisualBoundsProbe
 {
     public static readonly StyledProperty<TabVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialTabs, TabVariant>(nameof(Variant));
@@ -403,9 +403,6 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
     public static readonly StyledProperty<double> ScrollableMinimumTabWidthProperty =
         AvaloniaProperty.Register<MaterialTabs, double>(nameof(ScrollableMinimumTabWidth), 90);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
-
     private SpringAnimation? _centre;
     private SpringAnimation? _width;
     private TabTokens _tokens = TabTokens.Primary;
@@ -416,11 +413,6 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
 
     public MaterialTabs()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => InvalidateVisual();
-
-        _theme.Changed += (_, _) => ApplyTokens();
         Items.CollectionChanged += (_, _) => AttachItems();
 
         ApplyTokens();
@@ -553,11 +545,16 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
         }
     }
 
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
     private SpringAnimation IndicatorCentre =>
-        _centre ??= _motion.AddSpring(0, _theme.Spring(MotionRole.FastSpatial));
+        _centre ??= Motion.AddSpring(0, Spring(MotionRole.FastSpatial));
 
     private SpringAnimation IndicatorWidth =>
-        _width ??= _motion.AddSpring(0, _theme.Spring(MotionRole.FastSpatial));
+        _width ??= Motion.AddSpring(0, Spring(MotionRole.FastSpatial));
 
     private void AttachItems()
     {
@@ -621,8 +618,8 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
     {
         if (SelectedIndex < 0 || SelectedIndex >= Items.Count)
         {
-            IndicatorWidth.AnimateTo(0, _theme.Spring(MotionRole.FastSpatial));
-            _motion.Start();
+            IndicatorWidth.AnimateTo(0, Spring(MotionRole.FastSpatial));
+            Motion.Start();
             return;
         }
 
@@ -659,10 +656,10 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
             return;
         }
 
-        var spring = _theme.Spring(MotionRole.FastSpatial);
+        var spring = Spring(MotionRole.FastSpatial);
         IndicatorCentre.AnimateTo(centre, spring);
         IndicatorWidth.AnimateTo(width, spring);
-        _motion.Start();
+        Motion.Start();
     }
 
     private void ScrollSelectedTabIntoView()
@@ -727,7 +724,7 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
         if (string.IsNullOrEmpty(text))
             return tab.Bounds.Width;
 
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
         var formatted = new FormattedText(
             text!,
             System.Globalization.CultureInfo.CurrentCulture,
@@ -755,8 +752,8 @@ public class MaterialTabs : TemplatedControl, IVisualBoundsProbe
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetTabTokens(Variant);
-        _colors = _theme.Theme.GetTabColors(Variant, _theme.IsDark);
+        _tokens = ResolvedTheme.GetTabTokens(Variant);
+        _colors = ResolvedTheme.GetTabColors(Variant, IsDarkVariant);
 
         AttachItems();
         InvalidateVisual();

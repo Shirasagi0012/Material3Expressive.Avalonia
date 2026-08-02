@@ -32,7 +32,7 @@ public enum WideNavigationRailArrangement
 /// A Material wide navigation rail that preserves its destinations and selection while it
 /// expands between the 96dp collapsed and 220–360dp expanded layouts.
 /// </summary>
-public class MaterialWideNavigationRail : TemplatedControl
+public class MaterialWideNavigationRail : MaterialControl
 {
     public const double CollapsedWidth = 96;
     public const double ExpandedMinimumWidth = 220;
@@ -66,8 +66,6 @@ public class MaterialWideNavigationRail : TemplatedControl
             nameof(ExpansionProgress),
             owner => owner._expansionProgress);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
     private readonly HashSet<MaterialNavigationItem> _attachedItems = new();
     private NavigationColors _colors = NavigationTokens.Rail.Resolve(null, false);
     private SpringAnimation? _expansion;
@@ -76,10 +74,6 @@ public class MaterialWideNavigationRail : TemplatedControl
 
     public MaterialWideNavigationRail()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => SetExpansionProgress(_expansion?.Value ?? _expansionProgress);
-        _theme.Changed += (_, _) => ApplyTokens();
         Items.CollectionChanged += ItemsChanged;
         ApplyTokens();
     }
@@ -146,7 +140,7 @@ public class MaterialWideNavigationRail : TemplatedControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _motion.Start();
+        Motion.Start();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -170,6 +164,16 @@ public class MaterialWideNavigationRail : TemplatedControl
         {
             SyncSelection();
         }
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
+    protected override void OnMotionTick()
+    {
+        SetExpansionProgress(_expansion?.Value ?? _expansionProgress);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -217,7 +221,7 @@ public class MaterialWideNavigationRail : TemplatedControl
     }
 
     private SpringAnimation ExpansionAnimation =>
-        _expansion ??= _motion.AddSpring(_expansionProgress, _theme.Spring(MotionRole.DefaultSpatial));
+        _expansion ??= Motion.AddSpring(_expansionProgress, Spring(MotionRole.DefaultSpatial));
 
     private void AnimateExpansion()
     {
@@ -229,8 +233,8 @@ public class MaterialWideNavigationRail : TemplatedControl
             return;
         }
 
-        ExpansionAnimation.AnimateTo(target, _theme.Spring(MotionRole.DefaultSpatial));
-        _motion.Start();
+        ExpansionAnimation.AnimateTo(target, Spring(MotionRole.DefaultSpatial));
+        Motion.Start();
     }
 
     private void SetExpansionProgress(double value)
@@ -333,7 +337,7 @@ public class MaterialWideNavigationRail : TemplatedControl
 
     private void ApplyTokens()
     {
-        _colors = _theme.Theme.GetNavigationColors(NavigationVariant.Rail, _theme.IsDark);
+        _colors = ResolvedTheme.GetNavigationColors(NavigationVariant.Rail, IsDarkVariant);
         foreach (var item in Items)
             item.ApplyTokens();
         InvalidateVisual();

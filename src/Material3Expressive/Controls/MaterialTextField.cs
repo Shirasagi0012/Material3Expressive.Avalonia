@@ -35,7 +35,7 @@ namespace Material3Expressive.Controls;
 /// </para>
 /// </remarks>
 [TemplatePart(TextBoxPartName, typeof(TextBox))]
-public class MaterialTextField : TemplatedControl
+public class MaterialTextField : MaterialControl
 {
     private const string TextBoxPartName = "PART_TextBox";
 
@@ -62,9 +62,6 @@ public class MaterialTextField : TemplatedControl
     public static readonly StyledProperty<bool> IsErrorProperty =
         AvaloniaProperty.Register<MaterialTextField, bool>(nameof(IsError));
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
-
     private SpringAnimation? _float;
     private TextBox? _textBox;
     private DispatcherTimer? _caretTimer;
@@ -77,11 +74,6 @@ public class MaterialTextField : TemplatedControl
 
     public MaterialTextField()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => InvalidateVisual();
-
-        _theme.Changed += (_, _) => ApplyTokens();
         ApplyTokens();
     }
 
@@ -186,7 +178,7 @@ public class MaterialTextField : TemplatedControl
     // 16dp line height. An outlined field additionally reserves its 8dp label overhang above
     // the 56dp visible container.
     private double SupportingSlotHeight => SupportingTopPadding
-        + _theme.Theme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight;
+        + ResolvedTheme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight;
 
     private const double SupportingTopPadding = 4;
 
@@ -202,7 +194,7 @@ public class MaterialTextField : TemplatedControl
     internal Rect? MaterialCaretBounds => ResolveCaretBounds();
 
     private SpringAnimation Float =>
-        _float ??= _motion.AddSpring(ShouldFloat ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+        _float ??= Motion.AddSpring(ShouldFloat ? 1 : 0, Spring(MotionRole.FastSpatial));
 
     public override void Render(DrawingContext context)
     {
@@ -212,10 +204,10 @@ public class MaterialTextField : TemplatedControl
 
         var enabled = IsEffectivelyEnabled;
         var focused = _textBox?.IsFocused ?? false;
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, field.Size);
+        var corners = ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, field.Size);
 
         if (!string.IsNullOrEmpty(Label))
-            _labelWidthFloated = MeasureFloatedLabel(_theme.Theme.Typography);
+            _labelWidthFloated = MeasureFloatedLabel(ResolvedTheme.Typography);
 
         var outlineWidth = focused ? _tokens.FocusOutlineWidth : _tokens.OutlineWidth;
         var outline = !enabled ? _colors.DisabledOutlineColor
@@ -314,6 +306,11 @@ public class MaterialTextField : TemplatedControl
             InvalidateMeasure();
             InvalidateVisual();
         }
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
     }
 
     /// <summary>
@@ -431,7 +428,7 @@ public class MaterialTextField : TemplatedControl
     {
         if (string.IsNullOrEmpty(Label) || field.Width <= 0 || field.Height <= 0)
             return null;
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
         var resting = typography.GetTypeScale(_tokens.InputTextStyle);
         var floated = typography.GetTypeScale(_tokens.FloatingLabelTextStyle);
         var fraction = FloatFraction;
@@ -538,17 +535,17 @@ public class MaterialTextField : TemplatedControl
             return;
         }
 
-        Float.AnimateTo(target, _theme.Spring(MotionRole.FastSpatial));
-        _motion.Start();
+        Float.AnimateTo(target, Spring(MotionRole.FastSpatial));
+        Motion.Start();
     }
 
     private void ApplyTokens()
     {
         var previousPlaceholder = PlaceholderBrush;
-        _tokens = _theme.Theme.GetTextFieldTokens(Variant);
-        _colors = _theme.Theme.GetTextFieldColors(Variant, _theme.IsDark);
+        _tokens = ResolvedTheme.GetTextFieldTokens(Variant);
+        _colors = ResolvedTheme.GetTextFieldColors(Variant, IsDarkVariant);
 
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
 
         Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);
         MinHeight = _tokens.ContainerHeight;

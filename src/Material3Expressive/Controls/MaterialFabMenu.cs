@@ -22,7 +22,7 @@ namespace Material3Expressive.Controls;
 /// a phase offset into one shared spring, so closing reverses the order for free.
 /// </para>
 /// </remarks>
-public class MaterialFabMenu : TemplatedControl
+public class MaterialFabMenu : MaterialControl
 {
     /// <inheritdoc cref="IsExpanded" />
     public static readonly StyledProperty<bool> IsExpandedProperty =
@@ -39,9 +39,6 @@ public class MaterialFabMenu : TemplatedControl
     /// <summary>How far apart in the cycle two neighbouring items start moving.</summary>
     private const double StaggerFraction = 0.12;
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
-
     private SpringAnimation? _reveal;
     private FabMenuTokens _tokens = FabMenuTokens.Default;
 
@@ -52,11 +49,6 @@ public class MaterialFabMenu : TemplatedControl
 
     public MaterialFabMenu()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => UpdateItems();
-
-        _theme.Changed += (_, _) => ApplyTokens();
         Items.CollectionChanged += (_, _) => InvalidateMeasure();
 
         ApplyTokens();
@@ -102,7 +94,7 @@ public class MaterialFabMenu : TemplatedControl
             nameof(CloseButtonSpacing), o => o.CloseButtonSpacing);
 
     private SpringAnimation Reveal =>
-        _reveal ??= _motion.AddSpring(IsExpanded ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+        _reveal ??= Motion.AddSpring(IsExpanded ? 1 : 0, Spring(MotionRole.FastSpatial));
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -110,8 +102,8 @@ public class MaterialFabMenu : TemplatedControl
 
         if (change.Property == IsExpandedProperty)
         {
-            Reveal.AnimateTo(IsExpanded ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
-            _motion.Start();
+            Reveal.AnimateTo(IsExpanded ? 1 : 0, Spring(MotionRole.FastSpatial));
+            Motion.Start();
             UpdateItems();
         }
         else if (change.Property == VariantProperty)
@@ -119,6 +111,16 @@ public class MaterialFabMenu : TemplatedControl
             foreach (var item in Items)
                 item.Variant = Variant;
         }
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
+    protected override void OnMotionTick()
+    {
+        UpdateItems();
     }
 
     /// <summary>
@@ -151,7 +153,7 @@ public class MaterialFabMenu : TemplatedControl
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.FabMenuTokens;
+        _tokens = ResolvedTheme.FabMenuTokens;
 
         foreach (var item in Items)
         {

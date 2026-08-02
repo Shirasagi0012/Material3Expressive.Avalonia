@@ -27,7 +27,7 @@ namespace Material3Expressive.Controls;
 /// snackbar on a detached control stops counting down along with everything else.
 /// </para>
 /// </remarks>
-public class MaterialSnackbar : TemplatedControl
+public class MaterialSnackbar : MaterialControl
 {
     /// <inheritdoc cref="IsOpen" />
     public static readonly StyledProperty<bool> IsOpenProperty =
@@ -46,9 +46,6 @@ public class MaterialSnackbar : TemplatedControl
     public static readonly StyledProperty<TimeSpan> DurationProperty =
         AvaloniaProperty.Register<MaterialSnackbar, TimeSpan>(nameof(Duration), TimeSpan.FromSeconds(4));
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
-
     private SpringAnimation? _open;
     private TimeSpan _shownFor;
     private SnackbarTokens _tokens = SnackbarTokens.Default;
@@ -56,11 +53,6 @@ public class MaterialSnackbar : TemplatedControl
 
     public MaterialSnackbar()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => OnFrame();
-
-        _theme.Changed += (_, _) => ApplyTokens();
         ApplyTokens();
     }
 
@@ -122,7 +114,7 @@ public class MaterialSnackbar : TemplatedControl
     internal bool ParityShadowOccluderDrawn => true;
 
     private SpringAnimation Open =>
-        _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
+        _open ??= Motion.AddSpring(IsOpen ? 1 : 0, Spring(MotionRole.DefaultSpatial));
 
     internal void SnapOpenState(bool isOpen)
     {
@@ -134,10 +126,10 @@ public class MaterialSnackbar : TemplatedControl
     }
 
     private CornerRadius ContainerCornerRadius =>
-        _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
 
     private Color ShadowColor =>
-        _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        ResolvedTheme.ColorScheme?.GetColor(SysColorToken.Shadow, IsDarkVariant) ?? Colors.Black;
 
     public override void Render(DrawingContext context)
     {
@@ -178,14 +170,24 @@ public class MaterialSnackbar : TemplatedControl
         if (change.Property == IsOpenProperty)
         {
             _shownFor = TimeSpan.Zero;
-            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
-            _motion.Start();
+            Open.AnimateTo(IsOpen ? 1 : 0, Spring(MotionRole.DefaultSpatial));
+            Motion.Start();
             IsHitTestVisible = IsOpen;
         }
         else if (change.Property == ActionProperty)
         {
             ApplyActionTypography();
         }
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
+    protected override void OnMotionTick()
+    {
+        OnFrame();
     }
 
     /// <summary>
@@ -213,13 +215,13 @@ public class MaterialSnackbar : TemplatedControl
         var previousMessage = MessageBrush;
         var previousAction = ActionBrush;
 
-        _tokens = _theme.Theme.SnackbarTokens;
-        _colors = _theme.Theme.GetSnackbarColors(_theme.IsDark);
+        _tokens = ResolvedTheme.SnackbarTokens;
+        _colors = ResolvedTheme.GetSnackbarColors(IsDarkVariant);
 
         RaisePropertyChanged(MessageBrushProperty, previousMessage, MessageBrush);
         RaisePropertyChanged(ActionBrushProperty, previousAction, ActionBrush);
 
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
 
         // Snackbar.kt's one-row layout uses 16dp at the message edge and 8dp at the action edge.
         // Keep that asymmetric contract even without an action; it also leaves the generated
@@ -246,7 +248,7 @@ public class MaterialSnackbar : TemplatedControl
         if (text is null)
             return;
 
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
         var scale = typography.GetTypeScale(_tokens.ActionTextStyle);
         text.FontFamily = typography.GetFontFamily(_tokens.ActionTextStyle);
         text.FontWeight = typography.GetFontWeight(_tokens.ActionTextStyle);

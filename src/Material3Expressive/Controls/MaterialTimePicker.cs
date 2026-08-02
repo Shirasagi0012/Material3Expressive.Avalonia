@@ -28,7 +28,7 @@ public enum TimePickerField
 /// dead, and tapping a number on the far side sweeps to it instead of jumping.
 /// </para>
 /// </remarks>
-public class MaterialTimePicker : TemplatedControl
+public class MaterialTimePicker : MaterialControl
 {
     /// <inheritdoc cref="State" />
     public static readonly DirectProperty<MaterialTimePicker, MaterialTimePickerState> StateProperty =
@@ -49,8 +49,6 @@ public class MaterialTimePicker : TemplatedControl
     /// <summary>Twelve o'clock is up, and angles are measured from there.</summary>
     private const double TopAngle = -90;
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
     private MaterialTimePickerState _state = new();
     private bool _updatingFromState;
 
@@ -61,11 +59,6 @@ public class MaterialTimePicker : TemplatedControl
 
     public MaterialTimePicker()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => InvalidateVisual();
-
-        _theme.Changed += (_, _) => ApplyTokens();
         _state.PropertyChanged += OnStateChanged;
         Focusable = true;
         ApplyTokens();
@@ -113,14 +106,14 @@ public class MaterialTimePicker : TemplatedControl
     }
 
     private double HeadlineHeight =>
-        _theme.Theme.Typography.GetTypeScale(_tokens.HeadlineTextStyle).LineHeight + 32;
+        ResolvedTheme.Typography.GetTypeScale(_tokens.HeadlineTextStyle).LineHeight + 32;
 
     private SpringAnimation Hand =>
-        _hand ??= _motion.AddSpring(TargetAngle(), _theme.Spring(MotionRole.FastSpatial));
+        _hand ??= Motion.AddSpring(TargetAngle(), Spring(MotionRole.FastSpatial));
 
     public override void Render(DrawingContext context)
     {
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        var corners = ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
         MaterialContainer.Draw(context, Bounds.Size, corners, _colors.ContainerColor);
 
         DrawHeadline(context);
@@ -182,9 +175,14 @@ public class MaterialTimePicker : TemplatedControl
 
         if (change.Property == TimeProperty || change.Property == FieldProperty)
         {
-            Hand.AnimateTo(TargetAngle(), _theme.Spring(MotionRole.FastSpatial));
-            _motion.Start();
+            Hand.AnimateTo(TargetAngle(), Spring(MotionRole.FastSpatial));
+            Motion.Start();
         }
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
     }
 
     private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
@@ -227,7 +225,7 @@ public class MaterialTimePicker : TemplatedControl
 
     private void DrawHeadline(DrawingContext context)
     {
-        var size = _theme.Theme.Typography.GetTypeScale(_tokens.HeadlineTextStyle).FontSize;
+        var size = ResolvedTheme.Typography.GetTypeScale(_tokens.HeadlineTextStyle).FontSize;
         var text = Text(
             $"{Time.Hours % 24:00}:{Time.Minutes:00}",
             size,
@@ -256,7 +254,7 @@ public class MaterialTimePicker : TemplatedControl
         context.DrawEllipse(_colors.DayColor, null, centre, 4, 4);
         context.DrawEllipse(_colors.DayColor, null, handEnd, _tokens.DaySize / 2, _tokens.DaySize / 2);
 
-        var fontSize = _theme.Theme.Typography.GetTypeScale(_tokens.DayTextStyle).FontSize;
+        var fontSize = ResolvedTheme.Typography.GetTypeScale(_tokens.DayTextStyle).FontSize;
         var count = Field == TimePickerField.Hour ? 12 : 12;
         var step = Field == TimePickerField.Hour ? 1 : 5;
 
@@ -318,7 +316,7 @@ public class MaterialTimePicker : TemplatedControl
 
     private FormattedText Text(string value, double size, IImmutableBrush brush)
     {
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
 
         return new FormattedText(
             value,
@@ -331,8 +329,8 @@ public class MaterialTimePicker : TemplatedControl
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetPickerTokens(PickerVariant.Time);
-        _colors = _theme.Theme.GetPickerColors(PickerVariant.Time, _theme.IsDark);
+        _tokens = ResolvedTheme.GetPickerTokens(PickerVariant.Time);
+        _colors = ResolvedTheme.GetPickerColors(PickerVariant.Time, IsDarkVariant);
 
         InvalidateMeasure();
         InvalidateVisual();

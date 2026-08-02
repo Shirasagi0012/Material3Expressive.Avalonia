@@ -107,7 +107,7 @@ public sealed class AppBarScrollState : INotifyPropertyChanged
 /// <summary>
 /// A standard or flexible Material top app bar with optional scroll coordination.
 /// </summary>
-public class MaterialAppBar : TemplatedControl
+public class MaterialAppBar : MaterialControl
 {
     public static readonly StyledProperty<AppBarSize> SizeProperty =
         AvaloniaProperty.Register<MaterialAppBar, AppBarSize>(nameof(Size));
@@ -175,8 +175,6 @@ public class MaterialAppBar : TemplatedControl
         AvaloniaProperty.RegisterDirect<MaterialAppBar, FontWeight>(
             nameof(SubtitleFontWeight), owner => owner.SubtitleFontWeight);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
     private AppBarTokens _tokens = AppBarTokens.Small;
     private AppBarColors _colors = AppBarTokens.Small.Resolve(null, false);
     private AppBarScrollState _state = new();
@@ -197,10 +195,6 @@ public class MaterialAppBar : TemplatedControl
 
     public MaterialAppBar()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => SetVisualFraction(_motionFraction?.Value ?? _visualCollapsedFraction);
-        _theme.Changed += (_, _) => ApplyTokens();
         _state.PropertyChanged += OnStateChanged;
         ApplyTokens();
     }
@@ -414,6 +408,16 @@ public class MaterialAppBar : TemplatedControl
         }
     }
 
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
+    protected override void OnMotionTick()
+    {
+        SetVisualFraction(_motionFraction?.Value ?? _visualCollapsedFraction);
+    }
+
     private double ExpandedHeight =>
         Variant == AppBarVariant.Flexible
             ? Subtitle is null
@@ -526,15 +530,15 @@ public class MaterialAppBar : TemplatedControl
 
     private void AnimateTo(double target, bool snap)
     {
-        _motionFraction ??= _motion.AddSpring(
+        _motionFraction ??= Motion.AddSpring(
             _visualCollapsedFraction,
-            _theme.Spring(MotionRole.DefaultSpatial));
+            Spring(MotionRole.DefaultSpatial));
         if (snap)
             _motionFraction.SnapTo(target);
         else
         {
-            _motionFraction.AnimateTo(target, _theme.Spring(MotionRole.DefaultSpatial));
-            _motion.Start();
+            _motionFraction.AnimateTo(target, Spring(MotionRole.DefaultSpatial));
+            Motion.Start();
         }
         SetVisualFraction(_motionFraction.Value);
     }
@@ -610,9 +614,9 @@ public class MaterialAppBar : TemplatedControl
         var oldSubtitleFamily = SubtitleFontFamily;
         var oldSubtitleWeight = SubtitleFontWeight;
 
-        _tokens = _theme.Theme.GetAppBarTokens(Size);
-        _colors = _theme.Theme.GetAppBarColors(Size, _theme.IsDark);
-        var typography = _theme.Theme.Typography;
+        _tokens = ResolvedTheme.GetAppBarTokens(Size);
+        _colors = ResolvedTheme.GetAppBarColors(Size, IsDarkVariant);
+        var typography = ResolvedTheme.Typography;
         var titleRole = Variant == AppBarVariant.Flexible
             ? _tokens.FlexibleTitleTextStyle
             : _tokens.TitleTextStyle;

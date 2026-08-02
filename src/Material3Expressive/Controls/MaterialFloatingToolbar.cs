@@ -140,7 +140,7 @@ public sealed class FloatingToolbarScrollState : INotifyPropertyChanged
 /// corresponding Compose overload. When <see cref="FloatingActionButton"/> is present, collapse
 /// clips the complete toolbar and grows that FAB from 56 to 80 DIPs.
 /// </remarks>
-public sealed class MaterialFloatingToolbar : TemplatedControl
+public sealed class MaterialFloatingToolbar : MaterialControl
 {
     public static readonly StyledProperty<FloatingToolbarOrientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialFloatingToolbar, FloatingToolbarOrientation>(
@@ -237,8 +237,6 @@ public sealed class MaterialFloatingToolbar : TemplatedControl
         AvaloniaProperty.RegisterDirect<MaterialFloatingToolbar, double>(
             nameof(ScrollOffsetY), owner => owner.ScrollOffsetY);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
     private FloatingToolbarTokens _tokens = FloatingToolbarTokens.Standard;
     private FloatingToolbarColors _colors = FloatingToolbarTokens.Standard.Resolve(null, false);
     private FloatingToolbarScrollState _state = new();
@@ -252,10 +250,6 @@ public sealed class MaterialFloatingToolbar : TemplatedControl
 
     public MaterialFloatingToolbar()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => SetExpansionProgress(_expansion?.Value ?? _expansionProgress);
-        _theme.Changed += (_, _) => ApplyTokens();
         _state.PropertyChanged += OnStatePropertyChanged;
         Items.CollectionChanged += (_, _) => ApplyItemMetrics();
         AddHandler(KeyDownEvent, OnToolbarKeyDown, Avalonia.Interactivity.RoutingStrategies.Bubble);
@@ -393,7 +387,7 @@ public sealed class MaterialFloatingToolbar : TemplatedControl
     {
         base.OnAttachedToVisualTree(e);
         UpdateFocusability();
-        _motion.Start();
+        Motion.Start();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -439,6 +433,16 @@ public sealed class MaterialFloatingToolbar : TemplatedControl
         }
     }
 
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
+    protected override void OnMotionTick()
+    {
+        SetExpansionProgress(_expansion?.Value ?? _expansionProgress);
+    }
+
     internal void ResolveOrientation(Size available)
     {
         var next = Orientation switch
@@ -467,7 +471,7 @@ public sealed class MaterialFloatingToolbar : TemplatedControl
     }
 
     private SpringAnimation ExpansionAnimation =>
-        _expansion ??= _motion.AddSpring(_expansionProgress, _theme.Spring(MotionRole.FastSpatial));
+        _expansion ??= Motion.AddSpring(_expansionProgress, Spring(MotionRole.FastSpatial));
 
     private void AnimateExpansion()
     {
@@ -479,8 +483,8 @@ public sealed class MaterialFloatingToolbar : TemplatedControl
             return;
         }
 
-        ExpansionAnimation.AnimateTo(target, _theme.Spring(MotionRole.FastSpatial));
-        _motion.Start();
+        ExpansionAnimation.AnimateTo(target, Spring(MotionRole.FastSpatial));
+        Motion.Start();
     }
 
     private void SetExpansionProgress(double value)
@@ -610,8 +614,8 @@ public sealed class MaterialFloatingToolbar : TemplatedControl
         var oldScreenOffset = ScreenOffset;
         var oldElevation = CurrentElevation;
 
-        _tokens = _theme.Theme.GetFloatingToolbarTokens(Variant);
-        _colors = _theme.Theme.GetFloatingToolbarColors(Variant, _theme.IsDark);
+        _tokens = ResolvedTheme.GetFloatingToolbarTokens(Variant);
+        _colors = ResolvedTheme.GetFloatingToolbarColors(Variant, IsDarkVariant);
         ApplyFabDefaults();
 
         RaisePropertyChanged(ToolbarBrushProperty, oldBrush, ToolbarBrush);
