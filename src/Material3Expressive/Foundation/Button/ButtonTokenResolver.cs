@@ -28,6 +28,10 @@ internal static class ButtonTokenResolver
             ButtonToken.DisabledLabelTextColor => Color(static colors => colors.DisabledLabelTextColor),
             ButtonToken.DisabledIconColor => Color(static colors => colors.DisabledIconColor),
             ButtonToken.DisabledOutlineColor => Color(static colors => colors.DisabledOutlineColor),
+            ButtonToken.UnselectedContainerColor => Color(static colors => colors.UnselectedContainerColor),
+            ButtonToken.SelectedContainerColor => Color(static colors => colors.SelectedContainerColor),
+            ButtonToken.UnselectedLabelTextColor => Color(static colors => colors.UnselectedLabelTextColor),
+            ButtonToken.SelectedLabelTextColor => Color(static colors => colors.SelectedLabelTextColor),
 
             ButtonToken.ContainerCornerRadius =>
                 Metric((theme, size) => CornerRadius(theme, size, Metrics(theme, size).ContainerShape)),
@@ -35,6 +39,8 @@ internal static class ButtonTokenResolver
                 Metric((theme, size) => CornerRadius(theme, size, Metrics(theme, size).PressedContainerShape)),
             ButtonToken.ContentPadding => Metric((theme, size) => ContentPadding(Metrics(theme, size))),
             ButtonToken.ContainerHeight => Metric((theme, size) => Metrics(theme, size).ContainerHeight),
+            ButtonToken.ToggleContainerHeight => Metric(
+                (theme, size) => Math.Max(48, Metrics(theme, size).ContainerHeight)),
             ButtonToken.IconSize => Metric((theme, size) => Metrics(theme, size).IconSize),
             ButtonToken.IconLabelSpace => Metric((theme, size) => Metrics(theme, size).IconLabelSpace),
             ButtonToken.OutlineWidth => Metric((theme, size) => Metrics(theme, size).OutlineWidth),

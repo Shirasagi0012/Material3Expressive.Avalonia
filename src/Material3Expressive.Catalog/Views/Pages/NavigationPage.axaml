@@ -210,9 +210,9 @@
                     <Border Classes="demo-canvas" Height="520" MinWidth="320" MaxWidth="900">
                         <m3:MaterialNavigationSuiteScaffold SelectedIndex="1">
                             <m3:MaterialNavigationSuiteScaffold.PrimaryAction>
-                                <m3:MaterialIconButton>
+                                <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                     <ms:MaterialSymbol Symbol="Add" />
-                                </m3:MaterialIconButton>
+                                </Button>
                             </m3:MaterialNavigationSuiteScaffold.PrimaryAction>
                             <m3:MaterialNavigationSuiteScaffold.Items>
                                 <m3:MaterialNavigationItem Content="Home">

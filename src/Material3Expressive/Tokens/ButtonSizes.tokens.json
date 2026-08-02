@@ -59,8 +59,9 @@
         "LeadingSpace": "@ButtonSmallTokens.LeadingSpace",
         "TrailingSpace": "@ButtonSmallTokens.TrailingSpace",
         // ButtonDefaults.smallVerticalPadding is 8dp for precision pointers and 10dp for coarse
-        // ones. Avalonia has no equivalent of that signal, so the desktop value is the default.
-        "VerticalSpace": 8,
+        // ones. Avalonia has no equivalent of that signal, so the coarse-pointer value is the
+        // default.
+        "VerticalSpace": 10,
         "IconSize": "@ButtonSmallTokens.IconSize",
         "IconLabelSpace": "@ButtonSmallTokens.IconLabelSpace",
         "OutlineWidth": "@ButtonSmallTokens.OutlinedOutlineWidth",

@@ -33,10 +33,10 @@
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="20" LineSpacing="20" VerticalAlignment="Center">
                             <!-- <Button Content="Template button" /> -->
-                            <Button m3:ButtonAssist.Variant="Filled">Native button</Button>
-                            <m3:MaterialIconButton Variant="Tonal">
+                            <Button m3:ButtonAssist.IsSquare="True">Native button</Button>
+                            <Button Theme="{StaticResource MaterialTonalIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="TouchApp" />
-                            </m3:MaterialIconButton>
+                            </Button>
                             <m3:MaterialCheckbox Content="Unbounded ripple" />
                             <m3:MaterialSwitch Content="Track focus ring" />
                         </WrapPanel>
@@ -109,21 +109,21 @@
                     <TextBlock Classes="title-large" Text="Variants" />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialIconButton Variant="Standard">
+                            <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Filled">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialFilledIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Tonal">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialTonalIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Outlined">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialOutlinedIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Filled" IsEnabled="False">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialFilledIconButtonTheme}" IsEnabled="False">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialIconButton>
+                            </Button>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -132,21 +132,27 @@
                     <TextBlock Classes="title-large" Text="Sizes, and square containers" />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialIconButton Variant="Filled" Size="ExtraSmall">
+                            <Button Theme="{StaticResource MaterialFilledIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="ExtraSmall">
                                 <ms:MaterialSymbol Symbol="Edit" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Filled" Size="Small">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialFilledIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="Small">
                                 <ms:MaterialSymbol Symbol="Edit" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Filled" Size="Medium">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialFilledIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="Medium">
                                 <ms:MaterialSymbol Symbol="Edit" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" IsSquare="True">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialTonalIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="Medium"
+                                    m3:IconButtonAssist.IsSquare="True">
                                 <ms:MaterialSymbol Symbol="Edit" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Filled" Size="Large">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialFilledIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="Large">
                                 <ms:MaterialSymbol Symbol="Edit" />
-                            </m3:MaterialIconButton>
+                            </Button>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -158,15 +164,21 @@
                                Text="Narrow, default and wide are independent of size — two axes, not six token sets." />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Narrow">
+                            <Button Theme="{StaticResource MaterialTonalIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="Medium"
+                                    m3:IconButtonAssist.ButtonWidth="Narrow">
                                 <ms:MaterialSymbol Symbol="Close" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Default">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialTonalIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="Medium"
+                                    m3:IconButtonAssist.ButtonWidth="Default">
                                 <ms:MaterialSymbol Symbol="Close" />
-                            </m3:MaterialIconButton>
-                            <m3:MaterialIconButton Variant="Tonal" Size="Medium" ButtonWidth="Wide">
+                            </Button>
+                            <Button Theme="{StaticResource MaterialTonalIconButtonTheme}"
+                                    m3:IconButtonAssist.Size="Medium"
+                                    m3:IconButtonAssist.ButtonWidth="Wide">
                                 <ms:MaterialSymbol Symbol="Close" />
-                            </m3:MaterialIconButton>
+                            </Button>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -181,9 +193,9 @@
                                Text="Checking a toggle swaps its shape as well as its colours — a round button squares off, and back, on the same spring the press uses." />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialToggleButton Variant="Filled">Filled</m3:MaterialToggleButton>
-                            <m3:MaterialToggleButton Variant="Tonal" IsChecked="True">Tonal</m3:MaterialToggleButton>
-                            <m3:MaterialToggleButton Variant="Outlined">Outlined</m3:MaterialToggleButton>
+                            <ToggleButton m3:ButtonAssist.Variant="Filled">Filled</ToggleButton>
+                            <ToggleButton m3:ButtonAssist.Variant="Tonal" IsChecked="True">Tonal</ToggleButton>
+                            <ToggleButton m3:ButtonAssist.Variant="Outlined">Outlined</ToggleButton>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -192,18 +204,18 @@
                     <TextBlock Classes="title-large" Text="Toggle icon buttons" />
                     <Border Classes="demo-canvas">
                         <WrapPanel ItemSpacing="16" LineSpacing="16" VerticalAlignment="Center">
-                            <m3:MaterialToggleIconButton Variant="Standard">
+                            <ToggleButton Theme="{StaticResource MaterialStandardToggleIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialToggleIconButton>
-                            <m3:MaterialToggleIconButton Variant="Filled" IsChecked="True">
+                            </ToggleButton>
+                            <ToggleButton Theme="{StaticResource MaterialFilledToggleIconButtonTheme}" IsChecked="True">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialToggleIconButton>
-                            <m3:MaterialToggleIconButton Variant="Tonal">
+                            </ToggleButton>
+                            <ToggleButton Theme="{StaticResource MaterialTonalToggleIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialToggleIconButton>
-                            <m3:MaterialToggleIconButton Variant="Outlined">
+                            </ToggleButton>
+                            <ToggleButton Theme="{StaticResource MaterialOutlinedToggleIconButtonTheme}">
                                 <ms:MaterialSymbol Symbol="Star" />
-                            </m3:MaterialToggleIconButton>
+                            </ToggleButton>
                         </WrapPanel>
                     </Border>
                 </StackPanel>
@@ -218,10 +230,10 @@
                                Text="A connected group keeps the row's outer corners round and tightens the ones where segments meet — something no button can work out about itself." />
                     <Border Classes="demo-canvas">
                         <m3:MaterialButtonGroup Variant="Connected" HorizontalAlignment="Left">
-                            <m3:MaterialToggleButton Variant="Tonal" Content="Day" IsChecked="True" />
-                            <m3:MaterialToggleButton Variant="Tonal" Content="Week" />
-                            <m3:MaterialToggleButton Variant="Tonal" Content="Month" />
-                            <m3:MaterialToggleButton Variant="Tonal" Content="Year" />
+                            <ToggleButton m3:ButtonAssist.Variant="Tonal" Content="Day" IsChecked="True" />
+                            <ToggleButton m3:ButtonAssist.Variant="Tonal" Content="Week" />
+                            <ToggleButton m3:ButtonAssist.Variant="Tonal" Content="Month" />
+                            <ToggleButton m3:ButtonAssist.Variant="Tonal" Content="Year" />
                         </m3:MaterialButtonGroup>
                     </Border>
                 </StackPanel>

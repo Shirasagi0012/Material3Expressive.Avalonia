@@ -15,11 +15,11 @@ public static class ButtonAssist
 {
     public static readonly AttachedProperty<ButtonVariant> VariantProperty =
         AvaloniaProperty.RegisterAttached<Button, ButtonVariant>(
-            "Variant", typeof(ButtonAssist), ButtonVariant.Filled);
+            "Variant", typeof(ButtonAssist), ButtonVariant.Filled, inherits: true);
 
     public static readonly AttachedProperty<ButtonSize> SizeProperty =
         AvaloniaProperty.RegisterAttached<Button, ButtonSize>(
-            "Size", typeof(ButtonAssist), ButtonSize.Small);
+            "Size", typeof(ButtonAssist), ButtonSize.Small, inherits: true);
 
     public static readonly AttachedProperty<bool> IsSquareProperty =
         AvaloniaProperty.RegisterAttached<Button, bool>("IsSquare", typeof(ButtonAssist));

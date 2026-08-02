@@ -4,9 +4,9 @@
     <Design.PreviewWith>
         <Border Padding="24">
             <m3:MaterialFloatingToolbar>
-                <m3:MaterialIconButton Content="A" />
-                <m3:MaterialIconButton Content="B" Variant="Filled" />
-                <m3:MaterialIconButton Content="C" />
+                <Button Theme="{StaticResource MaterialStandardIconButtonTheme}" Content="A" />
+                <Button Theme="{StaticResource MaterialFilledIconButtonTheme}" Content="B" />
+                <Button Theme="{StaticResource MaterialStandardIconButtonTheme}" Content="C" />
             </m3:MaterialFloatingToolbar>
         </Border>
     </Design.PreviewWith>

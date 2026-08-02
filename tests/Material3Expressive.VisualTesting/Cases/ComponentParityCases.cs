@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Controls;
@@ -180,18 +181,22 @@ internal static class ComponentParityCases
         Scene(
             "togglebutton/tonal/selected/light",
             new PixelSize(160, 96),
-            _ => new MaterialToggleButton
+            _ =>
             {
-                Name = "component",
-                Variant = ButtonVariant.Tonal,
-                IsChecked = true,
-                Content = new TextBlock
+                var button = new ToggleButton
                 {
-                    Name = "label",
-                    Text = "Tonal"
-                },
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                    Name = "component",
+                    IsChecked = true,
+                    Content = new TextBlock
+                    {
+                        Name = "label",
+                        Text = "Tonal"
+                    },
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
+                return button;
             },
             context => context.SettleAnimations());
 

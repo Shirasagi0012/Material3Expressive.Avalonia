@@ -28,6 +28,7 @@ public sealed class MaterialRipplePresenter : Control
         AvaloniaProperty.Register<MaterialRipplePresenter, double>(nameof(RippleRadius), double.NaN);
 
     private MaterialInteractionHost? _interaction;
+    private Control? _owner;
 
     public MaterialRipplePresenter()
     {
@@ -64,15 +65,20 @@ public sealed class MaterialRipplePresenter : Control
     {
         base.Render(context);
         ApplyConfiguration();
-        _interaction?.DrawLayers(context, StateLayerBrush, CornerRadius);
+        if (_interaction is not { } interaction)
+            return;
+
+        var area = interaction.InteractionArea ?? new Rect(Bounds.Size);
+        using (context.PushTransform(Matrix.CreateTranslation(-area.X, -area.Y)))
+            interaction.DrawLayers(context, StateLayerBrush, CornerRadius);
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
 
-        var owner = TemplatedParent as Control ?? this;
-        _interaction = MaterialInteraction.GetOrCreate(owner);
+        _owner = TemplatedParent as Control ?? this;
+        _interaction = MaterialInteraction.GetOrCreate(_owner);
         _interaction.Ticked += OnInteractionChanged;
         _interaction.InteractionChanged += OnInteractionChanged;
         ApplyConfiguration();
@@ -87,6 +93,7 @@ public sealed class MaterialRipplePresenter : Control
         }
 
         _interaction = null;
+        _owner = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -109,7 +116,13 @@ public sealed class MaterialRipplePresenter : Control
         if (_interaction is not { } interaction)
             return;
 
-        interaction.InteractionArea = new Rect(Bounds.Size);
+        var origin = _owner is { } owner
+            ? this.TranslatePoint(default, owner) ?? default
+            : default;
+        var area = new Rect(origin, Bounds.Size);
+        interaction.InteractionArea = area;
+        interaction.FocusRingArea = area;
+        interaction.FocusRingCornerRadius = CornerRadius;
         interaction.IsRippleBounded = IsBounded;
         interaction.RippleRadius = double.IsFinite(RippleRadius) ? RippleRadius : null;
     }

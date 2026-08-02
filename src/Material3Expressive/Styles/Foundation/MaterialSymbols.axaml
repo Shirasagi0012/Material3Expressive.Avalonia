@@ -18,9 +18,6 @@
     <!-- Selection is expressed through the variable font instead of swapping two glyphs. These
          selectors target only M3E controls; an application remains free to use Fill independently
          on MaterialSymbol controls elsewhere. -->
-    <Style Selector="m3|MaterialToggleIconButton:checked ms|MaterialSymbol">
-        <Setter Property="Fill" Value="1" />
-    </Style>
     <Style Selector="m3|MaterialNavigationItem:checked ms|MaterialSymbol">
         <Setter Property="Fill" Value="1" />
     </Style>
@@ -28,6 +25,9 @@
         <Setter Property="Fill" Value="1" />
     </Style>
     <Style Selector="m3|MaterialChip:checked ms|MaterialSymbol">
+        <Setter Property="Fill" Value="1" />
+    </Style>
+    <Style Selector=":is(ToggleButton):checked[(m3|IconButtonAssist.IsIconButton)=True] ms|MaterialSymbol">
         <Setter Property="Fill" Value="1" />
     </Style>
 

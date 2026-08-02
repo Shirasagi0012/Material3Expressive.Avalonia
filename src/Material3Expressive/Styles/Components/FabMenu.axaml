@@ -30,12 +30,13 @@
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
-                        <m3:MaterialToggleIconButton x:Name="PART_Toggle"
-                                                     HorizontalAlignment="Right"
-                                                     Variant="Filled"
-                                                     Size="Medium"
-                                                     Content="{TemplateBinding Icon}"
-                                                     IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
+                        <ToggleButton x:Name="PART_Toggle"
+                                      Theme="{StaticResource MaterialFilledToggleIconButtonTheme}"
+                                      HorizontalAlignment="Right"
+                                      m3:IconButtonAssist.Variant="Filled"
+                                      m3:IconButtonAssist.Size="Medium"
+                                      Content="{TemplateBinding Icon}"
+                                      IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
                     </StackPanel>
                 </ControlTemplate>
             </Setter>

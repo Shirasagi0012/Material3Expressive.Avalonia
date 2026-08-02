@@ -125,23 +125,23 @@
                                 <m3:MaterialFloatingToolbar x:Name="HorizontalToolbar"
                                                             HorizontalAlignment="Left">
                                     <m3:MaterialFloatingToolbar.LeadingContent>
-                                        <m3:MaterialIconButton Variant="Tonal">
+                                        <Button Theme="{StaticResource MaterialTonalIconButtonTheme}">
                                             <ms:MaterialSymbol Symbol="Create" />
-                                        </m3:MaterialIconButton>
+                                        </Button>
                                     </m3:MaterialFloatingToolbar.LeadingContent>
-                                    <m3:MaterialIconButton>
+                                    <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                         <ms:MaterialSymbol Symbol="Check" />
-                                    </m3:MaterialIconButton>
-                                    <m3:MaterialIconButton Variant="Filled">
+                                    </Button>
+                                    <Button Theme="{StaticResource MaterialFilledIconButtonTheme}">
                                         <ms:MaterialSymbol Symbol="Favorite" />
-                                    </m3:MaterialIconButton>
-                                    <m3:MaterialIconButton>
+                                    </Button>
+                                    <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                         <ms:MaterialSymbol Symbol="Edit" />
-                                    </m3:MaterialIconButton>
+                                    </Button>
                                     <m3:MaterialFloatingToolbar.TrailingContent>
-                                        <m3:MaterialIconButton Variant="Tonal">
+                                        <Button Theme="{StaticResource MaterialTonalIconButtonTheme}">
                                             <ms:MaterialSymbol Symbol="Delete" />
-                                        </m3:MaterialIconButton>
+                                        </Button>
                                     </m3:MaterialFloatingToolbar.TrailingContent>
                                 </m3:MaterialFloatingToolbar>
 
@@ -152,15 +152,15 @@
                                             <ms:MaterialSymbol Symbol="Add" />
                                         </m3:MaterialFab>
                                     </m3:MaterialFloatingToolbar.FloatingActionButton>
-                                    <m3:MaterialIconButton>
+                                    <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                         <ms:MaterialSymbol Symbol="Check" />
-                                    </m3:MaterialIconButton>
-                                    <m3:MaterialIconButton>
+                                    </Button>
+                                    <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                         <ms:MaterialSymbol Symbol="Edit" />
-                                    </m3:MaterialIconButton>
-                                    <m3:MaterialIconButton>
+                                    </Button>
+                                    <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                         <ms:MaterialSymbol Symbol="Favorite" />
-                                    </m3:MaterialIconButton>
+                                    </Button>
                                 </m3:MaterialFloatingToolbar>
                             </StackPanel>
 
@@ -169,15 +169,15 @@
                                                         Orientation="Vertical"
                                                         Variant="Vibrant"
                                                         VerticalAlignment="Top">
-                                <m3:MaterialIconButton>
+                                <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                     <ms:MaterialSymbol Symbol="Check" />
-                                </m3:MaterialIconButton>
-                                <m3:MaterialIconButton Variant="Filled">
+                                </Button>
+                                <Button Theme="{StaticResource MaterialFilledIconButtonTheme}">
                                     <ms:MaterialSymbol Symbol="Favorite" />
-                                </m3:MaterialIconButton>
-                                <m3:MaterialIconButton>
+                                </Button>
+                                <Button Theme="{StaticResource MaterialStandardIconButtonTheme}">
                                     <ms:MaterialSymbol Symbol="Edit" />
-                                </m3:MaterialIconButton>
+                                </Button>
                             </m3:MaterialFloatingToolbar>
                         </Grid>
                     </Border>

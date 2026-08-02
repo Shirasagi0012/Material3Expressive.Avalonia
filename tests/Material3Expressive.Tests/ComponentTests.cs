@@ -2,6 +2,7 @@ using System.Linq;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
@@ -982,7 +983,8 @@ public class ButtonGroupTests
 
         var leading = split.GetVisualDescendants().OfType<Button>()
             .FirstOrDefault(button => button.Name == "PART_Leading");
-        var trailing = split.GetVisualDescendants().OfType<MaterialToggleButton>().FirstOrDefault();
+        var trailing = split.GetVisualDescendants().OfType<ToggleButton>()
+            .FirstOrDefault(button => button.Name == "PART_Trailing");
 
         Assert.NotNull(leading);
         Assert.NotNull(trailing);
@@ -992,8 +994,9 @@ public class ButtonGroupTests
         var leadingShape = ButtonAssist.GetContainerShapeOverride(leading!);
         Assert.Equal(CornerSize.Full, leadingShape!.TopStart);
         Assert.Equal(inner, leadingShape.TopEnd);
-        Assert.Equal(inner, trailing!.ContainerShapeOverride!.TopStart);
-        Assert.Equal(CornerSize.Full, trailing.ContainerShapeOverride!.TopEnd);
+        var trailingShape = ButtonAssist.GetContainerShapeOverride(trailing!);
+        Assert.Equal(inner, trailingShape!.TopStart);
+        Assert.Equal(CornerSize.Full, trailingShape.TopEnd);
     }
 }
 

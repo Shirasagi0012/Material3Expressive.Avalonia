@@ -18,6 +18,9 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="ClipToBounds" Value="False" />
+            <!-- Buttons keep their token height: unlike panel stretch, the container is never
+                 deformed by a taller sibling. Matches androidx's min-height semantics. -->
+            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Background" Value="{m3:MdButtonToken ContainerColor}" />
             <Setter Property="Foreground" Value="{m3:MdButtonToken LabelTextColor}" />
             <Setter Property="BorderBrush" Value="{m3:MdButtonToken OutlineColor}" />
@@ -92,29 +95,86 @@
                       TargetType="m3:MaterialButton"
                       BasedOn="{StaticResource MaterialFilledButtonTheme}" />
 
-        <!-- ToggleButton has not moved in this experiment yet. Keep its existing implementation
-             isolated while Button becomes native-first. -->
-        <ControlTheme x:Key="{x:Type m3:MaterialToggleButton}" TargetType="m3:MaterialToggleButton">
+        <ControlTheme x:Key="MaterialToggleButtonCoreTheme" TargetType="ToggleButton">
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="ClipToBounds" Value="False" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="{m3:MdButtonToken UnselectedContainerColor}" />
+            <Setter Property="Foreground" Value="{m3:MdButtonToken UnselectedLabelTextColor}" />
+            <Setter Property="BorderBrush" Value="{m3:MdButtonToken OutlineColor}" />
+            <Setter Property="BorderThickness" Value="{m3:MdButtonToken ContainerOutlineThickness}" />
+            <Setter Property="Padding" Value="{m3:MdButtonToken ContentPadding}" />
+            <Setter Property="MinHeight" Value="{m3:MdButtonToken ToggleContainerHeight}" />
+            <Setter Property="m3:TypographyScheme.TextStyle" Value="{m3:MdButtonToken LabelTextStyle}" />
             <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <ContentPresenter Padding="{TemplateBinding Padding}"
-                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                      RecognizesAccessKey="True"
-                                      Content="{TemplateBinding Content}"
-                                      ContentTemplate="{TemplateBinding ContentTemplate}"
-                                      TextElement.Foreground="{TemplateBinding Foreground}"
-                                      TextElement.FontSize="{TemplateBinding FontSize}"
-                                      TextElement.FontFamily="{TemplateBinding FontFamily}"
-                                      TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                    <Grid Background="Transparent">
+                        <Grid Height="{m3:MdButtonToken ContainerHeight}"
+                              VerticalAlignment="Center">
+                            <m3:MaterialToggleButtonContainerPresenter x:Name="PART_Container" />
+                            <ContentPresenter Padding="{TemplateBinding Padding}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                            <m3:MaterialRipplePresenter
+                                StateLayerBrush="{m3:MdButtonToken StateLayerColor}"
+                                CornerRadius="{Binding CurrentCornerRadius, ElementName=PART_Container}" />
+                        </Grid>
+                    </Grid>
                 </ControlTemplate>
             </Setter>
+
+            <Style Selector="^:checked">
+                <Setter Property="Background" Value="{m3:MdButtonToken SelectedContainerColor}" />
+                <Setter Property="Foreground" Value="{m3:MdButtonToken SelectedLabelTextColor}" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Background" Value="{m3:MdButtonToken DisabledContainerColor}" />
+                <Setter Property="Foreground" Value="{m3:MdButtonToken DisabledLabelTextColor}" />
+                <Setter Property="BorderBrush" Value="{m3:MdButtonToken DisabledOutlineColor}" />
+            </Style>
         </ControlTheme>
+
+        <ControlTheme x:Key="MaterialFilledToggleButtonTheme"
+                      TargetType="ToggleButton"
+                      BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
+            <Setter Property="m3:ButtonAssist.Variant" Value="Filled" />
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialTonalToggleButtonTheme"
+                      TargetType="ToggleButton"
+                      BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
+            <Setter Property="m3:ButtonAssist.Variant" Value="Tonal" />
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialElevatedToggleButtonTheme"
+                      TargetType="ToggleButton"
+                      BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
+            <Setter Property="m3:ButtonAssist.Variant" Value="Elevated" />
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialOutlinedToggleButtonTheme"
+                      TargetType="ToggleButton"
+                      BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
+            <Setter Property="m3:ButtonAssist.Variant" Value="Outlined" />
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialTextToggleButtonTheme"
+                      TargetType="ToggleButton"
+                      BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
+            <Setter Property="m3:ButtonAssist.Variant" Value="Text" />
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type ToggleButton}"
+                      TargetType="ToggleButton"
+                      BasedOn="{StaticResource MaterialFilledToggleButtonTheme}" />
+        <ControlTheme x:Key="{x:Type m3:MaterialToggleButton}"
+                      TargetType="m3:MaterialToggleButton"
+                      BasedOn="{StaticResource MaterialFilledToggleButtonTheme}" />
     </Styles.Resources>
 </Styles>

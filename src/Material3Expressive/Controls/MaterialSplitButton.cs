@@ -24,7 +24,7 @@ namespace Material3Expressive.Controls;
 /// </para>
 /// </remarks>
 [TemplatePart(LeadingPartName, typeof(Button))]
-[TemplatePart(TrailingPartName, typeof(MaterialToggleButton))]
+[TemplatePart(TrailingPartName, typeof(ToggleButton))]
 public class MaterialSplitButton : TemplatedControl
 {
     private const string LeadingPartName = "PART_Leading";
@@ -51,7 +51,7 @@ public class MaterialSplitButton : TemplatedControl
         RoutedEvent.Register<MaterialSplitButton, RoutedEventArgs>(nameof(Click), RoutingStrategies.Bubble);
 
     private Button? _leading;
-    private MaterialToggleButton? _trailing;
+    private ToggleButton? _trailing;
 
     static MaterialSplitButton()
     {
@@ -111,7 +111,7 @@ public class MaterialSplitButton : TemplatedControl
             _leading.Click -= OnLeadingClick;
 
         _leading = e.NameScope.Find<Button>(LeadingPartName);
-        _trailing = e.NameScope.Find<MaterialToggleButton>(TrailingPartName);
+        _trailing = e.NameScope.Find<ToggleButton>(TrailingPartName);
 
         if (_leading is { })
             _leading.Click += OnLeadingClick;
@@ -158,6 +158,6 @@ public class MaterialSplitButton : TemplatedControl
             ButtonAssist.SetContainerShapeOverride(_leading, leadingShape);
 
         if (_trailing is { })
-            _trailing.ContainerShapeOverride = trailingShape;
+            ButtonAssist.SetContainerShapeOverride(_trailing, trailingShape);
     }
 }

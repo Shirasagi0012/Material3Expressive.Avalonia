@@ -20,13 +20,13 @@
         <Border Grid.Column="0" Background="{mcu:MdSysColor SurfaceContainer}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,16">
-                    <m3:MaterialToggleIconButton x:Name="ThemeToggle"
-                                                 Variant="Standard"
-                                                 HorizontalAlignment="Center"
-                                                 IsCheckedChanged="OnThemeToggled"
-                                                 ToolTip.Tip="Toggle dark theme">
+                    <ToggleButton x:Name="ThemeToggle"
+                                  Theme="{StaticResource MaterialStandardToggleIconButtonTheme}"
+                                  HorizontalAlignment="Center"
+                                  IsCheckedChanged="OnThemeToggled"
+                                  ToolTip.Tip="Toggle dark theme">
                         <ms:MaterialSymbol Symbol="DarkMode" />
-                    </m3:MaterialToggleIconButton>
+                    </ToggleButton>
                 </StackPanel>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto">

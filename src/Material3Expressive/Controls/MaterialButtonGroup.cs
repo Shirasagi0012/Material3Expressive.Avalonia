@@ -99,6 +99,11 @@ public class MaterialButtonGroup : Panel
 
             var length = horizontal ? child.DesiredSize.Width : child.DesiredSize.Height;
 
+            // Connected segments must stay contiguous even when a parent stretches the group
+            // taller than the buttons; the theme's centered default would gap them.
+            if (_tokens.IsConnected)
+                child.VerticalAlignment = VerticalAlignment.Stretch;
+
             child.Arrange(horizontal
                 ? new Rect(offset, 0, length, finalSize.Height)
                 : new Rect(0, offset, finalSize.Width, length));
@@ -157,11 +162,8 @@ public class MaterialButtonGroup : Panel
 
         switch (child)
         {
-            case MaterialToggleButton toggle:
-                toggle.ContainerShapeOverride = shape;
-                break;
-            case MaterialIconButton icon:
-                icon.ContainerShapeOverride = shape;
+            case Button icon when IconButtonAssist.GetIsIconButton(icon):
+                IconButtonAssist.SetContainerShapeOverride(icon, shape);
                 break;
             case Button button:
                 ButtonAssist.SetContainerShapeOverride(button, shape);

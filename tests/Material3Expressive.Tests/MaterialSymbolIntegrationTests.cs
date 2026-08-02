@@ -1,5 +1,9 @@
+using Avalonia;
 using Avalonia.Animation;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
+using Avalonia.Styling;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
@@ -16,17 +20,19 @@ public class MaterialSymbolIntegrationTests
     public void AnIconButton_ArrangesItsSymbolAtTheResolvedTokenSize()
     {
         var symbol = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Edit };
-        var button = new MaterialIconButton
+        var button = new Button
         {
-            Size = IconButtonSize.Large,
+            Theme = Theme("MaterialStandardIconButtonTheme"),
             Content = symbol,
         };
+        IconButtonAssist.SetSize(button, IconButtonSize.Large);
 
         var window = ThemeTestHelper.ShowWindow(button);
 
-        Assert.Equal(button.IconSize, symbol.Bounds.Width, 3);
-        Assert.Equal(button.IconSize, symbol.Bounds.Height, 3);
-        Assert.Equal(button.IconSize, symbol.ResolvedVariation.OpticalSize, 3);
+        var iconSize = IconButtonAssist.GetIconSize(button);
+        Assert.Equal(iconSize, symbol.Bounds.Width, 3);
+        Assert.Equal(iconSize, symbol.Bounds.Height, 3);
+        Assert.Equal(iconSize, symbol.ResolvedVariation.OpticalSize, 3);
         Assert.Equal(IconStyle.Rounded, symbol.Style);
         window.Close();
     }
@@ -41,8 +47,9 @@ public class MaterialSymbolIntegrationTests
             // than depending on the process-wide animation clock.
             Transitions = new Transitions(),
         };
-        var button = new MaterialToggleIconButton
+        var button = new ToggleButton
         {
+            Theme = Theme("MaterialStandardToggleIconButtonTheme"),
             Content = symbol,
             IsChecked = true,
         };
@@ -92,6 +99,12 @@ public class MaterialSymbolIntegrationTests
 
         Assert.Equal(1, symbol.Fill);
         window.Close();
+    }
+
+    private static ControlTheme Theme(string key)
+    {
+        Assert.True(Application.Current!.TryFindResource(key, out var resource));
+        return Assert.IsType<ControlTheme>(resource);
     }
 
 }
