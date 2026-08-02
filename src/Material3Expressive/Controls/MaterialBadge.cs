@@ -14,7 +14,7 @@ namespace Material3Expressive.Controls;
 /// often all a navigation item has room to say. The large one says how much, and grows wider than
 /// it is tall to fit.
 /// </remarks>
-public class MaterialBadge : TemplatedControl
+public class MaterialBadge : MaterialControl
 {
     public static readonly StyledProperty<BadgeVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialBadge, BadgeVariant>(nameof(Variant), BadgeVariant.Large);
@@ -23,16 +23,11 @@ public class MaterialBadge : TemplatedControl
     public static readonly StyledProperty<object?> CountProperty =
         AvaloniaProperty.Register<MaterialBadge, object?>(nameof(Count));
 
-    private readonly MaterialThemeWatcher _theme;
-
     private BadgeTokens _tokens = BadgeTokens.Large;
     private BadgeColors _colors = BadgeTokens.Large.Resolve(null, false);
 
     public MaterialBadge()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
-
         ApplyTokens();
     }
 
@@ -63,7 +58,7 @@ public class MaterialBadge : TemplatedControl
 
     public override void Render(DrawingContext context)
     {
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        var corners = ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
         MaterialContainer.Draw(context, Bounds.Size, corners, _colors.ContainerColor);
 
         base.Render(context);
@@ -86,15 +81,20 @@ public class MaterialBadge : TemplatedControl
             ApplyTokens();
     }
 
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
     private void ApplyTokens()
     {
         var previousHasLabel = HasLabel;
 
-        _tokens = _theme.Theme.GetBadgeTokens(Variant);
-        _colors = _theme.Theme.GetBadgeColors(Variant, _theme.IsDark);
+        _tokens = ResolvedTheme.GetBadgeTokens(Variant);
+        _colors = ResolvedTheme.GetBadgeColors(Variant, IsDarkVariant);
         RaisePropertyChanged(HasLabelProperty, previousHasLabel, HasLabel);
 
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
 
         Foreground = _colors.LabelTextColor;
         Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);

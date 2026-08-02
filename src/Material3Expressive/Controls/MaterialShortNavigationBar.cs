@@ -33,7 +33,7 @@ public enum ShortNavigationBarArrangement
 /// <summary>
 /// A compact adaptive destination bar with equal-weight and centered arrangements.
 /// </summary>
-public class MaterialShortNavigationBar : TemplatedControl
+public class MaterialShortNavigationBar : MaterialControl
 {
     /// <summary>The Material compact-to-medium width boundary, in Avalonia logical pixels (dp).</summary>
     public const double MediumWidthBreakpoint = 600;
@@ -62,7 +62,6 @@ public class MaterialShortNavigationBar : TemplatedControl
             nameof(ResolvedArrangement),
             owner => owner.ResolvedArrangement);
 
-    private readonly MaterialThemeWatcher _theme;
     private readonly HashSet<MaterialNavigationItem> _attachedItems = new();
     private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
     private ShortNavigationBarArrangement _resolvedArrangement = ShortNavigationBarArrangement.EqualWeight;
@@ -70,8 +69,6 @@ public class MaterialShortNavigationBar : TemplatedControl
 
     public MaterialShortNavigationBar()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
         Items.CollectionChanged += ItemsChanged;
         ApplyTokens();
     }
@@ -140,6 +137,11 @@ public class MaterialShortNavigationBar : TemplatedControl
             SyncSelection();
         else if (change.Property == ArrangementProperty || change.Property == ResponsiveBreakpointProperty)
             ResolveArrangement(Bounds.Width);
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -278,7 +280,7 @@ public class MaterialShortNavigationBar : TemplatedControl
 
     private void ApplyTokens()
     {
-        _colors = _theme.Theme.GetNavigationColors(NavigationVariant.Bar, _theme.IsDark);
+        _colors = ResolvedTheme.GetNavigationColors(NavigationVariant.Bar, IsDarkVariant);
         foreach (var item in Items)
             item.ApplyTokens();
         InvalidateVisual();

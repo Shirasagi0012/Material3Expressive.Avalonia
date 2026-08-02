@@ -22,7 +22,7 @@ public enum DividerOrientation { Horizontal, Vertical }
 // no-line meaning.
 
 /// <summary>A Material 3 horizontal or vertical divider.</summary>
-public sealed class MaterialDivider : TemplatedControl, IVisualBoundsProbe
+public sealed class MaterialDivider : MaterialControl, IVisualBoundsProbe
 {
     public static readonly StyledProperty<DividerOrientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialDivider, DividerOrientation>(nameof(Orientation));
@@ -33,7 +33,6 @@ public sealed class MaterialDivider : TemplatedControl, IVisualBoundsProbe
     public static readonly DirectProperty<MaterialDivider, IBrush?> DividerBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialDivider, IBrush?>(nameof(DividerBrush), o => o.DividerBrush, (o, value) => o.SetDividerBrush(value));
 
-    private readonly MaterialThemeWatcher _theme;
     private readonly HairlineStrokeVisual _hairlineStroke;
     private DividerColors _colors = DividerTokens.Default.Resolve(null, false);
     private IBrush? _dividerBrush;
@@ -52,8 +51,6 @@ public sealed class MaterialDivider : TemplatedControl, IVisualBoundsProbe
             IsTabStop = false,
             ZIndex = -1
         };
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTheme();
         IsHitTestVisible = false;
         Focusable = false;
         ApplyTheme();
@@ -153,7 +150,7 @@ public sealed class MaterialDivider : TemplatedControl, IVisualBoundsProbe
 
     private void ApplyTheme()
     {
-        _colors = _theme.Theme.GetDividerColors(_theme.IsDark);
+        _colors = ResolvedTheme.GetDividerColors(IsDarkVariant);
         if (!_hasExplicitBrush)
         {
             SetAndRaise(DividerBrushProperty, ref _dividerBrush, _colors.Color);
@@ -193,6 +190,11 @@ public sealed class MaterialDivider : TemplatedControl, IVisualBoundsProbe
             || change.Property == IsHairlineProperty
             || change.Property == DividerBrushProperty)
             _hairlineStroke?.InvalidateVisual();
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTheme();
     }
 
     private sealed class HairlineStrokeVisual(MaterialDivider owner) : Control

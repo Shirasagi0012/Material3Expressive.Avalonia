@@ -23,7 +23,7 @@ namespace Material3Expressive.Controls;
 /// told.
 /// </para>
 /// </remarks>
-public class MaterialDatePicker : TemplatedControl
+public class MaterialDatePicker : MaterialControl
 {
     /// <inheritdoc cref="State" />
     public static readonly DirectProperty<MaterialDatePicker, MaterialDatePickerState> StateProperty =
@@ -46,7 +46,6 @@ public class MaterialDatePicker : TemplatedControl
     private const int DaysPerWeek = 7;
     private const int MaxWeeks = 6;
 
-    private readonly MaterialThemeWatcher _theme;
     private MaterialDatePickerState _state = new();
     private bool _updatingFromState;
 
@@ -55,8 +54,6 @@ public class MaterialDatePicker : TemplatedControl
 
     public MaterialDatePicker()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
         _state.PropertyChanged += OnStateChanged;
         SetCurrentValue(SelectedDateProperty, _state.SelectedDate);
         SetCurrentValue(DisplayMonthProperty, _state.DisplayMonth);
@@ -111,13 +108,13 @@ public class MaterialDatePicker : TemplatedControl
         _tokens.DaySize * (MaxWeeks + 1));
 
     private double HeadlineHeight =>
-        _theme.Theme.Typography.GetTypeScale(_tokens.HeadlineTextStyle).LineHeight
-        + _theme.Theme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight
+        ResolvedTheme.Typography.GetTypeScale(_tokens.HeadlineTextStyle).LineHeight
+        + ResolvedTheme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight
         + 32;
 
     public override void Render(DrawingContext context)
     {
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        var corners = ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
         MaterialContainer.Draw(context, Bounds.Size, corners, _colors.ContainerColor);
 
         DrawHeadline(context);
@@ -151,6 +148,11 @@ public class MaterialDatePicker : TemplatedControl
             _state.SelectedDate = SelectedDate;
         else if (change.Property == DisplayMonthProperty)
             _state.DisplayMonth = DisplayMonth;
+    }
+
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
     }
 
     private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
@@ -193,7 +195,7 @@ public class MaterialDatePicker : TemplatedControl
 
     private void DrawHeadline(DrawingContext context)
     {
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
         var culture = CultureInfo.CurrentCulture;
 
         var prompt = Text(
@@ -219,7 +221,7 @@ public class MaterialDatePicker : TemplatedControl
     private void DrawGrid(DrawingContext context)
     {
         var culture = CultureInfo.CurrentCulture;
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
         var daySize = _tokens.DaySize;
         var grid = GridArea;
         var fontSize = typography.GetTypeScale(_tokens.DayTextStyle).FontSize;
@@ -256,7 +258,7 @@ public class MaterialDatePicker : TemplatedControl
 
             if (isSelected)
             {
-                var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.DayShape, cell.Size);
+                var corners = ResolvedTheme.Shapes.GetCornerRadius(_tokens.DayShape, cell.Size);
                 using (context.PushTransform(Matrix.CreateTranslation(cell.X, cell.Y)))
                     MaterialContainer.Draw(context, cell.Size, corners, _colors.SelectedDayContainerColor);
             }
@@ -309,7 +311,7 @@ public class MaterialDatePicker : TemplatedControl
 
     private FormattedText Text(string value, double size, IImmutableBrush brush)
     {
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
 
         return new FormattedText(
             value,
@@ -322,8 +324,8 @@ public class MaterialDatePicker : TemplatedControl
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetPickerTokens(PickerVariant.Date);
-        _colors = _theme.Theme.GetPickerColors(PickerVariant.Date, _theme.IsDark);
+        _tokens = ResolvedTheme.GetPickerTokens(PickerVariant.Date);
+        _colors = ResolvedTheme.GetPickerColors(PickerVariant.Date, IsDarkVariant);
 
         InvalidateMeasure();
         InvalidateVisual();

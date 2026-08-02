@@ -24,7 +24,7 @@ namespace Material3Expressive.Controls;
 /// </para>
 /// </remarks>
 [TemplatePart(TextBoxPartName, typeof(TextBox))]
-public class MaterialSearchBar : TemplatedControl
+public class MaterialSearchBar : MaterialControl
 {
     private const string TextBoxPartName = "PART_TextBox";
 
@@ -57,7 +57,6 @@ public class MaterialSearchBar : TemplatedControl
     public static readonly RoutedEvent<RoutedEventArgs> SearchEvent =
         RoutedEvent.Register<MaterialSearchBar, RoutedEventArgs>(nameof(Search), RoutingStrategies.Bubble);
 
-    private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
 
     private AnimatedShape? _shape;
@@ -67,10 +66,8 @@ public class MaterialSearchBar : TemplatedControl
 
     public MaterialSearchBar()
     {
-        _theme = new MaterialThemeWatcher(this);
         _interaction = new MaterialInteractionHost(this) { IsRippleEnabled = false };
 
-        _theme.Changed += (_, _) => ApplyTokens();
         ApplyTokens();
     }
 
@@ -146,12 +143,12 @@ public class MaterialSearchBar : TemplatedControl
             nameof(IconLabelSpace), o => o.IconLabelSpace);
 
     private AnimatedShape Shape =>
-        _shape ??= _interaction.CreateAnimatedShape(RestingShape(), _theme.Spring(MotionRole.DefaultSpatial));
+        _shape ??= _interaction.CreateAnimatedShape(RestingShape(), Spring(MotionRole.DefaultSpatial));
 
     public override void Render(DrawingContext context)
     {
         var corners = ContainerCornerRadius;
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        var shadow = ResolvedTheme.ColorScheme?.GetColor(SysColorToken.Shadow, IsDarkVariant) ?? Colors.Black;
 
         MaterialContainer.Draw(
             context,
@@ -198,6 +195,11 @@ public class MaterialSearchBar : TemplatedControl
             UpdateShape();
     }
 
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
     private void OnEditorKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
@@ -221,7 +223,7 @@ public class MaterialSearchBar : TemplatedControl
     /// </remarks>
     private RoundedCornerShape RestingShape()
     {
-        return _theme.Theme.Shapes.Get(
+        return ResolvedTheme.Shapes.Get(
             IsOpen ? _tokens.ResultsContainerShape : _tokens.ContainerShape);
     }
 
@@ -236,7 +238,7 @@ public class MaterialSearchBar : TemplatedControl
             return;
         }
 
-        Shape.AnimateTo(target, _theme.Spring(MotionRole.DefaultSpatial));
+        Shape.AnimateTo(target, Spring(MotionRole.DefaultSpatial));
         _interaction.Motion.Start();
     }
 
@@ -245,13 +247,13 @@ public class MaterialSearchBar : TemplatedControl
         var previousIconSize = IconSize;
         var previousSpace = IconLabelSpace;
 
-        _tokens = _theme.Theme.SearchBarTokens;
-        _colors = _theme.Theme.GetSearchBarColors(_theme.IsDark);
+        _tokens = ResolvedTheme.SearchBarTokens;
+        _colors = ResolvedTheme.GetSearchBarColors(IsDarkVariant);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);
 
-        var typography = _theme.Theme.Typography;
+        var typography = ResolvedTheme.Typography;
 
         Foreground = _colors.InputTextColor;
         Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);

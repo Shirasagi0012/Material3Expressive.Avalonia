@@ -23,7 +23,7 @@ namespace Material3Expressive.Controls;
 /// you end up with two selected at once.
 /// </para>
 /// </remarks>
-public class MaterialNavigationBar : TemplatedControl
+public class MaterialNavigationBar : MaterialControl
 {
     public static readonly StyledProperty<NavigationVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialNavigationBar, NavigationVariant>(nameof(Variant));
@@ -33,17 +33,12 @@ public class MaterialNavigationBar : TemplatedControl
         AvaloniaProperty.Register<MaterialNavigationBar, int>(
             nameof(SelectedIndex), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
-    private readonly MaterialThemeWatcher _theme;
-
     private NavigationTokens _tokens = NavigationTokens.Bar;
     private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
     private bool _updatingSelection;
 
     public MaterialNavigationBar()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
-
         Items.CollectionChanged += (_, _) => AttachItems();
         ApplyTokens();
     }
@@ -126,6 +121,11 @@ public class MaterialNavigationBar : TemplatedControl
             SyncSelection();
     }
 
+    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    {
+        ApplyTokens();
+    }
+
     /// <summary>
     /// Keeps exactly one item checked, and reflects a click back into
     /// <see cref="SelectedIndex" />.
@@ -187,8 +187,8 @@ public class MaterialNavigationBar : TemplatedControl
         var previousRows = ItemRows;
         var previousColumns = ItemColumns;
 
-        _tokens = _theme.Theme.GetNavigationTokens(Variant);
-        _colors = _theme.Theme.GetNavigationColors(Variant, _theme.IsDark);
+        _tokens = ResolvedTheme.GetNavigationTokens(Variant);
+        _colors = ResolvedTheme.GetNavigationColors(Variant, IsDarkVariant);
 
         RaisePropertyChanged(ItemSpacingProperty, previousSpacing, ItemSpacing);
         RaisePropertyChanged(IsVerticalProperty, previousVertical, IsVertical);
