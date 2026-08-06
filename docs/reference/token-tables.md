@@ -1,17 +1,27 @@
 # Token tables
 
-Every token in the library is defined once, in a JSON table under `src/Material3Expressive/Tokens/`
-or `src/Material3Expressive/Defaults/`, and turned into C# at build time by
-`Material3Expressive.TokenGenerator`. The directories mirror the ownership boundary: reference,
-system and raw component transcriptions are kept apart from component assembly and Avalonia
-overrides. Nothing about a default is written by hand three times — that triplication (constructor
-default, resolver arm, markup-extension fallback) is what this pipeline exists to delete. Generated
-component records and snapshot accessors are internal implementation details; public customization
-goes through the generated override bags and stable component enums.
+Every token in the library is defined once, in a JSONC table under `src/Material3Expressive/Tokens/`,
+and turned into C# at build time by `Material3Expressive.TokenGenerator`. The directories mirror
+the ownership boundary: reference, system and raw component transcriptions are kept apart from
+component assembly and Avalonia overrides. Nothing about a default is written by hand three times
+— that triplication (constructor default, resolver arm, markup-extension fallback) is what this
+pipeline exists to delete. Generated component records and snapshot accessors are internal
+implementation details; public customization goes through the generated override bags and stable
+component enums.
 
-A table is picked up by its file name: `*.tokens.json`, included as `AdditionalFiles`. A malformed
-table is a build error (`M3ETOK001`); two tables claiming the same type name is `M3ETOK002`; an
-unknown, incompatible or cyclic `@Table.Member` reference is `M3ETOK003`.
+The filename suffix communicates the table category and determines discovery:
+
+| suffix | root `kind` | purpose |
+|---|---|---|
+| `.ref.jsonc` | `referenceTokens` | reference-layer primitives such as palettes |
+| `.sys.jsonc` | `systemTokens` | shared system roles and schemes |
+| `.comp.jsonc` | `componentTokens` | verbatim upstream component token tables |
+| `.default.jsonc` | `componentDefaults` | component assembly, variants and overrides |
+
+The root `kind` remains the semantic authority; a suffix/kind mismatch is a build error
+(`M3ETOK004`). Other `AdditionalFile` names are ignored. A malformed table is a build error
+(`M3ETOK001`); two tables claiming the same type name is `M3ETOK002`; an unknown, incompatible or
+cyclic `@Table.Member` reference is `M3ETOK003`.
 
 `provenance` is optional metadata with one of `androidx-token`, `compose-default`, `m3-spec` or
 `avalonia-policy`. If omitted, raw/reference/system tables default to `androidx-token` and component
@@ -161,13 +171,15 @@ Keep the domain visible in the path as well as in the table name:
 
 ```text
 Tokens/
+  Reference/
   System/
   Component/<Domain>/
-Defaults/<Domain>/
+  Defaults/<Domain>/
 ```
 
-The generator includes both trees recursively. A component normally has at least one raw table in
-`Tokens/Component/<Domain>/` and one matching `Defaults/<Domain>/` table.
+The generator includes the four suffix families recursively. A component normally has at least one
+raw table in `Tokens/Component/<Domain>/` and one matching defaults table in
+`Tokens/Defaults/<Domain>/`.
 
 ## Adding a component
 

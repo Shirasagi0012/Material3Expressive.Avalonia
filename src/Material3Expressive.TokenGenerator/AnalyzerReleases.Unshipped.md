@@ -5,5 +5,7 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|------
-M3ETOK001 | Material3Expressive | Error | A `*.tokens.json` table is malformed and could not be turned into code.
+M3ETOK001 | Material3Expressive | Error | A `*.jsonc` token table is malformed and could not be turned into code.
 M3ETOK002 | Material3Expressive | Error | Two token tables declare the same name, so one would overwrite the other.
+M3ETOK003 | Material3Expressive | Error | A token table contains an unknown, incompatible, reverse-layer, or cyclic reference.
+M3ETOK004 | Material3Expressive | Error | A token table's filename suffix does not match its root `kind`.

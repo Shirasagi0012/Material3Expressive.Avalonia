@@ -16,7 +16,7 @@ namespace Material3Expressive.Foundation;
 /// on <c>ColorScheme</c>.
 /// <para>
 /// The component token half of this class is generated from the defaults tables under
-/// <c>Defaults/</c> (with raw values under <c>Tokens/</c>) — see
+/// <c>Tokens/Defaults/</c> (with raw values under <c>Tokens/</c>) — see
 /// <c>ResolvedTheme.Components.g.cs</c> — so adding a component domain costs no hand-written
 /// accessor edit here. System schemes, including typography, resolve through their owning scheme.
 /// </para>

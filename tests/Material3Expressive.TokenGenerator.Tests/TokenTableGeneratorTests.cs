@@ -7,7 +7,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void TokenSet_EmitsTheRepresentativeTableAndThemeAccessor()
     {
-        var run = GeneratorTestHost.Run(("Reference.tokens.json", """
+        var run = GeneratorTestHost.Run(("Reference.ref.jsonc", """
             {
               // Token comments are deliberately allowed in hand-maintained tables.
               "kind": "referenceTokens",
@@ -40,7 +40,7 @@ public sealed class TokenTableGeneratorTests
     public void Component_ResolvesReferencesAndExtendsWithoutCopyingValues()
     {
         var run = GeneratorTestHost.Run(
-            ("ButtonSmall.tokens.json", """
+            ("ButtonSmall.comp.jsonc", """
                 {
                   "kind": "componentTokens",
                   "name": "ButtonSmallTokens",
@@ -51,7 +51,7 @@ public sealed class TokenTableGeneratorTests
                   }
                 }
                 """),
-            ("Button.tokens.json", """
+            ("Button.default.jsonc", """
                 {
                   "kind": "componentDefaults",
                   "name": "ButtonTokens",
@@ -101,7 +101,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void SystemScheme_IsEmittedButDoesNotBecomeAComponentAccessor()
     {
-        var run = GeneratorTestHost.Run(("TypeScale.tokens.json", """
+        var run = GeneratorTestHost.Run(("TypeScale.sys.jsonc", """
             {
               "kind": "systemTokens",
               "name": "TestTypeScale",
@@ -122,7 +122,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void UnknownTokenSetReferenceProducesACatalogDiagnostic()
     {
-        var run = GeneratorTestHost.Run(("Broken.tokens.json", """
+        var run = GeneratorTestHost.Run(("Broken.default.jsonc", """
             {
               "kind": "componentDefaults",
               "name": "BrokenTokens",
@@ -142,14 +142,14 @@ public sealed class TokenTableGeneratorTests
     public void ReferenceTypeMismatchProducesACatalogDiagnostic()
     {
         var run = GeneratorTestHost.Run(
-            ("Raw.tokens.json", """
+            ("Raw.comp.jsonc", """
                 {
                   "kind": "componentTokens",
                   "name": "RawTokens",
                   "tokens": { "Value": { "type": "dimension", "value": 40 } }
                 }
                 """),
-            ("Broken.tokens.json", """
+            ("Broken.default.jsonc", """
                 {
                   "kind": "componentDefaults",
                   "name": "BrokenTokens",
@@ -169,14 +169,14 @@ public sealed class TokenTableGeneratorTests
     public void ReverseLayerReferenceProducesACatalogDiagnostic()
     {
         var run = GeneratorTestHost.Run(
-            ("Component.tokens.json", """
+            ("Component.comp.jsonc", """
                 {
                   "kind": "componentTokens",
                   "name": "ComponentTokens",
                   "tokens": { "Value": { "type": "dimension", "value": 40 } }
                 }
                 """),
-            ("Reference.tokens.json", """
+            ("Reference.ref.jsonc", """
                 {
                   "kind": "referenceTokens",
                   "name": "ReferenceTokens",
@@ -193,14 +193,14 @@ public sealed class TokenTableGeneratorTests
     public void TokenSetReferenceCycleProducesACatalogDiagnostic()
     {
         var run = GeneratorTestHost.Run(
-            ("A.tokens.json", """
+            ("A.comp.jsonc", """
                 {
                   "kind": "componentTokens",
                   "name": "ATokens",
                   "tokens": { "Value": { "type": "dimension", "value": "@BTokens.Value" } }
                 }
                 """),
-            ("B.tokens.json", """
+            ("B.comp.jsonc", """
                 {
                   "kind": "componentTokens",
                   "name": "BTokens",
@@ -217,7 +217,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void DuplicatePropertiesProduceAGeneratorDiagnostic()
     {
-        var run = GeneratorTestHost.Run(("Broken.tokens.json", """
+        var run = GeneratorTestHost.Run(("Broken.ref.jsonc", """
             {
               "kind": "referenceTokens",
               "name": "BrokenTokens",
@@ -236,7 +236,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void AMalformedReferenceProducesAGeneratorDiagnostic()
     {
-        var run = GeneratorTestHost.Run(("Broken.tokens.json", """
+        var run = GeneratorTestHost.Run(("Broken.default.jsonc", """
             {
               "kind": "componentDefaults",
               "name": "BrokenTokens",
@@ -257,7 +257,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void StrictJsonSyntaxErrorsKeepTheirSourceLocation()
     {
-        var run = GeneratorTestHost.Run(("Broken.tokens.json", """
+        var run = GeneratorTestHost.Run(("Broken.ref.jsonc", """
             {
               "kind": "referenceTokens",
               "name": "BrokenTokens",
@@ -274,7 +274,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void UnknownProvenanceProducesATableDiagnostic()
     {
-        var run = GeneratorTestHost.Run(("Broken.tokens.json", """
+        var run = GeneratorTestHost.Run(("Broken.ref.jsonc", """
             {
               "kind": "referenceTokens",
               "name": "BrokenTokens",
@@ -285,6 +285,23 @@ public sealed class TokenTableGeneratorTests
 
         var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK001"));
         Assert.Contains("'provenance'", diagnostic.GetMessage());
+    }
+
+    [Fact]
+    public void FilenameSuffixMustMatchRootKind()
+    {
+        var run = GeneratorTestHost.Run(("Wrong.default.jsonc", """
+            {
+              "kind": "componentTokens",
+              "name": "WrongTokens",
+              "tokens": { "Value": { "type": "dimension", "value": 1 } }
+            }
+            """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK004"));
+        Assert.Contains("componentTokens", diagnostic.GetMessage());
+        Assert.Contains("componentDefaults", diagnostic.GetMessage());
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "WrongTokens.Tokens.g.cs");
     }
 
     [Fact]
@@ -308,10 +325,10 @@ public sealed class TokenTableGeneratorTests
         var result = GeneratorTestHost.RunIncremental(
             new[]
             {
-                ("unchanged.tokens.json", unchanged),
-                ("changed.tokens.json", changed)
+                ("unchanged.ref.jsonc", unchanged),
+                ("changed.ref.jsonc", changed)
             },
-            ("changed.tokens.json", changed.Replace("\"value\": 1", "\"value\": 2", StringComparison.Ordinal)));
+            ("changed.ref.jsonc", changed.Replace("\"value\": 1", "\"value\": 2", StringComparison.Ordinal)));
 
         Assert.True(result.After.TrackedSteps.TryGetValue("TokenTable.Parse", out var steps));
         Assert.Contains(steps.SelectMany(step => step.Outputs),

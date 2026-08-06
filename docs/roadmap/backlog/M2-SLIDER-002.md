@@ -61,7 +61,7 @@ automation tree, dynamic ranges, and the single-focus-owner desktop keyboard ada
 | Dimension | Evidence |
 |---|---|
 | Upstream | AndroidX `ff0a0a99` `Slider.kt` two-thumb focus, key, and semantics sections above; the executable reference remains CMP 1.12.0-alpha03 / Material3 alpha22. |
-| Tokens | Existing `Slider.tokens.json` and generated `SliderTokens` retain the 16dp track, 4×44dp handle, gap, inner corners, stop indicators, and theme roles used by the accepted scenes. |
+| Tokens | Existing `Slider.default.jsonc` and generated `SliderTokens` retain the 16dp track, 4×44dp handle, gap, inner corners, stop indicators, and theme roles used by the accepted scenes. |
 | API | Ordered bindable `Minimum`/`Maximum`/`StartValue`/`EndValue` plus small/large steps cover XAML and application-owned scalar restoration without a duplicate state object. |
 | Visual | Light enabled, dark enabled, and light disabled static cases cover theme/enabled rendering; keyboard focus uses the shared inset Material ring on the selected endpoint. |
 | Behavior | Nearest-thumb pointer selection, value constraints, Page/Home/End/arrows, endpoint switching, RTL, invalid writes, and reconnect behavior are deterministic-test covered. |

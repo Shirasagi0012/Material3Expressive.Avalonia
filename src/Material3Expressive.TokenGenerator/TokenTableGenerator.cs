@@ -14,19 +14,30 @@ namespace Material3Expressive.TokenGenerator;
 
 /// <summary>
 /// Generates the token layer from the reference/system/component tables and component defaults
-/// under <c>Tokens/</c> and <c>Defaults/</c>.
+/// under <c>Tokens/</c>.
 /// </summary>
 /// <remarks>
 /// The tables are the single source of truth. Before this generator existed, every component token
 /// default was written three times — once in the authoring class's constructor, once in the
 /// resolver, and once as a markup extension's fallback — and the three drifted. Now a token exists
-/// in exactly one place, and adding a component domain is one table file.
+/// in exactly one place, and adding a component domain is a small set of clearly classified table
+/// files.
 /// </remarks>
 [Generator]
 public sealed class TokenTableGenerator : IIncrementalGenerator
 {
-    /// <summary>Only files named <c>*.tokens.json</c> are tables; other AdditionalFiles are ignored.</summary>
-    private const string TableSuffix = ".tokens.json";
+    /// <summary>
+    /// Only files with one of the four layer suffixes are tables; other AdditionalFiles are
+    /// ignored. The root <c>kind</c> remains the semantic authority, while the suffix provides a
+    /// discoverable, human-readable classification and is checked against that kind below.
+    /// </summary>
+    private static readonly string[] TableSuffixes =
+    {
+        ".ref.jsonc",
+        ".sys.jsonc",
+        ".comp.jsonc",
+        ".default.jsonc"
+    };
 
     private static readonly DiagnosticDescriptor InvalidTable = new(
         "M3ETOK001",
@@ -52,13 +63,22 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
         DiagnosticSeverity.Error,
         true);
 
+    private static readonly DiagnosticDescriptor FileKindMismatch = new(
+        "M3ETOK004",
+        "Token filename kind mismatch",
+        "Token table '{0}' has kind '{1}', but suffix '{2}' requires kind '{3}'",
+        "Material3Expressive",
+        DiagnosticSeverity.Error,
+        true);
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Carry one source through the pipeline at a time. The parsed result compares by path and
         // content, so an unrelated edit reuses every other table's parse result before the global
         // catalog/accessor pass runs.
         var tableItems = context.AdditionalTextsProvider
-            .Where(text => text.Path.EndsWith(TableSuffix, StringComparison.OrdinalIgnoreCase))
+            .Where(text => TableSuffixes.Any(suffix =>
+                text.Path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)))
             .Select((text, token) => new TableSource(
                 text.Path,
                 text.GetText(token)?.ToString() ?? string.Empty))
@@ -107,12 +127,62 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
     {
         try
         {
-            return new ParsedTable(source, TokenTable.Parse(source.Content), error: null);
+            var table = TokenTable.Parse(source.Content);
+            if (TryGetFileKind(source.Path, out var fileKind) &&
+                !IsMatchingKind(fileKind, table.Category))
+            {
+                return new ParsedTable(
+                    source,
+                    table: null,
+                    error: null,
+                    kindMismatch: new FileKindMismatchInfo(
+                        table.Kind,
+                        fileKind.Suffix,
+                        fileKind.Kind));
+            }
+
+            return new ParsedTable(source, table, error: null);
         }
         catch (Exception exception) when (exception is InvalidTableException or JsonException)
         {
             return new ParsedTable(source, table: null, exception.Message);
         }
+    }
+
+    private static bool TryGetFileKind(string path, out FileKindInfo fileKind)
+    {
+        foreach (var suffix in TableSuffixes)
+        {
+            if (!path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var kind = suffix switch
+            {
+                ".ref.jsonc" => "referenceTokens",
+                ".sys.jsonc" => "systemTokens",
+                ".comp.jsonc" => "componentTokens",
+                ".default.jsonc" => "componentDefaults",
+                _ => throw new InvalidOperationException("Unknown token table suffix.")
+            };
+
+            fileKind = new FileKindInfo(suffix, kind);
+            return true;
+        }
+
+        fileKind = default;
+        return false;
+    }
+
+    private static bool IsMatchingKind(FileKindInfo fileKind, TokenTableCategory category)
+    {
+        return fileKind.Kind switch
+        {
+            "referenceTokens" => category == TokenTableCategory.ReferenceTokens,
+            "systemTokens" => category == TokenTableCategory.SystemTokens,
+            "componentTokens" => category == TokenTableCategory.ComponentTokens,
+            "componentDefaults" => category == TokenTableCategory.ComponentDefaults,
+            _ => false
+        };
     }
 
     private static void EmitTable(SourceProductionContext context, ParsedTable result,
@@ -133,6 +203,18 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
 
         foreach (var result in sources.OrderBy(s => s.Source.Path, StringComparer.Ordinal))
         {
+            if (result.KindMismatch is { } mismatch)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    FileKindMismatch,
+                    Location.None,
+                    result.Source.DisplayName,
+                    mismatch.Kind,
+                    mismatch.Suffix,
+                    mismatch.ExpectedKind));
+                continue;
+            }
+
             if (result.Table is null)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
@@ -254,11 +336,13 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
     /// <summary>One source's parse result, detached from the incremental JSON DOM.</summary>
     private readonly struct ParsedTable : IEquatable<ParsedTable>
     {
-        public ParsedTable(TableSource source, TokenTable? table, string? error)
+        public ParsedTable(TableSource source, TokenTable? table, string? error,
+            FileKindMismatchInfo? kindMismatch = null)
         {
             Source = source;
             Table = table;
             Error = error;
+            KindMismatch = kindMismatch;
         }
 
         public TableSource Source { get; }
@@ -267,9 +351,13 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
 
         public string? Error { get; }
 
+        public FileKindMismatchInfo? KindMismatch { get; }
+
         public bool Equals(ParsedTable other)
         {
-            return Source.Equals(other.Source) && string.Equals(Error, other.Error, StringComparison.Ordinal);
+            return Source.Equals(other.Source) &&
+                   string.Equals(Error, other.Error, StringComparison.Ordinal) &&
+                   Nullable.Equals(KindMismatch, other.KindMismatch);
         }
 
         public override bool Equals(object? obj)
@@ -281,7 +369,55 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
         {
             unchecked
             {
-                return (Source.GetHashCode() * 397) ^ (Error?.GetHashCode() ?? 0);
+                return ((Source.GetHashCode() * 397) ^ (Error?.GetHashCode() ?? 0)) * 397 ^
+                       (KindMismatch?.GetHashCode() ?? 0);
+            }
+        }
+    }
+
+    private readonly struct FileKindInfo
+    {
+        public FileKindInfo(string suffix, string kind)
+        {
+            Suffix = suffix;
+            Kind = kind;
+        }
+
+        public string Suffix { get; }
+
+        public string Kind { get; }
+    }
+
+    private readonly struct FileKindMismatchInfo : IEquatable<FileKindMismatchInfo>
+    {
+        public FileKindMismatchInfo(string kind, string suffix, string expectedKind)
+        {
+            Kind = kind;
+            Suffix = suffix;
+            ExpectedKind = expectedKind;
+        }
+
+        public string Kind { get; }
+
+        public string Suffix { get; }
+
+        public string ExpectedKind { get; }
+
+        public bool Equals(FileKindMismatchInfo other)
+        {
+            return string.Equals(Kind, other.Kind, StringComparison.Ordinal) &&
+                   string.Equals(Suffix, other.Suffix, StringComparison.Ordinal) &&
+                   string.Equals(ExpectedKind, other.ExpectedKind, StringComparison.Ordinal);
+        }
+
+        public override bool Equals(object? obj) => obj is FileKindMismatchInfo other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((Kind.GetHashCode() * 397) ^ Suffix.GetHashCode()) * 397 ^
+                       ExpectedKind.GetHashCode();
             }
         }
     }

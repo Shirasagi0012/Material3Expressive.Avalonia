@@ -20,12 +20,13 @@ unrelated control during XAML parsing.
 
 ## Token pipeline
 
-Token source files are split by ownership: reference/system and raw component transcriptions live
-under `src/Material3Expressive/Tokens/`, while component assembly and override tables live under
-`src/Material3Expressive/Defaults/`. The token generator emits token sets, component variants,
-internal resolved accessors, and sparse public override bags. New domains should keep upstream values in a raw
-component table and put runtime assembly or Avalonia corrections in its matching defaults table;
-do not duplicate constructor defaults, resolver arms, and markup fallbacks by hand.
+Token source files are split by ownership under `src/Material3Expressive/Tokens/`: reference tables
+use `.ref.jsonc`, shared system tables use `.sys.jsonc`, raw component transcriptions use
+`.comp.jsonc`, and component assembly/override tables use `.default.jsonc` under `Tokens/Defaults/`.
+The token generator emits token sets, component variants, internal resolved accessors, and sparse
+public override bags. New domains should keep upstream values in a raw component table and put
+runtime assembly or Avalonia corrections in its matching defaults table; do not duplicate
+constructor defaults, resolver arms, and markup fallbacks by hand.
 
 System typography is owned by `TypographyScheme.TypeScaleOverrides`; component defaults stay in
 `MaterialTheme.Components`. The old `TypeScaleOverrides` item in `Components` remains only as an

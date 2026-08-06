@@ -76,7 +76,7 @@ reset semantics, and keep persistence application-owned through a recoverable in
 | Dimension | Evidence |
 |---|---|
 | Upstream | AndroidX `ff0a0a99` `AppBar.kt:518-968,1384-1425,1693-2375,3493-3761` and v14_0_0 AppBar token files; Avalonia `ScrollViewer` attachment and logical-delta forwarding are recorded desktop adaptations. |
-| Tokens | Standard 64/112/152dp and flexible 64/112/120dp heights, 136/152dp subtitle heights, title/subtitle roles, surface/scrolled colors, and icon colors are generated from `AppBar.tokens.json`. |
+| Tokens | Standard 64/112/152dp and flexible 64/112/120dp heights, 136/152dp subtitle heights, title/subtitle roles, surface/scrolled colors, and icon colors are generated from `AppBar.default.jsonc`. |
 | API | One XAML-compatible `MaterialAppBar` exposes `Size`, `Variant`, slots, `ScrollBehavior`, optional `ScrollTarget`, `ApplyScrollDelta`, non-null replaceable `State`, and `ResetState()`. |
 | Visual | The supported standard Medium expanded endpoint passes the centralized existing `component-with-text` profile twice with exact probes and zero rejected pixels. Alpha25-only and alpha22-token-conflict endpoints are explicitly parity-unavailable. |
 | Behavior | Three scroll behaviors, content-boundary handoff, command animation, title crossfade, interruption, replacement, reset, and detached old ownership are deterministic-test covered. |
