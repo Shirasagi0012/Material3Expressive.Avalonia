@@ -29,18 +29,13 @@
     <File Path="nuget.config" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/Solution Items/docs/">
-    <File Path="docs/reference/androidx-material3.md" />
-    <File Path="docs/architecture/theming.md" />
-    <File Path="docs/reference/token-tables.md" />
-    <File Path="docs/testing/visual-parity/README.md" />
-  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />
     <Project Path="src/Material3Expressive.TokenGenerator/Material3Expressive.TokenGenerator.csproj" />
     <Project Path="src/Material3Expressive/Material3Expressive.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Material3Expressive.TokenGenerator.Tests/Material3Expressive.TokenGenerator.Tests.csproj" />
     <Project Path="tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj" />
     <Project Path="tests/Material3Expressive.VisualTesting/Material3Expressive.VisualTesting.csproj" />
     <Project Path="tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj" />

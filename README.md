@@ -571,9 +571,12 @@ default.
 ## How it is built
 
 Every token in the library is defined once, in a JSON table under
-[`src/Material3Expressive/Tokens`](src/Material3Expressive/Tokens), and turned into C# at build
-time. Adding a component token domain is one table file — the value record, the variant enum, the
-override bag and the theme accessors are all generated. See
+[`src/Material3Expressive/Tokens`](src/Material3Expressive/Tokens) or
+[`src/Material3Expressive/Defaults`](src/Material3Expressive/Defaults), and turned into C# at
+build time. Raw reference/system/component values are kept separate from component assembly and
+override tables; the value record, variant enum, override bag and theme accessors are still
+generated. Component records and snapshot accessors are internal; public retuning uses the
+generated override bags and stable enums. See
 [docs/reference/token-tables.md](docs/reference/token-tables.md).
 
 The theming core is documented in [docs/architecture/theming.md](docs/architecture/theming.md). The current

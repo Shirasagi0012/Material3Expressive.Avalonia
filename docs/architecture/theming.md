@@ -20,10 +20,29 @@ unrelated control during XAML parsing.
 
 ## Token pipeline
 
-Token source files live in `src/Material3Expressive/Tokens/*.tokens.json`. The token generator
-emits token sets, component variants, resolved accessors, and sparse override bags. New token
-domains should be added through one table; do not duplicate constructor defaults, resolver arms,
-and markup fallbacks by hand.
+Token source files are split by ownership: reference/system and raw component transcriptions live
+under `src/Material3Expressive/Tokens/`, while component assembly and override tables live under
+`src/Material3Expressive/Defaults/`. The token generator emits token sets, component variants,
+internal resolved accessors, and sparse public override bags. New domains should keep upstream values in a raw
+component table and put runtime assembly or Avalonia corrections in its matching defaults table;
+do not duplicate constructor defaults, resolver arms, and markup fallbacks by hand.
+
+System typography is owned by `TypographyScheme.TypeScaleOverrides`; component defaults stay in
+`MaterialTheme.Components`. The old `TypeScaleOverrides` item in `Components` remains only as an
+obsolete compatibility path during the alpha migration.
+
+Button is the first component boundary being tightened. Its raw `Tokens/Component/Button/` files
+remain AndroidX-shaped, while `Controls/Button/` owns the `ToggleButtonDefaults` adapter and its
+state-aware markup resolver. The adapter has separate checked, unchecked and disabled colour
+contracts plus three shape states; the older `ButtonColorTokens` toggle fields remain only as a
+compatibility surface while the public override API is migrated. Conditional interaction and
+Avalonia property binding stay in C#, rather than becoming a JSON behaviour language.
+
+The same boundary now exists for Switch and Slider. `Controls/Switch/` projects the generated
+checked/unchecked/disabled colours into the visual state consumed by `MaterialSwitch`, while
+`Controls/Slider/` shares disabled-colour projection between `MaterialSlider` and
+`MaterialRangeSlider`. Their JSON tables remain static defaults; endpoint selection, pointer state,
+motion and layout policy stay in the controls.
 
 ## Scope and history
 

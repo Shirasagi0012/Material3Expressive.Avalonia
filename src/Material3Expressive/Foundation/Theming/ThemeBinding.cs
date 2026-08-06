@@ -123,6 +123,42 @@ internal static class ThemeBinding
         };
     }
 
+    /// <summary>A value that depends on the theme and three live properties on the target.</summary>
+    public static BindingBase FromThemeProperties<TFirst, TSecond, TThird, TValue>(
+        AvaloniaProperty firstProperty,
+        AvaloniaProperty secondProperty,
+        AvaloniaProperty thirdProperty,
+        Func<ResolvedTheme, TFirst, TSecond, TThird, TValue> select,
+        TFirst firstFallback,
+        TSecond secondFallback,
+        TThird thirdFallback,
+        TValue fallback)
+    {
+        return new MultiBinding
+        {
+            Mode = BindingMode.OneWay,
+            FallbackValue = (object?)fallback ?? AvaloniaProperty.UnsetValue,
+            Bindings =
+            {
+                new CompiledBinding(SelfPath(MaterialThemeScope.ResolvedThemeProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(firstProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(secondProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(thirdProperty)) { Mode = BindingMode.OneWay }
+            },
+            Converter = new FuncMultiValueConverter<object?, object?>(values =>
+            {
+                if (Value<ResolvedTheme>(values, 0) is not { } theme)
+                    return fallback;
+
+                return select(
+                    theme,
+                    ValueOr(values, 1, firstFallback),
+                    ValueOr(values, 2, secondFallback),
+                    ValueOr(values, 3, thirdFallback));
+            })
+        };
+    }
+
     /// <summary>
     /// A value that depends on the theme, the effective light/dark variant and one target property.
     /// </summary>
@@ -149,6 +185,43 @@ internal static class ThemeBinding
 
                 var isDark = ColorScheme.IsDark(Value<ThemeVariant>(values, 1) ?? ThemeVariant.Default);
                 return select(theme, isDark, ValueOr(values, 2, propertyFallback));
+            })
+        };
+    }
+
+    /// <summary>
+    /// A colour-like value that depends on the theme variant and two live properties on the target.
+    /// </summary>
+    public static BindingBase FromThemeVariantProperties<TFirst, TSecond, TValue>(
+        AvaloniaProperty firstProperty,
+        AvaloniaProperty secondProperty,
+        Func<ResolvedTheme, bool, TFirst, TSecond, TValue> select,
+        TFirst firstFallback,
+        TSecond secondFallback,
+        TValue fallback)
+    {
+        return new MultiBinding
+        {
+            Mode = BindingMode.OneWay,
+            FallbackValue = (object?)fallback ?? AvaloniaProperty.UnsetValue,
+            Bindings =
+            {
+                new CompiledBinding(SelfPath(MaterialThemeScope.ResolvedThemeProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(ThemeVariantScope.ActualThemeVariantProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(firstProperty)) { Mode = BindingMode.OneWay },
+                new CompiledBinding(SelfPath(secondProperty)) { Mode = BindingMode.OneWay }
+            },
+            Converter = new FuncMultiValueConverter<object?, object?>(values =>
+            {
+                if (Value<ResolvedTheme>(values, 0) is not { } theme)
+                    return fallback;
+
+                var isDark = ColorScheme.IsDark(Value<ThemeVariant>(values, 1) ?? ThemeVariant.Default);
+                return select(
+                    theme,
+                    isDark,
+                    ValueOr(values, 2, firstFallback),
+                    ValueOr(values, 3, secondFallback));
             })
         };
     }

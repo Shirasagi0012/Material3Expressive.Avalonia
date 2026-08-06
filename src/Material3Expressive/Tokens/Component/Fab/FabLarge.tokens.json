@@ -1,0 +1,15 @@
+{
+  "kind": "componentTokens",
+  "name": "FabLargeTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_14_0",
+  "source": "androidx compose/material3 tokens/FabLargeTokens.kt",
+  "summary": "The large floating action button.",
+
+  "tokens": {
+    "ContainerHeight": { "type": "dimension", "value": 96 },
+    "ContainerWidth": { "type": "dimension", "value": 96 },
+    "ContainerShape": { "type": "shape", "value": "CornerExtraLarge" },
+    "IconSize": { "type": "dimension", "value": 32 }
+  }
+}

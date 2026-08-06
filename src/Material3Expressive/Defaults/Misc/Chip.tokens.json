@@ -1,0 +1,116 @@
+{
+  "kind": "componentDefaults",
+  "name": "ChipTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "ChipColors",
+  "version": "7_0_1",
+  "source": "androidx compose/material3 tokens/{Chips,AssistChip,FilterChip,InputChip,SuggestionChip}Tokens.kt",
+  "summary": "The colours and metrics of one chip variant.",
+
+  "variantEnum": "ChipVariant",
+  "variantEnumSummary": "The four chip kinds. They differ in what they mean, and the colours follow.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The chip's fill when unselected — transparent for the flat kinds." },
+    "LabelTextColor": { "type": "color", "summary": "The label." },
+    "LeadingIconColor": { "type": "color", "summary": "An icon before the label." },
+    "TrailingIconColor": { "type": "color", "summary": "An icon after the label, usually a dismiss affordance." },
+    "OutlineColor": { "type": "color", "summary": "The border." },
+    "StateLayerColor": { "type": "color", "summary": "The state layer, which is the label colour." },
+
+    "SelectedContainerColor": { "type": "color", "summary": "The fill once selected." },
+    "SelectedLabelTextColor": { "type": "color", "summary": "The label once selected." },
+    "SelectedIconColor": { "type": "color", "summary": "Icons once selected." },
+
+    "DisabledContainerColor": { "type": "color", "opacity": "DisabledContainerOpacity", "summary": "The fill when disabled." },
+    "DisabledLabelTextColor": { "type": "color", "opacity": "DisabledLabelTextOpacity", "summary": "The label when disabled." },
+    "DisabledIconColor": { "type": "color", "opacity": "DisabledLabelTextOpacity", "summary": "Icons when disabled." },
+    "DisabledOutlineColor": { "type": "color", "opacity": "DisabledOutlineOpacity", "summary": "The border when disabled." },
+    "DisabledContainerOpacity": { "type": "opacity", "summary": "Alpha applied to the disabled fill." },
+    "DisabledLabelTextOpacity": { "type": "opacity", "summary": "Alpha applied to disabled text and icons." },
+    "DisabledOutlineOpacity": { "type": "opacity", "summary": "Alpha applied to the disabled border." },
+
+    "ContainerHeight": { "type": "dimension", "summary": "The chip's height." },
+    "ContainerShape": { "type": "shape", "summary": "The chip's corners when unselected." },
+    "SelectedContainerShape": { "type": "shape", "summary": "The chip's corners once selected — Expressive rounds it fully." },
+    "OutlineWidth": { "type": "dimension", "summary": "The border, which vanishes once the chip is filled." },
+    "IconSize": { "type": "dimension", "summary": "Leading and trailing icons." },
+    "HorizontalSpace": { "type": "dimension", "summary": "Padding at each end." },
+    "IconLabelSpace": { "type": "dimension", "summary": "The gap between an icon and the label." },
+    "LabelTextStyle": { "type": "typography", "summary": "The label's type scale." },
+    "IsSelectable": { "type": "bool", "summary": "Whether this kind carries a selected state at all." }
+  },
+
+  "sets": [
+    {
+      "name": "Assist",
+      "summary": "Suggests an action related to the content it sits with.",
+      "values": {
+        "ContainerColor": "#00000000",
+        "LabelTextColor": "OnSurface",
+        "LeadingIconColor": "Primary",
+        "TrailingIconColor": "Primary",
+        "OutlineColor": "OutlineVariant",
+        "StateLayerColor": "OnSurface",
+
+        "SelectedContainerColor": "SecondaryContainer",
+        "SelectedLabelTextColor": "OnSecondaryContainer",
+        "SelectedIconColor": "OnSecondaryContainer",
+
+        "DisabledContainerColor": "#00000000",
+        "DisabledLabelTextColor": "OnSurface",
+        "DisabledIconColor": "OnSurface",
+        "DisabledOutlineColor": "OnSurface",
+        "DisabledContainerOpacity": 1,
+        "DisabledLabelTextOpacity": 0.38,
+        "DisabledOutlineOpacity": 0.12,
+
+        "ContainerHeight": 32,
+        "ContainerShape": "CornerSmall",
+        "SelectedContainerShape": "CornerFull",
+        "OutlineWidth": 1,
+        "IconSize": 18,
+        "HorizontalSpace": 16,
+        "IconLabelSpace": 8,
+        "LabelTextStyle": "LabelLarge",
+        "IsSelectable": false
+      }
+    },
+    {
+      "name": "Filter",
+      "extends": "Assist",
+      "summary": "Narrows a set. The only kind whose selected state is the point of it.",
+      "values": {
+        "LabelTextColor": "OnSurfaceVariant",
+        "LeadingIconColor": "Primary",
+        "TrailingIconColor": "OnSurfaceVariant",
+        "StateLayerColor": "OnSurfaceVariant",
+        "IsSelectable": true
+      }
+    },
+    {
+      "name": "Input",
+      "extends": "Assist",
+      "summary": "Represents something the user entered, and can usually be dismissed.",
+      "values": {
+        "LabelTextColor": "OnSurfaceVariant",
+        "LeadingIconColor": "OnSurfaceVariant",
+        "TrailingIconColor": "OnSurfaceVariant",
+        "StateLayerColor": "OnSurfaceVariant",
+        "IsSelectable": true
+      }
+    },
+    {
+      "name": "Suggestion",
+      "extends": "Assist",
+      "summary": "Offers a likely next input.",
+      "values": {
+        "LabelTextColor": "OnSurfaceVariant",
+        "LeadingIconColor": "Primary",
+        "TrailingIconColor": "OnSurfaceVariant",
+        "StateLayerColor": "OnSurfaceVariant",
+        "IsSelectable": false
+      }
+    }
+  ]
+}

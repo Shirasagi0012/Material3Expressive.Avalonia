@@ -34,6 +34,9 @@
                     Condition="'$(ContinuousIntegrationBuild)' == 'true'" />
     <!-- Roslyn baseline for the token generator. Keep at or below the oldest SDK we support. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <!-- The token generator targets netstandard2.0 and uses the DOM API only; keep this explicit
+         because analyzer dependencies must be present when the compiler loads the generator. -->
+    <PackageVersion Include="System.Text.Json" Version="10.0.8" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />

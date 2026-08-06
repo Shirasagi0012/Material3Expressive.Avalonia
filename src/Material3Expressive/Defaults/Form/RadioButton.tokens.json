@@ -1,0 +1,44 @@
+{
+  "kind": "componentDefaults",
+  "name": "RadioButtonTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "RadioButtonColors",
+  "version": "v0_117",
+  "source": "androidx compose/material3 tokens/RadioButtonTokens.kt",
+  "summary": "The radio button: a ring, with a dot when selected.",
+
+  "properties": {
+    "IconSize": { "type": "dimension", "summary": "The outer ring's diameter." },
+    "StateLayerSize": { "type": "dimension", "summary": "The circular hit and state-layer area." },
+    "RingWidth": { "type": "dimension", "summary": "The ring's stroke." },
+    "DotSize": { "type": "dimension", "summary": "The selected dot's diameter." },
+
+    "SelectedColor": { "type": "color", "summary": "The ring and dot when selected." },
+    "UnselectedColor": { "type": "color", "summary": "The ring when unselected." },
+    "DisabledSelectedColor": { "type": "color", "opacity": "DisabledSelectedOpacity", "summary": "The ring and dot when disabled and selected." },
+    "DisabledUnselectedColor": { "type": "color", "opacity": "DisabledUnselectedOpacity", "summary": "The ring when disabled and unselected." },
+    "DisabledSelectedOpacity": { "type": "opacity", "summary": "Alpha applied when disabled and selected." },
+    "DisabledUnselectedOpacity": { "type": "opacity", "summary": "Alpha applied when disabled and unselected." }
+  },
+
+  "sets": [
+    {
+      "name": "Default",
+      "values": {
+        "IconSize": 20,
+        "StateLayerSize": 40,
+        // Upstream draws the radio button from RadioButton.kt rather than from tokens: a 2dp ring
+        // and a 10dp dot inside the 20dp icon box.
+        "RingWidth": 2,
+        "DotSize": 10,
+
+        "SelectedColor": "Primary",
+        "UnselectedColor": "OnSurfaceVariant",
+        "DisabledSelectedColor": "OnSurface",
+        "DisabledUnselectedColor": "OnSurface",
+        "DisabledSelectedOpacity": 0.38,
+        "DisabledUnselectedOpacity": 0.38
+      }
+    }
+  ]
+}

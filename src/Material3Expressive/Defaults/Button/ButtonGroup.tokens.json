@@ -1,0 +1,47 @@
+{
+  "kind": "componentDefaults",
+  "name": "ButtonGroupTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "version": "14_1_0",
+  "source": "androidx compose/material3 tokens/{ButtonGroupSmall,ConnectedButtonGroupSmall,SplitButtonSmall}Tokens.kt",
+  "summary": "How a row of buttons is spaced, and how the corners where they meet are shaped.",
+
+  "variantEnum": "ButtonGroupVariant",
+  "variantEnumSummary": "Whether the buttons stand apart or read as one connected control.",
+
+  "properties": {
+    "BetweenSpace": { "type": "dimension", "summary": "The gap between neighbours." },
+    "ContainerHeight": { "type": "dimension", "summary": "The row's height." },
+    "InnerCornerSize": { "type": "dimension", "summary": "The radius of the corners where two buttons meet." },
+    "PressedInnerCornerSize": { "type": "dimension", "summary": "That radius while a button is pressed." },
+    "SelectedInnerCornerPercent": { "type": "number", "summary": "The inner radius of a selected button, as a percentage of its height — 50 makes it a pill again." },
+    "IsConnected": { "type": "bool", "summary": "Whether the buttons square off where they meet." }
+  },
+
+  "sets": [
+    {
+      "name": "Standard",
+      "summary": "Separate buttons in a row; each keeps its own shape.",
+      "values": {
+        "BetweenSpace": "@ButtonGroupSmallTokens.BetweenSpace",
+        "ContainerHeight": "@ButtonGroupSmallTokens.ContainerHeight",
+        "InnerCornerSize": 0,
+        "PressedInnerCornerSize": 0,
+        "SelectedInnerCornerPercent": 50,
+        "IsConnected": false
+      }
+    },
+    {
+      "name": "Connected",
+      "summary": "One control made of segments: the outer corners stay round, the inner ones tighten.",
+      "values": {
+        "BetweenSpace": "@ConnectedButtonGroupSmallTokens.BetweenSpace",
+        "ContainerHeight": "@ConnectedButtonGroupSmallTokens.ContainerHeight",
+        "InnerCornerSize": 8,
+        "PressedInnerCornerSize": 4,
+        "SelectedInnerCornerPercent": "@ConnectedButtonGroupSmallTokens.SelectedInnerCornerCornerSizePercent",
+        "IsConnected": true
+      }
+    }
+  ]
+}

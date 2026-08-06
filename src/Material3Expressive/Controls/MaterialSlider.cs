@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Material3Expressive.Controls.SliderRuntime;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -40,8 +41,8 @@ public class MaterialSlider : RangeBase
     private readonly MaterialInteractionHost _interaction;
 
     private SpringAnimation? _handleWidth;
-    private SliderTokens _tokens = SliderTokens.Default;
-    private SliderColors _colors = SliderTokens.Default.Resolve(null, false);
+    private SliderTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
+    private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
 
     public MaterialSlider()
     {
@@ -88,6 +89,7 @@ public class MaterialSlider : RangeBase
             return;
 
         var enabled = IsEffectivelyEnabled;
+        var visuals = SliderDefaults.Visuals(_colors, enabled);
         var trackHeight = _tokens.TrackHeight;
         var trackRadius = trackHeight / 2;
         var handleWidth = HandleWidth.Value;
@@ -108,8 +110,8 @@ public class MaterialSlider : RangeBase
         // at every render scale instead of losing an antialiased bottom row.
         var renderedHandlePosition = SnapToDevicePixel(handlePosition);
 
-        var activeBrush = enabled ? _colors.ActiveTrackColor : _colors.DisabledActiveTrackColor;
-        var inactiveBrush = enabled ? _colors.InactiveTrackColor : _colors.DisabledInactiveTrackColor;
+        var activeBrush = visuals.ActiveTrackColor;
+        var inactiveBrush = visuals.InactiveTrackColor;
 
         DrawTrack(
             context, activeBrush, trackStart, activeEnd, crossLength / 2, trackHeight,
@@ -127,7 +129,7 @@ public class MaterialSlider : RangeBase
             context.DrawEllipse(
                 // SliderDefaults.Track deliberately uses the active track colour here; the
                 // similarly named token is for the legacy track overload, not this composable.
-                activeBrush,
+                visuals.StopIndicatorColor,
                 null,
                 PointOnAxis(trackEnd - trackRadius, crossLength / 2),
                 radius,
@@ -149,7 +151,7 @@ public class MaterialSlider : RangeBase
         _interaction.FocusRingCornerRadius =
             new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2);
 
-        var handleBrush = enabled ? _colors.HandleColor : _colors.DisabledHandleColor;
+        var handleBrush = visuals.HandleColor;
         var handle = RectOnAxis(
             renderedHandlePosition - handleWidth / 2,
             crossLength / 2 - _tokens.HandleHeight / 2,
@@ -158,7 +160,7 @@ public class MaterialSlider : RangeBase
 
         context.DrawRectangle(handleBrush, null, new RoundedRect(handle, new CornerRadius(handleWidth / 2)));
         base.Render(context);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, new CornerRadius(stateLayerSize / 2));
+        _interaction.DrawLayers(context, visuals.StateLayerColor, new CornerRadius(stateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -282,8 +284,8 @@ public class MaterialSlider : RangeBase
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.SliderTokens;
-        _colors = _theme.Theme.GetSliderColors(_theme.IsDark);
+        _tokens = SliderDefaults.Tokens(_theme.Theme);
+        _colors = SliderDefaults.Colors(_theme.Theme, _theme.IsDark);
 
         UpdateHandleWidth();
         InvalidateMeasure();

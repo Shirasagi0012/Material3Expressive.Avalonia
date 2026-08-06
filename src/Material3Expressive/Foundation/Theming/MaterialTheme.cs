@@ -98,6 +98,11 @@ public partial class MaterialTheme : AvaloniaObject
             case ColorScheme colorScheme:
                 colorScheme.SchemeChanged += OnSchemeChanged;
                 break;
+            case TypographyScheme typographyScheme:
+                typographyScheme.TypeScaleOverrides.CollectionChanged += OnTypeScaleOverridesChanged;
+                foreach (var item in typographyScheme.TypeScaleOverrides)
+                    Attach(item);
+                break;
             case AvaloniaObject avaloniaObject:
                 avaloniaObject.PropertyChanged += OnSchemePropertyChanged;
                 break;
@@ -110,6 +115,11 @@ public partial class MaterialTheme : AvaloniaObject
         {
             case ColorScheme colorScheme:
                 colorScheme.SchemeChanged -= OnSchemeChanged;
+                break;
+            case TypographyScheme typographyScheme:
+                typographyScheme.TypeScaleOverrides.CollectionChanged -= OnTypeScaleOverridesChanged;
+                foreach (var item in typographyScheme.TypeScaleOverrides)
+                    Detach(item);
                 break;
             case AvaloniaObject avaloniaObject:
                 avaloniaObject.PropertyChanged -= OnSchemePropertyChanged;
@@ -124,6 +134,17 @@ public partial class MaterialTheme : AvaloniaObject
 
     private void OnSchemePropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        Invalidate();
+    }
+
+    private void OnTypeScaleOverridesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        foreach (var item in e.OldItems ?? (System.Collections.IList)Array.Empty<object>())
+            Detach(item);
+
+        foreach (var item in e.NewItems ?? (System.Collections.IList)Array.Empty<object>())
+            Attach(item);
+
         Invalidate();
     }
 

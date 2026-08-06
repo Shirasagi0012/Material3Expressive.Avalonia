@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Foundation;
@@ -14,9 +15,10 @@ namespace Material3Expressive.Foundation;
 /// variant instead, mirroring the per-theme-instance default bundles upstream keeps as ~60 fields
 /// on <c>ColorScheme</c>.
 /// <para>
-/// The component token half of this class is generated from the tables under <c>Tokens/</c> — see
-/// <c>ResolvedTheme.Components.g.cs</c> — so adding a component domain costs one table file and no
-/// edit here.
+/// The component token half of this class is generated from the defaults tables under
+/// <c>Defaults/</c> (with raw values under <c>Tokens/</c>) — see
+/// <c>ResolvedTheme.Components.g.cs</c> — so adding a component domain costs no hand-written
+/// accessor edit here. System schemes, including typography, resolve through their owning scheme.
 /// </para>
 /// </remarks>
 public sealed partial class ResolvedTheme
@@ -30,9 +32,32 @@ public sealed partial class ResolvedTheme
         Motion = new ResolvedMotionScheme(theme.MotionScheme);
         Ripple = new ResolvedRippleThemeConfiguration(theme.RippleTheme);
 
-        // Typography reads the generated type scale, so the component tokens have to exist first.
+        // Component defaults are initialized independently; TypeScale is a system table and is
+        // resolved through TypographyScheme below rather than through MaterialTheme.Components.
         InitializeComponentTokens(theme);
-        Typography = new ResolvedTypographyScheme(theme.TypographyScheme, GetTypeScale);
+
+#pragma warning disable CS0618 // Legacy Components-based TypeScaleOverrides remains supported.
+        var legacyTypeScaleOverrides = theme.Components.OfType<TypeScaleOverrides>().ToArray();
+#pragma warning restore CS0618
+
+        Typography = new ResolvedTypographyScheme(theme.TypographyScheme, role =>
+        {
+            var scale = TypeScale.For(role);
+
+            foreach (var overrides in theme.TypographyScheme.TypeScaleOverrides)
+            {
+                if (overrides.Variant == role)
+                    scale = overrides.ApplyTo(scale);
+            }
+
+            foreach (var overrides in legacyTypeScaleOverrides)
+            {
+                if (overrides.Variant == role)
+                    scale = overrides.ApplyTo(scale);
+            }
+
+            return scale;
+        });
     }
 
     /// <summary>The theme every element falls back to when no theme has been declared above it.</summary>

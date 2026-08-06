@@ -1,0 +1,23 @@
+{
+  "kind": "componentTokens",
+  "name": "SplitButtonSmallTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "18_0_18",
+  "source": "androidx compose/material3 tokens/SplitButtonSmallTokens.kt",
+  "summary": "A button with a separate trailing segment that opens something.",
+
+  "tokens": {
+    "BetweenSpace": { "type": "dimension", "value": 2 },
+    "ContainerHeight": { "type": "dimension", "value": 40 },
+    "ContainerShape": { "type": "shape", "value": "CornerFull" },
+    "InnerCornerSize": { "type": "dimension", "value": 4 },
+    "InnerHoveredCornerSize": { "type": "dimension", "value": 12 },
+    "InnerPressedCornerSize": { "type": "dimension", "value": 12 },
+    "LeadingButtonLeadingSpace": { "type": "dimension", "value": 16 },
+    "LeadingButtonTrailingSpace": { "type": "dimension", "value": 12 },
+    "TrailingButtonLeadingSpace": { "type": "dimension", "value": 13 },
+    "TrailingButtonTrailingSpace": { "type": "dimension", "value": 13 },
+    "TrailingIconSize": { "type": "dimension", "value": 22 },
+    "TrailingInnerSelectedCornerCornerSizePercent": { "type": "number", "value": 50 }
+  }
+}

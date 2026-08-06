@@ -1,0 +1,19 @@
+{
+  "kind": "componentTokens",
+  "name": "TextButtonTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/TextButtonTokens.kt",
+  "summary": "Colours of the text button. Upstream names its label tokens Label rather than LabelText here; the names are kept as they are so the transcription stays checkable against the source.",
+
+  "tokens": {
+    "DisabledContainerColor": { "type": "color", "value": "OnSurface" },
+    "DisabledContainerOpacity": { "type": "opacity", "value": 0.1 },
+    "DisabledIconColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "DisabledIconOpacity": { "type": "opacity", "value": 0.38 },
+    "DisabledLabelColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "DisabledLabelOpacity": { "type": "opacity", "value": 0.38 },
+    "IconColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "LabelColor": { "type": "color", "value": "OnSurfaceVariant" }
+  }
+}

@@ -8,6 +8,9 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls;
+using Material3Expressive.Controls.ButtonRuntime;
+using Material3Expressive.Controls.SliderRuntime;
+using Material3Expressive.Controls.SwitchRuntime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Tests.TestUtils;
@@ -119,6 +122,64 @@ public class ToggleTests
         Assert.Equal(SysColorToken.OnPrimary, ButtonColorTokens.Filled.SelectedLabelTextColor.RoleToken);
         Assert.Equal(SysColorToken.OnSecondary, ButtonColorTokens.Tonal.SelectedLabelTextColor.RoleToken);
         Assert.Equal(SysColorToken.InverseOnSurface, ButtonColorTokens.Outlined.SelectedLabelTextColor.RoleToken);
+    }
+
+    [Fact]
+    public void ToggleDefaults_ExposeIndependentCheckedAndDisabledStateSelection()
+    {
+        var colors = ToggleButtonDefaults.Colors(ResolvedTheme.Default, ButtonVariant.Tonal, isDark: false);
+
+        Assert.Same(colors.UncheckedContentColor, colors.ContentColor(enabled: true, checkedState: false));
+        Assert.Same(colors.CheckedContentColor, colors.ContentColor(enabled: true, checkedState: true));
+        Assert.Same(colors.DisabledContentColor, colors.ContentColor(enabled: false, checkedState: true));
+        Assert.NotSame(colors.UncheckedContentColor, colors.CheckedContentColor);
+    }
+
+    [Fact]
+    public void ToggleDefaults_KeepThreeShapeStatesSeparateFromButtonColorState()
+    {
+        var shapes = ToggleButtonDefaults.Shapes(ResolvedTheme.Default, ButtonSize.Small);
+
+        Assert.Equal(ButtonSmallTokens.ContainerShapeRound, shapes.UncheckedShape);
+        Assert.Equal(ButtonSmallTokens.PressedContainerShape, shapes.PressedShape);
+        Assert.Equal(ButtonSmallTokens.ContainerShapeSquare, shapes.CheckedShape);
+    }
+}
+
+public class ButtonDefaultsTests
+{
+    [Fact]
+    public void ButtonDefaults_ResolvesColoursAndStateElevationFromTheSameVariant()
+    {
+        var theme = ResolvedTheme.Default;
+        var tokens = ButtonDefaults.ColorTokens(theme, ButtonVariant.Elevated);
+        var colors = ButtonDefaults.Colors(theme, ButtonVariant.Elevated, isDark: false);
+
+        Assert.Same(
+            colors,
+            theme.GetButtonColors(ButtonVariant.Elevated, isDark: false));
+        Assert.Equal(
+            tokens.PressedContainerElevation,
+            ButtonDefaults.Elevation(tokens, enabled: true, InteractionState.Pressed));
+        Assert.Equal(
+            tokens.DisabledContainerElevation,
+            ButtonDefaults.Elevation(tokens, enabled: false, InteractionState.Hovered));
+    }
+
+    [Fact]
+    public void ButtonDefaults_AdaptsSizeTokensIntoTemplateValues()
+    {
+        var theme = ResolvedTheme.Default;
+        var metrics = ButtonDefaults.Metrics(theme, ButtonSize.Medium);
+        var shapes = ButtonDefaults.Shapes(theme, ButtonSize.Medium);
+
+        Assert.Equal(
+            new Thickness(metrics.LeadingSpace, metrics.VerticalSpace, metrics.TrailingSpace,
+                metrics.VerticalSpace),
+            ButtonDefaults.ContentPadding(theme, ButtonSize.Medium));
+        Assert.Equal(metrics.ContainerShape, shapes.ContainerShape);
+        Assert.Equal(metrics.PressedContainerShape, shapes.PressedContainerShape);
+        Assert.Equal(metrics.SquareContainerShape, shapes.SquareContainerShape);
     }
 }
 
@@ -233,6 +294,19 @@ public class SelectionTests
         Assert.Equal(
             ThemeTestHelper.Expected(theme, SysColorToken.Primary),
             ThemeTestHelper.ColorOf(colors.SelectedTrackColor));
+    }
+
+    [Fact]
+    public void SwitchDefaults_ProjectCheckedAndDisabledStateIntoRenderValues()
+    {
+        var colors = SwitchDefaults.Colors(ResolvedTheme.Default, isDark: false);
+        var selected = SwitchDefaults.Visuals(colors, enabled: true, selected: true);
+        var disabled = SwitchDefaults.Visuals(colors, enabled: false, selected: false);
+
+        Assert.Same(colors.SelectedTrackColor, selected.TrackColor);
+        Assert.Null(selected.TrackOutlineColor);
+        Assert.Same(colors.DisabledUnselectedTrackColor, disabled.TrackColor);
+        Assert.Same(colors.DisabledUnselectedTrackOutlineColor, disabled.TrackOutlineColor);
     }
 
     [AvaloniaFact]
@@ -1117,6 +1191,18 @@ public class LoadingIndicatorTests
 
 public class SliderTests
 {
+    [Fact]
+    public void SliderDefaults_ShareDisabledProjectionForSliderAndRangeSlider()
+    {
+        var colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
+        var visuals = SliderDefaults.Visuals(colors, enabled: false);
+
+        Assert.Same(colors.DisabledActiveTrackColor, visuals.ActiveTrackColor);
+        Assert.Same(colors.DisabledInactiveTrackColor, visuals.InactiveTrackColor);
+        Assert.Same(colors.DisabledHandleColor, visuals.HandleColor);
+        Assert.Same(visuals.ActiveTrackColor, visuals.StopIndicatorColor);
+    }
+
     [AvaloniaFact]
     public void TheHandle_NarrowsWhilePressedSoTheValueStaysVisible()
     {

@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Material3Expressive.Controls.ButtonRuntime;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -20,7 +21,10 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
     private ToggleButton? _owner;
     private MaterialInteractionHost? _interaction;
     private AnimatedShape? _shape;
-    private ButtonSizeTokens _metrics = ButtonSizeTokens.Small;
+    private ToggleButtonShapes _shapes = new(
+        ShapeRole.CornerFull,
+        ShapeRole.CornerSmall,
+        ShapeRole.CornerSmall);
     private CornerRadius _currentCornerRadius;
 
     public MaterialToggleButtonContainerPresenter()
@@ -126,7 +130,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
     {
         if (_owner is not { } owner)
             return;
-        _metrics = _theme.Theme.GetButtonSizeTokens(ButtonAssist.GetSize(owner));
+        _shapes = ToggleButtonDefaults.Shapes(_theme.Theme, ButtonAssist.GetSize(owner));
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -137,7 +141,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
             return;
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Theme.Shapes.Get(_metrics.PressedContainerShape)
+            ? _theme.Theme.Shapes.Get(_shapes.PressedShape)
             : RestingShape();
         if (snap && !shape.IsRunning)
             shape.SnapTo(target);
@@ -153,14 +157,14 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return _theme.Theme.Shapes.Get(_metrics.ContainerShape);
+            return _theme.Theme.Shapes.Get(_shapes.UncheckedShape);
         if (ButtonAssist.GetContainerShapeOverride(owner) is { } shape)
             return shape;
 
         var selected = owner.IsChecked == true;
         var round = ButtonAssist.GetIsSquare(owner) == selected;
         return _theme.Theme.Shapes.Get(
-            round ? _metrics.ContainerShape : _metrics.SquareContainerShape);
+            round ? _shapes.UncheckedShape : _shapes.CheckedShape);
     }
 
     private void UpdateCurrentCornerRadius()

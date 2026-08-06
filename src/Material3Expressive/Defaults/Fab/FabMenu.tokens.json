@@ -1,0 +1,49 @@
+{
+  "kind": "componentDefaults",
+  "name": "FabMenuTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "version": "v0_14_0",
+  "source": "androidx compose/material3 tokens/FabMenuBaselineTokens.kt",
+  "summary": "The FAB menu: a floating action button that expands into a column of labelled items.",
+
+  "properties": {
+    "CloseButtonSize": { "type": "dimension", "summary": "The toggle itself, once expanded." },
+    "CloseButtonIconSize": { "type": "dimension", "summary": "Its icon, which is smaller than a normal FAB's." },
+    "CloseButtonShape": { "type": "shape", "summary": "The toggle's corners." },
+    "CloseButtonBetweenSpace": { "type": "dimension", "summary": "The gap between the toggle and the item nearest it." },
+    "CloseButtonElevation": { "type": "elevation", "summary": "The toggle's shadow." },
+
+    "ItemHeight": { "type": "dimension", "summary": "Each item's height." },
+    "ItemShape": { "type": "shape", "summary": "Each item's corners." },
+    "ItemBetweenSpace": { "type": "dimension", "summary": "The gap between items." },
+    "ItemElevation": { "type": "elevation", "summary": "Each item's shadow." },
+    "ItemIconSize": { "type": "dimension", "summary": "An item's icon." },
+    "ItemIconLabelSpace": { "type": "dimension", "summary": "The gap between an item's icon and its label." },
+    "ItemLeadingSpace": { "type": "dimension", "summary": "Padding before an item's icon." },
+    "ItemTrailingSpace": { "type": "dimension", "summary": "Padding after an item's label." },
+    "ItemLabelTextStyle": { "type": "typography", "summary": "An item's label." }
+  },
+
+  "sets": [
+    {
+      "name": "Default",
+      "values": {
+        "CloseButtonSize": 56,
+        "CloseButtonIconSize": 20,
+        "CloseButtonShape": "CornerFull",
+        "CloseButtonBetweenSpace": 8,
+        "CloseButtonElevation": "@ElevationTokens.Level3",
+
+        "ItemHeight": 56,
+        "ItemShape": "CornerFull",
+        "ItemBetweenSpace": 4,
+        "ItemElevation": "@ElevationTokens.Level3",
+        "ItemIconSize": 24,
+        "ItemIconLabelSpace": 8,
+        "ItemLeadingSpace": 24,
+        "ItemTrailingSpace": 24,
+        "ItemLabelTextStyle": "TitleMedium"
+      }
+    }
+  ]
+}

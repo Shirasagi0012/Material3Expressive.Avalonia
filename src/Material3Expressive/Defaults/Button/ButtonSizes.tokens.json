@@ -1,0 +1,123 @@
+// Upstream behavior reference: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
+// Button.kt:1661-1677 (ButtonDefaults.textStyleFor) and 978-1013 (size paddings), plus
+// tokens/Button{XSmall,Small,Medium,Large,XLarge}Tokens.kt (VERSION v0_11_0). The executable
+// Compose Multiplatform Material3 1.5.0-alpha22 lineage has the same textStyleFor thresholds at
+// Button.kt:1652-1670, so the size-to-typography adaptation is executable visual-parity scope.
+{
+  "kind": "componentDefaults",
+  "name": "ButtonSizeTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/Button{XSmall,Small,Medium,Large,XLarge}Tokens.kt, with the paddings and text styles from ButtonDefaults",
+  "summary": "The metrics of one button size. Upstream splits a button's tokens the same way: colours vary by variant, metrics vary by size.",
+
+  "variantEnum": "ButtonSize",
+  "variantEnumSummary": "The five Expressive button sizes.",
+
+  "properties": {
+    "ContainerHeight": { "type": "dimension", "summary": "The button's minimum height." },
+    "ContainerShape": { "type": "shape", "summary": "The resting shape of a round button." },
+    "SquareContainerShape": { "type": "shape", "summary": "The resting shape of a square button." },
+    "PressedContainerShape": { "type": "shape", "summary": "The shape the container morphs to while pressed." },
+    "LeadingSpace": { "type": "dimension", "summary": "Padding before the content." },
+    "TrailingSpace": { "type": "dimension", "summary": "Padding after the content." },
+    "VerticalSpace": { "type": "dimension", "summary": "Padding above and below the content." },
+    "IconSize": { "type": "dimension", "summary": "The size of a leading or trailing icon." },
+    "IconLabelSpace": { "type": "dimension", "summary": "The gap between an icon and the label." },
+    "OutlineWidth": { "type": "dimension", "summary": "The outlined variant's border thickness at this size." },
+    "LabelTextStyle": { "type": "typography", "summary": "The type scale the label is set in." }
+  },
+
+  "sets": [
+    {
+      "name": "ExtraSmall",
+      "summary": "32dp tall.",
+      "values": {
+        "ContainerHeight": "@ButtonXSmallTokens.ContainerHeight",
+        "ContainerShape": "@ButtonXSmallTokens.ContainerShapeRound",
+        "SquareContainerShape": "@ButtonXSmallTokens.ContainerShapeSquare",
+        "PressedContainerShape": "@ButtonXSmallTokens.PressedContainerShape",
+        // ButtonDefaults.ExtraSmallContentPadding overrides the token file, which upstream
+        // marks as awaiting correction; the 12dp/6dp here is what actually ships.
+        "LeadingSpace": 12,
+        "TrailingSpace": 12,
+        "VerticalSpace": 6,
+        "IconSize": "@ButtonXSmallTokens.IconSize",
+        "IconLabelSpace": "@ButtonXSmallTokens.IconLabelSpace",
+        "OutlineWidth": "@ButtonXSmallTokens.OutlinedOutlineWidth",
+        "LabelTextStyle": "LabelLarge"
+      }
+    },
+    {
+      "name": "Small",
+      "summary": "40dp tall — the default.",
+      "values": {
+        "ContainerHeight": "@ButtonSmallTokens.ContainerHeight",
+        "ContainerShape": "@ButtonSmallTokens.ContainerShapeRound",
+        "SquareContainerShape": "@ButtonSmallTokens.ContainerShapeSquare",
+        "PressedContainerShape": "@ButtonSmallTokens.PressedContainerShape",
+        "LeadingSpace": "@ButtonSmallTokens.LeadingSpace",
+        "TrailingSpace": "@ButtonSmallTokens.TrailingSpace",
+        // ButtonDefaults.smallVerticalPadding is 8dp for precision pointers and 10dp for coarse
+        // ones. Avalonia has no equivalent of that signal, so the coarse-pointer value is the
+        // default.
+        "VerticalSpace": 10,
+        "IconSize": "@ButtonSmallTokens.IconSize",
+        "IconLabelSpace": "@ButtonSmallTokens.IconLabelSpace",
+        "OutlineWidth": "@ButtonSmallTokens.OutlinedOutlineWidth",
+        "LabelTextStyle": "LabelLarge"
+      }
+    },
+    {
+      "name": "Medium",
+      "summary": "56dp tall.",
+      "values": {
+        "ContainerHeight": "@ButtonMediumTokens.ContainerHeight",
+        "ContainerShape": "@ButtonMediumTokens.ContainerShapeRound",
+        "SquareContainerShape": "@ButtonMediumTokens.ContainerShapeSquare",
+        "PressedContainerShape": "@ButtonMediumTokens.PressedContainerShape",
+        "LeadingSpace": "@ButtonMediumTokens.LeadingSpace",
+        "TrailingSpace": "@ButtonMediumTokens.TrailingSpace",
+        "VerticalSpace": 16,
+        "IconSize": "@ButtonMediumTokens.IconSize",
+        "IconLabelSpace": "@ButtonMediumTokens.IconLabelSpace",
+        "OutlineWidth": "@ButtonMediumTokens.OutlinedOutlineWidth",
+        "LabelTextStyle": "TitleMedium"
+      }
+    },
+    {
+      "name": "Large",
+      "summary": "96dp tall.",
+      "values": {
+        "ContainerHeight": "@ButtonLargeTokens.ContainerHeight",
+        "ContainerShape": "@ButtonLargeTokens.ContainerShapeRound",
+        "SquareContainerShape": "@ButtonLargeTokens.ContainerShapeSquare",
+        "PressedContainerShape": "@ButtonLargeTokens.PressedContainerShape",
+        "LeadingSpace": "@ButtonLargeTokens.LeadingSpace",
+        "TrailingSpace": "@ButtonLargeTokens.TrailingSpace",
+        "VerticalSpace": 32,
+        "IconSize": "@ButtonLargeTokens.IconSize",
+        "IconLabelSpace": "@ButtonLargeTokens.IconLabelSpace",
+        "OutlineWidth": "@ButtonLargeTokens.OutlinedOutlineWidth",
+        "LabelTextStyle": "HeadlineSmall"
+      }
+    },
+    {
+      "name": "ExtraLarge",
+      "summary": "136dp tall.",
+      "values": {
+        "ContainerHeight": "@ButtonXLargeTokens.ContainerHeight",
+        "ContainerShape": "@ButtonXLargeTokens.ContainerShapeRound",
+        "SquareContainerShape": "@ButtonXLargeTokens.ContainerShapeSquare",
+        "PressedContainerShape": "@ButtonXLargeTokens.PressedContainerShape",
+        "LeadingSpace": "@ButtonXLargeTokens.LeadingSpace",
+        "TrailingSpace": "@ButtonXLargeTokens.TrailingSpace",
+        "VerticalSpace": 48,
+        "IconSize": "@ButtonXLargeTokens.IconSize",
+        "IconLabelSpace": "@ButtonXLargeTokens.IconLabelSpace",
+        "OutlineWidth": "@ButtonXLargeTokens.OutlinedOutlineWidth",
+        "LabelTextStyle": "HeadlineLarge"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "kind": "componentTokens",
+  "name": "SmallIconButtonTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "14_1_0",
+  "source": "androidx compose/material3 tokens/SmallIconButtonTokens.kt",
+  "summary": "Metrics for the small icon button size.",
+
+  "tokens": {
+    "ContainerHeight": { "type": "dimension", "value": 40 },
+    "ContainerShapeRound": { "type": "shape", "value": "CornerFull" },
+    "ContainerShapeSquare": { "type": "shape", "value": "CornerMedium" },
+    "PressedContainerShape": { "type": "shape", "value": "CornerSmall" },
+    "SelectedContainerShapeRound": { "type": "shape", "value": "CornerMedium" },
+    "SelectedContainerShapeSquare": { "type": "shape", "value": "CornerFull" },
+    "IconSize": { "type": "dimension", "value": 24 },
+    "NarrowLeadingSpace": { "type": "dimension", "value": 4 },
+    "DefaultLeadingSpace": { "type": "dimension", "value": 8 },
+    "WideLeadingSpace": { "type": "dimension", "value": 14 },
+    "OutlinedOutlineWidth": { "type": "dimension", "value": 1 }
+  }
+}

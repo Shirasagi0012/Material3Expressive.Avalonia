@@ -1,0 +1,117 @@
+{
+  "kind": "componentDefaults",
+  "name": "TextFieldTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "TextFieldColors",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/{Filled,Outlined}TextFieldTokens.kt",
+  "summary": "The colours and metrics of one text field variant.",
+
+  "variantEnum": "TextFieldVariant",
+  "variantEnumSummary": "Filled sits on a surface with an indicator underneath; outlined is a border with a notch for its label.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The field's fill. Transparent when outlined." },
+    "DisabledContainerColor": { "type": "color", "opacity": "DisabledContainerOpacity", "summary": "The resolved fill when disabled. Filled fields retain their normal container surface; outlined fields remain transparent." },
+    "DisabledContainerOpacity": { "type": "opacity", "summary": "Alpha applied to the resolved disabled fill." },
+
+    "InputColor": { "type": "color", "summary": "The text being edited." },
+    "PlaceholderColor": { "type": "color", "summary": "The placeholder shown while empty." },
+    "LabelColor": { "type": "color", "summary": "The label at rest." },
+    "FocusLabelColor": { "type": "color", "summary": "The label once focused." },
+    "SupportingColor": { "type": "color", "summary": "The helper text under the field." },
+    "LeadingIconColor": { "type": "color", "summary": "An icon before the input." },
+    "TrailingIconColor": { "type": "color", "summary": "An icon after the input." },
+
+    "OutlineColor": { "type": "color", "summary": "The border, or the indicator line when filled." },
+    "FocusOutlineColor": { "type": "color", "summary": "That border once focused." },
+
+    "ErrorColor": { "type": "color", "summary": "Label, indicator and supporting text in the error state." },
+    "ErrorInputColor": { "type": "color", "summary": "The text itself stays readable in error; only its surroundings change." },
+
+    "DisabledInputColor": { "type": "color", "opacity": "DisabledContentOpacity", "summary": "Text when disabled." },
+    "DisabledLabelColor": { "type": "color", "opacity": "DisabledContentOpacity", "summary": "The label when disabled." },
+    "DisabledSupportingColor": { "type": "color", "opacity": "DisabledContentOpacity", "summary": "Supporting text when disabled." },
+    "DisabledIconColor": { "type": "color", "opacity": "DisabledContentOpacity", "summary": "Icons when disabled." },
+    "DisabledOutlineColor": { "type": "color", "opacity": "DisabledOutlineOpacity", "summary": "The border when disabled." },
+    "DisabledContentOpacity": { "type": "opacity", "summary": "Alpha applied to disabled text and icons." },
+    "DisabledOutlineOpacity": { "type": "opacity", "summary": "Alpha applied to the disabled border." },
+
+    "ContainerShape": { "type": "shape", "summary": "The field's corners." },
+    "ContainerHeight": { "type": "dimension", "summary": "The field's minimum height." },
+    "OutlineWidth": { "type": "dimension", "summary": "The border or indicator at rest." },
+    "FocusOutlineWidth": { "type": "dimension", "summary": "The border or indicator once focused — Material thickens it rather than recolouring alone." },
+    "IconSize": { "type": "dimension", "summary": "Leading and trailing icons." },
+    "HorizontalSpace": { "type": "dimension", "summary": "Padding at each end of the input." },
+    "InputTextStyle": { "type": "typography", "summary": "The type scale the input and the resting label are set in." },
+    "FloatingLabelTextStyle": { "type": "typography", "summary": "The type scale the label shrinks to once it floats." },
+    "SupportingTextStyle": { "type": "typography", "summary": "The type scale for helper and error text." },
+    "IsFilled": { "type": "bool", "summary": "Whether the variant fills its container and draws an indicator instead of a border." }
+  },
+
+  "sets": [
+    {
+      "name": "Filled",
+      "summary": "A tinted surface with an indicator line along its bottom edge.",
+      "values": {
+        "ContainerColor": "SurfaceContainerHighest",
+        // TextFieldDefaults.defaultTextFieldColors() resolves the default disabled container
+        // from FilledTextFieldTokens.ContainerColor, rather than directly exposing the raw
+        // DisabledContainerColor/Opacity token pair.
+        "DisabledContainerColor": "SurfaceContainerHighest",
+        "DisabledContainerOpacity": 1,
+
+        "InputColor": "OnSurface",
+        "PlaceholderColor": "OnSurfaceVariant",
+        "LabelColor": "OnSurfaceVariant",
+        "FocusLabelColor": "Primary",
+        "SupportingColor": "OnSurfaceVariant",
+        "LeadingIconColor": "OnSurfaceVariant",
+        "TrailingIconColor": "OnSurfaceVariant",
+
+        "OutlineColor": "OnSurfaceVariant",
+        "FocusOutlineColor": "Primary",
+
+        "ErrorColor": "Error",
+        "ErrorInputColor": "OnSurface",
+
+        "DisabledInputColor": "OnSurface",
+        "DisabledLabelColor": "OnSurface",
+        "DisabledSupportingColor": "OnSurface",
+        "DisabledIconColor": "OnSurface",
+        "DisabledOutlineColor": "OnSurface",
+        "DisabledContentOpacity": 0.38,
+        "DisabledOutlineOpacity": 0.38,
+
+        "ContainerShape": "CornerExtraSmallTop",
+        "ContainerHeight": 56,
+        "OutlineWidth": 1,
+        "FocusOutlineWidth": 2,
+        "IconSize": 24,
+        "HorizontalSpace": 16,
+        "InputTextStyle": "BodyLarge",
+        "FloatingLabelTextStyle": "BodySmall",
+        "SupportingTextStyle": "BodySmall",
+        "IsFilled": true
+      }
+    },
+    {
+      "name": "Outlined",
+      "extends": "Filled",
+      "summary": "A border, notched where the floating label crosses it.",
+      "values": {
+        "ContainerColor": "#00000000",
+        "DisabledContainerColor": "#00000000",
+        "DisabledContainerOpacity": 1,
+
+        "OutlineColor": "Outline",
+        "FocusOutlineColor": "Primary",
+        // The outlined field's border dims much further than the filled one's indicator.
+        "DisabledOutlineOpacity": 0.12,
+
+        "ContainerShape": "CornerExtraSmall",
+        "IsFilled": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "kind": "componentTokens",
+  "name": "MediumIconButtonTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "14_1_0",
+  "source": "androidx compose/material3 tokens/MediumIconButtonTokens.kt",
+  "summary": "Metrics for the medium icon button size.",
+
+  "tokens": {
+    "ContainerHeight": { "type": "dimension", "value": 56 },
+    "ContainerShapeRound": { "type": "shape", "value": "CornerFull" },
+    "ContainerShapeSquare": { "type": "shape", "value": "CornerLarge" },
+    "PressedContainerShape": { "type": "shape", "value": "CornerMedium" },
+    "SelectedContainerShapeRound": { "type": "shape", "value": "CornerLarge" },
+    "SelectedContainerShapeSquare": { "type": "shape", "value": "CornerFull" },
+    "IconSize": { "type": "dimension", "value": 24 },
+    "NarrowLeadingSpace": { "type": "dimension", "value": 12 },
+    "DefaultLeadingSpace": { "type": "dimension", "value": 16 },
+    "WideLeadingSpace": { "type": "dimension", "value": 24 },
+    "OutlinedOutlineWidth": { "type": "dimension", "value": 1 }
+  }
+}

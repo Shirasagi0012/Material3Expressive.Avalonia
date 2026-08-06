@@ -1,0 +1,50 @@
+{
+  "kind": "componentDefaults",
+  "name": "SnackbarTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "resolvedName": "SnackbarColors",
+  "version": "v0_103",
+  "source": "androidx compose/material3 tokens/SnackbarTokens.kt",
+  "summary": "A snackbar: a brief message on an inverted surface, so it reads as separate from the page under it.",
+
+  "properties": {
+    "ContainerColor": { "type": "color", "summary": "The inverted surface." },
+    "SupportingTextColor": { "type": "color", "summary": "The message." },
+    "ActionLabelTextColor": { "type": "color", "summary": "The action. Inverse primary, so it still reads as an accent on an inverted surface." },
+    "IconColor": { "type": "color", "summary": "The dismiss icon." },
+
+    "ContainerElevation": { "type": "elevation", "summary": "The snackbar shadow." },
+    "ContainerShape": { "type": "shape", "summary": "The snackbar corners." },
+    "SingleLineHeight": { "type": "dimension", "summary": "Height with a one-line message." },
+    "TwoLineHeight": { "type": "dimension", "summary": "Height once the message wraps." },
+    "MinWidth": { "type": "dimension", "summary": "How narrow it may get." },
+    "MaxWidth": { "type": "dimension", "summary": "How wide, before it stops reading as a snackbar." },
+    "HorizontalSpace": { "type": "dimension", "summary": "Padding at each end." },
+    "IconSize": { "type": "dimension", "summary": "The dismiss icon." },
+    "SupportingTextStyle": { "type": "typography", "summary": "The message." },
+    "ActionTextStyle": { "type": "typography", "summary": "The action." }
+  },
+
+  "sets": [
+    {
+      "name": "Default",
+      "values": {
+        "ContainerColor": "InverseSurface",
+        "SupportingTextColor": "InverseOnSurface",
+        "ActionLabelTextColor": "InversePrimary",
+        "IconColor": "InverseOnSurface",
+
+        "ContainerElevation": "@ElevationTokens.Level3",
+        "ContainerShape": "CornerExtraSmall",
+        "SingleLineHeight": 48,
+        "TwoLineHeight": 68,
+        "MinWidth": 344,
+        "MaxWidth": 600,
+        "HorizontalSpace": 16,
+        "IconSize": 24,
+        "SupportingTextStyle": "BodyMedium",
+        "ActionTextStyle": "LabelLarge"
+      }
+    }
+  ]
+}

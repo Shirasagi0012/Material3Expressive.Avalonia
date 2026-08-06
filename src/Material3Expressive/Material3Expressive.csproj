@@ -61,7 +61,8 @@
     <!-- The token tables are the source of truth for every token in the library; the generator
          turns each into its C# form at build time. -->
     <ItemGroup>
-        <AdditionalFiles Include="Tokens\**\*.tokens.json"/>
+        <AdditionalFiles Include="Tokens\**\*.tokens.json" />
+        <AdditionalFiles Include="Defaults\**\*.tokens.json" />
     </ItemGroup>
 
     <ItemGroup>

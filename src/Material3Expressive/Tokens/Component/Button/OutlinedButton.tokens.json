@@ -1,0 +1,27 @@
+{
+  "kind": "componentTokens",
+  "name": "OutlinedButtonTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/OutlinedButtonTokens.kt",
+  "summary": "Colours of the outlined button. It has no container colour of its own — the container is transparent until the toggle variant selects it.",
+
+  "tokens": {
+    "DisabledContainerOpacity": { "type": "opacity", "value": 0.1 },
+    "DisabledIconColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "DisabledIconOpacity": { "type": "opacity", "value": 0.38 },
+    "DisabledLabelTextColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "DisabledLabelTextOpacity": { "type": "opacity", "value": 0.38 },
+    "DisabledOutlineColor": { "type": "color", "value": "OutlineVariant" },
+    "IconColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "LabelTextColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "OutlineColor": { "type": "color", "value": "OutlineVariant" },
+    "SelectedContainerColor": { "type": "color", "value": "InverseSurface" },
+    "SelectedDisabledContainerColor": { "type": "color", "value": "OnSurface" },
+    "SelectedIconColor": { "type": "color", "value": "InverseOnSurface" },
+    "SelectedLabelTextColor": { "type": "color", "value": "InverseOnSurface" },
+    "UnselectedDisabledOutlineColor": { "type": "color", "value": "OutlineVariant" },
+    "UnselectedIconColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "UnselectedLabelTextColor": { "type": "color", "value": "OnSurfaceVariant" }
+  }
+}

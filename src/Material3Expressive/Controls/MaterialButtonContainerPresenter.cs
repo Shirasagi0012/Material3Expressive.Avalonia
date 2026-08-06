@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.VisualTree;
+using Material3Expressive.Controls.ButtonRuntime;
 using Material3Expressive.Foundation;
 using MaterialColorUtilities.Avalonia.Tokens;
 
@@ -28,7 +29,7 @@ public sealed class MaterialButtonContainerPresenter : Control
     private MaterialInteractionHost? _interaction;
     private AnimatedShape? _shape;
     private ButtonColorTokens _tokens = ButtonColorTokens.Filled;
-    private ButtonSizeTokens _metrics = ButtonSizeTokens.Small;
+    private ButtonShapes _shapes = ButtonDefaults.Shapes(ResolvedTheme.Default, ButtonSize.Small);
     private CornerRadius _currentCornerRadius;
 
     public MaterialButtonContainerPresenter()
@@ -165,8 +166,8 @@ public sealed class MaterialButtonContainerPresenter : Control
         if (_owner is not { } owner)
             return;
 
-        _tokens = _theme.Theme.GetButtonColorTokens(ButtonAssist.GetVariant(owner));
-        _metrics = _theme.Theme.GetButtonSizeTokens(ButtonAssist.GetSize(owner));
+        _tokens = ButtonDefaults.ColorTokens(_theme.Theme, ButtonAssist.GetVariant(owner));
+        _shapes = ButtonDefaults.Shapes(_theme.Theme, ButtonAssist.GetSize(owner));
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -178,7 +179,7 @@ public sealed class MaterialButtonContainerPresenter : Control
 
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? ShapeFor(_metrics.PressedContainerShape)
+            ? ShapeFor(_shapes.PressedContainerShape)
             : RestingShape();
 
         if (snap && !shape.IsRunning)
@@ -206,13 +207,13 @@ public sealed class MaterialButtonContainerPresenter : Control
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return ShapeFor(_metrics.ContainerShape);
+            return ShapeFor(_shapes.ContainerShape);
 
         return ButtonAssist.GetContainerShapeOverride(owner)
                ?? ShapeFor(
                    ButtonAssist.GetIsSquare(owner)
-                       ? _metrics.SquareContainerShape
-                       : _metrics.ContainerShape);
+                       ? _shapes.SquareContainerShape
+                       : _shapes.ContainerShape);
     }
 
     private RoundedCornerShape ShapeFor(ShapeRole role) => _theme.Theme.Shapes.Get(role);
@@ -221,11 +222,7 @@ public sealed class MaterialButtonContainerPresenter : Control
     {
         var interaction = _interaction?.Interaction ?? InteractionState.None;
 
-        return !enabled ? _tokens.DisabledContainerElevation
-            : interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedContainerElevation
-            : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoveredContainerElevation
-            : interaction.HasFlag(InteractionState.Focused) ? _tokens.FocusedContainerElevation
-            : _tokens.ContainerElevation;
+        return ButtonDefaults.Elevation(_tokens, enabled, interaction);
     }
 
     private static double Uniform(Thickness thickness)

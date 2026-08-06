@@ -1,0 +1,35 @@
+{
+  "kind": "componentTokens",
+  "name": "FilledButtonTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/FilledButtonTokens.kt",
+  "summary": "Colours and elevations of the filled button.",
+
+  // Upstream also emits Focused*/Hovered*/Pressed* colour tokens. In every button variant they
+  // repeat the resting colour verbatim, because Expressive expresses interaction as a state layer
+  // drawn over the container rather than as a different container colour, so they are not
+  // transcribed. The elevations, which genuinely do vary by state, are.
+  "tokens": {
+    "ContainerColor": { "type": "color", "value": "Primary" },
+    "ContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" },
+    "DisabledContainerColor": { "type": "color", "value": "OnSurface" },
+    "DisabledContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" },
+    "DisabledContainerOpacity": { "type": "opacity", "value": 0.1 },
+    "DisabledIconColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "DisabledIconOpacity": { "type": "opacity", "value": 0.38 },
+    "DisabledLabelTextColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "DisabledLabelTextOpacity": { "type": "opacity", "value": 0.38 },
+    "FocusedContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" },
+    "HoveredContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level1" },
+    "IconColor": { "type": "color", "value": "OnPrimary" },
+    "LabelTextColor": { "type": "color", "value": "OnPrimary" },
+    "LabelTextSelectedColor": { "type": "color", "value": "OnPrimary" },
+    "LabelTextUnselectedColor": { "type": "color", "value": "OnSurfaceVariant" },
+    "PressedContainerElevation": { "type": "elevation", "value": "@ElevationTokens.Level0" },
+    "SelectedContainerColor": { "type": "color", "value": "Primary" },
+    "SelectedIconColor": { "type": "color", "value": "OnPrimary" },
+    "UnselectedContainerColor": { "type": "color", "value": "SurfaceContainer" },
+    "UnselectedIconColor": { "type": "color", "value": "OnSurfaceVariant" }
+  }
+}

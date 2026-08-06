@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Controls.Automation;
+using Material3Expressive.Controls.SliderRuntime;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -38,8 +39,8 @@ public sealed class MaterialRangeSlider : Control
 
     private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
-    private SliderTokens _tokens = SliderTokens.Default;
-    private SliderColors _colors = SliderTokens.Default.Resolve(null, false);
+    private SliderTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
+    private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private bool _updating;
     private bool _startActive = true;
 
@@ -79,8 +80,9 @@ public sealed class MaterialRangeSlider : Control
         var high = Math.Max(start, end);
         var radius = _tokens.TrackHeight / 2;
         var enabled = IsEffectivelyEnabled;
-        var active = enabled ? _colors.ActiveTrackColor : _colors.DisabledActiveTrackColor;
-        var inactive = enabled ? _colors.InactiveTrackColor : _colors.DisabledInactiveTrackColor;
+        var visuals = SliderDefaults.Visuals(_colors, enabled);
+        var active = visuals.ActiveTrackColor;
+        var inactive = visuals.InactiveTrackColor;
         var trackStart = handleWidth / 2;
         var trackEnd = width - handleWidth / 2;
         var startTrackEnd = low - handleWidth / 2 - _tokens.HandlePadding;
@@ -98,7 +100,7 @@ public sealed class MaterialRangeSlider : Control
             context.DrawEllipse(active, null, new Point(trackStart + radius, center), stopRadius, stopRadius);
         if (trackEnd - endTrackStart > radius)
             context.DrawEllipse(active, null, new Point(trackEnd - radius, center), stopRadius, stopRadius);
-        var brush = enabled ? _colors.HandleColor : _colors.DisabledHandleColor;
+        var brush = visuals.HandleColor;
         DrawHandle(context, start, center, handleWidth, brush);
         DrawHandle(context, end, center, handleWidth, brush);
 
@@ -117,7 +119,7 @@ public sealed class MaterialRangeSlider : Control
         _interaction.FocusRingArea = focusRingArea;
         _interaction.FocusRingCornerRadius =
             new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, new CornerRadius(stateLayerSize / 2));
+        _interaction.DrawLayers(context, visuals.StateLayerColor, new CornerRadius(stateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize) =>
@@ -334,8 +336,8 @@ public sealed class MaterialRangeSlider : Control
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.SliderTokens;
-        _colors = _theme.Theme.GetSliderColors(_theme.IsDark);
+        _tokens = SliderDefaults.Tokens(_theme.Theme);
+        _colors = SliderDefaults.Colors(_theme.Theme, _theme.IsDark);
         InvalidateMeasure();
         InvalidateVisual();
     }

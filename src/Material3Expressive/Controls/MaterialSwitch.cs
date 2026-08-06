@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Material3Expressive.Controls.SwitchRuntime;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -29,8 +30,8 @@ public class MaterialSwitch : ToggleButton
 
     private SpringAnimation? _position;
     private SpringAnimation? _handleSize;
-    private SwitchTokens _tokens = SwitchTokens.Default;
-    private SwitchColors _colors = SwitchTokens.Default.Resolve(null, false);
+    private SwitchTokens _tokens = SwitchDefaults.Tokens(ResolvedTheme.Default);
+    private SwitchColors _colors = SwitchDefaults.Colors(ResolvedTheme.Default, isDark: false);
 
     public MaterialSwitch()
     {
@@ -62,15 +63,10 @@ public class MaterialSwitch : ToggleButton
         var track = TrackArea;
         var enabled = IsEffectivelyEnabled;
         var fraction = Position.Value;
+        var visuals = SwitchDefaults.Visuals(_colors, enabled, IsSelected);
 
-        var trackFill = enabled
-            ? IsSelected ? _colors.SelectedTrackColor : _colors.UnselectedTrackColor
-            : IsSelected ? _colors.DisabledSelectedTrackColor : _colors.DisabledUnselectedTrackColor;
-
-        // Only the unselected track is outlined; the selected one is a solid fill.
-        var trackOutline = IsSelected
-            ? null
-            : enabled ? _colors.UnselectedTrackOutlineColor : _colors.DisabledUnselectedTrackOutlineColor;
+        var trackFill = visuals.TrackColor;
+        var trackOutline = visuals.TrackOutlineColor;
 
         var radius = track.Height / 2;
         _interaction.FocusRingArea = track;
@@ -99,16 +95,14 @@ public class MaterialSwitch : ToggleButton
             stateLayerSize,
             stateLayerSize);
 
-        var handleFill = enabled
-            ? IsSelected ? _colors.SelectedHandleColor : _colors.UnselectedHandleColor
-            : IsSelected ? _colors.DisabledSelectedHandleColor : _colors.DisabledUnselectedHandleColor;
+        var handleFill = visuals.HandleColor;
 
         context.DrawEllipse(handleFill, null, centre, handleRadius, handleRadius);
 
         base.Render(context);
         _interaction.DrawLayers(
             context,
-            IsSelected ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
+            visuals.StateLayerColor,
             new CornerRadius(stateLayerSize / 2));
     }
 
@@ -137,8 +131,8 @@ public class MaterialSwitch : ToggleButton
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.SwitchTokens;
-        _colors = _theme.Theme.GetSwitchColors(_theme.IsDark);
+        _tokens = SwitchDefaults.Tokens(_theme.Theme);
+        _colors = SwitchDefaults.Colors(_theme.Theme, _theme.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         Padding = new Thickness(_tokens.TrackWidth + 12, 0, 0, 0);

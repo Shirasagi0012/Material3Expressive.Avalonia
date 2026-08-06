@@ -1,0 +1,22 @@
+{
+  "kind": "componentTokens",
+  "name": "ButtonXLargeTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/ButtonXLargeTokens.kt",
+  "summary": "Metrics for the extra large button size.",
+
+  "tokens": {
+    "ContainerHeight": { "type": "dimension", "value": 136 },
+    "ContainerShapeRound": { "type": "shape", "value": "CornerFull" },
+    "ContainerShapeSquare": { "type": "shape", "value": "CornerExtraLarge" },
+    "IconLabelSpace": { "type": "dimension", "value": 16 },
+    "IconSize": { "type": "dimension", "value": 40 },
+    "LeadingSpace": { "type": "dimension", "value": 64 },
+    "OutlinedOutlineWidth": { "type": "dimension", "value": 3 },
+    "PressedContainerShape": { "type": "shape", "value": "CornerLarge" },
+    "SelectedContainerShapeRound": { "type": "shape", "value": "CornerFull" },
+    "SelectedContainerShapeSquare": { "type": "shape", "value": "CornerExtraLarge" },
+    "TrailingSpace": { "type": "dimension", "value": 64 }
+  }
+}

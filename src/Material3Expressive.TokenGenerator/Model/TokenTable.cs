@@ -77,13 +77,47 @@ internal static class TokenTypes
     }
 }
 
+/// <summary>A reference from one token value to a member of another generated token set.</summary>
+internal sealed class TokenReference
+{
+    public TokenReference(string tableName, string memberName)
+    {
+        TableName = tableName;
+        MemberName = memberName;
+    }
+
+    public string TableName { get; }
+
+    public string MemberName { get; }
+}
+
+/// <summary>A typed value plus its emitted expression and optional cross-table reference.</summary>
+internal sealed class TokenValue
+{
+    public TokenValue(TokenType type, string expression, string? enumType, TokenReference? reference)
+    {
+        Type = type;
+        Expression = expression;
+        EnumType = enumType;
+        Reference = reference;
+    }
+
+    public TokenType Type { get; }
+
+    public string Expression { get; }
+
+    public string? EnumType { get; }
+
+    public TokenReference? Reference { get; }
+}
+
 internal sealed class TokenEntry
 {
-    public TokenEntry(string name, TokenType type, string expression, string? summary, string? enumType)
+    public TokenEntry(string name, TokenType type, TokenValue value, string? summary, string? enumType)
     {
         Name = name;
         Type = type;
-        Expression = expression;
+        Value = value;
         Summary = summary;
         EnumType = enumType;
     }
@@ -92,8 +126,10 @@ internal sealed class TokenEntry
 
     public TokenType Type { get; }
 
+    public TokenValue Value { get; }
+
     /// <summary>The emitted C# initialiser.</summary>
-    public string Expression { get; }
+    public string Expression => Value.Expression;
 
     public string? Summary { get; }
 
@@ -130,7 +166,7 @@ internal sealed class TokenProperty
 
 internal sealed class TokenSet
 {
-    public TokenSet(string name, string? summary, IReadOnlyDictionary<string, string> values)
+    public TokenSet(string name, string? summary, IReadOnlyDictionary<string, TokenValue> values)
     {
         Name = name;
         Summary = summary;
@@ -141,27 +177,95 @@ internal sealed class TokenSet
 
     public string? Summary { get; }
 
-    /// <summary>Property name to emitted C# initialiser, already flattened through <c>extends</c>.</summary>
-    public IReadOnlyDictionary<string, string> Values { get; }
+    /// <summary>Property name to typed value, already flattened through <c>extends</c>.</summary>
+    public IReadOnlyDictionary<string, TokenValue> Values { get; }
 }
 
 /// <summary>
-/// One token table: either a verbatim transcription of an upstream <c>*Tokens.kt</c> object, or a
-/// component's overridable token surface plus its per-variant value sets.
+/// The four logical table categories used by the token files. The root <c>kind</c> is the only
+/// semantic discriminator; directory placement is organizational.
 /// </summary>
-internal sealed class TokenTable
+internal enum TokenTableCategory
 {
-    private TokenTable(string kind, string name, string @namespace, string? version, string? source, string? summary)
+    ReferenceTokens,
+    SystemTokens,
+    ComponentTokens,
+    ComponentDefaults
+}
+
+/// <summary>Where a table's values or assembly decisions originate.</summary>
+internal enum TokenProvenance
+{
+    AndroidXToken,
+    ComposeDefault,
+    M3Spec,
+    AvaloniaPolicy
+}
+
+internal static class TokenProvenances
+{
+    public static bool TryParse(string? text, out TokenProvenance provenance)
+    {
+        switch (text)
+        {
+            case "androidx-token": provenance = TokenProvenance.AndroidXToken; return true;
+            case "compose-default": provenance = TokenProvenance.ComposeDefault; return true;
+            case "m3-spec": provenance = TokenProvenance.M3Spec; return true;
+            case "avalonia-policy": provenance = TokenProvenance.AvaloniaPolicy; return true;
+            default: provenance = default; return false;
+        }
+    }
+
+    public static string ToText(TokenProvenance provenance) => provenance switch
+    {
+        TokenProvenance.AndroidXToken => "androidx-token",
+        TokenProvenance.ComposeDefault => "compose-default",
+        TokenProvenance.M3Spec => "m3-spec",
+        TokenProvenance.AvaloniaPolicy => "avalonia-policy",
+        _ => throw new ArgumentOutOfRangeException(nameof(provenance), provenance, null)
+    };
+
+    public static TokenProvenance Infer(TokenTableCategory category)
+    {
+        return category switch
+        {
+            TokenTableCategory.ReferenceTokens or
+                TokenTableCategory.SystemTokens or
+                TokenTableCategory.ComponentTokens => TokenProvenance.AndroidXToken,
+            TokenTableCategory.ComponentDefaults => TokenProvenance.ComposeDefault,
+            _ => TokenProvenance.ComposeDefault
+        };
+    }
+}
+
+/// <summary>
+/// Parser output. The generator consumes the typed <see cref="TokenTable"/> wrappers declared in
+/// <c>TypedTokenTables.cs</c>; this intermediate keeps the JSON grammar implementation isolated
+/// from the emitters.
+/// </summary>
+internal sealed class ParsedTokenTable
+{
+    private ParsedTokenTable(string kind, string declaredKind, TokenTableCategory category, string name, string @namespace, string? version,
+        string? source, string? summary, TokenProvenance provenance)
     {
         Kind = kind;
+        DeclaredKind = declaredKind;
+        Category = category;
         Name = name;
         Namespace = @namespace;
         Version = version;
         Source = source;
         Summary = summary;
+        Provenance = provenance;
     }
 
     public string Kind { get; }
+
+    /// <summary>The explicit root <c>kind</c>; <see cref="Kind"/> is the normalized payload shape.</summary>
+    public string DeclaredKind { get; }
+
+    /// <summary>The schema category declared by the source file.</summary>
+    public TokenTableCategory Category { get; }
 
     public string Name { get; }
 
@@ -173,6 +277,9 @@ internal sealed class TokenTable
     public string? Source { get; }
 
     public string? Summary { get; }
+
+    /// <summary>Machine-readable origin of the table's values or assembly.</summary>
+    public TokenProvenance Provenance { get; }
 
     /// <summary>Populated for <c>tokenSet</c> tables.</summary>
     public IReadOnlyList<TokenEntry> Tokens { get; private set; } = System.Array.Empty<TokenEntry>();
@@ -199,26 +306,36 @@ internal sealed class TokenTable
     public IReadOnlyList<TokenProperty> ColorProperties =>
         Properties.Where(p => p.Type == TokenType.Color).ToArray();
 
-    public static TokenTable Parse(string json)
+    public static ParsedTokenTable Parse(string json)
     {
         var root = JsonParser.Parse(json);
         if (root.Kind != JsonKind.Object)
             throw new InvalidTableException("A token table must be a JSON object.");
 
-        var kind = root["kind"].AsString() ?? throw new InvalidTableException("'kind' is required.");
-        if (kind != "tokenSet" && kind != "component")
-            throw new InvalidTableException($"'kind' must be 'tokenSet' or 'component', not '{kind}'.");
+        var kindText = root["kind"].AsString() ?? throw new InvalidTableException("'kind' is required.");
+        var (kind, category) = ParseKind(kindText, root);
 
         var name = Identifier(root["name"].AsString(), "name");
         var @namespace = root["namespace"].AsString() ?? "Material3Expressive.Foundation";
 
-        var table = new TokenTable(
+        var provenanceText = root["provenance"].AsString();
+        var provenance = provenanceText is null
+            ? TokenProvenances.Infer(category)
+            : TokenProvenances.TryParse(provenanceText, out var declaredProvenance)
+                ? declaredProvenance
+                : throw new InvalidTableException(
+                    $"'provenance' must be 'androidx-token', 'compose-default', 'm3-spec', or 'avalonia-policy', not '{provenanceText}'.");
+
+        var table = new ParsedTokenTable(
             kind,
+            kindText,
+            category,
             name,
             @namespace,
             root["version"].AsString(),
             root["source"].AsString(),
-            root["summary"].AsString());
+            root["summary"].AsString(),
+            provenance);
 
         if (kind == "tokenSet")
             table.ParseTokens(root);
@@ -226,6 +343,32 @@ internal sealed class TokenTable
             table.ParseComponent(root);
 
         return table;
+    }
+
+    private static (string Kind, TokenTableCategory Category) ParseKind(string kind, JsonValue root)
+    {
+        switch (kind)
+        {
+            case "referenceTokens":
+                return ("tokenSet", TokenTableCategory.ReferenceTokens);
+            case "componentTokens":
+                return ("tokenSet", TokenTableCategory.ComponentTokens);
+            case "componentDefaults":
+                return ("component", TokenTableCategory.ComponentDefaults);
+            case "systemTokens":
+                // System typography is a scheme-shaped table (TypeScale), while elevation/state
+                // are direct token sets. Both are system tokens and share one schema category.
+                var hasTokens = root["tokens"].Kind == JsonKind.Object;
+                var hasProperties = root["properties"].Kind == JsonKind.Object;
+                if (hasTokens == hasProperties)
+                    throw new InvalidTableException(
+                        "A 'systemTokens' table must define exactly one of 'tokens' or 'properties'.");
+
+                return (hasProperties ? "component" : "tokenSet", TokenTableCategory.SystemTokens);
+            default:
+                throw new InvalidTableException(
+                    $"'kind' must be 'referenceTokens', 'systemTokens', 'componentTokens', or 'componentDefaults', not '{kind}'.");
+        }
     }
 
     private void ParseTokens(JsonValue root)
@@ -330,7 +473,7 @@ internal sealed class TokenTable
             throw new InvalidTableException("A 'component' table needs a non-empty 'sets' array.");
 
         var enumTypes = declared.ToDictionary(p => p.Name, p => p.EnumType, StringComparer.Ordinal);
-        var byName = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+        var byName = new Dictionary<string, Dictionary<string, TokenValue>>(StringComparer.Ordinal);
         var parsed = new List<TokenSet>();
 
         foreach (var item in sets.Items)
@@ -339,7 +482,7 @@ internal sealed class TokenTable
                 throw new InvalidTableException("Each entry of 'sets' must be an object.");
 
             var setName = Identifier(item["name"].AsString(), "set name");
-            var values = new Dictionary<string, string>(StringComparer.Ordinal);
+            var values = new Dictionary<string, TokenValue>(StringComparer.Ordinal);
 
             if (item["extends"].AsString() is { } baseName)
             {
@@ -427,15 +570,15 @@ internal static class ValueEmitter
 {
     private const string TokensNamespace = "global::Material3Expressive.Foundation.Tokens";
 
-    public static string Emit(string context, TokenType type, JsonValue value, string? enumType = null)
+    public static TokenValue Emit(string context, TokenType type, JsonValue value, string? enumType = null)
     {
         if (value.IsNull)
             throw new InvalidTableException($"'{context}' has no value.");
 
         if (value.Kind == JsonKind.String && value.AsString() is { Length: > 0 } text && text[0] == '@')
-            return Reference(context, text.Substring(1));
+            return Reference(context, type, text.Substring(1), enumType);
 
-        return type switch
+        var expression = type switch
         {
             TokenType.Color => Color(context, value),
             TokenType.Shape => EnumMember(context, "global::Material3Expressive.Foundation.ShapeRole", value),
@@ -447,9 +590,11 @@ internal static class ValueEmitter
                 : throw new InvalidTableException($"'{context}' must be true or false."),
             _ => Number(context, value)
         };
+
+        return new TokenValue(type, expression, enumType, reference: null);
     }
 
-    private static string Reference(string context, string path)
+    private static TokenValue Reference(string context, TokenType type, string path, string? enumType)
     {
         if (path.Length == 0)
             throw new InvalidTableException($"'{context}' has an empty '@' reference.");
@@ -460,8 +605,21 @@ internal static class ValueEmitter
                 throw new InvalidTableException($"'{context}' has a malformed reference '@{path}'.");
         }
 
-        // Unqualified references name a member of a generated token set.
-        return path.IndexOf('.') < 0 ? path : $"{TokensNamespace}.{path}";
+        // Unqualified references name a member of a generated token set. Qualified references are
+        // retained as structured data so the catalog can check existence, type and layer before
+        // the expression is emitted.
+        if (path.IndexOf('.') < 0)
+            return new TokenValue(type, path, enumType, reference: null);
+
+        var separator = path.IndexOf('.');
+        var hasOneSeparator = separator > 0 && separator < path.Length - 1 &&
+                              path.IndexOf('.', separator + 1) < 0;
+        if (!hasOneSeparator)
+            throw new InvalidTableException($"'{context}' has a malformed reference '@{path}'.");
+
+        var reference = new TokenReference(path.Substring(0, separator), path.Substring(separator + 1));
+
+        return new TokenValue(type, $"{TokensNamespace}.{path}", enumType, reference);
     }
 
     private static string Number(string context, JsonValue value)

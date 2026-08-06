@@ -53,6 +53,21 @@ public class GeneratedTokenTests
     }
 
     [Fact]
+    public void ToggleDefaults_HaveTheirOwnStateContractAndVariantEnum()
+    {
+        Assert.Equal(
+            SysColorToken.OnSecondaryContainer,
+            ToggleButtonColorTokens.Tonal.UncheckedContentColor.RoleToken);
+        Assert.Equal(
+            SysColorToken.OnSecondary,
+            ToggleButtonColorTokens.Tonal.CheckedContentColor.RoleToken);
+        Assert.True(ToggleButtonColorTokens.Outlined.HasOutline);
+        Assert.Same(
+            ToggleButtonColorTokens.Elevated,
+            ToggleButtonColorTokens.For(ToggleButtonVariant.Elevated));
+    }
+
+    [Fact]
     public void ExtendedSets_InheritWhatTheyDoNotRestate()
     {
         // Tonal extends Filled and says nothing about the outline, so it keeps Filled's.

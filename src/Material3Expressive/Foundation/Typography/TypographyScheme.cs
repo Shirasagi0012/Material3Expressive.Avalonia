@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Material3Expressive.Foundation.Tokens;
@@ -10,8 +11,8 @@ namespace Material3Expressive.Foundation;
 /// The typefaces and weights a theme is set in.
 /// </summary>
 /// <remarks>
-/// The per-slot metrics are not here: they live in the <c>TypeScale</c> token table, and an app
-/// retunes an individual slot with a <see cref="TypeScaleOverrides" /> on the theme. What remains
+/// The per-slot metrics are not here: they live in the <c>TypeScale</c> system token table, and an
+/// app retunes an individual slot with a <see cref="TypeScaleOverrides" /> in this scheme. What remains
 /// is the part that is genuinely scheme-wide — which four faces and three weights the fifteen
 /// slots draw on.
 /// <para>
@@ -51,6 +52,14 @@ public partial class TypographyScheme : AvaloniaObject
     [GeneratedStyledProperty] public partial FontWeight WeightBold { get; set; }
     [GeneratedStyledProperty] public partial FontWeight WeightMedium { get; set; }
     [GeneratedStyledProperty] public partial FontWeight WeightRegular { get; set; }
+
+    #pragma warning disable CS0618 // The compatibility type is intentionally exposed here.
+    /// <summary>
+    /// Sparse per-slot system typography overrides. These are intentionally separate from
+    /// <see cref="MaterialTheme.Components"/>, which is reserved for component defaults.
+    /// </summary>
+    public AvaloniaList<TypeScaleOverrides> TypeScaleOverrides { get; } = new();
+    #pragma warning restore CS0618
 
     public static TypographyRole GetTextStyle(StyledElement element)
     {
