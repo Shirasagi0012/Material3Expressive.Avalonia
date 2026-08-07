@@ -1,7 +1,7 @@
 using Avalonia.Media;
 using Material3Expressive.Foundation;
 
-namespace Material3Expressive.Controls.SliderRuntime;
+namespace Material3Expressive.Controls;
 
 /// <summary>Render colours selected for one enabled state of a slider or range slider.</summary>
 internal sealed record SliderVisualColors(

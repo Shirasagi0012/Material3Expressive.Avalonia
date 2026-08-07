@@ -6,7 +6,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Controls.Automation;
-using Material3Expressive.Controls.SliderRuntime;
+using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;

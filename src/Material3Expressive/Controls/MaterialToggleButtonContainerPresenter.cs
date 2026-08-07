@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using Material3Expressive.Controls.ButtonRuntime;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;

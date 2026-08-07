@@ -1,8 +1,9 @@
 using Avalonia.Data;
 using Avalonia.Metadata;
-using Material3Expressive.Controls.ButtonRuntime;
 
 namespace Material3Expressive.Markups;
+
+using Controls;
 
 /// <summary>Resolves a ToggleButton-owned state-aware token against the live target.</summary>
 public sealed class MdToggleButtonTokenExtension

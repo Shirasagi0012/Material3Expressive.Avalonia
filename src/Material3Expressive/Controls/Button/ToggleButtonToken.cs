@@ -1,4 +1,4 @@
-namespace Material3Expressive.Controls.ButtonRuntime;
+namespace Material3Expressive.Controls;
 
 /// <summary>The values a ToggleButton template consumes from its own state-aware resolver.</summary>
 public enum ToggleButtonToken

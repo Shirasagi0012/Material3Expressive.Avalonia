@@ -3,7 +3,7 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
-using Material3Expressive.Controls.SwitchRuntime;
+using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;

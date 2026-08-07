@@ -1,7 +1,7 @@
+namespace Material3Expressive.Controls;
+
 using Avalonia;
 using Material3Expressive.Foundation;
-
-namespace Material3Expressive.Controls.ButtonRuntime;
 
 /// <summary>
 /// The component-owned runtime adapter for an ordinary Material button.

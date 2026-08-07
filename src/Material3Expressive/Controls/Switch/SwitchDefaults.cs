@@ -1,7 +1,7 @@
 using Avalonia.Media;
 using Material3Expressive.Foundation;
 
-namespace Material3Expressive.Controls.SwitchRuntime;
+namespace Material3Expressive.Controls;
 
 /// <summary>Resolved state colours selected by a Material switch renderer.</summary>
 internal sealed record SwitchVisualColors(

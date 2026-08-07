@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.VisualTree;
-using Material3Expressive.Controls.ButtonRuntime;
 using Material3Expressive.Foundation;
 using MaterialColorUtilities.Avalonia.Tokens;
 

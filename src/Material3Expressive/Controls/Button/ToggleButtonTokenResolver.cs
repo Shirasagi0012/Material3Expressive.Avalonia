@@ -1,10 +1,10 @@
+namespace Material3Expressive.Controls;
+
 using System;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Material3Expressive.Foundation;
-
-namespace Material3Expressive.Controls.ButtonRuntime;
 
 /// <summary>Bindings for the ToggleButton-owned token surface.</summary>
 internal static class ToggleButtonTokenResolver

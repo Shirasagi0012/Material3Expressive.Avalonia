@@ -1,8 +1,8 @@
+namespace Material3Expressive.Controls;
+
 using System;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
-
-namespace Material3Expressive.Controls.ButtonRuntime;
 
 /// <summary>
 /// The runtime colour contract owned by ToggleButton. A normal button's enabled colour is not a

@@ -1,10 +1,10 @@
+namespace Material3Expressive.Controls;
+
 using System;
 using Avalonia;
 using Avalonia.Data;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
-
-namespace Material3Expressive.Controls.ButtonRuntime;
 
 /// <summary>
 /// Bindings for the ordinary Button component's markup token surface.
