@@ -18,7 +18,7 @@ namespace Material3Expressive.Controls;
 /// is the same spring morph the buttons use.
 /// </para>
 /// </remarks>
-public class MaterialChip : ToggleButton
+public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     public static readonly StyledProperty<ChipVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialChip, ChipVariant>(nameof(Variant));
@@ -41,8 +41,8 @@ public class MaterialChip : ToggleButton
     public static readonly DirectProperty<MaterialChip, IImmutableBrush> IconBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialChip, IImmutableBrush>(nameof(IconBrush), o => o.IconBrush);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
     private ChipTokens _tokens = ChipTokens.Assist;
@@ -50,14 +50,16 @@ public class MaterialChip : ToggleButton
 
     public MaterialChip()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => UpdateShape();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        UpdateShape();
 
     static MaterialChip()
     {

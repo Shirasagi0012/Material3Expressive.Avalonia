@@ -25,7 +25,7 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 [TemplatePart(LeadingPartName, typeof(Button))]
 [TemplatePart(TrailingPartName, typeof(ToggleButton))]
-public class MaterialSplitButton : TemplatedControl
+public class MaterialSplitButton : TemplatedControl, IMaterialThemeConsumer
 {
     private const string LeadingPartName = "PART_Leading";
     private const string TrailingPartName = "PART_Trailing";
@@ -52,7 +52,7 @@ public class MaterialSplitButton : TemplatedControl
 
     private Button? _leading;
     private ToggleButton? _trailing;
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
     private SplitButtonDefaultsTokens _tokens = SplitButtonDefaultsTokens.Default;
 
     static MaterialSplitButton()
@@ -62,10 +62,11 @@ public class MaterialSplitButton : TemplatedControl
 
     public MaterialSplitButton()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     /// <summary>The default action.</summary>
     public event EventHandler<RoutedEventArgs>? Click

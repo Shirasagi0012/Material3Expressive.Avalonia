@@ -21,7 +21,7 @@ namespace Material3Expressive.Controls;
 /// theme in scope at the control it is attached to for free.
 /// </para>
 /// </remarks>
-public class MaterialTooltip : ContentControl
+public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
 {
     /// <summary>The tooltip content to show for a control.</summary>
     public static readonly AttachedProperty<object?> TipProperty =
@@ -39,18 +39,18 @@ public class MaterialTooltip : ContentControl
     public static readonly StyledProperty<TooltipVariant> StyleProperty =
         AvaloniaProperty.Register<MaterialTooltip, TooltipVariant>(nameof(Style));
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
 
     private TooltipTokens _tokens = TooltipTokens.Plain;
     private TooltipColors _colors = TooltipTokens.Plain.Resolve(null, false);
 
     public MaterialTooltip()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
-
+        _theme = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     static MaterialTooltip()
     {

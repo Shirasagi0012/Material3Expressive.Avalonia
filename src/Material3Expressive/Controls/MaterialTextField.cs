@@ -35,8 +35,22 @@ namespace Material3Expressive.Controls;
 /// </para>
 /// </remarks>
 [TemplatePart(TextBoxPartName, typeof(TextBox))]
-public class MaterialTextField : MaterialControl
+public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     private const string TextBoxPartName = "PART_TextBox";
 
     public static readonly StyledProperty<TextFieldVariant> VariantProperty =
@@ -74,6 +88,7 @@ public class MaterialTextField : MaterialControl
 
     public MaterialTextField()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
     }
 
@@ -306,11 +321,6 @@ public class MaterialTextField : MaterialControl
             InvalidateMeasure();
             InvalidateVisual();
         }
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
     }
 
     /// <summary>

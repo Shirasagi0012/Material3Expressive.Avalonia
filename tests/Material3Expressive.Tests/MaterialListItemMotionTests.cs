@@ -176,8 +176,8 @@ public sealed class MaterialListItemMotionTests
         Assert.Equal(
             theme.Resolved.Shapes.GetCornerRadius(tokens.DraggedShape, item.Bounds.Size),
             ContentClip(item).CornerRadius);
-        Assert.Equal(InteractionState.Dragged, InteractionHost(item).Interaction & InteractionState.Dragged);
-        Assert.Equal(StateLayer.Opacity(InteractionState.Dragged), InteractionHost(item).StateLayerOpacity);
+        Assert.Equal(InteractionState.Dragged, InteractionController(item).Interaction & InteractionState.Dragged);
+        Assert.Equal(StateLayer.Opacity(InteractionState.Dragged), InteractionController(item).StateLayerOpacity);
         Assert.Equal(1, item.ZIndex);
 
         item.IsDragged = false;
@@ -266,8 +266,8 @@ public sealed class MaterialListItemMotionTests
     private static SpringAnimation ElevationAnimation(MaterialListItem item) =>
         Assert.IsType<SpringAnimation>(PrivateField(item, "_elevation").GetValue(item));
 
-    private static MaterialInteractionHost InteractionHost(MaterialListItem item) =>
-        Assert.IsType<MaterialInteractionHost>(PrivateField(item, "_interaction").GetValue(item));
+    private static MaterialInteractionController InteractionController(MaterialListItem item) =>
+        MaterialElementContext.GetOrCreate(item).Interaction;
 
     private static Border ContentClip(MaterialListItem item) =>
         Assert.Single(

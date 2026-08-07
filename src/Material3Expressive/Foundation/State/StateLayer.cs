@@ -13,7 +13,7 @@ namespace Material3Expressive.Foundation;
 /// <list type="number">
 /// <item>
 /// Interactions stack, but only the most recent one is shown. The ordered stack lives in
-/// <c>MaterialInteractionHost</c>; this type supplies the token and transition lookup.
+/// <c>MaterialInteractionController</c>; this type supplies the token and transition lookup.
 /// </item>
 /// <item>
 /// The fades are not symmetric. Focus arrives over 45ms and leaves over 15; a drag arrives over 45

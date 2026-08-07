@@ -23,8 +23,22 @@ namespace Material3Expressive.Controls;
 /// told.
 /// </para>
 /// </remarks>
-public class MaterialDatePicker : MaterialControl
+public class MaterialDatePicker : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     /// <inheritdoc cref="State" />
     public static readonly DirectProperty<MaterialDatePicker, MaterialDatePickerState> StateProperty =
         AvaloniaProperty.RegisterDirect<MaterialDatePicker, MaterialDatePickerState>(
@@ -54,6 +68,7 @@ public class MaterialDatePicker : MaterialControl
 
     public MaterialDatePicker()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         _state.PropertyChanged += OnStateChanged;
         SetCurrentValue(SelectedDateProperty, _state.SelectedDate);
         SetCurrentValue(DisplayMonthProperty, _state.DisplayMonth);
@@ -148,11 +163,6 @@ public class MaterialDatePicker : MaterialControl
             _state.SelectedDate = SelectedDate;
         else if (change.Property == DisplayMonthProperty)
             _state.DisplayMonth = DisplayMonth;
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
     }
 
     private void OnStateChanged(object? sender, PropertyChangedEventArgs e)

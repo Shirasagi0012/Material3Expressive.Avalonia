@@ -140,8 +140,20 @@ public sealed class FloatingToolbarScrollState : INotifyPropertyChanged
 /// corresponding Compose overload. When <see cref="FloatingActionButton"/> is present, collapse
 /// clips the complete toolbar and grows that FAB from 56 to 80 DIPs.
 /// </remarks>
-public sealed class MaterialFloatingToolbar : MaterialControl
+public sealed class MaterialFloatingToolbar : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
     public static readonly StyledProperty<FloatingToolbarOrientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialFloatingToolbar, FloatingToolbarOrientation>(
             nameof(Orientation),
@@ -250,6 +262,7 @@ public sealed class MaterialFloatingToolbar : MaterialControl
 
     public MaterialFloatingToolbar()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         _state.PropertyChanged += OnStatePropertyChanged;
         Items.CollectionChanged += (_, _) => ApplyItemMetrics();
         AddHandler(KeyDownEvent, OnToolbarKeyDown, Avalonia.Interactivity.RoutingStrategies.Bubble);
@@ -433,12 +446,7 @@ public sealed class MaterialFloatingToolbar : MaterialControl
         }
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
-    }
-
-    protected override void OnMotionTick()
+    private void OnMotionTick()
     {
         SetExpansionProgress(_expansion?.Value ?? _expansionProgress);
     }
@@ -788,18 +796,19 @@ internal sealed class MaterialFloatingToolbarLayoutPanel : Panel
         start + ((end - start) * fraction);
 }
 
-internal sealed class MaterialFloatingToolbarShadow : Control
+internal sealed class MaterialFloatingToolbarShadow : Control, IMaterialThemeConsumer
 {
     public static readonly StyledProperty<double> ElevationProperty =
         AvaloniaProperty.Register<MaterialFloatingToolbarShadow, double>(nameof(Elevation));
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
 
     public MaterialFloatingToolbarShadow()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => InvalidateVisual();
+        _theme = MaterialElementContext.GetOrCreate(this);
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => InvalidateVisual();
 
     static MaterialFloatingToolbarShadow()
     {

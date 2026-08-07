@@ -10,16 +10,17 @@ using Material3Expressive.Foundation;
 namespace Material3Expressive.Controls;
 
 /// <summary>Draws the checked-aware container chrome for a native Material ToggleButton.</summary>
-public sealed class MaterialToggleButtonContainerPresenter : Control
+public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialThemeConsumer, IMaterialInteractionObserver
 {
     public static readonly DirectProperty<MaterialToggleButtonContainerPresenter, CornerRadius>
         CurrentCornerRadiusProperty = AvaloniaProperty.RegisterDirect<
             MaterialToggleButtonContainerPresenter,
             CornerRadius>(nameof(CurrentCornerRadius), presenter => presenter.CurrentCornerRadius);
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
     private ToggleButton? _owner;
-    private MaterialInteractionHost? _interaction;
+    private MaterialInteractionController? _interaction;
+    private IDisposable? _interactionLease;
     private AnimatedShape? _shape;
     private ToggleButtonShapes _shapes = new(
         ShapeRole.CornerFull,
@@ -31,9 +32,11 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
     {
         IsHitTestVisible = false;
         Focusable = false;
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += OnThemeChanged;
+        _theme = MaterialElementContext.GetOrCreate(this);
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
+        ApplyTokens(snapShape: true);
 
     public CornerRadius CurrentCornerRadius
     {
@@ -41,7 +44,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
         private set => SetAndRaise(CurrentCornerRadiusProperty, ref _currentCornerRadius, value);
     }
 
-    internal MaterialInteractionHost? InteractionHost => _interaction;
+    internal MaterialInteractionController? Interaction => _interaction;
 
     public override void Render(DrawingContext context)
     {
@@ -65,10 +68,9 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
         _owner = TemplatedParent as ToggleButton
                  ?? throw new InvalidOperationException(
                      $"{nameof(MaterialToggleButtonContainerPresenter)} requires a ToggleButton template.");
-        _interaction = MaterialInteraction.GetOrCreate(_owner);
+        _interaction = MaterialElementContext.GetOrCreate(_owner).Interaction;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
-        _interaction.InteractionChanged += OnInteractionChanged;
-        _interaction.Ticked += OnInteractionTicked;
+        _interactionLease = _interaction.Subscribe(this);
         ApplyTokens(snapShape: true);
     }
 
@@ -78,11 +80,12 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
             _owner.PropertyChanged -= OnOwnerPropertyChanged;
         if (_interaction is { } interaction)
         {
-            interaction.InteractionChanged -= OnInteractionChanged;
-            interaction.Ticked -= OnInteractionTicked;
             if (_shape is { })
                 interaction.Motion.Remove(_shape.Progress);
         }
+
+        _interactionLease?.Dispose();
+        _interactionLease = null;
 
         _shape = null;
         _interaction = null;
@@ -100,8 +103,6 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
     private AnimatedShape Shape => _shape ??= _interaction!.CreateAnimatedShape(
         RestingShape(), _theme.Spring(MotionRole.DefaultEffects));
 
-    private void OnThemeChanged(object? sender, EventArgs e) => ApplyTokens(snapShape: true);
-
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
         if (change.Property == ButtonAssist.VariantProperty
@@ -118,9 +119,9 @@ public sealed class MaterialToggleButtonContainerPresenter : Control
             InvalidateVisual();
     }
 
-    private void OnInteractionChanged(object? sender, EventArgs e) => UpdateShape();
+    void IMaterialInteractionObserver.OnMaterialInteractionChanged(InteractionState state) => UpdateShape();
 
-    private void OnInteractionTicked(object? sender, EventArgs e)
+    void IMaterialInteractionObserver.OnMaterialInteractionFrame()
     {
         UpdateCurrentCornerRadius();
         InvalidateVisual();

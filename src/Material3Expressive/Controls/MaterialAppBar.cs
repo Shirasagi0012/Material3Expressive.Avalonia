@@ -107,8 +107,20 @@ public sealed class AppBarScrollState : INotifyPropertyChanged
 /// <summary>
 /// A standard or flexible Material top app bar with optional scroll coordination.
 /// </summary>
-public class MaterialAppBar : MaterialControl
+public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
     public static readonly StyledProperty<AppBarSize> SizeProperty =
         AvaloniaProperty.Register<MaterialAppBar, AppBarSize>(nameof(Size));
     public static readonly StyledProperty<AppBarVariant> VariantProperty =
@@ -195,6 +207,7 @@ public class MaterialAppBar : MaterialControl
 
     public MaterialAppBar()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         _state.PropertyChanged += OnStateChanged;
         ApplyTokens();
     }
@@ -408,12 +421,7 @@ public class MaterialAppBar : MaterialControl
         }
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
-    }
-
-    protected override void OnMotionTick()
+    private void OnMotionTick()
     {
         SetVisualFraction(_motionFraction?.Value ?? _visualCollapsedFraction);
     }

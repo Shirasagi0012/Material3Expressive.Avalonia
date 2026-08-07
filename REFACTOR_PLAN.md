@@ -1,10 +1,14 @@
 # Material Runtime Context Refactor Plan
 
-Status: Ready for implementation
+Status: Implemented; final validation complete except environment-blocked visual parity
 
 Scope: Intentional breaking refactor; source and binary compatibility are not required
 
 Last verified against the repository: 2026-08-07
+
+This document is the source of truth for the breaking refactor. The working tree may contain a
+partial implementation while the phases are being executed; a phase is not complete until its
+focused tests, source gates, and owner-level invariants pass.
 
 ## 1. Decision summary
 
@@ -49,16 +53,54 @@ property is only an owner-local storage mechanism for internal runtime state.
 - Moving component runtime policy into `Foundation`.
 - Turning component properties or token selection into a generic behavior DSL.
 
+### Review findings locked into this plan
+
+The following points are implementation requirements, not optional cleanup. They address the
+review of the proposed context/coordinator design:
+
+1. **Theme deduplication is not a token invalidation mechanism.** The context deduplicates only
+   `(ResolvedTheme reference, IsDark)`. `Variant`, `Size`, `IsError`, checked/selected state, and
+   effective-enabled changes must still enter the component's own `OnPropertyChanged` path and
+   call `ApplyTokens` using the already committed context snapshot. `MaterialLoadingIndicator`
+   is the mandatory regression case because it previously called `OnThemeChanged` directly for
+   `Variant`.
+2. **The first publication needs a separate sentinel.** `ResolvedTheme.Default` is a valid result,
+   so a `MaterialThemeState.Default` value alone cannot mean “not resolved yet”. Keep an explicit
+   `hasPublished` bit (equivalent to the old nullable watcher state) and test the no-theme case.
+3. **Detach semantics must be explicit.** The target contract keeps the current effective-value
+   behavior: inherited fallback, including `ResolvedTheme.Default`, is published while leaving a
+   scope. We do not retain the last attached theme. If a future product decision changes that
+   policy, it must add a `_detaching` state set by `DetachedFromLogicalTree` and suppress fallback
+   notifications by that state—not by `IsAttachedToLogicalTree` or `Parent`, whose values are
+   already stale when Avalonia raises the notification.
+4. **Input enablement is a dynamic channel.** `InteractionMode=None` and similar policies can
+   change at runtime. Keep a dedicated `SetInputEnabled(bool)` operation that clears only
+   physical Hovered/Focused/Pressed state when disabled; do not encode this as a static policy or
+   as `SetExternalState`.
+5. **Presentation geometry is a live lease.** Switch, Checkbox, RadioButton, Slider,
+   RangeSlider, NavigationItem, and ripple presenters can move their interaction area every
+   frame. A lease therefore has `UpdateGeometry(...)`; the controller stores the last geometry
+   for subsequent pointer/ripple calculations and does not allocate a new lease per frame.
+6. **Motion ordering includes post-callback re-checking.** A frame consumer may finish one
+   animation and start/retarget another in the same `Ticked` callback (the Snackbar transition is
+   the regression case). The coordinator must re-check running state after all callbacks and
+   request another frame when necessary.
+7. **Migration order is part of correctness.** The visual settler and manual clock must understand
+   coordinators before the first production owner is migrated. Remove the obsolete ordering probes
+   in the same early phase, rewrite the second-host ripple test for one-owner/one-controller,
+   rename GroupCount assertions to coordinator/scope invariants, and move `ComposeOpacity` before
+   deleting the old host. No source-search gate may be based on a comment substring.
+
 ## 3. Verified current baseline
 
 Re-run these commands before implementation because the counts can drift:
 
 ```bash
-rg -n 'class\s+\w+\s*:\s*MaterialControl\b' src/Material3Expressive
-rg -n 'new\s+MaterialThemeWatcher\(' src/Material3Expressive
-rg -n 'new\s+MaterialInteractionHost\(' src/Material3Expressive
-rg -n 'MaterialInteraction\.GetOrCreate' src/Material3Expressive
-rg -n 'new\s+MotionGroup\(' src/Material3Expressive
+rg -n --glob '*.cs' 'class\s+\w+\s*:\s*MaterialControl\b' src/Material3Expressive
+rg -n --glob '*.cs' 'new\s+MaterialThemeWatcher\(' src/Material3Expressive
+rg -n --glob '*.cs' 'new\s+MaterialInteractionHost\(' src/Material3Expressive
+rg -n --glob '*.cs' 'MaterialInteraction\.GetOrCreate' src/Material3Expressive
+rg -n --glob '*.cs' 'new\s+MotionGroup\(' src/Material3Expressive
 ```
 
 At the verification date, production source contains:
@@ -94,6 +136,36 @@ The 17 current subclasses to migrate to `TemplatedControl` are:
 - `MaterialTextField`
 - `MaterialTimePicker`
 - `MaterialWideNavigationRail`
+
+### 3.1 Implementation snapshot (historical)
+
+The following records the intermediate working-tree state used to sequence the migration. It is
+retained for auditability; the final status and validation record below supersede its intermediate
+“remaining work” wording:
+
+- `Controls/Runtime` contains the context, coordinator/scope, interaction controller, geometry
+  lease, and debug snapshot types.
+- The five legacy runtime files have been removed from the working tree, and all 17 former
+  `MaterialControl` subclasses have been changed to direct Avalonia bases.
+- Core test/build work was exercised incrementally before the final solution, token, visual, and
+  source-gate pass.
+- The current slice has removed component `_theme.Changed` subscriptions, moved `ComposeOpacity`,
+  completed policy/observer APIs, added live presentation geometry, and removed the `GroupCount`
+  alias. The coordinator now uses one owner-frame transaction with post-consumer interaction
+  observers, visual-detach epochs, and affected-scope lifecycle settling. The focused
+  lifecycle/reentrancy/reparent coverage and final gate pass are now complete.
+
+### 3.2 Implementation status for this working tree
+
+Completed slices include the private context and theme sentinel/queue, direct owner capability
+dispatch, the coordinator/test-clock/visual-settler migration, the interaction controller with
+separate input/external/policy channels, live presentation leases, native-base and presenter
+migration, all former `MaterialControl` subclasses, legacy runtime deletion, source-gate cleanup,
+and the 0.2.0-alpha breaking note. The core build and 479 core tests pass. The only remaining
+environment-qualified check is visual parity, whose external Compose/font prerequisites are absent.
+
+This snapshot is descriptive only. The phase checkboxes and the definition of done below remain
+the acceptance criteria.
 
 ## 4. Target architecture
 
@@ -287,18 +359,26 @@ theme-originated and local-property-originated recomputation behave identically.
 
 ### 5.5 Detach and reparent theme semantics
 
-Do not attempt to retain the last attached theme while off-tree.
+The locked target behavior is to publish the current effective value, including the fallback
+`ResolvedTheme.Default`, while leaving a scope. This matches the existing watcher contract and
+keeps reparenting deterministic; the context instance and its subscriptions are retained.
 
 Avalonia clears the inheritance parent before its logical-detach event. Inherited theme and variant
 fallback notifications can therefore arrive while `Parent` and `IsAttachedToLogicalTree` still look
-attached. A flag set in `DetachedFromLogicalTree` is too late to suppress those notifications without
-also introducing deferred/heuristic theme dispatch.
+attached. A flag set in `DetachedFromLogicalTree` is too late to suppress those notifications when
+the contract is to publish fallback, so the context must not use those properties as a dispatch
+guard.
 
-The context must instead follow the current effective Avalonia values:
+The context must follow the current effective Avalonia values:
 
 - Publish the inherited fallback, including `ResolvedTheme.Default`, during detach.
 - On reattach/reparent, resolve and publish the new scope.
 - Retain the same context instance and subscriptions across both operations.
+
+If a later version deliberately chooses “retain the last attached theme while detached”, that is a
+different contract and must add an explicit `_detaching` marker set by the detach handler, plus a
+guarded fallback notification. It must not be implemented by checking `IsAttachedToLogicalTree` or
+`Parent`, whose values are already stale when Avalonia raises the notification.
 
 ### 5.6 Capability interfaces and dispatch
 
@@ -321,8 +401,12 @@ internal interface IMaterialInteractionConsumer
 }
 ```
 
-Only implement the capabilities a component consumes. Secondary consumers whose lifetime is shorter
-than the owner use disposable observer leases instead of owner interfaces.
+Only implement the capabilities a component consumes. Theme-consuming components must implement
+`IMaterialThemeConsumer`; they must not subscribe to `MaterialElementContext.Changed` and must not
+reintroduce anonymous `_theme.Changed` handlers. The context dispatches the owner first, then its
+context-owned interaction controller, then disposable secondary observer leases. Secondary
+consumers whose lifetime is shorter than the owner use disposable observer leases instead of owner
+interfaces.
 
 ### 5.7 One motion coordinator and multiple scopes per owner
 
@@ -378,6 +462,9 @@ The coordinator must use a generation/epoch for scheduled TopLevel callbacks:
 - On visual detach, cancel the generation and settle; do not suspend running animation across an
   unrendered gap.
 - On visual attach, retry `StartIfNeeded` for work created before a TopLevel existed.
+- Lifecycle settling is one coordinator transaction: settle all scopes, publish each affected
+  scope's tick notification at most once, then run the owner synchronization/invalidation once.
+  Do not call a scope-level settle callback and a coordinator-level callback for the same frame.
 
 ### 5.8 Interaction controller channels
 
@@ -417,6 +504,10 @@ The controller:
 - Uses named handlers rather than unremovable anonymous subscriptions where practical.
 - Does not create a watcher, scheduler, or second attached cache.
 
+`MaterialInteractionPolicy` is an immutable value containing the four indication switches (ripple,
+focus, hover, and drag). It is not a substitute for `SetInputEnabled`: a policy update changes how
+a state is drawn, while the input gate controls whether physical events are accepted.
+
 ### 5.9 Presentation leases are live, per-frame geometry providers
 
 Presentation identity is stable for an attach lifetime, but its geometry is mutable:
@@ -442,6 +533,12 @@ Requirements:
 - A controller has one primary physical presentation geometry at a time. Independent interaction
   targets require independent Control owners/contexts.
 - Presenters that only react to state/motion use observer leases and do not compete for geometry.
+
+The controller's natural internal surface remains available to production presenters and tests:
+`Interaction`, `StateLayerOpacity`, `Set`, `DrawLayers`, and the interaction `Motion` scope are
+behavioral capabilities, not compatibility shims. `_ripples` remains an implementation collection
+because ripple lifetime needs it; tests must observe it through behavior or an intentional debug
+snapshot rather than by depending on its private field name.
 
 ### 5.10 Theme scope is per actual element
 
@@ -564,6 +661,8 @@ an internal diagnostic count separately; do not give scopes independent clocks.
 
 - One controller per owner, including stock Avalonia controls created through a template presenter.
 - `SetInputEnabled(false)` clears only input-derived state and ripples.
+- Disabling input after `Pressed` has ended still clears the released ripple fade and invalidates the
+  owner, so no transient frame survives a mode switch or detach.
 - External Dragged state is not accidentally treated as physical input state.
 - Logical detach clears stale Pressed/Hovered/Focused state.
 - Theme changes recalculate focus/state-layer presentation without a second watcher.
@@ -575,28 +674,31 @@ an internal diagnostic count separately; do not give scopes independent clocks.
 
 ### 8.5 Replace reflection with deliberate internal diagnostics
 
-Final tests must not depend on `_interaction`, `_motion`, `_ripples`, or other private field names.
+Final tests must not depend on private runtime field names such as `_interaction`, `_motion`, or
+`_ripples`. The controller may keep those members when they are required by its behavior; what is
+removed is test coupling to their names.
 
 Use friend-assembly access to:
 
 - `MaterialElementContext.TryGet`
-- `MotionIfCreated`
+- `MotionCoordinatorIfCreated`
 - `InteractionIfCreated`
 - an immutable `MaterialInteractionDebugSnapshot` when a ripple count/center cannot be asserted
   cleanly through output behavior
 
-Do not retain the controller's old `Motion` property or `_ripples` field solely for tests.
+Keep the controller's natural internal `Motion`, `Interaction`, `StateLayerOpacity`, `Set`, and
+`DrawLayers` capabilities. Do not add aliases or fields solely to preserve an old reflection test.
 
-### 8.6 Visual test infrastructure must migrate before the first production motion owner
+### 8.6 Visual test infrastructure migration (completed)
 
-`VisualMotionSettler` currently discovers private `MotionGroup` and `MaterialInteractionHost` fields
-through reflection. Before any production owner switches to the new coordinator:
+`VisualMotionSettler` now discovers only `MaterialElementContext` instances and their created
+coordinators; `MotionTestClockScope` likewise controls coordinators and never reaches private
+runtime fields. The temporary mixed-runtime bridge was removed with the last legacy owner.
 
-- Teach the test bridge to discover `MaterialElementContext` and its created coordinator.
-- During the temporary mixed migration, continue discovering legacy groups as well.
-- Remove the legacy reflection branch immediately after the last legacy group is deleted.
-- Keep `MotionTestClockScope` capable of controlling both implementations only for the migration
-  window; its final implementation controls coordinators only.
+This bridge migration was an explicit hard gate inside Phase 2. The obsolete virtual-ordering tests
+were deleted, the second-host ripple test now retrieves the context-owned controller, and motion
+tests use one coordinator plus explicit scopes. Manual-clock tests hold a coordinator (or a scope's
+coordinator), never a private group handle.
 
 Update reflection-based unit tests in the same commit as their owning component. Replace the old
 theme-ordering probes only when `MaterialControl` stops providing that contract.
@@ -628,25 +730,25 @@ Rules:
 
 ### Phase 0 — Freeze baseline and inventory
 
-- [ ] Re-run the five inventory searches in section 3 and save the owner list in the implementation
+- [x] Re-run the five inventory searches in section 3 and save the owner list in the implementation
       notes/commit description.
-- [ ] Confirm all `MaterialControl` references are inheritance, tests, or documentation.
-- [ ] Run the current solution build and core tests.
-- [ ] Run the current non-parity visual tests.
-- [ ] Record visual-parity environment prerequisites separately from visual mismatch results.
-- [ ] Record the current public API types to be deleted.
+- [x] Confirm all `MaterialControl` references are inheritance, tests, or documentation.
+- [x] Run the current solution build and core tests.
+- [x] Run the current non-parity visual tests.
+- [x] Record visual-parity environment prerequisites separately from visual mismatch results.
+- [x] Record the current public API types to be deleted.
 
 Exit condition: the starting behavior and complete migration surface are known.
 
 ### Phase 1 — Add context and theme runtime contracts
 
-- [ ] Add `Controls/Runtime` and the internal capability interfaces.
-- [ ] Add the private non-inherited context attached property.
-- [ ] Implement two-phase publication and idempotent activation.
-- [ ] Implement theme resolution, first-publication sentinel, deduplication, and queued reentrancy.
-- [ ] Preserve effective Default fallback during detach.
-- [ ] Add context-only probe controls and all section 8.1 tests.
-- [ ] Add representative dual-input token tests proving theme and local properties call the same
+- [x] Add `Controls/Runtime` and the internal capability interfaces.
+- [x] Add the private non-inherited context attached property.
+- [x] Implement two-phase publication and idempotent activation.
+- [x] Implement theme resolution, first-publication sentinel, deduplication, and queued reentrancy.
+- [x] Preserve effective Default fallback during detach.
+- [x] Add context-only probe controls and all section 8.1 tests.
+- [x] Add representative dual-input token tests proving theme and local properties call the same
       component resolver.
 
 Do not migrate a production owner yet, and do not modify `MaterialControl` to wrap the context.
@@ -656,28 +758,32 @@ unchanged.
 
 ### Phase 2 — Add motion coordinator and migrate the test clock/settler first
 
-- [ ] Implement one coordinator with disposable scopes.
-- [ ] Implement post-consumer running-state recheck.
-- [ ] Implement epoch cancellation, visual-detach settle, and visual-attach retry.
-- [ ] Register coordinators with `MotionTestClockScope`.
-- [ ] Update `VisualMotionSettler` to discover both context coordinators and legacy groups during the
-      migration window.
-- [ ] Rewrite MotionGroup-centric unit tests around coordinator and scope invariants.
-- [ ] Add the snackbar-style callback-starts-new-animation regression test.
+- [x] Implement one coordinator with disposable scopes.
+- [x] Implement post-consumer running-state recheck.
+- [x] Implement epoch cancellation, visual-detach settle, and visual-attach retry.
+- [x] Register coordinators with `MotionTestClockScope`.
+- [x] Update `VisualMotionSettler` to discover both context coordinators and legacy groups during the
+      migration window **before migrating any production motion owner**.
+- [x] Delete the two old virtual-ordering tests as soon as the new dispatch path is enabled.
+- [x] Rewrite MotionGroup-centric unit tests around coordinator and scope invariants; rename
+      `GroupCount` to `CoordinatorCount` and provide scope-level handles where required.
+- [x] Rewrite the deliberate second-host ripple test to assert one controller per owner.
+- [x] Add the snackbar-style callback-starts-new-animation regression test.
 
 Exit condition: the first production coordinator can be introduced without a silent visual-test
-clock gap.
+clock gap, stale ordering probes, or tests that accidentally create two runtimes for one owner.
 
 ### Phase 3 — Add interaction controller and live presentation leases
 
-- [ ] Implement context-only controller creation.
-- [ ] Implement `SetInputEnabled`, `SetExternalState`, and indication policy updates.
-- [ ] Implement input-derived detach cleanup.
-- [ ] Implement owner direct dispatch and disposable secondary observers.
-- [ ] Implement presentation leases with per-frame `UpdateGeometry`.
-- [ ] Implement default owner-bounds geometry and last-geometry retention.
-- [ ] Implement the interaction motion scope on the owner's coordinator.
-- [ ] Add intentional internal debug snapshots for tests that require ripple internals.
+- [x] Implement context-only controller creation.
+- [x] Implement `SetInputEnabled`, `SetExternalState`, and indication policy updates.
+- [x] Implement input-derived detach cleanup.
+- [x] Implement owner direct dispatch and disposable secondary observers.
+- [x] Implement presentation leases with per-frame `UpdateGeometry`.
+- [x] Implement default owner-bounds geometry and last-geometry retention.
+- [x] Implement the interaction motion scope on the owner's coordinator.
+- [x] Move `ComposeOpacity` to a focused rendering utility before removing the old host reference.
+- [x] Add intentional internal debug snapshots for tests that require ripple internals.
 
 Exit condition: the new controller is behavior-complete without using the old host, watcher, or
 group.
@@ -686,12 +792,12 @@ group.
 
 For each owner that inherits a stock Avalonia base and has no motion/interaction ownership:
 
-- [ ] Replace the watcher field with one cached context.
-- [ ] Implement `IMaterialThemeConsumer` explicitly.
-- [ ] Preserve every local-property `ApplyTokens` trigger.
-- [ ] Keep presenter theme resolution on the presenter itself.
-- [ ] Update its tests in the same change.
-- [ ] Verify no legacy runtime remains on that owner.
+- [x] Replace the watcher field with one cached context.
+- [x] Implement `IMaterialThemeConsumer` explicitly.
+- [x] Preserve every local-property `ApplyTokens` trigger.
+- [x] Keep presenter theme resolution on the presenter itself.
+- [x] Update its tests in the same change.
+- [x] Verify no legacy runtime remains on that owner.
 
 Exit condition: the selected owners have exactly one context and no watcher.
 
@@ -699,21 +805,21 @@ Exit condition: the selected owners have exactly one context and no watcher.
 
 For every stock-base owner with any combination of watcher, group, and host:
 
-- [ ] Replace all of those fields in one owner-level change.
-- [ ] Register component animations in the component scope.
-- [ ] Route interaction animations through the controller's sibling scope.
-- [ ] Convert frame handlers to `IMaterialMotionConsumer` where owner-lifetime dispatch is needed.
-- [ ] Convert short-lived observers to disposable leases.
-- [ ] Replace private-field reflection tests at the same time.
-- [ ] Preserve all local Variant/Size/Error/Enabled/Checked token paths.
+- [x] Replace all of those fields in one owner-level change.
+- [x] Register component animations in the component scope.
+- [x] Route interaction animations through the controller's sibling scope.
+- [x] Convert frame handlers to `IMaterialMotionConsumer` where owner-lifetime dispatch is needed.
+- [x] Convert short-lived observers to disposable leases.
+- [x] Replace private-field reflection tests at the same time.
+- [x] Preserve all local Variant/Size/Error/Enabled/Checked token paths.
 
 Special audits in this phase:
 
-- [ ] `MaterialListItem`: dynamic input gate and externally-owned Dragged state.
-- [ ] `MaterialSwitch`: per-frame moving interaction area and stale Pressed cleanup.
-- [ ] Checkbox/RadioButton/Slider/RangeSlider/NavigationItem: render-time geometry updates.
-- [ ] Snackbar transitions: animation started from a frame consumer.
-- [ ] Composite/scaffold controls: helpers receive the owner's context/scope rather than creating
+- [x] `MaterialListItem`: dynamic input gate and externally-owned Dragged state.
+- [x] `MaterialSwitch`: per-frame moving interaction area and stale Pressed cleanup.
+- [x] Checkbox/RadioButton/Slider/RangeSlider/NavigationItem: render-time geometry updates.
+- [x] Snackbar transitions: animation started from a frame consumer.
+- [x] Composite/scaffold controls: helpers receive the owner's context/scope rather than creating
       their own runtime for the same owner.
 
 Exit condition: migrated native-base owners have one context, one coordinator at most, and one
@@ -721,15 +827,15 @@ controller at most.
 
 ### Phase 6 — Migrate stock-control template presenters
 
-- [ ] Migrate `MaterialRipplePresenter`.
-- [ ] Migrate Button, ToggleButton, and IconButton container presenters.
-- [ ] Give every theme-consuming presenter its own context.
-- [ ] Borrow only the templated owner's interaction through observer/presentation leases.
-- [ ] Update geometry on Render/bounds changes and dispose leases on detach/template replacement.
-- [ ] Prove a stock Button and all of its Material presenters resolve one owner controller.
-- [ ] Rewrite the test that currently constructs a second host on an already templated Button so it
-      retrieves that one context-owned controller.
-- [ ] Update visual cases that settle motion through presenter-owned or owner-owned animations.
+- [x] Migrate `MaterialRipplePresenter`.
+- [x] Migrate Button, ToggleButton, and IconButton container presenters.
+- [x] Give every theme-consuming presenter its own context.
+- [x] Borrow only the templated owner's interaction through observer/presentation leases.
+- [x] Update geometry on Render/bounds changes and dispose leases on detach/template replacement.
+- [x] Prove a stock Button and all of its Material presenters resolve one owner controller.
+- [x] Rewrite the test that currently constructs a second host on an already templated Button so it
+      retrieves that one context-owned controller; do not merely rename the old host field.
+- [x] Update visual cases that settle motion through presenter-owned or owner-owned animations.
 
 Exit condition: no presenter calls `MaterialInteraction.GetOrCreate` and template replacement leaves
 no old observer or geometry.
@@ -738,55 +844,55 @@ no old observer or geometry.
 
 For each listed control in section 3:
 
-- [ ] Change the base class to `TemplatedControl`.
-- [ ] Acquire one context.
-- [ ] Replace `OnThemeChanged` with explicit `IMaterialThemeConsumer` implementation.
-- [ ] Replace protected `ResolvedTheme`, `IsDarkVariant`, and `Spring` reads with context state.
-- [ ] Replace protected `Motion` and `OnMotionTick` with the component scope and
+- [x] Change the base class to `TemplatedControl`.
+- [x] Acquire one context.
+- [x] Replace `OnThemeChanged` with explicit `IMaterialThemeConsumer` implementation.
+- [x] Replace protected `ResolvedTheme`, `IsDarkVariant`, and `Spring` reads with context state.
+- [x] Replace protected `Motion` and `OnMotionTick` with the component scope and
       `IMaterialMotionConsumer` as appropriate.
-- [ ] Preserve local token triggers, especially `MaterialLoadingIndicator.Variant`.
-- [ ] Remove lifecycle overrides whose only purpose was old base behavior.
-- [ ] Fully migrate any interaction owned by the same control in the same change.
-- [ ] Update focused tests and visual cases.
+- [x] Preserve local token triggers, especially `MaterialLoadingIndicator.Variant`.
+- [x] Remove lifecycle overrides whose only purpose was old base behavior.
+- [x] Fully migrate any interaction owned by the same control in the same change.
+- [x] Update focused tests and visual cases.
 
 In the same phase:
 
-- [ ] Replace `ThemeProbe` with a `TemplatedControl + IMaterialThemeConsumer` probe.
-- [ ] Delete the two old virtual-ordering assertions.
-- [ ] Add/retain tests for theme-before-first-measure/render, live changes, and reparenting.
+- [x] Replace `ThemeProbe` with a `TemplatedControl + IMaterialThemeConsumer` probe.
+- [x] Delete the two old virtual-ordering assertions.
+- [x] Add/retain tests for theme-before-first-measure/render, live changes, and reparenting.
 
 Exit condition: no production class inherits `MaterialControl`.
 
 ### Phase 8 — Close inventory and delete the legacy runtime
 
-- [ ] Re-run all construction/inheritance searches.
-- [ ] Migrate any nested or late-created helper missed by the owner cohorts.
-- [ ] Move `ComposeOpacity` and other pure helpers out of `MaterialInteractionHost`.
-- [ ] Move animated-shape registration to the motion scope/helper.
-- [ ] Delete `MaterialControl.cs`.
-- [ ] Delete `MaterialThemeWatcher.cs`.
-- [ ] Delete `MaterialInteractionHost.cs`.
-- [ ] Delete `MaterialInteraction.cs`.
-- [ ] Delete `MotionGroup.cs` after all production/test consumers use the coordinator.
-- [ ] Remove the transitional legacy branch from `VisualMotionSettler` and
+- [x] Re-run all construction/inheritance searches.
+- [x] Migrate any nested or late-created helper missed by the owner cohorts.
+- [x] Move `ComposeOpacity` and other pure helpers out of `MaterialInteractionHost`.
+- [x] Move animated-shape registration to the motion scope/helper.
+- [x] Delete `MaterialControl.cs`.
+- [x] Delete `MaterialThemeWatcher.cs`.
+- [x] Delete `MaterialInteractionHost.cs`.
+- [x] Delete `MaterialInteraction.cs`.
+- [x] Delete `MotionGroup.cs` after all production/test consumers use the coordinator.
+- [x] Remove the transitional legacy branch from `VisualMotionSettler` and
       `MotionTestClockScope`.
-- [ ] Remove stale usings, XML docs, comments, and active architecture documentation.
-- [ ] Confirm no obsolete alias or forwarding type remains.
+- [x] Remove stale usings, XML docs, comments, and active architecture documentation.
+- [x] Confirm no obsolete alias or forwarding type remains.
 
 Exit condition: only the new runtime architecture exists.
 
 ### Phase 9 — Public API, versioning, documentation, and full validation
 
-- [ ] Document deletion of the four public types: `MaterialControl`, `MaterialThemeWatcher`,
+- [x] Document deletion of the four public types: `MaterialControl`, `MaterialThemeWatcher`,
       `MaterialInteractionHost`, and `MotionGroup`.
-- [ ] Document the new direct Avalonia base type for every affected public control.
-- [ ] Add a breaking-change/migration note; do not offer a compatibility shim.
-- [ ] Prefer version `0.2.0-alpha` for the incompatible runtime line.
-- [ ] Account for the CI rule requiring root-owned packages to share one base version, or explicitly
+- [x] Document the new direct Avalonia base type for every affected public control.
+- [x] Add a breaking-change/migration note; do not offer a compatibility shim.
+- [x] Prefer version `0.2.0-alpha` for the incompatible runtime line.
+- [x] Account for the CI rule requiring root-owned packages to share one base version, or explicitly
       revise that versioning policy before changing only the main package version.
-- [ ] Update active motion and visual-parity documentation from MotionGroup terminology to
+- [x] Update active motion and visual-parity documentation from MotionGroup terminology to
       coordinator/scope terminology.
-- [ ] Run all validation in section 12.
+- [x] Run all validation in section 12 (visual parity remains infrastructure-blocked; see note below).
 
 Exit condition: implementation, public API, package version, tests, and documentation all describe
 the same final architecture.
@@ -832,26 +938,41 @@ rg -n 'GetField\("_(interaction|motion|ripples)"|PrivateField\([^,]+,\s*"_(inter
 
 This must return zero.
 
+Additional active-reference gates:
+
+```bash
+rg -n --glob '*.cs' 'MaterialInteractionController\.ComposeOpacity|MaterialInteractionHost\.ComposeOpacity' \
+  src/Material3Expressive
+rg -n --glob '*.cs' 'GroupCount|new\s+MaterialInteractionHost\(' \
+  tests/Material3Expressive.Tests tests/Material3Expressive.VisualTesting
+rg -n --glob '*.cs' 'MaterialElementContext\.Changed|_theme\.Changed|_material\.Changed' \
+  src/Material3Expressive
+```
+
+The first and third commands must return zero. The second may only match an explicitly documented
+migration fixture while the mixed-runtime window is open; it must return zero at the final gate.
+These gates use C# files and declarations rather than broad substrings in comments or prose.
+
 ## 12. Definition of done and validation
 
 The refactor is complete only when all of the following hold:
 
-- [ ] Every production Material owner uses at most one context.
-- [ ] No owner uses both legacy and new runtime objects.
-- [ ] Theme transport still uses only inherited `ResolvedThemeProperty` plus actual theme variant.
-- [ ] First Default-theme resolution publishes exactly once.
-- [ ] Theme and every component-local token input produce correct current tokens.
-- [ ] Context is never inherited or recreated on ordinary detach/reattach.
-- [ ] One coordinator drives all motion scopes for an owner.
-- [ ] Frame consumers can start new animations without starving the next frame.
-- [ ] Visual detach cancels stale callbacks and settles motion.
-- [ ] One controller owns physical interaction for an owner.
-- [ ] Input disable/detach clears physical state without corrupting external state.
-- [ ] Presentation geometry follows animated controls frame by frame.
-- [ ] Template replacement leaves no stale observers, geometry, or motion tracks.
-- [ ] No final production or test code depends on private runtime field names.
-- [ ] All five legacy files/types are deleted with no shim.
-- [ ] Active documentation and package version describe the breaking architecture.
+- [x] Every production Material owner uses at most one context.
+- [x] No owner uses both legacy and new runtime objects.
+- [x] Theme transport still uses only inherited `ResolvedThemeProperty` plus actual theme variant.
+- [x] First Default-theme resolution publishes exactly once.
+- [x] Theme and every component-local token input produce correct current tokens.
+- [x] Context is never inherited or recreated on ordinary detach/reattach.
+- [x] One coordinator drives all motion scopes for an owner.
+- [x] Frame consumers can start new animations without starving the next frame.
+- [x] Visual detach cancels stale callbacks and settles motion.
+- [x] One controller owns physical interaction for an owner.
+- [x] Input disable/detach clears physical state without corrupting external state.
+- [x] Presentation geometry follows animated controls frame by frame.
+- [x] Template replacement leaves no stale observers, geometry, or motion tracks.
+- [x] No final production or test code depends on private runtime field names.
+- [x] All five legacy files/types are deleted with no shim.
+- [x] Active documentation and package version describe the breaking architecture.
 
 Run at minimum:
 
@@ -865,6 +986,24 @@ dotnet test tests/Material3Expressive.VisualTests/Material3Expressive.VisualTest
 Also run the repository's Compose-versus-Avalonia visual-parity workflow when its runner and pinned
 font prerequisites are available. Infrastructure failure before a comparison report is not a visual
 verdict.
+
+Validation record for 2026-08-07:
+
+- Solution build: passed with 0 errors; only the pre-existing `AVA3001` warning remains.
+- TokenGenerator tests: 14/14 passed.
+- Core tests: 479/479 passed.
+- Visual-test assembly: 52 non-parity cases passed; 153 parity cases were blocked before
+  comparison because the pinned Roboto font and Linux `cmd.exe`/Compose runner are unavailable.
+- Final production source gates: zero matches for `MaterialControl` inheritance,
+  `MaterialThemeWatcher` construction, `MaterialInteractionHost` construction,
+  `MaterialInteraction.GetOrCreate`, and `MotionGroup` construction. The two new runtime
+  constructors occur only in `MaterialElementContext`; stale-name, subscription, `GroupCount`, and
+  private-field reflection gates are empty.
+- `git diff --check`: passed.
+- Package versions: the main package, MaterialSkiaShadow, and MaterialTypography.Roboto all declare
+  `0.2.0-alpha`; all three package projects generated their nupkg/snupkg artifacts successfully.
+  The main package was re-run outside the sandbox after the observed in-sandbox `dotnet` crash and
+  completed successfully.
 
 No phase is complete merely because it compiles. Its focused behavior tests, relevant visual cases,
 inventory update, and owner-level no-dual-runtime check must pass before moving to the next cohort.

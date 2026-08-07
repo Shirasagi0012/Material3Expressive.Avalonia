@@ -18,7 +18,7 @@ namespace Material3Expressive.Controls;
 /// the 18dp box — the touch target and the feedback area are the same thing, and both are bigger
 /// than the mark.
 /// </remarks>
-public class MaterialCheckbox : CheckBox
+public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     private const double SnapAnimationDelayMilliseconds = 100;
     // The pinned Compose reference is Material3 1.5.0-alpha22. In that release Checkbox.kt's
@@ -36,8 +36,8 @@ public class MaterialCheckbox : CheckBox
     public static readonly StyledProperty<bool> IsErrorProperty =
         AvaloniaProperty.Register<MaterialCheckbox, bool>(nameof(IsError));
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private CheckboxDefaultsTokens _tokens = CheckboxDefaultsTokens.Default;
     private CheckboxColors _colors = CheckboxDefaultsTokens.Default.Resolve(null, false);
@@ -53,14 +53,18 @@ public class MaterialCheckbox : CheckBox
 
     public MaterialCheckbox()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this) { IsRippleBounded = false };
-
-        _theme.Changed += (_, _) => ApplyTokens(snap: !this.IsAttachedToVisualTree());
-        _interaction.InteractionChanged += (_, _) => InvalidateVisual();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _interaction.IsRippleBounded = false;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
+        ApplyTokens(snap: !this.IsAttachedToVisualTree());
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        InvalidateVisual();
 
     static MaterialCheckbox()
     {
@@ -91,7 +95,8 @@ public class MaterialCheckbox : CheckBox
     public override void Render(DrawingContext context)
     {
         var area = GlyphArea;
-        _interaction.InteractionArea = area;
+        _theme.InteractionPresentation.UpdateGeometry(
+            new MaterialInteractionGeometry(area, null, null));
 
         EnsureVisualState(snap: true);
 

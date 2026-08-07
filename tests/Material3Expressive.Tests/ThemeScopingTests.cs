@@ -80,12 +80,20 @@ public class ThemeScopingTests
         var probe = new ThemeProbe();
         var window = ThemeTestHelper.ShowWindow(new StackPanel { Children = { button, probe } });
 
+        var beforeLight = probe.ChangeCount;
         window.RequestedThemeVariant = ThemeVariant.Light;
 
         Assert.Equal(
             ThemeTestHelper.Expected(theme, SysColorToken.Primary),
             ThemeTestHelper.ColorOf(button.Background));
         Assert.False(probe.ObservedIsDark);
+        var afterLight = probe.ChangeCount;
+
+        // The platform may have published Light while the window was attaching, or it may have
+        // started at another effective variant. In either case, assigning the same effective
+        // value again must not create a second publication.
+        window.RequestedThemeVariant = ThemeVariant.Light;
+        Assert.Equal(afterLight, probe.ChangeCount);
 
         window.RequestedThemeVariant = ThemeVariant.Dark;
 
@@ -96,6 +104,14 @@ public class ThemeScopingTests
             ThemeTestHelper.Expected(theme, SysColorToken.Primary, isDark: true),
             ThemeTestHelper.ColorOf(probe.ContainerBrush));
         Assert.True(probe.ObservedIsDark);
+        Assert.Equal(afterLight + 1, probe.ChangeCount);
+
+        window.RequestedThemeVariant = ThemeVariant.Dark;
+        Assert.Equal(afterLight + 1, probe.ChangeCount);
+
+        // Keep the local baseline in the test so a future platform-variant default cannot turn a
+        // valid initial Default -> application-theme publication into a false failure.
+        Assert.InRange(afterLight - beforeLight, 0, 1);
     }
 
     [AvaloniaFact]
@@ -239,7 +255,7 @@ public class ThemeScopingTests
     {
         using var _ = ThemeTestHelper.AppTheme(ThemeTestHelper.ThemeSeededWith(Colors.Red));
 
-        // Both theme-reading paths: self-painting controls and one hosting the watcher.
+        // Both theme-reading paths: self-painting controls and one hosting a native control.
         var page = new StackPanel
         {
             Children =
@@ -290,27 +306,4 @@ public class ThemeScopingTests
             ThemeTestHelper.ColorOf(probe.ContainerBrush));
     }
 
-    [AvaloniaFact]
-    public void MaterialControl_ResolvesThemeBeforeDerivedAttachLogic()
-    {
-        var probe = new ThemeOrderingProbe();
-
-        ThemeTestHelper.ShowWindow(probe);
-
-        Assert.True(
-            probe.Events.IndexOf("theme") < probe.Events.IndexOf("derived-attach"),
-            $"Observed callback order: {string.Join(", ", probe.Events)}");
-    }
-
-    [AvaloniaFact]
-    public void MaterialControl_ResolvesThemeBeforeDerivedPropertyLogic()
-    {
-        var probe = new ThemeOrderingProbe();
-        ThemeTestHelper.ShowWindow(probe);
-        probe.Events.Clear();
-
-        MaterialThemeScope.SetTheme(probe, ThemeTestHelper.ThemeSeededWith(Colors.Blue));
-
-        Assert.Equal(["theme", "derived-property"], probe.Events);
-    }
 }

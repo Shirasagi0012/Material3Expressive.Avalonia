@@ -231,7 +231,7 @@ public sealed class MaterialSnackbarHost : ContentControl
         AvaloniaProperty.RegisterDirect<MaterialSnackbarHost, SnackbarHostState>(
             nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
     private readonly Grid _transitionLayer = new();
     private readonly List<TransitionItem> _items = [];
     private SnackbarHostState _state = new();
@@ -246,7 +246,7 @@ public sealed class MaterialSnackbarHost : ContentControl
 
     public MaterialSnackbarHost()
     {
-        _theme = new MaterialThemeWatcher(this);
+        _theme = MaterialElementContext.GetOrCreate(this);
         _state.PropertyChanged += OnStateChanged;
         UpdateCurrent(_state.CurrentSnackbarData);
     }
@@ -408,9 +408,9 @@ public sealed class MaterialSnackbarHost : ContentControl
             Content = null;
     }
 
-    private sealed class TransitionItem : Decorator
+    private sealed class TransitionItem : Decorator, IMaterialMotionConsumer
     {
-        private readonly MotionGroup _motion;
+        private readonly MaterialMotionScope _motion;
         private readonly SpringAnimation _opacity;
         private readonly SpringAnimation _scale;
         private readonly DelayAnimation _exitFrameDelay;
@@ -439,15 +439,16 @@ public sealed class MaterialSnackbarHost : ContentControl
             RenderTransform = _scaleTransform;
             Child = snackbar;
 
-            _motion = new MotionGroup(this);
+            _motion = MaterialElementContext.GetOrCreate(this).Motion;
             _opacity = _motion.AddSpring(0, opacitySpec);
             _scale = _motion.AddSpring(.8, scaleSpec);
             _exitFrameDelay = _motion.Add(new DelayAnimation(TimeSpan.FromTicks(1)));
             if (duration != Timeout.InfiniteTimeSpan)
                 _timeout = _motion.Add(new DelayAnimation(duration));
-            _motion.Ticked += OnTicked;
             ApplyValues();
         }
+
+        void IMaterialMotionConsumer.OnMaterialMotionFrame() => OnMotionFrame();
 
         public MaterialSnackbar Snackbar { get; }
 
@@ -499,7 +500,7 @@ public sealed class MaterialSnackbarHost : ContentControl
             _motion.Start();
         }
 
-        private void OnTicked(object? sender, EventArgs e)
+        private void OnMotionFrame()
         {
             ApplyValues();
             if (_hideOnNextFrame && _exitFrameDelay.HasElapsed)
@@ -595,7 +596,7 @@ public sealed class MaterialSnackbarHost : ContentControl
 
         public void Settle()
         {
-            // A timeout is an operation deadline, not a visual interpolation. MotionGroup settles
+            // A timeout is an operation deadline, not a visual interpolation. MaterialMotionScope settles
             // visual springs when a control detaches or a static test asks for terminal visuals;
             // completing the deadline there would dismiss a snackbar merely because it left the
             // visual tree. Keep elapsed time paused and resume it on reattachment instead.

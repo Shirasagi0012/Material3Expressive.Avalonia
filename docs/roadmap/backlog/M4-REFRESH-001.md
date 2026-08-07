@@ -61,7 +61,7 @@ devices.
   replacement, keyboard, automation, template layering, clipping, and default elevation.
 - Supported alpha22 motion parity establishes fraction 1.25 and begins retraction in one trigger,
   avoiding pre-trigger clock drift. Tick zero, 100ms, and settled checkpoints use controlled
-  Compose coroutine/frame clocks and Avalonia `MotionGroup`, including subpixel position and
+  Compose coroutine/frame clocks and Avalonia motion coordinator, including subpixel position and
   top-edge clipping. The existing `component-with-text-and-elevation-motion` profile is unchanged;
   the scene selects IndicatorBox's supported zero-elevation parameter to isolate motion without a
   backend shadow residual. Production Level2 elevation is separately source- and test-covered.

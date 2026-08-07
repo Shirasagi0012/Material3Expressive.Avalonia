@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Automation.Peers;
+using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Controls.Automation;
@@ -21,8 +22,23 @@ namespace Material3Expressive.Controls;
 /// a 3dp amplitude the difference is not visible.
 /// </para>
 /// </remarks>
-public class MaterialLinearProgressIndicator : MaterialControl
+public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
+        ApplyTheme(state.Theme, state.IsDark);
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     /// <inheritdoc cref="Value" />
     public static readonly StyledProperty<double> ValueProperty =
         AvaloniaProperty.Register<MaterialLinearProgressIndicator, double>(nameof(Value));
@@ -44,6 +60,11 @@ public class MaterialLinearProgressIndicator : MaterialControl
 
     private ProgressTokens _tokens = ProgressTokens.Linear;
     private ProgressColors _colors = ProgressTokens.Linear.Resolve(null, false);
+
+    public MaterialLinearProgressIndicator()
+    {
+        _material = MaterialElementContext.GetOrCreate(this);
+    }
 
     static MaterialLinearProgressIndicator()
     {
@@ -119,7 +140,7 @@ public class MaterialLinearProgressIndicator : MaterialControl
         return new Size(width, height);
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    private void ApplyTheme(ResolvedTheme theme, bool isDark)
     {
         _tokens = theme.GetProgressTokens(ProgressIndicatorShape.Linear);
         _colors = theme.GetProgressColors(ProgressIndicatorShape.Linear, isDark);

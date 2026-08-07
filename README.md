@@ -8,7 +8,7 @@ reference is Compose Multiplatform Material3 `1.12.0-alpha03`, corresponding to 
 [docs/reference/upstream-baselines.md](docs/reference/upstream-baselines.md). Every token is transcribed from the
 Material token database and stamped with the version it came from.
 
-> `0.1.0-alpha` development line. The theming core, token pipeline, motion foundations, broad
+> `0.2.0-alpha` development line. The theming core, token pipeline, motion foundations, broad
 > component coverage, and local visual-parity workflow are implemented. Current completeness work
 > is tracked in [ROADMAP.md](ROADMAP.md); no publication date is currently planned.
 

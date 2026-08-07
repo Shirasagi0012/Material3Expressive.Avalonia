@@ -14,8 +14,22 @@ namespace Material3Expressive.Controls;
 /// often all a navigation item has room to say. The large one says how much, and grows wider than
 /// it is tall to fit.
 /// </remarks>
-public class MaterialBadge : MaterialControl
+public class MaterialBadge : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     public static readonly StyledProperty<BadgeVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialBadge, BadgeVariant>(nameof(Variant), BadgeVariant.Large);
 
@@ -28,6 +42,7 @@ public class MaterialBadge : MaterialControl
 
     public MaterialBadge()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
     }
 
@@ -79,11 +94,6 @@ public class MaterialBadge : MaterialControl
 
         if (change.Property == VariantProperty || change.Property == CountProperty)
             ApplyTokens();
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
     }
 
     private void ApplyTokens()

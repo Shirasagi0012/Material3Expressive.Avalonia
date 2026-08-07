@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Avalonia;
+using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
 using Material3Expressive.Controls.Motion;
@@ -23,8 +24,23 @@ namespace Material3Expressive.Controls;
 /// <c>DeterminateIndicatorPolygons</c>, transcribed below.
 /// </para>
 /// </remarks>
-public class MaterialLoadingIndicator : MaterialControl
+public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
+        ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     /// <inheritdoc cref="Variant" />
     public static readonly StyledProperty<LoadingIndicatorVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialLoadingIndicator, LoadingIndicatorVariant>(nameof(Variant));
@@ -71,6 +87,11 @@ public class MaterialLoadingIndicator : MaterialControl
     private LoadingIndicatorDefaultsTokens _tokens = LoadingIndicatorDefaultsTokens.Standard;
     private LoadingIndicatorColors _colors = LoadingIndicatorDefaultsTokens.Standard.Resolve(null, false);
 
+    public MaterialLoadingIndicator()
+    {
+        _material = MaterialElementContext.GetOrCreate(this);
+    }
+
     static MaterialLoadingIndicator()
     {
         AffectsRender<MaterialLoadingIndicator>(VariantProperty, IsIndeterminateProperty, ValueProperty);
@@ -96,6 +117,11 @@ public class MaterialLoadingIndicator : MaterialControl
         get => GetValue(IsIndeterminateProperty);
         set => SetValue(IsIndeterminateProperty, value);
     }
+
+    // Deliberate friend-assembly seam: this is the component's committed token snapshot, not a
+    // compatibility API. It lets the runtime acceptance test prove the local Variant channel
+    // without depending on a private field or a rasterized drawing tree.
+    internal bool HasResolvedContainer => _tokens.HasContainer;
 
     private LoadingIndicatorMorphAnimation MorphPhase =>
         _morph ??= Motion.Add(new LoadingIndicatorMorphAnimation(IndeterminateShapes.Length));
@@ -162,10 +188,11 @@ public class MaterialLoadingIndicator : MaterialControl
         return new Size(size, size);
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    private void ApplyTokens()
     {
+        var theme = ResolvedTheme;
         _tokens = theme.GetLoadingIndicatorDefaultsTokens(Variant);
-        _colors = theme.GetLoadingIndicatorColors(Variant, isDark);
+        _colors = theme.GetLoadingIndicatorColors(Variant, IsDarkVariant);
         InvalidateMeasure();
         InvalidateVisual();
     }
@@ -182,7 +209,9 @@ public class MaterialLoadingIndicator : MaterialControl
 
         if (change.Property == VariantProperty)
         {
-            OnThemeChanged(ResolvedTheme, IsDarkVariant);
+            // Variant is a component-local token input. Theme deduplication deliberately does not
+            // model it, so reapply against the context's already committed snapshot here.
+            ApplyTokens();
         }
         else if (change.Property == ValueProperty && !IsIndeterminate)
         {

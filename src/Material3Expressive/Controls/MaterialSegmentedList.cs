@@ -26,7 +26,7 @@ namespace Material3Expressive.Controls;
 /// not coordinated here; each row keeps its explicit <see cref="MaterialListItem.InteractionMode" />
 /// and application-owned selection model.
 /// </remarks>
-public sealed class MaterialSegmentedList : Panel
+public sealed class MaterialSegmentedList : Panel, IMaterialThemeConsumer
 {
     /// <summary>Defines the vertical space between visible segments.</summary>
     public static readonly StyledProperty<double> SpacingProperty =
@@ -35,15 +35,16 @@ public sealed class MaterialSegmentedList : Panel
             2,
             validate: static value => double.IsFinite(value) && value >= 0);
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
     private IDisposable? _spacingLease;
 
     public MaterialSegmentedList()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     static MaterialSegmentedList()
     {

@@ -266,20 +266,21 @@ public class TweenTests
     }
 }
 
-public class MotionGroupTests
+public class MaterialMotionCoordinatorTests
 {
     [Fact]
-    public void ATestClockScopeOwnsGroupsCreatedAfterActivation()
+    public void ATestClockScopeOwnsCoordinatorsCreatedAfterActivation()
     {
         using var clock = new MotionTestClockScope();
-        var group = new MotionGroup(new Border());
-        var tween = group.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
+        var coordinator = MaterialElementContext.GetOrCreate(new Border()).EnsureMotionCoordinator();
+        var scope = coordinator.CreateScope("test");
+        var tween = scope.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
         tween.AnimateTo(1);
-        group.Start();
+        scope.Start();
 
         clock.AdvanceBy(TimeSpan.FromMilliseconds(40));
 
-        Assert.Equal(1, clock.GroupCount);
+        Assert.Equal(1, clock.CoordinatorCount);
         Assert.Equal(0.4, tween.Value, 6);
     }
 
@@ -294,20 +295,21 @@ public class MotionGroupTests
     [Fact]
     public void AManualClockAdvancesByTheExactRequestedDuration()
     {
-        var group = new MotionGroup(new Border());
-        var tween = group.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
-        group.UseManualClock();
+        var coordinator = MaterialElementContext.GetOrCreate(new Border()).EnsureMotionCoordinator();
+        var scope = coordinator.CreateScope("test");
+        var tween = scope.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
+        coordinator.UseManualClock();
         tween.AnimateTo(1);
 
         // A detached production group normally settles. Manual mode must instead wait for the
         // test-provided delta.
-        group.Start();
+        scope.Start();
         Assert.Equal(0, tween.Value);
 
-        group.AdvanceBy(TimeSpan.FromMilliseconds(40));
+        coordinator.AdvanceBy(TimeSpan.FromMilliseconds(40));
         Assert.Equal(0.4, tween.Value, 6);
 
-        group.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        coordinator.AdvanceBy(TimeSpan.FromMilliseconds(60));
         Assert.Equal(1, tween.Value);
         Assert.False(tween.IsRunning);
     }
@@ -315,11 +317,12 @@ public class MotionGroupTests
     [Fact]
     public void AManualClockRejectsTimeMovingBackwards()
     {
-        var group = new MotionGroup(new Border());
-        group.UseManualClock();
+        var coordinator = MaterialElementContext.GetOrCreate(new Border()).EnsureMotionCoordinator();
+        coordinator.CreateScope("test");
+        coordinator.UseManualClock();
 
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => group.AdvanceBy(TimeSpan.FromMilliseconds(-1)));
+            () => coordinator.AdvanceBy(TimeSpan.FromMilliseconds(-1)));
     }
 }
 

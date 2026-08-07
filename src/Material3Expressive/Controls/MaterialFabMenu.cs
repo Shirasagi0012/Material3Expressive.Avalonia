@@ -22,8 +22,20 @@ namespace Material3Expressive.Controls;
 /// a phase offset into one shared spring, so closing reverses the order for free.
 /// </para>
 /// </remarks>
-public class MaterialFabMenu : MaterialControl
+public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
     /// <inheritdoc cref="IsExpanded" />
     public static readonly StyledProperty<bool> IsExpandedProperty =
         AvaloniaProperty.Register<MaterialFabMenu, bool>(
@@ -49,6 +61,7 @@ public class MaterialFabMenu : MaterialControl
 
     public MaterialFabMenu()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         Items.CollectionChanged += (_, _) => InvalidateMeasure();
 
         ApplyTokens();
@@ -113,12 +126,7 @@ public class MaterialFabMenu : MaterialControl
         }
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
-    }
-
-    protected override void OnMotionTick()
+    private void OnMotionTick()
     {
         UpdateItems();
     }

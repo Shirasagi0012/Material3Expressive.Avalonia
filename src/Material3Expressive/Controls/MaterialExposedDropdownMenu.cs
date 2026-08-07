@@ -34,7 +34,7 @@ namespace Material3Expressive.Controls;
 [TemplatePart(PopupPartName, typeof(Popup), IsRequired = true)]
 [TemplatePart(EditableTextBoxPartName, typeof(TextBox), IsRequired = false)]
 [TemplatePart(AnchorPartName, typeof(Control), IsRequired = true)]
-public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe
+public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
     private const string PopupPartName = "PART_Popup";
     private const string EditableTextBoxPartName = "PART_EditableTextBox";
@@ -140,8 +140,8 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe
             AvaloniaProperty.RegisterDirect<MaterialExposedDropdownMenu, double>(
                 nameof(MenuOpacity), owner => owner.MenuOpacity);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
     private SpringAnimation? _float;
     private SpringAnimation? _menuScale;
     private SpringAnimation? _menuAlpha;
@@ -168,16 +168,18 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe
 
     public MaterialExposedDropdownMenu()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += HandleMotionTicked;
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         AttachedToVisualTree += HandleAttachedToVisualTree;
         DetachedFromVisualTree += HandleDetachedFromVisualTree;
         DropDownOpened += HandleDropDownOpened;
         DropDownClosed += HandleDropDownClosed;
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() => HandleMotionFrame();
 
     static MaterialExposedDropdownMenu()
     {
@@ -539,7 +541,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe
 
         // Compose quantizes graphics-layer alpha to the nearest 8-bit value before Skia
         // compositing; Avalonia otherwise truncates the multiplier one step earlier.
-        _menuSurface.Opacity = MaterialInteractionHost.ComposeOpacity(MenuOpacity);
+        _menuSurface.Opacity = MaterialInteractionRendering.ComposeOpacity(MenuOpacity);
         if (_menuSurface.RenderTransform is ScaleTransform scale)
         {
             scale.ScaleX = MenuScale;
@@ -637,7 +639,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe
         InvalidateVisual();
     }
 
-    private void HandleMotionTicked(object? sender, EventArgs e)
+    private void HandleMotionFrame()
     {
         var previous = _lastMenuOpenFraction;
         var current = MenuOpenFraction;
@@ -681,7 +683,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe
         _lastMenuOpenFraction = previous;
         _lastMenuOpacity = previousOpacity;
         _motion.Start();
-        HandleMotionTicked(this, EventArgs.Empty);
+        HandleMotionFrame();
     }
 
     private void ApplyTokens()

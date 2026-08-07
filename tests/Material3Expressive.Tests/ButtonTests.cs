@@ -154,7 +154,7 @@ public class ButtonTests
         var point = button.TranslatePoint(new Point(36, 20), window)
                     ?? throw new InvalidOperationException("Button was not mounted.");
         var presenter = PresenterOf(button);
-        var interaction = Assert.IsType<MaterialInteractionHost>(presenter.InteractionHost);
+        var interaction = Assert.IsType<MaterialInteractionController>(presenter.Interaction);
 
         window.MouseMove(point);
         window.MouseDown(point, MouseButton.Left);

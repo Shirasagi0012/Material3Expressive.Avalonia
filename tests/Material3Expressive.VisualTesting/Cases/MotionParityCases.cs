@@ -45,14 +45,14 @@ internal static class MotionParityCases
     private sealed class LinearTweenProbe : Control
     {
         private static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(200);
-        private readonly MotionGroup _motion;
+        private readonly MaterialMotionScope _motion;
         private readonly TweenAnimation _progress;
 
         public LinearTweenProbe()
         {
             Width = 60;
             Height = 20;
-            _motion = new MotionGroup(this);
+            _motion = MaterialElementContext.GetOrCreate(this).Motion;
             _progress = _motion.AddTween(0, Duration, Easings.Linear);
             _motion.Ticked += (_, _) => InvalidateVisual();
         }

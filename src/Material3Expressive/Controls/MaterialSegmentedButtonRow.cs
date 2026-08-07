@@ -37,7 +37,7 @@ public enum SegmentedButtonSelectionMode
 /// keeps one XAML control with an explicit <see cref="SelectionMode"/> property, while preserving
 /// bindable child state and application-owned selection models.
 /// </remarks>
-public sealed class MaterialSegmentedButtonRow : Panel
+public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
 {
     public static readonly StyledProperty<SegmentedButtonSelectionMode> SelectionModeProperty =
         AvaloniaProperty.Register<MaterialSegmentedButtonRow, SegmentedButtonSelectionMode>(
@@ -50,20 +50,20 @@ public sealed class MaterialSegmentedButtonRow : Panel
             1,
             validate: static value => double.IsFinite(value) && value >= 0);
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
     private double _containerHeight = 40;
     private IDisposable? _overlapLease;
 
     public MaterialSegmentedButtonRow()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) =>
-        {
-            ApplyTokens();
-            ApplySegmentPositions();
-        };
-
+        _theme = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
+    }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state)
+    {
+        ApplyTokens();
+        ApplySegmentPositions();
     }
 
     static MaterialSegmentedButtonRow()

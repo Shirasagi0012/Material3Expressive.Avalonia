@@ -57,7 +57,7 @@ keyboard paths.
   automation, background sizing, and Compose overflow.
 - Supported alpha22 parity covers programmatic EndToStart dismissal at tick zero, 100ms, and the
   settled endpoint. All three use the producer's controlled coroutine/frame clocks and Avalonia's
-  controlled `MotionGroup`; input timestamps are unused. The existing `component-with-text`
+  controlled motion coordinator; input timestamps are unused. The existing `component-with-text`
   profile is unchanged.
 - Consecutive artifacts `artifacts/visual-parity/xunit/20260730-085844-908` and
   `artifacts/visual-parity/xunit/20260730-090520-424` accept all three rows as

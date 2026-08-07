@@ -23,8 +23,22 @@ namespace Material3Expressive.Controls;
 /// you end up with two selected at once.
 /// </para>
 /// </remarks>
-public class MaterialNavigationBar : MaterialControl
+public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     public static readonly StyledProperty<NavigationVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialNavigationBar, NavigationVariant>(nameof(Variant));
 
@@ -39,6 +53,7 @@ public class MaterialNavigationBar : MaterialControl
 
     public MaterialNavigationBar()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         Items.CollectionChanged += (_, _) => AttachItems();
         ApplyTokens();
     }
@@ -119,11 +134,6 @@ public class MaterialNavigationBar : MaterialControl
             ApplyTokens();
         else if (change.Property == SelectedIndexProperty)
             SyncSelection();
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
     }
 
     /// <summary>

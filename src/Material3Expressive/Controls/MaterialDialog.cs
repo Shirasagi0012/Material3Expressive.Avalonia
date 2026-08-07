@@ -22,7 +22,7 @@ namespace Material3Expressive.Controls;
 /// scrim both dismiss, unless <see cref="IsDismissable" /> says the decision cannot be deferred.
 /// </para>
 /// </remarks>
-public class MaterialDialog : ContentControl
+public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
     /// <inheritdoc cref="IsOpen" />
     public static readonly StyledProperty<bool> IsOpenProperty =
@@ -45,8 +45,8 @@ public class MaterialDialog : ContentControl
     public static readonly StyledProperty<bool> IsDismissableProperty =
         AvaloniaProperty.Register<MaterialDialog, bool>(nameof(IsDismissable), true);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _open;
     private DialogDefaultsTokens _tokens = DialogDefaultsTokens.Default;
@@ -54,13 +54,14 @@ public class MaterialDialog : ContentControl
 
     public MaterialDialog()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => InvalidateVisual();
-
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() => InvalidateVisual();
 
     static MaterialDialog()
     {

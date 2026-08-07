@@ -16,7 +16,7 @@ namespace Material3Expressive.Controls;
 // accessibility contracts and are represented by explicit controls, not implicit container modes.
 
 /// <summary>A non-interactive Material surface that supplies Surface and OnSurface defaults.</summary>
-public sealed class MaterialSurface : ContentControl
+public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
 {
     public static readonly StyledProperty<double> TonalElevationProperty =
         AvaloniaProperty.Register<MaterialSurface, double>(nameof(TonalElevation));
@@ -29,18 +29,19 @@ public sealed class MaterialSurface : ContentControl
             nameof(AbsoluteTonalElevation),
             surface => surface.AbsoluteTonalElevation);
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
     private MaterialSurface? _tonalParent;
     private double _absoluteTonalElevation;
 
     public MaterialSurface()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTheme();
+        _theme = MaterialElementContext.GetOrCreate(this);
         AttachedToVisualTree += (_, _) => UpdateTonalParent();
         DetachedFromVisualTree += (_, _) => SetTonalParent(null);
         UpdateAbsoluteTonalElevation();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTheme();
 
     /// <summary>
     /// The elevation used to tint this surface when its effective background is the theme Surface

@@ -13,6 +13,11 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public sealed class MaterialButton : Button
 {
+    public MaterialButton()
+    {
+        MaterialElementContext.GetOrCreate(this);
+    }
+
     public static readonly AttachedProperty<ButtonVariant> VariantProperty =
         ButtonAssist.VariantProperty.AddOwner<MaterialButton>();
 

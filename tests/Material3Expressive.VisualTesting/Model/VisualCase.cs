@@ -35,7 +35,7 @@ public sealed record VisualMotionSpec(
 public sealed record VisualMotionClockCoverage(
     string ComposeFrameClock,
     string ComposeCoroutineClock,
-    string AvaloniaMotionGroup,
+    string AvaloniaMotionCoordinator,
     string AvaloniaTransition,
     string AvaloniaComposition,
     string InputTimestamp)
@@ -43,7 +43,7 @@ public sealed record VisualMotionClockCoverage(
     public static VisualMotionClockCoverage ComponentOwned(bool usesComposeCoroutineClock) => new(
         ComposeFrameClock: "controlled",
         ComposeCoroutineClock: usesComposeCoroutineClock ? "controlled" : "unused",
-        AvaloniaMotionGroup: "controlled",
+        AvaloniaMotionCoordinator: "controlled",
         AvaloniaTransition: "forbidden",
         AvaloniaComposition: "forbidden",
         InputTimestamp: "insensitive");

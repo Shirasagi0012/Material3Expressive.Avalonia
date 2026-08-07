@@ -50,7 +50,7 @@ interaction, accessibility, and visual evidence.
   focus target is never stolen.
 - The arrow snaps between 0° and 180° with expansion, matching
   `ExposedDropdownMenuDefaults.TrailingIcon`. The popup independently applies expressive
-  FastSpatial scale and FastEffects alpha through the controlled `MotionGroup`; alpha is
+  FastSpatial scale and FastEffects alpha through the controlled motion coordinator; alpha is
   Compose-quantized before Skia compositing.
 - `MaterialExposedDropdownMenuAutomationPeer` retains ComboBox ExpandCollapse, Selection, and
   editable Value providers. Label, supporting/error help, and Invalid status augment that

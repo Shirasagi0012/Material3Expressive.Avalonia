@@ -41,7 +41,7 @@ public enum NavigationSuiteLayoutType
 /// Coordinates one retained navigation destination collection across adaptive short-bar and
 /// wide-rail layouts while assigning the remaining area to body content.
 /// </summary>
-public sealed class MaterialNavigationSuiteScaffold : ContentControl
+public sealed class MaterialNavigationSuiteScaffold : ContentControl, IMaterialMotionConsumer
 {
     /// <summary>The lower bound of the Material medium width size class, in dp.</summary>
     public const double MediumWidthBreakpoint = 600;
@@ -96,8 +96,8 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl
             nameof(NavigationVisibilityProgress),
             owner => owner._navigationVisibilityProgress);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
     private readonly MaterialShortNavigationBar _shortBar;
     private readonly MaterialWideNavigationRail _wideRail;
     private NavigationSuiteLayoutType _resolvedLayoutType =
@@ -111,12 +111,8 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl
 
     public MaterialNavigationSuiteScaffold()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) =>
-            SetNavigationVisibilityProgress(
-                _visibility?.Value ?? _navigationVisibilityProgress);
-
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         _shortBar = new MaterialShortNavigationBar
         {
             Arrangement = ShortNavigationBarArrangement.EqualWeight
@@ -127,6 +123,9 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl
         Items.CollectionChanged += ItemsChanged;
         SwitchNavigation(_resolvedLayoutType);
     }
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        SetNavigationVisibilityProgress(_visibility?.Value ?? _navigationVisibilityProgress);
 
     static MaterialNavigationSuiteScaffold()
     {

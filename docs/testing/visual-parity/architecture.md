@@ -350,7 +350,7 @@ For focus, hover, press, and animated states:
 Motion cases use the protocol in [animation.md](animation.md): one fresh scene per
 checkpoint, one trigger at logical time zero, a producer-owned frame schedule replayed from the
 beginning, and an exact final capture timestamp. Compose frame and coroutine clocks are controlled;
-Avalonia component-owned `MotionGroup` instances are manual before scene construction. Native
+Avalonia component-owned motion coordinator instances are manual before scene construction. Native
 Avalonia transitions, composition animations, and wall-clock timers are unsupported unless a
 future adapter explicitly places them under the same contract. No case may use an arbitrary delay
 such as “sleep for 500 ms.”

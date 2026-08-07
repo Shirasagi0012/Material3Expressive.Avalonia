@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.LogicalTree;
+using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Controls;
@@ -60,10 +60,17 @@ internal static class ThemeTestHelper
 }
 
 /// <summary>
-/// A control that reads its tokens in code, standing in for the real components until Phase 4.
+/// A control that reads its tokens in code through the owner-local runtime context.
 /// </summary>
-internal sealed class ThemeProbe : MaterialControl
+internal sealed class ThemeProbe : TemplatedControl, IMaterialThemeConsumer
 {
+    private readonly MaterialElementContext _context;
+
+    public ThemeProbe()
+    {
+        _context = MaterialElementContext.GetOrCreate(this);
+    }
+
     public ResolvedTheme? ObservedTheme { get; private set; }
 
     public bool ObservedIsDark { get; private set; }
@@ -72,37 +79,13 @@ internal sealed class ThemeProbe : MaterialControl
 
     public IImmutableBrush? ContainerBrush { get; private set; }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state)
     {
+        var theme = state.Theme;
+        var isDark = state.IsDark;
         ObservedTheme = theme;
         ObservedIsDark = isDark;
         ContainerBrush = theme.GetButtonColors(ButtonVariant.Filled, isDark).ContainerColor;
         ChangeCount++;
-    }
-}
-
-/// <summary>Records the protected callback ordering promised by MaterialControl.</summary>
-internal sealed class ThemeOrderingProbe : MaterialControl
-{
-    public List<string> Events { get; } = new();
-
-    protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToLogicalTree(e);
-        Events.Add("derived-attach");
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-
-        if (change.Property == MaterialThemeScope.ResolvedThemeProperty
-            || change.Property == ThemeVariantScope.ActualThemeVariantProperty)
-            Events.Add("derived-property");
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        Events.Add("theme");
     }
 }

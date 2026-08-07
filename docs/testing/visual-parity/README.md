@@ -104,7 +104,7 @@ Checks happen in this order:
 Motion cases add a structural check between steps 1 and 2. Compose records the trigger, logical
 time origin, complete frame-delivery schedule, capture index, schedule hash, and controlled clock
 coverage in the current capture schema v10. Avalonia creates a fresh tree and replays that exact schedule through
-component-owned `MotionGroup` instances. A timeline mismatch fails before raster classification;
+component-owned motion coordinators. A timeline mismatch fails before raster classification;
 neither semantic equivalence nor a warning policy can accept it. See
 [animation.md](animation.md) for the lifecycle and authoring rules.
 

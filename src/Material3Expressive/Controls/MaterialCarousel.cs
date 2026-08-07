@@ -25,7 +25,7 @@ namespace Material3Expressive.Controls;
 /// and are marked as such in the table.
 /// </para>
 /// </remarks>
-public class MaterialCarousel : Panel
+public class MaterialCarousel : Panel, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
     public static readonly StyledProperty<CarouselVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialCarousel, CarouselVariant>(nameof(Variant));
@@ -34,21 +34,22 @@ public class MaterialCarousel : Panel
     public static readonly StyledProperty<double> OffsetProperty =
         AvaloniaProperty.Register<MaterialCarousel, double>(nameof(Offset));
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _scroll;
     private CarouselTokens _tokens = CarouselTokens.MultiBrowse;
 
     public MaterialCarousel()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) => InvalidateArrange();
-
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() => InvalidateArrange();
 
     static MaterialCarousel()
     {

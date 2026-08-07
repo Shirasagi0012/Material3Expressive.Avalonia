@@ -15,7 +15,7 @@ namespace Material3Expressive.Controls;
 /// and leaves the outer ones fully round, so a segment's shape depends on where it sits in the
 /// row — something no individual button can know about itself.
 /// </remarks>
-public class MaterialButtonGroup : Panel
+public class MaterialButtonGroup : Panel, IMaterialThemeConsumer
 {
     public static readonly StyledProperty<ButtonGroupVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialButtonGroup, ButtonGroupVariant>(nameof(Variant));
@@ -23,17 +23,17 @@ public class MaterialButtonGroup : Panel
     public static readonly StyledProperty<Orientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialButtonGroup, Orientation>(nameof(Orientation), Orientation.Horizontal);
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
 
     private ButtonGroupTokens _tokens = ButtonGroupTokens.Standard;
 
     public MaterialButtonGroup()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += (_, _) => ApplyTokens();
-
+        _theme = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     static MaterialButtonGroup()
     {

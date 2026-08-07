@@ -16,17 +16,18 @@ namespace Material3Expressive.Controls;
 /// content. This leaf presenter owns only the geometry that cannot be expressed by a static
 /// Border: elevation and the interruptible pressed-shape morph.
 /// </remarks>
-public sealed class MaterialButtonContainerPresenter : Control
+public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeConsumer, IMaterialInteractionObserver
 {
     public static readonly DirectProperty<MaterialButtonContainerPresenter, CornerRadius>
         CurrentCornerRadiusProperty = AvaloniaProperty.RegisterDirect<
             MaterialButtonContainerPresenter,
             CornerRadius>(nameof(CurrentCornerRadius), presenter => presenter.CurrentCornerRadius);
 
-    private readonly MaterialThemeWatcher _theme;
+    private readonly MaterialElementContext _theme;
 
     private Button? _owner;
-    private MaterialInteractionHost? _interaction;
+    private MaterialInteractionController? _interaction;
+    private IDisposable? _interactionLease;
     private AnimatedShape? _shape;
     private ButtonColorTokens _tokens = ButtonColorTokens.Filled;
     private ButtonShapes _shapes = ButtonDefaults.Shapes(ResolvedTheme.Default, ButtonSize.Small);
@@ -36,9 +37,11 @@ public sealed class MaterialButtonContainerPresenter : Control
     {
         IsHitTestVisible = false;
         Focusable = false;
-        _theme = new MaterialThemeWatcher(this);
-        _theme.Changed += OnThemeChanged;
+        _theme = MaterialElementContext.GetOrCreate(this);
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
+        ApplyTokens(snapShape: true);
 
     /// <summary>The live, bounds-resolved corners used by the ripple overlay.</summary>
     public CornerRadius CurrentCornerRadius
@@ -47,7 +50,7 @@ public sealed class MaterialButtonContainerPresenter : Control
         private set => SetAndRaise(CurrentCornerRadiusProperty, ref _currentCornerRadius, value);
     }
 
-    internal MaterialInteractionHost? InteractionHost => _interaction;
+    internal MaterialInteractionController? Interaction => _interaction;
 
     public override void Render(DrawingContext context)
     {
@@ -81,10 +84,9 @@ public sealed class MaterialButtonContainerPresenter : Control
         _owner = TemplatedParent as Button
                  ?? throw new InvalidOperationException(
                      $"{nameof(MaterialButtonContainerPresenter)} must be used in a Button template.");
-        _interaction = MaterialInteraction.GetOrCreate(_owner);
+        _interaction = MaterialElementContext.GetOrCreate(_owner).Interaction;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
-        _interaction.InteractionChanged += OnInteractionChanged;
-        _interaction.Ticked += OnInteractionTicked;
+        _interactionLease = _interaction.Subscribe(this);
 
         ApplyTokens(snapShape: true);
     }
@@ -96,11 +98,12 @@ public sealed class MaterialButtonContainerPresenter : Control
 
         if (_interaction is { } interaction)
         {
-            interaction.InteractionChanged -= OnInteractionChanged;
-            interaction.Ticked -= OnInteractionTicked;
             if (_shape is { })
                 interaction.Motion.Remove(_shape.Progress);
         }
+
+        _interactionLease?.Dispose();
+        _interactionLease = null;
 
         _shape = null;
         _interaction = null;
@@ -127,11 +130,6 @@ public sealed class MaterialButtonContainerPresenter : Control
             _theme.Spring(MotionRole.DefaultEffects));
     }
 
-    private void OnThemeChanged(object? sender, EventArgs e)
-    {
-        ApplyTokens(snapShape: true);
-    }
-
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
         if (change.Property == ButtonAssist.VariantProperty
@@ -153,9 +151,9 @@ public sealed class MaterialButtonContainerPresenter : Control
         }
     }
 
-    private void OnInteractionChanged(object? sender, EventArgs e) => UpdateShape();
+    void IMaterialInteractionObserver.OnMaterialInteractionChanged(InteractionState state) => UpdateShape();
 
-    private void OnInteractionTicked(object? sender, EventArgs e)
+    void IMaterialInteractionObserver.OnMaterialInteractionFrame()
     {
         UpdateCurrentCornerRadius();
         InvalidateVisual();

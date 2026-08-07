@@ -20,7 +20,7 @@ namespace Material3Expressive.Controls;
 /// operates that selected thumb. Tab moves from the Start endpoint to the End endpoint before
 /// leaving the control; Shift+Tab traverses the two endpoints in reverse.
 /// </remarks>
-public sealed class MaterialRangeSlider : Control
+public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
 {
     private const double MinimumInteractiveComponentSize = 48;
     private const double TrackInsideCornerSize = 2;
@@ -37,8 +37,8 @@ public sealed class MaterialRangeSlider : Control
     public static readonly StyledProperty<double> LargeChangeProperty =
         AvaloniaProperty.Register<MaterialRangeSlider, double>(nameof(LargeChange), 10d);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
     private SliderDefaultsTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
     private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private bool _updating;
@@ -46,12 +46,13 @@ public sealed class MaterialRangeSlider : Control
 
     public MaterialRangeSlider()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
         Focusable = true;
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     static MaterialRangeSlider()
     {
@@ -106,7 +107,7 @@ public sealed class MaterialRangeSlider : Control
 
         var activePosition = _startActive ? start : end;
         var stateLayerSize = _tokens.HandleHeight;
-        _interaction.InteractionArea = new Rect(
+        var interactionArea = new Rect(
             activePosition - stateLayerSize / 2,
             center - stateLayerSize / 2,
             stateLayerSize,
@@ -116,9 +117,11 @@ public sealed class MaterialRangeSlider : Control
             center - _tokens.HandleHeight / 2,
             handleWidth,
             _tokens.HandleHeight).Inflate(4);
-        _interaction.FocusRingArea = focusRingArea;
-        _interaction.FocusRingCornerRadius =
-            new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2);
+        _theme.InteractionPresentation.UpdateGeometry(
+            new MaterialInteractionGeometry(
+                interactionArea,
+                focusRingArea,
+                new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2)));
         _interaction.DrawLayers(context, visuals.StateLayerColor, new CornerRadius(stateLayerSize / 2));
     }
 
@@ -281,7 +284,7 @@ public sealed class MaterialRangeSlider : Control
 
     internal bool IsStartEndpointActive => _startActive;
 
-    internal Rect? EndpointFocusRingArea => _interaction.FocusRingArea;
+    internal Rect? EndpointFocusRingArea => _interaction.Geometry.FocusRingArea;
 
     internal bool IsEndpointFocusIndicatorActive =>
         _interaction.Interaction.HasFlag(InteractionState.Focused);

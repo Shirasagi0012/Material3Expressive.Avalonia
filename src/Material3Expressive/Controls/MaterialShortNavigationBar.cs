@@ -33,8 +33,22 @@ public enum ShortNavigationBarArrangement
 /// <summary>
 /// A compact adaptive destination bar with equal-weight and centered arrangements.
 /// </summary>
-public class MaterialShortNavigationBar : MaterialControl
+public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     /// <summary>The Material compact-to-medium width boundary, in Avalonia logical pixels (dp).</summary>
     public const double MediumWidthBreakpoint = 600;
 
@@ -69,6 +83,7 @@ public class MaterialShortNavigationBar : MaterialControl
 
     public MaterialShortNavigationBar()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         Items.CollectionChanged += ItemsChanged;
         ApplyTokens();
     }
@@ -137,11 +152,6 @@ public class MaterialShortNavigationBar : MaterialControl
             SyncSelection();
         else if (change.Property == ArrangementProperty || change.Property == ResponsiveBreakpointProperty)
             ResolveArrangement(Bounds.Width);
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

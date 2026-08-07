@@ -41,7 +41,7 @@ public sealed class AnimatedShape
         _progress = new SpringAnimation(1.0, spec);
     }
 
-    /// <summary>The animation to register with a <c>MotionGroup</c>.</summary>
+    /// <summary>The animation to register with a material motion scope.</summary>
     public IAnimation Progress => _progress;
 
     /// <summary>The shape currently being animated towards.</summary>

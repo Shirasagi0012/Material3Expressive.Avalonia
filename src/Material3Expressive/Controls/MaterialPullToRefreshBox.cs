@@ -134,7 +134,7 @@ internal sealed class PullTransitionRequestedEventArgs(double targetValue, bool 
 /// <summary>
 /// Hosts scrollable content and requests refresh after a downward pull crosses its threshold.
 /// </summary>
-public sealed class MaterialPullToRefreshBox : ContentControl
+public sealed class MaterialPullToRefreshBox : ContentControl, IMaterialMotionConsumer
 {
     /// <summary>Defines whether the application is currently refreshing.</summary>
     public static readonly StyledProperty<bool> IsRefreshingProperty =
@@ -172,7 +172,7 @@ public sealed class MaterialPullToRefreshBox : ContentControl
 
     private static readonly SpringSpec DefaultAnimatableSpring = new(1, 1500, .01);
 
-    private readonly MotionGroup _motion;
+    private readonly MaterialMotionScope _motion;
     private readonly MaterialPullToRefreshIndicator _defaultIndicator;
     private PullToRefreshState _state = new();
     private SpringAnimation? _fractionMotion;
@@ -194,8 +194,7 @@ public sealed class MaterialPullToRefreshBox : ContentControl
         Focusable = true;
         _defaultIndicator = new MaterialPullToRefreshIndicator { Name = "indicator" };
         _effectiveIndicator = _defaultIndicator;
-        _motion = new MotionGroup(this);
-        _motion.Ticked += OnMotionTick;
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         AttachState(_state);
         UpdateIndicator();
 
@@ -210,6 +209,8 @@ public sealed class MaterialPullToRefreshBox : ContentControl
             RoutingStrategies.Bubble,
             handledEventsToo: true);
     }
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() => OnMotionFrame();
 
     static MaterialPullToRefreshBox() =>
         ClipToBoundsProperty.OverrideDefaultValue<MaterialPullToRefreshBox>(false);
@@ -596,7 +597,7 @@ public sealed class MaterialPullToRefreshBox : ContentControl
         UpdateIndicator();
     }
 
-    private void OnMotionTick(object? sender, EventArgs e)
+    private void OnMotionFrame()
     {
         if (_fractionMotion is null)
             return;
@@ -746,10 +747,10 @@ internal sealed class MaterialPullToRefreshIndicatorHost : Decorator
 }
 
 /// <summary>Alpha22 default 40 DIP pull indicator surface, arrow, and refreshing spinner.</summary>
-internal sealed class MaterialPullToRefreshIndicator : Control
+internal sealed class MaterialPullToRefreshIndicator : Control, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
     private readonly LoopingAnimation _rotation;
     private readonly SpringAnimation _alpha;
     private double _fraction;
@@ -774,15 +775,17 @@ internal sealed class MaterialPullToRefreshIndicator : Control
     {
         Width = Height = PullToRefreshDefaults.IndicatorContainerSize;
         IsHitTestVisible = false;
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         _rotation = _motion.Add(new LoopingAnimation(TimeSpan.FromMilliseconds(1332)));
         _rotation.Settle();
         _alpha = _motion.AddSpring(.3, new SpringSpec(1, 1600, .01));
-        _motion.Ticked += (_, _) => InvalidateVisual();
-        _theme.Changed += (_, _) => ApplyTheme();
         ApplyTheme();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTheme();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() => InvalidateVisual();
 
     internal void Update(double fraction, bool refreshing)
     {

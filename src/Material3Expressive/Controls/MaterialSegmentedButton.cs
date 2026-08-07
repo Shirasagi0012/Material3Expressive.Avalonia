@@ -27,7 +27,7 @@ namespace Material3Expressive.Controls;
 /// event. Its parent supplies the segment shape and, in single-choice mode, the radio-like
 /// mutual exclusion.
 /// </remarks>
-public class MaterialSegmentedButton : ToggleButton
+public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer, IMaterialMotionConsumer
 {
     /// <summary>
     /// The 24x24 Filled.Check vector from AndroidX <c>internal/Icons.kt</c>.
@@ -100,8 +100,8 @@ public class MaterialSegmentedButton : ToggleButton
             nameof(ContentOffset),
             owner => owner.ContentOffset);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
     private SegmentedButtonColors _colors = SegmentedButtonTokens.Default.Resolve(null, false);
     private SegmentedButtonTokens _tokens = SegmentedButtonTokens.Default;
     private SpringAnimation? _contentOffsetAnimation;
@@ -121,19 +121,21 @@ public class MaterialSegmentedButton : ToggleButton
 
     public MaterialSegmentedButton()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) =>
-        {
-            InteractionChanged?.Invoke(this, EventArgs.Empty);
-            InvalidateVisual();
-        };
-        _interaction.Motion.Ticked += (_, _) => SyncMotionOutputs();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state)
+    {
+        InteractionChanged?.Invoke(this, EventArgs.Empty);
+        InvalidateVisual();
+    }
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() => SyncMotionOutputs();
 
     static MaterialSegmentedButton()
     {
@@ -235,7 +237,7 @@ public class MaterialSegmentedButton : ToggleButton
 
     internal MaterialSegmentedButtonRow? OwnerRow { get; set; }
 
-    internal MaterialInteractionHost InteractionHost => _interaction;
+    internal MaterialInteractionController Interaction => _interaction;
 
     internal int InteractionZIndex =>
         (IsChecked == true ? 5 : 0)
@@ -266,7 +268,8 @@ public class MaterialSegmentedButton : ToggleButton
             outline,
             _tokens.OutlineWidth);
 
-        _interaction.InteractionArea = new Rect(Bounds.Size);
+        _theme.InteractionPresentation.UpdateGeometry(
+            new MaterialInteractionGeometry(new Rect(Bounds.Size), null, null));
         base.Render(context);
         _interaction.DrawLayers(
             context,

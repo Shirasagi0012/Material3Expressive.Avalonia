@@ -5,19 +5,19 @@ using System.Threading;
 namespace Material3Expressive.Controls;
 
 /// <summary>
-/// Test-only owner for every <see cref="MotionGroup" /> created while the scope is active.
+/// Test-only owner for every <see cref="MaterialMotionCoordinator" /> created while the scope is active.
 /// </summary>
 /// <remarks>
 /// The visual-parity host enters this scope before it constructs a scene. That makes initial,
-/// templated, and trigger-created motion groups manual before they can request a host frame. The
+/// templated, and trigger-created coordinators manual before they can request a host frame. The
 /// type is internal and exposed only to the repository's friend test assemblies.
 /// </remarks>
 internal sealed class MotionTestClockScope : IDisposable
 {
     private static readonly AsyncLocal<MotionTestClockScope?> CurrentScope = new();
 
-    private readonly List<MotionGroup> _groups = [];
-    private readonly HashSet<MotionGroup> _knownGroups = [];
+    private readonly List<MaterialMotionCoordinator> _coordinators = [];
+    private readonly HashSet<MaterialMotionCoordinator> _knownCoordinators = [];
     private bool _disposed;
 
     public MotionTestClockScope()
@@ -28,11 +28,11 @@ internal sealed class MotionTestClockScope : IDisposable
         CurrentScope.Value = this;
     }
 
-    internal int GroupCount => _groups.Count;
+    internal int CoordinatorCount => _coordinators.Count;
 
-    internal static void Register(MotionGroup group)
+    internal static void Register(MaterialMotionCoordinator coordinator)
     {
-        CurrentScope.Value?.Add(group);
+        CurrentScope.Value?.Add(coordinator);
     }
 
     internal void AdvanceBy(TimeSpan delta)
@@ -41,17 +41,17 @@ internal sealed class MotionTestClockScope : IDisposable
         if (delta < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(delta), "Animation time cannot move backwards.");
 
-        // A tick can create another motion group. Indexing lets that group consume the same
+        // A tick can create another coordinator. Indexing lets that coordinator consume the same
         // logical frame, matching a frame clock where all registered callbacks see one timestamp.
-        for (var index = 0; index < _groups.Count; index++)
-            _groups[index].AdvanceBy(delta);
+        for (var index = 0; index < _coordinators.Count; index++)
+            _coordinators[index].AdvanceBy(delta);
     }
 
     internal void SettleAll()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        for (var index = 0; index < _groups.Count; index++)
-            _groups[index].SettleAll();
+        for (var index = 0; index < _coordinators.Count; index++)
+            _coordinators[index].SettleAll();
     }
 
     public void Dispose()
@@ -65,12 +65,12 @@ internal sealed class MotionTestClockScope : IDisposable
         _disposed = true;
     }
 
-    private void Add(MotionGroup group)
+    private void Add(MaterialMotionCoordinator coordinator)
     {
-        if (!_knownGroups.Add(group))
+        if (!_knownCoordinators.Add(coordinator))
             return;
 
-        group.UseManualClock();
-        _groups.Add(group);
+        coordinator.UseManualClock();
+        _coordinators.Add(coordinator);
     }
 }

@@ -8,7 +8,7 @@
 
     <PropertyGroup>
         <PackageId>Shirasagi0012.MaterialTypography.Roboto</PackageId>
-        <Version>0.1.0-alpha</Version>
+        <Version>0.2.0-alpha</Version>
         <Authors>Shirasagi0012</Authors>
         <Description>Roboto Typeface for Material3Expressive.Avalonia</Description>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

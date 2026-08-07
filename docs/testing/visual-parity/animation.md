@@ -7,7 +7,7 @@ parity runner. It is not video comparison and it does not sample a live host clo
 checkpoint is an ordinary parity case with an additional, structurally compared motion contract.
 
 The first vertical slice is `foundation/motion/linear-tween/{start,mid,end}/light`. It proves exact
-0ms, 100ms, and 200ms replay through the Compose frame clock, the Avalonia `MotionGroup` manual
+0ms, 100ms, and 200ms replay through the Compose frame clock, the Avalonia motion coordinator manual
 clock, the shared manifest, and the normal image/geometry comparer. The first component families
 extend that contract to circular wavy progress at 0ms/500ms/1000ms and indeterminate Loading
 Indicator at 0ms/150ms/650ms.
@@ -18,7 +18,7 @@ Supported in the first version:
 |---|---|
 | Compose frame-clock animation | Supported and controlled |
 | Compose coroutine delay/time | Supported through `TestCoroutineScheduler` |
-| Avalonia component-owned `MotionGroup` | Supported and controlled |
+| Avalonia component-owned motion coordinator | Supported and controlled |
 | Timestamp-insensitive trigger/input | Supported |
 | Avalonia `Transition` | Unsupported in motion parity cases |
 | Avalonia composition animations | Unsupported in motion parity cases |
@@ -72,7 +72,7 @@ list; it does not independently calculate target timestamps.
 
 The registration transaction is not an animation sample and does not appear in
 `deliveryFrameTicks`. It resolves the platform ordering difference where Compose installs an
-animation during composition while an Avalonia control normally creates its `MotionGroup` in its
+animation during composition while an Avalonia control normally creates its motion coordinator in its
 constructor.
 
 Compose uses duration scale `1.0`. Motion cases run with a test coroutine dispatcher as well as the
@@ -80,7 +80,7 @@ controlled render timestamps. Before each render, the scheduler advances to the 
 whole-millisecond time and drains current work. This is sufficient for Material's millisecond
 duration and delay contracts while frame animation still uses the nanosecond render timestamp.
 
-Avalonia enters `MotionTestClockScope` before `CreateContent`. Every `MotionGroup` constructed in
+Avalonia enters `MotionTestClockScope` before `CreateContent`. Every motion coordinator constructed in
 that scope switches to manual mode before it can request a host frame. The declared trigger then
 runs, and each manifest delta is delivered to every registered group. Ordinary render ticks may
 commit drawing, but cannot advance a manually owned group.
@@ -99,7 +99,7 @@ the same values on both sides:
 - every delivery-frame timestamp;
 - final capture-frame index;
 - schedule SHA-256;
-- clock-coverage declarations for Compose frame/coroutine clocks, Avalonia `MotionGroup`, native
+- clock-coverage declarations for Compose frame/coroutine clocks, Avalonia motion coordinator, native
   transitions/composition, and input timestamps.
 
 Motion metadata is a structural contract. Missing metadata, a changed event, a timestamp mismatch,
@@ -135,7 +135,7 @@ On Avalonia:
 1. Construct the same initial state in `VisualCase.CreateContent`.
 2. Add `VisualMotionSpec` with matching scenario, checkpoint, trigger action, and clock coverage.
 3. Put the state change or input in `VisualMotionSpec.Trigger`, not in `Prepare`.
-4. Use only component-owned `MotionGroup` animation during the case.
+4. Use only component-owned motion coordinator animation during the case.
 5. Let `VisualRenderer` replay the Compose-produced schedule; do not call
    `UseManualMotionClock`/`AdvanceAnimations` for first-class motion cases.
 

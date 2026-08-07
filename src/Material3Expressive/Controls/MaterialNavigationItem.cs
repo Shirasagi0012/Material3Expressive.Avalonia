@@ -26,7 +26,7 @@ namespace Material3Expressive.Controls;
 /// the indicator: a pill that grows behind the icon rather than a colour change alone, which is
 /// what Material 3 replaced the old highlighted-tab look with.
 /// </remarks>
-public class MaterialNavigationItem : ToggleButton
+public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     public static readonly StyledProperty<bool> FollowWideRailExpansionProperty =
         AvaloniaProperty.Register<MaterialNavigationItem, bool>(
@@ -93,8 +93,8 @@ public class MaterialNavigationItem : ToggleButton
         AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
             nameof(AnchorTopIcon), o => o.AnchorTopIcon);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private SpringAnimation? _indicator;
     private NavigationTokens _tokens = NavigationTokens.Bar;
@@ -105,14 +105,16 @@ public class MaterialNavigationItem : ToggleButton
 
     public MaterialNavigationItem()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => InvalidateVisual();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        InvalidateVisual();
 
     /// <summary>The destination's icon.</summary>
     public object? Icon
@@ -318,7 +320,8 @@ public class MaterialNavigationItem : ToggleButton
                 MaterialContainer.Draw(context, grown.Size, corners, _colors.ActiveIndicatorColor);
         }
 
-        _interaction.InteractionArea = area;
+        _theme.InteractionPresentation.UpdateGeometry(
+            new MaterialInteractionGeometry(area, null, null));
         base.Render(context);
         _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
     }

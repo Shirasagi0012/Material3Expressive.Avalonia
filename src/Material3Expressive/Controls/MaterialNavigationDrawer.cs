@@ -23,7 +23,7 @@ namespace Material3Expressive.Controls;
 /// dismiss target.
 /// </para>
 /// </remarks>
-public class MaterialNavigationDrawer : ContentControl
+public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
     public static readonly StyledProperty<DrawerVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialNavigationDrawer, DrawerVariant>(nameof(Variant));
@@ -33,8 +33,8 @@ public class MaterialNavigationDrawer : ContentControl
         AvaloniaProperty.Register<MaterialNavigationDrawer, bool>(
             nameof(IsOpen), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _open;
     private DrawerTokens _tokens = DrawerTokens.Modal;
@@ -42,16 +42,17 @@ public class MaterialNavigationDrawer : ContentControl
 
     public MaterialNavigationDrawer()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) =>
-        {
-            InvalidateArrange();
-            InvalidateVisual();
-        };
-
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         ApplyTokens();
+    }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame()
+    {
+        InvalidateArrange();
+        InvalidateVisual();
     }
 
     static MaterialNavigationDrawer()

@@ -179,10 +179,8 @@ public sealed class MaterialListItemInteractionModeTests
         Assert.True(item.IsChecked);
     }
 
-    private static MaterialInteractionHost InteractionOf(MaterialListItem item) =>
-        (MaterialInteractionHost)typeof(MaterialListItem)
-            .GetField("_interaction", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(item)!;
+    private static MaterialInteractionController InteractionOf(MaterialListItem item) =>
+        MaterialElementContext.GetOrCreate(item).Interaction;
 
     private sealed class DisabledCommand : ICommand
     {

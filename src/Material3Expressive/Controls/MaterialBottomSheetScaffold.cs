@@ -3,7 +3,7 @@
 // 453-620 and SheetDefaults.kt:90-260, 496-540 (VERSION 29.0.0).
 // The alpha22 executable reference has the same standard two-anchor geometry. Avalonia maps
 // suspend SheetState methods to synchronous, vetoable state commands and keeps animation owned by
-// the control's MotionGroup so interrupted drags resume from the current fraction.
+// the control's MaterialMotionScope so interrupted drags resume from the current fraction.
 
 using System.ComponentModel;
 using Avalonia;
@@ -236,7 +236,7 @@ public sealed class MaterialBottomSheetScaffold : ContentControl
 }
 
 /// <summary>Internal themed surface used by the scaffold template.</summary>
-internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
+internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
     public static readonly StyledProperty<double> PeekHeightProperty =
         AvaloniaProperty.Register<MaterialBottomSheetScaffoldSheet, double>(nameof(PeekHeight), 56);
@@ -246,8 +246,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
         AvaloniaProperty.RegisterDirect<MaterialBottomSheetScaffoldSheet, BottomSheetState>(
             nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
     private BottomSheetTokens _tokens = BottomSheetTokens.Standard;
     private BottomSheetColors _colors = BottomSheetTokens.Standard.Resolve(null, false);
     private Point? _dragStart;
@@ -261,15 +261,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
 
     public MaterialBottomSheetScaffoldSheet()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) =>
-        {
-            _fraction = _motionFraction?.Value ?? _fraction;
-            (this.GetVisualParent() as Control)?.InvalidateArrange();
-            InvalidateVisual();
-        };
-        _theme.Changed += (_, _) => ApplyTheme();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         AddHandler(
             InputElement.ScrollGestureEvent,
             OnNestedScrollGesture,
@@ -286,6 +279,15 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl
             RoutingStrategies.Tunnel,
             handledEventsToo: true);
         ApplyTheme();
+    }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTheme();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame()
+    {
+        _fraction = _motionFraction?.Value ?? _fraction;
+        (this.GetVisualParent() as Control)?.InvalidateArrange();
+        InvalidateVisual();
     }
 
     static MaterialBottomSheetScaffoldSheet() =>

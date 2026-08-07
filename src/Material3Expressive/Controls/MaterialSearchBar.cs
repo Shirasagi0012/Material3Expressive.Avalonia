@@ -24,8 +24,22 @@ namespace Material3Expressive.Controls;
 /// </para>
 /// </remarks>
 [TemplatePart(TextBoxPartName, typeof(TextBox))]
-public class MaterialSearchBar : MaterialControl
+public class MaterialSearchBar : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     private const string TextBoxPartName = "PART_TextBox";
 
     public static readonly StyledProperty<string?> TextProperty =
@@ -57,7 +71,7 @@ public class MaterialSearchBar : MaterialControl
     public static readonly RoutedEvent<RoutedEventArgs> SearchEvent =
         RoutedEvent.Register<MaterialSearchBar, RoutedEventArgs>(nameof(Search), RoutingStrategies.Bubble);
 
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
     private TextBox? _textBox;
@@ -66,7 +80,9 @@ public class MaterialSearchBar : MaterialControl
 
     public MaterialSearchBar()
     {
-        _interaction = new MaterialInteractionHost(this) { IsRippleEnabled = false };
+        _material = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _interaction.IsRippleEnabled = false;
 
         ApplyTokens();
     }
@@ -193,11 +209,6 @@ public class MaterialSearchBar : MaterialControl
 
         if (change.Property == IsOpenProperty)
             UpdateShape();
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
     }
 
     private void OnEditorKeyDown(object? sender, KeyEventArgs e)

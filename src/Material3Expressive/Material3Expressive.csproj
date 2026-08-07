@@ -9,7 +9,7 @@
 
     <PropertyGroup>
         <PackageId>Shirasagi0012.Material3Expressive.Avalonia</PackageId>
-        <Version>0.1.0-alpha</Version>
+        <Version>0.2.0-alpha</Version>
         <Authors>Shirasagi0012</Authors>
         <Description>Material 3 Expressive for Avalonia, ported from androidx.compose.material3</Description>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

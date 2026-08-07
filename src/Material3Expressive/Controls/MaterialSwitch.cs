@@ -23,10 +23,10 @@ namespace Material3Expressive.Controls;
 /// half-completed toggle reverse from where it is.
 /// </para>
 /// </remarks>
-public class MaterialSwitch : ToggleButton
+public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private SpringAnimation? _position;
     private SpringAnimation? _handleSize;
@@ -35,14 +35,17 @@ public class MaterialSwitch : ToggleButton
 
     public MaterialSwitch()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this) { IsRippleBounded = false };
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => UpdateHandleSize();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _interaction.IsRippleBounded = false;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        UpdateHandleSize();
 
     /// <summary>The track, which is also the state layer's alignment box.</summary>
     protected Rect TrackArea =>
@@ -69,8 +72,6 @@ public class MaterialSwitch : ToggleButton
         var trackOutline = visuals.TrackOutlineColor;
 
         var radius = track.Height / 2;
-        _interaction.FocusRingArea = track;
-        _interaction.FocusRingCornerRadius = new CornerRadius(radius);
         var pen = trackOutline is { } ? new ImmutablePen(trackOutline, _tokens.TrackOutlineWidth) : null;
         var inset = pen is { } ? _tokens.TrackOutlineWidth / 2 : 0;
 
@@ -89,11 +90,16 @@ public class MaterialSwitch : ToggleButton
         var centre = new Point(left + (right - left) * fraction, track.Center.Y);
 
         var stateLayerSize = _tokens.StateLayerSize;
-        _interaction.InteractionArea = new Rect(
+        var interactionArea = new Rect(
             centre.X - stateLayerSize / 2,
             centre.Y - stateLayerSize / 2,
             stateLayerSize,
             stateLayerSize);
+        _theme.InteractionPresentation.UpdateGeometry(
+            new MaterialInteractionGeometry(
+                interactionArea,
+                track,
+                new CornerRadius(radius)));
 
         var handleFill = visuals.HandleColor;
 

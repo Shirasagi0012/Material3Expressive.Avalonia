@@ -10,10 +10,10 @@ using Avalonia.Media;
 namespace Material3Expressive.Foundation;
 
 /// <summary>
-/// A retargetable solid brush animated by the component-owned <c>MotionGroup</c> clock.
+/// A retargetable solid brush animated by a component-owned material motion scope.
 /// </summary>
 /// <remarks>
-/// The animation interface is scalar because a <c>MotionGroup</c> only needs scheduling
+/// The animation interface is scalar because a motion coordinator only needs scheduling
 /// and settling. <see cref="Value" /> exposes alpha for that interface; rendering always reads the
 /// live <see cref="Brush" /> instead. An unsupported non-solid source is intentionally assigned
 /// without motion instead of guessing a gradient interpolation policy.

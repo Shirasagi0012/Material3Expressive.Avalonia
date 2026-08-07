@@ -22,8 +22,23 @@ public enum DividerOrientation { Horizontal, Vertical }
 // no-line meaning.
 
 /// <summary>A Material 3 horizontal or vertical divider.</summary>
-public sealed class MaterialDivider : MaterialControl, IVisualBoundsProbe
+public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer, IVisualBoundsProbe
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
+        ApplyTheme(state.Theme, state.IsDark);
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     public static readonly StyledProperty<DividerOrientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialDivider, DividerOrientation>(nameof(Orientation));
     public static readonly StyledProperty<double> ThicknessProperty =
@@ -40,6 +55,7 @@ public sealed class MaterialDivider : MaterialControl, IVisualBoundsProbe
 
     public MaterialDivider()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         // The retained child gives Dp.Hairline a non-zero render footprint while this control
         // keeps Compose's zero cross-axis desired/layout size. It is intentionally visual-only:
         // dividers remain non-interactive and do not gain a logical or automation child.
@@ -192,7 +208,7 @@ public sealed class MaterialDivider : MaterialControl, IVisualBoundsProbe
             _hairlineStroke?.InvalidateVisual();
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    private void ApplyTheme(ResolvedTheme theme, bool isDark)
     {
         ApplyTheme();
     }

@@ -16,7 +16,7 @@ namespace Material3Expressive.Controls;
 /// only shows a state layer and raises on hover when it is actually actionable, and a card that
 /// looks pressable but is not is worse than one that looks flat.
 /// </remarks>
-public class MaterialCard : ContentControl
+public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     public static readonly StyledProperty<CardVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialCard, CardVariant>(nameof(Variant), CardVariant.Filled);
@@ -25,22 +25,24 @@ public class MaterialCard : ContentControl
     public static readonly StyledProperty<bool> IsClickableProperty =
         AvaloniaProperty.Register<MaterialCard, bool>(nameof(IsClickable));
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private CardTokens _tokens = CardTokens.Filled;
     private CardColors _colors = CardTokens.Filled.Resolve(null, false);
 
     public MaterialCard()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => InvalidateVisual();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        InvalidateVisual();
 
     static MaterialCard()
     {

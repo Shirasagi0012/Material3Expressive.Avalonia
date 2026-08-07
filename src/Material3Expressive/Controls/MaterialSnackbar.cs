@@ -27,8 +27,20 @@ namespace Material3Expressive.Controls;
 /// snackbar on a detached control stops counting down along with everything else.
 /// </para>
 /// </remarks>
-public class MaterialSnackbar : MaterialControl
+public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
     /// <inheritdoc cref="IsOpen" />
     public static readonly StyledProperty<bool> IsOpenProperty =
         AvaloniaProperty.Register<MaterialSnackbar, bool>(
@@ -53,6 +65,7 @@ public class MaterialSnackbar : MaterialControl
 
     public MaterialSnackbar()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         ApplyTokens();
     }
 
@@ -180,12 +193,7 @@ public class MaterialSnackbar : MaterialControl
         }
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
-    }
-
-    protected override void OnMotionTick()
+    private void OnMotionTick()
     {
         OnFrame();
     }

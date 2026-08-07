@@ -82,7 +82,7 @@ internal enum MaterialListItemSegmentPosition
 }
 
 /// <summary>A Material list row with leading, headline, overline, supporting and trailing slots.</summary>
-public sealed class MaterialListItem : ToggleButton
+public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer, IMaterialMotionConsumer
 {
     // Pinned Compose Text resolves Material's default fontFeatureSettings to an empty string.
     // Avalonia otherwise enables Roboto standard/contextual ligatures by default, changing the
@@ -161,8 +161,8 @@ public sealed class MaterialListItem : ToggleButton
     public static readonly DirectProperty<MaterialListItem, IBrush> OverlineBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialListItem, IBrush>(nameof(OverlineBrush), item => item.OverlineBrush);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
     private readonly Dictionary<TextBlock, SlotTypographyAssignment> _slotTypographyAssignments = new();
 
     private ListItemTokens _tokens = ListItemTokens.Default;
@@ -194,16 +194,20 @@ public sealed class MaterialListItem : ToggleButton
 
     public MaterialListItem()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => UpdateShape();
-        _interaction.Ticked += (_, _) =>
-        {
-            UpdateContentClip();
-            UpdateElevationZIndex();
-        };
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
         ApplyTokens();
+    }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        UpdateShape();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame()
+    {
+        UpdateContentClip();
+        UpdateElevationZIndex();
     }
 
     /// <summary>Gets or sets the row's unified interaction contract.</summary>
@@ -716,7 +720,7 @@ public sealed class MaterialListItem : ToggleButton
         // the 56/72/88dp minimum and preserves an application-provided MinHeight.
         Focusable = IsInteractive;
         UpdateLongClickGesture();
-        _interaction.IsInputEnabled = IsInteractive && IsEffectivelyEnabled;
+        _interaction.SetInputEnabled(IsInteractive && IsEffectivelyEnabled);
         ApplyVisualState(snapShape: true);
         InvalidateMeasure();
     }

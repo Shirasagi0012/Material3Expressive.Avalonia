@@ -23,7 +23,7 @@ namespace Material3Expressive.Controls;
 /// small/large change steps are the stock ones and behave as they do on every other range control.
 /// </para>
 /// </remarks>
-public class MaterialSlider : RangeBase
+public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     private const double MinimumInteractiveComponentSize = 48;
     // SliderDefaults.Track uses a 2dp inner corner where a track segment faces the thumb.
@@ -37,8 +37,8 @@ public class MaterialSlider : RangeBase
     public static readonly StyledProperty<Orientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialSlider, Orientation>(nameof(Orientation), Orientation.Horizontal);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private SpringAnimation? _handleWidth;
     private SliderDefaultsTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
@@ -46,15 +46,17 @@ public class MaterialSlider : RangeBase
 
     public MaterialSlider()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => UpdateHandleWidth();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
 
         Focusable = true;
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        UpdateHandleWidth();
 
     static MaterialSlider()
     {
@@ -137,7 +139,7 @@ public class MaterialSlider : RangeBase
         }
 
         var stateLayerSize = _tokens.HandleHeight;
-        _interaction.InteractionArea = RectOnAxis(
+        var interactionArea = RectOnAxis(
             renderedHandlePosition - stateLayerSize / 2,
             crossLength / 2 - stateLayerSize / 2,
             stateLayerSize,
@@ -147,9 +149,11 @@ public class MaterialSlider : RangeBase
             crossLength / 2 - _tokens.HandleHeight / 2,
             handleWidth,
             _tokens.HandleHeight).Inflate(4);
-        _interaction.FocusRingArea = focusRingArea;
-        _interaction.FocusRingCornerRadius =
-            new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2);
+        _theme.InteractionPresentation.UpdateGeometry(
+            new MaterialInteractionGeometry(
+                interactionArea,
+                focusRingArea,
+                new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2)));
 
         var handleBrush = visuals.HandleColor;
         var handle = RectOnAxis(

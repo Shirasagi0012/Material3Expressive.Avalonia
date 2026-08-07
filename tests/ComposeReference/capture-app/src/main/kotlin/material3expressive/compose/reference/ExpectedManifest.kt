@@ -82,7 +82,7 @@ data class CaptureMotionEvent(
 data class CaptureMotionClockCoverage(
     val composeFrameClock: String = "controlled",
     val composeCoroutineClock: String,
-    val avaloniaMotionGroup: String = "controlled",
+    val avaloniaMotionCoordinator: String = "controlled",
     val avaloniaTransition: String = "forbidden",
     val avaloniaComposition: String = "forbidden",
     val inputTimestamp: String = "insensitive",

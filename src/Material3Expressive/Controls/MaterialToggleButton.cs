@@ -7,6 +7,11 @@ namespace Material3Expressive.Controls;
 /// <summary>CLR-property facade over a native Material-themed ToggleButton.</summary>
 public sealed class MaterialToggleButton : ToggleButton
 {
+    public MaterialToggleButton()
+    {
+        MaterialElementContext.GetOrCreate(this);
+    }
+
     public static readonly AttachedProperty<ButtonVariant> VariantProperty =
         ButtonAssist.VariantProperty.AddOwner<MaterialToggleButton>();
     public static readonly AttachedProperty<ButtonSize> SizeProperty =

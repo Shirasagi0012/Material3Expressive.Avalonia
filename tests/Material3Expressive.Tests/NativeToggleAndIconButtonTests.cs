@@ -87,7 +87,7 @@ public class NativeToggleAndIconButtonTests
             ThemeTestHelper.ColorOf(button.Foreground));
 
         button.IsChecked = true;
-        Assert.IsType<MaterialInteractionHost>(presenter.InteractionHost).Motion.SettleAll();
+        Assert.IsType<MaterialInteractionController>(presenter.Interaction).Motion.SettleAll();
 
         Assert.Equal(
             ThemeTestHelper.Expected(theme, SysColorToken.OnPrimary),

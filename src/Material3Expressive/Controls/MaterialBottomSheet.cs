@@ -20,7 +20,7 @@ namespace Material3Expressive.Controls;
 /// velocity the drag had, so a flick keeps going instead of stopping dead at the release point.
 /// </para>
 /// </remarks>
-public class MaterialBottomSheet : ContentControl
+public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
     public static readonly StyledProperty<BottomSheetVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialBottomSheet, BottomSheetVariant>(nameof(Variant));
@@ -33,8 +33,8 @@ public class MaterialBottomSheet : ContentControl
     /// <summary>Past this fraction of the sheet's height, a release settles it closed.</summary>
     private const double DismissThreshold = 0.4;
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MotionGroup _motion;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _open;
     private BottomSheetTokens _tokens = BottomSheetTokens.Modal;
@@ -45,16 +45,17 @@ public class MaterialBottomSheet : ContentControl
 
     public MaterialBottomSheet()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _motion = new MotionGroup(this);
-        _motion.Ticked += (_, _) =>
-        {
-            InvalidateArrange();
-            InvalidateVisual();
-        };
-
-        _theme.Changed += (_, _) => ApplyTokens();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         ApplyTokens();
+    }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame()
+    {
+        InvalidateArrange();
+        InvalidateVisual();
     }
 
     static MaterialBottomSheet()

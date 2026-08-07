@@ -245,7 +245,7 @@ internal sealed class SwipeTransitionRequestedEventArgs(
 /// <summary>
 /// A foreground content surface that exposes background content while it is swiped away.
 /// </summary>
-public sealed class MaterialSwipeToDismissBox : ContentControl
+public sealed class MaterialSwipeToDismissBox : ContentControl, IMaterialMotionConsumer
 {
     /// <summary>Defines the content stacked behind the dismissible foreground.</summary>
     public static readonly StyledProperty<object?> BackgroundContentProperty =
@@ -276,7 +276,7 @@ public sealed class MaterialSwipeToDismissBox : ContentControl
         AvaloniaProperty.RegisterDirect<MaterialSwipeToDismissBox, double>(
             nameof(ContentOffset), owner => owner._contentOffset);
 
-    private readonly MotionGroup _motion;
+    private readonly MaterialMotionScope _motion;
     private SwipeToDismissBoxState _state = new();
     private TweenAnimation? _offsetMotion;
     private double _contentOffset;
@@ -295,10 +295,11 @@ public sealed class MaterialSwipeToDismissBox : ContentControl
     public MaterialSwipeToDismissBox()
     {
         Focusable = true;
-        _motion = new MotionGroup(this);
-        _motion.Ticked += OnMotionTick;
+        _motion = MaterialElementContext.GetOrCreate(this).Motion;
         AttachState(_state);
     }
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() => OnMotionFrame();
 
     /// <summary>Raised once after motion settles at a dismissal anchor.</summary>
     public event EventHandler<SwipeDismissedEventArgs>? Dismissed;
@@ -604,7 +605,7 @@ public sealed class MaterialSwipeToDismissBox : ContentControl
         _motion.Start();
     }
 
-    private void OnMotionTick(object? sender, EventArgs e)
+    private void OnMotionFrame()
     {
         if (_offsetMotion is null)
             return;

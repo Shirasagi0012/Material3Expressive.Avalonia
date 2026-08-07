@@ -98,7 +98,7 @@ public class RippleAnimationTests
     }
 }
 
-public class MaterialInteractionHostRippleTests
+public class MaterialInteractionControllerRippleTests
 {
     [Fact]
     public void RippleTheme_DefaultsTheFrameworkToTheMaterialThreeInsetFocusRing()
@@ -128,7 +128,7 @@ public class MaterialInteractionHostRippleTests
         };
         var owner = new Border { Width = 80, Height = 40 };
         MaterialThemeScope.SetTheme(owner, theme);
-        var interaction = new MaterialInteractionHost(owner);
+        var interaction = MaterialElementContext.GetOrCreate(owner).Interaction;
         var window = ThemeTestHelper.ShowWindow(owner);
 
         interaction.Set(InteractionState.Focused, true);
@@ -164,16 +164,16 @@ public class MaterialInteractionHostRippleTests
         MaterialThemeScope.SetTheme(
             owner,
             new MaterialTheme { RippleTheme = RippleThemeConfiguration.CreateOpacity() });
-        var interaction = new MaterialInteractionHost(owner);
+        var interaction = MaterialElementContext.GetOrCreate(owner).Interaction;
         var window = ThemeTestHelper.ShowWindow(owner);
-        interaction.Motion.UseManualClock();
+        interaction.Motion.Coordinator.UseManualClock();
 
         interaction.Set(InteractionState.Hovered, true);
-        interaction.Motion.AdvanceBy(TimeSpan.FromMilliseconds(15));
+        interaction.Motion.Coordinator.AdvanceBy(TimeSpan.FromMilliseconds(15));
         Assert.Equal(StateTokens.HoverStateLayerOpacity, interaction.StateLayerOpacity, 6);
 
         interaction.Set(InteractionState.Focused, true);
-        interaction.Motion.AdvanceBy(TimeSpan.FromMilliseconds(45));
+        interaction.Motion.Coordinator.AdvanceBy(TimeSpan.FromMilliseconds(45));
         Assert.Equal(StateTokens.FocusStateLayerOpacity, interaction.StateLayerOpacity, 6);
 
         // Removing an interaction below the top leaves focus in place.
@@ -182,7 +182,7 @@ public class MaterialInteractionHostRippleTests
 
         // A later hover entry now sits above focus, matching RippleNode's interactions.lastOrNull.
         interaction.Set(InteractionState.Hovered, true);
-        interaction.Motion.AdvanceBy(TimeSpan.FromMilliseconds(15));
+        interaction.Motion.Coordinator.AdvanceBy(TimeSpan.FromMilliseconds(15));
         Assert.Equal(StateTokens.HoverStateLayerOpacity, interaction.StateLayerOpacity, 6);
 
         window.Close();
@@ -191,14 +191,13 @@ public class MaterialInteractionHostRippleTests
     [Fact]
     public void APerCallSiteIndicationSwitch_CanSuppressHover()
     {
-        var interaction = new MaterialInteractionHost(new Border())
-        {
-            IsHoverIndicationEnabled = false
-        };
-        interaction.Motion.UseManualClock();
+        var owner = new Border();
+        var interaction = MaterialElementContext.GetOrCreate(owner).Interaction;
+        interaction.IsHoverIndicationEnabled = false;
+        interaction.Motion.Coordinator.UseManualClock();
 
         interaction.Set(InteractionState.Hovered, true);
-        interaction.Motion.AdvanceBy(TimeSpan.FromMilliseconds(15));
+        interaction.Motion.Coordinator.AdvanceBy(TimeSpan.FromMilliseconds(15));
 
         Assert.True(interaction.Interaction.HasFlag(InteractionState.Hovered));
         Assert.Equal(0, interaction.StateLayerOpacity);
@@ -215,9 +214,7 @@ public class MaterialInteractionHostRippleTests
 
         var presenter = Assert.Single(
             button.GetVisualDescendants().OfType<MaterialRipplePresenter>());
-        var interaction = (MaterialInteractionHost)typeof(MaterialRipplePresenter)
-            .GetField("_interaction", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(presenter)!;
+        var interaction = MaterialElementContext.GetOrCreate(button).Interaction;
 
         Assert.Same(button, presenter.TemplatedParent);
         Assert.True(presenter.IsBounded);
@@ -235,7 +232,7 @@ public class MaterialInteractionHostRippleTests
     {
         var button = new Button { Width = 80, Height = 40 };
         var window = ThemeTestHelper.ShowWindow(button);
-        var interaction = new MaterialInteractionHost(button);
+        var interaction = MaterialElementContext.GetOrCreate(button).Interaction;
 
         button.RaiseEvent(new KeyEventArgs
         {
@@ -244,10 +241,8 @@ public class MaterialInteractionHostRippleTests
         });
 
         Assert.True(interaction.Interaction.HasFlag(InteractionState.Pressed));
-        var ripples = (List<RippleAnimation>)typeof(MaterialInteractionHost)
-            .GetField("_ripples", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(interaction)!;
-        Assert.Equal(new Point(40, 20), Assert.Single(ripples).Center);
+        Assert.Equal(1, interaction.DebugSnapshot.RippleCount);
+        Assert.Equal(new Point(40, 20), interaction.DebugSnapshot.LastRippleCenter);
 
         button.RaiseEvent(new KeyEventArgs
         {
@@ -266,9 +261,7 @@ public class MaterialInteractionHostRippleTests
     public void SelectionControls_UseTheMaterialThreeUnboundedRipple(Type controlType)
     {
         var control = (Control)Activator.CreateInstance(controlType)!;
-        var interaction = (MaterialInteractionHost)controlType
-            .GetField("_interaction", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(control)!;
+        var interaction = MaterialElementContext.GetOrCreate(control).Interaction;
 
         Assert.False(interaction.IsRippleBounded);
         Assert.NotNull(interaction.RippleRadius);

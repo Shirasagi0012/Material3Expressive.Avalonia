@@ -15,10 +15,10 @@ namespace Material3Expressive.Controls;
 /// stock behaviour. The dot scales in with a spring rather than appearing: Material animates the
 /// selection, and at this size a snap reads as a glitch.
 /// </remarks>
-public class MaterialRadioButton : RadioButton
+public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private SpringAnimation? _dot;
     private RadioButtonDefaultsTokens _tokens = RadioButtonDefaultsTokens.Default;
@@ -26,14 +26,17 @@ public class MaterialRadioButton : RadioButton
 
     public MaterialRadioButton()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this) { IsRippleBounded = false };
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => InvalidateVisual();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _interaction.IsRippleBounded = false;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        InvalidateVisual();
 
     /// <summary>The state-layer circle, which is also the ring's alignment box.</summary>
     protected Rect GlyphArea
@@ -53,7 +56,8 @@ public class MaterialRadioButton : RadioButton
     public override void Render(DrawingContext context)
     {
         var area = GlyphArea;
-        _interaction.InteractionArea = area;
+        _theme.InteractionPresentation.UpdateGeometry(
+            new MaterialInteractionGeometry(area, null, null));
 
         var enabled = IsEffectivelyEnabled;
         var selected = IsChecked == true;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Automation.Peers;
+using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Controls.Automation;
@@ -19,8 +20,23 @@ namespace Material3Expressive.Controls;
 /// separated by <c>TrackActiveSpace</c>, converted here from a length along the circumference into
 /// the angle it subtends, so the gap stays the specified size at any diameter.
 /// </remarks>
-public class MaterialCircularProgressIndicator : MaterialControl
+public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
+        ApplyTheme(state.Theme, state.IsDark);
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     /// <inheritdoc cref="Value" />
     public static readonly StyledProperty<double> ValueProperty =
         AvaloniaProperty.Register<MaterialCircularProgressIndicator, double>(nameof(Value));
@@ -54,6 +70,11 @@ public class MaterialCircularProgressIndicator : MaterialControl
         Easings.CubicBezier(.2, 0, 0, 1);
     private static readonly Easing IndeterminateRotationEasing =
         Easings.CubicBezier(.05, .7, .1, 1);
+
+    public MaterialCircularProgressIndicator()
+    {
+        _material = MaterialElementContext.GetOrCreate(this);
+    }
 
     private LoopingAnimation? _rotation;
     private LoopingAnimation? _sweep;
@@ -145,7 +166,7 @@ public class MaterialCircularProgressIndicator : MaterialControl
         return new Size(size, size);
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
+    private void ApplyTheme(ResolvedTheme theme, bool isDark)
     {
         _tokens = theme.GetProgressTokens(ProgressIndicatorShape.Circular);
         _colors = theme.GetProgressColors(ProgressIndicatorShape.Circular, isDark);

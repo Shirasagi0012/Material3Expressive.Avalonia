@@ -32,8 +32,20 @@ public enum WideNavigationRailArrangement
 /// A Material wide navigation rail that preserves its destinations and selection while it
 /// expands between the 96dp collapsed and 220–360dp expanded layouts.
 /// </summary>
-public class MaterialWideNavigationRail : MaterialControl
+public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
     public const double CollapsedWidth = 96;
     public const double ExpandedMinimumWidth = 220;
     public const double ExpandedMaximumWidth = 360;
@@ -74,6 +86,7 @@ public class MaterialWideNavigationRail : MaterialControl
 
     public MaterialWideNavigationRail()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         Items.CollectionChanged += ItemsChanged;
         ApplyTokens();
     }
@@ -166,12 +179,7 @@ public class MaterialWideNavigationRail : MaterialControl
         }
     }
 
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
-    }
-
-    protected override void OnMotionTick()
+    private void OnMotionTick()
     {
         SetExpansionProgress(_expansion?.Value ?? _expansionProgress);
     }

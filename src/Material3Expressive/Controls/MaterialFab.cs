@@ -19,7 +19,7 @@ namespace Material3Expressive.Controls;
 /// content sliding past.
 /// </para>
 /// </remarks>
-public class MaterialFab : Button
+public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     public static readonly StyledProperty<FabVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialFab, FabVariant>(nameof(Variant));
@@ -46,8 +46,8 @@ public class MaterialFab : Button
     public static readonly DirectProperty<MaterialFab, bool> IsExtendedProperty =
         AvaloniaProperty.RegisterDirect<MaterialFab, bool>(nameof(IsExtended), o => o.IsExtended);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
     private FabColors _colors = FabColorTokens.Primary.Resolve(null, false);
@@ -56,14 +56,16 @@ public class MaterialFab : Button
 
     public MaterialFab()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => UpdateShape();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        UpdateShape();
 
     static MaterialFab()
     {

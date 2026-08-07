@@ -373,7 +373,7 @@ class ExpectedProducer(
         // The trigger changes Compose state, but modifier nodes and their animation coroutines are
         // not installed until a render transaction applies that state. Keep this mount-only frame
         // outside the logical timeline, then let t=0 be the first frame delivered to both the
-        // newly registered Compose animations and Avalonia's already mounted MotionGroups.
+        // newly registered Compose animations and Avalonia's already mounted motion coordinators.
         render(MOTION_RAW_EPOCH_NANOS - MOTION_REGISTRATION_LEAD_NANOS).close()
         clock.runCurrent()
 

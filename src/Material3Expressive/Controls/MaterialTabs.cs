@@ -17,7 +17,7 @@ namespace Material3Expressive.Controls;
 // only as a visual conformance observation; alpha25 remains the implementation source baseline.
 
 /// <summary>One tab in a <see cref="MaterialTabs" />.</summary>
-public class MaterialTab : ToggleButton
+public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     // Compose's pinned Roboto reference shapes the Material tab label without discretionary
     // standard/contextual ligatures. Retain a caller-provided feature set, but make Avalonia's
@@ -36,22 +36,24 @@ public class MaterialTab : ToggleButton
     public static readonly DirectProperty<MaterialTab, IImmutableBrush> IconBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialTab, IImmutableBrush>(nameof(IconBrush), o => o.IconBrush);
 
-    private readonly MaterialThemeWatcher _theme;
-    private readonly MaterialInteractionHost _interaction;
+    private readonly MaterialElementContext _theme;
+    private readonly MaterialInteractionController _interaction;
 
     private TabTokens _tokens = TabTokens.Primary;
     private TabColors _colors = TabTokens.Primary.Resolve(null, false);
 
     public MaterialTab()
     {
-        _theme = new MaterialThemeWatcher(this);
-        _interaction = new MaterialInteractionHost(this);
-
-        _theme.Changed += (_, _) => ApplyTokens();
-        _interaction.InteractionChanged += (_, _) => InvalidateVisual();
+        _theme = MaterialElementContext.GetOrCreate(this);
+        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
 
         ApplyTokens();
     }
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        InvalidateVisual();
 
     /// <summary>An optional icon above the label.</summary>
     public object? Icon
@@ -381,8 +383,25 @@ public sealed class MaterialTabContentPanel : Panel
 /// a token, not a special case.
 /// </para>
 /// </remarks>
-public class MaterialTabs : MaterialControl, IVisualBoundsProbe
+public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer, IMaterialInteractionConsumer, IVisualBoundsProbe
 {
+    private MaterialElementContext? _material;
+
+    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.IsDark ?? false;
+    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+
+    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+
+    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
+        OnMotionTick();
+
+    void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
+        InvalidateVisual();
+
+    private void OnMotionTick() => InvalidateVisual();
+
     public static readonly StyledProperty<TabVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialTabs, TabVariant>(nameof(Variant));
 
@@ -413,6 +432,7 @@ public class MaterialTabs : MaterialControl, IVisualBoundsProbe
 
     public MaterialTabs()
     {
+        _material = MaterialElementContext.GetOrCreate(this);
         Items.CollectionChanged += (_, _) => AttachItems();
 
         ApplyTokens();
@@ -543,11 +563,6 @@ public class MaterialTabs : MaterialControl, IVisualBoundsProbe
             PseudoClasses.Set(":scrollable", IsScrollable);
             _scrollSelectedTab = IsScrollable;
         }
-    }
-
-    protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTokens();
     }
 
     private SpringAnimation IndicatorCentre =>

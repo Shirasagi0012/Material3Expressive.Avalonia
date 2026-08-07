@@ -11,7 +11,7 @@ namespace Material3Expressive.Controls;
 // 1.12.0-alpha03 / Jetpack Material3 1.5.0-alpha22 uses the equivalent
 // material3/src/commonMain/kotlin/androidx/compose/material3/internal/ripple/
 // {RippleAnimation,CommonRipple}.kt:58-67, 122-152. Compose supplies a Color with its state
-// alpha replaced before Skia compositing; MaterialInteractionHost.ComposeOpacity preserves that
+// alpha replaced before Skia compositing; MaterialInteractionRendering.ComposeOpacity preserves that
 // nearest-8-bit behavior for Avalonia's opacity stack.
 
 /// <summary>
@@ -164,7 +164,7 @@ public sealed class RippleAnimation : IAnimation
         if (alpha <= 0)
             return;
 
-        using (context.PushOpacity(MaterialInteractionHost.ComposeOpacity(alpha)))
+        using (context.PushOpacity(MaterialInteractionRendering.ComposeOpacity(alpha)))
             context.DrawEllipse(brush, null, Center, Radius, Radius);
     }
 

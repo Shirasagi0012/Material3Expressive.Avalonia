@@ -1,5 +1,5 @@
-using System.Reflection;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls;
 
@@ -11,48 +11,35 @@ namespace Material3Expressive.VisualTesting.Rendering;
 /// </summary>
 internal static class VisualMotionSettler
 {
-    private const BindingFlags Fields =
-        BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
-
     public static void Settle(Visual root)
     {
-        foreach (var group in FindGroups(root))
-            group.SettleAll();
+        foreach (var coordinator in FindCoordinators(root))
+            coordinator.SettleAll();
     }
 
     public static void UseManualClock(Visual root)
     {
-        foreach (var group in FindGroups(root))
-            group.UseManualClock();
+        foreach (var coordinator in FindCoordinators(root))
+            coordinator.UseManualClock();
     }
 
     public static void AdvanceBy(Visual root, TimeSpan delta)
     {
-        foreach (var group in FindGroups(root))
-            group.AdvanceBy(delta);
+        foreach (var coordinator in FindCoordinators(root))
+            coordinator.AdvanceBy(delta);
     }
 
-    private static HashSet<MotionGroup> FindGroups(Visual root)
+    private static HashSet<MaterialMotionCoordinator> FindCoordinators(Visual root)
     {
-        var groups = new HashSet<MotionGroup>();
+        var coordinators = new HashSet<MaterialMotionCoordinator>();
         foreach (var visual in root.GetVisualDescendants().Prepend(root))
         {
-            for (var type = visual.GetType(); type is not null; type = type.BaseType)
-            {
-                foreach (var field in type.GetFields(Fields))
-                {
-                    if (field.GetValue(visual) is MotionGroup group)
-                    {
-                        groups.Add(group);
-                    }
-                    else if (field.GetValue(visual) is MaterialInteractionHost interaction)
-                    {
-                        groups.Add(interaction.Motion);
-                    }
-                }
-            }
+            if (visual is Control control
+                && MaterialElementContext.TryGet(control, out var context)
+                && context.MotionCoordinatorIfCreated is { } coordinator)
+                coordinators.Add(coordinator);
         }
 
-        return groups;
+        return coordinators;
     }
 }
