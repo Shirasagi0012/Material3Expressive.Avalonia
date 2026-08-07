@@ -23,8 +23,8 @@ public class MaterialBadge : MaterialControl
     public static readonly StyledProperty<object?> CountProperty =
         AvaloniaProperty.Register<MaterialBadge, object?>(nameof(Count));
 
-    private BadgeTokens _tokens = BadgeTokens.Large;
-    private BadgeColors _colors = BadgeTokens.Large.Resolve(null, false);
+    private BadgeDefaultsTokens _tokens = BadgeDefaultsTokens.Large;
+    private BadgeColors _colors = BadgeDefaultsTokens.Large.Resolve(null, false);
 
     public MaterialBadge()
     {
@@ -90,7 +90,7 @@ public class MaterialBadge : MaterialControl
     {
         var previousHasLabel = HasLabel;
 
-        _tokens = ResolvedTheme.GetBadgeTokens(Variant);
+        _tokens = ResolvedTheme.GetBadgeDefaultsTokens(Variant);
         _colors = ResolvedTheme.GetBadgeColors(Variant, IsDarkVariant);
         RaisePropertyChanged(HasLabelProperty, previousHasLabel, HasLabel);
 

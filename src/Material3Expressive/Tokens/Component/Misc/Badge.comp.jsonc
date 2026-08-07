@@ -1,0 +1,19 @@
+{
+  "kind": "componentTokens",
+  "name": "BadgeTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_103",
+  "source": "androidx compose/material3 tokens/BadgeTokens.kt",
+  "summary": "Verbatim BadgeTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "Color": {"type": "color", "value": "Error"},
+    "LargeColor": {"type": "color", "value": "Error"},
+    "LargeLabelTextColor": {"type": "color", "value": "OnError"},
+    "LargeLabelTextFont": {"type": "typography", "value": "LabelSmall"},
+    "LargeShape": {"type": "shape", "value": "CornerFull"},
+    "LargeSize": {"type": "dimension", "value": 16},
+    "Shape": {"type": "shape", "value": "CornerFull"},
+    "Size": {"type": "dimension", "value": 6}
+  }
+}

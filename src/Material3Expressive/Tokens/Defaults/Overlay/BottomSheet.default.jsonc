@@ -29,17 +29,17 @@
     {
       "name": "Modal",
       "values": {
-        "ContainerColor": "SurfaceContainerLow",
+        "ContainerColor": "@SheetBottomTokens.DockedContainerColor",
         "ScrimColor": "Scrim",
-        "DragHandleColor": "OnSurfaceVariant",
+        "DragHandleColor": "@SheetBottomTokens.DockedDragHandleColor",
 
-        "ContainerElevation": "@ElevationTokens.Level1",
-        "ContainerShape": "CornerExtraLargeTop",
-        "DragHandleWidth": 32,
-        "DragHandleHeight": 4,
+        "ContainerElevation": "@SheetBottomTokens.DockedModalContainerElevation",
+        "ContainerShape": "@SheetBottomTokens.DockedContainerShape",
+        "DragHandleWidth": "@SheetBottomTokens.DockedDragHandleWidth",
+        "DragHandleHeight": "@SheetBottomTokens.DockedDragHandleHeight",
         "DragHandleSpace": 22,
         "MaxWidth": 640,
-        "ScrimOpacity": 0.32,
+        "ScrimOpacity": "@ScrimTokens.ContainerOpacity",
         "IsModal": true
       }
     },

@@ -21,7 +21,7 @@ internal sealed record SliderVisualColors(
 /// </remarks>
 internal static class SliderDefaults
 {
-    public static SliderTokens Tokens(ResolvedTheme theme) => theme.SliderTokens;
+    public static SliderDefaultsTokens Tokens(ResolvedTheme theme) => theme.SliderDefaultsTokens;
 
     public static SliderColors Colors(ResolvedTheme theme, bool isDark) =>
         theme.GetSliderColors(isDark);

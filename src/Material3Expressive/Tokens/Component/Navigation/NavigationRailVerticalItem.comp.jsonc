@@ -1,0 +1,17 @@
+{
+  "kind": "componentTokens",
+  "name": "NavigationRailVerticalItemTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/NavigationRailVerticalItemTokens.kt",
+  "summary": "Verbatim NavigationRailVerticalItemTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ActiveIndicatorHeight": {"type": "dimension", "value": 32},
+    "ActiveIndicatorWidth": {"type": "dimension", "value": 56},
+    "IconLabelSpace": {"type": "dimension", "value": 4},
+    "LeadingSpace": {"type": "dimension", "value": 16},
+    "TrailingSpace": {"type": "dimension", "value": 16},
+    "LabelTextFont": {"type": "typography", "value": "LabelMedium"}
+  }
+}

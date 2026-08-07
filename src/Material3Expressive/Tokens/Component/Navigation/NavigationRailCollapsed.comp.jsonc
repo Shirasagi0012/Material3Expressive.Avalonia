@@ -1,0 +1,18 @@
+{
+  "kind": "componentTokens",
+  "name": "NavigationRailCollapsedTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/NavigationRailCollapsedTokens.kt",
+  "summary": "Verbatim NavigationRailCollapsedTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "ContainerShape": {"type": "shape", "value": "CornerNone"},
+    "ContainerWidth": {"type": "dimension", "value": 96},
+    "ItemVerticalSpace": {"type": "dimension", "value": 4},
+    "TopSpace": {"type": "dimension", "value": 44},
+    "ContainerColor": {"type": "color", "value": "Surface"},
+    "NarrowContainerWidth": {"type": "dimension", "value": 80}
+  }
+}

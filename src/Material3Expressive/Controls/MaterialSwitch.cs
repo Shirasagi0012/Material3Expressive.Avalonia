@@ -30,7 +30,7 @@ public class MaterialSwitch : ToggleButton
 
     private SpringAnimation? _position;
     private SpringAnimation? _handleSize;
-    private SwitchTokens _tokens = SwitchDefaults.Tokens(ResolvedTheme.Default);
+    private SwitchDefaultsTokens _tokens = SwitchDefaults.Tokens(ResolvedTheme.Default);
     private SwitchColors _colors = SwitchDefaults.Colors(ResolvedTheme.Default, isDark: false);
 
     public MaterialSwitch()

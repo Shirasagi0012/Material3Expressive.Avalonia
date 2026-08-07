@@ -1,0 +1,13 @@
+{
+  "kind": "componentTokens",
+  "name": "DividerTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_117",
+  "source": "androidx compose/material3 tokens/DividerTokens.kt",
+  "summary": "Verbatim DividerTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "Color": {"type": "color", "value": "OutlineVariant"},
+    "Thickness": {"type": "dimension", "value": 1}
+  }
+}

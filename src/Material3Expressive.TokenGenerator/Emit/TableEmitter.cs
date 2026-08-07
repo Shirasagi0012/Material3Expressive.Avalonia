@@ -455,6 +455,9 @@ internal static class TableEmitter
 
     private static string OverridesGlobal(TokenTableShape table)
     {
+        if (table.OverridesName is { } explicitName)
+            return $"global::{table.Namespace}.{explicitName}";
+
         var stem = table.Name.EndsWith("Tokens", StringComparison.Ordinal)
             ? table.Name.Substring(0, table.Name.Length - "Tokens".Length)
             : table.Name;
@@ -467,6 +470,9 @@ internal static class TableEmitter
     /// </summary>
     private static string OverridesName(TokenTable table)
     {
+        if (table.OverridesName is { } explicitName)
+            return explicitName;
+
         var stem = table.Name.EndsWith("Tokens", StringComparison.Ordinal)
             ? table.Name.Substring(0, table.Name.Length - "Tokens".Length)
             : table.Name;

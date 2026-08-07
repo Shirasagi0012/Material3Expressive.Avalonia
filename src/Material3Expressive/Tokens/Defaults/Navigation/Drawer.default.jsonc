@@ -37,27 +37,27 @@
     {
       "name": "Modal",
       "values": {
-        "ContainerColor": "SurfaceContainerLow",
+        "ContainerColor": "@NavigationDrawerTokens.ModalContainerColor",
         "ScrimColor": "Scrim",
-        "HeadlineColor": "OnSurfaceVariant",
-        "ActiveIndicatorColor": "SecondaryContainer",
-        "ActiveIconColor": "OnSecondaryContainer",
-        "ActiveLabelTextColor": "OnSecondaryContainer",
-        "InactiveIconColor": "OnSurfaceVariant",
-        "InactiveLabelTextColor": "OnSurfaceVariant",
+        "HeadlineColor": "@NavigationDrawerTokens.HeadlineColor",
+        "ActiveIndicatorColor": "@NavigationDrawerTokens.ActiveIndicatorColor",
+        "ActiveIconColor": "@NavigationDrawerTokens.ActiveIconColor",
+        "ActiveLabelTextColor": "@NavigationDrawerTokens.ActiveLabelTextColor",
+        "InactiveIconColor": "@NavigationDrawerTokens.InactiveIconColor",
+        "InactiveLabelTextColor": "@NavigationDrawerTokens.InactiveLabelTextColor",
         "StateLayerColor": "OnSurface",
 
-        "ContainerElevation": "@ElevationTokens.Level1",
-        "ContainerWidth": 360,
-        "ContainerShape": "CornerLargeEnd",
-        "ItemHeight": 56,
-        "ItemShape": "CornerFull",
-        "IconSize": 24,
+        "ContainerElevation": "@NavigationDrawerTokens.ModalContainerElevation",
+        "ContainerWidth": "@NavigationDrawerTokens.ContainerWidth",
+        "ContainerShape": "@NavigationDrawerTokens.ContainerShape",
+        "ItemHeight": "@NavigationDrawerTokens.ActiveIndicatorHeight",
+        "ItemShape": "@NavigationDrawerTokens.ActiveIndicatorShape",
+        "IconSize": "@NavigationDrawerTokens.IconSize",
         // Upstream's scrim is the Scrim role at 32% — dark enough to recede, light enough to keep
         // the content behind legible.
-        "ScrimOpacity": 0.32,
-        "HeadlineTextStyle": "TitleSmall",
-        "LabelTextStyle": "LabelLarge",
+        "ScrimOpacity": "@ScrimTokens.ContainerOpacity",
+        "HeadlineTextStyle": "@NavigationDrawerTokens.HeadlineFont",
+        "LabelTextStyle": "@NavigationDrawerTokens.LabelTextFont",
         "IsModal": true
       }
     },
@@ -65,8 +65,8 @@
       "name": "Standard",
       "extends": "Modal",
       "values": {
-        "ContainerColor": "Surface",
-        "ContainerElevation": "@ElevationTokens.Level0",
+        "ContainerColor": "@NavigationDrawerTokens.StandardContainerColor",
+        "ContainerElevation": "@NavigationDrawerTokens.StandardContainerElevation",
         "ScrimOpacity": 0,
         "IsModal": false
       }

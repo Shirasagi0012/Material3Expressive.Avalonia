@@ -99,6 +99,31 @@ public sealed class TokenTableGeneratorTests
     }
 
     [Fact]
+    public void ComponentDefaults_KeepAnExplicitOverrideTypeName()
+    {
+        var run = GeneratorTestHost.Run(("Checkbox.default.jsonc", """
+            {
+              "kind": "componentDefaults",
+              "name": "CheckboxDefaultsTokens",
+              "overridesName": "CheckboxOverrides",
+              "properties": { "Size": "dimension" },
+              "sets": [
+                { "name": "Default", "values": { "Size": 18 } }
+              ]
+            }
+            """));
+
+        Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
+
+        var source = run.Source("CheckboxDefaultsTokens.Tokens.g.cs");
+        Assert.Contains("public sealed partial class CheckboxOverrides", source);
+        Assert.DoesNotContain("CheckboxDefaultsOverrides", source);
+
+        var accessors = run.Source("ResolvedTheme.Components.g.cs");
+        Assert.Contains("case global::Material3Expressive.Foundation.CheckboxOverrides typed:", accessors);
+    }
+
+    [Fact]
     public void SystemScheme_IsEmittedButDoesNotBecomeAComponentAccessor()
     {
         var run = GeneratorTestHost.Run(("TypeScale.sys.jsonc", """

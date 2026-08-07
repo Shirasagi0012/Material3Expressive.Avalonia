@@ -52,10 +52,19 @@ public class MaterialSplitButton : TemplatedControl
 
     private Button? _leading;
     private ToggleButton? _trailing;
+    private readonly MaterialThemeWatcher _theme;
+    private SplitButtonDefaultsTokens _tokens = SplitButtonDefaultsTokens.Default;
 
     static MaterialSplitButton()
     {
         AffectsMeasure<MaterialSplitButton>(ContentProperty, TrailingIconProperty);
+    }
+
+    public MaterialSplitButton()
+    {
+        _theme = new MaterialThemeWatcher(this);
+        _theme.Changed += (_, _) => ApplyTokens();
+        ApplyTokens();
     }
 
     /// <summary>The default action.</summary>
@@ -97,7 +106,7 @@ public class MaterialSplitButton : TemplatedControl
     }
 
     /// <summary>The gap between the halves, which is a token rather than a margin in the template.</summary>
-    public double BetweenSpace => SplitButtonSmallTokens.BetweenSpace;
+    public double BetweenSpace => _tokens.BetweenSpace;
 
     /// <summary>Exposes <see cref="BetweenSpace" /> to the template, which needs an AvaloniaProperty.</summary>
     public static readonly DirectProperty<MaterialSplitButton, double> BetweenSpaceProperty =
@@ -116,7 +125,7 @@ public class MaterialSplitButton : TemplatedControl
         if (_leading is { })
             _leading.Click += OnLeadingClick;
 
-        ApplyShapes();
+        ApplyTokens();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -143,7 +152,7 @@ public class MaterialSplitButton : TemplatedControl
     private void ApplyShapes()
     {
         var outer = CornerSize.Full;
-        var inner = CornerSize.Absolute(SplitButtonSmallTokens.InnerCornerSize);
+        var inner = CornerSize.Absolute(_tokens.InnerCornerSize);
         var flipped = FlowDirection == Avalonia.Media.FlowDirection.RightToLeft;
 
         var leadingShape = flipped
@@ -159,5 +168,13 @@ public class MaterialSplitButton : TemplatedControl
 
         if (_trailing is { })
             ButtonAssist.SetContainerShapeOverride(_trailing, trailingShape);
+    }
+
+    private void ApplyTokens()
+    {
+        _tokens = _theme.Theme.SplitButtonDefaultsTokens;
+        ApplyShapes();
+        InvalidateMeasure();
+        InvalidateVisual();
     }
 }

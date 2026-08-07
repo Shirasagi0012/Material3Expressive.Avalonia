@@ -1,0 +1,25 @@
+{
+  "kind": "componentTokens",
+  "name": "AppBarTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "14_0_0",
+  "source": "androidx compose/material3 tokens/AppBarTokens.kt",
+  "summary": "Verbatim AppBarTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "AvatarSize": {"type": "dimension", "value": 32},
+    "ContainerColor": {"type": "color", "value": "Surface"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "ContainerShape": {"type": "shape", "value": "CornerNone"},
+    "IconButtonSpace": {"type": "dimension", "value": 0},
+    "IconSize": {"type": "dimension", "value": 24},
+    "LeadingIconColor": {"type": "color", "value": "OnSurface"},
+    "LeadingSpace": {"type": "dimension", "value": 4},
+    "OnScrollContainerColor": {"type": "color", "value": "SurfaceContainer"},
+    "OnScrollContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level2"},
+    "SubtitleColor": {"type": "color", "value": "OnSurfaceVariant"},
+    "TitleColor": {"type": "color", "value": "OnSurface"},
+    "TrailingIconColor": {"type": "color", "value": "OnSurfaceVariant"},
+    "TrailingSpace": {"type": "dimension", "value": 4}
+  }
+}

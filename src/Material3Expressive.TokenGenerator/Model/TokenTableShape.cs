@@ -21,6 +21,7 @@ internal sealed class TokenTableShape : IEquatable<TokenTableShape>
         VariantEnum = table.VariantEnum;
         ResolvedName = table.ResolvedName;
         Overridable = table.Overridable;
+        OverridesName = table.OverridesName;
     }
 
     public string Name { get; }
@@ -39,6 +40,8 @@ internal sealed class TokenTableShape : IEquatable<TokenTableShape>
 
     public bool Overridable { get; }
 
+    public string? OverridesName { get; }
+
     public bool Equals(TokenTableShape? other)
     {
         return other is not null &&
@@ -48,7 +51,8 @@ internal sealed class TokenTableShape : IEquatable<TokenTableShape>
                SetNames.SequenceEqual(other.SetNames, StringComparer.Ordinal) &&
                string.Equals(VariantEnum, other.VariantEnum, StringComparison.Ordinal) &&
                string.Equals(ResolvedName, other.ResolvedName, StringComparison.Ordinal) &&
-               Overridable == other.Overridable;
+               Overridable == other.Overridable &&
+               string.Equals(OverridesName, other.OverridesName, StringComparison.Ordinal);
     }
 
     public override bool Equals(object? obj) => Equals(obj as TokenTableShape);
@@ -64,7 +68,8 @@ internal sealed class TokenTableShape : IEquatable<TokenTableShape>
                 hash = hash * 397 + setName.GetHashCode();
             hash = hash * 397 + (VariantEnum?.GetHashCode() ?? 0);
             hash = hash * 397 + (ResolvedName?.GetHashCode() ?? 0);
-            return hash * 397 + Overridable.GetHashCode();
+            hash = hash * 397 + Overridable.GetHashCode();
+            return hash * 397 + (OverridesName?.GetHashCode() ?? 0);
         }
     }
 }

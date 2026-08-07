@@ -23,7 +23,7 @@ public class MaterialCheckbox : CheckBox
     private const double SnapAnimationDelayMilliseconds = 100;
     // The pinned Compose reference is Material3 1.5.0-alpha22. In that release Checkbox.kt's
     // compatibility path uses CheckboxSize (20dp) and CheckboxDefaultPadding (2dp), rather than
-    // the newer CheckboxTokens.ContainerSize (18dp) path. Keep this separate from the generated
+    // the newer CheckboxDefaultsTokens.ContainerSize (18dp) path. Keep this separate from the generated
     // current token table so moving the reference lineage is an explicit compatibility decision.
     private const double ReferenceContainerSize = 20;
 
@@ -39,8 +39,8 @@ public class MaterialCheckbox : CheckBox
     private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
 
-    private CheckboxTokens _tokens = CheckboxTokens.Default;
-    private CheckboxColors _colors = CheckboxTokens.Default.Resolve(null, false);
+    private CheckboxDefaultsTokens _tokens = CheckboxDefaultsTokens.Default;
+    private CheckboxColors _colors = CheckboxDefaultsTokens.Default.Resolve(null, false);
     private SpringAnimation? _checkDrawFraction;
     private SpringAnimation? _checkCenterGravitation;
     private SpringAnimation? _checkOpacity;
@@ -141,7 +141,7 @@ public class MaterialCheckbox : CheckBox
 
     private void ApplyTokens(bool snap = true)
     {
-        _tokens = _theme.Theme.CheckboxTokens;
+        _tokens = _theme.Theme.CheckboxDefaultsTokens;
         _colors = _theme.Theme.GetCheckboxColors(_theme.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 

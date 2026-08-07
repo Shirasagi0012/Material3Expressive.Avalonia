@@ -237,8 +237,8 @@ public sealed class MaterialFloatingToolbar : MaterialControl
         AvaloniaProperty.RegisterDirect<MaterialFloatingToolbar, double>(
             nameof(ScrollOffsetY), owner => owner.ScrollOffsetY);
 
-    private FloatingToolbarTokens _tokens = FloatingToolbarTokens.Standard;
-    private FloatingToolbarColors _colors = FloatingToolbarTokens.Standard.Resolve(null, false);
+    private FloatingToolbarDefaultsTokens _tokens = FloatingToolbarDefaultsTokens.Standard;
+    private FloatingToolbarColors _colors = FloatingToolbarDefaultsTokens.Standard.Resolve(null, false);
     private FloatingToolbarScrollState _state = new();
     private FloatingToolbarOrientation _resolvedOrientation = FloatingToolbarOrientation.Horizontal;
     private SpringAnimation? _expansion;
@@ -614,7 +614,7 @@ public sealed class MaterialFloatingToolbar : MaterialControl
         var oldScreenOffset = ScreenOffset;
         var oldElevation = CurrentElevation;
 
-        _tokens = ResolvedTheme.GetFloatingToolbarTokens(Variant);
+        _tokens = ResolvedTheme.GetFloatingToolbarDefaultsTokens(Variant);
         _colors = ResolvedTheme.GetFloatingToolbarColors(Variant, IsDarkVariant);
         ApplyFabDefaults();
 

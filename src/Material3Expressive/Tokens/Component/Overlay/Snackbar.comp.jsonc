@@ -1,0 +1,28 @@
+{
+  "kind": "componentTokens",
+  "name": "SnackbarTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_103",
+  "source": "androidx compose/material3 tokens/SnackbarTokens.kt",
+  "summary": "Verbatim SnackbarTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ActionFocusLabelTextColor": {"type": "color", "value": "InversePrimary"},
+    "ActionHoverLabelTextColor": {"type": "color", "value": "InversePrimary"},
+    "ActionLabelTextColor": {"type": "color", "value": "InversePrimary"},
+    "ActionLabelTextFont": {"type": "typography", "value": "LabelLarge"},
+    "ActionPressedLabelTextColor": {"type": "color", "value": "InversePrimary"},
+    "ContainerColor": {"type": "color", "value": "InverseSurface"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level3"},
+    "ContainerShape": {"type": "shape", "value": "CornerExtraSmall"},
+    "IconColor": {"type": "color", "value": "InverseOnSurface"},
+    "FocusIconColor": {"type": "color", "value": "InverseOnSurface"},
+    "HoverIconColor": {"type": "color", "value": "InverseOnSurface"},
+    "PressedIconColor": {"type": "color", "value": "InverseOnSurface"},
+    "IconSize": {"type": "dimension", "value": 24},
+    "SupportingTextColor": {"type": "color", "value": "InverseOnSurface"},
+    "SupportingTextFont": {"type": "typography", "value": "BodyMedium"},
+    "SingleLineContainerHeight": {"type": "dimension", "value": 48},
+    "TwoLinesContainerHeight": {"type": "dimension", "value": 68}
+  }
+}

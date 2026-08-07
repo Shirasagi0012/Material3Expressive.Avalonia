@@ -64,10 +64,15 @@
       // The secondary tab's indicator runs the full width of the tab and its label stays neutral;
       // only the icon and indicator take the accent.
       "values": {
-        "ActiveLabelTextColor": "OnSurface",
-        "ActiveIconColor": "OnSurface",
-        "InactiveIconColor": "OnSurface",
-        "InactiveLabelTextColor": "OnSurface",
+        "ContainerColor": "@SecondaryNavigationTabTokens.ContainerColor",
+        "ActiveLabelTextColor": "@SecondaryNavigationTabTokens.ActiveLabelTextColor",
+        "ActiveIconColor": "@SecondaryNavigationTabTokens.ActiveIconColor",
+        "InactiveIconColor": "@SecondaryNavigationTabTokens.InactiveIconColor",
+        "InactiveLabelTextColor": "@SecondaryNavigationTabTokens.InactiveLabelTextColor",
+        "DividerColor": "@SecondaryNavigationTabTokens.DividerColor",
+        "ContainerHeight": "@SecondaryNavigationTabTokens.ContainerHeight",
+        "IconSize": "@SecondaryNavigationTabTokens.IconSize",
+        "LabelTextStyle": "@SecondaryNavigationTabTokens.LabelTextFont",
         // SecondaryIndicator defaults to PrimaryNavigationTabTokens.ActiveIndicatorHeight.
         "ActiveIndicatorHeight": 3,
         "ActiveIndicatorCornerRadius": 0,

@@ -39,7 +39,7 @@ public sealed class MaterialRangeSlider : Control
 
     private readonly MaterialThemeWatcher _theme;
     private readonly MaterialInteractionHost _interaction;
-    private SliderTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
+    private SliderDefaultsTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
     private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private bool _updating;
     private bool _startActive = true;

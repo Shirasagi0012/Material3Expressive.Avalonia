@@ -1,0 +1,25 @@
+{
+  "kind": "componentTokens",
+  "name": "FabMenuBaselineTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_14_0",
+  "source": "androidx compose/material3 tokens/FabMenuBaselineTokens.kt",
+  "summary": "Verbatim FabMenuBaselineTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "CloseButtonBetweenSpace": {"type": "dimension", "value": 8},
+    "CloseButtonContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level3"},
+    "CloseButtonContainerHeight": {"type": "dimension", "value": 56},
+    "CloseButtonContainerShape": {"type": "shape", "value": "CornerFull"},
+    "CloseButtonContainerWidth": {"type": "dimension", "value": 56},
+    "CloseButtonIconSize": {"type": "dimension", "value": 20},
+    "ListItemBetweenSpace": {"type": "dimension", "value": 4},
+    "ListItemContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level3"},
+    "ListItemContainerHeight": {"type": "dimension", "value": 56},
+    "ListItemContainerShape": {"type": "shape", "value": "CornerFull"},
+    "ListItemIconLabelSpace": {"type": "dimension", "value": 8},
+    "ListItemIconSize": {"type": "dimension", "value": 24},
+    "ListItemLeadingSpace": {"type": "dimension", "value": 24},
+    "ListItemTrailingSpace": {"type": "dimension", "value": 24}
+  }
+}

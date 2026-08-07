@@ -1,0 +1,36 @@
+{
+  "kind": "componentTokens",
+  "name": "FilledTonalButtonTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_103",
+  "source": "androidx compose/material3 tokens/FilledTonalButtonTokens.kt",
+  "summary": "Verbatim FilledTonalButtonTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+
+  "tokens": {
+    "ContainerColor": {"type": "color", "value": "SecondaryContainer"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "ContainerHeight": {"type": "dimension", "value": 40},
+    "ContainerShape": {"type": "shape", "value": "CornerFull"},
+    "DisabledContainerColor": {"type": "color", "value": "OnSurface"},
+    "DisabledContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "DisabledContainerOpacity": {"type": "opacity", "value": 0.12},
+    "DisabledLabelTextColor": {"type": "color", "value": "OnSurface"},
+    "DisabledLabelTextOpacity": {"type": "opacity", "value": 0.38},
+    "FocusContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "FocusLabelTextColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "HoverContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level1"},
+    "HoverLabelTextColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "LabelTextColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "LabelTextFont": {"type": "typography", "value": "LabelLarge"},
+    "PressedContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "PressedLabelTextColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "DisabledIconColor": {"type": "color", "value": "OnSurface"},
+    "DisabledIconOpacity": {"type": "opacity", "value": 0.38},
+    "FocusIconColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "HoverIconColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "IconColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "IconSize": {"type": "dimension", "value": 18},
+    "PressedIconColor": {"type": "color", "value": "OnSecondaryContainer"}
+  }
+}

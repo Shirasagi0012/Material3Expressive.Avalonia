@@ -1,0 +1,19 @@
+{
+  "kind": "componentTokens",
+  "name": "NavigationRailExpandedTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/NavigationRailExpandedTokens.kt",
+  "summary": "Verbatim NavigationRailExpandedTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "ContainerShape": {"type": "shape", "value": "CornerNone"},
+    "ContainerWidthMaximum": {"type": "dimension", "value": 360},
+    "ContainerWidthMinimum": {"type": "dimension", "value": 220},
+    "ModalContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level2"},
+    "ModalContainerShape": {"type": "shape", "value": "CornerLarge"},
+    "TopSpace": {"type": "dimension", "value": 44},
+    "ModalContainerColor": {"type": "color", "value": "SurfaceContainer"}
+  }
+}

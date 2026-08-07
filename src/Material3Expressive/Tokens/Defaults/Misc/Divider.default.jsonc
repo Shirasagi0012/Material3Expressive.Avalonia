@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "DividerTokens",
+ "name": "DividerDefaultsTokens",
+  "overridesName": "DividerOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "DividerColors",
   "version": "v0_117",
@@ -16,8 +17,10 @@
     {
       "name": "Default",
       "values": {
-        "Color": "OutlineVariant",
-        "Thickness": 1
+        "Color": "@DividerTokens.Color",
+
+        "Thickness": "@DividerTokens.Thickness"
+
       }
     }
   ]

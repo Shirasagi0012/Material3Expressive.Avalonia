@@ -1,0 +1,19 @@
+{
+  "kind": "componentTokens",
+  "name": "MenuTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/MenuTokens.kt",
+  "summary": "Verbatim MenuTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerColor": {"type": "color", "value": "SurfaceContainer"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level2"},
+    "ContainerShape": {"type": "shape", "value": "CornerExtraSmall"},
+    "FocusIndicatorColor": {"type": "color", "value": "Secondary"},
+    "ListItemSelectedContainerColor": {"type": "color", "value": "SecondaryContainer"},
+    "ListItemSelectedLabelTextColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "ListItemSelectedLeadingTrailingIconColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "MenuListItemLeadingIconColor": {"type": "color", "value": "OnSecondaryContainer"}
+  }
+}

@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "CheckboxTokens",
+ "name": "CheckboxDefaultsTokens",
+  "overridesName": "CheckboxOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "CheckboxColors",
   "version": "14_1_0",
@@ -36,26 +37,43 @@
     {
       "name": "Default",
       "values": {
-        "ContainerSize": 18,
-        "ContainerCornerRadius": 2,
-        "IconSize": 18,
-        "StateLayerSize": 40,
-        "OutlineWidth": 2,
+        "ContainerSize": "@CheckboxTokens.ContainerSize",
 
-        "SelectedContainerColor": "Primary",
-        "SelectedIconColor": "OnPrimary",
-        "SelectedStateLayerColor": "Primary",
-        "UnselectedOutlineColor": "OnSurfaceVariant",
-        "UnselectedStateLayerColor": "OnSurface",
+        "ContainerCornerRadius": "@CheckboxTokens.ContainerShape",
 
-        "DisabledSelectedContainerColor": "OnSurface",
-        "DisabledSelectedIconColor": "Surface",
-        "DisabledOutlineColor": "OnSurface",
-        "DisabledContainerOpacity": 0.38,
+        "IconSize": "@CheckboxTokens.IconSize",
 
-        "ErrorContainerColor": "Error",
-        "ErrorIconColor": "OnError",
-        "ErrorOutlineColor": "Error"
+        "StateLayerSize": "@CheckboxTokens.StateLayerSize",
+
+        "OutlineWidth": "@CheckboxTokens.UnselectedOutlineWidth",
+
+
+        "SelectedContainerColor": "@CheckboxTokens.SelectedContainerColor",
+
+        "SelectedIconColor": "@CheckboxTokens.SelectedIconColor",
+
+        "SelectedStateLayerColor": "@CheckboxTokens.SelectedContainerColor",
+
+        "UnselectedOutlineColor": "@CheckboxTokens.UnselectedOutlineColor",
+
+        "UnselectedStateLayerColor": "@CheckboxTokens.UnselectedFocusOutlineColor",
+
+
+        "DisabledSelectedContainerColor": "@CheckboxTokens.SelectedDisabledContainerColor",
+
+        "DisabledSelectedIconColor": "@CheckboxTokens.SelectedDisabledIconColor",
+
+        "DisabledOutlineColor": "@CheckboxTokens.UnselectedDisabledOutlineColor",
+
+        "DisabledContainerOpacity": "@CheckboxTokens.SelectedDisabledContainerOpacity",
+
+
+        "ErrorContainerColor": "@CheckboxTokens.SelectedErrorContainerColor",
+
+        "ErrorIconColor": "@CheckboxTokens.SelectedErrorIconColor",
+
+        "ErrorOutlineColor": "@CheckboxTokens.UnselectedErrorOutlineColor"
+
       }
     }
   ]

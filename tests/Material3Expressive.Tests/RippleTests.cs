@@ -274,9 +274,9 @@ public class MaterialInteractionHostRippleTests
         Assert.NotNull(interaction.RippleRadius);
         var expectedRadius = control switch
         {
-            MaterialCheckbox => CheckboxTokens.Default.StateLayerSize / 2,
-            MaterialRadioButton => RadioButtonTokens.Default.StateLayerSize / 2,
-            MaterialSwitch => SwitchTokens.Default.StateLayerSize / 2,
+            MaterialCheckbox => CheckboxDefaultsTokens.Default.StateLayerSize / 2,
+            MaterialRadioButton => RadioButtonDefaultsTokens.Default.StateLayerSize / 2,
+            MaterialSwitch => SwitchDefaultsTokens.Default.StateLayerSize / 2,
             _ => throw new InvalidOperationException()
         };
         Assert.Equal(expectedRadius, interaction.RippleRadius!.Value);

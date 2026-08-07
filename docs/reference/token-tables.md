@@ -38,6 +38,20 @@ The reader accepts `//` and `/* */` comments and trailing commas, because these 
 maintained by hand and want annotating — every deviation from upstream is a comment next to the
 value it explains.
 
+## Current coverage snapshot
+
+At the frozen AndroidX baseline `ff0a0a99c4f0cfe95d75d5df615e51d399575922`, the repository contains
+103 raw component tables, 3 system tables, 35 component-defaults tables, and no duplicated
+reference palette tables. The raw component set covers all 103 component-domain `*Tokens.kt`
+files from the 120-file AndroidX token directory. The remaining 17 names are either owned by
+`MaterialColorUtilities`, `ShapeScheme`, `MotionScheme`, or `TypographyScheme`, represented by a
+system table, or intentionally deferred because `PrimaryNavigationTabTokens` contains a custom
+3dp shape that the current raw schema cannot express faithfully.
+
+The complete file-by-file inventory, including the 27 raw tables that do not yet have a defaults
+assembly, is in [Token coverage and ownership](token-coverage.md). Keep that inventory in sync
+when the AndroidX baseline or a component's owner changes.
+
 ## Four table categories
 
 ### `referenceTokens` — design-system reference values

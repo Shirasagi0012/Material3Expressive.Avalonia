@@ -189,8 +189,8 @@ public class MaterialRangeSliderTests
         var start = children[0].GetBoundingRectangle();
         var end = children[1].GetBoundingRectangle();
 
-        Assert.Equal(SliderTokens.Default.HandleWidth, start.Width, 3);
-        Assert.Equal(SliderTokens.Default.HandleHeight, start.Height, 3);
+        Assert.Equal(SliderDefaultsTokens.Default.HandleWidth, start.Width, 3);
+        Assert.Equal(SliderDefaultsTokens.Default.HandleHeight, start.Height, 3);
         Assert.Equal(start.Size, end.Size);
         Assert.True(start.X < end.X);
 

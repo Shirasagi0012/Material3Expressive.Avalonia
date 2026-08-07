@@ -1,0 +1,27 @@
+{
+  "kind": "componentTokens",
+  "name": "DragHandleTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "7_0_1",
+  "source": "androidx compose/material3 tokens/DragHandleTokens.kt",
+  "summary": "Verbatim DragHandleTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "Color": {"type": "color", "value": "Outline"},
+    "ContainerWidth": {"type": "dimension", "value": 24},
+    "DraggedColor": {"type": "color", "value": "OnSurface"},
+    "DraggedElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "DraggedHeight": {"type": "dimension", "value": 52},
+    "DraggedShape": {"type": "shape", "value": "CornerMedium"},
+    "DraggedWidth": {"type": "dimension", "value": 12},
+    "Elevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "Height": {"type": "dimension", "value": 48},
+    "PressedColor": {"type": "color", "value": "OnSurface"},
+    "PressedElevation": {"type": "elevation", "value": "@ElevationTokens.Level0"},
+    "PressedHeight": {"type": "dimension", "value": 52},
+    "PressedShape": {"type": "shape", "value": "CornerMedium"},
+    "PressedWidth": {"type": "dimension", "value": 12},
+    "Shape": {"type": "shape", "value": "CornerFull"},
+    "Width": {"type": "dimension", "value": 4}
+  }
+}

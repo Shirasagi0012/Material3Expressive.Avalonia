@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "SearchBarTokens",
+ "name": "SearchBarDefaultsTokens",
+  "overridesName": "SearchBarOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "SearchBarColors",
   "version": "v0_210",
@@ -31,23 +32,23 @@
     {
       "name": "Default",
       "values": {
-        "ContainerColor": "SurfaceContainerHigh",
-        "InputTextColor": "OnSurface",
-        "SupportingTextColor": "OnSurfaceVariant",
-        "LeadingIconColor": "OnSurface",
-        "TrailingIconColor": "OnSurfaceVariant",
-        "ResultsContainerColor": "SurfaceContainerHigh",
-        "DividerColor": "Outline",
+        "ContainerColor": "@SearchBarTokens.ContainerColor",
+        "InputTextColor": "@SearchBarTokens.InputTextColor",
+        "SupportingTextColor": "@SearchBarTokens.SupportingTextColor",
+        "LeadingIconColor": "@SearchBarTokens.LeadingIconColor",
+        "TrailingIconColor": "@SearchBarTokens.TrailingIconColor",
+        "ResultsContainerColor": "@SearchViewTokens.ContainerColor",
+        "DividerColor": "@SearchViewTokens.DividerColor",
 
-        "ContainerElevation": "@ElevationTokens.Level3",
-        "ContainerHeight": 56,
-        "ContainerShape": "CornerFull",
-        "ResultsContainerShape": "CornerExtraLarge",
+        "ContainerElevation": "@SearchBarTokens.ContainerElevation",
+        "ContainerHeight": "@SearchBarTokens.ContainerHeight",
+        "ContainerShape": "@SearchBarTokens.ContainerShape",
+        "ResultsContainerShape": "@SearchViewTokens.DockedContainerShape",
         "HorizontalSpace": 16,
         "IconSize": 24,
         "IconLabelSpace": 16,
         "DividerHeight": 1,
-        "InputTextStyle": "BodyLarge"
+        "InputTextStyle": "@SearchBarTokens.InputTextFont"
       }
     }
   ]

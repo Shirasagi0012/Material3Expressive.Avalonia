@@ -1,6 +1,6 @@
 // Executable reference: Compose Multiplatform Material3 1.12.0-alpha03 / Jetpack Material3
 // 1.5.0-alpha22. Implementation source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25
-// FloatingToolbar.kt and FloatingToolbarTokens.kt VERSION 12_0_0.
+// FloatingToolbar.kt and FloatingToolbarDefaultsTokens.kt VERSION 12_0_0.
 
 using Avalonia;
 using Avalonia.Controls;

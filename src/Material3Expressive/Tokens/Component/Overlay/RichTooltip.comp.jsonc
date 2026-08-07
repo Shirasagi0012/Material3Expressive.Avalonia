@@ -1,0 +1,23 @@
+{
+  "kind": "componentTokens",
+  "name": "RichTooltipTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/RichTooltipTokens.kt",
+  "summary": "Verbatim RichTooltipTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ActionFocusLabelTextColor": {"type": "color", "value": "Primary"},
+    "ActionHoverLabelTextColor": {"type": "color", "value": "Primary"},
+    "ActionLabelTextColor": {"type": "color", "value": "Primary"},
+    "ActionLabelTextFont": {"type": "typography", "value": "LabelLarge"},
+    "ActionPressedLabelTextColor": {"type": "color", "value": "Primary"},
+    "ContainerColor": {"type": "color", "value": "SurfaceContainer"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level2"},
+    "ContainerShape": {"type": "shape", "value": "CornerMedium"},
+    "SubheadColor": {"type": "color", "value": "OnSurfaceVariant"},
+    "SubheadFont": {"type": "typography", "value": "TitleSmall"},
+    "SupportingTextColor": {"type": "color", "value": "OnSurfaceVariant"},
+    "SupportingTextFont": {"type": "typography", "value": "BodyMedium"}
+  }
+}

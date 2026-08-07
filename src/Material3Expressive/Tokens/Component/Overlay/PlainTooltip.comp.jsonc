@@ -1,0 +1,15 @@
+{
+  "kind": "componentTokens",
+  "name": "PlainTooltipTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "ff0a0a99",
+  "source": "androidx compose/material3 tokens/PlainTooltipTokens.kt",
+  "summary": "Verbatim PlainTooltipTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerColor": {"type": "color", "value": "InverseSurface"},
+    "ContainerShape": {"type": "shape", "value": "CornerExtraSmall"},
+    "SupportingTextColor": {"type": "color", "value": "InverseOnSurface"},
+    "SupportingTextFont": {"type": "typography", "value": "BodySmall"}
+  }
+}

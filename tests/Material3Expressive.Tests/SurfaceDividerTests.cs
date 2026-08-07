@@ -16,7 +16,7 @@ namespace Material3Expressive.Tests;
 /// <summary>
 /// Focused structural and deterministic render tests for the Surface and Divider contracts.
 /// Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25, Surface.kt:550-620,
-/// ColorScheme.kt:1151-1154, Divider.kt and tokens/DividerTokens.kt (VERSION v0_117).
+/// ColorScheme.kt:1151-1154, Divider.kt and tokens/DividerDefaultsTokens.kt (VERSION v0_117).
 /// </summary>
 public class SurfaceTests
 {
@@ -167,7 +167,7 @@ public class DividerTests
 {
     // Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
     // Divider.kt; DividerTest.kt:42-101; DividerScreenshotTest.kt:45-109; and
-    // tokens/DividerTokens.kt (VERSION v0_117). The default rule is 1dp OutlineVariant;
+    // tokens/DividerDefaultsTokens.kt (VERSION v0_117). The default rule is 1dp OutlineVariant;
     // Dp.Hairline has zero layout size but paints a physical-pixel stroke.
 
     [AvaloniaFact]

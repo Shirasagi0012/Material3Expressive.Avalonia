@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "BadgeTokens",
+ "name": "BadgeDefaultsTokens",
+  "overridesName": "BadgeOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "BadgeColors",
   "version": "v0_103",
@@ -24,12 +25,16 @@
     {
       "name": "Small",
       "values": {
-        "ContainerColor": "Error",
+        "ContainerColor": "@BadgeTokens.Color",
+
         "LabelTextColor": "OnError",
-        "Size": 6,
-        "ContainerShape": "CornerFull",
+        "Size": "@BadgeTokens.Size",
+
+        "ContainerShape": "@BadgeTokens.Shape",
+
         "HorizontalSpace": 0,
-        "LabelTextStyle": "LabelSmall",
+        "LabelTextStyle": "@BadgeTokens.LargeLabelTextFont",
+
         "HasLabel": false
       }
     },
@@ -37,7 +42,8 @@
       "name": "Large",
       "extends": "Small",
       "values": {
-        "Size": 16,
+        "Size": "@BadgeTokens.LargeSize",
+
         "HorizontalSpace": 4,
         "HasLabel": true
       }

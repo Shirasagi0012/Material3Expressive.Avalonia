@@ -40,31 +40,31 @@
       "name": "Bar",
       "summary": "Along the bottom of the window.",
       "values": {
-        "ContainerColor": "SurfaceContainer",
-        "ActiveIndicatorColor": "SecondaryContainer",
-        "ActiveIconColor": "OnSecondaryContainer",
-        "ActiveLabelTextColor": "Secondary",
-        "InactiveIconColor": "OnSurfaceVariant",
-        "InactiveLabelTextColor": "OnSurfaceVariant",
+        "ContainerColor": "@NavigationBarTokens.ContainerColor",
+        "ActiveIndicatorColor": "@NavigationBarTokens.ItemActiveIndicatorColor",
+        "ActiveIconColor": "@NavigationBarTokens.ItemActiveIconColor",
+        "ActiveLabelTextColor": "@NavigationBarTokens.ItemActiveLabelTextColor",
+        "InactiveIconColor": "@NavigationBarTokens.ItemInactiveIconColor",
+        "InactiveLabelTextColor": "@NavigationBarTokens.ItemInactiveLabelTextColor",
         "StateLayerColor": "OnSurface",
 
-        "ContainerElevation": "@ElevationTokens.Level2",
-        "ContainerSize": 80,
-        "ActiveIndicatorWidth": 56,
-        "ActiveIndicatorHeight": 32,
-        "ActiveIndicatorShape": "CornerFull",
-        "IconSize": 24,
+        "ContainerElevation": "@NavigationBarTokens.ContainerElevation",
+        "ContainerSize": "@NavigationBarTokens.TallContainerHeight",
+        "ActiveIndicatorWidth": "@NavigationBarVerticalItemTokens.ActiveIndicatorWidth",
+        "ActiveIndicatorHeight": "@NavigationBarVerticalItemTokens.ActiveIndicatorHeight",
+        "ActiveIndicatorShape": "@NavigationBarTokens.ItemActiveIndicatorShape",
+        "IconSize": "@NavigationBarVerticalItemTokens.IconSize",
         // Compose positions the label below the icon by its 4dp indicator padding plus the
         // 4dp indicator-to-label token gap.  This value is the effective icon-to-label gap used
         // by the shared Avalonia template.
         "IconLabelSpace": 8,
-        "StartActiveIndicatorHeight": 40,
-        "StartIndicatorHorizontalPadding": 16,
+        "StartActiveIndicatorHeight": "@NavigationBarHorizontalItemTokens.ActiveIndicatorHeight",
+        "StartIndicatorHorizontalPadding": "@NavigationBarHorizontalItemTokens.ActiveIndicatorLeadingSpace",
         "StartIndicatorVerticalPadding": 8,
         "TopItemVerticalPadding": 6,
         // NavigationBar.kt uses NavigationBarItemHorizontalPadding (8dp) between weighted items.
         "ItemBetweenSpace": 8,
-        "LabelTextStyle": "LabelMedium",
+        "LabelTextStyle": "@NavigationBarTokens.LabelTextFont",
         "IsVertical": false
       }
     },
@@ -73,11 +73,23 @@
       "extends": "Bar",
       "summary": "Up the side of the window.",
       "values": {
-        "ContainerColor": "Surface",
-        "ContainerElevation": "@ElevationTokens.Level0",
-        "ContainerSize": 96,
+        "ContainerColor": "@NavigationRailCollapsedTokens.ContainerColor",
+        "ContainerElevation": "@NavigationRailCollapsedTokens.ContainerElevation",
+        "ContainerSize": "@NavigationRailCollapsedTokens.ContainerWidth",
+        "ActiveIndicatorColor": "@NavigationRailColorTokens.ItemActiveIndicator",
+        "ActiveIconColor": "@NavigationRailColorTokens.ItemActiveIcon",
+        "ActiveLabelTextColor": "@NavigationRailColorTokens.ItemActiveLabelText",
+        "InactiveIconColor": "@NavigationRailColorTokens.ItemInactiveIcon",
+        "InactiveLabelTextColor": "@NavigationRailColorTokens.ItemInactiveLabelText",
+        "ActiveIndicatorWidth": "@NavigationRailVerticalItemTokens.ActiveIndicatorWidth",
+        "ActiveIndicatorHeight": "@NavigationRailVerticalItemTokens.ActiveIndicatorHeight",
+        "ActiveIndicatorShape": "@NavigationRailBaselineItemTokens.ActiveIndicatorShape",
+        "IconSize": "@NavigationRailBaselineItemTokens.IconSize",
         // NavigationRail.kt uses NavigationRailVerticalPadding (4dp) both around and between items.
-        "ItemBetweenSpace": 4,
+        "ItemBetweenSpace": "@NavigationRailCollapsedTokens.ItemVerticalSpace",
+        "IconLabelSpace": "@NavigationRailVerticalItemTokens.IconLabelSpace",
+        "StartIndicatorHorizontalPadding": "@NavigationRailVerticalItemTokens.LeadingSpace",
+        "LabelTextStyle": "@NavigationRailVerticalItemTokens.LabelTextFont",
         "IsVertical": true
       }
     }

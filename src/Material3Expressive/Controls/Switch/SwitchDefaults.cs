@@ -19,7 +19,7 @@ internal sealed record SwitchVisualColors(
 /// </remarks>
 internal static class SwitchDefaults
 {
-    public static SwitchTokens Tokens(ResolvedTheme theme) => theme.SwitchTokens;
+    public static SwitchDefaultsTokens Tokens(ResolvedTheme theme) => theme.SwitchDefaultsTokens;
 
     public static SwitchColors Colors(ResolvedTheme theme, bool isDark) =>
         theme.GetSwitchColors(isDark);

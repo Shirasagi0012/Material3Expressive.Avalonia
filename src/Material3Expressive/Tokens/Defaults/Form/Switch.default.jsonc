@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "SwitchTokens",
+ "name": "SwitchDefaultsTokens",
+  "overridesName": "SwitchOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "SwitchColors",
   "version": "v0_210",
@@ -41,33 +42,58 @@
     {
       "name": "Default",
       "values": {
-        "TrackWidth": 52,
-        "TrackHeight": 32,
-        "TrackOutlineWidth": 2,
-        "UnselectedHandleSize": 16,
-        "SelectedHandleSize": 24,
-        "PressedHandleSize": 28,
-        "IconHandleSize": 24,
-        "IconSize": 16,
-        "StateLayerSize": 40,
+        "TrackWidth": "@SwitchTokens.TrackWidth",
 
-        "SelectedTrackColor": "Primary",
-        "SelectedHandleColor": "OnPrimary",
-        "SelectedIconColor": "OnPrimaryContainer",
-        "UnselectedTrackColor": "SurfaceContainerHighest",
-        "UnselectedTrackOutlineColor": "Outline",
-        "UnselectedHandleColor": "Outline",
-        "UnselectedIconColor": "SurfaceContainerHighest",
-        "SelectedStateLayerColor": "Primary",
-        "UnselectedStateLayerColor": "OnSurface",
+        "TrackHeight": "@SwitchTokens.TrackHeight",
 
-        "DisabledSelectedTrackColor": "OnSurface",
-        "DisabledSelectedHandleColor": "Surface",
-        "DisabledUnselectedTrackColor": "SurfaceContainerHighest",
-        "DisabledUnselectedTrackOutlineColor": "OnSurface",
-        "DisabledUnselectedHandleColor": "OnSurface",
-        "DisabledTrackOpacity": 0.12,
-        "DisabledHandleOpacity": 0.38
+        "TrackOutlineWidth": "@SwitchTokens.TrackOutlineWidth",
+
+        "UnselectedHandleSize": "@SwitchTokens.UnselectedHandleWidth",
+
+        "SelectedHandleSize": "@SwitchTokens.SelectedHandleWidth",
+
+        "PressedHandleSize": "@SwitchTokens.PressedHandleWidth",
+
+        "IconHandleSize": "@SwitchTokens.IconHandleWidth",
+
+        "IconSize": "@SwitchTokens.SelectedIconSize",
+
+        "StateLayerSize": "@SwitchTokens.StateLayerSize",
+
+
+        "SelectedTrackColor": "@SwitchTokens.SelectedTrackColor",
+
+        "SelectedHandleColor": "@SwitchTokens.SelectedHandleColor",
+
+        "SelectedIconColor": "@SwitchTokens.SelectedIconColor",
+
+        "UnselectedTrackColor": "@SwitchTokens.UnselectedTrackColor",
+
+        "UnselectedTrackOutlineColor": "@SwitchTokens.UnselectedTrackOutlineColor",
+
+        "UnselectedHandleColor": "@SwitchTokens.UnselectedHandleColor",
+
+        "UnselectedIconColor": "@SwitchTokens.UnselectedIconColor",
+
+        "SelectedStateLayerColor": "@SwitchTokens.SelectedTrackColor",
+
+        "UnselectedStateLayerColor": "@SwitchTokens.UnselectedTrackColor",
+
+
+        "DisabledSelectedTrackColor": "@SwitchTokens.DisabledSelectedTrackColor",
+
+        "DisabledSelectedHandleColor": "@SwitchTokens.DisabledSelectedHandleColor",
+
+        "DisabledUnselectedTrackColor": "@SwitchTokens.DisabledUnselectedTrackColor",
+
+        "DisabledUnselectedTrackOutlineColor": "@SwitchTokens.DisabledUnselectedTrackOutlineColor",
+
+        "DisabledUnselectedHandleColor": "@SwitchTokens.DisabledUnselectedHandleColor",
+
+        "DisabledTrackOpacity": "@SwitchTokens.DisabledTrackOpacity",
+
+        "DisabledHandleOpacity": "@SwitchTokens.DisabledUnselectedHandleOpacity"
+
       }
     }
   ]

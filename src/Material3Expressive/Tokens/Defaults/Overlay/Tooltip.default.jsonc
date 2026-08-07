@@ -30,18 +30,18 @@
     {
       "name": "Plain",
       "values": {
-        "ContainerColor": "InverseSurface",
-        "SupportingTextColor": "InverseOnSurface",
+        "ContainerColor": "@PlainTooltipTokens.ContainerColor",
+        "SupportingTextColor": "@PlainTooltipTokens.SupportingTextColor",
         "TitleColor": "InverseOnSurface",
         "ActionLabelTextColor": "InversePrimary",
 
-        "ContainerShape": "CornerExtraSmall",
+        "ContainerShape": "@PlainTooltipTokens.ContainerShape",
         "ContainerElevation": "@ElevationTokens.Level0",
         "MinHeight": 24,
         "MaxWidth": 200,
         "HorizontalSpace": 8,
         "VerticalSpace": 4,
-        "SupportingTextStyle": "BodySmall",
+        "SupportingTextStyle": "@PlainTooltipTokens.SupportingTextFont",
         "TitleTextStyle": "TitleSmall"
       }
     },
@@ -49,17 +49,19 @@
       "name": "Rich",
       "extends": "Plain",
       "values": {
-        "ContainerColor": "SurfaceContainer",
-        "SupportingTextColor": "OnSurfaceVariant",
-        "TitleColor": "OnSurface",
-        "ActionLabelTextColor": "Primary",
+        "ContainerColor": "@RichTooltipTokens.ContainerColor",
+        "SupportingTextColor": "@RichTooltipTokens.SupportingTextColor",
+        "TitleColor": "@RichTooltipTokens.SubheadColor",
+        "ActionLabelTextColor": "@RichTooltipTokens.ActionLabelTextColor",
 
-        "ContainerShape": "CornerMedium",
-        "ContainerElevation": "@ElevationTokens.Level2",
+        "ContainerShape": "@RichTooltipTokens.ContainerShape",
+        "ContainerElevation": "@RichTooltipTokens.ContainerElevation",
         "MinHeight": 40,
         "MaxWidth": 320,
         "HorizontalSpace": 16,
-        "VerticalSpace": 12
+        "VerticalSpace": 12,
+        "SupportingTextStyle": "@RichTooltipTokens.SupportingTextFont",
+        "TitleTextStyle": "@RichTooltipTokens.SubheadFont"
       }
     }
   ]

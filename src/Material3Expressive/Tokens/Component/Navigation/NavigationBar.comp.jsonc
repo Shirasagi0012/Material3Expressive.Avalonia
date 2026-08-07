@@ -1,0 +1,25 @@
+{
+  "kind": "componentTokens",
+  "name": "NavigationBarTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_11_0",
+  "source": "androidx compose/material3 tokens/NavigationBarTokens.kt",
+  "summary": "Verbatim NavigationBarTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerColor": {"type": "color", "value": "SurfaceContainer"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level2"},
+    "ContainerHeight": {"type": "dimension", "value": 64},
+    "ItemActiveIconColor": {"type": "color", "value": "OnSecondaryContainer"},
+    "ItemActiveIndicatorColor": {"type": "color", "value": "SecondaryContainer"},
+    "ItemActiveIndicatorIconLabelSpace": {"type": "dimension", "value": 4},
+    "ItemActiveIndicatorShape": {"type": "shape", "value": "CornerFull"},
+    "ItemActiveLabelTextColor": {"type": "color", "value": "Secondary"},
+    "ItemBetweenSpace": {"type": "dimension", "value": 0},
+    "ItemInactiveIconColor": {"type": "color", "value": "OnSurfaceVariant"},
+    "ItemInactiveLabelTextColor": {"type": "color", "value": "OnSurfaceVariant"},
+    "NavShape": {"type": "shape", "value": "CornerNone"},
+    "TallContainerHeight": {"type": "dimension", "value": 80},
+    "LabelTextFont": {"type": "typography", "value": "LabelMedium"}
+  }
+}

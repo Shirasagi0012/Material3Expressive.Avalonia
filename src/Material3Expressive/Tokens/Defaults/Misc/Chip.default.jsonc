@@ -47,32 +47,32 @@
       "summary": "Suggests an action related to the content it sits with.",
       "values": {
         "ContainerColor": "#00000000",
-        "LabelTextColor": "OnSurface",
-        "LeadingIconColor": "Primary",
-        "TrailingIconColor": "Primary",
-        "OutlineColor": "OutlineVariant",
-        "StateLayerColor": "OnSurface",
+        "LabelTextColor": "@AssistChipTokens.LabelTextColor",
+        "LeadingIconColor": "@AssistChipTokens.IconColor",
+        "TrailingIconColor": "@AssistChipTokens.IconColor",
+        "OutlineColor": "@AssistChipTokens.FlatOutlineColor",
+        "StateLayerColor": "@AssistChipTokens.LabelTextColor",
 
-        "SelectedContainerColor": "SecondaryContainer",
-        "SelectedLabelTextColor": "OnSecondaryContainer",
-        "SelectedIconColor": "OnSecondaryContainer",
+        "SelectedContainerColor": "@ChipsTokens.SelectedContainerColor",
+        "SelectedLabelTextColor": "@ChipsTokens.SelectedLabelTextColor",
+        "SelectedIconColor": "@ChipsTokens.SelectedLeadingIconColor",
 
         "DisabledContainerColor": "#00000000",
-        "DisabledLabelTextColor": "OnSurface",
-        "DisabledIconColor": "OnSurface",
-        "DisabledOutlineColor": "OnSurface",
+        "DisabledLabelTextColor": "@AssistChipTokens.DisabledLabelTextColor",
+        "DisabledIconColor": "@AssistChipTokens.DisabledIconColor",
+        "DisabledOutlineColor": "@AssistChipTokens.FlatDisabledOutlineColor",
         "DisabledContainerOpacity": 1,
-        "DisabledLabelTextOpacity": 0.38,
-        "DisabledOutlineOpacity": 0.12,
+        "DisabledLabelTextOpacity": "@AssistChipTokens.DisabledLabelTextOpacity",
+        "DisabledOutlineOpacity": "@AssistChipTokens.FlatDisabledOutlineOpacity",
 
-        "ContainerHeight": 32,
-        "ContainerShape": "CornerSmall",
-        "SelectedContainerShape": "CornerFull",
-        "OutlineWidth": 1,
-        "IconSize": 18,
+        "ContainerHeight": "@AssistChipTokens.ContainerHeight",
+        "ContainerShape": "@AssistChipTokens.ContainerShape",
+        "SelectedContainerShape": "@ChipsTokens.SelectedShape",
+        "OutlineWidth": "@AssistChipTokens.FlatOutlineWidth",
+        "IconSize": "@AssistChipTokens.IconSize",
         "HorizontalSpace": 16,
         "IconLabelSpace": 8,
-        "LabelTextStyle": "LabelLarge",
+        "LabelTextStyle": "@AssistChipTokens.LabelTextFont",
         "IsSelectable": false
       }
     },
@@ -81,10 +81,13 @@
       "extends": "Assist",
       "summary": "Narrows a set. The only kind whose selected state is the point of it.",
       "values": {
-        "LabelTextColor": "OnSurfaceVariant",
-        "LeadingIconColor": "Primary",
-        "TrailingIconColor": "OnSurfaceVariant",
-        "StateLayerColor": "OnSurfaceVariant",
+        "LabelTextColor": "@FilterChipTokens.UnselectedLabelTextColor",
+        "LeadingIconColor": "@FilterChipTokens.UnselectedLeadingIconColor",
+        "TrailingIconColor": "@FilterChipTokens.UnselectedTrailingIconColor",
+        "StateLayerColor": "@FilterChipTokens.UnselectedLabelTextColor",
+        "SelectedContainerColor": "@FilterChipTokens.FlatSelectedContainerColor",
+        "SelectedLabelTextColor": "@FilterChipTokens.SelectedLabelTextColor",
+        "SelectedIconColor": "@FilterChipTokens.SelectedLeadingIconColor",
         "IsSelectable": true
       }
     },
@@ -93,10 +96,13 @@
       "extends": "Assist",
       "summary": "Represents something the user entered, and can usually be dismissed.",
       "values": {
-        "LabelTextColor": "OnSurfaceVariant",
-        "LeadingIconColor": "OnSurfaceVariant",
-        "TrailingIconColor": "OnSurfaceVariant",
-        "StateLayerColor": "OnSurfaceVariant",
+        "LabelTextColor": "@InputChipTokens.UnselectedLabelTextColor",
+        "LeadingIconColor": "@InputChipTokens.UnselectedLeadingIconColor",
+        "TrailingIconColor": "@InputChipTokens.UnselectedTrailingIconColor",
+        "StateLayerColor": "@InputChipTokens.UnselectedLabelTextColor",
+        "SelectedContainerColor": "@InputChipTokens.SelectedContainerColor",
+        "SelectedLabelTextColor": "@InputChipTokens.SelectedLabelTextColor",
+        "SelectedIconColor": "@InputChipTokens.SelectedLeadingIconColor",
         "IsSelectable": true
       }
     },
@@ -105,10 +111,10 @@
       "extends": "Assist",
       "summary": "Offers a likely next input.",
       "values": {
-        "LabelTextColor": "OnSurfaceVariant",
-        "LeadingIconColor": "Primary",
-        "TrailingIconColor": "OnSurfaceVariant",
-        "StateLayerColor": "OnSurfaceVariant",
+        "LabelTextColor": "@SuggestionChipTokens.LabelTextColor",
+        "LeadingIconColor": "@SuggestionChipTokens.LeadingIconColor",
+        "TrailingIconColor": "@SuggestionChipTokens.LeadingIconColor",
+        "StateLayerColor": "@SuggestionChipTokens.LabelTextColor",
         "IsSelectable": false
       }
     }

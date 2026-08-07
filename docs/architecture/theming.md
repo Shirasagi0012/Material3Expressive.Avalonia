@@ -28,6 +28,26 @@ public override bags. New domains should keep upstream values in a raw component
 runtime assembly or Avalonia corrections in its matching defaults table; do not duplicate
 constructor defaults, resolver arms, and markup fallbacks by hand.
 
+The current frozen-baseline coverage is 103 raw component tables, 3 system tables, and 35 defaults
+tables. `MaterialColorUtilities` remains the owner of palette and system-colour resolution;
+`ShapeScheme`, `MotionScheme`, and `TypographyScheme` remain the owners of their runtime contracts.
+Those owners are intentionally not mirrored as JSON reference tables. The explicit exceptions and
+the 27 raw-only future component sources are recorded in the
+[token coverage inventory](../reference/token-coverage.md).
+
+```mermaid
+flowchart LR
+    A[AndroidX ff0a0a99\n*Tokens.kt] --> B[.comp.jsonc\nraw component tables]
+    A --> C[.sys.jsonc\nElevation / State / TypeScale]
+    B --> D[.default.jsonc\nCompose Defaults + M3/Avalonia assembly]
+    C --> D
+    D --> E[TokenTableGenerator]
+    E --> F[ResolvedTheme\nimmutable snapshot]
+    F --> G[component-owned adapter]
+    G --> H[Avalonia control/template]
+    I[MaterialColorUtilities\nShapeScheme / MotionScheme / TypographyScheme] --> F
+```
+
 System typography is owned by `TypographyScheme.TypeScaleOverrides`; component defaults stay in
 `MaterialTheme.Components`. The old `TypeScaleOverrides` item in `Components` remains only as an
 obsolete compatibility path during the alpha migration.

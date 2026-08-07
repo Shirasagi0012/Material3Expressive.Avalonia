@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "SnackbarTokens",
+ "name": "SnackbarDefaultsTokens",
+  "overridesName": "SnackbarOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "SnackbarColors",
   "version": "v0_103",
@@ -29,21 +30,21 @@
     {
       "name": "Default",
       "values": {
-        "ContainerColor": "InverseSurface",
-        "SupportingTextColor": "InverseOnSurface",
-        "ActionLabelTextColor": "InversePrimary",
-        "IconColor": "InverseOnSurface",
+        "ContainerColor": "@SnackbarTokens.ContainerColor",
+        "SupportingTextColor": "@SnackbarTokens.SupportingTextColor",
+        "ActionLabelTextColor": "@SnackbarTokens.ActionLabelTextColor",
+        "IconColor": "@SnackbarTokens.IconColor",
 
-        "ContainerElevation": "@ElevationTokens.Level3",
-        "ContainerShape": "CornerExtraSmall",
-        "SingleLineHeight": 48,
-        "TwoLineHeight": 68,
+        "ContainerElevation": "@SnackbarTokens.ContainerElevation",
+        "ContainerShape": "@SnackbarTokens.ContainerShape",
+        "SingleLineHeight": "@SnackbarTokens.SingleLineContainerHeight",
+        "TwoLineHeight": "@SnackbarTokens.TwoLinesContainerHeight",
         "MinWidth": 344,
         "MaxWidth": 600,
         "HorizontalSpace": 16,
-        "IconSize": 24,
-        "SupportingTextStyle": "BodyMedium",
-        "ActionTextStyle": "LabelLarge"
+        "IconSize": "@SnackbarTokens.IconSize",
+        "SupportingTextStyle": "@SnackbarTokens.SupportingTextFont",
+        "ActionTextStyle": "@SnackbarTokens.ActionLabelTextFont"
       }
     }
   ]

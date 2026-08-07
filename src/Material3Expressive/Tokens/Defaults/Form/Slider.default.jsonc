@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "SliderTokens",
+ "name": "SliderDefaultsTokens",
+  "overridesName": "SliderOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "SliderColors",
   "version": "v2_3_5",
@@ -34,26 +35,44 @@
     {
       "name": "Default",
       "values": {
-        "TrackHeight": 16,
-        "HandleWidth": 4,
-        "PressedHandleWidth": 2,
-        "HandleHeight": 44,
-        "HandlePadding": 6,
-        "StopIndicatorSize": 4,
-        "StopIndicatorTrailingSpace": 6,
+        "TrackHeight": "@SliderTokens.ActiveTrackHeight",
 
-        "ActiveTrackColor": "Primary",
-        "InactiveTrackColor": "SecondaryContainer",
-        "HandleColor": "Primary",
-        "StopIndicatorColor": "SecondaryContainer",
-        "StateLayerColor": "Primary",
+        "HandleWidth": "@SliderTokens.HandleWidth",
 
-        "DisabledActiveTrackColor": "OnSurface",
-        "DisabledInactiveTrackColor": "OnSurface",
-        "DisabledHandleColor": "OnSurface",
-        "DisabledActiveTrackOpacity": 0.38,
-        "DisabledInactiveTrackOpacity": 0.12,
-        "DisabledHandleOpacity": 0.38
+        "PressedHandleWidth": "@SliderTokens.PressedHandleWidth",
+
+        "HandleHeight": "@SliderTokens.HandleHeight",
+
+        "HandlePadding": "@SliderTokens.ActiveHandlePadding",
+
+        "StopIndicatorSize": "@SliderTokens.StopIndicatorSize",
+
+        "StopIndicatorTrailingSpace": "@SliderTokens.StopIndicatorTrailingSpace",
+
+
+        "ActiveTrackColor": "@SliderTokens.ActiveTrackColor",
+
+        "InactiveTrackColor": "@SliderTokens.InactiveTrackColor",
+
+        "HandleColor": "@SliderTokens.HandleColor",
+
+        "StopIndicatorColor": "@SliderTokens.StopIndicatorColor",
+
+        "StateLayerColor": "@SliderTokens.HandleColor",
+
+
+        "DisabledActiveTrackColor": "@SliderTokens.DisabledActiveTrackColor",
+
+        "DisabledInactiveTrackColor": "@SliderTokens.DisabledInactiveTrackColor",
+
+        "DisabledHandleColor": "@SliderTokens.DisabledHandleColor",
+
+        "DisabledActiveTrackOpacity": "@SliderTokens.DisabledActiveTrackOpacity",
+
+        "DisabledInactiveTrackOpacity": "@SliderTokens.DisabledInactiveTrackOpacity",
+
+        "DisabledHandleOpacity": "@SliderTokens.DisabledHandleOpacity"
+
       }
     }
   ]

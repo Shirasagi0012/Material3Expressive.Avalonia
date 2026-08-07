@@ -1,0 +1,24 @@
+{
+  "kind": "componentTokens",
+  "name": "SplitButtonMediumTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "18_0_18",
+  "source": "androidx compose/material3 tokens/SplitButtonMediumTokens.kt",
+  "summary": "Verbatim SplitButtonMediumTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+
+  "tokens": {
+    "BetweenSpace": {"type": "dimension", "value": 2},
+    "ContainerHeight": {"type": "dimension", "value": 56},
+    "ContainerShape": {"type": "shape", "value": "CornerFull"},
+    "InnerCornerCornerSize": {"type": "dimension", "value": 4},
+    "InnerHoveredCornerCornerSize": {"type": "dimension", "value": 12},
+    "InnerPressedCornerCornerSize": {"type": "dimension", "value": 12},
+    "LeadingButtonLeadingSpace": {"type": "dimension", "value": 24},
+    "LeadingButtonTrailingSpace": {"type": "dimension", "value": 24},
+    "TrailingIconSize": {"type": "dimension", "value": 26},
+    "TrailingInnerSelectedCornerCornerSizePercent": {"type": "number", "value": 50},
+    "TrailingButtonLeadingSpace": {"type": "dimension", "value": 15},
+    "TrailingButtonTrailingSpace": {"type": "dimension", "value": 15}
+  }
+}

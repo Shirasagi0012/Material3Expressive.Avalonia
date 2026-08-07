@@ -13,7 +13,7 @@ public enum DividerOrientation { Horizontal, Vertical }
 
 // Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/{Divider.kt,
-// tokens/DividerTokens.kt} (VERSION v0_117), plus DividerTest.kt and DividerScreenshotTest.kt.
+// tokens/DividerDefaultsTokens.kt} (VERSION v0_117), plus DividerTest.kt and DividerScreenshotTest.kt.
 // HorizontalDivider/VerticalDivider draw a centred 1dp OutlineVariant stroke. Dp.Hairline has a
 // zero layout-axis size but Skia still draws one physical pixel. Avalonia.Skia deliberately treats
 // Pen.Thickness == 0 as "do not draw" (DrawingContextImpl.TryCreatePaint), so IsHairline is the
@@ -27,14 +27,14 @@ public sealed class MaterialDivider : MaterialControl, IVisualBoundsProbe
     public static readonly StyledProperty<DividerOrientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialDivider, DividerOrientation>(nameof(Orientation));
     public static readonly StyledProperty<double> ThicknessProperty =
-        AvaloniaProperty.Register<MaterialDivider, double>(nameof(Thickness), DividerTokens.Default.Thickness);
+        AvaloniaProperty.Register<MaterialDivider, double>(nameof(Thickness), DividerDefaultsTokens.Default.Thickness);
     public static readonly StyledProperty<bool> IsHairlineProperty =
         AvaloniaProperty.Register<MaterialDivider, bool>(nameof(IsHairline));
     public static readonly DirectProperty<MaterialDivider, IBrush?> DividerBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialDivider, IBrush?>(nameof(DividerBrush), o => o.DividerBrush, (o, value) => o.SetDividerBrush(value));
 
     private readonly HairlineStrokeVisual _hairlineStroke;
-    private DividerColors _colors = DividerTokens.Default.Resolve(null, false);
+    private DividerColors _colors = DividerDefaultsTokens.Default.Resolve(null, false);
     private IBrush? _dividerBrush;
     private bool _hasExplicitBrush;
 

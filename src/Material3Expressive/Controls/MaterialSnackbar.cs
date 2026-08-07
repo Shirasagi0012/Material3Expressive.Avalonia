@@ -1,6 +1,6 @@
 // Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt:101-177,
-// 291-462 and tokens/SnackbarTokens.kt. The Avalonia template adapts the one-row slot layout;
+// 291-462 and tokens/SnackbarDefaultsTokens.kt. The Avalonia template adapts the one-row slot layout;
 // generated host actions retain the upstream TextButton size, padding, and LabelLarge typography.
 
 using System;
@@ -48,8 +48,8 @@ public class MaterialSnackbar : MaterialControl
 
     private SpringAnimation? _open;
     private TimeSpan _shownFor;
-    private SnackbarTokens _tokens = SnackbarTokens.Default;
-    private SnackbarColors _colors = SnackbarTokens.Default.Resolve(null, false);
+    private SnackbarDefaultsTokens _tokens = SnackbarDefaultsTokens.Default;
+    private SnackbarColors _colors = SnackbarDefaultsTokens.Default.Resolve(null, false);
 
     public MaterialSnackbar()
     {
@@ -215,7 +215,7 @@ public class MaterialSnackbar : MaterialControl
         var previousMessage = MessageBrush;
         var previousAction = ActionBrush;
 
-        _tokens = ResolvedTheme.SnackbarTokens;
+        _tokens = ResolvedTheme.SnackbarDefaultsTokens;
         _colors = ResolvedTheme.GetSnackbarColors(IsDarkVariant);
 
         RaisePropertyChanged(MessageBrushProperty, previousMessage, MessageBrush);

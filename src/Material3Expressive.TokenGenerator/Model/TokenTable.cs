@@ -246,7 +246,7 @@ internal static class TokenProvenances
 internal sealed class ParsedTokenTable
 {
     private ParsedTokenTable(string kind, string declaredKind, TokenTableCategory category, string name, string @namespace, string? version,
-        string? source, string? summary, TokenProvenance provenance)
+        string? source, string? summary, TokenProvenance provenance, string? overridesName)
     {
         Kind = kind;
         DeclaredKind = declaredKind;
@@ -257,6 +257,7 @@ internal sealed class ParsedTokenTable
         Source = source;
         Summary = summary;
         Provenance = provenance;
+        OverridesName = overridesName;
     }
 
     public string Kind { get; }
@@ -280,6 +281,9 @@ internal sealed class ParsedTokenTable
 
     /// <summary>Machine-readable origin of the table's values or assembly.</summary>
     public TokenProvenance Provenance { get; }
+
+    /// <summary>Optional compatibility name for the generated public override bag.</summary>
+    public string? OverridesName { get; }
 
     /// <summary>Populated for <c>tokenSet</c> tables.</summary>
     public IReadOnlyList<TokenEntry> Tokens { get; private set; } = System.Array.Empty<TokenEntry>();
@@ -335,7 +339,10 @@ internal sealed class ParsedTokenTable
             root["version"].AsString(),
             root["source"].AsString(),
             root["summary"].AsString(),
-            provenance);
+            provenance,
+            root["overridesName"].AsString() is { } overridesName
+                ? Identifier(overridesName, "overridesName")
+                : null);
 
         if (kind == "tokenSet")
             table.ParseTokens(root);

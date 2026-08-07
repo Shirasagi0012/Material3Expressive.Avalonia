@@ -1,6 +1,6 @@
 // Implementation-source basis: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/{Divider.kt,
-// tokens/DividerTokens.kt} (VERSION v0_117), DividerTest.kt, and DividerScreenshotTest.kt.
+// tokens/DividerDefaultsTokens.kt} (VERSION v0_117), DividerTest.kt, and DividerScreenshotTest.kt.
 // Executable reference: Compose Multiplatform Material3 1.12.0-alpha03 / Jetpack alpha22. The
 // Canvas-drawn stroke has no independent Compose layout node, so this parity contract compares
 // the component's real layout bounds and same-coordinate raster. Focused deterministic tests

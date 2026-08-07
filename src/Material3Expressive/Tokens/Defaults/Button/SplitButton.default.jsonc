@@ -1,0 +1,42 @@
+{
+  "kind": "componentDefaults",
+  "name": "SplitButtonDefaultsTokens",
+  "namespace": "Material3Expressive.Foundation",
+  "version": "18_0_18",
+  "source": "androidx compose/material3 tokens/SplitButton{XSmall,Small,Medium,Large,XLarge}Tokens.kt and SplitButton.kt",
+  "summary": "The geometry shared by the two halves of a split button. The current Avalonia control uses the small size until its size property is exposed.",
+  "provenance": "compose-default",
+  "properties": {
+    "BetweenSpace": { "type": "dimension" },
+    "ContainerHeight": { "type": "dimension" },
+    "ContainerShape": { "type": "shape" },
+    "InnerCornerSize": { "type": "dimension" },
+    "InnerHoveredCornerSize": { "type": "dimension" },
+    "InnerPressedCornerSize": { "type": "dimension" },
+    "LeadingButtonLeadingSpace": { "type": "dimension" },
+    "LeadingButtonTrailingSpace": { "type": "dimension" },
+    "TrailingButtonLeadingSpace": { "type": "dimension" },
+    "TrailingButtonTrailingSpace": { "type": "dimension" },
+    "TrailingIconSize": { "type": "dimension" },
+    "TrailingInnerSelectedCornerPercent": { "type": "number" }
+  },
+  "sets": [
+    {
+      "name": "Default",
+      "values": {
+        "BetweenSpace": "@SplitButtonSmallTokens.BetweenSpace",
+        "ContainerHeight": "@SplitButtonSmallTokens.ContainerHeight",
+        "ContainerShape": "@SplitButtonSmallTokens.ContainerShape",
+        "InnerCornerSize": "@SplitButtonSmallTokens.InnerCornerSize",
+        "InnerHoveredCornerSize": "@SplitButtonSmallTokens.InnerHoveredCornerSize",
+        "InnerPressedCornerSize": "@SplitButtonSmallTokens.InnerPressedCornerSize",
+        "LeadingButtonLeadingSpace": "@SplitButtonSmallTokens.LeadingButtonLeadingSpace",
+        "LeadingButtonTrailingSpace": "@SplitButtonSmallTokens.LeadingButtonTrailingSpace",
+        "TrailingButtonLeadingSpace": "@SplitButtonSmallTokens.TrailingButtonLeadingSpace",
+        "TrailingButtonTrailingSpace": "@SplitButtonSmallTokens.TrailingButtonTrailingSpace",
+        "TrailingIconSize": "@SplitButtonSmallTokens.TrailingIconSize",
+        "TrailingInnerSelectedCornerPercent": "@SplitButtonSmallTokens.TrailingInnerSelectedCornerCornerSizePercent"
+      }
+    }
+  ]
+}

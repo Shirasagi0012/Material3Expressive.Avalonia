@@ -1,0 +1,13 @@
+{
+  "kind": "componentTokens",
+  "name": "ScrimTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_117",
+  "source": "androidx compose/material3 tokens/ScrimTokens.kt",
+  "summary": "Verbatim ScrimTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerColor": {"type": "color", "value": "Scrim"},
+    "ContainerOpacity": {"type": "opacity", "value": 0.32}
+  }
+}

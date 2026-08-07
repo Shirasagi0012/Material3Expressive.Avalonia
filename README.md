@@ -578,7 +578,8 @@ reference/system/component values are kept separate from component assembly and 
 the value record, variant enum, override bag and theme accessors are still generated. Component
 records and snapshot accessors are internal; public retuning uses the generated override bags and
 stable enums. See
-[docs/reference/token-tables.md](docs/reference/token-tables.md).
+[docs/reference/token-tables.md](docs/reference/token-tables.md) and the
+[token coverage inventory](docs/reference/token-coverage.md).
 
 The theming core is documented in [docs/architecture/theming.md](docs/architecture/theming.md). The current
 Compose comparison workflow is in [docs/testing/visual-parity/README.md](docs/testing/visual-parity/README.md). Feature-level

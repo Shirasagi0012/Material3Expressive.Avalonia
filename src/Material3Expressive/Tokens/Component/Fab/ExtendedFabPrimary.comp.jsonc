@@ -1,0 +1,32 @@
+{
+  "kind": "componentTokens",
+  "name": "ExtendedFabPrimaryTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_103",
+  "source": "androidx compose/material3 tokens/ExtendedFabPrimaryTokens.kt",
+  "summary": "Verbatim ExtendedFabPrimaryTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerColor": {"type": "color", "value": "PrimaryContainer"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level3"},
+    "ContainerHeight": {"type": "dimension", "value": 56},
+    "ContainerShape": {"type": "shape", "value": "CornerLarge"},
+    "FocusContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level3"},
+    "FocusIconColor": {"type": "color", "value": "OnPrimaryContainer"},
+    "FocusLabelTextColor": {"type": "color", "value": "OnPrimaryContainer"},
+    "HoverContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level4"},
+    "HoverIconColor": {"type": "color", "value": "OnPrimaryContainer"},
+    "HoverLabelTextColor": {"type": "color", "value": "OnPrimaryContainer"},
+    "IconColor": {"type": "color", "value": "OnPrimaryContainer"},
+    "IconSize": {"type": "dimension", "value": 24},
+    "LabelTextColor": {"type": "color", "value": "OnPrimaryContainer"},
+    "LabelTextFont": {"type": "typography", "value": "LabelLarge"},
+    "LoweredContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level1"},
+    "LoweredFocusContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level1"},
+    "LoweredHoverContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level2"},
+    "LoweredPressedContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level1"},
+    "PressedContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level3"},
+    "PressedIconColor": {"type": "color", "value": "OnPrimaryContainer"},
+    "PressedLabelTextColor": {"type": "color", "value": "OnPrimaryContainer"}
+  }
+}

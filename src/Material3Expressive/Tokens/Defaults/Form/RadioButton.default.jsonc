@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "RadioButtonTokens",
+ "name": "RadioButtonDefaultsTokens",
+  "overridesName": "RadioButtonOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "RadioButtonColors",
   "version": "v0_117",
@@ -25,19 +26,27 @@
     {
       "name": "Default",
       "values": {
-        "IconSize": 20,
-        "StateLayerSize": 40,
+        "IconSize": "@RadioButtonTokens.IconSize",
+
+        "StateLayerSize": "@RadioButtonTokens.StateLayerSize",
+
         // Upstream draws the radio button from RadioButton.kt rather than from tokens: a 2dp ring
         // and a 10dp dot inside the 20dp icon box.
         "RingWidth": 2,
         "DotSize": 10,
 
-        "SelectedColor": "Primary",
-        "UnselectedColor": "OnSurfaceVariant",
-        "DisabledSelectedColor": "OnSurface",
-        "DisabledUnselectedColor": "OnSurface",
-        "DisabledSelectedOpacity": 0.38,
-        "DisabledUnselectedOpacity": 0.38
+        "SelectedColor": "@RadioButtonTokens.SelectedIconColor",
+
+        "UnselectedColor": "@RadioButtonTokens.UnselectedIconColor",
+
+        "DisabledSelectedColor": "@RadioButtonTokens.DisabledSelectedIconColor",
+
+        "DisabledUnselectedColor": "@RadioButtonTokens.DisabledUnselectedIconColor",
+
+        "DisabledSelectedOpacity": "@RadioButtonTokens.DisabledSelectedIconOpacity",
+
+        "DisabledUnselectedOpacity": "@RadioButtonTokens.DisabledUnselectedIconOpacity"
+
       }
     }
   ]

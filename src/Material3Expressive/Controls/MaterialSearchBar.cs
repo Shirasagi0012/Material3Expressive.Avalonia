@@ -61,8 +61,8 @@ public class MaterialSearchBar : MaterialControl
 
     private AnimatedShape? _shape;
     private TextBox? _textBox;
-    private SearchBarTokens _tokens = SearchBarTokens.Default;
-    private SearchBarColors _colors = SearchBarTokens.Default.Resolve(null, false);
+    private SearchBarDefaultsTokens _tokens = SearchBarDefaultsTokens.Default;
+    private SearchBarColors _colors = SearchBarDefaultsTokens.Default.Resolve(null, false);
 
     public MaterialSearchBar()
     {
@@ -247,7 +247,7 @@ public class MaterialSearchBar : MaterialControl
         var previousIconSize = IconSize;
         var previousSpace = IconLabelSpace;
 
-        _tokens = ResolvedTheme.SearchBarTokens;
+        _tokens = ResolvedTheme.SearchBarDefaultsTokens;
         _colors = ResolvedTheme.GetSearchBarColors(IsDarkVariant);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);

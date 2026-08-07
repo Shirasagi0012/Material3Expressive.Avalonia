@@ -1,0 +1,15 @@
+{
+  "kind": "componentTokens",
+  "name": "BottomAppBarTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "v0_210",
+  "source": "androidx compose/material3 tokens/BottomAppBarTokens.kt",
+  "summary": "Verbatim BottomAppBarTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "ContainerColor": {"type": "color", "value": "SurfaceContainer"},
+    "ContainerElevation": {"type": "elevation", "value": "@ElevationTokens.Level2"},
+    "ContainerHeight": {"type": "dimension", "value": 80},
+    "ContainerShape": {"type": "shape", "value": "CornerNone"}
+  }
+}

@@ -68,8 +68,8 @@ public class MaterialLoadingIndicator : MaterialControl
     private LoopingAnimation? _globalRotation;
     private SpringAnimation? _progress;
 
-    private LoadingIndicatorTokens _tokens = LoadingIndicatorTokens.Standard;
-    private LoadingIndicatorColors _colors = LoadingIndicatorTokens.Standard.Resolve(null, false);
+    private LoadingIndicatorDefaultsTokens _tokens = LoadingIndicatorDefaultsTokens.Standard;
+    private LoadingIndicatorColors _colors = LoadingIndicatorDefaultsTokens.Standard.Resolve(null, false);
 
     static MaterialLoadingIndicator()
     {
@@ -164,7 +164,7 @@ public class MaterialLoadingIndicator : MaterialControl
 
     protected override void OnThemeChanged(ResolvedTheme theme, bool isDark)
     {
-        _tokens = theme.GetLoadingIndicatorTokens(Variant);
+        _tokens = theme.GetLoadingIndicatorDefaultsTokens(Variant);
         _colors = theme.GetLoadingIndicatorColors(Variant, isDark);
         InvalidateMeasure();
         InvalidateVisual();

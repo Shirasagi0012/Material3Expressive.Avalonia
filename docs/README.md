@@ -13,6 +13,7 @@ traceability but are not routine implementation instructions.
 - [AndroidX Material 3 reference notes](reference/androidx-material3.md)
 - [Upstream baseline contract](reference/upstream-baselines.md)
 - [Token tables and generator](reference/token-tables.md)
+- [Token coverage and ownership inventory](reference/token-coverage.md)
 - [Alpha22 → alpha25 audit](reference/audits/alpha22-alpha25-difference-audit.md)
 
 ## Testing

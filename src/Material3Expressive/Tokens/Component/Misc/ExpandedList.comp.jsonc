@@ -1,0 +1,19 @@
+{
+  "kind": "componentTokens",
+  "name": "ExpandedListTokens",
+  "namespace": "Material3Expressive.Foundation.Tokens",
+  "version": "29.0.0",
+  "source": "androidx compose/material3 tokens/ExpandedListTokens.kt",
+  "summary": "Verbatim ExpandedListTokens transcription from the AndroidX implementation baseline.",
+  "provenance": "androidx-token",
+  "tokens": {
+    "CollapsedItemTrailingIconContainerColor": {"type": "color", "value": "Surface"},
+    "CollapsedItemTrailingIconIconColor": {"type": "color", "value": "OnSurface"},
+    "ContainerShape": {"type": "shape", "value": "CornerLarge"},
+    "ExpandedItemContainerColor": {"type": "color", "value": "Surface"},
+    "ExpandedItemSegmentedContainerColor": {"type": "color", "value": "Surface"},
+    "ExpandedItemTrailingIconContainerColor": {"type": "color", "value": "SurfaceContainer"},
+    "ExpandedItemTrailingIconIconColor": {"type": "color", "value": "OnSurface"},
+    "TrailingIconShape": {"type": "shape", "value": "CornerFull"}
+  }
+}

@@ -39,6 +39,7 @@ internal abstract class TokenTable
         Source = parsed.Source;
         Summary = parsed.Summary;
         Provenance = parsed.Provenance;
+        OverridesName = parsed.OverridesName;
     }
 
     /// <summary>The explicit root <c>kind</c> from the source file.</summary>
@@ -62,6 +63,9 @@ internal abstract class TokenTable
     public string? Summary { get; }
 
     public TokenProvenance Provenance { get; }
+
+    /// <summary>Optional compatibility name for the generated public override bag.</summary>
+    public string? OverridesName { get; }
 
     public abstract bool IsTokenSet { get; }
 

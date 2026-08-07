@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "DialogTokens",
+ "name": "DialogDefaultsTokens",
+  "overridesName": "DialogOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "DialogColors",
   "version": "v0_210",
@@ -29,21 +30,21 @@
     {
       "name": "Default",
       "values": {
-        "ContainerColor": "SurfaceContainerHigh",
+        "ContainerColor": "@DialogTokens.ContainerColor",
         "ScrimColor": "Scrim",
-        "HeadlineColor": "OnSurface",
-        "SupportingTextColor": "OnSurfaceVariant",
-        "IconColor": "Secondary",
+        "HeadlineColor": "@DialogTokens.HeadlineColor",
+        "SupportingTextColor": "@DialogTokens.SupportingTextColor",
+        "IconColor": "@DialogTokens.IconColor",
 
-        "ContainerElevation": "@ElevationTokens.Level3",
-        "ContainerShape": "CornerExtraLarge",
+        "ContainerElevation": "@DialogTokens.ContainerElevation",
+        "ContainerShape": "@DialogTokens.ContainerShape",
         "MinWidth": 280,
         "MaxWidth": 560,
         "Padding": 24,
-        "IconSize": 24,
-        "ScrimOpacity": 0.32,
-        "HeadlineTextStyle": "HeadlineSmall",
-        "SupportingTextStyle": "BodyMedium"
+        "IconSize": "@DialogTokens.IconSize",
+        "ScrimOpacity": "@ScrimTokens.ContainerOpacity",
+        "HeadlineTextStyle": "@DialogTokens.HeadlineFont",
+        "SupportingTextStyle": "@DialogTokens.SupportingTextFont"
       }
     }
   ]

@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "AppBarTokens",
+ "name": "AppBarDefaultsTokens",
+  "overridesName": "AppBarOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "AppBarColors",
   "version": "14_0_0",
@@ -32,20 +33,20 @@
     {
       "name": "Small",
       "values": {
-        "ContainerColor": "Surface",
-        "ScrolledContainerColor": "SurfaceContainer",
-        "TitleColor": "OnSurface",
-        "SubtitleColor": "OnSurfaceVariant",
-        "IconColor": "OnSurfaceVariant",
+        "ContainerColor": "@AppBarTokens.ContainerColor",
+        "ScrolledContainerColor": "@AppBarTokens.OnScrollContainerColor",
+        "TitleColor": "@AppBarTokens.TitleColor",
+        "SubtitleColor": "@AppBarTokens.SubtitleColor",
+        "IconColor": "@AppBarTokens.TrailingIconColor",
 
-        "ContainerHeight": 64,
-        "FlexibleContainerHeight": 64,
-        "FlexibleContainerHeightWithSubtitle": 64,
+        "ContainerHeight": "@AppBarSmallTokens.ContainerHeight",
+        "FlexibleContainerHeight": "@AppBarSmallTokens.ContainerHeight",
+        "FlexibleContainerHeightWithSubtitle": "@AppBarSmallTokens.ContainerHeight",
         "HorizontalSpace": 16,
-        "TitleTextStyle": "TitleLarge",
-        "SubtitleTextStyle": "LabelMedium",
-        "FlexibleTitleTextStyle": "TitleLarge",
-        "FlexibleSubtitleTextStyle": "LabelMedium",
+        "TitleTextStyle": "@AppBarSmallTokens.TitleFont",
+        "SubtitleTextStyle": "@AppBarSmallTokens.SubtitleFont",
+        "FlexibleTitleTextStyle": "@AppBarSmallTokens.TitleFont",
+        "FlexibleSubtitleTextStyle": "@AppBarSmallTokens.SubtitleFont",
         "IsStacked": false
       }
     },
@@ -53,12 +54,12 @@
       "name": "Medium",
       "extends": "Small",
       "values": {
-        "ContainerHeight": 112,
-        "TitleTextStyle": "HeadlineSmall",
-        "FlexibleContainerHeight": 112,
-        "FlexibleContainerHeightWithSubtitle": 136,
-        "FlexibleTitleTextStyle": "HeadlineMedium",
-        "FlexibleSubtitleTextStyle": "LabelLarge",
+        "ContainerHeight": "@AppBarMediumTokens.ContainerHeight",
+        "TitleTextStyle": "@AppBarMediumTokens.TitleFont",
+        "FlexibleContainerHeight": "@AppBarMediumFlexibleTokens.ContainerHeight",
+        "FlexibleContainerHeightWithSubtitle": "@AppBarMediumFlexibleTokens.LargeContainerHeight",
+        "FlexibleTitleTextStyle": "@AppBarMediumFlexibleTokens.TitleFont",
+        "FlexibleSubtitleTextStyle": "@AppBarMediumFlexibleTokens.SubtitleFont",
         "IsStacked": true
       }
     },
@@ -66,12 +67,12 @@
       "name": "Large",
       "extends": "Small",
       "values": {
-        "ContainerHeight": 152,
-        "TitleTextStyle": "HeadlineMedium",
-        "FlexibleContainerHeight": 120,
-        "FlexibleContainerHeightWithSubtitle": 152,
-        "FlexibleTitleTextStyle": "DisplaySmall",
-        "FlexibleSubtitleTextStyle": "TitleMedium",
+        "ContainerHeight": "@AppBarLargeTokens.ContainerHeight",
+        "TitleTextStyle": "@AppBarLargeTokens.TitleFont",
+        "FlexibleContainerHeight": "@AppBarLargeFlexibleTokens.ContainerHeight",
+        "FlexibleContainerHeightWithSubtitle": "@AppBarLargeFlexibleTokens.LargeContainerHeight",
+        "FlexibleTitleTextStyle": "@AppBarLargeFlexibleTokens.TitleFont",
+        "FlexibleSubtitleTextStyle": "@AppBarLargeFlexibleTokens.SubtitleFont",
         "IsStacked": true
       }
     }

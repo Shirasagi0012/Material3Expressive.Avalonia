@@ -175,8 +175,8 @@ public class MaterialAppBar : MaterialControl
         AvaloniaProperty.RegisterDirect<MaterialAppBar, FontWeight>(
             nameof(SubtitleFontWeight), owner => owner.SubtitleFontWeight);
 
-    private AppBarTokens _tokens = AppBarTokens.Small;
-    private AppBarColors _colors = AppBarTokens.Small.Resolve(null, false);
+    private AppBarDefaultsTokens _tokens = AppBarDefaultsTokens.Small;
+    private AppBarColors _colors = AppBarDefaultsTokens.Small.Resolve(null, false);
     private AppBarScrollState _state = new();
     private SpringAnimation? _motionFraction;
     private double _visualCollapsedFraction;
@@ -426,7 +426,7 @@ public class MaterialAppBar : MaterialControl
             : _tokens.ContainerHeight;
 
     private double CollapseRange =>
-        Math.Max(0, ExpandedHeight - AppBarTokens.Small.ContainerHeight);
+        Math.Max(0, ExpandedHeight - AppBarDefaultsTokens.Small.ContainerHeight);
 
     private void ObserveScrollTarget(ScrollViewer? previous, ScrollViewer? next)
     {
@@ -614,7 +614,7 @@ public class MaterialAppBar : MaterialControl
         var oldSubtitleFamily = SubtitleFontFamily;
         var oldSubtitleWeight = SubtitleFontWeight;
 
-        _tokens = ResolvedTheme.GetAppBarTokens(Size);
+        _tokens = ResolvedTheme.GetAppBarDefaultsTokens(Size);
         _colors = ResolvedTheme.GetAppBarColors(Size, IsDarkVariant);
         var typography = ResolvedTheme.Typography;
         var titleRole = Variant == AppBarVariant.Flexible

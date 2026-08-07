@@ -21,8 +21,8 @@ public class MaterialRadioButton : RadioButton
     private readonly MaterialInteractionHost _interaction;
 
     private SpringAnimation? _dot;
-    private RadioButtonTokens _tokens = RadioButtonTokens.Default;
-    private RadioButtonColors _colors = RadioButtonTokens.Default.Resolve(null, false);
+    private RadioButtonDefaultsTokens _tokens = RadioButtonDefaultsTokens.Default;
+    private RadioButtonColors _colors = RadioButtonDefaultsTokens.Default.Resolve(null, false);
 
     public MaterialRadioButton()
     {
@@ -101,7 +101,7 @@ public class MaterialRadioButton : RadioButton
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.RadioButtonTokens;
+        _tokens = _theme.Theme.RadioButtonDefaultsTokens;
         _colors = _theme.Theme.GetRadioButtonColors(_theme.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 

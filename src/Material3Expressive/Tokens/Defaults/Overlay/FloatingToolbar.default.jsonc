@@ -1,6 +1,7 @@
 {
   "kind": "componentDefaults",
-  "name": "FloatingToolbarTokens",
+ "name": "FloatingToolbarDefaultsTokens",
+  "overridesName": "FloatingToolbarOverrides",
   "namespace": "Material3Expressive.Foundation",
   "resolvedName": "FloatingToolbarColors",
   "version": "12_0_0",
@@ -30,14 +31,14 @@
     {
       "name": "Standard",
       "values": {
-        "ContainerColor": "SurfaceContainer",
+        "ContainerColor": "@FloatingToolbarTokens.StandardContainerColor",
         "ContentColor": "OnSurface",
         "FabContainerColor": "PrimaryContainer",
         "FabContentColor": "OnPrimaryContainer",
-        "ContainerSize": 64,
-        "ContentPadding": 8,
+        "ContainerSize": "@FloatingToolbarTokens.ContainerHeight",
+        "ContentPadding": "@FloatingToolbarTokens.ContainerLeadingSpace",
         "ToolbarToFabGap": 8,
-        "ScreenOffset": 16,
+        "ScreenOffset": "@FloatingToolbarTokens.ContainerExternalPadding",
         "ScrollDistanceThreshold": 40,
         "ExpandedElevation": 0,
         "CollapsedElevation": 0,
@@ -49,7 +50,7 @@
       "name": "Vibrant",
       "extends": "Standard",
       "values": {
-        "ContainerColor": "PrimaryContainer",
+        "ContainerColor": "@FloatingToolbarTokens.VibrantContainerColor",
         "ContentColor": "OnPrimaryContainer",
         "FabContainerColor": "TertiaryContainer",
         "FabContentColor": "OnTertiaryContainer"
