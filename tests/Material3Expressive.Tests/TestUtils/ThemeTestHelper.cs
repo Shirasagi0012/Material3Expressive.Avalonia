@@ -85,7 +85,10 @@ internal sealed class ThemeProbe : TemplatedControl, IMaterialThemeConsumer
         var isDark = state.IsDark;
         ObservedTheme = theme;
         ObservedIsDark = isDark;
-        ContainerBrush = theme.GetButtonColors(ButtonVariant.Filled, isDark).ContainerColor;
+        // This probe exercises the system-theme transport itself. It must not reach through a
+        // component bundle now that Button defaults are component-owned.
+        ContainerBrush = new ImmutableSolidColorBrush(
+            theme.ColorScheme?.GetColor(SysColorToken.Primary, isDark) ?? Colors.Transparent);
         ChangeCount++;
     }
 }

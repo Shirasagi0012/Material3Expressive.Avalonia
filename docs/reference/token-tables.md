@@ -1,13 +1,15 @@
 # Token tables
 
-Every token in the library is defined once, in a JSONC table under `src/Material3Expressive/Tokens/`,
-and turned into C# at build time by `Material3Expressive.TokenGenerator`. The directories mirror
-the ownership boundary: reference, system and raw component transcriptions are kept apart from
-component assembly and Avalonia overrides. Nothing about a default is written by hand three times
-— that triplication (constructor default, resolver arm, markup-extension fallback) is what this
-pipeline exists to delete. Generated component records and snapshot accessors are internal
-implementation details; public customization goes through the generated override bags and stable
-component enums.
+Raw reference, system and component facts are defined once in JSONC under
+`src/Material3Expressive/Tokens/` and turned into C# at build time by
+`Material3Expressive.TokenGenerator`. The directories keep those upstream transcriptions separate
+from the remaining legacy component-default assembly tables.
+
+The project is migrating away from generated `componentDefaults`: ordinary `Button` and
+`ToggleButton` are the first Button-family components on the new path. Their raw `.comp.jsonc`
+tables remain generated, while variant/size/state mapping, Compose corrections, Avalonia adaptation
+and template projection live in their own C# Defaults/adapters. The `.default.jsonc` tables and
+their generated snapshot/override surfaces remain only for controls not yet migrated.
 
 The filename suffix communicates the table category and determines discovery:
 
@@ -16,7 +18,7 @@ The filename suffix communicates the table category and determines discovery:
 | `.ref.jsonc` | `referenceTokens` | reference-layer primitives such as palettes |
 | `.sys.jsonc` | `systemTokens` | shared system roles and schemes |
 | `.comp.jsonc` | `componentTokens` | verbatim upstream component token tables |
-| `.default.jsonc` | `componentDefaults` | component assembly, variants and overrides |
+| `.default.jsonc` | `componentDefaults` | legacy component assembly, variants and overrides for unmigrated controls |
 
 The root `kind` remains the semantic authority; a suffix/kind mismatch is a build error
 (`M3ETOK004`). Other `AdditionalFile` names are ignored. A malformed table is a build error
@@ -41,16 +43,15 @@ value it explains.
 ## Current coverage snapshot
 
 At the frozen AndroidX baseline `ff0a0a99c4f0cfe95d75d5df615e51d399575922`, the repository contains
-103 raw component tables, 3 system tables, 35 component-defaults tables, and no duplicated
+103 raw component tables, 3 system tables, 32 legacy component-defaults tables, and no duplicated
 reference palette tables. The raw component set covers all 103 component-domain `*Tokens.kt`
 files from the 120-file AndroidX token directory. The remaining 17 names are either owned by
 `MaterialColorUtilities`, `ShapeScheme`, `MotionScheme`, or `TypographyScheme`, represented by a
 system table, or intentionally deferred because `PrimaryNavigationTabTokens` contains a custom
 3dp shape that the current raw schema cannot express faithfully.
 
-The complete file-by-file inventory, including the 27 raw tables that do not yet have a defaults
-assembly, is in [Token coverage and ownership](token-coverage.md). Keep that inventory in sync
-when the AndroidX baseline or a component's owner changes.
+The complete file-by-file inventory is in [Token coverage and ownership](token-coverage.md). Keep
+that inventory in sync when the AndroidX baseline or a component's owner changes.
 
 ## Four table categories
 
@@ -72,7 +73,7 @@ system theme layer, not authored as a component default.
 One table per upstream `*Tokens.kt` object. It becomes an `internal static class` of constants in
 `Material3Expressive.Foundation.Tokens`, carrying the upstream file and token-DB stamp in its
 header so the transcription stays checkable. Raw classes are implementation/provenance artifacts,
-not stable package API; use the component defaults, theme overrides and control properties at
+not stable package API; use the component's defaults policy and public control properties at
 runtime instead.
 
 ```json
@@ -91,20 +92,21 @@ runtime instead.
 }
 ```
 
-### `componentDefaults` — a value record plus its variants
+### `componentDefaults` — legacy generated assembly
 
 Declares a component token surface once (`properties`) and fills it once per variant (`sets`). This
-is the layer that composes transcriptions into something a control consumes. Runtime corrections,
-`extends`, variant selection, resolved brushes and sparse overrides belong here; they must not be
-copied into a raw `componentTokens` table.
+is the legacy layer that composes transcriptions into a generated control surface. It remains
+supported for unmigrated controls. New component-owned Defaults code should instead keep runtime
+corrections, variant selection, resolved brushes and Avalonia policy beside the control; none of
+that belongs in a raw `componentTokens` transcription.
 
 ```json
 {
   "kind": "componentDefaults",
-  "name": "ButtonColorTokens",
+  "name": "IconButtonColorTokens",
   "namespace": "Material3Expressive.Foundation",
-  "resolvedName": "ButtonColors",
-  "variantEnum": "ButtonVariant",
+  "resolvedName": "IconButtonColors",
+  "variantEnum": "IconButtonVariant",
 
   "properties": {
     "ContainerColor": { "type": "color", "summary": "The container fill." },
@@ -113,14 +115,19 @@ copied into a raw `componentTokens` table.
   },
 
   "sets": [
-    { "name": "Filled", "values": { "ContainerColor": "@FilledButtonTokens.ContainerColor", "…": "…" } },
-    { "name": "Tonal", "extends": "Filled", "values": { "ContainerColor": "@TonalButtonTokens.ContainerColor" } }
+    { "name": "Standard", "values": { "ContainerColor": "@IconButtonTokens.ContainerColor", "…": "…" } },
+    { "name": "Filled", "extends": "Standard", "values": { "ContainerColor": "@FilledIconButtonTokens.ContainerColor" } }
   ]
 }
 ```
 
 A set must give every property a value; `extends` inherits from a set declared above it, so a
 variant states only what it changes.
+
+Ordinary Button and ToggleButton intentionally have no corresponding generated defaults tables.
+`ButtonVariant` and `ButtonSize` are handwritten component API; `ButtonDefaults` and
+`ToggleButtonDefaults` map them directly to the raw Button tables and keep state policy in C#.
+Their generated color/size override bags have therefore been removed.
 
 The four JSON kinds are the artifact contract. Internally, the generator also records two
 orthogonal axes: `layer` (`Reference`, `System`, `Component`) and `artifact` (`Raw`, `Defaults`).
@@ -149,35 +156,26 @@ together to resolve into one brush.
 
 ## What gets generated
 
-For a component table named `ButtonColorTokens` with `variantEnum: "ButtonVariant"` and
-`resolvedName: "ButtonColors"`:
+For an **unmigrated** component-defaults table with a `variantEnum` and `resolvedName`, the
+generator still emits:
 
-- `public enum ButtonVariant` — one stable member per set.
-- `internal record ButtonColorTokens` — the token values, with a `static` property per set and
-  `For(ButtonVariant)`; this is consumed by the component adapter, not application code.
-- `internal record ButtonColors` — the colour tokens resolved to brushes for one theme variant,
-  built by `ButtonColorTokens.Resolve(scheme, isDark)`.
-- `public class ButtonColorOverrides : ComponentTokenOverrides` — a sparse authoring bag. Only the
-  tokens actually set on it replace the generated defaults, so a theme can retune one colour
-  without restating the set around it.
-- Internal accessors on the theme snapshot are intentionally implementation details; controls and
-  markup resolve through their component-owned adapter instead of coupling user code to generated
-  record types.
+- a public variant enum, one stable member per set;
+- an internal token record with a static property per set and `For(variant)`;
+- an internal resolved record for one theme variant;
+- a `ComponentTokenOverrides` subclass when the table is overridable;
+- internal accessors on the legacy component portion of `ResolvedTheme`.
 
-ToggleButton is intentionally a separate defaults table (`ToggleButtonColorTokens` with
-`ToggleButtonVariant`) and runtime adapter. Its resolved record has unchecked/checked/disabled
-content and container slots; it does not make a toggle depend on the ordinary Button resolver's
-conditional fields.
+Those are migration compatibility artifacts, not the model for new component APIs. The Button
+family prototypes instead have handwritten axis API, internal raw-table consumption, independent
+semantic records, and public Avalonia properties for visual customization. ToggleButton still has
+unchecked/checked/disabled slots and three shape states, but it now reuses `ButtonDefaults.Metrics`
+and `ButtonDefaults.Shapes` for the shared size/shape axis.
 
-Overrides ride the theme as its content:
+For an unmigrated component, its generated override bag is still added to `MaterialTheme.Components`.
+Do not use that mechanism as a Button customization API: use `Background`, `Foreground`, `Padding`,
+`BorderBrush`, `BorderThickness`, `MinHeight`, styles or a custom ControlTheme instead.
 
-```xml
-<foundation:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}">
-    <foundation:ButtonColorOverrides Variant="Filled" ContainerColor="Custom:Brand" />
-</foundation:MaterialTheme>
-```
-
-Set `"overridable": false` on a table that should not get a bag.
+Set `"overridable": false` on a legacy table that should not get a bag.
 
 ## Directory layout
 
@@ -188,15 +186,17 @@ Tokens/
   Reference/
   System/
   Component/<Domain>/
-  Defaults/<Domain>/
+  Defaults/<Domain>/        # legacy, until its component migrates
 ```
 
-The generator includes the four suffix families recursively. A component normally has at least one
-raw table in `Tokens/Component/<Domain>/` and one matching defaults table in
+The generator includes the four suffix families recursively. Every component has raw table(s) in
+`Tokens/Component/<Domain>/`; only a legacy component also has a matching defaults table under
 `Tokens/Defaults/<Domain>/`.
 
 ## Adding a component
 
-Write the raw upstream transcription and its component-defaults assembly table. There is no hand
-written accessor step — the snapshot accessors and override plumbing are emitted from the set of
-defaults tables, so `ResolvedTheme` never has to be edited.
+Write the raw upstream transcription first. Then give the control a component-owned Defaults
+adapter when it needs variant mapping, Compose corrections, theme resolution or template
+projection. Add a `.default.jsonc` assembly table only when deliberately using the remaining legacy
+generator path; it is not the target architecture and new code should not rely on generated
+component overrides or `ResolvedTheme.Components`.

@@ -3,6 +3,11 @@
 
 > Component Defaults 将 raw tokens 和 `ResolvedTheme` 解析成 semantic records；owner-local adapter 再通过 AvaloniaProperty 将这些 records 投影给 ControlTheme、template 和 presenter。
 
+> **实现状态（2026-08）**：普通 `Button` 与紧密相关的 `ToggleButton` 已落地为两个原型。
+> 两者的旧 Button-family defaults、markup extension 和对应的 `ResolvedTheme` component
+> snapshot 依赖均已移除；ToggleButton 仍保留独立的 checked/unchecked 语义记录，而不是
+> 复用普通 Button 的颜色 aggregate。其他控件仍在旧路径上，这不是全局迁移声明。
+
 
 ```mermaid
 flowchart LR
@@ -42,9 +47,7 @@ internal static class ButtonDefaults
 
     public static ButtonMetrics Metrics(ButtonSize size);
 
-    public static ButtonShapes Shapes(
-        ResolvedTheme theme,
-        ButtonSize size);
+    public static ButtonShapes Shapes(ButtonSize size);
 
     public static ButtonElevation Elevation(
         ButtonVariant variant);
@@ -52,8 +55,9 @@ internal static class ButtonDefaults
     public static SpringSpec ShapeMotion(
         ResolvedTheme theme);
 
-    public static bool HasOutline(
-        ButtonVariant variant);
+    public static Thickness OutlineThickness(
+        ButtonVariant variant,
+        ButtonSize size);
 }
 ```
 
@@ -73,7 +77,7 @@ internal static class ButtonDefaults
 
 ```text
 ButtonDefaultsAdapter
-IconButtonDefaultsAdapter
+ToggleButtonDefaultsAdapter
 SwitchDefaultsAdapter
 ```
 
@@ -103,7 +107,7 @@ private void Refresh()
     ButtonAssist.SetDefaultMetrics(_owner, metrics);
     ButtonAssist.SetDefaultShapes(
         _owner,
-        ButtonDefaults.Shapes(theme, size));
+        ButtonDefaults.Shapes(size));
     ButtonAssist.SetDefaultElevation(
         _owner,
         ButtonDefaults.Elevation(variant));
@@ -113,10 +117,7 @@ private void Refresh()
 
     ButtonAssist.SetDefaultOutlineThickness(
         _owner,
-        new Thickness(
-            ButtonDefaults.HasOutline(variant)
-                ? metrics.OutlineWidth
-                : 0));
+        ButtonDefaults.OutlineThickness(variant, size));
 }
 ```
 
@@ -127,32 +128,35 @@ Adapter 只发布 default outputs，不直接修改 `Background`、`Padding` 等
 对于需要支持原生 Avalonia `Button` 的组件，使用 `ButtonAssist` attached properties：
 
 ```csharp
-internal static readonly AttachedProperty<ButtonColors>
+public static readonly AttachedProperty<ButtonColors>
     DefaultColorsProperty;
 
-internal static readonly AttachedProperty<ButtonMetrics>
+public static readonly AttachedProperty<ButtonMetrics>
     DefaultMetricsProperty;
 
-internal static readonly AttachedProperty<ButtonShapes>
+public static readonly AttachedProperty<ButtonShapes>
     DefaultShapesProperty;
 
-internal static readonly AttachedProperty<ButtonElevation>
+public static readonly AttachedProperty<ButtonElevation>
     DefaultElevationProperty;
 
-internal static readonly AttachedProperty<SpringSpec>
+public static readonly AttachedProperty<SpringSpec>
     DefaultShapeMotionProperty;
 
-internal static readonly AttachedProperty<Thickness>
+public static readonly AttachedProperty<Thickness>
     DefaultOutlineThicknessProperty;
 ```
 
 这些 properties：
 
-- 是只读 default outputs；
-- 由 adapter 写入；
-- 不属于公共 override API；
+- 是 library-owned default outputs，由 adapter 的 internal 写入路径维护；
+- 不属于受支持的公共 override API；
 - 不重复 Colors、Metrics 等字段；
 - 可以被普通 Avalonia binding 观察。
+
+编译后的 library AXAML 需要能访问 attached-property field，因此 field 本身必须是 `public`。
+它们以 `EditorBrowsable(Never)` 隐藏，读写辅助方法保持 `internal`；这里的 `public` 是
+AXAML metadata contract，不能被解读为通用 token override surface。
 
 对于 `MaterialFab` 等自有控件，也可以使用 DirectProperty 暴露同类输出，不一定需要 attached property。
 
@@ -299,21 +303,33 @@ local value
 Default properties 和公共 override properties 是两套不同角色：
 
 ```text
-DefaultColors       internal resolved fallback
+DefaultColors       library-owned resolved fallback
 Background          public effective property
 ColorsOverride      optional public semantic override
 ```
 
 Adapter 不能把 default 写成公共属性的 local value，否则会破坏 Avalonia 的样式优先级。
 
-## 9. 最终删除的旧机制
+## 9. Button family 原型的迁移结果与全局目标
 
-目标架构不再需要：
+普通 Button 与 ToggleButton 已删除：
 
 ```text
 MdButtonTokenExtension
 ButtonToken enum
 ButtonTokenResolver
+MdToggleButtonTokenExtension
+ToggleButtonToken enum
+ToggleButtonTokenResolver
+```
+
+这两个控件也不再读取 `ResolvedTheme.Components` 或生成的 Button-family override bags。
+ToggleButton 的颜色状态仍由自己的 `ToggleButtonDefaults` 解析；IconButton 和其他未迁移控件
+仍会使用各自的 defaults table、markup extension 和 component snapshot 路径。
+
+全局迁移完成后，目标架构不再需要：
+
+```text
 component-specific ThemeBinding/MultiBinding
 TemplateSettings aggregate
 generated component overrides
@@ -339,4 +355,6 @@ Presenter
     结合 interaction 和 geometry 计算运行时展示
 ```
 
-仍需通过 Button 原型验证两点：ControlTheme 内 attached semantic property 的具体 binding 语法，以及 app Style 相对 library ControlTheme binding 的实际覆盖优先级。
+Button 原型已验证两点：ControlTheme 内 attached semantic property 的 self binding 可以工作，
+且 app `Style`/local value 会持续覆盖 library ControlTheme 的 defaults projection。当前环境
+不能运行 visual-parity suite，因此这一原型没有视觉 parity 结论。

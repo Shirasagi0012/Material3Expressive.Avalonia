@@ -25,6 +25,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
         ShapeRole.CornerFull,
         ShapeRole.CornerSmall,
         ShapeRole.CornerSmall);
+    private SpringSpec _shapeMotion = ToggleButtonDefaults.ShapeMotion(ResolvedTheme.Default);
     private CornerRadius _currentCornerRadius;
 
     public MaterialToggleButtonContainerPresenter()
@@ -100,12 +101,12 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     }
 
     private AnimatedShape Shape => _shape ??= _interaction!.CreateAnimatedShape(
-        RestingShape(), _theme.Spring(MotionRole.DefaultEffects));
+        RestingShape(), _shapeMotion);
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == ButtonAssist.VariantProperty
-            || change.Property == ButtonAssist.SizeProperty)
+        if (change.Property == ToggleButtonAssist.DefaultShapesProperty
+            || change.Property == ToggleButtonAssist.DefaultShapeMotionProperty)
             ApplyTokens(snapShape: true);
         else if (change.Property == ToggleButton.IsCheckedProperty
                  || change.Property == ButtonAssist.IsSquareProperty)
@@ -130,7 +131,11 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     {
         if (_owner is not { } owner)
             return;
-        _shapes = ToggleButtonDefaults.Shapes(_theme.Theme, ButtonAssist.GetSize(owner));
+        _shapes = ToggleButtonAssist.GetDefaultShapes(owner)
+                  ?? ToggleButtonDefaults.Shapes(ButtonAssist.GetSize(owner));
+        _shapeMotion = ToggleButtonAssist.GetDefaultShapeMotion(owner);
+        if (_shapeMotion.Stiffness <= 0)
+            _shapeMotion = ToggleButtonDefaults.ShapeMotion(_theme.Theme);
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -141,13 +146,13 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
             return;
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Theme.Shapes.Get(_shapes.PressedShape)
+            ? _theme.Theme.Shapes.Get(_shapes.Pressed)
             : RestingShape();
         if (snap && !shape.IsRunning)
             shape.SnapTo(target);
         else
         {
-            shape.AnimateTo(target, _theme.Spring(MotionRole.DefaultEffects));
+            shape.AnimateTo(target, _shapeMotion);
             _interaction.Motion.Start();
         }
         UpdateCurrentCornerRadius();
@@ -157,14 +162,14 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return _theme.Theme.Shapes.Get(_shapes.UncheckedShape);
+            return _theme.Theme.Shapes.Get(_shapes.Unchecked);
         if (ButtonAssist.GetContainerShapeOverride(owner) is { } shape)
             return shape;
 
         var selected = owner.IsChecked == true;
         var round = ButtonAssist.GetIsSquare(owner) == selected;
         return _theme.Theme.Shapes.Get(
-            round ? _shapes.UncheckedShape : _shapes.CheckedShape);
+            round ? _shapes.Unchecked : _shapes.Checked);
     }
 
     private void UpdateCurrentCornerRadius()

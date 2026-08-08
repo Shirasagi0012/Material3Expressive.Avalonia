@@ -10,7 +10,7 @@ using PropertyGenerator.Avalonia;
 namespace Material3Expressive.Foundation;
 
 /// <summary>
-/// A whole Material theme: colour, typography, shape, motion and component token overrides.
+/// A whole Material theme: colour, typography, shape, motion and legacy component token overrides.
 /// </summary>
 /// <remarks>
 /// This is the authoring surface — mutable and bindable, so a scheme's seed colour can be a
@@ -50,8 +50,9 @@ public partial class MaterialTheme : AvaloniaObject
     [GeneratedStyledProperty] public partial RippleThemeConfiguration RippleTheme { get; set; }
 
     /// <summary>
-    /// Per-component token overrides, layered onto the generated defaults when the snapshot is
-    /// built. This is the theme's content property, so the bags nest directly inside it in XAML.
+    /// Legacy per-component token overrides, layered onto generated defaults when the snapshot is
+    /// built. This content property remains while controls migrate to component-owned Defaults;
+    /// the Button family deliberately does not consume it.
     /// </summary>
     [Content]
     public AvaloniaList<ComponentTokenOverrides> Components { get; } = new();

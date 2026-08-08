@@ -69,9 +69,9 @@ public class ButtonTests
 
         ButtonAssist.SetSize(button, size);
 
-        var metrics = ButtonSizeTokens.For(size);
+        var metrics = ButtonDefaults.Metrics(size);
         Assert.Equal(metrics.ContainerHeight, button.MinHeight);
-        Assert.Equal(metrics.LeadingSpace, button.Padding.Left);
+        Assert.Equal(metrics.ContentPadding.Left, button.Padding.Left);
         Assert.Equal(expectedTextStyle, TypographyScheme.GetTextStyle(button));
         Assert.Equal(expectedFontSize, button.FontSize);
     }
@@ -236,17 +236,64 @@ public class ButtonTests
     }
 
     [AvaloniaFact]
+    public void DefaultsAdapter_PublishesSemanticProfilesAndRefreshesAxes()
+    {
+        var button = new Button { Content = "Press" };
+        ThemeTestHelper.ShowWindow(button);
+
+        var initialColors = Assert.IsType<ButtonColors>(ButtonAssist.GetDefaultColors(button));
+        var initialMetrics = Assert.IsType<ButtonMetrics>(ButtonAssist.GetDefaultMetrics(button));
+        Assert.Equal(ButtonSmallTokens.ContainerHeight, initialMetrics.ContainerHeight);
+        Assert.Equal(
+            ResolvedTheme.Default.ColorScheme!.GetColor(SysColorToken.Primary, isDark: false),
+            ThemeTestHelper.ColorOf(initialColors.Container));
+
+        ButtonAssist.SetVariant(button, ButtonVariant.Outlined);
+        ButtonAssist.SetSize(button, ButtonSize.Large);
+
+        var outlined = Assert.IsType<ButtonColors>(ButtonAssist.GetDefaultColors(button));
+        var large = Assert.IsType<ButtonMetrics>(ButtonAssist.GetDefaultMetrics(button));
+        Assert.Equal(0, ThemeTestHelper.ColorOf(outlined.Container).A);
+        Assert.Equal(ButtonLargeTokens.ContainerHeight, large.ContainerHeight);
+        Assert.Equal(new Thickness(ButtonLargeTokens.OutlinedOutlineWidth), button.BorderThickness);
+    }
+
+    [AvaloniaFact]
+    public void ApplicationStyle_OverridesTheLibraryDefaultsProjection()
+    {
+        var style = new Style(selector => selector.Is<Button>());
+        style.Add(new Setter(Button.BackgroundProperty, Brushes.HotPink));
+        Application.Current!.Styles.Add(style);
+
+        try
+        {
+            var button = new Button { Content = "Press" };
+            ThemeTestHelper.ShowWindow(button);
+
+            Assert.Same(Brushes.HotPink, button.Background);
+
+            ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
+            Assert.Same(Brushes.HotPink, button.Background);
+        }
+        finally
+        {
+            Application.Current!.Styles.Remove(style);
+        }
+    }
+
+    [AvaloniaFact]
     public void TextAndOutlinedVariants_HaveExpectedContainerContracts()
     {
-        var filled = ButtonColorTokens.For(ButtonVariant.Filled);
-        var outlined = ButtonColorTokens.For(ButtonVariant.Outlined);
-        var text = ButtonColorTokens.For(ButtonVariant.Text);
+        var theme = ResolvedTheme.Default;
+        var filled = ButtonDefaults.Colors(theme, ButtonVariant.Filled, isDark: false);
+        var outlined = ButtonDefaults.Colors(theme, ButtonVariant.Outlined, isDark: false);
+        var text = ButtonDefaults.Colors(theme, ButtonVariant.Text, isDark: false);
 
-        Assert.False(filled.ContainerColor.IsLiteral);
-        Assert.Equal(0, outlined.ContainerColor.LiteralColor!.Value.A);
-        Assert.Equal(0, text.ContainerColor.LiteralColor!.Value.A);
-        Assert.True(outlined.HasOutline);
-        Assert.False(text.HasOutline);
+        Assert.NotEqual(0, ThemeTestHelper.ColorOf(filled.Container).A);
+        Assert.Equal(0, ThemeTestHelper.ColorOf(outlined.Container).A);
+        Assert.Equal(0, ThemeTestHelper.ColorOf(text.Container).A);
+        Assert.Equal(new Thickness(1), ButtonDefaults.OutlineThickness(ButtonVariant.Outlined, ButtonSize.Small));
+        Assert.Equal(new Thickness(0), ButtonDefaults.OutlineThickness(ButtonVariant.Text, ButtonSize.Small));
     }
 
     private static MaterialButtonContainerPresenter PresenterOf(Button button) =>

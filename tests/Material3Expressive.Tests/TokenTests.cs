@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using MaterialColorUtilities.Avalonia.Tokens;
@@ -225,31 +226,34 @@ public class ThemeSnapshotTests
     }
 
     [Fact]
-    public void ButtonColorBundles_AreMemoizedPerVariantAndThemeVariant()
+    public void ButtonDefaults_AreResolvedOutsideTheSystemThemeSnapshot()
     {
         var theme = new MaterialTheme();
         var snapshot = theme.Resolved;
+        var first = ButtonDefaults.Colors(snapshot, ButtonVariant.Filled, isDark: false);
+        var repeated = ButtonDefaults.Colors(snapshot, ButtonVariant.Filled, isDark: false);
+        var dark = ButtonDefaults.Colors(snapshot, ButtonVariant.Filled, isDark: true);
+        var tonal = ButtonDefaults.Colors(snapshot, ButtonVariant.Tonal, isDark: false);
 
-        Assert.Same(
-            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false),
-            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false));
+        // Component results are not fields of ResolvedTheme and no snapshot-level cache is part
+        // of its semantics. ButtonDefaults is a pure component policy function.
         Assert.NotSame(
-            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false),
-            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: true));
+            first,
+            repeated);
         Assert.NotSame(
-            snapshot.GetButtonColors(ButtonVariant.Filled, isDark: false),
-            snapshot.GetButtonColors(ButtonVariant.Tonal, isDark: false));
+            first,
+            dark);
+        Assert.NotSame(first, tonal);
     }
 
     [Fact]
     public void DisabledColors_CarryTheirTokenOpacity()
     {
         var theme = new MaterialTheme();
-        var tokens = theme.Resolved.GetButtonColorTokens(ButtonVariant.Filled);
-        var colors = theme.Resolved.GetButtonColors(ButtonVariant.Filled, isDark: false);
+        var colors = ButtonDefaults.Colors(theme.Resolved, ButtonVariant.Filled, isDark: false);
 
         Assert.Equal(
-            (byte)Math.Round(255 * tokens.DisabledContainerOpacity),
-            ((ISolidColorBrush)colors.DisabledContainerColor).Color.A);
+            (byte)Math.Round(255 * FilledButtonTokens.DisabledContainerOpacity),
+            ((ISolidColorBrush)colors.DisabledContainer).Color.A);
     }
 }

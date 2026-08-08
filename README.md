@@ -556,28 +556,39 @@ width), the theme's `Secondary` and `OnSecondary` colours, and the current motio
 `FastSpatial`/`FastEffects` springs. Set `FocusIndication="Opacity"` on
 `RippleThemeConfiguration` when compatibility with the older focus state layer is required.
 
-## Retuning a token
+## Retuning Button appearance
 
-Overrides ride the theme as its content and are sparse: only what they name replaces the generated
-default.
+The ordinary Button and ToggleButton are the first components on the component-owned defaults path.
+They deliberately do not expose generated Button-family override bags: use normal Avalonia
+properties, styles and control themes instead. For a checked-state visual override, add a
+pseudo-class style (for example `ToggleButton:checked`) alongside the base style.
 
 ```xml
-<foundation:MaterialTheme>
-    <foundation:ButtonColorOverrides Variant="Filled" ContainerColor="Custom:Brand" />
-    <foundation:ButtonSizeOverrides Variant="Small" ContainerHeight="48" />
-</foundation:MaterialTheme>
+<Border>
+    <Border.Styles>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#006E1C" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="20,10" />
+        </Style>
+    </Border.Styles>
+    <Button Content="Save" />
+</Border>
 ```
+
+Generated override bags remain temporarily for controls that still use the legacy
+`.default.jsonc` path. They are not part of Button's API and will be retired component by
+component rather than preserved as a new generic override mechanism.
 
 ## How it is built
 
-Every token in the library is defined once, in a JSONC table under
-[`src/Material3Expressive/Tokens`](src/Material3Expressive/Tokens), and turned into C# at build
-time. The `.ref.jsonc`, `.sys.jsonc`, `.comp.jsonc` and `.default.jsonc` suffixes identify the
-reference, system, raw component and component-default layers respectively. Raw
-reference/system/component values are kept separate from component assembly and override tables;
-the value record, variant enum, override bag and theme accessors are still generated. Component
-records and snapshot accessors are internal; public retuning uses the generated override bags and
-stable enums. See
+Raw reference, system and component tokens are defined in JSONC tables under
+[`src/Material3Expressive/Tokens`](src/Material3Expressive/Tokens) and turned into C# at build
+time. The `.ref.jsonc`, `.sys.jsonc` and `.comp.jsonc` suffixes identify the reference, system
+and raw component layers. `.default.jsonc` remains a legacy assembly/override artifact for
+unmigrated controls; the Button family instead maps raw tables in its own Defaults code. Raw token
+records and legacy snapshot accessors are internal. Public Button-family retuning uses Avalonia
+properties and styles. See
 [docs/reference/token-tables.md](docs/reference/token-tables.md) and the
 [token coverage inventory](docs/reference/token-coverage.md).
 

@@ -5,8 +5,8 @@ using MaterialColorUtilities.Avalonia.Tokens;
 namespace Material3Expressive.Foundation;
 
 /// <summary>
-/// The immutable form of a <see cref="MaterialTheme" />: what actually travels down the tree and
-/// what every consumer reads.
+/// The immutable form of a <see cref="MaterialTheme" />: the system snapshot that travels down the
+/// tree, plus legacy component projections for controls not yet migrated.
 /// </summary>
 /// <remarks>
 /// A snapshot is rebuilt whenever the authoring theme changes, so it never needs invalidating —
@@ -15,10 +15,11 @@ namespace Material3Expressive.Foundation;
 /// variant instead, mirroring the per-theme-instance default bundles upstream keeps as ~60 fields
 /// on <c>ColorScheme</c>.
 /// <para>
-/// The component token half of this class is generated from the defaults tables under
-/// <c>Tokens/Defaults/</c> (with raw values under <c>Tokens/</c>) — see
-/// <c>ResolvedTheme.Components.g.cs</c> — so adding a component domain costs no hand-written
-/// accessor edit here. System schemes, including typography, resolve through their owning scheme.
+/// The legacy component-token half of this class is generated from the remaining defaults tables
+/// under <c>Tokens/Defaults/</c> (with raw values under <c>Tokens/</c>) — see
+/// <c>ResolvedTheme.Components.g.cs</c>. Components on the new ownership model, such as ordinary
+/// Button family controls read only the system schemes and map their raw tables in component code.
+/// System schemes, including typography, resolve through their owning scheme.
 /// </para>
 /// </remarks>
 public sealed partial class ResolvedTheme

@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using MaterialColorUtilities.Avalonia.Tokens;
@@ -6,10 +7,7 @@ using Xunit;
 
 namespace Material3Expressive.Tests;
 
-/// <summary>
-/// The Phase 2 exit criterion: a component token domain is one table entry and no hand-written
-/// plumbing. These tests pin the behaviour that plumbing used to provide.
-/// </summary>
+/// <summary>Contracts for raw token transcription and component-owned defaults assembly.</summary>
 public class GeneratedTokenTests
 {
     [Fact]
@@ -26,135 +24,72 @@ public class GeneratedTokenTests
     }
 
     [Fact]
-    public void ComponentSets_ReferenceTokenSetsRatherThanRestatingThem()
+    public void ButtonDefaults_AssemblesMetricsFromRawSizeTables()
     {
-        // The value has one definition. If the table stopped referencing the transcription, these
-        // would drift apart exactly the way the hand-written defaults used to.
-        Assert.Equal(ButtonSmallTokens.ContainerHeight, ButtonSizeTokens.Small.ContainerHeight);
-        Assert.Equal(ButtonSmallTokens.IconSize, ButtonSizeTokens.Small.IconSize);
-        Assert.Equal(FilledButtonTokens.ContainerColor, ButtonColorTokens.Filled.ContainerColor);
+        var small = ButtonDefaults.Metrics(ButtonSize.Small);
+        var large = ButtonDefaults.Metrics(ButtonSize.Large);
+
+        Assert.Equal(ButtonSmallTokens.ContainerHeight, small.ContainerHeight);
+        Assert.Equal(ButtonSmallTokens.IconSize, small.IconSize);
+        Assert.Equal(new Avalonia.Thickness(16, 10), small.ContentPadding);
+        Assert.Equal(ButtonLargeTokens.ContainerHeight, large.ContainerHeight);
+        Assert.Equal(TypographyRole.HeadlineSmall, large.LabelTextStyle);
     }
 
     [Fact]
-    public void EachVariant_CarriesItsOwnColours()
+    public void ButtonDefaults_AssemblesVariantPolicyFromRawColourTables()
     {
-        Assert.Equal(SysColorToken.Primary, ButtonColorTokens.Filled.ContainerColor.RoleToken);
-        Assert.Equal(SysColorToken.SecondaryContainer, ButtonColorTokens.Tonal.ContainerColor.RoleToken);
-        Assert.Equal(SysColorToken.SurfaceContainerLow, ButtonColorTokens.Elevated.ContainerColor.RoleToken);
-
-        // Outlined and text have no container of their own.
-        Assert.True(ButtonColorTokens.Outlined.ContainerColor.IsLiteral);
-        Assert.Equal(0, ButtonColorTokens.Outlined.ContainerColor.LiteralColor!.Value.A);
-        Assert.True(ButtonColorTokens.Text.ContainerColor.IsLiteral);
-
-        Assert.True(ButtonColorTokens.Outlined.HasOutline);
-        Assert.False(ButtonColorTokens.Text.HasOutline);
-        Assert.False(ButtonColorTokens.Filled.HasOutline);
-    }
-
-    [Fact]
-    public void ToggleDefaults_HaveTheirOwnStateContractAndVariantEnum()
-    {
-        Assert.Equal(
-            SysColorToken.OnSecondaryContainer,
-            ToggleButtonColorTokens.Tonal.UncheckedContentColor.RoleToken);
-        Assert.Equal(
-            SysColorToken.OnSecondary,
-            ToggleButtonColorTokens.Tonal.CheckedContentColor.RoleToken);
-        Assert.True(ToggleButtonColorTokens.Outlined.HasOutline);
-        Assert.Same(
-            ToggleButtonColorTokens.Elevated,
-            ToggleButtonColorTokens.For(ToggleButtonVariant.Elevated));
-    }
-
-    [Fact]
-    public void ExtendedSets_InheritWhatTheyDoNotRestate()
-    {
-        // Tonal extends Filled and says nothing about the outline, so it keeps Filled's.
-        Assert.Equal(ButtonColorTokens.Filled.OutlineColor, ButtonColorTokens.Tonal.OutlineColor);
-        Assert.Equal(ButtonColorTokens.Filled.DisabledLabelTextOpacity, ButtonColorTokens.Tonal.DisabledLabelTextOpacity);
-    }
-
-    [Fact]
-    public void For_SelectsTheSetNamedByTheVariant()
-    {
-        Assert.Same(ButtonColorTokens.Elevated, ButtonColorTokens.For(ButtonVariant.Elevated));
-        Assert.Same(ButtonSizeTokens.Large, ButtonSizeTokens.For(ButtonSize.Large));
-    }
-
-    [Fact]
-    public void ASparseOverride_ReplacesOnlyWhatItSets()
-    {
-        var theme = new MaterialTheme();
-        theme.Components.Add(new ButtonColorOverrides
-        {
-            Variant = ButtonVariant.Filled,
-            ContainerColor = Colors.Fuchsia
-        });
-
-        var tokens = theme.Resolved.GetButtonColorTokens(ButtonVariant.Filled);
-
-        Assert.Equal(Colors.Fuchsia, tokens.ContainerColor.LiteralColor);
-        Assert.Equal(ButtonColorTokens.Filled.LabelTextColor, tokens.LabelTextColor);
-        Assert.Equal(ButtonColorTokens.Filled.DisabledContainerOpacity, tokens.DisabledContainerOpacity);
-    }
-
-    [Fact]
-    public void AnOverride_LeavesTheOtherVariantsAlone()
-    {
-        var theme = new MaterialTheme();
-        theme.Components.Add(new ButtonColorOverrides
-        {
-            Variant = ButtonVariant.Tonal,
-            ContainerColor = Colors.Fuchsia
-        });
+        var theme = ResolvedTheme.Default;
+        var filled = ButtonDefaults.Colors(theme, ButtonVariant.Filled, isDark: false);
+        var tonal = ButtonDefaults.Colors(theme, ButtonVariant.Tonal, isDark: false);
+        var outlined = ButtonDefaults.Colors(theme, ButtonVariant.Outlined, isDark: false);
+        var text = ButtonDefaults.Colors(theme, ButtonVariant.Text, isDark: false);
 
         Assert.Equal(
-            ButtonColorTokens.Filled.ContainerColor,
-            theme.Resolved.GetButtonColorTokens(ButtonVariant.Filled).ContainerColor);
+            theme.ColorScheme!.GetColor(SysColorToken.Primary, isDark: false),
+            ((ISolidColorBrush)filled.Container).Color);
         Assert.Equal(
-            Colors.Fuchsia,
-            theme.Resolved.GetButtonColorTokens(ButtonVariant.Tonal).ContainerColor.LiteralColor);
+            theme.ColorScheme.GetColor(SysColorToken.SecondaryContainer, isDark: false),
+            ((ISolidColorBrush)tonal.Container).Color);
+        Assert.Equal(0, ((ISolidColorBrush)outlined.Container).Color.A);
+        Assert.Equal(0, ((ISolidColorBrush)text.Container).Color.A);
+        Assert.Equal(
+            theme.ColorScheme.GetColor(SysColorToken.OutlineVariant, isDark: false),
+            ((ISolidColorBrush)outlined.Outline).Color);
     }
 
     [Fact]
-    public void OverridingAComponent_RebuildsTheSnapshot()
+    public void ButtonDefaults_KeepComposeCorrectionsInComponentCode()
     {
-        var theme = new MaterialTheme();
-        var before = theme.Resolved;
+        var extraSmall = ButtonDefaults.Metrics(ButtonSize.ExtraSmall);
+        var small = ButtonDefaults.Metrics(ButtonSize.Small);
 
-        theme.Components.Add(new ButtonSizeOverrides { Variant = ButtonSize.Small, ContainerHeight = 48 });
-
-        Assert.NotSame(before, theme.Resolved);
-        Assert.Equal(48, theme.Resolved.GetButtonSizeTokens(ButtonSize.Small).ContainerHeight);
+        // The raw XSmall table says 16dp; Compose ButtonDefaults corrects the shipped horizontal
+        // padding to 12dp. Small's vertical padding is likewise Avalonia's coarse-pointer choice.
+        Assert.Equal(new Avalonia.Thickness(12, 6), extraSmall.ContentPadding);
+        Assert.Equal(new Avalonia.Thickness(16, 10), small.ContentPadding);
+        Assert.Equal(new Avalonia.Thickness(0), ButtonDefaults.OutlineThickness(ButtonVariant.Text, ButtonSize.Small));
+        Assert.Equal(
+            new Avalonia.Thickness(ButtonLargeTokens.OutlinedOutlineWidth),
+            ButtonDefaults.OutlineThickness(ButtonVariant.Outlined, ButtonSize.Large));
     }
 
     [Fact]
-    public void EditingAnOverrideInPlace_RebuildsTheSnapshot()
+    public void ToggleButtonDefaults_AssembleTheirOwnStateContractFromRawButtonTables()
     {
-        var theme = new MaterialTheme();
-        var overrides = new ButtonSizeOverrides { Variant = ButtonSize.Medium };
-        theme.Components.Add(overrides);
+        var theme = ResolvedTheme.Default;
+        var tonal = ToggleButtonDefaults.Colors(theme, ButtonVariant.Tonal, isDark: false);
+        var outlined = ToggleButtonDefaults.Colors(theme, ButtonVariant.Outlined, isDark: false);
 
-        var before = theme.Resolved;
-        overrides.ContainerHeight = 64;
-
-        Assert.NotSame(before, theme.Resolved);
-        Assert.Equal(64, theme.Resolved.GetButtonSizeTokens(ButtonSize.Medium).ContainerHeight);
-    }
-
-    [Fact]
-    public void OverriddenColours_ResolveThroughTheMemoisedAccessor()
-    {
-        var theme = new MaterialTheme();
-        theme.Components.Add(new ButtonColorOverrides
-        {
-            Variant = ButtonVariant.Filled,
-            ContainerColor = Colors.Fuchsia
-        });
-
-        var colors = theme.Resolved.GetButtonColors(ButtonVariant.Filled, isDark: false);
-
-        Assert.Equal(Colors.Fuchsia, ((ISolidColorBrush)colors.ContainerColor).Color);
+        Assert.Equal(
+            theme.ColorScheme!.GetColor(SysColorToken.OnSecondaryContainer, isDark: false),
+            ((ISolidColorBrush)tonal.UncheckedContent).Color);
+        Assert.Equal(
+            theme.ColorScheme.GetColor(SysColorToken.OnSecondary, isDark: false),
+            ((ISolidColorBrush)tonal.CheckedContent).Color);
+        Assert.True(outlined.HasOutline);
+        Assert.Equal(
+            theme.ColorScheme.GetColor(SysColorToken.InverseOnSurface, isDark: false),
+            ((ISolidColorBrush)outlined.CheckedContent).Color);
     }
 }

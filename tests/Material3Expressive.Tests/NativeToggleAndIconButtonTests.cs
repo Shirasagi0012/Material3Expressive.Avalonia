@@ -43,6 +43,74 @@ public class NativeToggleAndIconButtonTests
     }
 
     [AvaloniaFact]
+    public void ToggleDefaultsAdapter_ProjectsCheckedStateAndIndependentSemanticProfiles()
+    {
+        var toggle = new ToggleButton { Content = "Toggle" };
+        ThemeTestHelper.ShowWindow(toggle);
+
+        var colors = Assert.IsType<ToggleButtonColors>(ToggleButtonAssist.GetDefaultColors(toggle));
+        var metrics = Assert.IsType<ToggleButtonMetrics>(ToggleButtonAssist.GetDefaultMetrics(toggle));
+
+        Assert.Equal(ButtonSize.Small, ButtonAssist.GetSize(toggle));
+        Assert.Equal(40, metrics.ContainerHeight);
+        Assert.Equal(48, metrics.ToggleContainerHeight);
+        Assert.Same(colors.UncheckedContent, ToggleButtonAssist.GetDefaultStateLayerBrush(toggle));
+
+        ButtonAssist.SetVariant(toggle, ButtonVariant.Outlined);
+        Assert.Equal(new Thickness(1), ToggleButtonAssist.GetDefaultOutlineThickness(toggle));
+
+        toggle.IsChecked = true;
+
+        var checkedColors = Assert.IsType<ToggleButtonColors>(ToggleButtonAssist.GetDefaultColors(toggle));
+        Assert.Same(checkedColors.CheckedContent, ToggleButtonAssist.GetDefaultStateLayerBrush(toggle));
+        Assert.Equal(new Thickness(0), ToggleButtonAssist.GetDefaultOutlineThickness(toggle));
+    }
+
+    [AvaloniaFact]
+    public void ToggleDefaultsAdapter_ClearsItsProjectionWhenTheMaterialMarkerIsRemoved()
+    {
+        var toggle = new ToggleButton { Content = "Toggle" };
+        ThemeTestHelper.ShowWindow(toggle);
+
+        Assert.NotNull(ToggleButtonAssist.GetDefaultColors(toggle));
+
+        toggle.SetValue(ToggleButtonAssist.UseMaterialDefaultsProperty, false);
+
+        Assert.Null(ToggleButtonAssist.GetDefaultColors(toggle));
+        Assert.Null(ToggleButtonAssist.GetDefaultMetrics(toggle));
+        Assert.Null(ToggleButtonAssist.GetDefaultShapes(toggle));
+    }
+
+    [AvaloniaFact]
+    public void ToggleApplicationStyle_OverridesTheLibraryDefaultsProjection()
+    {
+        var style = new Style(selector => selector.Is<ToggleButton>());
+        style.Add(new Setter(ToggleButton.BackgroundProperty, Brushes.HotPink));
+        var checkedStyle = new Style(selector => selector.Is<ToggleButton>().Class(":checked"));
+        checkedStyle.Add(new Setter(ToggleButton.BackgroundProperty, Brushes.LimeGreen));
+        Application.Current!.Styles.Add(style);
+        Application.Current.Styles.Add(checkedStyle);
+
+        try
+        {
+            var toggle = new ToggleButton { Content = "Toggle" };
+            ThemeTestHelper.ShowWindow(toggle);
+
+            Assert.Same(Brushes.HotPink, toggle.Background);
+
+            ButtonAssist.SetVariant(toggle, ButtonVariant.Tonal);
+            toggle.IsChecked = true;
+
+            Assert.Same(Brushes.LimeGreen, toggle.Background);
+        }
+        finally
+        {
+            Application.Current!.Styles.Remove(checkedStyle);
+            Application.Current!.Styles.Remove(style);
+        }
+    }
+
+    [AvaloniaFact]
     public void NativeIconButton_UsesAnExplicitThemeAndLiveSizingAxes()
     {
         var button = new Button

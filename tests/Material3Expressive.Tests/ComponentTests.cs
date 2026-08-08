@@ -106,19 +106,26 @@ public class ToggleTests
     [AvaloniaFact]
     public void EveryButtonVariant_DefinesItsToggleColours()
     {
+        var theme = ResolvedTheme.Default;
         foreach (var variant in System.Enum.GetValues<ButtonVariant>())
         {
-            var tokens = ButtonColorTokens.For(variant);
+            var colors = ToggleButtonDefaults.Colors(theme, variant, isDark: false);
 
-            // The Filled and Tonal families select towards their own container; nothing should
-            // have silently inherited another variant's toggle colours.
-            Assert.NotEqual(default, tokens.SelectedLabelTextColor);
-            Assert.NotEqual(default, tokens.UnselectedLabelTextColor);
+            // ToggleButton has a checked/unchecked contract of its own; it does not inherit
+            // Button's ordinary enabled colours merely because it shares the Variant axis.
+            Assert.NotNull(colors.CheckedContent);
+            Assert.NotNull(colors.UncheckedContent);
         }
 
-        Assert.Equal(SysColorToken.OnPrimary, ButtonColorTokens.Filled.SelectedLabelTextColor.RoleToken);
-        Assert.Equal(SysColorToken.OnSecondary, ButtonColorTokens.Tonal.SelectedLabelTextColor.RoleToken);
-        Assert.Equal(SysColorToken.InverseOnSurface, ButtonColorTokens.Outlined.SelectedLabelTextColor.RoleToken);
+        Assert.Equal(
+            theme.ColorScheme!.GetColor(SysColorToken.OnPrimary, isDark: false),
+            ThemeTestHelper.ColorOf(ToggleButtonDefaults.Colors(theme, ButtonVariant.Filled, isDark: false).CheckedContent));
+        Assert.Equal(
+            theme.ColorScheme.GetColor(SysColorToken.OnSecondary, isDark: false),
+            ThemeTestHelper.ColorOf(ToggleButtonDefaults.Colors(theme, ButtonVariant.Tonal, isDark: false).CheckedContent));
+        Assert.Equal(
+            theme.ColorScheme.GetColor(SysColorToken.InverseOnSurface, isDark: false),
+            ThemeTestHelper.ColorOf(ToggleButtonDefaults.Colors(theme, ButtonVariant.Outlined, isDark: false).CheckedContent));
     }
 
     [Fact]
@@ -126,20 +133,28 @@ public class ToggleTests
     {
         var colors = ToggleButtonDefaults.Colors(ResolvedTheme.Default, ButtonVariant.Tonal, isDark: false);
 
-        Assert.Same(colors.UncheckedContentColor, colors.ContentColor(enabled: true, checkedState: false));
-        Assert.Same(colors.CheckedContentColor, colors.ContentColor(enabled: true, checkedState: true));
-        Assert.Same(colors.DisabledContentColor, colors.ContentColor(enabled: false, checkedState: true));
-        Assert.NotSame(colors.UncheckedContentColor, colors.CheckedContentColor);
+        Assert.Same(colors.UncheckedContent, colors.Content(enabled: true, isChecked: false));
+        Assert.Same(colors.CheckedContent, colors.Content(enabled: true, isChecked: true));
+        Assert.Same(colors.DisabledContent, colors.Content(enabled: false, isChecked: true));
+        Assert.NotSame(colors.UncheckedContent, colors.CheckedContent);
     }
 
     [Fact]
     public void ToggleDefaults_KeepThreeShapeStatesSeparateFromButtonColorState()
     {
-        var shapes = ToggleButtonDefaults.Shapes(ResolvedTheme.Default, ButtonSize.Small);
+        var shapes = ToggleButtonDefaults.Shapes(ButtonSize.Small);
 
-        Assert.Equal(ButtonSmallTokens.ContainerShapeRound, shapes.UncheckedShape);
-        Assert.Equal(ButtonSmallTokens.PressedContainerShape, shapes.PressedShape);
-        Assert.Equal(ButtonSmallTokens.ContainerShapeSquare, shapes.CheckedShape);
+        Assert.Equal(ButtonSmallTokens.ContainerShapeRound, shapes.Unchecked);
+        Assert.Equal(ButtonSmallTokens.PressedContainerShape, shapes.Pressed);
+        Assert.Equal(ButtonSmallTokens.ContainerShapeSquare, shapes.Checked);
+    }
+
+    [Fact]
+    public void ToggleDefaults_UseSpatialMotionForTheCheckedShapeMorph()
+    {
+        Assert.Equal(
+            ResolvedTheme.Default.Motion.Get(MotionRole.FastSpatial),
+            ToggleButtonDefaults.ShapeMotion(ResolvedTheme.Default));
     }
 }
 
@@ -149,34 +164,36 @@ public class ButtonDefaultsTests
     public void ButtonDefaults_ResolvesColoursAndStateElevationFromTheSameVariant()
     {
         var theme = ResolvedTheme.Default;
-        var tokens = ButtonDefaults.ColorTokens(theme, ButtonVariant.Elevated);
         var colors = ButtonDefaults.Colors(theme, ButtonVariant.Elevated, isDark: false);
+        var elevation = ButtonDefaults.Elevation(ButtonVariant.Elevated);
 
-        Assert.Same(
-            colors,
-            theme.GetButtonColors(ButtonVariant.Elevated, isDark: false));
         Assert.Equal(
-            tokens.PressedContainerElevation,
-            ButtonDefaults.Elevation(tokens, enabled: true, InteractionState.Pressed));
+            theme.ColorScheme!.GetColor(SysColorToken.SurfaceContainerLow, isDark: false),
+            ThemeTestHelper.ColorOf(colors.Container));
         Assert.Equal(
-            tokens.DisabledContainerElevation,
-            ButtonDefaults.Elevation(tokens, enabled: false, InteractionState.Hovered));
+            elevation.Pressed,
+            elevation.For(enabled: true, InteractionState.Pressed));
+        Assert.Equal(
+            elevation.Disabled,
+            elevation.For(enabled: false, InteractionState.Hovered));
     }
 
     [Fact]
     public void ButtonDefaults_AdaptsSizeTokensIntoTemplateValues()
     {
-        var theme = ResolvedTheme.Default;
-        var metrics = ButtonDefaults.Metrics(theme, ButtonSize.Medium);
-        var shapes = ButtonDefaults.Shapes(theme, ButtonSize.Medium);
+        var metrics = ButtonDefaults.Metrics(ButtonSize.Medium);
+        var shapes = ButtonDefaults.Shapes(ButtonSize.Medium);
 
         Assert.Equal(
-            new Thickness(metrics.LeadingSpace, metrics.VerticalSpace, metrics.TrailingSpace,
-                metrics.VerticalSpace),
-            ButtonDefaults.ContentPadding(theme, ButtonSize.Medium));
-        Assert.Equal(metrics.ContainerShape, shapes.ContainerShape);
-        Assert.Equal(metrics.PressedContainerShape, shapes.PressedContainerShape);
-        Assert.Equal(metrics.SquareContainerShape, shapes.SquareContainerShape);
+            new Thickness(
+                ButtonMediumTokens.LeadingSpace,
+                16,
+                ButtonMediumTokens.TrailingSpace,
+                16),
+            metrics.ContentPadding);
+        Assert.Equal(metrics.ContainerShape, shapes.Container);
+        Assert.Equal(metrics.PressedContainerShape, shapes.Pressed);
+        Assert.Equal(metrics.SquareContainerShape, shapes.Square);
     }
 }
 

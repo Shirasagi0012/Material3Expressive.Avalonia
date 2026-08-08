@@ -18,16 +18,28 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="ClipToBounds" Value="False" />
+            <!-- Activates the owner-local defaults adapter. The adapter publishes only internal
+                 semantic fallbacks; the bindings below remain normal theme-priority setters. -->
+            <Setter Property="m3:ButtonAssist.UseMaterialDefaults" Value="True" />
             <!-- Buttons keep their token height: unlike panel stretch, the container is never
                  deformed by a taller sibling. Matches androidx's min-height semantics. -->
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Background" Value="{m3:MdButtonToken ContainerColor}" />
-            <Setter Property="Foreground" Value="{m3:MdButtonToken LabelTextColor}" />
-            <Setter Property="BorderBrush" Value="{m3:MdButtonToken OutlineColor}" />
-            <Setter Property="BorderThickness" Value="{m3:MdButtonToken ContainerOutlineThickness}" />
-            <Setter Property="Padding" Value="{m3:MdButtonToken ContentPadding}" />
-            <Setter Property="MinHeight" Value="{m3:MdButtonToken ContainerHeight}" />
-            <Setter Property="m3:TypographyScheme.TextStyle" Value="{m3:MdButtonToken LabelTextStyle}" />
+            <Setter Property="Background"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Container, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Content, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderBrush"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderThickness"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Padding"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinHeight"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).LabelTextStyle, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:ButtonAssist.StateLayerBrush"
+                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).StateLayer, RelativeSource={RelativeSource Self}}" />
             <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -47,16 +59,19 @@
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontWeight="{TemplateBinding FontWeight}" />
                         <m3:MaterialRipplePresenter
-                            StateLayerBrush="{m3:MdButtonToken StateLayerColor}"
+                            StateLayerBrush="{Binding Path=(m3:ButtonAssist.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
                             CornerRadius="{Binding CurrentCornerRadius, ElementName=PART_Container}" />
                     </Grid>
                 </ControlTemplate>
             </Setter>
 
             <Style Selector="^:disabled">
-                <Setter Property="Background" Value="{m3:MdButtonToken DisabledContainerColor}" />
-                <Setter Property="Foreground" Value="{m3:MdButtonToken DisabledLabelTextColor}" />
-                <Setter Property="BorderBrush" Value="{m3:MdButtonToken DisabledOutlineColor}" />
+                <Setter Property="Background"
+                        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Foreground"
+                        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledContent, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="BorderBrush"
+                        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
             </Style>
         </ControlTheme>
 
@@ -99,20 +114,30 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="ClipToBounds" Value="False" />
+            <Setter Property="m3:ToggleButtonAssist.UseMaterialDefaults" Value="True" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Background" Value="{m3:MdToggleButtonToken UncheckedContainerColor}" />
-            <Setter Property="Foreground" Value="{m3:MdToggleButtonToken UncheckedContentColor}" />
-            <Setter Property="BorderBrush" Value="{m3:MdToggleButtonToken OutlineColor}" />
-            <Setter Property="BorderThickness" Value="{m3:MdToggleButtonToken ContainerOutlineThickness}" />
-            <Setter Property="Padding" Value="{m3:MdToggleButtonToken ContentPadding}" />
-            <Setter Property="MinHeight" Value="{m3:MdToggleButtonToken ToggleContainerHeight}" />
-            <Setter Property="m3:TypographyScheme.TextStyle" Value="{m3:MdToggleButtonToken LabelTextStyle}" />
+            <Setter Property="Background"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).UncheckedContainer, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).UncheckedContent, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderBrush"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderThickness"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Padding"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinHeight"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).ToggleContainerHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).LabelTextStyle, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:ToggleButtonAssist.StateLayerBrush"
+                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultStateLayerBrush), RelativeSource={RelativeSource Self}}" />
             <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <Grid Background="Transparent">
-                        <Grid Height="{m3:MdToggleButtonToken ContainerHeight}"
+                        <Grid Height="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource TemplatedParent}}"
                               VerticalAlignment="Center">
                             <m3:MaterialToggleButtonContainerPresenter x:Name="PART_Container" />
                             <ContentPresenter Padding="{TemplateBinding Padding}"
@@ -126,7 +151,7 @@
                                               TextElement.FontFamily="{TemplateBinding FontFamily}"
                                               TextElement.FontWeight="{TemplateBinding FontWeight}" />
                             <m3:MaterialRipplePresenter
-                                StateLayerBrush="{m3:MdToggleButtonToken StateLayerColor}"
+                                StateLayerBrush="{Binding Path=(m3:ToggleButtonAssist.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
                                 CornerRadius="{Binding CurrentCornerRadius, ElementName=PART_Container}" />
                         </Grid>
                     </Grid>
@@ -134,13 +159,18 @@
             </Setter>
 
             <Style Selector="^:checked">
-                <Setter Property="Background" Value="{m3:MdToggleButtonToken CheckedContainerColor}" />
-                <Setter Property="Foreground" Value="{m3:MdToggleButtonToken CheckedContentColor}" />
+                <Setter Property="Background"
+                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).CheckedContainer, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Foreground"
+                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).CheckedContent, RelativeSource={RelativeSource Self}}" />
             </Style>
             <Style Selector="^:disabled">
-                <Setter Property="Background" Value="{m3:MdToggleButtonToken DisabledContainerColor}" />
-                <Setter Property="Foreground" Value="{m3:MdToggleButtonToken DisabledContentColor}" />
-                <Setter Property="BorderBrush" Value="{m3:MdToggleButtonToken DisabledOutlineColor}" />
+                <Setter Property="Background"
+                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Foreground"
+                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).DisabledContent, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="BorderBrush"
+                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
             </Style>
         </ControlTheme>
 

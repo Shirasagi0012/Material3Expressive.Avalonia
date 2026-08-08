@@ -28,8 +28,9 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     private MaterialInteractionController? _interaction;
     private IDisposable? _interactionLease;
     private AnimatedShape? _shape;
-    private ButtonColorTokens _tokens = ButtonColorTokens.Filled;
-    private ButtonShapes _shapes = ButtonDefaults.Shapes(ResolvedTheme.Default, ButtonSize.Small);
+    private ButtonShapes _shapes = ButtonDefaults.Shapes(ButtonSize.Small);
+    private ButtonElevation _elevation = ButtonDefaults.Elevation(ButtonVariant.Filled);
+    private SpringSpec _shapeMotion = ButtonDefaults.ShapeMotion(ResolvedTheme.Default);
     private CornerRadius _currentCornerRadius;
 
     public MaterialButtonContainerPresenter()
@@ -126,13 +127,14 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
                           ?? throw new InvalidOperationException("The presenter is not attached.");
         return interaction.CreateAnimatedShape(
             RestingShape(),
-            _theme.Spring(MotionRole.DefaultEffects));
+            _shapeMotion);
     }
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == ButtonAssist.VariantProperty
-            || change.Property == ButtonAssist.SizeProperty)
+        if (change.Property == ButtonAssist.DefaultShapesProperty
+            || change.Property == ButtonAssist.DefaultElevationProperty
+            || change.Property == ButtonAssist.DefaultShapeMotionProperty)
         {
             ApplyTokens(snapShape: true);
         }
@@ -163,8 +165,15 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
         if (_owner is not { } owner)
             return;
 
-        _tokens = ButtonDefaults.ColorTokens(_theme.Theme, ButtonAssist.GetVariant(owner));
-        _shapes = ButtonDefaults.Shapes(_theme.Theme, ButtonAssist.GetSize(owner));
+        // Defaults are projected by the owner-local adapter. The fallbacks only cover the short
+        // construction window before the ControlTheme marker has activated that adapter.
+        _shapes = ButtonAssist.GetDefaultShapes(owner)
+                  ?? ButtonDefaults.Shapes(ButtonAssist.GetSize(owner));
+        _elevation = ButtonAssist.GetDefaultElevation(owner)
+                     ?? ButtonDefaults.Elevation(ButtonAssist.GetVariant(owner));
+        _shapeMotion = ButtonAssist.GetDefaultShapeMotion(owner);
+        if (_shapeMotion.Stiffness <= 0)
+            _shapeMotion = ButtonDefaults.ShapeMotion(_theme.Theme);
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -176,14 +185,14 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
 
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? ShapeFor(_shapes.PressedContainerShape)
+            ? ShapeFor(_shapes.Pressed)
             : RestingShape();
 
         if (snap && !shape.IsRunning)
             shape.SnapTo(target);
         else
         {
-            shape.AnimateTo(target, _theme.Spring(MotionRole.DefaultEffects));
+            shape.AnimateTo(target, _shapeMotion);
             _interaction.Motion.Start();
         }
 
@@ -204,13 +213,13 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return ShapeFor(_shapes.ContainerShape);
+            return ShapeFor(_shapes.Container);
 
         return ButtonAssist.GetContainerShapeOverride(owner)
                ?? ShapeFor(
                    ButtonAssist.GetIsSquare(owner)
-                       ? _shapes.SquareContainerShape
-                       : _shapes.ContainerShape);
+                       ? _shapes.Square
+                       : _shapes.Container);
     }
 
     private RoundedCornerShape ShapeFor(ShapeRole role) => _theme.Theme.Shapes.Get(role);
@@ -219,7 +228,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     {
         var interaction = _interaction?.Interaction ?? InteractionState.None;
 
-        return ButtonDefaults.Elevation(_tokens, enabled, interaction);
+        return _elevation.For(enabled, interaction);
     }
 
     private static double Uniform(Thickness thickness)

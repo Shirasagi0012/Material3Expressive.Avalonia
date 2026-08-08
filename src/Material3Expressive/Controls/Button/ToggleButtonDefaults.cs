@@ -1,89 +1,128 @@
 namespace Material3Expressive.Controls;
 
 using System;
+using Avalonia;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
+using MaterialColorUtilities.Avalonia.Tokens;
 
 /// <summary>
-/// The runtime colour contract owned by ToggleButton. A normal button's enabled colour is not a
-/// valid model for a toggle: checked and unchecked content/container pairs are independent states,
-/// and the state layer follows the currently selected content colour.
-/// </summary>
-internal sealed record ToggleButtonColors(
-    IImmutableBrush UncheckedContainerColor,
-    IImmutableBrush UncheckedContentColor,
-    IImmutableBrush CheckedContainerColor,
-    IImmutableBrush CheckedContentColor,
-    IImmutableBrush DisabledContainerColor,
-    IImmutableBrush DisabledContentColor,
-    IImmutableBrush OutlineColor,
-    IImmutableBrush DisabledOutlineColor,
-    bool HasOutline)
-{
-    public IImmutableBrush ContainerColor(bool enabled, bool checkedState) =>
-        !enabled ? DisabledContainerColor
-        : checkedState ? CheckedContainerColor
-        : UncheckedContainerColor;
-
-    public IImmutableBrush ContentColor(bool enabled, bool checkedState) =>
-        !enabled ? DisabledContentColor
-        : checkedState ? CheckedContentColor
-        : UncheckedContentColor;
-
-    public IImmutableBrush StateLayerColor(bool checkedState) =>
-        checkedState ? CheckedContentColor : UncheckedContentColor;
-}
-
-/// <summary>Three geometry states used by a ToggleButton's interruptible shape morph.</summary>
-internal sealed record ToggleButtonShapes(
-    ShapeRole UncheckedShape,
-    ShapeRole PressedShape,
-    ShapeRole CheckedShape);
-
-/// <summary>
-/// Adapts the generated ToggleButton defaults into a runtime record. The table owns the static
-/// state values; conditional checked/disabled selection and Avalonia property binding are control
-/// policy, and belong in C# beside the control.
+/// The component-owned runtime adapter for a Material ToggleButton.
 /// </summary>
 internal static class ToggleButtonDefaults
 {
-    /// <summary>Returns the generated toggle colour tokens for a button-facing variant.</summary>
-    public static ToggleButtonColorTokens ColorTokens(ResolvedTheme theme, ButtonVariant variant) =>
-        theme.GetToggleButtonColorTokens(ToToggleVariant(variant));
+    private static readonly IImmutableBrush Transparent =
+        new ImmutableSolidColorBrush(Avalonia.Media.Colors.Transparent);
 
     public static ToggleButtonColors Colors(ResolvedTheme theme, ButtonVariant variant, bool isDark)
     {
-        var toggleVariant = ToToggleVariant(variant);
-        var colors = theme.GetToggleButtonColors(toggleVariant, isDark);
-        var tokens = ColorTokens(theme, variant);
-        return new ToggleButtonColors(
-            colors.UncheckedContainerColor,
-            colors.UncheckedContentColor,
-            colors.CheckedContainerColor,
-            colors.CheckedContentColor,
-            colors.DisabledContainerColor,
-            colors.DisabledContentColor,
-            colors.OutlineColor,
-            colors.DisabledOutlineColor,
-            tokens.HasOutline);
+        ArgumentNullException.ThrowIfNull(theme);
+
+        return variant switch
+        {
+            ButtonVariant.Filled => ResolveFilled(theme, isDark),
+            ButtonVariant.Tonal => ResolveTonal(theme, isDark),
+            ButtonVariant.Elevated => ResolveElevated(theme, isDark),
+            ButtonVariant.Outlined => ResolveOutlined(theme, isDark),
+            ButtonVariant.Text => ResolveText(theme, isDark),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
+        };
     }
 
-    public static ToggleButtonShapes Shapes(ResolvedTheme theme, ButtonSize size)
+    /// <summary>Projects the shared Button size axis into ToggleButton-specific template metrics.</summary>
+    public static ToggleButtonMetrics Metrics(ButtonSize size)
     {
-        var metrics = theme.GetButtonSizeTokens(size);
+        var metrics = ButtonDefaults.Metrics(size);
+        return new ToggleButtonMetrics(
+            metrics.ContainerHeight,
+            Math.Max(48, metrics.ContainerHeight),
+            metrics.ContentPadding,
+            metrics.OutlineWidth,
+            metrics.LabelTextStyle);
+    }
+
+    public static ToggleButtonShapes Shapes(ButtonSize size)
+    {
+        var metrics = ButtonDefaults.Metrics(size);
         return new ToggleButtonShapes(
             metrics.ContainerShape,
             metrics.PressedContainerShape,
             metrics.SquareContainerShape);
     }
 
-    private static ToggleButtonVariant ToToggleVariant(ButtonVariant variant) => variant switch
+    public static SpringSpec ShapeMotion(ResolvedTheme theme)
     {
-        ButtonVariant.Filled => ToggleButtonVariant.Filled,
-        ButtonVariant.Tonal => ToggleButtonVariant.Tonal,
-        ButtonVariant.Elevated => ToggleButtonVariant.Elevated,
-        ButtonVariant.Outlined => ToggleButtonVariant.Outlined,
-        ButtonVariant.Text => ToggleButtonVariant.Text,
-        _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
-    };
+        ArgumentNullException.ThrowIfNull(theme);
+        // ToggleButton's checked/pressed shape morph is spatial motion in Compose. FastSpatial is
+        // intentionally bouncy; ordinary Button uses DefaultEffects to avoid a bounce.
+        return theme.Motion.Get(MotionRole.FastSpatial);
+    }
+
+    public static Thickness OutlineThickness(
+        ToggleButtonColors colors,
+        ButtonSize size,
+        bool isChecked) => new(colors.HasOutline && !isChecked ? Metrics(size).OutlineWidth : 0);
+
+    private static ToggleButtonColors ResolveFilled(ResolvedTheme theme, bool isDark) => new(
+        Brush(FilledButtonTokens.UnselectedContainerColor, theme, isDark),
+        Brush(FilledButtonTokens.LabelTextUnselectedColor, theme, isDark),
+        Brush(FilledButtonTokens.SelectedContainerColor, theme, isDark),
+        Brush(FilledButtonTokens.LabelTextSelectedColor, theme, isDark),
+        Brush(FilledButtonTokens.DisabledContainerColor, theme, isDark, FilledButtonTokens.DisabledContainerOpacity),
+        Brush(FilledButtonTokens.DisabledLabelTextColor, theme, isDark, FilledButtonTokens.DisabledLabelTextOpacity),
+        Transparent,
+        Transparent,
+        HasOutline: false);
+
+    private static ToggleButtonColors ResolveTonal(ResolvedTheme theme, bool isDark) => new(
+        Brush(TonalButtonTokens.UnselectedContainerColor, theme, isDark),
+        Brush(TonalButtonTokens.UnselectedLabelTextColor, theme, isDark),
+        Brush(TonalButtonTokens.SelectedContainerColor, theme, isDark),
+        Brush(TonalButtonTokens.SelectedLabelTextColor, theme, isDark),
+        Brush(TonalButtonTokens.DisabledContainerColor, theme, isDark, TonalButtonTokens.DisabledContainerOpacity),
+        Brush(TonalButtonTokens.DisabledLabelTextColor, theme, isDark, TonalButtonTokens.DisabledLabelTextOpacity),
+        Transparent,
+        Transparent,
+        HasOutline: false);
+
+    private static ToggleButtonColors ResolveElevated(ResolvedTheme theme, bool isDark) => new(
+        Brush(ElevatedButtonTokens.UnselectedContainerColor, theme, isDark),
+        Brush(ElevatedButtonTokens.LabelTextUnselectedColor, theme, isDark),
+        Brush(ElevatedButtonTokens.SelectedContainerColor, theme, isDark),
+        Brush(ElevatedButtonTokens.LabelTextSelectedColor, theme, isDark),
+        Brush(ElevatedButtonTokens.DisabledContainerColor, theme, isDark, ElevatedButtonTokens.DisabledContainerOpacity),
+        Brush(ElevatedButtonTokens.DisabledLabelTextColor, theme, isDark, ElevatedButtonTokens.DisabledLabelTextOpacity),
+        Transparent,
+        Transparent,
+        HasOutline: false);
+
+    private static ToggleButtonColors ResolveOutlined(ResolvedTheme theme, bool isDark) => new(
+        Transparent,
+        Brush(OutlinedButtonTokens.UnselectedLabelTextColor, theme, isDark),
+        Brush(OutlinedButtonTokens.SelectedContainerColor, theme, isDark),
+        Brush(OutlinedButtonTokens.SelectedLabelTextColor, theme, isDark),
+        Transparent,
+        Brush(OutlinedButtonTokens.DisabledLabelTextColor, theme, isDark, OutlinedButtonTokens.DisabledLabelTextOpacity),
+        Brush(OutlinedButtonTokens.OutlineColor, theme, isDark),
+        Brush(OutlinedButtonTokens.DisabledOutlineColor, theme, isDark),
+        HasOutline: true);
+
+    private static ToggleButtonColors ResolveText(ResolvedTheme theme, bool isDark) => new(
+        Transparent,
+        Brush(SysColorToken.Primary, theme, isDark),
+        Transparent,
+        Brush(SysColorToken.Primary, theme, isDark),
+        Transparent,
+        Brush(TextButtonTokens.DisabledLabelColor, theme, isDark, TextButtonTokens.DisabledLabelOpacity),
+        Transparent,
+        Transparent,
+        HasOutline: false);
+
+    private static IImmutableBrush Brush(
+        ColorTokenValue token,
+        ResolvedTheme theme,
+        bool isDark,
+        double opacity = 1) => token.ResolveBrush(theme.ColorScheme, isDark, opacity);
 }

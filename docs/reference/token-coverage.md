@@ -11,7 +11,7 @@ baseline). The AndroidX token directory contains 120 `*Tokens.kt` files at that 
 | `Tokens/Reference/*.ref.jsonc` | 0 | No duplicated palette/reference source is checked in. |
 | `Tokens/System/*.sys.jsonc` | 3 | `ElevationTokens`, `StateTokens`, and the scheme-shaped `TypeScale`. |
 | `Tokens/Component/**/*.comp.jsonc` | 103 | Same-name, verbatim AndroidX component token tables. |
-| `Tokens/Defaults/**/*.default.jsonc` | 35 | Compose Defaults/component assembly surfaces consumed by controls. |
+| `Tokens/Defaults/**/*.default.jsonc` | 32 | Legacy Compose Defaults/component assembly surfaces consumed by unmigrated controls. |
 
 The 103 raw component tables account for every AndroidX component token file that belongs to a
 component domain. The 17-name exception list below includes the three names represented by the
@@ -19,11 +19,11 @@ system tables, so the unique total remains 120. A raw table is allowed to be a s
 without having a one-to-one
 defaults record: a defaults record may combine several size, colour, state, and item tables.
 
-The 35 defaults files are grouped by Button, Card, FAB, Form, IconButton, Misc, Navigation,
-Overlay, ProgressIndicator, and TextInput. Their generated records are the only component values
-that the theme snapshot exposes to control adapters. `overridesName` is used where a defaults
-record was renamed for clarity (for example `CheckboxDefaultsTokens` still emits the compatible
-`CheckboxOverrides` type).
+The 32 legacy defaults files are grouped by Card, FAB, Form, IconButton, Misc, Navigation, Overlay,
+ProgressIndicator, and TextInput. Button and ToggleButton now own their variant/state assembly in
+`Controls/Button/` C# adapters, so they no longer contribute generated component records to the
+theme snapshot. `overridesName` is used where a legacy defaults record was renamed for clarity (for
+example `CheckboxDefaultsTokens` still emits the compatible `CheckboxOverrides` type).
 
 ## AndroidX files intentionally not represented as raw component tables
 
@@ -44,11 +44,13 @@ it can be backed by an independent, stable reference owner; it must not mirror
 `MaterialColorUtilities`, `ShapeScheme`, or `MotionScheme` merely to make the file count look like
 AndroidX.
 
-## Raw tables without a defaults assembly yet
+## Raw tables without a legacy defaults assembly or component policy yet
 
-The following 27 raw tables are already transcribed, but no current defaults table references
-them. They are the next candidates when the corresponding controls or variants are implemented;
-they are not safe to delete because they preserve the upstream provenance needed for that work.
+The following 27 raw tables are already transcribed, but no current defaults table or
+component-owned policy references them. They are the next candidates when the corresponding
+controls or variants are implemented; they are not safe to delete because they preserve the
+upstream provenance needed for that work. Button and ToggleButton raw tables are intentionally not
+listed: their C# adapters consume them directly without a legacy defaults table.
 
 ```text
 BaselineButtonTokens             BottomAppBarTokens
