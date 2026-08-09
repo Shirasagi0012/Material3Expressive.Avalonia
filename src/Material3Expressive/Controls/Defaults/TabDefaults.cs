@@ -60,9 +60,12 @@ internal static class TabDefaults
             SysColorToken.Primary,
             SecondaryNavigationTabTokens.ActiveIconColor,
             SecondaryNavigationTabTokens.ActiveLabelTextColor,
-            SecondaryNavigationTabTokens.InactiveIconColor,
-            SecondaryNavigationTabTokens.InactiveLabelTextColor,
-            SecondaryNavigationTabTokens.DividerColor,
+            // The pinned Compose parity baseline uses the secondary tab's provided
+            // content color for every enabled label/icon; its inactive token is not applied
+            // by this static row contract.
+            SecondaryNavigationTabTokens.ActiveIconColor,
+            SecondaryNavigationTabTokens.ActiveLabelTextColor,
+            SysColorToken.OutlineVariant,
             SysColorToken.Primary,
             SecondaryNavigationTabTokens.ContainerHeight,
             64,

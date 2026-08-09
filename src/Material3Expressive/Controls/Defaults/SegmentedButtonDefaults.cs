@@ -67,7 +67,10 @@ internal static class SegmentedButtonDefaults
             Transparent,
             OutlinedSegmentedButtonTokens.DisabledLabelTextColor.ResolveBrush(
                 scheme, isDark, OutlinedSegmentedButtonTokens.DisabledLabelTextOpacity),
-            OutlinedSegmentedButtonTokens.DisabledOutlineColor.ResolveBrush(
+            // The alpha22-compatible segmented-button contract applies the disabled 12% alpha
+            // to Outline.  Newer upstream tokens switched the role to OnSurface; keeping that
+            // newer role here darkens the whole disabled outline against the parity reference.
+            OutlinedSegmentedButtonTokens.OutlineColor.ResolveBrush(
                 scheme, isDark, OutlinedSegmentedButtonTokens.DisabledOutlineOpacity),
             OutlinedSegmentedButtonTokens.DisabledLabelTextOpacity,
             OutlinedSegmentedButtonTokens.DisabledOutlineOpacity);

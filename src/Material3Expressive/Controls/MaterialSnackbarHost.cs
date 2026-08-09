@@ -365,8 +365,11 @@ public sealed class MaterialSnackbarHost : ContentControl
             // Avalonia centers content inside MinHeight; adding Compose's separate 8dp vertical
             // content padding here would apply that inset twice in the stock Button template.
             Padding = new Thickness(12, 0),
+            // ButtonDefaults.MinWidth: the upstream TextButton minimum is 58dp.
             MinWidth = 58,
             MinHeight = 40,
+            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
             Foreground = actionBrush,
             Content = text,
             Command = new ActionCommand(

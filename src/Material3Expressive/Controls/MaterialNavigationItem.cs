@@ -276,20 +276,33 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
                     ? Math.Max(0, containerWidth - ToComposePixels(20, scale) - indicatorWidth) / scale
                     : ToComposePixels(20, scale) / scale
                 : Math.Max(0, (containerWidth - indicatorWidth) / 2) / scale;
-            return new Rect(left, IndicatorTop(height, startIcon), indicatorWidth / scale, height);
+            return new Rect(left, IndicatorTop(height, startIcon, scale), indicatorWidth / scale, height);
         }
     }
 
     private static int ToComposePixels(double value, double scale) =>
         Math.Max(0, (int)Math.Floor(value * scale + 0.5));
 
-    private double IndicatorTop(double indicatorHeight, bool startIcon) =>
-        startIcon
+    private double IndicatorTop(double indicatorHeight, bool startIcon, double scale)
+    {
+        if (NavigationItemLayout.IsBaselineRail(Surface, IsWideNavigationItem))
+        {
+            var geometry = NavigationItemLayout.CalculateBaselineRail(
+                ToComposePixels(Bounds.Height, scale),
+                ToComposePixels(IconSize, scale),
+                ToComposePixels(LabelHeight, scale),
+                ToComposePixels(_tokens.IconLabelSpace, scale),
+                ToComposePixels(4, scale));
+            return geometry.IndicatorTop / scale;
+        }
+
+        return startIcon
             ? (Bounds.Height - indicatorHeight) / 2
             : AnchorTopIcon
                 ? TopItemVerticalPadding
             // The label sits under the indicator, so the pair is centred rather than the pill alone.
                 : (Bounds.Height - indicatorHeight - _tokens.IconLabelSpace - LabelHeight) / 2;
+    }
 
     private TypographyRole LabelTextStyle =>
         IsWideNavigationExpandedItem ? TypographyRole.LabelLarge : _tokens.LabelTextStyle;
@@ -627,7 +640,9 @@ public sealed class MaterialNavigationItemContentPanel : Panel
 
             var contentWidth = visibleChildren.Sum(static child => child.DesiredSize.Width)
                 + Spacing * (visibleChildren.Length - 1);
-            StartIndicatorWidth = StartHorizontalPadding * 2 + contentWidth;
+            // The expanded wide-rail item reserves its 4dp transition gutter outside the
+            // leading icon/label stack; it belongs to the indicator's measured width.
+            StartIndicatorWidth = StartHorizontalPadding * 2 + contentWidth + (AlignStart ? 4 : 0);
             var contentHeight = visibleChildren.Max(static child => child.DesiredSize.Height);
             return new Size(StartIndicatorWidth, StartVerticalPadding * 2 + contentHeight);
         }
@@ -669,9 +684,9 @@ public sealed class MaterialNavigationItemContentPanel : Panel
                     ? Math.Max(
                         0,
                         startFinalWidth
-                        - ToComposePixels(20 + StartHorizontalPadding, startScale)
+                        - ToComposePixels(24 + StartHorizontalPadding, startScale)
                         - totalWidth)
-                    : ToComposePixels(20 + StartHorizontalPadding, startScale)
+                    : ToComposePixels(24 + StartHorizontalPadding, startScale)
                 : Math.Max(0, (startFinalWidth - totalWidth) / 2);
 
             for (var index = 0; index < visibleChildren.Length; index++)
@@ -708,11 +723,36 @@ public sealed class MaterialNavigationItemContentPanel : Panel
             contentHeight += childHeights[index];
         }
 
+        var navigationItem = TemplatedParent as MaterialNavigationItem;
+        var baselineRail = navigationItem is not null &&
+            NavigationItemLayout.IsBaselineRail(
+                navigationItem.Surface,
+                navigationItem.IsWideNavigationItem);
+        var baselineRailGeometry = baselineRail && visibleChildren.Length >= 2
+            ? NavigationItemLayout.CalculateBaselineRail(
+                finalHeight,
+                childHeights[0],
+                childHeights[1],
+                spacing,
+                ToComposePixels(4, scale))
+            : default(BaselineRailGeometry?);
+
         // NavigationBar.kt / NavigationRail.kt use roundToInt only when emitting the vertical
         // placeable position. This is equivalent to rounding the shared pair offset once here.
-        var top = AnchorTop
-            ? ToComposePixels(TopVerticalPadding + TopIndicatorVerticalPadding, scale)
-            : ToComposePixels((finalHeight - contentHeight) / 2d, 1);
+        var top = navigationItem is null
+            ? AnchorTop
+                ? ToComposePixels(TopVerticalPadding + TopIndicatorVerticalPadding, scale)
+                : ToComposePixels((finalHeight - contentHeight) / 2d, 1)
+            : NavigationItemLayout.CalculateTopContentStack(
+                navigationItem.Surface,
+                navigationItem.IsWideNavigationItem,
+                navigationItem.IsWideNavigationExpandedItem,
+                AnchorTop,
+                finalHeight,
+                contentHeight,
+                ToComposePixels(TopVerticalPadding, scale),
+                ToComposePixels(TopIndicatorVerticalPadding, scale),
+                ToComposePixels(4, scale));
 
         for (var index = 0; index < visibleChildren.Length; index++)
         {
@@ -720,13 +760,17 @@ public sealed class MaterialNavigationItemContentPanel : Panel
             var height = childHeights[index];
             var left = Math.Max(0, (finalWidth - width) / 2);
 
+            var childTop = baselineRailGeometry is { } geometry && index < 2
+                ? index == 0 ? geometry.IconTop : geometry.LabelTop
+                : top;
             visibleChildren[index].Arrange(new Rect(
                 ToLogicalPixels(left, scale),
-                ToLogicalPixels(top, scale),
+                ToLogicalPixels(childTop, scale),
                 ToLogicalPixels(width, scale),
                 ToLogicalPixels(height, scale)));
 
-            top += height + spacing;
+            if (baselineRailGeometry is null || index >= 2)
+                top += height + spacing;
         }
 
         return finalSize;
@@ -753,3 +797,64 @@ public enum NavigationItemIconPosition
     Top,
     Start
 }
+
+/// <summary>
+/// Compose-equivalent geometry shared by a navigation item's renderer and content panel.
+/// </summary>
+internal static class NavigationItemLayout
+{
+    public static bool IsBaselineRail(NavigationVariant surface, bool isWideNavigationItem) =>
+        surface == NavigationVariant.Rail && !isWideNavigationItem;
+
+    /// <summary>
+    /// Mirrors NavigationRail.kt's placeLabelAndIcon calculation in physical pixels.
+    /// </summary>
+    public static BaselineRailGeometry CalculateBaselineRail(
+        int itemHeight,
+        int iconHeight,
+        int labelHeight,
+        int indicatorVerticalPadding,
+        int itemVerticalPadding)
+    {
+        var contentHeight =
+            iconHeight + indicatorVerticalPadding + itemVerticalPadding + labelHeight;
+        var contentVerticalPadding = Math.Max(
+            (itemHeight - contentHeight) / 2,
+            indicatorVerticalPadding);
+        var iconTop = contentVerticalPadding;
+
+        return new BaselineRailGeometry(
+            iconTop - indicatorVerticalPadding,
+            iconTop,
+            iconTop + iconHeight + indicatorVerticalPadding + itemVerticalPadding);
+    }
+
+    /// <summary>
+    /// Gets the top of a top-icon content stack using the rail's collapsed wide-layout branch.
+    /// All parameters are physical pixels, matching Compose's placement inputs.
+    /// </summary>
+    public static int CalculateTopContentStack(
+        NavigationVariant surface,
+        bool isWideNavigationItem,
+        bool isWideNavigationExpandedItem,
+        bool anchorTop,
+        int itemHeight,
+        int contentHeight,
+        int topVerticalPadding,
+        int topIndicatorVerticalPadding,
+        int wideRailCollapsedContentPadding)
+    {
+        if (!anchorTop)
+            return Math.Max(0, (int)Math.Floor((itemHeight - contentHeight) / 2d + 0.5));
+
+        var top = topVerticalPadding + topIndicatorVerticalPadding;
+        return surface == NavigationVariant.Rail &&
+            isWideNavigationItem &&
+            !isWideNavigationExpandedItem
+            ? top + wideRailCollapsedContentPadding
+            : top;
+    }
+}
+
+/// <summary>Physical-pixel positions emitted by the baseline navigation rail layout.</summary>
+internal readonly record struct BaselineRailGeometry(int IndicatorTop, int IconTop, int LabelTop);
