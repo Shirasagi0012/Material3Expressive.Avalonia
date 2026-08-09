@@ -52,7 +52,7 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
     private const double StaggerFraction = 0.12;
 
     private SpringAnimation? _reveal;
-    private FabMenuTokens _tokens = FabMenuTokens.Default;
+    private FabMenuMetrics _metrics = FabMenuDefaults.Metrics();
 
     static MaterialFabMenu()
     {
@@ -93,10 +93,10 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
     public AvaloniaList<MaterialFab> Items { get; } = new();
 
     /// <summary>The gap between items, from the token table.</summary>
-    public double ItemSpacing => _tokens.ItemBetweenSpace;
+    public double ItemSpacing => _metrics.ItemBetweenSpace;
 
     /// <summary>The gap between the last item and the toggle.</summary>
-    public double CloseButtonSpacing => _tokens.CloseButtonBetweenSpace;
+    public double CloseButtonSpacing => _metrics.CloseButtonBetweenSpace;
 
     // Read-only outputs of token resolution; the template binds to them.
     public static readonly DirectProperty<MaterialFabMenu, double> ItemSpacingProperty =
@@ -161,7 +161,9 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
 
     private void ApplyTokens()
     {
-        _tokens = ResolvedTheme.FabMenuTokens;
+        var oldItemSpacing = ItemSpacing;
+        var oldCloseButtonSpacing = CloseButtonSpacing;
+        _metrics = FabMenuDefaults.Metrics();
 
         foreach (var item in Items)
         {
@@ -170,6 +172,8 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
         }
 
         UpdateItems();
+        RaisePropertyChanged(ItemSpacingProperty, oldItemSpacing, ItemSpacing);
+        RaisePropertyChanged(CloseButtonSpacingProperty, oldCloseButtonSpacing, CloseButtonSpacing);
         InvalidateMeasure();
     }
 }

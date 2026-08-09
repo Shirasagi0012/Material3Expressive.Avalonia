@@ -202,26 +202,26 @@ public class CardTests
     [AvaloniaFact]
     public void EachVariant_HasItsOwnSurface()
     {
-        Assert.Equal(SysColorToken.SurfaceContainerLow, CardTokens.Elevated.ContainerColor.RoleToken);
-        Assert.Equal(SysColorToken.SurfaceContainerHighest, CardTokens.Filled.ContainerColor.RoleToken);
-        Assert.Equal(SysColorToken.Surface, CardTokens.Outlined.ContainerColor.RoleToken);
+        Assert.Equal(SysColorToken.SurfaceContainerLow, ElevatedCardTokens.ContainerColor.RoleToken);
+        Assert.Equal(SysColorToken.SurfaceContainerHighest, FilledCardTokens.ContainerColor.RoleToken);
+        Assert.Equal(SysColorToken.Surface, OutlinedCardTokens.ContainerColor.RoleToken);
     }
 
     [AvaloniaFact]
     public void OnlyTheOutlinedVariant_DrawsABorder()
     {
-        Assert.True(CardTokens.Outlined.HasOutline);
-        Assert.Equal(OutlinedCardTokens.OutlineWidth, CardTokens.Outlined.OutlineWidth);
-        Assert.False(CardTokens.Elevated.HasOutline);
-        Assert.False(CardTokens.Filled.HasOutline);
+        Assert.True(CardDefaults.Metrics(CardVariant.Outlined).HasOutline);
+        Assert.Equal(OutlinedCardTokens.OutlineWidth, CardDefaults.Metrics(CardVariant.Outlined).OutlineWidth);
+        Assert.False(CardDefaults.Metrics(CardVariant.Elevated).HasOutline);
+        Assert.False(CardDefaults.Metrics(CardVariant.Filled).HasOutline);
     }
 
     [AvaloniaFact]
     public void OnlyTheElevatedVariant_RestsAboveTheSurface()
     {
-        Assert.True(CardTokens.Elevated.ContainerElevation > 0);
-        Assert.Equal(0, CardTokens.Filled.ContainerElevation);
-        Assert.Equal(0, CardTokens.Outlined.ContainerElevation);
+        Assert.True(CardDefaults.Metrics(CardVariant.Elevated).Elevation.Resting > 0);
+        Assert.Equal(0, CardDefaults.Metrics(CardVariant.Filled).Elevation.Resting);
+        Assert.Equal(0, CardDefaults.Metrics(CardVariant.Outlined).Elevation.Resting);
     }
 
     [AvaloniaFact]
@@ -1355,7 +1355,7 @@ public class FabTests
         fab.Label = "Compose";
 
         Assert.True(fab.IsExtended);
-        Assert.Equal(FabSizeTokens.Small.LabelSpace, fab.Padding.Left);
+        Assert.Equal(FabDefaults.Metrics(FabSize.Small).LabelSpace, fab.Padding.Left);
     }
 
     [AvaloniaFact]
@@ -1375,11 +1375,11 @@ public class FabTests
     [AvaloniaFact]
     public void LoweringIt_DropsItsElevation()
     {
-        var tokens = FabColorTokens.Primary;
+        var tokens = FabDefaults.Elevation(FabVariant.Primary);
 
-        Assert.True(tokens.LoweredContainerElevation < tokens.ContainerElevation);
-        Assert.Equal(ElevationTokens.Level1, tokens.LoweredContainerElevation);
-        Assert.Equal(ElevationTokens.Level3, tokens.ContainerElevation);
+        Assert.True(tokens.Lowered < tokens.Resting);
+        Assert.Equal(ElevationTokens.Level1, tokens.Lowered);
+        Assert.Equal(ElevationTokens.Level3, tokens.Resting);
     }
 
     [AvaloniaFact]

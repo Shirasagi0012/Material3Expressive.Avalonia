@@ -28,8 +28,8 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
     private readonly MaterialElementContext _theme;
     private readonly MaterialInteractionController _interaction;
 
-    private CardTokens _tokens = CardTokens.Filled;
-    private CardColors _colors = CardTokens.Filled.Resolve(null, false);
+    private CardMetrics _metrics = CardDefaults.Metrics(CardVariant.Filled);
+    private CardColors _colors = CardDefaults.Colors(ResolvedTheme.Default, CardVariant.Filled, isDark: false);
 
     public MaterialCard()
     {
@@ -74,7 +74,7 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
             return;
 
         var enabled = IsEffectivelyEnabled;
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        var corners = _theme.Theme.Shapes.GetCornerRadius(_metrics.ContainerShape, Bounds.Size);
         var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
 
         MaterialContainer.Draw(
@@ -84,7 +84,7 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
             corners,
             enabled ? _colors.ContainerColor : _colors.DisabledContainerColor,
             enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
-            _tokens.HasOutline ? _tokens.OutlineWidth : 0,
+            _metrics.HasOutline ? _metrics.OutlineWidth : 0,
             CurrentElevation(enabled),
             shadow);
 
@@ -106,8 +106,8 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetCardTokens(Variant);
-        _colors = _theme.Theme.GetCardColors(Variant, _theme.IsDark);
+        _metrics = CardDefaults.Metrics(Variant);
+        _colors = CardDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
         InvalidateVisual();
     }
 
@@ -115,11 +115,6 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
     {
         var interaction = IsClickable ? _interaction.Interaction : InteractionState.None;
 
-        return !enabled ? _tokens.DisabledContainerElevation
-            : interaction.HasFlag(InteractionState.Dragged) ? _tokens.DraggedContainerElevation
-            : interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedContainerElevation
-            : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoverContainerElevation
-            : interaction.HasFlag(InteractionState.Focused) ? _tokens.FocusContainerElevation
-            : _tokens.ContainerElevation;
+        return _metrics.Elevation.For(enabled, interaction);
     }
 }

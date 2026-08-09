@@ -50,9 +50,9 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
-    private FabColors _colors = FabColorTokens.Primary.Resolve(null, false);
-    private FabColorTokens _tokens = FabColorTokens.Primary;
-    private FabSizeTokens _metrics = FabSizeTokens.Small;
+    private FabColors _colors = FabDefaults.Colors(ResolvedTheme.Default, FabVariant.Primary, isDark: false);
+    private FabElevation _elevation = FabDefaults.Elevation(FabVariant.Primary);
+    private FabMetrics _metrics = FabDefaults.Metrics(FabSize.Small);
 
     public MaterialFab()
     {
@@ -113,7 +113,7 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     public double IconLabelSpace => _metrics.IconLabelSpace;
 
     /// <summary>Tells the template that the values it binds to have been recomputed.</summary>
-    private void RaiseTokenOutputs(FabSizeTokens previous, bool wasExtended)
+    private void RaiseTokenOutputs(FabMetrics previous, bool wasExtended)
     {
         RaisePropertyChanged(IconSizeProperty, previous.IconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previous.IconLabelSpace, IconLabelSpace);
@@ -161,9 +161,9 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
         var previousMetrics = _metrics;
         var wasExtended = IsExtended;
 
-        _tokens = _theme.Theme.GetFabColorTokens(Variant);
-        _colors = _theme.Theme.GetFabColors(Variant, _theme.IsDark);
-        _metrics = _theme.Theme.GetFabSizeTokens(Size);
+        _colors = FabDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
+        _elevation = FabDefaults.Elevation(Variant);
+        _metrics = FabDefaults.Metrics(Size);
         RaiseTokenOutputs(previousMetrics, wasExtended);
 
         var typography = _theme.Theme.Typography;
@@ -208,10 +208,6 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     {
         var interaction = _interaction.Interaction;
 
-        return IsLowered ? _tokens.LoweredContainerElevation
-            : interaction.HasFlag(InteractionState.Pressed) ? _tokens.PressedContainerElevation
-            : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoveredContainerElevation
-            : interaction.HasFlag(InteractionState.Focused) ? _tokens.FocusedContainerElevation
-            : _tokens.ContainerElevation;
+        return _elevation.For(IsLowered, interaction);
     }
 }
