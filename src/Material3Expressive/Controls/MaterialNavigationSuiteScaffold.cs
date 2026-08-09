@@ -96,8 +96,8 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl, IMaterialM
             nameof(NavigationVisibilityProgress),
             owner => owner._navigationVisibilityProgress);
 
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
     private readonly MaterialShortNavigationBar _shortBar;
     private readonly MaterialWideNavigationRail _wideRail;
     private NavigationSuiteLayoutType _resolvedLayoutType =
@@ -111,8 +111,8 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl, IMaterialM
 
     public MaterialNavigationSuiteScaffold()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         _shortBar = new MaterialShortNavigationBar
         {
             Arrangement = ShortNavigationBarArrangement.EqualWeight
@@ -225,7 +225,7 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl, IMaterialM
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _motion.Start();
+        _motion.RequestFrame();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -267,7 +267,7 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl, IMaterialM
     private SpringAnimation VisibilityAnimation =>
         _visibility ??= _motion.AddSpring(
             _navigationVisibilityProgress,
-            _theme.Spring(MotionRole.DefaultSpatial));
+            _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
 
     private void ResolveLayout(Size size)
     {
@@ -470,8 +470,8 @@ public sealed class MaterialNavigationSuiteScaffold : ContentControl, IMaterialM
             return;
         }
 
-        VisibilityAnimation.AnimateTo(target, _theme.Spring(MotionRole.DefaultSpatial));
-        _motion.Start();
+        VisibilityAnimation.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+        _motion.RequestFrame();
     }
 
     private void SetNavigationVisibilityProgress(double value)

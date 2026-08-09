@@ -62,13 +62,15 @@ internal static class ThemeTestHelper
 /// <summary>
 /// A control that reads its tokens in code through the owner-local runtime context.
 /// </summary>
-internal sealed class ThemeProbe : TemplatedControl, IMaterialThemeConsumer
+internal sealed class ThemeProbe : TemplatedControl
 {
-    private readonly MaterialElementContext _context;
+    private readonly MaterialThemeController _theme;
+    private readonly IDisposable _themeSubscription;
 
     public ThemeProbe()
     {
-        _context = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _themeSubscription = _theme.Subscribe(OnThemeChanged);
     }
 
     public ResolvedTheme? ObservedTheme { get; private set; }
@@ -79,7 +81,7 @@ internal sealed class ThemeProbe : TemplatedControl, IMaterialThemeConsumer
 
     public IImmutableBrush? ContainerBrush { get; private set; }
 
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state)
+    private void OnThemeChanged(MaterialThemeState state)
     {
         var theme = state.Theme;
         var isDark = state.IsDark;

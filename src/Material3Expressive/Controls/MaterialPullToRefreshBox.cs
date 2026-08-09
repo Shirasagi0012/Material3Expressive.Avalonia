@@ -172,7 +172,7 @@ public sealed class MaterialPullToRefreshBox : ContentControl, IMaterialMotionCo
 
     private static readonly SpringSpec DefaultAnimatableSpring = new(1, 1500, .01);
 
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialMotionController _motion;
     private readonly MaterialPullToRefreshIndicator _defaultIndicator;
     private PullToRefreshState _state = new();
     private SpringAnimation? _fractionMotion;
@@ -194,7 +194,7 @@ public sealed class MaterialPullToRefreshBox : ContentControl, IMaterialMotionCo
         Focusable = true;
         _defaultIndicator = new MaterialPullToRefreshIndicator { Name = "indicator" };
         _effectiveIndicator = _defaultIndicator;
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         AttachState(_state);
         UpdateIndicator();
 
@@ -592,7 +592,7 @@ public sealed class MaterialPullToRefreshBox : ContentControl, IMaterialMotionCo
         {
             _fractionMotion!.AnimateTo(target, DefaultAnimatableSpring);
             State.SetMotionValue(_fractionMotion.Value, _fractionMotion.IsRunning);
-            _motion.Start();
+            _motion.RequestFrame();
         }
         UpdateIndicator();
     }
@@ -749,8 +749,8 @@ internal sealed class MaterialPullToRefreshIndicatorHost : Decorator
 /// <summary>Alpha22 default 40 DIP pull indicator surface, arrow, and refreshing spinner.</summary>
 internal sealed class MaterialPullToRefreshIndicator : Control, IMaterialThemeConsumer, IMaterialMotionConsumer
 {
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
     private readonly LoopingAnimation _rotation;
     private readonly SpringAnimation _alpha;
     private double _fraction;
@@ -775,8 +775,8 @@ internal sealed class MaterialPullToRefreshIndicator : Control, IMaterialThemeCo
     {
         Width = Height = PullToRefreshDefaults.IndicatorContainerSize;
         IsHitTestVisible = false;
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         _rotation = _motion.Add(new LoopingAnimation(TimeSpan.FromMilliseconds(1332)));
         _rotation.Settle();
         _alpha = _motion.AddSpring(.3, new SpringSpec(1, 1600, .01));
@@ -791,14 +791,14 @@ internal sealed class MaterialPullToRefreshIndicator : Control, IMaterialThemeCo
     {
         _fraction = Math.Max(0, fraction);
         _alpha.AnimateTo(_fraction >= 1 ? 1 : .3, new SpringSpec(1, 1600, .01));
-        _motion.Start();
+        _motion.RequestFrame();
         if (_refreshing != refreshing)
         {
             _refreshing = refreshing;
             if (refreshing)
             {
                 _rotation.Resume();
-                _motion.Start();
+                _motion.RequestFrame();
             }
             else
             {
@@ -838,7 +838,9 @@ internal sealed class MaterialPullToRefreshIndicator : Control, IMaterialThemeCo
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _motion.Start();
+        if (_refreshing)
+            _rotation.Resume();
+        _motion.RequestFrame();
     }
 
     private void DrawRefreshing(DrawingContext context)
@@ -913,14 +915,14 @@ internal sealed class MaterialPullToRefreshIndicator : Control, IMaterialThemeCo
 
     private void ApplyTheme()
     {
-        var scheme = _theme.Theme.ColorScheme;
+        var scheme = _theme.Current.Theme.ColorScheme;
         _container = new ImmutableSolidColorBrush(
-            scheme?.GetColor(SysColorToken.SurfaceContainerHigh, _theme.IsDark)
+            scheme?.GetColor(SysColorToken.SurfaceContainerHigh, _theme.Current.IsDark)
             ?? Color.FromRgb(236, 230, 240));
         _content = new ImmutableSolidColorBrush(
-            scheme?.GetColor(SysColorToken.OnSurfaceVariant, _theme.IsDark)
+            scheme?.GetColor(SysColorToken.OnSurfaceVariant, _theme.Current.IsDark)
             ?? Color.FromRgb(73, 69, 79));
-        _shadow = scheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        _shadow = scheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
         InvalidateVisual();
     }
 

@@ -151,10 +151,10 @@ public sealed class MaterialFloatingToolbar : TemplatedControl, IMaterialThemeCo
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.IsDark ?? false;
-    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
+    private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
@@ -269,7 +269,7 @@ public sealed class MaterialFloatingToolbar : TemplatedControl, IMaterialThemeCo
 
     public MaterialFloatingToolbar()
     {
-        _material = MaterialElementContext.GetOrCreate(this);
+        _material = MaterialElementContext.Ensure(this);
         _state.PropertyChanged += OnStatePropertyChanged;
         Items.CollectionChanged += (_, _) => ApplyItemMetrics();
         AddHandler(KeyDownEvent, OnToolbarKeyDown, Avalonia.Interactivity.RoutingStrategies.Bubble);
@@ -407,7 +407,7 @@ public sealed class MaterialFloatingToolbar : TemplatedControl, IMaterialThemeCo
     {
         base.OnAttachedToVisualTree(e);
         UpdateFocusability();
-        Motion.Start();
+        Motion.RequestFrame();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -499,7 +499,7 @@ public sealed class MaterialFloatingToolbar : TemplatedControl, IMaterialThemeCo
         }
 
         ExpansionAnimation.AnimateTo(target, Spring(MotionRole.FastSpatial));
-        Motion.Start();
+        Motion.RequestFrame();
     }
 
     private void SetExpansionProgress(double value)
@@ -808,11 +808,11 @@ internal sealed class MaterialFloatingToolbarShadow : Control, IMaterialThemeCon
     public static readonly StyledProperty<double> ElevationProperty =
         AvaloniaProperty.Register<MaterialFloatingToolbarShadow, double>(nameof(Elevation));
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
 
     public MaterialFloatingToolbarShadow()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
     }
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => InvalidateVisual();
@@ -831,7 +831,7 @@ internal sealed class MaterialFloatingToolbarShadow : Control, IMaterialThemeCon
 
     public override void Render(DrawingContext context)
     {
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark)
+        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark)
                      ?? Colors.Black;
         MaterialContainer.Draw(
             context,

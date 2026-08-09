@@ -24,6 +24,9 @@ internal sealed class IconButtonDefaultsAdapter
     private readonly Button _owner;
     private bool _active;
     private bool _refreshing;
+    private bool _refreshPending;
+    private MaterialThemeState _themeState = MaterialThemeState.Default;
+    private IDisposable? _themeSubscription;
 
     private IconButtonDefaultsAdapter(Button owner)
     {
@@ -50,15 +53,13 @@ internal sealed class IconButtonDefaultsAdapter
     {
         if (_active)
         {
-            Refresh();
+            RequestRefresh();
             return;
         }
 
         _active = true;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
-        _owner.AttachedToLogicalTree += OnAttachedToLogicalTree;
-        _owner.DetachedFromLogicalTree += OnDetachedFromLogicalTree;
-        Refresh();
+        _themeSubscription = MaterialElementContext.Ensure(_owner).Theme.Subscribe(OnThemeChanged);
     }
 
     internal void Deactivate()
@@ -68,8 +69,8 @@ internal sealed class IconButtonDefaultsAdapter
 
         _active = false;
         _owner.PropertyChanged -= OnOwnerPropertyChanged;
-        _owner.AttachedToLogicalTree -= OnAttachedToLogicalTree;
-        _owner.DetachedFromLogicalTree -= OnDetachedFromLogicalTree;
+        _themeSubscription?.Dispose();
+        _themeSubscription = null;
 
         _owner.ClearValue(M3IconButton.DefaultColorsProperty);
         _owner.ClearValue(M3IconButton.DefaultMetricsProperty);
@@ -78,51 +79,60 @@ internal sealed class IconButtonDefaultsAdapter
         _owner.ClearValue(M3IconButton.DefaultOutlineThicknessProperty);
     }
 
-    private void OnAttachedToLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) => Refresh();
-
-    private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) => Refresh();
-
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == MaterialThemeScope.ResolvedThemeProperty
-            || change.Property == ThemeVariantScope.ActualThemeVariantProperty
-            || change.Property == M3IconButton.VariantProperty
+        if (change.Property == M3IconButton.VariantProperty
             || change.Property == M3IconButton.SizeProperty
             || change.Property == M3IconButton.ButtonWidthProperty)
         {
-            Refresh();
+            RequestRefresh();
         }
     }
 
-    private void Refresh()
+    private void OnThemeChanged(MaterialThemeState state)
     {
-        if (!_active || _refreshing)
+        _themeState = state;
+        RequestRefresh();
+    }
+
+    private void RequestRefresh()
+    {
+        if (!_active)
             return;
+
+        if (_refreshing)
+        {
+            _refreshPending = true;
+            return;
+        }
 
         _refreshing = true;
         try
         {
-            var theme = MaterialThemeScope.GetResolvedTheme(_owner);
-            var isDark = ColorScheme.IsDark(_owner.ActualThemeVariant ?? ThemeVariant.Default);
-            var variant = M3IconButton.GetVariant(_owner);
-            var size = M3IconButton.GetSize(_owner);
-            var width = M3IconButton.GetButtonWidth(_owner);
+            do
+            {
+                _refreshPending = false;
+                var variant = M3IconButton.GetVariant(_owner);
+                var size = M3IconButton.GetSize(_owner);
+                var width = M3IconButton.GetButtonWidth(_owner);
 
-            M3IconButton.SetDefaultColors(
-                _owner,
-                IconButtonDefaults.Colors(theme, variant, isDark));
-            M3IconButton.SetDefaultMetrics(
-                _owner,
-                IconButtonDefaults.Metrics(size, width));
-            M3IconButton.SetDefaultShapes(
-                _owner,
-                IconButtonDefaults.Shapes(size));
-            M3IconButton.SetDefaultShapeMotion(
-                _owner,
-                IconButtonDefaults.ShapeMotion(theme));
-            M3IconButton.SetDefaultOutlineThickness(
-                _owner,
-                IconButtonDefaults.OutlineThickness(variant, size));
+                M3IconButton.SetDefaultColors(
+                    _owner,
+                    IconButtonDefaults.Colors(_themeState.Theme, variant, _themeState.IsDark));
+                M3IconButton.SetDefaultMetrics(
+                    _owner,
+                    IconButtonDefaults.Metrics(size, width));
+                M3IconButton.SetDefaultShapes(
+                    _owner,
+                    IconButtonDefaults.Shapes(size));
+                M3IconButton.SetDefaultShapeMotion(
+                    _owner,
+                    IconButtonDefaults.ShapeMotion(_themeState.Theme));
+                M3IconButton.SetDefaultOutlineThickness(
+                    _owner,
+                    IconButtonDefaults.OutlineThickness(variant, size));
+            }
+            while (_refreshPending);
         }
         finally
         {

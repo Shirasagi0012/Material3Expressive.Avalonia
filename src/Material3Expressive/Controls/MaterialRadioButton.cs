@@ -17,8 +17,14 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
+    private MaterialInteractionPresentationLease? _presentation;
+
+    private MaterialInteractionPresentationLease InteractionPresentation =>
+        _presentation is { IsDisposed: false } existing
+            ? existing
+            : _presentation = _interaction.AttachPresentation(this);
 
     private SpringAnimation? _dot;
     private RadioButtonMetrics _tokens = RadioButtonDefaults.Metrics();
@@ -26,8 +32,8 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
 
     public MaterialRadioButton()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
         _interaction.IsRippleBounded = false;
 
         ApplyTokens();
@@ -51,12 +57,12 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
     private SpringAnimation Dot =>
         _dot ??= _interaction.Motion.AddSpring(
             IsChecked == true ? 1 : 0,
-            _theme.Spring(MotionRole.FastSpatial));
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     public override void Render(DrawingContext context)
     {
         var area = GlyphArea;
-        _theme.InteractionPresentation.UpdateGeometry(
+        InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(area, null, null));
 
         var enabled = IsEffectivelyEnabled;
@@ -97,8 +103,8 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
         }
         else if (change.Property == IsCheckedProperty)
         {
-            Dot.AnimateTo(IsChecked == true ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
-            _interaction.Motion.Start();
+            Dot.AnimateTo(IsChecked == true ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+            _interaction.Motion.RequestFrame();
             InvalidateVisual();
         }
     }
@@ -106,7 +112,7 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
     private void ApplyTokens()
     {
         _tokens = RadioButtonDefaults.Metrics();
-        _colors = RadioButtonDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = RadioButtonDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         Padding = new Thickness(_tokens.StateLayerSize, 0, 0, 0);

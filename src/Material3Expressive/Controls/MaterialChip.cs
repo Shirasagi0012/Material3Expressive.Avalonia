@@ -44,7 +44,7 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
     public static readonly DirectProperty<MaterialChip, IImmutableBrush> IconBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialChip, IImmutableBrush>(nameof(IconBrush), o => o.IconBrush);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
@@ -53,8 +53,8 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
 
     public MaterialChip()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         ApplyTokens();
     }
@@ -107,8 +107,16 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
 
     private bool IsSelected => _tokens.IsSelectable && IsChecked == true;
 
-    private AnimatedShape Shape =>
-        _shape ??= _interaction.CreateAnimatedShape(RestingShape(), _theme.Spring(MotionRole.DefaultEffects));
+    private AnimatedShape Shape => _shape ??= CreateShape();
+
+    private AnimatedShape CreateShape()
+    {
+        var shape = new AnimatedShape(
+            RestingShape(),
+            _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects));
+        _interaction.Motion.Add(shape.Progress);
+        return shape;
+    }
 
     public override void Render(DrawingContext context)
     {
@@ -149,12 +157,12 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
         var previousSpace = IconLabelSpace;
 
         _tokens = ChipDefaults.Metrics(Variant);
-        _colors = ChipDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
+        _colors = ChipDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
 
         Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);
         MinHeight = _tokens.ContainerHeight;
@@ -190,12 +198,12 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
             return;
         }
 
-        Shape.AnimateTo(target, _theme.Spring(MotionRole.DefaultEffects));
-        _interaction.Motion.Start();
+        Shape.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects));
+        _interaction.Motion.RequestFrame();
     }
 
     private RoundedCornerShape RestingShape()
     {
-        return _theme.Theme.Shapes.Get(IsSelected ? _tokens.SelectedContainerShape : _tokens.ContainerShape);
+        return _theme.Current.Theme.Shapes.Get(IsSelected ? _tokens.SelectedContainerShape : _tokens.ContainerShape);
     }
 }

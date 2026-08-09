@@ -24,6 +24,9 @@ internal sealed class ButtonDefaultsAdapter
     private readonly Button _owner;
     private bool _active;
     private bool _refreshing;
+    private bool _refreshPending;
+    private MaterialThemeState _themeState = MaterialThemeState.Default;
+    private IDisposable? _themeSubscription;
 
     private ButtonDefaultsAdapter(Button owner)
     {
@@ -50,15 +53,13 @@ internal sealed class ButtonDefaultsAdapter
     {
         if (_active)
         {
-            Refresh();
+            RequestRefresh();
             return;
         }
 
         _active = true;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
-        _owner.AttachedToLogicalTree += OnAttachedToLogicalTree;
-        _owner.DetachedFromLogicalTree += OnDetachedFromLogicalTree;
-        Refresh();
+        _themeSubscription = MaterialElementContext.Ensure(_owner).Theme.Subscribe(OnThemeChanged);
     }
 
     internal void Deactivate()
@@ -68,8 +69,8 @@ internal sealed class ButtonDefaultsAdapter
 
         _active = false;
         _owner.PropertyChanged -= OnOwnerPropertyChanged;
-        _owner.AttachedToLogicalTree -= OnAttachedToLogicalTree;
-        _owner.DetachedFromLogicalTree -= OnDetachedFromLogicalTree;
+        _themeSubscription?.Dispose();
+        _themeSubscription = null;
 
         // These are adapter-owned local values rather than public presentation properties, so
         // clearing them cannot disturb an application's Style or local value.
@@ -81,43 +82,54 @@ internal sealed class ButtonDefaultsAdapter
         _owner.ClearValue(M3Button.DefaultOutlineThicknessProperty);
     }
 
-    private void OnAttachedToLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) => Refresh();
-
-    private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) => Refresh();
-
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == MaterialThemeScope.ResolvedThemeProperty
-            || change.Property == ThemeVariantScope.ActualThemeVariantProperty
-            || change.Property == M3Button.VariantProperty
+        if (change.Property == M3Button.VariantProperty
             || change.Property == M3Button.SizeProperty)
         {
-            Refresh();
+            RequestRefresh();
         }
     }
 
-    private void Refresh()
+    private void OnThemeChanged(MaterialThemeState state)
     {
-        if (!_active || _refreshing)
+        _themeState = state;
+        RequestRefresh();
+    }
+
+    private void RequestRefresh()
+    {
+        if (!_active)
             return;
+
+        if (_refreshing)
+        {
+            _refreshPending = true;
+            return;
+        }
 
         _refreshing = true;
         try
         {
-            var theme = MaterialThemeScope.GetResolvedTheme(_owner);
-            var isDark = ColorScheme.IsDark(_owner.ActualThemeVariant ?? ThemeVariant.Default);
-            var variant = M3Button.GetVariant(_owner);
-            var size = M3Button.GetSize(_owner);
-            var metrics = ButtonDefaults.Metrics(size);
+            do
+            {
+                _refreshPending = false;
+                var variant = M3Button.GetVariant(_owner);
+                var size = M3Button.GetSize(_owner);
+                var metrics = ButtonDefaults.Metrics(size);
 
-            M3Button.SetDefaultColors(_owner, ButtonDefaults.Colors(theme, variant, isDark));
-            M3Button.SetDefaultMetrics(_owner, metrics);
-            M3Button.SetDefaultShapes(_owner, ButtonDefaults.Shapes(size));
-            M3Button.SetDefaultElevation(_owner, ButtonDefaults.Elevation(variant));
-            M3Button.SetDefaultShapeMotion(_owner, ButtonDefaults.ShapeMotion(theme));
-            M3Button.SetDefaultOutlineThickness(
-                _owner,
-                ButtonDefaults.OutlineThickness(variant, size));
+                M3Button.SetDefaultColors(
+                    _owner,
+                    ButtonDefaults.Colors(_themeState.Theme, variant, _themeState.IsDark));
+                M3Button.SetDefaultMetrics(_owner, metrics);
+                M3Button.SetDefaultShapes(_owner, ButtonDefaults.Shapes(size));
+                M3Button.SetDefaultElevation(_owner, ButtonDefaults.Elevation(variant));
+                M3Button.SetDefaultShapeMotion(_owner, ButtonDefaults.ShapeMotion(_themeState.Theme));
+                M3Button.SetDefaultOutlineThickness(
+                    _owner,
+                    ButtonDefaults.OutlineThickness(variant, size));
+            }
+            while (_refreshPending);
         }
         finally
         {

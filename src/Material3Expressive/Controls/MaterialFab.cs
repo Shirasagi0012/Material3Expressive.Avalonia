@@ -84,7 +84,7 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     public static readonly DirectProperty<MaterialFab, bool> IsExtendedProperty =
         AvaloniaProperty.RegisterDirect<MaterialFab, bool>(nameof(IsExtended), o => o.IsExtended);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
@@ -94,8 +94,8 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
 
     public MaterialFab()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         ApplyTokens();
     }
@@ -161,13 +161,21 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     protected CornerRadius ContainerCornerRadius =>
         Shape.ToCornerRadius(Bounds.Size, FlowDirection == FlowDirection.RightToLeft);
 
-    private AnimatedShape Shape =>
-        _shape ??= _interaction.CreateAnimatedShape(RestingShape(), _theme.Spring(MotionRole.DefaultEffects));
+    private AnimatedShape Shape => _shape ??= CreateShape();
+
+    private AnimatedShape CreateShape()
+    {
+        var shape = new AnimatedShape(
+            RestingShape(),
+            _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects));
+        _interaction.Motion.Add(shape.Progress);
+        return shape;
+    }
 
     public override void Render(DrawingContext context)
     {
         var corners = ContainerCornerRadius;
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
 
         MaterialContainer.Draw(
             context,
@@ -199,12 +207,12 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
         var previousMetrics = _metrics;
         var wasExtended = IsExtended;
 
-        _colors = FabDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
+        _colors = FabDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
         _elevation = FabDefaults.Elevation(Variant);
         _metrics = FabDefaults.Metrics(Size);
         RaiseTokenOutputs(previousMetrics, wasExtended);
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
 
         Foreground = _colors.IconColor;
         MinHeight = _metrics.ContainerHeight;
@@ -223,7 +231,7 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     private void UpdateShape(bool snap = false)
     {
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Theme.Shapes.Get(_metrics.PressedContainerShape)
+            ? _theme.Current.Theme.Shapes.Get(_metrics.PressedContainerShape)
             : RestingShape();
 
         if (snap && !Shape.IsRunning)
@@ -233,13 +241,13 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
             return;
         }
 
-        Shape.AnimateTo(target, _theme.Spring(MotionRole.DefaultEffects));
-        _interaction.Motion.Start();
+        Shape.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects));
+        _interaction.Motion.RequestFrame();
     }
 
     private RoundedCornerShape RestingShape()
     {
-        return _theme.Theme.Shapes.Get(_metrics.ContainerShape);
+        return _theme.Current.Theme.Shapes.Get(_metrics.ContainerShape);
     }
 
     private double CurrentElevation()

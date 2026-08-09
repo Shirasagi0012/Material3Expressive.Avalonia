@@ -40,8 +40,8 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
     /// <summary>Past this fraction of the sheet's height, a release settles it closed.</summary>
     private const double DismissThreshold = 0.4;
 
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
 
     private SpringAnimation? _open;
     private BottomSheetMetrics _tokens = BottomSheetDefaults.Metrics(BottomSheetVariant.Modal);
@@ -52,8 +52,8 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
 
     public MaterialBottomSheet()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         ApplyTokens();
     }
 
@@ -87,7 +87,7 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
     protected double OpenFraction => _open?.Value ?? (IsOpen ? 1 : 0);
 
     private SpringAnimation Open =>
-        _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
+        _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
 
     private Rect SheetArea => GetSheetArea(Bounds.Size);
 
@@ -112,7 +112,7 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
 
         if (_tokens.IsModal && _tokens.ScrimOpacity > 0)
         {
-            var scrim = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.IsDark) ?? Colors.Black;
+            var scrim = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.Current.IsDark) ?? Colors.Black;
             using (context.PushOpacity(_tokens.ScrimOpacity * fraction))
                 context.FillRectangle(new SolidColorBrush(scrim), new Rect(Bounds.Size));
         }
@@ -121,7 +121,7 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         if (sheet.Height <= 0)
             return;
 
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, sheet.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, sheet.Size);
 
         using (context.PushTransform(Matrix.CreateTranslation(sheet.X, sheet.Y)))
         {
@@ -234,8 +234,8 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         }
         else if (change.Property == IsOpenProperty)
         {
-            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
-            _motion.Start();
+            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+            _motion.RequestFrame();
             IsHitTestVisible = IsOpen;
         }
     }
@@ -258,15 +258,15 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         }
         else
         {
-            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
-            _motion.Start();
+            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+            _motion.RequestFrame();
         }
     }
 
     private void ApplyTokens()
     {
         _tokens = BottomSheetDefaults.Metrics(Variant);
-        _colors = BottomSheetDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
+        _colors = BottomSheetDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
 
         Padding = new Thickness(0, _tokens.DragHandleSpace, 0, 0);
         IsHitTestVisible = IsOpen;

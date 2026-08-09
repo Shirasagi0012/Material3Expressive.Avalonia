@@ -5,7 +5,7 @@ using System.Threading;
 namespace Material3Expressive.Controls;
 
 /// <summary>
-/// Test-only owner for every <see cref="MaterialMotionCoordinator" /> created while the scope is active.
+/// Test-only owner for every <see cref="MaterialMotionController" /> created while the scope is active.
 /// </summary>
 /// <remarks>
 /// The visual-parity host enters this scope before it constructs a scene. That makes initial,
@@ -16,8 +16,8 @@ internal sealed class MotionTestClockScope : IDisposable
 {
     private static readonly AsyncLocal<MotionTestClockScope?> CurrentScope = new();
 
-    private readonly List<MaterialMotionCoordinator> _coordinators = [];
-    private readonly HashSet<MaterialMotionCoordinator> _knownCoordinators = [];
+    private readonly List<MaterialMotionController> _controllers = [];
+    private readonly HashSet<MaterialMotionController> _knownControllers = [];
     private bool _disposed;
 
     public MotionTestClockScope()
@@ -28,11 +28,11 @@ internal sealed class MotionTestClockScope : IDisposable
         CurrentScope.Value = this;
     }
 
-    internal int CoordinatorCount => _coordinators.Count;
+    internal int ControllerCount => _controllers.Count;
 
-    internal static void Register(MaterialMotionCoordinator coordinator)
+    internal static void Register(MaterialMotionController controller)
     {
-        CurrentScope.Value?.Add(coordinator);
+        CurrentScope.Value?.Add(controller);
     }
 
     internal void AdvanceBy(TimeSpan delta)
@@ -43,15 +43,15 @@ internal sealed class MotionTestClockScope : IDisposable
 
         // A tick can create another coordinator. Indexing lets that coordinator consume the same
         // logical frame, matching a frame clock where all registered callbacks see one timestamp.
-        for (var index = 0; index < _coordinators.Count; index++)
-            _coordinators[index].AdvanceBy(delta);
+        for (var index = 0; index < _controllers.Count; index++)
+            _controllers[index].AdvanceBy(delta);
     }
 
     internal void SettleAll()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        for (var index = 0; index < _coordinators.Count; index++)
-            _coordinators[index].SettleAll();
+        for (var index = 0; index < _controllers.Count; index++)
+            _controllers[index].SettleAll();
     }
 
     public void Dispose()
@@ -65,12 +65,12 @@ internal sealed class MotionTestClockScope : IDisposable
         _disposed = true;
     }
 
-    private void Add(MaterialMotionCoordinator coordinator)
+    private void Add(MaterialMotionController controller)
     {
-        if (!_knownCoordinators.Add(coordinator))
+        if (!_knownControllers.Add(controller))
             return;
 
-        coordinator.UseManualClock();
-        _coordinators.Add(coordinator);
+        controller.UseManualClock();
+        _controllers.Add(controller);
     }
 }

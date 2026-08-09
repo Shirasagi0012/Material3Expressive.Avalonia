@@ -22,7 +22,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
             MaterialButtonContainerPresenter,
             CornerRadius>(nameof(CurrentCornerRadius), presenter => presenter.CurrentCornerRadius);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
 
     private Button? _owner;
     private MaterialInteractionController? _interaction;
@@ -37,7 +37,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     {
         IsHitTestVisible = false;
         Focusable = false;
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
     }
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
@@ -62,7 +62,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
         UpdateCurrentCornerRadius();
 
         var enabled = owner.IsEffectivelyEnabled;
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark)
+        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark)
                      ?? Colors.Black;
 
         MaterialContainer.Draw(
@@ -84,7 +84,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
         _owner = TemplatedParent as Button
                  ?? throw new InvalidOperationException(
                      $"{nameof(MaterialButtonContainerPresenter)} must be used in a Button template.");
-        _interaction = MaterialElementContext.GetOrCreate(_owner).Interaction;
+        _interaction = MaterialElementContext.Ensure(_owner).Interaction;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
         _interactionLease = _interaction.Subscribe(this);
 
@@ -125,9 +125,9 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     {
         var interaction = _interaction
                           ?? throw new InvalidOperationException("The presenter is not attached.");
-        return interaction.CreateAnimatedShape(
-            RestingShape(),
-            _shapeMotion);
+        var shape = new AnimatedShape(RestingShape(), _shapeMotion);
+        interaction.Motion.Add(shape.Progress);
+        return shape;
     }
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
@@ -173,7 +173,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
                      ?? ButtonDefaults.Elevation(M3Button.GetVariant(owner));
         _shapeMotion = M3Button.GetDefaultShapeMotion(owner);
         if (_shapeMotion.Stiffness <= 0)
-            _shapeMotion = ButtonDefaults.ShapeMotion(_theme.Theme);
+            _shapeMotion = ButtonDefaults.ShapeMotion(_theme.Current.Theme);
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -193,7 +193,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
         else
         {
             shape.AnimateTo(target, _shapeMotion);
-            _interaction.Motion.Start();
+            _interaction.Motion.RequestFrame();
         }
 
         UpdateCurrentCornerRadius();
@@ -222,7 +222,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
                        : _shapes.Container);
     }
 
-    private RoundedCornerShape ShapeFor(ShapeRole role) => _theme.Theme.Shapes.Get(role);
+    private RoundedCornerShape ShapeFor(ShapeRole role) => _theme.Current.Theme.Shapes.Get(role);
 
     private double CurrentElevation(bool enabled)
     {

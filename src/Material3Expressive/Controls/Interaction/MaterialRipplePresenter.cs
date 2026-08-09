@@ -107,7 +107,7 @@ public sealed class MaterialRipplePresenter : Control, IMaterialInteractionObser
         base.OnAttachedToVisualTree(e);
 
         _owner = TemplatedParent as Control ?? this;
-        _interaction = MaterialElementContext.GetOrCreate(_owner).Interaction;
+        _interaction = MaterialElementContext.Ensure(_owner).Interaction;
         _presentation = _interaction.AttachPresentation(this);
         _presentation.Disposed += OnPresentationDisposed;
         _interactionLease = _interaction.Subscribe(this);

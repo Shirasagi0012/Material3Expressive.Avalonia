@@ -100,8 +100,14 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
             nameof(ContentOffset),
             owner => owner.ContentOffset);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
+    private MaterialInteractionPresentationLease? _presentation;
+
+    private MaterialInteractionPresentationLease InteractionPresentation =>
+        _presentation is { IsDisposed: false } existing
+            ? existing
+            : _presentation = _interaction.AttachPresentation(this);
     private SegmentedButtonColors _colors = SegmentedButtonDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private SegmentedButtonMetrics _tokens = SegmentedButtonDefaults.Metrics();
     private SpringAnimation? _contentOffsetAnimation;
@@ -121,8 +127,8 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
 
     public MaterialSegmentedButton()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         ApplyTokens();
     }
@@ -268,7 +274,7 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
             outline,
             _tokens.OutlineWidth);
 
-        _theme.InteractionPresentation.UpdateGeometry(
+        InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(new Rect(Bounds.Size), null, null));
         base.Render(context);
         _interaction.DrawLayers(
@@ -425,7 +431,7 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         var previousDefault = IsDefaultIconVisible;
 
         _tokens = SegmentedButtonDefaults.Metrics();
-        _colors = SegmentedButtonDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = SegmentedButtonDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
 
         ReplaceLease(ref _minWidthLease, MinWidthProperty, 58d);
         ReplaceLease(ref _minHeightLease, MinHeightProperty, _tokens.ContainerHeight);
@@ -438,10 +444,10 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
                 _tokens.HorizontalContentPadding,
                 _tokens.VerticalContentPadding));
 
-        var typeScale = _theme.Theme.Typography.GetTypeScale(_tokens.LabelTextStyle);
+        var typeScale = _theme.Current.Theme.Typography.GetTypeScale(_tokens.LabelTextStyle);
         FontSize = typeScale.FontSize;
-        FontFamily = _theme.Theme.Typography.GetFontFamily(_tokens.LabelTextStyle);
-        FontWeight = _theme.Theme.Typography.GetFontWeight(_tokens.LabelTextStyle);
+        FontFamily = _theme.Current.Theme.Typography.GetFontFamily(_tokens.LabelTextStyle);
+        FontWeight = _theme.Current.Theme.Typography.GetFontWeight(_tokens.LabelTextStyle);
         Foreground = IsEffectivelyEnabled
             ? IsChecked == true ? _colors.ActiveContentColor : _colors.InactiveContentColor
             : IsChecked == true ? _colors.DisabledActiveContentColor : _colors.DisabledInactiveContentColor;
@@ -518,13 +524,13 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
     {
         var iconTarget = Icon is not null ? 1d : IsDefaultIconVisible ? 1d : 0d;
         var offsetTarget = HasVisibleIcon ? 0d : -(IconSize + IconSpacing) / 2d;
-        var fastSpatial = _theme.Spring(MotionRole.FastSpatial);
+        var fastSpatial = _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial);
 
         _contentOffsetAnimation ??= _interaction.Motion.AddSpring(offsetTarget, fastSpatial);
         _iconScaleAnimation ??= _interaction.Motion.AddSpring(iconTarget, fastSpatial);
         _iconOpacityAnimation ??= _interaction.Motion.AddSpring(
             iconTarget,
-            _theme.Spring(MotionRole.DefaultEffects));
+            _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects));
 
         if (snap)
         {
@@ -546,12 +552,12 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
                 _iconScaleAnimation.AnimateTo(1, fastSpatial);
                 _iconOpacityAnimation.AnimateTo(
                     1,
-                    _theme.Spring(MotionRole.DefaultEffects));
+                    _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects));
             }
         }
 
         SyncMotionOutputs();
-        _interaction.Motion.Start();
+        _interaction.Motion.RequestFrame();
     }
 
     private void SyncMotionOutputs()

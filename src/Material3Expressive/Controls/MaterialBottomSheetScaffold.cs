@@ -3,7 +3,7 @@
 // 453-620 and SheetDefaults.kt:90-260, 496-540 (VERSION 29.0.0).
 // The alpha22 executable reference has the same standard two-anchor geometry. Avalonia maps
 // suspend SheetState methods to synchronous, vetoable state commands and keeps animation owned by
-// the control's MaterialMotionScope so interrupted drags resume from the current fraction.
+// the control's MaterialMotionController so interrupted drags resume from the current fraction.
 
 using System.ComponentModel;
 using Avalonia;
@@ -246,8 +246,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
         AvaloniaProperty.RegisterDirect<MaterialBottomSheetScaffoldSheet, BottomSheetState>(
             nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
 
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
     private BottomSheetMetrics _tokens = BottomSheetDefaults.Metrics(BottomSheetVariant.Standard);
     private BottomSheetVisualColors _colors = BottomSheetDefaults.Colors(Foundation.ResolvedTheme.Default, BottomSheetVariant.Standard, false);
     private Point? _dragStart;
@@ -261,8 +261,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
 
     public MaterialBottomSheetScaffoldSheet()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         AddHandler(
             InputElement.ScrollGestureEvent,
             OnNestedScrollGesture,
@@ -331,10 +331,10 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
     private SpringAnimation? _motionFraction;
 
     private CornerRadius ContainerCornerRadius =>
-        _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
 
     private Color ShadowColor =>
-        _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
 
     public override void Render(DrawingContext context)
     {
@@ -459,7 +459,7 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
     private void SetFraction(double fraction)
     {
         fraction = Math.Clamp(fraction, 0, 1);
-        _motionFraction ??= _motion.AddSpring(fraction, _theme.Spring(MotionRole.DefaultSpatial));
+        _motionFraction ??= _motion.AddSpring(fraction, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
         _motionFraction.SnapTo(fraction);
         _fraction = fraction;
         (this.GetVisualParent() as Control)?.InvalidateArrange();
@@ -551,7 +551,7 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
     private void ApplyTheme()
     {
         _tokens = BottomSheetDefaults.Metrics(BottomSheetVariant.Standard);
-        _colors = BottomSheetDefaults.Colors(_theme.Theme, BottomSheetVariant.Standard, _theme.IsDark);
+        _colors = BottomSheetDefaults.Colors(_theme.Current.Theme, BottomSheetVariant.Standard, _theme.Current.IsDark);
         // DragHandle uses 22dp vertical padding on both sides around its 4dp stroke.
         Padding = new Thickness(
             0,
@@ -600,13 +600,13 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
 
     private void AnimateTo(double target, bool snap)
     {
-        _motionFraction ??= _motion.AddSpring(target, _theme.Spring(MotionRole.DefaultSpatial));
+        _motionFraction ??= _motion.AddSpring(target, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
         if (snap)
             _motionFraction.SnapTo(target);
         else
         {
-            _motionFraction.AnimateTo(target, _theme.Spring(MotionRole.DefaultSpatial));
-            _motion.Start();
+            _motionFraction.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+            _motion.RequestFrame();
         }
         _fraction = _motionFraction.Value;
         (this.GetVisualParent() as Control)?.InvalidateArrange();

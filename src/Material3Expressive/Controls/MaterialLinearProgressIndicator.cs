@@ -30,10 +30,10 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.IsDark ?? false;
-    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
+    private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
         ApplyTheme(state.Theme, state.IsDark);
@@ -67,7 +67,7 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
 
     public MaterialLinearProgressIndicator()
     {
-        _material = MaterialElementContext.GetOrCreate(this);
+        _material = MaterialElementContext.Ensure(this);
     }
 
     static MaterialLinearProgressIndicator()
@@ -159,7 +159,7 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
         if (change.Property == ValueProperty)
         {
             Progress.AnimateTo(Clamp(Value), Spring(MotionRole.DefaultSpatial));
-            Motion.Start();
+            Motion.RequestFrame();
         }
         else if (change.Property == IsIndeterminateProperty || change.Property == IsWavyProperty)
         {
@@ -263,7 +263,7 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
         else
             Sweep.Settle();
 
-        Motion.Start();
+        Motion.RequestFrame();
         InvalidateVisual();
     }
 

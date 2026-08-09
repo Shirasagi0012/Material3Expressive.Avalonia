@@ -268,7 +268,7 @@ public sealed class MaterialListItemMotionTests
         Assert.IsType<SpringAnimation>(PrivateField(item, "_elevation").GetValue(item));
 
     private static MaterialInteractionController InteractionController(MaterialListItem item) =>
-        MaterialElementContext.GetOrCreate(item).Interaction;
+        MaterialElementContext.Ensure(item).Interaction;
 
     private static Border ContentClip(MaterialListItem item) =>
         Assert.Single(

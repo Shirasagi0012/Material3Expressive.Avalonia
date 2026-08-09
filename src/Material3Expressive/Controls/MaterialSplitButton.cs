@@ -52,7 +52,7 @@ public class MaterialSplitButton : TemplatedControl, IMaterialThemeConsumer
 
     private Button? _leading;
     private ToggleButton? _trailing;
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private SplitButtonMetrics _tokens = SplitButtonDefaults.Metrics();
 
     static MaterialSplitButton()
@@ -62,7 +62,7 @@ public class MaterialSplitButton : TemplatedControl, IMaterialThemeConsumer
 
     public MaterialSplitButton()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
         ApplyTokens();
     }
 

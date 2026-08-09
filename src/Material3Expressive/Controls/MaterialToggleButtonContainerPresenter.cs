@@ -16,7 +16,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
             MaterialToggleButtonContainerPresenter,
             CornerRadius>(nameof(CurrentCornerRadius), presenter => presenter.CurrentCornerRadius);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private ToggleButton? _owner;
     private MaterialInteractionController? _interaction;
     private IDisposable? _interactionLease;
@@ -32,7 +32,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     {
         IsHitTestVisible = false;
         Focusable = false;
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
     }
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
@@ -68,7 +68,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
         _owner = TemplatedParent as ToggleButton
                  ?? throw new InvalidOperationException(
                      $"{nameof(MaterialToggleButtonContainerPresenter)} requires a ToggleButton template.");
-        _interaction = MaterialElementContext.GetOrCreate(_owner).Interaction;
+        _interaction = MaterialElementContext.Ensure(_owner).Interaction;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
         _interactionLease = _interaction.Subscribe(this);
         ApplyTokens(snapShape: true);
@@ -100,8 +100,16 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
             UpdateCurrentCornerRadius();
     }
 
-    private AnimatedShape Shape => _shape ??= _interaction!.CreateAnimatedShape(
-        RestingShape(), _shapeMotion);
+    private AnimatedShape Shape => _shape ??= CreateShape();
+
+    private AnimatedShape CreateShape()
+    {
+        var interaction = _interaction
+                          ?? throw new InvalidOperationException("The presenter is not attached.");
+        var shape = new AnimatedShape(RestingShape(), _shapeMotion);
+        interaction.Motion.Add(shape.Progress);
+        return shape;
+    }
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
@@ -135,7 +143,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
                   ?? ToggleButtonDefaults.Shapes(M3Button.GetSize(owner));
         _shapeMotion = M3ToggleButton.GetDefaultShapeMotion(owner);
         if (_shapeMotion.Stiffness <= 0)
-            _shapeMotion = ToggleButtonDefaults.ShapeMotion(_theme.Theme);
+            _shapeMotion = ToggleButtonDefaults.ShapeMotion(_theme.Current.Theme);
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -146,14 +154,14 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
             return;
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Theme.Shapes.Get(_shapes.Pressed)
+            ? _theme.Current.Theme.Shapes.Get(_shapes.Pressed)
             : RestingShape();
         if (snap && !shape.IsRunning)
             shape.SnapTo(target);
         else
         {
             shape.AnimateTo(target, _shapeMotion);
-            _interaction.Motion.Start();
+            _interaction.Motion.RequestFrame();
         }
         UpdateCurrentCornerRadius();
         InvalidateVisual();
@@ -162,13 +170,13 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return _theme.Theme.Shapes.Get(_shapes.Unchecked);
+            return _theme.Current.Theme.Shapes.Get(_shapes.Unchecked);
         if (M3Button.GetContainerShapeOverride(owner) is { } shape)
             return shape;
 
         var selected = owner.IsChecked == true;
         var round = M3Button.GetIsSquare(owner) == selected;
-        return _theme.Theme.Shapes.Get(
+        return _theme.Current.Theme.Shapes.Get(
             round ? _shapes.Unchecked : _shapes.Checked);
     }
 

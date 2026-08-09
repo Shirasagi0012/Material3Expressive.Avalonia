@@ -161,7 +161,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     public static readonly DirectProperty<MaterialListItem, IBrush> OverlineBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialListItem, IBrush>(nameof(OverlineBrush), item => item.OverlineBrush);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
     private readonly Dictionary<TextBlock, SlotTypographyAssignment> _slotTypographyAssignments = new();
 
@@ -194,8 +194,8 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
 
     public MaterialListItem()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
         ApplyTokens();
     }
 
@@ -331,8 +331,16 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
         _longClickHandlerCount > 0
         || LongClickCommand?.CanExecute(LongClickCommandParameter) == true;
 
-    private AnimatedShape Shape =>
-        _shape ??= _interaction.CreateAnimatedShape(RestingShape(), _theme.Spring(_tokens.ShapeMotion));
+    private AnimatedShape Shape => _shape ??= CreateShape();
+
+    private AnimatedShape CreateShape()
+    {
+        var shape = new AnimatedShape(
+            RestingShape(),
+            _theme.Current.Theme.Motion.Get(_tokens.ShapeMotion));
+        _interaction.Motion.Add(shape.Progress);
+        return shape;
+    }
 
     private CornerRadius ContainerCornerRadius =>
         Shape.ToCornerRadius(Bounds.Size, FlowDirection == FlowDirection.RightToLeft);
@@ -349,7 +357,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     internal bool ParityShadowOccluderDrawn => true;
 
     private Color ShadowColor =>
-        _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
 
     /// <inheritdoc />
     /// <remarks>
@@ -704,9 +712,9 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     private void ApplyTokens()
     {
         _tokens = ListItemDefaults.Metrics();
-        _colors = ListItemDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = ListItemDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
         var scale = typography.GetTypeScale(_tokens.ContentTextStyle);
         FontSize = scale.FontSize;
         FontFamily = typography.GetFontFamily(_tokens.ContentTextStyle);
@@ -812,7 +820,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
         // local value. Clearing the recorded current overrides restores the original style when
         // this caller-owned TextBlock leaves the slot.
         var restoreMetricOverrides = new List<Action>();
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
         var scale = typography.GetTypeScale(resolvedRole);
         OverrideSlotMetric(
             textBlock,
@@ -993,9 +1001,9 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
             return;
         }
 
-        Shape.AnimateTo(target, _theme.Spring(_tokens.ShapeMotion));
+        Shape.AnimateTo(target, _theme.Current.Theme.Motion.Get(_tokens.ShapeMotion));
         UpdateContentClip();
-        _interaction.Motion.Start();
+        _interaction.Motion.RequestFrame();
         InvalidateVisual();
     }
 
@@ -1027,11 +1035,11 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
 
     private RoundedCornerShape RestingShape()
     {
-        var shape = _theme.Theme.Shapes.Get(_tokens.RestingShape);
+        var shape = _theme.Current.Theme.Shapes.Get(_tokens.RestingShape);
         if (SegmentPosition is MaterialListItemSegmentPosition.None or MaterialListItemSegmentPosition.Middle)
             return shape;
 
-        var outer = _theme.Theme.Shapes.Get(_tokens.SegmentedOuterShape);
+        var outer = _theme.Current.Theme.Shapes.Get(_tokens.SegmentedOuterShape);
         return SegmentPosition switch
         {
             MaterialListItemSegmentPosition.Single => shape with
@@ -1068,13 +1076,13 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
             : interaction.HasFlag(InteractionState.Hovered) ? _tokens.HoveredShape
             : null;
         return role is { } activeRole
-            ? _theme.Theme.Shapes.Get(activeRole)
+            ? _theme.Current.Theme.Shapes.Get(activeRole)
             : RestingShape();
     }
 
     private void UpdateAnimatedColors(bool snap)
     {
-        var spring = _theme.Spring(_tokens.ColorMotion);
+        var spring = _theme.Current.Theme.Motion.Get(_tokens.ColorMotion);
         var started = false;
 
         RetargetBrush(ref _containerBrushAnimation, TargetContainerBrush(), spring, snap, ref started);
@@ -1085,13 +1093,13 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
         RetargetBrush(ref _supportingBrushAnimation, TargetSupportingContentBrush(), spring, snap, ref started);
 
         if (started)
-            _interaction.Motion.Start();
+            _interaction.Motion.RequestFrame();
     }
 
     private void UpdateElevation(bool snap)
     {
         var target = TargetElevation();
-        var spring = _theme.Spring(_tokens.ElevationMotion);
+        var spring = _theme.Current.Theme.Motion.Get(_tokens.ElevationMotion);
 
         if (_elevation is null)
         {
@@ -1107,7 +1115,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
 
         _elevation.AnimateTo(target, spring);
         if (_elevation.IsRunning)
-            _interaction.Motion.Start();
+            _interaction.Motion.RequestFrame();
     }
 
     private void RetargetBrush(

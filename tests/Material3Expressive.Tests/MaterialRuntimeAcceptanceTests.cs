@@ -28,13 +28,13 @@ public sealed class MaterialElementContextAcceptanceTests
         var child = new Border();
         owner.Child = child;
 
-        var first = MaterialElementContext.GetOrCreate(owner);
+        var first = MaterialElementContext.Ensure(owner);
 
-        Assert.Same(first, MaterialElementContext.GetOrCreate(owner));
+        Assert.Same(first, MaterialElementContext.Ensure(owner));
         Assert.True(MaterialElementContext.TryGet(owner, out var stored));
         Assert.Same(first, stored);
         Assert.False(MaterialElementContext.TryGet(child, out _));
-        Assert.Null(first.MotionCoordinatorIfCreated);
+        Assert.Null(first.MotionIfCreated);
         Assert.Null(first.InteractionIfCreated);
     }
 
@@ -42,7 +42,7 @@ public sealed class MaterialElementContextAcceptanceTests
     public void FirstDefaultResolution_IsPublishedExactlyOnce()
     {
         var probe = new ThemeProbe();
-        Assert.Equal(0, probe.ChangeCount);
+        Assert.Equal(1, probe.ChangeCount);
         ThemeTestHelper.ShowWindow(probe);
 
         Assert.Equal(1, probe.ChangeCount);
@@ -56,10 +56,10 @@ public sealed class MaterialElementContextAcceptanceTests
         var owner = new Border();
         var window = ThemeTestHelper.ShowWindow(owner);
 
-        var context = MaterialElementContext.GetOrCreate(owner);
+        var context = MaterialElementContext.Ensure(owner);
 
-        Assert.True(context.HasPublishedTheme);
-        Assert.Same(context, MaterialElementContext.GetOrCreate(owner));
+        Assert.Same(ResolvedTheme.Default, context.Theme.Current.Theme);
+        Assert.Same(context, MaterialElementContext.Ensure(owner));
         window.Close();
     }
 
@@ -71,6 +71,7 @@ public sealed class MaterialElementContextAcceptanceTests
         var probe = new ReentrantThemeProbe(second);
 
         MaterialThemeScope.SetTheme(probe, first);
+        probe.Activate();
 
         Assert.Equal(2, probe.Themes.Count);
         Assert.Same(first.Resolved, probe.Themes[0]);
@@ -84,7 +85,7 @@ public sealed class MaterialElementContextAcceptanceTests
         var probe = new ThemeProbe();
         var host = new Border { Child = probe };
         var window = ThemeTestHelper.ShowWindow(host);
-        var context = MaterialElementContext.GetOrCreate(probe);
+        var context = MaterialElementContext.Ensure(probe);
 
         MaterialThemeScope.SetTheme(host, theme);
         Assert.Same(theme.Resolved, probe.ObservedTheme);
@@ -95,7 +96,7 @@ public sealed class MaterialElementContextAcceptanceTests
         Assert.Equal(afterTheme + 1, probe.ChangeCount);
 
         host.Child = probe;
-        Assert.Same(context, MaterialElementContext.GetOrCreate(probe));
+        Assert.Same(context, MaterialElementContext.Ensure(probe));
         Assert.Same(theme.Resolved, probe.ObservedTheme);
 
         var beforeReplacement = probe.ChangeCount;
@@ -111,11 +112,12 @@ public sealed class MaterialElementContextAcceptanceTests
     {
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Green);
         var probe = new ThemeProbe();
+        var initialChanges = probe.ChangeCount;
         MaterialThemeScope.SetTheme(probe, theme);
 
-        Assert.Equal(1, probe.ChangeCount);
+        Assert.Equal(initialChanges + 1, probe.ChangeCount);
         MaterialThemeScope.SetTheme(probe, theme);
-        Assert.Equal(1, probe.ChangeCount);
+        Assert.Equal(initialChanges + 1, probe.ChangeCount);
 
         var beforeVariant = probe.ChangeCount;
         probe.SetValue(ThemeVariantScope.RequestedThemeVariantProperty, ThemeVariant.Dark);
@@ -130,93 +132,88 @@ public sealed class MaterialElementContextAcceptanceTests
     }
 
     [Fact]
-    public void OneCoordinatorOwnsIndependentComponentAndInteractionScopes()
+    public void OneControllerIsSharedByComponentAndInteraction()
     {
-        var context = MaterialElementContext.GetOrCreate(new Border());
+        var context = MaterialElementContext.Ensure(new Border());
         var component = context.Motion;
         var interaction = context.Interaction.Motion;
 
-        Assert.Same(component.Coordinator, interaction.Coordinator);
-        Assert.Equal(2, component.Coordinator.ScopeCount);
-        Assert.Same(context.MotionCoordinatorIfCreated, component.Coordinator);
+        Assert.Same(component, interaction);
+        Assert.Same(context.MotionIfCreated, component);
         Assert.Same(context.InteractionIfCreated, context.Interaction);
     }
 
     [Fact]
-    public void ScopeSettle_DoesNotSettleASiblingScope()
+    public void SettleAll_SettlesEveryRegisteredTrack()
     {
-        var context = MaterialElementContext.GetOrCreate(new Border());
-        var coordinator = context.EnsureMotionCoordinator();
-        var first = coordinator.CreateScope("first");
-        var second = coordinator.CreateScope("second");
-        var firstAnimation = first.AddTween(0, TimeSpan.FromSeconds(1), Easings.Linear);
-        var secondAnimation = second.AddTween(0, TimeSpan.FromSeconds(1), Easings.Linear);
+        var context = MaterialElementContext.Ensure(new Border());
+        var controller = context.Motion;
+        var firstAnimation = controller.AddTween(0, TimeSpan.FromSeconds(1), Easings.Linear);
+        var secondAnimation = controller.AddTween(0, TimeSpan.FromSeconds(1), Easings.Linear);
 
-        coordinator.UseManualClock();
+        controller.UseManualClock();
         firstAnimation.AnimateTo(1);
         secondAnimation.AnimateTo(1);
-        coordinator.AdvanceBy(TimeSpan.FromMilliseconds(100));
-        first.Settle();
+        controller.AdvanceBy(TimeSpan.FromMilliseconds(100));
+        controller.SettleAll();
 
         Assert.Equal(1, firstAnimation.Value);
-        Assert.InRange(secondAnimation.Value, 0.099, 0.101);
-        Assert.True(secondAnimation.IsRunning);
+        Assert.Equal(1, secondAnimation.Value);
+        Assert.False(secondAnimation.IsRunning);
     }
 
     [Fact]
     public void FrameCallback_CanStartAnotherAnimationWithoutLosingTheNextFrame()
     {
-        var context = MaterialElementContext.GetOrCreate(new Border());
-        var coordinator = context.EnsureMotionCoordinator();
-        var scope = coordinator.CreateScope("callback");
-        var first = scope.AddTween(0, TimeSpan.FromMilliseconds(10), Easings.Linear);
+        var context = MaterialElementContext.Ensure(new Border());
+        var controller = context.Motion;
+        var first = controller.AddTween(0, TimeSpan.FromMilliseconds(10), Easings.Linear);
         var secondStarted = false;
         TweenAnimation? second = null;
-        scope.Ticked += (_, _) =>
+        controller.AfterOwnerFrame += () =>
         {
             if (secondStarted)
                 return;
 
             secondStarted = true;
-            second = scope.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
+            second = controller.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
             second.AnimateTo(1);
         };
 
-        coordinator.UseManualClock();
+        controller.UseManualClock();
         first.AnimateTo(1);
-        coordinator.AdvanceBy(TimeSpan.FromMilliseconds(10));
+        controller.AdvanceBy(TimeSpan.FromMilliseconds(10));
 
         Assert.True(secondStarted);
         Assert.NotNull(second);
         Assert.True(second!.IsRunning);
-        Assert.True(coordinator.IsRunning);
+        Assert.True(controller.IsRunning);
     }
 
     [Fact]
-    public void LifecycleSettle_FinishesAnimationsStartedByASettledScopeCallback()
+    public void LifecycleSettle_FinishesAnimationsStartedByAFrameCallback()
     {
-        var context = MaterialElementContext.GetOrCreate(new Border());
-        var coordinator = context.EnsureMotionCoordinator();
-        var scope = coordinator.CreateScope("lifecycle-reentrant");
-        var first = scope.AddTween(0, TimeSpan.FromMilliseconds(10), Easings.Linear);
+        var context = MaterialElementContext.Ensure(new Border());
+        var controller = context.Motion;
+        var first = controller.AddTween(0, TimeSpan.FromMilliseconds(10), Easings.Linear);
         TweenAnimation? second = null;
 
-        scope.Ticked += (_, _) =>
+        controller.AfterOwnerFrame += () =>
         {
             if (second is not null)
                 return;
 
-            second = scope.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
+            second = controller.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
             second.AnimateTo(1);
         };
 
         first.AnimateTo(1);
-        coordinator.SettleAllForLifecycle();
+        controller.SettleAllForLifecycle();
 
         Assert.NotNull(second);
         Assert.Equal(1, first.Value);
         Assert.Equal(1, second!.Value);
-        Assert.False(coordinator.IsRunning);
+        Assert.False(controller.IsRunning);
     }
 }
 
@@ -237,7 +234,7 @@ public sealed class MaterialInteractionRuntimeAcceptanceTests
     public void InputDisable_ClearsPhysicalStateButPreservesExternalDraggedState()
     {
         var owner = new Border { Width = 80, Height = 40 };
-        var interaction = MaterialElementContext.GetOrCreate(owner).Interaction;
+        var interaction = MaterialElementContext.Ensure(owner).Interaction;
 
         interaction.Set(InteractionState.Dragged, true);
         interaction.Set(InteractionState.Hovered, true);
@@ -257,7 +254,7 @@ public sealed class MaterialInteractionRuntimeAcceptanceTests
     public void InputDisable_ClearsReleasedRipplesThatOutlivePressed()
     {
         var owner = new Border { Width = 80, Height = 40 };
-        var interaction = MaterialElementContext.GetOrCreate(owner).Interaction;
+        var interaction = MaterialElementContext.Ensure(owner).Interaction;
         using var presentation = interaction.AttachPresentation(owner);
         presentation.UpdateGeometry(
             new MaterialInteractionGeometry(new Rect(0, 0, 80, 40), null, null));
@@ -277,7 +274,7 @@ public sealed class MaterialInteractionRuntimeAcceptanceTests
     public void PresentationGeometry_IsLiveAndClearsWhenItsLeaseIsDisposed()
     {
         var owner = new Border { Width = 100, Height = 40 };
-        var context = MaterialElementContext.GetOrCreate(owner);
+        var context = MaterialElementContext.Ensure(owner);
         var interaction = context.Interaction;
         var lease = interaction.AttachPresentation(new Border());
         var geometry = new MaterialInteractionGeometry(
@@ -299,7 +296,7 @@ public sealed class MaterialInteractionRuntimeAcceptanceTests
     [Fact]
     public void ObserverLeases_DisposeIndependently()
     {
-        var interaction = MaterialElementContext.GetOrCreate(new Border()).Interaction;
+        var interaction = MaterialElementContext.Ensure(new Border()).Interaction;
         var observer = new RecordingInteractionObserver();
         using var first = interaction.Subscribe(observer);
         using var second = interaction.Subscribe(observer);
@@ -316,8 +313,8 @@ public sealed class MaterialInteractionRuntimeAcceptanceTests
     [Fact]
     public void PolicyChangesRefreshActiveStateWithoutChangingTheUnderlyingState()
     {
-        var interaction = MaterialElementContext.GetOrCreate(new Border()).Interaction;
-        var coordinator = interaction.Motion.Coordinator;
+        var interaction = MaterialElementContext.Ensure(new Border()).Interaction;
+        var coordinator = interaction.Motion;
         coordinator.UseManualClock();
         interaction.Set(InteractionState.Hovered, true);
         coordinator.AdvanceBy(TimeSpan.FromMilliseconds(20));
@@ -346,20 +343,23 @@ public sealed class MaterialInteractionRuntimeAcceptanceTests
     }
 }
 
-internal sealed class ReentrantThemeProbe : TemplatedControl, IMaterialThemeConsumer
+internal sealed class ReentrantThemeProbe : TemplatedControl
 {
     private readonly MaterialTheme _replacement;
+    private readonly MaterialThemeController _theme;
     private bool _reentered;
 
     public ReentrantThemeProbe(MaterialTheme replacement)
     {
         _replacement = replacement;
-        MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
     }
 
     public List<ResolvedTheme> Themes { get; } = [];
 
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state)
+    internal void Activate() => _theme.Subscribe(OnThemeChanged);
+
+    private void OnThemeChanged(MaterialThemeState state)
     {
         Themes.Add(state.Theme);
         if (_reentered)

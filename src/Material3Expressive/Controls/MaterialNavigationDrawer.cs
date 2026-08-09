@@ -40,8 +40,8 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
         AvaloniaProperty.Register<MaterialNavigationDrawer, bool>(
             nameof(IsOpen), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
 
     private SpringAnimation? _open;
     private DrawerMetrics _tokens = DrawerDefaults.Metrics(DrawerVariant.Modal);
@@ -49,8 +49,8 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
 
     public MaterialNavigationDrawer()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         ApplyTokens();
     }
 
@@ -84,7 +84,7 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
     protected double OpenFraction => _open?.Value ?? (IsOpen ? 1 : 0);
 
     private SpringAnimation Open =>
-        _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
+        _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
 
     public override void Render(DrawingContext context)
     {
@@ -97,13 +97,13 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
 
         if (_tokens.IsModal && _tokens.ScrimOpacity > 0)
         {
-            var scrim = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.IsDark) ?? Colors.Black;
+            var scrim = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.Current.IsDark) ?? Colors.Black;
             using (context.PushOpacity(_tokens.ScrimOpacity * fraction))
                 context.FillRectangle(new SolidColorBrush(scrim), new Rect(Bounds.Size));
         }
 
         var panel = new Rect(offset, 0, width, Bounds.Height);
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, panel.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, panel.Size);
 
         using (context.PushTransform(Matrix.CreateTranslation(panel.X, panel.Y)))
         {
@@ -152,8 +152,8 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
         }
         else if (change.Property == IsOpenProperty)
         {
-            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Spring(MotionRole.DefaultSpatial));
-            _motion.Start();
+            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+            _motion.RequestFrame();
             IsHitTestVisible = IsOpen;
         }
     }
@@ -161,7 +161,7 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
     private void ApplyTokens()
     {
         _tokens = DrawerDefaults.Metrics(Variant);
-        _colors = DrawerDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
+        _colors = DrawerDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
 
         IsHitTestVisible = IsOpen;
         InvalidateArrange();

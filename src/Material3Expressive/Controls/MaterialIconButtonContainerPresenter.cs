@@ -16,7 +16,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
             MaterialIconButtonContainerPresenter,
             CornerRadius>(nameof(CurrentCornerRadius), presenter => presenter.CurrentCornerRadius);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private Button? _owner;
     private MaterialInteractionController? _interaction;
     private IDisposable? _interactionLease;
@@ -29,7 +29,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
     {
         IsHitTestVisible = false;
         Focusable = false;
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
     }
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
@@ -64,7 +64,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
         _owner = TemplatedParent as Button
                  ?? throw new InvalidOperationException(
                      $"{nameof(MaterialIconButtonContainerPresenter)} requires a Button template.");
-        _interaction = MaterialElementContext.GetOrCreate(_owner).Interaction;
+        _interaction = MaterialElementContext.Ensure(_owner).Interaction;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
         _interactionLease = _interaction.Subscribe(this);
         ApplyTokens(snapShape: true);
@@ -95,8 +95,16 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
             UpdateCurrentCornerRadius();
     }
 
-    private AnimatedShape Shape => _shape ??= _interaction!.CreateAnimatedShape(
-        RestingShape(), _shapeMotion);
+    private AnimatedShape Shape => _shape ??= CreateShape();
+
+    private AnimatedShape CreateShape()
+    {
+        var interaction = _interaction
+                          ?? throw new InvalidOperationException("The presenter is not attached.");
+        var shape = new AnimatedShape(RestingShape(), _shapeMotion);
+        interaction.Motion.Add(shape.Progress);
+        return shape;
+    }
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
@@ -136,7 +144,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
                       ?? ToggleIconButtonDefaults.Shapes(M3IconButton.GetSize(owner));
             _shapeMotion = M3ToggleIconButton.GetDefaultShapeMotion(toggle);
             if (_shapeMotion.Stiffness <= 0)
-                _shapeMotion = ToggleIconButtonDefaults.ShapeMotion(_theme.Theme);
+                _shapeMotion = ToggleIconButtonDefaults.ShapeMotion(_theme.Current.Theme);
         }
         else
         {
@@ -144,7 +152,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
                       ?? IconButtonDefaults.Shapes(M3IconButton.GetSize(owner));
             _shapeMotion = M3IconButton.GetDefaultShapeMotion(owner);
             if (_shapeMotion.Stiffness <= 0)
-                _shapeMotion = IconButtonDefaults.ShapeMotion(_theme.Theme);
+                _shapeMotion = IconButtonDefaults.ShapeMotion(_theme.Current.Theme);
         }
         UpdateShape(snapShape);
         InvalidateVisual();
@@ -156,14 +164,14 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
             return;
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Theme.Shapes.Get(_shapes.Pressed)
+            ? _theme.Current.Theme.Shapes.Get(_shapes.Pressed)
             : RestingShape();
         if (snap && !shape.IsRunning)
             shape.SnapTo(target);
         else
         {
             shape.AnimateTo(target, _shapeMotion);
-            _interaction.Motion.Start();
+            _interaction.Motion.RequestFrame();
         }
         UpdateCurrentCornerRadius();
         InvalidateVisual();
@@ -172,7 +180,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return _theme.Theme.Shapes.Get(_shapes.Container);
+            return _theme.Current.Theme.Shapes.Get(_shapes.Container);
         if (M3IconButton.GetContainerShapeOverride(owner) is { } shape)
             return shape;
 
@@ -185,7 +193,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
             (false, false) => _shapes.Container,
             _ => _shapes.Square
         };
-        return _theme.Theme.Shapes.Get(role);
+        return _theme.Current.Theme.Shapes.Get(role);
     }
 
     private void UpdateCurrentCornerRadius()

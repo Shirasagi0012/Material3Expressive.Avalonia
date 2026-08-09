@@ -30,8 +30,14 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
     public static readonly StyledProperty<bool> IsErrorProperty =
         AvaloniaProperty.Register<MaterialCheckbox, bool>(nameof(IsError));
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
+    private MaterialInteractionPresentationLease? _presentation;
+
+    private MaterialInteractionPresentationLease InteractionPresentation =>
+        _presentation is { IsDisposed: false } existing
+            ? existing
+            : _presentation = _interaction.AttachPresentation(this);
 
     private CheckboxMetrics _tokens = CheckboxDefaults.Metrics();
     private CheckboxColors _colors = CheckboxDefaults.Colors(ResolvedTheme.Default, isDark: false);
@@ -47,8 +53,8 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
 
     public MaterialCheckbox()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
         _interaction.IsRippleBounded = false;
 
         ApplyTokens();
@@ -89,7 +95,7 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
     public override void Render(DrawingContext context)
     {
         var area = GlyphArea;
-        _theme.InteractionPresentation.UpdateGeometry(
+        InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(area, null, null));
 
         EnsureVisualState(snap: true);
@@ -141,14 +147,14 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
     private void ApplyTokens(bool snap = true)
     {
         _tokens = CheckboxDefaults.Metrics();
-        _colors = CheckboxDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = CheckboxDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         // Compose keeps a fixed 48dp interactive checkbox slot ahead of an optional label.
         // Centre the 40dp state layer inside that slot, then start the content after the slot.
         Padding = new Thickness(MinimumInteractiveComponentSize, 0, 0, 0);
         Foreground = new SolidColorBrush(
-            _theme.Theme.ColorScheme?.GetColor(SysColorToken.OnSurface, _theme.IsDark) ?? Colors.Black);
+            _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.OnSurface, _theme.Current.IsDark) ?? Colors.Black);
         UpdateVisualState(snap: snap || !_hasVisualState);
         InvalidateMeasure();
         InvalidateVisual();
@@ -160,9 +166,9 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
             return;
 
         var targets = VisualTargets(IsChecked);
-        _checkDrawFraction = _interaction.Motion.AddSpring(targets.DrawFraction, _theme.Spring(MotionRole.DefaultSpatial));
-        _checkCenterGravitation = _interaction.Motion.AddSpring(targets.Gravitation, _theme.Spring(MotionRole.DefaultSpatial));
-        _checkOpacity = _interaction.Motion.AddSpring(targets.DrawFraction, _theme.Spring(MotionRole.DefaultEffects));
+        _checkDrawFraction = _interaction.Motion.AddSpring(targets.DrawFraction, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+        _checkCenterGravitation = _interaction.Motion.AddSpring(targets.Gravitation, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+        _checkOpacity = _interaction.Motion.AddSpring(targets.DrawFraction, _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects));
         _boxBrush = _interaction.Motion.Add(new AnimatedBrush(targets.Box));
         _borderBrush = _interaction.Motion.Add(new AnimatedBrush(targets.Border));
         _delayedCheckClear = _interaction.Motion.Add(new DelayedSnapAnimation());
@@ -192,7 +198,7 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
         // Checkbox.kt uses the standard Material3 DefaultSpatial token, independently of this
         // library's expressive component defaults.
         var spatial = MotionTokens.Standard.DefaultSpatial;
-        var effects = _theme.Spring(startedOff ? MotionRole.FastEffects : MotionRole.DefaultEffects);
+        var effects = _theme.Current.Theme.Motion.Get(startedOff ? MotionRole.FastEffects : MotionRole.DefaultEffects);
         _boxBrush!.AnimateTo(targets.Box, effects);
         _borderBrush!.AnimateTo(targets.Border, effects);
         if (IsChecked is false)
@@ -221,7 +227,7 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
             _checkCenterGravitation!.AnimateTo(targets.Gravitation, spatial);
         }
 
-        _interaction.Motion.Start();
+        _interaction.Motion.RequestFrame();
         _visualState = IsChecked;
         _hasVisualState = true;
         InvalidateVisual();

@@ -180,7 +180,7 @@ public sealed class MaterialListItemInteractionModeTests
     }
 
     private static MaterialInteractionController InteractionOf(MaterialListItem item) =>
-        MaterialElementContext.GetOrCreate(item).Interaction;
+        MaterialElementContext.Ensure(item).Interaction;
 
     private sealed class DisabledCommand : ICommand
     {

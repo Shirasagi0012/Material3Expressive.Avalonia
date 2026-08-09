@@ -29,14 +29,14 @@ internal static class VisualMotionSettler
             coordinator.AdvanceBy(delta);
     }
 
-    private static HashSet<MaterialMotionCoordinator> FindCoordinators(Visual root)
+    private static HashSet<MaterialMotionController> FindCoordinators(Visual root)
     {
-        var coordinators = new HashSet<MaterialMotionCoordinator>();
+        var coordinators = new HashSet<MaterialMotionController>();
         foreach (var visual in root.GetVisualDescendants().Prepend(root))
         {
             if (visual is Control control
                 && MaterialElementContext.TryGet(control, out var context)
-                && context.MotionCoordinatorIfCreated is { } coordinator)
+                && context.MotionIfCreated is { } coordinator)
                 coordinators.Add(coordinator);
         }
 

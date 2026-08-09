@@ -25,8 +25,14 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
+    private MaterialInteractionPresentationLease? _presentation;
+
+    private MaterialInteractionPresentationLease InteractionPresentation =>
+        _presentation is { IsDisposed: false } existing
+            ? existing
+            : _presentation = _interaction.AttachPresentation(this);
 
     private SpringAnimation? _position;
     private SpringAnimation? _handleSize;
@@ -35,8 +41,8 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
 
     public MaterialSwitch()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
         _interaction.IsRippleBounded = false;
 
         ApplyTokens();
@@ -56,10 +62,10 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
     // 0 is fully off, 1 fully on. A fraction rather than a distance so a retuned track width does
     // not need the spring restarting.
     private SpringAnimation Position =>
-        _position ??= _interaction.Motion.AddSpring(IsSelected ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+        _position ??= _interaction.Motion.AddSpring(IsSelected ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     private SpringAnimation HandleSize =>
-        _handleSize ??= _interaction.Motion.AddSpring(RestingHandleSize(), _theme.Spring(MotionRole.FastSpatial));
+        _handleSize ??= _interaction.Motion.AddSpring(RestingHandleSize(), _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     public override void Render(DrawingContext context)
     {
@@ -95,7 +101,7 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
             centre.Y - stateLayerSize / 2,
             stateLayerSize,
             stateLayerSize);
-        _theme.InteractionPresentation.UpdateGeometry(
+        InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(
                 interactionArea,
                 track,
@@ -130,7 +136,7 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
         }
         else if (change.Property == IsCheckedProperty)
         {
-            Position.AnimateTo(IsSelected ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+            Position.AnimateTo(IsSelected ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
             UpdateHandleSize();
         }
     }
@@ -138,7 +144,7 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
     private void ApplyTokens()
     {
         _tokens = SwitchDefaults.Metrics();
-        _colors = SwitchDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = SwitchDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         Padding = new Thickness(_tokens.TrackWidth + 12, 0, 0, 0);
@@ -148,8 +154,8 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
 
     private void UpdateHandleSize()
     {
-        HandleSize.AnimateTo(RestingHandleSize(), _theme.Spring(MotionRole.FastSpatial));
-        _interaction.Motion.Start();
+        HandleSize.AnimateTo(RestingHandleSize(), _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+        _interaction.Motion.RequestFrame();
         InvalidateVisual();
     }
 

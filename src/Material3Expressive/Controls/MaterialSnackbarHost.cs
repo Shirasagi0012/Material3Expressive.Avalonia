@@ -231,7 +231,7 @@ public sealed class MaterialSnackbarHost : ContentControl
         AvaloniaProperty.RegisterDirect<MaterialSnackbarHost, SnackbarHostState>(
             nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly Grid _transitionLayer = new();
     private readonly List<TransitionItem> _items = [];
     private SnackbarHostState _state = new();
@@ -246,7 +246,7 @@ public sealed class MaterialSnackbarHost : ContentControl
 
     public MaterialSnackbarHost()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
         _state.PropertyChanged += OnStateChanged;
         UpdateCurrent(_state.CurrentSnackbarData);
     }
@@ -331,8 +331,8 @@ public sealed class MaterialSnackbarHost : ContentControl
         };
         var item = new TransitionItem(
             snackbar,
-            _theme.Spring(MotionRole.FastEffects),
-            _theme.Spring(MotionRole.FastSpatial),
+            _theme.Current.Theme.Motion.Get(MotionRole.FastEffects),
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial),
             duration,
             () => OnTimeout(data),
             RemoveItem);
@@ -413,7 +413,7 @@ public sealed class MaterialSnackbarHost : ContentControl
 
     private sealed class TransitionItem : Decorator, IMaterialMotionConsumer
     {
-        private readonly MaterialMotionScope _motion;
+        private readonly MaterialMotionController _motion;
         private readonly SpringAnimation _opacity;
         private readonly SpringAnimation _scale;
         private readonly DelayAnimation _exitFrameDelay;
@@ -442,7 +442,7 @@ public sealed class MaterialSnackbarHost : ContentControl
             RenderTransform = _scaleTransform;
             Child = snackbar;
 
-            _motion = MaterialElementContext.GetOrCreate(this).Motion;
+            _motion = MaterialElementContext.Ensure(this).Motion;
             _opacity = _motion.AddSpring(0, opacitySpec);
             _scale = _motion.AddSpring(.8, scaleSpec);
             _exitFrameDelay = _motion.Add(new DelayAnimation(TimeSpan.FromTicks(1)));
@@ -465,7 +465,7 @@ public sealed class MaterialSnackbarHost : ContentControl
             _opacity.AnimateTo(1);
             _scale.AnimateTo(1);
             _timeout?.Start();
-            _motion.Start();
+            _motion.RequestFrame();
             ApplyValues();
         }
 
@@ -480,7 +480,7 @@ public sealed class MaterialSnackbarHost : ContentControl
             {
                 _hideOnNextFrame = true;
                 _exitFrameDelay.Start();
-                _motion.Start();
+                _motion.RequestFrame();
                 return;
             }
 
@@ -491,7 +491,7 @@ public sealed class MaterialSnackbarHost : ContentControl
         {
             _opacity.AnimateTo(0);
             _scale.AnimateTo(.8);
-            _motion.Start();
+            _motion.RequestFrame();
             ApplyValues();
             if (!_opacity.IsRunning && !_scale.IsRunning)
                 _remove(this);
@@ -500,7 +500,7 @@ public sealed class MaterialSnackbarHost : ContentControl
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnAttachedToVisualTree(e);
-            _motion.Start();
+            _motion.RequestFrame();
         }
 
         private void OnMotionFrame()
@@ -599,7 +599,7 @@ public sealed class MaterialSnackbarHost : ContentControl
 
         public void Settle()
         {
-            // A timeout is an operation deadline, not a visual interpolation. MaterialMotionScope settles
+            // A timeout is an operation deadline, not a visual interpolation. MaterialMotionController settles
             // visual springs when a control detaches or a static test asks for terminal visuals;
             // completing the deadline there would dismiss a snackbar merely because it left the
             // visual tree. Keep elapsed time paused and resume it on reattachment instead.

@@ -39,7 +39,7 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
     public static readonly DirectProperty<MaterialTab, IImmutableBrush> IconBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialTab, IImmutableBrush>(nameof(IconBrush), o => o.IconBrush);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
 
     private TabMetrics _tokens = TabDefaults.Metrics(TabVariant.Primary);
@@ -47,8 +47,8 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
 
     public MaterialTab()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         ApplyTokens();
     }
@@ -92,10 +92,10 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
         var previousIconSize = IconSize;
 
         _tokens = TabDefaults.Metrics(Style);
-        _colors = TabDefaults.Colors(_theme.Theme, Style, _theme.IsDark);
+        _colors = TabDefaults.Colors(_theme.Current.Theme, Style, _theme.Current.IsDark);
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
         FontSize = typography.GetTypeScale(_tokens.LabelTextStyle).FontSize;
         FontFamily = typography.GetFontFamily(_tokens.LabelTextStyle);
         FontWeight = typography.GetFontWeight(_tokens.LabelTextStyle);
@@ -390,10 +390,10 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.IsDark ?? false;
-    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
+    private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
@@ -435,7 +435,7 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
 
     public MaterialTabs()
     {
-        _material = MaterialElementContext.GetOrCreate(this);
+        _material = MaterialElementContext.Ensure(this);
         Items.CollectionChanged += (_, _) => AttachItems();
 
         ApplyTokens();
@@ -637,7 +637,7 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
         if (SelectedIndex < 0 || SelectedIndex >= Items.Count)
         {
             IndicatorWidth.AnimateTo(0, Spring(MotionRole.FastSpatial));
-            Motion.Start();
+            Motion.RequestFrame();
             return;
         }
 
@@ -677,7 +677,7 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
         var spring = Spring(MotionRole.FastSpatial);
         IndicatorCentre.AnimateTo(centre, spring);
         IndicatorWidth.AnimateTo(width, spring);
-        Motion.Start();
+        Motion.RequestFrame();
     }
 
     private void ScrollSelectedTabIntoView()

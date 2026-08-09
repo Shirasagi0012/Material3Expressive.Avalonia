@@ -15,6 +15,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
@@ -39,7 +40,8 @@ namespace Material3Expressive.Controls;
 internal sealed class MaterialInteractionController
 {
     private readonly Control _owner;
-    private readonly MaterialElementContext _context;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
     private readonly List<RippleAnimation> _ripples = new();
     private readonly List<InteractionState> _stateLayerInteractions = new();
     private readonly List<IMaterialInteractionObserver> _observers = new();
@@ -56,16 +58,18 @@ internal sealed class MaterialInteractionController
     private bool _isFocusIndicationEnabled = true;
     private bool _isHoverIndicationEnabled = true;
     private bool _isDragIndicationEnabled = true;
+    private bool _active;
+    private IDisposable? _themeSubscription;
 
     internal MaterialInteractionController(
-        MaterialElementContext context,
-        MaterialMotionCoordinator coordinator)
+        Control owner,
+        MaterialThemeController theme,
+        MaterialMotionController motion)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _owner = context.Owner;
+        _owner = owner ?? throw new ArgumentNullException(nameof(owner));
+        _theme = theme ?? throw new ArgumentNullException(nameof(theme));
+        _motion = motion ?? throw new ArgumentNullException(nameof(motion));
         _geometry = DefaultGeometry;
-        Motion = coordinator.CreateScope("interaction");
-        Motion.Ticked += (_, _) => OnTick();
         _owner.PointerEntered += (_, _) =>
         {
             if (IsInputEnabled)
@@ -105,11 +109,23 @@ internal sealed class MaterialInteractionController
             EndPress();
             Set(InteractionState.Focused, false);
         };
-
     }
 
     /// <summary>This control's animations and the frame loop that drives them.</summary>
-    internal MaterialMotionScope Motion { get; }
+    internal MaterialMotionController Motion => _motion;
+
+    /// <summary>Completes two-phase construction by installing runtime subscriptions.</summary>
+    internal void Activate()
+    {
+        if (_active)
+            return;
+
+        _active = true;
+        _themeSubscription = _theme.Subscribe(OnMaterialThemeChanged);
+        _motion.BeforeOwnerFrame += RemoveCompletedRipples;
+        _motion.AfterOwnerFrame += PublishInteractionFrame;
+        _owner.DetachedFromLogicalTree += OnDetachedFromLogicalTree;
+    }
 
     /// <summary>Which interactions the owner is currently under.</summary>
     internal InteractionState Interaction => _interaction;
@@ -203,8 +219,6 @@ internal sealed class MaterialInteractionController
             ClearInputInteractions();
     }
 
-    internal void ClearInputInteractionsOnDetach() => ClearInputInteractions();
-
     internal void SetExternalState(InteractionState state, bool active) => Set(state, active);
 
     internal IDisposable Subscribe(IMaterialInteractionObserver observer)
@@ -230,7 +244,7 @@ internal sealed class MaterialInteractionController
     {
         UpdateStateLayer();
         UpdateFocusRing(_interaction.HasFlag(InteractionState.Focused));
-        Motion.Start();
+        Motion.RequestFrame();
         _owner.InvalidateVisual();
     }
 
@@ -300,15 +314,7 @@ internal sealed class MaterialInteractionController
     private SpringAnimation FocusRingInterpolation =>
         _focusRingInterpolation ??= Motion.AddSpring(
             0,
-            _context.Spring(MotionRole.FastSpatial));
-
-    /// <summary>Creates a shape that morphs with a spring, on this controller's frame loop.</summary>
-    internal AnimatedShape CreateAnimatedShape(RoundedCornerShape initial, SpringSpec spec)
-    {
-        var shape = new AnimatedShape(initial, spec);
-        Motion.Add(shape.Progress);
-        return shape;
-    }
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     /// <summary>
     /// Draws the state layer and any live ripples over the container.
@@ -376,7 +382,7 @@ internal sealed class MaterialInteractionController
             UpdateFocusRing(active);
         UpdateStateLayer();
         NotifyInteractionChanged();
-        Motion.Start();
+        Motion.RequestFrame();
         _owner.InvalidateVisual();
     }
 
@@ -405,7 +411,7 @@ internal sealed class MaterialInteractionController
             RippleRadius);
         _ripples.Add(ripple);
         Motion.Add(ripple);
-        Motion.Start();
+        Motion.RequestFrame();
     }
 
     /// <summary>Ends the pressed state and lets any live ripple fade out.</summary>
@@ -419,7 +425,7 @@ internal sealed class MaterialInteractionController
         foreach (var ripple in _ripples)
             ripple.Release();
 
-        Motion.Start();
+        Motion.RequestFrame();
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -471,6 +477,9 @@ internal sealed class MaterialInteractionController
             e.NavigationMethod is NavigationMethod.Directional or NavigationMethod.Tab);
     }
 
+    private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) =>
+        ClearInputInteractions();
+
     private void ClearInputInteractions()
     {
         var hadInputInteraction = _interaction.HasFlag(InteractionState.Hovered)
@@ -500,11 +509,12 @@ internal sealed class MaterialInteractionController
             NotifyInteractionChanged();
         }
 
-        Motion.Start();
+        Motion.RequestFrame();
         _owner.InvalidateVisual();
     }
 
-    private void OnTick()
+    /// <summary>Removes only interaction-owned transient ripples after they complete.</summary>
+    internal void RemoveCompletedRipples()
     {
         // Completed ripples would otherwise accumulate for the control's lifetime.
         for (var i = _ripples.Count - 1; i >= 0; i--)
@@ -516,11 +526,6 @@ internal sealed class MaterialInteractionController
             _ripples.RemoveAt(i);
         }
 
-        // The context publishes secondary observers after the owner consumer has synchronized.
-        // A direct scope-level settle has no surrounding coordinator transaction, so preserve a
-        // useful standalone behavior for that call without duplicating normal frame callbacks.
-        if (!Motion.Coordinator.IsPublishingFrameCallbacks)
-            PublishInteractionFrame();
     }
 
     internal void PublishInteractionFrame()
@@ -551,7 +556,7 @@ internal sealed class MaterialInteractionController
 
         var targetOpacity = IsIndicationEnabled(topmost)
             && !(topmost == InteractionState.Focused
-                                 && _context.Theme.Ripple.FocusIndication == RippleFocusIndication.InsetRing)
+                                 && _theme.Current.Theme.Ripple.FocusIndication == RippleFocusIndication.InsetRing)
             ? StateLayer.Opacity(topmost)
             : 0;
 
@@ -575,7 +580,7 @@ internal sealed class MaterialInteractionController
     private void UpdateFocusRing(bool focused)
     {
         if (!IsFocusIndicationEnabled
-            || _context.Theme.Ripple.FocusIndication != RippleFocusIndication.InsetRing)
+            || _theme.Current.Theme.Ripple.FocusIndication != RippleFocusIndication.InsetRing)
             focused = false;
 
         if (!focused && _focusRingInterpolation is null)
@@ -583,8 +588,8 @@ internal sealed class MaterialInteractionController
 
         FocusRingInterpolation.AnimateTo(
             focused ? 1 : 0,
-            _context.Spring(focused ? MotionRole.FastSpatial : MotionRole.FastEffects));
-        Motion.Start();
+            _theme.Current.Theme.Motion.Get(focused ? MotionRole.FastSpatial : MotionRole.FastEffects));
+        Motion.RequestFrame();
     }
 
     private void UpdateInteractionStack(InteractionState flag, bool active)
@@ -612,7 +617,7 @@ internal sealed class MaterialInteractionController
     {
         UpdateStateLayer();
         UpdateFocusRing(_interaction.HasFlag(InteractionState.Focused));
-        Motion.Start();
+        Motion.RequestFrame();
         _owner.InvalidateVisual();
     }
 
@@ -636,15 +641,16 @@ internal sealed class MaterialInteractionController
     {
         var interpolation = _focusRingInterpolation?.Value ?? 0;
         if (interpolation <= 0
-            || _context.Theme.Ripple.FocusIndication != RippleFocusIndication.InsetRing
+            || _theme.Current.Theme.Ripple.FocusIndication != RippleFocusIndication.InsetRing
             || area.Width <= 0
             || area.Height <= 0)
             return;
 
-        var ripple = _context.Theme.Ripple;
-        var scheme = _context.Theme.ColorScheme;
-        var innerColor = scheme?.GetColor(SysColorToken.OnSecondary, _context.IsDark) ?? Colors.White;
-        var outerColor = scheme?.GetColor(SysColorToken.Secondary, _context.IsDark) ?? Colors.Black;
+        var state = _theme.Current;
+        var ripple = state.Theme.Ripple;
+        var scheme = state.Theme.ColorScheme;
+        var innerColor = scheme?.GetColor(SysColorToken.OnSecondary, state.IsDark) ?? Colors.White;
+        var outerColor = scheme?.GetColor(SysColorToken.Secondary, state.IsDark) ?? Colors.Black;
 
         // AndroidX draws the inner stroke first and the outer stroke second. Width and inset are
         // both multiplied by the spring interpolation, so the ring grows out of the shape edge.

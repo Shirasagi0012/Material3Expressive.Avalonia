@@ -26,10 +26,10 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.IsDark ?? false;
-    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
+    private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
@@ -61,7 +61,7 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
 
     public MaterialFabMenu()
     {
-        _material = MaterialElementContext.GetOrCreate(this);
+        _material = MaterialElementContext.Ensure(this);
         Items.CollectionChanged += (_, _) => InvalidateMeasure();
 
         ApplyTokens();
@@ -109,6 +109,14 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
     private SpringAnimation Reveal =>
         _reveal ??= Motion.AddSpring(IsExpanded ? 1 : 0, Spring(MotionRole.FastSpatial));
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        // The scheduler no longer performs an owner-wide lifecycle settle. Synchronize this
+        // component-owned semantic track when its presenter becomes visible instead.
+        UpdateItems();
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -116,7 +124,7 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
         if (change.Property == IsExpandedProperty)
         {
             Reveal.AnimateTo(IsExpanded ? 1 : 0, Spring(MotionRole.FastSpatial));
-            Motion.Start();
+            Motion.RequestFrame();
             UpdateItems();
         }
         else if (change.Property == VariantProperty)

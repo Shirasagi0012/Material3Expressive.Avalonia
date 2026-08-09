@@ -28,10 +28,10 @@ public class MaterialSearchBar : TemplatedControl, IMaterialThemeConsumer, IMate
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.IsDark ?? false;
-    private MaterialMotionScope Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
+    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
+    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
+    private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
@@ -80,8 +80,8 @@ public class MaterialSearchBar : TemplatedControl, IMaterialThemeConsumer, IMate
 
     public MaterialSearchBar()
     {
-        _material = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _material = MaterialElementContext.Ensure(this);
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
         _interaction.IsRippleEnabled = false;
 
         ApplyTokens();
@@ -158,8 +158,14 @@ public class MaterialSearchBar : TemplatedControl, IMaterialThemeConsumer, IMate
         AvaloniaProperty.RegisterDirect<MaterialSearchBar, double>(
             nameof(IconLabelSpace), o => o.IconLabelSpace);
 
-    private AnimatedShape Shape =>
-        _shape ??= _interaction.CreateAnimatedShape(RestingShape(), Spring(MotionRole.DefaultSpatial));
+    private AnimatedShape Shape => _shape ??= CreateShape();
+
+    private AnimatedShape CreateShape()
+    {
+        var shape = new AnimatedShape(RestingShape(), Spring(MotionRole.DefaultSpatial));
+        _interaction.Motion.Add(shape.Progress);
+        return shape;
+    }
 
     public override void Render(DrawingContext context)
     {
@@ -250,7 +256,7 @@ public class MaterialSearchBar : TemplatedControl, IMaterialThemeConsumer, IMate
         }
 
         Shape.AnimateTo(target, Spring(MotionRole.DefaultSpatial));
-        _interaction.Motion.Start();
+        _interaction.Motion.RequestFrame();
     }
 
     private void ApplyTokens()

@@ -42,26 +42,27 @@ internal static class MotionParityCases
             Trigger: context => context.Require<LinearTweenProbe>("component").Start(),
             ClockCoverage: VisualMotionClockCoverage.ComponentOwned(usesComposeCoroutineClock: false)));
 
-    private sealed class LinearTweenProbe : Control
+    private sealed class LinearTweenProbe : Control, IMaterialMotionConsumer
     {
         private static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(200);
-        private readonly MaterialMotionScope _motion;
+        private readonly MaterialMotionController _motion;
         private readonly TweenAnimation _progress;
 
         public LinearTweenProbe()
         {
             Width = 60;
             Height = 20;
-            _motion = MaterialElementContext.GetOrCreate(this).Motion;
+            _motion = MaterialElementContext.Ensure(this).Motion;
             _progress = _motion.AddTween(0, Duration, Easings.Linear);
-            _motion.Ticked += (_, _) => InvalidateVisual();
         }
 
         public void Start()
         {
             _progress.AnimateTo(1, Duration, Easings.Linear);
-            _motion.Start();
+            _motion.RequestFrame();
         }
+
+        void IMaterialMotionConsumer.OnMaterialMotionFrame() => InvalidateVisual();
 
         public override void Render(DrawingContext context)
         {

@@ -35,12 +35,12 @@ public sealed class MaterialSegmentedList : Panel, IMaterialThemeConsumer
             2,
             validate: static value => double.IsFinite(value) && value >= 0);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private IDisposable? _spacingLease;
 
     public MaterialSegmentedList()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
         ApplyTokens();
     }
 

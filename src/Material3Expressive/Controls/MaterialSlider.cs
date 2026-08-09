@@ -37,8 +37,14 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
     public static readonly StyledProperty<Orientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialSlider, Orientation>(nameof(Orientation), Orientation.Horizontal);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
+    private MaterialInteractionPresentationLease? _presentation;
+
+    private MaterialInteractionPresentationLease InteractionPresentation =>
+        _presentation is { IsDisposed: false } existing
+            ? existing
+            : _presentation = _interaction.AttachPresentation(this);
 
     private SpringAnimation? _handleWidth;
     private SliderMetrics _tokens = SliderDefaults.Metrics();
@@ -46,8 +52,8 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
 
     public MaterialSlider()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         Focusable = true;
         ApplyTokens();
@@ -81,7 +87,7 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
     }
 
     private SpringAnimation HandleWidth =>
-        _handleWidth ??= _interaction.Motion.AddSpring(_tokens.HandleWidth, _theme.Spring(MotionRole.FastEffects));
+        _handleWidth ??= _interaction.Motion.AddSpring(_tokens.HandleWidth, _theme.Current.Theme.Motion.Get(MotionRole.FastEffects));
 
     public override void Render(DrawingContext context)
     {
@@ -149,7 +155,7 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
             crossLength / 2 - _tokens.HandleHeight / 2,
             handleWidth,
             _tokens.HandleHeight).Inflate(4);
-        _theme.InteractionPresentation.UpdateGeometry(
+        InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(
                 interactionArea,
                 focusRingArea,
@@ -289,7 +295,7 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
     private void ApplyTokens()
     {
         _tokens = SliderDefaults.Metrics();
-        _colors = SliderDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = SliderDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
 
         UpdateHandleWidth();
         InvalidateMeasure();
@@ -302,8 +308,8 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
             ? _tokens.PressedHandleWidth
             : _tokens.HandleWidth;
 
-        HandleWidth.AnimateTo(target, _theme.Spring(MotionRole.FastEffects));
-        _interaction.Motion.Start();
+        HandleWidth.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.FastEffects));
+        _interaction.Motion.RequestFrame();
         InvalidateVisual();
     }
 }

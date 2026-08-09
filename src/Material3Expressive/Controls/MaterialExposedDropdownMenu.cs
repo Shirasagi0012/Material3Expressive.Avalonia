@@ -140,8 +140,8 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
             AvaloniaProperty.RegisterDirect<MaterialExposedDropdownMenu, double>(
                 nameof(MenuOpacity), owner => owner.MenuOpacity);
 
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
     private SpringAnimation? _float;
     private SpringAnimation? _menuScale;
     private SpringAnimation? _menuAlpha;
@@ -168,8 +168,8 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
 
     public MaterialExposedDropdownMenu()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         AttachedToVisualTree += HandleAttachedToVisualTree;
         DetachedFromVisualTree += HandleDetachedFromVisualTree;
         DropDownOpened += HandleDropDownOpened;
@@ -296,7 +296,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         !_tokens.IsFilled && !string.IsNullOrEmpty(Label) ? OutlinedLabelTopInset : 0;
 
     private double SupportingSlotHeight => SupportingTopPadding
-        + _theme.Theme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight;
+        + _theme.Current.Theme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight;
 
     private Rect FieldArea
     {
@@ -320,17 +320,17 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         || !string.IsNullOrEmpty(Text);
 
     private SpringAnimation Float =>
-        _float ??= _motion.AddSpring(ShouldFloat ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+        _float ??= _motion.AddSpring(ShouldFloat ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     private SpringAnimation MenuOpen =>
         _menuScale ??= _motion.AddSpring(
             IsDropDownOpen ? 1 : 0,
-            _theme.Spring(MotionRole.FastSpatial));
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     private SpringAnimation MenuAlpha =>
         _menuAlpha ??= _motion.AddSpring(
             IsDropDownOpen ? 1 : 0,
-            _theme.Spring(MotionRole.FastEffects));
+            _theme.Current.Theme.Motion.Get(MotionRole.FastEffects));
 
     public override void Render(DrawingContext context)
     {
@@ -342,7 +342,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         // Compose applies the anchor's expanded focus treatment on the first delivered motion
         // frame, not synchronously with the state write at tick zero.
         var focused = IsKeyboardFocusWithin || MenuOpenFraction > 0.000001;
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, field.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, field.Size);
         var outlineWidth = focused ? _tokens.FocusOutlineWidth : _tokens.OutlineWidth;
         var outline = !enabled ? _colors.DisabledOutlineColor
             : IsError ? _colors.ErrorColor
@@ -582,7 +582,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         if (_topLevel is { })
             _topLevel.PropertyChanged += HandleTopLevelPropertyChanged;
         RaiseEffectiveMenuMaxHeight();
-        _motion.Start();
+        _motion.RequestFrame();
     }
 
     private void HandleDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
@@ -660,8 +660,8 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         if (snap)
             Float.SnapTo(target);
         else
-            Float.AnimateTo(target, _theme.Spring(MotionRole.FastSpatial));
-        _motion.Start();
+            Float.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+        _motion.RequestFrame();
         InvalidateVisual();
     }
 
@@ -677,12 +677,12 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         }
         else
         {
-            MenuOpen.AnimateTo(target, _theme.Spring(MotionRole.FastSpatial));
-            MenuAlpha.AnimateTo(target, _theme.Spring(MotionRole.FastEffects));
+            MenuOpen.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+            MenuAlpha.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.FastEffects));
         }
         _lastMenuOpenFraction = previous;
         _lastMenuOpacity = previousOpacity;
-        _motion.Start();
+        _motion.RequestFrame();
         HandleMotionFrame();
     }
 
@@ -691,8 +691,8 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         var previousSupporting = SupportingBrush;
         var previousPlaceholder = PlaceholderBrush;
         _tokens = TextFieldDefaults.Metrics(Variant);
-        _colors = TextFieldDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
-        var typography = _theme.Theme.Typography;
+        _colors = TextFieldDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
+        var typography = _theme.Current.Theme.Typography;
         var inputStyle = typography.GetTypeScale(_tokens.InputTextStyle);
 
         MinHeight = _tokens.ContainerHeight;
@@ -860,7 +860,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
         if (string.IsNullOrEmpty(Label) || field.Width <= 0 || field.Height <= 0)
             return null;
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
         var resting = typography.GetTypeScale(_tokens.InputTextStyle);
         var floated = typography.GetTypeScale(_tokens.FloatingLabelTextStyle);
         var fraction = Float.Value;
@@ -910,7 +910,7 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
 
     private double MeasureFloatedLabel()
     {
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
         var style = typography.GetTypeScale(_tokens.FloatingLabelTextStyle);
         using var text = new TextLayout(
             Label ?? string.Empty,

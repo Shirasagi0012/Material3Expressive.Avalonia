@@ -45,8 +45,8 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
     public static readonly StyledProperty<bool> IsDismissableProperty =
         AvaloniaProperty.Register<MaterialDialog, bool>(nameof(IsDismissable), true);
 
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
 
     private SpringAnimation? _open;
     private DialogMetrics _tokens = DialogDefaults.Metrics();
@@ -54,8 +54,8 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
 
     public MaterialDialog()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         ApplyTokens();
     }
 
@@ -123,7 +123,7 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
     protected double OpenFraction => _open?.Value ?? (IsOpen ? 1 : 0);
 
     private SpringAnimation Open =>
-        _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+        _open ??= _motion.AddSpring(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     public override void Render(DrawingContext context)
     {
@@ -131,7 +131,7 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
         if (fraction <= 0.001)
             return;
 
-        var scrim = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.IsDark) ?? Colors.Black;
+        var scrim = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.Current.IsDark) ?? Colors.Black;
         using (context.PushOpacity(_tokens.ScrimOpacity * fraction))
             context.FillRectangle(new SolidColorBrush(scrim), new Rect(Bounds.Size));
 
@@ -146,7 +146,7 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
             content.Y - Padding.Top,
             content.Width + Padding.Left + Padding.Right,
             content.Height + Padding.Top + Padding.Bottom);
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, surface.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, surface.Size);
 
         // The surface grows from 90% as it fades in, about its own centre.
         var scale = 0.9 + 0.1 * fraction;
@@ -225,8 +225,8 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
 
         if (change.Property == IsOpenProperty)
         {
-            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
-            _motion.Start();
+            Open.AnimateTo(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+            _motion.RequestFrame();
             IsHitTestVisible = IsOpen;
 
             if (IsOpen)
@@ -240,12 +240,12 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
         var previousSupporting = SupportingBrush;
 
         _tokens = DialogDefaults.Metrics();
-        _colors = DialogDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = DialogDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
 
         RaisePropertyChanged(HeadlineBrushProperty, previousHeadline, HeadlineBrush);
         RaisePropertyChanged(SupportingBrushProperty, previousSupporting, SupportingBrush);
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
         FontSize = typography.GetTypeScale(_tokens.SupportingTextStyle).FontSize;
         FontFamily = typography.GetFontFamily(_tokens.SupportingTextStyle);
 

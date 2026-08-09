@@ -46,14 +46,14 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
     public static readonly StyledProperty<TooltipVariant> StyleProperty =
         AvaloniaProperty.Register<MaterialTooltip, TooltipVariant>(nameof(Style));
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
 
     private TooltipMetrics _tokens = TooltipDefaults.Metrics(TooltipVariant.Plain);
     private TooltipVisualColors _colors = TooltipDefaults.Colors(Foundation.ResolvedTheme.Default, TooltipVariant.Plain, false);
 
     public MaterialTooltip()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
         ApplyTokens();
     }
 
@@ -108,8 +108,8 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
 
     public override void Render(DrawingContext context)
     {
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
 
         MaterialContainer.Draw(
             context,
@@ -166,10 +166,10 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
         var previousTitle = TitleBrush;
 
         _tokens = TooltipDefaults.Metrics(Style);
-        _colors = TooltipDefaults.Colors(_theme.Theme, Style, _theme.IsDark);
+        _colors = TooltipDefaults.Colors(_theme.Current.Theme, Style, _theme.Current.IsDark);
         RaisePropertyChanged(TitleBrushProperty, previousTitle, TitleBrush);
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
 
         Foreground = _colors.SupportingTextColor;
         Padding = new Thickness(_tokens.HorizontalSpace, _tokens.VerticalSpace);

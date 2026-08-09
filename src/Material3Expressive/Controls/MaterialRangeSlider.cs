@@ -37,8 +37,14 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
     public static readonly StyledProperty<double> LargeChangeProperty =
         AvaloniaProperty.Register<MaterialRangeSlider, double>(nameof(LargeChange), 10d);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
+    private MaterialInteractionPresentationLease? _presentation;
+
+    private MaterialInteractionPresentationLease InteractionPresentation =>
+        _presentation is { IsDisposed: false } existing
+            ? existing
+            : _presentation = _interaction.AttachPresentation(this);
     private SliderMetrics _tokens = SliderDefaults.Metrics();
     private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private bool _updating;
@@ -46,8 +52,8 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
 
     public MaterialRangeSlider()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
         Focusable = true;
         ApplyTokens();
     }
@@ -117,7 +123,7 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
             center - _tokens.HandleHeight / 2,
             handleWidth,
             _tokens.HandleHeight).Inflate(4);
-        _theme.InteractionPresentation.UpdateGeometry(
+        InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(
                 interactionArea,
                 focusRingArea,
@@ -340,7 +346,7 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
     private void ApplyTokens()
     {
         _tokens = SliderDefaults.Metrics();
-        _colors = SliderDefaults.Colors(_theme.Theme, _theme.IsDark);
+        _colors = SliderDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
         InvalidateMeasure();
         InvalidateVisual();
     }

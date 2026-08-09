@@ -93,8 +93,14 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         AvaloniaProperty.RegisterDirect<MaterialNavigationItem, bool>(
             nameof(AnchorTopIcon), o => o.AnchorTopIcon);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
+    private MaterialInteractionPresentationLease? _presentation;
+
+    private MaterialInteractionPresentationLease InteractionPresentation =>
+        _presentation is { IsDisposed: false } existing
+            ? existing
+            : _presentation = _interaction.AttachPresentation(this);
 
     private SpringAnimation? _indicator;
     private NavigationMetrics _tokens = NavigationDefaults.Metrics(NavigationVariant.Bar);
@@ -105,8 +111,8 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
 
     public MaterialNavigationItem()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         ApplyTokens();
     }
@@ -162,11 +168,11 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
 
     /// <summary>The resolved line height for label content.</summary>
     public double LabelLineHeight =>
-        _theme.Theme.Typography.GetTypeScale(LabelTextStyle).LineHeight;
+        _theme.Current.Theme.Typography.GetTypeScale(LabelTextStyle).LineHeight;
 
     /// <summary>The resolved letter spacing for label content.</summary>
     public double LabelLetterSpacing =>
-        _theme.Theme.Typography.GetTypeScale(LabelTextStyle).LetterSpacing;
+        _theme.Current.Theme.Typography.GetTypeScale(LabelTextStyle).LetterSpacing;
 
     /// <summary>Whether the item is currently owned by a short navigation bar.</summary>
     public bool IsShortNavigationItem => OwnerShortNavigationBar is not null;
@@ -308,11 +314,11 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         IsWideNavigationExpandedItem ? TypographyRole.LabelLarge : _tokens.LabelTextStyle;
 
     private double LabelHeight =>
-        Content is null ? 0 : _theme.Theme.Typography.GetTypeScale(LabelTextStyle).LineHeight;
+        Content is null ? 0 : _theme.Current.Theme.Typography.GetTypeScale(LabelTextStyle).LineHeight;
 
     private SpringAnimation Indicator =>
         _indicator ??= _interaction.Motion.AddSpring(
-            IsChecked == true ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
+            IsChecked == true ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     public override void Render(DrawingContext context)
     {
@@ -320,7 +326,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         if (area.Width <= 0 || area.Height <= 0)
             return;
 
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_tokens.ActiveIndicatorShape, area.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ActiveIndicatorShape, area.Size);
 
         var scale = Indicator.Value;
         if (scale > 0.001)
@@ -333,7 +339,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
                 MaterialContainer.Draw(context, grown.Size, corners, _colors.ActiveIndicatorColor);
         }
 
-        _theme.InteractionPresentation.UpdateGeometry(
+        InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(area, null, null));
         base.Render(context);
         _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
@@ -345,8 +351,8 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
 
         if (change.Property == IsCheckedProperty)
         {
-            Indicator.AnimateTo(IsChecked == true ? 1 : 0, _theme.Spring(MotionRole.FastSpatial));
-            _interaction.Motion.Start();
+            Indicator.AnimateTo(IsChecked == true ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+            _interaction.Motion.RequestFrame();
             ApplyColors();
         }
         else if (change.Property == IsEffectivelyEnabledProperty)
@@ -393,7 +399,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         var previousLabelLetterSpacing = LabelLetterSpacing;
 
         _tokens = NavigationDefaults.Metrics(Surface);
-        _colors = NavigationDefaults.Colors(_theme.Theme, Surface, _theme.IsDark);
+        _colors = NavigationDefaults.Colors(_theme.Current.Theme, Surface, _theme.Current.IsDark);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);
@@ -419,7 +425,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
             previousLabelLetterSpacing,
             LabelLetterSpacing);
 
-        var typography = _theme.Theme.Typography;
+        var typography = _theme.Current.Theme.Typography;
         FontSize = typography.GetTypeScale(LabelTextStyle).FontSize;
         FontFamily = typography.GetFontFamily(LabelTextStyle);
         FontWeight = typography.GetFontWeight(LabelTextStyle);
@@ -448,7 +454,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         var role = hasExplicitRole
             ? TypographyScheme.GetTextStyle(textBlock)
             : LabelTextStyle;
-        var scale = _theme.Theme.Typography.GetTypeScale(role);
+        var scale = _theme.Current.Theme.Typography.GetTypeScale(role);
         OverrideLabelMetric(
             textBlock,
             TextBlock.LineHeightProperty,

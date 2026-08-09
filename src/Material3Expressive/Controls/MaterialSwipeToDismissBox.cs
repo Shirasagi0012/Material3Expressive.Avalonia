@@ -276,7 +276,7 @@ public sealed class MaterialSwipeToDismissBox : ContentControl, IMaterialMotionC
         AvaloniaProperty.RegisterDirect<MaterialSwipeToDismissBox, double>(
             nameof(ContentOffset), owner => owner._contentOffset);
 
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialMotionController _motion;
     private SwipeToDismissBoxState _state = new();
     private TweenAnimation? _offsetMotion;
     private double _contentOffset;
@@ -295,7 +295,7 @@ public sealed class MaterialSwipeToDismissBox : ContentControl, IMaterialMotionC
     public MaterialSwipeToDismissBox()
     {
         Focusable = true;
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         AttachState(_state);
     }
 
@@ -602,7 +602,7 @@ public sealed class MaterialSwipeToDismissBox : ContentControl, IMaterialMotionC
             TimeSpan.FromMilliseconds(300),
             Easings.FastOutSlowIn);
         UpdateStateFromMotion(target);
-        _motion.Start();
+        _motion.RequestFrame();
     }
 
     private void OnMotionFrame()

@@ -31,13 +31,13 @@ public class MaterialButtonGroup : Panel, IMaterialThemeConsumer
     public static readonly StyledProperty<Orientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialButtonGroup, Orientation>(nameof(Orientation), Orientation.Horizontal);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
 
     private ButtonGroupMetrics _tokens = ButtonGroupDefaults.Metrics(ButtonGroupVariant.Standard);
 
     public MaterialButtonGroup()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
         ApplyTokens();
     }
 

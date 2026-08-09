@@ -50,13 +50,13 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
             1,
             validate: static value => double.IsFinite(value) && value >= 0);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private double _containerHeight = 40;
     private IDisposable? _overlapLease;
 
     public MaterialSegmentedButtonRow()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
         ApplyTokens();
     }
 
@@ -364,7 +364,7 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
 
     private RoundedCornerShape ShapeFor(SegmentedButtonSegmentPosition position)
     {
-        var baseShape = _theme.Theme.Shapes.Get(SegmentedButtonDefaults.Metrics().ContainerShape);
+        var baseShape = _theme.Current.Theme.Shapes.Get(SegmentedButtonDefaults.Metrics().ContainerShape);
         return position switch
         {
             SegmentedButtonSegmentPosition.First => baseShape.Start(),

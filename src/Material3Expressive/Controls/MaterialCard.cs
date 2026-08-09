@@ -43,7 +43,7 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
     public static readonly StyledProperty<bool> IsClickableProperty =
         AvaloniaProperty.Register<MaterialCard, bool>(nameof(IsClickable));
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
 
     private CardMetrics _metrics = CardDefaults.Metrics(CardVariant.Filled);
@@ -51,8 +51,8 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
 
     public MaterialCard()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _interaction = MaterialElementContext.GetOrCreate(this).Interaction;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         ApplyTokens();
     }
@@ -92,8 +92,8 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
             return;
 
         var enabled = IsEffectivelyEnabled;
-        var corners = _theme.Theme.Shapes.GetCornerRadius(_metrics.ContainerShape, Bounds.Size);
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_metrics.ContainerShape, Bounds.Size);
+        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
 
         MaterialContainer.Draw(
             context,
@@ -125,7 +125,7 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
     private void ApplyTokens()
     {
         _metrics = CardDefaults.Metrics(Variant);
-        _colors = CardDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
+        _colors = CardDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
         InvalidateVisual();
     }
 

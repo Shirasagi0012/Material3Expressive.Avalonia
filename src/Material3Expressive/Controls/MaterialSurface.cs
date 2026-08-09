@@ -29,13 +29,13 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
             nameof(AbsoluteTonalElevation),
             surface => surface.AbsoluteTonalElevation);
 
-    private readonly MaterialElementContext _theme;
+    private readonly MaterialThemeController _theme;
     private MaterialSurface? _tonalParent;
     private double _absoluteTonalElevation;
 
     public MaterialSurface()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
+        _theme = MaterialElementContext.Ensure(this).Theme;
         AttachedToVisualTree += (_, _) => UpdateTonalParent();
         DetachedFromVisualTree += (_, _) => SetTonalParent(null);
         UpdateAbsoluteTonalElevation();
@@ -66,7 +66,7 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
     public override void Render(DrawingContext context)
     {
         var surface = EffectiveSurfaceBrush();
-        var shadow = _theme.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.IsDark) ?? Colors.Black;
+        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
         MaterialContainer.Draw(
             context,
             this,
@@ -152,15 +152,15 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
     private IBrush? EffectiveSurfaceBrush()
     {
         var background = Background;
-        var scheme = _theme.Theme.ColorScheme;
+        var scheme = _theme.Current.Theme.ColorScheme;
         if (background is not ISolidColorBrush solid || scheme is null)
             return background;
 
-        var surface = scheme.GetColor(SysColorToken.Surface, _theme.IsDark);
+        var surface = scheme.GetColor(SysColorToken.Surface, _theme.Current.IsDark);
         if (solid.Color != surface || _absoluteTonalElevation <= 0)
             return background;
 
-        var tint = scheme.GetColor(SysColorToken.SurfaceTint, _theme.IsDark);
+        var tint = scheme.GetColor(SysColorToken.SurfaceTint, _theme.Current.IsDark);
         var alpha = ((4.5 * Math.Log(_absoluteTonalElevation + 1)) + 2) / 100;
         return new ImmutableSolidColorBrush(CompositeOver(tint, alpha, surface), solid.Opacity);
     }

@@ -37,16 +37,16 @@ public class MaterialCarousel : Panel, IMaterialThemeConsumer, IMaterialMotionCo
     public static readonly StyledProperty<double> OffsetProperty =
         AvaloniaProperty.Register<MaterialCarousel, double>(nameof(Offset));
 
-    private readonly MaterialElementContext _theme;
-    private readonly MaterialMotionScope _motion;
+    private readonly MaterialThemeController _theme;
+    private readonly MaterialMotionController _motion;
 
     private SpringAnimation? _scroll;
     private CarouselMetrics _tokens = CarouselDefaults.Metrics(CarouselVariant.MultiBrowse);
 
     public MaterialCarousel()
     {
-        _theme = MaterialElementContext.GetOrCreate(this);
-        _motion = MaterialElementContext.GetOrCreate(this).Motion;
+        _theme = MaterialElementContext.Ensure(this).Theme;
+        _motion = MaterialElementContext.Ensure(this).Motion;
         ApplyTokens();
     }
 
@@ -75,7 +75,7 @@ public class MaterialCarousel : Panel, IMaterialThemeConsumer, IMaterialMotionCo
     }
 
     private SpringAnimation Scroll =>
-        _scroll ??= _motion.AddSpring(Offset, _theme.Spring(MotionRole.DefaultSpatial));
+        _scroll ??= _motion.AddSpring(Offset, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -122,8 +122,8 @@ public class MaterialCarousel : Panel, IMaterialThemeConsumer, IMaterialMotionCo
 
         if (change.Property == OffsetProperty)
         {
-            Scroll.AnimateTo(Offset, _theme.Spring(MotionRole.DefaultSpatial));
-            _motion.Start();
+            Scroll.AnimateTo(Offset, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
+            _motion.RequestFrame();
         }
         else if (change.Property == VariantProperty)
         {
