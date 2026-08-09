@@ -1,7 +1,52 @@
 using Avalonia.Media;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
+
+/// <summary>
+/// The geometry values a Material switch consumes at render time.
+/// </summary>
+/// <remarks>
+/// This is deliberately a component-owned semantic record rather than a generated defaults
+/// snapshot.  The generated <see cref="SwitchTokens"/> class is a verbatim transcription of the
+/// upstream token set; the mapping (including the fact that the expressive control uses the width
+/// tokens for its handle size) belongs here with the control policy.
+/// </remarks>
+internal sealed record SwitchMetrics(
+    double TrackWidth,
+    double TrackHeight,
+    double TrackOutlineWidth,
+    double UnselectedHandleSize,
+    double SelectedHandleSize,
+    double PressedHandleSize,
+    double IconHandleSize,
+    double IconSize,
+    double StateLayerSize);
+
+/// <summary>
+/// Theme-resolved colour roles used by a Material switch.
+/// </summary>
+/// <remarks>
+/// The raw roles are resolved against the current system colour scheme when a control's theme
+/// snapshot changes.  Disabled entries carry the opacity specified by <see cref="SwitchTokens"/>
+/// so render code never has to know how the upstream role/alpha pair is assembled.
+/// </remarks>
+internal sealed record SwitchColors(
+    IImmutableBrush SelectedTrackColor,
+    IImmutableBrush SelectedHandleColor,
+    IImmutableBrush SelectedIconColor,
+    IImmutableBrush UnselectedTrackColor,
+    IImmutableBrush UnselectedTrackOutlineColor,
+    IImmutableBrush UnselectedHandleColor,
+    IImmutableBrush UnselectedIconColor,
+    IImmutableBrush SelectedStateLayerColor,
+    IImmutableBrush UnselectedStateLayerColor,
+    IImmutableBrush DisabledSelectedTrackColor,
+    IImmutableBrush DisabledSelectedHandleColor,
+    IImmutableBrush DisabledUnselectedTrackColor,
+    IImmutableBrush DisabledUnselectedTrackOutlineColor,
+    IImmutableBrush DisabledUnselectedHandleColor);
 
 /// <summary>Resolved state colours selected by a Material switch renderer.</summary>
 internal sealed record SwitchVisualColors(
@@ -19,10 +64,47 @@ internal sealed record SwitchVisualColors(
 /// </remarks>
 internal static class SwitchDefaults
 {
-    public static SwitchDefaultsTokens Tokens(ResolvedTheme theme) => theme.SwitchDefaultsTokens;
+    private static readonly SwitchMetrics DefaultMetrics = new(
+        SwitchTokens.TrackWidth,
+        SwitchTokens.TrackHeight,
+        SwitchTokens.TrackOutlineWidth,
+        SwitchTokens.UnselectedHandleWidth,
+        SwitchTokens.SelectedHandleWidth,
+        SwitchTokens.PressedHandleWidth,
+        SwitchTokens.IconHandleWidth,
+        SwitchTokens.SelectedIconSize,
+        SwitchTokens.StateLayerSize);
 
-    public static SwitchColors Colors(ResolvedTheme theme, bool isDark) =>
-        theme.GetSwitchColors(isDark);
+    /// <summary>Maps the raw upstream token set to the geometry consumed by the control.</summary>
+    public static SwitchMetrics Metrics() => DefaultMetrics;
+
+    /// <summary>Resolves the raw upstream colour roles against a system theme snapshot.</summary>
+    public static SwitchColors Colors(ResolvedTheme theme, bool isDark)
+    {
+        ArgumentNullException.ThrowIfNull(theme);
+
+        var scheme = theme.ColorScheme;
+        return new SwitchColors(
+            SwitchTokens.SelectedTrackColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.SelectedHandleColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.SelectedIconColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.UnselectedTrackColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.UnselectedTrackOutlineColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.UnselectedHandleColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.UnselectedIconColor.ResolveBrush(scheme, isDark),
+            // The upstream defaults use the track role as the state-layer role.
+            SwitchTokens.SelectedTrackColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.UnselectedTrackColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.DisabledSelectedTrackColor.ResolveBrush(
+                scheme, isDark, SwitchTokens.DisabledTrackOpacity),
+            SwitchTokens.DisabledSelectedHandleColor.ResolveBrush(scheme, isDark),
+            SwitchTokens.DisabledUnselectedTrackColor.ResolveBrush(
+                scheme, isDark, SwitchTokens.DisabledTrackOpacity),
+            SwitchTokens.DisabledUnselectedTrackOutlineColor.ResolveBrush(
+                scheme, isDark, SwitchTokens.DisabledTrackOpacity),
+            SwitchTokens.DisabledUnselectedHandleColor.ResolveBrush(
+                scheme, isDark, SwitchTokens.DisabledUnselectedHandleOpacity));
+    }
 
     public static SwitchVisualColors Visuals(SwitchColors colors, bool enabled, bool selected)
     {

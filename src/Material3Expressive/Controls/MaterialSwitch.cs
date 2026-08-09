@@ -30,7 +30,7 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
 
     private SpringAnimation? _position;
     private SpringAnimation? _handleSize;
-    private SwitchDefaultsTokens _tokens = SwitchDefaults.Tokens(ResolvedTheme.Default);
+    private SwitchMetrics _tokens = SwitchDefaults.Metrics();
     private SwitchColors _colors = SwitchDefaults.Colors(ResolvedTheme.Default, isDark: false);
 
     public MaterialSwitch()
@@ -137,7 +137,7 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
 
     private void ApplyTokens()
     {
-        _tokens = SwitchDefaults.Tokens(_theme.Theme);
+        _tokens = SwitchDefaults.Metrics();
         _colors = SwitchDefaults.Colors(_theme.Theme, _theme.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 

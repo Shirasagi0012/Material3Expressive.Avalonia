@@ -41,7 +41,7 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
     private readonly MaterialInteractionController _interaction;
 
     private SpringAnimation? _handleWidth;
-    private SliderDefaultsTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
+    private SliderMetrics _tokens = SliderDefaults.Metrics();
     private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
 
     public MaterialSlider()
@@ -288,7 +288,7 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
 
     private void ApplyTokens()
     {
-        _tokens = SliderDefaults.Tokens(_theme.Theme);
+        _tokens = SliderDefaults.Metrics();
         _colors = SliderDefaults.Colors(_theme.Theme, _theme.IsDark);
 
         UpdateHandleWidth();

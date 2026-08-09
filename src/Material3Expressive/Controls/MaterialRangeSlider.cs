@@ -39,7 +39,7 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
 
     private readonly MaterialElementContext _theme;
     private readonly MaterialInteractionController _interaction;
-    private SliderDefaultsTokens _tokens = SliderDefaults.Tokens(ResolvedTheme.Default);
+    private SliderMetrics _tokens = SliderDefaults.Metrics();
     private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private bool _updating;
     private bool _startActive = true;
@@ -339,7 +339,7 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
 
     private void ApplyTokens()
     {
-        _tokens = SliderDefaults.Tokens(_theme.Theme);
+        _tokens = SliderDefaults.Metrics();
         _colors = SliderDefaults.Colors(_theme.Theme, _theme.IsDark);
         InvalidateMeasure();
         InvalidateVisual();

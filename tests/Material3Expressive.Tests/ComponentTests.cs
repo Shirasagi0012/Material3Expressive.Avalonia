@@ -286,7 +286,7 @@ public class SelectionTests
     [AvaloniaFact]
     public void ASwitchsHandle_GrowsFromOffToOnToPressed()
     {
-        var tokens = SwitchDefaultsTokens.Default;
+        var tokens = SwitchDefaults.Metrics();
 
         Assert.True(tokens.UnselectedHandleSize < tokens.SelectedHandleSize);
         Assert.True(tokens.SelectedHandleSize < tokens.PressedHandleSize);
@@ -303,7 +303,7 @@ public class SelectionTests
         MaterialThemeScope.SetTheme(host, theme);
         ThemeTestHelper.ShowWindow(host);
 
-        var colors = theme.Resolved.GetSwitchColors(isDark: false);
+        var colors = SwitchDefaults.Colors(theme.Resolved, isDark: false);
 
         Assert.Equal(
             ThemeTestHelper.Expected(theme, SysColorToken.Primary),
@@ -1223,7 +1223,7 @@ public class SliderTests
     [AvaloniaFact]
     public void TheHandle_NarrowsWhilePressedSoTheValueStaysVisible()
     {
-        var tokens = SliderDefaultsTokens.Default;
+        var tokens = SliderDefaults.Metrics();
 
         Assert.True(tokens.PressedHandleWidth < tokens.HandleWidth);
         // And it stands taller than the track it sits on.
@@ -1236,7 +1236,7 @@ public class SliderTests
         var slider = new MaterialSlider { Width = 200 };
         ThemeTestHelper.ShowWindow(slider);
 
-        Assert.Equal(Math.Max(SliderDefaultsTokens.Default.HandleHeight, 48), slider.Bounds.Height, 3);
+        Assert.Equal(Math.Max(SliderDefaults.Metrics().HandleHeight, 48), slider.Bounds.Height, 3);
     }
 
     [AvaloniaFact]
@@ -1284,7 +1284,7 @@ public class SliderTests
         window.MouseDown(nearBottom, Avalonia.Input.MouseButton.Left);
 
         Assert.InRange(slider.Value, 80, 100);
-        Assert.Equal(Math.Max(SliderDefaultsTokens.Default.HandleHeight, 48), slider.Bounds.Width, 3);
+        Assert.Equal(Math.Max(SliderDefaults.Metrics().HandleHeight, 48), slider.Bounds.Width, 3);
     }
 
     [AvaloniaFact]
