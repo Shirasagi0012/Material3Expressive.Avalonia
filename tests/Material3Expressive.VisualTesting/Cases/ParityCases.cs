@@ -119,8 +119,8 @@ internal static class ParityCases
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     VerticalContentAlignment = VerticalAlignment.Center
                 };
-                ButtonAssist.SetVariant(button, variant);
-                ButtonAssist.SetSize(button, size);
+                M3Button.SetVariant(button, variant);
+                M3Button.SetSize(button, size);
 
                 return new Grid { Children = { button } };
             },

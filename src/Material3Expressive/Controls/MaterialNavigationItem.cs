@@ -97,8 +97,8 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
     private readonly MaterialInteractionController _interaction;
 
     private SpringAnimation? _indicator;
-    private NavigationTokens _tokens = NavigationTokens.Bar;
-    private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
+    private NavigationMetrics _tokens = NavigationDefaults.Metrics(NavigationVariant.Bar);
+    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Bar, false);
     private MaterialNavigationItemContentPanel? _contentPanel;
     private ContentPresenter? _labelPresenter;
     private readonly List<Action> _restoreLabelMetrics = new();
@@ -379,8 +379,8 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         var previousLabelLineHeight = LabelLineHeight;
         var previousLabelLetterSpacing = LabelLetterSpacing;
 
-        _tokens = _theme.Theme.GetNavigationTokens(Surface);
-        _colors = _theme.Theme.GetNavigationColors(Surface, _theme.IsDark);
+        _tokens = NavigationDefaults.Metrics(Surface);
+        _colors = NavigationDefaults.Colors(_theme.Theme, Surface, _theme.IsDark);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);

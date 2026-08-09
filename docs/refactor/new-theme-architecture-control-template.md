@@ -3,10 +3,10 @@
 
 > Component Defaults 将 raw tokens 和 `ResolvedTheme` 解析成 semantic records；owner-local adapter 再通过 AvaloniaProperty 将这些 records 投影给 ControlTheme、template 和 presenter。
 
-> **实现状态（2026-08）**：普通 `Button` 与紧密相关的 `ToggleButton` 已落地为两个原型。
-> 两者的旧 Button-family defaults、markup extension 和对应的 `ResolvedTheme` component
-> snapshot 依赖均已移除；ToggleButton 仍保留独立的 checked/unchecked 语义记录，而不是
-> 复用普通 Button 的颜色 aggregate。其他控件仍在旧路径上，这不是全局迁移声明。
+> **实现状态（2026-08）**：这一投影边界已推广到所有原有 component-default consumers。
+> Button family、IconButton family 和自有控件都由各自的 Defaults owner 消费 raw tokens；
+> 不存在 `.default.jsonc`、component snapshot 或 generated override bags。ToggleButton 仍保留
+> 独立的 checked/unchecked 语义记录，而不是复用普通 Button 的颜色 aggregate。
 
 
 ```mermaid
@@ -97,25 +97,25 @@ private void Refresh()
 {
     var theme = MaterialThemeScope.GetResolvedTheme(_owner);
     var isDark = IsDark(_owner.ActualThemeVariant);
-    var variant = ButtonAssist.GetVariant(_owner);
-    var size = ButtonAssist.GetSize(_owner);
+    var variant = M3Button.GetVariant(_owner);
+    var size = M3Button.GetSize(_owner);
 
     var colors = ButtonDefaults.Colors(theme, variant, isDark);
     var metrics = ButtonDefaults.Metrics(size);
 
-    ButtonAssist.SetDefaultColors(_owner, colors);
-    ButtonAssist.SetDefaultMetrics(_owner, metrics);
-    ButtonAssist.SetDefaultShapes(
+    M3Button.SetDefaultColors(_owner, colors);
+    M3Button.SetDefaultMetrics(_owner, metrics);
+    M3Button.SetDefaultShapes(
         _owner,
         ButtonDefaults.Shapes(size));
-    ButtonAssist.SetDefaultElevation(
+    M3Button.SetDefaultElevation(
         _owner,
         ButtonDefaults.Elevation(variant));
-    ButtonAssist.SetDefaultShapeMotion(
+    M3Button.SetDefaultShapeMotion(
         _owner,
         ButtonDefaults.ShapeMotion(theme));
 
-    ButtonAssist.SetDefaultOutlineThickness(
+    M3Button.SetDefaultOutlineThickness(
         _owner,
         ButtonDefaults.OutlineThickness(variant, size));
 }
@@ -125,7 +125,7 @@ Adapter 只发布 default outputs，不直接修改 `Background`、`Padding` 等
 
 ## 3. 通过 AvaloniaProperty 发布 semantic records
 
-对于需要支持原生 Avalonia `Button` 的组件，使用 `ButtonAssist` attached properties：
+对于需要支持原生 Avalonia `Button` 的组件，使用 `M3Button` attached properties：
 
 ```csharp
 public static readonly AttachedProperty<ButtonColors>
@@ -158,6 +158,11 @@ public static readonly AttachedProperty<Thickness>
 它们以 `EditorBrowsable(Never)` 隐藏，读写辅助方法保持 `internal`；这里的 `public` 是
 AXAML metadata contract，不能被解读为通用 token override surface。
 
+`M3Button` 也直接承载 Button family 的公开输入：`Variant`、`Size`、`IsSquare`、
+`ContainerShapeOverride` 和 `StateLayerBrush`。没有额外的 `ButtonAxes` 或
+`ButtonDefaultsProjection` 类型；前者是同文件中的顶层 enum，后者只是同一个 attached-property
+owner 上标记为隐藏的 library contract。
+
 对于 `MaterialFab` 等自有控件，也可以使用 DirectProperty 暴露同类输出，不一定需要 attached property。
 
 ## 4. 由 Material ControlTheme 激活 Adapter
@@ -167,7 +172,7 @@ AXAML metadata contract，不能被解读为通用 token override surface。
 核心主题设置内部 marker：
 
 ```xml
-<Setter Property="m3:ButtonAssist.UseMaterialDefaults"
+<Setter Property="m3:M3Button.UseMaterialDefaults"
         Value="True" />
 ```
 
@@ -187,27 +192,27 @@ Library ControlTheme 使用普通 self-rooted binding：
 ```xml
 <!-- 示意语法 -->
 <Setter Property="Background"
-        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Container,
+        Value="{Binding Path=(m3:M3Button.DefaultColors).Container,
                         RelativeSource={RelativeSource Self}}" />
 
 <Setter Property="Foreground"
-        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Content,
+        Value="{Binding Path=(m3:M3Button.DefaultColors).Content,
                         RelativeSource={RelativeSource Self}}" />
 
 <Setter Property="BorderBrush"
-        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Outline,
+        Value="{Binding Path=(m3:M3Button.DefaultColors).Outline,
                         RelativeSource={RelativeSource Self}}" />
 
 <Setter Property="Padding"
-        Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).ContentPadding,
+        Value="{Binding Path=(m3:M3Button.DefaultMetrics).ContentPadding,
                         RelativeSource={RelativeSource Self}}" />
 
 <Setter Property="MinHeight"
-        Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).ContainerHeight,
+        Value="{Binding Path=(m3:M3Button.DefaultMetrics).ContainerHeight,
                         RelativeSource={RelativeSource Self}}" />
 
 <Setter Property="BorderThickness"
-        Value="{Binding Path=(m3:ButtonAssist.DefaultOutlineThickness),
+        Value="{Binding Path=(m3:M3Button.DefaultOutlineThickness),
                         RelativeSource={RelativeSource Self}}" />
 ```
 
@@ -216,11 +221,11 @@ Library ControlTheme 使用普通 self-rooted binding：
 ```xml
 <Style Selector="^:disabled">
     <Setter Property="Background"
-            Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledContainer,
+            Value="{Binding Path=(m3:M3Button.DefaultColors).DisabledContainer,
                             RelativeSource={RelativeSource Self}}" />
 
     <Setter Property="Foreground"
-            Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledContent,
+            Value="{Binding Path=(m3:M3Button.DefaultColors).DisabledContent,
                             RelativeSource={RelativeSource Self}}" />
 </Style>
 ```
@@ -238,8 +243,8 @@ Template 不知道 `ButtonDefaults`、`ResolvedTheme` 或 raw tokens：
 对于 state layer 等 component-specific 能力，增加可覆盖的 StyledProperty：
 
 ```xml
-<Setter Property="m3:ButtonAssist.StateLayerBrush"
-        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).StateLayer,
+<Setter Property="m3:M3Button.StateLayerBrush"
+        Value="{Binding Path=(m3:M3Button.DefaultColors).StateLayer,
                         RelativeSource={RelativeSource Self}}" />
 ```
 
@@ -247,7 +252,7 @@ template 再使用：
 
 ```xml
 <MaterialRipplePresenter
-    StateLayerBrush="{TemplateBinding m3:ButtonAssist.StateLayerBrush}" />
+    StateLayerBrush="{TemplateBinding m3:M3Button.StateLayerBrush}" />
 ```
 
 ## 7. Presenter 消费 profiles 和 runtime state
@@ -256,12 +261,10 @@ Presenter 直接读取默认 semantic properties：
 
 ```csharp
 var shapes =
-    ButtonAssist.GetShapesOverride(owner)
-    ?? ButtonAssist.GetDefaultShapes(owner);
+    M3Button.GetDefaultShapes(owner);
 
 var elevation =
-    ButtonAssist.GetElevationOverride(owner)
-    ?? ButtonAssist.GetDefaultElevation(owner);
+    M3Button.GetDefaultElevation(owner);
 ```
 
 然后结合：
@@ -310,7 +313,7 @@ ColorsOverride      optional public semantic override
 
 Adapter 不能把 default 写成公共属性的 local value，否则会破坏 Avalonia 的样式优先级。
 
-## 9. Button family 原型的迁移结果与全局目标
+## 9. Button family 原型与全局结果
 
 普通 Button 与 ToggleButton 已删除：
 
@@ -323,11 +326,11 @@ ToggleButtonToken enum
 ToggleButtonTokenResolver
 ```
 
-这两个控件也不再读取 `ResolvedTheme.Components` 或生成的 Button-family override bags。
-ToggleButton 的颜色状态仍由自己的 `ToggleButtonDefaults` 解析；IconButton 和其他未迁移控件
-仍会使用各自的 defaults table、markup extension 和 component snapshot 路径。
+这两个控件不读取 `ResolvedTheme.Components` 或生成的 Button-family override bags。
+ToggleButton 的颜色状态仍由自己的 `ToggleButtonDefaults` 解析；IconButton family 及其他控件
+也已采用各自的 Defaults policy，而不是回到 JSON assembly 路径。
 
-全局迁移完成后，目标架构不再需要：
+当前架构不需要：
 
 ```text
 component-specific ThemeBinding/MultiBinding

@@ -39,8 +39,8 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
     private readonly MaterialElementContext _theme;
     private readonly MaterialInteractionController _interaction;
 
-    private TabTokens _tokens = TabTokens.Primary;
-    private TabColors _colors = TabTokens.Primary.Resolve(null, false);
+    private TabMetrics _tokens = TabDefaults.Metrics(TabVariant.Primary);
+    private TabVisualColors _colors = TabDefaults.Colors(Foundation.ResolvedTheme.Default, TabVariant.Primary, false);
 
     public MaterialTab()
     {
@@ -88,8 +88,8 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
     {
         var previousIconSize = IconSize;
 
-        _tokens = _theme.Theme.GetTabTokens(Style);
-        _colors = _theme.Theme.GetTabColors(Style, _theme.IsDark);
+        _tokens = TabDefaults.Metrics(Style);
+        _colors = TabDefaults.Colors(_theme.Theme, Style, _theme.IsDark);
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
 
         var typography = _theme.Theme.Typography;
@@ -424,8 +424,8 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
 
     private SpringAnimation? _centre;
     private SpringAnimation? _width;
-    private TabTokens _tokens = TabTokens.Primary;
-    private TabColors _colors = TabTokens.Primary.Resolve(null, false);
+    private TabMetrics _tokens = TabDefaults.Metrics(TabVariant.Primary);
+    private TabVisualColors _colors = TabDefaults.Colors(Foundation.ResolvedTheme.Default, TabVariant.Primary, false);
     private bool _updatingSelection;
     private ScrollViewer? _scrollViewer;
     private bool _scrollSelectedTab;
@@ -767,8 +767,8 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
 
     private void ApplyTokens()
     {
-        _tokens = ResolvedTheme.GetTabTokens(Variant);
-        _colors = ResolvedTheme.GetTabColors(Variant, IsDarkVariant);
+        _tokens = TabDefaults.Metrics(Variant);
+        _colors = TabDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
 
         AttachItems();
         InvalidateVisual();

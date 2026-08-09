@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Material3Expressive.Tests;
 
-/// <summary>Native-first contracts shared by ToggleButton, icon buttons, and their CLR facades.</summary>
+/// <summary>Native-first contracts shared by ToggleButton and icon buttons.</summary>
 public class NativeToggleAndIconButtonTests
 {
     [AvaloniaFact]
@@ -24,7 +24,7 @@ public class NativeToggleAndIconButtonTests
     {
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
         var button = new ToggleButton { Content = "Toggle" };
-        ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
+        M3Button.SetVariant(button, ButtonVariant.Tonal);
         var host = new Border { Child = button };
         MaterialThemeScope.SetTheme(host, theme);
         ThemeTestHelper.ShowWindow(host);
@@ -48,22 +48,22 @@ public class NativeToggleAndIconButtonTests
         var toggle = new ToggleButton { Content = "Toggle" };
         ThemeTestHelper.ShowWindow(toggle);
 
-        var colors = Assert.IsType<ToggleButtonColors>(ToggleButtonAssist.GetDefaultColors(toggle));
-        var metrics = Assert.IsType<ToggleButtonMetrics>(ToggleButtonAssist.GetDefaultMetrics(toggle));
+        var colors = Assert.IsType<ToggleButtonColors>(M3ToggleButton.GetDefaultColors(toggle));
+        var metrics = Assert.IsType<ToggleButtonMetrics>(M3ToggleButton.GetDefaultMetrics(toggle));
 
-        Assert.Equal(ButtonSize.Small, ButtonAssist.GetSize(toggle));
+        Assert.Equal(ButtonSize.Small, M3Button.GetSize(toggle));
         Assert.Equal(40, metrics.ContainerHeight);
         Assert.Equal(48, metrics.ToggleContainerHeight);
-        Assert.Same(colors.UncheckedContent, ToggleButtonAssist.GetDefaultStateLayerBrush(toggle));
+        Assert.Same(colors.UncheckedContent, M3ToggleButton.GetDefaultStateLayerBrush(toggle));
 
-        ButtonAssist.SetVariant(toggle, ButtonVariant.Outlined);
-        Assert.Equal(new Thickness(1), ToggleButtonAssist.GetDefaultOutlineThickness(toggle));
+        M3Button.SetVariant(toggle, ButtonVariant.Outlined);
+        Assert.Equal(new Thickness(1), M3ToggleButton.GetDefaultOutlineThickness(toggle));
 
         toggle.IsChecked = true;
 
-        var checkedColors = Assert.IsType<ToggleButtonColors>(ToggleButtonAssist.GetDefaultColors(toggle));
-        Assert.Same(checkedColors.CheckedContent, ToggleButtonAssist.GetDefaultStateLayerBrush(toggle));
-        Assert.Equal(new Thickness(0), ToggleButtonAssist.GetDefaultOutlineThickness(toggle));
+        var checkedColors = Assert.IsType<ToggleButtonColors>(M3ToggleButton.GetDefaultColors(toggle));
+        Assert.Same(checkedColors.CheckedContent, M3ToggleButton.GetDefaultStateLayerBrush(toggle));
+        Assert.Equal(new Thickness(0), M3ToggleButton.GetDefaultOutlineThickness(toggle));
     }
 
     [AvaloniaFact]
@@ -72,13 +72,13 @@ public class NativeToggleAndIconButtonTests
         var toggle = new ToggleButton { Content = "Toggle" };
         ThemeTestHelper.ShowWindow(toggle);
 
-        Assert.NotNull(ToggleButtonAssist.GetDefaultColors(toggle));
+        Assert.NotNull(M3ToggleButton.GetDefaultColors(toggle));
 
-        toggle.SetValue(ToggleButtonAssist.UseMaterialDefaultsProperty, false);
+        toggle.SetValue(M3ToggleButton.UseMaterialDefaultsProperty, false);
 
-        Assert.Null(ToggleButtonAssist.GetDefaultColors(toggle));
-        Assert.Null(ToggleButtonAssist.GetDefaultMetrics(toggle));
-        Assert.Null(ToggleButtonAssist.GetDefaultShapes(toggle));
+        Assert.Null(M3ToggleButton.GetDefaultColors(toggle));
+        Assert.Null(M3ToggleButton.GetDefaultMetrics(toggle));
+        Assert.Null(M3ToggleButton.GetDefaultShapes(toggle));
     }
 
     [AvaloniaFact]
@@ -98,7 +98,7 @@ public class NativeToggleAndIconButtonTests
 
             Assert.Same(Brushes.HotPink, toggle.Background);
 
-            ButtonAssist.SetVariant(toggle, ButtonVariant.Tonal);
+            M3Button.SetVariant(toggle, ButtonVariant.Tonal);
             toggle.IsChecked = true;
 
             Assert.Same(Brushes.LimeGreen, toggle.Background);
@@ -118,18 +118,18 @@ public class NativeToggleAndIconButtonTests
             Content = "icon",
             Theme = Theme("MaterialTonalIconButtonTheme")
         };
-        IconButtonAssist.SetSize(button, IconButtonSize.Medium);
-        IconButtonAssist.SetButtonWidth(button, IconButtonWidth.Narrow);
+        M3IconButton.SetSize(button, IconButtonSize.Medium);
+        M3IconButton.SetButtonWidth(button, IconButtonWidth.Narrow);
         ThemeTestHelper.ShowWindow(button);
 
-        Assert.True(IconButtonAssist.GetIsIconButton(button));
+        Assert.True(M3IconButton.GetIsIconButton(button));
         Assert.Single(button.GetVisualDescendants().OfType<MaterialIconButtonContainerPresenter>());
         Assert.Equal(MediumIconButtonTokens.ContainerHeight, button.Height);
         Assert.Equal(MediumIconButtonTokens.IconSize + MediumIconButtonTokens.NarrowLeadingSpace * 2, button.Width);
         Assert.Equal(MediumIconButtonTokens.NarrowLeadingSpace, button.Padding.Left);
-        Assert.Equal(MediumIconButtonTokens.IconSize, IconButtonAssist.GetIconSize(button));
+        Assert.Equal(MediumIconButtonTokens.IconSize, M3IconButton.GetIconSize(button));
 
-        IconButtonAssist.SetButtonWidth(button, IconButtonWidth.Wide);
+        M3IconButton.SetButtonWidth(button, IconButtonWidth.Wide);
 
         Assert.Equal(MediumIconButtonTokens.WideLeadingSpace, button.Padding.Left);
     }
@@ -169,48 +169,33 @@ public class NativeToggleAndIconButtonTests
         var ordinary = new Button { Content = "Action" };
         ThemeTestHelper.ShowWindow(ordinary);
 
-        Assert.False(IconButtonAssist.GetIsIconButton(ordinary));
+        Assert.False(M3IconButton.GetIsIconButton(ordinary));
         Assert.Empty(ordinary.GetVisualDescendants().OfType<MaterialIconButtonContainerPresenter>());
     }
 
     [AvaloniaFact]
-    public void Facades_AddClrSyntaxWithoutAddingIndependentState()
+    public void NativeToggleIconButton_UsesTheSharedM3IconButtonAxes()
     {
-        Assert.Same(ButtonAssist.VariantProperty, MaterialToggleButton.VariantProperty);
-        Assert.Same(ButtonAssist.SizeProperty, MaterialToggleButton.SizeProperty);
-        Assert.Same(ButtonAssist.IsSquareProperty, MaterialToggleButton.IsSquareProperty);
-        Assert.Same(
-            ButtonAssist.ContainerShapeOverrideProperty,
-            MaterialToggleButton.ContainerShapeOverrideProperty);
-
-        AssertIconFacadeProperties(
-            MaterialIconButton.VariantProperty,
-            MaterialIconButton.SizeProperty,
-            MaterialIconButton.ButtonWidthProperty,
-            MaterialIconButton.IsSquareProperty,
-            MaterialIconButton.ContainerShapeOverrideProperty,
-            MaterialIconButton.IconSizeProperty);
-        AssertIconFacadeProperties(
-            MaterialToggleIconButton.VariantProperty,
-            MaterialToggleIconButton.SizeProperty,
-            MaterialToggleIconButton.ButtonWidthProperty,
-            MaterialToggleIconButton.IsSquareProperty,
-            MaterialToggleIconButton.ContainerShapeOverrideProperty,
-            MaterialToggleIconButton.IconSizeProperty);
-
-        var facade = new MaterialToggleIconButton
+        var toggle = new ToggleButton
         {
-            Variant = IconButtonVariant.Outlined,
-            Size = IconButtonSize.Large,
-            ButtonWidth = IconButtonWidth.Wide,
+            Theme = Theme("MaterialOutlinedToggleIconButtonTheme"),
             IsChecked = true
         };
-        ThemeTestHelper.ShowWindow(facade);
+        M3IconButton.SetVariant(toggle, IconButtonVariant.Outlined);
+        M3IconButton.SetSize(toggle, IconButtonSize.Large);
+        M3IconButton.SetButtonWidth(toggle, IconButtonWidth.Wide);
+        ThemeTestHelper.ShowWindow(toggle);
 
-        Assert.Equal(IconButtonVariant.Outlined, IconButtonAssist.GetVariant(facade));
-        Assert.Equal(IconButtonSize.Large, IconButtonAssist.GetSize(facade));
-        Assert.Equal(IconButtonWidth.Wide, IconButtonAssist.GetButtonWidth(facade));
-        Assert.Single(facade.GetVisualDescendants().OfType<MaterialIconButtonContainerPresenter>());
+        Assert.Equal(IconButtonVariant.Outlined, M3IconButton.GetVariant(toggle));
+        Assert.Equal(IconButtonSize.Large, M3IconButton.GetSize(toggle));
+        Assert.Equal(IconButtonWidth.Wide, M3IconButton.GetButtonWidth(toggle));
+        Assert.Equal(
+            LargeIconButtonTokens.IconSize + LargeIconButtonTokens.WideLeadingSpace * 2,
+            toggle.Width);
+        Assert.Equal(
+            LargeIconButtonTokens.WideLeadingSpace,
+            Assert.IsType<IconButtonMetrics>(M3ToggleIconButton.GetDefaultMetrics(toggle)).ContentPadding.Left);
+        Assert.Single(toggle.GetVisualDescendants().OfType<MaterialIconButtonContainerPresenter>());
     }
 
     [AvaloniaFact]
@@ -270,9 +255,9 @@ public class NativeToggleAndIconButtonTests
         };
         ThemeTestHelper.ShowWindow(button);
 
-        IconButtonAssist.SetVariant(button, IconButtonVariant.Tonal);
-        IconButtonAssist.SetSize(button, IconButtonSize.Large);
-        IconButtonAssist.SetButtonWidth(button, IconButtonWidth.Wide);
+        M3IconButton.SetVariant(button, IconButtonVariant.Tonal);
+        M3IconButton.SetSize(button, IconButtonSize.Large);
+        M3IconButton.SetButtonWidth(button, IconButtonWidth.Wide);
 
         Assert.Same(background, button.Background);
         Assert.Equal(new Thickness(3), button.Padding);
@@ -284,19 +269,4 @@ public class NativeToggleAndIconButtonTests
         return Assert.IsType<ControlTheme>(resource);
     }
 
-    private static void AssertIconFacadeProperties(
-        AvaloniaProperty variant,
-        AvaloniaProperty size,
-        AvaloniaProperty width,
-        AvaloniaProperty square,
-        AvaloniaProperty shape,
-        AvaloniaProperty iconSize)
-    {
-        Assert.Same(IconButtonAssist.VariantProperty, variant);
-        Assert.Same(IconButtonAssist.SizeProperty, size);
-        Assert.Same(IconButtonAssist.ButtonWidthProperty, width);
-        Assert.Same(IconButtonAssist.IsSquareProperty, square);
-        Assert.Same(IconButtonAssist.ContainerShapeOverrideProperty, shape);
-        Assert.Same(IconButtonAssist.IconSizeProperty, iconSize);
-    }
 }

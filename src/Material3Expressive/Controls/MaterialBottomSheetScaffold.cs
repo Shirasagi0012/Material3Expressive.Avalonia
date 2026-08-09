@@ -248,8 +248,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
 
     private readonly MaterialElementContext _theme;
     private readonly MaterialMotionScope _motion;
-    private BottomSheetTokens _tokens = BottomSheetTokens.Standard;
-    private BottomSheetColors _colors = BottomSheetTokens.Standard.Resolve(null, false);
+    private BottomSheetMetrics _tokens = BottomSheetDefaults.Metrics(BottomSheetVariant.Standard);
+    private BottomSheetVisualColors _colors = BottomSheetDefaults.Colors(Foundation.ResolvedTheme.Default, BottomSheetVariant.Standard, false);
     private Point? _dragStart;
     private double _dragStartFraction;
     private bool _dragging;
@@ -550,8 +550,8 @@ internal sealed class MaterialBottomSheetScaffoldSheet : ContentControl, IMateri
 
     private void ApplyTheme()
     {
-        _tokens = BottomSheetTokens.Standard;
-        _colors = _tokens.Resolve(_theme.Theme.ColorScheme, _theme.IsDark);
+        _tokens = BottomSheetDefaults.Metrics(BottomSheetVariant.Standard);
+        _colors = BottomSheetDefaults.Colors(_theme.Theme, BottomSheetVariant.Standard, _theme.IsDark);
         // DragHandle uses 22dp vertical padding on both sides around its 4dp stroke.
         Padding = new Thickness(
             0,

@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
@@ -21,31 +22,45 @@ public class IconButtonTests
     [AvaloniaFact]
     public void ItsWidthAxis_IsIndependentOfItsSize()
     {
-        var narrow = new MaterialIconButton { Size = IconButtonSize.Medium, ButtonWidth = IconButtonWidth.Narrow };
-        var wide = new MaterialIconButton { Size = IconButtonSize.Medium, ButtonWidth = IconButtonWidth.Wide };
+        var narrow = new Button { Theme = IconButtonTheme() };
+        var wide = new Button { Theme = IconButtonTheme() };
+        M3IconButton.SetSize(narrow, IconButtonSize.Medium);
+        M3IconButton.SetButtonWidth(narrow, IconButtonWidth.Narrow);
+        M3IconButton.SetSize(wide, IconButtonSize.Medium);
+        M3IconButton.SetButtonWidth(wide, IconButtonWidth.Wide);
         ThemeTestHelper.ShowWindow(new StackPanel { Children = { narrow, wide } });
 
         Assert.Equal(MediumIconButtonTokens.NarrowLeadingSpace, narrow.Padding.Left);
         Assert.Equal(MediumIconButtonTokens.WideLeadingSpace, wide.Padding.Left);
 
         // Same size, so the icon and the height are unchanged by the width.
-        Assert.Equal(narrow.IconSize, wide.IconSize);
-        Assert.Equal(narrow.MinHeight, wide.MinHeight);
+        Assert.Equal(M3IconButton.GetIconSize(narrow), M3IconButton.GetIconSize(wide));
+        Assert.Equal(narrow.Height, wide.Height);
     }
 
     [AvaloniaFact]
     public void TheStandardVariant_HasNoContainer()
     {
-        Assert.Equal(0, IconButtonColorTokens.Standard.ContainerColor.LiteralColor!.Value.A);
-        Assert.False(IconButtonColorTokens.Standard.HasOutline);
-        Assert.True(IconButtonColorTokens.Outlined.HasOutline);
+        var standard = IconButtonDefaults.Colors(
+            ResolvedTheme.Default,
+            IconButtonVariant.Standard,
+            isDark: false);
+        var outlined = IconButtonDefaults.Colors(
+            ResolvedTheme.Default,
+            IconButtonVariant.Outlined,
+            isDark: false);
+
+        Assert.Equal(0, ThemeTestHelper.ColorOf(standard.Container).A);
+        Assert.False(standard.HasOutline);
+        Assert.True(outlined.HasOutline);
     }
 
     [AvaloniaFact]
     public void ItsIconColour_FollowsTheVariantAndTheThemeInScope()
     {
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
-        var button = new MaterialIconButton { Variant = IconButtonVariant.Filled };
+        var button = new Button { Theme = IconButtonTheme() };
+        M3IconButton.SetVariant(button, IconButtonVariant.Filled);
         var host = new Border { Child = button };
         MaterialThemeScope.SetTheme(host, theme);
         ThemeTestHelper.ShowWindow(host);
@@ -60,11 +75,25 @@ public class IconButtonTests
     {
         // Outlined is the odd one out: selected, it flips to the inverse surface rather than
         // filling with primary the way the other three do.
-        var outlined = IconButtonColorTokens.Outlined;
+        var theme = ResolvedTheme.Default;
+        var outlined = ToggleIconButtonDefaults.Colors(theme, IconButtonVariant.Outlined, isDark: false);
+        var filled = ToggleIconButtonDefaults.Colors(theme, IconButtonVariant.Filled, isDark: false);
 
-        Assert.Equal(SysColorToken.InverseSurface, outlined.SelectedContainerColor.RoleToken);
-        Assert.Equal(SysColorToken.InverseOnSurface, outlined.SelectedIconColor.RoleToken);
-        Assert.Equal(SysColorToken.Primary, IconButtonColorTokens.Filled.SelectedContainerColor.RoleToken);
+        Assert.Equal(
+            theme.ColorScheme!.GetColor(SysColorToken.InverseSurface, isDark: false),
+            ThemeTestHelper.ColorOf(outlined.CheckedContainer));
+        Assert.Equal(
+            theme.ColorScheme.GetColor(SysColorToken.InverseOnSurface, isDark: false),
+            ThemeTestHelper.ColorOf(outlined.CheckedIcon));
+        Assert.Equal(
+            theme.ColorScheme.GetColor(SysColorToken.Primary, isDark: false),
+            ThemeTestHelper.ColorOf(filled.CheckedContainer));
+    }
+
+    private static ControlTheme IconButtonTheme()
+    {
+        Assert.True(Application.Current!.TryFindResource("MaterialStandardIconButtonTheme", out var resource));
+        return Assert.IsType<ControlTheme>(resource);
     }
 }
 
@@ -74,7 +103,8 @@ public class ToggleTests
     public void CheckingAToggleButton_SwitchesItToTheSelectedColours()
     {
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
-        var toggle = new MaterialToggleButton { Variant = ButtonVariant.Tonal, Content = "On" };
+        var toggle = new ToggleButton { Content = "On" };
+        M3Button.SetVariant(toggle, ButtonVariant.Tonal);
         var host = new Border { Child = toggle };
         MaterialThemeScope.SetTheme(host, theme);
         ThemeTestHelper.ShowWindow(host);
@@ -95,12 +125,12 @@ public class ToggleTests
     {
         // The icon button does not simply invert round and square: it carries a separate pair of
         // selected shapes, and at the small size they differ from the unselected pair.
-        var metrics = IconButtonSizeTokens.Small;
+        var shapes = ToggleIconButtonDefaults.Shapes(IconButtonSize.Small);
 
-        Assert.Equal(ShapeRole.CornerFull, metrics.ContainerShape);
-        Assert.Equal(ShapeRole.CornerMedium, metrics.SelectedContainerShape);
-        Assert.Equal(ShapeRole.CornerMedium, metrics.SquareContainerShape);
-        Assert.Equal(ShapeRole.CornerFull, metrics.SelectedSquareContainerShape);
+        Assert.Equal(ShapeRole.CornerFull, shapes.Container);
+        Assert.Equal(ShapeRole.CornerMedium, shapes.Selected);
+        Assert.Equal(ShapeRole.CornerMedium, shapes.Square);
+        Assert.Equal(ShapeRole.CornerFull, shapes.SelectedSquare);
     }
 
     [AvaloniaFact]
@@ -242,11 +272,11 @@ public class SelectionTests
     [AvaloniaFact]
     public void ACheckboxsTouchTarget_IsLargerThanItsBox()
     {
-        // Material sizes the state layer and the hit area at 40dp around an 18dp box; a control
-        // that only reserved the box would be a fiddly target.
-        var tokens = CheckboxDefaultsTokens.Default;
+        // The pinned Checkbox.kt compatibility path draws a 20dp box in the standard 40dp state
+        // layer; the 48dp interactive layout slot is still larger than both.
+        var tokens = CheckboxDefaults.Metrics();
 
-        Assert.Equal(18, tokens.ContainerSize);
+        Assert.Equal(20, tokens.ContainerSize);
         Assert.Equal(40, tokens.StateLayerSize);
         Assert.True(tokens.StateLayerSize > tokens.ContainerSize);
     }
@@ -258,7 +288,7 @@ public class SelectionTests
         ThemeTestHelper.ShowWindow(checkbox);
 
         Assert.Equal(48, checkbox.Padding.Left);
-        Assert.True(checkbox.Bounds.Height >= CheckboxDefaultsTokens.Default.StateLayerSize);
+        Assert.True(checkbox.Bounds.Height >= CheckboxDefaults.Metrics().StateLayerSize);
     }
 
     [AvaloniaFact]
@@ -269,13 +299,13 @@ public class SelectionTests
 
         Assert.True(checkbox.IsThreeState);
         Assert.Null(checkbox.IsChecked);
-        Assert.True(checkbox.Bounds.Width >= CheckboxDefaultsTokens.Default.StateLayerSize);
+        Assert.True(checkbox.Bounds.Width >= CheckboxDefaults.Metrics().StateLayerSize);
     }
 
     [AvaloniaFact]
     public void ARadioButtonsRing_FitsInsideItsIconBox()
     {
-        var tokens = RadioButtonDefaultsTokens.Default;
+        var tokens = RadioButtonDefaults.Metrics();
 
         // The ring is stroked, so its centre line has to be inset by half the stroke or it would
         // spill past the 20dp box.
@@ -323,17 +353,6 @@ public class SelectionTests
         Assert.Same(colors.DisabledUnselectedTrackOutlineColor, disabled.TrackOutlineColor);
     }
 
-    [AvaloniaFact]
-    public void ASingleSetTable_StillGetsItsOverrideBag()
-    {
-        // Checkbox, radio and switch have no variants, which is a different generator path from
-        // everything else in the library.
-        var theme = new MaterialTheme();
-        theme.Components.Add(new CheckboxOverrides { ContainerSize = 24 });
-
-        Assert.Equal(24, theme.Resolved.CheckboxDefaultsTokens.ContainerSize);
-        Assert.Equal(CheckboxDefaultsTokens.Default.StateLayerSize, theme.Resolved.CheckboxDefaultsTokens.StateLayerSize);
-    }
 }
 
 public class ProgressTests
@@ -341,8 +360,8 @@ public class ProgressTests
     [AvaloniaFact]
     public void TheTwoShapes_ShareTheirColoursAndDifferInMetrics()
     {
-        var linear = ProgressTokens.Linear;
-        var circular = ProgressTokens.Circular;
+        var linear = ProgressDefaults.Metrics(ProgressIndicatorShape.Linear);
+        var circular = ProgressDefaults.Metrics(ProgressIndicatorShape.Circular);
 
         Assert.Equal(linear.ActiveIndicatorColor, circular.ActiveIndicatorColor);
         Assert.Equal(linear.TrackColor, circular.TrackColor);
@@ -358,8 +377,8 @@ public class ProgressTests
     [AvaloniaFact]
     public void ExpressiveLeavesAGap_BetweenTheIndicatorAndTheTrack()
     {
-        Assert.True(ProgressTokens.Linear.TrackActiveSpace > 0);
-        Assert.True(ProgressTokens.Circular.TrackActiveSpace > 0);
+        Assert.True(ProgressDefaults.Metrics(ProgressIndicatorShape.Linear).TrackActiveSpace > 0);
+        Assert.True(ProgressDefaults.Metrics(ProgressIndicatorShape.Circular).TrackActiveSpace > 0);
     }
 
     [AvaloniaFact]
@@ -370,7 +389,7 @@ public class ProgressTests
         ThemeTestHelper.ShowWindow(new StackPanel { Children = { flat, wavy } });
 
         Assert.True(wavy.Bounds.Height > flat.Bounds.Height);
-        Assert.Equal(ProgressTokens.Linear.WaveSize, wavy.Bounds.Height, 3);
+        Assert.Equal(ProgressDefaults.Metrics(ProgressIndicatorShape.Linear).WaveSize, wavy.Bounds.Height, 3);
     }
 
     [AvaloniaFact]
@@ -380,8 +399,8 @@ public class ProgressTests
         var wavy = new MaterialCircularProgressIndicator { Value = .5, IsWavy = true };
         ThemeTestHelper.ShowWindow(new StackPanel { Children = { flat, wavy } });
 
-        Assert.Equal(ProgressTokens.Circular.Size, flat.Bounds.Width, 3);
-        Assert.Equal(ProgressTokens.Circular.WaveSize, wavy.Bounds.Width, 3);
+        Assert.Equal(ProgressDefaults.Metrics(ProgressIndicatorShape.Circular).Size, flat.Bounds.Width, 3);
+        Assert.Equal(ProgressDefaults.Metrics(ProgressIndicatorShape.Circular).WaveSize, wavy.Bounds.Width, 3);
         Assert.True(wavy.Bounds.Width > flat.Bounds.Width);
     }
 
@@ -412,17 +431,20 @@ public class SearchCarouselAndPickerTests
     public void TheSearchBarChangesShapeWhenItOpens()
     {
         // A pill closed, a rounded rectangle open — one control, because it is one shape.
-        Assert.Equal(ShapeRole.CornerFull, SearchBarDefaultsTokens.Default.ContainerShape);
-        Assert.Equal(ShapeRole.CornerExtraLarge, SearchBarDefaultsTokens.Default.ResultsContainerShape);
+        var metrics = SearchBarDefaults.Metrics();
+        Assert.Equal(ShapeRole.CornerFull, metrics.ContainerShape);
+        Assert.Equal(ShapeRole.CornerExtraLarge, metrics.ResultsContainerShape);
     }
 
     [AvaloniaFact]
     public void TheHeroCarousel_GivesOneItemMoreRoomThanMultiBrowse()
     {
-        Assert.True(CarouselTokens.Hero.LargeItemWidth > CarouselTokens.MultiBrowse.LargeItemWidth);
+        var hero = CarouselDefaults.Metrics(CarouselVariant.Hero);
+        var multiBrowse = CarouselDefaults.Metrics(CarouselVariant.MultiBrowse);
+        Assert.True(hero.LargeItemWidth > multiBrowse.LargeItemWidth);
 
         // And squeezes the edges harder, so less of the next item shows.
-        Assert.True(CarouselTokens.Hero.SmallItemWidth < CarouselTokens.MultiBrowse.SmallItemWidth);
+        Assert.True(hero.SmallItemWidth < multiBrowse.SmallItemWidth);
     }
 
     [AvaloniaFact]
@@ -435,10 +457,11 @@ public class SearchCarouselAndPickerTests
         ThemeTestHelper.ShowWindow(carousel);
 
         var widths = carousel.Children.Select(c => c.Bounds.Width).ToArray();
+        var metrics = CarouselDefaults.Metrics(CarouselVariant.MultiBrowse);
 
         // The first item starts at the left edge and is therefore squeezed; one in the middle is not.
-        Assert.True(widths[0] < CarouselTokens.MultiBrowse.LargeItemWidth);
-        Assert.True(widths[0] >= CarouselTokens.MultiBrowse.SmallItemWidth);
+        Assert.True(widths[0] < metrics.LargeItemWidth);
+        Assert.True(widths[0] >= metrics.SmallItemWidth);
         Assert.True(widths[1] > widths[0]);
     }
 
@@ -472,9 +495,11 @@ public class SearchCarouselAndPickerTests
     public void TheTimePickerIsTallerPerCellThanTheDatePicker()
     {
         // A clock face needs bigger targets than a month grid, and says so in its tokens.
-        Assert.True(PickerTokens.Time.DaySize > PickerTokens.Date.DaySize);
-        Assert.True(PickerTokens.Time.IsTime);
-        Assert.False(PickerTokens.Date.IsTime);
+        var time = PickerDefaults.Metrics(PickerVariant.Time);
+        var date = PickerDefaults.Metrics(PickerVariant.Date);
+        Assert.True(time.DaySize > date.DaySize);
+        Assert.True(time.IsTime);
+        Assert.False(date.IsTime);
     }
 }
 
@@ -523,7 +548,7 @@ public class OverlayTests
     [AvaloniaFact]
     public void TheSnackbarInverts_SoItReadsAsSeparateFromThePage()
     {
-        var tokens = SnackbarDefaultsTokens.Default;
+        var tokens = SnackbarDefaults.Metrics();
 
         Assert.Equal(SysColorToken.InverseSurface, tokens.ContainerColor.RoleToken);
         Assert.Equal(SysColorToken.InverseOnSurface, tokens.SupportingTextColor.RoleToken);
@@ -534,16 +559,19 @@ public class OverlayTests
     [AvaloniaFact]
     public void OnlyTheModalSheet_HasAScrim()
     {
-        Assert.True(BottomSheetTokens.Modal.IsModal);
-        Assert.True(BottomSheetTokens.Modal.ScrimOpacity > 0);
-        Assert.False(BottomSheetTokens.Standard.IsModal);
-        Assert.Equal(0, BottomSheetTokens.Standard.ScrimOpacity);
+        var modal = BottomSheetDefaults.Metrics(BottomSheetVariant.Modal);
+        var standard = BottomSheetDefaults.Metrics(BottomSheetVariant.Standard);
+        Assert.True(modal.IsModal);
+        Assert.True(modal.ScrimOpacity > 0);
+        Assert.False(standard.IsModal);
+        Assert.Equal(0, standard.ScrimOpacity);
     }
 
     [AvaloniaFact]
     public void TheSheetsCornersAreRoundedOnlyAlongItsTopEdge()
     {
-        var shape = new MaterialTheme().Resolved.Shapes.Get(BottomSheetTokens.Modal.ContainerShape);
+        var shape = new MaterialTheme().Resolved.Shapes.Get(
+            BottomSheetDefaults.Metrics(BottomSheetVariant.Modal).ContainerShape);
 
         Assert.NotEqual(CornerSize.Zero, shape.TopStart);
         Assert.NotEqual(CornerSize.Zero, shape.TopEnd);
@@ -569,11 +597,13 @@ public class OverlayTests
     [AvaloniaFact]
     public void ThePlainTooltipInverts_AndTheRichOneDoesNot()
     {
-        Assert.Equal(SysColorToken.InverseSurface, TooltipTokens.Plain.ContainerColor.RoleToken);
-        Assert.Equal(SysColorToken.SurfaceContainer, TooltipTokens.Rich.ContainerColor.RoleToken);
+        var plain = TooltipDefaults.Metrics(TooltipVariant.Plain);
+        var rich = TooltipDefaults.Metrics(TooltipVariant.Rich);
+        Assert.Equal(SysColorToken.InverseSurface, plain.ContainerColor.RoleToken);
+        Assert.Equal(SysColorToken.SurfaceContainer, rich.ContainerColor.RoleToken);
 
         // A rich tooltip has more to say, so it gets more room.
-        Assert.True(TooltipTokens.Rich.MaxWidth > TooltipTokens.Plain.MaxWidth);
+        Assert.True(rich.MaxWidth > plain.MaxWidth);
     }
 }
 
@@ -582,8 +612,8 @@ public class NavigationTests
     [AvaloniaFact]
     public void TheBarAndTheRail_DifferOnlyInSurfaceElevationAndAxis()
     {
-        var bar = NavigationTokens.Bar;
-        var rail = NavigationTokens.Rail;
+        var bar = NavigationDefaults.Metrics(NavigationVariant.Bar);
+        var rail = NavigationDefaults.Metrics(NavigationVariant.Rail);
 
         Assert.False(bar.IsVertical);
         Assert.True(rail.IsVertical);
@@ -639,17 +669,19 @@ public class TabTests
     [AvaloniaFact]
     public void ThePrimaryIndicatorHugsTheLabel_AndTheSecondaryOneDoesNot()
     {
-        Assert.True(TabTokens.Primary.IndicatorSpansLabel);
-        Assert.False(TabTokens.Secondary.IndicatorSpansLabel);
+        var primary = TabDefaults.Metrics(TabVariant.Primary);
+        var secondary = TabDefaults.Metrics(TabVariant.Secondary);
+        Assert.True(primary.IndicatorSpansLabel);
+        Assert.False(secondary.IndicatorSpansLabel);
 
         // TabRowDefaults.SecondaryIndicator deliberately takes its default height from
         // PrimaryNavigationTabTokens.ActiveIndicatorHeight (3dp). The primary/secondary
         // distinction is therefore content-width and shape, not thickness. Source:
         // AndroidX ff0a0a99 / Material3 1.5.0-alpha25, TabRow.kt:PrimaryIndicator,
         // SecondaryIndicator and PrimaryNavigationTabTokens.kt (VERSION v0_162).
-        Assert.Equal(TabTokens.Primary.ActiveIndicatorHeight, TabTokens.Secondary.ActiveIndicatorHeight);
-        Assert.True(TabTokens.Primary.ActiveIndicatorCornerRadius > 0);
-        Assert.Equal(0, TabTokens.Secondary.ActiveIndicatorCornerRadius);
+        Assert.Equal(primary.ActiveIndicatorHeight, secondary.ActiveIndicatorHeight);
+        Assert.True(primary.ActiveIndicatorCornerRadius > 0);
+        Assert.Equal(0, secondary.ActiveIndicatorCornerRadius);
     }
 
     [AvaloniaFact]
@@ -856,18 +888,21 @@ public class AppBarTests
     [AvaloniaFact]
     public void OnlyTheTallerBars_PutTheTitleOnItsOwnLine()
     {
-        Assert.False(AppBarDefaultsTokens.Small.IsStacked);
-        Assert.True(AppBarDefaultsTokens.Medium.IsStacked);
-        Assert.True(AppBarDefaultsTokens.Large.IsStacked);
+        var small = AppBarDefaults.Metrics(AppBarSize.Small);
+        var medium = AppBarDefaults.Metrics(AppBarSize.Medium);
+        var large = AppBarDefaults.Metrics(AppBarSize.Large);
+        Assert.False(small.IsStacked);
+        Assert.True(medium.IsStacked);
+        Assert.True(large.IsStacked);
 
-        Assert.True(AppBarDefaultsTokens.Medium.ContainerHeight > AppBarDefaultsTokens.Small.ContainerHeight);
-        Assert.True(AppBarDefaultsTokens.Large.ContainerHeight > AppBarDefaultsTokens.Medium.ContainerHeight);
+        Assert.True(medium.ContainerHeight > small.ContainerHeight);
+        Assert.True(large.ContainerHeight > medium.ContainerHeight);
     }
 
     [AvaloniaFact]
     public void AScrolledBar_ChangesSurfaceRatherThanGainingAShadow()
     {
-        var tokens = AppBarDefaultsTokens.Small;
+        var tokens = AppBarDefaults.Metrics(AppBarSize.Small);
 
         Assert.NotEqual(tokens.ContainerColor, tokens.ScrolledContainerColor);
         Assert.Equal(SysColorToken.Surface, tokens.ContainerColor.RoleToken);
@@ -880,18 +915,20 @@ public class DrawerTests
     [AvaloniaFact]
     public void OnlyTheModalDrawer_HasAScrim()
     {
-        Assert.True(DrawerTokens.Modal.IsModal);
-        Assert.True(DrawerTokens.Modal.ScrimOpacity > 0);
+        var modal = DrawerDefaults.Metrics(DrawerVariant.Modal);
+        var standard = DrawerDefaults.Metrics(DrawerVariant.Standard);
+        Assert.True(modal.IsModal);
+        Assert.True(modal.ScrimOpacity > 0);
 
-        Assert.False(DrawerTokens.Standard.IsModal);
-        Assert.Equal(0, DrawerTokens.Standard.ScrimOpacity);
+        Assert.False(standard.IsModal);
+        Assert.Equal(0, standard.ScrimOpacity);
     }
 
     [AvaloniaFact]
     public void ItsCornersAreRoundedOnlyOnTheEdgeFacingTheContent()
     {
         var shapes = new MaterialTheme().Resolved.Shapes;
-        var shape = shapes.Get(DrawerTokens.Modal.ContainerShape);
+        var shape = shapes.Get(DrawerDefaults.Metrics(DrawerVariant.Modal).ContainerShape);
 
         // CornerLargeEnd: square where it meets the screen edge, round where it meets the content.
         Assert.Equal(CornerSize.Zero, shape.TopStart);
@@ -951,15 +988,17 @@ public class TextFieldTests
     [AvaloniaFact]
     public void OnlyTheFilledVariant_HasASurfaceAndAnIndicator()
     {
-        Assert.True(TextFieldTokens.Filled.IsFilled);
-        Assert.False(TextFieldTokens.Outlined.IsFilled);
+        var filled = TextFieldDefaults.Metrics(TextFieldVariant.Filled);
+        var outlined = TextFieldDefaults.Metrics(TextFieldVariant.Outlined);
+        Assert.True(filled.IsFilled);
+        Assert.False(outlined.IsFilled);
 
-        Assert.Equal(SysColorToken.SurfaceContainerHighest, TextFieldTokens.Filled.ContainerColor.RoleToken);
-        Assert.Equal(0, TextFieldTokens.Outlined.ContainerColor.LiteralColor!.Value.A);
+        Assert.Equal(SysColorToken.SurfaceContainerHighest, filled.ContainerColor.RoleToken);
+        Assert.Equal(0, outlined.ContainerColor.LiteralColor!.Value.A);
 
         // The filled variant's shape is squared off at the bottom, because its indicator sits there.
-        Assert.Equal(ShapeRole.CornerExtraSmallTop, TextFieldTokens.Filled.ContainerShape);
-        Assert.Equal(ShapeRole.CornerExtraSmall, TextFieldTokens.Outlined.ContainerShape);
+        Assert.Equal(ShapeRole.CornerExtraSmallTop, filled.ContainerShape);
+        Assert.Equal(ShapeRole.CornerExtraSmall, outlined.ContainerShape);
     }
 
     [AvaloniaFact]
@@ -967,7 +1006,7 @@ public class TextFieldTests
     {
         foreach (var variant in System.Enum.GetValues<TextFieldVariant>())
         {
-            var tokens = TextFieldTokens.For(variant);
+            var tokens = TextFieldDefaults.Metrics(variant);
             Assert.True(tokens.FocusOutlineWidth > tokens.OutlineWidth);
         }
     }
@@ -976,7 +1015,7 @@ public class TextFieldTests
     public void TheLabel_ShrinksWhenItFloats()
     {
         var typography = new MaterialTheme().Resolved.Typography;
-        var tokens = TextFieldTokens.Filled;
+        var tokens = TextFieldDefaults.Metrics(TextFieldVariant.Filled);
 
         var resting = typography.GetTypeScale(tokens.InputTextStyle).FontSize;
         var floated = typography.GetTypeScale(tokens.FloatingLabelTextStyle).FontSize;
@@ -999,7 +1038,7 @@ public class TextFieldTests
     public void AnErrorField_KeepsItsInputReadable()
     {
         // Only the surroundings turn red; text the user typed must stay legible.
-        var tokens = TextFieldTokens.Filled;
+        var tokens = TextFieldDefaults.Metrics(TextFieldVariant.Filled);
 
         Assert.Equal(SysColorToken.Error, tokens.ErrorColor.RoleToken);
         Assert.Equal(SysColorToken.OnSurface, tokens.ErrorInputColor.RoleToken);
@@ -1019,17 +1058,19 @@ public class ButtonGroupTests
     [AvaloniaFact]
     public void AConnectedGroup_SitsCloserThanASpacedOne()
     {
-        Assert.True(ButtonGroupTokens.Connected.BetweenSpace < ButtonGroupTokens.Standard.BetweenSpace);
-        Assert.True(ButtonGroupTokens.Connected.IsConnected);
-        Assert.False(ButtonGroupTokens.Standard.IsConnected);
+        var connected = ButtonGroupDefaults.Metrics(ButtonGroupVariant.Connected);
+        var standard = ButtonGroupDefaults.Metrics(ButtonGroupVariant.Standard);
+        Assert.True(connected.BetweenSpace < standard.BetweenSpace);
+        Assert.True(connected.IsConnected);
+        Assert.False(standard.IsConnected);
     }
 
     [AvaloniaFact]
     public void AConnectedGroup_RoundsTheOutsideAndTightensTheSeams()
     {
-        var first = new MaterialToggleButton { Content = "A" };
-        var middle = new MaterialToggleButton { Content = "B" };
-        var last = new MaterialToggleButton { Content = "C" };
+        var first = new ToggleButton { Content = "A" };
+        var middle = new ToggleButton { Content = "B" };
+        var last = new ToggleButton { Content = "C" };
 
         var group = new MaterialButtonGroup { Variant = ButtonGroupVariant.Connected };
         group.Children.Add(first);
@@ -1037,30 +1078,34 @@ public class ButtonGroupTests
         group.Children.Add(last);
         ThemeTestHelper.ShowWindow(group);
 
-        var inner = CornerSize.Absolute(ButtonGroupTokens.Connected.InnerCornerSize);
+        var inner = CornerSize.Absolute(
+            ButtonGroupDefaults.Metrics(ButtonGroupVariant.Connected).InnerCornerSize);
 
         // The first segment keeps its leading corners round and tightens the trailing pair.
-        Assert.Equal(CornerSize.Full, first.ContainerShapeOverride!.TopStart);
-        Assert.Equal(inner, first.ContainerShapeOverride!.TopEnd);
+        var firstShape = M3Button.GetContainerShapeOverride(first);
+        Assert.Equal(CornerSize.Full, firstShape!.TopStart);
+        Assert.Equal(inner, firstShape.TopEnd);
 
         // The middle is tight on both sides.
-        Assert.Equal(inner, middle.ContainerShapeOverride!.TopStart);
-        Assert.Equal(inner, middle.ContainerShapeOverride!.TopEnd);
+        var middleShape = M3Button.GetContainerShapeOverride(middle);
+        Assert.Equal(inner, middleShape!.TopStart);
+        Assert.Equal(inner, middleShape.TopEnd);
 
         // The last mirrors the first.
-        Assert.Equal(inner, last.ContainerShapeOverride!.TopStart);
-        Assert.Equal(CornerSize.Full, last.ContainerShapeOverride!.TopEnd);
+        var lastShape = M3Button.GetContainerShapeOverride(last);
+        Assert.Equal(inner, lastShape!.TopStart);
+        Assert.Equal(CornerSize.Full, lastShape.TopEnd);
     }
 
     [AvaloniaFact]
     public void AStandardGroup_LeavesItsChildrenAlone()
     {
-        var button = new MaterialButton { Content = "A" };
+        var button = new Button { Content = "A" };
         var group = new MaterialButtonGroup { Variant = ButtonGroupVariant.Standard };
         group.Children.Add(button);
         ThemeTestHelper.ShowWindow(group);
 
-        Assert.Null(button.ContainerShapeOverride);
+        Assert.Null(M3Button.GetContainerShapeOverride(button));
     }
 
     [AvaloniaFact]
@@ -1077,15 +1122,15 @@ public class ButtonGroupTests
         Assert.NotNull(leading);
         Assert.NotNull(trailing);
 
-        var tokens = SplitButtonDefaultsTokens.Default;
+        var tokens = SplitButtonDefaults.Metrics();
         Assert.Equal(SplitButtonSmallTokens.ContainerHeight, tokens.ContainerHeight);
         Assert.Equal(SplitButtonSmallTokens.BetweenSpace, split.BetweenSpace);
         var inner = CornerSize.Absolute(tokens.InnerCornerSize);
 
-        var leadingShape = ButtonAssist.GetContainerShapeOverride(leading!);
+        var leadingShape = M3Button.GetContainerShapeOverride(leading!);
         Assert.Equal(CornerSize.Full, leadingShape!.TopStart);
         Assert.Equal(inner, leadingShape.TopEnd);
-        var trailingShape = ButtonAssist.GetContainerShapeOverride(trailing!);
+        var trailingShape = M3Button.GetContainerShapeOverride(trailing!);
         Assert.Equal(inner, trailingShape!.TopStart);
         Assert.Equal(CornerSize.Full, trailingShape.TopEnd);
     }
@@ -1096,10 +1141,10 @@ public class ChipTests
     [AvaloniaFact]
     public void OnlyFilterAndInputChips_CarryASelectedState()
     {
-        Assert.True(ChipTokens.Filter.IsSelectable);
-        Assert.True(ChipTokens.Input.IsSelectable);
-        Assert.False(ChipTokens.Assist.IsSelectable);
-        Assert.False(ChipTokens.Suggestion.IsSelectable);
+        Assert.True(ChipDefaults.Metrics(ChipVariant.Filter).IsSelectable);
+        Assert.True(ChipDefaults.Metrics(ChipVariant.Input).IsSelectable);
+        Assert.False(ChipDefaults.Metrics(ChipVariant.Assist).IsSelectable);
+        Assert.False(ChipDefaults.Metrics(ChipVariant.Suggestion).IsSelectable);
     }
 
     [AvaloniaFact]
@@ -1136,8 +1181,9 @@ public class ChipTests
             ThemeTestHelper.ColorOf(chip.Foreground));
 
         // Unselected it is a small-cornered outline; selected it is a filled pill.
-        Assert.Equal(ShapeRole.CornerSmall, ChipTokens.Filter.ContainerShape);
-        Assert.Equal(ShapeRole.CornerFull, ChipTokens.Filter.SelectedContainerShape);
+        var metrics = ChipDefaults.Metrics(ChipVariant.Filter);
+        Assert.Equal(ShapeRole.CornerSmall, metrics.ContainerShape);
+        Assert.Equal(ShapeRole.CornerFull, metrics.SelectedContainerShape);
     }
 }
 
@@ -1172,11 +1218,24 @@ public class LoadingIndicatorTests
     [AvaloniaFact]
     public void OnlyTheContainedVariant_DrawsAContainer()
     {
-        Assert.False(LoadingIndicatorDefaultsTokens.Standard.HasContainer);
-        Assert.True(LoadingIndicatorDefaultsTokens.Contained.HasContainer);
+        var standard = LoadingIndicatorDefaults.Metrics(LoadingIndicatorVariant.Standard);
+        var contained = LoadingIndicatorDefaults.Metrics(LoadingIndicatorVariant.Contained);
+        var theme = ResolvedTheme.Default;
+        var standardColors = LoadingIndicatorDefaults.Colors(
+            theme,
+            LoadingIndicatorVariant.Standard,
+            isDark: false);
+        var containedColors = LoadingIndicatorDefaults.Colors(
+            theme,
+            LoadingIndicatorVariant.Contained,
+            isDark: false);
+        Assert.False(standard.HasContainer);
+        Assert.True(contained.HasContainer);
 
-        Assert.Equal(0, LoadingIndicatorDefaultsTokens.Standard.ContainerColor.LiteralColor!.Value.A);
-        Assert.Equal(SysColorToken.PrimaryContainer, LoadingIndicatorDefaultsTokens.Contained.ContainerColor.RoleToken);
+        Assert.Equal(0, ThemeTestHelper.ColorOf(standardColors.ContainerColor).A);
+        Assert.Equal(
+            theme.ColorScheme!.GetColor(SysColorToken.PrimaryContainer, isDark: false),
+            ThemeTestHelper.ColorOf(containedColors.ContainerColor));
     }
 
     [AvaloniaFact]
@@ -1186,8 +1245,14 @@ public class LoadingIndicatorTests
         var contained = new MaterialLoadingIndicator { Variant = LoadingIndicatorVariant.Contained };
         ThemeTestHelper.ShowWindow(new StackPanel { Children = { standard, contained } });
 
-        Assert.Equal(LoadingIndicatorDefaultsTokens.Standard.ContainerSize, standard.Bounds.Width, 3);
-        Assert.Equal(LoadingIndicatorDefaultsTokens.Contained.ContainerSize, contained.Bounds.Width, 3);
+        Assert.Equal(
+            LoadingIndicatorDefaults.Metrics(LoadingIndicatorVariant.Standard).ContainerSize,
+            standard.Bounds.Width,
+            3);
+        Assert.Equal(
+            LoadingIndicatorDefaults.Metrics(LoadingIndicatorVariant.Contained).ContainerSize,
+            contained.Bounds.Width,
+            3);
     }
 
     [AvaloniaFact]

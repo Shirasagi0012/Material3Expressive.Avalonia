@@ -163,8 +163,8 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
     private double _popupMaxWidth = 280;
     private double _effectiveMenuMaxHeight = double.PositiveInfinity;
 
-    private TextFieldTokens _tokens = TextFieldTokens.Filled;
-    private TextFieldColors _colors = TextFieldTokens.Filled.Resolve(null, false);
+    private TextFieldMetrics _tokens = TextFieldDefaults.Metrics(TextFieldVariant.Filled);
+    private TextFieldVisualColors _colors = TextFieldDefaults.Colors(Foundation.ResolvedTheme.Default, TextFieldVariant.Filled, false);
 
     public MaterialExposedDropdownMenu()
     {
@@ -690,8 +690,8 @@ public class MaterialExposedDropdownMenu : ComboBox, IVisualBoundsProbe, IMateri
     {
         var previousSupporting = SupportingBrush;
         var previousPlaceholder = PlaceholderBrush;
-        _tokens = _theme.Theme.GetTextFieldTokens(Variant);
-        _colors = _theme.Theme.GetTextFieldColors(Variant, _theme.IsDark);
+        _tokens = TextFieldDefaults.Metrics(Variant);
+        _colors = TextFieldDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
         var typography = _theme.Theme.Typography;
         var inputStyle = typography.GetTypeScale(_tokens.InputTextStyle);
 

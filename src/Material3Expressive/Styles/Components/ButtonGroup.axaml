@@ -5,9 +5,9 @@
         <Border Padding="20">
             <StackPanel Spacing="16">
                 <m3:MaterialButtonGroup Variant="Connected">
-                    <ToggleButton m3:ButtonAssist.Variant="Tonal" Content="Day" IsChecked="True" />
-                    <ToggleButton m3:ButtonAssist.Variant="Tonal" Content="Week" />
-                    <ToggleButton m3:ButtonAssist.Variant="Tonal" Content="Month" />
+                    <ToggleButton m3:M3Button.Variant="Tonal" Content="Day" IsChecked="True" />
+                    <ToggleButton m3:M3Button.Variant="Tonal" Content="Week" />
+                    <ToggleButton m3:M3Button.Variant="Tonal" Content="Month" />
                 </m3:MaterialButtonGroup>
                 <m3:MaterialSplitButton Content="Save" TrailingIcon="&#x25BE;" />
             </StackPanel>
@@ -23,11 +23,11 @@
                     <StackPanel Orientation="Horizontal" Spacing="{TemplateBinding BetweenSpace}">
                         <Button x:Name="PART_Leading"
                                 Theme="{StaticResource MaterialFilledButtonTheme}"
-                                m3:ButtonAssist.Variant="{TemplateBinding Variant}"
+                                m3:M3Button.Variant="{TemplateBinding Variant}"
                                 Content="{TemplateBinding Content}" />
                         <ToggleButton x:Name="PART_Trailing"
                                       Theme="{StaticResource MaterialFilledToggleButtonTheme}"
-                                      m3:ButtonAssist.Variant="{TemplateBinding Variant}"
+                                      m3:M3Button.Variant="{TemplateBinding Variant}"
                                       Content="{TemplateBinding TrailingIcon}"
                                       IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
                     </StackPanel>

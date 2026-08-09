@@ -14,7 +14,7 @@ public class ElevationClippingTests
     {
         Control[] controls =
         [
-            new MaterialButton(),
+            new Button(),
             new MaterialFab(),
             new MaterialCard(),
             new MaterialNavigationBar(),

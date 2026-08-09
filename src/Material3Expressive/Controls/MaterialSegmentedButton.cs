@@ -102,8 +102,8 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
 
     private readonly MaterialElementContext _theme;
     private readonly MaterialInteractionController _interaction;
-    private SegmentedButtonColors _colors = SegmentedButtonTokens.Default.Resolve(null, false);
-    private SegmentedButtonTokens _tokens = SegmentedButtonTokens.Default;
+    private SegmentedButtonColors _colors = SegmentedButtonDefaults.Colors(ResolvedTheme.Default, isDark: false);
+    private SegmentedButtonMetrics _tokens = SegmentedButtonDefaults.Metrics();
     private SpringAnimation? _contentOffsetAnimation;
     private SpringAnimation? _iconOpacityAnimation;
     private SpringAnimation? _iconScaleAnimation;
@@ -424,8 +424,8 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         var previousVisible = HasVisibleIcon;
         var previousDefault = IsDefaultIconVisible;
 
-        _tokens = _theme.Theme.SegmentedButtonTokens;
-        _colors = _theme.Theme.GetSegmentedButtonColors(_theme.IsDark);
+        _tokens = SegmentedButtonDefaults.Metrics();
+        _colors = SegmentedButtonDefaults.Colors(_theme.Theme, _theme.IsDark);
 
         ReplaceLease(ref _minWidthLease, MinWidthProperty, 58d);
         ReplaceLease(ref _minHeightLease, MinHeightProperty, _tokens.ContainerHeight);

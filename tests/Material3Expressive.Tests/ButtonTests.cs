@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Material3Expressive.Tests;
 
-/// <summary>Contracts for the native-first Button implementation and its CLR facade.</summary>
+/// <summary>Contracts for the native-first Button implementation.</summary>
 public class ButtonTests
 {
     [AvaloniaFact]
@@ -26,8 +26,8 @@ public class ButtonTests
         var button = new Button { Content = "Press" };
         ThemeTestHelper.ShowWindow(button);
 
-        Assert.Equal(ButtonVariant.Filled, ButtonAssist.GetVariant(button));
-        Assert.Equal(ButtonSize.Small, ButtonAssist.GetSize(button));
+        Assert.Equal(ButtonVariant.Filled, M3Button.GetVariant(button));
+        Assert.Equal(ButtonSize.Small, M3Button.GetSize(button));
         Assert.Equal(ButtonSmallTokens.ContainerHeight, button.MinHeight);
         Assert.Single(button.GetVisualDescendants().OfType<MaterialButtonContainerPresenter>());
     }
@@ -46,7 +46,7 @@ public class ButtonTests
             ThemeTestHelper.Expected(theme, SysColorToken.OnPrimary),
             ThemeTestHelper.ColorOf(button.Foreground));
 
-        ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
+        M3Button.SetVariant(button, ButtonVariant.Tonal);
 
         Assert.Equal(
             ThemeTestHelper.Expected(theme, SysColorToken.OnSecondaryContainer),
@@ -67,7 +67,7 @@ public class ButtonTests
         var button = new Button { Content = "Press" };
         ThemeTestHelper.ShowWindow(button);
 
-        ButtonAssist.SetSize(button, size);
+        M3Button.SetSize(button, size);
 
         var metrics = ButtonDefaults.Metrics(size);
         Assert.Equal(metrics.ContainerHeight, button.MinHeight);
@@ -132,7 +132,7 @@ public class ButtonTests
         var presenter = PresenterOf(button);
 
         var pill = presenter.CurrentCornerRadius.TopLeft;
-        ButtonAssist.SetIsSquare(button, true);
+        M3Button.SetIsSquare(button, true);
 
         var previous = pill;
         for (var frame = 0; frame < 3; frame++)
@@ -171,29 +171,6 @@ public class ButtonTests
     }
 
     [AvaloniaFact]
-    public void Facade_AddsClrSyntaxWithoutAddingStateOrImplementation()
-    {
-        Assert.Same(ButtonAssist.VariantProperty, MaterialButton.VariantProperty);
-        Assert.Same(ButtonAssist.SizeProperty, MaterialButton.SizeProperty);
-        Assert.Same(ButtonAssist.IsSquareProperty, MaterialButton.IsSquareProperty);
-        Assert.Same(
-            ButtonAssist.ContainerShapeOverrideProperty,
-            MaterialButton.ContainerShapeOverrideProperty);
-
-        var facade = new MaterialButton
-        {
-            Content = "Press",
-            Variant = ButtonVariant.Outlined,
-            Size = ButtonSize.Medium
-        };
-        ThemeTestHelper.ShowWindow(facade);
-
-        Assert.Equal(ButtonVariant.Outlined, ButtonAssist.GetVariant(facade));
-        Assert.Equal(ButtonSize.Medium, ButtonAssist.GetSize(facade));
-        Assert.Single(facade.GetVisualDescendants().OfType<MaterialButtonContainerPresenter>());
-    }
-
-    [AvaloniaFact]
     public void NamedTheme_OnlyProvidesAnOverridableVariantDefault()
     {
         Assert.True(
@@ -206,11 +183,11 @@ public class ButtonTests
         };
         ThemeTestHelper.ShowWindow(button);
 
-        Assert.Equal(ButtonVariant.Outlined, ButtonAssist.GetVariant(button));
+        Assert.Equal(ButtonVariant.Outlined, M3Button.GetVariant(button));
 
-        ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
+        M3Button.SetVariant(button, ButtonVariant.Tonal);
 
-        Assert.Equal(ButtonVariant.Tonal, ButtonAssist.GetVariant(button));
+        Assert.Equal(ButtonVariant.Tonal, M3Button.GetVariant(button));
         Assert.Equal(0, button.BorderThickness.Left);
     }
 
@@ -227,8 +204,8 @@ public class ButtonTests
         };
         ThemeTestHelper.ShowWindow(button);
 
-        ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
-        ButtonAssist.SetSize(button, ButtonSize.Large);
+        M3Button.SetVariant(button, ButtonVariant.Tonal);
+        M3Button.SetSize(button, ButtonSize.Large);
 
         Assert.Same(background, button.Background);
         Assert.Equal(new Thickness(3), button.Padding);
@@ -241,18 +218,18 @@ public class ButtonTests
         var button = new Button { Content = "Press" };
         ThemeTestHelper.ShowWindow(button);
 
-        var initialColors = Assert.IsType<ButtonColors>(ButtonAssist.GetDefaultColors(button));
-        var initialMetrics = Assert.IsType<ButtonMetrics>(ButtonAssist.GetDefaultMetrics(button));
+        var initialColors = Assert.IsType<ButtonColors>(M3Button.GetDefaultColors(button));
+        var initialMetrics = Assert.IsType<ButtonMetrics>(M3Button.GetDefaultMetrics(button));
         Assert.Equal(ButtonSmallTokens.ContainerHeight, initialMetrics.ContainerHeight);
         Assert.Equal(
             ResolvedTheme.Default.ColorScheme!.GetColor(SysColorToken.Primary, isDark: false),
             ThemeTestHelper.ColorOf(initialColors.Container));
 
-        ButtonAssist.SetVariant(button, ButtonVariant.Outlined);
-        ButtonAssist.SetSize(button, ButtonSize.Large);
+        M3Button.SetVariant(button, ButtonVariant.Outlined);
+        M3Button.SetSize(button, ButtonSize.Large);
 
-        var outlined = Assert.IsType<ButtonColors>(ButtonAssist.GetDefaultColors(button));
-        var large = Assert.IsType<ButtonMetrics>(ButtonAssist.GetDefaultMetrics(button));
+        var outlined = Assert.IsType<ButtonColors>(M3Button.GetDefaultColors(button));
+        var large = Assert.IsType<ButtonMetrics>(M3Button.GetDefaultMetrics(button));
         Assert.Equal(0, ThemeTestHelper.ColorOf(outlined.Container).A);
         Assert.Equal(ButtonLargeTokens.ContainerHeight, large.ContainerHeight);
         Assert.Equal(new Thickness(ButtonLargeTokens.OutlinedOutlineWidth), button.BorderThickness);
@@ -272,7 +249,7 @@ public class ButtonTests
 
             Assert.Same(Brushes.HotPink, button.Background);
 
-            ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
+            M3Button.SetVariant(button, ButtonVariant.Tonal);
             Assert.Same(Brushes.HotPink, button.Background);
         }
         finally

@@ -69,10 +69,8 @@ public class TypeScaleTests
     public void ASlot_CanBeRetunedOnTheTheme()
     {
         var theme = new MaterialTheme();
-#pragma warning disable CS0618 // Exercise the compatibility type through the new system collection.
         theme.TypographyScheme.TypeScaleOverrides.Add(
             new TypeScaleOverrides { Variant = TypographyRole.LabelLarge, FontSize = 15 });
-#pragma warning restore CS0618
 
         var typography = theme.Resolved.Typography;
 
@@ -83,14 +81,4 @@ public class TypeScaleTests
         Assert.Equal(TypeScale.LabelMedium.FontSize, typography.GetTypeScale(TypographyRole.LabelMedium).FontSize);
     }
 
-    [Fact]
-    public void LegacyComponentCollection_TypeScaleOverrideStillWorks()
-    {
-        var theme = new MaterialTheme();
-#pragma warning disable CS0618 // This test pins the migration compatibility path.
-        theme.Components.Add(new TypeScaleOverrides { Variant = TypographyRole.LabelLarge, FontSize = 15 });
-#pragma warning restore CS0618
-
-        Assert.Equal(15, theme.Resolved.Typography.GetTypeScale(TypographyRole.LabelLarge).FontSize);
-    }
 }

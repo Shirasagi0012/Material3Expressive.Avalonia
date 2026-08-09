@@ -77,7 +77,7 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
             owner => owner.ResolvedArrangement);
 
     private readonly HashSet<MaterialNavigationItem> _attachedItems = new();
-    private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
+    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Bar, false);
     private ShortNavigationBarArrangement _resolvedArrangement = ShortNavigationBarArrangement.EqualWeight;
     private bool _updatingSelection;
 
@@ -290,7 +290,7 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
 
     private void ApplyTokens()
     {
-        _colors = ResolvedTheme.GetNavigationColors(NavigationVariant.Bar, IsDarkVariant);
+        _colors = NavigationDefaults.Colors(ResolvedTheme, NavigationVariant.Bar, IsDarkVariant);
         foreach (var item in Items)
             item.ApplyTokens();
         InvalidateVisual();

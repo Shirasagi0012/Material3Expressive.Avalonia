@@ -83,8 +83,8 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
     private double _labelWidthAtRest;
     private double _labelWidthFloated;
 
-    private TextFieldTokens _tokens = TextFieldTokens.Filled;
-    private TextFieldColors _colors = TextFieldTokens.Filled.Resolve(null, false);
+    private TextFieldMetrics _tokens = TextFieldDefaults.Metrics(TextFieldVariant.Filled);
+    private TextFieldVisualColors _colors = TextFieldDefaults.Colors(Foundation.ResolvedTheme.Default, TextFieldVariant.Filled, false);
 
     public MaterialTextField()
     {
@@ -552,8 +552,8 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
     private void ApplyTokens()
     {
         var previousPlaceholder = PlaceholderBrush;
-        _tokens = ResolvedTheme.GetTextFieldTokens(Variant);
-        _colors = ResolvedTheme.GetTextFieldColors(Variant, IsDarkVariant);
+        _tokens = TextFieldDefaults.Metrics(Variant);
+        _colors = TextFieldDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
 
         var typography = ResolvedTheme.Typography;
 

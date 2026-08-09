@@ -45,8 +45,8 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
     private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
-    private ChipTokens _tokens = ChipTokens.Assist;
-    private ChipColors _colors = ChipTokens.Assist.Resolve(null, false);
+    private ChipMetrics _tokens = ChipDefaults.Metrics(ChipVariant.Assist);
+    private ChipVisualColors _colors = ChipDefaults.Colors(Foundation.ResolvedTheme.Default, ChipVariant.Assist, false);
 
     public MaterialChip()
     {
@@ -145,8 +145,8 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
         var previousIconSize = IconSize;
         var previousSpace = IconLabelSpace;
 
-        _tokens = _theme.Theme.GetChipTokens(Variant);
-        _colors = _theme.Theme.GetChipColors(Variant, _theme.IsDark);
+        _tokens = ChipDefaults.Metrics(Variant);
+        _colors = ChipDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);

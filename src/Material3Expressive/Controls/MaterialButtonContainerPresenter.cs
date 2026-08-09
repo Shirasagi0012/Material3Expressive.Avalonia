@@ -132,16 +132,16 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == ButtonAssist.DefaultShapesProperty
-            || change.Property == ButtonAssist.DefaultElevationProperty
-            || change.Property == ButtonAssist.DefaultShapeMotionProperty)
+        if (change.Property == M3Button.DefaultShapesProperty
+            || change.Property == M3Button.DefaultElevationProperty
+            || change.Property == M3Button.DefaultShapeMotionProperty)
         {
             ApplyTokens(snapShape: true);
         }
-        else if (change.Property == ButtonAssist.IsSquareProperty
-                 || change.Property == ButtonAssist.ContainerShapeOverrideProperty)
+        else if (change.Property == M3Button.IsSquareProperty
+                 || change.Property == M3Button.ContainerShapeOverrideProperty)
         {
-            UpdateShape(change.Property == ButtonAssist.ContainerShapeOverrideProperty);
+            UpdateShape(change.Property == M3Button.ContainerShapeOverrideProperty);
         }
         else if (change.Property == IsEffectivelyEnabledProperty
                  || change.Property == Button.BackgroundProperty
@@ -167,11 +167,11 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
 
         // Defaults are projected by the owner-local adapter. The fallbacks only cover the short
         // construction window before the ControlTheme marker has activated that adapter.
-        _shapes = ButtonAssist.GetDefaultShapes(owner)
-                  ?? ButtonDefaults.Shapes(ButtonAssist.GetSize(owner));
-        _elevation = ButtonAssist.GetDefaultElevation(owner)
-                     ?? ButtonDefaults.Elevation(ButtonAssist.GetVariant(owner));
-        _shapeMotion = ButtonAssist.GetDefaultShapeMotion(owner);
+        _shapes = M3Button.GetDefaultShapes(owner)
+                  ?? ButtonDefaults.Shapes(M3Button.GetSize(owner));
+        _elevation = M3Button.GetDefaultElevation(owner)
+                     ?? ButtonDefaults.Elevation(M3Button.GetVariant(owner));
+        _shapeMotion = M3Button.GetDefaultShapeMotion(owner);
         if (_shapeMotion.Stiffness <= 0)
             _shapeMotion = ButtonDefaults.ShapeMotion(_theme.Theme);
         UpdateShape(snapShape);
@@ -215,9 +215,9 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
         if (_owner is not { } owner)
             return ShapeFor(_shapes.Container);
 
-        return ButtonAssist.GetContainerShapeOverride(owner)
+        return M3Button.GetContainerShapeOverride(owner)
                ?? ShapeFor(
-                   ButtonAssist.GetIsSquare(owner)
+                   M3Button.GetIsSquare(owner)
                        ? _shapes.Square
                        : _shapes.Container);
     }

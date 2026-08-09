@@ -3,8 +3,16 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
+
+/// <summary>Whether a button group leaves gaps between its children or joins them into one control.</summary>
+public enum ButtonGroupVariant
+{
+    Standard,
+    Connected
+}
 
 /// <summary>
 /// A row of buttons, either spaced apart or connected into one control.
@@ -25,7 +33,7 @@ public class MaterialButtonGroup : Panel, IMaterialThemeConsumer
 
     private readonly MaterialElementContext _theme;
 
-    private ButtonGroupTokens _tokens = ButtonGroupTokens.Standard;
+    private ButtonGroupMetrics _tokens = ButtonGroupDefaults.Metrics(ButtonGroupVariant.Standard);
 
     public MaterialButtonGroup()
     {
@@ -162,11 +170,11 @@ public class MaterialButtonGroup : Panel, IMaterialThemeConsumer
 
         switch (child)
         {
-            case Button icon when IconButtonAssist.GetIsIconButton(icon):
-                IconButtonAssist.SetContainerShapeOverride(icon, shape);
+            case Button icon when M3IconButton.GetIsIconButton(icon):
+                M3IconButton.SetContainerShapeOverride(icon, shape);
                 break;
             case Button button:
-                ButtonAssist.SetContainerShapeOverride(button, shape);
+                M3Button.SetContainerShapeOverride(button, shape);
                 break;
         }
     }
@@ -190,7 +198,7 @@ public class MaterialButtonGroup : Panel, IMaterialThemeConsumer
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetButtonGroupTokens(Variant);
+        _tokens = ButtonGroupDefaults.Metrics(Variant);
         InvalidateMeasure();
     }
 }

@@ -34,7 +34,8 @@ public sealed class MaterialListItemMotionTests
         using var clock = new MotionTestClockScope();
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
         var item = CreateInteractiveItem(ListItemInteractionMode.MultiSelection, theme);
-        var colors = theme.Resolved.GetListItemColors(isDark: false);
+        var colors = ListItemDefaults.Colors(theme.Resolved, isDark: false);
+        var tokens = ListItemDefaults.Metrics();
 
         // Theme attachment can itself retarget the initially-default brushes. Establish a known
         // rest point before testing the user-visible selection transition.
@@ -46,12 +47,12 @@ public sealed class MaterialListItemMotionTests
 
         Assert.Equal(ThemeTestHelper.ColorOf(colors.ContainerColor), start);
         Assert.NotEqual(start, target);
-        Assert.Equal(MotionRole.DefaultEffects, theme.Resolved.ListItemTokens.ColorMotion);
+        Assert.Equal(MotionRole.DefaultEffects, tokens.ColorMotion);
 
         item.IsSelected = true;
 
         Assert.Equal(
-            theme.Resolved.Motion.Get(theme.Resolved.ListItemTokens.ColorMotion),
+            theme.Resolved.Motion.Get(tokens.ColorMotion),
             ColorAlpha(animation).Spec);
         Assert.True(animation.IsRunning);
 
@@ -77,7 +78,7 @@ public sealed class MaterialListItemMotionTests
         clock.SettleAll();
 
         var elevation = ElevationAnimation(item);
-        var tokens = theme.Resolved.ListItemTokens;
+        var tokens = ListItemDefaults.Metrics();
         var resting = tokens.ContainerElevation;
         var dragged = tokens.DraggedContainerElevation;
 
@@ -121,7 +122,8 @@ public sealed class MaterialListItemMotionTests
         using var clock = new MotionTestClockScope();
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
         var item = CreateInteractiveItem(ListItemInteractionMode.MultiSelection, theme);
-        var colors = theme.Resolved.GetListItemColors(isDark: false);
+        var colors = ListItemDefaults.Colors(theme.Resolved, isDark: false);
+        var tokens = ListItemDefaults.Metrics();
 
         clock.SettleAll();
         item.IsSelected = true;
@@ -129,11 +131,9 @@ public sealed class MaterialListItemMotionTests
         item.IsEnabled = false;
         clock.SettleAll();
 
-        // ListItemColors deliberately has no selected-disabled resolver branch. This assertion
-        // remains discriminating because the generated alpha25 tokens retain a distinct legacy
-        // selected-disabled value that the upstream resolver does not use.
+        // Disabled takes precedence over selected in ListItemDefaults' state resolution.
         Assert.NotEqual(
-            ThemeTestHelper.ColorOf(colors.SelectedDisabledContainerColor),
+            ThemeTestHelper.ColorOf(colors.SelectedContainerColor),
             ThemeTestHelper.ColorOf(colors.DisabledContainerColor));
         Assert.Equal(ThemeTestHelper.ColorOf(colors.DisabledContainerColor), ThemeTestHelper.ColorOf(ContainerColorAnimation(item).Brush));
         Assert.Equal(ThemeTestHelper.ColorOf(colors.DisabledContentColor), ThemeTestHelper.ColorOf(item.Foreground));
@@ -144,7 +144,7 @@ public sealed class MaterialListItemMotionTests
 
         Assert.Equal(
             theme.Resolved.Shapes.GetCornerRadius(
-                theme.Resolved.ListItemTokens.SelectedShape,
+                tokens.SelectedShape,
                 item.Bounds.Size),
             ContentClip(item).CornerRadius);
     }
@@ -155,8 +155,8 @@ public sealed class MaterialListItemMotionTests
         using var clock = new MotionTestClockScope();
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
         var item = CreateInteractiveItem(ListItemInteractionMode.MultiSelection, theme);
-        var tokens = theme.Resolved.ListItemTokens;
-        var colors = theme.Resolved.GetListItemColors(isDark: false);
+        var tokens = ListItemDefaults.Metrics();
+        var colors = ListItemDefaults.Colors(theme.Resolved, isDark: false);
 
         clock.SettleAll();
         item.IsSelected = true;
@@ -224,9 +224,10 @@ public sealed class MaterialListItemMotionTests
 
         Assert.False(item.ClipToBounds);
         Assert.True(contentClip.ClipToBounds);
+        var tokens = ListItemDefaults.Metrics();
         Assert.Equal(
             theme.Resolved.Shapes.GetCornerRadius(
-                theme.Resolved.ListItemTokens.RestingShape,
+                tokens.RestingShape,
                 item.Bounds.Size),
             contentClip.CornerRadius);
 
@@ -236,7 +237,7 @@ public sealed class MaterialListItemMotionTests
 
         Assert.Equal(
             theme.Resolved.Shapes.GetCornerRadius(
-                theme.Resolved.ListItemTokens.SelectedShape,
+                tokens.SelectedShape,
                 item.Bounds.Size),
             contentClip.CornerRadius);
     }

@@ -79,7 +79,7 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
             owner => owner._expansionProgress);
 
     private readonly HashSet<MaterialNavigationItem> _attachedItems = new();
-    private NavigationColors _colors = NavigationTokens.Rail.Resolve(null, false);
+    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Rail, false);
     private SpringAnimation? _expansion;
     private double _expansionProgress;
     private bool _updatingSelection;
@@ -345,7 +345,7 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
 
     private void ApplyTokens()
     {
-        _colors = ResolvedTheme.GetNavigationColors(NavigationVariant.Rail, IsDarkVariant);
+        _colors = NavigationDefaults.Colors(ResolvedTheme, NavigationVariant.Rail, IsDarkVariant);
         foreach (var item in Items)
             item.ApplyTokens();
         InvalidateVisual();

@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -63,8 +64,8 @@ public class MaterialDatePicker : TemplatedControl, IMaterialThemeConsumer, IMat
     private MaterialDatePickerState _state = new();
     private bool _updatingFromState;
 
-    private PickerTokens _tokens = PickerTokens.Date;
-    private PickerColors _colors = PickerTokens.Date.Resolve(null, false);
+    private PickerMetrics _tokens = PickerDefaults.Metrics(PickerVariant.Date);
+    private PickerVisualColors _colors = PickerDefaults.Colors(ResolvedTheme.Default, PickerVariant.Date, false);
 
     public MaterialDatePicker()
     {
@@ -334,8 +335,8 @@ public class MaterialDatePicker : TemplatedControl, IMaterialThemeConsumer, IMat
 
     private void ApplyTokens()
     {
-        _tokens = ResolvedTheme.GetPickerTokens(PickerVariant.Date);
-        _colors = ResolvedTheme.GetPickerColors(PickerVariant.Date, IsDarkVariant);
+        _tokens = PickerDefaults.Metrics(PickerVariant.Date);
+        _colors = PickerDefaults.Colors(ResolvedTheme, PickerVariant.Date, IsDarkVariant);
 
         InvalidateMeasure();
         InvalidateVisual();

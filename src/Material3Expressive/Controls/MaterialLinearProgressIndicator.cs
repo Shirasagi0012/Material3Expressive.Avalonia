@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -58,8 +59,8 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
     private LoopingAnimation? _sweep;
     private SpringAnimation? _progress;
 
-    private ProgressTokens _tokens = ProgressTokens.Linear;
-    private ProgressColors _colors = ProgressTokens.Linear.Resolve(null, false);
+    private ProgressMetrics _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Linear);
+    private ProgressVisualColors _colors = ProgressDefaults.Colors(ResolvedTheme.Default, ProgressIndicatorShape.Linear, false);
 
     public MaterialLinearProgressIndicator()
     {
@@ -142,8 +143,8 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
 
     private void ApplyTheme(ResolvedTheme theme, bool isDark)
     {
-        _tokens = theme.GetProgressTokens(ProgressIndicatorShape.Linear);
-        _colors = theme.GetProgressColors(ProgressIndicatorShape.Linear, isDark);
+        _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Linear);
+        _colors = ProgressDefaults.Colors(theme, ProgressIndicatorShape.Linear, isDark);
         InvalidateMeasure();
         InvalidateVisual();
     }

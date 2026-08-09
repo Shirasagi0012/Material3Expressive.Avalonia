@@ -40,13 +40,13 @@
                                    Text="The dialog scales up from 90% as its scrim fades in, from one spring. The sheet can be dragged by its handle — let go past 40% and it keeps going." />
                         <Border Classes="demo-canvas">
                             <WrapPanel ItemSpacing="16" LineSpacing="16">
-                                <Button m3:ButtonAssist.Variant="Filled"
+                                <Button m3:M3Button.Variant="Filled"
                                         Content="Show dialog"
                                         Click="OnShowDialog" />
-                                <Button m3:ButtonAssist.Variant="Tonal"
+                                <Button m3:M3Button.Variant="Tonal"
                                         Content="Show sheet"
                                         Click="OnShowSheet" />
-                                <Button m3:ButtonAssist.Variant="Outlined"
+                                <Button m3:M3Button.Variant="Outlined"
                                         Content="Show snackbar"
                                         Click="OnShowSnackbar" />
                             </WrapPanel>
@@ -198,10 +198,10 @@
                                     <x:String>Indigo</x:String>
                                     <x:String>Blue</x:String>
                                 </m3:MaterialExposedDropdownMenu>
-                                <Button m3:ButtonAssist.Variant="Tonal"
+                                <Button m3:M3Button.Variant="Tonal"
                                         Content="Hover me"
                                         m3:MaterialTooltip.Tip="Archives the conversation" />
-                                <Button m3:ButtonAssist.Variant="Tonal"
+                                <Button m3:M3Button.Variant="Tonal"
                                         Content="Rich tooltip"
                                         m3:MaterialTooltip.Variant="Rich"
                                         m3:MaterialTooltip.Tip="Moves this to the archive, where it stays searchable." />
@@ -270,10 +270,10 @@
                 <TextBlock Classes="body-medium" TextWrapping="Wrap"
                            Text="The draft and everything in it will be removed. This cannot be undone." />
                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                    <Button m3:ButtonAssist.Variant="Text"
+                    <Button m3:M3Button.Variant="Text"
                             Content="Cancel"
                             Click="OnCloseDialog" />
-                    <Button m3:ButtonAssist.Variant="Filled"
+                    <Button m3:M3Button.Variant="Filled"
                             Content="Delete"
                             Click="OnCloseDialog" />
                 </StackPanel>

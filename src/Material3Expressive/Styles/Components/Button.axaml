@@ -6,40 +6,39 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button>Native filled</Button>
                 <Button Theme="{StaticResource MaterialOutlinedButtonTheme}">Native outlined</Button>
-                <m3:MaterialButton Variant="Tonal">Facade tonal</m3:MaterialButton>
+                <Button m3:M3Button.Variant="Tonal">Native tonal</Button>
             </StackPanel>
         </Border>
     </Design.PreviewWith>
 
     <Styles.Resources>
-        <!-- Canonical implementation. It targets Avalonia's native Button and contains no
-             facade-specific selectors or behavior. -->
+        <!-- Canonical implementation targets Avalonia's native Button. -->
         <ControlTheme x:Key="MaterialButtonCoreTheme" TargetType="Button">
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="ClipToBounds" Value="False" />
             <!-- Activates the owner-local defaults adapter. The adapter publishes only internal
                  semantic fallbacks; the bindings below remain normal theme-priority setters. -->
-            <Setter Property="m3:ButtonAssist.UseMaterialDefaults" Value="True" />
+            <Setter Property="m3:M3Button.UseMaterialDefaults" Value="True" />
             <!-- Buttons keep their token height: unlike panel stretch, the container is never
                  deformed by a taller sibling. Matches androidx's min-height semantics. -->
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Background"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Container, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3Button.DefaultColors).Container, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Foreground"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Content, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3Button.DefaultColors).Content, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderBrush"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3Button.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderThickness"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3Button.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
             <Setter Property="Padding"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3Button.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
             <Setter Property="MinHeight"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3Button.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource Self}}" />
             <Setter Property="m3:TypographyScheme.TextStyle"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultMetrics).LabelTextStyle, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="m3:ButtonAssist.StateLayerBrush"
-                    Value="{Binding Path=(m3:ButtonAssist.DefaultColors).StateLayer, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3Button.DefaultMetrics).LabelTextStyle, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:M3Button.StateLayerBrush"
+                    Value="{Binding Path=(m3:M3Button.DefaultColors).StateLayer, RelativeSource={RelativeSource Self}}" />
             <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -59,7 +58,7 @@
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontWeight="{TemplateBinding FontWeight}" />
                         <m3:MaterialRipplePresenter
-                            StateLayerBrush="{Binding Path=(m3:ButtonAssist.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
+                            StateLayerBrush="{Binding Path=(m3:M3Button.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
                             CornerRadius="{Binding CurrentCornerRadius, ElementName=PART_Container}" />
                     </Grid>
                 </ControlTemplate>
@@ -67,11 +66,11 @@
 
             <Style Selector="^:disabled">
                 <Setter Property="Background"
-                        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3Button.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="Foreground"
-                        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledContent, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3Button.DefaultColors).DisabledContent, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="BorderBrush"
-                        Value="{Binding Path=(m3:ButtonAssist.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3Button.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
             </Style>
         </ControlTheme>
 
@@ -79,65 +78,62 @@
         <ControlTheme x:Key="MaterialFilledButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Filled" />
+            <Setter Property="m3:M3Button.Variant" Value="Filled" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialTonalButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Tonal" />
+            <Setter Property="m3:M3Button.Variant" Value="Tonal" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialElevatedButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Elevated" />
+            <Setter Property="m3:M3Button.Variant" Value="Elevated" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialOutlinedButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Outlined" />
+            <Setter Property="m3:M3Button.Variant" Value="Outlined" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialTextButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Text" />
+            <Setter Property="m3:M3Button.Variant" Value="Text" />
         </ControlTheme>
 
-        <!-- Native-first default and optional ergonomic facade both enter the same core theme. -->
+        <!-- Native Button is the only public control surface. -->
         <ControlTheme x:Key="{x:Type Button}"
                       TargetType="Button"
-                      BasedOn="{StaticResource MaterialFilledButtonTheme}" />
-        <ControlTheme x:Key="{x:Type m3:MaterialButton}"
-                      TargetType="m3:MaterialButton"
                       BasedOn="{StaticResource MaterialFilledButtonTheme}" />
 
         <ControlTheme x:Key="MaterialToggleButtonCoreTheme" TargetType="ToggleButton">
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="ClipToBounds" Value="False" />
-            <Setter Property="m3:ToggleButtonAssist.UseMaterialDefaults" Value="True" />
+            <Setter Property="m3:M3ToggleButton.UseMaterialDefaults" Value="True" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Background"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).UncheckedContainer, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).UncheckedContainer, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Foreground"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).UncheckedContent, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).UncheckedContent, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderBrush"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderThickness"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
             <Setter Property="Padding"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
             <Setter Property="MinHeight"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).ToggleContainerHeight, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultMetrics).ToggleContainerHeight, RelativeSource={RelativeSource Self}}" />
             <Setter Property="m3:TypographyScheme.TextStyle"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).LabelTextStyle, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="m3:ToggleButtonAssist.StateLayerBrush"
-                    Value="{Binding Path=(m3:ToggleButtonAssist.DefaultStateLayerBrush), RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultMetrics).LabelTextStyle, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:M3ToggleButton.StateLayerBrush"
+                    Value="{Binding Path=(m3:M3ToggleButton.DefaultStateLayerBrush), RelativeSource={RelativeSource Self}}" />
             <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <Grid Background="Transparent">
-                        <Grid Height="{Binding Path=(m3:ToggleButtonAssist.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource TemplatedParent}}"
+                        <Grid Height="{Binding Path=(m3:M3ToggleButton.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource TemplatedParent}}"
                               VerticalAlignment="Center">
                             <m3:MaterialToggleButtonContainerPresenter x:Name="PART_Container" />
                             <ContentPresenter Padding="{TemplateBinding Padding}"
@@ -151,7 +147,7 @@
                                               TextElement.FontFamily="{TemplateBinding FontFamily}"
                                               TextElement.FontWeight="{TemplateBinding FontWeight}" />
                             <m3:MaterialRipplePresenter
-                                StateLayerBrush="{Binding Path=(m3:ToggleButtonAssist.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
+                                StateLayerBrush="{Binding Path=(m3:M3ToggleButton.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
                                 CornerRadius="{Binding CurrentCornerRadius, ElementName=PART_Container}" />
                         </Grid>
                     </Grid>
@@ -160,51 +156,48 @@
 
             <Style Selector="^:checked">
                 <Setter Property="Background"
-                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).CheckedContainer, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).CheckedContainer, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="Foreground"
-                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).CheckedContent, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).CheckedContent, RelativeSource={RelativeSource Self}}" />
             </Style>
             <Style Selector="^:disabled">
                 <Setter Property="Background"
-                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="Foreground"
-                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).DisabledContent, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).DisabledContent, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="BorderBrush"
-                        Value="{Binding Path=(m3:ToggleButtonAssist.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleButton.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
             </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="MaterialFilledToggleButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Filled" />
+            <Setter Property="m3:M3Button.Variant" Value="Filled" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialTonalToggleButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Tonal" />
+            <Setter Property="m3:M3Button.Variant" Value="Tonal" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialElevatedToggleButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Elevated" />
+            <Setter Property="m3:M3Button.Variant" Value="Elevated" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialOutlinedToggleButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Outlined" />
+            <Setter Property="m3:M3Button.Variant" Value="Outlined" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialTextToggleButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleButtonCoreTheme}">
-            <Setter Property="m3:ButtonAssist.Variant" Value="Text" />
+            <Setter Property="m3:M3Button.Variant" Value="Text" />
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type ToggleButton}"
                       TargetType="ToggleButton"
-                      BasedOn="{StaticResource MaterialFilledToggleButtonTheme}" />
-        <ControlTheme x:Key="{x:Type m3:MaterialToggleButton}"
-                      TargetType="m3:MaterialToggleButton"
                       BasedOn="{StaticResource MaterialFilledToggleButtonTheme}" />
     </Styles.Resources>
 </Styles>

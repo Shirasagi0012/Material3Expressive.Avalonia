@@ -13,21 +13,19 @@ using Microsoft.CodeAnalysis.Text;
 namespace Material3Expressive.TokenGenerator;
 
 /// <summary>
-/// Generates the token layer from the reference/system/component tables and component defaults
-/// under <c>Tokens/</c>.
+/// Generates the token layer from the reference, system and raw component tables under
+/// <c>Tokens/</c>.
 /// </summary>
 /// <remarks>
-/// The tables are the single source of truth. Before this generator existed, every component token
-/// default was written three times — once in the authoring class's constructor, once in the
-/// resolver, and once as a markup extension's fallback — and the three drifted. Now a token exists
-/// in exactly one place, and adding a component domain is a small set of clearly classified table
-/// files.
+/// The tables are the single source of truth for raw token facts. Component-owned C# Defaults
+/// select and resolve those facts into semantic values; the generator deliberately does not model
+/// component state, variants, or template bindings.
 /// </remarks>
 [Generator]
 public sealed class TokenTableGenerator : IIncrementalGenerator
 {
     /// <summary>
-    /// Only files with one of the four layer suffixes are tables; other AdditionalFiles are
+    /// Only files with one of the three layer suffixes are tables; other AdditionalFiles are
     /// ignored. The root <c>kind</c> remains the semantic authority, while the suffix provides a
     /// discoverable, human-readable classification and is checked against that kind below.
     /// </summary>
@@ -35,8 +33,7 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
     {
         ".ref.jsonc",
         ".sys.jsonc",
-        ".comp.jsonc",
-        ".default.jsonc"
+        ".comp.jsonc"
     };
 
     private static readonly DiagnosticDescriptor InvalidTable = new(
@@ -94,13 +91,6 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
                 result.Table is { } table ? new TokenTableDeclaration(table) : null))
             .WithTrackingName("TokenTable.Declaration");
 
-        var shapes = tableItems
-            .Select((result, _) => new TableShapeSource(
-                result.Source.Path,
-                result.Table is { } table ? new TokenTableShape(table) : null))
-            .WithTrackingName("TokenTable.Shape")
-            .Collect();
-
         var validation = declarations
             .Collect()
             .Select((items, _) => BuildValidation(items))
@@ -109,7 +99,7 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
         var allTables = tableItems.Collect();
 
         // Each table has its own source-output node. Roslyn can now reuse every unchanged table's
-        // emitted source even though the aggregate theme accessor still comes from the global pass.
+        // emitted source without a generated global component snapshot.
         context.RegisterSourceOutput(
             tableItems.Combine(validation),
             static (production, pair) => EmitTable(production, pair.Left, pair.Right));
@@ -118,9 +108,6 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
             allTables.Combine(validation),
             static (production, pair) => ReportDiagnostics(production, pair.Left, pair.Right));
 
-        context.RegisterSourceOutput(
-            shapes.Combine(validation),
-            static (production, pair) => EmitThemeAccessors(production, pair.Left, pair.Right));
     }
 
     private static ParsedTable Parse(TableSource source)
@@ -161,7 +148,6 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
                 ".ref.jsonc" => "referenceTokens",
                 ".sys.jsonc" => "systemTokens",
                 ".comp.jsonc" => "componentTokens",
-                ".default.jsonc" => "componentDefaults",
                 _ => throw new InvalidOperationException("Unknown token table suffix.")
             };
 
@@ -180,7 +166,6 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
             "referenceTokens" => category == TokenTableCategory.ReferenceTokens,
             "systemTokens" => category == TokenTableCategory.SystemTokens,
             "componentTokens" => category == TokenTableCategory.ComponentTokens,
-            "componentDefaults" => category == TokenTableCategory.ComponentDefaults,
             _ => false
         };
     }
@@ -243,21 +228,6 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
                 issue.Message));
         }
 
-    }
-
-    private static void EmitThemeAccessors(SourceProductionContext context,
-        ImmutableArray<TableShapeSource> shapes, ValidationSnapshot validation)
-    {
-        var validShapes = shapes
-            .Where(item => item.Shape is not null && !validation.InvalidPaths.Contains(item.Path))
-            .Select(item => item.Shape!)
-            .ToArray();
-
-        context.AddSource(
-            "ResolvedTheme.Components.g.cs",
-            SourceText.From(
-                TableEmitter.EmitThemeAccessors(validShapes),
-                System.Text.Encoding.UTF8));
     }
 
     private static ValidationSnapshot BuildValidation(ImmutableArray<TableDeclarationSource> declarations)
@@ -451,39 +421,6 @@ public sealed class TokenTableGenerator : IIncrementalGenerator
             unchecked
             {
                 return (Path.GetHashCode() * 397) ^ (Declaration?.GetHashCode() ?? 0);
-            }
-        }
-    }
-
-    /// <summary>A shape keyed by path; literal values are intentionally absent from equality.</summary>
-    private readonly struct TableShapeSource : IEquatable<TableShapeSource>
-    {
-        public TableShapeSource(string path, TokenTableShape? shape)
-        {
-            Path = path;
-            Shape = shape;
-        }
-
-        public string Path { get; }
-
-        public TokenTableShape? Shape { get; }
-
-        public bool Equals(TableShapeSource other)
-        {
-            return string.Equals(Path, other.Path, StringComparison.Ordinal) &&
-                   (Shape?.Equals(other.Shape) ?? other.Shape is null);
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return obj is TableShapeSource other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return (Path.GetHashCode() * 397) ^ (Shape?.GetHashCode() ?? 0);
             }
         }
     }

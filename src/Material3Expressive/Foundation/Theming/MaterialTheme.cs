@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Specialized;
 using Avalonia;
-using Avalonia.Collections;
 using Avalonia.Media;
-using Avalonia.Metadata;
 using MaterialColorUtilities.Avalonia;
 using PropertyGenerator.Avalonia;
 
 namespace Material3Expressive.Foundation;
 
 /// <summary>
-/// A whole Material theme: colour, typography, shape, motion and legacy component token overrides.
+/// A whole Material theme: colour, typography, shape, motion and ripple schemes.
 /// </summary>
 /// <remarks>
 /// This is the authoring surface — mutable and bindable, so a scheme's seed colour can be a
@@ -31,8 +29,6 @@ public partial class MaterialTheme : AvaloniaObject
         // the same attach path as any later assignment.
         PropertyChanged += OnSelfPropertyChanged;
 
-        Components.CollectionChanged += OnComponentsChanged;
-
         ColorScheme = new TonalSpotScheme(BaselineSeedColor);
         TypographyScheme = new TypographyScheme();
         ShapeScheme = new ShapeScheme();
@@ -48,14 +44,6 @@ public partial class MaterialTheme : AvaloniaObject
     [GeneratedStyledProperty] public partial ShapeScheme ShapeScheme { get; set; }
     [GeneratedStyledProperty] public partial MotionScheme MotionScheme { get; set; }
     [GeneratedStyledProperty] public partial RippleThemeConfiguration RippleTheme { get; set; }
-
-    /// <summary>
-    /// Legacy per-component token overrides, layered onto generated defaults when the snapshot is
-    /// built. This content property remains while controls migrate to component-owned Defaults;
-    /// the Button family deliberately does not consume it.
-    /// </summary>
-    [Content]
-    public AvaloniaList<ComponentTokenOverrides> Components { get; } = new();
 
     /// <summary>The current snapshot, rebuilt on demand after any change.</summary>
     public ResolvedTheme Resolved => _resolved ??= new ResolvedTheme(this);
@@ -76,17 +64,6 @@ public partial class MaterialTheme : AvaloniaObject
 
         Detach(e.OldValue);
         Attach(e.NewValue);
-        Invalidate();
-    }
-
-    private void OnComponentsChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        foreach (var item in e.OldItems ?? (System.Collections.IList)Array.Empty<object>())
-            Detach(item);
-
-        foreach (var item in e.NewItems ?? (System.Collections.IList)Array.Empty<object>())
-            Attach(item);
-
         Invalidate();
     }
 

@@ -105,13 +105,13 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == ToggleButtonAssist.DefaultShapesProperty
-            || change.Property == ToggleButtonAssist.DefaultShapeMotionProperty)
+        if (change.Property == M3ToggleButton.DefaultShapesProperty
+            || change.Property == M3ToggleButton.DefaultShapeMotionProperty)
             ApplyTokens(snapShape: true);
         else if (change.Property == ToggleButton.IsCheckedProperty
-                 || change.Property == ButtonAssist.IsSquareProperty)
+                 || change.Property == M3Button.IsSquareProperty)
             UpdateShape();
-        else if (change.Property == ButtonAssist.ContainerShapeOverrideProperty)
+        else if (change.Property == M3Button.ContainerShapeOverrideProperty)
             UpdateShape(snap: true);
         else if (change.Property == ToggleButton.BackgroundProperty
                  || change.Property == ToggleButton.BorderBrushProperty
@@ -131,9 +131,9 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     {
         if (_owner is not { } owner)
             return;
-        _shapes = ToggleButtonAssist.GetDefaultShapes(owner)
-                  ?? ToggleButtonDefaults.Shapes(ButtonAssist.GetSize(owner));
-        _shapeMotion = ToggleButtonAssist.GetDefaultShapeMotion(owner);
+        _shapes = M3ToggleButton.GetDefaultShapes(owner)
+                  ?? ToggleButtonDefaults.Shapes(M3Button.GetSize(owner));
+        _shapeMotion = M3ToggleButton.GetDefaultShapeMotion(owner);
         if (_shapeMotion.Stiffness <= 0)
             _shapeMotion = ToggleButtonDefaults.ShapeMotion(_theme.Theme);
         UpdateShape(snapShape);
@@ -163,11 +163,11 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     {
         if (_owner is not { } owner)
             return _theme.Theme.Shapes.Get(_shapes.Unchecked);
-        if (ButtonAssist.GetContainerShapeOverride(owner) is { } shape)
+        if (M3Button.GetContainerShapeOverride(owner) is { } shape)
             return shape;
 
         var selected = owner.IsChecked == true;
-        var round = ButtonAssist.GetIsSquare(owner) == selected;
+        var round = M3Button.GetIsSquare(owner) == selected;
         return _theme.Theme.Shapes.Get(
             round ? _shapes.Unchecked : _shapes.Checked);
     }

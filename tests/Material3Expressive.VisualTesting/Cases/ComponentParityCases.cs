@@ -195,7 +195,7 @@ internal static class ComponentParityCases
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 };
-                ButtonAssist.SetVariant(button, ButtonVariant.Tonal);
+                M3Button.SetVariant(button, ButtonVariant.Tonal);
                 return button;
             },
             context => context.SettleAnimations());

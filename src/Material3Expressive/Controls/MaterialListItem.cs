@@ -165,8 +165,8 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     private readonly MaterialInteractionController _interaction;
     private readonly Dictionary<TextBlock, SlotTypographyAssignment> _slotTypographyAssignments = new();
 
-    private ListItemTokens _tokens = ListItemTokens.Default;
-    private ListItemColors _colors = ListItemTokens.Default.Resolve(null, false);
+    private ListItemMetrics _tokens = ListItemDefaults.Metrics();
+    private ListItemVisualColors _colors = ListItemDefaults.Colors(Foundation.ResolvedTheme.Default, false);
     private AnimatedShape? _shape;
     private AnimatedBrush? _containerBrushAnimation;
     private AnimatedBrush? _contentBrushAnimation;
@@ -703,8 +703,8 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.ListItemTokens;
-        _colors = _theme.Theme.GetListItemColors(_theme.IsDark);
+        _tokens = ListItemDefaults.Metrics();
+        _colors = ListItemDefaults.Colors(_theme.Theme, _theme.IsDark);
 
         var typography = _theme.Theme.Typography;
         var scale = typography.GetTypeScale(_tokens.ContentTextStyle);

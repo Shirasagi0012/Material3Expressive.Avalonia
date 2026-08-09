@@ -37,8 +37,8 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
     private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _open;
-    private DrawerTokens _tokens = DrawerTokens.Modal;
-    private DrawerColors _colors = DrawerTokens.Modal.Resolve(null, false);
+    private DrawerMetrics _tokens = DrawerDefaults.Metrics(DrawerVariant.Modal);
+    private DrawerVisualColors _colors = DrawerDefaults.Colors(Foundation.ResolvedTheme.Default, DrawerVariant.Modal, false);
 
     public MaterialNavigationDrawer()
     {
@@ -153,8 +153,8 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetDrawerTokens(Variant);
-        _colors = _theme.Theme.GetDrawerColors(Variant, _theme.IsDark);
+        _tokens = DrawerDefaults.Metrics(Variant);
+        _colors = DrawerDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
 
         IsHitTestVisible = IsOpen;
         InvalidateArrange();

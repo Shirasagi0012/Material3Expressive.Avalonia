@@ -53,7 +53,7 @@ public class MaterialSplitButton : TemplatedControl, IMaterialThemeConsumer
     private Button? _leading;
     private ToggleButton? _trailing;
     private readonly MaterialElementContext _theme;
-    private SplitButtonDefaultsTokens _tokens = SplitButtonDefaultsTokens.Default;
+    private SplitButtonMetrics _tokens = SplitButtonDefaults.Metrics();
 
     static MaterialSplitButton()
     {
@@ -165,15 +165,15 @@ public class MaterialSplitButton : TemplatedControl, IMaterialThemeConsumer
             : new RoundedCornerShape(inner, outer, outer, inner);
 
         if (_leading is { })
-            ButtonAssist.SetContainerShapeOverride(_leading, leadingShape);
+            M3Button.SetContainerShapeOverride(_leading, leadingShape);
 
         if (_trailing is { })
-            ButtonAssist.SetContainerShapeOverride(_trailing, trailingShape);
+            M3Button.SetContainerShapeOverride(_trailing, trailingShape);
     }
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.SplitButtonDefaultsTokens;
+        _tokens = SplitButtonDefaults.Metrics();
         ApplyShapes();
         InvalidateMeasure();
         InvalidateVisual();

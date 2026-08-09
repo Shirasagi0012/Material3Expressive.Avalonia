@@ -62,7 +62,7 @@ toggle semantics and automation.
 | Dimension | Evidence |
 |---|---|
 | Upstream | Exact alpha25 files, revision, alpha22 compatibility, disabled-border exception, and Border.kt asymmetric-path branch recorded above and in source comments. |
-| Tokens | `SegmentedButton.default.jsonc` records `v0_162`: 40dp height, CornerFull, LabelLarge, 18dp icon, 8dp spacing, 12×8dp padding, 1dp outline, all enabled/disabled state colours and opacities. |
+| Tokens | `SegmentedButtonDefaults` maps `OutlinedSegmentedButtonTokens` and the Compose policy: 40dp height, CornerFull, LabelLarge, 18dp icon, 8dp spacing, 12×8dp padding, 1dp outline, and enabled/disabled state colours and opacities. |
 | API | D010 records the unified row/selection-mode XAML adaptation; bindable child state and explicit customization properties are public. |
 | Visual | Four cases cover single light/dark, disabled single, and multiple selection. The completion audit caught and repaired lost 24×24 icon viewport padding; all four are `semanticRasterEquivalent`, with zero warnings and rejected pixels. |
 | Behavior | Deterministic tests cover single/multiple state, no selected-item toggle-off, initial normalization, official icon slot, controlled motion, and shape override. |

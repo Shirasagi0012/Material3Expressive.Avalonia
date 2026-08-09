@@ -64,11 +64,9 @@
         <AdditionalFiles Include="Tokens\**\*.ref.jsonc" />
         <AdditionalFiles Include="Tokens\**\*.sys.jsonc" />
         <AdditionalFiles Include="Tokens\**\*.comp.jsonc" />
-        <AdditionalFiles Include="Tokens\**\*.default.jsonc" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Markups\Components\" />
       <Folder Include="Styles\Foundation\" />
     </ItemGroup>
 

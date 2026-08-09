@@ -47,8 +47,8 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
         AvaloniaProperty.Register<MaterialNavigationBar, int>(
             nameof(SelectedIndex), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
-    private NavigationTokens _tokens = NavigationTokens.Bar;
-    private NavigationColors _colors = NavigationTokens.Bar.Resolve(null, false);
+    private NavigationMetrics _tokens = NavigationDefaults.Metrics(NavigationVariant.Bar);
+    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Bar, false);
     private bool _updatingSelection;
 
     public MaterialNavigationBar()
@@ -197,8 +197,8 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
         var previousRows = ItemRows;
         var previousColumns = ItemColumns;
 
-        _tokens = ResolvedTheme.GetNavigationTokens(Variant);
-        _colors = ResolvedTheme.GetNavigationColors(Variant, IsDarkVariant);
+        _tokens = NavigationDefaults.Metrics(Variant);
+        _colors = NavigationDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
 
         RaisePropertyChanged(ItemSpacingProperty, previousSpacing, ItemSpacing);
         RaisePropertyChanged(IsVerticalProperty, previousVertical, IsVertical);

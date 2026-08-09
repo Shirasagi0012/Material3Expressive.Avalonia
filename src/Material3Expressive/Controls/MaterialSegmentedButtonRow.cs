@@ -364,7 +364,7 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
 
     private RoundedCornerShape ShapeFor(SegmentedButtonSegmentPosition position)
     {
-        var baseShape = _theme.Theme.Shapes.Get(_theme.Theme.SegmentedButtonTokens.ContainerShape);
+        var baseShape = _theme.Theme.Shapes.Get(SegmentedButtonDefaults.Metrics().ContainerShape);
         return position switch
         {
             SegmentedButtonSegmentPosition.First => baseShape.Start(),
@@ -376,7 +376,7 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
 
     private void ApplyTokens()
     {
-        var tokens = _theme.Theme.SegmentedButtonTokens;
+        var tokens = SegmentedButtonDefaults.Metrics();
         _containerHeight = tokens.ContainerHeight;
         _overlapLease?.Dispose();
         _overlapLease = SetValue(

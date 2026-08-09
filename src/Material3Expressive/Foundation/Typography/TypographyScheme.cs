@@ -53,13 +53,10 @@ public partial class TypographyScheme : AvaloniaObject
     [GeneratedStyledProperty] public partial FontWeight WeightMedium { get; set; }
     [GeneratedStyledProperty] public partial FontWeight WeightRegular { get; set; }
 
-    #pragma warning disable CS0618 // The compatibility type is intentionally exposed here.
     /// <summary>
-    /// Sparse per-slot system typography overrides. These are intentionally separate from
-    /// <see cref="MaterialTheme.Components"/>, which is reserved for component defaults.
+    /// Sparse per-slot system typography overrides.
     /// </summary>
     public AvaloniaList<TypeScaleOverrides> TypeScaleOverrides { get; } = new();
-    #pragma warning restore CS0618
 
     public static TypographyRole GetTextStyle(StyledElement element)
     {

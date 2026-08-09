@@ -32,8 +32,8 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
             .Select(value => new TokenValueDeclaration(value.Type, value.EnumType, value.Reference))
             .ToArray();
 
-        // A component accessor depends on names and ordering, but not on the literal value of a
-        // set. Include the record shape here for the same reason.
+        // A generated system record depends on names and ordering, but not on the literal value
+        // of a set. Include the record shape here for the same reason.
         Properties = table.Properties
             .Select(property => new TokenPropertyDeclaration(
                 property.Name,
@@ -43,7 +43,6 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
             .ToArray();
         SetNames = table.Sets.Select(set => set.Name).ToArray();
         VariantEnum = table.VariantEnum;
-        ResolvedName = table.ResolvedName;
     }
 
     public string Name { get; }
@@ -64,8 +63,6 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
 
     public string? VariantEnum { get; }
 
-    public string? ResolvedName { get; }
-
     public bool Equals(TokenTableDeclaration? other)
     {
         if (ReferenceEquals(this, other))
@@ -73,8 +70,7 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
 
         if (other is null || !string.Equals(Name, other.Name, StringComparison.Ordinal) ||
             Category != other.Category || Layer != other.Layer || IsTokenSet != other.IsTokenSet ||
-            !string.Equals(VariantEnum, other.VariantEnum, StringComparison.Ordinal) ||
-            !string.Equals(ResolvedName, other.ResolvedName, StringComparison.Ordinal))
+            !string.Equals(VariantEnum, other.VariantEnum, StringComparison.Ordinal))
             return false;
 
         return SequenceEqual(Symbols, other.Symbols) &&
@@ -97,7 +93,6 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
             hash = hash * 397 + (int)Layer;
             hash = hash * 397 + IsTokenSet.GetHashCode();
             hash = hash * 397 + (VariantEnum?.GetHashCode() ?? 0);
-            hash = hash * 397 + (ResolvedName?.GetHashCode() ?? 0);
             foreach (var symbol in Symbols)
                 hash = hash * 397 + symbol.GetHashCode();
             foreach (var value in Values)

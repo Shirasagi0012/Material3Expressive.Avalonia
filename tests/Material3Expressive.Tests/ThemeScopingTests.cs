@@ -262,7 +262,7 @@ public class ThemeScopingTests
             {
                 new ThemeProbe(),
                 new MaterialLinearProgressIndicator { Value = 0.5, Width = 200 },
-                new MaterialButton()
+                new Button()
             }
         };
         var host = new ContentControl { Content = page };

@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -67,8 +68,8 @@ public class MaterialTimePicker : TemplatedControl, IMaterialThemeConsumer, IMat
     private bool _updatingFromState;
 
     private SpringAnimation? _hand;
-    private PickerTokens _tokens = PickerTokens.Time;
-    private PickerColors _colors = PickerTokens.Time.Resolve(null, false);
+    private PickerMetrics _tokens = PickerDefaults.Metrics(PickerVariant.Time);
+    private PickerVisualColors _colors = PickerDefaults.Colors(ResolvedTheme.Default, PickerVariant.Time, false);
     private bool _dragging;
 
     public MaterialTimePicker()
@@ -339,8 +340,8 @@ public class MaterialTimePicker : TemplatedControl, IMaterialThemeConsumer, IMat
 
     private void ApplyTokens()
     {
-        _tokens = ResolvedTheme.GetPickerTokens(PickerVariant.Time);
-        _colors = ResolvedTheme.GetPickerColors(PickerVariant.Time, IsDarkVariant);
+        _tokens = PickerDefaults.Metrics(PickerVariant.Time);
+        _colors = PickerDefaults.Colors(ResolvedTheme, PickerVariant.Time, IsDarkVariant);
 
         InvalidateMeasure();
         InvalidateVisual();

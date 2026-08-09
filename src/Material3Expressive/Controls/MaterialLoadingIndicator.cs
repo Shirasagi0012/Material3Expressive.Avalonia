@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Controls.Motion;
 using MaterialShapes;
 
@@ -84,8 +85,10 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     private LoopingAnimation? _globalRotation;
     private SpringAnimation? _progress;
 
-    private LoadingIndicatorDefaultsTokens _tokens = LoadingIndicatorDefaultsTokens.Standard;
-    private LoadingIndicatorColors _colors = LoadingIndicatorDefaultsTokens.Standard.Resolve(null, false);
+    private LoadingIndicatorMetrics _tokens = LoadingIndicatorDefaults.Metrics(LoadingIndicatorVariant.Standard);
+    private LoadingIndicatorVisualColors _colors = new(
+        LoadingIndicatorTokens.ActiveIndicatorColor.ResolveBrush(null, false),
+        ColorTokenValue.Literal(Avalonia.Media.Colors.Transparent).ResolveBrush(null, false));
 
     public MaterialLoadingIndicator()
     {
@@ -191,8 +194,8 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     private void ApplyTokens()
     {
         var theme = ResolvedTheme;
-        _tokens = theme.GetLoadingIndicatorDefaultsTokens(Variant);
-        _colors = theme.GetLoadingIndicatorColors(Variant, IsDarkVariant);
+        _tokens = LoadingIndicatorDefaults.Metrics(Variant);
+        _colors = LoadingIndicatorDefaults.Colors(theme, Variant, IsDarkVariant);
         InvalidateMeasure();
         InvalidateVisual();
     }

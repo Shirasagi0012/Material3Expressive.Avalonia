@@ -48,14 +48,14 @@ represent them.
 
 | Area | Compose feature family | Avalonia counterpart | Status | Principal gap or adaptation |
 |---|---|---|---|---|
-| Buttons | Button variants and sizes | `MaterialButton` | Implemented | Compose composables are represented by `Variant` and `Size`; the alpha25 `textStyleFor` mapping is explicit: ExtraSmall/Small → LabelLarge, Medium → TitleMedium, Large → HeadlineSmall, ExtraLarge → HeadlineLarge. The executable alpha22 large-button scene passes. |
-| Buttons | ToggleButton variants | `MaterialToggleButton` | Implemented | Variants are consolidated into one XAML control. |
-| Buttons | IconButton variants and sizes | `MaterialIconButton` | Implemented | Width and size are Avalonia properties. |
-| Buttons | IconToggleButton variants | `MaterialToggleIconButton` | Implemented | Variants are consolidated into one control. |
+| Buttons | Button variants and sizes | native `Button` + `M3Button` | Implemented | Compose composables are represented by `M3Button.Variant` and `M3Button.Size`; the alpha25 `textStyleFor` mapping is explicit: ExtraSmall/Small → LabelLarge, Medium → TitleMedium, Large → HeadlineSmall, ExtraLarge → HeadlineLarge. The executable alpha22 large-button scene passes. |
+| Buttons | ToggleButton variants | native `ToggleButton` + `M3Button` | Implemented | The shared Button-family axes are attached properties; ToggleButton retains its independent checked-state defaults policy. |
+| Buttons | IconButton variants and sizes | native `Button` + `M3IconButton` | Implemented | `M3IconButton.Variant`, `.Size`, and `.ButtonWidth` are attached component axes; named icon-button control themes activate the defaults adapter. |
+| Buttons | IconToggleButton variants | native `ToggleButton` + `M3IconButton` | Implemented | The shared axes stay on `M3IconButton`; `M3ToggleIconButton` is the internal checked-state semantic projection, not a second facade. |
 | Buttons | ButtonGroup and connected group | `MaterialButtonGroup` | Implemented | Public API follows panel/content conventions. |
 | Buttons | SplitButton | `MaterialSplitButton` | Implemented | Leading and trailing segments are hosted controls. |
-| Containers | Card, ElevatedCard, OutlinedCard | `MaterialCard` | Implemented | Compose variants map to `CardVariant`. |
-| Actions | FloatingActionButton and extended/size variants | `MaterialFab` | Implemented | Label presence selects extended presentation. |
+| Containers | Card, ElevatedCard, OutlinedCard | `MaterialCard` | Implemented | Compose variants map to the controls-owned `CardVariant`. |
+| Actions | FloatingActionButton and extended/size variants | `MaterialFab` | Implemented | Label presence selects extended presentation; `FabVariant` and `FabSize` are controls-owned component API. |
 | Actions | FloatingActionButtonMenu | `MaterialFabMenu` | Partial | Compose menu-item and toggle APIs are not fully represented. |
 | Actions | Horizontal/Vertical FloatingToolbar | `MaterialFloatingToolbar`, `FloatingToolbarScrollState` | Implemented | One D011 XAML items control adapts both axes and with/without-FAB overloads through Orientation/Auto, leading/trailing/FAB slots, logical FAB position, FastSpatial collapse, 56–80dp FAB sizing, non-null/reset ExitAlways state, ScrollViewer/custom-delta coordination, host-owned 16dp anchoring, desktop arrow/Home/End focus, non-trapping Tab, hidden-focus removal, and ToolBar/ExpandCollapse automation. Two alpha22-compatible horizontal/vertical scenes are exact with zero raster difference. |
 | Selection | Checkbox and TriStateCheckbox | `MaterialCheckbox` | Implemented | Use `IsThreeState="True"` with `IsChecked="{x:Null}"` for Compose `ToggleableState.Indeterminate`; selected and indeterminate alpha22 parity cases pass. |

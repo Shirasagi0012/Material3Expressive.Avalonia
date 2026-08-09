@@ -5,7 +5,7 @@ namespace Material3Expressive.TokenGenerator.Tests;
 public sealed class TokenTableGeneratorTests
 {
     [Fact]
-    public void TokenSet_EmitsTheRepresentativeTableAndThemeAccessor()
+    public void TokenSet_EmitsTheRepresentativeRawTableWithoutAThemeAccessor()
     {
         var run = GeneratorTestHost.Run(("Reference.ref.jsonc", """
             {
@@ -30,14 +30,11 @@ public sealed class TokenTableGeneratorTests
         Assert.Contains("SysColorToken.Primary", source);
         Assert.Contains("Source: Material Design token", source);
         Assert.Contains("Provenance: androidx-token", source);
-
-        Assert.Contains(
-            run.Sources,
-            result => result.HintName == "ResolvedTheme.Components.g.cs");
+        Assert.DoesNotContain(run.Sources, result => result.HintName == "ResolvedTheme.Components.g.cs");
     }
 
     [Fact]
-    public void Component_ResolvesReferencesAndExtendsWithoutCopyingValues()
+    public void ComponentTokenSet_ResolvesRawReferencesWithoutGeneratingDefaults()
     {
         var run = GeneratorTestHost.Run(
             ("ButtonSmall.comp.jsonc", """
@@ -51,80 +48,68 @@ public sealed class TokenTableGeneratorTests
                   }
                 }
                 """),
-            ("Button.default.jsonc", """
+            ("ButtonLarge.comp.jsonc", """
                 {
-                  "kind": "componentDefaults",
-                  "name": "ButtonTokens",
-                  "namespace": "Material3Expressive.Foundation",
-                  "variantEnum": "ButtonVariant",
-                  "properties": {
-                    "ContainerHeight": "dimension",
-                    "ContainerColor": "color",
-                    "Enabled": "bool"
-                  },
-                  "sets": [
-                    {
-                      "name": "Filled",
-                      "values": {
-                        "ContainerHeight": "@ButtonSmallTokens.ContainerHeight",
-                        "ContainerColor": "@ButtonSmallTokens.ContainerColor",
-                        "Enabled": true
-                      }
-                    },
-                    {
-                      "name": "Tonal",
-                      "extends": "Filled",
-                      "values": { "ContainerColor": "SecondaryContainer" }
-                    }
-                  ]
+                  "kind": "componentTokens",
+                  "name": "ButtonLargeTokens",
+                  "namespace": "Material3Expressive.Foundation.Tokens",
+                  "tokens": {
+                    "ContainerHeight": { "type": "dimension", "value": "@ButtonSmallTokens.ContainerHeight" },
+                    "ContainerColor": { "type": "color", "value": "@ButtonSmallTokens.ContainerColor" }
+                  }
                 }
                 """));
 
         Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
 
-        var source = run.Source("ButtonTokens.Tokens.g.cs");
+        var source = run.Source("ButtonLargeTokens.Tokens.g.cs");
+        Assert.Contains("internal static class ButtonLargeTokens", source);
         Assert.Contains("ButtonSmallTokens.ContainerHeight", source);
         Assert.Contains("ButtonSmallTokens.ContainerColor", source);
-        Assert.Contains("SysColorToken.SecondaryContainer", source);
-        Assert.Contains("true);", source);
-        Assert.DoesNotContain("ContainerHeight = 40", source);
-        Assert.Contains("public enum ButtonVariant", source);
-        Assert.Contains("internal sealed partial record ButtonTokens", source);
-        Assert.Contains("public sealed partial class ButtonOverrides", source);
-        Assert.Contains("internal ButtonTokens ApplyTo(ButtonTokens baseTokens)", source);
-
-        var accessors = run.Source("ResolvedTheme.Components.g.cs");
-        Assert.Contains("internal global::Material3Expressive.Foundation.ButtonTokens GetButtonTokens", accessors);
-        Assert.DoesNotContain("public global::Material3Expressive.Foundation.ButtonTokens GetButtonTokens", accessors);
+        Assert.DoesNotContain("partial record ButtonLargeTokens", source);
+        Assert.DoesNotContain("Overrides", source);
+        Assert.DoesNotContain(run.Sources, result => result.HintName == "ResolvedTheme.Components.g.cs");
     }
 
     [Fact]
-    public void ComponentDefaults_KeepAnExplicitOverrideTypeName()
+    public void LegacyDefaultFilesAreIgnored()
     {
-        var run = GeneratorTestHost.Run(("Checkbox.default.jsonc", """
+        var run = GeneratorTestHost.Run(("Button.default.jsonc", """
             {
               "kind": "componentDefaults",
-              "name": "CheckboxDefaultsTokens",
-              "overridesName": "CheckboxOverrides",
+              "name": "ButtonTokens",
               "properties": { "Size": "dimension" },
               "sets": [
-                { "name": "Default", "values": { "Size": 18 } }
+                { "name": "Default", "values": { "Size": 40 } }
               ]
             }
             """));
 
-        Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
-
-        var source = run.Source("CheckboxDefaultsTokens.Tokens.g.cs");
-        Assert.Contains("public sealed partial class CheckboxOverrides", source);
-        Assert.DoesNotContain("CheckboxDefaultsOverrides", source);
-
-        var accessors = run.Source("ResolvedTheme.Components.g.cs");
-        Assert.Contains("case global::Material3Expressive.Foundation.CheckboxOverrides typed:", accessors);
+        Assert.Empty(run.Diagnostics);
+        Assert.Empty(run.Sources);
     }
 
     [Fact]
-    public void SystemScheme_IsEmittedButDoesNotBecomeAComponentAccessor()
+    public void ComponentDefaultsKindIsRejectedWhenPassedThroughARawSuffix()
+    {
+        var run = GeneratorTestHost.Run(("Button.comp.jsonc", """
+            {
+              "kind": "componentDefaults",
+              "name": "ButtonTokens",
+              "properties": { "Size": "dimension" },
+              "sets": [
+                { "name": "Default", "values": { "Size": 40 } }
+              ]
+            }
+            """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK001"));
+        Assert.Contains("'kind' must be 'referenceTokens', 'systemTokens', or 'componentTokens'", diagnostic.GetMessage());
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "ButtonTokens.Tokens.g.cs");
+    }
+
+    [Fact]
+    public void SystemScheme_IsEmittedAsAPublicSystemRecordWithoutAComponentAccessor()
     {
         var run = GeneratorTestHost.Run(("TypeScale.sys.jsonc", """
             {
@@ -140,21 +125,24 @@ public sealed class TokenTableGeneratorTests
             """));
 
         Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
-        Assert.Contains("record TestTypeScale", run.Source("TestTypeScale.Tokens.g.cs"));
-        Assert.DoesNotContain("GetTestTypeScale", run.Source("ResolvedTheme.Components.g.cs"));
+
+        var source = run.Source("TestTypeScale.Tokens.g.cs");
+        Assert.Contains("public enum TestTypographyRole", source);
+        Assert.Contains("public sealed partial record TestTypeScale", source);
+        Assert.Contains("public static TestTypeScale For(TestTypographyRole variant)", source);
+        Assert.DoesNotContain(run.Sources, result => result.HintName == "ResolvedTheme.Components.g.cs");
     }
 
     [Fact]
     public void UnknownTokenSetReferenceProducesACatalogDiagnostic()
     {
-        var run = GeneratorTestHost.Run(("Broken.default.jsonc", """
+        var run = GeneratorTestHost.Run(("Broken.comp.jsonc", """
             {
-              "kind": "componentDefaults",
+              "kind": "componentTokens",
               "name": "BrokenTokens",
-              "properties": { "Value": "dimension" },
-              "sets": [
-                { "name": "Default", "values": { "Value": "@MissingTokens.Value" } }
-              ]
+              "tokens": {
+                "Value": { "type": "dimension", "value": "@MissingTokens.Value" }
+              }
             }
             """));
 
@@ -174,14 +162,13 @@ public sealed class TokenTableGeneratorTests
                   "tokens": { "Value": { "type": "dimension", "value": 40 } }
                 }
                 """),
-            ("Broken.default.jsonc", """
+            ("Broken.comp.jsonc", """
                 {
-                  "kind": "componentDefaults",
+                  "kind": "componentTokens",
                   "name": "BrokenTokens",
-                  "properties": { "Value": "color" },
-                  "sets": [
-                    { "name": "Default", "values": { "Value": "@RawTokens.Value" } }
-                  ]
+                  "tokens": {
+                    "Value": { "type": "color", "value": "@RawTokens.Value" }
+                  }
                 }
                 """));
 
@@ -261,17 +248,13 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void AMalformedReferenceProducesAGeneratorDiagnostic()
     {
-        var run = GeneratorTestHost.Run(("Broken.default.jsonc", """
+        var run = GeneratorTestHost.Run(("Broken.comp.jsonc", """
             {
-              "kind": "componentDefaults",
+              "kind": "componentTokens",
               "name": "BrokenTokens",
-              "properties": { "Value": "dimension" },
-              "sets": [
-                {
-                  "name": "Default",
-                  "values": { "Value": "@Missing-Tokens.Value" }
-                }
-              ]
+              "tokens": {
+                "Value": { "type": "dimension", "value": "@Missing-Tokens.Value" }
+              }
             }
             """));
 
@@ -315,7 +298,7 @@ public sealed class TokenTableGeneratorTests
     [Fact]
     public void FilenameSuffixMustMatchRootKind()
     {
-        var run = GeneratorTestHost.Run(("Wrong.default.jsonc", """
+        var run = GeneratorTestHost.Run(("Wrong.ref.jsonc", """
             {
               "kind": "componentTokens",
               "name": "WrongTokens",
@@ -325,7 +308,7 @@ public sealed class TokenTableGeneratorTests
 
         var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK004"));
         Assert.Contains("componentTokens", diagnostic.GetMessage());
-        Assert.Contains("componentDefaults", diagnostic.GetMessage());
+        Assert.Contains("referenceTokens", diagnostic.GetMessage());
         Assert.DoesNotContain(run.Sources, source => source.HintName == "WrongTokens.Tokens.g.cs");
     }
 
@@ -376,12 +359,6 @@ public sealed class TokenTableGeneratorTests
                 Microsoft.CodeAnalysis.IncrementalStepRunReason.Cached,
                 Microsoft.CodeAnalysis.IncrementalStepRunReason.Unchanged
             }));
-        Assert.True(result.After.TrackedSteps.TryGetValue("TokenTable.Shape", out var shapes));
-        Assert.All(shapes.SelectMany(step => step.Outputs),
-            output => Assert.Contains(output.Reason, new[]
-            {
-                Microsoft.CodeAnalysis.IncrementalStepRunReason.Cached,
-                Microsoft.CodeAnalysis.IncrementalStepRunReason.Unchanged
-            }));
+        Assert.False(result.After.TrackedSteps.ContainsKey("TokenTable.Shape"));
     }
 }

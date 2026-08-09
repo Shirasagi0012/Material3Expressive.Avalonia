@@ -75,8 +75,8 @@ public class MaterialSearchBar : TemplatedControl, IMaterialThemeConsumer, IMate
 
     private AnimatedShape? _shape;
     private TextBox? _textBox;
-    private SearchBarDefaultsTokens _tokens = SearchBarDefaultsTokens.Default;
-    private SearchBarColors _colors = SearchBarDefaultsTokens.Default.Resolve(null, false);
+    private SearchBarMetrics _tokens = SearchBarDefaults.Metrics();
+    private SearchBarVisualColors _colors = SearchBarDefaults.Colors(Foundation.ResolvedTheme.Default, false);
 
     public MaterialSearchBar()
     {
@@ -258,8 +258,8 @@ public class MaterialSearchBar : TemplatedControl, IMaterialThemeConsumer, IMate
         var previousIconSize = IconSize;
         var previousSpace = IconLabelSpace;
 
-        _tokens = ResolvedTheme.SearchBarDefaultsTokens;
-        _colors = ResolvedTheme.GetSearchBarColors(IsDarkVariant);
+        _tokens = SearchBarDefaults.Metrics();
+        _colors = SearchBarDefaults.Colors(ResolvedTheme, IsDarkVariant);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);

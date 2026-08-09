@@ -49,8 +49,8 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
     private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _open;
-    private DialogDefaultsTokens _tokens = DialogDefaultsTokens.Default;
-    private DialogColors _colors = DialogDefaultsTokens.Default.Resolve(null, false);
+    private DialogMetrics _tokens = DialogDefaults.Metrics();
+    private DialogVisualColors _colors = DialogDefaults.Colors(Foundation.ResolvedTheme.Default, false);
 
     public MaterialDialog()
     {
@@ -239,8 +239,8 @@ public class MaterialDialog : ContentControl, IMaterialThemeConsumer, IMaterialM
         var previousHeadline = HeadlineBrush;
         var previousSupporting = SupportingBrush;
 
-        _tokens = _theme.Theme.DialogDefaultsTokens;
-        _colors = _theme.Theme.GetDialogColors(_theme.IsDark);
+        _tokens = DialogDefaults.Metrics();
+        _colors = DialogDefaults.Colors(_theme.Theme, _theme.IsDark);
 
         RaisePropertyChanged(HeadlineBrushProperty, previousHeadline, HeadlineBrush);
         RaisePropertyChanged(SupportingBrushProperty, previousSupporting, SupportingBrush);

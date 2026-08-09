@@ -17,17 +17,30 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="ClipToBounds" Value="False" />
-            <Setter Property="Background" Value="{m3:MdIconButtonToken ContainerColor}" />
-            <Setter Property="Foreground" Value="{m3:MdIconButtonToken IconColor}" />
-            <Setter Property="BorderBrush" Value="{m3:MdIconButtonToken OutlineColor}" />
-            <Setter Property="BorderThickness" Value="{m3:MdIconButtonToken ContainerOutlineThickness}" />
-            <Setter Property="Padding" Value="{m3:MdIconButtonToken ContentPadding}" />
+            <!-- Activates the owner-local defaults adapter. The bindings below stay ordinary
+                 theme-priority setters, so app styles and local values can override them. -->
+            <Setter Property="m3:M3IconButton.UseMaterialDefaults" Value="True" />
+            <Setter Property="Background"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).Container, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).Icon, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderBrush"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderThickness"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Padding"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
             <!-- Fixed rather than minimum size: like androidx's Modifier.size, the container must
                  keep its token metrics even when a parent panel stretches its children. -->
-            <Setter Property="Height" Value="{m3:MdIconButtonToken ContainerHeight}" />
-            <Setter Property="Width" Value="{m3:MdIconButtonToken ContainerWidth}" />
-            <Setter Property="m3:IconButtonAssist.IconSize" Value="{m3:MdIconButtonToken IconSize}" />
-            <Setter Property="m3:IconButtonAssist.IsIconButton" Value="True" />
+            <Setter Property="Height"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Width"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).ContainerWidth, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:M3IconButton.IconSize"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).IconSize, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:M3IconButton.IsIconButton" Value="True" />
+            <Setter Property="m3:M3IconButton.StateLayerBrush"
+                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).StateLayer, RelativeSource={RelativeSource Self}}" />
             <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -35,8 +48,8 @@
                     <Grid Background="Transparent">
                         <m3:MaterialIconButtonContainerPresenter x:Name="PART_Container" />
                         <!-- MaterialSymbol reads its arranged bounds to resolve the opsz axis. -->
-                        <ContentPresenter Width="{m3:MdIconButtonToken IconSize}"
-                                          Height="{m3:MdIconButtonToken IconSize}"
+                        <ContentPresenter Width="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Height="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           HorizontalContentAlignment="Stretch"
@@ -45,85 +58,124 @@
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
                                           TextElement.Foreground="{TemplateBinding Foreground}" />
                         <m3:MaterialRipplePresenter
-                            StateLayerBrush="{m3:MdIconButtonToken StateLayerColor}"
+                            StateLayerBrush="{Binding Path=(m3:M3IconButton.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
                             CornerRadius="{Binding CurrentCornerRadius, ElementName=PART_Container}" />
                     </Grid>
                 </ControlTemplate>
             </Setter>
 
             <Style Selector="^:disabled">
-                <Setter Property="Background" Value="{m3:MdIconButtonToken DisabledContainerColor}" />
-                <Setter Property="Foreground" Value="{m3:MdIconButtonToken DisabledIconColor}" />
-                <Setter Property="BorderBrush" Value="{m3:MdIconButtonToken DisabledOutlineColor}" />
+                <Setter Property="Background"
+                        Value="{Binding Path=(m3:M3IconButton.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Foreground"
+                        Value="{Binding Path=(m3:M3IconButton.DefaultColors).DisabledIcon, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="BorderBrush"
+                        Value="{Binding Path=(m3:M3IconButton.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
             </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="MaterialStandardIconButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Standard" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Standard" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialFilledIconButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Filled" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Filled" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialTonalIconButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Tonal" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Tonal" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialOutlinedIconButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Outlined" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Outlined" />
         </ControlTheme>
 
         <ControlTheme x:Key="MaterialToggleIconButtonCoreTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialIconButtonCoreTheme}">
-            <Setter Property="Background" Value="{m3:MdIconButtonToken UnselectedContainerColor}" />
-            <Setter Property="Foreground" Value="{m3:MdIconButtonToken UnselectedIconColor}" />
-            <Setter Property="BorderBrush" Value="{m3:MdIconButtonToken UnselectedOutlineColor}" />
+            <!-- BasedOn supplies the shared native Button/template contract. Every visual binding
+                 that has a checked-state-specific semantic record is projected again here. -->
+            <Setter Property="Background"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).UncheckedContainer, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).UncheckedIcon, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderBrush"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).UncheckedOutline, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderThickness"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Padding"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Height"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Width"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).ContainerWidth, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:M3IconButton.IconSize"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).IconSize, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:M3ToggleIconButton.StateLayerBrush"
+                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultStateLayerBrush), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid Background="Transparent">
+                        <m3:MaterialIconButtonContainerPresenter x:Name="PART_Container" />
+                        <ContentPresenter Width="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Height="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
+                        <m3:MaterialRipplePresenter
+                            StateLayerBrush="{Binding Path=(m3:M3ToggleIconButton.StateLayerBrush), RelativeSource={RelativeSource TemplatedParent}}"
+                            CornerRadius="{Binding CurrentCornerRadius, ElementName=PART_Container}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
 
             <Style Selector="^:checked">
-                <Setter Property="Background" Value="{m3:MdIconButtonToken SelectedContainerColor}" />
-                <Setter Property="Foreground" Value="{m3:MdIconButtonToken SelectedIconColor}" />
-                <Setter Property="BorderBrush" Value="{m3:MdIconButtonToken OutlineColor}" />
+                <Setter Property="Background"
+                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).CheckedContainer, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Foreground"
+                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).CheckedIcon, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="BorderBrush"
+                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).CheckedOutline, RelativeSource={RelativeSource Self}}" />
             </Style>
             <Style Selector="^:disabled">
-                <Setter Property="Background" Value="{m3:MdIconButtonToken DisabledContainerColor}" />
-                <Setter Property="Foreground" Value="{m3:MdIconButtonToken DisabledIconColor}" />
-                <Setter Property="BorderBrush" Value="{m3:MdIconButtonToken DisabledOutlineColor}" />
+                <Setter Property="Background"
+                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Foreground"
+                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).DisabledIcon, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="BorderBrush"
+                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
             </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="MaterialStandardToggleIconButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Standard" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Standard" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialFilledToggleIconButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Filled" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Filled" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialTonalToggleIconButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Tonal" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Tonal" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialOutlinedToggleIconButtonTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialToggleIconButtonCoreTheme}">
-            <Setter Property="m3:IconButtonAssist.Variant" Value="Outlined" />
+            <Setter Property="m3:M3IconButton.Variant" Value="Outlined" />
         </ControlTheme>
 
-        <ControlTheme x:Key="{x:Type m3:MaterialIconButton}"
-                      TargetType="m3:MaterialIconButton"
-                      BasedOn="{StaticResource MaterialStandardIconButtonTheme}" />
-        <ControlTheme x:Key="{x:Type m3:MaterialToggleIconButton}"
-                      TargetType="m3:MaterialToggleIconButton"
-                      BasedOn="{StaticResource MaterialStandardToggleIconButtonTheme}" />
     </Styles.Resources>
 </Styles>

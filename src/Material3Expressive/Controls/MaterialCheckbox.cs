@@ -21,12 +21,6 @@ namespace Material3Expressive.Controls;
 public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInteractionConsumer
 {
     private const double SnapAnimationDelayMilliseconds = 100;
-    // The pinned Compose reference is Material3 1.5.0-alpha22. In that release Checkbox.kt's
-    // compatibility path uses CheckboxSize (20dp) and CheckboxDefaultPadding (2dp), rather than
-    // the newer CheckboxDefaultsTokens.ContainerSize (18dp) path. Keep this separate from the generated
-    // current token table so moving the reference lineage is an explicit compatibility decision.
-    private const double ReferenceContainerSize = 20;
-
     // androidx.compose.foundation.layout.minimumInteractiveComponentSize() supplies the standard
     // 48dp touch target around Checkbox's 20dp canvas. The 40dp state layer remains centred inside
     // this larger layout slot.
@@ -39,8 +33,8 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
     private readonly MaterialElementContext _theme;
     private readonly MaterialInteractionController _interaction;
 
-    private CheckboxDefaultsTokens _tokens = CheckboxDefaultsTokens.Default;
-    private CheckboxColors _colors = CheckboxDefaultsTokens.Default.Resolve(null, false);
+    private CheckboxMetrics _tokens = CheckboxDefaults.Metrics();
+    private CheckboxColors _colors = CheckboxDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private SpringAnimation? _checkDrawFraction;
     private SpringAnimation? _checkCenterGravitation;
     private SpringAnimation? _checkOpacity;
@@ -100,7 +94,7 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
 
         EnsureVisualState(snap: true);
 
-        var boxSize = ReferenceContainerSize;
+        var boxSize = _tokens.ContainerSize;
         var box = new Rect(
             area.X + (area.Width - boxSize) / 2,
             area.Y + (area.Height - boxSize) / 2,
@@ -146,8 +140,8 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
 
     private void ApplyTokens(bool snap = true)
     {
-        _tokens = _theme.Theme.CheckboxDefaultsTokens;
-        _colors = _theme.Theme.GetCheckboxColors(_theme.IsDark);
+        _tokens = CheckboxDefaults.Metrics();
+        _colors = CheckboxDefaults.Colors(_theme.Theme, _theme.IsDark);
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
         // Compose keeps a fixed 48dp interactive checkbox slot ahead of an optional label.

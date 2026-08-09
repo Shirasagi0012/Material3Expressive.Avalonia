@@ -27,7 +27,7 @@
     <Style Selector="m3|MaterialChip:checked ms|MaterialSymbol">
         <Setter Property="Fill" Value="1" />
     </Style>
-    <Style Selector=":is(ToggleButton):checked[(m3|IconButtonAssist.IsIconButton)=True] ms|MaterialSymbol">
+    <Style Selector=":is(ToggleButton):checked[(m3|M3IconButton.IsIconButton)=True] ms|MaterialSymbol">
         <Setter Property="Fill" Value="1" />
     </Style>
 

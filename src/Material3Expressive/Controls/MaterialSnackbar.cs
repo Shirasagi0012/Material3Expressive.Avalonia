@@ -60,8 +60,8 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
 
     private SpringAnimation? _open;
     private TimeSpan _shownFor;
-    private SnackbarDefaultsTokens _tokens = SnackbarDefaultsTokens.Default;
-    private SnackbarColors _colors = SnackbarDefaultsTokens.Default.Resolve(null, false);
+    private SnackbarMetrics _tokens = SnackbarDefaults.Metrics();
+    private SnackbarVisualColors _colors = SnackbarDefaults.Colors(Foundation.ResolvedTheme.Default, false);
 
     public MaterialSnackbar()
     {
@@ -223,8 +223,8 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
         var previousMessage = MessageBrush;
         var previousAction = ActionBrush;
 
-        _tokens = ResolvedTheme.SnackbarDefaultsTokens;
-        _colors = ResolvedTheme.GetSnackbarColors(IsDarkVariant);
+        _tokens = SnackbarDefaults.Metrics();
+        _colors = SnackbarDefaults.Colors(ResolvedTheme, IsDarkVariant);
 
         RaisePropertyChanged(MessageBrushProperty, previousMessage, MessageBrush);
         RaisePropertyChanged(ActionBrushProperty, previousAction, ActionBrush);

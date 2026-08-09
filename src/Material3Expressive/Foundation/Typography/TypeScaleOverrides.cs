@@ -1,4 +1,3 @@
-using System;
 using Avalonia;
 using Material3Expressive.Foundation.Tokens;
 
@@ -7,13 +6,8 @@ namespace Material3Expressive.Foundation;
 /// <summary>
 /// Sparse override for one system type-scale slot.
 /// </summary>
-/// <remarks>
-/// Type scale belongs to <see cref="TypographyScheme"/>, not the component override collection.
-/// The class remains a <see cref="ComponentTokenOverrides"/> for source compatibility with the
-/// alpha API; new code should add it to <see cref="TypographyScheme.TypeScaleOverrides"/>.
-/// </remarks>
-[Obsolete("TypeScaleOverrides belongs in TypographyScheme.TypeScaleOverrides; the Components collection form is retained for compatibility.")]
-public sealed class TypeScaleOverrides : ComponentTokenOverrides
+/// <remarks>Type scale overrides belong to <see cref="TypographyScheme.TypeScaleOverrides"/>.</remarks>
+public sealed class TypeScaleOverrides : AvaloniaObject
 {
     public static readonly StyledProperty<TypographyRole> VariantProperty =
         AvaloniaProperty.Register<TypeScaleOverrides, TypographyRole>(nameof(Variant));

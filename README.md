@@ -53,14 +53,12 @@ no further wiring.
 
 ```xml
 <!-- Native-first: a bare Button is Filled once MaterialStyles is loaded. -->
-<Button m3:ButtonAssist.Variant="Tonal"
-        m3:ButtonAssist.Size="Medium">Send</Button>
+<Button m3:M3Button.Variant="Tonal"
+        m3:M3Button.Size="Medium">Send</Button>
 
-<!-- Named themes select a default variant and remain overridable by ButtonAssist. -->
+<!-- Named themes select a default variant and remain overridable by M3Button. -->
 <Button Theme="{StaticResource MaterialOutlinedButtonTheme}">Cancel</Button>
 
-<!-- Optional CLR facade: the same attached properties with shorter CLR/XAML syntax. -->
-<m3:MaterialButton Variant="Tonal" Size="Medium">Send</m3:MaterialButton>
 <m3:MaterialFab Label="Compose"><ms:MaterialSymbol Symbol="Edit" /></m3:MaterialFab>
 <m3:MaterialCard Variant="Outlined">…</m3:MaterialCard>
 ```
@@ -391,7 +389,7 @@ the destination group.
 <m3:MaterialWideNavigationRail IsExpanded="{Binding IsNavigationExpanded}"
                                SelectedIndex="{Binding DestinationIndex}">
     <m3:MaterialWideNavigationRail.Header>
-        <m3:MaterialIconButton Content="Menu" />
+        <Button Theme="{StaticResource MaterialStandardIconButtonTheme}" Content="Menu" />
     </m3:MaterialWideNavigationRail.Header>
     <m3:MaterialNavigationItem Content="Home">
         <m3:MaterialNavigationItem.Icon><ms:MaterialSymbol Symbol="Home" /></m3:MaterialNavigationItem.Icon>
@@ -421,7 +419,7 @@ below 480dp tall use `ShortNavigationBarMedium`; all other windows use
 ```xml
 <m3:MaterialNavigationSuiteScaffold SelectedIndex="{Binding DestinationIndex}">
     <m3:MaterialNavigationSuiteScaffold.PrimaryAction>
-        <m3:MaterialIconButton Content="Create" />
+        <Button Theme="{StaticResource MaterialStandardIconButtonTheme}" Content="Create" />
     </m3:MaterialNavigationSuiteScaffold.PrimaryAction>
     <m3:MaterialNavigationSuiteScaffold.Items>
         <m3:MaterialNavigationItem Content="Home">
@@ -556,12 +554,12 @@ width), the theme's `Secondary` and `OnSecondary` colours, and the current motio
 `FastSpatial`/`FastEffects` springs. Set `FocusIndication="Opacity"` on
 `RippleThemeConfiguration` when compatibility with the older focus state layer is required.
 
-## Retuning Button appearance
+## Retuning component appearance
 
-The ordinary Button and ToggleButton are the first components on the component-owned defaults path.
-They deliberately do not expose generated Button-family override bags: use normal Avalonia
-properties, styles and control themes instead. For a checked-state visual override, add a
-pseudo-class style (for example `ToggleButton:checked`) alongside the base style.
+Components use component-owned Defaults policies internally. They deliberately do not expose
+generated token override bags: use normal Avalonia properties, styles and control themes instead.
+For a checked-state visual override, add a pseudo-class style (for example `ToggleButton:checked`)
+alongside the base style.
 
 ```xml
 <Border>
@@ -576,19 +574,14 @@ pseudo-class style (for example `ToggleButton:checked`) alongside the base style
 </Border>
 ```
 
-Generated override bags remain temporarily for controls that still use the legacy
-`.default.jsonc` path. They are not part of Button's API and will be retired component by
-component rather than preserved as a new generic override mechanism.
-
 ## How it is built
 
 Raw reference, system and component tokens are defined in JSONC tables under
 [`src/Material3Expressive/Tokens`](src/Material3Expressive/Tokens) and turned into C# at build
 time. The `.ref.jsonc`, `.sys.jsonc` and `.comp.jsonc` suffixes identify the reference, system
-and raw component layers. `.default.jsonc` remains a legacy assembly/override artifact for
-unmigrated controls; the Button family instead maps raw tables in its own Defaults code. Raw token
-records and legacy snapshot accessors are internal. Public Button-family retuning uses Avalonia
-properties and styles. See
+and raw component layers. Each component maps those raw tables in its own Defaults code; JSON does
+not describe component behavior, state selection, bindings, or an override API. Raw token records
+are internal. Public retuning uses Avalonia properties and styles. See
 [docs/reference/token-tables.md](docs/reference/token-tables.md) and the
 [token coverage inventory](docs/reference/token-coverage.md).
 

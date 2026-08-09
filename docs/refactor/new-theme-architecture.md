@@ -1,9 +1,8 @@
 # 新 Theme/Token 架构设计
 
-> 本文记录的是**目标架构**，不是把尚未迁移的全库实现描述成既成事实。当前普通
-> `Button` 与 `ToggleButton` 已作为原型直接消费 raw `.comp.jsonc`，并且不读取 component snapshot；
-> `MaterialTheme.Components`、`ResolvedTheme.Components.g.cs` 和其余 `.default.jsonc`
-> 仍为未迁移控件保留，待逐组件迁移后再删除。
+> 本文记录的是当前主题/token 架构的职责边界。所有既有 component-default consumers 的
+> defaults 已迁移到各自的 C# owner；`.default.jsonc`、component snapshot 与通用 component
+> override bag 均不再存在。
 
 可以归纳为四个核心层次：
 
@@ -35,7 +34,7 @@ MotionScheme
 RippleTheme
 ```
 
-目标上不再包含：
+不包含：
 
 ```text
 Components
@@ -46,12 +45,9 @@ ButtonSizeOverrides
 
 当前主题作用域仍采用 nearest whole-theme wins。逐 subsystem 继承和 partial overlay 已推迟到未来，不影响这次 component token 重构。
 
-迁移期间，`Components` 仍是旧 defaults generator 的兼容承载层；Button family 不读取它，
-但未迁移组件仍会读取。不能在两个原型完成后立刻删除它。
-
 ## 2. ResolvedTheme：系统主题运行时快照
 
-目标中的 `ResolvedTheme` 是从 `MaterialTheme` 构建的 immutable system snapshot，包含：
+`ResolvedTheme` 是从 `MaterialTheme` 构建的 immutable system snapshot，包含：
 
 ```text
 ResolvedColorScheme
@@ -65,7 +61,7 @@ ResolvedRippleThemeConfiguration
 
 > 当前主题作用域中的 system semantics 最终是什么。
 
-目标上它不包含：
+它不包含：
 
 - raw system token 副本；
 - component tokens；
@@ -81,10 +77,6 @@ ResolvedRippleThemeConfiguration
 
 第一版不必引入 component cache。如果之后性能测试证明有必要，可以增加完全私有的 snapshot-scoped memoization，但它不属于 `ResolvedTheme` 的语义模型。
 
-目前 `ResolvedTheme` 仍带有 generated component snapshot，专供旧控件路径使用。Button family
-adapters 只读取其中的 system schemes（颜色、shape、motion、typography），不读取 Button 或
-ToggleButton component record；所以两个原型都验证了目标 ownership，而没有错误地扩大改动范围。
-
 ## 3. `.comp.jsonc`：上游 raw token 层
 
 `.comp.jsonc` 继续保存 AndroidX/Material 生成的原始 component token facts，例如：
@@ -96,14 +88,14 @@ OutlinedButtonTokens
 SwitchTokens
 ```
 
-目标 generator 只为 `.comp.jsonc` 生成 internal raw token 类型：
+generator 只为 `.comp.jsonc` 生成 internal raw token 类型：
 
 ```text
 comp.jsonc
     → internal ButtonLargeTokens
 ```
 
-目标中不再自动生成：
+它不自动生成：
 
 ```text
 ResolvedButtonLargeTokens
@@ -119,10 +111,10 @@ raw token 的责任是忠实记录：
 
 它不是公共组件定制 API。
 
-Button family 已实现此目标：`FilledButtonTokens`、`ButtonLargeTokens` 等 raw tables 仍由
-generator 生成，`ButtonDefaults` / `ToggleButtonDefaults` 在 C# 中完成 variant/size/state
-映射。它们不生成 `ResolvedButtonLargeTokens`、`ButtonLargeTokensOverrides` 或
-Button-family override bags。
+`FilledButtonTokens`、`ButtonLargeTokens` 等 raw tables 仍由 generator 生成；
+`ButtonDefaults` / `ToggleButtonDefaults` 与其他组件的 Defaults 在 C# 中完成
+variant/size/state 映射。不会生成 `ResolvedButtonLargeTokens`、
+`ButtonLargeTokensOverrides` 或任何 component override bag。
 
 ## 4. Component Defaults：组件策略层
 
@@ -245,9 +237,9 @@ local value
     > raw component tokens + ResolvedTheme
 ```
 
-## 7. `.default.jsonc` 的目标
+## 7. `.default.jsonc` 已删除
 
-目标架构中删除 `componentDefaults` 这一生成层，将其内容迁移到组件 Defaults C#。
+架构删除了 `componentDefaults` 这一生成层，并将其内容迁移到组件 Defaults C#。
 
 但其中的价值必须保留：
 
@@ -263,7 +255,5 @@ local value
 > 删除 defaults token artifact，不是删除 default policy；default policy 转由组件 owner 负责。
 >
 
-普通 Button 与 ToggleButton 已迁移并删除了 Button-family defaults JSON（颜色、尺寸以及
-ToggleButton 颜色表）。ToggleButton 的 checked/unchecked color contract 仍是独立的 C#
-semantic record；其他组件的 defaults tables、generated overrides 和 component snapshots 也仍然
-存在，不能将这一步误解为全局 `componentDefaults` 已删除。
+每个组件的 Defaults 都是 component-owned policy。ToggleButton 的 checked/unchecked color
+contract 仍是独立的 C# semantic record；这不是由 JSON schema 或通用 overrides 机制推导出来的。

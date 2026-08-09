@@ -187,8 +187,9 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         AvaloniaProperty.RegisterDirect<MaterialAppBar, FontWeight>(
             nameof(SubtitleFontWeight), owner => owner.SubtitleFontWeight);
 
-    private AppBarDefaultsTokens _tokens = AppBarDefaultsTokens.Small;
-    private AppBarColors _colors = AppBarDefaultsTokens.Small.Resolve(null, false);
+    // The control owns its semantic defaults; the raw component tables stay below AppBarDefaults.
+    private AppBarMetrics _tokens = AppBarDefaults.Metrics(AppBarSize.Small);
+    private AppBarVisualColors _colors = AppBarDefaults.Colors(Foundation.ResolvedTheme.Default, AppBarSize.Small, false);
     private AppBarScrollState _state = new();
     private SpringAnimation? _motionFraction;
     private double _visualCollapsedFraction;
@@ -434,7 +435,7 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
             : _tokens.ContainerHeight;
 
     private double CollapseRange =>
-        Math.Max(0, ExpandedHeight - AppBarDefaultsTokens.Small.ContainerHeight);
+        Math.Max(0, ExpandedHeight - AppBarDefaults.Metrics(AppBarSize.Small).ContainerHeight);
 
     private void ObserveScrollTarget(ScrollViewer? previous, ScrollViewer? next)
     {
@@ -622,8 +623,8 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         var oldSubtitleFamily = SubtitleFontFamily;
         var oldSubtitleWeight = SubtitleFontWeight;
 
-        _tokens = ResolvedTheme.GetAppBarDefaultsTokens(Size);
-        _colors = ResolvedTheme.GetAppBarColors(Size, IsDarkVariant);
+        _tokens = AppBarDefaults.Metrics(Size);
+        _colors = AppBarDefaults.Colors(ResolvedTheme, Size, IsDarkVariant);
         var typography = ResolvedTheme.Typography;
         var titleRole = Variant == AppBarVariant.Flexible
             ? _tokens.FlexibleTitleTextStyle

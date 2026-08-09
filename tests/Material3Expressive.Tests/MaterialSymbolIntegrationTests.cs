@@ -25,11 +25,11 @@ public class MaterialSymbolIntegrationTests
             Theme = Theme("MaterialStandardIconButtonTheme"),
             Content = symbol,
         };
-        IconButtonAssist.SetSize(button, IconButtonSize.Large);
+        M3IconButton.SetSize(button, IconButtonSize.Large);
 
         var window = ThemeTestHelper.ShowWindow(button);
 
-        var iconSize = IconButtonAssist.GetIconSize(button);
+        var iconSize = M3IconButton.GetIconSize(button);
         Assert.Equal(iconSize, symbol.Bounds.Width, 3);
         Assert.Equal(iconSize, symbol.Bounds.Height, 3);
         Assert.Equal(iconSize, symbol.ResolvedVariation.OpticalSize, 3);

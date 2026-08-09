@@ -182,18 +182,17 @@ internal sealed class TokenSet
 }
 
 /// <summary>
-/// The four logical table categories used by the token files. The root <c>kind</c> is the only
+/// The three logical table categories used by the token files. The root <c>kind</c> is the only
 /// semantic discriminator; directory placement is organizational.
 /// </summary>
 internal enum TokenTableCategory
 {
     ReferenceTokens,
     SystemTokens,
-    ComponentTokens,
-    ComponentDefaults
+    ComponentTokens
 }
 
-/// <summary>Where a table's values or assembly decisions originate.</summary>
+/// <summary>Where a table's values originate.</summary>
 internal enum TokenProvenance
 {
     AndroidXToken,
@@ -232,8 +231,7 @@ internal static class TokenProvenances
             TokenTableCategory.ReferenceTokens or
                 TokenTableCategory.SystemTokens or
                 TokenTableCategory.ComponentTokens => TokenProvenance.AndroidXToken,
-            TokenTableCategory.ComponentDefaults => TokenProvenance.ComposeDefault,
-            _ => TokenProvenance.ComposeDefault
+            _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
         };
     }
 }
@@ -246,7 +244,7 @@ internal static class TokenProvenances
 internal sealed class ParsedTokenTable
 {
     private ParsedTokenTable(string kind, string declaredKind, TokenTableCategory category, string name, string @namespace, string? version,
-        string? source, string? summary, TokenProvenance provenance, string? overridesName)
+        string? source, string? summary, TokenProvenance provenance)
     {
         Kind = kind;
         DeclaredKind = declaredKind;
@@ -257,7 +255,6 @@ internal sealed class ParsedTokenTable
         Source = source;
         Summary = summary;
         Provenance = provenance;
-        OverridesName = overridesName;
     }
 
     public string Kind { get; }
@@ -282,9 +279,6 @@ internal sealed class ParsedTokenTable
     /// <summary>Machine-readable origin of the table's values or assembly.</summary>
     public TokenProvenance Provenance { get; }
 
-    /// <summary>Optional compatibility name for the generated public override bag.</summary>
-    public string? OverridesName { get; }
-
     /// <summary>Populated for <c>tokenSet</c> tables.</summary>
     public IReadOnlyList<TokenEntry> Tokens { get; private set; } = System.Array.Empty<TokenEntry>();
 
@@ -294,21 +288,10 @@ internal sealed class ParsedTokenTable
     /// <summary>Populated for <c>component</c> tables.</summary>
     public IReadOnlyList<TokenSet> Sets { get; private set; } = System.Array.Empty<TokenSet>();
 
-    /// <summary>The enum naming the sets, when a component table declares more than a default.</summary>
+    /// <summary>The enum naming the sets, when a record-shaped system table declares more than one.</summary>
     public string? VariantEnum { get; private set; }
 
     public string? VariantEnumSummary { get; private set; }
-
-    /// <summary>Whether to emit the sparse <c>*Overrides</c> authoring bag and theme plumbing.</summary>
-    public bool Overridable { get; private set; }
-
-    /// <summary>
-    /// The record holding this table's colour tokens resolved to brushes, when it has any.
-    /// </summary>
-    public string? ResolvedName { get; private set; }
-
-    public IReadOnlyList<TokenProperty> ColorProperties =>
-        Properties.Where(p => p.Type == TokenType.Color).ToArray();
 
     public static ParsedTokenTable Parse(string json)
     {
@@ -339,10 +322,7 @@ internal sealed class ParsedTokenTable
             root["version"].AsString(),
             root["source"].AsString(),
             root["summary"].AsString(),
-            provenance,
-            root["overridesName"].AsString() is { } overridesName
-                ? Identifier(overridesName, "overridesName")
-                : null);
+            provenance);
 
         if (kind == "tokenSet")
             table.ParseTokens(root);
@@ -360,8 +340,6 @@ internal sealed class ParsedTokenTable
                 return ("tokenSet", TokenTableCategory.ReferenceTokens);
             case "componentTokens":
                 return ("tokenSet", TokenTableCategory.ComponentTokens);
-            case "componentDefaults":
-                return ("component", TokenTableCategory.ComponentDefaults);
             case "systemTokens":
                 // System typography is a scheme-shaped table (TypeScale), while elevation/state
                 // are direct token sets. Both are system tokens and share one schema category.
@@ -374,7 +352,7 @@ internal sealed class ParsedTokenTable
                 return (hasProperties ? "component" : "tokenSet", TokenTableCategory.SystemTokens);
             default:
                 throw new InvalidTableException(
-                    $"'kind' must be 'referenceTokens', 'systemTokens', 'componentTokens', or 'componentDefaults', not '{kind}'.");
+                    $"'kind' must be 'referenceTokens', 'systemTokens', or 'componentTokens', not '{kind}'.");
         }
     }
 
@@ -529,15 +507,9 @@ internal sealed class ParsedTokenTable
             ? Identifier(variantEnum, "variantEnum")
             : null;
         VariantEnumSummary = root["variantEnumSummary"].AsString();
-        Overridable = root["overridable"].AsBoolean() ?? true;
 
         if (VariantEnum is null && parsed.Count > 1)
             throw new InvalidTableException("A table with more than one set must name a 'variantEnum'.");
-
-        if (ColorProperties.Count > 0)
-            ResolvedName = root["resolvedName"].AsString() is { } resolved
-                ? Identifier(resolved, "resolvedName")
-                : "Resolved" + Name;
     }
 
     private static string Identifier(string? text, string what)

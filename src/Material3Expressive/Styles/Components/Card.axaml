@@ -12,7 +12,7 @@
     </Design.PreviewWith>
 
     <Styles.Resources>
-        <!-- Like MaterialButton, the card paints its own surface, border and shadow in Render, so
+        <!-- Like the native Button theme, the card paints its own surface, border and shadow in Render, so
              the template is only the content. -->
         <ControlTheme x:Key="{x:Type m3:MaterialCard}" TargetType="m3:MaterialCard">
             <Setter Property="Padding" Value="16" />

@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 using MaterialShapes;
 
 namespace Material3Expressive.Controls;
@@ -83,8 +84,8 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
     private double _waveSpeed;
     private SpringAnimation? _progress;
 
-    private ProgressTokens _tokens = ProgressTokens.Circular;
-    private ProgressColors _colors = ProgressTokens.Circular.Resolve(null, false);
+    private ProgressMetrics _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Circular);
+    private ProgressVisualColors _colors = ProgressDefaults.Colors(ResolvedTheme.Default, ProgressIndicatorShape.Circular, false);
 
     static MaterialCircularProgressIndicator()
     {
@@ -168,8 +169,8 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
 
     private void ApplyTheme(ResolvedTheme theme, bool isDark)
     {
-        _tokens = theme.GetProgressTokens(ProgressIndicatorShape.Circular);
-        _colors = theme.GetProgressColors(ProgressIndicatorShape.Circular, isDark);
+        _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Circular);
+        _colors = ProgressDefaults.Colors(theme, ProgressIndicatorShape.Circular, isDark);
         InvalidateMeasure();
         InvalidateVisual();
     }

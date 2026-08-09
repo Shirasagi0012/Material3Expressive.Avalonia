@@ -38,7 +38,7 @@ public class MaterialCarousel : Panel, IMaterialThemeConsumer, IMaterialMotionCo
     private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _scroll;
-    private CarouselTokens _tokens = CarouselTokens.MultiBrowse;
+    private CarouselMetrics _tokens = CarouselDefaults.Metrics(CarouselVariant.MultiBrowse);
 
     public MaterialCarousel()
     {
@@ -151,7 +151,7 @@ public class MaterialCarousel : Panel, IMaterialThemeConsumer, IMaterialMotionCo
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetCarouselTokens(Variant);
+        _tokens = CarouselDefaults.Metrics(Variant);
         InvalidateMeasure();
     }
 }

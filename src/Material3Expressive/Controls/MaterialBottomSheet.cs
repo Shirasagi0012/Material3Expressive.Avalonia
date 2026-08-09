@@ -37,8 +37,8 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
     private readonly MaterialMotionScope _motion;
 
     private SpringAnimation? _open;
-    private BottomSheetTokens _tokens = BottomSheetTokens.Modal;
-    private BottomSheetColors _colors = BottomSheetTokens.Modal.Resolve(null, false);
+    private BottomSheetMetrics _tokens = BottomSheetDefaults.Metrics(BottomSheetVariant.Modal);
+    private BottomSheetVisualColors _colors = BottomSheetDefaults.Colors(Foundation.ResolvedTheme.Default, BottomSheetVariant.Modal, false);
 
     private Point? _dragStart;
     private double _dragStartFraction;
@@ -258,8 +258,8 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
 
     private void ApplyTokens()
     {
-        _tokens = _theme.Theme.GetBottomSheetTokens(Variant);
-        _colors = _theme.Theme.GetBottomSheetColors(Variant, _theme.IsDark);
+        _tokens = BottomSheetDefaults.Metrics(Variant);
+        _colors = BottomSheetDefaults.Colors(_theme.Theme, Variant, _theme.IsDark);
 
         Padding = new Thickness(0, _tokens.DragHandleSpace, 0, 0);
         IsHitTestVisible = IsOpen;

@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -37,8 +38,10 @@ public class MaterialBadge : TemplatedControl, IMaterialThemeConsumer, IMaterial
     public static readonly StyledProperty<object?> CountProperty =
         AvaloniaProperty.Register<MaterialBadge, object?>(nameof(Count));
 
-    private BadgeDefaultsTokens _tokens = BadgeDefaultsTokens.Large;
-    private BadgeColors _colors = BadgeDefaultsTokens.Large.Resolve(null, false);
+    private BadgeMetrics _tokens = BadgeDefaults.Metrics(BadgeVariant.Large);
+    private BadgeVisualColors _colors = new(
+        BadgeTokens.Color.ResolveBrush(null, false),
+        BadgeTokens.LargeLabelTextColor.ResolveBrush(null, false));
 
     public MaterialBadge()
     {
@@ -100,8 +103,8 @@ public class MaterialBadge : TemplatedControl, IMaterialThemeConsumer, IMaterial
     {
         var previousHasLabel = HasLabel;
 
-        _tokens = ResolvedTheme.GetBadgeDefaultsTokens(Variant);
-        _colors = ResolvedTheme.GetBadgeColors(Variant, IsDarkVariant);
+        _tokens = BadgeDefaults.Metrics(Variant);
+        _colors = BadgeDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
         RaisePropertyChanged(HasLabelProperty, previousHasLabel, HasLabel);
 
         var typography = ResolvedTheme.Typography;

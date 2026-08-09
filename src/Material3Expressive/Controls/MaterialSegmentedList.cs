@@ -174,7 +174,7 @@ public sealed class MaterialSegmentedList : Panel, IMaterialThemeConsumer
         _spacingLease?.Dispose();
         _spacingLease = SetValue(
             SpacingProperty,
-            _theme.Theme.ListItemTokens.SegmentedGap,
+            ListItemDefaults.Metrics().SegmentedGap,
             BindingPriority.Template);
         InvalidateMeasure();
     }

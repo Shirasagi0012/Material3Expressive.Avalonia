@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
@@ -42,14 +43,14 @@ public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, 
     public static readonly StyledProperty<DividerOrientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialDivider, DividerOrientation>(nameof(Orientation));
     public static readonly StyledProperty<double> ThicknessProperty =
-        AvaloniaProperty.Register<MaterialDivider, double>(nameof(Thickness), DividerDefaultsTokens.Default.Thickness);
+        AvaloniaProperty.Register<MaterialDivider, double>(nameof(Thickness), DividerDefaults.Thickness);
     public static readonly StyledProperty<bool> IsHairlineProperty =
         AvaloniaProperty.Register<MaterialDivider, bool>(nameof(IsHairline));
     public static readonly DirectProperty<MaterialDivider, IBrush?> DividerBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialDivider, IBrush?>(nameof(DividerBrush), o => o.DividerBrush, (o, value) => o.SetDividerBrush(value));
 
     private readonly HairlineStrokeVisual _hairlineStroke;
-    private DividerColors _colors = DividerDefaultsTokens.Default.Resolve(null, false);
+    private DividerVisualColors _colors = new(DividerTokens.Color.ResolveBrush(null, false));
     private IBrush? _dividerBrush;
     private bool _hasExplicitBrush;
 
@@ -166,7 +167,7 @@ public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, 
 
     private void ApplyTheme()
     {
-        _colors = ResolvedTheme.GetDividerColors(IsDarkVariant);
+        _colors = DividerDefaults.Colors(ResolvedTheme, IsDarkVariant);
         if (!_hasExplicitBrush)
         {
             SetAndRaise(DividerBrushProperty, ref _dividerBrush, _colors.Color);

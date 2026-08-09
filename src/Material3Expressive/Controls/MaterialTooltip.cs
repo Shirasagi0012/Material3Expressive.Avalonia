@@ -41,8 +41,8 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
 
     private readonly MaterialElementContext _theme;
 
-    private TooltipTokens _tokens = TooltipTokens.Plain;
-    private TooltipColors _colors = TooltipTokens.Plain.Resolve(null, false);
+    private TooltipMetrics _tokens = TooltipDefaults.Metrics(TooltipVariant.Plain);
+    private TooltipVisualColors _colors = TooltipDefaults.Colors(Foundation.ResolvedTheme.Default, TooltipVariant.Plain, false);
 
     public MaterialTooltip()
     {
@@ -158,8 +158,8 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
     {
         var previousTitle = TitleBrush;
 
-        _tokens = _theme.Theme.GetTooltipTokens(Style);
-        _colors = _theme.Theme.GetTooltipColors(Style, _theme.IsDark);
+        _tokens = TooltipDefaults.Metrics(Style);
+        _colors = TooltipDefaults.Colors(_theme.Theme, Style, _theme.IsDark);
         RaisePropertyChanged(TitleBrushProperty, previousTitle, TitleBrush);
 
         var typography = _theme.Theme.Typography;
