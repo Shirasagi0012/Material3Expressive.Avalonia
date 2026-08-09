@@ -96,6 +96,10 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     public MaterialLoadingIndicator()
     {
         _material = MaterialElementContext.Ensure(this);
+        // Rendering can request the determinate spring before any styled property changes. Make
+        // the theme controller live before rendering so applying inherited tokens never
+        // invalidates the visual during a compositor pass.
+        _ = _material.Theme;
     }
 
     static MaterialLoadingIndicator()

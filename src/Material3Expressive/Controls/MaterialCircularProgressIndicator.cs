@@ -75,6 +75,10 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
     public MaterialCircularProgressIndicator()
     {
         _material = MaterialElementContext.Ensure(this);
+        // Indeterminate indicators can enter the tree without a Value assignment. Create the
+        // theme controller now so their initial render observes the inherited theme rather than
+        // retaining the light default token snapshot.
+        _ = _material.Theme;
     }
 
     private LoopingAnimation? _rotation;
