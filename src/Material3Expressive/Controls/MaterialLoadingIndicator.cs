@@ -10,6 +10,9 @@ using MaterialShapes;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Whether a loading indicator owns a container behind its morphing shape.</summary>
+public enum LoadingIndicatorVariant { Standard, Contained }
+
 /// <summary>
 /// A Material 3 Expressive loading indicator: a shape that morphs through the Material catalog
 /// while it turns.

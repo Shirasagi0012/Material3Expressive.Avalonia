@@ -8,6 +8,13 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Whether a bottom sheet is modal or embedded in its surrounding surface.</summary>
+public enum BottomSheetVariant
+{
+    Modal,
+    Standard
+}
+
 /// <summary>
 /// A bottom sheet: a surface that rises from the bottom edge.
 /// </summary>

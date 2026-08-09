@@ -9,6 +9,13 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Whether a navigation drawer floats over content or shares its surface.</summary>
+public enum DrawerVariant
+{
+    Modal,
+    Standard
+}
+
 /// <summary>
 /// A navigation drawer: a panel of destinations that slides in from the side.
 /// </summary>

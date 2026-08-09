@@ -10,6 +10,9 @@ using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Whether progress is drawn along a line or around a circle.</summary>
+public enum ProgressIndicatorShape { Linear, Circular }
+
 /// <summary>
 /// A Material 3 Expressive linear progress indicator, flat or wavy, determinate or not.
 /// </summary>

@@ -21,6 +21,13 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>The neutral or vibrant floating-toolbar colour treatment.</summary>
+public enum FloatingToolbarVariant
+{
+    Standard,
+    Vibrant
+}
+
 /// <summary>Chooses the toolbar axis or lets its available aspect ratio choose it.</summary>
 public enum FloatingToolbarOrientation
 {

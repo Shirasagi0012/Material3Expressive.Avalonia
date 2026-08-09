@@ -11,6 +11,9 @@ using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Whether picker metrics are for the date or time picker.</summary>
+public enum PickerVariant { Date, Time }
+
 /// <summary>Which half of the time the dial is currently editing.</summary>
 public enum TimePickerField
 {

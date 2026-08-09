@@ -19,6 +19,9 @@ using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Top app-bar size axis.</summary>
+public enum AppBarSize { Small, Medium, Large }
+
 /// <summary>Standard or alpha25 flexible top-app-bar layout.</summary>
 public enum AppBarVariant
 {

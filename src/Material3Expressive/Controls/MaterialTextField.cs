@@ -15,6 +15,13 @@ using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>The filled indicator treatment or outlined notched treatment for text input.</summary>
+public enum TextFieldVariant
+{
+    Filled,
+    Outlined
+}
+
 /// <summary>
 /// A Material 3 text field, filled or outlined.
 /// </summary>

@@ -8,6 +8,9 @@ using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Whether a carousel shows several browsable items or a hero item.</summary>
+public enum CarouselVariant { MultiBrowse, Hero }
+
 /// <summary>
 /// A carousel: a row of items where the ones at the edges are squeezed rather than clipped.
 /// </summary>

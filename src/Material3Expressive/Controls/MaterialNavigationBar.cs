@@ -10,6 +10,9 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Navigation surface orientation.</summary>
+public enum NavigationVariant { Bar, Rail }
+
 /// <summary>
 /// A navigation bar along the bottom of the window, or a rail up its side.
 /// </summary>

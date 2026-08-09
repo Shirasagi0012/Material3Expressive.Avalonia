@@ -5,6 +5,9 @@ using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>The four Material chip meanings.</summary>
+public enum ChipVariant { Assist, Filter, Input, Suggestion }
+
 /// <summary>
 /// A Material 3 chip: assist, filter, input or suggestion.
 /// </summary>

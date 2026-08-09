@@ -8,6 +8,13 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>The compact inverted tooltip or the richer elevated tooltip treatment.</summary>
+public enum TooltipVariant
+{
+    Plain,
+    Rich
+}
+
 /// <summary>
 /// A Material 3 tooltip, plain or rich.
 /// </summary>

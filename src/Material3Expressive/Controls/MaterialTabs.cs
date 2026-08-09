@@ -11,6 +11,9 @@ using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Primary tabs sit under an app bar; secondary tabs sit inside content.</summary>
+public enum TabVariant { Primary, Secondary }
+
 // Upstream source: AndroidX ff0a0a99 / Material3 1.5.0-alpha25,
 // TabRow.kt (ScrollableTabData.calculateTabOffset and ScrollableTabRowWithSubcomposeImpl).
 // The executable Compose parity reference is alpha22, whose matching tab-row behavior is used

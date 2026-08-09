@@ -7,6 +7,9 @@ using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>Whether a badge is a dot or carries a count.</summary>
+public enum BadgeVariant { Small, Large }
+
 /// <summary>
 /// A badge: a dot, or a dot with a number in it.
 /// </summary>
