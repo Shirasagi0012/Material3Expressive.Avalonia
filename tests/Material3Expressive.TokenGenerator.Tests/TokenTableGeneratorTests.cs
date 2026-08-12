@@ -17,7 +17,7 @@ public sealed class TokenTableGeneratorTests
               "source": "Material Design token",
               "tokens": {
                 "ContainerHeight": { "type": "dimension", "value": 40, },
-                "ContainerColor": { "type": "color", "value": "Primary" }
+                "ContainerColor": { "type": "color", "value": "#FF6750A4" }
               },
             }
             """));
@@ -27,7 +27,24 @@ public sealed class TokenTableGeneratorTests
         var source = run.Source("ReferenceTokens.Tokens.g.cs");
         Assert.Contains("internal static class ReferenceTokens", source);
         Assert.Contains("ContainerHeight = 40", source);
-        Assert.Contains("SysColorToken.Primary", source);
+        Assert.Contains("Color.Parse(\"#FF6750A4\")", source);
+        Assert.Contains("public static class ReferenceTokensKeys", source);
+        Assert.Contains("MaterialToken<double> ContainerHeight", source);
+        Assert.Contains("\"Reference.ReferenceTokens.ContainerHeight\"", source);
+        Assert.Contains("TokenLayer.Reference", source);
+        Assert.Contains("Token.Literal((double)40)", source);
+        Assert.Contains("MaterialToken<global::Avalonia.Media.Color> ContainerColor", source);
+        Assert.Contains("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF6750A4\"))", source);
+        Assert.Contains("public sealed class ReferenceTokensOverrides", source);
+        Assert.Contains(
+            "[global::System.ComponentModel.TypeConverter(typeof(" +
+            "global::Material3Expressive.Foundation.Tokens.Runtime.DoubleTokenDefinitionTypeConverter))]",
+            source);
+        Assert.Contains("TokenDefinition<double>? ContainerHeight", source);
+        Assert.Contains("get => GetDefinition(ReferenceTokensKeys.ContainerHeight);", source);
+        Assert.Contains(
+            "if (value is null) Clear(ReferenceTokensKeys.ContainerHeight); else SetDefinition(ReferenceTokensKeys.ContainerHeight, value);",
+            source);
         Assert.Contains("Source: Material Design token", source);
         Assert.Contains("Provenance: androidx-token", source);
         Assert.DoesNotContain(run.Sources, result => result.HintName == "ResolvedTheme.Components.g.cs");
@@ -66,9 +83,82 @@ public sealed class TokenTableGeneratorTests
         Assert.Contains("internal static class ButtonLargeTokens", source);
         Assert.Contains("ButtonSmallTokens.ContainerHeight", source);
         Assert.Contains("ButtonSmallTokens.ContainerColor", source);
+        Assert.Contains("public static class ButtonLargeTokensKeys", source);
+        Assert.Contains("Token.Alias(ButtonSmallTokensKeys.ContainerHeight)", source);
+        Assert.Contains("Token.Alias(ButtonSmallTokensKeys.ContainerColor)", source);
+        Assert.Contains("TokenLayer.Component", source);
         Assert.DoesNotContain("partial record ButtonLargeTokens", source);
-        Assert.DoesNotContain("Overrides", source);
+        Assert.Contains("public sealed class ButtonLargeTokensOverrides", source);
         Assert.DoesNotContain(run.Sources, result => result.HintName == "ResolvedTheme.Components.g.cs");
+    }
+
+    [Fact]
+    public void TokenDescriptors_EmitLiteralAndCustomSystemColors()
+    {
+        var run = GeneratorTestHost.Run(("Colors.comp.jsonc", """
+            {
+              "kind": "componentTokens",
+              "name": "ColorTokens",
+              "namespace": "Material3Expressive.Foundation.Tokens",
+              "tokens": {
+                "Literal": { "type": "color", "value": "#FF123456" },
+                "Custom": { "type": "color", "value": "Custom:brand" }
+              }
+            }
+            """));
+
+        Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
+
+        var source = run.Source("ColorTokens.Tokens.g.cs");
+        Assert.Contains("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF123456\"))", source);
+        Assert.Contains(
+            "[global::System.ComponentModel.TypeConverter(typeof(" +
+            "global::Material3Expressive.Foundation.Tokens.Runtime.ColorTokenDefinitionTypeConverter))]",
+            source);
+        Assert.Contains(
+            "Token.Alias(global::Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens.Get(" +
+            "global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Custom, \"brand\"))",
+            source);
+    }
+
+    [Fact]
+    public void TokenOverrides_ReuseOneConcreteConverterPerCustomEnumType()
+    {
+        var run = GeneratorTestHost.Run(("Enums.comp.jsonc", """
+            {
+              "kind": "componentTokens",
+              "name": "EnumTokens",
+              "namespace": "Material3Expressive.Foundation.Tokens",
+              "tokens": {
+                "First": { "type": "enum", "enumType": "Example.Mode", "value": "One" },
+                "Second": { "type": "enum", "enumType": "Example.Mode", "value": "Two" },
+                "Other": { "type": "enum", "enumType": "Example.OtherMode", "value": "One" }
+              }
+            }
+            """));
+
+        Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
+
+        var source = run.Source("EnumTokens.Tokens.g.cs");
+        Assert.Equal(
+            2,
+            source.Split(
+                "typeof(EnumTokenDefinitionTypeConverter0)",
+                System.StringSplitOptions.None).Length - 1);
+        Assert.Equal(
+            1,
+            source.Split(
+                "public sealed class EnumTokenDefinitionTypeConverter0",
+                System.StringSplitOptions.None).Length - 1);
+        Assert.Contains(
+            "TokenDefinitionTypeConverter<global::Example.Mode>",
+            source);
+        Assert.Contains(
+            "public sealed class EnumTokenDefinitionTypeConverter1",
+            source);
+        Assert.Contains(
+            "TokenDefinitionTypeConverter<global::Example.OtherMode>",
+            source);
     }
 
     [Fact]
@@ -199,6 +289,55 @@ public sealed class TokenTableGeneratorTests
         var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK003"));
         Assert.Contains("Reference", diagnostic.GetMessage());
         Assert.Contains("Component", diagnostic.GetMessage());
+    }
+
+    [Fact]
+    public void ReferenceColorTokenCannotAliasASystemColorRole()
+    {
+        var run = GeneratorTestHost.Run(("Reference.ref.jsonc", """
+            {
+              "kind": "referenceTokens",
+              "name": "ReferenceTokens",
+              "tokens": {
+                "Primary": { "type": "color", "value": "Primary" }
+              }
+            }
+            """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK003"));
+        Assert.Contains("Reference color token 'Primary'", diagnostic.GetMessage());
+        Assert.Contains("literal color", diagnostic.GetMessage());
+        Assert.Contains("Reference-layer color token", diagnostic.GetMessage());
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "ReferenceTokens.Tokens.g.cs");
+    }
+
+    [Fact]
+    public void ReferenceColorTokenCanAliasAnotherReferenceColorToken()
+    {
+        var run = GeneratorTestHost.Run(
+            ("Palette.ref.jsonc", """
+                {
+                  "kind": "referenceTokens",
+                  "name": "PaletteTokens",
+                  "tokens": {
+                    "Primary40": { "type": "color", "value": "#FF6750A4" }
+                  }
+                }
+                """),
+            ("Aliases.ref.jsonc", """
+                {
+                  "kind": "referenceTokens",
+                  "name": "AliasTokens",
+                  "tokens": {
+                    "Brand": { "type": "color", "value": "@PaletteTokens.Primary40" }
+                  }
+                }
+                """));
+
+        Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
+        Assert.Contains(
+            "Token.Alias(PaletteTokensKeys.Primary40)",
+            run.Source("AliasTokens.Tokens.g.cs"));
     }
 
     [Fact]

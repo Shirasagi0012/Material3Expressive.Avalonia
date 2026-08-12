@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.LogicalTree;
 using Avalonia.Styling;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens.Runtime;
 using MaterialColorUtilities.Avalonia;
 
 namespace Material3Expressive.Controls;
@@ -58,7 +59,10 @@ internal sealed class ButtonDefaultsAdapter
         }
 
         _active = true;
+        _owner.AttachedToLogicalTree += OnLogicalTreeChanged;
+        _owner.DetachedFromLogicalTree += OnLogicalTreeChanged;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
+        ((IResourceHost)_owner).ResourcesChanged += OnResourcesChanged;
         _themeSubscription = MaterialElementContext.Ensure(_owner).Theme.Subscribe(OnThemeChanged);
     }
 
@@ -68,7 +72,10 @@ internal sealed class ButtonDefaultsAdapter
             return;
 
         _active = false;
+        _owner.AttachedToLogicalTree -= OnLogicalTreeChanged;
+        _owner.DetachedFromLogicalTree -= OnLogicalTreeChanged;
         _owner.PropertyChanged -= OnOwnerPropertyChanged;
+        ((IResourceHost)_owner).ResourcesChanged -= OnResourcesChanged;
         _themeSubscription?.Dispose();
         _themeSubscription = null;
 
@@ -80,6 +87,21 @@ internal sealed class ButtonDefaultsAdapter
         _owner.ClearValue(M3Button.DefaultElevationProperty);
         _owner.ClearValue(M3Button.DefaultShapeMotionProperty);
         _owner.ClearValue(M3Button.DefaultOutlineThicknessProperty);
+    }
+
+    private void OnLogicalTreeChanged(object? sender, LogicalTreeAttachmentEventArgs e)
+    {
+        // A detached button can still receive resource notifications through its stale logical
+        // ancestors. Pause while detached and resume on re-attach if the theme still opts in.
+        if (((ILogical)_owner).IsAttachedToLogicalTree)
+        {
+            if (M3Button.GetUseMaterialDefaults(_owner))
+                Activate();
+        }
+        else
+        {
+            Deactivate();
+        }
     }
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
@@ -96,6 +118,8 @@ internal sealed class ButtonDefaultsAdapter
         _themeState = state;
         RequestRefresh();
     }
+
+    private void OnResourcesChanged(object? sender, ResourcesChangedEventArgs e) => RequestRefresh();
 
     private void RequestRefresh()
     {
@@ -116,18 +140,21 @@ internal sealed class ButtonDefaultsAdapter
                 _refreshPending = false;
                 var variant = M3Button.GetVariant(_owner);
                 var size = M3Button.GetSize(_owner);
-                var metrics = ButtonDefaults.Metrics(size);
+                var tokens = TokenReader.Begin(
+                    _owner,
+                    _owner.ActualThemeVariant ?? ThemeVariant.Default);
+                var metrics = ButtonDefaults.Metrics(tokens, size);
 
                 M3Button.SetDefaultColors(
                     _owner,
-                    ButtonDefaults.Colors(_themeState.Theme, variant, _themeState.IsDark));
+                    ButtonDefaults.Colors(tokens, variant));
                 M3Button.SetDefaultMetrics(_owner, metrics);
-                M3Button.SetDefaultShapes(_owner, ButtonDefaults.Shapes(size));
-                M3Button.SetDefaultElevation(_owner, ButtonDefaults.Elevation(variant));
+                M3Button.SetDefaultShapes(_owner, ButtonDefaults.Shapes(metrics));
+                M3Button.SetDefaultElevation(_owner, ButtonDefaults.Elevation(tokens, variant));
                 M3Button.SetDefaultShapeMotion(_owner, ButtonDefaults.ShapeMotion(_themeState.Theme));
                 M3Button.SetDefaultOutlineThickness(
                     _owner,
-                    ButtonDefaults.OutlineThickness(variant, size));
+                    ButtonDefaults.OutlineThickness(variant, metrics));
             }
             while (_refreshPending);
         }

@@ -1,22 +1,26 @@
 using System;
 using System.Collections.Specialized;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Styling;
+using Material3Expressive.Foundation.Tokens.Runtime;
 using MaterialColorUtilities.Avalonia;
 using PropertyGenerator.Avalonia;
 
 namespace Material3Expressive.Foundation;
 
+#pragma warning disable CS0618 // ResolvedTheme stays as this theme's snapshot until the M9 cutover; see docs/refactor/migration-plan.md.
+
 /// <summary>
 /// A whole Material theme: colour, typography, shape, motion and ripple schemes.
 /// </summary>
 /// <remarks>
-/// This is the authoring surface — mutable and bindable, so a scheme's seed colour can be a
-/// <c>DynamicResource</c> and a live theme can be edited in place. Consumers never see it: every
-/// change rebuilds an immutable <see cref="ResolvedTheme" />, and that is what
-/// <see cref="MaterialThemeScope" /> publishes into the control tree.
+/// This is both the mutable authoring surface and a resource provider. The immutable
+/// <see cref="ResolvedTheme" /> remains its execution snapshot, while token consumers resolve
+/// system colour definitions through the ordinary Avalonia resource cascade.
 /// </remarks>
-public partial class MaterialTheme : AvaloniaObject
+public partial class MaterialTheme : ResourceProvider
 {
     /// <summary>The Material 3 baseline seed, so an undeclared theme still renders as Material.</summary>
     private static readonly Color BaselineSeedColor = Color.FromRgb(0x67, 0x50, 0xA4);
@@ -47,6 +51,63 @@ public partial class MaterialTheme : AvaloniaObject
 
     /// <summary>The current snapshot, rebuilt on demand after any change.</summary>
     public ResolvedTheme Resolved => _resolved ??= new ResolvedTheme(this);
+
+    internal void SetResolvedSnapshot(ResolvedTheme value) => _resolved = value;
+
+    /// <inheritdoc />
+    public override bool HasResources => true;
+
+    /// <summary>
+    /// Provides theme-dependent system token definitions. Component defaults deliberately remain
+    /// in the generated token graph so a local theme does not mask component overrides above it.
+    /// </summary>
+    public override bool TryGetResource(object key, ThemeVariant? theme, out object? value)
+    {
+        if (key is MaterialToken referenceToken &&
+            ReferencePaletteTokens.TryGetMetadata(
+                referenceToken,
+                out var palette,
+                out var tone,
+                out var paletteCustomKey))
+        {
+            var color = Resolved.ColorScheme?.GetPaletteColor(palette, tone, paletteCustomKey)
+                        ?? Colors.Transparent;
+            // A provider may publish T directly; definitions are needed only for aliases and
+            // recipes. Avoid allocating a LiteralTokenDefinition on every resource lookup.
+            value = color;
+            return true;
+        }
+
+        if (key is MaterialToken token &&
+            SystemColorTokens.TryGetRole(token, out var role, out var customKey))
+        {
+            var isDark = MaterialColorUtilities.Avalonia.ColorScheme.IsDark(
+                theme ?? ThemeVariant.Default);
+            var color = Resolved.ColorScheme?.GetColor(role, isDark, customKey)
+                        ?? Colors.Transparent;
+            value = color;
+            return true;
+        }
+
+        if (key is MaterialToken typeToken &&
+            SystemTypeScaleTokens.TryGetRole(typeToken, out var typeRole, out var field))
+        {
+            var scale = Resolved.Typography.GetTypeScale(typeRole);
+            value = field switch
+            {
+                SystemTypeScaleField.FontSize => scale.FontSize,
+                SystemTypeScaleField.LineHeight => scale.LineHeight,
+                SystemTypeScaleField.LetterSpacing => scale.LetterSpacing,
+                SystemTypeScaleField.Font => scale.Font,
+                SystemTypeScaleField.Weight => scale.Weight,
+                _ => null
+            };
+            return value is not null;
+        }
+
+        value = null;
+        return false;
+    }
 
     public object ProvideValue()
     {
@@ -129,6 +190,7 @@ public partial class MaterialTheme : AvaloniaObject
     private void Invalidate()
     {
         _resolved = null;
+        RaiseResourcesChanged();
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

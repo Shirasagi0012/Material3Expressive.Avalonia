@@ -49,6 +49,23 @@ internal sealed class TokenCatalog
 
         foreach (var table in tables)
         {
+            if (table.Layer == TokenTableLayer.Reference)
+            {
+                foreach (var symbol in table.Symbols)
+                {
+                    if (symbol.Type == TokenType.Color &&
+                        symbol.Reference is null &&
+                        !symbol.IsColorLiteral)
+                    {
+                        issues.Add(new TokenReferenceIssue(
+                            table.Name,
+                            symbol.Name,
+                            $"Reference color token '{symbol.Name}' must be a literal color or an '@Table.Member' " +
+                            "reference to another Reference-layer color token; semantic System color roles are not allowed."));
+                    }
+                }
+            }
+
             foreach (var value in table.Values)
             {
                 if (value.Reference is not { } reference)

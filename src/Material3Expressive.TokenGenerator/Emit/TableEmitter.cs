@@ -1,4 +1,6 @@
 using Material3Expressive.TokenGenerator.Model;
+using System;
+using System.Collections.Generic;
 
 namespace Material3Expressive.TokenGenerator.Emit;
 
@@ -66,6 +68,156 @@ internal static class TableEmitter
                 writer.Line($"public {modifier} {TokenTypes.ToClrType(token.Type, token.EnumType)} {token.Name} = {token.Expression};");
             }
         }
+
+        writer.Line();
+        TokenDescriptors(writer, table);
+        writer.Line();
+        TokenOverrides(writer, table);
+    }
+
+    private static void TokenDescriptors(CodeWriter writer, TokenTable table)
+    {
+        writer.Doc("summary", $"Strongly typed resource keys for the {table.Name} token set.");
+        Provenance(writer, table);
+
+        using (writer.Block($"public static class {table.Name}Keys"))
+        {
+            var first = true;
+            foreach (var token in table.Tokens)
+            {
+                if (!first)
+                    writer.Line();
+
+                first = false;
+                writer.Doc("summary", token.Summary);
+                writer.Line(
+                    $"public static readonly {DescriptorType(token)} {token.Name} = new(\"{table.Layer}.{table.Name}.{token.Name}\", " +
+                    $"global::Material3Expressive.Foundation.Tokens.Runtime.TokenLayer.{table.Layer}, {DescriptorDefault(token)});");
+            }
+        }
+    }
+
+    private static string DescriptorType(TokenEntry token)
+    {
+        return $"global::Material3Expressive.Foundation.Tokens.Runtime.MaterialToken<{DescriptorValueType(token)}>";
+    }
+
+    private static string DescriptorValueType(TokenEntry token)
+    {
+        return token.Type == TokenType.Color
+            ? "global::Avalonia.Media.Color"
+            : TokenTypes.ToClrType(token.Type, token.EnumType);
+    }
+
+    private static string DescriptorDefault(TokenEntry token)
+    {
+        const string runtime = "global::Material3Expressive.Foundation.Tokens.Runtime.Token";
+
+        if (token.Value.Reference is { } reference)
+            return $"{runtime}.Alias({reference.TableName}Keys.{reference.MemberName})";
+
+        if (token.Type == TokenType.Color)
+            return ColorDescriptorDefault(token.Expression, runtime);
+
+        if (token.Type is TokenType.Dimension or TokenType.Number)
+            return $"{runtime}.Literal((double){token.Expression})";
+
+        return $"{runtime}.Literal({token.Expression})";
+    }
+
+    private static string ColorDescriptorDefault(string expression, string runtime)
+    {
+        const string literalPrefix = "global::Material3Expressive.Foundation.ColorTokenValue.Literal(";
+        if (expression.StartsWith(literalPrefix, System.StringComparison.Ordinal) &&
+            expression.EndsWith(")", System.StringComparison.Ordinal))
+        {
+            var color = expression.Substring(literalPrefix.Length, expression.Length - literalPrefix.Length - 1);
+            return $"{runtime}.Literal({color})";
+        }
+
+        const string rolePrefix = "global::Material3Expressive.Foundation.ColorTokenValue.Role(";
+        if (expression.StartsWith(rolePrefix, System.StringComparison.Ordinal) &&
+            expression.EndsWith(")", System.StringComparison.Ordinal))
+        {
+            var arguments = expression.Substring(rolePrefix.Length, expression.Length - rolePrefix.Length - 1);
+            return $"{runtime}.Alias(global::Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens.Get({arguments}))";
+        }
+
+        return $"{runtime}.Alias(global::Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens.Get({expression}, null))";
+    }
+
+    private static void TokenOverrides(CodeWriter writer, TokenTable table)
+    {
+        var enumConverters = EnumConverters(table);
+        writer.Doc("summary", $"Sparse resource overrides for the {table.Name} token set.");
+        using (writer.Block(
+                   $"public sealed class {table.Name}Overrides : global::Material3Expressive.Foundation.Tokens.Runtime.MaterialTokenOverrides"))
+        {
+            var first = true;
+            foreach (var token in table.Tokens)
+            {
+                if (!first)
+                    writer.Line();
+
+                first = false;
+                writer.Doc("summary", token.Summary);
+                writer.Line(
+                    $"[global::System.ComponentModel.TypeConverter(typeof({DescriptorConverterType(token, enumConverters)}))]");
+                var definition =
+                    $"global::Material3Expressive.Foundation.Tokens.Runtime.TokenDefinition<{DescriptorValueType(token)}>";
+                using (writer.Block($"public {definition}? {token.Name}"))
+                {
+                    writer.Line($"get => GetDefinition({table.Name}Keys.{token.Name});");
+                    writer.Line(
+                        $"set {{ if (value is null) Clear({table.Name}Keys.{token.Name}); else SetDefinition({table.Name}Keys.{token.Name}, value); }}");
+                }
+            }
+
+            foreach (var converter in enumConverters)
+            {
+                writer.Line();
+                writer.Doc("summary", $"Converts XAML literals of <c>{converter.Key}</c> to token definitions.");
+                using (writer.Block(
+                           $"public sealed class {converter.Value} : " +
+                           "global::Material3Expressive.Foundation.Tokens.Runtime.TokenDefinitionTypeConverter<" +
+                           $"{converter.Key}>"))
+                {
+                }
+            }
+        }
+    }
+
+    private static IReadOnlyDictionary<string, string> EnumConverters(TokenTable table)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var token in table.Tokens)
+        {
+            if (token.Type != TokenType.Enum)
+                continue;
+
+            var valueType = DescriptorValueType(token);
+            if (!result.ContainsKey(valueType))
+                result.Add(valueType, $"EnumTokenDefinitionTypeConverter{result.Count}");
+        }
+
+        return result;
+    }
+
+    private static string DescriptorConverterType(
+        TokenEntry token,
+        IReadOnlyDictionary<string, string> enumConverters)
+    {
+        const string runtime = "global::Material3Expressive.Foundation.Tokens.Runtime.";
+        return token.Type switch
+        {
+            TokenType.Color => runtime + "ColorTokenDefinitionTypeConverter",
+            TokenType.Shape => runtime + "ShapeTokenDefinitionTypeConverter",
+            TokenType.Typography => runtime + "TypographyTokenDefinitionTypeConverter",
+            TokenType.Motion => runtime + "MotionTokenDefinitionTypeConverter",
+            TokenType.Boolean => runtime + "BooleanTokenDefinitionTypeConverter",
+            TokenType.Enum => enumConverters[DescriptorValueType(token)],
+            _ => runtime + "DoubleTokenDefinitionTypeConverter"
+        };
     }
 
     private static void SystemRecord(CodeWriter writer, TokenTable table)

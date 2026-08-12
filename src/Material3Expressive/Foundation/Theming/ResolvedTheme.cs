@@ -3,6 +3,8 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Foundation;
 
+#pragma warning disable CS0618 // This file defines the legacy snapshot; see docs/refactor/migration-plan.md M0/M9.
+
 /// <summary>
 /// The immutable system form of a <see cref="MaterialTheme" /> that travels down the tree.
 /// </summary>
@@ -12,6 +14,11 @@ namespace Material3Expressive.Foundation;
 /// that depend on the consumer's theme variant cannot be resolved here; component-owned Defaults
 /// resolve those values at the point of consumption.
 /// </remarks>
+[Obsolete(
+    "Legacy theme snapshot transported via the MaterialThemeScope attached property. Token " +
+    "consumers must resolve MaterialToken values through TokenReader/MaterialTokenResolver " +
+    "instead; this type becomes the internal MaterialThemeSnapshot when the compat path is " +
+    "removed. See docs/refactor/migration-plan.md.")]
 public sealed class ResolvedTheme
 {
     public ResolvedTheme(MaterialTheme theme)

@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
+using Material3Expressive.Foundation.Tokens.Runtime;
 using MaterialColorUtilities.Avalonia.Tokens;
 
 /// <summary>Theme-resolved colours published by the Button defaults adapter.</summary>
@@ -109,6 +110,26 @@ internal static class ButtonDefaults
     }
 
     /// <summary>
+    /// Resolves the visual colour profile from the resource scope of the eventual consumer.
+    /// Component aliases are deliberately evaluated by <paramref name="tokens" /> rather than
+    /// pre-resolved in a theme provider, so a local system-token override is visible here.
+    /// </summary>
+    public static ButtonColors Colors(TokenReader tokens, ButtonVariant variant)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+
+        return variant switch
+        {
+            ButtonVariant.Filled => ResolveFilled(tokens),
+            ButtonVariant.Tonal => ResolveTonal(tokens),
+            ButtonVariant.Elevated => ResolveElevated(tokens),
+            ButtonVariant.Outlined => ResolveOutlined(tokens),
+            ButtonVariant.Text => ResolveText(tokens),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
+        };
+    }
+
+    /// <summary>
     /// Resolves the size axis into the values actually consumed by the control theme and presenter.
     /// Corrections from Compose <c>ButtonDefaults</c> intentionally live here rather than in JSON.
     /// </summary>
@@ -180,10 +201,94 @@ internal static class ButtonDefaults
         };
     }
 
+    /// <summary>Resolves size tokens from the resource scope of the eventual consumer.</summary>
+    public static ButtonMetrics Metrics(TokenReader tokens, ButtonSize size)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+
+        return size switch
+        {
+            ButtonSize.ExtraSmall => Metrics(
+                tokens.Get(ButtonXSmallTokensKeys.ContainerHeight),
+                tokens.Get(ButtonXSmallTokensKeys.ContainerShapeRound),
+                tokens.Get(ButtonXSmallTokensKeys.PressedContainerShape),
+                tokens.Get(ButtonXSmallTokensKeys.ContainerShapeSquare),
+                // Compose ships 12dp here even though the raw upstream table still says 16dp.
+                leading: 12,
+                vertical: 6,
+                trailing: 12,
+                tokens.Get(ButtonXSmallTokensKeys.IconSize),
+                tokens.Get(ButtonXSmallTokensKeys.IconLabelSpace),
+                tokens.Get(ButtonXSmallTokensKeys.OutlinedOutlineWidth),
+                TypographyRole.LabelLarge),
+            ButtonSize.Small => Metrics(
+                tokens.Get(ButtonSmallTokensKeys.ContainerHeight),
+                tokens.Get(ButtonSmallTokensKeys.ContainerShapeRound),
+                tokens.Get(ButtonSmallTokensKeys.PressedContainerShape),
+                tokens.Get(ButtonSmallTokensKeys.ContainerShapeSquare),
+                tokens.Get(ButtonSmallTokensKeys.LeadingSpace),
+                vertical: 10,
+                tokens.Get(ButtonSmallTokensKeys.TrailingSpace),
+                tokens.Get(ButtonSmallTokensKeys.IconSize),
+                tokens.Get(ButtonSmallTokensKeys.IconLabelSpace),
+                tokens.Get(ButtonSmallTokensKeys.OutlinedOutlineWidth),
+                TypographyRole.LabelLarge),
+            ButtonSize.Medium => Metrics(
+                tokens.Get(ButtonMediumTokensKeys.ContainerHeight),
+                tokens.Get(ButtonMediumTokensKeys.ContainerShapeRound),
+                tokens.Get(ButtonMediumTokensKeys.PressedContainerShape),
+                tokens.Get(ButtonMediumTokensKeys.ContainerShapeSquare),
+                tokens.Get(ButtonMediumTokensKeys.LeadingSpace),
+                vertical: 16,
+                tokens.Get(ButtonMediumTokensKeys.TrailingSpace),
+                tokens.Get(ButtonMediumTokensKeys.IconSize),
+                tokens.Get(ButtonMediumTokensKeys.IconLabelSpace),
+                tokens.Get(ButtonMediumTokensKeys.OutlinedOutlineWidth),
+                TypographyRole.TitleMedium),
+            ButtonSize.Large => Metrics(
+                tokens.Get(ButtonLargeTokensKeys.ContainerHeight),
+                tokens.Get(ButtonLargeTokensKeys.ContainerShapeRound),
+                tokens.Get(ButtonLargeTokensKeys.PressedContainerShape),
+                tokens.Get(ButtonLargeTokensKeys.ContainerShapeSquare),
+                tokens.Get(ButtonLargeTokensKeys.LeadingSpace),
+                vertical: 32,
+                tokens.Get(ButtonLargeTokensKeys.TrailingSpace),
+                tokens.Get(ButtonLargeTokensKeys.IconSize),
+                tokens.Get(ButtonLargeTokensKeys.IconLabelSpace),
+                tokens.Get(ButtonLargeTokensKeys.OutlinedOutlineWidth),
+                TypographyRole.HeadlineSmall),
+            ButtonSize.ExtraLarge => Metrics(
+                tokens.Get(ButtonXLargeTokensKeys.ContainerHeight),
+                tokens.Get(ButtonXLargeTokensKeys.ContainerShapeRound),
+                tokens.Get(ButtonXLargeTokensKeys.PressedContainerShape),
+                tokens.Get(ButtonXLargeTokensKeys.ContainerShapeSquare),
+                tokens.Get(ButtonXLargeTokensKeys.LeadingSpace),
+                vertical: 48,
+                tokens.Get(ButtonXLargeTokensKeys.TrailingSpace),
+                tokens.Get(ButtonXLargeTokensKeys.IconSize),
+                tokens.Get(ButtonXLargeTokensKeys.IconLabelSpace),
+                tokens.Get(ButtonXLargeTokensKeys.OutlinedOutlineWidth),
+                TypographyRole.HeadlineLarge),
+            _ => throw new ArgumentOutOfRangeException(nameof(size), size, null)
+        };
+    }
+
     /// <summary>Returns the geometry roles needed by the runtime presenter.</summary>
     public static ButtonShapes Shapes(ButtonSize size)
     {
-        var metrics = Metrics(size);
+        return Shapes(Metrics(size));
+    }
+
+    /// <summary>Returns requester-local geometry roles for the runtime presenter.</summary>
+    public static ButtonShapes Shapes(TokenReader tokens, ButtonSize size)
+    {
+        return Shapes(Metrics(tokens, size));
+    }
+
+    /// <summary>Projects an already-resolved metrics profile into presenter geometry.</summary>
+    public static ButtonShapes Shapes(ButtonMetrics metrics)
+    {
+        ArgumentNullException.ThrowIfNull(metrics);
         return new ButtonShapes(
             metrics.ContainerShape,
             metrics.PressedContainerShape,
@@ -218,6 +323,36 @@ internal static class ButtonDefaults
         };
     }
 
+    /// <summary>Returns the requester-local interaction elevation profile for a variant.</summary>
+    public static ButtonElevation Elevation(TokenReader tokens, ButtonVariant variant)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+
+        return variant switch
+        {
+            ButtonVariant.Filled => Elevation(
+                tokens.Get(FilledButtonTokensKeys.ContainerElevation),
+                tokens.Get(FilledButtonTokensKeys.HoveredContainerElevation),
+                tokens.Get(FilledButtonTokensKeys.FocusedContainerElevation),
+                tokens.Get(FilledButtonTokensKeys.PressedContainerElevation),
+                tokens.Get(FilledButtonTokensKeys.DisabledContainerElevation)),
+            ButtonVariant.Tonal => Elevation(
+                tokens.Get(TonalButtonTokensKeys.ContainerElevation),
+                tokens.Get(TonalButtonTokensKeys.HoveredContainerElevation),
+                tokens.Get(TonalButtonTokensKeys.FocusedContainerElevation),
+                tokens.Get(TonalButtonTokensKeys.PressedContainerElevation),
+                tokens.Get(TonalButtonTokensKeys.DisabledContainerElevation)),
+            ButtonVariant.Elevated => Elevation(
+                tokens.Get(ElevatedButtonTokensKeys.ContainerElevation),
+                tokens.Get(ElevatedButtonTokensKeys.HoveredContainerElevation),
+                tokens.Get(ElevatedButtonTokensKeys.FocusedContainerElevation),
+                tokens.Get(ElevatedButtonTokensKeys.PressedContainerElevation),
+                tokens.Get(ElevatedButtonTokensKeys.DisabledContainerElevation)),
+            ButtonVariant.Outlined or ButtonVariant.Text => new ButtonElevation(0, 0, 0, 0, 0),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
+        };
+    }
+
     /// <summary>The effects spring used for the Button's pressed-shape morph.</summary>
     public static SpringSpec ShapeMotion(ResolvedTheme theme)
     {
@@ -228,7 +363,20 @@ internal static class ButtonDefaults
     /// <summary>Returns the outline thickness consumed by the ordinary Button ControlTheme.</summary>
     public static Thickness OutlineThickness(ButtonVariant variant, ButtonSize size)
     {
-        var width = variant == ButtonVariant.Outlined ? Metrics(size).OutlineWidth : 0;
+        return OutlineThickness(variant, Metrics(size));
+    }
+
+    /// <summary>Returns the requester-local outline thickness consumed by the ControlTheme.</summary>
+    public static Thickness OutlineThickness(TokenReader tokens, ButtonVariant variant, ButtonSize size)
+    {
+        return OutlineThickness(variant, Metrics(tokens, size));
+    }
+
+    /// <summary>Returns outline thickness from an already-resolved metrics profile.</summary>
+    public static Thickness OutlineThickness(ButtonVariant variant, ButtonMetrics metrics)
+    {
+        ArgumentNullException.ThrowIfNull(metrics);
+        var width = variant == ButtonVariant.Outlined ? metrics.OutlineWidth : 0;
         return new Thickness(width);
     }
 
@@ -318,6 +466,89 @@ internal static class ButtonDefaults
         Brush(TextButtonTokens.DisabledLabelColor, theme, isDark, TextButtonTokens.DisabledLabelOpacity),
         Brush(TextButtonTokens.DisabledIconColor, theme, isDark, TextButtonTokens.DisabledIconOpacity),
         Transparent);
+
+    private static ButtonColors ResolveFilled(TokenReader tokens) => new(
+        Brush(tokens, FilledButtonTokensKeys.ContainerColor),
+        Brush(tokens, FilledButtonTokensKeys.LabelTextColor),
+        Brush(tokens, FilledButtonTokensKeys.IconColor),
+        Transparent,
+        Brush(tokens, FilledButtonTokensKeys.LabelTextColor),
+        Brush(tokens, FilledButtonTokensKeys.DisabledContainerColor, FilledButtonTokensKeys.DisabledContainerOpacity),
+        Brush(tokens, FilledButtonTokensKeys.DisabledLabelTextColor, FilledButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, FilledButtonTokensKeys.DisabledIconColor, FilledButtonTokensKeys.DisabledIconOpacity),
+        Transparent);
+
+    private static ButtonColors ResolveTonal(TokenReader tokens) => new(
+        Brush(tokens, TonalButtonTokensKeys.ContainerColor),
+        Brush(tokens, TonalButtonTokensKeys.LabelTextColor),
+        Brush(tokens, TonalButtonTokensKeys.IconColor),
+        Transparent,
+        Brush(tokens, TonalButtonTokensKeys.LabelTextColor),
+        Brush(tokens, TonalButtonTokensKeys.DisabledContainerColor, TonalButtonTokensKeys.DisabledContainerOpacity),
+        Brush(tokens, TonalButtonTokensKeys.DisabledLabelTextColor, TonalButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, TonalButtonTokensKeys.DisabledIconColor, TonalButtonTokensKeys.DisabledIconOpacity),
+        Transparent);
+
+    private static ButtonColors ResolveElevated(TokenReader tokens) => new(
+        Brush(tokens, ElevatedButtonTokensKeys.ContainerColor),
+        Brush(tokens, ElevatedButtonTokensKeys.LabelTextColor),
+        Brush(tokens, ElevatedButtonTokensKeys.IconColor),
+        Transparent,
+        Brush(tokens, ElevatedButtonTokensKeys.LabelTextColor),
+        Brush(tokens, ElevatedButtonTokensKeys.DisabledContainerColor, ElevatedButtonTokensKeys.DisabledContainerOpacity),
+        Brush(tokens, ElevatedButtonTokensKeys.DisabledLabelTextColor, ElevatedButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, ElevatedButtonTokensKeys.DisabledIconColor, ElevatedButtonTokensKeys.DisabledIconOpacity),
+        Transparent);
+
+    private static ButtonColors ResolveOutlined(TokenReader tokens) => new(
+        Transparent,
+        Brush(tokens, OutlinedButtonTokensKeys.LabelTextColor),
+        Brush(tokens, OutlinedButtonTokensKeys.IconColor),
+        Brush(tokens, OutlinedButtonTokensKeys.OutlineColor),
+        Brush(tokens, OutlinedButtonTokensKeys.LabelTextColor),
+        Transparent,
+        Brush(tokens, OutlinedButtonTokensKeys.DisabledLabelTextColor, OutlinedButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, OutlinedButtonTokensKeys.DisabledIconColor, OutlinedButtonTokensKeys.DisabledIconOpacity),
+        Brush(tokens, OutlinedButtonTokensKeys.DisabledOutlineColor));
+
+    private static ButtonColors ResolveText(TokenReader tokens)
+    {
+        // Compose's public ButtonDefaults correct these two raw generated defaults to Primary.
+        // An explicit component token still takes precedence, including requester-local aliases.
+        var label = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.LabelColor, SystemColorTokens.Primary));
+        var icon = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.IconColor, SystemColorTokens.Primary));
+        return new ButtonColors(
+            Transparent,
+            label,
+            icon,
+            Transparent,
+            label,
+            Transparent,
+            Brush(tokens, TextButtonTokensKeys.DisabledLabelColor, TextButtonTokensKeys.DisabledLabelOpacity),
+            Brush(tokens, TextButtonTokensKeys.DisabledIconColor, TextButtonTokensKeys.DisabledIconOpacity),
+            Transparent);
+    }
+
+    private static IImmutableBrush Brush(Color color) => new ImmutableSolidColorBrush(color);
+
+    private static IImmutableBrush Brush(
+        TokenReader tokens,
+        MaterialToken<Color> colorToken,
+        MaterialToken<double>? opacityToken = null)
+    {
+        var color = tokens.Get(colorToken);
+        var opacity = opacityToken is null ? 1 : tokens.Get(opacityToken);
+        if (opacity < 1)
+        {
+            color = new Color(
+                (byte)Math.Round(color.A * Math.Clamp(opacity, 0, 1)),
+                color.R,
+                color.G,
+                color.B);
+        }
+
+        return new ImmutableSolidColorBrush(color);
+    }
 
     private static IImmutableBrush Brush(
         ColorTokenValue token,

@@ -7,7 +7,8 @@ namespace Material3Expressive.TokenGenerator.Model;
 /// <summary>
 /// The part of a parsed table that can affect cross-table validation. Literal expressions are
 /// deliberately omitted, so changing a number or colour does not invalidate the global catalog.
-/// References, member names, types and record shape remain part of the declaration.
+/// References, member names, types and record shape remain part of the declaration. Color literals
+/// retain only their literal-vs-semantic classification so layer validation stays incremental.
 /// </summary>
 internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
 {
@@ -24,7 +25,8 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
                     token.Name,
                     token.Type,
                     token.EnumType,
-                    token.Value.Reference))
+                    token.Value.Reference,
+                    IsColorLiteral(token.Value)))
                 .ToArray()
             : Array.Empty<TokenSymbolDeclaration>();
 
@@ -115,6 +117,13 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
             .Select(pair => pair.Value);
     }
 
+    private static bool IsColorLiteral(TokenValue value)
+    {
+        const string literalPrefix = "global::Material3Expressive.Foundation.ColorTokenValue.Literal(";
+        return value.Type == TokenType.Color &&
+               value.Expression.StartsWith(literalPrefix, StringComparison.Ordinal);
+    }
+
     private static bool SequenceEqual<T>(IReadOnlyList<T> left, IReadOnlyList<T> right)
         where T : IEquatable<T>
     {
@@ -133,12 +142,18 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
 
 internal sealed class TokenSymbolDeclaration : IEquatable<TokenSymbolDeclaration>
 {
-    public TokenSymbolDeclaration(string name, TokenType type, string? enumType, TokenReference? reference)
+    public TokenSymbolDeclaration(
+        string name,
+        TokenType type,
+        string? enumType,
+        TokenReference? reference,
+        bool isColorLiteral)
     {
         Name = name;
         Type = type;
         EnumType = enumType;
         Reference = reference;
+        IsColorLiteral = isColorLiteral;
     }
 
     public string Name { get; }
@@ -149,16 +164,25 @@ internal sealed class TokenSymbolDeclaration : IEquatable<TokenSymbolDeclaration
 
     public TokenReference? Reference { get; }
 
+    public bool IsColorLiteral { get; }
+
     public bool Equals(TokenSymbolDeclaration? other)
     {
         return other is not null && string.Equals(Name, other.Name, StringComparison.Ordinal) &&
                Type == other.Type && string.Equals(EnumType, other.EnumType, StringComparison.Ordinal) &&
-               TokenReferenceEquals(Reference, other.Reference);
+               TokenReferenceEquals(Reference, other.Reference) &&
+               IsColorLiteral == other.IsColorLiteral;
     }
 
     public override bool Equals(object? obj) => Equals(obj as TokenSymbolDeclaration);
 
-    public override int GetHashCode() => Hash(Name, Type, EnumType, Reference);
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            return Hash(Name, Type, EnumType, Reference) * 397 + IsColorLiteral.GetHashCode();
+        }
+    }
 
     private static int Hash(string name, TokenType type, string? enumType, TokenReference? reference)
     {

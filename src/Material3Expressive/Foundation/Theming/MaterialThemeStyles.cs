@@ -1,3 +1,5 @@
+using Avalonia.Logging;
+
 namespace Material3Expressive.Foundation;
 
 /// <summary>
@@ -13,6 +15,21 @@ public sealed class MaterialThemeStyles : Avalonia.Styling.Styles
 {
     public MaterialThemeStyles()
     {
+        if (Avalonia.Application.Current is { } application)
+        {
+            MaterialThemeScope.InstallBaselineResources(application);
+        }
+        else
+        {
+            // Previewer/designer surfaces can construct styles before an Application exists.
+            // Styles offer no later hook, so surface the skipped baseline instead of failing
+            // silently — tokens would otherwise resolve to their Transparent fallback.
+            Logger.TryGet(LogEventLevel.Warning, LogArea.Control)?.Log(
+                this,
+                "MaterialThemeStyles was constructed before Application.Current was assigned; " +
+                "baseline token resources were not installed.");
+        }
+
         Add(MaterialThemeScope.CreateTopLevelInjectionStyle());
     }
 }
