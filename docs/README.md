@@ -5,8 +5,10 @@ traceability but are not routine implementation instructions.
 
 ## Architecture
 
-- [Theming architecture](architecture/theming.md)
+- [Current theming architecture](architecture/theming.md)
+- [Target Material 3 token refactor](refactor/README.md) — proposed design; not yet implemented
 - [Archived v3 design record](archive/theming-core-v3-architecture.md)
+- [Archived previous Theme/Token refactor](archive/theme-token-refactor-v1/README.md)
 
 ## Reference
 

@@ -1,4 +1,7 @@
-# 新 Theme/Token 架构
+# 新 Theme/Token 架构（归档）
+
+> **归档说明：** 本文记录上一轮未完成的 Theme/Token 过渡设计，不再代表目标架构。
+> 当前目标设计与迁移入口见 [`docs/refactor/README.md`](../../refactor/README.md)。
 
 > 本文描述当前已经落地的过渡架构，而不是最终迁移完成后的设想。
 > 新 token runtime、generator surface、`MaterialTheme` resource provider 和 Button 纵向切片已经可用；

@@ -1,4 +1,7 @@
-# 控件 Template 消费新 Theme/Token 架构
+# 控件 Template 消费新 Theme/Token 架构（归档）
+
+> **归档说明：** 本文记录上一轮 Component Defaults Projection 设计，不再代表目标架构。
+> 当前目标设计与迁移入口见 [`docs/refactor/README.md`](../../refactor/README.md)。
 这套新设计可以称为 Component Defaults Projection：
 
 > Component Defaults 将 raw tokens 和 `ResolvedTheme` 解析成 semantic records；owner-local adapter 再通过 AvaloniaProperty 将这些 records 投影给 ControlTheme、template 和 presenter。
