@@ -156,8 +156,8 @@ bool TryGetLocalRaw(
 
 ### 3.3 DefaultRawTokens 不属于 Children
 
-`DefaultRawTokens` 是 generator 生成的、不可变共享 catalog。它在逻辑上由 resolver 内置，但不是隐式
-插入每个 MaterialTheme.Children 的 base source。
+`DefaultRawTokens` 是 generated M3E definitions 与显式 domain contributions 组成的不可变共享
+catalog。它在逻辑上由 resolver 内置，但不是隐式插入每个 MaterialTheme.Children 的 base source。
 
 下面的实现是错误的：
 
@@ -179,6 +179,17 @@ Child MaterialTheme.Children
 
 Child placement 解析 `System.Primary` 时必须能得到 Root 的 Red。如果 Child 在本地 miss 后立即返回默认
 Blue，祖先 override 将永远不可见。
+
+### 3.4 MCU ColorScheme 是稀疏 context source
+
+MCU 的 `ColorScheme` 或轻量 adapter 可以作为 child source，但它只提供内部的
+`McuColorContextTokens.Current`，不直接 claim 整套 Reference/System colors。标准 color key 在完整资源链
+miss 后由 MCU catalog recipe 读取该 context。
+
+因此没有本地 ColorScheme 的子 placement 会继承祖先 context；全链都没有 scheme 时才使用 MCU
+contribution 中的 terminal baseline。不能给每个 `MaterialTheme` 自动安装本地默认 Tonal Spot source，
+否则空的子 placement 会意外遮蔽祖先品牌 scheme。完整契约见
+[MaterialColorUtilities 集成](material-color-utilities.md)。
 
 ## 4. TryGetResource 的两条分支
 
@@ -298,8 +309,8 @@ object FindDefinition(MaterialToken token)
     if (DefaultRawTokens.TryGetDefinition(token, queryTheme, out definition))
         return ValidateDefault(token, definition);
 
-    throw DefaultRawTokens.RequiresGeneratedDefinition(token)
-        ? MissingGeneratedDefault(token)
+    throw DefaultRawTokens.RequiresCatalogDefinition(token)
+        ? MissingCatalogDefinition(token)
         : MissingSourceRequiredToken(token);
 }
 ```
@@ -388,6 +399,10 @@ MaterialTheme 不订阅：
 
 无持久 cache 后也不存在“Owner 变化时主动 Rebuild”的需要。
 
+MCU ColorScheme child 可以保留只依赖固定 scheme input 的 immutable `ResolvedColorScheme`/Color Context
+snapshot，并在 scheme mutation 时整体替换。它是 child source 内部的算法 memoization，不缓存 Owner
+resource winner 或 Flat value，因此不违反本节的 MaterialTheme cache 禁令。
+
 ### 7.3 变化序列
 
 ```mermaid
@@ -415,8 +430,9 @@ requester ActualThemeVariantChanged
 
 ## 8. DefaultRawTokens 的终端语义
 
-`DefaultRawTokens` 必须是完整、不可变、可共享的 generated graph，并允许同一个 Raw key 拥有
-variant-specific baseline definition。它的查找点只有一个：
+`DefaultRawTokens` 必须是完整、不可变、可共享的 composite graph，由 generated definitions 与 imported
+domain contributions 组成，并允许同一个 Raw key 拥有 variant-specific baseline definition。它的查找点
+只有一个：
 
 ```text
 placementOwner.TryFindResource(rawKey, queryTheme) == false
@@ -440,10 +456,11 @@ Owner resource chain
     Component.Container = Red
 ```
 
-如果 `DefaultRawTokens` 对一个受支持的 Raw key 也 miss，这是 generator/catalog 完整性错误。不得返回
-透明色、0、空字符串或其他哨兵值掩盖问题。对于没有 generated baseline 的动态/custom key，catalog
-的独立 membership metadata 必须把它分类为 source-required missing；resolver 不能把两类缺失混成同一
-异常，也不能靠 `Path` 字符串猜测。
+如果 `DefaultRawTokens` 对一个 catalog-owned Raw key 也 miss，这是 generator/domain contribution/
+catalog 完整性错误。不得返回透明色、0、空字符串或其他哨兵值掩盖问题。对于没有 catalog definition
+family 的动态/custom key，catalog 的独立 membership metadata 必须把它分类为 source-required missing；
+resolver 不能把两类缺失混成同一异常，也不能靠 `Path` 字符串猜测。MCU custom color family 可以有通用
+recipe 但缺少 named palette；这是单独的 configuration error，不是合法透明色。
 
 ## 9. 边界相对语义
 
@@ -516,5 +533,6 @@ MaterialTheme 必须把“没有这个资源”和“这个 Material value 配�
 12. 不保留跨请求 Raw/Flat cache。
 13. MaterialTheme 不订阅 Owner 资源或主题事件。
 14. Children 变化只产生一次有效资源广播，并正确退订旧 child。
+15. MCU ColorScheme source 只提供内部 Color Context；terminal baseline 不作为 placement-local child 安装。
 
 这些规则是第一版 vertical slice 的验收条件，而不是可推迟的性能优化项。

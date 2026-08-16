@@ -24,7 +24,7 @@
 
 ```mermaid
 flowchart LR
-    DEF["Generated DefaultRawTokens<br/>Reference / System / Component"] --> RR["Raw resolver"]
+    DEF["Composed DefaultRawTokens<br/>generated M3E + MCU contribution"] --> RR["Raw resolver"]
     LOCAL["Owner resource chain<br/>sparse Raw overrides"] --> RR
     CHILD["MaterialTheme.Children<br/>local token sources"] --> RR
 
@@ -41,7 +41,7 @@ flowchart LR
 2. Avalonia 沿控件的资源链找到最近的、能够处理该 Flat key 的 `MaterialTheme`。
 3. `MaterialTheme` 以自己的 `Owner` 为 Raw 查找起点，并全程透传本次请求的 `ThemeVariant`。
 4. Value plan 读取一个或多个 `MaterialToken<T>`；每个 Raw hop 都重新从同一 `Owner` 查找定义。
-5. 如果整个 Owner 资源链都没有定义该 Raw key，resolver 才使用 generated `DefaultRawTokens`。
+5. 如果整个 Owner 资源链都没有定义该 Raw key，resolver 才使用 composed `DefaultRawTokens`。
 6. literal、alias 或 recipe 被递归求值，Value plan 最终产生 consumer-ready 的非空 `T`。
 7. `DynamicResource` 把结果应用到 Setter 或属性，并负责在资源或实际主题变化时重新查询。
 
@@ -163,8 +163,10 @@ MaterialTheme 的详细行为见 [MaterialTheme 与 Placement](material-theme.md
 
 | 模块 | 负责 | 不负责 |
 |---|---|---|
+| Shared Raw contracts | descriptor/definition/recipe/source/catalog contribution 的中立协议 | MCU 算法、组件消费或资源树解析 |
+| MCU Avalonia | canonical Reference/System color identity、Color Context source、color catalog contribution | M3E Component token、Flat schema、复制一套 resolver |
 | Raw descriptors | typed identity、path、layer、value type | baseline definition、Avalonia 属性投影、控件状态 |
-| `DefaultRawTokens` | built-in 完整默认图、终端 fallback | 遮蔽 scope override、为动态 key 臆造默认值 |
+| `DefaultRawTokens` | 组合 generated/domain contributions、暴露 built-in 完整默认图与终端 fallback | 以 contributor 顺序实现 override、遮蔽 scope override、为动态 key 臆造默认值 |
 | Raw source/override | 当前 scope 的稀疏 definition | 补齐整份主题 |
 | Raw resolver | 资源链查询、alias/recipe、类型、层级、循环 | variant/size/state policy |
 | `MaterialValueKey<T>` | 稳定消费身份、声明式 Raw dependencies、纯投影 | 查 requester、Bounds、时间或服务 |
@@ -182,7 +184,8 @@ MaterialTheme 的详细行为见 [MaterialTheme 与 Placement](material-theme.md
 3. **边界稳定。** 一次 Flat 求值的所有 Raw hop 使用同一个 placement Owner。
 4. **主题稳定。** 所有 hop 使用同一个原始 query theme；fallback 只影响当前 key 的命中。
 5. **稀疏覆盖。** source miss 必须继续查找；`Clear` 表示删除本层定义。
-6. **默认图最后。** 只有 Owner 整条资源链 miss，才能查询 `DefaultRawTokens`。
+6. **默认图最后。** 只有 Owner 整条资源链 miss，才能查询 composed `DefaultRawTokens`；contribution
+   顺序不是资源 precedence。
 7. **非法命中不回退。** null、错误类型、非法层级、未声明 recipe dependency 与 cycle 都是错误，不是 miss。
 8. **已识别 Flat key fail-fast。** 解析失败不能返回 `false` 并静默落到祖先 Flat provider。
 9. **final value 非 null。** `null` 只表示 authoring facade 的 Clear，不是合法 resolved value。
@@ -204,6 +207,8 @@ MaterialTheme 的详细行为见 [MaterialTheme 与 Placement](material-theme.md
 - 根据 Owner 当前主题维护单份 `_raw` 或 `_flat`；
 - Flat recipe 读取 requester、控件状态、Bounds、RTL、服务或时间；
 - Children miss 后立即使用本地 defaults，从而截断祖先 override；
+- 在 M3E 中重新实现 MCU `DynamicScheme`，或把所有 System color 强制转录成固定 Reference tone alias；
+- 让 M3E 新路径通过 inherited `ResolvedSchemeProperty`/`$self` binding 选择颜色；
 - 依赖 Avalonia 隐式转换来定义 Color、Thickness、Shape 等跨类型契约。
 
 ## 9. 目标消费形态
@@ -228,6 +233,8 @@ variant、size 与 state 仍由 ControlTheme selector 或轻量组件 policy 选
 - [Raw Token 模型](raw-token-model.md)：typed identity、definition、layer、default graph 与 resolver。
 - [Material Value](material-values.md)：Flat schema、resolution plan、consumer-ready 类型与投影边界。
 - [MaterialTheme 与 Placement](material-theme.md)：资源节点、Owner、Children、主题与事件生命周期。
+- [MaterialColorUtilities 集成](material-color-utilities.md)：颜色 token owner、Color Context、catalog
+  composition、算法与 compatibility 边界。
 - [Generator](generator.md)：JSONC 输入、default graph、typed API 和编译期校验。
 - [Authoring 与 XAML](authoring-and-xaml.md)：全局/局部 placement、override、Clear 与消费示例。
 - [诊断与测试](diagnostics-and-testing.md)：错误分类、cycle path、scope/theme/lifecycle 测试矩阵。

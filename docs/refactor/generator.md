@@ -11,6 +11,7 @@ Avalonia 资源树，不生成控件行为，也不为 Material value 建立全�
 - [Raw Token 模型](raw-token-model.md)
 - [Material value](material-values.md)
 - [MaterialTheme](material-theme.md)
+- [MaterialColorUtilities 集成](material-color-utilities.md)
 - [诊断与测试](diagnostics-and-testing.md)
 - [迁移计划](migration-plan.md)
 
@@ -20,14 +21,15 @@ Avalonia 资源树，不生成控件行为，也不为 Material value 建立全�
 已经具备应当延续的基础：
 
 - 以 Roslyn `IIncrementalGenerator` 读取 `AdditionalTexts`；
-- 只接受 `.ref.jsonc`、`.sys.jsonc` 与 `.comp.jsonc`；
+- 本地 token table 只接受 `.ref.jsonc`、`.sys.jsonc` 与 `.comp.jsonc`；
 - JSONC 支持注释与尾随逗号；
 - 每张表独立解析、独立发射，声明 catalog 单独参与全局验证；
 - 保留 `source`、`version`、`provenance` 与成员级说明；
 - 生成强类型 `MaterialToken<T>` descriptor 与 typed override facade；
 - 在编译期检查引用存在性、值类型、依赖层级与循环。
 
-新架构是在这些能力上补齐完整的默认 Raw 图，而不是把 generator 改写成文本拼接器。当前 emitter
+新架构是在这些能力上补齐 M3E contribution，并参与 composed 默认 Raw 图，而不是把 generator 改写成
+文本拼接器。当前 emitter
 可参见 [`TableEmitter`](../../src/Material3Expressive.TokenGenerator/Emit/TableEmitter.cs)，当前表格式说明
 可参见 [Token tables](../reference/token-tables.md)。后者描述的是现状；本页定义目标。
 
@@ -38,19 +40,21 @@ Avalonia 资源树，不生成控件行为，也不为 Material value 建立全�
 1. 读取并校验 Reference、System、Component 三层 token facts。
 2. 生成稳定、强类型的 Raw token identity。
 3. 生成 literal、alias 与受约束 recipe 构成的默认定义图。
-4. 将默认定义汇总为全局只读的 `DefaultRawTokens` catalog。
+4. 将本项目拥有的默认定义汇总为只读的 generated contribution，并让统一 `DefaultRawTokens` 组合它与
+   MCU 等外部 domain contribution。
 5. 生成 XAML/C# 友好的稀疏 typed override facade。
 6. 保留可追溯来源，并为结构错误提供确定性的编译诊断。
 
 ### 2.2 Generator 不负责
 
-- 不执行 Avalonia resource lookup，也不从 Owner 推断有效主题；generated catalog 只按传入的
+- 不执行 Avalonia resource lookup，也不从 Owner 推断有效主题；generated contribution 只按传入的
   `queryTheme` 执行确定性的 baseline variant fallback；
 - 不解析控件的 variant、size、state、pseudo-class、bounds 或 flow direction；
 - 不生成 `ResolvedTheme.Components` 或任何全量 resolved component snapshot；
 - 不将 Raw graph 提前拍扁为最终值；
 - 不生成中央 `FlatToken` enum、`FlatTokens` 列表或 `Flat -> Raw` switch；
 - 不维护 Flat cache；
+- 不重新生成 MCU-owned Reference palette/System color descriptor 或转录 `DynamicScheme` 算法；
 - 不把任意 C# 表达式嵌入 JSON，也不生成组件行为 DSL。
 
 这些边界保证 token transcription 仍然是事实层，控件消费契约仍由组件拥有。
@@ -59,12 +63,16 @@ Avalonia 资源树，不生成控件行为，也不为 Material value 建立全�
 
 | 文件后缀 | 根 `kind` | 层级 | 主要内容 |
 |---|---|---|---|
-| `.ref.jsonc` | `referenceTokens` | Reference | palette、primitive、基础 metric |
-| `.sys.jsonc` | `systemTokens` | System | 跨组件的 semantic role 与 system scheme facts |
+| `.ref.jsonc` | `referenceTokens` | Reference | M3E-owned primitive、基础 metric；MCU color palette identity 不在此重复声明 |
+| `.sys.jsonc` | `systemTokens` | System | M3E-owned 跨组件 semantic role；MCU system colors 由外部 catalog 声明 |
 | `.comp.jsonc` | `componentTokens` | Component | 上游组件 token 的忠实转录 |
 
 文件后缀是可发现的分类，根 `kind` 是语义声明；两者必须一致。表中引用使用结构化的
 `@Table.Member`，不能退化成运行时字符串查找。
+
+外部 canonical declaration metadata 是只读的编译输入，不是第四种本地 token table。它由 domain
+package 提供，用于解析和验证 `@` 引用或 color-role shorthand，M3E generator 不为其中的 key 发射
+descriptor/default。
 
 `provenance` 至少保留当前四种来源：
 
@@ -96,11 +104,12 @@ Avalonia 资源树，不生成控件行为，也不为 Material value 建立全�
 ```mermaid
 flowchart LR
     A["AdditionalText"] --> B["按路径与内容解析单表"]
+    X["External canonical declarations<br/>MCU catalog metadata"] --> C
     B --> C["声明快照：identity/type/layer/reference"]
     C --> D["全局 catalog 验证"]
     B --> E["逐表代码发射"]
     D --> E
-    D --> F["DefaultRawTokens 发射"]
+    D --> F["GeneratedM3DefaultRawTokens contribution 发射"]
 ```
 
 实现必须满足：
@@ -109,7 +118,8 @@ flowchart LR
 - 只有影响 identity、type、layer 或 reference 的变化才使全图结构验证失效；
 - 输出按稳定顺序排列，不依赖文件系统枚举顺序；
 - 错误表不产生部分可用的 descriptor/default 输出；
-- 同一次编译中，descriptor 与 default catalog 必须来自同一份已验证声明快照。
+- 同一次编译中，descriptor 与 generated contribution 必须来自同一份已验证声明快照，并记录所验证的
+  external declaration version。
 
 ## 5. 生成输出
 
@@ -120,12 +130,12 @@ flowchart LR
 | `XxxTokens` | internal | 忠实保存 raw transcription 与 provenance |
 | `XxxTokensKeys` | public | 稳定、强类型的 `MaterialToken<T>` identity |
 | `XxxTokensOverrides` | public | 稀疏 typed authoring source/provider |
-| `DefaultRawTokens` entries | internal/shared | identity 与 variant 对应的不可变 baseline definition |
+| `GeneratedM3DefaultRawTokens` entries | internal/shared | M3E-owned identity 与 variant 对应的不可变 baseline definition contribution |
 
 descriptor 的公开契约是 identity、`Path`、`Layer` 与 `ValueType`。默认定义是 catalog 数据，不应要求
 调用方从 descriptor 上读取；这样 identity 与默认策略可以独立演进。迁移期间可以暂时适配当前
 [`MaterialToken<T>.DefaultDefinition`](../../src/Material3Expressive/Foundation/Tokens/Runtime/MaterialToken.cs)，
-但目标 resolver 以 `DefaultRawTokens` 为唯一默认图入口。
+但目标 resolver 以 composed `DefaultRawTokens` 为唯一默认图入口。
 
 typed override facade 继续提供：
 
@@ -140,11 +150,12 @@ typed override facade 继续提供：
 有不依赖 Owner 的 `Changed` 通知，provider 形态则使用 Avalonia 的资源通知。同一实例一次只能用于一个
 authoring placement，不能同时作为 child 又挂进 resource dictionary，也不能被多个 placement 共享。
 
-## 6. `DefaultRawTokens` catalog
+## 6. `DefaultRawTokens` catalog composition
 
 ### 6.1 语义
 
-`DefaultRawTokens` 是完整 Raw graph 的最终兜底，不是一个资源 scope，也不是 resolved value cache：
+`DefaultRawTokens` 是完整 Raw graph 的统一最终兜底，不是一个资源 scope，也不是 resolved value cache。
+它组合 M3E generator 输出与显式导入的 domain contributions；第一版的外部 contribution 是 MCU colors：
 
 ```text
 MaterialTheme placement 从 Owner 查找某个 Raw key
@@ -168,8 +179,8 @@ catalog 必须满足：
 - lookup 不产生副作用，不发出 `ResourcesChanged`；
 - 保存 definition graph，不保存 resolved value；
 - 所有内置、可最终解析的静态 key 都有定义；
-- 发射独立的 generated membership/missing-policy metadata，使 runtime 能区分 built-in catalog 缺损与
-  source-required custom key；
+- 发射可合入 composite catalog 的 membership/missing-policy metadata，使 runtime 能区分 built-in
+  catalog 缺损与 source-required custom key；
 - catalog 缺项属于 generator/库错误，不能静默回退到 `default(T)`。
 
 概念 API 可以是：
@@ -182,19 +193,20 @@ internal static class DefaultRawTokens
         ThemeVariant? queryTheme,
         out ITokenDefinition definition);
 
-    public static bool RequiresGeneratedDefinition(MaterialToken key);
+    public static bool RequiresCatalogDefinition(MaterialToken key);
 }
 ```
 
-具体实现可以由按表分片的只读字典或生成的 type-safe dispatch 组成。它不是供应用作者修改的
-`ResourceDictionary`，也不得为每个 `MaterialTheme` 复制一份。
+具体实现可以由按表分片的只读字典、生成的 type-safe dispatch 与 imported contribution dispatch 组成。
+它不是供应用作者修改的 `ResourceDictionary`，也不得为每个 `MaterialTheme` 复制一份。Contributor 顺序
+不提供 override precedence；同一 canonical key 被重复声明为 owned 必须在构建或初始化时失败。
 
 ### 6.2 默认图必须保持层次
 
-Generator 生成的是：
+Generator 与 imported contribution 共同保留的是：
 
 ```text
-Component token → System token → Reference token → literal
+Component token → System token → Reference token / algorithm-input leaf → literal / immutable context
 ```
 
 而不是：
@@ -203,20 +215,37 @@ Component token → System token → Reference token → literal
 Component token → 已解析后的 Color/double/shape
 ```
 
-只有保留依赖关系，较近 scope 对 System 或 Reference token 的 override 才能重新绑定祖先或默认
-Component alias。
+只有保留依赖关系，较近 scope 对 System 或实际声明为 dependency 的 Reference token override 才能重新
+绑定祖先或默认 Component alias。MCU System role 依赖内部 Color Context，不承诺依赖某个公开 tone key。
 
 ### 6.3 Theme-dependent leaves
 
-主题算法产生的 palette/system 值通常由 `MaterialTheme.Children` 中的内置 source 按请求
-`ThemeVariant` 提供。`DefaultRawTokens` 仍需让无自定义 source 的默认主题形成可诊断、可终止的图；
-它可以保存 Default/Light/Dark/custom variant 对应的 baseline alias/literal，但不能把某个 placement
-当前已经解析出的 Light/Dark 值编译成 snapshot。
+主题算法产生的 palette/system 值由外部 domain 拥有时，generator 不应复制算法。MCU color integration
+使用一个稀疏 ColorScheme source 提供内部 Color Context leaf，并由 MCU catalog recipes 从该 immutable
+context 读取 palette/system colors。`DefaultRawTokens` 仍需通过 MCU contribution 提供 terminal baseline
+context，使没有显式 scheme source 的默认主题形成可诊断、可终止的图。
 
 例如 `HighContrastDark.InheritVariant = Dark` 时，catalog 查询某个 key 的顺序是
 `HighContrastDark → Dark → Default`。如果该 definition alias 到另一 key，下一跳仍然携带原始
 `HighContrastDark`，而不是携带本次命中的 `Dark`。换言之，catalog 是 variant-aware 的默认定义图，
 不是“默认主题计算结果的快照”。
+
+MCU 的 immutable `ResolvedColorScheme`/Color Context 可以在 source 内预建 Light/Dark `DynamicScheme`；
+这是固定 scheme input 的算法 memoization，不是 generator 输出、placement snapshot 或 Raw/Flat cache。
+完整边界见 [MaterialColorUtilities 集成](material-color-utilities.md)。
+
+### 6.4 外部 canonical declarations
+
+MCU-owned key 不进入 M3E 的本地声明输出。Generator 必须读取 versioned external declaration metadata，
+至少获得 path、layer、value type、owner、canonical symbol/factory 与 provenance。具体载体可以是 package
+提供的 build-time manifest 或等价的 Roslyn-visible metadata，但 runtime 不能靠 path string 合并 identity。
+
+Component color role 应直接发射对 MCU canonical singleton 的 alias。完整性、类型、层级与 cycle 验证以
+composed graph 为准；缺失 MCU contribution 或 external declaration version 不兼容时，应给出编译诊断，
+不能临时生成一个 M3E wrapper key 补洞。
+
+Generated contribution 必须同时记录 required domain contribution id/version；`DefaultRawTokens` 初始化时
+验证依赖闭包，避免把漏装 MCU contribution 误报成普通 source-required token。
 
 ## 7. `MaterialValueKey<T>` 与 generator
 
@@ -244,7 +273,8 @@ key 的 descriptor 类型识别并求值。新增组件不应修改一个全局 
 ## 8. Custom key 策略
 
 有限 enum 无法表达 `ReferencePaletteTokens.Custom(name, tone)` 或
-`SystemColorTokens.Custom(role, name)`。目标架构继续采用参数化、强类型 descriptor family：
+`SystemColorTokens.Custom(role, name)`。目标架构继续采用参数化、强类型 descriptor family；颜色 family
+由 MCU canonical catalog 拥有，其他 domain 可以采用同一模式：
 
 - family factory 按规范化参数 intern key，确保相同逻辑 key 获得稳定 identity；
 - custom name 沿用当前大小写不敏感规则，tone/role 在构造时校验；
@@ -255,13 +285,18 @@ key 的 descriptor 类型识别并求值。新增组件不应修改一个全局 
   使用 `default(T)`。
 
 生成期已知的 parameterized family 必须同时声明其 missing policy：哪些 canonical family member 拥有
-generated baseline，哪些只允许 theme source 动态提供。应用运行时创建且未注册的扩展 descriptor 默认
+catalog baseline，哪些只允许 theme source 动态提供。应用运行时创建且未注册的扩展 descriptor 默认
 视为 source-required。这个分类属于 catalog/family metadata，不是 descriptor 上的默认 definition。
 
-当前参数化 identity 的实现可参考
+当前 M3E 过渡期参数化 identity 的实现可参考
 [`ReferencePaletteTokens`](../../src/Material3Expressive/Foundation/Tokens/Runtime/ReferencePaletteTokens.cs)
 与 [`SystemColorTokens`](../../src/Material3Expressive/Foundation/Tokens/Runtime/SystemColorTokens.cs)。
-迁移时应保留它们的 identity 语义，不将其转换成 generated enum 成员。
+迁移时应把 canonical intern table 移入 MCU Avalonia，并让 M3E compatibility facade 返回 MCU 的同一
+descriptor instance；不能保留第二份 table，也不能将其转换成 generated enum 成员。
+
+MCU custom color key family 可以由 MCU contribution 提供通用 recipe，但仍要求可见 Color Context 声明
+对应 named palette；缺失时必须报告配置错误，不能返回 Transparent。它与任意应用 extension key 完全
+没有 catalog definition 的 source-required 情况应分别诊断。
 
 应用作者自行创建的扩展 token 同样不进入生成 catalog。由于 descriptor 只承载 identity，不承载默认
 definition，应用必须通过使用处可见的 scope source/override 提供它；否则解析应以 missing token
@@ -286,7 +321,9 @@ fail-fast。
 - `Reference -> Reference`、`System -> System/Reference`、
   `Component -> Component/System/Reference` 的方向限制；
 - 完整 dependency graph 的 cycle，并报告实际环路；
-- 每个 generated Raw key 都能在 default catalog 中找到 definition；
+- 每个 generated Raw key 与每个 external catalog-owned dependency 都能在 composed default catalog 中
+  找到 definition；
+- external canonical declaration 的 owner/version/type/layer 与发射目标一致，且没有重复 identity owner；
 - `*.values.jsonc` 启用后，operator 名称、版本、输入与输出类型均合法。
 
 不要为了赶迁移把这些错误推迟到运行时。运行时诊断是对手写 override 和动态 custom key 的防线，
@@ -297,12 +334,13 @@ fail-fast。
 Generator 目标阶段完成时，应有以下测试：
 
 - incremental tracking：无关表不重新解析/发射；
-- snapshot：descriptor、override facade、provenance 与 catalog 输出稳定；
+- snapshot：descriptor、override facade、provenance 与 generated contribution 输出稳定；
 - graph：跨表存在性、类型、层级和完整 cycle path；
-- completeness：所有 generated Raw descriptor 都能按受支持的 query variant fallback 在
-  `DefaultRawTokens` 中获得定义；
+- completeness：所有 generated Raw descriptor 与 MCU-owned canonical dependency 都能按受支持的 query
+  variant fallback 在 composed `DefaultRawTokens` 中获得定义；
 - variant：每 key exact → `InheritVariant` → Default，且 alias/recipe hop 保留原始 query theme；
 - identity：standard/custom parameterized key 稳定且不会冲突；
+- external identity：M3E facade/generator reference 与 MCU API 指向同一 descriptor instance；
 - compiled-XAML：typed override literal 与 alias 可编译；
 - values schema（启用后）：每个标准 operator 的正例和错误类型诊断；
 - determinism：不同输入枚举顺序产生相同输出。

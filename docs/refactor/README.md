@@ -19,7 +19,8 @@ token runtime 的类型、层级和循环诊断能力，但将消费路径从 `R
 | [Raw token 模型](raw-token-model.md) | `MaterialToken<T>`、literal/alias/recipe、三层依赖、默认图和覆盖语义 |
 | [Material values](material-values.md) | `MaterialValueKey<T>`、Direct/Recipe plan、消费粒度和组件运行时边界 |
 | [MaterialTheme provider](material-theme.md) | Children、scope、主题透传、查询顺序、生命周期和通知 |
-| [Generator](generator.md) | JSONC 输入、generated default catalog、诊断以及未来 values manifest |
+| [MaterialColorUtilities 集成](material-color-utilities.md) | 颜色 token 所有权、Color Context、catalog contribution、兼容与缓存边界 |
+| [Generator](generator.md) | JSONC 输入、composed default catalog、诊断以及未来 values manifest |
 | [XAML 与 authoring](authoring-and-xaml.md) | 全局/子树 placement、typed override、DynamicResource 和最终值覆盖 |
 | [诊断与测试](diagnostics-and-testing.md) | miss/invalid/cycle 语义、测试矩阵、性能验证和验收门槛 |
 | [迁移计划](migration-plan.md) | 当前残留、Button 纵向切片、双轨迁移、清理与回滚边界 |
@@ -31,7 +32,7 @@ DynamicResource MaterialValueKey<T>
     → 最近的 MaterialTheme placement
     → MaterialValue plan 读取一个或多个 typed Raw tokens
     → 每个 Raw dependency 从 placement.Owner 重新沿资源树查找
-    → 整条资源树 miss 时才读取 generated DefaultRawTokens
+    → 整条资源树 miss 时才读取 composed DefaultRawTokens
     → 返回 consumer-ready、非 null 的 T
 ```
 
@@ -47,7 +48,8 @@ DynamicResource MaterialValueKey<T>
 4. Avalonia 传入的 `ThemeVariant?` 是权威参数，在同一次解析中原样贯穿所有 Raw dependency。
 5. Children 是本 placement 的 sparse Raw sources，later child wins；本地 miss 必须允许同 scope 其他
    provider 和祖先继续查找。
-6. `DefaultRawTokens` 是 generator 生成的不可变共享 catalog，只在完整 Owner 资源链 miss 后作为终端
+6. `DefaultRawTokens` 是不可变共享的 composite catalog，由 generated M3E definitions 与显式导入的
+   domain contributions（第一版包括 MCU colors）组成；它只在完整 Owner 资源链 miss 后作为终端
    fallback，绝不作为每个 placement 的本地 dense source。
 7. Flat schema 是显式的消费契约，不是全部 Component Raw token 的机械镜像。
 8. `MaterialValueKey<T>` 的 plan 第一版只有 Direct Raw 与显式依赖的纯 Raw recipe；禁止 Flat → Flat、
@@ -60,6 +62,8 @@ DynamicResource MaterialValueKey<T>
 12. 只有实测证明需要时才增加持久 cache；设计不能预先依赖 cache 才正确。
 13. Raw key 公开用于 typed authoring 与 alias identity，但不是控件的直接 `DynamicResource` 消费协议；
     原样消费也通过 `DirectRaw<T>` value key，确保终端 default fallback 只发生在完整解析 session 中。
+14. MCU Avalonia 是 Reference palette 与 System color key/算法的 canonical owner；M3E 不复制 color
+    descriptor 或 `DynamicScheme` 规则，只组合 MCU catalog contribution。
 
 ## 第一版明确不做
 

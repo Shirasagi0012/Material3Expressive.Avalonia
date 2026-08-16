@@ -2,7 +2,8 @@
 
 > **目标架构，尚未实现。** 本文规定重构完成后的公开使用方式和 XAML 形状，不能作为当前版本的 API 文档。
 > 总体设计见[架构总览](./architecture-overview.md)，Raw 与 Flat 的职责分别见
-> [Raw Token 模型](./raw-token-model.md)和 [Material Value](./material-values.md)。
+> [Raw Token 模型](./raw-token-model.md)和 [Material Value](./material-values.md)，颜色 scheme 的所有权与
+> source 形状见 [MaterialColorUtilities 集成](./material-color-utilities.md)。
 
 本架构提供两条刻意分开的使用路径：
 
@@ -55,13 +56,17 @@ placement 随后以自己的 Owner 为固定查找起点解析整条 Raw graph�
 `MaterialTheme.Children` 是当前 placement 的本地、稀疏 Raw source 列表。典型内容包括 generated
 typed override facade，以及将主题 authoring model 投影为 Raw definitions 的 source。
 
+以下目标示例中，`mcu:` 表示 MCU Avalonia 提供的 canonical color key/source API，`m3:` 表示 M3E 的
+Component/Material Value authoring API。迁移期的 M3E forwarding facade 可以兼容旧命名，但不能创建第二
+份 color key identity。
+
 ```xml
 <m3:MaterialTheme>
   <m3:MaterialTheme.Children>
-    <m3:SystemColorTokensOverrides
+    <mcu:SystemColorTokensOverrides
         Primary="#FF6750A4" />
     <m3:FilledButtonTokensOverrides
-        ContainerColor="{m3:TokenRef Token={x:Static m3:SystemColorTokens.Primary}}" />
+        ContainerColor="{m3:TokenRef Token={x:Static mcu:SystemColorTokens.Primary}}" />
   </m3:MaterialTheme.Children>
 </m3:MaterialTheme>
 ```
@@ -73,11 +78,38 @@ Children 的目标语义是：
 3. child 命中 `null`、错误类型或非法 definition 是配置错误，不得当作 miss；
 4. 所有 Children 都 miss 时，当前 `MaterialTheme` 的 Raw 分支返回 miss，让 Owner 的剩余资源和祖先
    scope 继续参与查找；
-5. 只有完整 Owner 资源链都 miss 后，resolver 才查询 generated `DefaultRawTokens`；默认图不是一个
+5. 只有完整 Owner 资源链都 miss 后，resolver 才查询 composed `DefaultRawTokens`；默认图不是一个
    需要由作者手工添加的 child；
 6. Children 增删、重排或内容变化时，placement 发布一次 `ResourcesChanged`。
 
 因此，局部空白不是“恢复硬编码默认值”，而是继续继承外层定义。`Clear` 也遵循同样语义。
+
+### 2.1 MCU ColorScheme source
+
+目标 MCU integration 允许 `ColorScheme` 本身作为 `IMaterialTokenSource`，或使用一个语义等价的轻量
+adapter。推荐 authoring 形状概念上是：
+
+```xml
+<m3:MaterialTheme>
+  <m3:MaterialTheme.Children>
+    <mcu:TonalSpotScheme Color="#FF6750A4" />
+  </m3:MaterialTheme.Children>
+</m3:MaterialTheme>
+```
+
+准确的 XAML 类型名可在共享 contract 落地后冻结。M3E 如果迁移期保留 `MaterialTheme.ColorScheme`
+convenience property，它必须把同一个 scheme 适配成上述本地 source 语义，不能同时再加入 Children。
+
+这个 source 只提供内部 Color Context token，不直接发布整套 Reference/System color，因此仍然是 sparse：
+
+- 当前 placement 没有 scheme source 时，Color Context 继续从祖先 placement 查找；
+- 整条资源链都没有 scheme 时，MCU catalog contribution 提供 terminal Material baseline；
+- 显式 System/Reference override 仍在完整资源链中先于 MCU recipe；
+- 每个新 placement 不会因为自动创建默认 Tonal Spot scheme 而遮蔽祖先品牌 scheme。
+
+修改 seed、contrast、platform、spec version 或 custom colors 会替换 MCU immutable snapshot，并通过 child
+`Changed` 让 placement 发布一次资源变化。新 M3E 路径不要求作者设置 inherited
+`MaterialColor.ResolvedSchemeProperty`。
 
 ## 3. 强类型 Raw override facade
 
@@ -94,15 +126,15 @@ generator 为受支持的 token table 生成 typed override facade。每个属�
 
 ```xml
 <m3:FilledButtonTokensOverrides
-    ContainerColor="{m3:TokenRef Token={x:Static m3:SystemColorTokens.Secondary}}"
-    LabelTextColor="{m3:TokenRef Token={x:Static m3:SystemColorTokens.OnSecondary}}" />
+    ContainerColor="{m3:TokenRef Token={x:Static mcu:SystemColorTokens.Secondary}}"
+    LabelTextColor="{m3:TokenRef Token={x:Static mcu:SystemColorTokens.OnSecondary}}" />
 ```
 
 reference palette 等参数化 catalog 可以通过专门的 markup extension 构造 key：
 
 ```xml
 <m3:FilledButtonTokensOverrides
-    ContainerColor="{m3:TokenRef Token={m3:ReferencePaletteToken Primary, 40}}" />
+    ContainerColor="{m3:TokenRef Token={mcu:ReferencePaletteToken Primary, 40}}" />
 ```
 
 facade 必须维持以下契约：
@@ -126,12 +158,13 @@ Raw key 的 public identity 用于 override 与 `TokenRef`，不表示它可以�
 应消费一个 `DirectRaw<T>` 的 `MaterialValueKey<T>`。
 
 `MaterialToken<T>` 本身只描述 identity、Path、layer 和 value type，不携带默认 definition。canonical
-token 的 baseline definition 位于独立的 generated `DefaultRawTokens` catalog。该 catalog 允许
+token 的 baseline definition 位于独立的 composed `DefaultRawTokens` catalog。该 catalog 允许
 variant-specific definition；`TryGetDefinition(token, queryTheme)` 对每个 Raw key 按
 exact → `InheritVariant` → Default 查询，同时 alias/recipe 的每一跳仍使用原始 `queryTheme`。
 
 参数化 custom token 可以没有 catalog entry；这种 token 必须由某个显式 source 提供，否则解析以
-source-required missing 失败，而不是臆造一个默认值。
+source-required missing 失败，而不是臆造一个默认值。MCU custom color family 是已知例外：catalog 可以
+提供通用算法 recipe，但当前 Color Context 仍必须声明对应 named palette；缺失时 fail-fast，不返回透明色。
 
 ## 4. `MaterialValueKey<T>` 的 XAML 消费
 
@@ -185,10 +218,10 @@ interaction 和动画进度仍由 control/presenter 处理，不能作为 Materi
     <ResourceDictionary.MergedDictionaries>
       <m3:MaterialTheme>
         <m3:MaterialTheme.Children>
-          <m3:SystemColorTokensOverrides
+          <mcu:SystemColorTokensOverrides
               Secondary="#FF006A6A" />
           <m3:FilledButtonTokensOverrides
-              ContainerColor="{m3:TokenRef Token={x:Static m3:SystemColorTokens.Secondary}}" />
+              ContainerColor="{m3:TokenRef Token={x:Static mcu:SystemColorTokens.Secondary}}" />
         </m3:MaterialTheme.Children>
       </m3:MaterialTheme>
     </ResourceDictionary.MergedDictionaries>
@@ -204,8 +237,8 @@ interaction 和动画进度仍由 control/presenter 处理，不能作为 Materi
 ```xml
 <m3:MaterialTheme>
   <m3:MaterialTheme.Children>
-    <m3:SystemColorTokensOverrides Primary="#FF6750A4" />
-    <m3:SystemColorTokensOverrides Primary="#FF005AC1" />
+    <mcu:SystemColorTokensOverrides Primary="#FF6750A4" />
+    <mcu:SystemColorTokensOverrides Primary="#FF005AC1" />
   </m3:MaterialTheme.Children>
 </m3:MaterialTheme>
 ```
@@ -268,12 +301,12 @@ theme-specific Raw override 使用 Avalonia `ThemeDictionaries`。每个 theme d
   <ResourceDictionary.ThemeDictionaries>
     <ResourceDictionary x:Key="Light">
       <ResourceDictionary.MergedDictionaries>
-        <m3:SystemColorTokensOverrides Primary="#FF6750A4" />
+        <mcu:SystemColorTokensOverrides Primary="#FF6750A4" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
     <ResourceDictionary x:Key="Dark">
       <ResourceDictionary.MergedDictionaries>
-        <m3:SystemColorTokensOverrides Primary="#FFD0BCFF" />
+        <mcu:SystemColorTokensOverrides Primary="#FFD0BCFF" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries>
@@ -357,6 +390,7 @@ attach 同一个实例可以支持热重载和字典替换，但任意时刻仍�
 - override facade 保持稀疏，`Clear`/`null` property 表示删除 definition；
 - alias 用 typed `TokenRef`，value 消费用 `DynamicResource + x:Static MaterialValueKey`；
 - 不用 `DynamicResource` 直接请求 Raw key；原样值也通过 Direct value key；
+- MCU `ColorScheme` 作为 sparse context source；空 placement 继承祖先 scheme，不手工安装 dense defaults；
 - theme-specific override 使用 `ThemeDictionaries`，不自行把 Default 当作 Light；
 - 日常主题定制使用 Raw，直接 Flat override 仅用于明确的展示层替换；
 - 不把 requester state、Bounds、RTL 或动画逻辑塞入 token/value projector。

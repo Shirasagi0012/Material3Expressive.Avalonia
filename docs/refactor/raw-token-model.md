@@ -2,7 +2,8 @@
 
 > **状态：目标架构，尚未实现。** 本文定义重构完成后 Raw token 的语义契约；代码片段是 API 草图，
 > 不表示当前仓库已经提供这些类型或成员。总体结构见[架构总览](architecture-overview.md)，
-> `MaterialTheme` 如何接入 Avalonia 资源树见 [MaterialTheme 与资源边界](material-theme.md)。
+> `MaterialTheme` 如何接入 Avalonia 资源树见 [MaterialTheme 与资源边界](material-theme.md)，颜色域的
+> 外部 owner 与算法边界见 [MaterialColorUtilities 集成](material-color-utilities.md)。
 
 ## 1. 职责
 
@@ -11,10 +12,14 @@ Raw token graph 保存 Material Design token 的**设计语义**，而不是某�
 
 ```text
 Component.FilledButton.ContainerColor
-    → System.Color.Primary
-    → Reference.Palette.Primary.40
-    → #FF6750A4
+    → MCU System.Color.Primary
+    → MCU Color Context（Reference-layer algorithm leaf）
+    → DynamicScheme.Primary
 ```
+
+非颜色 token 可以保留普通的 literal/alias graph；MCU dynamic system colors 则还取决于 contrast、
+tone-delta、platform 与 spec version，不应被错误转录成固定的 `System.Primary → Primary.40`。Reference、
+System、Component 仍表示设计层级与合法依赖方向，不要求每个 System role 都物化为公开 Reference tone alias。
 
 Raw 层负责：
 
@@ -53,7 +58,7 @@ public abstract class MaterialToken
 
 public sealed class MaterialToken<T> : MaterialToken
 {
-    // 构造入口由 generated catalog 或受控的动态 catalog 持有。
+    // 构造入口由 canonical domain catalog、generator 或受控的动态 catalog 持有。
 }
 ```
 
@@ -73,6 +78,10 @@ descriptor 必须满足以下不变量：
 3. `Path` 稳定、全局可诊断，并用于错误消息和工具输出；
 4. `Layer` 和 `ValueType` 是身份 schema 的一部分，发布后不能静默改变；
 5. canonical key 必须由静态字段或 canonical factory 返回稳定的同一实例。
+
+同一 token domain 只能有一个 canonical owner。尤其是 Reference palette 与 System color descriptor 由
+MCU Avalonia 提供；M3E compatibility facade 只能返回 MCU 的同一实例，不能创建 path 相同的 wrapper。
+详细依赖和迁移约束见 [MaterialColorUtilities 集成](material-color-utilities.md)。
 
 主 API 不使用一个有限 `enum` 表示所有 token。有限 enum 无法表达带参数的身份，例如自定义 palette
 名称与 tone：
@@ -105,6 +114,10 @@ Component  → 组件语义槽
 
 generator 应尽可能在生成期拒绝非法依赖；runtime 仍须检查动态 definition 与手写 recipe，不能假定所有
 资源都来自 generator。层级合法也不代表允许循环，循环在任何层都必须失败。
+
+domain integration 可以声明内部的 Reference-layer algorithm-input leaf。例如 MCU 的 Color Context 是
+Reference 层的不可变输入；Reference palette recipe 与 System color recipe 都可依赖它。这个内部 leaf
+不改变公开的三层模型，也不能反向依赖 System、Component、Owner 或 requester。
 
 ## 4. Definition 模型
 
@@ -168,6 +181,10 @@ recipe 必须：
 - 不自行访问资源树、requester、Owner、服务、时钟或其他环境状态；
 - 遵守层级方向与非 `null` 输出约束。
 
+recipe 可以调用某个已声明 Raw dependency 暴露的纯算法 API。例如 MCU color recipe 从显式声明的
+immutable Color Context 读取 palette/system color，仍然是合法的纯求值；Color Context 必须在进入 recipe
+之前就按本次 query theme 选好，recipe 不能自行查询 theme 或资源树。
+
 Raw recipe 表达的是 Material token graph 中的派生关系。仅为适配 Avalonia 属性而进行的组合，应放到
 Material Value plan 中，不能污染 Raw graph。
 
@@ -199,15 +216,19 @@ for (var i = Children.Count - 1; i >= 0; --i)
 ```
 
 Child miss 必须返回 `false`，让 Avalonia 继续查询同一资源节点的其他 provider 与祖先节点。Child
-不得自行使用 generated default，否则较近 placement 的默认值会错误遮蔽祖先显式 override。
+不得自行使用 composed default，否则较近 placement 的默认值会错误遮蔽祖先显式 override。
 
 查询 theme 属于原始资源请求，而不属于 source 或 Owner。一次 alias/recipe 解析中的每一步都透传同一
 theme；具体 variant fallback 规则见 [MaterialTheme 与资源边界](material-theme.md)。
 
 ## 6. DefaultRawTokens
 
-内置默认图由 generator 生成到一个只读、进程级共享的 `DefaultRawTokens` catalog。它保存每个
-built-in descriptor 的 `TokenDefinition<T>`，包括所有默认 literal、alias 与 Raw recipe：
+内置默认图通过一个只读、进程级共享的 `DefaultRawTokens` 统一暴露。它是 composite catalog，而不是
+单个 generator 的输出：M3E generator 提供组件及非颜色 definitions，MCU 等 domain package 可以提供
+自己拥有的 canonical key、definition family 与 provenance contribution。
+
+它保存或 dispatch 每个 built-in descriptor 的 `TokenDefinition<T>`，包括默认 literal、alias 与 Raw
+recipe：
 
 ```csharp
 internal static class DefaultRawTokens
@@ -217,12 +238,13 @@ internal static class DefaultRawTokens
         ThemeVariant? queryTheme,
         out ITokenDefinition definition);
 
-    public static bool RequiresGeneratedDefinition(MaterialToken token);
+    public static bool RequiresCatalogDefinition(MaterialToken token);
 }
 ```
 
-它是默认 graph 的唯一事实来源，不应复制到每个 `MaterialTheme`，也不应在生成时提前拍扁。保留
-definition graph 才能让局部 override 重新绑定默认 alias。
+它是 resolver 面前默认 graph 的唯一入口，不应复制到每个 `MaterialTheme`，也不应在生成/导入时提前
+拍扁。保留 definition graph 才能让局部 override 重新绑定默认 alias。Contribution 的注册顺序不提供
+override precedence；同一 canonical key 被两个 contribution 声明为 owned 必须失败。
 
 catalog 可以为同一个 Raw key 保存 variant-specific baseline definition。对该 key 的一次查询按
 `exact queryTheme → InheritVariant chain → Default` 查找；`null` 或 `ThemeVariant.Default` 直接查询
@@ -243,22 +265,27 @@ placement.Children
 例如，子 placement 没有定义 `System.Color.Primary`，祖先把它覆盖为红色；子 placement 必须使用祖先
 红色，而不能先被内置默认紫色截断。
 
-DefaultRawTokens 对所有 generated built-in token 必须完备。若完整资源链与默认 catalog 都缺少某个
-built-in token，这是 generator 或架构错误，应抛出可诊断异常。动态/custom descriptor 不受有限枚举
-约束，也不因此自动获得 default：没有 catalog entry 时，必须由当前 scope 可见的 token source 提供
-definition；否则解析为 missing configuration error，系统不能凭空构造一个值。
+DefaultRawTokens 对所有 catalog-owned built-in token 必须完备。若完整资源链与默认 catalog 都缺少某个
+owned token，这是 generator、domain contribution 或架构错误，应抛出可诊断异常。动态/custom descriptor
+不受有限枚举约束，也不因此自动获得 default：没有 catalog definition family 时，必须由当前 scope
+可见的 token source 提供 definition；否则解析为 missing configuration error，系统不能凭空构造一个值。
 
-resolver 因而还需要 generated membership metadata 来区分“本应有 catalog definition 的 built-in”与
-“按设计必须由 source 提供的 key”。该 metadata 可以由 `DefaultRawTokens.RequiresGeneratedDefinition`
-或独立的 generated identity catalog 提供；它只表达 missing policy，不保存 definition，也不把
-`DefaultDefinition` 放回 descriptor。未知的应用扩展 key 默认按 source-required 处理，不能根据 `Path`
-命名约定猜测类别。
+resolver 因而还需要 composed membership metadata 来区分“本应有 catalog definition 的 canonical
+key/family”与“按设计必须由 source 提供的 key”。该 metadata 可以由
+`DefaultRawTokens.RequiresCatalogDefinition` 或等价的 missing-policy catalog 提供；它只表达 missing
+policy，不把 `DefaultDefinition` 放回 descriptor。未知的应用扩展 key 默认按 source-required 处理，
+不能根据 `Path` 命名约定猜测类别。
+
+MCU parameterized custom color family 是一个需要单独诊断的已知 family：catalog 可以为它提供通用算法
+recipe，但当前 Color Context 必须包含对应 named palette；缺失时是配置错误，不返回透明色。它与完全
+未知、必须直接由应用 source 提供的 extension key 不同，详见
+[MaterialColorUtilities 集成](material-color-utilities.md)。
 
 如果 catalog 在 inherited variant 中命中一个 alias 或 recipe，其每个后续 Raw dependency 仍使用同一个
 原始 `queryTheme`：先重新查询完整 Owner 资源链，整链 miss 后再以该原始 theme 查询 catalog。不得把
 本 hop 命中的 inherited variant 当成下一 hop 的 query theme。
 
-默认 catalog 的生成、校验与版本策略见 [Generator](generator.md)。
+默认 catalog 的生成、导入、校验与版本策略见 [Generator](generator.md)。
 
 ## 7. 单次解析 session
 
@@ -327,9 +354,10 @@ definition。有关 C#/XAML authoring 见 [Authoring 与 XAML](authoring-and-xam
 3. 每次依赖跳转使用同一个 placement Owner 和同一个原始 theme；
 4. source 保持稀疏，miss 不截断 Avalonia 资源级联；
 5. DefaultRawTokens 只在完整 Raw 资源链 miss 后使用；
-6. generated default graph 保持为 graph，不预先拍扁；
+6. generated/imported default graph 保持为 graph，不预先拍扁；
 7. final value 非 `null`，`Clear` 表示删除 entry；
 8. 第一版只做单次 session memoization，不做持久 Raw/Flat cache；
 9. 非法类型、依赖方向、未声明依赖和循环都 fail fast；
 10. Variant、Size、state、Bounds 与平台投影不进入 Raw resolver；
-11. Raw key 不作为 ControlTheme 的直接 `DynamicResource` key；原样消费仍通过 Direct Material Value。
+11. Raw key 不作为 ControlTheme 的直接 `DynamicResource` key；原样消费仍通过 Direct Material Value；
+12. 外部 domain 的 canonical key 只有一个 owner；composite catalog 不以 contributor 顺序实现覆盖。
