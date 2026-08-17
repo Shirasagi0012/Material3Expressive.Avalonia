@@ -71,6 +71,9 @@ public static class M3Button
     /// allocate Material defaults state.
     /// </remarks>
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter activation. New themes must use MaterialValueKey<T>.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<bool> UseMaterialDefaultsProperty =
         AvaloniaProperty.RegisterAttached<Button, bool>(
             "UseMaterialDefaults", typeof(M3Button), defaultValue: false);
@@ -93,31 +96,93 @@ public static class M3Button
     // These are resolved fallback profiles. They are intentionally separate from ordinary styled
     // properties so their local values never compete with application Background/Padding/etc.
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<ButtonColors?> DefaultColorsProperty =
         AvaloniaProperty.RegisterAttached<Button, ButtonColors?>(
             "DefaultColors", typeof(M3Button));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<ButtonMetrics?> DefaultMetricsProperty =
         AvaloniaProperty.RegisterAttached<Button, ButtonMetrics?>(
             "DefaultMetrics", typeof(M3Button));
 
+    // These semantic properties carry the new MaterialValue results inside the ControlTheme.
+    // Variant/size selectors choose a typed endpoint, while the ordinary public properties keep a
+    // single base-theme setter so application styles and local values retain Avalonia precedence.
     [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<IBrush?> ResolvedContainerBrushProperty =
+        AvaloniaProperty.RegisterAttached<Button, IBrush?>(
+            "ResolvedContainerBrush", typeof(M3Button));
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<double> ResolvedContainerHeightProperty =
+        AvaloniaProperty.RegisterAttached<Button, double>(
+            "ResolvedContainerHeight", typeof(M3Button));
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<Thickness> ResolvedContentPaddingProperty =
+        AvaloniaProperty.RegisterAttached<Button, Thickness>(
+            "ResolvedContentPadding", typeof(M3Button));
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<TypographyRole> ResolvedTextStyleProperty =
+        AvaloniaProperty.RegisterAttached<Button, TypographyRole>(
+            "ResolvedTextStyle", typeof(M3Button), TypographyRole.LabelLarge);
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<ButtonVisualColors?> ResolvedVisualColorsProperty =
+        AvaloniaProperty.RegisterAttached<Button, ButtonVisualColors?>(
+            "ResolvedVisualColors", typeof(M3Button));
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<ButtonElevationProfile?> ResolvedElevationProperty =
+        AvaloniaProperty.RegisterAttached<Button, ButtonElevationProfile?>(
+            "ResolvedElevation", typeof(M3Button));
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<SpringSpec> ResolvedShapeMotionProperty =
+        AvaloniaProperty.RegisterAttached<Button, SpringSpec>(
+            "ResolvedShapeMotion", typeof(M3Button));
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<Thickness> ResolvedOutlineThicknessProperty =
+        AvaloniaProperty.RegisterAttached<Button, Thickness>(
+            "ResolvedOutlineThickness", typeof(M3Button));
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy Button shape-profile transport. Shape roles are now supplied through " +
+        "ButtonValueKeys and MaterialButtonContainerPresenter.ShapeProfile.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<ButtonShapes?> DefaultShapesProperty =
         AvaloniaProperty.RegisterAttached<Button, ButtonShapes?>(
             "DefaultShapes", typeof(M3Button));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<ButtonElevation?> DefaultElevationProperty =
         AvaloniaProperty.RegisterAttached<Button, ButtonElevation?>(
             "DefaultElevation", typeof(M3Button));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<SpringSpec> DefaultShapeMotionProperty =
         AvaloniaProperty.RegisterAttached<Button, SpringSpec>(
             "DefaultShapeMotion", typeof(M3Button));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<Thickness> DefaultOutlineThicknessProperty =
         AvaloniaProperty.RegisterAttached<Button, Thickness>(
             "DefaultOutlineThickness", typeof(M3Button));
@@ -175,9 +240,17 @@ public static class M3Button
     internal static void SetDefaultMetrics(Button button, ButtonMetrics? value) =>
         button.SetValue(DefaultMetricsProperty, value);
 
+    [Obsolete(
+        "Legacy Button shape-profile transport. Shape roles are now supplied through " +
+        "ButtonValueKeys and MaterialButtonContainerPresenter.ShapeProfile.",
+        DiagnosticId = "M3E1004")]
     internal static ButtonShapes? GetDefaultShapes(Button button) =>
         button.GetValue(DefaultShapesProperty);
 
+    [Obsolete(
+        "Legacy Button shape-profile transport. Shape roles are now supplied through " +
+        "ButtonValueKeys and MaterialButtonContainerPresenter.ShapeProfile.",
+        DiagnosticId = "M3E1004")]
     internal static void SetDefaultShapes(Button button, ButtonShapes? value) =>
         button.SetValue(DefaultShapesProperty, value);
 
@@ -198,6 +271,15 @@ public static class M3Button
 
     internal static void SetDefaultOutlineThickness(Button button, Thickness value) =>
         button.SetValue(DefaultOutlineThicknessProperty, value);
+
+    internal static ButtonVisualColors? GetResolvedVisualColors(Button button) =>
+        button.GetValue(ResolvedVisualColorsProperty);
+
+    internal static ButtonElevationProfile? GetResolvedElevation(Button button) =>
+        button.GetValue(ResolvedElevationProperty);
+
+    internal static SpringSpec GetResolvedShapeMotion(Button button) =>
+        button.GetValue(ResolvedShapeMotionProperty);
 
     public static IBrush? GetStateLayerBrush(Button button) =>
         button.GetValue(StateLayerBrushProperty);

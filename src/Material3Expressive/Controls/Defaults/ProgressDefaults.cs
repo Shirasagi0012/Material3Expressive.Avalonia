@@ -4,6 +4,9 @@ using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
+[Obsolete(
+    "Legacy progress metrics snapshot. Use ProgressValueKeys endpoints instead.",
+    DiagnosticId = "M3E1005")]
 internal sealed record ProgressMetrics(
     ColorTokenValue ActiveIndicatorColor,
     ColorTokenValue TrackColor,
@@ -18,14 +21,15 @@ internal sealed record ProgressMetrics(
     double IndeterminateWaveWavelength,
     double WaveSize);
 
-internal sealed record ProgressVisualColors(
-    IImmutableBrush ActiveIndicatorColor,
-    IImmutableBrush TrackColor,
-    IImmutableBrush StopColor);
-
 /// <summary>Component-owned policy shared by linear and circular progress indicators.</summary>
+[Obsolete(
+    "Legacy progress defaults transport. Use ProgressValueKeys endpoints instead.",
+    DiagnosticId = "M3E1005")]
 internal static class ProgressDefaults
 {
+    [Obsolete(
+        "Legacy progress metrics snapshot. Use ProgressValueKeys endpoints instead.",
+        DiagnosticId = "M3E1005")]
     public static ProgressMetrics Metrics(ProgressIndicatorShape shape) => shape switch
     {
         ProgressIndicatorShape.Linear => new(
@@ -57,6 +61,9 @@ internal static class ProgressDefaults
         _ => throw new ArgumentOutOfRangeException(nameof(shape), shape, null)
     };
 
+    [Obsolete(
+        "Legacy progress colour projection. Use ProgressValueKeys.VisualColors instead.",
+        DiagnosticId = "M3E1005")]
     public static ProgressVisualColors Colors(ResolvedTheme theme, ProgressIndicatorShape shape, bool isDark)
     {
         var metrics = Metrics(shape);

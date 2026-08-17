@@ -1,10 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
-using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -30,6 +30,43 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
     public static readonly StyledProperty<bool> IsErrorProperty =
         AvaloniaProperty.Register<MaterialCheckbox, bool>(nameof(IsError));
 
+    private static readonly CheckboxGeometryProfile DefaultGeometryProfile = new(
+        ContainerSize: 20,
+        ContainerCornerRadius: 2,
+        StateLayerSize: 40,
+        OutlineWidth: 2);
+
+    private static readonly CheckboxVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    /// <summary>
+    /// The renderer geometry profile supplied by the Material control theme.
+    /// </summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<CheckboxGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialCheckbox, CheckboxGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    /// <summary>
+    /// The renderer brush profile supplied by the Material control theme.
+    /// </summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<CheckboxVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialCheckbox, CheckboxVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
     private MaterialInteractionPresentationLease? _presentation;
@@ -39,8 +76,6 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
             ? existing
             : _presentation = _interaction.AttachPresentation(this);
 
-    private CheckboxMetrics _tokens = CheckboxDefaults.Metrics();
-    private CheckboxColors _colors = CheckboxDefaults.Colors(ResolvedTheme.Default, isDark: false);
     private SpringAnimation? _checkDrawFraction;
     private SpringAnimation? _checkCenterGravitation;
     private SpringAnimation? _checkOpacity;
@@ -68,7 +103,12 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
 
     static MaterialCheckbox()
     {
-        AffectsRender<MaterialCheckbox>(IsErrorProperty, IsCheckedProperty);
+        AffectsRender<MaterialCheckbox>(
+            IsErrorProperty,
+            IsCheckedProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
+        AffectsMeasure<MaterialCheckbox>(GeometryProfileProperty);
     }
 
     /// <inheritdoc cref="IsErrorProperty" />
@@ -78,12 +118,26 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
         set => SetValue(IsErrorProperty, value);
     }
 
+    /// <summary>Gets or sets the hidden renderer geometry profile.</summary>
+    internal CheckboxGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden renderer brush profile.</summary>
+    internal CheckboxVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
     /// <summary>The 40dp state layer centred inside the leading 48dp interactive layout slot.</summary>
     protected Rect GlyphArea
     {
         get
         {
-            var size = _tokens.StateLayerSize;
+            var size = GeometryProfile.StateLayerSize;
             return new Rect(
                 (MinimumInteractiveComponentSize - size) / 2,
                 (Bounds.Height - size) / 2,
@@ -100,13 +154,13 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
 
         EnsureVisualState(snap: true);
 
-        var boxSize = _tokens.ContainerSize;
+        var boxSize = GeometryProfile.ContainerSize;
         var box = new Rect(
             area.X + (area.Width - boxSize) / 2,
             area.Y + (area.Height - boxSize) / 2,
             boxSize,
             boxSize);
-        var corners = new CornerRadius(_tokens.ContainerCornerRadius);
+        var corners = new CornerRadius(GeometryProfile.ContainerCornerRadius);
 
         DrawBox(context, box, corners, _boxBrush!.Brush, _borderBrush!.Brush);
         DrawCheck(
@@ -119,8 +173,8 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
         base.Render(context);
         _interaction.DrawLayers(
             context,
-            IsChecked == true ? _colors.SelectedStateLayerColor : _colors.UnselectedStateLayerColor,
-            new CornerRadius(_tokens.StateLayerSize / 2));
+            IsChecked == true ? VisualColors.SelectedStateLayerColor : VisualColors.UnselectedStateLayerColor,
+            new CornerRadius(GeometryProfile.StateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -135,7 +189,9 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == IsEffectivelyEnabledProperty || change.Property == IsErrorProperty)
+        if (change.Property == GeometryProfileProperty || change.Property == VisualColorsProperty)
+            ApplyTokens(snap: !this.IsAttachedToVisualTree());
+        else if (change.Property == IsEffectivelyEnabledProperty || change.Property == IsErrorProperty)
             ApplyTokens(snap: !this.IsAttachedToVisualTree());
         else if (change.Property == IsCheckedProperty)
             UpdateVisualState(
@@ -146,15 +202,7 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
 
     private void ApplyTokens(bool snap = true)
     {
-        _tokens = CheckboxDefaults.Metrics();
-        _colors = CheckboxDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
-        _interaction.RippleRadius = _tokens.StateLayerSize / 2;
-
-        // Compose keeps a fixed 48dp interactive checkbox slot ahead of an optional label.
-        // Centre the 40dp state layer inside that slot, then start the content after the slot.
-        Padding = new Thickness(MinimumInteractiveComponentSize, 0, 0, 0);
-        Foreground = new SolidColorBrush(
-            _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.OnSurface, _theme.Current.IsDark) ?? Colors.Black);
+        _interaction.RippleRadius = GeometryProfile.StateLayerSize / 2;
         UpdateVisualState(snap: snap || !_hasVisualState);
         InvalidateMeasure();
         InvalidateVisual();
@@ -248,15 +296,15 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
     {
         var enabled = IsEffectivelyEnabled;
         var selected = state is not false;
-        var box = !enabled ? selected ? _colors.DisabledSelectedContainerColor : Brushes.Transparent
-            : IsError ? selected ? _colors.ErrorContainerColor : Brushes.Transparent
-            : selected ? _colors.SelectedContainerColor : Brushes.Transparent;
-        var border = !enabled ? selected ? _colors.DisabledSelectedContainerColor : _colors.DisabledOutlineColor
-            : IsError ? selected ? _colors.ErrorContainerColor : _colors.ErrorOutlineColor
-            : selected ? _colors.SelectedContainerColor : _colors.UnselectedOutlineColor;
-        var check = !enabled ? selected ? _colors.DisabledSelectedIconColor : Brushes.Transparent
-            : IsError ? selected ? _colors.ErrorIconColor : Brushes.Transparent
-            : selected ? _colors.SelectedIconColor : Brushes.Transparent;
+        var box = !enabled ? selected ? VisualColors.DisabledSelectedContainerColor : Brushes.Transparent
+            : IsError ? selected ? VisualColors.ErrorContainerColor : Brushes.Transparent
+            : selected ? VisualColors.SelectedContainerColor : Brushes.Transparent;
+        var border = !enabled ? selected ? VisualColors.DisabledSelectedContainerColor : VisualColors.DisabledOutlineColor
+            : IsError ? selected ? VisualColors.ErrorContainerColor : VisualColors.ErrorOutlineColor
+            : selected ? VisualColors.SelectedContainerColor : VisualColors.UnselectedOutlineColor;
+        var check = !enabled ? selected ? VisualColors.DisabledSelectedIconColor : Brushes.Transparent
+            : IsError ? selected ? VisualColors.ErrorIconColor : Brushes.Transparent
+            : selected ? VisualColors.SelectedIconColor : Brushes.Transparent;
         return new CheckboxVisualTargets(
             box,
             border,
@@ -285,16 +333,18 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
             context.DrawRectangle(
                 fill,
                 null,
-                new RoundedRect(box.Deflate(_tokens.OutlineWidth), MaterialContainer.Deflate(corners, _tokens.OutlineWidth)));
+                new RoundedRect(
+                    box.Deflate(GeometryProfile.OutlineWidth),
+                    MaterialContainer.Deflate(corners, GeometryProfile.OutlineWidth)));
         }
 
         if (borderColor.A == 0)
             return;
 
-        var inset = _tokens.OutlineWidth / 2;
+        var inset = GeometryProfile.OutlineWidth / 2;
         context.DrawRectangle(
             null,
-            new Pen(border, _tokens.OutlineWidth),
+            new Pen(border, GeometryProfile.OutlineWidth),
             new RoundedRect(box.Deflate(inset), MaterialContainer.Deflate(corners, inset)));
     }
 
@@ -342,6 +392,9 @@ public class MaterialCheckbox : CheckBox, IMaterialThemeConsumer, IMaterialInter
             solid.Color.G,
             solid.Color.B)
         : Colors.Transparent;
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 
     private IBrush CheckBrush
     {

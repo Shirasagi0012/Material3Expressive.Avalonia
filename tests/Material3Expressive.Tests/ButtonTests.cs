@@ -213,25 +213,28 @@ public class ButtonTests
     }
 
     [AvaloniaFact]
-    public void DefaultsAdapter_PublishesSemanticProfilesAndRefreshesAxes()
+    public void NewValueSlotsAndLegacyAdapter_RefreshTheirOwnedAxes()
     {
         var button = new Button { Content = "Press" };
         ThemeTestHelper.ShowWindow(button);
 
         var initialColors = Assert.IsType<ButtonColors>(M3Button.GetDefaultColors(button));
-        var initialMetrics = Assert.IsType<ButtonMetrics>(M3Button.GetDefaultMetrics(button));
-        Assert.Equal(ButtonSmallTokens.ContainerHeight, initialMetrics.ContainerHeight);
+        Assert.IsType<ButtonMetrics>(M3Button.GetDefaultMetrics(button));
+        Assert.Equal(ButtonSmallTokens.ContainerHeight, button.MinHeight);
         Assert.Equal(
-            ResolvedTheme.Default.ColorScheme!.GetColor(SysColorToken.Primary, isDark: false),
-            ThemeTestHelper.ColorOf(initialColors.Container));
+            ResolvedTheme.Default.ColorScheme!.GetColor(SysColorToken.OnPrimary, isDark: false),
+            ThemeTestHelper.ColorOf(initialColors.Content));
 
         M3Button.SetVariant(button, ButtonVariant.Outlined);
         M3Button.SetSize(button, ButtonSize.Large);
 
         var outlined = Assert.IsType<ButtonColors>(M3Button.GetDefaultColors(button));
-        var large = Assert.IsType<ButtonMetrics>(M3Button.GetDefaultMetrics(button));
-        Assert.Equal(0, ThemeTestHelper.ColorOf(outlined.Container).A);
-        Assert.Equal(ButtonLargeTokens.ContainerHeight, large.ContainerHeight);
+        Assert.IsType<ButtonMetrics>(M3Button.GetDefaultMetrics(button));
+        Assert.Equal(0, ThemeTestHelper.ColorOf(button.Background).A);
+        Assert.Equal(ButtonLargeTokens.ContainerHeight, button.MinHeight);
+        Assert.Equal(
+            ResolvedTheme.Default.ColorScheme!.GetColor(SysColorToken.OnSurfaceVariant, isDark: false),
+            ThemeTestHelper.ColorOf(outlined.Content));
         Assert.Equal(new Thickness(ButtonLargeTokens.OutlinedOutlineWidth), button.BorderThickness);
     }
 

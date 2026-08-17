@@ -12,6 +12,9 @@ namespace Material3Expressive.Controls;
 /// Owns the live projection from a native toggle icon button's theme, axes and checked state to
 /// semantic defaults.
 /// </summary>
+[Obsolete(
+    "Legacy component-defaults adapter. Consume typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 internal sealed class ToggleIconButtonDefaultsAdapter
 {
     private static readonly AttachedProperty<ToggleIconButtonDefaultsAdapter?> AdapterProperty =

@@ -16,6 +16,7 @@ namespace Material3Expressive.Controls;
 /// through styles and local values.
 /// </remarks>
 [EditorBrowsable(EditorBrowsableState.Never)]
+[Obsolete("Use IconButtonValueKeys and typed MaterialValue endpoints instead.", DiagnosticId = "M3E1004")]
 public sealed record IconButtonColors(
     IImmutableBrush Container,
     IImmutableBrush Icon,
@@ -28,6 +29,7 @@ public sealed record IconButtonColors(
 
 /// <summary>Size-dependent metrics published by an icon-button defaults adapter.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
+[Obsolete("Use IconButtonValueKeys and typed MaterialValue endpoints instead.", DiagnosticId = "M3E1004")]
 public sealed record IconButtonMetrics(
     double ContainerHeight,
     double IconSize,
@@ -37,6 +39,7 @@ public sealed record IconButtonMetrics(
 
 /// <summary>Geometry roles consumed by an icon-button container presenter.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
+[Obsolete("Use IconButtonValueKeys and typed MaterialValue endpoints instead.", DiagnosticId = "M3E1004")]
 public sealed record IconButtonShapes(
     ShapeRole Container,
     ShapeRole Pressed,
@@ -54,6 +57,7 @@ public sealed record IconButtonShapes(
 /// control, subscribe to a theme, or write Avalonia properties; <see cref="IconButtonDefaultsAdapter"/>
 /// owns that lifecycle.
 /// </remarks>
+[Obsolete("Use IconButtonValueKeys and typed MaterialValue endpoints instead.", DiagnosticId = "M3E1004")]
 internal static class IconButtonDefaults
 {
     private static readonly IImmutableBrush Transparent =

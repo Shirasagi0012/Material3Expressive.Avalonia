@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using System.ComponentModel;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 
@@ -13,6 +14,10 @@ namespace Material3Expressive.Controls;
 /// upstream token set; the mapping (including the fact that the expressive control uses the width
 /// tokens for its handle size) belongs here with the control policy.
 /// </remarks>
+[Obsolete(
+    "Legacy switch geometry snapshot. Use SwitchValueKeys.GeometryProfile instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal sealed record SwitchMetrics(
     double TrackWidth,
     double TrackHeight,
@@ -32,6 +37,10 @@ internal sealed record SwitchMetrics(
 /// snapshot changes.  Disabled entries carry the opacity specified by <see cref="SwitchTokens"/>
 /// so render code never has to know how the upstream role/alpha pair is assembled.
 /// </remarks>
+[Obsolete(
+    "Legacy switch colour snapshot. Use SwitchValueKeys.VisualColors instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal sealed record SwitchColors(
     IImmutableBrush SelectedTrackColor,
     IImmutableBrush SelectedHandleColor,
@@ -48,8 +57,12 @@ internal sealed record SwitchColors(
     IImmutableBrush DisabledUnselectedTrackOutlineColor,
     IImmutableBrush DisabledUnselectedHandleColor);
 
-/// <summary>Resolved state colours selected by a Material switch renderer.</summary>
-internal sealed record SwitchVisualColors(
+/// <summary>Resolved state colours selected by the legacy switch renderer.</summary>
+[Obsolete(
+    "Legacy switch visual projection. Use SwitchValueKeys.VisualColors instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
+internal sealed record LegacySwitchVisualColors(
     IImmutableBrush TrackColor,
     IImmutableBrush? TrackOutlineColor,
     IImmutableBrush HandleColor,
@@ -62,6 +75,10 @@ internal sealed record SwitchVisualColors(
 /// The generated table owns the static geometry and colour roles. This adapter owns the
 /// enabled/disabled and checked/unchecked projection that is specific to the control runtime.
 /// </remarks>
+[Obsolete(
+    "Legacy switch defaults adapter. Use SwitchValueKeys and MaterialValueKey<T> resources instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal static class SwitchDefaults
 {
     private static readonly SwitchMetrics DefaultMetrics = new(
@@ -76,9 +93,15 @@ internal static class SwitchDefaults
         SwitchTokens.StateLayerSize);
 
     /// <summary>Maps the raw upstream token set to the geometry consumed by the control.</summary>
+    [Obsolete(
+        "Legacy switch geometry snapshot. Use SwitchValueKeys.GeometryProfile instead.",
+        DiagnosticId = "M3E1005")]
     public static SwitchMetrics Metrics() => DefaultMetrics;
 
     /// <summary>Resolves the raw upstream colour roles against a system theme snapshot.</summary>
+    [Obsolete(
+        "Legacy switch colour snapshot. Use SwitchValueKeys.VisualColors instead.",
+        DiagnosticId = "M3E1005")]
     public static SwitchColors Colors(ResolvedTheme theme, bool isDark)
     {
         ArgumentNullException.ThrowIfNull(theme);
@@ -106,7 +129,10 @@ internal static class SwitchDefaults
                 scheme, isDark, SwitchTokens.DisabledUnselectedHandleOpacity));
     }
 
-    public static SwitchVisualColors Visuals(SwitchColors colors, bool enabled, bool selected)
+    [Obsolete(
+        "Legacy switch visual projection. Use SwitchValueKeys.VisualColors instead.",
+        DiagnosticId = "M3E1005")]
+    public static LegacySwitchVisualColors Visuals(SwitchColors colors, bool enabled, bool selected)
     {
         var track = !enabled
             ? selected ? colors.DisabledSelectedTrackColor : colors.DisabledUnselectedTrackColor
@@ -119,6 +145,6 @@ internal static class SwitchDefaults
             : selected ? colors.SelectedHandleColor : colors.UnselectedHandleColor;
         var stateLayer = selected ? colors.SelectedStateLayerColor : colors.UnselectedStateLayerColor;
 
-        return new SwitchVisualColors(track, outline, handle, stateLayer);
+        return new LegacySwitchVisualColors(track, outline, handle, stateLayer);
     }
 }

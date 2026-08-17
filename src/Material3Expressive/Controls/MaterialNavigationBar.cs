@@ -4,6 +4,7 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Metadata;
 using Material3Expressive.Foundation;
 using MaterialColorUtilities.Avalonia.Tokens;
@@ -30,8 +31,6 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
@@ -45,13 +44,27 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
     public static readonly StyledProperty<NavigationVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialNavigationBar, NavigationVariant>(nameof(Variant));
 
+    private static readonly NavigationGeometryProfile DefaultGeometryProfile = new(
+        0, 80, 56, 32, ShapeRole.CornerFull, 24, 8, 40, 16, 8, 6, 0,
+        TypographyRole.LabelMedium, false);
+
+    private static readonly NavigationVisualColors DefaultVisualColors = new(
+        TransparentBrush(), TransparentBrush(), TransparentBrush(), TransparentBrush(),
+        TransparentBrush(), TransparentBrush(), TransparentBrush());
+
+    internal static readonly StyledProperty<NavigationGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialNavigationBar, NavigationGeometryProfile>(
+            nameof(GeometryProfile), DefaultGeometryProfile);
+
+    internal static readonly StyledProperty<NavigationVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialNavigationBar, NavigationVisualColors>(
+            nameof(VisualColors), DefaultVisualColors);
+
     /// <inheritdoc cref="SelectedIndex" />
     public static readonly StyledProperty<int> SelectedIndexProperty =
         AvaloniaProperty.Register<MaterialNavigationBar, int>(
             nameof(SelectedIndex), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
-    private NavigationMetrics _tokens = NavigationDefaults.Metrics(NavigationVariant.Bar);
-    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Bar, false);
     private bool _updatingSelection;
 
     public MaterialNavigationBar()
@@ -64,7 +77,7 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
     static MaterialNavigationBar()
     {
         ClipToBoundsProperty.OverrideDefaultValue<MaterialNavigationBar>(false);
-        AffectsRender<MaterialNavigationBar>(VariantProperty);
+        AffectsRender<MaterialNavigationBar>(VariantProperty, GeometryProfileProperty, VisualColorsProperty);
     }
 
     /// <summary>Bar or rail.</summary>
@@ -72,6 +85,18 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
     {
         get => GetValue(VariantProperty);
         set => SetValue(VariantProperty, value);
+    }
+
+    internal NavigationGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    internal NavigationVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
     }
 
     /// <summary>Which destination is selected. -1 for none.</summary>
@@ -86,10 +111,10 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
     public AvaloniaList<MaterialNavigationItem> Items { get; } = new();
 
     /// <summary>The gap between items, from the token table.</summary>
-    public double ItemSpacing => _tokens.ItemBetweenSpace;
+    public double ItemSpacing => GeometryProfile.ItemBetweenSpace;
 
     /// <summary>True when the items stack down the side rather than across the bottom.</summary>
-    public bool IsVertical => _tokens.IsVertical;
+    public bool IsVertical => GeometryProfile.IsVertical;
 
     /// <summary>Rows requested by the template's uniform item grid.</summary>
     public int ItemRows => IsVertical ? 0 : 1;
@@ -115,7 +140,7 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
             context,
             Bounds.Size,
             default,
-            _colors.ContainerColor);
+            VisualColors.ContainerColor);
 
         base.Render(context);
     }
@@ -124,16 +149,18 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
     {
         var size = base.MeasureOverride(availableSize);
 
-        return _tokens.IsVertical
-            ? new Size(Math.Max(size.Width, _tokens.ContainerSize), size.Height)
-            : new Size(size.Width, Math.Max(size.Height, _tokens.ContainerSize));
+        return GeometryProfile.IsVertical
+            ? new Size(Math.Max(size.Width, GeometryProfile.ContainerSize), size.Height)
+            : new Size(size.Width, Math.Max(size.Height, GeometryProfile.ContainerSize));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty)
+        if (change.Property == VariantProperty
+            || change.Property == GeometryProfileProperty
+            || change.Property == VisualColorsProperty)
             ApplyTokens();
         else if (change.Property == SelectedIndexProperty)
             SyncSelection();
@@ -200,9 +227,6 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
         var previousRows = ItemRows;
         var previousColumns = ItemColumns;
 
-        _tokens = NavigationDefaults.Metrics(Variant);
-        _colors = NavigationDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
-
         RaisePropertyChanged(ItemSpacingProperty, previousSpacing, ItemSpacing);
         RaisePropertyChanged(IsVerticalProperty, previousVertical, IsVertical);
         RaisePropertyChanged(ItemRowsProperty, previousRows, ItemRows);
@@ -211,4 +235,7 @@ public class MaterialNavigationBar : TemplatedControl, IMaterialThemeConsumer, I
         AttachItems();
         InvalidateVisual();
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

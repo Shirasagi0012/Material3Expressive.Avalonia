@@ -15,6 +15,7 @@ namespace Material3Expressive.Controls;
 /// checked; collapsing those states into an ordinary icon-button profile loses that contract.
 /// </remarks>
 [EditorBrowsable(EditorBrowsableState.Never)]
+[Obsolete("Use IconButtonValueKeys and typed MaterialValue endpoints instead.", DiagnosticId = "M3E1004")]
 public sealed record ToggleIconButtonColors(
     IImmutableBrush UncheckedContainer,
     IImmutableBrush UncheckedIcon,
@@ -54,6 +55,7 @@ public sealed record ToggleIconButtonColors(
 /// the raw size facts and the ordinary icon-button metrics, while the checked shape morph uses the
 /// expressive fast-spatial motion profile.
 /// </remarks>
+[Obsolete("Use IconButtonValueKeys and typed MaterialValue endpoints instead.", DiagnosticId = "M3E1004")]
 internal static class ToggleIconButtonDefaults
 {
     private static readonly IImmutableBrush Transparent =

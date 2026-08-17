@@ -3,9 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
-using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
-using MaterialColorUtilities.Avalonia.Tokens;
+using Avalonia.Media.Immutable;
 
 namespace Material3Expressive.Controls;
 
@@ -23,40 +21,29 @@ public enum DividerOrientation { Horizontal, Vertical }
 // no-line meaning.
 
 /// <summary>A Material 3 horizontal or vertical divider.</summary>
-public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer, IVisualBoundsProbe
+public sealed class MaterialDivider : TemplatedControl, IVisualBoundsProbe
 {
-    private MaterialElementContext? _material;
-
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
-    private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
-        ApplyTheme(state.Theme, state.IsDark);
-
-    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
-        OnMotionTick();
-
-    private void OnMotionTick() => InvalidateVisual();
-
     public static readonly StyledProperty<DividerOrientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialDivider, DividerOrientation>(nameof(Orientation));
     public static readonly StyledProperty<double> ThicknessProperty =
-        AvaloniaProperty.Register<MaterialDivider, double>(nameof(Thickness), DividerDefaults.Thickness);
+        AvaloniaProperty.Register<MaterialDivider, double>(nameof(Thickness), 1);
     public static readonly StyledProperty<bool> IsHairlineProperty =
         AvaloniaProperty.Register<MaterialDivider, bool>(nameof(IsHairline));
-    public static readonly DirectProperty<MaterialDivider, IBrush?> DividerBrushProperty =
-        AvaloniaProperty.RegisterDirect<MaterialDivider, IBrush?>(nameof(DividerBrush), o => o.DividerBrush, (o, value) => o.SetDividerBrush(value));
+    public static readonly StyledProperty<IBrush?> DividerBrushProperty =
+        AvaloniaProperty.Register<MaterialDivider, IBrush?>(nameof(DividerBrush));
+
+    // These properties are the hidden semantic transport from the ControlTheme's typed value
+    // endpoints to the public Avalonia properties.  Keeping the endpoint setters separate from
+    // the public properties lets ordinary application styles and local values retain precedence.
+    internal static readonly StyledProperty<IImmutableBrush?> ResolvedDividerBrushProperty =
+        AvaloniaProperty.Register<MaterialDivider, IImmutableBrush?>(nameof(ResolvedDividerBrush));
+    internal static readonly StyledProperty<double> ResolvedThicknessProperty =
+        AvaloniaProperty.Register<MaterialDivider, double>(nameof(ResolvedThickness));
 
     private readonly HairlineStrokeVisual _hairlineStroke;
-    private DividerVisualColors _colors = new(DividerTokens.Color.ResolveBrush(null, false));
-    private IBrush? _dividerBrush;
-    private bool _hasExplicitBrush;
 
     public MaterialDivider()
     {
-        _material = MaterialElementContext.Ensure(this);
         // The retained child gives Dp.Hairline a non-zero render footprint while this control
         // keeps Compose's zero cross-axis desired/layout size. It is intentionally visual-only:
         // dividers remain non-interactive and do not gain a logical or automation child.
@@ -70,7 +57,6 @@ public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, 
         };
         IsHitTestVisible = false;
         Focusable = false;
-        ApplyTheme();
     }
 
     public DividerOrientation Orientation { get => GetValue(OrientationProperty); set => SetValue(OrientationProperty, value); }
@@ -87,7 +73,21 @@ public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, 
     /// </remarks>
     public bool IsHairline { get => GetValue(IsHairlineProperty); set => SetValue(IsHairlineProperty, value); }
 
-    public IBrush? DividerBrush { get => _dividerBrush; set => SetDividerBrush(value); }
+    public IBrush? DividerBrush { get => GetValue(DividerBrushProperty); set => SetValue(DividerBrushProperty, value); }
+
+    /// <summary>Gets or sets the hidden MaterialValue brush projection.</summary>
+    internal IImmutableBrush? ResolvedDividerBrush
+    {
+        get => GetValue(ResolvedDividerBrushProperty);
+        set => SetValue(ResolvedDividerBrushProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden MaterialValue thickness projection.</summary>
+    internal double ResolvedThickness
+    {
+        get => GetValue(ResolvedThicknessProperty);
+        set => SetValue(ResolvedThicknessProperty, value);
+    }
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -165,25 +165,6 @@ public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, 
         AffectsRender<MaterialDivider>(OrientationProperty, ThicknessProperty, IsHairlineProperty, DividerBrushProperty);
     }
 
-    private void ApplyTheme()
-    {
-        _colors = DividerDefaults.Colors(ResolvedTheme, IsDarkVariant);
-        if (!_hasExplicitBrush)
-        {
-            SetAndRaise(DividerBrushProperty, ref _dividerBrush, _colors.Color);
-            InvalidateVisual();
-            _hairlineStroke.InvalidateVisual();
-        }
-    }
-
-    private void SetDividerBrush(IBrush? value)
-    {
-        _hasExplicitBrush = true;
-        SetAndRaise(DividerBrushProperty, ref _dividerBrush, value);
-        InvalidateVisual();
-        _hairlineStroke.InvalidateVisual();
-    }
-
     private double LayoutThickness => IsHairline ? 0 : Math.Max(0, Thickness);
 
     private double OnePhysicalPixel => 1 / (TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
@@ -207,11 +188,6 @@ public sealed class MaterialDivider : TemplatedControl, IMaterialThemeConsumer, 
             || change.Property == IsHairlineProperty
             || change.Property == DividerBrushProperty)
             _hairlineStroke?.InvalidateVisual();
-    }
-
-    private void ApplyTheme(ResolvedTheme theme, bool isDark)
-    {
-        ApplyTheme();
     }
 
     private sealed class HairlineStrokeVisual(MaterialDivider owner) : Control

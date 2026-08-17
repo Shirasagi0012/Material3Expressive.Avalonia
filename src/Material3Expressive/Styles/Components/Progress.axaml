@@ -20,16 +20,38 @@
              bounds, since all three draw centred. -->
         <ControlTheme x:Key="{x:Type m3:MaterialLinearProgressIndicator}"
                       TargetType="m3:MaterialLinearProgressIndicator">
+            <!-- The renderer receives only consumer-ready profiles. Progress/value state,
+                 wavy geometry, bounds and motion remain owned by the control. -->
+            <Setter Property="ResolvedMetrics"
+                    Value="{DynamicResource {x:Static m3:ProgressValueKeys.LinearMetrics}}" />
+            <Setter Property="ResolvedVisualColors"
+                    Value="{DynamicResource {x:Static m3:ProgressValueKeys.VisualColors}}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialCircularProgressIndicator}"
                       TargetType="m3:MaterialCircularProgressIndicator">
+            <Setter Property="ResolvedMetrics"
+                    Value="{DynamicResource {x:Static m3:ProgressValueKeys.CircularMetrics}}" />
+            <Setter Property="ResolvedVisualColors"
+                    Value="{DynamicResource {x:Static m3:ProgressValueKeys.VisualColors}}" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialLoadingIndicator}" TargetType="m3:MaterialLoadingIndicator">
+            <!-- Variant selects consumer-ready profiles. Morphing, bounds, progress state and
+                 motion remain owned by the loading-indicator renderer. -->
+            <Setter Property="ResolvedMetrics"
+                    Value="{DynamicResource {x:Static m3:LoadingIndicatorValueKeys.StandardGeometry}}" />
+            <Setter Property="ResolvedVisualColors"
+                    Value="{DynamicResource {x:Static m3:LoadingIndicatorValueKeys.StandardVisualColors}}" />
+            <Style Selector="^[Variant=Contained]">
+                <Setter Property="ResolvedMetrics"
+                        Value="{DynamicResource {x:Static m3:LoadingIndicatorValueKeys.ContainedGeometry}}" />
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:LoadingIndicatorValueKeys.ContainedVisualColors}}" />
+            </Style>
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </ControlTheme>

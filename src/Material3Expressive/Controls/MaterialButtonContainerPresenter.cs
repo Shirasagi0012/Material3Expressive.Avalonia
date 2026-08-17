@@ -17,6 +17,16 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeConsumer, IMaterialInteractionObserver
 {
+    private static readonly ButtonShapeProfile DefaultShapeProfile = new(
+        ShapeRole.CornerFull,
+        ShapeRole.CornerSmall,
+        ShapeRole.CornerMedium);
+
+    public static readonly StyledProperty<ButtonShapeProfile> ShapeProfileProperty =
+        AvaloniaProperty.Register<MaterialButtonContainerPresenter, ButtonShapeProfile>(
+            nameof(ShapeProfile),
+            DefaultShapeProfile);
+
     public static readonly DirectProperty<MaterialButtonContainerPresenter, CornerRadius>
         CurrentCornerRadiusProperty = AvaloniaProperty.RegisterDirect<
             MaterialButtonContainerPresenter,
@@ -28,9 +38,8 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     private MaterialInteractionController? _interaction;
     private IDisposable? _interactionLease;
     private AnimatedShape? _shape;
-    private ButtonShapes _shapes = ButtonDefaults.Shapes(ButtonSize.Small);
-    private ButtonElevation _elevation = ButtonDefaults.Elevation(ButtonVariant.Filled);
-    private SpringSpec _shapeMotion = ButtonDefaults.ShapeMotion(ResolvedTheme.Default);
+    private ButtonElevationProfile _elevation = new(0, 0, 0, 0, 0);
+    private SpringSpec _shapeMotion = new(1, 1600);
     private CornerRadius _currentCornerRadius;
 
     public MaterialButtonContainerPresenter()
@@ -48,6 +57,13 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     {
         get => _currentCornerRadius;
         private set => SetAndRaise(CurrentCornerRadiusProperty, ref _currentCornerRadius, value);
+    }
+
+    /// <summary>Gets or sets the semantic shapes selected atomically by the Button size policy.</summary>
+    public ButtonShapeProfile ShapeProfile
+    {
+        get => GetValue(ShapeProfileProperty);
+        set => SetValue(ShapeProfileProperty, value);
     }
 
     internal MaterialInteractionController? Interaction => _interaction;
@@ -117,6 +133,8 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
 
         if (change.Property == BoundsProperty || change.Property == FlowDirectionProperty)
             UpdateCurrentCornerRadius();
+        else if (change.Property == ShapeProfileProperty)
+            UpdateShape(snap: true);
     }
 
     private AnimatedShape Shape => _shape ??= CreateShape();
@@ -132,9 +150,8 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == M3Button.DefaultShapesProperty
-            || change.Property == M3Button.DefaultElevationProperty
-            || change.Property == M3Button.DefaultShapeMotionProperty)
+        if (change.Property == M3Button.ResolvedElevationProperty
+            || change.Property == M3Button.ResolvedShapeMotionProperty)
         {
             ApplyTokens(snapShape: true);
         }
@@ -165,15 +182,13 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
         if (_owner is not { } owner)
             return;
 
-        // Defaults are projected by the owner-local adapter. The fallbacks only cover the short
-        // construction window before the ControlTheme marker has activated that adapter.
-        _shapes = M3Button.GetDefaultShapes(owner)
-                  ?? ButtonDefaults.Shapes(M3Button.GetSize(owner));
-        _elevation = M3Button.GetDefaultElevation(owner)
-                     ?? ButtonDefaults.Elevation(M3Button.GetVariant(owner));
-        _shapeMotion = M3Button.GetDefaultShapeMotion(owner);
+        // Variant and motion selection are projected by typed Material value resources onto the
+        // owner. These constants only cover a custom template that omits the Material setters.
+        _elevation = M3Button.GetResolvedElevation(owner)
+                     ?? new ButtonElevationProfile(0, 0, 0, 0, 0);
+        _shapeMotion = M3Button.GetResolvedShapeMotion(owner);
         if (_shapeMotion.Stiffness <= 0)
-            _shapeMotion = ButtonDefaults.ShapeMotion(_theme.Current.Theme);
+            _shapeMotion = new SpringSpec(1, 1600);
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -185,7 +200,7 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
 
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? ShapeFor(_shapes.Pressed)
+            ? ShapeFor(ShapeProfile.Pressed)
             : RestingShape();
 
         if (snap && !shape.IsRunning)
@@ -213,13 +228,13 @@ public sealed class MaterialButtonContainerPresenter : Control, IMaterialThemeCo
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return ShapeFor(_shapes.Container);
+            return ShapeFor(ShapeProfile.Container);
 
         return M3Button.GetContainerShapeOverride(owner)
                ?? ShapeFor(
                    M3Button.GetIsSquare(owner)
-                       ? _shapes.Square
-                       : _shapes.Container);
+                       ? ShapeProfile.Square
+                       : ShapeProfile.Container);
     }
 
     private RoundedCornerShape ShapeFor(ShapeRole role) => _theme.Current.Theme.Shapes.Get(role);

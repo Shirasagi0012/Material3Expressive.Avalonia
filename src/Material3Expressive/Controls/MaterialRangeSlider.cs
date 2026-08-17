@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
@@ -20,10 +21,27 @@ namespace Material3Expressive.Controls;
 /// operates that selected thumb. Tab moves from the Start endpoint to the End endpoint before
 /// leaving the control; Shift+Tab traverses the two endpoints in reverse.
 /// </remarks>
-public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
+public sealed class MaterialRangeSlider : Control
 {
     private const double MinimumInteractiveComponentSize = 48;
     private const double TrackInsideCornerSize = 2;
+
+    private static readonly SliderGeometryProfile DefaultGeometryProfile = new(
+        TrackHeight: 16,
+        HandleWidth: 4,
+        PressedHandleWidth: 2,
+        HandleHeight: 44,
+        HandlePadding: 6,
+        StopIndicatorSize: 4);
+
+    private static readonly SliderVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
     public static readonly StyledProperty<double> MinimumProperty =
         AvaloniaProperty.Register<MaterialRangeSlider, double>(nameof(Minimum));
     public static readonly StyledProperty<double> MaximumProperty =
@@ -37,7 +55,20 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
     public static readonly StyledProperty<double> LargeChangeProperty =
         AvaloniaProperty.Register<MaterialRangeSlider, double>(nameof(LargeChange), 10d);
 
-    private readonly MaterialThemeController _theme;
+    /// <summary>The renderer geometry profile supplied by the Material control theme.</summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SliderGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialRangeSlider, SliderGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    /// <summary>The renderer brush profile supplied by the Material control theme.</summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SliderVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialRangeSlider, SliderVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
     private readonly MaterialInteractionController _interaction;
     private MaterialInteractionPresentationLease? _presentation;
 
@@ -45,26 +76,25 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
         _presentation is { IsDisposed: false } existing
             ? existing
             : _presentation = _interaction.AttachPresentation(this);
-    private SliderMetrics _tokens = SliderDefaults.Metrics();
-    private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
+    private SliderGeometryProfile _tokens = DefaultGeometryProfile;
+    private SliderVisualColors _colors = DefaultVisualColors;
     private bool _updating;
     private bool _startActive = true;
 
     public MaterialRangeSlider()
     {
-        _theme = MaterialElementContext.Ensure(this).Theme;
         _interaction = MaterialElementContext.Ensure(this).Interaction;
         Focusable = true;
-        ApplyTokens();
+        ApplyProfiles();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     static MaterialRangeSlider()
     {
         AffectsRender<MaterialRangeSlider>(
             MinimumProperty, MaximumProperty, StartValueProperty, EndValueProperty,
-            SmallChangeProperty, LargeChangeProperty);
+            SmallChangeProperty, LargeChangeProperty,
+            IsEffectivelyEnabledProperty, GeometryProfileProperty, VisualColorsProperty);
+        AffectsMeasure<MaterialRangeSlider>(GeometryProfileProperty);
     }
 
     public double Minimum { get => GetValue(MinimumProperty); set => SetValue(MinimumProperty, value); }
@@ -73,6 +103,20 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
     public double EndValue { get => GetValue(EndValueProperty); set => SetValue(EndValueProperty, value); }
     public double SmallChange { get => GetValue(SmallChangeProperty); set => SetValue(SmallChangeProperty, value); }
     public double LargeChange { get => GetValue(LargeChangeProperty); set => SetValue(LargeChangeProperty, value); }
+
+    /// <summary>Gets the renderer geometry profile.</summary>
+    internal SliderGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets the renderer brush profile.</summary>
+    internal SliderVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
 
     public override void Render(DrawingContext context)
     {
@@ -87,9 +131,8 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
         var high = Math.Max(start, end);
         var radius = _tokens.TrackHeight / 2;
         var enabled = IsEffectivelyEnabled;
-        var visuals = SliderDefaults.Visuals(_colors, enabled);
-        var active = visuals.ActiveTrackColor;
-        var inactive = visuals.InactiveTrackColor;
+        var active = enabled ? _colors.ActiveTrackColor : _colors.DisabledActiveTrackColor;
+        var inactive = enabled ? _colors.InactiveTrackColor : _colors.DisabledInactiveTrackColor;
         var trackStart = handleWidth / 2;
         var trackEnd = width - handleWidth / 2;
         var startTrackEnd = low - handleWidth / 2 - _tokens.HandlePadding;
@@ -107,7 +150,7 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
             context.DrawEllipse(active, null, new Point(trackStart + radius, center), stopRadius, stopRadius);
         if (trackEnd - endTrackStart > radius)
             context.DrawEllipse(active, null, new Point(trackEnd - radius, center), stopRadius, stopRadius);
-        var brush = visuals.HandleColor;
+        var brush = enabled ? _colors.HandleColor : _colors.DisabledHandleColor;
         DrawHandle(context, start, center, handleWidth, brush);
         DrawHandle(context, end, center, handleWidth, brush);
 
@@ -128,7 +171,7 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
                 interactionArea,
                 focusRingArea,
                 new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2)));
-        _interaction.DrawLayers(context, visuals.StateLayerColor, new CornerRadius(stateLayerSize / 2));
+        _interaction.DrawLayers(context, _colors.StateLayerColor, new CornerRadius(stateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize) =>
@@ -219,8 +262,9 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == IsEffectivelyEnabledProperty)
-            ApplyTokens();
+        if (change.Property == GeometryProfileProperty || change.Property == VisualColorsProperty)
+            ApplyProfiles();
+
         if (!_updating)
         {
             if (change.Property == StartValueProperty)
@@ -343,11 +387,14 @@ public sealed class MaterialRangeSlider : Control, IMaterialThemeConsumer
     private void DrawHandle(DrawingContext context, double x, double center, double width, IBrush brush) =>
         context.DrawRectangle(brush, null, new RoundedRect(new Rect(x - width / 2, center - _tokens.HandleHeight / 2, width, _tokens.HandleHeight), new CornerRadius(width / 2)));
 
-    private void ApplyTokens()
+    private void ApplyProfiles()
     {
-        _tokens = SliderDefaults.Metrics();
-        _colors = SliderDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
+        _tokens = GeometryProfile;
+        _colors = VisualColors;
         InvalidateMeasure();
         InvalidateVisual();
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

@@ -8,6 +8,9 @@ namespace Material3Expressive.Foundation;
 /// Bindings for the typography markup extensions. Typography has no theme-variant dimension, so
 /// these depend on the theme alone.
 /// </summary>
+[Obsolete(
+    "Legacy ResolvedTheme typography binding. Consume typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 internal static class TypographyResolver
 {
     public static BindingBase FontFamily(FontFamilyToken token)

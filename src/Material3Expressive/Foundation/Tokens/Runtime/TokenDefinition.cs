@@ -25,6 +25,11 @@ internal enum TokenDefinitionKind
 /// <summary>Describes how a token obtains a value in a resource scope.</summary>
 /// <typeparam name="T">The resolved token value type.</typeparam>
 [TypeConverter(typeof(TokenDefinitionTypeConverter))]
+[Obsolete(
+    "Legacy descriptor-owned token definition. Use " +
+    "MaterialDesignTokens.Avalonia.TokenDefinition<T>.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public abstract record TokenDefinition<T> : ITokenDefinition
 {
     // Resolution is intentionally closed over the three definition kinds below. Recipes are the
@@ -50,6 +55,10 @@ public abstract record TokenDefinition<T> : ITokenDefinition
 }
 
 /// <summary>Converts a XAML literal to the value type of a typed token-definition property.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class TokenDefinitionTypeConverter : TypeConverter
 {
     /// <inheritdoc />
@@ -83,6 +92,10 @@ public sealed class TokenDefinitionTypeConverter : TypeConverter
 /// non-generic converter cannot reliably discover <typeparamref name="T" /> from the context.
 /// </summary>
 /// <typeparam name="T">The token's resolved value type.</typeparam>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public class TokenDefinitionTypeConverter<T> : TypeConverter
 {
     /// <inheritdoc />
@@ -106,45 +119,77 @@ public class TokenDefinitionTypeConverter<T> : TypeConverter
 }
 
 /// <summary>Converts XAML color literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class ColorTokenDefinitionTypeConverter : TokenDefinitionTypeConverter<Color>
 {
 }
 
 /// <summary>Converts XAML numeric literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class DoubleTokenDefinitionTypeConverter : TokenDefinitionTypeConverter<double>
 {
 }
 
 /// <summary>Converts XAML Boolean literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class BooleanTokenDefinitionTypeConverter : TokenDefinitionTypeConverter<bool>
 {
 }
 
 /// <summary>Converts XAML shape-role literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class ShapeTokenDefinitionTypeConverter :
     TokenDefinitionTypeConverter<global::Material3Expressive.Foundation.ShapeRole>
 {
 }
 
 /// <summary>Converts XAML typography-role literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class TypographyTokenDefinitionTypeConverter :
     TokenDefinitionTypeConverter<global::Material3Expressive.Foundation.TypographyRole>
 {
 }
 
 /// <summary>Converts XAML motion-role literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class MotionTokenDefinitionTypeConverter :
     TokenDefinitionTypeConverter<global::Material3Expressive.Foundation.MotionRole>
 {
 }
 
 /// <summary>Converts XAML typeface-family token literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class FontFamilyTokenDefinitionTypeConverter :
     TokenDefinitionTypeConverter<global::Material3Expressive.Foundation.Tokens.FontFamilyToken>
 {
 }
 
 /// <summary>Converts XAML typeface-weight token literals to token definitions.</summary>
+[Obsolete(
+    "Legacy token-definition converter. Use the shared MaterialDesignTokens.Avalonia contract.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class FontWeightTokenDefinitionTypeConverter :
     TokenDefinitionTypeConverter<global::Material3Expressive.Foundation.Tokens.FontWeightToken>
 {
@@ -166,6 +211,10 @@ internal static class TokenLiteralConversion
 }
 
 /// <summary>A token definition containing a concrete value.</summary>
+[Obsolete(
+    "Legacy descriptor-owned token definition. Use MaterialDesignTokens.Avalonia.Token.Literal.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record LiteralTokenDefinition<T>(T Value) : TokenDefinition<T>
 {
     internal override TokenDefinitionKind Kind => TokenDefinitionKind.Literal;
@@ -173,6 +222,10 @@ public sealed record LiteralTokenDefinition<T>(T Value) : TokenDefinition<T>
 }
 
 /// <summary>A token definition which resolves another token from the same consumer scope.</summary>
+[Obsolete(
+    "Legacy descriptor-owned token definition. Use MaterialDesignTokens.Avalonia.Token.Alias.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record AliasTokenDefinition<T> : TokenDefinition<T>
 {
     /// <summary>Creates an alias definition.</summary>
@@ -189,6 +242,10 @@ public sealed record AliasTokenDefinition<T> : TokenDefinition<T>
 }
 
 /// <summary>A token definition evaluated from an explicit, typed dependency set.</summary>
+[Obsolete(
+    "Legacy descriptor-owned token definition. Use MaterialDesignTokens.Avalonia.Token.Recipe.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record RecipeTokenDefinition<T> : TokenDefinition<T>
 {
     /// <summary>Creates a recipe definition.</summary>
@@ -206,6 +263,10 @@ public sealed record RecipeTokenDefinition<T> : TokenDefinition<T>
 }
 
 /// <summary>A pure, inspectable computation used to derive one token from other tokens.</summary>
+[Obsolete(
+    "Legacy descriptor-owned recipe. Use MaterialDesignTokens.Avalonia.ITokenRecipe<T>.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public interface ITokenRecipe<out T>
 {
     /// <summary>Gets the dependencies the recipe may request from <see cref="TokenRecipeContext" />.</summary>
@@ -216,6 +277,10 @@ public interface ITokenRecipe<out T>
 }
 
 /// <summary>Provides requester-local dependency values to a token recipe.</summary>
+[Obsolete(
+    "Legacy requester-local recipe context. Use the shared Raw token recipe context.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class TokenRecipeContext
 {
     private readonly Func<MaterialToken, object?> _resolve;
@@ -241,6 +306,10 @@ public sealed class TokenRecipeContext
 }
 
 /// <summary>Creates strongly typed token definitions.</summary>
+[Obsolete(
+    "Legacy descriptor-owned token factory. Use MaterialDesignTokens.Avalonia.Token.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public static class Token
 {
     /// <summary>Creates a literal definition.</summary>

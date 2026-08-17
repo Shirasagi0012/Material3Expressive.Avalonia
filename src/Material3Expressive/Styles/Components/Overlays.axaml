@@ -12,28 +12,15 @@
     </Design.PreviewWith>
 
     <Styles.Resources>
-        <ControlTheme x:Key="{x:Type m3:MaterialDialog}" TargetType="m3:MaterialDialog">
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="VerticalAlignment" Value="Stretch" />
-            <Setter Property="Template">
-                <ControlTemplate>
-                    <!-- The presenter is the dialog surface; the control paints the scrim and the
-                         surface behind it, and arranges this in the middle. -->
-                    <ContentPresenter x:Name="PART_ContentPresenter"
-                                      Margin="{TemplateBinding Padding}"
-                                      HorizontalContentAlignment="Stretch"
-                                      Content="{TemplateBinding Content}"
-                                      ContentTemplate="{TemplateBinding ContentTemplate}"
-                                      TextElement.Foreground="{TemplateBinding SupportingBrush}"
-                                      TextElement.FontSize="{TemplateBinding FontSize}"
-                                      TextElement.FontFamily="{TemplateBinding FontFamily}" />
-                </ControlTemplate>
-            </Setter>
-        </ControlTheme>
-
         <ControlTheme x:Key="{x:Type m3:MaterialBottomSheet}" TargetType="m3:MaterialBottomSheet">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:BottomSheetValueKeys.ModalGeometry}}" />
+            <Setter Property="VisualProfile"
+                    Value="{DynamicResource {x:Static m3:BottomSheetValueKeys.Visuals}}" />
+            <Setter Property="Padding"
+                    Value="{Binding GeometryProfile.ContentPadding, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <ContentPresenter x:Name="PART_ContentPresenter"
@@ -43,10 +30,30 @@
                                       ContentTemplate="{TemplateBinding ContentTemplate}" />
                 </ControlTemplate>
             </Setter>
+            <Style Selector="^[Variant=Modal]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:BottomSheetValueKeys.ModalGeometry}}" />
+            </Style>
+            <Style Selector="^[Variant=Standard]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:BottomSheetValueKeys.StandardGeometry}}" />
+            </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialSnackbar}" TargetType="m3:MaterialSnackbar">
             <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:OverlayValueKeys.SnackbarGeometry}}" />
+            <Setter Property="VisualProfile"
+                    Value="{DynamicResource {x:Static m3:OverlayValueKeys.SnackbarVisuals}}" />
+            <Setter Property="Padding"
+                    Value="{Binding GeometryProfile.ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MotionSpec"
+                    Value="{DynamicResource {x:Static m3:OverlayValueKeys.SnackbarMotion}}" />
+            <Setter Property="MinHeight"
+                    Value="{Binding GeometryProfile.SingleLineHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding GeometryProfile.SupportingTextStyle, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <Grid ColumnDefinitions="*,Auto" Margin="{TemplateBinding Padding}">
@@ -61,6 +68,7 @@
                                           VerticalAlignment="Center"
                                           Content="{TemplateBinding Action}"
                                           IsVisible="{TemplateBinding Action, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          m3:TypographyScheme.TextStyle="{Binding GeometryProfile.ActionTextStyle, RelativeSource={RelativeSource TemplatedParent}}"
                                           TextElement.Foreground="{TemplateBinding ActionBrush}" />
                     </Grid>
                 </ControlTemplate>
@@ -83,6 +91,23 @@
         <ControlTheme x:Key="{x:Type m3:MaterialBadge}" TargetType="m3:MaterialBadge">
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
+            <!-- Variant selectors choose typed MaterialValue profiles.  The ordinary layout and
+                 typography properties remain normal theme setters, so application styles and
+                 local values retain Avalonia's usual precedence. -->
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:BadgeValueKeys.LargeGeometry}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:BadgeValueKeys.LargeVisualColors}}" />
+            <Setter Property="Padding"
+                    Value="{Binding GeometryProfile.ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinWidth"
+                    Value="{Binding GeometryProfile.Size, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinHeight"
+                    Value="{Binding GeometryProfile.Size, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding GeometryProfile.LabelTextStyle, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding VisualColors.LabelTextColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <ContentPresenter Margin="{TemplateBinding Padding}"
@@ -96,14 +121,42 @@
                                       TextElement.FontWeight="{TemplateBinding FontWeight}" />
                 </ControlTemplate>
             </Setter>
+
+            <Style Selector="^[Variant=Small]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:BadgeValueKeys.SmallGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:BadgeValueKeys.SmallVisualColors}}" />
+            </Style>
+            <Style Selector="^[Variant=Large]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:BadgeValueKeys.LargeGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:BadgeValueKeys.LargeVisualColors}}" />
+            </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialTooltip}" TargetType="m3:MaterialTooltip">
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:OverlayValueKeys.PlainTooltipGeometry}}" />
+            <Setter Property="VisualProfile"
+                    Value="{DynamicResource {x:Static m3:OverlayValueKeys.PlainTooltipVisuals}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding VisualProfile.SupportingTextColor, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Padding"
+                    Value="{Binding GeometryProfile.ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinHeight"
+                    Value="{Binding GeometryProfile.MinHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MaxWidth"
+                    Value="{Binding GeometryProfile.MaxWidth, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding GeometryProfile.SupportingTextStyle, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <StackPanel Margin="{TemplateBinding Padding}" Spacing="4">
                         <ContentPresenter Content="{TemplateBinding Title}"
                                           IsVisible="{TemplateBinding Title, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          m3:TypographyScheme.TextStyle="{Binding GeometryProfile.TitleTextStyle, RelativeSource={RelativeSource TemplatedParent}}"
                                           TextElement.Foreground="{TemplateBinding TitleBrush}" />
                         <ContentPresenter Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -113,6 +166,18 @@
                     </StackPanel>
                 </ControlTemplate>
             </Setter>
+            <Style Selector="^[Style=Plain]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:OverlayValueKeys.PlainTooltipGeometry}}" />
+                <Setter Property="VisualProfile"
+                        Value="{DynamicResource {x:Static m3:OverlayValueKeys.PlainTooltipVisuals}}" />
+            </Style>
+            <Style Selector="^[Style=Rich]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:OverlayValueKeys.RichTooltipGeometry}}" />
+                <Setter Property="VisualProfile"
+                        Value="{DynamicResource {x:Static m3:OverlayValueKeys.RichTooltipVisuals}}" />
+            </Style>
         </ControlTheme>
     </Styles.Resources>
 </Styles>

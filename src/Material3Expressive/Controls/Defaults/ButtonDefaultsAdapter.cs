@@ -16,6 +16,9 @@ namespace Material3Expressive.Controls;
 /// fallback properties on <see cref="M3Button" />; the Material ControlTheme remains
 /// responsible for binding those fallbacks to public Avalonia properties at style priority.
 /// </remarks>
+[Obsolete(
+    "Legacy component-defaults adapter. Consume typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 internal sealed class ButtonDefaultsAdapter
 {
     private static readonly AttachedProperty<ButtonDefaultsAdapter?> AdapterProperty =
@@ -83,7 +86,6 @@ internal sealed class ButtonDefaultsAdapter
         // clearing them cannot disturb an application's Style or local value.
         _owner.ClearValue(M3Button.DefaultColorsProperty);
         _owner.ClearValue(M3Button.DefaultMetricsProperty);
-        _owner.ClearValue(M3Button.DefaultShapesProperty);
         _owner.ClearValue(M3Button.DefaultElevationProperty);
         _owner.ClearValue(M3Button.DefaultShapeMotionProperty);
         _owner.ClearValue(M3Button.DefaultOutlineThicknessProperty);
@@ -143,13 +145,12 @@ internal sealed class ButtonDefaultsAdapter
                 var tokens = TokenReader.Begin(
                     _owner,
                     _owner.ActualThemeVariant ?? ThemeVariant.Default);
-                var metrics = ButtonDefaults.Metrics(tokens, size);
+                var metrics = ButtonDefaults.UnmigratedMetrics(tokens, size);
 
                 M3Button.SetDefaultColors(
                     _owner,
-                    ButtonDefaults.Colors(tokens, variant));
+                    ButtonDefaults.UnmigratedColors(tokens, variant));
                 M3Button.SetDefaultMetrics(_owner, metrics);
-                M3Button.SetDefaultShapes(_owner, ButtonDefaults.Shapes(metrics));
                 M3Button.SetDefaultElevation(_owner, ButtonDefaults.Elevation(tokens, variant));
                 M3Button.SetDefaultShapeMotion(_owner, ButtonDefaults.ShapeMotion(_themeState.Theme));
                 M3Button.SetDefaultOutlineThickness(

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Controls.Motion;
 using MaterialShapes;
 
@@ -28,17 +28,16 @@ public enum LoadingIndicatorVariant { Standard, Contained }
 /// <c>DeterminateIndicatorPolygons</c>, transcribed below.
 /// </para>
 /// </remarks>
-public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialLoadingIndicator : TemplatedControl, IMaterialMotionConsumer
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
+    // Shape and motion are still read through the compatibility controller until those authoring
+    // schemes receive their own value endpoints. Loading colours and metrics no longer use it.
+    private MaterialThemeController Theme => _material?.Theme ??
+        throw new InvalidOperationException("Material element context is not initialized.");
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
-        ApplyTokens();
+    private SpringSpec Spring(MotionRole role) => Theme.Current.Theme.Motion.Get(role);
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
         OnMotionTick();
@@ -56,6 +55,25 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     /// <inheritdoc cref="IsIndeterminate" />
     public static readonly StyledProperty<bool> IsIndeterminateProperty =
         AvaloniaProperty.Register<MaterialLoadingIndicator, bool>(nameof(IsIndeterminate), true);
+
+    private static readonly LoadingIndicatorGeometryProfile DefaultGeometry = new(
+        ActiveSize: 38,
+        ContainerWidth: 48,
+        ContainerHeight: 48,
+        ContainerShape: ShapeRole.CornerFull,
+        HasContainer: false);
+
+    private static readonly LoadingIndicatorVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush());
+
+    internal static readonly StyledProperty<LoadingIndicatorGeometryProfile> ResolvedMetricsProperty =
+        AvaloniaProperty.Register<MaterialLoadingIndicator, LoadingIndicatorGeometryProfile>(
+            nameof(ResolvedMetrics), DefaultGeometry);
+
+    internal static readonly StyledProperty<LoadingIndicatorVisualColors> ResolvedVisualColorsProperty =
+        AvaloniaProperty.Register<MaterialLoadingIndicator, LoadingIndicatorVisualColors>(
+            nameof(ResolvedVisualColors), DefaultVisualColors);
 
     /// <summary>AndroidX's independent, linear global rotation period.</summary>
     private static readonly TimeSpan GlobalRotationPeriod = TimeSpan.FromMilliseconds(4666);
@@ -88,23 +106,23 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     private LoopingAnimation? _globalRotation;
     private SpringAnimation? _progress;
 
-    private LoadingIndicatorMetrics _tokens = LoadingIndicatorDefaults.Metrics(LoadingIndicatorVariant.Standard);
-    private LoadingIndicatorVisualColors _colors = new(
-        LoadingIndicatorTokens.ActiveIndicatorColor.ResolveBrush(null, false),
-        ColorTokenValue.Literal(Avalonia.Media.Colors.Transparent).ResolveBrush(null, false));
+    private LoadingIndicatorGeometryProfile _tokens = DefaultGeometry;
+    private LoadingIndicatorVisualColors _colors = DefaultVisualColors;
 
     public MaterialLoadingIndicator()
     {
         _material = MaterialElementContext.Ensure(this);
-        // Rendering can request the determinate spring before any styled property changes. Make
-        // the theme controller live before rendering so applying inherited tokens never
-        // invalidates the visual during a compositor pass.
-        _ = _material.Theme;
     }
 
     static MaterialLoadingIndicator()
     {
-        AffectsRender<MaterialLoadingIndicator>(VariantProperty, IsIndeterminateProperty, ValueProperty);
+        AffectsRender<MaterialLoadingIndicator>(
+            VariantProperty,
+            IsIndeterminateProperty,
+            ValueProperty,
+            ResolvedMetricsProperty,
+            ResolvedVisualColorsProperty);
+        AffectsMeasure<MaterialLoadingIndicator>(ResolvedMetricsProperty);
     }
 
     /// <summary>Whether the shape sits on a container of its own.</summary>
@@ -133,6 +151,20 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     // without depending on a private field or a rasterized drawing tree.
     internal bool HasResolvedContainer => _tokens.HasContainer;
 
+    /// <summary>Gets the hidden variant-selected metrics profile.</summary>
+    internal LoadingIndicatorGeometryProfile ResolvedMetrics
+    {
+        get => GetValue(ResolvedMetricsProperty);
+        set => SetValue(ResolvedMetricsProperty, value);
+    }
+
+    /// <summary>Gets the hidden variant-selected colour profile.</summary>
+    internal LoadingIndicatorVisualColors ResolvedVisualColors
+    {
+        get => GetValue(ResolvedVisualColorsProperty);
+        set => SetValue(ResolvedVisualColorsProperty, value);
+    }
+
     private LoadingIndicatorMorphAnimation MorphPhase =>
         _morph ??= Motion.Add(new LoadingIndicatorMorphAnimation(IndeterminateShapes.Length));
 
@@ -152,8 +184,10 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
 
         if (_tokens.HasContainer)
         {
-            var containerSize = Math.Min(box, _tokens.ContainerSize);
-            var corners = ResolvedTheme.Shapes.GetCornerRadius(
+            var containerSize = Math.Min(
+                box,
+                Math.Min(_tokens.ContainerWidth, _tokens.ContainerHeight));
+            var corners = Theme.Current.Theme.Shapes.GetCornerRadius(
                 _tokens.ContainerShape, new Size(containerSize, containerSize));
 
             using (context.PushTransform(Matrix.CreateTranslation(
@@ -171,9 +205,10 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
         // path by calculateScaleFactor(polygons) * ActiveIndicatorScale. The first factor keeps all
         // rotating shapes inside their slot; the second is the token ratio (38dp / 48dp).
         var polygonScale = IsIndeterminate ? IndeterminateShapeScale : DeterminateShapeScale;
-        var activeIndicatorScale = _tokens.ContainerSize <= 0
+        var activeContainerSize = Math.Min(_tokens.ContainerWidth, _tokens.ContainerHeight);
+        var activeIndicatorScale = activeContainerSize <= 0
             ? 0
-            : _tokens.ActiveSize / _tokens.ContainerSize;
+            : _tokens.ActiveSize / activeContainerSize;
         var active = box * polygonScale * activeIndicatorScale;
         var cubics = morph.AsCubics(progress);
         var geometry = morph.ToGeometry(progress);
@@ -194,17 +229,7 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     {
         // Both upstream overloads own the same public ContainerWidth × ContainerHeight slot. The
         // standard variant simply paints that slot with Color.Unspecified/transparent.
-        var size = _tokens.ContainerSize;
-        return new Size(size, size);
-    }
-
-    private void ApplyTokens()
-    {
-        var theme = ResolvedTheme;
-        _tokens = LoadingIndicatorDefaults.Metrics(Variant);
-        _colors = LoadingIndicatorDefaults.Colors(theme, Variant, IsDarkVariant);
-        InvalidateMeasure();
-        InvalidateVisual();
+        return new Size(_tokens.ContainerWidth, _tokens.ContainerHeight);
     }
 
     protected override void OnAttachedToLogicalTree(Avalonia.LogicalTree.LogicalTreeAttachmentEventArgs e)
@@ -217,11 +242,26 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty)
+        if (change.Property == ResolvedMetricsProperty)
         {
-            // Variant is a component-local token input. Theme deduplication deliberately does not
-            // model it, so reapply against the context's already committed snapshot here.
-            ApplyTokens();
+            _tokens = change.GetNewValue<LoadingIndicatorGeometryProfile>();
+        }
+        else if (change.Property == ResolvedVisualColorsProperty)
+        {
+            _colors = change.GetNewValue<LoadingIndicatorVisualColors>();
+        }
+        else if (change.Property == VariantProperty)
+        {
+            // A detached indicator has no ControlTheme yet, but the local variant still needs
+            // to expose its immediate semantic state to the interaction/runtime probes. Keep
+            // this as a narrow fallback over the default profile; once a typed style profile is
+            // present, its DynamicResource remains authoritative.
+            if (_tokens == DefaultGeometry)
+            {
+                _tokens = _tokens with { HasContainer = Variant == LoadingIndicatorVariant.Contained };
+                InvalidateMeasure();
+                InvalidateVisual();
+            }
         }
         else if (change.Property == ValueProperty && !IsIndeterminate)
         {
@@ -299,6 +339,9 @@ public class MaterialLoadingIndicator : TemplatedControl, IMaterialThemeConsumer
     {
         return double.IsNaN(value) ? 0 : Math.Clamp(value, 0, 1);
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 
     /// <summary>
     /// Port of LoadingIndicator.kt calculateScaleFactor(): compare each polygon's occupied bounds

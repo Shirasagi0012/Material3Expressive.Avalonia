@@ -5,6 +5,9 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+[Obsolete(
+    "Legacy picker defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record PickerMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue HeadlineColor,
@@ -26,6 +29,9 @@ internal sealed record PickerMetrics(
     TypographyRole DayTextStyle,
     bool IsTime);
 
+[Obsolete(
+    "Legacy picker defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record PickerVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush HeadlineColor,
@@ -38,6 +44,9 @@ internal sealed record PickerVisualColors(
     IImmutableBrush DividerColor);
 
 /// <summary>Component-owned policy shared by date and time pickers.</summary>
+[Obsolete(
+    "Legacy picker defaults adapter. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class PickerDefaults
 {
     public static PickerMetrics Metrics(PickerVariant variant) => variant switch

@@ -6,6 +6,8 @@ using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Foundation.Tokens.Runtime;
 using Material3Expressive.Tests.TestUtils;
+using McuSystemColorTokens = MaterialColorUtilities.Avalonia.Tokens.SystemColorTokens;
+using SharedToken = MaterialDesignTokens.Avalonia.Token;
 using Xunit;
 
 namespace Material3Expressive.Tests;
@@ -122,18 +124,23 @@ public sealed class MaterialTokenArchitectureTests
     public void GeneratedOverrideSurface_AcceptsLiteralAndUpstreamAliasDefinitions()
     {
         var consumer = Show(new Border());
+        consumer.Resources.MergedDictionaries.Add(new MaterialTheme());
         var overrides = new FilledButtonTokensOverrides
         {
-            ContainerColor = Token.Literal(Colors.Red),
+            ContainerColor = SharedToken.Literal(Colors.Red),
         };
         consumer.Resources.MergedDictionaries.Add(overrides);
 
-        Assert.Equal(Colors.Red, _resolver.Resolve(consumer, FilledButtonTokensKeys.ContainerColor));
+        Assert.Equal(
+            Colors.Red,
+            SharedTokenTestHelper.Resolve(consumer, FilledButtonTokensKeys.ContainerColor));
 
-        consumer.Resources[SystemColorTokens.Secondary] = Colors.Blue;
-        overrides.ContainerColor = Token.Alias(SystemColorTokens.Secondary);
+        consumer.Resources[McuSystemColorTokens.Secondary] = SharedToken.Literal(Colors.Blue);
+        overrides.ContainerColor = SharedToken.Alias(McuSystemColorTokens.Secondary);
 
-        Assert.Equal(Colors.Blue, _resolver.Resolve(consumer, FilledButtonTokensKeys.ContainerColor));
+        Assert.Equal(
+            Colors.Blue,
+            SharedTokenTestHelper.Resolve(consumer, FilledButtonTokensKeys.ContainerColor));
     }
 
     [AvaloniaFact]
@@ -150,17 +157,22 @@ public sealed class MaterialTokenArchitectureTests
                 theme,
                 MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary,
                 isDark: true),
-            _resolver.Resolve(consumer, SystemColorTokens.Primary));
+            SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary));
     }
 
     [AvaloniaFact]
     public void GeneratedOverrides_AreAuthorableWithLiteralAndTokenRefInCompiledXaml()
     {
         var probe = Show(new TokenOverrideXamlProbe());
-        probe.Resources[SystemColorTokens.Primary] = Colors.Blue;
+        probe.Resources.MergedDictionaries.Insert(0, new MaterialTheme());
+        probe.Resources[McuSystemColorTokens.Primary] = SharedToken.Literal(Colors.Blue);
 
-        Assert.Equal(Colors.Red, _resolver.Resolve(probe, FilledButtonTokensKeys.ContainerColor));
-        Assert.Equal(Colors.Blue, _resolver.Resolve(probe, FilledButtonTokensKeys.LabelTextColor));
+        Assert.Equal(
+            Colors.Red,
+            SharedTokenTestHelper.Resolve(probe, FilledButtonTokensKeys.ContainerColor));
+        Assert.Equal(
+            Colors.Blue,
+            SharedTokenTestHelper.Resolve(probe, FilledButtonTokensKeys.LabelTextColor));
         var bodyLarge = SystemTypeScaleTokens.For(TypographyRole.BodyLarge);
         Assert.Equal(17.5, _resolver.Resolve(probe, bodyLarge.FontSize));
         Assert.Equal(FontWeightToken.Bold, _resolver.Resolve(probe, bodyLarge.Weight));

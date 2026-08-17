@@ -39,6 +39,11 @@ internal sealed class MaterialMotionController
 
     internal bool IsRunning => AnyRunning();
 
+    // Test hosts use the manual clock to inspect intermediate motion frames. Normal UI state
+    // changes settle synchronously when no clock is available, while manual-clock consumers keep
+    // the real spring trajectory.
+    internal bool IsManualClock => _manualClock;
+
     internal void Activate()
     {
         if (_active)

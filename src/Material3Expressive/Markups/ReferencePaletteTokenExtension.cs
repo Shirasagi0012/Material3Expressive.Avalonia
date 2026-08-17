@@ -1,7 +1,7 @@
 using Avalonia.Media;
 using Avalonia.Metadata;
-using Material3Expressive.Foundation.Tokens.Runtime;
 using MaterialColorUtilities.Avalonia.Tokens;
+using MaterialDesignTokens.Avalonia;
 
 namespace Material3Expressive.Markups;
 
@@ -9,6 +9,10 @@ namespace Material3Expressive.Markups;
 /// <example>
 /// <c>{m3:TokenRef Token={m3:ReferencePaletteToken Primary, 40}}</c>
 /// </example>
+[Obsolete(
+    "Legacy M3 reference-palette markup wrapper. Use the MaterialColorUtilities.Avalonia " +
+    "ReferencePaletteToken markup extension directly.",
+    DiagnosticId = "M3E1003")]
 public sealed class ReferencePaletteTokenExtension
 {
     public ReferencePaletteTokenExtension()
@@ -37,5 +41,6 @@ public sealed class ReferencePaletteTokenExtension
     public string? CustomKey { get; set; }
 
     public MaterialToken<Color> ProvideValue() =>
-        ReferencePaletteTokens.Get(Palette, Tone, CustomKey);
+        MaterialColorUtilities.Avalonia.Tokens.ReferencePaletteTokens.Get(
+            Palette, Tone, CustomKey);
 }

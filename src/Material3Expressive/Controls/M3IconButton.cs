@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -69,6 +70,27 @@ public enum IconButtonWidth
 /// </remarks>
 public static class M3IconButton
 {
+    private static readonly IconButtonGeometryProfile DefaultGeometryProfile = new(
+        ContainerHeight: 40,
+        IconSize: 24,
+        ContentPadding: new Thickness(8, 0),
+        ContainerWidth: 40,
+        OutlineWidth: 1,
+        ContainerShape: ShapeRole.CornerFull,
+        PressedShape: ShapeRole.CornerSmall,
+        SquareShape: ShapeRole.CornerMedium,
+        SelectedShape: ShapeRole.CornerMedium,
+        SelectedSquareShape: ShapeRole.CornerFull);
+
+    private static readonly IconButtonVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
     /// <summary>
     /// Internal activation marker installed by the Material icon-button ControlTheme.
     /// </summary>
@@ -78,6 +100,9 @@ public static class M3IconButton
     /// Material icon-button theme never allocate a defaults adapter.
     /// </remarks>
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter activation. New themes must use MaterialValueKey<T>.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<bool> UseMaterialDefaultsProperty =
         AvaloniaProperty.RegisterAttached<Button, bool>(
             "UseMaterialDefaults", typeof(M3IconButton), defaultValue: false);
@@ -105,6 +130,22 @@ public static class M3IconButton
         AvaloniaProperty.RegisterAttached<Button, double>(
             "IconSize", typeof(M3IconButton), 24);
 
+    /// <summary>Typed geometry supplied by the Material icon-button ControlTheme.</summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<IconButtonGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.RegisterAttached<Button, IconButtonGeometryProfile>(
+            "GeometryProfile",
+            typeof(M3IconButton),
+            defaultValue: DefaultGeometryProfile);
+
+    /// <summary>Typed enabled/disabled colours supplied by the Material icon-button theme.</summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<IconButtonVisualColors> VisualColorsProperty =
+        AvaloniaProperty.RegisterAttached<Button, IconButtonVisualColors>(
+            "VisualColors",
+            typeof(M3IconButton),
+            defaultValue: DefaultVisualColors);
+
     /// <summary>Marks a Button/ToggleButton as using the icon-button semantic visual contract.</summary>
     public static readonly AttachedProperty<bool> IsIconButtonProperty =
         AvaloniaProperty.RegisterAttached<Button, bool>(
@@ -114,26 +155,41 @@ public static class M3IconButton
     // presentation properties so adapter-owned values never compete with app Background/Padding
     // or local values.
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<IconButtonColors?> DefaultColorsProperty =
         AvaloniaProperty.RegisterAttached<Button, IconButtonColors?>(
             "DefaultColors", typeof(M3IconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<IconButtonMetrics?> DefaultMetricsProperty =
         AvaloniaProperty.RegisterAttached<Button, IconButtonMetrics?>(
             "DefaultMetrics", typeof(M3IconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<IconButtonShapes?> DefaultShapesProperty =
         AvaloniaProperty.RegisterAttached<Button, IconButtonShapes?>(
             "DefaultShapes", typeof(M3IconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<SpringSpec> DefaultShapeMotionProperty =
         AvaloniaProperty.RegisterAttached<Button, SpringSpec>(
             "DefaultShapeMotion", typeof(M3IconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<Thickness> DefaultOutlineThicknessProperty =
         AvaloniaProperty.RegisterAttached<Button, Thickness>(
             "DefaultOutlineThickness", typeof(M3IconButton));
@@ -192,6 +248,18 @@ public static class M3IconButton
 
     public static double GetIconSize(Button button) => button.GetValue(IconSizeProperty);
 
+    internal static IconButtonGeometryProfile GetGeometryProfile(Button button) =>
+        button.GetValue(GeometryProfileProperty);
+
+    internal static void SetGeometryProfile(Button button, IconButtonGeometryProfile value) =>
+        button.SetValue(GeometryProfileProperty, value);
+
+    internal static IconButtonVisualColors GetVisualColors(Button button) =>
+        button.GetValue(VisualColorsProperty);
+
+    internal static void SetVisualColors(Button button, IconButtonVisualColors value) =>
+        button.SetValue(VisualColorsProperty, value);
+
     public static bool GetIsIconButton(Button button) => button.GetValue(IsIconButtonProperty);
 
     public static void SetIsIconButton(Button button, bool value) =>
@@ -238,4 +306,7 @@ public static class M3IconButton
 
     internal static void SetUseMaterialDefaults(Button button, bool value) =>
         button.SetValue(UseMaterialDefaultsProperty, value);
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

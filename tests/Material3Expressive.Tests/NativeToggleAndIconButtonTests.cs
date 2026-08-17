@@ -194,7 +194,7 @@ public class NativeToggleAndIconButtonTests
             toggle.Width);
         Assert.Equal(
             LargeIconButtonTokens.WideLeadingSpace,
-            Assert.IsType<IconButtonMetrics>(M3ToggleIconButton.GetDefaultMetrics(toggle)).ContentPadding.Left);
+            toggle.GetValue(M3IconButton.GeometryProfileProperty).ContentPadding.Left);
         Assert.Single(toggle.GetVisualDescendants().OfType<MaterialIconButtonContainerPresenter>());
     }
 

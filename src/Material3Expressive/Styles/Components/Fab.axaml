@@ -15,9 +15,72 @@
         <ControlTheme x:Key="{x:Type m3:MaterialFab}" TargetType="m3:MaterialFab">
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Background" Value="Transparent" />
+            <!-- Public properties remain ordinary theme setters. The typed endpoints below are
+                 the sole Material source for the default visual slots, while local values and
+                 application styles keep normal Avalonia precedence. -->
+            <Setter Property="Background"
+                    Value="{Binding ResolvedVisualColors.ContainerColor, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding ResolvedVisualColors.ContentColor, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinHeight"
+                    Value="{Binding ResolvedGeometry.ContainerHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinWidth"
+                    Value="{Binding ResolvedGeometry.ContainerWidth, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Padding"
+                    Value="{Binding ResolvedContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding ResolvedGeometry.LabelTextStyle, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
+
+            <!-- Variant selection is a ControlTheme policy. The resolver never inspects the
+                 requesting FAB or guesses which variant/state is active. -->
+            <Setter Property="ResolvedVisualColors"
+                    Value="{DynamicResource {x:Static m3:FabValueKeys.PrimaryVisualColors}}" />
+            <Setter Property="ResolvedElevation"
+                    Value="{DynamicResource {x:Static m3:FabValueKeys.PrimaryElevation}}" />
+            <Style Selector="^[Variant=Primary]">
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.PrimaryVisualColors}}" />
+                <Setter Property="ResolvedElevation"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.PrimaryElevation}}" />
+            </Style>
+            <Style Selector="^[Variant=Secondary]">
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.SecondaryVisualColors}}" />
+                <Setter Property="ResolvedElevation"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.SecondaryElevation}}" />
+            </Style>
+            <Style Selector="^[Variant=Tertiary]">
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.TertiaryVisualColors}}" />
+                <Setter Property="ResolvedElevation"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.TertiaryElevation}}" />
+            </Style>
+            <Style Selector="^[Variant=Surface]">
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.SurfaceVisualColors}}" />
+                <Setter Property="ResolvedElevation"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.SurfaceElevation}}" />
+            </Style>
+
+            <!-- Size selection is likewise explicit. Geometry profiles contain only immutable
+                 token/policy inputs; label presence and interaction remain control state. -->
+            <Setter Property="ResolvedGeometry"
+                    Value="{DynamicResource {x:Static m3:FabValueKeys.SmallGeometry}}" />
+            <Style Selector="^[Size=Small]">
+                <Setter Property="ResolvedGeometry"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.SmallGeometry}}" />
+            </Style>
+            <Style Selector="^[Size=Medium]">
+                <Setter Property="ResolvedGeometry"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.MediumGeometry}}" />
+            </Style>
+            <Style Selector="^[Size=Large]">
+                <Setter Property="ResolvedGeometry"
+                        Value="{DynamicResource {x:Static m3:FabValueKeys.LargeGeometry}}" />
+            </Style>
+
             <Setter Property="Template">
                 <ControlTemplate>
                     <StackPanel Orientation="Horizontal"

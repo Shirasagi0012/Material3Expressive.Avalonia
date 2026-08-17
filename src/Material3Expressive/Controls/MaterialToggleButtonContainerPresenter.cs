@@ -5,38 +5,61 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
 /// <summary>Draws the checked-aware container chrome for a native Material ToggleButton.</summary>
-public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialThemeConsumer, IMaterialInteractionObserver
+public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialInteractionObserver
 {
+    private static readonly ToggleButtonGeometryProfile DefaultGeometryProfile = new(
+        40,
+        48,
+        new Thickness(24, 10),
+        new Thickness(1),
+        TypographyRole.LabelLarge,
+        ShapeTokens.CornerFull,
+        ShapeTokens.CornerSmall,
+        ShapeTokens.CornerMedium);
+
+    public static readonly StyledProperty<ToggleButtonGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialToggleButtonContainerPresenter, ToggleButtonGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    public static readonly StyledProperty<SpringSpec> ShapeMotionProperty =
+        AvaloniaProperty.Register<MaterialToggleButtonContainerPresenter, SpringSpec>(
+            nameof(ShapeMotion),
+            new SpringSpec(0.9, 1400));
+
     public static readonly DirectProperty<MaterialToggleButtonContainerPresenter, CornerRadius>
         CurrentCornerRadiusProperty = AvaloniaProperty.RegisterDirect<
             MaterialToggleButtonContainerPresenter,
             CornerRadius>(nameof(CurrentCornerRadius), presenter => presenter.CurrentCornerRadius);
 
-    private readonly MaterialThemeController _theme;
     private ToggleButton? _owner;
     private MaterialInteractionController? _interaction;
     private IDisposable? _interactionLease;
     private AnimatedShape? _shape;
-    private ToggleButtonShapes _shapes = new(
-        ShapeRole.CornerFull,
-        ShapeRole.CornerSmall,
-        ShapeRole.CornerSmall);
-    private SpringSpec _shapeMotion = ToggleButtonDefaults.ShapeMotion(ResolvedTheme.Default);
     private CornerRadius _currentCornerRadius;
 
     public MaterialToggleButtonContainerPresenter()
     {
         IsHitTestVisible = false;
         Focusable = false;
-        _theme = MaterialElementContext.Ensure(this).Theme;
     }
 
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
-        ApplyTokens(snapShape: true);
+    public ToggleButtonGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    public SpringSpec ShapeMotion
+    {
+        get => GetValue(ShapeMotionProperty);
+        set => SetValue(ShapeMotionProperty, value);
+    }
 
     public CornerRadius CurrentCornerRadius
     {
@@ -71,7 +94,7 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
         _interaction = MaterialElementContext.Ensure(_owner).Interaction;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
         _interactionLease = _interaction.Subscribe(this);
-        ApplyTokens(snapShape: true);
+        UpdateShape(snap: true);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -98,6 +121,10 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
         base.OnPropertyChanged(change);
         if (change.Property == BoundsProperty || change.Property == FlowDirectionProperty)
             UpdateCurrentCornerRadius();
+        else if (change.Property == GeometryProfileProperty)
+            UpdateShape(snap: true);
+        else if (change.Property == ShapeMotionProperty && _shape is { })
+            UpdateShape();
     }
 
     private AnimatedShape Shape => _shape ??= CreateShape();
@@ -106,17 +133,14 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     {
         var interaction = _interaction
                           ?? throw new InvalidOperationException("The presenter is not attached.");
-        var shape = new AnimatedShape(RestingShape(), _shapeMotion);
+        var shape = new AnimatedShape(RestingShape(), ShapeMotion);
         interaction.Motion.Add(shape.Progress);
         return shape;
     }
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == M3ToggleButton.DefaultShapesProperty
-            || change.Property == M3ToggleButton.DefaultShapeMotionProperty)
-            ApplyTokens(snapShape: true);
-        else if (change.Property == ToggleButton.IsCheckedProperty
+        if (change.Property == ToggleButton.IsCheckedProperty
                  || change.Property == M3Button.IsSquareProperty)
             UpdateShape();
         else if (change.Property == M3Button.ContainerShapeOverrideProperty)
@@ -135,32 +159,19 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
         InvalidateVisual();
     }
 
-    private void ApplyTokens(bool snapShape)
-    {
-        if (_owner is not { } owner)
-            return;
-        _shapes = M3ToggleButton.GetDefaultShapes(owner)
-                  ?? ToggleButtonDefaults.Shapes(M3Button.GetSize(owner));
-        _shapeMotion = M3ToggleButton.GetDefaultShapeMotion(owner);
-        if (_shapeMotion.Stiffness <= 0)
-            _shapeMotion = ToggleButtonDefaults.ShapeMotion(_theme.Current.Theme);
-        UpdateShape(snapShape);
-        InvalidateVisual();
-    }
-
     private void UpdateShape(bool snap = false)
     {
         if (_owner is null || _interaction is null)
             return;
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Current.Theme.Shapes.Get(_shapes.Pressed)
+            ? GeometryProfile.PressedShape
             : RestingShape();
         if (snap && !shape.IsRunning)
             shape.SnapTo(target);
         else
         {
-            shape.AnimateTo(target, _shapeMotion);
+            shape.AnimateTo(target, ShapeMotion);
             _interaction.Motion.RequestFrame();
         }
         UpdateCurrentCornerRadius();
@@ -170,14 +181,13 @@ public sealed class MaterialToggleButtonContainerPresenter : Control, IMaterialT
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return _theme.Current.Theme.Shapes.Get(_shapes.Unchecked);
+            return GeometryProfile.UncheckedShape;
         if (M3Button.GetContainerShapeOverride(owner) is { } shape)
             return shape;
 
         var selected = owner.IsChecked == true;
         var round = M3Button.GetIsSquare(owner) == selected;
-        return _theme.Current.Theme.Shapes.Get(
-            round ? _shapes.Unchecked : _shapes.Checked);
+        return round ? GeometryProfile.UncheckedShape : GeometryProfile.CheckedShape;
     }
 
     private void UpdateCurrentCornerRadius()

@@ -3,7 +3,6 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
-using Material3Expressive.Controls;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -12,10 +11,10 @@ namespace Material3Expressive.Controls;
 /// A Material 3 switch.
 /// </summary>
 /// <remarks>
-/// Derives from <see cref="ToggleButton" /> rather than <see cref="Avalonia.Controls.ToggleSwitch" />: the whole
-/// switch is painted here, so <c>ToggleSwitch</c>'s knob template parts and knob animation would
-/// be dead machinery, and its <c>OnContent</c>/<c>OffContent</c> surface would be a promise this
-/// control does not keep. Drag-to-toggle goes with it, and is not yet reimplemented.
+/// Derives from <see cref="ToggleButton" /> rather than <see cref="Avalonia.Controls.ToggleSwitch" />:
+/// the whole switch is painted here, so <c>ToggleSwitch</c>'s knob template parts and knob
+/// animation would be dead machinery, and its <c>OnContent</c>/<c>OffContent</c> surface would be
+/// a promise this control does not keep. Drag-to-toggle goes with it, and is not yet reimplemented.
 /// <para>
 /// Two springs, not one: the handle's <i>position</i> slides along the track, and its <i>size</i>
 /// changes independently — 16dp off, 24dp on, 28dp while pressed. Driving them separately is what
@@ -23,8 +22,49 @@ namespace Material3Expressive.Controls;
 /// half-completed toggle reverse from where it is.
 /// </para>
 /// </remarks>
-public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
+public class MaterialSwitch : ToggleButton, IMaterialInteractionConsumer
 {
+    private static readonly SwitchGeometryProfile DefaultGeometryProfile = new(
+        TrackWidth: 52,
+        TrackHeight: 32,
+        TrackOutlineWidth: 2,
+        UnselectedHandleSize: 16,
+        SelectedHandleSize: 24,
+        PressedHandleSize: 28,
+        StateLayerSize: 40);
+
+    private static readonly SwitchVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    /// <summary>
+    /// The renderer geometry profile supplied by the Material control theme.
+    /// </summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SwitchGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialSwitch, SwitchGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    /// <summary>
+    /// The renderer brush profile supplied by the Material control theme.
+    /// </summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SwitchVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialSwitch, SwitchVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
     private MaterialInteractionPresentationLease? _presentation;
@@ -36,11 +76,23 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
 
     private SpringAnimation? _position;
     private SpringAnimation? _handleSize;
-    private SwitchMetrics _tokens = SwitchDefaults.Metrics();
-    private SwitchColors _colors = SwitchDefaults.Colors(ResolvedTheme.Default, isDark: false);
+    private SwitchGeometryProfile _tokens = DefaultGeometryProfile;
+    private SwitchVisualColors _colors = DefaultVisualColors;
+
+    static MaterialSwitch()
+    {
+        AffectsRender<MaterialSwitch>(
+            IsCheckedProperty,
+            IsEffectivelyEnabledProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
+        AffectsMeasure<MaterialSwitch>(GeometryProfileProperty);
+    }
 
     public MaterialSwitch()
     {
+        // The controller is retained only for motion specifications. Geometry and visual values
+        // arrive through typed MaterialValueKey resources in the ControlTheme.
         _theme = MaterialElementContext.Ensure(this).Theme;
         _interaction = MaterialElementContext.Ensure(this).Interaction;
         _interaction.IsRippleBounded = false;
@@ -48,7 +100,19 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
         ApplyTokens();
     }
 
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+    /// <summary>Gets the renderer geometry profile.</summary>
+    internal SwitchGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets the renderer brush profile.</summary>
+    internal SwitchVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
         UpdateHandleSize();
@@ -62,17 +126,21 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
     // 0 is fully off, 1 fully on. A fraction rather than a distance so a retuned track width does
     // not need the spring restarting.
     private SpringAnimation Position =>
-        _position ??= _interaction.Motion.AddSpring(IsSelected ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+        _position ??= _interaction.Motion.AddSpring(
+            IsSelected ? 1 : 0,
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     private SpringAnimation HandleSize =>
-        _handleSize ??= _interaction.Motion.AddSpring(RestingHandleSize(), _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+        _handleSize ??= _interaction.Motion.AddSpring(
+            RestingHandleSize(),
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
 
     public override void Render(DrawingContext context)
     {
         var track = TrackArea;
         var enabled = IsEffectivelyEnabled;
-        var fraction = Position.Value;
-        var visuals = SwitchDefaults.Visuals(_colors, enabled, IsSelected);
+        var selected = IsSelected;
+        var visuals = VisualTargets(enabled, selected);
 
         var trackFill = visuals.TrackColor;
         var trackOutline = visuals.TrackOutlineColor;
@@ -93,7 +161,7 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
         var margin = (track.Height - _tokens.SelectedHandleSize) / 2 + _tokens.SelectedHandleSize / 2;
         var left = track.X + margin;
         var right = track.Right - margin;
-        var centre = new Point(left + (right - left) * fraction, track.Center.Y);
+        var centre = new Point(left + (right - left) * Position.Value, track.Center.Y);
 
         var stateLayerSize = _tokens.StateLayerSize;
         var interactionArea = new Rect(
@@ -107,9 +175,7 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
                 track,
                 new CornerRadius(radius)));
 
-        var handleFill = visuals.HandleColor;
-
-        context.DrawEllipse(handleFill, null, centre, handleRadius, handleRadius);
+        context.DrawEllipse(visuals.HandleColor, null, centre, handleRadius, handleRadius);
 
         base.Render(context);
         _interaction.DrawLayers(
@@ -130,33 +196,62 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == IsEffectivelyEnabledProperty)
+        if (change.Property == GeometryProfileProperty || change.Property == VisualColorsProperty)
         {
             ApplyTokens();
         }
         else if (change.Property == IsCheckedProperty)
         {
-            Position.AnimateTo(IsSelected ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+            Position.AnimateTo(
+                IsSelected ? 1 : 0,
+                _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
             UpdateHandleSize();
         }
     }
 
     private void ApplyTokens()
     {
-        _tokens = SwitchDefaults.Metrics();
-        _colors = SwitchDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
+        _tokens = GeometryProfile;
+        _colors = VisualColors;
         _interaction.RippleRadius = _tokens.StateLayerSize / 2;
 
-        Padding = new Thickness(_tokens.TrackWidth + 12, 0, 0, 0);
+        if (_handleSize is not null)
+        {
+            _handleSize.AnimateTo(
+                RestingHandleSize(),
+                _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+            _interaction.Motion.RequestFrame();
+        }
+
         InvalidateMeasure();
         InvalidateVisual();
     }
 
     private void UpdateHandleSize()
     {
-        HandleSize.AnimateTo(RestingHandleSize(), _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
+        HandleSize.AnimateTo(
+            RestingHandleSize(),
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
         _interaction.Motion.RequestFrame();
         InvalidateVisual();
+    }
+
+    private SwitchRenderColors VisualTargets(bool enabled, bool selected)
+    {
+        var track = !enabled
+            ? selected ? _colors.DisabledSelectedTrackColor : _colors.DisabledUnselectedTrackColor
+            : selected ? _colors.SelectedTrackColor : _colors.UnselectedTrackColor;
+        var outline = selected
+            ? null
+            : !enabled ? _colors.DisabledUnselectedTrackOutlineColor : _colors.UnselectedTrackOutlineColor;
+        var handle = !enabled
+            ? selected ? _colors.DisabledSelectedHandleColor : _colors.DisabledUnselectedHandleColor
+            : selected ? _colors.SelectedHandleColor : _colors.UnselectedHandleColor;
+        var stateLayer = selected
+            ? _colors.SelectedStateLayerColor
+            : _colors.UnselectedStateLayerColor;
+
+        return new SwitchRenderColors(track, outline, handle, stateLayer);
     }
 
     private double RestingHandleSize()
@@ -166,4 +261,13 @@ public class MaterialSwitch : ToggleButton, IMaterialThemeConsumer, IMaterialInt
 
         return IsSelected ? _tokens.SelectedHandleSize : _tokens.UnselectedHandleSize;
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
+
+    private sealed record SwitchRenderColors(
+        IImmutableBrush TrackColor,
+        IImmutableBrush? TrackOutlineColor,
+        IImmutableBrush HandleColor,
+        IImmutableBrush StateLayerColor);
 }

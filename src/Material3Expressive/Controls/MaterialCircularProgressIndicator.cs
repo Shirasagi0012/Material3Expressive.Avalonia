@@ -21,17 +21,14 @@ namespace Material3Expressive.Controls;
 /// separated by <c>TrackActiveSpace</c>, converted here from a length along the circumference into
 /// the angle it subtends, so the gap stays the specified size at any diameter.
 /// </remarks>
-public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialMotionConsumer
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    // Motion still uses the compatibility controller's motion scheme during the migration. Token
+    // values themselves arrive through the MaterialValue endpoints below.
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
-        ApplyTheme(state.Theme, state.IsDark);
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
         OnMotionTick();
@@ -57,6 +54,28 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
     public static readonly StyledProperty<double> WaveSpeedProperty =
         AvaloniaProperty.Register<MaterialCircularProgressIndicator, double>(nameof(WaveSpeed), 15);
 
+    private static readonly CircularProgressMetrics DefaultMetrics = new(
+        ActiveThickness: 4,
+        TrackThickness: 4,
+        TrackActiveSpace: 4,
+        Size: 40,
+        WaveAmplitude: 1.6,
+        WaveWavelength: 15,
+        WaveSize: 48);
+
+    private static readonly ProgressVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    internal static readonly StyledProperty<CircularProgressMetrics> ResolvedMetricsProperty =
+        AvaloniaProperty.Register<MaterialCircularProgressIndicator, CircularProgressMetrics>(
+            nameof(ResolvedMetrics), DefaultMetrics);
+
+    internal static readonly StyledProperty<ProgressVisualColors> ResolvedVisualColorsProperty =
+        AvaloniaProperty.Register<MaterialCircularProgressIndicator, ProgressVisualColors>(
+            nameof(ResolvedVisualColors), DefaultVisualColors);
+
     private static readonly TimeSpan RotationPeriod = TimeSpan.FromSeconds(6);
     private static readonly TimeSpan SweepPeriod = TimeSpan.FromSeconds(6);
     // Used only until the first arrange resolves the actual vertex count. The default 48dp wave
@@ -75,10 +94,6 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
     public MaterialCircularProgressIndicator()
     {
         _material = MaterialElementContext.Ensure(this);
-        // Indeterminate indicators can enter the tree without a Value assignment. Create the
-        // theme controller now so their initial render observes the inherited theme rather than
-        // retaining the light default token snapshot.
-        _ = _material.Theme;
     }
 
     private LoopingAnimation? _rotation;
@@ -88,12 +103,19 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
     private double _waveSpeed;
     private SpringAnimation? _progress;
 
-    private ProgressMetrics _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Circular);
-    private ProgressVisualColors _colors = ProgressDefaults.Colors(ResolvedTheme.Default, ProgressIndicatorShape.Circular, false);
+    private CircularProgressMetrics _tokens = DefaultMetrics;
+    private ProgressVisualColors _colors = DefaultVisualColors;
 
     static MaterialCircularProgressIndicator()
     {
-        AffectsRender<MaterialCircularProgressIndicator>(IsIndeterminateProperty, IsWavyProperty);
+        AffectsRender<MaterialCircularProgressIndicator>(
+            IsIndeterminateProperty,
+            IsWavyProperty,
+            ResolvedMetricsProperty,
+            ResolvedVisualColorsProperty);
+        AffectsMeasure<MaterialCircularProgressIndicator>(
+            IsWavyProperty,
+            ResolvedMetricsProperty);
     }
 
     /// <inheritdoc cref="MaterialLinearProgressIndicator.Value" />
@@ -171,19 +193,33 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
         return new Size(size, size);
     }
 
-    private void ApplyTheme(ResolvedTheme theme, bool isDark)
+    /// <summary>Gets the hidden circular metrics profile supplied by the Material control theme.</summary>
+    internal CircularProgressMetrics ResolvedMetrics
     {
-        _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Circular);
-        _colors = ProgressDefaults.Colors(theme, ProgressIndicatorShape.Circular, isDark);
-        InvalidateMeasure();
-        InvalidateVisual();
+        get => GetValue(ResolvedMetricsProperty);
+        set => SetValue(ResolvedMetricsProperty, value);
+    }
+
+    /// <summary>Gets the hidden colour profile supplied by the Material control theme.</summary>
+    internal ProgressVisualColors ResolvedVisualColors
+    {
+        get => GetValue(ResolvedVisualColorsProperty);
+        set => SetValue(ResolvedVisualColorsProperty, value);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == ValueProperty)
+        if (change.Property == ResolvedMetricsProperty)
+        {
+            _tokens = change.GetNewValue<CircularProgressMetrics>();
+        }
+        else if (change.Property == ResolvedVisualColorsProperty)
+        {
+            _colors = change.GetNewValue<ProgressVisualColors>();
+        }
+        else if (change.Property == ValueProperty)
         {
             Progress.AnimateTo(Clamp(Value), Spring(MotionRole.DefaultSpatial));
             UpdateLoops();
@@ -546,4 +582,7 @@ public class MaterialCircularProgressIndicator : TemplatedControl, IMaterialThem
 
     private static double Interpolate(double start, double end, double fraction) =>
         start + (end - start) * Math.Clamp(fraction, 0, 1);
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

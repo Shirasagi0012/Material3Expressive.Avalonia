@@ -69,7 +69,6 @@ public class SurfaceTests
     [AvaloniaFact]
     public void CustomAndNonSolidBackgrounds_AreNotTonalTinted()
     {
-        var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
         var custom = new SolidColorBrush(Colors.MediumVioletRed);
         var gradient = new LinearGradientBrush
         {
@@ -82,7 +81,11 @@ public class SurfaceTests
 
         foreach (var background in new IBrush[] { custom, gradient })
         {
-            var surface = SurfaceInTheme(theme, background);
+            // A MaterialTheme is one placement, not a reusable value object. Each independently
+            // mounted surface therefore gets its own equivalent authoring instance.
+            var surface = SurfaceInTheme(
+                ThemeTestHelper.ThemeSeededWith(Colors.Teal),
+                background);
             surface.TonalElevation = 8;
 
             Assert.Same(background, RenderedSurfaceFill(surface));

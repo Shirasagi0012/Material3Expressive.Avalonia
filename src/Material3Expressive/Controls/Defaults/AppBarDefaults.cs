@@ -1,9 +1,15 @@
-using Avalonia.Media;
+using System.ComponentModel;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
+/// <summary>
+/// Compatibility-only shape retained for the pre-MaterialValue AppBar tests.
+/// </summary>
+[Obsolete(
+    "Legacy AppBar metrics facade. Use AppBarValueKeys and the resolved AppBar profiles instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal sealed record AppBarMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue ScrolledContainerColor,
@@ -20,75 +26,63 @@ internal sealed record AppBarMetrics(
     TypographyRole FlexibleSubtitleTextStyle,
     bool IsStacked);
 
-internal sealed record AppBarVisualColors(
-    IImmutableBrush ContainerColor,
-    IImmutableBrush ScrolledContainerColor,
-    IImmutableBrush TitleColor,
-    IImmutableBrush SubtitleColor,
-    IImmutableBrush IconColor);
-
-/// <summary>Component-owned policy for top app-bar size and color profiles.</summary>
+/// <summary>
+/// Compatibility-only bridge for source that still asserts the old AppBar geometry shape.
+/// Runtime consumers use typed <see cref="AppBarValueKeys"/> endpoints exclusively.
+/// </summary>
+[Obsolete(
+    "Legacy AppBar defaults facade. Use AppBarValueKeys instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal static class AppBarDefaults
 {
     public static AppBarMetrics Metrics(AppBarSize size) => size switch
     {
         AppBarSize.Small => new(
-            AppBarTokens.ContainerColor,
-            AppBarTokens.OnScrollContainerColor,
-            AppBarTokens.TitleColor,
-            AppBarTokens.SubtitleColor,
-            AppBarTokens.TrailingIconColor,
-            AppBarSmallTokens.ContainerHeight,
-            AppBarSmallTokens.ContainerHeight,
-            AppBarSmallTokens.ContainerHeight,
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Surface),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.SurfaceContainer),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurface),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurfaceVariant),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurfaceVariant),
+            64,
+            64,
+            64,
             16,
-            AppBarSmallTokens.TitleFont,
-            AppBarSmallTokens.SubtitleFont,
-            AppBarSmallTokens.TitleFont,
-            AppBarSmallTokens.SubtitleFont,
+            TypographyRole.TitleLarge,
+            TypographyRole.LabelMedium,
+            TypographyRole.TitleLarge,
+            TypographyRole.LabelMedium,
             false),
         AppBarSize.Medium => new(
-            AppBarTokens.ContainerColor,
-            AppBarTokens.OnScrollContainerColor,
-            AppBarTokens.TitleColor,
-            AppBarTokens.SubtitleColor,
-            AppBarTokens.TrailingIconColor,
-            AppBarMediumTokens.ContainerHeight,
-            AppBarMediumFlexibleTokens.ContainerHeight,
-            AppBarMediumFlexibleTokens.LargeContainerHeight,
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Surface),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.SurfaceContainer),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurface),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurfaceVariant),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurfaceVariant),
+            112,
+            112,
+            136,
             16,
-            AppBarMediumTokens.TitleFont,
-            AppBarSmallTokens.SubtitleFont,
-            AppBarMediumFlexibleTokens.TitleFont,
-            AppBarMediumFlexibleTokens.SubtitleFont,
+            TypographyRole.HeadlineSmall,
+            TypographyRole.LabelMedium,
+            TypographyRole.HeadlineMedium,
+            TypographyRole.LabelLarge,
             true),
         AppBarSize.Large => new(
-            AppBarTokens.ContainerColor,
-            AppBarTokens.OnScrollContainerColor,
-            AppBarTokens.TitleColor,
-            AppBarTokens.SubtitleColor,
-            AppBarTokens.TrailingIconColor,
-            AppBarLargeTokens.ContainerHeight,
-            AppBarLargeFlexibleTokens.ContainerHeight,
-            AppBarLargeFlexibleTokens.LargeContainerHeight,
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Surface),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.SurfaceContainer),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurface),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurfaceVariant),
+            ColorTokenValue.Role(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.OnSurfaceVariant),
+            152,
+            120,
+            152,
             16,
-            AppBarLargeTokens.TitleFont,
-            AppBarSmallTokens.SubtitleFont,
-            AppBarLargeFlexibleTokens.TitleFont,
-            AppBarLargeFlexibleTokens.SubtitleFont,
+            TypographyRole.HeadlineMedium,
+            TypographyRole.LabelMedium,
+            TypographyRole.DisplaySmall,
+            TypographyRole.TitleMedium,
             true),
-        _ => throw new ArgumentOutOfRangeException(nameof(size), size, null)
+        _ => throw new ArgumentOutOfRangeException(nameof(size), size, null),
     };
-
-    public static AppBarVisualColors Colors(ResolvedTheme theme, AppBarSize size, bool isDark)
-    {
-        var metrics = Metrics(size);
-        ArgumentNullException.ThrowIfNull(theme);
-        return new(
-            metrics.ContainerColor.ResolveBrush(theme.ColorScheme, isDark),
-            metrics.ScrolledContainerColor.ResolveBrush(theme.ColorScheme, isDark),
-            metrics.TitleColor.ResolveBrush(theme.ColorScheme, isDark),
-            metrics.SubtitleColor.ResolveBrush(theme.ColorScheme, isDark),
-            metrics.IconColor.ResolveBrush(theme.ColorScheme, isDark));
-    }
 }

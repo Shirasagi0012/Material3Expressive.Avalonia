@@ -23,12 +23,29 @@ namespace Material3Expressive.Controls;
 /// small/large change steps are the stock ones and behave as they do on every other range control.
 /// </para>
 /// </remarks>
-public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialInteractionConsumer
+public class MaterialSlider : RangeBase, IMaterialInteractionConsumer
 {
     private const double MinimumInteractiveComponentSize = 48;
     // SliderDefaults.Track uses a 2dp inner corner where a track segment faces the thumb.
     // The outer end remains fully rounded (half the 16dp track).
     private const double TrackInsideCornerSize = 2;
+
+    private static readonly SliderGeometryProfile DefaultGeometryProfile = new(
+        TrackHeight: 16,
+        HandleWidth: 4,
+        PressedHandleWidth: 2,
+        HandleHeight: 44,
+        HandlePadding: 6,
+        StopIndicatorSize: 4);
+
+    private static readonly SliderVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
     /// <summary>
     /// The axis on which the handle moves. <see cref="Orientation.Vertical" /> adapts Compose
     /// <c>VerticalSlider(topToBottom = true)</c>: the minimum is at the top and the maximum at the
@@ -36,6 +53,20 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
     /// </summary>
     public static readonly StyledProperty<Orientation> OrientationProperty =
         AvaloniaProperty.Register<MaterialSlider, Orientation>(nameof(Orientation), Orientation.Horizontal);
+
+    /// <summary>The renderer geometry profile supplied by the Material control theme.</summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SliderGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialSlider, SliderGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    /// <summary>The renderer brush profile supplied by the Material control theme.</summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SliderVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialSlider, SliderVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
 
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
@@ -47,8 +78,8 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
             : _presentation = _interaction.AttachPresentation(this);
 
     private SpringAnimation? _handleWidth;
-    private SliderMetrics _tokens = SliderDefaults.Metrics();
-    private SliderColors _colors = SliderDefaults.Colors(ResolvedTheme.Default, isDark: false);
+    private SliderGeometryProfile _tokens = DefaultGeometryProfile;
+    private SliderVisualColors _colors = DefaultVisualColors;
 
     public MaterialSlider()
     {
@@ -56,17 +87,23 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
         _interaction = MaterialElementContext.Ensure(this).Interaction;
 
         Focusable = true;
-        ApplyTokens();
+        ApplyProfiles();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
         UpdateHandleWidth();
 
     static MaterialSlider()
     {
-        AffectsRender<MaterialSlider>(ValueProperty, MinimumProperty, MaximumProperty, OrientationProperty);
+        AffectsRender<MaterialSlider>(
+            ValueProperty,
+            MinimumProperty,
+            MaximumProperty,
+            OrientationProperty,
+            IsEffectivelyEnabledProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
+        AffectsMeasure<MaterialSlider>(GeometryProfileProperty);
     }
 
     /// <inheritdoc cref="OrientationProperty" />
@@ -74,6 +111,20 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
     {
         get => GetValue(OrientationProperty);
         set => SetValue(OrientationProperty, value);
+    }
+
+    /// <summary>Gets the renderer geometry profile.</summary>
+    internal SliderGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets the renderer brush profile.</summary>
+    internal SliderVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
     }
 
     /// <summary>Where the handle sits, as a fraction of the track.</summary>
@@ -97,7 +148,9 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
             return;
 
         var enabled = IsEffectivelyEnabled;
-        var visuals = SliderDefaults.Visuals(_colors, enabled);
+        var activeBrush = enabled ? _colors.ActiveTrackColor : _colors.DisabledActiveTrackColor;
+        var inactiveBrush = enabled ? _colors.InactiveTrackColor : _colors.DisabledInactiveTrackColor;
+        var handleBrush = enabled ? _colors.HandleColor : _colors.DisabledHandleColor;
         var trackHeight = _tokens.TrackHeight;
         var trackRadius = trackHeight / 2;
         var handleWidth = HandleWidth.Value;
@@ -118,9 +171,6 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
         // at every render scale instead of losing an antialiased bottom row.
         var renderedHandlePosition = SnapToDevicePixel(handlePosition);
 
-        var activeBrush = visuals.ActiveTrackColor;
-        var inactiveBrush = visuals.InactiveTrackColor;
-
         DrawTrack(
             context, activeBrush, trackStart, activeEnd, crossLength / 2, trackHeight,
             trackRadius, TrackInsideCornerSize);
@@ -136,8 +186,8 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
             var radius = _tokens.StopIndicatorSize / 2;
             context.DrawEllipse(
                 // SliderDefaults.Track deliberately uses the active track colour here; the
-                // similarly named token is for the legacy track overload, not this composable.
-                visuals.StopIndicatorColor,
+                // similarly named raw token is not consumed by this renderer.
+                activeBrush,
                 null,
                 PointOnAxis(trackEnd - trackRadius, crossLength / 2),
                 radius,
@@ -161,7 +211,6 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
                 focusRingArea,
                 new CornerRadius(Math.Min(focusRingArea.Width, focusRingArea.Height) / 2)));
 
-        var handleBrush = visuals.HandleColor;
         var handle = RectOnAxis(
             renderedHandlePosition - handleWidth / 2,
             crossLength / 2 - _tokens.HandleHeight / 2,
@@ -170,7 +219,7 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
 
         context.DrawRectangle(handleBrush, null, new RoundedRect(handle, new CornerRadius(handleWidth / 2)));
         base.Render(context);
-        _interaction.DrawLayers(context, visuals.StateLayerColor, new CornerRadius(stateLayerSize / 2));
+        _interaction.DrawLayers(context, _colors.StateLayerColor, new CornerRadius(stateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -237,8 +286,8 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == IsEffectivelyEnabledProperty)
-            ApplyTokens();
+        if (change.Property == GeometryProfileProperty || change.Property == VisualColorsProperty)
+            ApplyProfiles();
         else if (change.Property == OrientationProperty)
             InvalidateMeasure();
     }
@@ -292,10 +341,10 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
         return Math.Round(value * scale, MidpointRounding.AwayFromZero) / scale;
     }
 
-    private void ApplyTokens()
+    private void ApplyProfiles()
     {
-        _tokens = SliderDefaults.Metrics();
-        _colors = SliderDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
+        _tokens = GeometryProfile;
+        _colors = VisualColors;
 
         UpdateHandleWidth();
         InvalidateMeasure();
@@ -312,4 +361,7 @@ public class MaterialSlider : RangeBase, IMaterialThemeConsumer, IMaterialIntera
         _interaction.Motion.RequestFrame();
         InvalidateVisual();
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Colors.Transparent);
 }

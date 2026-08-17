@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
 using MaterialColorUtilities.Avalonia.Tokens;
 
@@ -40,12 +41,27 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
         AvaloniaProperty.Register<MaterialNavigationDrawer, bool>(
             nameof(IsOpen), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
+    private static readonly DrawerGeometryProfile DefaultGeometryProfile = new(
+        1, 360, ShapeRole.CornerLargeEnd, 56, ShapeRole.CornerFull, 24, 0.32,
+        TypographyRole.TitleSmall, TypographyRole.LabelLarge, true);
+
+    private static readonly DrawerVisualColors DefaultVisualColors = new(
+        TransparentBrush(), TransparentBrush(), TransparentBrush(), TransparentBrush(),
+        TransparentBrush(), TransparentBrush(), TransparentBrush(), TransparentBrush(),
+        TransparentBrush());
+
+    internal static readonly StyledProperty<DrawerGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialNavigationDrawer, DrawerGeometryProfile>(
+            nameof(GeometryProfile), DefaultGeometryProfile);
+
+    internal static readonly StyledProperty<DrawerVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialNavigationDrawer, DrawerVisualColors>(
+            nameof(VisualColors), DefaultVisualColors);
+
     private readonly MaterialThemeController _theme;
     private readonly MaterialMotionController _motion;
 
     private SpringAnimation? _open;
-    private DrawerMetrics _tokens = DrawerDefaults.Metrics(DrawerVariant.Modal);
-    private DrawerVisualColors _colors = DrawerDefaults.Colors(Foundation.ResolvedTheme.Default, DrawerVariant.Modal, false);
 
     public MaterialNavigationDrawer()
     {
@@ -64,7 +80,8 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
 
     static MaterialNavigationDrawer()
     {
-        AffectsRender<MaterialNavigationDrawer>(VariantProperty, IsOpenProperty);
+        AffectsRender<MaterialNavigationDrawer>(
+            VariantProperty, IsOpenProperty, GeometryProfileProperty, VisualColorsProperty);
     }
 
     public DrawerVariant Variant
@@ -80,6 +97,18 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
         set => SetValue(IsOpenProperty, value);
     }
 
+    internal DrawerGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    internal DrawerVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
     /// <summary>How far open the drawer is, 0 closed and 1 open.</summary>
     protected double OpenFraction => _open?.Value ?? (IsOpen ? 1 : 0);
 
@@ -92,18 +121,17 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
         if (fraction <= 0.001)
             return;
 
-        var width = _tokens.ContainerWidth;
+        var width = GeometryProfile.ContainerWidth;
         var offset = -width * (1 - fraction);
 
-        if (_tokens.IsModal && _tokens.ScrimOpacity > 0)
+        if (GeometryProfile.IsModal && GeometryProfile.ScrimOpacity > 0)
         {
-            var scrim = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.Current.IsDark) ?? Colors.Black;
-            using (context.PushOpacity(_tokens.ScrimOpacity * fraction))
-                context.FillRectangle(new SolidColorBrush(scrim), new Rect(Bounds.Size));
+            using (context.PushOpacity(GeometryProfile.ScrimOpacity * fraction))
+                context.FillRectangle(VisualColors.ScrimColor, new Rect(Bounds.Size));
         }
 
         var panel = new Rect(offset, 0, width, Bounds.Height);
-        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, panel.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(GeometryProfile.ContainerShape, panel.Size);
 
         using (context.PushTransform(Matrix.CreateTranslation(panel.X, panel.Y)))
         {
@@ -111,14 +139,14 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
                 context,
                 panel.Size,
                 corners,
-                _colors.ContainerColor);
+                VisualColors.ContainerColor);
         }
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
         // The content is the drawer's own panel, so it rides the slide.
-        var width = _tokens.ContainerWidth;
+        var width = GeometryProfile.ContainerWidth;
         var offset = -width * (1 - OpenFraction);
 
         if (Presenter is { } presenter)
@@ -132,10 +160,10 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
         base.OnPointerPressed(e);
 
         // Tapping the scrim dismisses a modal drawer; a standard one has no scrim to tap.
-        if (!_tokens.IsModal || !IsOpen)
+        if (!GeometryProfile.IsModal || !IsOpen)
             return;
 
-        if (e.GetPosition(this).X > _tokens.ContainerWidth)
+        if (e.GetPosition(this).X > GeometryProfile.ContainerWidth)
         {
             IsOpen = false;
             e.Handled = true;
@@ -146,7 +174,9 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty)
+        if (change.Property == VariantProperty
+            || change.Property == GeometryProfileProperty
+            || change.Property == VisualColorsProperty)
         {
             ApplyTokens();
         }
@@ -160,11 +190,11 @@ public class MaterialNavigationDrawer : ContentControl, IMaterialThemeConsumer, 
 
     private void ApplyTokens()
     {
-        _tokens = DrawerDefaults.Metrics(Variant);
-        _colors = DrawerDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
-
         IsHitTestVisible = IsOpen;
         InvalidateArrange();
         InvalidateVisual();
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

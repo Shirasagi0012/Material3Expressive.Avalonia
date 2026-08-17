@@ -11,7 +11,6 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/IconButton.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Card.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Fab.axaml" />
-    <StyleInclude Source="avares://Material3Expressive/Styles/Components/FloatingToolbar.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Selection.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Progress.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Chip.axaml" />
@@ -23,12 +22,7 @@
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Tabs.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/AppBar.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Overlays.axaml" />
-    <StyleInclude Source="avares://Material3Expressive/Styles/Components/Menu.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/SearchBar.axaml" />
-    <StyleInclude Source="avares://Material3Expressive/Styles/Components/Pickers.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/SurfaceList.axaml" />
     <StyleInclude Source="avares://Material3Expressive/Styles/Components/Scaffold.axaml" />
-    <StyleInclude Source="avares://Material3Expressive/Styles/Components/BottomSheetScaffold.axaml" />
-    <StyleInclude Source="avares://Material3Expressive/Styles/Components/SwipeToDismissBox.axaml" />
-    <StyleInclude Source="avares://Material3Expressive/Styles/Components/PullToRefreshBox.axaml" />
 </Styles>

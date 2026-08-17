@@ -15,6 +15,9 @@ namespace Material3Expressive.Controls;
 /// Material ControlTheme binds those properties to ordinary Avalonia presentation properties at
 /// theme priority, leaving application styles and local values free to win.
 /// </remarks>
+[Obsolete(
+    "Legacy component-defaults adapter. Consume typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 internal sealed class IconButtonDefaultsAdapter
 {
     private static readonly AttachedProperty<IconButtonDefaultsAdapter?> AdapterProperty =

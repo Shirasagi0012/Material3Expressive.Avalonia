@@ -94,12 +94,14 @@ internal sealed class TokenReference
 /// <summary>A typed value plus its emitted expression and optional cross-table reference.</summary>
 internal sealed class TokenValue
 {
-    public TokenValue(TokenType type, string expression, string? enumType, TokenReference? reference)
+    public TokenValue(TokenType type, string expression, string? enumType, TokenReference? reference,
+        ColorRoleReference? colorRole = null)
     {
         Type = type;
         Expression = expression;
         EnumType = enumType;
         Reference = reference;
+        ColorRole = colorRole;
     }
 
     public TokenType Type { get; }
@@ -109,6 +111,23 @@ internal sealed class TokenValue
     public string? EnumType { get; }
 
     public TokenReference? Reference { get; }
+
+    /// <summary>A structured external MCU color-role reference, when the JSON used shorthand.</summary>
+    public ColorRoleReference? ColorRole { get; }
+}
+
+/// <summary>A component color shorthand retained independently from its transcription expression.</summary>
+internal sealed class ColorRoleReference
+{
+    public ColorRoleReference(string role, string? customName)
+    {
+        Role = role;
+        CustomName = customName;
+    }
+
+    public string Role { get; }
+
+    public string? CustomName { get; }
 }
 
 internal sealed class TokenEntry
@@ -557,9 +576,11 @@ internal static class ValueEmitter
         if (value.Kind == JsonKind.String && value.AsString() is { Length: > 0 } text && text[0] == '@')
             return Reference(context, type, text.Substring(1), enumType);
 
+        if (type == TokenType.Color)
+            return Color(context, value, enumType);
+
         var expression = type switch
         {
-            TokenType.Color => Color(context, value),
             TokenType.Shape => EnumMember(context, "global::Material3Expressive.Foundation.ShapeRole", value),
             TokenType.Typography => EnumMember(context, "global::Material3Expressive.Foundation.TypographyRole", value),
             TokenType.Motion => EnumMember(context, "global::Material3Expressive.Foundation.MotionRole", value),
@@ -619,24 +640,47 @@ internal static class ValueEmitter
         return $"{enumType}.{Member(context, text)}";
     }
 
-    private static string Color(string context, JsonValue value)
+    private static TokenValue Color(string context, JsonValue value, string? enumType)
     {
         var text = value.AsString()
                    ?? throw new InvalidTableException($"'{context}' must be a colour role or a literal colour.");
 
         if (text.StartsWith("#", StringComparison.Ordinal))
-            return $"global::Material3Expressive.Foundation.ColorTokenValue.Literal(global::Avalonia.Media.Color.Parse(\"{text}\"))";
+            return new TokenValue(
+                TokenType.Color,
+                $"global::Material3Expressive.Foundation.ColorTokenValue.Literal(global::Avalonia.Media.Color.Parse(\"{text}\"))",
+                enumType,
+                reference: null);
 
         var separator = text.IndexOf(':');
         if (separator > 0)
         {
             var role = Member(context, text.Substring(0, separator));
             var key = text.Substring(separator + 1);
-            return "global::Material3Expressive.Foundation.ColorTokenValue.Role(" +
-                   $"global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken.{role}, \"{key}\")";
+            if (string.IsNullOrWhiteSpace(key))
+                throw new InvalidTableException($"'{context}' has an empty custom color name.");
+            return new TokenValue(
+                TokenType.Color,
+                "global::Material3Expressive.Foundation.ColorTokenValue.Role(" +
+                $"global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken.{role}, {CSharpString(key)})",
+                enumType,
+                reference: null,
+                new ColorRoleReference(role, key));
         }
 
-        return "global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken." + Member(context, text);
+        var standardRole = Member(context, text);
+        return new TokenValue(
+            TokenType.Color,
+            "global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken." + standardRole,
+            enumType,
+            reference: null,
+            new ColorRoleReference(standardRole, customName: null));
+    }
+
+    private static string CSharpString(string text)
+    {
+        return "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"")
+            .Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t") + "\"";
     }
 
     private static string Member(string context, string text)

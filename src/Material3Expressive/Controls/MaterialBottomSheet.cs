@@ -3,8 +3,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -27,7 +27,7 @@ public enum BottomSheetVariant
 /// velocity the drag had, so a flick keeps going instead of stopping dead at the release point.
 /// </para>
 /// </remarks>
-public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialBottomSheet : ContentControl, IMaterialMotionConsumer
 {
     public static readonly StyledProperty<BottomSheetVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialBottomSheet, BottomSheetVariant>(nameof(Variant));
@@ -37,6 +37,29 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         AvaloniaProperty.Register<MaterialBottomSheet, bool>(
             nameof(IsOpen), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
+    internal static readonly StyledProperty<BottomSheetGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialBottomSheet, BottomSheetGeometryProfile>(
+            nameof(GeometryProfile),
+            new BottomSheetGeometryProfile(
+                0,
+                ShapeRole.CornerExtraLargeTop,
+                32,
+                4,
+                22,
+                new Thickness(0, 22, 0, 0),
+                640,
+                0.32,
+                true));
+
+    internal static readonly StyledProperty<BottomSheetVisualProfile> VisualProfileProperty =
+        AvaloniaProperty.Register<MaterialBottomSheet, BottomSheetVisualProfile>(
+            nameof(VisualProfile),
+            new BottomSheetVisualProfile(
+                TransparentBrush(),
+                TransparentBrush(),
+                TransparentBrush(),
+                Colors.Black));
+
     /// <summary>Past this fraction of the sheet's height, a release settles it closed.</summary>
     private const double DismissThreshold = 0.4;
 
@@ -44,9 +67,6 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
     private readonly MaterialMotionController _motion;
 
     private SpringAnimation? _open;
-    private BottomSheetMetrics _tokens = BottomSheetDefaults.Metrics(BottomSheetVariant.Modal);
-    private BottomSheetVisualColors _colors = BottomSheetDefaults.Colors(Foundation.ResolvedTheme.Default, BottomSheetVariant.Modal, false);
-
     private Point? _dragStart;
     private double _dragStartFraction;
 
@@ -54,10 +74,8 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
     {
         _theme = MaterialElementContext.Ensure(this).Theme;
         _motion = MaterialElementContext.Ensure(this).Motion;
-        ApplyTokens();
+        IsHitTestVisible = IsOpen;
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame()
     {
@@ -67,7 +85,12 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
 
     static MaterialBottomSheet()
     {
-        AffectsRender<MaterialBottomSheet>(VariantProperty, IsOpenProperty);
+        AffectsMeasure<MaterialBottomSheet>(GeometryProfileProperty);
+        AffectsRender<MaterialBottomSheet>(
+            VariantProperty,
+            IsOpenProperty,
+            GeometryProfileProperty,
+            VisualProfileProperty);
     }
 
     public BottomSheetVariant Variant
@@ -93,7 +116,7 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
 
     private Rect GetSheetArea(Size available)
     {
-        var width = Math.Min(available.Width, _tokens.MaxWidth);
+        var width = Math.Min(available.Width, GeometryProfile.MaxWidth);
         var height = Presenter?.DesiredSize.Height ?? 0;
         var hidden = height * (1 - OpenFraction);
 
@@ -110,18 +133,19 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         if (fraction <= 0.001)
             return;
 
-        if (_tokens.IsModal && _tokens.ScrimOpacity > 0)
+        if (GeometryProfile.IsModal && GeometryProfile.ScrimOpacity > 0)
         {
-            var scrim = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Scrim, _theme.Current.IsDark) ?? Colors.Black;
-            using (context.PushOpacity(_tokens.ScrimOpacity * fraction))
-                context.FillRectangle(new SolidColorBrush(scrim), new Rect(Bounds.Size));
+            using (context.PushOpacity(GeometryProfile.ScrimOpacity * fraction))
+                context.FillRectangle(VisualProfile.ScrimColor, new Rect(Bounds.Size));
         }
 
         var sheet = SheetArea;
         if (sheet.Height <= 0)
             return;
 
-        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, sheet.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(
+            GeometryProfile.ContainerShape,
+            sheet.Size);
 
         using (context.PushTransform(Matrix.CreateTranslation(sheet.X, sheet.Y)))
         {
@@ -129,26 +153,27 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
                 context,
                 sheet.Size,
                 corners,
-                _colors.ContainerColor);
+                VisualProfile.ContainerColor);
 
             // The drag handle sits in the space the sheet reserves above its content.
             var handle = new Rect(
-                (sheet.Width - _tokens.DragHandleWidth) / 2,
-                (_tokens.DragHandleSpace - _tokens.DragHandleHeight) / 2,
-                _tokens.DragHandleWidth,
-                _tokens.DragHandleHeight);
+                (sheet.Width - GeometryProfile.DragHandleWidth) / 2,
+                (GeometryProfile.DragHandleSpace - GeometryProfile.DragHandleHeight) / 2,
+                GeometryProfile.DragHandleWidth,
+                GeometryProfile.DragHandleHeight);
 
             context.DrawRectangle(
-                _colors.DragHandleColor,
+                VisualProfile.DragHandleColor,
                 null,
-                new RoundedRect(handle, new CornerRadius(_tokens.DragHandleHeight / 2)));
+                new RoundedRect(handle, new CornerRadius(GeometryProfile.DragHandleHeight / 2)));
         }
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
         if (Presenter is { } presenter)
-            presenter.Measure(new Size(Math.Min(availableSize.Width, _tokens.MaxWidth), availableSize.Height));
+            presenter.Measure(
+                new Size(Math.Min(availableSize.Width, GeometryProfile.MaxWidth), availableSize.Height));
 
         return availableSize;
     }
@@ -178,7 +203,7 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         if (!sheet.Contains(position))
         {
             // Outside the sheet is the scrim, and tapping it dismisses a modal sheet.
-            if (_tokens.IsModal)
+            if (GeometryProfile.IsModal)
             {
                 IsOpen = false;
                 e.Handled = true;
@@ -188,7 +213,7 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         }
 
         // Dragging starts anywhere in the handle strip along the top.
-        if (position.Y - sheet.Y > _tokens.DragHandleSpace)
+        if (position.Y - sheet.Y > GeometryProfile.DragHandleSpace)
             return;
 
         _dragStart = position;
@@ -228,11 +253,7 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty)
-        {
-            ApplyTokens();
-        }
-        else if (change.Property == IsOpenProperty)
+        if (change.Property == IsOpenProperty)
         {
             Open.AnimateTo(IsOpen ? 1 : 0, _theme.Current.Theme.Motion.Get(MotionRole.DefaultSpatial));
             _motion.RequestFrame();
@@ -263,15 +284,18 @@ public class MaterialBottomSheet : ContentControl, IMaterialThemeConsumer, IMate
         }
     }
 
-    private void ApplyTokens()
+    internal BottomSheetGeometryProfile GeometryProfile
     {
-        _tokens = BottomSheetDefaults.Metrics(Variant);
-        _colors = BottomSheetDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
-
-        Padding = new Thickness(0, _tokens.DragHandleSpace, 0, 0);
-        IsHitTestVisible = IsOpen;
-
-        InvalidateMeasure();
-        InvalidateVisual();
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
     }
+
+    internal BottomSheetVisualProfile VisualProfile
+    {
+        get => GetValue(VisualProfileProperty);
+        set => SetValue(VisualProfileProperty, value);
+    }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

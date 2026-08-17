@@ -5,6 +5,9 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+[Obsolete(
+    "Legacy tab defaults snapshot. Consume TabValueKeys through MaterialValueKey resources.",
+    DiagnosticId = "M3E1005")]
 internal sealed record TabMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue ActiveIndicatorColor,
@@ -23,6 +26,9 @@ internal sealed record TabMetrics(
     TypographyRole LabelTextStyle,
     bool IndicatorSpansLabel);
 
+[Obsolete(
+    "Legacy tab defaults snapshot. Consume TabValueKeys through MaterialValueKey resources.",
+    DiagnosticId = "M3E1005")]
 internal sealed record TabVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush ActiveIndicatorColor,
@@ -34,6 +40,9 @@ internal sealed record TabVisualColors(
     IImmutableBrush StateLayerColor);
 
 /// <summary>Component-owned policy for primary and secondary tabs.</summary>
+[Obsolete(
+    "Legacy tab defaults adapter. Consume TabValueKeys through MaterialValueKey resources.",
+    DiagnosticId = "M3E1005")]
 internal static class TabDefaults
 {
     public static TabMetrics Metrics(TabVariant variant) => variant switch

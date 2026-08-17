@@ -10,6 +10,9 @@ namespace Material3Expressive.Markups;
 /// a token — restating it at the call site is how the type scale's data ended up duplicated across
 /// the style sheet.
 /// </remarks>
+[Obsolete(
+    "Legacy ResolvedTheme typography markup. Use typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 public class MdTypeFamilyExtension
 {
     public MdTypeFamilyExtension()

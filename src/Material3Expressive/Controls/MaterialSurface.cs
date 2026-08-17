@@ -3,8 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.VisualTree;
-using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -16,7 +14,7 @@ namespace Material3Expressive.Controls;
 // accessibility contracts and are represented by explicit controls, not implicit container modes.
 
 /// <summary>A non-interactive Material surface that supplies Surface and OnSurface defaults.</summary>
-public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
+public sealed class MaterialSurface : ContentControl
 {
     public static readonly StyledProperty<double> TonalElevationProperty =
         AvaloniaProperty.Register<MaterialSurface, double>(nameof(TonalElevation));
@@ -29,19 +27,29 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
             nameof(AbsoluteTonalElevation),
             surface => surface.AbsoluteTonalElevation);
 
-    private readonly MaterialThemeController _theme;
+    private static readonly SurfaceVisualColors DefaultVisualColors = new(
+        new ImmutableSolidColorBrush(Colors.Transparent),
+        new ImmutableSolidColorBrush(Colors.Black),
+        Colors.Transparent,
+        Colors.Black);
+
+    // The profile is the only Material source for the default surface colours. Background and
+    // Foreground remain ordinary public Avalonia properties so application styles and local values
+    // retain their normal precedence over the ControlTheme setters.
+    internal static readonly StyledProperty<SurfaceVisualColors> ResolvedVisualColorsProperty =
+        AvaloniaProperty.Register<MaterialSurface, SurfaceVisualColors>(
+            nameof(ResolvedVisualColors),
+            DefaultVisualColors);
+
     private MaterialSurface? _tonalParent;
     private double _absoluteTonalElevation;
 
     public MaterialSurface()
     {
-        _theme = MaterialElementContext.Ensure(this).Theme;
         AttachedToVisualTree += (_, _) => UpdateTonalParent();
         DetachedFromVisualTree += (_, _) => SetTonalParent(null);
         UpdateAbsoluteTonalElevation();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTheme();
 
     /// <summary>
     /// The elevation used to tint this surface when its effective background is the theme Surface
@@ -63,10 +71,16 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
     /// <summary>The accumulated tonal elevation supplied to descendant material surfaces.</summary>
     internal double AbsoluteTonalElevation => _absoluteTonalElevation;
 
+    /// <summary>Gets or sets the hidden typed MaterialValue projection.</summary>
+    internal SurfaceVisualColors ResolvedVisualColors
+    {
+        get => GetValue(ResolvedVisualColorsProperty);
+        set => SetValue(ResolvedVisualColorsProperty, value);
+    }
+
     public override void Render(DrawingContext context)
     {
         var surface = EffectiveSurfaceBrush();
-        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
         MaterialContainer.Draw(
             context,
             this,
@@ -76,7 +90,7 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
             BorderBrush,
             EffectiveBorderThickness(),
             Math.Max(0, ShadowElevation),
-            shadow);
+            ResolvedVisualColors.ShadowColor);
         base.Render(context);
     }
 
@@ -88,7 +102,8 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
             BackgroundProperty,
             BorderBrushProperty,
             BorderThicknessProperty,
-            CornerRadiusProperty);
+            CornerRadiusProperty,
+            ResolvedVisualColorsProperty);
         ClipToBoundsProperty.OverrideDefaultValue<MaterialSurface>(false);
     }
 
@@ -101,8 +116,6 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
         else if (change.Property == VisualParentProperty)
             UpdateTonalParent();
     }
-
-    private void ApplyTheme() => InvalidateVisual();
 
     private void UpdateTonalParent()
     {
@@ -152,17 +165,19 @@ public sealed class MaterialSurface : ContentControl, IMaterialThemeConsumer
     private IBrush? EffectiveSurfaceBrush()
     {
         var background = Background;
-        var scheme = _theme.Current.Theme.ColorScheme;
-        if (background is not ISolidColorBrush solid || scheme is null)
+        var colors = ResolvedVisualColors;
+        if (background is not ISolidColorBrush solid
+            || colors.SurfaceBrush is not ISolidColorBrush surfaceBrush)
             return background;
 
-        var surface = scheme.GetColor(SysColorToken.Surface, _theme.Current.IsDark);
+        var surface = surfaceBrush.Color;
         if (solid.Color != surface || _absoluteTonalElevation <= 0)
             return background;
 
-        var tint = scheme.GetColor(SysColorToken.SurfaceTint, _theme.Current.IsDark);
         var alpha = ((4.5 * Math.Log(_absoluteTonalElevation + 1)) + 2) / 100;
-        return new ImmutableSolidColorBrush(CompositeOver(tint, alpha, surface), solid.Opacity);
+        return new ImmutableSolidColorBrush(
+            CompositeOver(colors.SurfaceTintColor, alpha, surface),
+            solid.Opacity);
     }
 
     private double EffectiveBorderThickness()

@@ -4,6 +4,9 @@ using Material3Expressive.Foundation.Tokens;
 namespace Material3Expressive.Controls;
 
 /// <summary>Geometry shared by the two halves of a split button.</summary>
+[Obsolete(
+    "Legacy split-button defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record SplitButtonMetrics(
     double BetweenSpace,
     double ContainerHeight,
@@ -19,6 +22,9 @@ internal sealed record SplitButtonMetrics(
     double TrailingInnerSelectedCornerPercent);
 
 /// <summary>Component-owned policy for split-button geometry.</summary>
+[Obsolete(
+    "Legacy split-button defaults adapter. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class SplitButtonDefaults
 {
     public static SplitButtonMetrics Metrics() => new(

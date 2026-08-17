@@ -7,12 +7,14 @@ using MaterialColorUtilities.Avalonia.Tokens;
 namespace Material3Expressive.Controls;
 
 /// <summary>Theme-resolved colour roles consumed by a Material floating action button.</summary>
+[Obsolete("Legacy FAB defaults transport. Use FabValueKeys and MaterialValue resources.", DiagnosticId = "M3E1005")]
 internal sealed record FabColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush IconColor,
     IImmutableBrush StateLayerColor);
 
 /// <summary>The interaction elevation profile selected by a Material floating action button.</summary>
+[Obsolete("Legacy FAB defaults transport. Use FabValueKeys and MaterialValue resources.", DiagnosticId = "M3E1005")]
 internal sealed record FabElevation(
     double Resting,
     double Hovered,
@@ -39,6 +41,7 @@ internal sealed record FabElevation(
 }
 
 /// <summary>The size-dependent semantic metrics consumed by a Material floating action button.</summary>
+[Obsolete("Legacy FAB defaults transport. Use FabValueKeys and MaterialValue resources.", DiagnosticId = "M3E1005")]
 internal sealed record FabMetrics(
     double ContainerHeight,
     double ContainerWidth,
@@ -58,6 +61,7 @@ internal sealed record FabMetrics(
 /// are Compose/spec defaults composed from system roles, while pressed shapes, extended padding
 /// and text-style selection are control policy. None belong in a generated component snapshot.
 /// </remarks>
+[Obsolete("Legacy FAB defaults transport. Use FabValueKeys and MaterialValue resources.", DiagnosticId = "M3E1005")]
 internal static class FabDefaults
 {
     /// <summary>Resolves the visual colour profile for one FAB variant.</summary>

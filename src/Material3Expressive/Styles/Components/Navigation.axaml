@@ -1,7 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia"
         xmlns:ms="using:MaterialSymbols.Avalonia">
     <Design.PreviewWith>
         <Border Padding="0" Width="420">
@@ -33,6 +32,10 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarGeometry}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarVisualColors}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <!-- The indicator is painted behind this by the control, so the template only
@@ -71,9 +74,25 @@
                     </m3:MaterialNavigationItemContentPanel>
                 </ControlTemplate>
             </Setter>
+            <Style Selector="^[Surface=Bar]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarVisualColors}}" />
+            </Style>
+            <Style Selector="^[Surface=Rail]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.RailGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.RailVisualColors}}" />
+            </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialNavigationBar}" TargetType="m3:MaterialNavigationBar">
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarGeometry}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarVisualColors}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <ItemsControl ItemsSource="{Binding $parent[m3:MaterialNavigationBar].Items}">
@@ -87,9 +106,23 @@
                     </ItemsControl>
                 </ControlTemplate>
             </Setter>
+            <Style Selector="^[Variant=Bar]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarVisualColors}}" />
+            </Style>
+            <Style Selector="^[Variant=Rail]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.RailGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:NavigationValueKeys.RailVisualColors}}" />
+            </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialShortNavigationBar}" TargetType="m3:MaterialShortNavigationBar">
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.BarVisualColors}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <ItemsControl ItemsSource="{Binding $parent[m3:MaterialShortNavigationBar].Items}">
@@ -105,6 +138,8 @@
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialWideNavigationRail}" TargetType="m3:MaterialWideNavigationRail">
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.RailVisualColors}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <m3:MaterialWideNavigationRailLayoutPanel>
@@ -121,9 +156,30 @@
             </Setter>
         </ControlTheme>
 
+        <ControlTheme x:Key="{x:Type m3:MaterialNavigationDrawer}" TargetType="m3:MaterialNavigationDrawer">
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:DrawerValueKeys.ModalGeometry}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:DrawerValueKeys.ModalVisualColors}}" />
+            <Style Selector="^[Variant=Modal]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:DrawerValueKeys.ModalGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:DrawerValueKeys.ModalVisualColors}}" />
+            </Style>
+            <Style Selector="^[Variant=Standard]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:DrawerValueKeys.StandardGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:DrawerValueKeys.StandardVisualColors}}" />
+            </Style>
+        </ControlTheme>
+
         <ControlTheme x:Key="{x:Type m3:MaterialNavigationSuiteScaffold}" TargetType="m3:MaterialNavigationSuiteScaffold">
-            <Setter Property="Background" Value="{mcu:MdSysColor Background}" />
-            <Setter Property="Foreground" Value="{mcu:MdSysColor OnBackground}" />
+            <Setter Property="Background"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.SuiteBackground}}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static m3:NavigationValueKeys.SuiteForeground}}" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
             <Setter Property="Template">

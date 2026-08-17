@@ -3,7 +3,10 @@ using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
-/// <summary>Resolved geometry used by <see cref="MaterialButtonGroup"/>.</summary>
+[Obsolete(
+    "Legacy button-group geometry snapshot. Use ButtonGroupValueKeys profiles instead.",
+    DiagnosticId = "M3E1005")]
+/// <summary>Compatibility-only geometry snapshot used by unmigrated tests.</summary>
 internal sealed record ButtonGroupMetrics(
     double BetweenSpace,
     double ContainerHeight,
@@ -12,9 +15,15 @@ internal sealed record ButtonGroupMetrics(
     double SelectedInnerCornerPercent,
     bool IsConnected);
 
-/// <summary>Component-owned policy for button-group geometry.</summary>
+[Obsolete(
+    "Legacy button-group defaults. Use ButtonGroupValueKeys profiles instead.",
+    DiagnosticId = "M3E1005")]
+/// <summary>Compatibility-only policy for the pre-MaterialValue button-group tests.</summary>
 internal static class ButtonGroupDefaults
 {
+    [Obsolete(
+        "Legacy button-group defaults. Use ButtonGroupValueKeys profiles instead.",
+        DiagnosticId = "M3E1005")]
     public static ButtonGroupMetrics Metrics(ButtonGroupVariant variant) => variant switch
     {
         ButtonGroupVariant.Standard => new(

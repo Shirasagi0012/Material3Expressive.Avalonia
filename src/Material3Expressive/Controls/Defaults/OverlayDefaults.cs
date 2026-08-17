@@ -5,6 +5,9 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+[Obsolete(
+    "Legacy bottom-sheet defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record BottomSheetMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue ScrimColor,
@@ -18,12 +21,18 @@ internal sealed record BottomSheetMetrics(
     double ScrimOpacity,
     bool IsModal);
 
+[Obsolete(
+    "Legacy bottom-sheet defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record BottomSheetVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush ScrimColor,
     IImmutableBrush DragHandleColor);
 
 /// <summary>Component-owned policy for modal and standard bottom sheets.</summary>
+[Obsolete(
+    "Legacy bottom-sheet defaults adapter. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class BottomSheetDefaults
 {
     public static BottomSheetMetrics Metrics(BottomSheetVariant variant) => variant switch
@@ -66,6 +75,9 @@ internal static class BottomSheetDefaults
     }
 }
 
+[Obsolete(
+    "Legacy dialog defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record DialogMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue ScrimColor,
@@ -82,6 +94,9 @@ internal sealed record DialogMetrics(
     TypographyRole HeadlineTextStyle,
     TypographyRole SupportingTextStyle);
 
+[Obsolete(
+    "Legacy dialog defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record DialogVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush ScrimColor,
@@ -90,6 +105,9 @@ internal sealed record DialogVisualColors(
     IImmutableBrush IconColor);
 
 /// <summary>Component-owned policy for dialog geometry, text roles and colours.</summary>
+[Obsolete(
+    "Legacy dialog defaults adapter. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class DialogDefaults
 {
     public static DialogMetrics Metrics() => new(
@@ -121,6 +139,9 @@ internal static class DialogDefaults
     }
 }
 
+[Obsolete(
+    "Legacy snackbar defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record SnackbarMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue SupportingTextColor,
@@ -137,6 +158,9 @@ internal sealed record SnackbarMetrics(
     TypographyRole SupportingTextStyle,
     TypographyRole ActionTextStyle);
 
+[Obsolete(
+    "Legacy snackbar defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record SnackbarVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush SupportingTextColor,
@@ -144,6 +168,9 @@ internal sealed record SnackbarVisualColors(
     IImmutableBrush IconColor);
 
 /// <summary>Component-owned policy for snackbar chrome and slot typography.</summary>
+[Obsolete(
+    "Legacy snackbar defaults adapter. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class SnackbarDefaults
 {
     public static SnackbarMetrics Metrics() => new(
@@ -174,6 +201,9 @@ internal static class SnackbarDefaults
     }
 }
 
+[Obsolete(
+    "Legacy tooltip defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record TooltipMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue SupportingTextColor,
@@ -188,6 +218,9 @@ internal sealed record TooltipMetrics(
     TypographyRole SupportingTextStyle,
     TypographyRole TitleTextStyle);
 
+[Obsolete(
+    "Legacy tooltip defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record TooltipVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush SupportingTextColor,
@@ -195,6 +228,9 @@ internal sealed record TooltipVisualColors(
     IImmutableBrush ActionLabelTextColor);
 
 /// <summary>Component-owned policy for plain and rich tooltip surfaces.</summary>
+[Obsolete(
+    "Legacy tooltip defaults adapter. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class TooltipDefaults
 {
     public static TooltipMetrics Metrics(TooltipVariant variant) => variant switch
@@ -240,6 +276,9 @@ internal static class TooltipDefaults
     }
 }
 
+[Obsolete(
+    "Legacy floating-toolbar defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record FloatingToolbarMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue ContentColor,
@@ -255,6 +294,9 @@ internal sealed record FloatingToolbarMetrics(
     double ExpandedElevationWithFab,
     double CollapsedElevationWithFab);
 
+[Obsolete(
+    "Legacy floating-toolbar defaults transport. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal sealed record FloatingToolbarVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush ContentColor,
@@ -262,6 +304,9 @@ internal sealed record FloatingToolbarVisualColors(
     IImmutableBrush FabContentColor);
 
 /// <summary>Component-owned policy for standard and vibrant floating toolbars.</summary>
+[Obsolete(
+    "Legacy floating-toolbar defaults adapter. Use typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class FloatingToolbarDefaults
 {
     public static FloatingToolbarMetrics Metrics(FloatingToolbarVariant variant) => variant switch

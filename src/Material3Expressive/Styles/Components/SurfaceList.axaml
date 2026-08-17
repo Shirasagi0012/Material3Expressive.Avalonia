@@ -6,12 +6,17 @@
      PART_ContentClip is Avalonia template plumbing, deliberately not a public ListItem API. -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        xmlns:mcu="https://github.com/Shirasagi0012/MaterialColorUtilities.Avalonia">
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type m3:MaterialSurface}" TargetType="m3:MaterialSurface">
-            <Setter Property="Background" Value="{mcu:MdSysColor Surface}" />
-            <Setter Property="Foreground" Value="{mcu:MdSysColor OnSurface}" />
+            <!-- Surface defaults are one typed MaterialValue profile. The public properties remain
+                 ordinary setters so local/application values retain normal Avalonia precedence. -->
+            <Setter Property="ResolvedVisualColors"
+                    Value="{DynamicResource {x:Static m3:SurfaceValueKeys.VisualColors}}" />
+            <Setter Property="Background"
+                    Value="{Binding ResolvedVisualColors.SurfaceBrush, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding ResolvedVisualColors.OnSurfaceBrush, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Template">
                 <ControlTemplate>
@@ -27,11 +32,28 @@
                 </ControlTemplate>
             </Setter>
         </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:MaterialDivider}" TargetType="m3:MaterialDivider">
+            <!-- Material values are projected through hidden semantic properties. These are
+                 ordinary base-theme setters, so application styles and local values on the
+                 public properties retain normal Avalonia precedence. -->
+            <Setter Property="ResolvedDividerBrush"
+                    Value="{DynamicResource {x:Static m3:DividerValueKeys.DividerBrush}}" />
+            <Setter Property="ResolvedThickness"
+                    Value="{DynamicResource {x:Static m3:DividerValueKeys.Thickness}}" />
+            <Setter Property="DividerBrush"
+                    Value="{Binding ResolvedDividerBrush, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Thickness"
+                    Value="{Binding ResolvedThickness, RelativeSource={RelativeSource Self}}" />
+        </ControlTheme>
         <ControlTheme x:Key="{x:Type m3:MaterialListItem}" TargetType="m3:MaterialListItem">
-            <!-- ListItemDefaults.ContentPadding: 16dp logical start/end and 10dp top/bottom.
-                 MaterialListItemPanel owns those insets so a user-supplied Padding is the explicit
-                 Avalonia adaptation of Compose's contentPadding parameter. -->
-            <Setter Property="Padding" Value="16,10" />
+            <!-- Geometry and visual profiles are the only Material default inputs. Padding remains
+                 public and can still be replaced by an application style or local value. -->
+            <Setter Property="ResolvedGeometry"
+                    Value="{DynamicResource {x:Static m3:ListItemValueKeys.GeometryProfile}}" />
+            <Setter Property="ResolvedVisualColors"
+                    Value="{DynamicResource {x:Static m3:ListItemValueKeys.VisualColors}}" />
+            <Setter Property="Padding"
+                    Value="{Binding ResolvedGeometry.ContentPadding, RelativeSource={RelativeSource Self}}" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <ControlTemplate>
@@ -41,41 +63,51 @@
                          host provides the inner clip without truncating the shadow. -->
                     <Border x:Name="PART_ContentClip"
                             ClipToBounds="True">
-                        <m3:MaterialListItemPanel ContentPadding="{TemplateBinding Padding}">
+                        <m3:MaterialListItemPanel ContentPadding="{TemplateBinding Padding}"
+                                                  BetweenSpace="{Binding ResolvedGeometry.BetweenSpace, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  OneLineMinimumHeight="{Binding ResolvedGeometry.OneLineContainerHeight, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  TwoLineMinimumHeight="{Binding ResolvedGeometry.TwoLineContainerHeight, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  ThreeLineMinimumHeight="{Binding ResolvedGeometry.ThreeLineContainerHeight, RelativeSource={RelativeSource TemplatedParent}}">
                             <ContentPresenter x:Name="PART_Leading"
                                               Content="{TemplateBinding LeadingContent}"
                                               IsVisible="{TemplateBinding LeadingContent, Converter={x:Static ObjectConverters.IsNotNull}}"
                                               m3:MaterialListItemPanel.Slot="Leading"
-                                              m3:TypographyScheme.TextStyle="TitleMedium"
+                                              m3:TypographyScheme.TextStyle="{Binding ResolvedGeometry.LeadingTextStyle, RelativeSource={RelativeSource TemplatedParent}}"
                                               TextElement.Foreground="{TemplateBinding LeadingBrush}" />
                             <ContentPresenter x:Name="PART_Trailing"
                                               Content="{TemplateBinding TrailingContent}"
                                               IsVisible="{TemplateBinding TrailingContent, Converter={x:Static ObjectConverters.IsNotNull}}"
                                               m3:MaterialListItemPanel.Slot="Trailing"
-                                              m3:TypographyScheme.TextStyle="LabelSmall"
+                                              m3:TypographyScheme.TextStyle="{Binding ResolvedGeometry.TrailingTextStyle, RelativeSource={RelativeSource TemplatedParent}}"
                                               TextElement.Foreground="{TemplateBinding TrailingBrush}" />
                             <ContentPresenter x:Name="PART_Overline"
                                               Content="{TemplateBinding OverlineContent}"
                                               IsVisible="{TemplateBinding OverlineContent, Converter={x:Static ObjectConverters.IsNotNull}}"
                                               m3:MaterialListItemPanel.Slot="Overline"
-                                              m3:TypographyScheme.TextStyle="LabelSmall"
+                                              m3:TypographyScheme.TextStyle="{Binding ResolvedGeometry.OverlineTextStyle, RelativeSource={RelativeSource TemplatedParent}}"
                                               TextElement.Foreground="{TemplateBinding OverlineBrush}" />
                             <ContentPresenter x:Name="PART_Headline"
                                               Content="{TemplateBinding Content}"
                                               ContentTemplate="{TemplateBinding ContentTemplate}"
                                               m3:MaterialListItemPanel.Slot="Headline"
-                                              m3:TypographyScheme.TextStyle="BodyLarge"
+                                              m3:TypographyScheme.TextStyle="{Binding ResolvedGeometry.ContentTextStyle, RelativeSource={RelativeSource TemplatedParent}}"
                                               TextElement.Foreground="{TemplateBinding Foreground}" />
                             <ContentPresenter x:Name="PART_Supporting"
                                               Content="{TemplateBinding SupportingContent}"
                                               IsVisible="{TemplateBinding SupportingContent, Converter={x:Static ObjectConverters.IsNotNull}}"
                                               m3:MaterialListItemPanel.Slot="Supporting"
-                                              m3:TypographyScheme.TextStyle="BodyMedium"
+                                              m3:TypographyScheme.TextStyle="{Binding ResolvedGeometry.SupportingTextStyle, RelativeSource={RelativeSource TemplatedParent}}"
                                               TextElement.Foreground="{TemplateBinding SupportingBrush}" />
                         </m3:MaterialListItemPanel>
                     </Border>
                 </ControlTemplate>
             </Setter>
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:MaterialSegmentedList}" TargetType="m3:MaterialSegmentedList">
+            <Setter Property="ResolvedGeometry"
+                    Value="{DynamicResource {x:Static m3:ListItemValueKeys.GeometryProfile}}" />
+            <Setter Property="Spacing"
+                    Value="{Binding ResolvedGeometry.SegmentedGap, RelativeSource={RelativeSource Self}}" />
         </ControlTheme>
     </Styles.Resources>
 </Styles>

@@ -1,16 +1,20 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
+using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
 /// <summary>The container-colour variants available to a Material floating action button.</summary>
 /// <remarks>
-/// This component API is intentionally hand-authored. <c>FabDefaults</c> maps the selection to
-/// raw upstream token tables and to the system roles used by the spec-only tertiary and surface
-/// variants.
+/// This component API is intentionally hand-authored. The <c>FabValueKeys</c> catalog maps the
+/// selector's choice to raw upstream token tables and to the system roles used by the spec-only
+/// tertiary and surface variants.
 /// </remarks>
 public enum FabVariant
 {
@@ -29,8 +33,8 @@ public enum FabVariant
 
 /// <summary>The three standard Material floating action button sizes.</summary>
 /// <remarks>
-/// Raw token selection and the expressive extended-FAB layout policy belong to
-/// <c>FabDefaults</c>, not to a generated defaults record.
+/// Raw token selection belongs to <c>FabValueKeys</c>; the expressive extended-FAB layout policy
+/// remains in the control and its theme, not in a generated defaults record.
 /// </remarks>
 public enum FabSize
 {
@@ -57,7 +61,7 @@ public enum FabSize
 /// content sliding past.
 /// </para>
 /// </remarks>
-public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionConsumer
+public class MaterialFab : Button, IMaterialInteractionConsumer
 {
     public static readonly StyledProperty<FabVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialFab, FabVariant>(nameof(Variant));
@@ -84,23 +88,63 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     public static readonly DirectProperty<MaterialFab, bool> IsExtendedProperty =
         AvaloniaProperty.RegisterDirect<MaterialFab, bool>(nameof(IsExtended), o => o.IsExtended);
 
+    private static readonly FabVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        Colors.Black);
+
+    private static readonly FabElevationProfile DefaultElevation = new(
+        ElevationTokens.Level3,
+        ElevationTokens.Level4,
+        ElevationTokens.Level3,
+        ElevationTokens.Level3,
+        ElevationTokens.Level1);
+
+    private static readonly FabGeometryProfile DefaultGeometry = new(
+        ContainerHeight: 56,
+        ContainerWidth: 56,
+        ContainerShape: ShapeRole.CornerLarge,
+        PressedContainerShape: ShapeRole.CornerMedium,
+        IconSize: 24,
+        LabelSpace: 16,
+        IconLabelSpace: 12,
+        LabelTextStyle: TypographyRole.LabelLarge);
+
+    // These hidden semantic properties carry the typed MaterialValue results selected by the
+    // ControlTheme. Public Button properties remain ordinary setters so application styles and
+    // local values retain normal Avalonia precedence.
+    internal static readonly StyledProperty<FabVisualColors> ResolvedVisualColorsProperty =
+        AvaloniaProperty.Register<MaterialFab, FabVisualColors>(
+            nameof(ResolvedVisualColors),
+            DefaultVisualColors);
+
+    internal static readonly StyledProperty<FabElevationProfile> ResolvedElevationProperty =
+        AvaloniaProperty.Register<MaterialFab, FabElevationProfile>(
+            nameof(ResolvedElevation),
+            DefaultElevation);
+
+    internal static readonly StyledProperty<FabGeometryProfile> ResolvedGeometryProperty =
+        AvaloniaProperty.Register<MaterialFab, FabGeometryProfile>(
+            nameof(ResolvedGeometry),
+            DefaultGeometry);
+
+    internal static readonly StyledProperty<Thickness> ResolvedContentPaddingProperty =
+        AvaloniaProperty.Register<MaterialFab, Thickness>(nameof(ResolvedContentPadding));
+
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
-    private FabColors _colors = FabDefaults.Colors(ResolvedTheme.Default, FabVariant.Primary, isDark: false);
-    private FabElevation _elevation = FabDefaults.Elevation(FabVariant.Primary);
-    private FabMetrics _metrics = FabDefaults.Metrics(FabSize.Small);
+    private bool _hasMaterialValues;
 
     public MaterialFab()
     {
         _theme = MaterialElementContext.Ensure(this).Theme;
         _interaction = MaterialElementContext.Ensure(this).Interaction;
 
-        ApplyTokens();
+        UpdateDerivedProperties();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
         UpdateShape();
@@ -108,7 +152,24 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     static MaterialFab()
     {
         ClipToBoundsProperty.OverrideDefaultValue<MaterialFab>(false);
-        AffectsRender<MaterialFab>(VariantProperty, IsLoweredProperty);
+        AffectsRender<MaterialFab>(
+            VariantProperty,
+            IsLoweredProperty,
+            ResolvedVisualColorsProperty,
+            ResolvedElevationProperty,
+            ResolvedGeometryProperty);
+        AffectsMeasure<MaterialFab>(ResolvedGeometryProperty, ResolvedContentPaddingProperty);
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _hasMaterialValues = this.TryFindResource(
+            FabValueKeys.SmallGeometry,
+            ActualThemeVariant,
+            out _);
+        if (!_hasMaterialValues)
+            ApplyUnscopedFallback();
     }
 
     public FabVariant Variant
@@ -145,13 +206,41 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     public bool IsExtended => Label is { };
 
     /// <summary>The size the icon in the content slot should be drawn at.</summary>
-    public double IconSize => _metrics.IconSize;
+    public double IconSize => EffectiveGeometry.IconSize;
 
     /// <summary>The gap between the icon and the label when extended.</summary>
-    public double IconLabelSpace => _metrics.IconLabelSpace;
+    public double IconLabelSpace => EffectiveGeometry.IconLabelSpace;
+
+    /// <summary>Gets the hidden variant-selected visual profile.</summary>
+    internal FabVisualColors ResolvedVisualColors
+    {
+        get => GetValue(ResolvedVisualColorsProperty);
+        set => SetValue(ResolvedVisualColorsProperty, value);
+    }
+
+    /// <summary>Gets the hidden variant-selected interaction-elevation profile.</summary>
+    internal FabElevationProfile ResolvedElevation
+    {
+        get => GetValue(ResolvedElevationProperty);
+        set => SetValue(ResolvedElevationProperty, value);
+    }
+
+    /// <summary>Gets the hidden size-selected geometry profile.</summary>
+    internal FabGeometryProfile ResolvedGeometry
+    {
+        get => GetValue(ResolvedGeometryProperty);
+        set => SetValue(ResolvedGeometryProperty, value);
+    }
+
+    /// <summary>Gets the hidden extended-FAB padding policy.</summary>
+    internal Thickness ResolvedContentPadding
+    {
+        get => GetValue(ResolvedContentPaddingProperty);
+        set => SetValue(ResolvedContentPaddingProperty, value);
+    }
 
     /// <summary>Tells the template that the values it binds to have been recomputed.</summary>
-    private void RaiseTokenOutputs(FabMetrics previous, bool wasExtended)
+    private void RaiseTokenOutputs(FabGeometryProfile previous, bool wasExtended)
     {
         RaisePropertyChanged(IconSizeProperty, previous.IconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previous.IconLabelSpace, IconLabelSpace);
@@ -175,63 +264,72 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
     public override void Render(DrawingContext context)
     {
         var corners = ContainerCornerRadius;
-        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
+        var colors = ResolvedVisualColors;
 
         MaterialContainer.Draw(
             context,
             this,
             Bounds.Size,
             corners,
-            _colors.ContainerColor,
+            Background ?? colors.ContainerColor,
             null,
             0,
             CurrentElevation(),
-            shadow);
+            colors.ShadowColor);
 
         base.Render(context);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
+        _interaction.DrawLayers(context, colors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty
-            || change.Property == SizeProperty
-            || change.Property == LabelProperty)
-            ApplyTokens();
+        if (change.Property == LabelProperty)
+        {
+            var wasExtended = change.GetOldValue<object?>() is not null;
+            RaiseTokenOutputs(ResolvedGeometry, wasExtended);
+            UpdateDerivedProperties();
+        }
+        else if (change.Property == ResolvedGeometryProperty)
+        {
+            var previous = change.GetOldValue<FabGeometryProfile>();
+            RaiseTokenOutputs(previous, IsExtended);
+            UpdateDerivedProperties();
+            UpdateShape(snap: true);
+        }
+        else if (change.Property == SizeProperty && !_hasMaterialValues && VisualRoot is not null)
+        {
+            var previous = FallbackGeometry(change.GetOldValue<FabSize>());
+            RaiseTokenOutputs(previous, IsExtended);
+            ApplyUnscopedFallback();
+            UpdateShape(snap: true);
+        }
+        else if (change.Property == ResolvedVisualColorsProperty
+            || change.Property == ResolvedElevationProperty)
+        {
+            InvalidateVisual();
+        }
     }
 
-    private void ApplyTokens()
+    private void UpdateDerivedProperties()
     {
-        var previousMetrics = _metrics;
-        var wasExtended = IsExtended;
-
-        _colors = FabDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
-        _elevation = FabDefaults.Elevation(Variant);
-        _metrics = FabDefaults.Metrics(Size);
-        RaiseTokenOutputs(previousMetrics, wasExtended);
-
-        var typography = _theme.Current.Theme.Typography;
-
-        Foreground = _colors.IconColor;
-        MinHeight = _metrics.ContainerHeight;
-        MinWidth = IsExtended ? _metrics.ContainerHeight : _metrics.ContainerWidth;
-        Padding = IsExtended
-            ? new Thickness(_metrics.LabelSpace, 0, _metrics.LabelSpace, 0)
+        ResolvedContentPadding = IsExtended
+            ? new Thickness(EffectiveGeometry.LabelSpace, 0, EffectiveGeometry.LabelSpace, 0)
             : default;
-        FontSize = typography.GetTypeScale(_metrics.LabelTextStyle).FontSize;
-        FontFamily = typography.GetFontFamily(_metrics.LabelTextStyle);
-        FontWeight = typography.GetFontWeight(_metrics.LabelTextStyle);
-
-        UpdateShape(snap: true);
+        // Do not install the unscoped compatibility values before attachment.  A control can be
+        // constructed before it is placed under a MaterialTheme; an early Style-priority value
+        // would then compete with the ControlTheme binding once the control is attached.
+        if (!_hasMaterialValues && VisualRoot is not null)
+            ApplyUnscopedFallback();
+        InvalidateMeasure();
         InvalidateVisual();
     }
 
     private void UpdateShape(bool snap = false)
     {
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Current.Theme.Shapes.Get(_metrics.PressedContainerShape)
+            ? _theme.Current.Theme.Shapes.Get(EffectiveGeometry.PressedContainerShape)
             : RestingShape();
 
         if (snap && !Shape.IsRunning)
@@ -247,13 +345,59 @@ public class MaterialFab : Button, IMaterialThemeConsumer, IMaterialInteractionC
 
     private RoundedCornerShape RestingShape()
     {
-        return _theme.Current.Theme.Shapes.Get(_metrics.ContainerShape);
+        return _theme.Current.Theme.Shapes.Get(EffectiveGeometry.ContainerShape);
     }
 
     private double CurrentElevation()
     {
         var interaction = _interaction.Interaction;
 
-        return _elevation.For(IsLowered, interaction);
+        return ResolvedElevation.For(IsLowered, interaction);
     }
+
+    private FabGeometryProfile EffectiveGeometry =>
+        _hasMaterialValues ? ResolvedGeometry : FallbackGeometry(Size);
+
+    private void ApplyUnscopedFallback()
+    {
+        var geometry = EffectiveGeometry;
+        SetValue(MinHeightProperty, geometry.ContainerHeight, BindingPriority.Style);
+        SetValue(
+            MinWidthProperty,
+            IsExtended ? geometry.ContainerHeight : geometry.ContainerWidth,
+            BindingPriority.Style);
+        SetValue(
+            PaddingProperty,
+            IsExtended
+                ? new Thickness(geometry.LabelSpace, 0, geometry.LabelSpace, 0)
+                : default(Thickness),
+            BindingPriority.Style);
+    }
+
+    private static FabGeometryProfile FallbackGeometry(FabSize size) => size switch
+    {
+        FabSize.Small => DefaultGeometry,
+        FabSize.Medium => new FabGeometryProfile(
+            80,
+            80,
+            ShapeRole.CornerLargeIncreased,
+            ShapeRole.CornerLarge,
+            28,
+            24,
+            16,
+            TypographyRole.TitleMedium),
+        FabSize.Large => new FabGeometryProfile(
+            96,
+            96,
+            ShapeRole.CornerExtraLarge,
+            ShapeRole.CornerLarge,
+            32,
+            28,
+            20,
+            TypographyRole.HeadlineSmall),
+        _ => throw new ArgumentOutOfRangeException(nameof(size), size, null),
+    };
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

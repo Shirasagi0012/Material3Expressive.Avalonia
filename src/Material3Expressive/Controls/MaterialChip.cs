@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
+using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
@@ -13,16 +15,35 @@ public enum ChipVariant { Assist, Filter, Input, Suggestion }
 /// </summary>
 /// <remarks>
 /// Derives from <see cref="ToggleButton" /> because a filter or input chip genuinely holds a
-/// selected state; assist and suggestion chips simply never set it, and their token sets say so
-/// with <c>IsSelectable</c>. One control rather than four types: the four kinds differ in what they
-/// mean and therefore in their colours, not in their behaviour or content model.
-/// <para>
-/// Selecting a chip changes its shape as well as its colours — Expressive rounds it fully — which
-/// is the same spring morph the buttons use.
-/// </para>
+/// selected state; assist and suggestion chips simply never set it. Variant selection is made by
+/// the ControlTheme, while the control owns selected/enabled policy and the late shape animation.
 /// </remarks>
-public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
+public class MaterialChip : ToggleButton, IMaterialInteractionConsumer
 {
+    private static readonly ChipGeometryProfile DefaultGeometryProfile = new(
+        ContainerHeight: 32,
+        ContainerShape: ShapeRole.CornerSmall,
+        SelectedContainerShape: ShapeRole.CornerFull,
+        OutlineWidth: 1,
+        IconSize: 18,
+        ContentPadding: new Thickness(16, 0, 16, 0),
+        IconLabelSpace: 8);
+
+    private static readonly ChipVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
     public static readonly StyledProperty<ChipVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialChip, ChipVariant>(nameof(Variant));
 
@@ -34,7 +55,21 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
     public static readonly StyledProperty<object?> TrailingIconProperty =
         AvaloniaProperty.Register<MaterialChip, object?>(nameof(TrailingIcon));
 
-    // Read-only outputs of token resolution; the template binds to them.
+    // These are the hidden semantic endpoints supplied by the ControlTheme. Ordinary public
+    // properties such as Foreground, Padding and MinHeight remain normal setters/bindings so an
+    // application style or a local value retains Avalonia's usual precedence.
+    internal static readonly StyledProperty<ChipGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialChip, ChipGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    internal static readonly StyledProperty<ChipVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialChip, ChipVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
+    // Read-only projections used by the template. They are derived from the current profile and
+    // state; no raw token or legacy snapshot is read by the control.
     public static readonly DirectProperty<MaterialChip, double> IconSizeProperty =
         AvaloniaProperty.RegisterDirect<MaterialChip, double>(nameof(IconSize), o => o.IconSize);
 
@@ -44,29 +79,36 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
     public static readonly DirectProperty<MaterialChip, IImmutableBrush> IconBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialChip, IImmutableBrush>(nameof(IconBrush), o => o.IconBrush);
 
+    internal static readonly DirectProperty<MaterialChip, IImmutableBrush> LabelBrushProperty =
+        AvaloniaProperty.RegisterDirect<MaterialChip, IImmutableBrush>(nameof(LabelBrush), o => o.LabelBrush);
+
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
 
     private AnimatedShape? _shape;
-    private ChipMetrics _tokens = ChipDefaults.Metrics(ChipVariant.Assist);
-    private ChipVisualColors _colors = ChipDefaults.Colors(Foundation.ResolvedTheme.Default, ChipVariant.Assist, false);
 
     public MaterialChip()
     {
+        // The legacy controller remains only for the chip's motion spring and shape scheme. All
+        // consumed colour/metric/typography values arrive through MaterialValue endpoints.
         _theme = MaterialElementContext.Ensure(this).Theme;
         _interaction = MaterialElementContext.Ensure(this).Interaction;
 
-        ApplyTokens();
+        ApplyProfiles(snap: true);
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
         UpdateShape();
 
     static MaterialChip()
     {
-        AffectsRender<MaterialChip>(VariantProperty);
+        AffectsRender<MaterialChip>(
+            VariantProperty,
+            IsCheckedProperty,
+            IsEffectivelyEnabledProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
+        AffectsMeasure<MaterialChip>(GeometryProfileProperty);
     }
 
     /// <summary>Assist, filter, input or suggestion.</summary>
@@ -90,22 +132,42 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
         set => SetValue(TrailingIconProperty, value);
     }
 
+    /// <summary>Gets the renderer's immutable layout profile.</summary>
+    internal ChipGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets the renderer's state-independent colour alternatives.</summary>
+    internal ChipVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
     /// <summary>The size leading and trailing icons should be drawn at.</summary>
-    public double IconSize => _tokens.IconSize;
+    public double IconSize => GeometryProfile.IconSize;
 
     /// <summary>The gap between an icon and the label.</summary>
-    public double IconLabelSpace => _tokens.IconLabelSpace;
+    public double IconLabelSpace => GeometryProfile.IconLabelSpace;
 
     /// <summary>The colour an icon in either slot should take right now.</summary>
     public IImmutableBrush IconBrush =>
-        !IsEffectivelyEnabled ? _colors.DisabledIconColor
-        : IsSelected ? _colors.SelectedIconColor
-        : _colors.LeadingIconColor;
+        !IsEffectivelyEnabled ? VisualColors.DisabledIconColor
+        : IsSelected ? VisualColors.SelectedIconColor
+        : VisualColors.LeadingIconColor;
+
+    /// <summary>The label colour selected by the control's enabled/checked policy.</summary>
+    internal IImmutableBrush LabelBrush =>
+        !IsEffectivelyEnabled ? VisualColors.DisabledLabelTextColor
+        : IsSelected ? VisualColors.SelectedLabelTextColor
+        : VisualColors.LabelTextColor;
 
     protected CornerRadius ContainerCornerRadius =>
         Shape.ToCornerRadius(Bounds.Size, FlowDirection == FlowDirection.RightToLeft);
 
-    private bool IsSelected => _tokens.IsSelectable && IsChecked == true;
+    private bool IsSelected => IsSelectable(Variant) && IsChecked == true;
 
     private AnimatedShape Shape => _shape ??= CreateShape();
 
@@ -124,64 +186,59 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
         var corners = ContainerCornerRadius;
 
         // A selected chip is filled and loses its outline; an unselected one is the other way
-        // about. That is why the outline width is a token and not a constant.
-        var outlineWidth = IsSelected ? 0 : _tokens.OutlineWidth;
+        // about. That is why the outline width is a profile input rather than a constant.
+        var outlineWidth = IsSelected ? 0 : GeometryProfile.OutlineWidth;
 
         MaterialContainer.Draw(
             context,
             Bounds.Size,
             corners,
             enabled
-                ? IsSelected ? _colors.SelectedContainerColor : _colors.ContainerColor
-                : _colors.DisabledContainerColor,
-            enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
+                ? IsSelected ? VisualColors.SelectedContainerColor : VisualColors.ContainerColor
+                : VisualColors.DisabledContainerColor,
+            enabled ? VisualColors.OutlineColor : VisualColors.DisabledOutlineColor,
             outlineWidth);
 
         base.Render(context);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
+        _interaction.DrawLayers(context, VisualColors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty || change.Property == IsEffectivelyEnabledProperty)
-            ApplyTokens();
-        else if (change.Property == IsCheckedProperty)
-            ApplyChecked();
+        if (change.Property == GeometryProfileProperty || change.Property == VisualColorsProperty)
+            ApplyProfiles(snap: !this.IsAttachedToVisualTree());
+        else if (change.Property == VariantProperty ||
+                 change.Property == IsEffectivelyEnabledProperty ||
+                 change.Property == IsCheckedProperty)
+            ApplyChecked(snap: !this.IsAttachedToVisualTree());
     }
 
-    private void ApplyTokens()
+    private void ApplyProfiles(bool snap)
     {
         var previousIconSize = IconSize;
         var previousSpace = IconLabelSpace;
-
-        _tokens = ChipDefaults.Metrics(Variant);
-        _colors = ChipDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
+        var previousIconBrush = IconBrush;
+        var previousLabelBrush = LabelBrush;
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);
+        RaisePropertyChanged(IconBrushProperty, previousIconBrush, IconBrush);
+        RaisePropertyChanged(LabelBrushProperty, previousLabelBrush, LabelBrush);
 
-        var typography = _theme.Current.Theme.Typography;
-
-        Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);
-        MinHeight = _tokens.ContainerHeight;
-        FontSize = typography.GetTypeScale(_tokens.LabelTextStyle).FontSize;
-        FontFamily = typography.GetFontFamily(_tokens.LabelTextStyle);
-        FontWeight = typography.GetFontWeight(_tokens.LabelTextStyle);
-
-        ApplyChecked(snap: true);
+        UpdateShape(snap);
+        InvalidateMeasure();
+        InvalidateVisual();
     }
 
-    private void ApplyChecked(bool snap = false)
+    private void ApplyChecked(bool snap)
     {
         var previousIconBrush = IconBrush;
-
-        Foreground = !IsEffectivelyEnabled ? _colors.DisabledLabelTextColor
-            : IsSelected ? _colors.SelectedLabelTextColor
-            : _colors.LabelTextColor;
+        var previousLabelBrush = LabelBrush;
 
         RaisePropertyChanged(IconBrushProperty, previousIconBrush, IconBrush);
+        RaisePropertyChanged(LabelBrushProperty, previousLabelBrush, LabelBrush);
 
         UpdateShape(snap);
         InvalidateVisual();
@@ -202,8 +259,15 @@ public class MaterialChip : ToggleButton, IMaterialThemeConsumer, IMaterialInter
         _interaction.Motion.RequestFrame();
     }
 
-    private RoundedCornerShape RestingShape()
-    {
-        return _theme.Current.Theme.Shapes.Get(IsSelected ? _tokens.SelectedContainerShape : _tokens.ContainerShape);
-    }
+    private RoundedCornerShape RestingShape() =>
+        _theme.Current.Theme.Shapes.Get(
+            IsSelected
+                ? GeometryProfile.SelectedContainerShape
+                : GeometryProfile.ContainerShape);
+
+    private static bool IsSelectable(ChipVariant variant) =>
+        variant is ChipVariant.Filter or ChipVariant.Input;
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

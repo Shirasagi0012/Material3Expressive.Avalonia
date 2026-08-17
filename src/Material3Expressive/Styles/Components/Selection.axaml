@@ -18,6 +18,17 @@
         <ControlTheme x:Key="{x:Type m3:MaterialCheckbox}" TargetType="m3:MaterialCheckbox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
+            <!-- These are typed resource endpoints; the control only consumes the resulting
+                 renderer profiles and never resolves raw tokens itself. -->
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:CheckboxValueKeys.GeometryProfile}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:CheckboxValueKeys.VisualColors}}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static m3:CheckboxValueKeys.LabelBrush}}" />
+            <!-- Keep this as a base theme setter so application styles and local values retain
+                 their normal Avalonia precedence. -->
+            <Setter Property="Padding" Value="48,0,0,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Cursor" Value="Hand" />
@@ -36,6 +47,17 @@
         <ControlTheme x:Key="{x:Type m3:MaterialRadioButton}" TargetType="m3:MaterialRadioButton">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
+            <!-- The renderer consumes only these typed profiles; state selection and dot motion
+                 remain control policy. -->
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:RadioButtonValueKeys.GeometryProfile}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:RadioButtonValueKeys.VisualColors}}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static m3:RadioButtonValueKeys.LabelBrush}}" />
+            <!-- Keep these as low-specificity defaults so application styles and local values
+                 retain normal Avalonia precedence. -->
+            <Setter Property="Padding" Value="40,0,0,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Cursor" Value="Hand" />
@@ -54,6 +76,17 @@
         <ControlTheme x:Key="{x:Type m3:MaterialSwitch}" TargetType="m3:MaterialSwitch">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
+            <!-- The renderer consumes only these typed profiles; checked/enabled and interaction
+                 state remain switch policy rather than requester-dependent value plans. -->
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:SwitchValueKeys.GeometryProfile}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:SwitchValueKeys.VisualColors}}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource {x:Static m3:SwitchValueKeys.LabelBrush}}" />
+            <!-- TrackWidth (52dp) plus the 12dp label gap. Keep it a base theme setter so
+                 application styles and local values retain normal Avalonia precedence. -->
+            <Setter Property="Padding" Value="64,0,0,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Cursor" Value="Hand" />
@@ -68,17 +101,30 @@
                 </ControlTemplate>
             </Setter>
         </ControlTheme>
-        <!-- The slider draws itself entirely; the theme only carries what the control does not
-             set for itself. -->
+        <!-- The slider draws itself entirely; typed profiles carry the raw-derived renderer inputs
+             while value state, interaction and motion remain in the control. -->
         <ControlTheme x:Key="{x:Type m3:MaterialSlider}" TargetType="m3:MaterialSlider">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:SliderValueKeys.GeometryProfile}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:SliderValueKeys.VisualColors}}" />
             <!-- A Material slider has a fixed height; stretching it would only inflate the hit
                  area, since the track and handle stay centred either way. -->
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Maximum" Value="1" />
             <Setter Property="SmallChange" Value="0.05" />
             <Setter Property="LargeChange" Value="0.2" />
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type m3:MaterialRangeSlider}" TargetType="m3:MaterialRangeSlider">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:SliderValueKeys.GeometryProfile}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:SliderValueKeys.VisualColors}}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </ControlTheme>
     </Styles.Resources>
 </Styles>

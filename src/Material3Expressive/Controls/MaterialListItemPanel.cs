@@ -69,11 +69,23 @@ public sealed class MaterialListItemPanel : Panel
     public static readonly StyledProperty<Thickness> ContentPaddingProperty =
         AvaloniaProperty.Register<MaterialListItemPanel, Thickness>(nameof(ContentPadding), new Thickness(16, 10));
 
-    private const double SlotSpacing = 12;
+    /// <summary>Defines the gap between a leading/trailing slot and the main text lane.</summary>
+    public static readonly StyledProperty<double> BetweenSpaceProperty =
+        AvaloniaProperty.Register<MaterialListItemPanel, double>(nameof(BetweenSpace), 12);
+
+    /// <summary>Defines the minimum height of a one-line item.</summary>
+    public static readonly StyledProperty<double> OneLineMinimumHeightProperty =
+        AvaloniaProperty.Register<MaterialListItemPanel, double>(nameof(OneLineMinimumHeight), 56);
+
+    /// <summary>Defines the minimum height of a two-line item.</summary>
+    public static readonly StyledProperty<double> TwoLineMinimumHeightProperty =
+        AvaloniaProperty.Register<MaterialListItemPanel, double>(nameof(TwoLineMinimumHeight), 72);
+
+    /// <summary>Defines the minimum height of a three-line item.</summary>
+    public static readonly StyledProperty<double> ThreeLineMinimumHeightProperty =
+        AvaloniaProperty.Register<MaterialListItemPanel, double>(nameof(ThreeLineMinimumHeight), 88);
+
     private const double SupportingMultilineThreshold = 30;
-    private const double OneLineMinimumHeight = 56;
-    private const double TwoLineMinimumHeight = 72;
-    private const double ThreeLineMinimumHeight = 88;
     private const double TopAlignmentInnerHeightBreakpoint = 60;
 
     static MaterialListItemPanel()
@@ -82,7 +94,12 @@ public sealed class MaterialListItemPanel : Panel
         // both the parent panel's desired size and its child rectangles.
         AffectsParentMeasure<MaterialListItemPanel>(SlotProperty);
         AffectsParentArrange<MaterialListItemPanel>(SlotProperty);
-        AffectsMeasure<MaterialListItemPanel>(ContentPaddingProperty);
+        AffectsMeasure<MaterialListItemPanel>(
+            ContentPaddingProperty,
+            BetweenSpaceProperty,
+            OneLineMinimumHeightProperty,
+            TwoLineMinimumHeightProperty,
+            ThreeLineMinimumHeightProperty);
     }
 
     /// <inheritdoc cref="ContentPaddingProperty" />
@@ -90,6 +107,34 @@ public sealed class MaterialListItemPanel : Panel
     {
         get => GetValue(ContentPaddingProperty);
         set => SetValue(ContentPaddingProperty, value);
+    }
+
+    /// <inheritdoc cref="BetweenSpaceProperty" />
+    public double BetweenSpace
+    {
+        get => GetValue(BetweenSpaceProperty);
+        set => SetValue(BetweenSpaceProperty, value);
+    }
+
+    /// <inheritdoc cref="OneLineMinimumHeightProperty" />
+    public double OneLineMinimumHeight
+    {
+        get => GetValue(OneLineMinimumHeightProperty);
+        set => SetValue(OneLineMinimumHeightProperty, value);
+    }
+
+    /// <inheritdoc cref="TwoLineMinimumHeightProperty" />
+    public double TwoLineMinimumHeight
+    {
+        get => GetValue(TwoLineMinimumHeightProperty);
+        set => SetValue(TwoLineMinimumHeightProperty, value);
+    }
+
+    /// <inheritdoc cref="ThreeLineMinimumHeightProperty" />
+    public double ThreeLineMinimumHeight
+    {
+        get => GetValue(ThreeLineMinimumHeightProperty);
+        set => SetValue(ThreeLineMinimumHeightProperty, value);
     }
 
     /// <summary>Gets the list-item slot assigned to <paramref name="control" />.</summary>
@@ -116,13 +161,13 @@ public sealed class MaterialListItemPanel : Panel
         var availableContentHeight = Subtract(availableSize.Height, padding.Top + padding.Bottom);
 
         var leadingSize = MeasureSlot(slots.Leading, availableContentWidth, availableContentHeight);
-        var leadingGap = slots.Leading is not null && mainSlotPresent ? SlotSpacing : 0;
+        var leadingGap = slots.Leading is not null && mainSlotPresent ? BetweenSpace : 0;
         var widthAfterLeading = Subtract(availableContentWidth, leadingSize.Width + leadingGap);
 
         // Compose measures leading before trailing. Retaining that ordering matters when a caller
         // supplies oversized custom slot content: the main lane gets only the remaining width.
         var trailingSize = MeasureSlot(slots.Trailing, widthAfterLeading, availableContentHeight);
-        var trailingGap = slots.Trailing is not null && mainSlotPresent ? SlotSpacing : 0;
+        var trailingGap = slots.Trailing is not null && mainSlotPresent ? BetweenSpace : 0;
         var mainAvailableWidth = Subtract(widthAfterLeading, trailingSize.Width + trailingGap);
 
         var overlineSize = MeasureSlot(slots.Overline, mainAvailableWidth, availableContentHeight);
@@ -158,10 +203,10 @@ public sealed class MaterialListItemPanel : Panel
         var availableContentHeight = Math.Max(0, finalSize.Height - padding.Top - padding.Bottom);
 
         var leadingSize = Constrain(slots.Leading?.DesiredSize ?? default, availableContentWidth, availableContentHeight);
-        var leadingGap = slots.Leading is not null && mainSlotPresent ? SlotSpacing : 0;
+        var leadingGap = slots.Leading is not null && mainSlotPresent ? BetweenSpace : 0;
         var widthAfterLeading = Math.Max(0, availableContentWidth - leadingSize.Width - leadingGap);
         var trailingSize = Constrain(slots.Trailing?.DesiredSize ?? default, widthAfterLeading, availableContentHeight);
-        var trailingGap = slots.Trailing is not null && mainSlotPresent ? SlotSpacing : 0;
+        var trailingGap = slots.Trailing is not null && mainSlotPresent ? BetweenSpace : 0;
         var mainWidth = Math.Max(0, widthAfterLeading - trailingSize.Width - trailingGap);
 
         var overlineSize = slots.Overline?.DesiredSize ?? default;
@@ -292,11 +337,11 @@ public sealed class MaterialListItemPanel : Panel
         return supportingHeight > SupportingMultilineThreshold;
     }
 
-    private static double GetMinimumHeight(int lineCount) => lineCount switch
+    private double GetMinimumHeight(int lineCount) => lineCount switch
     {
-        1 => OneLineMinimumHeight,
-        2 => TwoLineMinimumHeight,
-        _ => ThreeLineMinimumHeight
+        1 => Math.Max(0, OneLineMinimumHeight),
+        2 => Math.Max(0, TwoLineMinimumHeight),
+        _ => Math.Max(0, ThreeLineMinimumHeight)
     };
 
     private void ArrangeMainSlots(

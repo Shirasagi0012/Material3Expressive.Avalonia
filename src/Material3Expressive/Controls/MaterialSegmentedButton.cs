@@ -13,8 +13,10 @@ using Avalonia.Data;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
+using Avalonia.VisualTree;
 
 namespace Material3Expressive.Controls;
 
@@ -27,7 +29,7 @@ namespace Material3Expressive.Controls;
 /// event. Its parent supplies the segment shape and, in single-choice mode, the radio-like
 /// mutual exclusion.
 /// </remarks>
-public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer, IMaterialMotionConsumer
+public class MaterialSegmentedButton : ToggleButton, IMaterialInteractionConsumer, IMaterialMotionConsumer
 {
     /// <summary>
     /// The 24x24 Filled.Check vector from AndroidX <c>internal/Icons.kt</c>.
@@ -37,6 +39,29 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
     /// </summary>
     public static Geometry DefaultSelectionIcon { get; } =
         Geometry.Parse("M 9,16.17 L 4.83,12 L 3.41,13.41 L 9,19 L 21,7 L 19.59,5.59 Z");
+
+    // Fallbacks keep the control usable before its ControlTheme is attached. Once styled, the
+    // typed DynamicResource profiles below are the sole token authority.
+    private static readonly SegmentedButtonGeometryProfile DefaultGeometryProfile = new(
+        ContainerHeight: 40,
+        ContainerShape: ShapeRole.CornerFull,
+        IconSize: 18,
+        IconSpacing: 8,
+        ContentPadding: new Thickness(12, 8),
+        MinimumWidth: 58,
+        OutlineWidth: 1);
+
+    private static readonly SegmentedButtonVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
 
     public static readonly StyledProperty<object?> IconProperty =
         AvaloniaProperty.Register<MaterialSegmentedButton, object?>(nameof(Icon));
@@ -66,6 +91,20 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
             nameof(IconSpacing),
             8);
 
+    /// <summary>The renderer geometry profile supplied by the Material control theme.</summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SegmentedButtonGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialSegmentedButton, SegmentedButtonGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    /// <summary>The state alternatives supplied by the Material control theme.</summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SegmentedButtonVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialSegmentedButton, SegmentedButtonVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
     public static readonly StyledProperty<RoundedCornerShape?> ContainerShapeOverrideProperty =
         AvaloniaProperty.Register<MaterialSegmentedButton, RoundedCornerShape?>(
             nameof(ContainerShapeOverride));
@@ -84,6 +123,11 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         AvaloniaProperty.RegisterDirect<MaterialSegmentedButton, IImmutableBrush>(
             nameof(IconBrush),
             owner => owner.IconBrush);
+
+    internal static readonly DirectProperty<MaterialSegmentedButton, IImmutableBrush> LabelBrushProperty =
+        AvaloniaProperty.RegisterDirect<MaterialSegmentedButton, IImmutableBrush>(
+            nameof(LabelBrush),
+            owner => owner.LabelBrush);
 
     public static readonly DirectProperty<MaterialSegmentedButton, double> IconScaleProperty =
         AvaloniaProperty.RegisterDirect<MaterialSegmentedButton, double>(
@@ -108,16 +152,9 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         _presentation is { IsDisposed: false } existing
             ? existing
             : _presentation = _interaction.AttachPresentation(this);
-    private SegmentedButtonColors _colors = SegmentedButtonDefaults.Colors(ResolvedTheme.Default, isDark: false);
-    private SegmentedButtonMetrics _tokens = SegmentedButtonDefaults.Metrics();
     private SpringAnimation? _contentOffsetAnimation;
     private SpringAnimation? _iconOpacityAnimation;
     private SpringAnimation? _iconScaleAnimation;
-    private IDisposable? _contentPaddingLease;
-    private IDisposable? _iconSizeLease;
-    private IDisposable? _iconSpacingLease;
-    private IDisposable? _minHeightLease;
-    private IDisposable? _minWidthLease;
     private bool _hasVisibleIcon;
     private bool _isDefaultIconVisible;
     private RoundedCornerShape _segmentShape = RoundedCornerShape.Circle;
@@ -130,10 +167,8 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         _theme = MaterialElementContext.Ensure(this).Theme;
         _interaction = MaterialElementContext.Ensure(this).Interaction;
 
-        ApplyTokens();
+        ApplyProfiles(snap: true);
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state)
     {
@@ -151,7 +186,14 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
             IsCheckedProperty,
             ShowSelectionIconProperty,
             SelectionIconProperty,
-            ContainerShapeOverrideProperty);
+            ContainerShapeOverrideProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
+        AffectsMeasure<MaterialSegmentedButton>(
+            GeometryProfileProperty,
+            ContentPaddingProperty,
+            IconSizeProperty,
+            IconSpacingProperty);
         FocusableProperty.OverrideDefaultValue<MaterialSegmentedButton>(true);
     }
 
@@ -205,13 +247,30 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         set => SetValue(IconSpacingProperty, value);
     }
 
+    /// <summary>Gets or sets the hidden geometry profile supplied by the control theme.</summary>
+    internal SegmentedButtonGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden state-colour profile supplied by the control theme.</summary>
+    internal SegmentedButtonVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
     /// <summary>The resolved icon/content brush for the current checked and enabled state.</summary>
     public IImmutableBrush IconBrush =>
         !IsEffectivelyEnabled
             ? IsChecked == true
-                ? _colors.DisabledActiveContentColor
-                : _colors.DisabledInactiveContentColor
-            : IsChecked == true ? _colors.ActiveContentColor : _colors.InactiveContentColor;
+                ? VisualColors.DisabledActiveContentColor
+                : VisualColors.DisabledInactiveContentColor
+            : IsChecked == true ? VisualColors.ActiveContentColor : VisualColors.InactiveContentColor;
+
+    /// <summary>The label brush selected by the control's checked/enabled state policy.</summary>
+    internal IImmutableBrush LabelBrush => IconBrush;
 
     /// <summary>Whether the template should display an icon in the reserved leading slot.</summary>
     public bool HasVisibleIcon => _hasVisibleIcon;
@@ -262,9 +321,9 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         var enabled = IsEffectivelyEnabled;
         var active = IsChecked == true;
         var fill = enabled
-            ? active ? _colors.ActiveContainerColor : _colors.InactiveContainerColor
-            : active ? _colors.DisabledActiveContainerColor : _colors.DisabledInactiveContainerColor;
-        var outline = enabled ? _colors.BorderColor : _colors.DisabledBorderColor;
+            ? active ? VisualColors.ActiveContainerColor : VisualColors.InactiveContainerColor
+            : active ? VisualColors.DisabledActiveContainerColor : VisualColors.DisabledInactiveContainerColor;
+        var outline = enabled ? VisualColors.BorderColor : VisualColors.DisabledBorderColor;
 
         DrawContainer(
             context,
@@ -272,7 +331,7 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
             ContainerCornerRadius,
             fill,
             outline,
-            _tokens.OutlineWidth);
+            GeometryProfile.OutlineWidth);
 
         InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(new Rect(Bounds.Size), null, null));
@@ -280,8 +339,8 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         _interaction.DrawLayers(
             context,
             enabled
-                ? active ? _colors.ActiveContentColor : _colors.InactiveContentColor
-                : active ? _colors.DisabledActiveContentColor : _colors.DisabledInactiveContentColor,
+                ? active ? VisualColors.ActiveContentColor : VisualColors.InactiveContentColor
+                : active ? VisualColors.DisabledActiveContentColor : VisualColors.DisabledInactiveContentColor,
             ContainerCornerRadius);
     }
 
@@ -424,40 +483,37 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         InvalidateVisual();
     }
 
-    private void ApplyTokens()
+    private void ApplyProfiles(bool snap)
     {
         var previousIcon = IconBrush;
+        var previousLabel = LabelBrush;
         var previousVisible = HasVisibleIcon;
         var previousDefault = IsDefaultIconVisible;
 
-        _tokens = SegmentedButtonDefaults.Metrics();
-        _colors = SegmentedButtonDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
-
-        ReplaceLease(ref _minWidthLease, MinWidthProperty, 58d);
-        ReplaceLease(ref _minHeightLease, MinHeightProperty, _tokens.ContainerHeight);
-        ReplaceLease(ref _iconSizeLease, IconSizeProperty, _tokens.IconSize);
-        ReplaceLease(ref _iconSpacingLease, IconSpacingProperty, _tokens.IconSpacing);
-        ReplaceLease(
-            ref _contentPaddingLease,
-            ContentPaddingProperty,
-            new Thickness(
-                _tokens.HorizontalContentPadding,
-                _tokens.VerticalContentPadding));
-
-        var typeScale = _theme.Current.Theme.Typography.GetTypeScale(_tokens.LabelTextStyle);
-        FontSize = typeScale.FontSize;
-        FontFamily = _theme.Current.Theme.Typography.GetFontFamily(_tokens.LabelTextStyle);
-        FontWeight = _theme.Current.Theme.Typography.GetFontWeight(_tokens.LabelTextStyle);
-        Foreground = IsEffectivelyEnabled
-            ? IsChecked == true ? _colors.ActiveContentColor : _colors.InactiveContentColor
-            : IsChecked == true ? _colors.DisabledActiveContentColor : _colors.DisabledInactiveContentColor;
-        TypographyScheme.SetTextStyle(this, _tokens.LabelTextStyle);
-
         UpdateVisibleIcon();
-        UpdateSelectionMotion(snap: true);
+        UpdateSelectionMotion(snap);
         RaisePropertyChanged(IconBrushProperty, previousIcon, IconBrush);
+        RaisePropertyChanged(LabelBrushProperty, previousLabel, LabelBrush);
         RaisePropertyChanged(HasVisibleIconProperty, previousVisible, HasVisibleIcon);
         RaisePropertyChanged(IsDefaultIconVisibleProperty, previousDefault, IsDefaultIconVisible);
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
+    private void ApplyState()
+    {
+        var previousIcon = IconBrush;
+        var previousLabel = LabelBrush;
+        var previousVisible = HasVisibleIcon;
+        var previousDefault = IsDefaultIconVisible;
+
+        UpdateVisibleIcon();
+        UpdateSelectionMotion(snap: false);
+        RaisePropertyChanged(IconBrushProperty, previousIcon, IconBrush);
+        RaisePropertyChanged(LabelBrushProperty, previousLabel, LabelBrush);
+        RaisePropertyChanged(HasVisibleIconProperty, previousVisible, HasVisibleIcon);
+        RaisePropertyChanged(IsDefaultIconVisibleProperty, previousDefault, IsDefaultIconVisible);
+        InteractionChanged?.Invoke(this, EventArgs.Empty);
         InvalidateMeasure();
         InvalidateVisual();
     }
@@ -466,23 +522,15 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == IsCheckedProperty
+        if (change.Property == GeometryProfileProperty
+            || change.Property == VisualColorsProperty)
+        {
+            ApplyProfiles(snap: !this.IsAttachedToVisualTree());
+        }
+        else if (change.Property == IsCheckedProperty
             || change.Property == IsEffectivelyEnabledProperty)
         {
-            var previousIcon = IconBrush;
-            var previousVisible = HasVisibleIcon;
-            var previousDefault = IsDefaultIconVisible;
-            Foreground = !IsEffectivelyEnabled
-                ? IsChecked == true ? _colors.DisabledActiveContentColor : _colors.DisabledInactiveContentColor
-                : IsChecked == true ? _colors.ActiveContentColor : _colors.InactiveContentColor;
-            UpdateVisibleIcon();
-            UpdateSelectionMotion(snap: false);
-            RaisePropertyChanged(IconBrushProperty, previousIcon, IconBrush);
-            RaisePropertyChanged(HasVisibleIconProperty, previousVisible, HasVisibleIcon);
-            RaisePropertyChanged(IsDefaultIconVisibleProperty, previousDefault, IsDefaultIconVisible);
-            InteractionChanged?.Invoke(this, EventArgs.Empty);
-            InvalidateMeasure();
-            InvalidateVisual();
+            ApplyState();
         }
         else if (change.Property == IconProperty
             || change.Property == ShowSelectionIconProperty
@@ -585,14 +633,8 @@ public class MaterialSegmentedButton : ToggleButton, IMaterialThemeConsumer, IMa
         }
     }
 
-    private void ReplaceLease<T>(
-        ref IDisposable? lease,
-        StyledProperty<T> property,
-        T value)
-    {
-        lease?.Dispose();
-        lease = SetValue(property, value, BindingPriority.Template);
-    }
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }
 
 /// <summary>

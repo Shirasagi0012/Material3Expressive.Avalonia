@@ -4,7 +4,8 @@ using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
-internal sealed record NavigationMetrics(
+[Obsolete("Legacy ResolvedTheme navigation defaults. Use NavigationValueKeys.", DiagnosticId = "M3E1005")]
+internal sealed record LegacyNavigationMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue ActiveIndicatorColor,
     ColorTokenValue ActiveIconColor,
@@ -27,7 +28,8 @@ internal sealed record NavigationMetrics(
     TypographyRole LabelTextStyle,
     bool IsVertical);
 
-internal sealed record NavigationVisualColors(
+[Obsolete("Legacy ResolvedTheme navigation defaults. Use NavigationValueKeys.", DiagnosticId = "M3E1005")]
+internal sealed record LegacyNavigationVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush ActiveIndicatorColor,
     IImmutableBrush ActiveIconColor,
@@ -37,9 +39,10 @@ internal sealed record NavigationVisualColors(
     IImmutableBrush StateLayerColor);
 
 /// <summary>Component-owned policy shared by navigation bars, rails and their items.</summary>
+[Obsolete("Legacy ResolvedTheme navigation defaults. Use NavigationValueKeys.", DiagnosticId = "M3E1005")]
 internal static class NavigationDefaults
 {
-    public static NavigationMetrics Metrics(NavigationVariant variant) => variant switch
+    public static LegacyNavigationMetrics Metrics(NavigationVariant variant) => variant switch
     {
         NavigationVariant.Bar => new(
             NavigationBarTokens.ContainerColor,
@@ -88,7 +91,7 @@ internal static class NavigationDefaults
         _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
     };
 
-    public static NavigationVisualColors Colors(ResolvedTheme theme, NavigationVariant variant, bool isDark)
+    public static LegacyNavigationVisualColors Colors(ResolvedTheme theme, NavigationVariant variant, bool isDark)
     {
         var metrics = Metrics(variant);
         ArgumentNullException.ThrowIfNull(theme);

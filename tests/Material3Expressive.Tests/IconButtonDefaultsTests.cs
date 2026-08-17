@@ -12,11 +12,11 @@ using Xunit;
 
 namespace Material3Expressive.Tests;
 
-/// <summary>Contracts for the component-owned IconButton defaults projection.</summary>
+/// <summary>Contracts for the typed IconButton MaterialValue projection.</summary>
 public sealed class IconButtonDefaultsTests
 {
     [AvaloniaFact]
-    public void Adapter_ProjectsRawSizeAndWidthFactsToSemanticMetrics()
+    public void TypedGeometryEndpoint_ProjectsRawSizeAndWidthFacts()
     {
         var button = new Button { Theme = Theme("MaterialTonalIconButtonTheme") };
         M3IconButton.SetSize(button, IconButtonSize.Medium);
@@ -24,18 +24,18 @@ public sealed class IconButtonDefaultsTests
 
         var window = ThemeTestHelper.ShowWindow(button);
 
-        var metrics = Assert.IsType<IconButtonMetrics>(M3IconButton.GetDefaultMetrics(button));
-        Assert.Equal(56, metrics.ContainerHeight);
-        Assert.Equal(24, metrics.IconSize);
-        Assert.Equal(new Thickness(12, 0), metrics.ContentPadding);
-        Assert.Equal(48, metrics.ContainerWidth);
-        Assert.Equal(metrics.ContainerHeight, button.Height);
-        Assert.Equal(metrics.ContainerWidth, button.Width);
+        var geometry = button.GetValue(M3IconButton.GeometryProfileProperty);
+        Assert.Equal(56, geometry.ContainerHeight);
+        Assert.Equal(24, geometry.IconSize);
+        Assert.Equal(new Thickness(12, 0), geometry.ContentPadding);
+        Assert.Equal(48, geometry.ContainerWidth);
+        Assert.Equal(geometry.ContainerHeight, button.Height);
+        Assert.Equal(geometry.ContainerWidth, button.Width);
         window.Close();
     }
 
     [AvaloniaFact]
-    public void Adapter_RefreshesColorProfileWhenThemeVariantAndVariantChange()
+    public void TypedVisualEndpoint_RefreshesWhenThemeVariantAndVariantChange()
     {
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Teal);
         var button = new Button { Theme = Theme("MaterialFilledIconButtonTheme") };
@@ -44,43 +44,43 @@ public sealed class IconButtonDefaultsTests
         var window = ThemeTestHelper.ShowWindow(host);
 
         var light = ThemeTestHelper.ColorOf(
-            Assert.IsType<IconButtonColors>(M3IconButton.GetDefaultColors(button)).Icon);
+            button.GetValue(M3IconButton.VisualColorsProperty).IconColor);
         window.RequestedThemeVariant = ThemeVariant.Dark;
         var dark = ThemeTestHelper.ColorOf(
-            Assert.IsType<IconButtonColors>(M3IconButton.GetDefaultColors(button)).Icon);
+            button.GetValue(M3IconButton.VisualColorsProperty).IconColor);
 
         Assert.NotEqual(light, dark);
         Assert.Equal(ThemeTestHelper.Expected(theme, SysColorToken.OnPrimary, isDark: true), dark);
 
         M3IconButton.SetVariant(button, IconButtonVariant.Outlined);
-        var outlined = Assert.IsType<IconButtonColors>(M3IconButton.GetDefaultColors(button));
-        Assert.True(outlined.HasOutline);
-        Assert.Equal(new Thickness(1), M3IconButton.GetDefaultOutlineThickness(button));
+        var outlined = button.GetValue(M3IconButton.VisualColorsProperty);
+        Assert.Equal(
+            ThemeTestHelper.Expected(theme, SysColorToken.OutlineVariant, isDark: true),
+            ThemeTestHelper.ColorOf(outlined.OutlineColor));
+        Assert.Equal(new Thickness(1), button.BorderThickness);
         window.Close();
     }
 
     [AvaloniaFact]
-    public void ToggleAdapter_SeparatesCheckedColoursAndOutlineState()
+    public void ToggleVisualEndpoint_SeparatesCheckedColoursAndOutlineState()
     {
         var toggle = new ToggleButton { Theme = Theme("MaterialOutlinedToggleIconButtonTheme") };
         var window = ThemeTestHelper.ShowWindow(toggle);
 
-        var initial = Assert.IsType<ToggleIconButtonColors>(
-            M3ToggleIconButton.GetDefaultColors(toggle));
-        Assert.Equal(new Thickness(1), M3ToggleIconButton.GetDefaultOutlineThickness(toggle));
+        var initial = toggle.GetValue(M3ToggleIconButton.VisualColorsProperty);
+        Assert.Equal(new Thickness(1), toggle.BorderThickness);
         Assert.Equal(
-            ThemeTestHelper.ColorOf(initial.UncheckedIcon),
+            ThemeTestHelper.ColorOf(initial.UncheckedIconColor),
             ThemeTestHelper.ColorOf(toggle.Foreground));
 
         toggle.IsChecked = true;
 
-        var selected = Assert.IsType<ToggleIconButtonColors>(
-            M3ToggleIconButton.GetDefaultColors(toggle));
-        Assert.Equal(new Thickness(0), M3ToggleIconButton.GetDefaultOutlineThickness(toggle));
+        var selected = toggle.GetValue(M3ToggleIconButton.VisualColorsProperty);
+        Assert.Equal(new Thickness(0), toggle.BorderThickness);
         Assert.Equal(
-            ThemeTestHelper.ColorOf(selected.CheckedIcon),
+            ThemeTestHelper.ColorOf(selected.CheckedIconColor),
             ThemeTestHelper.ColorOf(toggle.Foreground));
-        Assert.Same(selected.CheckedStateLayer, M3ToggleIconButton.GetDefaultStateLayerBrush(toggle));
+        Assert.Same(selected.CheckedStateLayerColor, M3ToggleIconButton.GetStateLayerBrush(toggle));
         window.Close();
     }
 
@@ -108,17 +108,29 @@ public sealed class IconButtonDefaultsTests
     }
 
     [AvaloniaFact]
-    public void Adapter_ClearsItsProjectionWhenMaterialMarkerIsRemoved()
+    public void FlatGeometryEndpointOverride_IsConsumedByThemeBindings()
     {
         var button = new Button { Theme = Theme("MaterialFilledIconButtonTheme") };
         var window = ThemeTestHelper.ShowWindow(button);
 
-        Assert.NotNull(M3IconButton.GetDefaultColors(button));
-        button.SetValue(M3IconButton.UseMaterialDefaultsProperty, false);
+        var geometry = new IconButtonGeometryProfile(
+            44,
+            28,
+            new Thickness(9, 0),
+            46,
+            3,
+            ShapeRole.CornerMedium,
+            ShapeRole.CornerSmall,
+            ShapeRole.CornerLarge,
+            ShapeRole.CornerMedium,
+            ShapeRole.CornerFull);
+        button.SetValue(M3IconButton.GeometryProfileProperty, geometry);
 
-        Assert.Null(M3IconButton.GetDefaultColors(button));
-        Assert.Null(M3IconButton.GetDefaultMetrics(button));
-        Assert.Null(M3IconButton.GetDefaultShapes(button));
+        Assert.Same(geometry, button.GetValue(M3IconButton.GeometryProfileProperty));
+        Assert.Equal(44, button.Height);
+        Assert.Equal(46, button.Width);
+        Assert.Equal(new Thickness(9, 0), button.Padding);
+        Assert.Equal(28, M3IconButton.GetIconSize(button));
         window.Close();
     }
 

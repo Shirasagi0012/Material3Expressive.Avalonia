@@ -15,6 +15,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -37,7 +38,7 @@ public enum SegmentedButtonSelectionMode
 /// keeps one XAML control with an explicit <see cref="SelectionMode"/> property, while preserving
 /// bindable child state and application-owned selection models.
 /// </remarks>
-public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
+public sealed class MaterialSegmentedButtonRow : Panel
 {
     public static readonly StyledProperty<SegmentedButtonSelectionMode> SelectionModeProperty =
         AvaloniaProperty.Register<MaterialSegmentedButtonRow, SegmentedButtonSelectionMode>(
@@ -50,25 +51,35 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
             1,
             validate: static value => double.IsFinite(value) && value >= 0);
 
+    private static readonly SegmentedButtonGeometryProfile DefaultGeometryProfile = new(
+        ContainerHeight: 40,
+        ContainerShape: ShapeRole.CornerFull,
+        IconSize: 18,
+        IconSpacing: 8,
+        ContentPadding: new Thickness(12, 8),
+        MinimumWidth: 58,
+        OutlineWidth: 1);
+
+    /// <summary>The shared geometry profile supplied by the Material control style.</summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<SegmentedButtonGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialSegmentedButtonRow, SegmentedButtonGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
     private readonly MaterialThemeController _theme;
-    private double _containerHeight = 40;
-    private IDisposable? _overlapLease;
 
     public MaterialSegmentedButtonRow()
     {
         _theme = MaterialElementContext.Ensure(this).Theme;
-        ApplyTokens();
-    }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state)
-    {
-        ApplyTokens();
-        ApplySegmentPositions();
     }
 
     static MaterialSegmentedButtonRow()
     {
-        AffectsMeasure<MaterialSegmentedButtonRow>(SelectionModeProperty, OverlapProperty);
+        AffectsMeasure<MaterialSegmentedButtonRow>(
+            SelectionModeProperty,
+            OverlapProperty,
+            GeometryProfileProperty);
     }
 
     /// <summary>Single (radio) or Multiple (toggle) child semantics.</summary>
@@ -88,6 +99,13 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
         set => SetValue(OverlapProperty, value);
     }
 
+    /// <summary>Gets or sets the hidden geometry profile supplied by the control style.</summary>
+    internal SegmentedButtonGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
     internal IReadOnlyList<MaterialSegmentedButton> VisibleItems =>
         Children.OfType<MaterialSegmentedButton>()
             .Where(static child => child.IsVisible)
@@ -100,10 +118,10 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
 
         var visible = VisibleItems;
         if (visible.Count == 0)
-            return new Size(0, _containerHeight);
+            return new Size(0, GeometryProfile.ContainerHeight);
 
         var desiredWidth = 0d;
-        var desiredHeight = _containerHeight;
+        var desiredHeight = GeometryProfile.ContainerHeight;
         foreach (var child in visible)
         {
             child.Measure(new Size(double.PositiveInfinity, availableSize.Height));
@@ -172,7 +190,12 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == SelectionModeProperty)
+        if (change.Property == GeometryProfileProperty)
+        {
+            ApplySegmentPositions();
+            InvalidateMeasure();
+        }
+        else if (change.Property == SelectionModeProperty)
         {
             EnforceSingleSelection();
             ApplySegmentPositions();
@@ -364,7 +387,7 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
 
     private RoundedCornerShape ShapeFor(SegmentedButtonSegmentPosition position)
     {
-        var baseShape = _theme.Current.Theme.Shapes.Get(SegmentedButtonDefaults.Metrics().ContainerShape);
+        var baseShape = _theme.Current.Theme.Shapes.Get(GeometryProfile.ContainerShape);
         return position switch
         {
             SegmentedButtonSegmentPosition.First => baseShape.Start(),
@@ -372,18 +395,6 @@ public sealed class MaterialSegmentedButtonRow : Panel, IMaterialThemeConsumer
             SegmentedButtonSegmentPosition.Last => baseShape.End(),
             _ => baseShape
         };
-    }
-
-    private void ApplyTokens()
-    {
-        var tokens = SegmentedButtonDefaults.Metrics();
-        _containerHeight = tokens.ContainerHeight;
-        _overlapLease?.Dispose();
-        _overlapLease = SetValue(
-            OverlapProperty,
-            tokens.OutlineWidth,
-            BindingPriority.Template);
-        InvalidateMeasure();
     }
 
     private double ResolveOverlap()

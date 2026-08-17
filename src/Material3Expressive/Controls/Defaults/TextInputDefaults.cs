@@ -1,10 +1,15 @@
 using Avalonia.Media;
+using System.ComponentModel;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
+[Obsolete(
+    "Legacy text-field token snapshot. Use TextInputValueKeys text-field profiles instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal sealed record TextFieldMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue DisabledContainerColor,
@@ -38,27 +43,11 @@ internal sealed record TextFieldMetrics(
     TypographyRole SupportingTextStyle,
     bool IsFilled);
 
-internal sealed record TextFieldVisualColors(
-    IImmutableBrush ContainerColor,
-    IImmutableBrush DisabledContainerColor,
-    IImmutableBrush InputColor,
-    IImmutableBrush PlaceholderColor,
-    IImmutableBrush LabelColor,
-    IImmutableBrush FocusLabelColor,
-    IImmutableBrush SupportingColor,
-    IImmutableBrush LeadingIconColor,
-    IImmutableBrush TrailingIconColor,
-    IImmutableBrush OutlineColor,
-    IImmutableBrush FocusOutlineColor,
-    IImmutableBrush ErrorColor,
-    IImmutableBrush ErrorInputColor,
-    IImmutableBrush DisabledInputColor,
-    IImmutableBrush DisabledLabelColor,
-    IImmutableBrush DisabledSupportingColor,
-    IImmutableBrush DisabledIconColor,
-    IImmutableBrush DisabledOutlineColor);
-
 /// <summary>Component-owned policy for filled and outlined text fields.</summary>
+[Obsolete(
+    "Legacy text-field defaults adapter. Use TextInputValueKeys and MaterialValueKey<T> resources instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal static class TextFieldDefaults
 {
     private static ColorTokenValue Transparent => ColorTokenValue.Literal(Avalonia.Media.Colors.Transparent);
@@ -159,6 +148,10 @@ internal static class TextFieldDefaults
     }
 }
 
+[Obsolete(
+    "Legacy search-bar token snapshot. Use TextInputValueKeys search-bar profiles instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal sealed record SearchBarMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue InputTextColor,
@@ -177,16 +170,11 @@ internal sealed record SearchBarMetrics(
     double DividerHeight,
     TypographyRole InputTextStyle);
 
-internal sealed record SearchBarVisualColors(
-    IImmutableBrush ContainerColor,
-    IImmutableBrush InputTextColor,
-    IImmutableBrush SupportingTextColor,
-    IImmutableBrush LeadingIconColor,
-    IImmutableBrush TrailingIconColor,
-    IImmutableBrush ResultsContainerColor,
-    IImmutableBrush DividerColor);
-
 /// <summary>Component-owned policy for the search bar and its results surface.</summary>
+[Obsolete(
+    "Legacy search-bar defaults adapter. Use TextInputValueKeys and MaterialValueKey<T> resources instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal static class SearchBarDefaults
 {
     public static SearchBarMetrics Metrics() => new(
@@ -219,6 +207,8 @@ internal static class SearchBarDefaults
             metrics.LeadingIconColor.ResolveBrush(scheme, isDark),
             metrics.TrailingIconColor.ResolveBrush(scheme, isDark),
             metrics.ResultsContainerColor.ResolveBrush(scheme, isDark),
-            metrics.DividerColor.ResolveBrush(scheme, isDark));
+            metrics.DividerColor.ResolveBrush(scheme, isDark),
+            scheme?.GetColor(MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Shadow, isDark)
+                 ?? Avalonia.Media.Colors.Black);
     }
 }

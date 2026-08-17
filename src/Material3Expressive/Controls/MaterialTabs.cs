@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
@@ -20,7 +21,7 @@ public enum TabVariant { Primary, Secondary }
 // only as a visual conformance observation; alpha25 remains the implementation source baseline.
 
 /// <summary>One tab in a <see cref="MaterialTabs" />.</summary>
-public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
+public class MaterialTab : ToggleButton, IMaterialInteractionConsumer
 {
     // Compose's pinned Roboto reference shapes the Material tab label without discretionary
     // standard/contextual ligatures. Retain a caller-provided feature set, but make Avalonia's
@@ -39,21 +40,50 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
     public static readonly DirectProperty<MaterialTab, IImmutableBrush> IconBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialTab, IImmutableBrush>(nameof(IconBrush), o => o.IconBrush);
 
-    private readonly MaterialThemeController _theme;
-    private readonly MaterialInteractionController _interaction;
+    public static readonly DirectProperty<MaterialTab, IBrush?> EffectiveForegroundProperty =
+        AvaloniaProperty.RegisterDirect<MaterialTab, IBrush?>(
+            nameof(EffectiveForeground),
+            o => o.EffectiveForeground);
 
-    private TabMetrics _tokens = TabDefaults.Metrics(TabVariant.Primary);
-    private TabVisualColors _colors = TabDefaults.Colors(Foundation.ResolvedTheme.Default, TabVariant.Primary, false);
+    private readonly MaterialInteractionController _interaction;
+    // Avalonia's inherited default Foreground is a resolved value and therefore makes IsSet
+    // true even when no author supplied a colour. Track the binding priority of the last
+    // effective value instead so the MaterialValue profile remains authoritative until an
+    // application/style/local value explicitly overrides it.
+    private bool _hasForegroundOverride;
+
+    private static readonly TabItemGeometryProfile DefaultGeometryProfile = new(
+        48,
+        64,
+        24,
+        TypographyRole.TitleSmall);
+
+    private static readonly TabItemVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    internal static readonly StyledProperty<TabItemGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialTab, TabItemGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    internal static readonly StyledProperty<TabItemVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialTab, TabItemVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
+    public static readonly StyledProperty<TabVariant> VariantProperty =
+        AvaloniaProperty.Register<MaterialTab, TabVariant>(nameof(Variant), TabVariant.Primary);
 
     public MaterialTab()
     {
-        _theme = MaterialElementContext.Ensure(this).Theme;
         _interaction = MaterialElementContext.Ensure(this).Interaction;
 
-        ApplyTokens();
+        ApplyProfile();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
         InvalidateVisual();
@@ -65,18 +95,60 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
         set => SetValue(IconProperty, value);
     }
 
-    public double IconSize => _tokens.IconSize;
+    public double IconSize => GeometryProfile.IconSize;
 
     public IImmutableBrush IconBrush =>
-        IsChecked == true ? _colors.ActiveIconColor : _colors.InactiveIconColor;
+        IsChecked == true ? VisualColors.ActiveIconColor : VisualColors.InactiveIconColor;
+
+    /// <summary>
+    /// Gets the public foreground when an application/local value supplied one, otherwise the
+    /// checked-state colour from the selected Material Value profile.
+    /// </summary>
+    public IBrush? EffectiveForeground =>
+        // ToggleButton/TextElement supplies a framework default Foreground even when the
+        // application has not authored one.  Treat only an explicitly set value as an override;
+        // otherwise the typed profile must remain the source of the tab label colour.
+        _hasForegroundOverride
+            ? Foreground
+            : IsChecked == true
+                ? VisualColors.ActiveLabelTextColor
+                : VisualColors.InactiveLabelTextColor;
 
     /// <summary>Which tab style this belongs to; set by the parent.</summary>
-    internal TabVariant Style { get; set; } = TabVariant.Primary;
+    public TabVariant Variant
+    {
+        get => GetValue(VariantProperty);
+        set => SetValue(VariantProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden variant-selected item geometry profile.</summary>
+    internal TabItemGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden variant-selected item brush profile.</summary>
+    internal TabItemVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
+    /// <summary>Compatibility alias used by the owning row while the old API is retired.</summary>
+    [Obsolete(
+        "Legacy internal tab style transport. Set Variant instead.",
+        DiagnosticId = "M3E1005")]
+    internal TabVariant Style
+    {
+        get => Variant;
+        set => Variant = value;
+    }
 
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, default);
+        _interaction.DrawLayers(context, VisualColors.StateLayerColor, default);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -84,25 +156,44 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
         base.OnPropertyChanged(change);
 
         if (change.Property == IsCheckedProperty)
-            ApplyColors();
+        {
+            var previousChecked = change.GetOldValue<bool?>();
+            var previousIconBrush = previousChecked == true
+                ? VisualColors.ActiveIconColor
+                : VisualColors.InactiveIconColor;
+            ApplyColors(previousIconBrush);
+        }
+        else if (change.Property == ForegroundProperty)
+        {
+            _hasForegroundOverride = change.Priority <= BindingPriority.Style;
+            RaisePropertyChanged(
+                EffectiveForegroundProperty,
+                change.GetOldValue<IBrush?>(),
+                EffectiveForeground);
+        }
+        else if (change.Property == GeometryProfileProperty)
+            ApplyProfile();
+        else if (change.Property == VisualColorsProperty)
+        {
+            var previousColors = change.GetOldValue<TabItemVisualColors>();
+            var previousIconBrush = IsChecked == true
+                ? previousColors.ActiveIconColor
+                : previousColors.InactiveIconColor;
+            ApplyProfile(previousIconBrush);
+        }
+        else if (change.Property == IconProperty)
+            ApplyProfile();
     }
 
-    internal void ApplyTokens()
+    private void ApplyProfile(IImmutableBrush? previousIconBrush = null)
     {
         var previousIconSize = IconSize;
-
-        _tokens = TabDefaults.Metrics(Style);
-        _colors = TabDefaults.Colors(_theme.Current.Theme, Style, _theme.Current.IsDark);
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
 
-        var typography = _theme.Current.Theme.Typography;
-        FontSize = typography.GetTypeScale(_tokens.LabelTextStyle).FontSize;
-        FontFamily = typography.GetFontFamily(_tokens.LabelTextStyle);
-        FontWeight = typography.GetFontWeight(_tokens.LabelTextStyle);
         // Tab.kt wraps the text slot in ProvideTextStyle(TitleSmall).  Preserve the full
         // inherited type scale for a supplied TextBlock, not only the three TextElement values
         // exposed by the control itself.
-        TypographyScheme.SetTextStyle(this, _tokens.LabelTextStyle);
+        TypographyScheme.SetTextStyle(this, GeometryProfile.LabelTextStyle);
 
         // Tab.kt copies TitleSmall with TextAlign.Center before it invokes the supplied text
         // lambda. Existing TextBlock content needs the equivalent local paragraph setting; the
@@ -113,21 +204,26 @@ public class MaterialTab : ToggleButton, IMaterialThemeConsumer, IMaterialIntera
             textBlock.FontFeatures ??= s_defaultLabelFontFeatures;
         }
 
-        MinHeight = Icon is null ? _tokens.ContainerHeight : _tokens.IconAndLabelHeight;
+        MinHeight = Icon is null ? GeometryProfile.ContainerHeight : GeometryProfile.IconAndLabelHeight;
 
-        ApplyColors();
+        ApplyColors(previousIconBrush);
         InvalidateMeasure();
     }
 
-    private void ApplyColors()
+    private void ApplyColors(IImmutableBrush? previousIconBrush = null)
     {
-        var previousIconBrush = IconBrush;
+        previousIconBrush ??= IconBrush;
 
-        Foreground = IsChecked == true ? _colors.ActiveLabelTextColor : _colors.InactiveLabelTextColor;
+        var previousForeground = EffectiveForeground;
+
         RaisePropertyChanged(IconBrushProperty, previousIconBrush, IconBrush);
+        RaisePropertyChanged(EffectiveForegroundProperty, previousForeground, EffectiveForeground);
 
         InvalidateVisual();
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }
 
 /// <summary>
@@ -386,16 +482,12 @@ public sealed class MaterialTabContentPanel : Panel
 /// a token, not a special case.
 /// </para>
 /// </remarks>
-public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer, IMaterialInteractionConsumer, IVisualBoundsProbe
+public class MaterialTabs : TemplatedControl, IMaterialMotionConsumer, IMaterialInteractionConsumer, IVisualBoundsProbe
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
         OnMotionTick();
@@ -425,10 +517,29 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
     public static readonly StyledProperty<double> ScrollableMinimumTabWidthProperty =
         AvaloniaProperty.Register<MaterialTabs, double>(nameof(ScrollableMinimumTabWidth), 90);
 
+    private static readonly TabRowGeometryProfile DefaultGeometryProfile = new(
+        3,
+        3,
+        1,
+        true);
+
+    private static readonly TabRowVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    internal static readonly StyledProperty<TabRowGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialTabs, TabRowGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    internal static readonly StyledProperty<TabRowVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialTabs, TabRowVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
     private SpringAnimation? _centre;
     private SpringAnimation? _width;
-    private TabMetrics _tokens = TabDefaults.Metrics(TabVariant.Primary);
-    private TabVisualColors _colors = TabDefaults.Colors(Foundation.ResolvedTheme.Default, TabVariant.Primary, false);
     private bool _updatingSelection;
     private ScrollViewer? _scrollViewer;
     private bool _scrollSelectedTab;
@@ -438,12 +549,17 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
         _material = MaterialElementContext.Ensure(this);
         Items.CollectionChanged += (_, _) => AttachItems();
 
-        ApplyTokens();
+        ApplyProfile();
     }
 
     static MaterialTabs()
     {
-        AffectsRender<MaterialTabs>(VariantProperty, SelectedIndexProperty, IsScrollableProperty);
+        AffectsRender<MaterialTabs>(
+            VariantProperty,
+            SelectedIndexProperty,
+            IsScrollableProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
         AffectsMeasure<MaterialTabs>(IsScrollableProperty, ScrollableEdgePaddingProperty, ScrollableMinimumTabWidthProperty);
     }
 
@@ -451,6 +567,20 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
     {
         get => GetValue(VariantProperty);
         set => SetValue(VariantProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden variant-selected row geometry profile.</summary>
+    internal TabRowGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden variant-selected row brush profile.</summary>
+    internal TabRowVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
     }
 
     /// <summary>Which tab is selected. -1 for none.</summary>
@@ -489,24 +619,24 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
 
     public override void Render(DrawingContext context)
     {
-        MaterialContainer.Draw(context, Bounds.Size, default, _colors.ContainerColor);
+        MaterialContainer.Draw(context, Bounds.Size, default, VisualColors.ContainerColor);
 
         // The divider runs under every tab, selected or not; the indicator sits on top of it.
-        var dividerY = Bounds.Height - _tokens.DividerHeight / 2;
+        var dividerY = Bounds.Height - GeometryProfile.DividerHeight / 2;
         context.DrawLine(
-            new ImmutablePen(_colors.DividerColor, _tokens.DividerHeight),
+            new ImmutablePen(VisualColors.DividerColor, GeometryProfile.DividerHeight),
             new Point(0, dividerY),
             new Point(Bounds.Width, dividerY));
 
         if (TryGetVisualBounds("indicator", out var rect))
         {
-            var radius = _tokens.ActiveIndicatorCornerRadius;
+            var radius = GeometryProfile.ActiveIndicatorCornerRadius;
 
             // PrimaryIndicator applies RoundedCornerShape(3.dp) to all four corners. The
             // bottom edge touches the row boundary, but Compose still rasterizes both bottom
             // corner arcs before the surface clip is applied.
             context.DrawRectangle(
-                _colors.ActiveIndicatorColor,
+                VisualColors.ActiveIndicatorColor,
                 null,
                 new RoundedRect(rect, new CornerRadius(radius, radius, radius, radius)));
         }
@@ -520,7 +650,7 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
         if (id == "indicator" && IndicatorWidth.Value > 0.5)
         {
             var width = IndicatorWidth.Value;
-            var height = _tokens.ActiveIndicatorHeight;
+            var height = GeometryProfile.ActiveIndicatorHeight;
             bounds = new Rect(IndicatorCentre.Value - width / 2, Bounds.Height - height, width, height);
             return true;
         }
@@ -558,7 +688,9 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
         base.OnPropertyChanged(change);
 
         if (change.Property == VariantProperty)
-            ApplyTokens();
+            ApplyProfile();
+        else if (change.Property == GeometryProfileProperty || change.Property == VisualColorsProperty)
+            ApplyProfile();
         else if (change.Property == SelectedIndexProperty)
             SyncSelection();
         else if (change.Property == IsScrollableProperty)
@@ -578,8 +710,7 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
     {
         foreach (var item in Items)
         {
-            item.Style = Variant;
-            item.ApplyTokens();
+            item.Variant = Variant;
 
             item.IsCheckedChanged -= OnItemCheckedChanged;
             item.IsCheckedChanged += OnItemCheckedChanged;
@@ -648,7 +779,7 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
 
         var width = bounds.Width;
         var centre = bounds.Center.X;
-        if (_tokens.IndicatorSpansLabel)
+        if (GeometryProfile.IndicatorSpansLabel)
         {
             var scale = GetLayoutScale();
             var tabLeft = ToComposePixels(bounds.X, scale);
@@ -742,13 +873,12 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
         if (string.IsNullOrEmpty(text))
             return tab.Bounds.Width;
 
-        var typography = ResolvedTheme.Typography;
         var formatted = new FormattedText(
             text!,
             System.Globalization.CultureInfo.CurrentCulture,
             FlowDirection,
-            new Typeface(typography.GetFontFamily(_tokens.LabelTextStyle)),
-            typography.GetTypeScale(_tokens.LabelTextStyle).FontSize,
+            new Typeface(tab.FontFamily),
+            tab.FontSize,
             Brushes.Black);
 
         return formatted.Width;
@@ -768,12 +898,12 @@ public class MaterialTabs : TemplatedControl, IMaterialThemeConsumer, IMaterialM
 
     private static double ToLogicalPixels(double value, double scale) => value / scale;
 
-    private void ApplyTokens()
+    private void ApplyProfile()
     {
-        _tokens = TabDefaults.Metrics(Variant);
-        _colors = TabDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
-
         AttachItems();
         InvalidateVisual();
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

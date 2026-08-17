@@ -18,6 +18,15 @@
             <Setter Property="Padding" Value="16" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <!-- Variant selectors choose typed MaterialValue profiles. The public visual
+                 properties remain ordinary base-theme setters so application styles and local
+                 values keep their normal Avalonia precedence. -->
+            <Setter Property="Background"
+                    Value="{Binding ResolvedVisualColors.ContainerColor, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderBrush"
+                    Value="{Binding ResolvedVisualColors.OutlineColor, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderThickness"
+                    Value="{Binding ResolvedGeometry.BorderThickness, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <ContentPresenter Margin="{TemplateBinding Padding}"
@@ -27,6 +36,37 @@
                                       ContentTemplate="{TemplateBinding ContentTemplate}" />
                 </ControlTemplate>
             </Setter>
+
+            <Style Selector="^[Variant=Elevated]">
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.ElevatedVisualColors}}" />
+                <Setter Property="ResolvedGeometry"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.ElevatedGeometry}}" />
+                <Setter Property="ResolvedElevation"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.ElevatedElevation}}" />
+            </Style>
+            <Style Selector="^[Variant=Filled]">
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.FilledVisualColors}}" />
+                <Setter Property="ResolvedGeometry"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.FilledGeometry}}" />
+                <Setter Property="ResolvedElevation"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.FilledElevation}}" />
+            </Style>
+            <Style Selector="^[Variant=Outlined]">
+                <Setter Property="ResolvedVisualColors"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.OutlinedVisualColors}}" />
+                <Setter Property="ResolvedGeometry"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.OutlinedGeometry}}" />
+                <Setter Property="ResolvedElevation"
+                        Value="{DynamicResource {x:Static m3:CardValueKeys.OutlinedElevation}}" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Background"
+                        Value="{Binding ResolvedVisualColors.DisabledContainerColor, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="BorderBrush"
+                        Value="{Binding ResolvedVisualColors.DisabledOutlineColor, RelativeSource={RelativeSource Self}}" />
+            </Style>
 
             <Style Selector="^[IsClickable=True]">
                 <Setter Property="Cursor" Value="Hand" />

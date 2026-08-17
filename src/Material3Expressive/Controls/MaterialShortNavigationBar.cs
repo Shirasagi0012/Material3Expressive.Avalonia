@@ -13,6 +13,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Metadata;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
@@ -37,8 +38,6 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
@@ -76,8 +75,15 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
             nameof(ResolvedArrangement),
             owner => owner.ResolvedArrangement);
 
+    private static readonly NavigationVisualColors DefaultVisualColors = new(
+        TransparentBrush(), TransparentBrush(), TransparentBrush(), TransparentBrush(),
+        TransparentBrush(), TransparentBrush(), TransparentBrush());
+
+    internal static readonly StyledProperty<NavigationVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialShortNavigationBar, NavigationVisualColors>(
+            nameof(VisualColors), DefaultVisualColors);
+
     private readonly HashSet<MaterialNavigationItem> _attachedItems = new();
-    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Bar, false);
     private ShortNavigationBarArrangement _resolvedArrangement = ShortNavigationBarArrangement.EqualWeight;
     private bool _updatingSelection;
 
@@ -93,6 +99,7 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
         ClipToBoundsProperty.OverrideDefaultValue<MaterialShortNavigationBar>(false);
         FocusableProperty.OverrideDefaultValue<MaterialShortNavigationBar>(false);
         AffectsMeasure<MaterialShortNavigationBar>(ArrangementProperty, ResponsiveBreakpointProperty);
+        AffectsRender<MaterialShortNavigationBar>(VisualColorsProperty);
     }
 
     /// <summary>Whether destinations use equal shares, centered grouping, or the responsive default.</summary>
@@ -119,6 +126,12 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
     /// <summary>The arrangement selected for the current constrained width.</summary>
     public ShortNavigationBarArrangement ResolvedArrangement => _resolvedArrangement;
 
+    internal NavigationVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
     /// <summary>The navigation destinations. Their checked state is coordinated by this bar.</summary>
     [Content]
     public AvaloniaList<MaterialNavigationItem> Items { get; } = new();
@@ -128,7 +141,7 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
 
     public override void Render(DrawingContext context)
     {
-        MaterialContainer.Draw(context, Bounds.Size, default, _colors.ContainerColor);
+        MaterialContainer.Draw(context, Bounds.Size, default, VisualColors.ContainerColor);
         base.Render(context);
     }
 
@@ -152,6 +165,8 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
             SyncSelection();
         else if (change.Property == ArrangementProperty || change.Property == ResponsiveBreakpointProperty)
             ResolveArrangement(Bounds.Width);
+        else if (change.Property == VisualColorsProperty)
+            ApplyTokens();
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -290,13 +305,15 @@ public class MaterialShortNavigationBar : TemplatedControl, IMaterialThemeConsum
 
     private void ApplyTokens()
     {
-        _colors = NavigationDefaults.Colors(ResolvedTheme, NavigationVariant.Bar, IsDarkVariant);
         foreach (var item in Items)
             item.ApplyTokens();
         InvalidateVisual();
     }
 
     private static int Wrap(int value, int count) => (value % count + count) % count;
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }
 
 /// <summary>Compose-compatible layout panel used by <see cref="MaterialShortNavigationBar"/>.</summary>

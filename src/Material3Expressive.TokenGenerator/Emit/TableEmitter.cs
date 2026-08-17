@@ -91,15 +91,15 @@ internal static class TableEmitter
                 first = false;
                 writer.Doc("summary", token.Summary);
                 writer.Line(
-                    $"public static readonly {DescriptorType(token)} {token.Name} = new(\"{table.Layer}.{table.Name}.{token.Name}\", " +
-                    $"global::Material3Expressive.Foundation.Tokens.Runtime.TokenLayer.{table.Layer}, {DescriptorDefault(token)});");
+                    $"public static readonly {DescriptorType(token)} {token.Name} = new(\"{table.DescriptorPath(token.Name)}\", " +
+                    $"global::MaterialDesignTokens.Avalonia.TokenLayer.{table.Layer});");
             }
         }
     }
 
     private static string DescriptorType(TokenEntry token)
     {
-        return $"global::Material3Expressive.Foundation.Tokens.Runtime.MaterialToken<{DescriptorValueType(token)}>";
+        return $"global::MaterialDesignTokens.Avalonia.MaterialToken<{DescriptorValueType(token)}>";
     }
 
     private static string DescriptorValueType(TokenEntry token)
@@ -107,43 +107,6 @@ internal static class TableEmitter
         return token.Type == TokenType.Color
             ? "global::Avalonia.Media.Color"
             : TokenTypes.ToClrType(token.Type, token.EnumType);
-    }
-
-    private static string DescriptorDefault(TokenEntry token)
-    {
-        const string runtime = "global::Material3Expressive.Foundation.Tokens.Runtime.Token";
-
-        if (token.Value.Reference is { } reference)
-            return $"{runtime}.Alias({reference.TableName}Keys.{reference.MemberName})";
-
-        if (token.Type == TokenType.Color)
-            return ColorDescriptorDefault(token.Expression, runtime);
-
-        if (token.Type is TokenType.Dimension or TokenType.Number)
-            return $"{runtime}.Literal((double){token.Expression})";
-
-        return $"{runtime}.Literal({token.Expression})";
-    }
-
-    private static string ColorDescriptorDefault(string expression, string runtime)
-    {
-        const string literalPrefix = "global::Material3Expressive.Foundation.ColorTokenValue.Literal(";
-        if (expression.StartsWith(literalPrefix, System.StringComparison.Ordinal) &&
-            expression.EndsWith(")", System.StringComparison.Ordinal))
-        {
-            var color = expression.Substring(literalPrefix.Length, expression.Length - literalPrefix.Length - 1);
-            return $"{runtime}.Literal({color})";
-        }
-
-        const string rolePrefix = "global::Material3Expressive.Foundation.ColorTokenValue.Role(";
-        if (expression.StartsWith(rolePrefix, System.StringComparison.Ordinal) &&
-            expression.EndsWith(")", System.StringComparison.Ordinal))
-        {
-            var arguments = expression.Substring(rolePrefix.Length, expression.Length - rolePrefix.Length - 1);
-            return $"{runtime}.Alias(global::Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens.Get({arguments}))";
-        }
-
-        return $"{runtime}.Alias(global::Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens.Get({expression}, null))";
     }
 
     private static void TokenOverrides(CodeWriter writer, TokenTable table)
@@ -164,7 +127,7 @@ internal static class TableEmitter
                 writer.Line(
                     $"[global::System.ComponentModel.TypeConverter(typeof({DescriptorConverterType(token, enumConverters)}))]");
                 var definition =
-                    $"global::Material3Expressive.Foundation.Tokens.Runtime.TokenDefinition<{DescriptorValueType(token)}>";
+                    $"global::MaterialDesignTokens.Avalonia.TokenDefinition<{DescriptorValueType(token)}>";
                 using (writer.Block($"public {definition}? {token.Name}"))
                 {
                     writer.Line($"get => GetDefinition({table.Name}Keys.{token.Name});");
@@ -179,7 +142,7 @@ internal static class TableEmitter
                 writer.Doc("summary", $"Converts XAML literals of <c>{converter.Key}</c> to token definitions.");
                 using (writer.Block(
                            $"public sealed class {converter.Value} : " +
-                           "global::Material3Expressive.Foundation.Tokens.Runtime.TokenDefinitionTypeConverter<" +
+                           "global::Material3Expressive.Foundation.Tokens.RawTokenDefinitionTypeConverter<" +
                            $"{converter.Key}>"))
                 {
                 }
@@ -207,16 +170,16 @@ internal static class TableEmitter
         TokenEntry token,
         IReadOnlyDictionary<string, string> enumConverters)
     {
-        const string runtime = "global::Material3Expressive.Foundation.Tokens.Runtime.";
+        const string tokens = "global::Material3Expressive.Foundation.Tokens.";
         return token.Type switch
         {
-            TokenType.Color => runtime + "ColorTokenDefinitionTypeConverter",
-            TokenType.Shape => runtime + "ShapeTokenDefinitionTypeConverter",
-            TokenType.Typography => runtime + "TypographyTokenDefinitionTypeConverter",
-            TokenType.Motion => runtime + "MotionTokenDefinitionTypeConverter",
-            TokenType.Boolean => runtime + "BooleanTokenDefinitionTypeConverter",
+            TokenType.Color => tokens + "RawColorTokenDefinitionTypeConverter",
+            TokenType.Shape => tokens + "RawShapeTokenDefinitionTypeConverter",
+            TokenType.Typography => tokens + "RawTypographyTokenDefinitionTypeConverter",
+            TokenType.Motion => tokens + "RawMotionTokenDefinitionTypeConverter",
+            TokenType.Boolean => tokens + "RawBooleanTokenDefinitionTypeConverter",
             TokenType.Enum => enumConverters[DescriptorValueType(token)],
-            _ => runtime + "DoubleTokenDefinitionTypeConverter"
+            _ => tokens + "RawDoubleTokenDefinitionTypeConverter"
         };
     }
 

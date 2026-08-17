@@ -9,30 +9,23 @@
                     <ToggleButton m3:M3Button.Variant="Tonal" Content="Week" />
                     <ToggleButton m3:M3Button.Variant="Tonal" Content="Month" />
                 </m3:MaterialButtonGroup>
-                <m3:MaterialSplitButton Content="Save" TrailingIcon="&#x25BE;" />
             </StackPanel>
         </Border>
     </Design.PreviewWith>
 
+    <!-- The selected endpoint is a style fallback. Keep it separate from GeometryProfile so an
+         application style/local value on the public-facing transport retains ordinary precedence. -->
+    <Style Selector="m3|MaterialButtonGroup">
+        <Setter Property="MaterialGeometryProfile"
+                Value="{DynamicResource {x:Static m3:ButtonGroupValueKeys.StandardProfile}}" />
+    </Style>
+    <Style Selector="m3|MaterialButtonGroup[Variant=Connected]">
+        <Setter Property="MaterialGeometryProfile"
+                Value="{DynamicResource {x:Static m3:ButtonGroupValueKeys.ConnectedProfile}}" />
+    </Style>
+
     <Styles.Resources>
-        <ControlTheme x:Key="{x:Type m3:MaterialSplitButton}" TargetType="m3:MaterialSplitButton">
-            <Setter Property="HorizontalAlignment" Value="Left" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Template">
-                <ControlTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="{TemplateBinding BetweenSpace}">
-                        <Button x:Name="PART_Leading"
-                                Theme="{StaticResource MaterialFilledButtonTheme}"
-                                m3:M3Button.Variant="{TemplateBinding Variant}"
-                                Content="{TemplateBinding Content}" />
-                        <ToggleButton x:Name="PART_Trailing"
-                                      Theme="{StaticResource MaterialFilledToggleButtonTheme}"
-                                      m3:M3Button.Variant="{TemplateBinding Variant}"
-                                      Content="{TemplateBinding TrailingIcon}"
-                                      IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
-                    </StackPanel>
-                </ControlTemplate>
-            </Setter>
+        <ControlTheme x:Key="{x:Type m3:MaterialButtonGroup}" TargetType="m3:MaterialButtonGroup">
         </ControlTheme>
     </Styles.Resources>
 </Styles>

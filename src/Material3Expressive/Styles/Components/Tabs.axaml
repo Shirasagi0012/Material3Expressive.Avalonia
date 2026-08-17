@@ -11,14 +11,27 @@
         </Border>
     </Design.PreviewWith>
 
+    <!-- Keep the public padding slot at ordinary style priority so application styles and local
+         values retain Avalonia's normal precedence over the library fallback. -->
+    <Style Selector="m3|MaterialTab">
+        <Setter Property="Padding" Value="16,0" />
+    </Style>
+
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type m3:MaterialTab}" TargetType="m3:MaterialTab">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="16,0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
+            <!-- Variant selects explicit MaterialValue endpoints. The item consumes only the
+                 resulting geometry/brush profiles; checked and enabled state stay selectors. -->
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryItemGeometry}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryItemVisualColors}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding GeometryProfile.LabelTextStyle, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <!-- Tab.kt centres TabBaselineLayout in the full tab using a physical-pixel
@@ -38,16 +51,33 @@
                                           Padding="{TemplateBinding Padding}"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.Foreground="{TemplateBinding EffectiveForeground}"
                                           TextElement.FontSize="{TemplateBinding FontSize}"
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontWeight="{TemplateBinding FontWeight}" />
                     </m3:MaterialTabContentPanel>
                 </ControlTemplate>
             </Setter>
+            <Style Selector="^[Variant=Primary]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryItemGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryItemVisualColors}}" />
+            </Style>
+            <Style Selector="^[Variant=Secondary]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.SecondaryItemGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.SecondaryItemVisualColors}}" />
+            </Style>
         </ControlTheme>
 
         <ControlTheme x:Key="{x:Type m3:MaterialTabs}" TargetType="m3:MaterialTabs">
+            <!-- The row is a self-rendering consumer of two typed profiles. -->
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryRowGeometry}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryRowVisualColors}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <ItemsControl ItemsSource="{Binding $parent[m3:MaterialTabs].Items}">
@@ -80,6 +110,18 @@
                         </ScrollViewer>
                     </ControlTemplate>
                 </Setter>
+            </Style>
+            <Style Selector="^[Variant=Primary]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryRowGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.PrimaryRowVisualColors}}" />
+            </Style>
+            <Style Selector="^[Variant=Secondary]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.SecondaryRowGeometry}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:TabValueKeys.SecondaryRowVisualColors}}" />
             </Style>
         </ControlTheme>
     </Styles.Resources>

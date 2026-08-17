@@ -17,36 +17,35 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="ClipToBounds" Value="False" />
-            <!-- Activates the owner-local defaults adapter. The bindings below stay ordinary
-                 theme-priority setters, so app styles and local values can override them. -->
-            <Setter Property="m3:M3IconButton.UseMaterialDefaults" Value="True" />
+            <!-- All component values are typed MaterialValue endpoints. The ordinary Avalonia
+                 presentation properties remain theme-priority setters so app styles and locals
+                 retain their normal precedence. -->
             <Setter Property="Background"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).Container, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3IconButton.VisualColors).ContainerColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Foreground"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).Icon, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3IconButton.VisualColors).IconColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderBrush"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).Outline, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="BorderThickness"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3IconButton.VisualColors).OutlineColor, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
-            <!-- Fixed rather than minimum size: like androidx's Modifier.size, the container must
-                 keep its token metrics even when a parent panel stretches its children. -->
+                    Value="{Binding Path=(m3:M3IconButton.GeometryProfile).ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <!-- Fixed rather than minimum size: this is Compose's Modifier.size contract. -->
             <Setter Property="Height"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3IconButton.GeometryProfile).ContainerHeight, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Width"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).ContainerWidth, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3IconButton.GeometryProfile).ContainerWidth, RelativeSource={RelativeSource Self}}" />
             <Setter Property="m3:M3IconButton.IconSize"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultMetrics).IconSize, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3IconButton.GeometryProfile).IconSize, RelativeSource={RelativeSource Self}}" />
             <Setter Property="m3:M3IconButton.IsIconButton" Value="True" />
             <Setter Property="m3:M3IconButton.StateLayerBrush"
-                    Value="{Binding Path=(m3:M3IconButton.DefaultColors).StateLayer, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3IconButton.VisualColors).StateLayerColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <Grid Background="Transparent">
-                        <m3:MaterialIconButtonContainerPresenter x:Name="PART_Container" />
+                        <m3:MaterialIconButtonContainerPresenter x:Name="PART_Container"
+                            GeometryProfile="{Binding Path=(m3:M3IconButton.GeometryProfile), RelativeSource={RelativeSource TemplatedParent}}" />
                         <!-- MaterialSymbol reads its arranged bounds to resolve the opsz axis. -->
                         <ContentPresenter Width="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
                                           Height="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
@@ -66,14 +65,108 @@
 
             <Style Selector="^:disabled">
                 <Setter Property="Background"
-                        Value="{Binding Path=(m3:M3IconButton.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3IconButton.VisualColors).DisabledContainerColor, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="Foreground"
-                        Value="{Binding Path=(m3:M3IconButton.DefaultColors).DisabledIcon, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3IconButton.VisualColors).DisabledIconColor, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="BorderBrush"
-                        Value="{Binding Path=(m3:M3IconButton.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3IconButton.VisualColors).DisabledOutlineColor, RelativeSource={RelativeSource Self}}" />
+            </Style>
+
+            <!-- Variant policy chooses the visual endpoint; the plans themselves are requester
+                 independent and only read their declared Raw component dependencies. -->
+            <Style Selector="^[(m3|M3IconButton.Variant)=Standard]">
+                <Setter Property="m3:M3IconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.StandardVisualColors}}" />
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Variant)=Filled]">
+                <Setter Property="m3:M3IconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.FilledVisualColors}}" />
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Variant)=Tonal]">
+                <Setter Property="m3:M3IconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.TonalVisualColors}}" />
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Variant)=Outlined]">
+                <Setter Property="m3:M3IconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.OutlinedVisualColors}}" />
+                <Setter Property="BorderThickness"
+                        Value="{Binding Path=(m3:M3IconButton.GeometryProfile).OutlineWidth, RelativeSource={RelativeSource Self}}" />
+            </Style>
+
+            <!-- Size and width selectors choose one explicit profile endpoint. -->
+            <Style Selector="^[(m3|M3IconButton.Size)=ExtraSmall]">
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Narrow]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.ExtraSmallNarrowGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Default]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.ExtraSmallDefaultGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Wide]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.ExtraSmallWideGeometry}}" />
+                </Style>
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Size)=Small]">
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Narrow]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.SmallNarrowGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Default]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.SmallDefaultGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Wide]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.SmallWideGeometry}}" />
+                </Style>
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Size)=Medium]">
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Narrow]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.MediumNarrowGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Default]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.MediumDefaultGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Wide]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.MediumWideGeometry}}" />
+                </Style>
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Size)=Large]">
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Narrow]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.LargeNarrowGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Default]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.LargeDefaultGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Wide]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.LargeWideGeometry}}" />
+                </Style>
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Size)=ExtraLarge]">
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Narrow]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.ExtraLargeNarrowGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Default]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.ExtraLargeDefaultGeometry}}" />
+                </Style>
+                <Style Selector="^[(m3|M3IconButton.ButtonWidth)=Wide]">
+                    <Setter Property="m3:M3IconButton.GeometryProfile"
+                            Value="{DynamicResource {x:Static m3:IconButtonValueKeys.ExtraLargeWideGeometry}}" />
+                </Style>
             </Style>
         </ControlTheme>
 
+        <!-- Public named themes are only defaults for the canonical Variant attached property. -->
         <ControlTheme x:Key="MaterialStandardIconButtonTheme"
                       TargetType="Button"
                       BasedOn="{StaticResource MaterialIconButtonCoreTheme}">
@@ -98,30 +191,21 @@
         <ControlTheme x:Key="MaterialToggleIconButtonCoreTheme"
                       TargetType="ToggleButton"
                       BasedOn="{StaticResource MaterialIconButtonCoreTheme}">
-            <!-- BasedOn supplies the shared native Button/template contract. Every visual binding
-                 that has a checked-state-specific semantic record is projected again here. -->
+            <!-- Toggle colours keep their checked/unchecked contract separate from ordinary
+                 icon buttons. Geometry and size selectors are shared through M3IconButton. -->
             <Setter Property="Background"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).UncheckedContainer, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).UncheckedContainerColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Foreground"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).UncheckedIcon, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).UncheckedIconColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="BorderBrush"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).UncheckedOutline, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="BorderThickness"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultOutlineThickness), RelativeSource={RelativeSource Self}}" />
-            <Setter Property="Padding"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).ContentPadding, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="Height"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).ContainerHeight, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="Width"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).ContainerWidth, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="m3:M3IconButton.IconSize"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultMetrics).IconSize, RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).UncheckedOutlineColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="m3:M3ToggleIconButton.StateLayerBrush"
-                    Value="{Binding Path=(m3:M3ToggleIconButton.DefaultStateLayerBrush), RelativeSource={RelativeSource Self}}" />
+                    Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).UncheckedStateLayerColor, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <Grid Background="Transparent">
-                        <m3:MaterialIconButtonContainerPresenter x:Name="PART_Container" />
+                        <m3:MaterialIconButtonContainerPresenter x:Name="PART_Container"
+                            GeometryProfile="{Binding Path=(m3:M3IconButton.GeometryProfile), RelativeSource={RelativeSource TemplatedParent}}" />
                         <ContentPresenter Width="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
                                           Height="{Binding Path=(m3:M3IconButton.IconSize), RelativeSource={RelativeSource TemplatedParent}}"
                                           HorizontalAlignment="Center"
@@ -140,19 +224,43 @@
 
             <Style Selector="^:checked">
                 <Setter Property="Background"
-                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).CheckedContainer, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).CheckedContainerColor, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="Foreground"
-                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).CheckedIcon, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).CheckedIconColor, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="BorderBrush"
-                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).CheckedOutline, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).CheckedOutlineColor, RelativeSource={RelativeSource Self}}" />
+                <Setter Property="m3:M3ToggleIconButton.StateLayerBrush"
+                        Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).CheckedStateLayerColor, RelativeSource={RelativeSource Self}}" />
             </Style>
             <Style Selector="^:disabled">
                 <Setter Property="Background"
-                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).DisabledContainer, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).DisabledContainerColor, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="Foreground"
-                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).DisabledIcon, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).DisabledIconColor, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="BorderBrush"
-                        Value="{Binding Path=(m3:M3ToggleIconButton.DefaultColors).DisabledOutline, RelativeSource={RelativeSource Self}}" />
+                        Value="{Binding Path=(m3:M3ToggleIconButton.VisualColors).DisabledOutlineColor, RelativeSource={RelativeSource Self}}" />
+            </Style>
+
+            <Style Selector="^[(m3|M3IconButton.Variant)=Standard]">
+                <Setter Property="m3:M3ToggleIconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.StandardToggleVisualColors}}" />
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Variant)=Filled]">
+                <Setter Property="m3:M3ToggleIconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.FilledToggleVisualColors}}" />
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Variant)=Tonal]">
+                <Setter Property="m3:M3ToggleIconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.TonalToggleVisualColors}}" />
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Variant)=Outlined]">
+                <Setter Property="m3:M3ToggleIconButton.VisualColors"
+                        Value="{DynamicResource {x:Static m3:IconButtonValueKeys.OutlinedToggleVisualColors}}" />
+                <Setter Property="BorderThickness"
+                        Value="{Binding Path=(m3:M3IconButton.GeometryProfile).OutlineWidth, RelativeSource={RelativeSource Self}}" />
+            </Style>
+            <Style Selector="^[(m3|M3IconButton.Variant)=Outlined]:checked">
+                <Setter Property="BorderThickness" Value="0" />
             </Style>
         </ControlTheme>
 
@@ -176,6 +284,5 @@
                       BasedOn="{StaticResource MaterialToggleIconButtonCoreTheme}">
             <Setter Property="m3:M3IconButton.Variant" Value="Outlined" />
         </ControlTheme>
-
     </Styles.Resources>
 </Styles>

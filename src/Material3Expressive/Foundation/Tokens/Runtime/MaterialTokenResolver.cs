@@ -1,10 +1,16 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using System.ComponentModel;
 
 namespace Material3Expressive.Foundation.Tokens.Runtime;
 
 /// <summary>Resolves strongly typed tokens against the resource scope of an actual consumer.</summary>
+[Obsolete(
+    "Requester-relative token resolution is legacy. Use a MaterialTheme placement and " +
+    "MaterialValueKey<T> DynamicResource endpoints.",
+    DiagnosticId = "M3E1002")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class MaterialTokenResolver
 {
     /// <summary>Resolves one token in a new resolution session.</summary>

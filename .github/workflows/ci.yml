@@ -55,11 +55,17 @@ jobs:
           shadow_base_version="$(dotnet msbuild modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj -getProperty:Version -nologo)"
           roboto_base_version="$(dotnet msbuild modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj -getProperty:Version -nologo)"
           color_base_version="$(dotnet msbuild modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/MaterialColorUtilities.Avalonia.csproj -getProperty:Version -nologo)"
+          contract_base_version="$(dotnet msbuild modules/MaterialColorUtilities/MaterialDesignTokens.Avalonia/MaterialDesignTokens.Avalonia.csproj -getProperty:Version -nologo)"
           shapes_base_version="$(dotnet msbuild modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj -getProperty:Version -nologo)"
           symbols_base_version="$(dotnet msbuild modules/MaterialSymbols/MaterialSymbols.Avalonia.Rounded/MaterialSymbols.Avalonia.Rounded.csproj -getProperty:Version -nologo)"
 
           if [[ "$shadow_base_version" != "$main_base_version" || "$roboto_base_version" != "$main_base_version" ]]; then
             echo "Root-owned packages must share one base version."
+            exit 1
+          fi
+
+          if [[ "$contract_base_version" != "$color_base_version" ]]; then
+            echo "MaterialDesignTokens.Avalonia and MaterialColorUtilities.Avalonia must share one base version."
             exit 1
           fi
 

@@ -7,38 +7,38 @@ using Material3Expressive.Markups;
 using Material3Expressive.Tests.TestUtils;
 using MaterialColorUtilities.Avalonia;
 using MaterialColorUtilities.Avalonia.Tokens;
+using SharedTokens = MaterialDesignTokens.Avalonia;
 using Xunit;
+using McuReferencePaletteTokens = MaterialColorUtilities.Avalonia.Tokens.ReferencePaletteTokens;
 
 namespace Material3Expressive.Tests;
 
 public sealed class ReferencePaletteTokenTests
 {
-    private readonly MaterialTokenResolver _resolver = new();
-
     [Fact]
     public void KeysAreStableReferenceLayerDescriptors()
     {
-        var primary = ReferencePaletteTokens.Get(RefPaletteToken.Primary, 40);
+        var primary = McuReferencePaletteTokens.Get(RefPaletteToken.Primary, 40);
 
-        Assert.Same(primary, ReferencePaletteTokens.Get(RefPaletteToken.Primary, 40));
+        Assert.Same(primary, McuReferencePaletteTokens.Get(RefPaletteToken.Primary, 40));
         Assert.Same(
             primary,
-            ReferencePaletteTokens.Get(RefPaletteToken.Primary, 40, "IgnoredForStandardPalette"));
-        Assert.Equal(TokenLayer.Reference, primary.Layer);
+            McuReferencePaletteTokens.Get(RefPaletteToken.Primary, 40, "IgnoredForStandardPalette"));
+        Assert.Equal(SharedTokens.TokenLayer.Reference, primary.Layer);
         Assert.Equal("Reference.Palette.Primary.40", primary.Path);
         Assert.Equal(typeof(Color), primary.ValueType);
 
-        var custom = ReferencePaletteTokens.Get(RefPaletteToken.Custom, 60, "Brand");
-        Assert.Same(custom, ReferencePaletteTokens.Get(RefPaletteToken.Custom, 60, "brAND"));
-        Assert.Equal("Reference.Palette.Custom.Brand.60", custom.Path);
-        Assert.True(ReferencePaletteTokens.TryGetMetadata(
+        var custom = McuReferencePaletteTokens.Get(RefPaletteToken.Custom, 60, "Brand");
+        Assert.Same(custom, McuReferencePaletteTokens.Get(RefPaletteToken.Custom, 60, "brAND"));
+        Assert.Equal("Reference.Palette.Custom.u004200520041004E0044.60", custom.Path);
+        Assert.True(McuReferencePaletteTokens.TryGetMetadata(
             custom, out var palette, out var tone, out var customKey));
         Assert.Equal(RefPaletteToken.Custom, palette);
-        Assert.Equal((byte)60, tone);
-        Assert.Equal("Brand", customKey);
+        Assert.Equal(60d, tone);
+        Assert.Equal("BRAND", customKey);
 
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => ReferencePaletteTokens.Get(RefPaletteToken.Primary, 101));
+            () => McuReferencePaletteTokens.Get(RefPaletteToken.Primary, 101));
     }
 
     [AvaloniaFact]
@@ -54,31 +54,29 @@ public sealed class ReferencePaletteTokenTests
         var root = Show(new Border { Child = consumer });
         root.Resources.MergedDictionaries.Add(theme);
 
-        var primary = ReferencePaletteTokens.Get(RefPaletteToken.Primary, 35);
-        var custom = ReferencePaletteTokens.Get(RefPaletteToken.Custom, 70, "brand");
+        var primary = McuReferencePaletteTokens.Get(RefPaletteToken.Primary, 35);
+        var custom = McuReferencePaletteTokens.Get(RefPaletteToken.Custom, 70, "brand");
 
         Assert.Equal(
-            theme.Resolved.ColorScheme!.GetPaletteColor(RefPaletteToken.Primary, 35),
-            _resolver.Resolve(consumer, primary));
+            new ResolvedColorScheme(theme.ColorScheme!).GetPaletteColor(RefPaletteToken.Primary, 35),
+            SharedTokenTestHelper.Resolve(consumer, primary));
         Assert.Equal(
-            theme.Resolved.ColorScheme.GetPaletteColor(RefPaletteToken.Custom, 70, "Brand"),
-            _resolver.Resolve(consumer, custom));
+            new ResolvedColorScheme(theme.ColorScheme!).GetPaletteColor(RefPaletteToken.Custom, 70, "Brand"),
+            SharedTokenTestHelper.Resolve(consumer, custom));
     }
 
     [AvaloniaFact]
     public void SystemAndComponentAliasesRebindReferenceTokensFromRequesterScope()
     {
-        var referencePrimary = ReferencePaletteTokens.Get(RefPaletteToken.Primary, 40);
-        var referenceSecondary = ReferencePaletteTokens.Get(RefPaletteToken.Secondary, 80);
-        var referenceTertiary = ReferencePaletteTokens.Get(RefPaletteToken.Tertiary, 70);
-        var system = new MaterialToken<Color>(
+        var referencePrimary = McuReferencePaletteTokens.Get(RefPaletteToken.Primary, 40);
+        var referenceSecondary = McuReferencePaletteTokens.Get(RefPaletteToken.Secondary, 80);
+        var referenceTertiary = McuReferencePaletteTokens.Get(RefPaletteToken.Tertiary, 70);
+        var system = new SharedTokens.MaterialToken<Color>(
             "System.Test.AliasToReference",
-            TokenLayer.System,
-            Token.Alias(referencePrimary));
-        var component = new MaterialToken<Color>(
+            SharedTokens.TokenLayer.System);
+        var component = new SharedTokens.MaterialToken<Color>(
             "Component.Test.AliasToSystem",
-            TokenLayer.Component,
-            Token.Alias(system));
+            SharedTokens.TokenLayer.Component);
 
         var systemConsumer = new Border();
         var componentConsumer = new Border();
@@ -91,20 +89,27 @@ public sealed class ReferencePaletteTokenTests
         });
         var theme = new MaterialTheme();
         root.Resources.MergedDictionaries.Add(theme);
+        var defaults = new MaterialTokenOverrides();
+        defaults.Alias(system, referencePrimary);
+        defaults.Alias(component, system);
+        root.Resources.MergedDictionaries.Add(defaults);
+        var baseline = new ResolvedColorScheme(new TonalSpotScheme(Color.Parse("#6750A4")));
 
         var systemOverrides = AddOverrides(systemScope);
         systemOverrides.Alias(system, referenceSecondary);
         systemOverrides.Set(referenceSecondary, Colors.LimeGreen);
+        systemScope.Resources.MergedDictionaries.Add(new MaterialTheme());
 
         var componentOverrides = AddOverrides(componentScope);
         componentOverrides.Alias(component, referenceTertiary);
         componentOverrides.Set(referenceTertiary, Colors.HotPink);
+        componentScope.Resources.MergedDictionaries.Add(new MaterialTheme());
 
-        Assert.Equal(Colors.LimeGreen, _resolver.Resolve(systemConsumer, component));
-        Assert.Equal(Colors.HotPink, _resolver.Resolve(componentConsumer, component));
+        Assert.Equal(Colors.LimeGreen, SharedTokenTestHelper.Resolve(systemConsumer, component));
+        Assert.Equal(Colors.HotPink, SharedTokenTestHelper.Resolve(componentConsumer, component));
         Assert.Equal(
-            theme.Resolved.ColorScheme!.GetPaletteColor(RefPaletteToken.Primary, 40),
-            _resolver.Resolve(siblingConsumer, component));
+            baseline.GetPaletteColor(RefPaletteToken.Primary, 40),
+            SharedTokenTestHelper.Resolve(siblingConsumer, component));
     }
 
     [Fact]
@@ -113,7 +118,7 @@ public sealed class ReferencePaletteTokenTests
         var extension = new ReferencePaletteTokenExtension(RefPaletteToken.NeutralVariant, 90);
 
         Assert.Same(
-            ReferencePaletteTokens.Get(RefPaletteToken.NeutralVariant, 90),
+            McuReferencePaletteTokens.Get(RefPaletteToken.NeutralVariant, 90),
             extension.ProvideValue());
         Assert.Throws<ArgumentOutOfRangeException>(
             () => new ReferencePaletteTokenExtension(RefPaletteToken.Primary, 101));

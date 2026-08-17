@@ -8,6 +8,7 @@ using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Foundation.Tokens.Runtime;
 using MaterialColorUtilities.Avalonia.Tokens;
+using LegacySystemColorTokens = Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens;
 
 /// <summary>Theme-resolved colours published by the Button defaults adapter.</summary>
 /// <remarks>
@@ -15,6 +16,9 @@ using MaterialColorUtilities.Avalonia.Tokens;
 /// because compiled library AXAML must resolve the type of its attached-property contract.
 /// Applications customise ordinary visual properties through Avalonia styles and local values.
 /// </remarks>
+[Obsolete(
+    "Legacy Button defaults transport. Use ButtonValueKeys and MaterialValue resources.",
+    DiagnosticId = "M3E1005")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record ButtonColors(
     IImmutableBrush Container,
@@ -28,6 +32,9 @@ public sealed record ButtonColors(
     IImmutableBrush DisabledOutline);
 
 /// <summary>The size-dependent semantic metrics published by the Button defaults adapter.</summary>
+[Obsolete(
+    "Legacy Button defaults transport. Use ButtonValueKeys and MaterialValue resources.",
+    DiagnosticId = "M3E1005")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record ButtonMetrics(
     double ContainerHeight,
@@ -41,6 +48,9 @@ public sealed record ButtonMetrics(
     TypographyRole LabelTextStyle);
 
 /// <summary>The geometry roles a Button presenter needs for its runtime shape selection.</summary>
+[Obsolete(
+    "Legacy Button defaults transport. Use ButtonValueKeys and MaterialValue resources.",
+    DiagnosticId = "M3E1005")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record ButtonShapes(
     ShapeRole Container,
@@ -48,6 +58,9 @@ public sealed record ButtonShapes(
     ShapeRole Square);
 
 /// <summary>The elevation profile selected by a Button presenter from interaction state.</summary>
+[Obsolete(
+    "Legacy Button defaults transport. Use ButtonValueKeys and MaterialValue resources.",
+    DiagnosticId = "M3E1005")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record ButtonElevation(
     double Resting,
@@ -88,6 +101,9 @@ public sealed record ButtonElevation(
 /// bindings, or control templates.
 /// </para>
 /// </remarks>
+[Obsolete(
+    "Legacy Button defaults adapter. Use ButtonValueKeys and typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class ButtonDefaults
 {
     private static readonly IImmutableBrush Transparent =
@@ -125,6 +141,25 @@ internal static class ButtonDefaults
             ButtonVariant.Elevated => ResolveElevated(tokens),
             ButtonVariant.Outlined => ResolveOutlined(tokens),
             ButtonVariant.Text => ResolveText(tokens),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
+        };
+    }
+
+    /// <summary>
+    /// Resolves only colour fields still consumed by the compatibility adapter. Container fields
+    /// are inert placeholders because Background is now owned by Material value resources.
+    /// </summary>
+    internal static ButtonColors UnmigratedColors(TokenReader tokens, ButtonVariant variant)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+
+        return variant switch
+        {
+            ButtonVariant.Filled => ResolveUnmigratedFilled(tokens),
+            ButtonVariant.Tonal => ResolveUnmigratedTonal(tokens),
+            ButtonVariant.Elevated => ResolveUnmigratedElevated(tokens),
+            ButtonVariant.Outlined => ResolveUnmigratedOutlined(tokens),
+            ButtonVariant.Text => ResolveUnmigratedText(tokens),
             _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
         };
     }
@@ -273,6 +308,30 @@ internal static class ButtonDefaults
         };
     }
 
+    /// <summary>
+    /// Resolves only icon, outline and typography fields still consumed by the compatibility
+    /// adapter. Migrated height, padding and shape fields are inert and their Raw keys are not read.
+    /// </summary>
+    internal static ButtonMetrics UnmigratedMetrics(TokenReader tokens, ButtonSize size)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+
+        return size switch
+        {
+            ButtonSize.ExtraSmall => UnmigratedMetrics(
+                tokens.Get(ButtonXSmallTokensKeys.OutlinedOutlineWidth)),
+            ButtonSize.Small => UnmigratedMetrics(
+                tokens.Get(ButtonSmallTokensKeys.OutlinedOutlineWidth)),
+            ButtonSize.Medium => UnmigratedMetrics(
+                tokens.Get(ButtonMediumTokensKeys.OutlinedOutlineWidth)),
+            ButtonSize.Large => UnmigratedMetrics(
+                tokens.Get(ButtonLargeTokensKeys.OutlinedOutlineWidth)),
+            ButtonSize.ExtraLarge => UnmigratedMetrics(
+                tokens.Get(ButtonXLargeTokensKeys.OutlinedOutlineWidth)),
+            _ => throw new ArgumentOutOfRangeException(nameof(size), size, null)
+        };
+    }
+
     /// <summary>Returns the geometry roles needed by the runtime presenter.</summary>
     public static ButtonShapes Shapes(ButtonSize size)
     {
@@ -405,6 +464,17 @@ internal static class ButtonDefaults
             textStyle);
     }
 
+    private static ButtonMetrics UnmigratedMetrics(double outlineWidth) => new(
+        ContainerHeight: 0,
+        ContainerShape: ShapeRole.CornerNone,
+        PressedContainerShape: ShapeRole.CornerNone,
+        SquareContainerShape: ShapeRole.CornerNone,
+        ContentPadding: default,
+        IconSize: 0,
+        IconLabelSpace: 0,
+        OutlineWidth: outlineWidth,
+        LabelTextStyle: default);
+
     private static ButtonElevation Elevation(
         double resting,
         double hovered,
@@ -515,8 +585,70 @@ internal static class ButtonDefaults
     {
         // Compose's public ButtonDefaults correct these two raw generated defaults to Primary.
         // An explicit component token still takes precedence, including requester-local aliases.
-        var label = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.LabelColor, SystemColorTokens.Primary));
-        var icon = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.IconColor, SystemColorTokens.Primary));
+        var label = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.LabelColor, LegacySystemColorTokens.Primary));
+        var icon = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.IconColor, LegacySystemColorTokens.Primary));
+        return new ButtonColors(
+            Transparent,
+            label,
+            icon,
+            Transparent,
+            label,
+            Transparent,
+            Brush(tokens, TextButtonTokensKeys.DisabledLabelColor, TextButtonTokensKeys.DisabledLabelOpacity),
+            Brush(tokens, TextButtonTokensKeys.DisabledIconColor, TextButtonTokensKeys.DisabledIconOpacity),
+            Transparent);
+    }
+
+    private static ButtonColors ResolveUnmigratedFilled(TokenReader tokens) => new(
+        Transparent,
+        Brush(tokens, FilledButtonTokensKeys.LabelTextColor),
+        Brush(tokens, FilledButtonTokensKeys.IconColor),
+        Transparent,
+        Brush(tokens, FilledButtonTokensKeys.LabelTextColor),
+        Transparent,
+        Brush(tokens, FilledButtonTokensKeys.DisabledLabelTextColor, FilledButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, FilledButtonTokensKeys.DisabledIconColor, FilledButtonTokensKeys.DisabledIconOpacity),
+        Transparent);
+
+    private static ButtonColors ResolveUnmigratedTonal(TokenReader tokens) => new(
+        Transparent,
+        Brush(tokens, TonalButtonTokensKeys.LabelTextColor),
+        Brush(tokens, TonalButtonTokensKeys.IconColor),
+        Transparent,
+        Brush(tokens, TonalButtonTokensKeys.LabelTextColor),
+        Transparent,
+        Brush(tokens, TonalButtonTokensKeys.DisabledLabelTextColor, TonalButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, TonalButtonTokensKeys.DisabledIconColor, TonalButtonTokensKeys.DisabledIconOpacity),
+        Transparent);
+
+    private static ButtonColors ResolveUnmigratedElevated(TokenReader tokens) => new(
+        Transparent,
+        Brush(tokens, ElevatedButtonTokensKeys.LabelTextColor),
+        Brush(tokens, ElevatedButtonTokensKeys.IconColor),
+        Transparent,
+        Brush(tokens, ElevatedButtonTokensKeys.LabelTextColor),
+        Transparent,
+        Brush(tokens, ElevatedButtonTokensKeys.DisabledLabelTextColor, ElevatedButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, ElevatedButtonTokensKeys.DisabledIconColor, ElevatedButtonTokensKeys.DisabledIconOpacity),
+        Transparent);
+
+    private static ButtonColors ResolveUnmigratedOutlined(TokenReader tokens) => new(
+        Transparent,
+        Brush(tokens, OutlinedButtonTokensKeys.LabelTextColor),
+        Brush(tokens, OutlinedButtonTokensKeys.IconColor),
+        Brush(tokens, OutlinedButtonTokensKeys.OutlineColor),
+        Brush(tokens, OutlinedButtonTokensKeys.LabelTextColor),
+        Transparent,
+        Brush(tokens, OutlinedButtonTokensKeys.DisabledLabelTextColor, OutlinedButtonTokensKeys.DisabledLabelTextOpacity),
+        Brush(tokens, OutlinedButtonTokensKeys.DisabledIconColor, OutlinedButtonTokensKeys.DisabledIconOpacity),
+        Brush(tokens, OutlinedButtonTokensKeys.DisabledOutlineColor));
+
+    private static ButtonColors ResolveUnmigratedText(TokenReader tokens)
+    {
+        // Compose's public ButtonDefaults correct these two raw generated defaults to Primary.
+        // An explicit component token still takes precedence, including placement-local aliases.
+        var label = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.LabelColor, LegacySystemColorTokens.Primary));
+        var icon = Brush(tokens.GetDefinedOr(TextButtonTokensKeys.IconColor, LegacySystemColorTokens.Primary));
         return new ButtonColors(
             Transparent,
             label,
@@ -533,8 +665,8 @@ internal static class ButtonDefaults
 
     private static IImmutableBrush Brush(
         TokenReader tokens,
-        MaterialToken<Color> colorToken,
-        MaterialToken<double>? opacityToken = null)
+        MaterialDesignTokens.Avalonia.MaterialToken<Color> colorToken,
+        MaterialDesignTokens.Avalonia.MaterialToken<double>? opacityToken = null)
     {
         var color = tokens.Get(colorToken);
         var opacity = opacityToken is null ? 1 : tokens.Get(opacityToken);

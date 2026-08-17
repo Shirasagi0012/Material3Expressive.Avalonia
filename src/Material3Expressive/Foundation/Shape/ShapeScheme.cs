@@ -11,26 +11,40 @@ namespace Material3Expressive.Foundation;
 /// </summary>
 public partial class ShapeScheme : AvaloniaObject
 {
-    public ShapeScheme()
-    {
-        ExtraSmall = ShapeTokens.CornerExtraSmall;
-        Small = ShapeTokens.CornerSmall;
-        Medium = ShapeTokens.CornerMedium;
-        Large = ShapeTokens.CornerLarge;
-        LargeIncreased = ShapeTokens.CornerLargeIncreased;
-        ExtraLarge = ShapeTokens.CornerExtraLarge;
-        ExtraLargeIncreased = ShapeTokens.CornerExtraLargeIncreased;
-        ExtraExtraLarge = ShapeTokens.CornerExtraExtraLarge;
-    }
+    // Keep defaults in metadata: the compatibility Raw bridge treats only IsSet slots as local
+    // authoring, so an untouched nested scheme remains sparse and can inherit ancestor Raw facts.
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultExtraSmall))]
+    public partial RoundedCornerShape ExtraSmall { get; set; }
 
-    [GeneratedStyledProperty] public partial RoundedCornerShape ExtraSmall { get; set; }
-    [GeneratedStyledProperty] public partial RoundedCornerShape Small { get; set; }
-    [GeneratedStyledProperty] public partial RoundedCornerShape Medium { get; set; }
-    [GeneratedStyledProperty] public partial RoundedCornerShape Large { get; set; }
-    [GeneratedStyledProperty] public partial RoundedCornerShape LargeIncreased { get; set; }
-    [GeneratedStyledProperty] public partial RoundedCornerShape ExtraLarge { get; set; }
-    [GeneratedStyledProperty] public partial RoundedCornerShape ExtraLargeIncreased { get; set; }
-    [GeneratedStyledProperty] public partial RoundedCornerShape ExtraExtraLarge { get; set; }
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultSmall))]
+    public partial RoundedCornerShape Small { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultMedium))]
+    public partial RoundedCornerShape Medium { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultLarge))]
+    public partial RoundedCornerShape Large { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultLargeIncreased))]
+    public partial RoundedCornerShape LargeIncreased { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultExtraLarge))]
+    public partial RoundedCornerShape ExtraLarge { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultExtraLargeIncreased))]
+    public partial RoundedCornerShape ExtraLargeIncreased { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultExtraExtraLarge))]
+    public partial RoundedCornerShape ExtraExtraLarge { get; set; }
+
+    private static RoundedCornerShape GetDefaultExtraSmall() => ShapeTokens.CornerExtraSmall;
+    private static RoundedCornerShape GetDefaultSmall() => ShapeTokens.CornerSmall;
+    private static RoundedCornerShape GetDefaultMedium() => ShapeTokens.CornerMedium;
+    private static RoundedCornerShape GetDefaultLarge() => ShapeTokens.CornerLarge;
+    private static RoundedCornerShape GetDefaultLargeIncreased() => ShapeTokens.CornerLargeIncreased;
+    private static RoundedCornerShape GetDefaultExtraLarge() => ShapeTokens.CornerExtraLarge;
+    private static RoundedCornerShape GetDefaultExtraLargeIncreased() => ShapeTokens.CornerExtraLargeIncreased;
+    private static RoundedCornerShape GetDefaultExtraExtraLarge() => ShapeTokens.CornerExtraExtraLarge;
 
     public object ProvideValue()
     {

@@ -32,21 +32,23 @@ public sealed class TokenTableGeneratorTests
         Assert.Contains("MaterialToken<double> ContainerHeight", source);
         Assert.Contains("\"Reference.ReferenceTokens.ContainerHeight\"", source);
         Assert.Contains("TokenLayer.Reference", source);
-        Assert.Contains("Token.Literal((double)40)", source);
+        Assert.DoesNotContain("Token.Literal((double)40)", source);
         Assert.Contains("MaterialToken<global::Avalonia.Media.Color> ContainerColor", source);
-        Assert.Contains("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF6750A4\"))", source);
         Assert.Contains("public sealed class ReferenceTokensOverrides", source);
         Assert.Contains(
             "[global::System.ComponentModel.TypeConverter(typeof(" +
-            "global::Material3Expressive.Foundation.Tokens.Runtime.DoubleTokenDefinitionTypeConverter))]",
+            "global::Material3Expressive.Foundation.Tokens.RawDoubleTokenDefinitionTypeConverter))]",
             source);
-        Assert.Contains("TokenDefinition<double>? ContainerHeight", source);
+        Assert.Contains("global::MaterialDesignTokens.Avalonia.TokenDefinition<double>? ContainerHeight", source);
         Assert.Contains("get => GetDefinition(ReferenceTokensKeys.ContainerHeight);", source);
         Assert.Contains(
             "if (value is null) Clear(ReferenceTokensKeys.ContainerHeight); else SetDefinition(ReferenceTokensKeys.ContainerHeight, value);",
             source);
         Assert.Contains("Source: Material Design token", source);
         Assert.Contains("Provenance: androidx-token", source);
+        var catalog = run.Source("GeneratedM3DefaultRawTokens.g.cs");
+        Assert.Contains("Token.Literal((double)40)", catalog);
+        Assert.Contains("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF6750A4\"))", catalog);
         Assert.DoesNotContain(run.Sources, result => result.HintName == "ResolvedTheme.Components.g.cs");
     }
 
@@ -84,11 +86,13 @@ public sealed class TokenTableGeneratorTests
         Assert.Contains("ButtonSmallTokens.ContainerHeight", source);
         Assert.Contains("ButtonSmallTokens.ContainerColor", source);
         Assert.Contains("public static class ButtonLargeTokensKeys", source);
-        Assert.Contains("Token.Alias(ButtonSmallTokensKeys.ContainerHeight)", source);
-        Assert.Contains("Token.Alias(ButtonSmallTokensKeys.ContainerColor)", source);
+        Assert.DoesNotContain("Token.Alias(", source);
         Assert.Contains("TokenLayer.Component", source);
         Assert.DoesNotContain("partial record ButtonLargeTokens", source);
         Assert.Contains("public sealed class ButtonLargeTokensOverrides", source);
+        var catalog = run.Source("GeneratedM3DefaultRawTokens.g.cs");
+        Assert.Contains("Token.Alias(global::Material3Expressive.Foundation.Tokens.ButtonSmallTokensKeys.ContainerHeight)", catalog);
+        Assert.Contains("Token.Alias(global::Material3Expressive.Foundation.Tokens.ButtonSmallTokensKeys.ContainerColor)", catalog);
         Assert.DoesNotContain(run.Sources, result => result.HintName == "ResolvedTheme.Components.g.cs");
     }
 
@@ -110,15 +114,18 @@ public sealed class TokenTableGeneratorTests
         Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
 
         var source = run.Source("ColorTokens.Tokens.g.cs");
-        Assert.Contains("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF123456\"))", source);
+        Assert.DoesNotContain("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF123456\"))", source);
         Assert.Contains(
             "[global::System.ComponentModel.TypeConverter(typeof(" +
-            "global::Material3Expressive.Foundation.Tokens.Runtime.ColorTokenDefinitionTypeConverter))]",
+            "global::Material3Expressive.Foundation.Tokens.RawColorTokenDefinitionTypeConverter))]",
             source);
+        var catalog = run.Source("GeneratedM3DefaultRawTokens.g.cs");
+        Assert.Contains("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF123456\"))", catalog);
         Assert.Contains(
-            "Token.Alias(global::Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens.Get(" +
+            "ExternalColorAlias(global::MaterialColorUtilities.Avalonia.Tokens.SystemColorTokens.Get(" +
             "global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Custom, \"brand\"))",
-            source);
+            catalog);
+        Assert.DoesNotContain("Foundation.Tokens.Runtime.SystemColorTokens", catalog);
     }
 
     [Fact]
@@ -151,7 +158,7 @@ public sealed class TokenTableGeneratorTests
                 "public sealed class EnumTokenDefinitionTypeConverter0",
                 System.StringSplitOptions.None).Length - 1);
         Assert.Contains(
-            "TokenDefinitionTypeConverter<global::Example.Mode>",
+            "RawTokenDefinitionTypeConverter<global::Example.Mode>",
             source);
         Assert.Contains(
             "public sealed class EnumTokenDefinitionTypeConverter1",
@@ -336,8 +343,8 @@ public sealed class TokenTableGeneratorTests
 
         Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
         Assert.Contains(
-            "Token.Alias(PaletteTokensKeys.Primary40)",
-            run.Source("AliasTokens.Tokens.g.cs"));
+            "Token.Alias(global::Material3Expressive.Foundation.PaletteTokensKeys.Primary40)",
+            run.Source("GeneratedM3DefaultRawTokens.g.cs"));
     }
 
     [Fact]
@@ -499,5 +506,225 @@ public sealed class TokenTableGeneratorTests
                 Microsoft.CodeAnalysis.IncrementalStepRunReason.Unchanged
             }));
         Assert.False(result.After.TrackedSteps.ContainsKey("TokenTable.Shape"));
+    }
+
+    [Fact]
+    public void MissingExternalManifestProducesM3ETOK005AndNoGeneratedOutput()
+    {
+        var run = GeneratorTestHost.RunWithoutManifest(("Colors.comp.jsonc", """
+            {
+              "kind": "componentTokens",
+              "name": "ColorTokens",
+              "tokens": { "Container": { "type": "color", "value": "Primary" } }
+            }
+            """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK005"));
+        Assert.Contains("exactly one", diagnostic.GetMessage());
+        Assert.Empty(run.Sources);
+    }
+
+    [Theory]
+    [InlineData("material-design-token-canonical-declarations", "unknown-schema", "schema")]
+    [InlineData("\"owner\": \"MaterialColorUtilities.Avalonia\"", "\"owner\": \"Another.Owner\"", "owner")]
+    [InlineData("MaterialColorUtilities.Avalonia.ColorTokens", "Wrong.ColorTokens", "contribution")]
+    [InlineData("System.Color.Primary", "Wrong.Color.Primary", "path")]
+    [InlineData("\"layer\": \"System\"", "\"layer\": \"Component\"", "layer")]
+    [InlineData("Avalonia.Media.Color", "System.String", "value type")]
+    [InlineData("\"canonicalSymbol\"", "\"unknownSymbolField\"", "canonical symbol")]
+    [InlineData("material-color-utilities", "unknown-provenance", "provenance")]
+    [InlineData("MaterialColorUtilities.Avalonia.SystemColor", "Wrong.Family", "family")]
+    [InlineData("{customName}", "customName", "canonical factory")]
+    public void InvalidExternalManifestFieldProducesM3ETOK005(
+        string original,
+        string replacement,
+        string expected)
+    {
+        var manifest = GeneratorTestHost.CanonicalManifest.Replace(
+            original,
+            replacement,
+            StringComparison.Ordinal);
+        var run = GeneratorTestHost.Run(
+            (GeneratorTestHost.CanonicalManifestPath, manifest),
+            ("Colors.comp.jsonc", """
+                {
+                  "kind": "componentTokens",
+                  "name": "ColorTokens",
+                  "tokens": { "Container": { "type": "color", "value": "Primary" } }
+                }
+                """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK005"));
+        Assert.Contains(expected, diagnostic.GetMessage(), StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(run.Sources);
+    }
+
+    [Fact]
+    public void UndeclaredComponentColorShorthandProducesM3ETOK005()
+    {
+        var run = GeneratorTestHost.Run(("Colors.comp.jsonc", """
+            {
+              "kind": "componentTokens",
+              "name": "ColorTokens",
+              "tokens": { "Container": { "type": "color", "value": "Secondary" } }
+            }
+            """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK005"));
+        Assert.Contains("Secondary", diagnostic.GetMessage());
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "ColorTokens.Tokens.g.cs");
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "GeneratedM3DefaultRawTokens.g.cs");
+    }
+
+    [Theory]
+    [InlineData("Primary", "System.Color.Primary")]
+    [InlineData("Custom", "System.Color.Custom.*")]
+    public void GeneratedDescriptorCannotOverlapExternalFiniteIdentityOrFamily(
+        string tokenName,
+        string externalPath)
+    {
+        var run = GeneratorTestHost.Run(("Color.sys.jsonc", $$"""
+            {
+              "kind": "systemTokens",
+              "name": "Color",
+              "tokens": {
+                "{{tokenName}}": { "type": "color", "value": "#FF123456" }
+              }
+            }
+            """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK005"));
+        Assert.Contains($"System.Color.{tokenName}", diagnostic.GetMessage());
+        Assert.Contains(externalPath, diagnostic.GetMessage());
+        Assert.Contains("already owns", diagnostic.GetMessage());
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "Color.Tokens.g.cs");
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "GeneratedM3DefaultRawTokens.g.cs");
+    }
+
+    [Fact]
+    public void IncompatibleManifestSchemaVersionProducesM3ETOK005()
+    {
+        var manifest = GeneratorTestHost.CanonicalManifest.Replace(
+            "\"schemaVersion\": 1,",
+            "\"schemaVersion\": 2,",
+            StringComparison.Ordinal);
+        var run = GeneratorTestHost.Run(
+            (GeneratorTestHost.CanonicalManifestPath, manifest),
+            ("Token.ref.jsonc", """
+                {
+                  "kind": "referenceTokens",
+                  "name": "Token",
+                  "tokens": { "Value": { "type": "dimension", "value": 1 } }
+                }
+                """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK005"));
+        Assert.Contains("schema version 2", diagnostic.GetMessage());
+    }
+
+    [Fact]
+    public void IncompatibleContributionSchemaVersionProducesM3ETOK005()
+    {
+        const string marker = "\"schemaVersion\": 1";
+        var index = GeneratorTestHost.CanonicalManifest.LastIndexOf(marker, StringComparison.Ordinal);
+        var manifest = GeneratorTestHost.CanonicalManifest.Remove(index, marker.Length)
+            .Insert(index, "\"schemaVersion\": 2");
+        var run = GeneratorTestHost.Run(
+            (GeneratorTestHost.CanonicalManifestPath, manifest),
+            ("Token.ref.jsonc", """
+                {
+                  "kind": "referenceTokens",
+                  "name": "Token",
+                  "tokens": { "Value": { "type": "dimension", "value": 1 } }
+                }
+                """));
+
+        var diagnostic = Assert.Single(run.Diagnostics.Where(d => d.Id == "M3ETOK005"));
+        Assert.Contains("contribution schema 2", diagnostic.GetMessage());
+    }
+
+    [Fact]
+    public void GeneratedContributionUsesSharedDescriptorsCanonicalAliasesAndRequirement()
+    {
+        var run = GeneratorTestHost.Run(("Colors.comp.jsonc", """
+            {
+              "kind": "componentTokens",
+              "name": "ColorTokens",
+              "namespace": "Material3Expressive.Foundation.Tokens",
+              "tokens": {
+                "Container": { "type": "color", "value": "Primary" },
+                "Custom": { "type": "color", "value": "Custom:brand" },
+                "Height": { "type": "dimension", "value": 40 }
+              }
+            }
+            """));
+
+        Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
+        var descriptors = run.Source("ColorTokens.Tokens.g.cs");
+        Assert.Contains("global::MaterialDesignTokens.Avalonia.MaterialToken<global::Avalonia.Media.Color>", descriptors);
+        Assert.DoesNotContain("DefaultDefinition", descriptors);
+        Assert.DoesNotContain("Token.Alias(", descriptors);
+
+        var contribution = run.Source("GeneratedM3DefaultRawTokens.g.cs");
+        Assert.Contains("IMaterialTokenCatalogContribution", contribution);
+        Assert.Contains("Material3Expressive.GeneratedM3DefaultRawTokens", contribution);
+        Assert.Contains("MaterialColorUtilities.Avalonia.ColorTokens\", 1, 1", contribution);
+        Assert.Contains("MaterialTokenMissingPolicy.CatalogRequired", contribution);
+        Assert.Contains(
+            "TokenDefinition<global::Avalonia.Media.Color> ExternalColorAlias(" +
+            "global::MaterialDesignTokens.Avalonia.MaterialToken<global::Avalonia.Media.Color> target)",
+            contribution);
+        Assert.Contains("ExternalColorAlias(global::MaterialColorUtilities.Avalonia.Tokens.SystemColorTokens.Primary)", contribution);
+        Assert.Contains("ExternalColorAlias(global::MaterialColorUtilities.Avalonia.Tokens.SystemColorTokens.Get(global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Custom, \"brand\"))", contribution);
+        Assert.DoesNotContain("Foundation.Tokens.Runtime.SystemColorTokens", contribution);
+    }
+
+    [Fact]
+    public void InvalidGraphDoesNotEmitAPartialGeneratedContribution()
+    {
+        var run = GeneratorTestHost.Run(
+            ("Good.ref.jsonc", """
+                {
+                  "kind": "referenceTokens",
+                  "name": "GoodTokens",
+                  "tokens": { "Value": { "type": "dimension", "value": 1 } }
+                }
+                """),
+            ("Broken.comp.jsonc", """
+                {
+                  "kind": "componentTokens",
+                  "name": "BrokenTokens",
+                  "tokens": { "Value": { "type": "dimension", "value": "@MissingTokens.Value" } }
+                }
+                """));
+
+        Assert.Contains(run.Sources, source => source.HintName == "GoodTokens.Tokens.g.cs");
+        Assert.DoesNotContain(run.Sources, source => source.HintName == "GeneratedM3DefaultRawTokens.g.cs");
+    }
+
+    [Fact]
+    public void GeneratedContributionIsDeterministicAcrossAdditionalFileOrder()
+    {
+        var first = ("First.ref.jsonc", """
+            {
+              "kind": "referenceTokens",
+              "name": "FirstTokens",
+              "tokens": { "Value": { "type": "dimension", "value": 1 } }
+            }
+            """);
+        var second = ("Second.comp.jsonc", """
+            {
+              "kind": "componentTokens",
+              "name": "SecondTokens",
+              "tokens": { "Value": { "type": "dimension", "value": "@FirstTokens.Value" } }
+            }
+            """);
+
+        var forward = GeneratorTestHost.Run(first, second);
+        var reverse = GeneratorTestHost.Run(second, first);
+
+        Assert.Equal(
+            forward.Source("GeneratedM3DefaultRawTokens.g.cs"),
+            reverse.Source("GeneratedM3DefaultRawTokens.g.cs"));
     }
 }

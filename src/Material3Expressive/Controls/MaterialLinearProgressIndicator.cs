@@ -26,17 +26,15 @@ public enum ProgressIndicatorShape { Linear, Circular }
 /// a 3dp amplitude the difference is not visible.
 /// </para>
 /// </remarks>
-public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialMotionConsumer
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
-        ApplyTheme(state.Theme, state.IsDark);
+    // Motion still uses the compatibility controller's motion scheme during the migration. Token
+    // values themselves arrive through the MaterialValue endpoints below.
+    private SpringSpec Spring(MotionRole role) =>
+        (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
         OnMotionTick();
@@ -55,6 +53,30 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
     public static readonly StyledProperty<bool> IsWavyProperty =
         AvaloniaProperty.Register<MaterialLinearProgressIndicator, bool>(nameof(IsWavy));
 
+    private static readonly LinearProgressMetrics DefaultMetrics = new(
+        ActiveThickness: 4,
+        TrackThickness: 4,
+        TrackActiveSpace: 4,
+        Height: 4,
+        StopSize: 4,
+        WaveAmplitude: 3,
+        WaveWavelength: 40,
+        IndeterminateWaveWavelength: 20,
+        WaveSize: 10);
+
+    private static readonly ProgressVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    internal static readonly StyledProperty<LinearProgressMetrics> ResolvedMetricsProperty =
+        AvaloniaProperty.Register<MaterialLinearProgressIndicator, LinearProgressMetrics>(
+            nameof(ResolvedMetrics), DefaultMetrics);
+
+    internal static readonly StyledProperty<ProgressVisualColors> ResolvedVisualColorsProperty =
+        AvaloniaProperty.Register<MaterialLinearProgressIndicator, ProgressVisualColors>(
+            nameof(ResolvedVisualColors), DefaultVisualColors);
+
     private static readonly TimeSpan WavePeriod = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan SweepPeriod = TimeSpan.FromSeconds(1.75);
 
@@ -62,8 +84,8 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
     private LoopingAnimation? _sweep;
     private SpringAnimation? _progress;
 
-    private ProgressMetrics _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Linear);
-    private ProgressVisualColors _colors = ProgressDefaults.Colors(ResolvedTheme.Default, ProgressIndicatorShape.Linear, false);
+    private LinearProgressMetrics _tokens = DefaultMetrics;
+    private ProgressVisualColors _colors = DefaultVisualColors;
 
     public MaterialLinearProgressIndicator()
     {
@@ -72,7 +94,14 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
 
     static MaterialLinearProgressIndicator()
     {
-        AffectsRender<MaterialLinearProgressIndicator>(IsWavyProperty, IsIndeterminateProperty);
+        AffectsRender<MaterialLinearProgressIndicator>(
+            IsWavyProperty,
+            IsIndeterminateProperty,
+            ResolvedMetricsProperty,
+            ResolvedVisualColorsProperty);
+        AffectsMeasure<MaterialLinearProgressIndicator>(
+            IsWavyProperty,
+            ResolvedMetricsProperty);
     }
 
     /// <summary>Progress from 0 to 1. Ignored while <see cref="IsIndeterminate" /> is set.</summary>
@@ -139,24 +168,42 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var height = IsWavy ? _tokens.WaveSize : Math.Max(_tokens.ActiveThickness, _tokens.TrackThickness);
+        // Height is a consumer metric in its own right. Keep the stroke thickness as a safety
+        // floor so an explicit thickness override cannot be clipped by the token layout slot.
+        var height = IsWavy
+            ? _tokens.WaveSize
+            : Math.Max(_tokens.Height, Math.Max(_tokens.ActiveThickness, _tokens.TrackThickness));
         var width = double.IsInfinity(availableSize.Width) ? 240 : availableSize.Width;
         return new Size(width, height);
     }
 
-    private void ApplyTheme(ResolvedTheme theme, bool isDark)
+    /// <summary>Gets the hidden linear metrics profile supplied by the Material control theme.</summary>
+    internal LinearProgressMetrics ResolvedMetrics
     {
-        _tokens = ProgressDefaults.Metrics(ProgressIndicatorShape.Linear);
-        _colors = ProgressDefaults.Colors(theme, ProgressIndicatorShape.Linear, isDark);
-        InvalidateMeasure();
-        InvalidateVisual();
+        get => GetValue(ResolvedMetricsProperty);
+        set => SetValue(ResolvedMetricsProperty, value);
+    }
+
+    /// <summary>Gets the hidden colour profile supplied by the Material control theme.</summary>
+    internal ProgressVisualColors ResolvedVisualColors
+    {
+        get => GetValue(ResolvedVisualColorsProperty);
+        set => SetValue(ResolvedVisualColorsProperty, value);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == ValueProperty)
+        if (change.Property == ResolvedMetricsProperty)
+        {
+            _tokens = change.GetNewValue<LinearProgressMetrics>();
+        }
+        else if (change.Property == ResolvedVisualColorsProperty)
+        {
+            _colors = change.GetNewValue<ProgressVisualColors>();
+        }
+        else if (change.Property == ValueProperty)
         {
             Progress.AnimateTo(Clamp(Value), Spring(MotionRole.DefaultSpatial));
             Motion.RequestFrame();
@@ -271,4 +318,7 @@ public class MaterialLinearProgressIndicator : TemplatedControl, IMaterialThemeC
     {
         return double.IsNaN(value) ? 0 : Math.Clamp(value, 0, 1);
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

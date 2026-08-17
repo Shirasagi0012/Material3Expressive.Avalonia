@@ -1,8 +1,13 @@
+using System.ComponentModel;
 using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Foundation.Tokens.Runtime;
 
 /// <summary>The five strongly typed system-token keys that make up one Material type-scale role.</summary>
+[Obsolete(
+    "Legacy Runtime.MaterialToken type-scale table. Use generated shared Raw type-scale tokens.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class SystemTypeScaleTokenSet
 {
     internal SystemTypeScaleTokenSet(TypographyRole role, TypeScale defaults)
@@ -37,6 +42,10 @@ public sealed class SystemTypeScaleTokenSet
 /// directly from the generated <see cref="TypeScale"/> table; a <see cref="MaterialTheme"/> may
 /// provide theme-authored values through the resource cascade before those fallbacks are used.
 /// </remarks>
+[Obsolete(
+    "Legacy Runtime.MaterialToken type-scale table. Use generated shared Raw type-scale tokens.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public static class SystemTypeScaleTokens
 {
     private static readonly IReadOnlyDictionary<TypographyRole, SystemTypeScaleTokenSet> Sets =
@@ -98,6 +107,10 @@ public static class SystemTypeScaleTokens
 }
 
 /// <summary>A field in a <see cref="SystemTypeScaleTokenSet"/>.</summary>
+[Obsolete(
+    "Legacy Runtime.MaterialToken type-scale field. Use generated shared Raw type-scale tokens.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public enum SystemTypeScaleField
 {
     FontSize,

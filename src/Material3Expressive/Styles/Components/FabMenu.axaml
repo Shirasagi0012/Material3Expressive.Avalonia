@@ -15,6 +15,10 @@
         <ControlTheme x:Key="{x:Type m3:MaterialFabMenu}" TargetType="m3:MaterialFabMenu">
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="ItemSpacing"
+                    Value="{DynamicResource {x:Static m3:FabMenuValueKeys.ItemSpacing}}" />
+            <Setter Property="CloseButtonSpacing"
+                    Value="{DynamicResource {x:Static m3:FabMenuValueKeys.CloseButtonSpacing}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <!-- Bottom-aligned so the toggle stays put and the items grow upwards away

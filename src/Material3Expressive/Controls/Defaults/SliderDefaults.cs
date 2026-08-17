@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using System.ComponentModel;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 
@@ -12,6 +13,10 @@ namespace Material3Expressive.Controls;
 /// small semantic contract the two controls actually consume, including the expressive track and
 /// handle corrections that used to be hidden in the defaults JSON table.
 /// </remarks>
+[Obsolete(
+    "Legacy slider geometry snapshot. Use SliderValueKeys.GeometryProfile instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal sealed record SliderMetrics(
     double TrackHeight,
     double HandleWidth,
@@ -24,6 +29,10 @@ internal sealed record SliderMetrics(
 /// <summary>
 /// Theme-resolved colour roles shared by Slider and RangeSlider.
 /// </summary>
+[Obsolete(
+    "Legacy slider colour snapshot. Use SliderValueKeys.VisualColors instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal sealed record SliderColors(
     IImmutableBrush ActiveTrackColor,
     IImmutableBrush InactiveTrackColor,
@@ -34,8 +43,12 @@ internal sealed record SliderColors(
     IImmutableBrush DisabledInactiveTrackColor,
     IImmutableBrush DisabledHandleColor);
 
-/// <summary>Render colours selected for one enabled state of a slider or range slider.</summary>
-internal sealed record SliderVisualColors(
+/// <summary>Resolved state colours selected by the legacy slider renderer.</summary>
+[Obsolete(
+    "Legacy slider visual projection. Use SliderValueKeys.VisualColors instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
+internal sealed record LegacySliderVisualColors(
     IImmutableBrush ActiveTrackColor,
     IImmutableBrush InactiveTrackColor,
     IImmutableBrush HandleColor,
@@ -50,6 +63,10 @@ internal sealed record SliderVisualColors(
 /// policies remain in their respective controls. Disabled colour projection is common policy and
 /// lives here so it cannot drift between the two renderers.
 /// </remarks>
+[Obsolete(
+    "Legacy slider defaults adapter. Use SliderValueKeys and MaterialValueKey<T> resources instead.",
+    DiagnosticId = "M3E1005")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 internal static class SliderDefaults
 {
     private static readonly SliderMetrics DefaultMetrics = new(
@@ -63,9 +80,15 @@ internal static class SliderDefaults
         SliderTokens.StopIndicatorTrailingSpace);
 
     /// <summary>Maps the raw upstream token set to the shared geometry contract.</summary>
+    [Obsolete(
+        "Legacy slider geometry snapshot. Use SliderValueKeys.GeometryProfile instead.",
+        DiagnosticId = "M3E1005")]
     public static SliderMetrics Metrics() => DefaultMetrics;
 
     /// <summary>Resolves the raw upstream colour roles against a system theme snapshot.</summary>
+    [Obsolete(
+        "Legacy slider colour snapshot. Use SliderValueKeys.VisualColors instead.",
+        DiagnosticId = "M3E1005")]
     public static SliderColors Colors(ResolvedTheme theme, bool isDark)
     {
         ArgumentNullException.ThrowIfNull(theme);
@@ -86,14 +109,19 @@ internal static class SliderDefaults
                 scheme, isDark, SliderTokens.DisabledHandleOpacity));
     }
 
-    public static SliderVisualColors Visuals(SliderColors colors, bool enabled)
+    /// <summary>Projects the legacy colour snapshot for one enabled state.</summary>
+    [Obsolete(
+        "Legacy slider visual projection. Use SliderValueKeys.VisualColors instead.",
+        DiagnosticId = "M3E1005")]
+    public static LegacySliderVisualColors Visuals(SliderColors colors, bool enabled)
     {
         var active = enabled ? colors.ActiveTrackColor : colors.DisabledActiveTrackColor;
         var inactive = enabled ? colors.InactiveTrackColor : colors.DisabledInactiveTrackColor;
         var handle = enabled ? colors.HandleColor : colors.DisabledHandleColor;
 
-        // The expressive SliderDefaults.Track path uses the active track role for its stop dot;
-        // StopIndicatorColor is retained in the generated record for the legacy overload.
-        return new SliderVisualColors(active, inactive, handle, active, colors.StateLayerColor);
+        // The expressive SliderDefaults.Track path uses the active track colour for its stop dot;
+        // StopIndicatorColor is retained only for the compatibility record.
+        return new LegacySliderVisualColors(active, inactive, handle, active, colors.StateLayerColor);
     }
+
 }

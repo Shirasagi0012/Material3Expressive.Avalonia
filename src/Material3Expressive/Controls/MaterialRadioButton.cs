@@ -15,8 +15,10 @@ namespace Material3Expressive.Controls;
 /// stock behaviour. The dot scales in with a spring rather than appearing: Material animates the
 /// selection, and at this size a snap reads as a glitch.
 /// </remarks>
-public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMaterialInteractionConsumer
+public class MaterialRadioButton : RadioButton, IMaterialInteractionConsumer
 {
+    // The theme controller is retained only for motion specs. Geometry and colour values arrive
+    // through the typed DynamicResource profiles below.
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
     private MaterialInteractionPresentationLease? _presentation;
@@ -27,8 +29,46 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
             : _presentation = _interaction.AttachPresentation(this);
 
     private SpringAnimation? _dot;
-    private RadioButtonMetrics _tokens = RadioButtonDefaults.Metrics();
-    private RadioButtonColors _colors = RadioButtonDefaults.Colors(ResolvedTheme.Default, isDark: false);
+
+    private static readonly RadioButtonGeometryProfile DefaultGeometryProfile = new(
+        IconSize: 20,
+        StateLayerSize: 40,
+        RingWidth: 2,
+        DotSize: 10);
+
+    private static readonly RadioButtonVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    /// <summary>
+    /// The renderer geometry profile supplied by the Material control theme.
+    /// </summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<RadioButtonGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialRadioButton, RadioButtonGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    /// <summary>
+    /// The state-dependent brushes supplied by the Material control theme.
+    /// </summary>
+    /// <remarks>This is an implementation property, not a public authoring surface.</remarks>
+    internal static readonly StyledProperty<RadioButtonVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialRadioButton, RadioButtonVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
+
+    static MaterialRadioButton()
+    {
+        AffectsRender<MaterialRadioButton>(
+            IsCheckedProperty,
+            IsEffectivelyEnabledProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
+        AffectsMeasure<MaterialRadioButton>(GeometryProfileProperty);
+    }
 
     public MaterialRadioButton()
     {
@@ -36,20 +76,32 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
         _interaction = MaterialElementContext.Ensure(this).Interaction;
         _interaction.IsRippleBounded = false;
 
-        ApplyTokens();
+        ApplyProfile();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
         InvalidateVisual();
+
+    /// <summary>Gets the renderer geometry profile.</summary>
+    internal RadioButtonGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets the renderer's state-dependent brushes.</summary>
+    internal RadioButtonVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
 
     /// <summary>The state-layer circle, which is also the ring's alignment box.</summary>
     protected Rect GlyphArea
     {
         get
         {
-            var size = _tokens.StateLayerSize;
+            var size = GeometryProfile.StateLayerSize;
             return new Rect(0, (Bounds.Height - size) / 2, size, size);
         }
     }
@@ -69,37 +121,46 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
         var selected = IsChecked == true;
 
         var color = enabled
-            ? selected ? _colors.SelectedColor : _colors.UnselectedColor
-            : selected ? _colors.DisabledSelectedColor : _colors.DisabledUnselectedColor;
+            ? selected ? VisualColors.SelectedColor : VisualColors.UnselectedColor
+            : selected ? VisualColors.DisabledSelectedColor : VisualColors.DisabledUnselectedColor;
 
         var centre = area.Center;
-        var ringRadius = (_tokens.IconSize - _tokens.RingWidth) / 2;
-        context.DrawEllipse(null, new ImmutablePen(color, _tokens.RingWidth), centre, ringRadius, ringRadius);
+        var ringRadius = (GeometryProfile.IconSize - GeometryProfile.RingWidth) / 2;
+        context.DrawEllipse(
+            null,
+            new ImmutablePen(color, GeometryProfile.RingWidth),
+            centre,
+            ringRadius,
+            ringRadius);
 
         var scale = Dot.Value;
         if (scale > 0)
         {
-            var dotRadius = _tokens.DotSize / 2 * scale;
+            var dotRadius = GeometryProfile.DotSize / 2 * scale;
             context.DrawEllipse(color, null, centre, dotRadius, dotRadius);
         }
 
         base.Render(context);
-        _interaction.DrawLayers(context, color, new CornerRadius(_tokens.StateLayerSize / 2));
+        _interaction.DrawLayers(context, color, new CornerRadius(GeometryProfile.StateLayerSize / 2));
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
         var content = base.MeasureOverride(availableSize);
-        return new Size(content.Width, Math.Max(content.Height, _tokens.StateLayerSize));
+        return new Size(content.Width, Math.Max(content.Height, GeometryProfile.StateLayerSize));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == IsEffectivelyEnabledProperty)
+        if (change.Property == GeometryProfileProperty || change.Property == VisualColorsProperty)
         {
-            ApplyTokens();
+            ApplyProfile();
+        }
+        else if (change.Property == IsEffectivelyEnabledProperty)
+        {
+            InvalidateVisual();
         }
         else if (change.Property == IsCheckedProperty)
         {
@@ -109,14 +170,13 @@ public class MaterialRadioButton : RadioButton, IMaterialThemeConsumer, IMateria
         }
     }
 
-    private void ApplyTokens()
+    private void ApplyProfile()
     {
-        _tokens = RadioButtonDefaults.Metrics();
-        _colors = RadioButtonDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
-        _interaction.RippleRadius = _tokens.StateLayerSize / 2;
-
-        Padding = new Thickness(_tokens.StateLayerSize, 0, 0, 0);
+        _interaction.RippleRadius = GeometryProfile.StateLayerSize / 2;
         InvalidateMeasure();
         InvalidateVisual();
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

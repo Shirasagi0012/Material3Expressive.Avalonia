@@ -15,19 +15,21 @@ public sealed class MaterialThemeStyles : Avalonia.Styling.Styles
 {
     public MaterialThemeStyles()
     {
-        if (Avalonia.Application.Current is { } application)
-        {
-            MaterialThemeScope.InstallBaselineResources(application);
-        }
-        else
+        // MaterialStyles must remain usable without requiring every application to repeat a
+        // root MaterialTheme declaration. Keeping the baseline in this Styles resource scope
+        // gives it a real ResourceProvider placement while leaving application resources and
+        // subtree placements closer to the requester (and therefore higher priority).
+        Resources.MergedDictionaries.Add(new MaterialTheme());
+
+        if (Avalonia.Application.Current is null)
         {
             // Previewer/designer surfaces can construct styles before an Application exists.
-            // Styles offer no later hook, so surface the skipped baseline instead of failing
-            // silently — tokens would otherwise resolve to their Transparent fallback.
+            // Styles offer no later hook for the legacy TopLevel snapshot injection. The new
+            // resource path remains available once this Styles instance receives an owner.
             Logger.TryGet(LogEventLevel.Warning, LogArea.Control)?.Log(
                 this,
                 "MaterialThemeStyles was constructed before Application.Current was assigned; " +
-                "baseline token resources were not installed.");
+                "legacy TopLevel theme snapshot injection was not installed.");
         }
 
         Add(MaterialThemeScope.CreateTopLevelInjectionStyle());

@@ -16,6 +16,9 @@ using MaterialColorUtilities.Avalonia.Tokens;
 /// ToggleButton needs separate unchecked, checked and disabled slots; ordinary Button's colour
 /// profile cannot express that state contract.
 /// </remarks>
+[Obsolete(
+    "Legacy ToggleButton defaults transport. Use ButtonValueKeys and MaterialValue resources.",
+    DiagnosticId = "M3E1005")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record ToggleButtonColors(
     IImmutableBrush UncheckedContainer,
@@ -43,6 +46,9 @@ public sealed record ToggleButtonColors(
 }
 
 /// <summary>The size-dependent semantic metrics published by the ToggleButton defaults adapter.</summary>
+[Obsolete(
+    "Legacy ToggleButton defaults transport. Use ButtonValueKeys and MaterialValue resources.",
+    DiagnosticId = "M3E1005")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record ToggleButtonMetrics(
     double ContainerHeight,
@@ -52,6 +58,9 @@ public sealed record ToggleButtonMetrics(
     TypographyRole LabelTextStyle);
 
 /// <summary>The three geometry roles required by a ToggleButton's checked-aware presenter.</summary>
+[Obsolete(
+    "Legacy ToggleButton defaults transport. Use ButtonValueKeys and MaterialValue resources.",
+    DiagnosticId = "M3E1005")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed record ToggleButtonShapes(
     ShapeRole Unchecked,
@@ -61,6 +70,9 @@ public sealed record ToggleButtonShapes(
 /// <summary>
 /// The component-owned runtime adapter for a Material ToggleButton.
 /// </summary>
+[Obsolete(
+    "Legacy ToggleButton defaults adapter. Use ButtonValueKeys and typed MaterialValue endpoints.",
+    DiagnosticId = "M3E1005")]
 internal static class ToggleButtonDefaults
 {
     private static readonly IImmutableBrush Transparent =

@@ -17,6 +17,9 @@ namespace Material3Expressive.Controls;
 /// projection belong to their respective consumers, rather than turning this type into a
 /// runtime service locator.
 /// </remarks>
+[Obsolete(
+    "Legacy whole-theme snapshot controller. Consume typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 internal sealed class MaterialThemeController
 {
     private readonly Control _owner;

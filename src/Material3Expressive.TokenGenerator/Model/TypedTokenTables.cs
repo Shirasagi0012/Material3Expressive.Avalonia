@@ -11,6 +11,12 @@ internal enum TokenTableLayer
     Component
 }
 
+internal static class TokenDescriptorPaths
+{
+    public static string Create(TokenTableLayer layer, string tableName, string memberName) =>
+        layer + "." + tableName + "." + memberName;
+}
+
 /// <summary>
 /// Common metadata and read-only views for the three token table models. The explicit source
 /// <c>kind</c> remains available for diagnostics; emitters use <see cref="IsTokenSet"/> and the
@@ -62,6 +68,9 @@ internal abstract class TokenTable
     public virtual string? VariantEnum => null;
 
     public virtual string? VariantEnumSummary => null;
+
+    /// <summary>Gets the stable public descriptor path emitted for one token-set member.</summary>
+    public string DescriptorPath(string memberName) => TokenDescriptorPaths.Create(Layer, Name, memberName);
 
     public static TokenTable Parse(string json)
     {

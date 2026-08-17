@@ -5,6 +5,9 @@ using Material3Expressive.Foundation;
 namespace Material3Expressive.Markups;
 
 /// <summary>Font size of a type scale, from the theme in scope at the target element.</summary>
+[Obsolete(
+    "Legacy ResolvedTheme typography markup. Use typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 public class MdTypeSizeExtension
 {
     public MdTypeSizeExtension()

@@ -5,6 +5,7 @@ using MaterialColorUtilities.Avalonia.Tokens;
 using Material3Expressive.Foundation.Tokens.Runtime;
 using Material3Expressive.Tests.TestUtils;
 using Xunit;
+using SystemColorTokens = Material3Expressive.Foundation.Tokens.Runtime.SystemColorTokens;
 
 namespace Material3Expressive.Tests;
 
@@ -175,7 +176,7 @@ public sealed class MaterialTokenRuntimeTests
             out var role,
             out var customKey));
         Assert.Equal(SysColorToken.Custom, role);
-        Assert.Equal("Brand", customKey);
+        Assert.Equal("BRAND", customKey);
     }
 
     private static MaterialToken<int> LiteralToken(string path, TokenLayer layer, int value) =>

@@ -3,15 +3,14 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
 /// <summary>The three visual variants available to a Material card.</summary>
 /// <remarks>
 /// This is component API rather than generated token metadata. The raw card token tables retain
-/// the upstream facts; <c>CardDefaults</c> owns the mapping from this axis to those tables and to
-/// the active system theme.
+/// the upstream facts; <see cref="CardValueKeys" /> owns the consumer-ready mapping while this
+/// axis remains a ControlTheme selection policy.
 /// </remarks>
 public enum CardVariant
 {
@@ -34,7 +33,7 @@ public enum CardVariant
 /// only shows a state layer and raises on hover when it is actually actionable, and a card that
 /// looks pressable but is not is worse than one that looks flat.
 /// </remarks>
-public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInteractionConsumer
+public class MaterialCard : ContentControl, IMaterialInteractionConsumer
 {
     public static readonly StyledProperty<CardVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialCard, CardVariant>(nameof(Variant), CardVariant.Filled);
@@ -43,21 +42,36 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
     public static readonly StyledProperty<bool> IsClickableProperty =
         AvaloniaProperty.Register<MaterialCard, bool>(nameof(IsClickable));
 
+    // These hidden semantic properties carry the typed MaterialValue results selected by the
+    // ControlTheme. Public Background/Border/BorderThickness remain ordinary setters so an
+    // application Style or a local value retains normal Avalonia precedence.
+    internal static readonly StyledProperty<CardVisualColors?> ResolvedVisualColorsProperty =
+        AvaloniaProperty.Register<MaterialCard, CardVisualColors?>(nameof(ResolvedVisualColors));
+    internal static readonly StyledProperty<CardGeometryProfile?> ResolvedGeometryProperty =
+        AvaloniaProperty.Register<MaterialCard, CardGeometryProfile?>(nameof(ResolvedGeometry));
+    internal static readonly StyledProperty<CardElevationProfile?> ResolvedElevationProperty =
+        AvaloniaProperty.Register<MaterialCard, CardElevationProfile?>(nameof(ResolvedElevation));
+
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
 
-    private CardMetrics _metrics = CardDefaults.Metrics(CardVariant.Filled);
-    private CardColors _colors = CardDefaults.Colors(ResolvedTheme.Default, CardVariant.Filled, isDark: false);
+    private static readonly CardVisualColors EmptyVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        Colors.Black);
+    private static readonly CardGeometryProfile EmptyGeometry = new(
+        ShapeRole.CornerMedium,
+        new Thickness());
+    private static readonly CardElevationProfile EmptyElevation = new(0, 0, 0, 0, 0, 0);
 
     public MaterialCard()
     {
         _theme = MaterialElementContext.Ensure(this).Theme;
         _interaction = MaterialElementContext.Ensure(this).Interaction;
-
-        ApplyTokens();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialInteractionConsumer.OnMaterialInteractionChanged(InteractionState state) =>
         InvalidateVisual();
@@ -65,7 +79,16 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
     static MaterialCard()
     {
         ClipToBoundsProperty.OverrideDefaultValue<MaterialCard>(false);
-        AffectsRender<MaterialCard>(VariantProperty, IsClickableProperty);
+        AffectsRender<MaterialCard>(
+            VariantProperty,
+            IsClickableProperty,
+            IsEffectivelyEnabledProperty,
+            BackgroundProperty,
+            BorderBrushProperty,
+            BorderThicknessProperty,
+            ResolvedVisualColorsProperty,
+            ResolvedGeometryProperty,
+            ResolvedElevationProperty);
     }
 
     /// <summary>Elevated, filled or outlined.</summary>
@@ -85,6 +108,27 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
         set => SetValue(IsClickableProperty, value);
     }
 
+    /// <summary>Gets or sets the hidden variant-selected colour profile.</summary>
+    internal CardVisualColors? ResolvedVisualColors
+    {
+        get => GetValue(ResolvedVisualColorsProperty);
+        set => SetValue(ResolvedVisualColorsProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden variant-selected geometry profile.</summary>
+    internal CardGeometryProfile? ResolvedGeometry
+    {
+        get => GetValue(ResolvedGeometryProperty);
+        set => SetValue(ResolvedGeometryProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden variant-selected elevation profile.</summary>
+    internal CardElevationProfile? ResolvedElevation
+    {
+        get => GetValue(ResolvedElevationProperty);
+        set => SetValue(ResolvedElevationProperty, value);
+    }
+
     public override void Render(DrawingContext context)
     {
         var bounds = new Rect(Bounds.Size);
@@ -92,47 +136,49 @@ public class MaterialCard : ContentControl, IMaterialThemeConsumer, IMaterialInt
             return;
 
         var enabled = IsEffectivelyEnabled;
-        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_metrics.ContainerShape, Bounds.Size);
-        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
+        var colors = ResolvedVisualColors ?? EmptyVisualColors;
+        var geometry = ResolvedGeometry ?? EmptyGeometry;
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(geometry.ContainerShape, Bounds.Size);
+        var fill = Background ?? (enabled ? colors.ContainerColor : colors.DisabledContainerColor);
+        var outline = BorderBrush ?? (enabled ? colors.OutlineColor : colors.DisabledOutlineColor);
+        var outlineWidth = Uniform(BorderThickness);
+        if (outlineWidth <= 0)
+            outlineWidth = Uniform(geometry.BorderThickness);
 
         MaterialContainer.Draw(
             context,
             this,
             Bounds.Size,
             corners,
-            enabled ? _colors.ContainerColor : _colors.DisabledContainerColor,
-            enabled ? _colors.OutlineColor : _colors.DisabledOutlineColor,
-            _metrics.HasOutline ? _metrics.OutlineWidth : 0,
+            fill,
+            outline,
+            outlineWidth,
             CurrentElevation(enabled),
-            shadow);
+            colors.ShadowColor);
 
         base.Render(context);
 
         if (IsClickable)
-            _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
+            _interaction.DrawLayers(context, colors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty || change.Property == IsEffectivelyEnabledProperty)
-            ApplyTokens();
-        else if (change.Property == IsClickableProperty)
+        if (change.Property == IsClickableProperty)
             Focusable = IsClickable;
-    }
-
-    private void ApplyTokens()
-    {
-        _metrics = CardDefaults.Metrics(Variant);
-        _colors = CardDefaults.Colors(_theme.Current.Theme, Variant, _theme.Current.IsDark);
-        InvalidateVisual();
     }
 
     private double CurrentElevation(bool enabled)
     {
         var interaction = IsClickable ? _interaction.Interaction : InteractionState.None;
-
-        return _metrics.Elevation.For(enabled, interaction);
+        return (ResolvedElevation ?? EmptyElevation).For(enabled, interaction);
     }
+
+    private static double Uniform(Thickness thickness) =>
+        Math.Max(Math.Max(thickness.Left, thickness.Top), Math.Max(thickness.Right, thickness.Bottom));
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

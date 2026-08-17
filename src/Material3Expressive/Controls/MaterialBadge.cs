@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 
@@ -18,21 +19,13 @@ public enum BadgeVariant { Small, Large }
 /// often all a navigation item has room to say. The large one says how much, and grows wider than
 /// it is tall to fit.
 /// </remarks>
-public class MaterialBadge : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialBadge : TemplatedControl
 {
-    private MaterialElementContext? _material;
-
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
-    private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
-
-    void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
-        OnMotionTick();
-
-    private void OnMotionTick() => InvalidateVisual();
+    // ShapeRole is deliberately retained in the profile and converted to a CornerRadius only at
+    // render time, when Bounds is available.  The snapshot controller is used solely for this
+    // late shape-scheme lookup; all badge colours, metrics and typography arrive through the
+    // MaterialValue endpoints below.
+    private readonly MaterialThemeController _theme;
 
     public static readonly StyledProperty<BadgeVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialBadge, BadgeVariant>(nameof(Variant), BadgeVariant.Large);
@@ -41,20 +34,41 @@ public class MaterialBadge : TemplatedControl, IMaterialThemeConsumer, IMaterial
     public static readonly StyledProperty<object?> CountProperty =
         AvaloniaProperty.Register<MaterialBadge, object?>(nameof(Count));
 
-    private BadgeMetrics _tokens = BadgeDefaults.Metrics(BadgeVariant.Large);
-    private BadgeVisualColors _colors = new(
-        BadgeTokens.Color.ResolveBrush(null, false),
-        BadgeTokens.LargeLabelTextColor.ResolveBrush(null, false));
+    private static readonly BadgeGeometryProfile DefaultGeometryProfile = new(
+        16,
+        ShapeRole.CornerFull,
+        new Thickness(4, 0),
+        TypographyRole.LabelSmall);
+
+    private static readonly BadgeVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush());
+
+    /// <summary>Gets the variant-selected layout and late-shape profile.</summary>
+    internal static readonly StyledProperty<BadgeGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialBadge, BadgeGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
+    /// <summary>Gets the variant-selected container and label brushes.</summary>
+    internal static readonly StyledProperty<BadgeVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialBadge, BadgeVisualColors>(
+            nameof(VisualColors),
+            DefaultVisualColors);
 
     public MaterialBadge()
     {
-        _material = MaterialElementContext.Ensure(this);
-        ApplyTokens();
+        _theme = MaterialElementContext.Ensure(this).Theme;
     }
 
     static MaterialBadge()
     {
-        AffectsRender<MaterialBadge>(VariantProperty, CountProperty);
+        AffectsMeasure<MaterialBadge>(GeometryProfileProperty);
+        AffectsRender<MaterialBadge>(
+            VariantProperty,
+            CountProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty);
     }
 
     /// <summary>Small (a dot) or large (a dot with a count).</summary>
@@ -72,15 +86,18 @@ public class MaterialBadge : TemplatedControl, IMaterialThemeConsumer, IMaterial
     }
 
     /// <summary>Whether this size shows its count.</summary>
-    public bool HasLabel => _tokens.HasLabel && Count is not null;
+    public bool HasLabel => Variant == BadgeVariant.Large && Count is not null;
 
     public static readonly DirectProperty<MaterialBadge, bool> HasLabelProperty =
         AvaloniaProperty.RegisterDirect<MaterialBadge, bool>(nameof(HasLabel), o => o.HasLabel);
 
     public override void Render(DrawingContext context)
     {
-        var corners = ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
-        MaterialContainer.Draw(context, Bounds.Size, corners, _colors.ContainerColor);
+        var geometry = GeometryProfile;
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(
+            geometry.ContainerShape,
+            Bounds.Size);
+        MaterialContainer.Draw(context, Bounds.Size, corners, VisualColors.ContainerColor);
 
         base.Render(context);
     }
@@ -90,37 +107,44 @@ public class MaterialBadge : TemplatedControl, IMaterialThemeConsumer, IMaterial
         var content = base.MeasureOverride(availableSize);
 
         return new Size(
-            Math.Max(content.Width, _tokens.Size),
-            _tokens.Size);
+            Math.Max(content.Width, GeometryProfile.Size),
+            GeometryProfile.Size);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
+        var previousHasLabel = HasLabel;
+        if (change.Property == VariantProperty)
+        {
+            previousHasLabel =
+                change.GetOldValue<BadgeVariant>() == BadgeVariant.Large && Count is not null;
+        }
+        else if (change.Property == CountProperty)
+        {
+            previousHasLabel =
+                Variant == BadgeVariant.Large && change.GetOldValue<object?>() is not null;
+        }
+
         base.OnPropertyChanged(change);
 
         if (change.Property == VariantProperty || change.Property == CountProperty)
-            ApplyTokens();
+            RaisePropertyChanged(HasLabelProperty, previousHasLabel, HasLabel);
     }
 
-    private void ApplyTokens()
+    /// <summary>Gets or sets the hidden variant-selected layout profile.</summary>
+    internal BadgeGeometryProfile GeometryProfile
     {
-        var previousHasLabel = HasLabel;
-
-        _tokens = BadgeDefaults.Metrics(Variant);
-        _colors = BadgeDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
-        RaisePropertyChanged(HasLabelProperty, previousHasLabel, HasLabel);
-
-        var typography = ResolvedTheme.Typography;
-
-        Foreground = _colors.LabelTextColor;
-        Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);
-        MinWidth = _tokens.Size;
-        MinHeight = _tokens.Size;
-        FontSize = typography.GetTypeScale(_tokens.LabelTextStyle).FontSize;
-        FontFamily = typography.GetFontFamily(_tokens.LabelTextStyle);
-        FontWeight = typography.GetFontWeight(_tokens.LabelTextStyle);
-
-        InvalidateMeasure();
-        InvalidateVisual();
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
     }
+
+    /// <summary>Gets or sets the hidden variant-selected brush profile.</summary>
+    internal BadgeVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

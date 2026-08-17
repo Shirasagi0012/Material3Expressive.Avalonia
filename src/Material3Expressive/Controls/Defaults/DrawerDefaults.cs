@@ -5,7 +5,8 @@ using MaterialColorUtilities.Avalonia.Tokens;
 
 namespace Material3Expressive.Controls;
 
-internal sealed record DrawerMetrics(
+[Obsolete("Legacy ResolvedTheme drawer defaults. Use DrawerValueKeys.", DiagnosticId = "M3E1005")]
+internal sealed record LegacyDrawerMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue ScrimColor,
     ColorTokenValue HeadlineColor,
@@ -26,7 +27,8 @@ internal sealed record DrawerMetrics(
     TypographyRole LabelTextStyle,
     bool IsModal);
 
-internal sealed record DrawerVisualColors(
+[Obsolete("Legacy ResolvedTheme drawer defaults. Use DrawerValueKeys.", DiagnosticId = "M3E1005")]
+internal sealed record LegacyDrawerVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush ScrimColor,
     IImmutableBrush HeadlineColor,
@@ -38,9 +40,10 @@ internal sealed record DrawerVisualColors(
     IImmutableBrush StateLayerColor);
 
 /// <summary>Component-owned policy for modal and standard navigation drawers.</summary>
+[Obsolete("Legacy ResolvedTheme drawer defaults. Use DrawerValueKeys.", DiagnosticId = "M3E1005")]
 internal static class DrawerDefaults
 {
-    public static DrawerMetrics Metrics(DrawerVariant variant) => variant switch
+    public static LegacyDrawerMetrics Metrics(DrawerVariant variant) => variant switch
     {
         DrawerVariant.Modal => new(
             NavigationDrawerTokens.ModalContainerColor,
@@ -85,7 +88,7 @@ internal static class DrawerDefaults
         _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
     };
 
-    public static DrawerVisualColors Colors(ResolvedTheme theme, DrawerVariant variant, bool isDark)
+    public static LegacyDrawerVisualColors Colors(ResolvedTheme theme, DrawerVariant variant, bool isDark)
     {
         var metrics = Metrics(variant);
         ArgumentNullException.ThrowIfNull(theme);

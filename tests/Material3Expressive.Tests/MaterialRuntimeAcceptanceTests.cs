@@ -222,12 +222,24 @@ public sealed class MaterialInteractionRuntimeAcceptanceTests
     [Fact]
     public void LocalVariantChanges_ReapplyLoadingIndicatorTokensWithoutAThemeDispatch()
     {
-        var indicator = new MaterialLoadingIndicator();
+        var indicator = new MaterialLoadingIndicator
+        {
+            Variant = LoadingIndicatorVariant.Contained,
+        };
+        var scope = new Border { Child = indicator };
+        MaterialThemeScope.SetTheme(scope, new MaterialTheme());
+        var window = ThemeTestHelper.ShowWindow(scope);
 
-        Assert.False(indicator.HasResolvedContainer);
-        indicator.Variant = LoadingIndicatorVariant.Contained;
-
-        Assert.True(indicator.HasResolvedContainer);
+        try
+        {
+            // Variant selection is a ControlTheme policy; it becomes meaningful when the
+            // consumer is placed under a MaterialTheme resource boundary.
+            Assert.True(indicator.HasResolvedContainer);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [Fact]

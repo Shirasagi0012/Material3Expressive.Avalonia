@@ -8,8 +8,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
+using Material3Expressive.Foundation.Tokens;
 using MaterialSkiaShadow;
 
 namespace Material3Expressive.Controls;
@@ -27,16 +28,11 @@ namespace Material3Expressive.Controls;
 /// snackbar on a detached control stops counting down along with everything else.
 /// </para>
 /// </remarks>
-public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialSnackbar : TemplatedControl, IMaterialMotionConsumer
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
-    private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
         OnMotionTick();
@@ -58,21 +54,52 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
     public static readonly StyledProperty<TimeSpan> DurationProperty =
         AvaloniaProperty.Register<MaterialSnackbar, TimeSpan>(nameof(Duration), TimeSpan.FromSeconds(4));
 
+    internal static readonly StyledProperty<SnackbarGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialSnackbar, SnackbarGeometryProfile>(
+            nameof(GeometryProfile),
+            new SnackbarGeometryProfile(
+                0,
+                ShapeTokens.CornerExtraSmall,
+                48,
+                68,
+                344,
+                600,
+                new Thickness(16, 0, 8, 0),
+                24,
+                TypographyRole.BodyMedium,
+                TypographyRole.LabelLarge));
+
+    internal static readonly StyledProperty<SnackbarVisualProfile> VisualProfileProperty =
+        AvaloniaProperty.Register<MaterialSnackbar, SnackbarVisualProfile>(
+            nameof(VisualProfile),
+            new SnackbarVisualProfile(
+                TransparentBrush(),
+                TransparentBrush(),
+                TransparentBrush(),
+                TransparentBrush(),
+                Colors.Black));
+
+    internal static readonly StyledProperty<SpringSpec> MotionSpecProperty =
+        AvaloniaProperty.Register<MaterialSnackbar, SpringSpec>(
+            nameof(MotionSpec),
+            MotionTokens.Standard.DefaultSpatial);
+
     private SpringAnimation? _open;
     private TimeSpan _shownFor;
-    private SnackbarMetrics _tokens = SnackbarDefaults.Metrics();
-    private SnackbarVisualColors _colors = SnackbarDefaults.Colors(Foundation.ResolvedTheme.Default, false);
-
     public MaterialSnackbar()
     {
         _material = MaterialElementContext.Ensure(this);
-        ApplyTokens();
+        IsHitTestVisible = IsOpen;
     }
 
     static MaterialSnackbar()
     {
         ClipToBoundsProperty.OverrideDefaultValue<MaterialSnackbar>(false);
-        AffectsRender<MaterialSnackbar>(IsOpenProperty);
+        AffectsMeasure<MaterialSnackbar>(GeometryProfileProperty);
+        AffectsRender<MaterialSnackbar>(
+            IsOpenProperty,
+            GeometryProfileProperty,
+            VisualProfileProperty);
     }
 
     /// <summary>Whether the snackbar is showing.</summary>
@@ -104,10 +131,10 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
     }
 
     /// <summary>The message brush, exposed for the template.</summary>
-    public IImmutableBrush MessageBrush => _colors.SupportingTextColor;
+    public IImmutableBrush MessageBrush => VisualProfile.SupportingTextColor;
 
     /// <summary>The action brush.</summary>
-    public IImmutableBrush ActionBrush => _colors.ActionLabelTextColor;
+    public IImmutableBrush ActionBrush => VisualProfile.ActionLabelTextColor;
 
     public static readonly DirectProperty<MaterialSnackbar, IImmutableBrush> MessageBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialSnackbar, IImmutableBrush>(nameof(MessageBrush), o => o.MessageBrush);
@@ -122,12 +149,12 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
         ComposeShadowShape.RoundedRectangle(new Rect(Bounds.Size), ContainerCornerRadius);
 
     internal ComposeShadowParameters ParityShadowParameters =>
-        ComposeShadowParameters.Material(_tokens.ContainerElevation, ShadowColor);
+        ComposeShadowParameters.Material(GeometryProfile.ContainerElevation, ShadowColor);
 
     internal bool ParityShadowOccluderDrawn => true;
 
     private SpringAnimation Open =>
-        _open ??= Motion.AddSpring(IsOpen ? 1 : 0, Spring(MotionRole.DefaultSpatial));
+        _open ??= Motion.AddSpring(IsOpen ? 1 : 0, MotionSpec);
 
     internal void SnapOpenState(bool isOpen)
     {
@@ -139,10 +166,11 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
     }
 
     private CornerRadius ContainerCornerRadius =>
-        ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
+        GeometryProfile.ContainerShape.ToCornerRadius(
+            Bounds.Size,
+            FlowDirection == FlowDirection.RightToLeft);
 
-    private Color ShadowColor =>
-        ResolvedTheme.ColorScheme?.GetColor(SysColorToken.Shadow, IsDarkVariant) ?? Colors.Black;
+    private Color ShadowColor => VisualProfile.ShadowColor;
 
     public override void Render(DrawingContext context)
     {
@@ -159,10 +187,10 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
                 this,
                 Bounds.Size,
                 ContainerCornerRadius,
-                _colors.ContainerColor,
+                VisualProfile.ContainerColor,
                 null,
                 0,
-                _tokens.ContainerElevation,
+                GeometryProfile.ContainerElevation,
                 ShadowColor);
         }
     }
@@ -172,8 +200,8 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
         var size = base.MeasureOverride(availableSize);
 
         return new Size(
-            Math.Clamp(size.Width, _tokens.MinWidth, _tokens.MaxWidth),
-            Math.Max(size.Height, _tokens.SingleLineHeight));
+            Math.Clamp(size.Width, GeometryProfile.MinWidth, GeometryProfile.MaxWidth),
+            Math.Max(size.Height, GeometryProfile.SingleLineHeight));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -183,13 +211,26 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
         if (change.Property == IsOpenProperty)
         {
             _shownFor = TimeSpan.Zero;
-            Open.AnimateTo(IsOpen ? 1 : 0, Spring(MotionRole.DefaultSpatial));
+            Open.AnimateTo(IsOpen ? 1 : 0, MotionSpec);
             Motion.RequestFrame();
             IsHitTestVisible = IsOpen;
         }
-        else if (change.Property == ActionProperty)
+        else if (change.Property == VisualProfileProperty)
         {
-            ApplyActionTypography();
+            var oldProfile = change.GetOldValue<SnackbarVisualProfile>();
+            RaisePropertyChanged(
+                MessageBrushProperty,
+                oldProfile.SupportingTextColor,
+                MessageBrush);
+            RaisePropertyChanged(
+                ActionBrushProperty,
+                oldProfile.ActionLabelTextColor,
+                ActionBrush);
+        }
+        else if (change.Property == MotionSpecProperty && _open is not null)
+        {
+            _open.AnimateTo(IsOpen ? 1 : 0, MotionSpec);
+            Motion.RequestFrame();
         }
     }
 
@@ -218,50 +259,24 @@ public class MaterialSnackbar : TemplatedControl, IMaterialThemeConsumer, IMater
             IsOpen = false;
     }
 
-    private void ApplyTokens()
+    internal SnackbarGeometryProfile GeometryProfile
     {
-        var previousMessage = MessageBrush;
-        var previousAction = ActionBrush;
-
-        _tokens = SnackbarDefaults.Metrics();
-        _colors = SnackbarDefaults.Colors(ResolvedTheme, IsDarkVariant);
-
-        RaisePropertyChanged(MessageBrushProperty, previousMessage, MessageBrush);
-        RaisePropertyChanged(ActionBrushProperty, previousAction, ActionBrush);
-
-        var typography = ResolvedTheme.Typography;
-
-        // Snackbar.kt's one-row layout uses 16dp at the message edge and 8dp at the action edge.
-        // Keep that asymmetric contract even without an action; it also leaves the generated
-        // TextButton's own 12dp horizontal content padding at the official final position.
-        Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace / 2, 0);
-        MinHeight = _tokens.SingleLineHeight;
-        FontSize = typography.GetTypeScale(_tokens.SupportingTextStyle).FontSize;
-        FontFamily = typography.GetFontFamily(_tokens.SupportingTextStyle);
-        IsHitTestVisible = IsOpen;
-
-        ApplyActionTypography();
-        InvalidateMeasure();
-        InvalidateVisual();
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
     }
 
-    private void ApplyActionTypography()
+    internal SnackbarVisualProfile VisualProfile
     {
-        var text = Action switch
-        {
-            TextBlock direct => direct,
-            ContentControl { Content: TextBlock nested } => nested,
-            _ => null
-        };
-        if (text is null)
-            return;
-
-        var typography = ResolvedTheme.Typography;
-        var scale = typography.GetTypeScale(_tokens.ActionTextStyle);
-        text.FontFamily = typography.GetFontFamily(_tokens.ActionTextStyle);
-        text.FontWeight = typography.GetFontWeight(_tokens.ActionTextStyle);
-        text.FontSize = scale.FontSize;
-        text.LineHeight = scale.LineHeight;
-        text.LetterSpacing = scale.LetterSpacing;
+        get => GetValue(VisualProfileProperty);
+        set => SetValue(VisualProfileProperty, value);
     }
+
+    internal SpringSpec MotionSpec
+    {
+        get => GetValue(MotionSpecProperty);
+        set => SetValue(MotionSpecProperty, value);
+    }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

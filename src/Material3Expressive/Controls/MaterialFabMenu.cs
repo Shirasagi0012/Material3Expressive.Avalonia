@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Metadata;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -22,16 +23,19 @@ namespace Material3Expressive.Controls;
 /// a phase offset into one shared spring, so closing reverses the order for free.
 /// </para>
 /// </remarks>
-public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialFabMenu : TemplatedControl, IMaterialMotionConsumer
 {
+    // Safe pre-theme fallbacks only. The installed ControlTheme replaces these with the typed
+    // MaterialValue endpoints; keeping literals here prevents a second generated-facade consumer.
+    private const double DefaultItemSpacing = 4;
+    private const double DefaultCloseButtonSpacing = 8;
+
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
+    // The legacy theme controller is retained here only to obtain the current motion spring. All
+    // consumed menu values are DynamicResource MaterialValueKey endpoints supplied by the theme.
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
         OnMotionTick();
@@ -48,23 +52,44 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
     public static readonly StyledProperty<FabVariant> VariantProperty =
         AvaloniaProperty.Register<MaterialFabMenu, FabVariant>(nameof(Variant));
 
+    /// <summary>The default gap between neighbouring expanded items.</summary>
+    /// <remarks>
+    /// The Material control theme supplies this property from
+    /// <see cref="FabMenuValueKeys.ItemSpacing"/>. It remains a normal styled property so an
+    /// application style or a local value keeps Avalonia's normal precedence over the Material
+    /// default.
+    /// </remarks>
+    public static readonly StyledProperty<double> ItemSpacingProperty =
+        AvaloniaProperty.Register<MaterialFabMenu, double>(
+            nameof(ItemSpacing),
+            defaultValue: DefaultItemSpacing);
+
+    /// <summary>The default gap between the last item and the close button.</summary>
+    /// <remarks>
+    /// The Material control theme supplies this property from
+    /// <see cref="FabMenuValueKeys.CloseButtonSpacing"/>. It is intentionally a normal styled
+    /// property so application styles and local values retain their usual precedence.
+    /// </remarks>
+    public static readonly StyledProperty<double> CloseButtonSpacingProperty =
+        AvaloniaProperty.Register<MaterialFabMenu, double>(
+            nameof(CloseButtonSpacing),
+            defaultValue: DefaultCloseButtonSpacing);
+
     /// <summary>How far apart in the cycle two neighbouring items start moving.</summary>
     private const double StaggerFraction = 0.12;
 
     private SpringAnimation? _reveal;
-    private FabMenuMetrics _metrics = FabMenuDefaults.Metrics();
 
     static MaterialFabMenu()
     {
         ClipToBoundsProperty.OverrideDefaultValue<MaterialFabMenu>(false);
+        AffectsMeasure<MaterialFabMenu>(ItemSpacingProperty, CloseButtonSpacingProperty);
     }
 
     public MaterialFabMenu()
     {
         _material = MaterialElementContext.Ensure(this);
-        Items.CollectionChanged += (_, _) => InvalidateMeasure();
-
-        ApplyTokens();
+        Items.CollectionChanged += (_, _) => AttachItems();
     }
 
     /// <summary>Whether the menu is showing its items.</summary>
@@ -93,18 +118,18 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
     public AvaloniaList<MaterialFab> Items { get; } = new();
 
     /// <summary>The gap between items, from the token table.</summary>
-    public double ItemSpacing => _metrics.ItemBetweenSpace;
+    public double ItemSpacing
+    {
+        get => GetValue(ItemSpacingProperty);
+        set => SetValue(ItemSpacingProperty, value);
+    }
 
     /// <summary>The gap between the last item and the toggle.</summary>
-    public double CloseButtonSpacing => _metrics.CloseButtonBetweenSpace;
-
-    // Read-only outputs of token resolution; the template binds to them.
-    public static readonly DirectProperty<MaterialFabMenu, double> ItemSpacingProperty =
-        AvaloniaProperty.RegisterDirect<MaterialFabMenu, double>(nameof(ItemSpacing), o => o.ItemSpacing);
-
-    public static readonly DirectProperty<MaterialFabMenu, double> CloseButtonSpacingProperty =
-        AvaloniaProperty.RegisterDirect<MaterialFabMenu, double>(
-            nameof(CloseButtonSpacing), o => o.CloseButtonSpacing);
+    public double CloseButtonSpacing
+    {
+        get => GetValue(CloseButtonSpacingProperty);
+        set => SetValue(CloseButtonSpacingProperty, value);
+    }
 
     private SpringAnimation Reveal =>
         _reveal ??= Motion.AddSpring(IsExpanded ? 1 : 0, Spring(MotionRole.FastSpatial));
@@ -129,8 +154,7 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
         }
         else if (change.Property == VariantProperty)
         {
-            foreach (var item in Items)
-                item.Variant = Variant;
+            AttachItems();
         }
     }
 
@@ -167,21 +191,18 @@ public class MaterialFabMenu : TemplatedControl, IMaterialThemeConsumer, IMateri
         }
     }
 
-    private void ApplyTokens()
+    private void AttachItems()
     {
-        var oldItemSpacing = ItemSpacing;
-        var oldCloseButtonSpacing = CloseButtonSpacing;
-        _metrics = FabMenuDefaults.Metrics();
-
         foreach (var item in Items)
         {
             item.Variant = Variant;
             item.HorizontalAlignment = HorizontalAlignment.Right;
         }
 
+        // Keep items added after attachment on the current reveal track. The legacy
+        // ApplyTokens path performed this synchronization as part of every collection refresh;
+        // without it a newly added item can remain visible while the menu is collapsed.
         UpdateItems();
-        RaisePropertyChanged(ItemSpacingProperty, oldItemSpacing, ItemSpacing);
-        RaisePropertyChanged(CloseButtonSpacingProperty, oldCloseButtonSpacing, CloseButtonSpacing);
         InvalidateMeasure();
     }
 }

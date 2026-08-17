@@ -10,10 +10,8 @@ using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
-using Avalonia.Data;
 using Avalonia.Layout;
 using Material3Expressive.Controls.Automation;
-using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Controls;
 
@@ -26,7 +24,7 @@ namespace Material3Expressive.Controls;
 /// not coordinated here; each row keeps its explicit <see cref="MaterialListItem.InteractionMode" />
 /// and application-owned selection model.
 /// </remarks>
-public sealed class MaterialSegmentedList : Panel, IMaterialThemeConsumer
+public sealed class MaterialSegmentedList : Panel
 {
     /// <summary>Defines the vertical space between visible segments.</summary>
     public static readonly StyledProperty<double> SpacingProperty =
@@ -35,20 +33,18 @@ public sealed class MaterialSegmentedList : Panel, IMaterialThemeConsumer
             2,
             validate: static value => double.IsFinite(value) && value >= 0);
 
-    private readonly MaterialThemeController _theme;
-    private IDisposable? _spacingLease;
+    // The group consumes only the late layout gap from the list-item geometry profile. It does
+    // not resolve child state or shape; those remain owned by each MaterialListItem.
+    internal static readonly StyledProperty<ListItemGeometryProfile?> ResolvedGeometryProperty =
+        AvaloniaProperty.Register<MaterialSegmentedList, ListItemGeometryProfile?>(nameof(ResolvedGeometry));
 
     public MaterialSegmentedList()
     {
-        _theme = MaterialElementContext.Ensure(this).Theme;
-        ApplyTokens();
     }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     static MaterialSegmentedList()
     {
-        AffectsMeasure<MaterialSegmentedList>(SpacingProperty);
+        AffectsMeasure<MaterialSegmentedList>(SpacingProperty, ResolvedGeometryProperty);
     }
 
     /// <summary>
@@ -59,6 +55,13 @@ public sealed class MaterialSegmentedList : Panel, IMaterialThemeConsumer
     {
         get => GetValue(SpacingProperty);
         set => SetValue(SpacingProperty, value);
+    }
+
+    /// <summary>Gets or sets the hidden list-item geometry profile.</summary>
+    internal ListItemGeometryProfile? ResolvedGeometry
+    {
+        get => GetValue(ResolvedGeometryProperty);
+        set => SetValue(ResolvedGeometryProperty, value);
     }
 
     /// <inheritdoc />
@@ -169,13 +172,4 @@ public sealed class MaterialSegmentedList : Panel, IMaterialThemeConsumer
         return physicalPixels / scale;
     }
 
-    private void ApplyTokens()
-    {
-        _spacingLease?.Dispose();
-        _spacingLease = SetValue(
-            SpacingProperty,
-            ListItemDefaults.Metrics().SegmentedGap,
-            BindingPriority.Template);
-        InvalidateMeasure();
-    }
 }

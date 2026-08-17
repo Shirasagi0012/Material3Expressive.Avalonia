@@ -10,6 +10,12 @@
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type m3:MaterialSearchBar}" TargetType="m3:MaterialSearchBar">
             <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:TextInputValueKeys.SearchBarGeometry}}" />
+            <Setter Property="TypographyProfile"
+                    Value="{DynamicResource {x:Static m3:TextInputValueKeys.SearchBarTypography}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:TextInputValueKeys.SearchBarVisualColors}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <StackPanel>

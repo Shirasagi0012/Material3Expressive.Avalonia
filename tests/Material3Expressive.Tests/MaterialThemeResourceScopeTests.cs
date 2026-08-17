@@ -7,19 +7,18 @@ using Avalonia.Styling;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens.Runtime;
 using Material3Expressive.Tests.TestUtils;
-using System.Runtime.CompilerServices;
+using McuSystemColorTokens = MaterialColorUtilities.Avalonia.Tokens.SystemColorTokens;
 using Xunit;
 
 namespace Material3Expressive.Tests;
 
 public sealed class MaterialThemeResourceScopeTests
 {
-    private readonly MaterialTokenResolver _resolver = new();
-
     [AvaloniaFact]
     public void UndeclaredTheme_PreservesLegacyDefaultAndPublishesOnlyABaselineResource()
     {
         var consumer = new Border();
+        consumer.Resources.MergedDictionaries.Add(new MaterialTheme());
         ThemeTestHelper.ShowWindow(consumer);
 
         Assert.Null(MaterialThemeScope.GetTheme(Application.Current!));
@@ -28,7 +27,7 @@ public sealed class MaterialThemeResourceScopeTests
             ResolvedTheme.Default.ColorScheme!.GetColor(
                 MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary,
                 isDark: false),
-            _resolver.Resolve(consumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
     }
 
     [AvaloniaFact]
@@ -41,7 +40,7 @@ public sealed class MaterialThemeResourceScopeTests
 
         Assert.Equal(
             ThemeTestHelper.Expected(theme, MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary),
-            _resolver.Resolve(consumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
     }
 
     [AvaloniaFact]
@@ -59,10 +58,10 @@ public sealed class MaterialThemeResourceScopeTests
 
         Assert.Equal(
             ThemeTestHelper.Expected(localTheme, MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary),
-            _resolver.Resolve(localConsumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(localConsumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
         Assert.Equal(
             ThemeTestHelper.Expected(applicationTheme, MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary),
-            _resolver.Resolve(siblingConsumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(siblingConsumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
     }
 
     [AvaloniaFact]
@@ -79,60 +78,48 @@ public sealed class MaterialThemeResourceScopeTests
 
         MaterialThemeScope.SetTheme(scope, first);
         var firstPlacement = Assert.Single(scope.Resources.MergedDictionaries);
-        Assert.NotSame(first, firstPlacement);
+        Assert.Same(first, firstPlacement);
 
         MaterialThemeScope.SetTheme(scope, replacement);
         Assert.DoesNotContain(firstPlacement, scope.Resources.MergedDictionaries);
         var replacementPlacement = Assert.Single(scope.Resources.MergedDictionaries);
-        Assert.NotSame(replacement, replacementPlacement);
+        Assert.Same(replacement, replacementPlacement);
         Assert.Equal(
             ThemeTestHelper.Expected(replacement, MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary),
-            _resolver.Resolve(consumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
 
         MaterialThemeScope.SetTheme(scope, null);
         Assert.DoesNotContain(replacementPlacement, scope.Resources.MergedDictionaries);
         Assert.Equal(
             ThemeTestHelper.Expected(applicationTheme, MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary),
-            _resolver.Resolve(consumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
     }
 
     [AvaloniaFact]
-    public void OneThemeInstance_CanBePlacedInMultipleScopes()
-    {
-        var theme = ThemeTestHelper.ThemeSeededWith(Colors.Blue);
-        var firstConsumer = new Border();
-        var secondConsumer = new Border();
-        var firstScope = new Border { Child = firstConsumer };
-        var secondScope = new Border { Child = secondConsumer };
-        ThemeTestHelper.ShowWindow(new StackPanel { Children = { firstScope, secondScope } });
-
-        MaterialThemeScope.SetTheme(firstScope, theme);
-        MaterialThemeScope.SetTheme(secondScope, theme);
-
-        Assert.Equal(
-            _resolver.Resolve(firstConsumer, SystemColorTokens.Primary, ThemeVariant.Light),
-            _resolver.Resolve(secondConsumer, SystemColorTokens.Primary, ThemeVariant.Light));
-
-        MaterialThemeScope.SetTheme(firstScope, null);
-        Assert.Equal(
-            ThemeTestHelper.Expected(theme, MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary),
-            _resolver.Resolve(secondConsumer, SystemColorTokens.Primary, ThemeVariant.Light));
-    }
-
-    [AvaloniaFact]
-    public void SharedThemeMutation_NotifiesAProxyPlacementAndChangesResolution()
+    public void OneThemeInstance_CannotBePlacedInMultipleScopes()
     {
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Blue);
         var firstScope = new Border();
-        var consumer = new Border();
-        var secondScope = new Border { Child = consumer };
+        var secondScope = new Border();
         ThemeTestHelper.ShowWindow(new StackPanel { Children = { firstScope, secondScope } });
 
-        // The first placement owns MaterialTheme itself; the second exercises the single-owner
-        // proxy path.
         MaterialThemeScope.SetTheme(firstScope, theme);
-        MaterialThemeScope.SetTheme(secondScope, theme);
-        var before = _resolver.Resolve(consumer, SystemColorTokens.Primary, ThemeVariant.Light);
+        Assert.Throws<InvalidOperationException>(() => MaterialThemeScope.SetTheme(secondScope, theme));
+
+        Assert.Same(theme, Assert.Single(firstScope.Resources.MergedDictionaries));
+        Assert.DoesNotContain(theme, secondScope.Resources.MergedDictionaries);
+    }
+
+    [AvaloniaFact]
+    public void ThemeMutation_NotifiesItsRealPlacementAndChangesResolution()
+    {
+        var theme = ThemeTestHelper.ThemeSeededWith(Colors.Blue);
+        var consumer = new Border();
+        var scope = new Border { Child = consumer };
+        ThemeTestHelper.ShowWindow(scope);
+
+        MaterialThemeScope.SetTheme(scope, theme);
+        var before = SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary, ThemeVariant.Light);
         var notifications = 0;
         ((IResourceHost)consumer).ResourcesChanged += (_, _) => notifications++;
 
@@ -141,7 +128,7 @@ public sealed class MaterialThemeResourceScopeTests
         Assert.True(notifications > 0);
         Assert.NotEqual(
             before,
-            _resolver.Resolve(consumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
     }
 
     [AvaloniaFact]
@@ -151,7 +138,7 @@ public sealed class MaterialThemeResourceScopeTests
         var consumer = new Border();
         var scope = new Border { Child = consumer };
         var overrides = new MaterialTokenOverrides();
-        overrides.Set(SystemColorTokens.Primary, Colors.HotPink);
+        overrides.Set(McuSystemColorTokens.Primary, Colors.HotPink);
         scope.Resources.MergedDictionaries.Add(overrides);
         ThemeTestHelper.ShowWindow(scope);
 
@@ -161,7 +148,7 @@ public sealed class MaterialThemeResourceScopeTests
 
         Assert.Equal(
             Colors.HotPink,
-            _resolver.Resolve(consumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(consumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
     }
 
     [AvaloniaFact]
@@ -187,36 +174,16 @@ public sealed class MaterialThemeResourceScopeTests
             ThemeTestHelper.Expected(
                 scopedTheme,
                 MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Primary),
-            _resolver.Resolve(popupConsumer, SystemColorTokens.Primary, ThemeVariant.Light));
+            SharedTokenTestHelper.Resolve(popupConsumer, McuSystemColorTokens.Primary, ThemeVariant.Light));
     }
 
     [AvaloniaFact]
-    public void LongLivedTheme_DoesNotKeepAnAbandonedLocalScopeAlive()
+    public void ThemeOwnerIdentifiesItsPlacementUntilDetached()
     {
         var theme = ThemeTestHelper.ThemeSeededWith(Colors.Blue);
-        var scope = CreateAbandonedLocalScope(theme);
-
-        Collect(scope);
-
-        Assert.False(scope.IsAlive);
-        GC.KeepAlive(theme);
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static WeakReference CreateAbandonedLocalScope(MaterialTheme theme)
-    {
         var scope = new Border();
         MaterialThemeScope.SetTheme(scope, theme);
-        return new WeakReference(scope);
-    }
 
-    private static void Collect(WeakReference reference)
-    {
-        for (var attempt = 0; attempt < 3 && reference.IsAlive; attempt++)
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-        }
+        Assert.Same(scope, theme.Owner);
     }
 }

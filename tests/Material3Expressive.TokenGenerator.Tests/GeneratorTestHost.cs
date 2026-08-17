@@ -39,7 +39,51 @@ internal sealed record GeneratorRun(
 
 internal static class GeneratorTestHost
 {
+    internal const string CanonicalManifestPath = "MaterialColorUtilities.Avalonia.canonical-tokens.json";
+
+    internal const string CanonicalManifest = """
+        {
+          "schema": "material-design-token-canonical-declarations",
+          "schemaVersion": 1,
+          "owner": "MaterialColorUtilities.Avalonia",
+          "contribution": {
+            "id": "MaterialColorUtilities.Avalonia.ColorTokens",
+            "schemaVersion": 1
+          },
+          "declarations": [
+            {
+              "path": "System.Color.Primary",
+              "layer": "System",
+              "valueType": "Avalonia.Media.Color",
+              "role": "Primary",
+              "canonicalSymbol": "global::MaterialColorUtilities.Avalonia.Tokens.SystemColorTokens.Primary",
+              "provenance": "material-color-utilities",
+              "family": "MaterialColorUtilities.Avalonia.SystemColor"
+            },
+            {
+              "path": "System.Color.Custom.*",
+              "layer": "System",
+              "valueType": "Avalonia.Media.Color",
+              "role": "Custom",
+              "canonicalFactory": "global::MaterialColorUtilities.Avalonia.Tokens.SystemColorTokens.Get(global::MaterialColorUtilities.Avalonia.Tokens.SysColorToken.Custom, {customName})",
+              "provenance": "material-color-utilities",
+              "family": "MaterialColorUtilities.Avalonia.SystemColor"
+            }
+          ]
+        }
+        """;
+
     public static GeneratorRun Run(params (string Path, string Content)[] tables)
+    {
+        return RunCore(WithManifest(tables));
+    }
+
+    public static GeneratorRun RunWithoutManifest(params (string Path, string Content)[] tables)
+    {
+        return RunCore(tables);
+    }
+
+    private static GeneratorRun RunCore(IEnumerable<(string Path, string Content)> tables)
     {
         var compilation = CreateCompilation();
 
@@ -57,7 +101,7 @@ internal static class GeneratorTestHost
         (string Path, string Content) replacement)
     {
         var compilation = CreateCompilation();
-        var initialTexts = initial
+        var initialTexts = WithManifest(initial)
             .Select(table => (AdditionalText)new StringAdditionalText(table.Path, table.Content))
             .ToImmutableArray();
 
@@ -80,6 +124,18 @@ internal static class GeneratorTestHost
             new StringAdditionalText(replacement.Path, replacement.Content));
         driver = driver.RunGenerators(compilation);
         return (before, ReadRun(driver));
+    }
+
+    private static IEnumerable<(string Path, string Content)> WithManifest(
+        IEnumerable<(string Path, string Content)> inputs)
+    {
+        var materialized = inputs.ToArray();
+        if (materialized.Any(static input => input.Path.EndsWith(
+                ".canonical-tokens.json",
+                StringComparison.OrdinalIgnoreCase)))
+            return materialized;
+
+        return materialized.Append((CanonicalManifestPath, CanonicalManifest));
     }
 
     private static CSharpCompilation CreateCompilation()

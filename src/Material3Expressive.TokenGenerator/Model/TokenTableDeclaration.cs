@@ -26,7 +26,8 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
                     token.Type,
                     token.EnumType,
                     token.Value.Reference,
-                    IsColorLiteral(token.Value)))
+                    IsColorLiteral(token.Value),
+                    token.Value.ColorRole))
                 .ToArray()
             : Array.Empty<TokenSymbolDeclaration>();
 
@@ -64,6 +65,8 @@ internal sealed class TokenTableDeclaration : IEquatable<TokenTableDeclaration>
     public IReadOnlyList<string> SetNames { get; }
 
     public string? VariantEnum { get; }
+
+    public string DescriptorPath(string memberName) => TokenDescriptorPaths.Create(Layer, Name, memberName);
 
     public bool Equals(TokenTableDeclaration? other)
     {
@@ -147,13 +150,15 @@ internal sealed class TokenSymbolDeclaration : IEquatable<TokenSymbolDeclaration
         TokenType type,
         string? enumType,
         TokenReference? reference,
-        bool isColorLiteral)
+        bool isColorLiteral,
+        ColorRoleReference? colorRole)
     {
         Name = name;
         Type = type;
         EnumType = enumType;
         Reference = reference;
         IsColorLiteral = isColorLiteral;
+        ColorRole = colorRole;
     }
 
     public string Name { get; }
@@ -166,12 +171,15 @@ internal sealed class TokenSymbolDeclaration : IEquatable<TokenSymbolDeclaration
 
     public bool IsColorLiteral { get; }
 
+    public ColorRoleReference? ColorRole { get; }
+
     public bool Equals(TokenSymbolDeclaration? other)
     {
         return other is not null && string.Equals(Name, other.Name, StringComparison.Ordinal) &&
                Type == other.Type && string.Equals(EnumType, other.EnumType, StringComparison.Ordinal) &&
                TokenReferenceEquals(Reference, other.Reference) &&
-               IsColorLiteral == other.IsColorLiteral;
+               IsColorLiteral == other.IsColorLiteral &&
+               ColorRoleEquals(ColorRole, other.ColorRole);
     }
 
     public override bool Equals(object? obj) => Equals(obj as TokenSymbolDeclaration);
@@ -180,7 +188,9 @@ internal sealed class TokenSymbolDeclaration : IEquatable<TokenSymbolDeclaration
     {
         unchecked
         {
-            return Hash(Name, Type, EnumType, Reference) * 397 + IsColorLiteral.GetHashCode();
+            var hash = Hash(Name, Type, EnumType, Reference) * 397 + IsColorLiteral.GetHashCode();
+            hash = hash * 397 + (ColorRole?.Role.GetHashCode() ?? 0);
+            return hash * 397 + (ColorRole?.CustomName?.GetHashCode() ?? 0);
         }
     }
 
@@ -202,6 +212,14 @@ internal sealed class TokenSymbolDeclaration : IEquatable<TokenSymbolDeclaration
                (left is not null && right is not null &&
                 string.Equals(left.TableName, right.TableName, StringComparison.Ordinal) &&
                 string.Equals(left.MemberName, right.MemberName, StringComparison.Ordinal));
+    }
+
+    private static bool ColorRoleEquals(ColorRoleReference? left, ColorRoleReference? right)
+    {
+        return (left is null && right is null) ||
+               (left is not null && right is not null &&
+                string.Equals(left.Role, right.Role, StringComparison.Ordinal) &&
+                string.Equals(left.CustomName, right.CustomName, StringComparison.Ordinal));
     }
 }
 

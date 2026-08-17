@@ -36,6 +36,7 @@
 
     <ItemGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
         <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\MaterialColorUtilities.Avalonia.csproj"/>
+        <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialDesignTokens.Avalonia\MaterialDesignTokens.Avalonia.csproj"/>
         <!-- LoadingIndicator is the one component that genuinely morphs polygons. Button, FAB and
              chip press morphs are corner-radius lerps, and the wavy progress indicator's wave is a
              sampled sine — none of them need this. -->
@@ -48,6 +49,7 @@
 
     <ItemGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
         <PackageReference Include="Shirasagi0012.MaterialColorUtilities.Avalonia" />
+        <PackageReference Include="Shirasagi0012.MaterialDesignTokens.Avalonia" />
         <PackageReference Include="Shirasagi0012.MaterialShapes" />
         <PackageReference Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" />
     </ItemGroup>
@@ -64,6 +66,9 @@
         <AdditionalFiles Include="Tokens\**\*.ref.jsonc" />
         <AdditionalFiles Include="Tokens\**\*.sys.jsonc" />
         <AdditionalFiles Include="Tokens\**\*.comp.jsonc" />
+        <!-- ProjectReference builds do not import a dependency package's buildTransitive assets. -->
+        <AdditionalFiles Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities.Avalonia\buildTransitive\MaterialColorUtilities.Avalonia.canonical-tokens.json"
+                         Condition="'$(ContinuousIntegrationBuild)' != 'true'" />
     </ItemGroup>
 
     <ItemGroup>
@@ -75,6 +80,50 @@
         <DependentUpon>MaterialStyles.axaml</DependentUpon>
         <SubType>Code</SubType>
       </Compile>
+    </ItemGroup>
+
+    <!--
+      New-token architecture migration boundary.
+
+      These component families still use the legacy ResolvedTheme/defaults transport as their
+      authoritative value source. Keep them out of the production assembly until each family has
+      a complete Raw -> MaterialValue -> DynamicResource path. This list is deliberately central
+      and must shrink one family at a time; do not add compatibility shims to make an excluded
+      component compile against the new runtime.
+    -->
+    <ItemGroup Label="NewTokenArchitectureComponentExclusions">
+        <Compile Remove="Controls\Automation\MaterialBottomSheetScaffoldAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialExposedDropdownMenuAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialFloatingToolbarAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialPullToRefreshBoxAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialSwipeToDismissBoxAutomationPeer.cs" />
+
+        <Compile Remove="Controls\Defaults\CarouselDefaults.cs" />
+        <Compile Remove="Controls\Defaults\PickerDefaults.cs" />
+        <Compile Remove="Controls\Defaults\SplitButtonDefaults.cs" />
+
+        <Compile Remove="Controls\MaterialBottomSheetScaffold.cs" />
+        <Compile Remove="Controls\MaterialBottomSheetScaffoldPanel.cs" />
+        <Compile Remove="Controls\MaterialCarousel.cs" />
+        <Compile Remove="Controls\MaterialDateInput.cs" />
+        <Compile Remove="Controls\MaterialDatePicker.cs" />
+        <Compile Remove="Controls\MaterialDateRangeInput.cs" />
+        <Compile Remove="Controls\MaterialDialog.cs" />
+        <Compile Remove="Controls\MaterialExposedDropdownMenu.cs" />
+        <Compile Remove="Controls\MaterialFloatingToolbar.cs" />
+        <Compile Remove="Controls\MaterialPullToRefreshBox.cs" />
+        <Compile Remove="Controls\MaterialSplitButton.cs" />
+        <Compile Remove="Controls\MaterialSwipeToDismissBox.cs" />
+        <Compile Remove="Controls\MaterialTimeInput.cs" />
+        <Compile Remove="Controls\MaterialTimePicker.cs" />
+        <Compile Remove="Controls\PickerStates.cs" />
+
+        <AvaloniaResource Remove="Styles\Components\BottomSheetScaffold.axaml" />
+        <AvaloniaResource Remove="Styles\Components\FloatingToolbar.axaml" />
+        <AvaloniaResource Remove="Styles\Components\Menu.axaml" />
+        <AvaloniaResource Remove="Styles\Components\Pickers.axaml" />
+        <AvaloniaResource Remove="Styles\Components\PullToRefreshBox.axaml" />
+        <AvaloniaResource Remove="Styles\Components\SwipeToDismissBox.axaml" />
     </ItemGroup>
 
 </Project>

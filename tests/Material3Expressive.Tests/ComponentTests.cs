@@ -274,11 +274,13 @@ public class SelectionTests
     {
         // The pinned Checkbox.kt compatibility path draws a 20dp box in the standard 40dp state
         // layer; the 48dp interactive layout slot is still larger than both.
-        var tokens = CheckboxDefaults.Metrics();
+        var checkbox = new MaterialCheckbox();
+        ThemeTestHelper.ShowWindow(checkbox);
+        var profile = checkbox.GeometryProfile;
 
-        Assert.Equal(20, tokens.ContainerSize);
-        Assert.Equal(40, tokens.StateLayerSize);
-        Assert.True(tokens.StateLayerSize > tokens.ContainerSize);
+        Assert.Equal(20, profile.ContainerSize);
+        Assert.Equal(40, profile.StateLayerSize);
+        Assert.True(profile.StateLayerSize > profile.ContainerSize);
     }
 
     [AvaloniaFact]
@@ -288,7 +290,7 @@ public class SelectionTests
         ThemeTestHelper.ShowWindow(checkbox);
 
         Assert.Equal(48, checkbox.Padding.Left);
-        Assert.True(checkbox.Bounds.Height >= CheckboxDefaults.Metrics().StateLayerSize);
+        Assert.True(checkbox.Bounds.Height >= checkbox.GeometryProfile.StateLayerSize);
     }
 
     [AvaloniaFact]
@@ -299,7 +301,7 @@ public class SelectionTests
 
         Assert.True(checkbox.IsThreeState);
         Assert.Null(checkbox.IsChecked);
-        Assert.True(checkbox.Bounds.Width >= CheckboxDefaults.Metrics().StateLayerSize);
+        Assert.True(checkbox.Bounds.Width >= checkbox.GeometryProfile.StateLayerSize);
     }
 
     [AvaloniaFact]

@@ -11,33 +11,17 @@ namespace Material3Expressive.Foundation;
 
 #pragma warning disable CS0618 // ResolvedTheme plumbing lives here until the M9 cutover; see docs/refactor/migration-plan.md.
 
-/// <summary>
-/// Carries a <see cref="MaterialTheme" /> into a control tree.
-/// </summary>
-/// <remarks>
-/// Setting <see cref="ThemeProperty" /> on an element makes that element's subtree use the theme.
-/// The theme is installed into that element's resource chain for token lookup, while the inherited
-/// <see cref="ResolvedThemeProperty" /> remains as a compatibility transport for existing controls.
-/// The application-level theme reaches each <c>TopLevel</c> through
-/// <see cref="MaterialThemeStyles" />, since <see cref="Application" /> is not part of any tree.
-/// </remarks>
+/// <summary>Installs a <see cref="MaterialTheme"/> at a resource-host placement.</summary>
 public class MaterialThemeScope : AvaloniaObject
 {
-    /// <summary>
-    /// The theme declared by this element. Not inherited: it names the element that declares the
-    /// theme, not the elements affected by it.
-    /// </summary>
     public static readonly AttachedProperty<MaterialTheme?> ThemeProperty =
         AvaloniaProperty.RegisterAttached<MaterialThemeScope, AvaloniaObject, MaterialTheme?>("Theme");
 
-    /// <summary>
-    /// The snapshot in effect at this element, inherited from the nearest declaration above it.
-    /// Read by controls and by the markup extensions; app authors should not assign it.
-    /// </summary>
     [Obsolete(
-        "Compatibility transport for unmigrated controls. Consume MaterialToken values through " +
-        "TokenReader/MaterialTokenResolver instead; removed in the M9 cutover. See " +
-        "docs/refactor/migration-plan.md.")]
+        "Compatibility snapshot transport for unmigrated controls. Consume typed " +
+        "MaterialValueKey<T> resources through a MaterialTheme placement; removed in the M9 " +
+        "cutover. See docs/refactor/migration-plan.md.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<ResolvedTheme> ResolvedThemeProperty =
         AvaloniaProperty.RegisterAttached<MaterialThemeScope, AvaloniaObject, ResolvedTheme>(
             "ResolvedTheme",
@@ -51,9 +35,9 @@ public class MaterialThemeScope : AvaloniaObject
         AvaloniaProperty.RegisterAttached<MaterialThemeScope, AvaloniaObject, ThemeResourcePlacement?>(
             "ThemeResourcePlacement");
 
-    private static readonly AttachedProperty<MaterialTheme?> BaselineResourceProviderProperty =
-        AvaloniaProperty.RegisterAttached<MaterialThemeScope, Application, MaterialTheme?>(
-            "BaselineResourceProvider");
+    private static readonly AttachedProperty<bool> ThemeRollbackGuardProperty =
+        AvaloniaProperty.RegisterAttached<MaterialThemeScope, AvaloniaObject, bool>(
+            "ThemeRollbackGuard");
 
     private static readonly FuncValueConverter<ResolvedTheme?, ResolvedColorScheme?> ThemeToColorScheme =
         new(theme => theme?.ColorScheme);
@@ -62,81 +46,161 @@ public class MaterialThemeScope : AvaloniaObject
     {
         ThemeProperty.Changed.AddClassHandler<AvaloniaObject>(static (element, args) =>
         {
-            RemoveResourceProvider(element);
+            if (element.GetValue(ThemeRollbackGuardProperty))
+                return;
 
-            if (args.OldValue is MaterialTheme previous && element.GetValue(ThemeChangedHandlerProperty) is { } stale)
-            {
-                previous.Changed -= stale;
-                element.ClearValue(ThemeChangedHandlerProperty);
-            }
+            var previousTheme = args.OldValue as MaterialTheme;
+            var previousPlacement = element.GetValue(ThemeResourcePlacementProperty);
+            var previousHandler = element.GetValue(ThemeChangedHandlerProperty);
+            var previousResolved = previousTheme?.Resolved;
 
             if (args.NewValue is not MaterialTheme theme)
             {
-                element.ClearValue(ResolvedThemeProperty);
-                element.ClearValue(MaterialColor.ResolvedSchemeProperty);
-                return;
+                var clearHandlerDetached = false;
+                var clearPlacementRemovalAttempted = false;
+                try
+                {
+                    if (previousTheme is not null && previousHandler is not null)
+                    {
+                        previousTheme.Changed -= previousHandler;
+                        clearHandlerDetached = true;
+                    }
+
+                    // Resource removal can notify observers after the entry and Owner have already
+                    // changed. Mark the operation before calling into Avalonia so a late exception
+                    // restores the placement instead of leaving a half-committed clear.
+                    clearPlacementRemovalAttempted = previousPlacement?.OwnsEntry == true;
+                    RemoveResourcePlacement(previousPlacement);
+                    element.ClearValue(ThemeResourcePlacementProperty);
+                    element.ClearValue(ThemeChangedHandlerProperty);
+                    element.ClearValue(ResolvedThemeProperty);
+                    element.ClearValue(MaterialColor.ResolvedSchemeProperty);
+                    return;
+                }
+                catch
+                {
+                    if (clearPlacementRemovalAttempted && previousPlacement is not null)
+                        RestoreResourcePlacement(previousPlacement);
+
+                    if (previousTheme is not null && previousResolved is not null)
+                        previousTheme.RestoreResolvedSnapshot(previousResolved);
+
+                    if (clearHandlerDetached && previousTheme is not null && previousHandler is not null)
+                        previousTheme.Changed += previousHandler;
+
+                    SetPlacementState(element, previousPlacement);
+                    if (previousHandler is null)
+                        element.ClearValue(ThemeChangedHandlerProperty);
+                    else
+                        element.SetValue(ThemeChangedHandlerProperty, previousHandler);
+
+                    if (previousTheme is null)
+                    {
+                        element.ClearValue(ResolvedThemeProperty);
+                        element.ClearValue(MaterialColor.ResolvedSchemeProperty);
+                    }
+                    else
+                    {
+                        Publish(element, previousTheme.Resolved);
+                    }
+
+                    RestoreThemeProperty(element, previousTheme);
+                    throw;
+                }
             }
 
-            // An application-level theme outlives every element that scopes to it, so the
-            // subscription must not root the element.
-            WeakReference<AvaloniaObject> weakElement = new(element);
-            EventHandler? handler = null;
-            handler = (sender, _) =>
+            ThemeResourcePlacement? candidatePlacement = null;
+            EventHandler? candidateHandler = null;
+            var candidateHandlerAttached = false;
+            var previousHandlerDetached = false;
+            var previousPlacementRemovalAttempted = false;
+            try
             {
-                if (sender is not MaterialTheme changed)
-                    return;
+                // Stage the candidate while the previous placement and compatibility state remain
+                // fully live. A candidate already owned elsewhere therefore fails without first
+                // tearing down the working theme.
+                candidatePlacement = PrepareResourcePlacement(element, theme);
+                var candidateResolved = theme.Resolved;
+                candidateHandler = CreateThemeChangedHandler(element, theme);
+                Publish(element, candidateResolved);
 
-                if (weakElement.TryGetTarget(out var target))
-                    Publish(target, changed);
-                else if (handler is { })
-                    changed.Changed -= handler;
-            };
+                theme.Changed += candidateHandler;
+                candidateHandlerAttached = true;
+                if (previousTheme is not null && previousHandler is not null)
+                {
+                    previousTheme.Changed -= previousHandler;
+                    previousHandlerDetached = true;
+                }
 
-            theme.Changed += handler;
-            element.SetValue(ThemeChangedHandlerProperty, handler);
-            InstallResourceProvider(element, theme);
-            Publish(element, theme);
+                // Mark the attempt before removal: Avalonia can physically remove the provider and
+                // clear Owner before a synchronous ResourcesChanged observer throws.
+                previousPlacementRemovalAttempted = previousPlacement?.OwnsEntry == true;
+                RemoveResourcePlacement(previousPlacement);
+
+                SetPlacementState(element, candidatePlacement);
+                element.SetValue(ThemeChangedHandlerProperty, candidateHandler);
+            }
+            catch
+            {
+                if (candidateHandlerAttached && candidateHandler is not null)
+                    theme.Changed -= candidateHandler;
+
+                RemoveResourcePlacement(candidatePlacement);
+                if (previousPlacementRemovalAttempted && previousPlacement is not null)
+                    RestoreResourcePlacement(previousPlacement);
+
+                if (previousTheme is not null && previousResolved is not null)
+                    previousTheme.RestoreResolvedSnapshot(previousResolved);
+
+                if (previousHandlerDetached && previousTheme is not null && previousHandler is not null)
+                    previousTheme.Changed += previousHandler;
+
+                SetPlacementState(element, previousPlacement);
+                if (previousHandler is null)
+                    element.ClearValue(ThemeChangedHandlerProperty);
+                else
+                    element.SetValue(ThemeChangedHandlerProperty, previousHandler);
+
+                if (previousTheme is null)
+                {
+                    element.ClearValue(ResolvedThemeProperty);
+                    element.ClearValue(MaterialColor.ResolvedSchemeProperty);
+                }
+                else
+                {
+                    Publish(element, previousTheme.Resolved);
+                }
+
+                RestoreThemeProperty(element, previousTheme);
+                throw;
+            }
         });
     }
 
-    public static MaterialTheme? GetTheme(AvaloniaObject element)
-    {
-        return element.GetValue(ThemeProperty);
-    }
+    public static MaterialTheme? GetTheme(AvaloniaObject element) => element.GetValue(ThemeProperty);
 
-    public static void SetTheme(AvaloniaObject element, MaterialTheme? value)
-    {
+    public static void SetTheme(AvaloniaObject element, MaterialTheme? value) =>
         element.SetValue(ThemeProperty, value);
-    }
-
-    /// <summary>The theme in effect at this element.</summary>
-    [Obsolete(
-        "Compatibility transport for unmigrated controls. Consume MaterialToken values through " +
-        "TokenReader/MaterialTokenResolver instead; removed in the M9 cutover. See " +
-        "docs/refactor/migration-plan.md.")]
-    public static ResolvedTheme GetResolvedTheme(AvaloniaObject element)
-    {
-        return element.GetValue(ResolvedThemeProperty);
-    }
 
     [Obsolete(
-        "Compatibility transport for unmigrated controls. Consume MaterialToken values through " +
-        "TokenReader/MaterialTokenResolver instead; removed in the M9 cutover. See " +
-        "docs/refactor/migration-plan.md.")]
-    public static void SetResolvedTheme(AvaloniaObject element, ResolvedTheme value)
-    {
+        "Compatibility snapshot transport for unmigrated controls. Consume typed " +
+        "MaterialValueKey<T> resources through a MaterialTheme placement; removed in the M9 " +
+        "cutover. See docs/refactor/migration-plan.md.",
+        DiagnosticId = "M3E1004")]
+    public static ResolvedTheme GetResolvedTheme(AvaloniaObject element) =>
+        element.GetValue(ResolvedThemeProperty);
+
+    [Obsolete(
+        "Compatibility snapshot transport for unmigrated controls. Consume typed " +
+        "MaterialValueKey<T> resources through a MaterialTheme placement; removed in the M9 " +
+        "cutover. See docs/refactor/migration-plan.md.",
+        DiagnosticId = "M3E1004")]
+    public static void SetResolvedTheme(AvaloniaObject element, ResolvedTheme value) =>
         element.SetValue(ResolvedThemeProperty, value);
-    }
 
-    /// <summary>
-    /// The style that hands the application theme to every <c>TopLevel</c>, at style priority so
-    /// that a theme declared on a window itself still wins.
-    /// </summary>
     internal static Style CreateTopLevelInjectionStyle()
     {
         var style = new Style(selector => selector.Is<TopLevel>());
-
-        // Nothing to inject from without an application: the property default already covers it.
         if (Application.Current is not { } application)
             return style;
 
@@ -147,8 +211,6 @@ public class MaterialThemeScope : AvaloniaObject
                 application,
                 mode: BindingMode.OneWay)));
 
-        // Keep the colour layer's own inherited property in step, so that MaterialColorUtilities'
-        // markup extensions resolve inside an M3E theme without depending on M3E.
         style.Add(new Setter(
             MaterialColor.ResolvedSchemeProperty,
             CompiledBinding.Create<AvaloniaObject, object?>(
@@ -160,87 +222,117 @@ public class MaterialThemeScope : AvaloniaObject
         return style;
     }
 
-    /// <summary>
-    /// Installs the resource counterpart of <see cref="ResolvedTheme.Default" /> without
-    /// declaring an application theme or changing the legacy inherited-property contract.
-    /// </summary>
-    internal static void InstallBaselineResources(Application application)
+    private static EventHandler CreateThemeChangedHandler(
+        AvaloniaObject element,
+        MaterialTheme theme)
     {
-        ArgumentNullException.ThrowIfNull(application);
-        if (application.GetValue(BaselineResourceProviderProperty) is not null)
-            return;
+        WeakReference<AvaloniaObject> weakElement = new(element);
+        EventHandler? handler = null;
+        handler = (sender, _) =>
+        {
+            if (sender is not MaterialTheme changed)
+                return;
 
-        var resources = application.Resources;
-        var baseline = new MaterialTheme();
-        baseline.SetResolvedSnapshot(ResolvedTheme.Default);
-        resources.MergedDictionaries.Insert(0, baseline);
-        application.SetValue(BaselineResourceProviderProperty, baseline);
+            if (weakElement.TryGetTarget(out var target))
+                Publish(target, changed.Resolved);
+            else if (handler is not null)
+                theme.Changed -= handler;
+        };
+        return handler;
     }
 
-    private static void Publish(AvaloniaObject element, MaterialTheme theme)
+    private static void Publish(AvaloniaObject element, ResolvedTheme resolved)
     {
-        var resolved = theme.Resolved;
         element.SetValue(ResolvedThemeProperty, resolved);
         MaterialColor.SetResolvedScheme(element, resolved.ColorScheme);
     }
 
-    private static void InstallResourceProvider(AvaloniaObject element, MaterialTheme theme)
+    private static ThemeResourcePlacement? PrepareResourcePlacement(
+        AvaloniaObject element,
+        MaterialTheme theme)
     {
-        if (element is not IResourceHost host || GetResources(element) is not { } resources)
-            return;
+        if (element is not IResourceHost || GetResources(element) is not { } resources)
+            return null;
 
-        // Do not claim an entry that the application author installed independently. The theme is
-        // already effective at this host, and clearing ThemeProperty must not remove user state.
+        // Do not claim an entry installed manually by the author. Clearing ThemeProperty must not
+        // remove it later.
         if (resources.MergedDictionaries.Contains(theme))
         {
-            element.SetValue(
-                ThemeResourcePlacementProperty,
-                new ThemeResourcePlacement(resources, theme, OwnsEntry: false));
-            return;
+            return new ThemeResourcePlacement(
+                resources,
+                theme,
+                resources.MergedDictionaries.IndexOf(theme),
+                OwnsEntry: false);
         }
 
-        IResourceProvider provider;
-        if (element is Application && theme.Owner is null)
+        if (theme.Owner is not null)
         {
-            // Application lives for the duration of the process, so letting the theme own that
-            // resource host does not extend the lifetime of a transient object graph.
-            provider = theme;
-        }
-        else
-        {
-            // ResourceProvider.Owner is a strong reference. Always proxy a StyledElement scope so
-            // a long-lived theme authoring object cannot keep a detached control tree alive.
-            provider = new MaterialThemeResourcePlacement(theme);
+            throw new InvalidOperationException(
+                "A MaterialTheme instance already has a resource-host placement. " +
+                "Create a distinct theme instance for the second scope.");
         }
 
-        // Merged dictionaries use last-wins lookup. Keep the broad MaterialTheme fallback before
-        // every sparse provider authored at the same scope. At Application scope it must still
-        // follow the implicit baseline theme, so an explicitly declared theme wins that fallback.
-        var index = 0;
-        if (element is Application application &&
-            application.GetValue(BaselineResourceProviderProperty) is { } baseline)
+        const int index = 0;
+        try
         {
-            var baselineIndex = resources.MergedDictionaries.IndexOf(baseline);
-            if (baselineIndex >= 0)
-                index = baselineIndex + 1;
+            // The real MaterialTheme is the boundary. ResourceProvider's single-owner contract
+            // deliberately rejects trying to reuse the same authoring instance at another scope.
+            resources.MergedDictionaries.Insert(index, theme);
+        }
+        catch
+        {
+            // Some collection implementations publish the insertion before OnAddOwner rejects it.
+            // We established above that no matching entry pre-existed, so this only removes ours.
+            if (resources.MergedDictionaries.Contains(theme))
+                resources.MergedDictionaries.Remove(theme);
+            throw;
         }
 
-        resources.MergedDictionaries.Insert(index, provider);
-        element.SetValue(
-            ThemeResourcePlacementProperty,
-            new ThemeResourcePlacement(resources, provider, OwnsEntry: true));
+        return new ThemeResourcePlacement(resources, theme, index, OwnsEntry: true);
     }
 
-    private static void RemoveResourceProvider(AvaloniaObject element)
+    private static void RemoveResourcePlacement(ThemeResourcePlacement? placement)
     {
-        if (element.GetValue(ThemeResourcePlacementProperty) is not { } placement)
+        if (placement?.OwnsEntry == true)
+            placement.Resources.MergedDictionaries.Remove(placement.Theme);
+    }
+
+    private static void RestoreResourcePlacement(ThemeResourcePlacement placement)
+    {
+        if (!placement.OwnsEntry || placement.Resources.MergedDictionaries.Contains(placement.Theme))
             return;
 
-        element.ClearValue(ThemeResourcePlacementProperty);
-        if (placement.OwnsEntry)
-            placement.Resources.MergedDictionaries.Remove(placement.Provider);
-        if (placement.Provider is MaterialThemeResourcePlacement proxy)
-            proxy.Dispose();
+        var index = Math.Clamp(
+            placement.Index,
+            0,
+            placement.Resources.MergedDictionaries.Count);
+        placement.Resources.MergedDictionaries.Insert(index, placement.Theme);
+    }
+
+    private static void SetPlacementState(
+        AvaloniaObject element,
+        ThemeResourcePlacement? placement)
+    {
+        if (placement is null)
+            element.ClearValue(ThemeResourcePlacementProperty);
+        else
+            element.SetValue(ThemeResourcePlacementProperty, placement);
+    }
+
+    private static void RestoreThemeProperty(AvaloniaObject element, MaterialTheme? theme)
+    {
+        element.SetValue(ThemeRollbackGuardProperty, true);
+        try
+        {
+            if (theme is null)
+                element.ClearValue(ThemeProperty);
+            else
+                element.SetValue(ThemeProperty, theme);
+        }
+        finally
+        {
+            element.ClearValue(ThemeRollbackGuardProperty);
+        }
     }
 
     private static IResourceDictionary? GetResources(AvaloniaObject element) => element switch
@@ -252,59 +344,7 @@ public class MaterialThemeScope : AvaloniaObject
 
     private sealed record ThemeResourcePlacement(
         IResourceDictionary Resources,
-        IResourceProvider Provider,
+        MaterialTheme Theme,
+        int Index,
         bool OwnsEntry);
-
-    private sealed class MaterialThemeResourcePlacement : ResourceProvider, IDisposable
-    {
-        private MaterialTheme? _theme;
-        private EventHandler? _changedHandler;
-
-        public MaterialThemeResourcePlacement(MaterialTheme theme)
-        {
-            _theme = theme;
-
-            // The source theme often belongs to application state and can substantially outlive a
-            // local scope. It must not strongly retain this proxy (whose ResourceProvider.Owner in
-            // turn strongly retains the scope). Keep only a weak reverse edge and unsubscribe the
-            // dormant handler on the next notification if the proxy was collected.
-            var weakPlacement = new WeakReference<MaterialThemeResourcePlacement>(this);
-            EventHandler? handler = null;
-            handler = (sender, _) =>
-            {
-                if (weakPlacement.TryGetTarget(out var placement))
-                {
-                    placement.RaiseResourcesChanged();
-                }
-                else if (sender is MaterialTheme source && handler is not null)
-                {
-                    source.Changed -= handler;
-                }
-            };
-
-            _changedHandler = handler;
-            theme.Changed += handler;
-        }
-
-        public override bool HasResources => _theme?.HasResources == true;
-
-        public override bool TryGetResource(
-            object key,
-            ThemeVariant? theme,
-            out object? value)
-        {
-            if (_theme is { } source)
-                return source.TryGetResource(key, theme, out value);
-
-            value = null;
-            return false;
-        }
-
-        public void Dispose()
-        {
-            var handler = Interlocked.Exchange(ref _changedHandler, null);
-            if (Interlocked.Exchange(ref _theme, null) is { } theme && handler is not null)
-                theme.Changed -= handler;
-        }
-    }
 }

@@ -25,6 +25,10 @@ namespace Material3Expressive.Foundation;
 /// inherits nothing still resolves against <see cref="ResolvedTheme.Default" />.
 /// </para>
 /// </remarks>
+[Obsolete(
+    "Legacy $self/ResolvedTheme binding bridge. Use DynamicResource with typed " +
+    "MaterialValueKey<T> endpoints.",
+    DiagnosticId = "M3E1004")]
 internal static class ThemeBinding
 {
     /// <summary>A value that depends only on the theme in scope.</summary>

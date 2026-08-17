@@ -11,9 +11,11 @@ using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
 
@@ -114,8 +116,6 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
@@ -142,6 +142,22 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         AvaloniaProperty.Register<MaterialAppBar, AppBarScrollBehavior>(nameof(ScrollBehavior));
     public static readonly StyledProperty<ScrollViewer?> ScrollTargetProperty =
         AvaloniaProperty.Register<MaterialAppBar, ScrollViewer?>(nameof(ScrollTarget));
+    internal static readonly StyledProperty<AppBarGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialAppBar, AppBarGeometryProfile>(
+            nameof(GeometryProfile),
+            new AppBarGeometryProfile(64, 64, 64, 64, 16));
+    internal static readonly StyledProperty<AppBarTypographyProfile> TypographyProfileProperty =
+        AvaloniaProperty.Register<MaterialAppBar, AppBarTypographyProfile>(
+            nameof(TypographyProfile),
+            new AppBarTypographyProfile(
+                TypographyRole.TitleLarge,
+                TypographyRole.LabelMedium,
+                TypographyRole.TitleLarge,
+                TypographyRole.LabelMedium));
+    internal static readonly StyledProperty<AppBarVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialAppBar, AppBarVisualColors>(
+            nameof(VisualColors),
+            TransparentVisualColors());
     public static readonly DirectProperty<MaterialAppBar, AppBarScrollState> StateProperty =
         AvaloniaProperty.RegisterDirect<MaterialAppBar, AppBarScrollState>(
             nameof(State), owner => owner._state, (owner, value) => owner.SetState(value));
@@ -153,6 +169,9 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
     public static readonly DirectProperty<MaterialAppBar, IImmutableBrush> SubtitleBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialAppBar, IImmutableBrush>(
             nameof(SubtitleBrush), owner => owner.SubtitleBrush);
+    public static readonly DirectProperty<MaterialAppBar, IImmutableBrush> IconBrushProperty =
+        AvaloniaProperty.RegisterDirect<MaterialAppBar, IImmutableBrush>(
+            nameof(IconBrush), owner => owner.IconBrush);
     public static readonly DirectProperty<MaterialAppBar, double> CurrentHeightProperty =
         AvaloniaProperty.RegisterDirect<MaterialAppBar, double>(
             nameof(CurrentHeight), owner => owner.CurrentHeight);
@@ -190,9 +209,13 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         AvaloniaProperty.RegisterDirect<MaterialAppBar, FontWeight>(
             nameof(SubtitleFontWeight), owner => owner.SubtitleFontWeight);
 
-    // The control owns its semantic defaults; the raw component tables stay below AppBarDefaults.
-    private AppBarMetrics _tokens = AppBarDefaults.Metrics(AppBarSize.Small);
-    private AppBarVisualColors _colors = AppBarDefaults.Colors(Foundation.ResolvedTheme.Default, AppBarSize.Small, false);
+    private AppBarGeometryProfile _geometry = new(64, 64, 64, 64, 16);
+    private AppBarTypographyProfile _typography = new(
+        TypographyRole.TitleLarge,
+        TypographyRole.LabelMedium,
+        TypographyRole.TitleLarge,
+        TypographyRole.LabelMedium);
+    private AppBarVisualColors _colors = TransparentVisualColors();
     private AppBarScrollState _state = new();
     private SpringAnimation? _motionFraction;
     private double _visualCollapsedFraction;
@@ -205,6 +228,8 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
     private FontFamily _subtitleFontFamily = FontFamily.Default;
     private FontWeight _subtitleFontWeight = FontWeight.Normal;
     private Thickness _stackedTitleMargin = new(0, 0, 0, 16);
+    private Thickness _tokenPadding;
+    private bool _hasTokenPadding;
     private ContentPresenter? _inlineTitlePresenter;
     private ContentPresenter? _stackedTitlePresenter;
     private ContentPresenter? _subtitlePresenter;
@@ -222,6 +247,8 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
             SizeProperty,
             VariantProperty,
             IsScrolledProperty,
+            GeometryProfileProperty,
+            VisualColorsProperty,
             StateProperty);
     }
 
@@ -281,6 +308,27 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         set => SetValue(ScrollTargetProperty, value);
     }
 
+    /// <summary>Gets the hidden size geometry profile supplied by the Material control theme.</summary>
+    public AppBarGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    /// <summary>Gets the hidden typography profile supplied by the Material control theme.</summary>
+    internal AppBarTypographyProfile TypographyProfile
+    {
+        get => GetValue(TypographyProfileProperty);
+        set => SetValue(TypographyProfileProperty, value);
+    }
+
+    /// <summary>Gets the hidden visual colour profile supplied by the Material control theme.</summary>
+    internal AppBarVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
     /// <summary>Gets or replaces the non-null effective scroll state.</summary>
     public AppBarScrollState State
     {
@@ -293,6 +341,8 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
     public IImmutableBrush TitleBrush => _colors.TitleColor;
 
     public IImmutableBrush SubtitleBrush => _colors.SubtitleColor;
+
+    public IImmutableBrush IconBrush => _colors.IconColor;
 
     public double CurrentHeight =>
         ExpandedHeight - CollapseRange * _visualCollapsedFraction;
@@ -400,6 +450,12 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         {
             ApplyTokens();
         }
+        else if (change.Property == GeometryProfileProperty
+            || change.Property == TypographyProfileProperty
+            || change.Property == VisualColorsProperty)
+        {
+            ApplyTokens();
+        }
         else if (change.Property == ScrollTargetProperty)
         {
             ObserveScrollTarget(
@@ -433,12 +489,12 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
     private double ExpandedHeight =>
         Variant == AppBarVariant.Flexible
             ? Subtitle is null
-                ? _tokens.FlexibleContainerHeight
-                : _tokens.FlexibleContainerHeightWithSubtitle
-            : _tokens.ContainerHeight;
+                ? _geometry.FlexibleContainerHeight
+                : _geometry.FlexibleContainerHeightWithSubtitle
+            : _geometry.ContainerHeight;
 
     private double CollapseRange =>
-        Math.Max(0, ExpandedHeight - AppBarDefaults.Metrics(AppBarSize.Small).ContainerHeight);
+        Math.Max(0, ExpandedHeight - _geometry.CollapsedHeight);
 
     private void ObserveScrollTarget(ScrollViewer? previous, ScrollViewer? next)
     {
@@ -523,7 +579,10 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
     private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(AppBarScrollState.CollapsedFraction))
-            AnimateTo(_state.CollapsedFraction, snap: _updatingFromScroll);
+            // Ordinary layout/automation queries have no frame clock and should observe the
+            // committed state immediately. The manual test/parity clock intentionally preserves
+            // the spring trajectory so intermediate title transitions remain testable.
+            AnimateTo(_state.CollapsedFraction, snap: !Motion.IsManualClock);
         InvalidateVisual();
     }
 
@@ -616,6 +675,7 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         var oldStackedContent = TitleContentFor(Title, inline: false, oldStacked);
         var oldTitle = TitleBrush;
         var oldSubtitle = SubtitleBrush;
+        var oldIcon = IconBrush;
         var oldHeight = CurrentHeight;
         var oldInlineOpacity = InlineTitleOpacity;
         var oldStackedOpacity = StackedTitleOpacity;
@@ -626,19 +686,24 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
         var oldSubtitleFamily = SubtitleFontFamily;
         var oldSubtitleWeight = SubtitleFontWeight;
 
-        _tokens = AppBarDefaults.Metrics(Size);
-        _colors = AppBarDefaults.Colors(ResolvedTheme, Size, IsDarkVariant);
-        var typography = ResolvedTheme.Typography;
+        _geometry = GeometryProfile;
+        _typography = TypographyProfile;
+        _colors = VisualColors;
+        var typography = _material?.Theme.Current.Theme.Typography
+            ?? Foundation.ResolvedTheme.Default.Typography;
         var titleRole = Variant == AppBarVariant.Flexible
-            ? _tokens.FlexibleTitleTextStyle
-            : _tokens.TitleTextStyle;
+            ? _typography.FlexibleTitleTextStyle
+            : _typography.StandardTitleTextStyle;
         var subtitleRole = Variant == AppBarVariant.Flexible
-            ? _tokens.FlexibleSubtitleTextStyle
-            : _tokens.SubtitleTextStyle;
+            ? _typography.FlexibleSubtitleTextStyle
+            : _typography.StandardSubtitleTextStyle;
         var titleScale = typography.GetTypeScale(titleRole);
         var collapsedScale = typography.GetTypeScale(TypographyRole.TitleLarge);
         var subtitleScale = typography.GetTypeScale(subtitleRole);
 
+        // These are the app bar's own semantic text defaults. Avalonia application styles and
+        // local values can still replace them after this pass; using the normal setter also keeps
+        // the value visible to the ContentPresenter's TemplateBinding.
         FontSize = titleScale.FontSize;
         FontFamily = typography.GetFontFamily(titleRole);
         FontWeight = typography.GetFontWeight(titleRole);
@@ -652,11 +717,17 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
             StackedTitleMarginProperty,
             ref _stackedTitleMargin,
             new Thickness(0, 0, 0, Size == AppBarSize.Medium ? 16 : 28));
-        Padding = new Thickness(_tokens.HorizontalSpace, 0);
-
+        var tokenPadding = new Thickness(_geometry.HorizontalSpace, 0);
+        // Keep the token value as the style fallback, but never replace an application style or
+        // local value that already owns the public Padding slot.
+        if (!_hasTokenPadding || Padding == _tokenPadding || Padding == default)
+            SetValue(PaddingProperty, tokenPadding, BindingPriority.Style);
+        _tokenPadding = tokenPadding;
+        _hasTokenPadding = true;
         RaisePropertyChanged(IsStackedProperty, oldStacked, IsStacked);
         RaisePropertyChanged(TitleBrushProperty, oldTitle, TitleBrush);
         RaisePropertyChanged(SubtitleBrushProperty, oldSubtitle, SubtitleBrush);
+        RaisePropertyChanged(IconBrushProperty, oldIcon, IconBrush);
         RaisePropertyChanged(CurrentHeightProperty, oldHeight, CurrentHeight);
         RaisePropertyChanged(InlineTitleOpacityProperty, oldInlineOpacity, InlineTitleOpacity);
         RaisePropertyChanged(StackedTitleOpacityProperty, oldStackedOpacity, StackedTitleOpacity);
@@ -681,18 +752,25 @@ public class MaterialAppBar : TemplatedControl, IMaterialThemeConsumer, IMateria
             TypographyScheme.SetTextStyle(
                 _stackedTitlePresenter,
                 Variant == AppBarVariant.Flexible
-                    ? _tokens.FlexibleTitleTextStyle
-                    : _tokens.TitleTextStyle);
+                    ? _typography.FlexibleTitleTextStyle
+                    : _typography.StandardTitleTextStyle);
         }
         if (_subtitlePresenter is not null)
         {
             TypographyScheme.SetTextStyle(
                 _subtitlePresenter,
                 Variant == AppBarVariant.Flexible
-                    ? _tokens.FlexibleSubtitleTextStyle
-                    : _tokens.SubtitleTextStyle);
+                    ? _typography.FlexibleSubtitleTextStyle
+                    : _typography.StandardSubtitleTextStyle);
         }
     }
+
+    private static AppBarVisualColors TransparentVisualColors() => new(
+        new ImmutableSolidColorBrush(Colors.Transparent),
+        new ImmutableSolidColorBrush(Colors.Transparent),
+        new ImmutableSolidColorBrush(Colors.Transparent),
+        new ImmutableSolidColorBrush(Colors.Transparent),
+        new ImmutableSolidColorBrush(Colors.Transparent));
 
     private object? TitleContentFor(object? title, bool inline)
         => TitleContentFor(title, inline, IsStacked);

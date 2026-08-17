@@ -9,6 +9,10 @@ namespace Material3Expressive.Foundation.Tokens.Runtime;
 /// resource cascade. Properties accept either a literal or a token definition such as
 /// <c>{m3:TokenRef ...}</c>.
 /// </remarks>
+[Obsolete(
+    "Legacy Runtime.MaterialToken type-scale overrides. Use typed shared Raw overrides.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class SystemTypeScaleOverrides : MaterialTokenOverrides
 {
     private TypographyRole _role;

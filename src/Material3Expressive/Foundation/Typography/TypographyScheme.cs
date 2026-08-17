@@ -34,24 +34,36 @@ public partial class TypographyScheme : AvaloniaObject
         AvaloniaProperty.RegisterAttached<TypographyScheme, StyledElement, TypographyRole>(
             "TextStyle", TypographyRole.BodyMedium, inherits: true);
 
-    public TypographyScheme()
-    {
-        BrandFontFamily = TypefaceTokens.Brand;
-        PlainFontFamily = TypefaceTokens.Plain;
-        EmphasizedBrandFontFamily = TypefaceTokens.EmphasizedBrand;
-        EmphasizedPlainFontFamily = TypefaceTokens.EmphasizedPlain;
-        WeightBold = TypefaceTokens.WeightBold;
-        WeightMedium = TypefaceTokens.WeightMedium;
-        WeightRegular = TypefaceTokens.WeightRegular;
-    }
+    // Keep defaults in metadata so the compatibility Raw bridge can distinguish untouched slots
+    // from explicit local authoring without making every nested typography scheme dense.
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultBrandFontFamily))]
+    public partial FontFamily BrandFontFamily { get; set; }
 
-    [GeneratedStyledProperty] public partial FontFamily BrandFontFamily { get; set; }
-    [GeneratedStyledProperty] public partial FontFamily PlainFontFamily { get; set; }
-    [GeneratedStyledProperty] public partial FontFamily EmphasizedBrandFontFamily { get; set; }
-    [GeneratedStyledProperty] public partial FontFamily EmphasizedPlainFontFamily { get; set; }
-    [GeneratedStyledProperty] public partial FontWeight WeightBold { get; set; }
-    [GeneratedStyledProperty] public partial FontWeight WeightMedium { get; set; }
-    [GeneratedStyledProperty] public partial FontWeight WeightRegular { get; set; }
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultPlainFontFamily))]
+    public partial FontFamily PlainFontFamily { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultEmphasizedBrandFontFamily))]
+    public partial FontFamily EmphasizedBrandFontFamily { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultEmphasizedPlainFontFamily))]
+    public partial FontFamily EmphasizedPlainFontFamily { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultWeightBold))]
+    public partial FontWeight WeightBold { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultWeightMedium))]
+    public partial FontWeight WeightMedium { get; set; }
+
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultWeightRegular))]
+    public partial FontWeight WeightRegular { get; set; }
+
+    private static FontFamily GetDefaultBrandFontFamily() => TypefaceTokens.Brand;
+    private static FontFamily GetDefaultPlainFontFamily() => TypefaceTokens.Plain;
+    private static FontFamily GetDefaultEmphasizedBrandFontFamily() => TypefaceTokens.EmphasizedBrand;
+    private static FontFamily GetDefaultEmphasizedPlainFontFamily() => TypefaceTokens.EmphasizedPlain;
+    private static FontWeight GetDefaultWeightBold() => TypefaceTokens.WeightBold;
+    private static FontWeight GetDefaultWeightMedium() => TypefaceTokens.WeightMedium;
+    private static FontWeight GetDefaultWeightRegular() => TypefaceTokens.WeightRegular;
 
     /// <summary>
     /// Sparse per-slot system typography overrides.

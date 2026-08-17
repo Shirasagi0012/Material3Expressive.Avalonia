@@ -3,8 +3,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
+using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
@@ -28,7 +29,7 @@ public enum TooltipVariant
 /// theme in scope at the control it is attached to for free.
 /// </para>
 /// </remarks>
-public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
+public class MaterialTooltip : ContentControl
 {
     /// <summary>The tooltip content to show for a control.</summary>
     public static readonly AttachedProperty<object?> TipProperty =
@@ -46,23 +47,35 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
     public static readonly StyledProperty<TooltipVariant> StyleProperty =
         AvaloniaProperty.Register<MaterialTooltip, TooltipVariant>(nameof(Style));
 
-    private readonly MaterialThemeController _theme;
+    internal static readonly StyledProperty<TooltipGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialTooltip, TooltipGeometryProfile>(
+            nameof(GeometryProfile),
+            new TooltipGeometryProfile(
+                ShapeTokens.CornerExtraSmall,
+                0,
+                24,
+                200,
+                new Thickness(8, 4),
+                TypographyRole.BodySmall,
+                TypographyRole.TitleSmall));
 
-    private TooltipMetrics _tokens = TooltipDefaults.Metrics(TooltipVariant.Plain);
-    private TooltipVisualColors _colors = TooltipDefaults.Colors(Foundation.ResolvedTheme.Default, TooltipVariant.Plain, false);
+    internal static readonly StyledProperty<TooltipVisualProfile> VisualProfileProperty =
+        AvaloniaProperty.Register<MaterialTooltip, TooltipVisualProfile>(
+            nameof(VisualProfile),
+            new TooltipVisualProfile(
+                TransparentBrush(),
+                TransparentBrush(),
+                TransparentBrush(),
+                TransparentBrush(),
+                Colors.Black));
 
-    public MaterialTooltip()
-    {
-        _theme = MaterialElementContext.Ensure(this).Theme;
-        ApplyTokens();
-    }
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
+    public MaterialTooltip() { }
 
     static MaterialTooltip()
     {
         ClipToBoundsProperty.OverrideDefaultValue<MaterialTooltip>(false);
-        AffectsRender<MaterialTooltip>(StyleProperty);
+        AffectsMeasure<MaterialTooltip>(GeometryProfileProperty);
+        AffectsRender<MaterialTooltip>(GeometryProfileProperty, VisualProfileProperty);
         TipProperty.Changed.AddClassHandler<Control>(OnTipChanged);
     }
 
@@ -81,7 +94,7 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
     }
 
     /// <summary>The title brush, exposed for the template.</summary>
-    public IImmutableBrush TitleBrush => _colors.TitleColor;
+    public IImmutableBrush TitleBrush => VisualProfile.TitleColor;
 
     public static readonly DirectProperty<MaterialTooltip, IImmutableBrush> TitleBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialTooltip, IImmutableBrush>(nameof(TitleBrush), o => o.TitleBrush);
@@ -108,35 +121,40 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
 
     public override void Render(DrawingContext context)
     {
-        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ContainerShape, Bounds.Size);
-        var shadow = _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
+        var corners = GeometryProfile.ContainerShape.ToCornerRadius(
+            Bounds.Size,
+            FlowDirection == FlowDirection.RightToLeft);
 
         MaterialContainer.Draw(
             context,
             this,
             Bounds.Size,
             corners,
-            _colors.ContainerColor,
+            VisualProfile.ContainerColor,
             null,
             0,
-            _tokens.ContainerElevation,
-            shadow);
+            GeometryProfile.ContainerElevation,
+            VisualProfile.ShadowColor);
 
         base.Render(context);
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var size = base.MeasureOverride(new Size(Math.Min(availableSize.Width, _tokens.MaxWidth), availableSize.Height));
-        return new Size(size.Width, Math.Max(size.Height, _tokens.MinHeight));
+        var size = base.MeasureOverride(
+            new Size(Math.Min(availableSize.Width, GeometryProfile.MaxWidth), availableSize.Height));
+        return new Size(size.Width, Math.Max(size.Height, GeometryProfile.MinHeight));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == StyleProperty)
-            ApplyTokens();
+        if (change.Property == VisualProfileProperty)
+        {
+            var oldProfile = change.GetOldValue<TooltipVisualProfile>();
+            RaisePropertyChanged(TitleBrushProperty, oldProfile.TitleColor, TitleBrush);
+        }
     }
 
     /// <summary>
@@ -161,24 +179,18 @@ public class MaterialTooltip : ContentControl, IMaterialThemeConsumer
         });
     }
 
-    private void ApplyTokens()
+    internal TooltipGeometryProfile GeometryProfile
     {
-        var previousTitle = TitleBrush;
-
-        _tokens = TooltipDefaults.Metrics(Style);
-        _colors = TooltipDefaults.Colors(_theme.Current.Theme, Style, _theme.Current.IsDark);
-        RaisePropertyChanged(TitleBrushProperty, previousTitle, TitleBrush);
-
-        var typography = _theme.Current.Theme.Typography;
-
-        Foreground = _colors.SupportingTextColor;
-        Padding = new Thickness(_tokens.HorizontalSpace, _tokens.VerticalSpace);
-        MinHeight = _tokens.MinHeight;
-        MaxWidth = _tokens.MaxWidth;
-        FontSize = typography.GetTypeScale(_tokens.SupportingTextStyle).FontSize;
-        FontFamily = typography.GetFontFamily(_tokens.SupportingTextStyle);
-
-        InvalidateMeasure();
-        InvalidateVisual();
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
     }
+
+    internal TooltipVisualProfile VisualProfile
+    {
+        get => GetValue(VisualProfileProperty);
+        set => SetValue(VisualProfileProperty, value);
+    }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

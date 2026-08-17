@@ -6,6 +6,9 @@ namespace Material3Expressive.Markups;
 
 /// <summary>The weight a type scale slot is set in, from the theme in scope at the target.</summary>
 /// <inheritdoc cref="MdTypeFamilyExtension" path="/remarks" />
+[Obsolete(
+    "Legacy ResolvedTheme typography markup. Use typed MaterialValueKey<T> resources.",
+    DiagnosticId = "M3E1004")]
 public class MdTypeWeightExtension
 {
     public MdTypeWeightExtension()

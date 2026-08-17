@@ -16,32 +16,71 @@ namespace Material3Expressive.Controls;
 /// </remarks>
 public static class M3ToggleIconButton
 {
+    private static readonly ToggleIconButtonVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush());
+
+    /// <summary>Typed checked/unchecked colours supplied by the Material toggle theme.</summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
+    public static readonly AttachedProperty<ToggleIconButtonVisualColors> VisualColorsProperty =
+        AvaloniaProperty.RegisterAttached<ToggleButton, ToggleIconButtonVisualColors>(
+            "VisualColors",
+            typeof(M3ToggleIconButton),
+            defaultValue: DefaultVisualColors);
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<ToggleIconButtonColors?> DefaultColorsProperty =
         AvaloniaProperty.RegisterAttached<ToggleButton, ToggleIconButtonColors?>(
             "DefaultColors", typeof(M3ToggleIconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<IconButtonMetrics?> DefaultMetricsProperty =
         AvaloniaProperty.RegisterAttached<ToggleButton, IconButtonMetrics?>(
             "DefaultMetrics", typeof(M3ToggleIconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<IconButtonShapes?> DefaultShapesProperty =
         AvaloniaProperty.RegisterAttached<ToggleButton, IconButtonShapes?>(
             "DefaultShapes", typeof(M3ToggleIconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<SpringSpec> DefaultShapeMotionProperty =
         AvaloniaProperty.RegisterAttached<ToggleButton, SpringSpec>(
             "DefaultShapeMotion", typeof(M3ToggleIconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<Thickness> DefaultOutlineThicknessProperty =
         AvaloniaProperty.RegisterAttached<ToggleButton, Thickness>(
             "DefaultOutlineThickness", typeof(M3ToggleIconButton));
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete(
+        "Legacy component-defaults adapter output. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     public static readonly AttachedProperty<IImmutableBrush?> DefaultStateLayerBrushProperty =
         AvaloniaProperty.RegisterAttached<ToggleButton, IImmutableBrush?>(
             "DefaultStateLayerBrush", typeof(M3ToggleIconButton));
@@ -92,4 +131,13 @@ public static class M3ToggleIconButton
 
     public static void SetStateLayerBrush(ToggleButton owner, IBrush? value) =>
         owner.SetValue(StateLayerBrushProperty, value);
+
+    internal static ToggleIconButtonVisualColors GetVisualColors(ToggleButton owner) =>
+        owner.GetValue(VisualColorsProperty);
+
+    internal static void SetVisualColors(ToggleButton owner, ToggleIconButtonVisualColors value) =>
+        owner.SetValue(VisualColorsProperty, value);
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

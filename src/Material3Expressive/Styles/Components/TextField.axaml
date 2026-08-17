@@ -15,6 +15,23 @@
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type m3:MaterialTextField}" TargetType="m3:MaterialTextField">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="GeometryProfile"
+                    Value="{DynamicResource {x:Static m3:TextInputValueKeys.FilledTextFieldGeometry}}" />
+            <Setter Property="TypographyProfile"
+                    Value="{DynamicResource {x:Static m3:TextInputValueKeys.FilledTextFieldTypography}}" />
+            <Setter Property="VisualColors"
+                    Value="{DynamicResource {x:Static m3:TextInputValueKeys.FilledTextFieldVisualColors}}" />
+            <!-- These bindings consume the profiles at ControlTheme priority. They are defaults,
+                 not local writes, so application styles and local values can still customize the
+                 public Avalonia slots. -->
+            <Setter Property="Padding"
+                    Value="{Binding GeometryProfile.ContentPadding, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MinHeight"
+                    Value="{Binding GeometryProfile.ContainerHeight, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Foreground"
+                    Value="{Binding InputBrush, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="m3:TypographyScheme.TextStyle"
+                    Value="{Binding TypographyProfile.InputTextStyle, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <ControlTemplate>
                     <Grid RowDefinitions="*,Auto">
@@ -67,7 +84,7 @@
                                    Grid.Row="1"
                                    Margin="16,4,16,0"
                                    HorizontalAlignment="Left"
-                                   Classes="body-small"
+                                   m3:TypographyScheme.TextStyle="{Binding $parent[m3:MaterialTextField].TypographyProfile.SupportingTextStyle}"
                                    Text="{TemplateBinding SupportingText}"
                                    IsVisible="{TemplateBinding SupportingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                     </Grid>
@@ -77,6 +94,15 @@
             <!-- Supporting text carries the error colour; the input itself stays readable. -->
             <Style Selector="^ /template/ TextBlock#PART_Supporting">
                 <Setter Property="Foreground" Value="{Binding $parent[m3:MaterialTextField].SupportingBrush}" />
+            </Style>
+
+            <Style Selector="^[Variant=Outlined]">
+                <Setter Property="GeometryProfile"
+                        Value="{DynamicResource {x:Static m3:TextInputValueKeys.OutlinedTextFieldGeometry}}" />
+                <Setter Property="TypographyProfile"
+                        Value="{DynamicResource {x:Static m3:TextInputValueKeys.OutlinedTextFieldTypography}}" />
+                <Setter Property="VisualColors"
+                        Value="{DynamicResource {x:Static m3:TextInputValueKeys.OutlinedTextFieldVisualColors}}" />
             </Style>
         </ControlTheme>
 

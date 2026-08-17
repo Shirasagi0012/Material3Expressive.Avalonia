@@ -42,6 +42,26 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
     public static readonly StyledProperty<object?> IconProperty =
         AvaloniaProperty.Register<MaterialNavigationItem, object?>(nameof(Icon));
 
+    private static readonly NavigationGeometryProfile DefaultGeometryProfile = new(
+        0, 80, 56, 32, ShapeRole.CornerFull, 24, 8, 40, 16, 8, 6, 0,
+        TypographyRole.LabelMedium, false);
+
+    private static readonly NavigationVisualColors DefaultVisualColors = new(
+        TransparentBrush(), TransparentBrush(), TransparentBrush(), TransparentBrush(),
+        TransparentBrush(), TransparentBrush(), TransparentBrush());
+
+    internal static readonly StyledProperty<NavigationVariant> SurfaceProperty =
+        AvaloniaProperty.Register<MaterialNavigationItem, NavigationVariant>(
+            nameof(Surface), NavigationVariant.Bar);
+
+    internal static readonly StyledProperty<NavigationGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialNavigationItem, NavigationGeometryProfile>(
+            nameof(GeometryProfile), DefaultGeometryProfile);
+
+    internal static readonly StyledProperty<NavigationVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialNavigationItem, NavigationVisualColors>(
+            nameof(VisualColors), DefaultVisualColors);
+
     // Read-only outputs of token resolution; the template binds to them.
     public static readonly DirectProperty<MaterialNavigationItem, double> IconSizeProperty =
         AvaloniaProperty.RegisterDirect<MaterialNavigationItem, double>(nameof(IconSize), o => o.IconSize);
@@ -103,8 +123,6 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
             : _presentation = _interaction.AttachPresentation(this);
 
     private SpringAnimation? _indicator;
-    private NavigationMetrics _tokens = NavigationDefaults.Metrics(NavigationVariant.Bar);
-    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Bar, false);
     private MaterialNavigationItemContentPanel? _contentPanel;
     private ContentPresenter? _labelPresenter;
     private readonly List<Action> _restoreLabelMetrics = new();
@@ -147,24 +165,24 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
     }
 
     /// <summary>The size the icon should be drawn at.</summary>
-    public double IconSize => _tokens.IconSize;
+    public double IconSize => GeometryProfile.IconSize;
 
     /// <summary>The gap between the indicator and the label under it.</summary>
-    public double IconLabelSpace => _tokens.IconLabelSpace;
+    public double IconLabelSpace => GeometryProfile.IconLabelSpace;
 
     /// <summary>Vertical content padding for a top-icon destination.</summary>
-    public double TopItemVerticalPadding => _tokens.TopItemVerticalPadding;
+    public double TopItemVerticalPadding => GeometryProfile.TopItemVerticalPadding;
 
     /// <summary>Horizontal padding inside a leading-icon indicator.</summary>
-    public double StartIndicatorHorizontalPadding => _tokens.StartIndicatorHorizontalPadding;
+    public double StartIndicatorHorizontalPadding => GeometryProfile.StartIndicatorHorizontalPadding;
 
     /// <summary>Vertical padding inside a leading-icon indicator.</summary>
     public double StartIndicatorVerticalPadding =>
-        IsWideNavigationExpandedItem ? 16 : _tokens.StartIndicatorVerticalPadding;
+        IsWideNavigationExpandedItem ? 16 : GeometryProfile.StartIndicatorVerticalPadding;
 
     /// <summary>Padding between a top indicator and its icon.</summary>
     public double TopIndicatorVerticalPadding =>
-        (_tokens.ActiveIndicatorHeight - _tokens.IconSize) / 2;
+        (GeometryProfile.ActiveIndicatorHeight - GeometryProfile.IconSize) / 2;
 
     /// <summary>The resolved line height for label content.</summary>
     public double LabelLineHeight =>
@@ -190,12 +208,28 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
     public IImmutableBrush IconBrush =>
         IsEffectivelyEnabled
             ? IsChecked == true
-                ? _colors.ActiveIconColor
-                : _colors.InactiveIconColor
-            : WithOpacity(_colors.InactiveIconColor, 0.38);
+                ? VisualColors.ActiveIconColor
+                : VisualColors.InactiveIconColor
+            : WithOpacity(VisualColors.InactiveIconColor, 0.38);
 
     /// <summary>Which navigation surface this item belongs to; set by the parent.</summary>
-    internal NavigationVariant Surface { get; set; } = NavigationVariant.Bar;
+    internal NavigationVariant Surface
+    {
+        get => GetValue(SurfaceProperty);
+        set => SetValue(SurfaceProperty, value);
+    }
+
+    internal NavigationGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    internal NavigationVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
 
     internal MaterialShortNavigationBar? OwnerShortNavigationBar { get; set; }
 
@@ -236,7 +270,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
     {
         var previous = !IsWideNavigationExpandedItem;
         var previousAnchor = IsShortNavigationItem || (IsWideNavigationItem && previous);
-        var previousVerticalPadding = previous ? 16 : _tokens.StartIndicatorVerticalPadding;
+        var previousVerticalPadding = previous ? 16 : GeometryProfile.StartIndicatorVerticalPadding;
         RaisePropertyChanged(
             IsWideNavigationExpandedItemProperty,
             previous,
@@ -259,13 +293,13 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
                 .OfType<MaterialNavigationItemContentPanel>()
                 .FirstOrDefault();
             var width = startIcon
-                ? Math.Min(Bounds.Width, _contentPanel?.StartIndicatorWidth ?? _tokens.ActiveIndicatorWidth)
-                : _tokens.ActiveIndicatorWidth;
+                ? Math.Min(Bounds.Width, _contentPanel?.StartIndicatorWidth ?? GeometryProfile.ActiveIndicatorWidth)
+                : GeometryProfile.ActiveIndicatorWidth;
             var height = startIcon
                 ? IsWideNavigationExpandedItem
                     ? 56
-                    : _tokens.StartActiveIndicatorHeight
-                : _tokens.ActiveIndicatorHeight;
+                    : GeometryProfile.StartActiveIndicatorHeight
+                : GeometryProfile.ActiveIndicatorHeight;
             var scale = LayoutHelper.GetLayoutScale(this);
             if (scale <= 0 || double.IsNaN(scale) || double.IsInfinity(scale))
                 scale = 1;
@@ -297,7 +331,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
                 ToComposePixels(Bounds.Height, scale),
                 ToComposePixels(IconSize, scale),
                 ToComposePixels(LabelHeight, scale),
-                ToComposePixels(_tokens.IconLabelSpace, scale),
+                ToComposePixels(GeometryProfile.IconLabelSpace, scale),
                 ToComposePixels(4, scale));
             return geometry.IndicatorTop / scale;
         }
@@ -307,11 +341,11 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
             : AnchorTopIcon
                 ? TopItemVerticalPadding
             // The label sits under the indicator, so the pair is centred rather than the pill alone.
-                : (Bounds.Height - indicatorHeight - _tokens.IconLabelSpace - LabelHeight) / 2;
+                : (Bounds.Height - indicatorHeight - GeometryProfile.IconLabelSpace - LabelHeight) / 2;
     }
 
     private TypographyRole LabelTextStyle =>
-        IsWideNavigationExpandedItem ? TypographyRole.LabelLarge : _tokens.LabelTextStyle;
+        IsWideNavigationExpandedItem ? TypographyRole.LabelLarge : GeometryProfile.LabelTextStyle;
 
     private double LabelHeight =>
         Content is null ? 0 : _theme.Current.Theme.Typography.GetTypeScale(LabelTextStyle).LineHeight;
@@ -326,7 +360,7 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         if (area.Width <= 0 || area.Height <= 0)
             return;
 
-        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(_tokens.ActiveIndicatorShape, area.Size);
+        var corners = _theme.Current.Theme.Shapes.GetCornerRadius(GeometryProfile.ActiveIndicatorShape, area.Size);
 
         var scale = Indicator.Value;
         if (scale > 0.001)
@@ -336,13 +370,13 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
             var grown = new Rect(area.Center.X - width / 2, area.Y, width, area.Height);
 
             using (context.PushTransform(Matrix.CreateTranslation(grown.X, grown.Y)))
-                MaterialContainer.Draw(context, grown.Size, corners, _colors.ActiveIndicatorColor);
+                MaterialContainer.Draw(context, grown.Size, corners, VisualColors.ActiveIndicatorColor);
         }
 
         InteractionPresentation.UpdateGeometry(
             new MaterialInteractionGeometry(area, null, null));
         base.Render(context);
-        _interaction.DrawLayers(context, _colors.StateLayerColor, corners);
+        _interaction.DrawLayers(context, VisualColors.StateLayerColor, corners);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -356,6 +390,12 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
             ApplyColors();
         }
         else if (change.Property == IsEffectivelyEnabledProperty)
+        {
+            ApplyTokens();
+        }
+        else if (change.Property == SurfaceProperty
+                 || change.Property == GeometryProfileProperty
+                 || change.Property == VisualColorsProperty)
         {
             ApplyTokens();
         }
@@ -397,9 +437,6 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         var previousTopIndicatorVerticalPadding = TopIndicatorVerticalPadding;
         var previousLabelLineHeight = LabelLineHeight;
         var previousLabelLetterSpacing = LabelLetterSpacing;
-
-        _tokens = NavigationDefaults.Metrics(Surface);
-        _colors = NavigationDefaults.Colors(_theme.Current.Theme, Surface, _theme.Current.IsDark);
 
         RaisePropertyChanged(IconSizeProperty, previousIconSize, IconSize);
         RaisePropertyChanged(IconLabelSpaceProperty, previousSpace, IconLabelSpace);
@@ -500,9 +537,9 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
 
         Foreground = IsEffectivelyEnabled
             ? IsChecked == true
-                ? _colors.ActiveLabelTextColor
-                : _colors.InactiveLabelTextColor
-            : WithOpacity(_colors.InactiveLabelTextColor, 0.38);
+                ? VisualColors.ActiveLabelTextColor
+                : VisualColors.InactiveLabelTextColor
+            : WithOpacity(VisualColors.InactiveLabelTextColor, 0.38);
         RaisePropertyChanged(IconBrushProperty, previousIconBrush, IconBrush);
 
         InvalidateVisual();
@@ -512,6 +549,9 @@ public class MaterialNavigationItem : ToggleButton, IMaterialThemeConsumer, IMat
         brush is ImmutableSolidColorBrush solid
             ? new ImmutableSolidColorBrush(solid.Color, solid.Opacity * opacity)
             : brush;
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }
 
 /// <summary>

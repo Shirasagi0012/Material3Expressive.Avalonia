@@ -13,6 +13,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Metadata;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls.Automation;
@@ -36,8 +37,6 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
 {
     private MaterialElementContext? _material;
 
-    private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
 
@@ -78,8 +77,15 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
             nameof(ExpansionProgress),
             owner => owner._expansionProgress);
 
+    private static readonly NavigationVisualColors DefaultVisualColors = new(
+        TransparentBrush(), TransparentBrush(), TransparentBrush(), TransparentBrush(),
+        TransparentBrush(), TransparentBrush(), TransparentBrush());
+
+    internal static readonly StyledProperty<NavigationVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialWideNavigationRail, NavigationVisualColors>(
+            nameof(VisualColors), DefaultVisualColors);
+
     private readonly HashSet<MaterialNavigationItem> _attachedItems = new();
-    private NavigationVisualColors _colors = NavigationDefaults.Colors(Foundation.ResolvedTheme.Default, NavigationVariant.Rail, false);
     private SpringAnimation? _expansion;
     private double _expansionProgress;
     private bool _updatingSelection;
@@ -99,6 +105,7 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
             IsExpandedProperty,
             ArrangementProperty,
             HeaderProperty);
+        AffectsRender<MaterialWideNavigationRail>(VisualColorsProperty);
     }
 
     /// <summary>Whether the rail targets the expanded leading-icon layout.</summary>
@@ -136,6 +143,12 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
     /// <summary>Current animated collapsed-to-expanded fraction.</summary>
     public double ExpansionProgress => _expansionProgress;
 
+    internal NavigationVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
     internal IReadOnlyList<MaterialNavigationItem> VisibleItems =>
         Items.Where(static item => item.IsVisible).ToArray();
 
@@ -143,7 +156,7 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
 
     public override void Render(DrawingContext context)
     {
-        MaterialContainer.Draw(context, Bounds.Size, default, _colors.ContainerColor);
+        MaterialContainer.Draw(context, Bounds.Size, default, VisualColors.ContainerColor);
         base.Render(context);
     }
 
@@ -176,6 +189,10 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
         else if (change.Property == SelectedIndexProperty)
         {
             SyncSelection();
+        }
+        else if (change.Property == VisualColorsProperty)
+        {
+            ApplyTokens();
         }
     }
 
@@ -345,13 +362,15 @@ public class MaterialWideNavigationRail : TemplatedControl, IMaterialThemeConsum
 
     private void ApplyTokens()
     {
-        _colors = NavigationDefaults.Colors(ResolvedTheme, NavigationVariant.Rail, IsDarkVariant);
         foreach (var item in Items)
             item.ApplyTokens();
         InvalidateVisual();
     }
 
     private static int Wrap(int value, int count) => (value % count + count) % count;
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }
 
 internal sealed class MaterialWideNavigationRailLayoutPanel : Panel

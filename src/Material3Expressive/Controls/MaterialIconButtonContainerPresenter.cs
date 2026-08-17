@@ -11,6 +11,24 @@ namespace Material3Expressive.Controls;
 /// <summary>Draws normal and checked icon-button container geometry for native button controls.</summary>
 public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThemeConsumer, IMaterialInteractionObserver
 {
+    private static readonly IconButtonGeometryProfile DefaultGeometryProfile = new(
+        ContainerHeight: 40,
+        IconSize: 24,
+        ContentPadding: new Thickness(8, 0),
+        ContainerWidth: 40,
+        OutlineWidth: 1,
+        ContainerShape: ShapeRole.CornerFull,
+        PressedShape: ShapeRole.CornerSmall,
+        SquareShape: ShapeRole.CornerMedium,
+        SelectedShape: ShapeRole.CornerMedium,
+        SelectedSquareShape: ShapeRole.CornerFull);
+
+    /// <summary>Gets or sets the typed geometry profile selected by the owning ControlTheme.</summary>
+    public static readonly StyledProperty<IconButtonGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialIconButtonContainerPresenter, IconButtonGeometryProfile>(
+            nameof(GeometryProfile),
+            DefaultGeometryProfile);
+
     public static readonly DirectProperty<MaterialIconButtonContainerPresenter, CornerRadius>
         CurrentCornerRadiusProperty = AvaloniaProperty.RegisterDirect<
             MaterialIconButtonContainerPresenter,
@@ -21,8 +39,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
     private MaterialInteractionController? _interaction;
     private IDisposable? _interactionLease;
     private AnimatedShape? _shape;
-    private IconButtonShapes _shapes = IconButtonDefaults.Shapes(IconButtonSize.Small);
-    private SpringSpec _shapeMotion = IconButtonDefaults.ShapeMotion(ResolvedTheme.Default);
+    private SpringSpec _shapeMotion = new(1, 1600);
     private CornerRadius _currentCornerRadius;
 
     public MaterialIconButtonContainerPresenter()
@@ -33,7 +50,14 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
     }
 
     void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) =>
-        ApplyTokens(snapShape: true);
+        ApplyTheme(snapShape: true);
+
+    /// <summary>Gets or sets the size-selected geometry profile used by the presenter.</summary>
+    public IconButtonGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
 
     public CornerRadius CurrentCornerRadius
     {
@@ -67,7 +91,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
         _interaction = MaterialElementContext.Ensure(_owner).Interaction;
         _owner.PropertyChanged += OnOwnerPropertyChanged;
         _interactionLease = _interaction.Subscribe(this);
-        ApplyTokens(snapShape: true);
+        ApplyTheme(snapShape: true);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -93,6 +117,8 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
         base.OnPropertyChanged(change);
         if (change.Property == BoundsProperty || change.Property == FlowDirectionProperty)
             UpdateCurrentCornerRadius();
+        else if (change.Property == GeometryProfileProperty)
+            UpdateShape(snap: true);
     }
 
     private AnimatedShape Shape => _shape ??= CreateShape();
@@ -108,13 +134,8 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == M3IconButton.DefaultMetricsProperty
-            || change.Property == M3IconButton.DefaultShapesProperty
-            || change.Property == M3IconButton.DefaultShapeMotionProperty
-            || change.Property == M3ToggleIconButton.DefaultMetricsProperty
-            || change.Property == M3ToggleIconButton.DefaultShapesProperty
-            || change.Property == M3ToggleIconButton.DefaultShapeMotionProperty)
-            ApplyTokens(snapShape: true);
+        if (change.Property == M3IconButton.GeometryProfileProperty)
+            UpdateShape(snap: true);
         else if (change.Property == ToggleButton.IsCheckedProperty
                  || change.Property == M3IconButton.IsSquareProperty)
             UpdateShape();
@@ -134,26 +155,12 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
         InvalidateVisual();
     }
 
-    private void ApplyTokens(bool snapShape)
+    private void ApplyTheme(bool snapShape)
     {
         if (_owner is not { } owner)
             return;
-        if (owner is ToggleButton toggle)
-        {
-            _shapes = M3ToggleIconButton.GetDefaultShapes(toggle)
-                      ?? ToggleIconButtonDefaults.Shapes(M3IconButton.GetSize(owner));
-            _shapeMotion = M3ToggleIconButton.GetDefaultShapeMotion(toggle);
-            if (_shapeMotion.Stiffness <= 0)
-                _shapeMotion = ToggleIconButtonDefaults.ShapeMotion(_theme.Current.Theme);
-        }
-        else
-        {
-            _shapes = M3IconButton.GetDefaultShapes(owner)
-                      ?? IconButtonDefaults.Shapes(M3IconButton.GetSize(owner));
-            _shapeMotion = M3IconButton.GetDefaultShapeMotion(owner);
-            if (_shapeMotion.Stiffness <= 0)
-                _shapeMotion = IconButtonDefaults.ShapeMotion(_theme.Current.Theme);
-        }
+        _shapeMotion = _theme.Current.Theme.Motion.Get(
+            owner is ToggleButton ? MotionRole.FastSpatial : MotionRole.DefaultEffects);
         UpdateShape(snapShape);
         InvalidateVisual();
     }
@@ -164,7 +171,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
             return;
         var shape = Shape;
         var target = _interaction.Interaction.HasFlag(InteractionState.Pressed)
-            ? _theme.Current.Theme.Shapes.Get(_shapes.Pressed)
+            ? _theme.Current.Theme.Shapes.Get(GeometryProfile.PressedShape)
             : RestingShape();
         if (snap && !shape.IsRunning)
             shape.SnapTo(target);
@@ -180,7 +187,7 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
     private RoundedCornerShape RestingShape()
     {
         if (_owner is not { } owner)
-            return _theme.Current.Theme.Shapes.Get(_shapes.Container);
+            return _theme.Current.Theme.Shapes.Get(GeometryProfile.ContainerShape);
         if (M3IconButton.GetContainerShapeOverride(owner) is { } shape)
             return shape;
 
@@ -188,10 +195,10 @@ public sealed class MaterialIconButtonContainerPresenter : Control, IMaterialThe
         var square = M3IconButton.GetIsSquare(owner);
         var role = (selected, square) switch
         {
-            (true, false) => _shapes.Selected,
-            (true, true) => _shapes.SelectedSquare,
-            (false, false) => _shapes.Container,
-            _ => _shapes.Square
+            (true, false) => GeometryProfile.SelectedShape,
+            (true, true) => GeometryProfile.SelectedSquareShape,
+            (false, false) => GeometryProfile.ContainerShape,
+            _ => GeometryProfile.SquareShape
         };
         return _theme.Current.Theme.Shapes.Get(role);
     }

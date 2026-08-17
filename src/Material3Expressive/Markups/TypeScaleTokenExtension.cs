@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Avalonia.Metadata;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens.Runtime;
@@ -8,6 +9,10 @@ namespace Material3Expressive.Markups;
 /// <example>
 /// <c>FontSize="{m3:TokenRef Token={m3:TypeScaleToken BodyLarge, Field=FontSize}}"</c>
 /// </example>
+[Obsolete(
+    "Legacy Runtime.MaterialToken markup. Use typed shared Raw keys or MaterialValueKey resources.",
+    DiagnosticId = "M3E1001")]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class TypeScaleTokenExtension
 {
     public TypeScaleTokenExtension()

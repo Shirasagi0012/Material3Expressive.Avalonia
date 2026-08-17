@@ -32,11 +32,11 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Controls.Automation;
 using Material3Expressive.Foundation;
-using MaterialColorUtilities.Avalonia.Tokens;
 using MaterialSkiaShadow;
 using System.Windows.Input;
 
@@ -91,6 +91,59 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     private static readonly FontFeatureCollection s_defaultTextFontFeatures =
         FontFeatureCollection.Parse("liga=0, clig=0");
 
+    private static readonly ListItemGeometryProfile DefaultGeometry = new(
+        ShapeRole.CornerExtraSmall,
+        ShapeRole.CornerLarge,
+        ShapeRole.CornerLarge,
+        ShapeRole.CornerLarge,
+        ShapeRole.CornerLarge,
+        ShapeRole.CornerMedium,
+        ShapeRole.CornerLarge,
+        ContainerElevation: 0,
+        DraggedContainerElevation: 4,
+        OneLineContainerHeight: 56,
+        TwoLineContainerHeight: 72,
+        ThreeLineContainerHeight: 88,
+        LeadingSpace: 16,
+        TrailingSpace: 16,
+        TopSpace: 10,
+        BottomSpace: 10,
+        BetweenSpace: 12,
+        SegmentedGap: 2,
+        ContentTextStyle: TypographyRole.BodyLarge,
+        SupportingTextStyle: TypographyRole.BodyMedium,
+        OverlineTextStyle: TypographyRole.LabelSmall,
+        LeadingTextStyle: TypographyRole.TitleMedium,
+        TrailingTextStyle: TypographyRole.LabelSmall);
+
+    private static readonly ListItemVisualColors DefaultVisualColors = new(
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        TransparentBrush(),
+        Colors.Black);
+
     /// <summary>Defines which Compose ListItem overload family this row adapts.</summary>
     public static readonly StyledProperty<ListItemInteractionMode> InteractionModeProperty =
         AvaloniaProperty.Register<MaterialListItem, ListItemInteractionMode>(nameof(InteractionMode));
@@ -112,6 +165,19 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     internal static readonly StyledProperty<MaterialListItemSegmentPosition> SegmentPositionProperty =
         AvaloniaProperty.Register<MaterialListItem, MaterialListItemSegmentPosition>(
             nameof(SegmentPosition));
+
+    // These hidden semantic properties carry the typed MaterialValue results selected by the
+    // ControlTheme. Public interaction/content properties remain ordinary Avalonia properties;
+    // state selection and animation consume these immutable profiles in the control.
+    internal static readonly StyledProperty<ListItemGeometryProfile> ResolvedGeometryProperty =
+        AvaloniaProperty.Register<MaterialListItem, ListItemGeometryProfile>(
+            nameof(ResolvedGeometry),
+            DefaultGeometry);
+
+    internal static readonly StyledProperty<ListItemVisualColors> ResolvedVisualColorsProperty =
+        AvaloniaProperty.Register<MaterialListItem, ListItemVisualColors>(
+            nameof(ResolvedVisualColors),
+            DefaultVisualColors);
 
     /// <summary>Defines an optional command invoked by a successful long press on an interactive row.</summary>
     public static readonly StyledProperty<ICommand?> LongClickCommandProperty =
@@ -161,12 +227,16 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     public static readonly DirectProperty<MaterialListItem, IBrush> OverlineBrushProperty =
         AvaloniaProperty.RegisterDirect<MaterialListItem, IBrush>(nameof(OverlineBrush), item => item.OverlineBrush);
 
+    // Material values project component tokens to semantic roles, but role-to-foundation-value
+    // mapping remains a late control policy. Keep the theme consumer only for TypographyScheme,
+    // ShapeScheme and MotionScheme updates; component colours and metrics must come exclusively
+    // from ResolvedVisualColors and ResolvedGeometry above.
     private readonly MaterialThemeController _theme;
     private readonly MaterialInteractionController _interaction;
     private readonly Dictionary<TextBlock, SlotTypographyAssignment> _slotTypographyAssignments = new();
 
-    private ListItemMetrics _tokens = ListItemDefaults.Metrics();
-    private ListItemVisualColors _colors = ListItemDefaults.Colors(Foundation.ResolvedTheme.Default, false);
+    private ListItemGeometryProfile _tokens = DefaultGeometry;
+    private ListItemVisualColors _colors = DefaultVisualColors;
     private AnimatedShape? _shape;
     private AnimatedBrush? _containerBrushAnimation;
     private AnimatedBrush? _contentBrushAnimation;
@@ -235,6 +305,20 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     {
         get => GetValue(SegmentPositionProperty);
         set => SetValue(SegmentPositionProperty, value);
+    }
+
+    /// <summary>Gets the hidden geometry and typography-role MaterialValue projection.</summary>
+    internal ListItemGeometryProfile ResolvedGeometry
+    {
+        get => GetValue(ResolvedGeometryProperty);
+        set => SetValue(ResolvedGeometryProperty, value);
+    }
+
+    /// <summary>Gets the hidden visual-colour MaterialValue projection.</summary>
+    internal ListItemVisualColors ResolvedVisualColors
+    {
+        get => GetValue(ResolvedVisualColorsProperty);
+        set => SetValue(ResolvedVisualColorsProperty, value);
     }
 
     /// <summary>Gets or sets the optional command invoked by a long press on an interactive row.</summary>
@@ -337,7 +421,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     {
         var shape = new AnimatedShape(
             RestingShape(),
-            _theme.Current.Theme.Motion.Get(_tokens.ShapeMotion));
+            _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
         _interaction.Motion.Add(shape.Progress);
         return shape;
     }
@@ -356,8 +440,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
 
     internal bool ParityShadowOccluderDrawn => true;
 
-    private Color ShadowColor =>
-        _theme.Current.Theme.ColorScheme?.GetColor(SysColorToken.Shadow, _theme.Current.IsDark) ?? Colors.Black;
+    private Color ShadowColor => _colors.ShadowColor;
 
     /// <inheritdoc />
     /// <remarks>
@@ -378,12 +461,15 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
             IsSelectedProperty,
             IsDraggedProperty,
             SegmentPositionProperty,
-            IsEnabledProperty);
+            IsEnabledProperty,
+            ResolvedVisualColorsProperty,
+            ResolvedGeometryProperty);
         AffectsMeasure<MaterialListItem>(
             LeadingContentProperty,
             TrailingContentProperty,
             OverlineContentProperty,
-            SupportingContentProperty);
+            SupportingContentProperty,
+            ResolvedGeometryProperty);
     }
 
     /// <inheritdoc />
@@ -690,6 +776,11 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
             // now-invalid former position.
             ApplyVisualState(snapShape: true);
         }
+        else if (change.Property == ResolvedGeometryProperty
+                 || change.Property == ResolvedVisualColorsProperty)
+        {
+            ApplyTokens();
+        }
         else if (change.Property == IsEffectivelyEnabledProperty)
         {
             _interaction.Set(InteractionState.Dragged, EffectiveDragged);
@@ -711,8 +802,8 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
 
     private void ApplyTokens()
     {
-        _tokens = ListItemDefaults.Metrics();
-        _colors = ListItemDefaults.Colors(_theme.Current.Theme, _theme.Current.IsDark);
+        _tokens = ResolvedGeometry;
+        _colors = ResolvedVisualColors;
 
         var typography = _theme.Current.Theme.Typography;
         var scale = typography.GetTypeScale(_tokens.ContentTextStyle);
@@ -763,11 +854,11 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
         // without replacing a caller's local value or local binding. It is leased and disposed on
         // slot replacement/detach so caller-owned TextBlocks do not retain a ListItem role.
         var requested = new Dictionary<TextBlock, TypographyRole>();
-        AddRequestedSlotTypography(requested, LeadingContent, TypographyRole.TitleMedium);
-        AddRequestedSlotTypography(requested, TrailingContent, TypographyRole.LabelSmall);
-        AddRequestedSlotTypography(requested, OverlineContent, TypographyRole.LabelSmall);
-        AddRequestedSlotTypography(requested, Content, TypographyRole.BodyLarge);
-        AddRequestedSlotTypography(requested, SupportingContent, TypographyRole.BodyMedium);
+        AddRequestedSlotTypography(requested, LeadingContent, _tokens.LeadingTextStyle);
+        AddRequestedSlotTypography(requested, TrailingContent, _tokens.TrailingTextStyle);
+        AddRequestedSlotTypography(requested, OverlineContent, _tokens.OverlineTextStyle);
+        AddRequestedSlotTypography(requested, Content, _tokens.ContentTextStyle);
+        AddRequestedSlotTypography(requested, SupportingContent, _tokens.SupportingTextStyle);
 
         var stale = new List<TextBlock>();
         foreach (var pair in _slotTypographyAssignments)
@@ -1001,7 +1092,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
             return;
         }
 
-        Shape.AnimateTo(target, _theme.Current.Theme.Motion.Get(_tokens.ShapeMotion));
+        Shape.AnimateTo(target, _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial));
         UpdateContentClip();
         _interaction.Motion.RequestFrame();
         InvalidateVisual();
@@ -1082,7 +1173,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
 
     private void UpdateAnimatedColors(bool snap)
     {
-        var spring = _theme.Current.Theme.Motion.Get(_tokens.ColorMotion);
+        var spring = _theme.Current.Theme.Motion.Get(MotionRole.DefaultEffects);
         var started = false;
 
         RetargetBrush(ref _containerBrushAnimation, TargetContainerBrush(), spring, snap, ref started);
@@ -1099,7 +1190,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
     private void UpdateElevation(bool snap)
     {
         var target = TargetElevation();
-        var spring = _theme.Current.Theme.Motion.Get(_tokens.ElevationMotion);
+        var spring = _theme.Current.Theme.Motion.Get(MotionRole.FastSpatial);
 
         if (_elevation is null)
         {
@@ -1216,4 +1307,7 @@ public sealed class MaterialListItem : ToggleButton, IMaterialThemeConsumer, IMa
             return _colors.DraggedSupportingContentColor;
         return EffectiveSelected ? _colors.SelectedSupportingContentColor : _colors.SupportingContentColor;
     }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }

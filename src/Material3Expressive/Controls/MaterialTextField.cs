@@ -42,16 +42,13 @@ public enum TextFieldVariant
 /// </para>
 /// </remarks>
 [TemplatePart(TextBoxPartName, typeof(TextBox))]
-public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMaterialMotionConsumer
+public class MaterialTextField : TemplatedControl, IMaterialMotionConsumer
 {
     private MaterialElementContext? _material;
 
     private ResolvedTheme ResolvedTheme => _material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default;
-    private bool IsDarkVariant => _material?.Theme.Current.IsDark ?? false;
     private MaterialMotionController Motion => _material?.Motion ?? throw new InvalidOperationException("Material element context is not initialized.");
     private SpringSpec Spring(MotionRole role) => (_material?.Theme.Current.Theme ?? Foundation.ResolvedTheme.Default).Motion.Get(role);
-
-    void IMaterialThemeConsumer.OnMaterialThemeChanged(MaterialThemeState state) => ApplyTokens();
 
     void IMaterialMotionConsumer.OnMaterialMotionFrame() =>
         OnMotionTick();
@@ -83,20 +80,57 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
     public static readonly StyledProperty<bool> IsErrorProperty =
         AvaloniaProperty.Register<MaterialTextField, bool>(nameof(IsError));
 
+    internal static readonly StyledProperty<TextFieldGeometryProfile> GeometryProfileProperty =
+        AvaloniaProperty.Register<MaterialTextField, TextFieldGeometryProfile>(
+            nameof(GeometryProfile),
+            new TextFieldGeometryProfile(
+                ShapeRole.CornerExtraSmallTop,
+                56,
+                1,
+                2,
+                24,
+                new Thickness(16, 0),
+                IsFilled: true));
+
+    internal static readonly StyledProperty<TextFieldTypographyProfile> TypographyProfileProperty =
+        AvaloniaProperty.Register<MaterialTextField, TextFieldTypographyProfile>(
+            nameof(TypographyProfile),
+            new TextFieldTypographyProfile(
+                TypographyRole.BodyLarge,
+                TypographyRole.BodySmall,
+                TypographyRole.BodySmall));
+
+    internal static readonly StyledProperty<TextFieldVisualColors> VisualColorsProperty =
+        AvaloniaProperty.Register<MaterialTextField, TextFieldVisualColors>(
+            nameof(VisualColors),
+            TransparentVisualColors());
+
     private SpringAnimation? _float;
     private TextBox? _textBox;
     private DispatcherTimer? _caretTimer;
     private bool _caretVisible;
     private double _labelWidthAtRest;
     private double _labelWidthFloated;
+    private IImmutableBrush _inputBrush = TransparentBrush();
+    private IImmutableBrush _supportingBrush = TransparentBrush();
+    private IImmutableBrush _placeholderBrush = TransparentBrush();
 
-    private TextFieldMetrics _tokens = TextFieldDefaults.Metrics(TextFieldVariant.Filled);
-    private TextFieldVisualColors _colors = TextFieldDefaults.Colors(Foundation.ResolvedTheme.Default, TextFieldVariant.Filled, false);
+    private TextFieldGeometryProfile _geometry = new(
+        ShapeRole.CornerExtraSmallTop,
+        56,
+        1,
+        2,
+        24,
+        new Thickness(16, 0),
+        IsFilled: true);
+    private TextFieldTypographyProfile _typography = new(
+        TypographyRole.BodyLarge, TypographyRole.BodySmall, TypographyRole.BodySmall);
+    private TextFieldVisualColors _colors = TransparentVisualColors();
 
     public MaterialTextField()
     {
         _material = MaterialElementContext.Ensure(this);
-        ApplyTokens();
+        ApplyProfiles();
     }
 
     static MaterialTextField()
@@ -105,7 +139,11 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
             VariantProperty,
             IsErrorProperty,
             LabelProperty,
-            SupportingTextProperty);
+            SupportingTextProperty,
+            GeometryProfileProperty,
+            TypographyProfileProperty,
+            VisualColorsProperty);
+        AffectsMeasure<MaterialTextField>(GeometryProfileProperty, TypographyProfileProperty);
         FocusableProperty.OverrideDefaultValue<MaterialTextField>(false);
     }
 
@@ -149,11 +187,33 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         set => SetValue(IsErrorProperty, value);
     }
 
+    internal TextFieldGeometryProfile GeometryProfile
+    {
+        get => GetValue(GeometryProfileProperty);
+        set => SetValue(GeometryProfileProperty, value);
+    }
+
+    internal TextFieldTypographyProfile TypographyProfile
+    {
+        get => GetValue(TypographyProfileProperty);
+        set => SetValue(TypographyProfileProperty, value);
+    }
+
+    internal TextFieldVisualColors VisualColors
+    {
+        get => GetValue(VisualColorsProperty);
+        set => SetValue(VisualColorsProperty, value);
+    }
+
+    /// <summary>The input colour selected from the current Material profile and control state.</summary>
+    internal IImmutableBrush InputBrush => _inputBrush;
+
+    internal static readonly DirectProperty<MaterialTextField, IImmutableBrush> InputBrushProperty =
+        AvaloniaProperty.RegisterDirect<MaterialTextField, IImmutableBrush>(
+            nameof(InputBrush), o => o.InputBrush);
+
     /// <summary>The colour the supporting text should take right now.</summary>
-    public IImmutableBrush SupportingBrush =>
-        !IsEffectivelyEnabled ? _colors.DisabledSupportingColor
-        : IsError ? _colors.ErrorColor
-        : _colors.SupportingColor;
+    public IImmutableBrush SupportingBrush => _supportingBrush;
 
     /// <summary>Exposes <see cref="SupportingBrush" /> to the template.</summary>
     public static readonly DirectProperty<MaterialTextField, IImmutableBrush> SupportingBrushProperty =
@@ -161,7 +221,7 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
             nameof(SupportingBrush), o => o.SupportingBrush);
 
     /// <summary>The brush used for placeholder text while the editor is empty.</summary>
-    public IImmutableBrush PlaceholderBrush => _colors.PlaceholderColor;
+    public IImmutableBrush PlaceholderBrush => _placeholderBrush;
 
     /// <summary>Exposes <see cref="PlaceholderBrush"/> to the template.</summary>
     public static readonly DirectProperty<MaterialTextField, IImmutableBrush> PlaceholderBrushProperty =
@@ -188,19 +248,19 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
                 - (hasSupportingText ? SupportingSlotHeight : 0);
             var height = hasSupportingText
                 ? availableHeight
-                : Math.Min(availableHeight, _tokens.ContainerHeight);
+                : Math.Min(availableHeight, _geometry.ContainerHeight);
             return new Rect(0, outlinedLabelOverhang, Bounds.Width, Math.Max(0, height));
         }
     }
 
     private double OutlinedLabelOverhang =>
-        !_tokens.IsFilled && !string.IsNullOrEmpty(Label) ? OutlinedLabelTopInset : 0;
+        !_geometry.IsFilled && !string.IsNullOrEmpty(Label) ? OutlinedLabelTopInset : 0;
 
     // TextFieldImpl.kt defines SupportingTopPadding as 4.dp. The slot itself uses BodySmall's
     // 16dp line height. An outlined field additionally reserves its 8dp label overhang above
     // the 56dp visible container.
     private double SupportingSlotHeight => SupportingTopPadding
-        + ResolvedTheme.Typography.GetTypeScale(_tokens.SupportingTextStyle).LineHeight;
+        + ResolvedTheme.Typography.GetTypeScale(_typography.SupportingTextStyle).LineHeight;
 
     private const double SupportingTopPadding = 4;
 
@@ -226,18 +286,18 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
 
         var enabled = IsEffectivelyEnabled;
         var focused = _textBox?.IsFocused ?? false;
-        var corners = ResolvedTheme.Shapes.GetCornerRadius(_tokens.ContainerShape, field.Size);
+        var corners = ResolvedTheme.Shapes.GetCornerRadius(_geometry.ContainerShape, field.Size);
 
         if (!string.IsNullOrEmpty(Label))
             _labelWidthFloated = MeasureFloatedLabel(ResolvedTheme.Typography);
 
-        var outlineWidth = focused ? _tokens.FocusOutlineWidth : _tokens.OutlineWidth;
+        var outlineWidth = focused ? _geometry.FocusOutlineWidth : _geometry.OutlineWidth;
         var outline = !enabled ? _colors.DisabledOutlineColor
             : IsError ? _colors.ErrorColor
             : focused ? _colors.FocusOutlineColor
             : _colors.OutlineColor;
 
-        if (_tokens.IsFilled)
+        if (_geometry.IsFilled)
         {
             // Filled: a tinted surface, and an indicator along the bottom edge only.
             MaterialContainer.Draw(
@@ -264,7 +324,7 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
     protected override Size MeasureOverride(Size availableSize)
     {
         var size = base.MeasureOverride(availableSize);
-        return new Size(size.Width, Math.Max(size.Height, _tokens.ContainerHeight));
+        return new Size(size.Width, Math.Max(size.Height, _geometry.ContainerHeight));
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -304,11 +364,16 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == VariantProperty
-            || change.Property == IsEffectivelyEnabledProperty
+        if (change.Property == IsEffectivelyEnabledProperty
             || change.Property == IsErrorProperty)
         {
-            ApplyTokens();
+            ApplyProfiles();
+        }
+        else if (change.Property == GeometryProfileProperty
+                 || change.Property == TypographyProfileProperty
+                 || change.Property == VisualColorsProperty)
+        {
+            ApplyProfiles();
         }
         else if (change.Property == TextProperty)
         {
@@ -328,6 +393,13 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
             InvalidateMeasure();
             InvalidateVisual();
         }
+        else if (change.Property == ForegroundProperty)
+        {
+            // Foreground is a normal public Avalonia slot. Application styles and local values
+            // may replace the ControlTheme's InputBrush binding, and the hosted editor must follow
+            // that effective winner rather than writing a token value over it.
+            UpdateEditorColors();
+        }
     }
 
     /// <summary>
@@ -345,8 +417,8 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         var radius = MaterialContainer.Deflate(corners, inset);
         var pen = new ImmutablePen(outline, width);
 
-        var notchStart = rect.X + _tokens.HorizontalSpace - LabelPadding;
-        if (width > _tokens.OutlineWidth)
+        var notchStart = rect.X + _geometry.ContentPadding.Left - LabelPadding;
+        if (width > _geometry.OutlineWidth)
             notchStart -= 0.5;
         var notchWidth = _labelWidthFloated + LabelPadding * 2;
         var openness = FloatFraction;
@@ -446,13 +518,13 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         if (string.IsNullOrEmpty(Label) || field.Width <= 0 || field.Height <= 0)
             return null;
         var typography = ResolvedTheme.Typography;
-        var resting = typography.GetTypeScale(_tokens.InputTextStyle);
-        var floated = typography.GetTypeScale(_tokens.FloatingLabelTextStyle);
+        var resting = typography.GetTypeScale(_typography.InputTextStyle);
+        var floated = typography.GetTypeScale(_typography.FloatingLabelTextStyle);
         var fraction = FloatFraction;
         var typeface = new Typeface(
-            typography.GetFontFamily(_tokens.InputTextStyle),
+            typography.GetFontFamily(_typography.InputTextStyle),
             FontStyle.Normal,
-            typography.GetFontWeight(_tokens.InputTextStyle));
+            typography.GetFontWeight(_typography.InputTextStyle));
         var size = Lerp(resting.FontSize, floated.FontSize, fraction);
         var lineHeight = Lerp(resting.LineHeight, floated.LineHeight, fraction);
         var letterSpacing = Lerp(resting.LetterSpacing, floated.LetterSpacing, fraction);
@@ -460,10 +532,10 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         // TextFieldImpl.kt measures an expanded label with a 24dp minimum line height and a
         // minimized label with a 16dp one. Using font metrics here caused the custom Avalonia
         // draw path to be too short and vertically centred incorrectly.
-        var restingY = _tokens.IsFilled
+        var restingY = _geometry.IsFilled
             ? (field.Height - resting.LineHeight) / 2
             : field.Y / 2 + OutlinedLabelTopInset + (field.Height - OutlinedLabelTopInset - resting.LineHeight) / 2;
-        var floatedY = _tokens.IsFilled ? FilledLabelTopInset : 0;
+        var floatedY = _geometry.IsFilled ? FilledLabelTopInset : 0;
         return new LabelDrawingParameters(
             Label,
             typeface,
@@ -471,7 +543,7 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
             lineHeight,
             letterSpacing,
             new Point(
-                field.X + _tokens.HorizontalSpace,
+                field.X + _geometry.ContentPadding.Left,
                 restingY + (floatedY - restingY) * fraction));
     }
 
@@ -489,13 +561,13 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
 
     private double MeasureFloatedLabel(ResolvedTypographyScheme typography)
     {
-        var style = typography.GetTypeScale(_tokens.FloatingLabelTextStyle);
+        var style = typography.GetTypeScale(_typography.FloatingLabelTextStyle);
         using var text = new TextLayout(
             Label ?? string.Empty,
             new Typeface(
-                typography.GetFontFamily(_tokens.FloatingLabelTextStyle),
+                typography.GetFontFamily(_typography.FloatingLabelTextStyle),
                 FontStyle.Normal,
-                typography.GetFontWeight(_tokens.FloatingLabelTextStyle)),
+                typography.GetFontWeight(_typography.FloatingLabelTextStyle)),
             style.FontSize,
             Brushes.Black,
             flowDirection: FlowDirection,
@@ -556,31 +628,28 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         Motion.RequestFrame();
     }
 
-    private void ApplyTokens()
+    private void ApplyProfiles()
     {
-        var previousPlaceholder = PlaceholderBrush;
-        _tokens = TextFieldDefaults.Metrics(Variant);
-        _colors = TextFieldDefaults.Colors(ResolvedTheme, Variant, IsDarkVariant);
+        _geometry = GeometryProfile;
+        _typography = TypographyProfile;
+        _colors = VisualColors;
 
-        var typography = ResolvedTheme.Typography;
-
-        Padding = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, 0);
-        MinHeight = _tokens.ContainerHeight;
-        var inputStyle = typography.GetTypeScale(_tokens.InputTextStyle);
-        FontSize = inputStyle.FontSize;
-        FontFamily = typography.GetFontFamily(_tokens.InputTextStyle);
-        FontWeight = typography.GetFontWeight(_tokens.InputTextStyle);
-        // TextFieldImpl.kt provides bodyLarge to the editor content. The inherited attached role
-        // carries its line height and tracking through Avalonia's TextBox template as well.
-        TypographyScheme.SetTextStyle(this, _tokens.InputTextStyle);
-        var previousSupporting = SupportingBrush;
-
-        Foreground = IsEffectivelyEnabled
-            ? IsError ? _colors.ErrorInputColor : _colors.InputColor
-            : _colors.DisabledInputColor;
-
-        RaisePropertyChanged(SupportingBrushProperty, previousSupporting, SupportingBrush);
-        RaisePropertyChanged(PlaceholderBrushProperty, previousPlaceholder, PlaceholderBrush);
+        SetAndRaise(
+            InputBrushProperty,
+            ref _inputBrush,
+            IsEffectivelyEnabled
+                ? IsError ? _colors.ErrorInputColor : _colors.InputColor
+                : _colors.DisabledInputColor);
+        SetAndRaise(
+            SupportingBrushProperty,
+            ref _supportingBrush,
+            !IsEffectivelyEnabled
+                ? _colors.DisabledSupportingColor
+                : IsError ? _colors.ErrorColor : _colors.SupportingColor);
+        SetAndRaise(
+            PlaceholderBrushProperty,
+            ref _placeholderBrush,
+            _colors.PlaceholderColor);
 
         _labelWidthAtRest = 0;
         UpdateEditorColors();
@@ -598,7 +667,7 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         // fixed-height TextBox anchored to the bottom of the available grid row. These offsets
         // keep the editor centered, including the 4dp that a supporting slot adds to a filled
         // field's grid row and the 8dp outlined-label overhang.
-        var bottom = _tokens.IsFilled
+        var bottom = _geometry.IsFilled
             ? string.IsNullOrEmpty(SupportingText) ? 2.5 : 6.5
             : OutlinedLabelOverhang + 2.5;
         // TODO:HACK Fluent's focused TextPresenter settles on the next physical pixel at the parity
@@ -606,7 +675,11 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         // focused; all unfocused field states retain their Compose-aligned position.
         if (_textBox.IsFocused)
             bottom += 0.5;
-        _textBox.Margin = new Thickness(_tokens.HorizontalSpace, 0, _tokens.HorizontalSpace, bottom);
+        _textBox.Margin = new Thickness(
+            _geometry.ContentPadding.Left,
+            0,
+            _geometry.ContentPadding.Right,
+            bottom);
     }
 
     private void UpdateEditorColors()
@@ -707,6 +780,33 @@ public class MaterialTextField : TemplatedControl, IMaterialThemeConsumer, IMate
         var caret = new Rect(topLeft.Value, bottomRight.Value);
         return caret.Width > 0 && caret.Height > 0 ? caret : null;
     }
+
+    private static TextFieldVisualColors TransparentVisualColors()
+    {
+        var transparent = TransparentBrush();
+        return new TextFieldVisualColors(
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent,
+            transparent);
+    }
+
+    private static IImmutableBrush TransparentBrush() =>
+        new ImmutableSolidColorBrush(Colors.Transparent);
 }
 
 internal sealed record MaterialTextFieldLabelProbe(

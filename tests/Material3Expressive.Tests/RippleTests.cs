@@ -267,7 +267,7 @@ public class MaterialInteractionControllerRippleTests
         Assert.NotNull(interaction.RippleRadius);
         var expectedRadius = control switch
         {
-            MaterialCheckbox => CheckboxDefaults.Metrics().StateLayerSize / 2,
+            MaterialCheckbox checkbox => checkbox.GeometryProfile.StateLayerSize / 2,
             MaterialRadioButton => RadioButtonDefaults.Metrics().StateLayerSize / 2,
             MaterialSwitch => SwitchDefaults.Metrics().StateLayerSize / 2,
             _ => throw new InvalidOperationException()

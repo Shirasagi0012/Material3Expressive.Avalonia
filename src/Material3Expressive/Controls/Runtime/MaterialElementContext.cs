@@ -33,12 +33,18 @@ internal sealed class MaterialElementContext
 
     internal Control Owner => _owner;
 
+    [Obsolete(
+        "Legacy whole-theme snapshot controller. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     internal MaterialThemeController Theme => _theme ?? CreateTheme();
 
     internal MaterialMotionController Motion => _motion ?? CreateMotion();
 
     internal MaterialInteractionController Interaction => _interaction ?? CreateInteraction();
 
+    [Obsolete(
+        "Legacy whole-theme snapshot controller. Consume typed MaterialValueKey<T> resources.",
+        DiagnosticId = "M3E1004")]
     internal MaterialThemeController? ThemeIfCreated => _theme;
     internal MaterialMotionController? MotionIfCreated => _motion;
     internal MaterialInteractionController? InteractionIfCreated => _interaction;

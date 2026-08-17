@@ -4,6 +4,9 @@ using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Controls;
 
+[Obsolete(
+    "Legacy chip defaults snapshot. Use ChipValueKeys and the MaterialChip ControlTheme instead.",
+    DiagnosticId = "M3E1005")]
 internal sealed record ChipMetrics(
     ColorTokenValue ContainerColor,
     ColorTokenValue LabelTextColor,
@@ -31,7 +34,10 @@ internal sealed record ChipMetrics(
     TypographyRole LabelTextStyle,
     bool IsSelectable);
 
-internal sealed record ChipVisualColors(
+[Obsolete(
+    "Legacy chip colour snapshot. Use ChipValueKeys instead.",
+    DiagnosticId = "M3E1005")]
+internal sealed record LegacyChipVisualColors(
     IImmutableBrush ContainerColor,
     IImmutableBrush LabelTextColor,
     IImmutableBrush LeadingIconColor,
@@ -47,10 +53,16 @@ internal sealed record ChipVisualColors(
     IImmutableBrush DisabledOutlineColor);
 
 /// <summary>Component-owned policy for assist, filter, input and suggestion chips.</summary>
+[Obsolete(
+    "Legacy chip defaults adapter. Use ChipValueKeys and the MaterialChip ControlTheme instead.",
+    DiagnosticId = "M3E1005")]
 internal static class ChipDefaults
 {
     private static ColorTokenValue Transparent => ColorTokenValue.Literal(Avalonia.Media.Colors.Transparent);
 
+    [Obsolete(
+        "Legacy chip metrics snapshot. Use ChipValueKeys.GeometryProfile instead.",
+        DiagnosticId = "M3E1005")]
     public static ChipMetrics Metrics(ChipVariant variant) => variant switch
     {
         ChipVariant.Assist => new(
@@ -160,7 +172,10 @@ internal static class ChipDefaults
         _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
     };
 
-    public static ChipVisualColors Colors(ResolvedTheme theme, ChipVariant variant, bool isDark)
+    [Obsolete(
+        "Legacy chip colour projection. Use ChipValueKeys visual endpoints instead.",
+        DiagnosticId = "M3E1005")]
+    public static LegacyChipVisualColors Colors(ResolvedTheme theme, ChipVariant variant, bool isDark)
     {
         var metrics = Metrics(variant);
         ArgumentNullException.ThrowIfNull(theme);
