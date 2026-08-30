@@ -5,10 +5,8 @@ namespace Material3Expressive.Foundation;
 /// (stamp <c>14_1_0</c>).
 /// </summary>
 /// <remarks>
-/// Only eight of these are configurable on a <see cref="ShapeScheme" />. The directional roles are
-/// derived from their base role by squaring off the other corners, and
-/// <see cref="ShapeRole.CornerNone" /> and <see cref="ShapeRole.CornerFull" /> are fixed — a theme
-/// cannot redefine "no rounding" or "fully rounded", which matches upstream.
+/// Directional roles are projected from their canonical base Raw identities by squaring off the
+/// other corners. Every base identity, including None and Full, can be explicitly overridden.
 /// </remarks>
 public enum ShapeRole
 {

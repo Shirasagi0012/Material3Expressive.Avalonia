@@ -72,7 +72,7 @@ internal static class MotionValueKeys
                 role,
                 MaterialValue.FromRaw(
                     $"Value.Foundation.Motion.{role}",
-                    FoundationThemeRawTokens.Motion.For(role)));
+                    SystemMotionTokens.For(role)));
         }
 
         return keys;
@@ -127,7 +127,7 @@ internal static class TypographyValueKeys
                 token,
                 MaterialValue.FromRaw(
                     $"Value.Foundation.Typography.FontFamily.{token}",
-                    FoundationThemeRawTokens.Typography.For(token)));
+                    SystemTypographyTokens.For(token)));
         }
 
         return keys;
@@ -143,7 +143,7 @@ internal static class TypographyValueKeys
                 token,
                 MaterialValue.FromRaw(
                     $"Value.Foundation.Typography.FontWeight.{token}",
-                    FoundationThemeRawTokens.Typography.For(token)));
+                    SystemTypographyTokens.For(token)));
         }
 
         return keys;
@@ -154,17 +154,13 @@ internal static class TypographyValueKeys
         var keys = new Dictionary<TypographyRole, TypographyRoleValueKeys>();
         foreach (var role in Enum.GetValues<TypographyRole>())
         {
-            var raw = FoundationThemeRawTokens.TypeScale.For(role);
+            var raw = SystemTypeScaleTokens.For(role);
             var prefix = $"Value.Foundation.Typography.{role}";
             keys.Add(
                 role,
                 new TypographyRoleValueKeys(
-                    new MaterialValueKey<FontFamily>(
-                        $"{prefix}.FontFamily",
-                        new RawRecipePlan<FontFamily>(new TypographyFontFamilyRecipe(raw.Font))),
-                    new MaterialValueKey<FontWeight>(
-                        $"{prefix}.FontWeight",
-                        new RawRecipePlan<FontWeight>(new TypographyFontWeightRecipe(raw.Weight))),
+                    MaterialValue.FromRaw($"{prefix}.FontFamily", raw.FontFamily),
+                    MaterialValue.FromRaw($"{prefix}.FontWeight", raw.FontWeight),
                     MaterialValue.FromRaw($"{prefix}.FontSize", raw.FontSize),
                     MaterialValue.FromRaw($"{prefix}.LineHeight", raw.LineHeight),
                     MaterialValue.FromRaw($"{prefix}.LetterSpacing", raw.LetterSpacing)));
@@ -227,11 +223,7 @@ internal sealed class FixedShapeRoleRecipe : IRawValueRecipe<RoundedCornerShape>
     internal FixedShapeRoleRecipe(ShapeRole role)
     {
         _role = role;
-        _dependencies = ShapeRawProjection.DependencyFor(role) is { } dependency
-            ? Array.AsReadOnly<MaterialToken>([dependency])
-            : Array.Empty<MaterialToken>();
-
-        ShapeRawProjection.Validate(role);
+        _dependencies = Array.AsReadOnly<MaterialToken>([ShapeRawProjection.DependencyFor(role)]);
     }
 
     public IReadOnlyList<MaterialToken> Dependencies => _dependencies;
@@ -248,10 +240,10 @@ internal sealed class RawShapeRoleRecipe : IRawValueRecipe<RoundedCornerShape>
     internal RawShapeRoleRecipe(MaterialToken<ShapeRole> roleToken)
     {
         _roleToken = roleToken ?? throw new ArgumentNullException(nameof(roleToken));
-        var dependencies = new MaterialToken[1 + FoundationThemeRawTokens.Shape.All.Count];
+        var dependencies = new MaterialToken[1 + SystemShapeTokens.All.Count];
         dependencies[0] = roleToken;
         var index = 1;
-        foreach (var dependency in FoundationThemeRawTokens.Shape.All)
+        foreach (var dependency in SystemShapeTokens.All)
             dependencies[index++] = dependency;
         _dependencies = Array.AsReadOnly(dependencies);
     }
@@ -264,119 +256,31 @@ internal sealed class RawShapeRoleRecipe : IRawValueRecipe<RoundedCornerShape>
 
 internal static class ShapeRawProjection
 {
-    internal static MaterialToken<RoundedCornerShape>? DependencyFor(ShapeRole role) => role switch
-    {
-        ShapeRole.CornerExtraSmall or ShapeRole.CornerExtraSmallTop =>
-            FoundationThemeRawTokens.Shape.ExtraSmall,
-        ShapeRole.CornerSmall => FoundationThemeRawTokens.Shape.Small,
-        ShapeRole.CornerMedium => FoundationThemeRawTokens.Shape.Medium,
-        ShapeRole.CornerLarge or
-        ShapeRole.CornerLargeStart or
-        ShapeRole.CornerLargeEnd or
-        ShapeRole.CornerLargeTop => FoundationThemeRawTokens.Shape.Large,
-        ShapeRole.CornerLargeIncreased => FoundationThemeRawTokens.Shape.LargeIncreased,
-        ShapeRole.CornerExtraLarge or ShapeRole.CornerExtraLargeTop =>
-            FoundationThemeRawTokens.Shape.ExtraLarge,
-        ShapeRole.CornerExtraLargeIncreased =>
-            FoundationThemeRawTokens.Shape.ExtraLargeIncreased,
-        ShapeRole.CornerExtraExtraLarge => FoundationThemeRawTokens.Shape.ExtraExtraLarge,
-        ShapeRole.CornerNone or ShapeRole.CornerFull => null,
-        _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown shape role."),
-    };
-
-    internal static void Validate(ShapeRole role)
-    {
-        _ = DependencyFor(role);
-    }
+    internal static MaterialToken<RoundedCornerShape> DependencyFor(ShapeRole role) =>
+        SystemShapeTokens.ForProjection(role);
 
     internal static RoundedCornerShape Resolve(ShapeRole role, MaterialValueContext context) => role switch
     {
-        ShapeRole.CornerNone => ShapeTokens.CornerNone,
-        ShapeRole.CornerExtraSmall => context.Get(FoundationThemeRawTokens.Shape.ExtraSmall),
+        ShapeRole.CornerNone => context.Get(SystemShapeTokens.CornerNone),
+        ShapeRole.CornerExtraSmall => context.Get(SystemShapeTokens.CornerExtraSmall),
         ShapeRole.CornerExtraSmallTop =>
-            context.Get(FoundationThemeRawTokens.Shape.ExtraSmall).Top(),
-        ShapeRole.CornerSmall => context.Get(FoundationThemeRawTokens.Shape.Small),
-        ShapeRole.CornerMedium => context.Get(FoundationThemeRawTokens.Shape.Medium),
-        ShapeRole.CornerLarge => context.Get(FoundationThemeRawTokens.Shape.Large),
-        ShapeRole.CornerLargeStart => context.Get(FoundationThemeRawTokens.Shape.Large).Start(),
-        ShapeRole.CornerLargeEnd => context.Get(FoundationThemeRawTokens.Shape.Large).End(),
-        ShapeRole.CornerLargeTop => context.Get(FoundationThemeRawTokens.Shape.Large).Top(),
+            context.Get(SystemShapeTokens.CornerExtraSmall).Top(),
+        ShapeRole.CornerSmall => context.Get(SystemShapeTokens.CornerSmall),
+        ShapeRole.CornerMedium => context.Get(SystemShapeTokens.CornerMedium),
+        ShapeRole.CornerLarge => context.Get(SystemShapeTokens.CornerLarge),
+        ShapeRole.CornerLargeStart => context.Get(SystemShapeTokens.CornerLarge).Start(),
+        ShapeRole.CornerLargeEnd => context.Get(SystemShapeTokens.CornerLarge).End(),
+        ShapeRole.CornerLargeTop => context.Get(SystemShapeTokens.CornerLarge).Top(),
         ShapeRole.CornerLargeIncreased =>
-            context.Get(FoundationThemeRawTokens.Shape.LargeIncreased),
-        ShapeRole.CornerExtraLarge => context.Get(FoundationThemeRawTokens.Shape.ExtraLarge),
+            context.Get(SystemShapeTokens.CornerLargeIncreased),
+        ShapeRole.CornerExtraLarge => context.Get(SystemShapeTokens.CornerExtraLarge),
         ShapeRole.CornerExtraLargeIncreased =>
-            context.Get(FoundationThemeRawTokens.Shape.ExtraLargeIncreased),
+            context.Get(SystemShapeTokens.CornerExtraLargeIncreased),
         ShapeRole.CornerExtraLargeTop =>
-            context.Get(FoundationThemeRawTokens.Shape.ExtraLarge).Top(),
+            context.Get(SystemShapeTokens.CornerExtraLarge).Top(),
         ShapeRole.CornerExtraExtraLarge =>
-            context.Get(FoundationThemeRawTokens.Shape.ExtraExtraLarge),
-        ShapeRole.CornerFull => ShapeTokens.CornerFull,
+            context.Get(SystemShapeTokens.CornerExtraExtraLarge),
+        ShapeRole.CornerFull => context.Get(SystemShapeTokens.CornerFull),
         _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown shape role."),
-    };
-}
-
-internal sealed class TypographyFontFamilyRecipe : IRawValueRecipe<FontFamily>
-{
-    private readonly IReadOnlyList<MaterialToken> _dependencies;
-    private readonly MaterialToken<FontFamilyToken> _selector;
-
-    internal TypographyFontFamilyRecipe(MaterialToken<FontFamilyToken> selector)
-    {
-        _selector = selector ?? throw new ArgumentNullException(nameof(selector));
-        _dependencies = Array.AsReadOnly<MaterialToken>(
-        [
-            selector,
-            FoundationThemeRawTokens.Typography.BrandFontFamily,
-            FoundationThemeRawTokens.Typography.PlainFontFamily,
-            FoundationThemeRawTokens.Typography.EmphasizedBrandFontFamily,
-            FoundationThemeRawTokens.Typography.EmphasizedPlainFontFamily,
-        ]);
-    }
-
-    public IReadOnlyList<MaterialToken> Dependencies => _dependencies;
-
-    public FontFamily Evaluate(MaterialValueContext context) => context.Get(_selector) switch
-    {
-        FontFamilyToken.Brand =>
-            context.Get(FoundationThemeRawTokens.Typography.BrandFontFamily),
-        FontFamilyToken.Plain =>
-            context.Get(FoundationThemeRawTokens.Typography.PlainFontFamily),
-        FontFamilyToken.EmphasizedBrand =>
-            context.Get(FoundationThemeRawTokens.Typography.EmphasizedBrandFontFamily),
-        FontFamilyToken.EmphasizedPlain =>
-            context.Get(FoundationThemeRawTokens.Typography.EmphasizedPlainFontFamily),
-        var token => throw new ArgumentOutOfRangeException(
-            nameof(token), token, "Unknown font-family token."),
-    };
-}
-
-internal sealed class TypographyFontWeightRecipe : IRawValueRecipe<FontWeight>
-{
-    private readonly IReadOnlyList<MaterialToken> _dependencies;
-    private readonly MaterialToken<FontWeightToken> _selector;
-
-    internal TypographyFontWeightRecipe(MaterialToken<FontWeightToken> selector)
-    {
-        _selector = selector ?? throw new ArgumentNullException(nameof(selector));
-        _dependencies = Array.AsReadOnly<MaterialToken>(
-        [
-            selector,
-            FoundationThemeRawTokens.Typography.WeightRegular,
-            FoundationThemeRawTokens.Typography.WeightMedium,
-            FoundationThemeRawTokens.Typography.WeightBold,
-        ]);
-    }
-
-    public IReadOnlyList<MaterialToken> Dependencies => _dependencies;
-
-    public FontWeight Evaluate(MaterialValueContext context) => context.Get(_selector) switch
-    {
-        FontWeightToken.Regular =>
-            context.Get(FoundationThemeRawTokens.Typography.WeightRegular),
-        FontWeightToken.Medium =>
-            context.Get(FoundationThemeRawTokens.Typography.WeightMedium),
-        FontWeightToken.Bold => context.Get(FoundationThemeRawTokens.Typography.WeightBold),
-        var token => throw new ArgumentOutOfRangeException(
-            nameof(token), token, "Unknown font-weight token."),
     };
 }

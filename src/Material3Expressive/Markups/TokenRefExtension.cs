@@ -1,10 +1,9 @@
 using Avalonia.Metadata;
-using LegacyMaterialToken = Material3Expressive.Foundation.Tokens.Runtime.MaterialToken;
-using SharedMaterialToken = MaterialDesignTokens.Avalonia.MaterialToken;
+using MaterialDesignTokens.Avalonia;
 
 namespace Material3Expressive.Markups;
 
-/// <summary>Creates a requester-local alias definition for use in typed token override properties.</summary>
+/// <summary>Creates a Raw alias definition for a <see cref="MaterialToken" />.</summary>
 public sealed class TokenRefExtension
 {
     /// <summary>Creates an empty extension for XAML property syntax.</summary>
@@ -25,16 +24,11 @@ public sealed class TokenRefExtension
     /// <summary>Returns a <c>TokenDefinition&lt;T&gt;</c> matching the target token's value type.</summary>
     public object ProvideValue()
     {
-        return Token switch
-        {
-            SharedMaterialToken target => target.CreateAliasDefinition(),
-            LegacyMaterialToken target => typeof(Material3Expressive.Foundation.Tokens.Runtime.Token)
-                .GetMethod(nameof(Material3Expressive.Foundation.Tokens.Runtime.Token.Alias))!
-                .MakeGenericMethod(target.ValueType)
-                .Invoke(null, [target])!,
-            null => throw new InvalidOperationException("TokenRef requires a target token."),
-            _ => throw new InvalidOperationException(
-                $"TokenRef cannot target '{Token.GetType().FullName}'.")
-        };
+        return Token is MaterialToken target
+            ? target.CreateAliasDefinition()
+            : throw new InvalidOperationException(
+                Token is null
+                    ? "TokenRef requires a target token."
+                    : $"TokenRef cannot target '{Token.GetType().FullName}'.");
     }
 }

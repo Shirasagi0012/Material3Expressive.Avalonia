@@ -8,43 +8,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
     <Styles.Resources>
-        <ControlTheme x:Key="{x:Type m3:MaterialSurface}" TargetType="m3:MaterialSurface">
-            <!-- Surface defaults are one typed MaterialValue profile. The public properties remain
-                 ordinary setters so local/application values retain normal Avalonia precedence. -->
-            <Setter Property="ResolvedVisualColors"
-                    Value="{DynamicResource {x:Static m3:SurfaceValueKeys.VisualColors}}" />
-            <Setter Property="Background"
-                    Value="{Binding ResolvedVisualColors.SurfaceBrush, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="Foreground"
-                    Value="{Binding ResolvedVisualColors.OnSurfaceBrush, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Template">
-                <ControlTemplate>
-                    <Border CornerRadius="{TemplateBinding CornerRadius}"
-                            ClipToBounds="True">
-                        <ContentPresenter x:Name="PART_ContentPresenter"
-                                          Content="{TemplateBinding Content}"
-                                          ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          Padding="{TemplateBinding Padding}"
-                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-                    </Border>
-                </ControlTemplate>
-            </Setter>
-        </ControlTheme>
-        <ControlTheme x:Key="{x:Type m3:MaterialDivider}" TargetType="m3:MaterialDivider">
-            <!-- Material values are projected through hidden semantic properties. These are
-                 ordinary base-theme setters, so application styles and local values on the
-                 public properties retain normal Avalonia precedence. -->
-            <Setter Property="ResolvedDividerBrush"
-                    Value="{DynamicResource {x:Static m3:DividerValueKeys.DividerBrush}}" />
-            <Setter Property="ResolvedThickness"
-                    Value="{DynamicResource {x:Static m3:DividerValueKeys.Thickness}}" />
-            <Setter Property="DividerBrush"
-                    Value="{Binding ResolvedDividerBrush, RelativeSource={RelativeSource Self}}" />
-            <Setter Property="Thickness"
-                    Value="{Binding ResolvedThickness, RelativeSource={RelativeSource Self}}" />
-        </ControlTheme>
         <ControlTheme x:Key="{x:Type m3:MaterialListItem}" TargetType="m3:MaterialListItem">
             <!-- Geometry and visual profiles are the only Material default inputs. Padding remains
                  public and can still be replaced by an application style or local value. -->

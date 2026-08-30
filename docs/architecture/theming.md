@@ -1,94 +1,76 @@
 # Current theming architecture
 
-`MaterialTheme` is the mutable authoring model. `ResolvedTheme` is its immutable, inherited
-system snapshot, published through `MaterialThemeScope.ResolvedTheme`. Component defaults do not
-live in either object: each control family owns a small, stateless C# Defaults policy.
+The active theming core is a boundary-relative Raw-token graph built on Avalonia resources. The
+old `ResolvedTheme`, `MaterialThemeScope`, requester-relative `TokenReader`, and scheme snapshot
+transport have been removed.
 
-## Resolution order
+The normative design is split across the [token refactor documentation](../refactor/README.md).
+This page records the currently active production path.
 
-For a public Avalonia property, the effective value follows Avalonia precedence:
-
-1. control-local value;
-2. application or subtree `Style` / `ControlTheme`;
-3. library Material `ControlTheme` binding;
-4. component-owned default projection;
-5. raw component tokens plus `ResolvedTheme` system schemes.
-
-The library default is therefore a binding in the Material control theme, never a local write to
-`Background`, `Foreground`, `Padding`, or another public styling property. A consumer can retune
-an ordinary visual value with normal Avalonia styling without needing a token override bag.
-
-## Token pipeline
-
-The generator accepts three JSONC input kinds under `src/Material3Expressive/Tokens/`:
+## Resolution pipeline
 
 ```text
-AndroidX *Tokens.kt
-    -> .comp.jsonc                raw component provenance
-    -> .sys.jsonc                 shared system data
-    -> .ref.jsonc                 future reference primitives
-
-.comp.jsonc + ResolvedTheme + component axis/state policy
-    -> XxxDefaults semantic records
-    -> control, ControlTheme, presenter, or adapter
+canonical MaterialToken<T> identity
+    -> MaterialTheme.Children sparse sources
+    -> Avalonia owner resource chain
+    -> composed DefaultRawTokens catalog
+    -> one MaterialResolutionSession
+    -> MaterialValueKey<T>
+    -> DynamicResource / ControlTheme
 ```
 
-`.comp.jsonc` is intentionally a faithful, internal transcription. It records token facts,
-provenance, system-role references, dimensions, opacity and elevation; it does not describe
-variant assembly, interaction state, Avalonia bindings, template behavior, or public
-customisation. The generator emits raw token sets and the system TypeScale record only. It does
-not emit component default records, resolved component brushes, `ResolvedTheme.Components`, or
-generic token override types.
+`MaterialTheme` is a `ResourceProvider` placement. A Flat request fixes that placement's Owner as
+the boundary for every Raw dependency in the same resolution session. Each alias or recipe hop
+restarts at that Owner and preserves the original `ThemeVariant`.
 
-`ResolvedTheme` contains only resolved system schemes:
+There is no persistent Raw or Flat cache. One request memoizes common Raw dependencies only for
+the lifetime of its `MaterialResolutionSession`.
 
-```text
-ColorScheme
-Typography
-Shapes
-Motion
-Ripple
+## Raw identities and definitions
+
+Raw identities are immutable, canonical `MaterialToken<T>` instances. M3E owns its Foundation and
+component identities; MCU Avalonia owns Reference/System color identities. Identity descriptors do
+not carry defaults.
+
+Definitions use the closed shared model:
+
+- literal;
+- same-type alias;
+- pure recipe with declared Raw dependencies.
+
+The composed `DefaultRawTokens` catalog is queried only after the complete Avalonia resource chain
+misses. This lets a nearer sparse placement inherit an explicit ancestor definition instead of
+accidentally replacing it with a built-in default.
+
+## Authoring
+
+`MaterialTheme.Children` contains sparse `IMaterialTokenSource` instances. Later children have
+higher priority. MCU `ColorScheme` objects can participate directly; a one-off definition uses
+`TokenOverride`:
+
+```xml
+<m3:MaterialTheme>
+  <m3:MaterialTheme.Children>
+    <mcu:TonalSpotScheme Color="#6750A4" />
+    <m3:TokenOverride
+        Key="{x:Static m3:SystemShapeTokens.CornerSmall}"
+        Value="10" />
+  </m3:MaterialTheme.Children>
+</m3:MaterialTheme>
 ```
 
-It deliberately has no component tokens, defaults, overrides, light/dark selection, variant,
-size, interaction state, bounds, or pointer state. The consuming control supplies those late
-inputs to its Defaults policy.
+The generator emits canonical descriptors and immutable default-catalog contributions. It does not
+emit per-table override facades. `TokenRef` creates an alias definition targeting another canonical
+identity.
 
-## Component-owned Defaults
+## Material values and controls
 
-A Defaults class maps raw tables and a system snapshot into semantic records, for example:
+Controls consume public typed `MaterialValueKey<T>` endpoints through `DynamicResource`; Raw keys
+are not a ControlTheme consumption protocol. Material Value plans may combine Raw values into
+consumer-ready brushes, thicknesses, shapes, and profiles, but cannot inspect a requester, bounds,
+pointer state, or other hidden runtime input.
 
-```csharp
-var colors = ButtonDefaults.Colors(theme, variant, isDark);
-var metrics = ButtonDefaults.Metrics(size);
-```
-
-Defaults are pure policy: they do not subscribe to a theme, hold a control, write an
-`AvaloniaProperty`, or manage detach lifecycle. They are also where a Compose correction or an
-intentional Avalonia adaptation is documented beside the control that needs it.
-
-An adapter/control owns lifecycle and late state. Native Avalonia controls use internal attached
-semantic outputs projected by their Material `ControlTheme`; self-rendering controls can retain a
-semantic record or DirectProperty directly. Presenters combine those profiles with interaction,
-bounds and RTL to choose the final render value.
-
-## Customisation boundary
-
-Use the smallest ordinary Avalonia mechanism that reaches the desired result:
-
-- a `MaterialTheme` scheme for a brand-wide system change;
-- a subtree `Style` or `ControlTheme` for a family appearance;
-- a local styled property for one control;
-- a pseudo-class style for enabled/disabled/checked state;
-- a component-specific semantic property only when standard styling cannot express the required
-  presenter contract.
-
-There is no `MaterialTheme.Components`, `ComponentTokenOverrides`, or generic component token
-override bag. That omission is deliberate: component axes and state contracts vary too much for a
-uniform JSON-shaped API to stay understandable or correctly scoped.
-
-## Scope and history
-
-This page is the current contract. The detailed v3 investigation, including rejected approaches
-and early phase labels, is preserved in
-[the archived architecture record](../archive/theming-core-v3-architecture.md).
+During the current migration, token-dependent component families are excluded from the production
+assembly. Only the token-independent Scaffold slice remains enabled. A component returns to the
+build only after its complete Raw -> Material Value -> DynamicResource path no longer depends on
+the deleted runtime.

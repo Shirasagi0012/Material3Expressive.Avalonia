@@ -11,6 +11,10 @@ Material token database and stamped with the version it came from.
 > `0.2.0-alpha` development line. The theming core, token pipeline, motion foundations, broad
 > component coverage, and local visual-parity workflow are implemented. Current completeness work
 > is tracked in [ROADMAP.md](ROADMAP.md); no publication date is currently planned.
+>
+> The current refactor worktree intentionally compiles only the token-independent Scaffold
+> component while token-dependent families migrate to the new Raw -> Material Value path. The
+> component examples below describe the target surface and are restored family by family.
 
 ## What is here
 
@@ -42,9 +46,17 @@ Then load the component styles and theme:
     <m3:MaterialStyles />
 </Application.Styles>
 
-<foundation:MaterialThemeScope.Theme>
-    <foundation:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#6750A4'}" />
-</foundation:MaterialThemeScope.Theme>
+<Application.Resources>
+    <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <m3:MaterialTheme>
+                <m3:MaterialTheme.Children>
+                    <mcu:TonalSpotScheme Color="#6750A4" />
+                </m3:MaterialTheme.Children>
+            </m3:MaterialTheme>
+        </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+</Application.Resources>
 ```
 
 That is the whole setup. Component tokens are *references* to system roles — a button's container
@@ -521,14 +533,21 @@ stack is Avalonia 12.1 with SkiaSharp 4.150.1.
 
 ## Theming a subtree
 
-One attached property re-themes everything below it, including controls that read their tokens in
-C#:
+A subtree override establishes another `MaterialTheme` resource boundary at that scope:
 
 ```xml
 <Border>
-    <m3:MaterialThemeScope.Theme>
-        <m3:MaterialTheme ColorScheme="{mcu:TonalSpotScheme '#FF6D00'}" />
-    </m3:MaterialThemeScope.Theme>
+    <Border.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <m3:MaterialTheme>
+                    <m3:MaterialTheme.Children>
+                        <mcu:TonalSpotScheme Color="#FF6D00" />
+                    </m3:MaterialTheme.Children>
+                </m3:MaterialTheme>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Border.Resources>
     …
 </Border>
 ```
@@ -536,30 +555,13 @@ C#:
 Precedence runs control-local override → nearest subtree theme → application theme → built-in
 defaults. Popups inherit the theme of the subtree that opened them.
 
-The interaction layer uses the portable AndroidX `material3-ripple` algorithm: bounded ripples
-grow from the pointer, selection-control ripples are unbounded and grow from the centre, and quick
-taps finish the complete 225ms expansion before their 150ms fade-out. Animated inset focus rings
-are the framework default:
-
-```xml
-<m3:MaterialTheme>
-    <m3:MaterialTheme.RippleTheme>
-        <m3:RippleThemeConfiguration FocusIndication="InsetRing" />
-    </m3:MaterialTheme.RippleTheme>
-</m3:MaterialTheme>
-```
-
-Inset rings use AndroidX's two-stroke defaults (outer: 0dp inset/2dp width; inner: 1dp inset/3dp
-width), the theme's `Secondary` and `OnSecondary` colours, and the current motion scheme's
-`FastSpatial`/`FastEffects` springs. Set `FocusIndication="Opacity"` on
-`RippleThemeConfiguration` when compatibility with the older focus state layer is required.
+The interaction layer's ripple and focus behavior is restored with each component family. It is
+not configured through a parallel theme snapshot.
 
 ## Retuning component appearance
 
-Components use component-owned Defaults policies internally. They deliberately do not expose
-generated token override bags: use normal Avalonia properties, styles and control themes instead.
-For a checked-state visual override, add a pseudo-class style (for example `ToggleButton:checked`)
-alongside the base style.
+Material semantics can be retuned with one `TokenOverride` per canonical Raw identity. Ordinary
+presentation changes still use Avalonia properties, styles, control themes, and pseudo-classes.
 
 ```xml
 <Border>
@@ -579,9 +581,10 @@ alongside the base style.
 Raw reference, system and component tokens are defined in JSONC tables under
 [`src/Material3Expressive/Tokens`](src/Material3Expressive/Tokens) and turned into C# at build
 time. The `.ref.jsonc`, `.sys.jsonc` and `.comp.jsonc` suffixes identify the reference, system
-and raw component layers. Each component maps those raw tables in its own Defaults code; JSON does
-not describe component behavior, state selection, bindings, or an override API. Raw token records
-are internal. Public retuning uses Avalonia properties and styles. See
+and raw component layers. The generator emits canonical Raw identities and the immutable default
+graph; component-owned Material Value plans project consumer-ready values. JSON does not describe
+component behavior, state selection, bindings, or an override facade. Public semantic retuning uses
+`TokenOverride`; presentation changes use Avalonia properties and styles. See
 [docs/reference/token-tables.md](docs/reference/token-tables.md) and the
 [token coverage inventory](docs/reference/token-coverage.md).
 

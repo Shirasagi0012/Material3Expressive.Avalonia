@@ -1,6 +1,7 @@
 # 诊断与测试策略
 
-> **目标架构，尚未实现。** 本文定义新 Token/Value 架构必须具备的失败语义、诊断信息和验证矩阵。
+> **状态：runtime 诊断已落地，完整验证待用户允许执行。** 本文定义 Token/Value 架构必须具备的
+> 失败语义、诊断信息和验证矩阵。
 > 当前测试通过只能作为重构前 baseline，不能证明本文描述的目标行为已经存在。
 
 相关模型见 [Raw Token 模型](./raw-token-model.md)、[Material Value](./material-values.md)和
@@ -326,8 +327,8 @@ Provider 生命周期测试至少覆盖：
 - 同一实例并发挂到两个 host 时明确抛错；
 - detached placement、child source 和旧 host 在移除强引用后可被 GC；
 - 多次 attach/detach 不累计 handler，不重复广播；
-- typed override facade 作为 child source 时以 `Changed` 通知 placement，作为独立 provider 时走
-  Avalonia 资源通知；同一实例的双重安装被拒绝；
+- `TokenOverride` 作为 child source 时以 `Changed` 通知 placement，作为独立 provider 时走 Avalonia
+  资源通知；同一实例的双重安装被拒绝；
 - 同 host 多 placement 不属于保证行为；若实现开发期诊断，验证其信息与触发条件。
 
 GC 测试应使用 `WeakReference`、隔离创建方法和有界的强制收集循环，避免测试局部变量生存期造成假阴性。
@@ -371,7 +372,7 @@ identity 和实际 `DynamicResource` 订阅链正确。
 
 MCU color path 需要独立覆盖以下回归：
 
-- M3E compatibility facade、generator alias 与 MCU public catalog 返回同一 descriptor instance；
+- generator alias 与 MCU public catalog 返回同一 descriptor instance，M3E 不创建 compatibility facade；
 - composite catalog 只接受一个 canonical owner；缺少/版本不兼容的 MCU contribution 诊断 owner 与版本；
 - 空子 placement 继承祖先 Color Context，全链无 scheme 时才使用 terminal baseline；
 - 局部 ColorScheme 影响当前 subtree 而不影响 sibling；
@@ -429,7 +430,7 @@ cache；届时必须新增 notification ordering、cache generation、custom var
   dependency 必须显式标记并由相应 fixture/source 覆盖；
 - MCU external declaration 的 path/type/layer/version 与实际 canonical symbol 一致；
 - public `MaterialValueKey<T>` 的字段名、Path 和 `T` 不发生未经审查的兼容性变化；
-- generated override facade 的 property/converter 与 token 类型一致。
+- `TokenOverride` 的 literal converter 与 canonical token 类型一致，`TokenRef` alias 保持同类型。
 
 运行时仍保留同类防御，因为用户可以通过动态 provider、C# API 或 XAML override 引入 generator 看不到
 的 definition。generator 与 runtime 诊断应共享术语和 failure kind，避免同一错误出现两套含义。

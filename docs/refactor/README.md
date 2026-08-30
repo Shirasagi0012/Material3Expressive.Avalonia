@@ -1,15 +1,16 @@
 # Material 3 多层 Token 目标架构
 
-> **状态：目标设计，尚未实现。**
+> **状态：实施中。** Foundation Raw identity、`MaterialTheme`、composed defaults、Material Value runtime
+> 与逐 token `TokenOverride` 已落地；token-dependent 组件正在从编译排除区逐族恢复。
 >
-> 本目录定义下一轮 Theme/Token 重构的架构契约、模块边界和迁移顺序。当前仓库行为仍以
-> [`../architecture/theming.md`](../architecture/theming.md) 和代码为准；上一轮未完成设计已移至
+> 本目录定义 Theme/Token 重构的架构契约、模块边界和剩余迁移顺序。当前活动路径概览见
+> [`../architecture/theming.md`](../architecture/theming.md)；上一轮未完成设计已移至
 > [`../archive/theme-token-refactor-v1/`](../archive/theme-token-refactor-v1/README.md)。
 
 目标是在 Avalonia 原生资源系统上承载 Material Design 3 的 Reference → System → Component
-多层 token graph，并让 ControlTheme 通过标准 `DynamicResource` 消费最终值。重构保留当前 typed
-token runtime 的类型、层级和循环诊断能力，但将消费路径从 `ResolvedTheme`/Defaults Adapter 逐步
-替换成单 placement 的 `MaterialTheme` provider 与 typed `MaterialValueKey<T>`。
+多层 token graph，并让 ControlTheme 通过标准 `DynamicResource` 消费最终值。旧 snapshot、requester-
+relative runtime 和 scheme authoring 已删除；剩余工作是把排除的控件恢复到单 placement
+`MaterialTheme` provider 与 typed `MaterialValueKey<T>` 路径。
 
 ## 阅读目录
 
@@ -19,11 +20,11 @@ token runtime 的类型、层级和循环诊断能力，但将消费路径从 `R
 | [Raw token 模型](raw-token-model.md) | `MaterialToken<T>`、literal/alias/recipe、三层依赖、默认图和覆盖语义 |
 | [Material values](material-values.md) | `MaterialValueKey<T>`、Direct/Recipe plan、消费粒度和组件运行时边界 |
 | [MaterialTheme provider](material-theme.md) | Children、scope、主题透传、查询顺序、生命周期和通知 |
-| [MaterialColorUtilities 集成](material-color-utilities.md) | 颜色 token 所有权、Color Context、catalog contribution、兼容与缓存边界 |
+| [MaterialColorUtilities 集成](material-color-utilities.md) | 颜色 token 所有权、Color Context、catalog contribution、scope 与缓存边界 |
 | [Generator](generator.md) | JSONC 输入、composed default catalog、诊断以及未来 values manifest |
-| [XAML 与 authoring](authoring-and-xaml.md) | 全局/子树 placement、typed override、DynamicResource 和最终值覆盖 |
+| [XAML 与 authoring](authoring-and-xaml.md) | 全局/子树 placement、单 token override、DynamicResource 和最终值覆盖 |
 | [诊断与测试](diagnostics-and-testing.md) | miss/invalid/cycle 语义、测试矩阵、性能验证和验收门槛 |
-| [迁移计划](migration-plan.md) | 当前残留、Button 纵向切片、双轨迁移、清理与回滚边界 |
+| [迁移计划](migration-plan.md) | 当前进度、控件恢复顺序、清理与验收边界 |
 
 ## 一句话模型
 
@@ -73,7 +74,7 @@ DynamicResource MaterialValueKey<T>
 - 不自动为约两千个 Raw token 生成公开 Flat API。
 - 不把 variant × size × state 展开成完整笛卡尔积。
 - 不在 Raw `.comp.jsonc` 中加入 Avalonia 控件行为 DSL。
-- 不在第一阶段删除 `ResolvedTheme`；它在双轨迁移完成前保留兼容职责。
+- 不恢复 `ResolvedTheme`、requester-relative resolver 或按 table 生成的 typed override facade。
 
 ## 仍需由纵向切片验证
 

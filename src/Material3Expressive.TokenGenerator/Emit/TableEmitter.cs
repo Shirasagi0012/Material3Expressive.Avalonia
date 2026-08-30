@@ -1,6 +1,5 @@
 using Material3Expressive.TokenGenerator.Model;
 using System;
-using System.Collections.Generic;
 
 namespace Material3Expressive.TokenGenerator.Emit;
 
@@ -71,8 +70,6 @@ internal static class TableEmitter
 
         writer.Line();
         TokenDescriptors(writer, table);
-        writer.Line();
-        TokenOverrides(writer, table);
     }
 
     private static void TokenDescriptors(CodeWriter writer, TokenTable table)
@@ -107,80 +104,6 @@ internal static class TableEmitter
         return token.Type == TokenType.Color
             ? "global::Avalonia.Media.Color"
             : TokenTypes.ToClrType(token.Type, token.EnumType);
-    }
-
-    private static void TokenOverrides(CodeWriter writer, TokenTable table)
-    {
-        var enumConverters = EnumConverters(table);
-        writer.Doc("summary", $"Sparse resource overrides for the {table.Name} token set.");
-        using (writer.Block(
-                   $"public sealed class {table.Name}Overrides : global::Material3Expressive.Foundation.Tokens.Runtime.MaterialTokenOverrides"))
-        {
-            var first = true;
-            foreach (var token in table.Tokens)
-            {
-                if (!first)
-                    writer.Line();
-
-                first = false;
-                writer.Doc("summary", token.Summary);
-                writer.Line(
-                    $"[global::System.ComponentModel.TypeConverter(typeof({DescriptorConverterType(token, enumConverters)}))]");
-                var definition =
-                    $"global::MaterialDesignTokens.Avalonia.TokenDefinition<{DescriptorValueType(token)}>";
-                using (writer.Block($"public {definition}? {token.Name}"))
-                {
-                    writer.Line($"get => GetDefinition({table.Name}Keys.{token.Name});");
-                    writer.Line(
-                        $"set {{ if (value is null) Clear({table.Name}Keys.{token.Name}); else SetDefinition({table.Name}Keys.{token.Name}, value); }}");
-                }
-            }
-
-            foreach (var converter in enumConverters)
-            {
-                writer.Line();
-                writer.Doc("summary", $"Converts XAML literals of <c>{converter.Key}</c> to token definitions.");
-                using (writer.Block(
-                           $"public sealed class {converter.Value} : " +
-                           "global::Material3Expressive.Foundation.Tokens.RawTokenDefinitionTypeConverter<" +
-                           $"{converter.Key}>"))
-                {
-                }
-            }
-        }
-    }
-
-    private static IReadOnlyDictionary<string, string> EnumConverters(TokenTable table)
-    {
-        var result = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var token in table.Tokens)
-        {
-            if (token.Type != TokenType.Enum)
-                continue;
-
-            var valueType = DescriptorValueType(token);
-            if (!result.ContainsKey(valueType))
-                result.Add(valueType, $"EnumTokenDefinitionTypeConverter{result.Count}");
-        }
-
-        return result;
-    }
-
-    private static string DescriptorConverterType(
-        TokenEntry token,
-        IReadOnlyDictionary<string, string> enumConverters)
-    {
-        const string tokens = "global::Material3Expressive.Foundation.Tokens.";
-        return token.Type switch
-        {
-            TokenType.Color => tokens + "RawColorTokenDefinitionTypeConverter",
-            TokenType.Shape => tokens + "RawShapeTokenDefinitionTypeConverter",
-            TokenType.Typography => tokens + "RawTypographyTokenDefinitionTypeConverter",
-            TokenType.Motion => tokens + "RawMotionTokenDefinitionTypeConverter",
-            TokenType.Boolean => tokens + "RawBooleanTokenDefinitionTypeConverter",
-            TokenType.Enum => enumConverters[DescriptorValueType(token)],
-            _ => tokens + "RawDoubleTokenDefinitionTypeConverter"
-        };
     }
 
     private static void SystemRecord(CodeWriter writer, TokenTable table)

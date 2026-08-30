@@ -1,7 +1,7 @@
 # Raw Token 模型
 
-> **状态：目标架构，尚未实现。** 本文定义重构完成后 Raw token 的语义契约；代码片段是 API 草图，
-> 不表示当前仓库已经提供这些类型或成员。总体结构见[架构总览](architecture-overview.md)，
+> **状态：Foundation runtime 已实现。** 本文定义 Raw token 的语义契约；部分代码片段仍是说明性草图。
+> 总体结构见[架构总览](architecture-overview.md)，
 > `MaterialTheme` 如何接入 Avalonia 资源树见 [MaterialTheme 与资源边界](material-theme.md)，颜色域的
 > 外部 owner 与算法边界见 [MaterialColorUtilities 集成](material-color-utilities.md)。
 
@@ -40,7 +40,7 @@ Raw 层不负责：
 颜色/尺寸投影属于 [Material Value](material-values.md)，控件轴与 snapshot 边界属于 ControlTheme、组件
 policy 或 Presenter；直接资源消费同样通过 Material Value 建立契约。
 
-Raw descriptor 仍需公开给 typed override 与 alias authoring，但消费端不能直接请求 Raw key。Raw branch
+Raw descriptor 仍需公开给单 token override 与 alias authoring，但消费端不能直接请求 Raw key。Raw branch
 在本地 miss 后必须把查找交还 Avalonia，只有一个完整的 Material Value resolution session 才知道整条
 Owner 链何时结束并安全查询 `DefaultRawTokens`。需要原样 `T` 的消费槽使用 `DirectRaw<T>` value plan。
 
@@ -80,7 +80,7 @@ descriptor 必须满足以下不变量：
 5. canonical key 必须由静态字段或 canonical factory 返回稳定的同一实例。
 
 同一 token domain 只能有一个 canonical owner。尤其是 Reference palette 与 System color descriptor 由
-MCU Avalonia 提供；M3E compatibility facade 只能返回 MCU 的同一实例，不能创建 path 相同的 wrapper。
+MCU Avalonia 提供；M3E 不提供 path 相同的 wrapper 或 compatibility facade。
 详细依赖和迁移约束见 [MaterialColorUtilities 集成](material-color-utilities.md)。
 
 主 API 不使用一个有限 `enum` 表示所有 token。有限 enum 无法表达带参数的身份，例如自定义 palette
@@ -315,19 +315,27 @@ Component.Button.ContainerColor
 
 ## 8. 覆盖与 Clear
 
-override provider 只保存显式设置的 definition：
+第一版的 `TokenOverride` 只保存一个显式 definition。多个 override 通过
+`MaterialTheme.Children` 组合：
 
 ```csharp
-overrides.Set(FilledButtonTokensKeys.ContainerColor, Colors.Red);
-overrides.Alias(
-    FilledButtonTokensKeys.LabelTextColor,
-    SystemColorTokens.OnPrimary);
-overrides.Clear(FilledButtonTokensKeys.ContainerColor);
+var literal = new TokenOverride
+{
+    Key = FilledButtonTokensKeys.ContainerColor,
+    Value = Colors.Red,
+};
+
+var alias = new TokenOverride
+{
+    Key = FilledButtonTokensKeys.LabelTextColor,
+    Value = SystemColorTokens.OnPrimary.CreateAliasDefinition(),
+};
 ```
 
-`Clear` 的唯一含义是删除当前 provider 的 entry，使该 key 重新成为 miss 并继续外层查找。`null` 可以
-作为 generated facade 中表示 `Clear` 的 authoring 语法，但绝不是一个可解析的 token value 或
-definition。有关 C#/XAML authoring 见 [Authoring 与 XAML](authoring-and-xaml.md)。
+把 `Key` 或 `Value` 设为 `null` 会令该 source 不再包含 entry，使查询重新成为 miss 并继续外层查找。
+`null` 绝不是可解析的 token value 或 definition。有关 C#/XAML authoring 见
+[Authoring 与 XAML](authoring-and-xaml.md)。按 domain 生成 typed convenience facade 延后到出现明确需求后
+再设计，不属于第一版 Raw runtime。
 
 ## 9. 解析失败
 

@@ -34,16 +34,8 @@ public sealed class TokenTableGeneratorTests
         Assert.Contains("TokenLayer.Reference", source);
         Assert.DoesNotContain("Token.Literal((double)40)", source);
         Assert.Contains("MaterialToken<global::Avalonia.Media.Color> ContainerColor", source);
-        Assert.Contains("public sealed class ReferenceTokensOverrides", source);
-        Assert.Contains(
-            "[global::System.ComponentModel.TypeConverter(typeof(" +
-            "global::Material3Expressive.Foundation.Tokens.RawDoubleTokenDefinitionTypeConverter))]",
-            source);
-        Assert.Contains("global::MaterialDesignTokens.Avalonia.TokenDefinition<double>? ContainerHeight", source);
-        Assert.Contains("get => GetDefinition(ReferenceTokensKeys.ContainerHeight);", source);
-        Assert.Contains(
-            "if (value is null) Clear(ReferenceTokensKeys.ContainerHeight); else SetDefinition(ReferenceTokensKeys.ContainerHeight, value);",
-            source);
+        Assert.DoesNotContain("ReferenceTokensOverrides", source);
+        Assert.DoesNotContain("TypeConverter", source);
         Assert.Contains("Source: Material Design token", source);
         Assert.Contains("Provenance: androidx-token", source);
         var catalog = run.Source("GeneratedM3DefaultRawTokens.g.cs");
@@ -89,7 +81,7 @@ public sealed class TokenTableGeneratorTests
         Assert.DoesNotContain("Token.Alias(", source);
         Assert.Contains("TokenLayer.Component", source);
         Assert.DoesNotContain("partial record ButtonLargeTokens", source);
-        Assert.Contains("public sealed class ButtonLargeTokensOverrides", source);
+        Assert.DoesNotContain("ButtonLargeTokensOverrides", source);
         var catalog = run.Source("GeneratedM3DefaultRawTokens.g.cs");
         Assert.Contains("Token.Alias(global::Material3Expressive.Foundation.Tokens.ButtonSmallTokensKeys.ContainerHeight)", catalog);
         Assert.Contains("Token.Alias(global::Material3Expressive.Foundation.Tokens.ButtonSmallTokensKeys.ContainerColor)", catalog);
@@ -115,10 +107,7 @@ public sealed class TokenTableGeneratorTests
 
         var source = run.Source("ColorTokens.Tokens.g.cs");
         Assert.DoesNotContain("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF123456\"))", source);
-        Assert.Contains(
-            "[global::System.ComponentModel.TypeConverter(typeof(" +
-            "global::Material3Expressive.Foundation.Tokens.RawColorTokenDefinitionTypeConverter))]",
-            source);
+        Assert.DoesNotContain("TypeConverter", source);
         var catalog = run.Source("GeneratedM3DefaultRawTokens.g.cs");
         Assert.Contains("Token.Literal(global::Avalonia.Media.Color.Parse(\"#FF123456\"))", catalog);
         Assert.Contains(
@@ -129,7 +118,7 @@ public sealed class TokenTableGeneratorTests
     }
 
     [Fact]
-    public void TokenOverrides_ReuseOneConcreteConverterPerCustomEnumType()
+    public void TokenDescriptors_DoNotEmitOverrideFacadesForCustomEnumTypes()
     {
         var run = GeneratorTestHost.Run(("Enums.comp.jsonc", """
             {
@@ -147,25 +136,11 @@ public sealed class TokenTableGeneratorTests
         Assert.Empty(run.Diagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
 
         var source = run.Source("EnumTokens.Tokens.g.cs");
-        Assert.Equal(
-            2,
-            source.Split(
-                "typeof(EnumTokenDefinitionTypeConverter0)",
-                System.StringSplitOptions.None).Length - 1);
-        Assert.Equal(
-            1,
-            source.Split(
-                "public sealed class EnumTokenDefinitionTypeConverter0",
-                System.StringSplitOptions.None).Length - 1);
-        Assert.Contains(
-            "RawTokenDefinitionTypeConverter<global::Example.Mode>",
-            source);
-        Assert.Contains(
-            "public sealed class EnumTokenDefinitionTypeConverter1",
-            source);
-        Assert.Contains(
-            "TokenDefinitionTypeConverter<global::Example.OtherMode>",
-            source);
+        Assert.Contains("MaterialToken<global::Example.Mode> First", source);
+        Assert.Contains("MaterialToken<global::Example.Mode> Second", source);
+        Assert.Contains("MaterialToken<global::Example.OtherMode> Other", source);
+        Assert.DoesNotContain("Overrides", source);
+        Assert.DoesNotContain("TypeConverter", source);
     }
 
     [Fact]

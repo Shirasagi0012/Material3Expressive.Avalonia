@@ -1,8 +1,8 @@
 # MaterialColorUtilities 集成边界
 
-> **状态：目标架构，尚未实现。** 本文定义
+> **状态：已接入 Foundation，组件消费迁移中。** 本文定义
 > [`MaterialColorUtilities`](../../modules/MaterialColorUtilities/)（下称 MCU）与新 Token runtime 的所有权、
-> package 依赖、scope、缓存和兼容边界。本文不是当前 MCU Avalonia API 的使用说明。
+> package 依赖、scope 与缓存边界。本文不是 MCU standalone API 的完整使用说明。
 
 ## 1. 决策
 
@@ -14,7 +14,7 @@
 - Material3Expressive（下称 M3E）组合 MCU 的 color catalog contribution，并让 Component color token alias
   直接指向 MCU 的 canonical System key；
 - M3E 的新消费路径不再依赖 inherited `ResolvedSchemeProperty` 或 requester-relative `$self` binding；
-- MCU 现有 markup/binding API 暂时保留，服务 MCU standalone 用户与兼容期。
+- MCU standalone markup/binding API 由 MCU 自己维护；M3E 新路径不消费它们。
 
 三个候选方案的结论如下：
 
@@ -27,45 +27,33 @@
 这与当前 coverage 决策一致：palette 与 system color 的事实由 MCU 唯一拥有，M3E 不复制一份颜色表。
 现状说明见 [Token coverage](../reference/token-coverage.md)。
 
-## 2. 当前实现中保留与退出的部分
+## 2. 当前接入形态
 
-当前 MCU Avalonia 路径大致是：
+M3E 活动路径是：
 
 ```text
 mutable ColorScheme
-    → ResolvedColorScheme（Light/Dark immutable snapshot）
-    → inherited MaterialColor.ResolvedSchemeProperty
-    → ColorTokenBinding / MdSysColor / MdRefPalette
-    → requester-relative binding
+    → IMaterialTokenSource in MaterialTheme.Children
+    → internal MCU Color Context Raw token
+    → MCU Reference/System color recipes
+    → M3E component aliases / Material Value plans
 ```
 
-当前 M3E 又建立了一条桥接路径：
-
-```text
-M3E ReferencePaletteTokens / SystemColorTokens wrapper
-    → MaterialTheme.TryGetResource
-    → ResolvedTheme.ColorScheme
-    → MCU ResolvedColorScheme
-```
-
-相关当前代码包括：
+相关实现包括：
 
 - [`ColorScheme`](../../modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/Schemes/ColorScheme.cs)
 - [`ResolvedColorScheme`](../../modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/Tokens/ResolvedColorScheme.cs)
-- [`MaterialColor`](../../modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/MaterialColor.cs)
-- [`ColorTokenBinding`](../../modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/Tokens/ColorTokenBinding.cs)
-- M3E 当前的 [`ReferencePaletteTokens`](../../src/Material3Expressive/Foundation/Tokens/Runtime/ReferencePaletteTokens.cs)
-  与 [`SystemColorTokens`](../../src/Material3Expressive/Foundation/Tokens/Runtime/SystemColorTokens.cs)
+- [`McuColorDefaultTokens`](../../modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/Tokens/McuColorDefaultTokens.cs)
 - 当前 [`MaterialTheme`](../../src/Material3Expressive/Foundation/Theming/MaterialTheme.cs)
 
-需要保留的是：
+保留的 MCU 职责是：
 
 - `ColorScheme` 的可绑定 seed、contrast、spec version、platform 与 custom colors；
 - MCU Core 的 `DynamicScheme` 计算；
 - scheme mutation 后整体替换 immutable snapshot 的模型；
 - snapshot 内部对 palette、role 或 standalone brush 的 memoization。
 
-需要从 M3E 新路径退出的是：
+M3E 活动路径已经退出：
 
 - 通过 inherited attached property 为每个 requester 选择 scheme；
 - 通过 `$self`/application fallback binding 取得颜色；
@@ -73,8 +61,8 @@ M3E ReferencePaletteTokens / SystemColorTokens wrapper
 - `MaterialTheme.TryGetResource` 直接 claim 每个标准颜色并返回 snapshot 值；
 - custom color 缺失时用 `Transparent` 伪装成合法 Material token 值。
 
-`ResolvedColorScheme` 本身不是应删除的“Flat cache”。它是固定 scheme input 的算法 snapshot；真正要退出的
-是它作为 whole-theme transport 或 requester-relative resource protocol 的职责。
+`ResolvedColorScheme` 仍是固定 scheme input 的 MCU 算法 snapshot，不是 M3E Flat cache。它不再承担
+M3E whole-theme transport 或 requester-relative resource protocol。
 
 ## 3. Package 与依赖方向
 
@@ -120,7 +108,7 @@ resource key；不能靠 path string 在运行时“合并”它们。
 |---|---|
 | Reference tonal palette color keys | MCU Avalonia |
 | System color role keys | MCU Avalonia |
-| color-key markup factories 与 typed System/Reference override facade | MCU Avalonia |
+| color-key markup factories 与 canonical System/Reference identity | MCU Avalonia |
 | color-context internal key 与 color recipes | MCU Avalonia |
 | Component color slots | M3E generator/组件 |
 | non-color Reference/System/Component keys | 对应 M3E 或未来 domain package |
@@ -264,7 +252,7 @@ MCU contribution 提供：
 
 - canonical Reference palette key family；
 - canonical System color key family；
-- 与这些 key 使用同一 identity 的 XAML factory/typed override facade；
+- 与这些 key 使用同一 identity 的 XAML factory；逐 token authoring 使用通用 `TokenOverride`；
 - `McuColorContextTokens.Current` 的 terminal baseline；
 - Reference key 到 `Current.GetPaletteColor(...)` 的纯 recipe；
 - System key 到 `Current.GetSystemColor(...)` 的纯 recipe；
@@ -457,8 +445,8 @@ MCU 集成至少覆盖：
 1. **M1：共享契约。** 抽出 Raw descriptor、definition、recipe、source 与 catalog contribution contract；
    MCU Core 不依赖它。
 2. **M2：MCU canonical catalog。** 在 MCU Avalonia 建立 canonical color keys、Color Context、default
-   contribution、typed override/XAML factory 和外部 declaration metadata；M3E 旧 facade 暂时转发同一
-   singleton。
+   contribution、XAML key factory 和外部 declaration metadata；逐 token authoring 使用通用
+   `TokenOverride`，不保留 M3E forwarding facade。
 3. **M2/M3：composite defaults。** M3E generator 停止拥有 color key，`DefaultRawTokens` 组合 MCU 与
    generated M3E contribution。
 4. **M3：scheme source。** `ColorScheme` 或 adapter 以 sparse source 接入 `MaterialTheme.Children`；移除

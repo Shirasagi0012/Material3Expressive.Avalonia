@@ -9,5 +9,5 @@ internal static class DefaultRawTokens
         CompositeRawTokenCatalog.Create(
             GeneratedM3DefaultRawTokens.Instance,
             McuColorDefaultTokens.Instance,
-            FoundationThemeDefaultRawTokens.Instance);
+            FoundationDefaultRawTokens.Instance);
 }

@@ -1,7 +1,7 @@
 # Material 3 多层 Token 目标架构
 
-> **文档状态：目标架构。** 本文描述本轮重构完成后应满足的系统契约，不描述当前仓库已经完成的实现。
-> 迁移期间旧的 `ResolvedTheme + component Defaults/adapter` 路径与新路径可能并存；两者并存不改变本文的目标语义。
+> **文档状态：实施中的目标架构。** Foundation runtime 已按本文完成破坏性切换；尚未迁移的组件留在
+> 编译排除区，不与新路径并行运行。
 
 ## 1. 目标
 
@@ -59,7 +59,7 @@ System     → semantic color、type scale、shape、motion role
 Component  → 某一组件的 semantic slot
 ```
 
-其定义是强类型的 literal、alias 或受约束 recipe。Raw token 可被 scope 覆盖，并公开给 typed override
+其定义是强类型的 literal、alias 或受约束 recipe。Raw token 可被 scope 覆盖，并公开给单 token override
 和 alias authoring，但不是 ControlTheme 属性的直接 `DynamicResource` 协议：普通 Raw resource lookup
 无法判断何时完整 Owner 链已经 miss，因而不能安全进入终端 `DefaultRawTokens`。需要原样值的消费槽也应
 声明 `DirectRaw<T>` 的 `MaterialValueKey<T>`。详细模型见 [Raw Token 模型](raw-token-model.md)。
@@ -238,4 +238,4 @@ variant、size 与 state 仍由 ControlTheme selector 或轻量组件 policy 选
 - [Generator](generator.md)：JSONC 输入、default graph、typed API 和编译期校验。
 - [Authoring 与 XAML](authoring-and-xaml.md)：全局/局部 placement、override、Clear 与消费示例。
 - [诊断与测试](diagnostics-and-testing.md)：错误分类、cycle path、scope/theme/lifecycle 测试矩阵。
-- [迁移计划](migration-plan.md)：vertical slice、兼容期、旧路径退出与性能门槛。
+- [迁移计划](migration-plan.md)：Foundation 当前状态、组件恢复切片、旧源码清理与性能门槛。

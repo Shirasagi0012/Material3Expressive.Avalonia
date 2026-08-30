@@ -1,6 +1,7 @@
 # Material Value 与 Flat Schema
 
-> **状态：目标架构，尚未实现。** 本文定义 Raw token graph 与 Avalonia 消费端之间的 Flat schema。
+> **状态：Foundation runtime 已实现，组件 schema 迁移中。** 本文定义 Raw token graph 与 Avalonia
+> 消费端之间的 Flat schema。
 > API 片段用于冻结语义，不代表当前仓库已经提供相应类型。Raw definition 与 fallback 规则见
 > [Raw Token 模型](raw-token-model.md)，完整数据流见[架构总览](architecture-overview.md)。
 

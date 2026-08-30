@@ -18,10 +18,9 @@ system tables, so the unique total remains 120. A raw table is allowed to be a s
 without a one-to-one public control: a component-owned C# Defaults policy may combine several
 size, colour, state, and item tables, or preserve a raw table for a future control family.
 
-There are no `.default.jsonc` inputs. Card, FAB, Form, IconButton, Misc, Navigation, Overlay,
-ProgressIndicator, TextInput and Button policies now live in their owning C# Defaults classes.
-This keeps Compose defaults/corrections and Avalonia adaptation with the controls that consume
-them, rather than generating a global component snapshot or a generic override bag.
+There are no `.default.jsonc` inputs. Generated definitions enter the shared Raw catalog, while
+component projections and Avalonia adaptations live beside their owning ValueKeys and controls.
+This avoids both a global component snapshot and generated override bags.
 
 ## AndroidX files intentionally not represented as raw component tables
 
@@ -32,15 +31,14 @@ to a different owner or need a representation that is not currently part of the 
 |---|---|
 | `ElevationTokens`, `StateTokens`, `TypeScaleTokens` | represented by the three `.sys.jsonc` tables; `TypeScale` is the Avalonia scheme record built from the upstream slots. |
 | `PaletteTokens`, `ColorLightTokens`, `ColorDarkTokens`, `ColorSchemeKeyTokens` | `MaterialColorUtilities` owns tonal palettes, dynamic schemes, and `SysColorToken`; duplicating the generated palette would create a second colour source of truth. |
-| `ShapeTokens`, `ShapeKeyTokens` | `ShapeScheme` and `ShapeRole` own the theme-resolved shape roles; a raw Kotlin shape object would not add a new runtime source. |
-| `MotionTokens`, `StandardMotionTokens`, `ExpressiveMotionTokens`, `MotionSchemeKeyTokens` | `MotionScheme`, `MotionRole`, and the spring implementation own the Avalonia motion contract. |
-| `TypefaceTokens`, `TypographyKeyTokens`, `TypographyTokens` | `TypographyScheme`, `TypeScale`, and the Roboto module own font family, weight, and text-style resolution. |
+| `ShapeTokens`, `ShapeKeyTokens` | `SystemShapeTokens` owns canonical shape Raw identities; `ShapeRole` is retained only for component table facts and directional projection. |
+| `MotionTokens`, `StandardMotionTokens`, `ExpressiveMotionTokens`, `MotionSchemeKeyTokens` | `SystemMotionTokens`, `MotionRole`, and the spring implementation own the Raw identity and Avalonia motion contracts. |
+| `TypefaceTokens`, `TypographyKeyTokens`, `TypographyTokens` | `SystemTypographyTokens`, `SystemTypeScaleTokens`, `TypeScale`, and the Roboto module own type identity, baseline data, and font resources. |
 | `PrimaryNavigationTabTokens` | kept as a documented gap: its `ActiveIndicatorShape` is an inline `RoundedCornerShape(3.dp)`, while the current raw schema only represents a named `ShapeRole`. `TabDefaults` owns the explicit 3dp component policy. |
 
 These ownership decisions are deliberate. A future reference-layer table is appropriate only when
-it can be backed by an independent, stable reference owner; it must not mirror
-`MaterialColorUtilities`, `ShapeScheme`, or `MotionScheme` merely to make the file count look like
-AndroidX.
+it can be backed by an independent, stable reference owner; it must not mirror MCU-owned color or
+the canonical Foundation shape/motion identities merely to make the file count look like AndroidX.
 
 ## Raw tables without a component policy yet
 

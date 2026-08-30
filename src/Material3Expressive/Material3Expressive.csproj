@@ -92,6 +92,20 @@
       component compile against the new runtime.
     -->
     <ItemGroup Label="NewTokenArchitectureComponentExclusions">
+        <!-- Keep the active assembly deliberately small while the old component transport is
+             removed. Scaffold has no token dependency and remains as a layout-only control. -->
+        <Compile Remove="Controls\*.cs" />
+        <Compile Remove="Controls\**\*.cs" />
+        <Compile Include="Controls\MaterialScaffold.cs" />
+        <Compile Include="Controls\MaterialScaffoldPanel.cs" />
+        <Compile Include="Controls\Automation\MaterialScaffoldAutomationPeer.cs" />
+        <Compile Include="Controls\IVisualBoundsProbe.cs" />
+        <Compile Include="Controls\MaterialDivider.cs" />
+        <Compile Include="Controls\MaterialSurface.cs" />
+        <Compile Include="Controls\Defaults\DividerValueKeys.cs" />
+        <Compile Include="Controls\Defaults\SurfaceValueKeys.cs" />
+        <Compile Include="Controls\Interaction\MaterialContainer.cs" />
+
         <Compile Remove="Controls\Automation\MaterialBottomSheetScaffoldAutomationPeer.cs" />
         <Compile Remove="Controls\Automation\MaterialExposedDropdownMenuAutomationPeer.cs" />
         <Compile Remove="Controls\Automation\MaterialFloatingToolbarAutomationPeer.cs" />
@@ -118,12 +132,65 @@
         <Compile Remove="Controls\MaterialTimePicker.cs" />
         <Compile Remove="Controls\PickerStates.cs" />
 
-        <AvaloniaResource Remove="Styles\Components\BottomSheetScaffold.axaml" />
-        <AvaloniaResource Remove="Styles\Components\FloatingToolbar.axaml" />
-        <AvaloniaResource Remove="Styles\Components\Menu.axaml" />
-        <AvaloniaResource Remove="Styles\Components\Pickers.axaml" />
-        <AvaloniaResource Remove="Styles\Components\PullToRefreshBox.axaml" />
-        <AvaloniaResource Remove="Styles\Components\SwipeToDismissBox.axaml" />
+        <!-- Partially migrated controls still obtain shape, motion, typography, or interaction
+             state from the legacy controller. Keep them out until their entire value surface is
+             typed; excluding only the colour path would leave the old transport authoritative. -->
+        <Compile Remove="Controls\MaterialAppBar.cs" />
+        <Compile Remove="Controls\MaterialBadge.cs" />
+        <Compile Remove="Controls\MaterialBottomSheet.cs" />
+        <Compile Remove="Controls\MaterialButtonContainerPresenter.cs" />
+        <Compile Remove="Controls\MaterialCard.cs" />
+        <Compile Remove="Controls\MaterialCheckbox.cs" />
+        <Compile Remove="Controls\MaterialChip.cs" />
+        <Compile Remove="Controls\MaterialCircularProgressIndicator.cs" />
+        <Compile Remove="Controls\MaterialFab.cs" />
+        <Compile Remove="Controls\MaterialFabMenu.cs" />
+        <Compile Remove="Controls\MaterialIconButtonContainerPresenter.cs" />
+        <Compile Remove="Controls\MaterialLinearProgressIndicator.cs" />
+        <Compile Remove="Controls\MaterialListItem.cs" />
+        <Compile Remove="Controls\MaterialListItemPanel.cs" />
+        <Compile Remove="Controls\MaterialLoadingIndicator.cs" />
+        <Compile Remove="Controls\MaterialNavigationBar.cs" />
+        <Compile Remove="Controls\MaterialNavigationDrawer.cs" />
+        <Compile Remove="Controls\MaterialNavigationItem.cs" />
+        <Compile Remove="Controls\MaterialNavigationSuiteScaffold.cs" />
+        <Compile Remove="Controls\MaterialRadioButton.cs" />
+        <Compile Remove="Controls\MaterialSearchBar.cs" />
+        <Compile Remove="Controls\MaterialSegmentedButton.cs" />
+        <Compile Remove="Controls\MaterialSegmentedButtonRow.cs" />
+        <Compile Remove="Controls\MaterialSegmentedList.cs" />
+        <Compile Remove="Controls\MaterialShortNavigationBar.cs" />
+        <Compile Remove="Controls\MaterialSlider.cs" />
+        <Compile Remove="Controls\MaterialSnackbarHost.cs" />
+        <Compile Remove="Controls\MaterialSwitch.cs" />
+        <Compile Remove="Controls\MaterialTabs.cs" />
+        <Compile Remove="Controls\MaterialTextField.cs" />
+        <Compile Remove="Controls\MaterialWideNavigationRail.cs" />
+        <Compile Remove="Controls\MaterialSecureTextField.cs" />
+        <Compile Remove="Controls\M3Button.cs" />
+        <Compile Remove="Controls\M3IconButton.cs" />
+        <Compile Remove="Controls\M3ToggleButton.cs" />
+        <Compile Remove="Controls\M3ToggleIconButton.cs" />
+        <Compile Remove="Controls\MaterialToggleButtonContainerPresenter.cs" />
+
+        <Compile Remove="Controls\Automation\MaterialAppBarAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialListItemAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialNavigationItemAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialNavigationSuiteScaffoldAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialProgressIndicatorAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialSegmentedButtonAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialSegmentedButtonRowAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialShortNavigationBarAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialWideNavigationRailAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialSegmentedListAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialSnackbarHostAutomationPeer.cs" />
+        <Compile Remove="Controls\Automation\MaterialSecureTextFieldAutomationPeer.cs" />
+
+        <!-- Avalonia's SDK discovers .axaml files as AvaloniaXaml items. Remove the whole
+             component directory, then restore only complete component slices. -->
+        <AvaloniaXaml Remove="Styles\Components\*.axaml" />
+        <AvaloniaXaml Include="Styles\Components\Scaffold.axaml" />
+        <AvaloniaXaml Include="Styles\Components\Surface.axaml" />
     </ItemGroup>
 
 </Project>

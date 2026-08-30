@@ -23,9 +23,10 @@ note adjacent to the raw value that needs it.
 
 ## Generated output
 
-A raw reference or component table emits an `internal static` token class in
-`Material3Expressive.Foundation.Tokens`. System tables emit their raw class too; a scheme-shaped
-system table such as `TypeScale` additionally emits its system record and variant enum.
+A raw token-set table emits an `internal static` provenance class and a public canonical
+`XxxTokensKeys` class containing `MaterialToken<T>` identities. The generator also contributes the
+table's immutable literal/alias definitions to `GeneratedM3DefaultRawTokens`. A scheme-shaped
+system table such as `TypeScale` additionally emits its source record and variant enum.
 
 The generator does not emit any of the following:
 
@@ -37,10 +38,10 @@ ComponentTokenOverrides
 ResolvedTheme.Components
 ```
 
-Raw generated types are implementation/provenance artifacts, not a stable package customisation
-API. A component's C# Defaults policy selects raw tables, resolves colour roles against a
-`ResolvedTheme`, applies Compose corrections and Avalonia adaptations, and returns only the
-semantic records its control needs.
+Raw transcription classes are implementation/provenance artifacts. Canonical key classes are the
+stable Raw identity surface used by `TokenOverride`, aliases, and component Material Value plans.
+Consumer-ready brushes, thicknesses, shapes, and profiles are declared as component-owned
+`MaterialValueKey<T>` endpoints rather than resolved snapshots.
 
 ## `componentTokens`
 
@@ -62,8 +63,8 @@ upstream values and source/version metadata without encoding behavior:
 ```
 
 Variant axes, size axes, enabled/checked/pressed selection, state-layer behavior, template
-projection and user-facing properties belong in `ButtonDefaults`, `SwitchDefaults`,
-`IconButtonDefaults`, or the relevant component owner—not in this table.
+projection and user-facing properties belong in the relevant component ValueKeys, ControlTheme,
+or presenter—not in this table.
 
 ## Values and references
 
@@ -95,19 +96,19 @@ Tokens/
   Component/<Domain>/
 ```
 
-There is no `Tokens/Defaults/` input tree. A C# Defaults owner is the corresponding assembly
-layer. This preserves a clean division: JSON holds static source facts; code owns policy, bindings,
-state selection, lifecycle and rendering adaptation.
+There is no `Tokens/Defaults/` input tree. JSON holds static source facts and the generated default
+Raw graph; component C#/AXAML owns Material Value projection, state selection, lifecycle, and
+rendering adaptation.
 
 ## Adding or changing a component
 
 1. Transcribe the upstream raw token object into `.comp.jsonc`, including source/version and
    comments for deviations.
-2. Add or update the component-owned Defaults policy to choose raw tables and resolve system roles.
+2. Add or update component-owned `MaterialValueKey<T>` plans that project the required Raw roots.
 3. Keep normal visual customisation on existing Avalonia properties and styles. Add a
    component-specific semantic property only when a template/presenter genuinely needs one.
 4. Cover mappings and corrections with deterministic tests; run the visual-parity workflow when
    its infrastructure is available.
 
-Do not add a generic override bag or a component snapshot to bridge a one-off need. Those layers
-would blur static token provenance with component state and Avalonia behavior.
+Use the generic one-entry `TokenOverride` for authoring. Do not add a component snapshot or
+per-table generated override facade to bridge a one-off need.

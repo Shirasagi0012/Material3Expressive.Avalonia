@@ -1,7 +1,7 @@
 # Token Generator 与默认定义目录
 
-> 本文描述重构完成后的目标设计。除特别标为“当前”的内容外，文中的 API 名称与输出形态尚未实现，
-> 不能当作当前库的使用说明。
+> **状态：第一版 descriptor/default contribution 输出已实现。** 未来 values manifest 等扩展仍是目标
+> 设计，不能当作当前库已经提供的 API。
 
 Generator 的职责是把带来源信息的 token facts 编译成强类型、可检查的 Raw token 图。它不解析
 Avalonia 资源树，不生成控件行为，也不为 Material value 建立全局枚举或缓存表。
@@ -25,7 +25,7 @@ Avalonia 资源树，不生成控件行为，也不为 Material value 建立全�
 - JSONC 支持注释与尾随逗号；
 - 每张表独立解析、独立发射，声明 catalog 单独参与全局验证；
 - 保留 `source`、`version`、`provenance` 与成员级说明；
-- 生成强类型 `MaterialToken<T>` descriptor 与 typed override facade；
+- 生成强类型 `MaterialToken<T>` descriptor；
 - 在编译期检查引用存在性、值类型、依赖层级与循环。
 
 新架构是在这些能力上补齐 M3E contribution，并参与 composed 默认 Raw 图，而不是把 generator 改写成
@@ -42,8 +42,7 @@ Avalonia 资源树，不生成控件行为，也不为 Material value 建立全�
 3. 生成 literal、alias 与受约束 recipe 构成的默认定义图。
 4. 将本项目拥有的默认定义汇总为只读的 generated contribution，并让统一 `DefaultRawTokens` 组合它与
    MCU 等外部 domain contribution。
-5. 生成 XAML/C# 友好的稀疏 typed override facade。
-6. 保留可追溯来源，并为结构错误提供确定性的编译诊断。
+5. 保留可追溯来源，并为结构错误提供确定性的编译诊断。
 
 ### 2.2 Generator 不负责
 
@@ -123,32 +122,21 @@ flowchart LR
 
 ## 5. 生成输出
 
-对于 token-set 表，目标输出分为四类：
+对于 token-set 表，第一版输出分为三类：
 
 | 输出 | 可见性 | 作用 |
 |---|---|---|
 | `XxxTokens` | internal | 忠实保存 raw transcription 与 provenance |
 | `XxxTokensKeys` | public | 稳定、强类型的 `MaterialToken<T>` identity |
-| `XxxTokensOverrides` | public | 稀疏 typed authoring source/provider |
 | `GeneratedM3DefaultRawTokens` entries | internal/shared | M3E-owned identity 与 variant 对应的不可变 baseline definition contribution |
 
-descriptor 的公开契约是 identity、`Path`、`Layer` 与 `ValueType`。默认定义是 catalog 数据，不应要求
-调用方从 descriptor 上读取；这样 identity 与默认策略可以独立演进。迁移期间可以暂时适配当前
-[`MaterialToken<T>.DefaultDefinition`](../../src/Material3Expressive/Foundation/Tokens/Runtime/MaterialToken.cs)，
-但目标 resolver 以 composed `DefaultRawTokens` 为唯一默认图入口。
+descriptor 的公开契约是 identity、`Path`、`Layer` 与 `ValueType`。默认定义是 catalog 数据，不从
+descriptor 读取；identity 与默认策略可以独立演进，composed `DefaultRawTokens` 是唯一默认图入口。
 
-typed override facade 继续提供：
-
-- 与 token 类型一致的 `TokenDefinition<T>?` 属性；
-- compiled XAML 可用的 literal converter；
-- literal、alias 与 `Clear`；
-- 稀疏语义：未设置即 miss，不复制整套默认值。
-
-同一种 generated facade 必须支持两种安装形态：作为 `MaterialTheme.Children` 中的
-`IMaterialTokenSource`，或作为 `ThemeDictionaries`/普通 `MergedDictionaries` 中的独立 Raw
-`ResourceProvider`；具体实现也可以使用一个语义等价的 generated adapter。source 形态的 mutation 必须
-有不依赖 Owner 的 `Changed` 通知，provider 形态则使用 Avalonia 的资源通知。同一实例一次只能用于一个
-authoring placement，不能同时作为 child 又挂进 resource dictionary，也不能被多个 placement 共享。
+第一版 generator 不生成 `XxxTokensOverrides`。通用 `TokenOverride` 通过 generated canonical identity
+提供逐 token literal/alias authoring；这使 identity/default graph 的生成不依赖尚未定稿的 domain facade
+API。未来若某个 domain 确实需要 typed convenience facade，它必须是同一 identity/source 契约的可选包装，
+不能成为第二套 key 或默认图。
 
 ## 6. `DefaultRawTokens` catalog composition
 
@@ -288,11 +276,8 @@ key 的 descriptor 类型识别并求值。新增组件不应修改一个全局 
 catalog baseline，哪些只允许 theme source 动态提供。应用运行时创建且未注册的扩展 descriptor 默认
 视为 source-required。这个分类属于 catalog/family metadata，不是 descriptor 上的默认 definition。
 
-当前 M3E 过渡期参数化 identity 的实现可参考
-[`ReferencePaletteTokens`](../../src/Material3Expressive/Foundation/Tokens/Runtime/ReferencePaletteTokens.cs)
-与 [`SystemColorTokens`](../../src/Material3Expressive/Foundation/Tokens/Runtime/SystemColorTokens.cs)。
-迁移时应把 canonical intern table 移入 MCU Avalonia，并让 M3E compatibility facade 返回 MCU 的同一
-descriptor instance；不能保留第二份 table，也不能将其转换成 generated enum 成员。
+参数化 color identity 的 canonical intern table 位于 MCU Avalonia；M3E 不生成 compatibility facade，
+不能保留第二份 table，也不能将其转换成 generated enum 成员。
 
 MCU custom color key family 可以由 MCU contribution 提供通用 recipe，但仍要求可见 Color Context 声明
 对应 named palette；缺失时必须报告配置错误，不能返回 Transparent。它与任意应用 extension key 完全
@@ -334,16 +319,16 @@ fail-fast。
 Generator 目标阶段完成时，应有以下测试：
 
 - incremental tracking：无关表不重新解析/发射；
-- snapshot：descriptor、override facade、provenance 与 generated contribution 输出稳定；
+- snapshot：descriptor、provenance 与 generated contribution 输出稳定；
 - graph：跨表存在性、类型、层级和完整 cycle path；
 - completeness：所有 generated Raw descriptor 与 MCU-owned canonical dependency 都能按受支持的 query
   variant fallback 在 composed `DefaultRawTokens` 中获得定义；
 - variant：每 key exact → `InheritVariant` → Default，且 alias/recipe hop 保留原始 query theme；
 - identity：standard/custom parameterized key 稳定且不会冲突；
 - external identity：M3E facade/generator reference 与 MCU API 指向同一 descriptor instance；
-- compiled-XAML：typed override literal 与 alias 可编译；
+- compiled-XAML：通用 `TokenOverride` literal 与 `TokenRef` alias 可编译；
 - values schema（启用后）：每个标准 operator 的正例和错误类型诊断；
 - determinism：不同输入枚举顺序产生相同输出。
 
-只有这些条件满足后，组件迁移才可以依赖新的默认 catalog。Generator 阶段本身不代表消费路径已经从
-`ResolvedTheme`/`TokenReader` 切换；实际切换顺序由 [迁移计划](migration-plan.md) 管理。
+Foundation 已依赖新的默认 catalog；组件是否已经切到 Material Value 路径仍按
+[迁移计划](migration-plan.md)逐族记录。
