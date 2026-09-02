@@ -35,22 +35,23 @@ internal static class TokenResolver
     /// </summary>
     private static bool TryResolveCore(IResourceHost host, MaterialTokenKey key, ThemeVariant? theme, int hopsLeft, out object? value)
     {
-        for (var hop = 0; hop < hopsLeft; hop++)
+        while (hopsLeft-- > 0)
         {
             if (!host.TryFindResource(key, theme, out var candidate))
                 break;
 
-            if (candidate is TokenRef reference)
+            switch (candidate)
             {
-                key = reference.Key;
-                continue;
+                case TokenRef reference:
+                    key = reference.Key; continue;
+                
+                case WithAlpha withAlpha:
+                    return TryEvaluateWithAlpha(host, withAlpha, theme, hopsLeft, out value);
+                
+                default:
+                    value = candidate;
+                    return true;
             }
-
-            if (candidate is WithAlpha withAlpha)
-                return TryEvaluateWithAlpha(host, withAlpha, theme, hopsLeft - hop - 1, out value);
-
-            value = candidate;
-            return true;
         }
 
         value = null;
