@@ -5,5 +5,5 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Material3ExpressiveRefactor.Catalog.MainWindow"
         Title="Material3ExpressiveRefactor.Catalog">
-    Welcome to Avalonia!
+    <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
 </Window>

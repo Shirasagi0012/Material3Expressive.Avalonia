@@ -3,12 +3,13 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Metadata;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 
 namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
-public class MaterialTheme : ResourceProvider
+public class MaterialResource : ResourceProvider
 {
-    public MaterialTheme()
+    public MaterialResource()
     {
         Children.CollectionChanged += OnChildrenChanged;
     }

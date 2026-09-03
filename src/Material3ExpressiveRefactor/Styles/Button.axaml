@@ -21,6 +21,8 @@
       <Setter Property="FontWeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.LabelTextWeight}}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="Template">

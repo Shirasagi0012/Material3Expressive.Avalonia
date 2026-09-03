@@ -1,11 +1,9 @@
 using System.Collections.Frozen;
 using Avalonia;
 using Avalonia.Styling;
-using Material3ExpressiveRefactor.Foundation.Tokens;
-
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 
 /// <summary>
 /// Baseline defaults for the filled Button slots (design doc §7.5). Component→system mappings

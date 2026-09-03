@@ -4,6 +4,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
+using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Material3ExpressiveRefactor.Tokens;
 using MaterialColorUtilities.DynamicColors;
 using MaterialColorUtilities.HCT;
@@ -23,7 +24,7 @@ public class TokenResolverTests
 
     private static Button HostIn(params ITokenSource[] sources)
     {
-        var theme = new MaterialTheme();
+        var theme = new MaterialResource();
         foreach (var source in sources)
             theme.Children.Add(source);
         var resources = new ResourceDictionary();
@@ -70,13 +71,13 @@ public class TokenResolverTests
         // and never changes; overriding the intermediate key closer to the consumer must win.
         var outer = new TestTokenSource();
         outer.Set(CompColor, new TokenRef(MaterialTokens.Sys.Color.Primary));
-        var outerTheme = new MaterialTheme { Children = { new ColorScheme(), outer } };
+        var outerTheme = new MaterialResource { Children = { new ColorScheme(), outer } };
         var outerResources = new ResourceDictionary();
         outerResources.MergedDictionaries.Add(outerTheme);
 
         var inner = new TestTokenSource();
         inner.Set(MaterialTokens.Sys.Color.Primary, Colors.LimeGreen);
-        var innerTheme = new MaterialTheme { Children = { inner } };
+        var innerTheme = new MaterialResource { Children = { inner } };
         var innerResources = new ResourceDictionary();
         innerResources.MergedDictionaries.Add(innerTheme);
 

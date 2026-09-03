@@ -1,0 +1,24 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:sources="clr-namespace:Material3ExpressiveRefactor.Foundation.Tokens.Sources"
+        x:Class="Material3ExpressiveRefactor.Styles.MaterialTheme">
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <m3:MaterialResource>
+                    <sources:ColorScheme />
+                    <sources:StateTokenSource />
+                    <sources:ShapeTokenSource />
+                    <sources:TypographyTokenSource />
+                    <sources:ElevationTokenSource />
+                    <sources:MotionTokenSource />
+                    
+                    <sources:FilledButtonTokenSource />
+                </m3:MaterialResource>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+    
+    <StyleInclude Source="Button.axaml" />
+</Styles>

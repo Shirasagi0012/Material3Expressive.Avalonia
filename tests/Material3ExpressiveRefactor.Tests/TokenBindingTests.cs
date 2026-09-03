@@ -9,6 +9,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
+using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Material3ExpressiveRefactor.Tokens;
 using MaterialColorUtilities.DynamicColors;
 using MaterialColorUtilities.HCT;
@@ -38,7 +39,7 @@ public class TokenBindingTests
 
     private static Window ShowWindow(ColorScheme scheme, TestTokenSource extras, out Button button)
     {
-        var theme = new MaterialTheme { Children = { scheme, extras } };
+        var theme = new MaterialResource { Children = { scheme, extras } };
         var resources = new ResourceDictionary();
         resources.MergedDictionaries.Add(theme);
 
@@ -96,7 +97,7 @@ public class TokenBindingTests
         Assert.Equal(SchemeColor(false, static s => s.Primary), BackgroundColorOf(button));
 
         var inner = new TestTokenSource();
-        var innerTheme = new MaterialTheme { Children = { inner } };
+        var innerTheme = new MaterialResource { Children = { inner } };
         var innerResources = new ResourceDictionary();
         innerResources.MergedDictionaries.Add(innerTheme);
         button.Resources = innerResources;

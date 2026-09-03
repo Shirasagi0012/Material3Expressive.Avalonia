@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
+using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Material3ExpressiveRefactor.Tokens;
 using Xunit;
 
@@ -19,7 +20,7 @@ public class BaselineSubsystemTests
 {
     private static Button HostIn(params ITokenSource[] sources)
     {
-        var theme = new MaterialTheme();
+        var theme = new MaterialResource();
         foreach (var source in sources)
             theme.Children.Add(source);
         var resources = new ResourceDictionary();
@@ -203,7 +204,7 @@ public class BaselineSubsystemTests
     [AvaloniaFact]
     public void Baseline_ComposesAcrossSubsystems()
     {
-        // The §6.3 menu end to end: one MaterialTheme carrying every baseline source answers a
+        // The §6.3 menu end to end: one MaterialResource carrying every baseline source answers a
         // key from each subsystem through the resolver.
         var host = HostIn(
             new ColorScheme(),

@@ -5,6 +5,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
+using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Material3ExpressiveRefactor.Tokens;
 using MaterialColorUtilities.DynamicColors;
 using MaterialColorUtilities.HCT;
@@ -15,10 +16,10 @@ using Xunit;
 namespace Material3ExpressiveRefactor.Tests;
 
 /// <summary>
-/// MaterialTheme as a pure combinator (design doc §6.1): ordered children, later wins, miss falls
+/// MaterialResource as a pure combinator (design doc §6.1): ordered children, later wins, miss falls
 /// through, child changes broadcast.
 /// </summary>
-public class MaterialThemeTests
+public class MaterialResourceTests
 {
     private static readonly MaterialTokenKey<Avalonia.Media.Color> Key = new("md.comp.test-widget.container-color");
 
@@ -29,7 +30,7 @@ public class MaterialThemeTests
         first.Set(Key, Avalonia.Media.Colors.Red);
         var second = new TestTokenSource();
         second.Set(Key, Avalonia.Media.Colors.Blue);
-        var theme = new MaterialTheme { Children = { first, second } };
+        var theme = new MaterialResource { Children = { first, second } };
 
         Assert.True(theme.TryGetResource(Key, null, out var value));
         Assert.Equal(Avalonia.Media.Colors.Blue, value);
@@ -38,7 +39,7 @@ public class MaterialThemeTests
     [AvaloniaFact]
     public void Miss_FallsThrough()
     {
-        var theme = new MaterialTheme { Children = { new TestTokenSource() } };
+        var theme = new MaterialResource { Children = { new TestTokenSource() } };
 
         Assert.False(theme.TryGetResource(Key, null, out _));
     }
@@ -46,7 +47,7 @@ public class MaterialThemeTests
     [AvaloniaFact]
     public void NonTokenKey_IsNotAnswered()
     {
-        var theme = new MaterialTheme { Children = { new ColorScheme() } };
+        var theme = new MaterialResource { Children = { new ColorScheme() } };
 
         Assert.False(theme.TryGetResource("Sys.Color.Primary", null, out _));
     }
@@ -58,7 +59,7 @@ public class MaterialThemeTests
         // consumer re-reads. A DynamicResource on Control.Tag is the smallest such consumer.
         var source = new TestTokenSource();
         source.Set(Key, Avalonia.Media.Colors.Red);
-        var theme = new MaterialTheme { Children = { source } };
+        var theme = new MaterialResource { Children = { source } };
         var resources = new ResourceDictionary();
         resources.MergedDictionaries.Add(theme);
         var button = new Button();
@@ -82,7 +83,7 @@ public class MaterialThemeTests
     [AvaloniaFact]
     public void ColorScheme_AnswersThroughMaterialTheme()
     {
-        var theme = new MaterialTheme { Children = { new ColorScheme() } };
+        var theme = new MaterialResource { Children = { new ColorScheme() } };
 
         Assert.True(theme.TryGetResource(MaterialTokens.Sys.Color.Primary, ThemeVariant.Dark, out var value));
         var expected = new SchemeTonalSpot(

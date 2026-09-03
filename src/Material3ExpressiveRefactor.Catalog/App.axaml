@@ -7,6 +7,6 @@
 
     <Application.Styles>
         <FluentTheme />
-        <styles:MaterialStyles />
+        <styles:MaterialTheme />
     </Application.Styles>
 </Application>

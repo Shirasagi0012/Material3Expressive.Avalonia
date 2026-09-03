@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
+using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Xunit;
 
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
@@ -20,7 +21,7 @@ public class FilledButtonTokenTests
 {
     private static Button HostIn(params ITokenSource[] sources)
     {
-        var theme = new MaterialTheme();
+        var theme = new MaterialResource();
         foreach (var source in sources)
             theme.Children.Add(source);
         var resources = new ResourceDictionary();
@@ -28,7 +29,7 @@ public class FilledButtonTokenTests
         return new Button { Resources = resources };
     }
 
-    // Later children win in MaterialTheme, so overrides go after the baseline set.
+    // Later children win in MaterialResource, so overrides go after the baseline set.
     private static Button BaselineHost(params ITokenSource[] overrides) =>
         HostIn(new ITokenSource[]
         {

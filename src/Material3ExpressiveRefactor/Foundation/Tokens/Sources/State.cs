@@ -1,10 +1,8 @@
 using System.Collections.Frozen;
 using Avalonia.Styling;
-using Material3ExpressiveRefactor.Foundation.Tokens;
-
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 
 /// <summary>
 /// The shared state-layer opacities (design doc §7.4): interactive templates drive

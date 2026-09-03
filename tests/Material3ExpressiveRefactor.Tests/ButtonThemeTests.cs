@@ -10,6 +10,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
+using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using MaterialColorUtilities.DynamicColors;
 using MaterialColorUtilities.HCT;
 using MaterialColorUtilities.Scheme;
@@ -19,15 +20,15 @@ using Xunit;
 namespace Material3ExpressiveRefactor.Tests;
 
 /// <summary>
-/// The compiled-AXAML path of the first component slice: Themes/Button.axaml loads, the implicit
+/// The compiled-AXAML path of the first component slice: Styles/Button.axaml loads, the implicit
 /// {x:Type Button} theme applies the filled defaults, and the {m3:Token} setter bindings resolve
-/// against a real MaterialTheme placement including a ThemeVariant switch. Interaction states
+/// against a real MaterialResource placement including a ThemeVariant switch. Interaction states
 /// (pointer/keyboard) are verified manually for now.
 /// </summary>
 public class ButtonThemeTests
 {
-    private static Styles LoadButtonStyles() =>
-        Assert.IsType<Styles>(AvaloniaXamlLoader.Load(new Uri("avares://Material3ExpressiveRefactor/Themes/Button.axaml")));
+    private static Avalonia.Styling.Styles LoadButtonStyles() =>
+        Assert.IsType<Avalonia.Styling.Styles>(AvaloniaXamlLoader.Load(new Uri("avares://Material3ExpressiveRefactor/Styles/Button.axaml")));
 
     private static Color SchemeColor(bool isDark, Func<DynamicScheme, ArgbColor> pick)
     {
@@ -40,7 +41,7 @@ public class ButtonThemeTests
 
     private static Window ShowWindow(out Button button)
     {
-        var theme = new MaterialTheme
+        var theme = new MaterialResource
         {
             Children =
             {

@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Styling;
-using Material3ExpressiveRefactor.Foundation.Tokens;
 using Material3ExpressiveRefactor.Tokens;
 using MaterialColorUtilities.DynamicColors;
 using MaterialColorUtilities.HCT;
@@ -9,7 +8,7 @@ using MaterialColorUtilities.Palettes;
 using MaterialColorUtilities.Scheme;
 using MaterialColorUtilities.Utils;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 
 /// <summary>
 /// Seed-driven color token source (design doc §6.3): wraps material-color-utilities and serves

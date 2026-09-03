@@ -1,6 +1,6 @@
 ﻿using Avalonia.Styling;
 
-namespace Material3ExpressiveRefactor.Foundation.Tokens;
+namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 
 public interface ITokenSource
 {
