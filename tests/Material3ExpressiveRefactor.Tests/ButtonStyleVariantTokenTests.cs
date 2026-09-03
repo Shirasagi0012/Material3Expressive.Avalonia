@@ -2,10 +2,10 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Baseline;
 using Material3ExpressiveRefactor.Controls;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
-using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Xunit;
 
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;

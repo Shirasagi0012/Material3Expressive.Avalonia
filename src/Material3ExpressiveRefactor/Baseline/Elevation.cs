@@ -1,9 +1,10 @@
 using System.Collections.Frozen;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Tokens;
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
-namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
+namespace Material3ExpressiveRefactor.Baseline;
 
 /// <summary>
 /// The six elevation levels and their shadows (design doc §7.6). Levels are plain DIPs; shadows

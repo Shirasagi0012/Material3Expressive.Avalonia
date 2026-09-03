@@ -3,9 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Baseline;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
-using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Material3ExpressiveRefactor.Tokens;
 using Xunit;
 

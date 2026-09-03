@@ -3,7 +3,6 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Material3ExpressiveRefactor.Foundation.Tokens;
-using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
 namespace Material3ExpressiveRefactor.Controls;

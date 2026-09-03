@@ -42,5 +42,9 @@
              analyzer together with a manifest AdditionalFile if/when jsonc-driven generation is
              adopted. -->
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Foundation\Interaction\" />
+    </ItemGroup>
     
 </Project>

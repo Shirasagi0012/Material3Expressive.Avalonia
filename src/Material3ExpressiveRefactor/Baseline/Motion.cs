@@ -1,8 +1,9 @@
 using System.Collections.Frozen;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Tokens;
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
-namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
+namespace Material3ExpressiveRefactor.Baseline;
 
 /// <summary>
 /// The baseline motion tokens (design doc §4.2): standard durations as <see cref="TimeSpan"/> and

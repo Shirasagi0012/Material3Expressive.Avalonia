@@ -1,9 +1,10 @@
 using System.Collections.Frozen;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Tokens;
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
-namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
+namespace Material3ExpressiveRefactor.Baseline;
 
 /// <summary>
 /// The baseline type scale (design doc §6.3 menu): answers <c>md.sys.typescale.*</c> and

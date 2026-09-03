@@ -4,7 +4,6 @@ using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Avalonia.Styling;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
-using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
 using Xunit;
 
 namespace Material3ExpressiveRefactor.Tests;

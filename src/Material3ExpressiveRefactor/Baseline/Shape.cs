@@ -1,9 +1,10 @@
 using System.Collections.Frozen;
 using Avalonia;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Tokens;
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
-namespace Material3ExpressiveRefactor.Foundation.Tokens.Sources;
+namespace Material3ExpressiveRefactor.Baseline;
 
 /// <summary>
 /// The Expressive corner scale (design doc §4.2/§4.3): answers <c>md.sys.shape.*</c> as composed
