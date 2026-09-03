@@ -42,5 +42,11 @@
              analyzer together with a manifest AdditionalFile if/when jsonc-driven generation is
              adopted. -->
     </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Themes\MaterialStyles.axaml.cs">
+        <SubType>Code</SubType>
+      </Compile>
+    </ItemGroup>
     
 </Project>

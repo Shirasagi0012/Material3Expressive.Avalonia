@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using MaterialTypography.Roboto;
 
 namespace Material3ExpressiveRefactor.Catalog;
 
@@ -19,6 +20,6 @@ class Program
 #if DEBUG
             .WithDeveloperTools()
 #endif
-            .WithInterFont()
+            .WithRobotoFont()
             .LogToTrace();
 }
