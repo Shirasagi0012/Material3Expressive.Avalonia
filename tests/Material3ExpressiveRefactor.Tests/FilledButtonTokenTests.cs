@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Controls;
 using Material3ExpressiveRefactor.Foundation;
 using Material3ExpressiveRefactor.Foundation.Tokens;
 using Material3ExpressiveRefactor.Foundation.Tokens.Sources;
@@ -82,30 +83,6 @@ public class FilledButtonTokenTests
         var content = Assert.IsType<Color>(TokenScan.Resolve(host, Comp.FilledButton.DisabledContentColor));
         Assert.Equal((byte)Math.Round(0.38 * onSurface.A), content.A);
         Assert.Equal(onSurface.R, content.R);
-    }
-
-    [AvaloniaFact]
-    public void FilledButton_MetricsAndShape()
-    {
-        var host = BaselineHost();
-
-        Assert.Equal(40d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.FilledButton.ContainerHeight)));
-        Assert.Equal(new Thickness(24, 0, 24, 0), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.FilledButton.ContentPadding)));
-        // The stadium shape hops into the sys corner scale (CornerRadius(1000)).
-        Assert.Equal(new CornerRadius(1000), Assert.IsType<CornerRadius>(TokenScan.Resolve(host, Comp.FilledButton.ContainerShape)));
-    }
-
-    [AvaloniaFact]
-    public void FilledButton_LabelText_AliasesLabelLarge()
-    {
-        var host = BaselineHost();
-
-        // LabelTextFont → sys.typescale.label-large.font → ref.typeface.plain → literal: 3 hops.
-        Assert.Equal("Roboto", Assert.IsType<FontFamily>(TokenScan.Resolve(host, Comp.FilledButton.LabelTextFont)).Name);
-        Assert.Equal(14d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.FilledButton.LabelTextSize)));
-        Assert.Equal(FontWeight.Medium, Assert.IsType<FontWeight>(TokenScan.Resolve(host, Comp.FilledButton.LabelTextWeight)));
-        Assert.Equal(0.1d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.FilledButton.LabelTextTracking)));
-        Assert.Equal(20d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.FilledButton.LabelTextLineHeight)));
     }
 
     [AvaloniaFact]

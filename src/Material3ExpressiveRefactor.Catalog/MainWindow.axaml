@@ -5,5 +5,18 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Material3ExpressiveRefactor.Catalog.MainWindow"
         Title="Material3ExpressiveRefactor.Catalog">
-    <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+    <StackPanel Spacing="16">
+        <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialElevatedButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialTonalButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialOutlinedButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialTextButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+
+        
+        <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="xsmall" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="medium" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="large" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+        <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="xlarge" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
+    </StackPanel>
 </Window>

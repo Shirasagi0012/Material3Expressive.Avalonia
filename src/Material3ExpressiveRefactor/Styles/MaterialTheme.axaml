@@ -1,7 +1,8 @@
-﻿<Styles xmlns="https://github.com/avaloniaui"
+<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         xmlns:sources="clr-namespace:Material3ExpressiveRefactor.Foundation.Tokens.Sources"
+        xmlns:controls="clr-namespace:Material3ExpressiveRefactor.Controls"
         x:Class="Material3ExpressiveRefactor.Styles.MaterialTheme">
     <Styles.Resources>
         <ResourceDictionary>
@@ -13,8 +14,13 @@
                     <sources:TypographyTokenSource />
                     <sources:ElevationTokenSource />
                     <sources:MotionTokenSource />
-                    
-                    <sources:FilledButtonTokenSource />
+
+                    <controls:ButtonSizesTokenSource />
+                    <controls:FilledButtonTokenSource />
+                    <controls:ElevatedButtonTokenSource />
+                    <controls:TonalButtonTokenSource />
+                    <controls:OutlinedButtonTokenSource />
+                    <controls:TextButtonTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
