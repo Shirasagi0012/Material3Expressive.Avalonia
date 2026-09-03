@@ -1,0 +1,81 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <!--
+    Filled Button, M3 Expressive default size (40dp). Every consumed value is a comp slot
+    (design doc §7.1) resolved through {m3:Token}; interactions follow the §7.4 state-layer
+    model: PART_StateLayer's Opacity and Background are driven by pseudo-class styles.
+    Ripple, press shape-morph and the focus ring belong to the deferred motion slice.
+    Nested facade types are referenced with the XAML '+' syntax — '{x:Static}' splits the
+    argument at the first dot, so 'MaterialTokens.Comp.FilledButton.X' would not resolve.
+  -->
+  <Styles.Resources>
+
+    <ControlTheme x:Key="MaterialFilledButtonTheme" TargetType="Button">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContentColor}}" />
+      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerHeight}}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContentPadding}}" />
+      <Setter Property="FontFamily" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.LabelTextFont}}" />
+      <Setter Property="FontSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.LabelTextSize}}" />
+      <Setter Property="FontWeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.LabelTextWeight}}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border x:Name="PART_Container"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerShape}}"
+                  ClipToBounds="True">
+            <Grid>
+              <!-- Beneath the content per the M3 layer order (container → state layer → content);
+                   the container's ClipToBounds gives the rounded clip for free. -->
+              <Border x:Name="PART_StateLayer"
+                      IsHitTestVisible="False"
+                      Opacity="0"
+                      Background="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.StateLayerColor}}" />
+              <ContentPresenter x:Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Padding="{TemplateBinding Padding}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                LetterSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.LabelTextTracking}}"
+                                LineHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.LabelTextLineHeight}}" />
+            </Grid>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+
+      <!-- §7.4: pseudo-class styles drive the state layer. Later selectors win on ties, so the
+           declaration order hover < focus < pressed is load-bearing: pressed must beat hover
+           when both pseudo-classes are active. -->
+      <Style Selector="^:pointerover /template/ Border#PART_StateLayer">
+        <Setter Property="Opacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.HoverStateLayerOpacity}}" />
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.HoverStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ Border#PART_StateLayer">
+        <Setter Property="Opacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.FocusStateLayerOpacity}}" />
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.FocusedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ Border#PART_StateLayer">
+        <Setter Property="Opacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.PressedStateLayerOpacity}}" />
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.PressedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContentColor}}" />
+      </Style>
+    </ControlTheme>
+
+    <!-- The implicit Button theme IS filled (M3 baseline). BasedOn inherits the setters and
+         nested styles (StyledElement.ApplyControlTheme recurses into BasedOn first). -->
+    <ControlTheme x:Key="{x:Type Button}" TargetType="Button"
+                  BasedOn="{StaticResource MaterialFilledButtonTheme}" />
+
+  </Styles.Resources>
+</Styles>

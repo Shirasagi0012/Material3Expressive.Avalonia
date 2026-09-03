@@ -34,6 +34,7 @@
     <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />
     <Project Path="src/Material3Expressive.TokenGenerator/Material3Expressive.TokenGenerator.csproj" />
     <Project Path="src/Material3Expressive/Material3Expressive.csproj" />
+    <Project Path="src/Material3ExpressiveRefactor.Catalog/Material3ExpressiveRefactor.Catalog.csproj" />
     <Project Path="src/Material3ExpressiveRefactor/Material3ExpressiveRefactor.csproj" />
   </Folder>
   <Folder Name="/tests/">

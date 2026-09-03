@@ -12,7 +12,7 @@ namespace Material3ExpressiveRefactor.Tokens;
 public static partial class MaterialTokens
 {
     /// <summary>System layer — the primary public face for global/local theming.</summary>
-    public static class Sys
+    public static partial class Sys
     {
         /// <summary>
         /// <c>md.sys.color.*</c> — the 49 classic roles plus the four spec-2025 <c>*-dim</c>
@@ -74,30 +74,10 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<Avalonia.Media.Color> OnTertiaryFixed = new("md.sys.color.on-tertiary-fixed");
             public static readonly MaterialTokenKey<Avalonia.Media.Color> OnTertiaryFixedVariant = new("md.sys.color.on-tertiary-fixed-variant");
         }
-        
-        public static class Elevation
-        {
-            public static readonly MaterialTokenKey<float> Level0 = new();
-            public static readonly MaterialTokenKey<float> Level1 = new();
-            public static readonly MaterialTokenKey<float> Level2 = new();
-            public static readonly MaterialTokenKey<float> Level3 = new();
-            public static readonly MaterialTokenKey<float> Level4 = new();
-            public static readonly MaterialTokenKey<float> Level5 = new();
-
-            public static readonly Dictionary<MaterialTokenKey, float> Defaults = new()
-            {
-                [Level0] = 0f,
-                [Level1] = 1f,
-                [Level2] = 3f,
-                [Level3] = 6f,
-                [Level4] = 8f,
-                [Level5] = 12f,
-            };
-        }
     }
 
     /// <summary>Reference layer — spec alignment and the advanced tier.</summary>
-    public static class Ref
+    public static partial class Ref
     {
         /// <summary>
         /// <c>md.ref.palette.*</c> — six tonal palettes over the closed
