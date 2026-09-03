@@ -1,4 +1,4 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -102,8 +102,9 @@ public class ButtonSizesTokenSource : ITokenSource
 
 /// <summary>
 /// Baseline defaults for the elevated Button slots (upstream ElevatedButtonTokens v0_11_0). The
-/// shadow slots alias the baked <c>md.sys.elevation.*-shadow</c> recipes (§7.6): resting/focus/
-/// pressed at level 1, hover at level 2, disabled at level 0. Immutable baseline:
+/// per-state elevations alias the <c>md.sys.elevation.level*</c> DIP levels: resting/focus/pressed
+/// at level 1, hover at level 2, disabled at level 0. They are consumed by the template part's
+/// <c>MaterialSurface.Elevation</c> and rendered by MaterialSkiaShadow. Immutable baseline:
 /// <see cref="Changed"/> is a documented no-op.
 /// </summary>
 public class ElevatedButtonTokenSource : ITokenSource
@@ -119,11 +120,11 @@ public class ElevatedButtonTokenSource : ITokenSource
         [Comp.ElevatedButton.DisabledContainerColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContainerOpacity),
         [Comp.ElevatedButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContentOpacity),
 
-        [Comp.ElevatedButton.ContainerShadow] = new TokenRef(Sys.Elevation.Level1Shadow),
-        [Comp.ElevatedButton.HoveredContainerShadow] = new TokenRef(Sys.Elevation.Level2Shadow),
-        [Comp.ElevatedButton.FocusedContainerShadow] = new TokenRef(Sys.Elevation.Level1Shadow),
-        [Comp.ElevatedButton.PressedContainerShadow] = new TokenRef(Sys.Elevation.Level1Shadow),
-        [Comp.ElevatedButton.DisabledContainerShadow] = new TokenRef(Sys.Elevation.Level0Shadow),
+        [Comp.ElevatedButton.ContainerElevation] = new TokenRef(Sys.Elevation.Level1),
+        [Comp.ElevatedButton.HoveredContainerElevation] = new TokenRef(Sys.Elevation.Level2),
+        [Comp.ElevatedButton.FocusedContainerElevation] = new TokenRef(Sys.Elevation.Level1),
+        [Comp.ElevatedButton.PressedContainerElevation] = new TokenRef(Sys.Elevation.Level1),
+        [Comp.ElevatedButton.DisabledContainerElevation] = new TokenRef(Sys.Elevation.Level0),
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) =>

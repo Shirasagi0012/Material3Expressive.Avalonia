@@ -20,5 +20,13 @@ public static class HeadlessTestAppBuilder
 {
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<HeadlessTestApplication>()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions());
+            // Real Skia rendering (not the drawing stub) so pixel-level probes can capture frames;
+            // render on the UI thread to keep CaptureRenderedFrame deterministic.
+            .UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions
+            {
+                UseHeadlessDrawing = false,
+                ShouldRenderOnUIThread = true,
+                Fps = 60,
+            });
 }

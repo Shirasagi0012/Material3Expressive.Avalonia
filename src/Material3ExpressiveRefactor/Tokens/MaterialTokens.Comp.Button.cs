@@ -7,7 +7,7 @@ namespace Material3ExpressiveRefactor.Tokens;
 public static partial class MaterialTokens
 {
     /// <summary>Component layer — the per-component slots ControlThemes actually consume (§7.1).</summary>
-    public static class Comp
+    public static partial class Comp
     {
         // Button family (design doc §7.5), split along upstream's two orthogonal axes:
         // style tables (colors/elevation/outline, per style) and size tables (metrics/shape/
@@ -37,10 +37,10 @@ public static partial class MaterialTokens
         }
 
         /// <summary>
-        /// <c>md.comp.elevated-button.*</c> — elevated Button color and shadow slots (upstream
-        /// ElevatedButtonTokens v0_11_0). Elevation is this style's defining feature, so the
-        /// per-state levels are transcribed as <see cref="BoxShadows"/> slots aliasing the baked
-        /// <c>md.sys.elevation.*-shadow</c> recipes (§7.6).
+        /// <c>md.comp.elevated-button.*</c> — elevated Button color and elevation slots (upstream
+        /// ElevatedButtonTokens v0_11_0). Elevation is this style's defining feature; the per-state
+        /// levels are DIPs aliasing <c>md.sys.elevation.level*</c>, consumed by the template part's
+        /// <c>MaterialSurface.Elevation</c>.
         /// </summary>
         public static class ElevatedButton
         {
@@ -53,11 +53,11 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<Color> DisabledContainerColor = new("md.comp.elevated-button.disabled.container.color");
             public static readonly MaterialTokenKey<Color> DisabledContentColor = new("md.comp.elevated-button.disabled.content.color");
 
-            public static readonly MaterialTokenKey<BoxShadows> ContainerShadow = new("md.comp.elevated-button.container.shadow");
-            public static readonly MaterialTokenKey<BoxShadows> HoveredContainerShadow = new("md.comp.elevated-button.hover.container.shadow");
-            public static readonly MaterialTokenKey<BoxShadows> FocusedContainerShadow = new("md.comp.elevated-button.focus.container.shadow");
-            public static readonly MaterialTokenKey<BoxShadows> PressedContainerShadow = new("md.comp.elevated-button.pressed.container.shadow");
-            public static readonly MaterialTokenKey<BoxShadows> DisabledContainerShadow = new("md.comp.elevated-button.disabled.container.shadow");
+            public static readonly MaterialTokenKey<double> ContainerElevation = new("md.comp.elevated-button.container.elevation");
+            public static readonly MaterialTokenKey<double> HoveredContainerElevation = new("md.comp.elevated-button.hover.container.elevation");
+            public static readonly MaterialTokenKey<double> FocusedContainerElevation = new("md.comp.elevated-button.focus.container.elevation");
+            public static readonly MaterialTokenKey<double> PressedContainerElevation = new("md.comp.elevated-button.pressed.container.elevation");
+            public static readonly MaterialTokenKey<double> DisabledContainerElevation = new("md.comp.elevated-button.disabled.container.elevation");
         }
 
         /// <summary>

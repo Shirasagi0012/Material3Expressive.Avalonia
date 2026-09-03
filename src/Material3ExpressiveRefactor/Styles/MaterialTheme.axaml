@@ -21,10 +21,18 @@
                     <controls:TonalButtonTokenSource />
                     <controls:OutlinedButtonTokenSource />
                     <controls:TextButtonTokenSource />
+
+                    <controls:IconButtonSizesTokenSource />
+                    <controls:StandardIconButtonTokenSource />
+                    <controls:FilledIconButtonTokenSource />
+                    <controls:TonalIconButtonTokenSource />
+                    <controls:OutlinedIconButtonTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Styles.Resources>
     
+    <StyleInclude Source="Surface.axaml" />
     <StyleInclude Source="Button.axaml" />
+    <StyleInclude Source="IconButton.axaml" />
 </Styles>

@@ -76,8 +76,10 @@ public class BaselineSubsystemTests
     }
 
     [AvaloniaFact]
-    public void Elevation_LevelsAndShadows()
+    public void Elevation_Levels()
     {
+        // Elevation tokens are plain DIPs; pixel-level shadow derivation lives in the
+        // MaterialSkiaShadow renderer, not in the token stock.
         var source = new ElevationTokenSource();
 
         Assert.Equal(0d, Get<double>(source, MaterialTokens.Sys.Elevation.Level0));
@@ -86,15 +88,6 @@ public class BaselineSubsystemTests
         Assert.Equal(6d, Get<double>(source, MaterialTokens.Sys.Elevation.Level3));
         Assert.Equal(8d, Get<double>(source, MaterialTokens.Sys.Elevation.Level4));
         Assert.Equal(12d, Get<double>(source, MaterialTokens.Sys.Elevation.Level5));
-
-        Assert.Equal(0, Get<BoxShadows>(source, MaterialTokens.Sys.Elevation.Level0Shadow).Count);
-
-        var level5 = Get<BoxShadows>(source, MaterialTokens.Sys.Elevation.Level5Shadow);
-        Assert.Equal(2, level5.Count);
-        Assert.Equal(4d, level5[0].Blur);   // key shadow
-        Assert.Equal(0.30, level5[0].Color.A / 255.0, 2);
-        Assert.Equal(6d, level5[1].Spread); // ambient shadow
-        Assert.Equal(0.15, level5[1].Color.A / 255.0, 2);
     }
 
     [AvaloniaFact]

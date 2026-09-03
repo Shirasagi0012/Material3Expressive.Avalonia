@@ -52,7 +52,7 @@ public class ButtonStyleVariantTokenTests
     }
 
     [AvaloniaFact]
-    public void ElevatedButton_ColorsAndShadows()
+    public void ElevatedButton_ColorsAndElevations()
     {
         var host = BaselineHost();
 
@@ -63,23 +63,23 @@ public class ButtonStyleVariantTokenTests
             Assert.IsType<Color>(TokenScan.Resolve(host, Sys.Color.Primary)),
             Assert.IsType<Color>(TokenScan.Resolve(host, Comp.ElevatedButton.ContentColor)));
 
-        // Per-state shadows alias the baked elevation recipes: rest/focus/press at level 1,
+        // Per-state elevations alias the sys.elevation DIP levels: rest/focus/press at level 1,
         // hover at level 2, disabled at level 0.
         Assert.Equal(
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Sys.Elevation.Level1Shadow)),
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Comp.ElevatedButton.ContainerShadow)));
+            Assert.IsType<double>(TokenScan.Resolve(host, Sys.Elevation.Level1)),
+            Assert.IsType<double>(TokenScan.Resolve(host, Comp.ElevatedButton.ContainerElevation)));
         Assert.Equal(
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Sys.Elevation.Level2Shadow)),
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Comp.ElevatedButton.HoveredContainerShadow)));
+            Assert.IsType<double>(TokenScan.Resolve(host, Sys.Elevation.Level2)),
+            Assert.IsType<double>(TokenScan.Resolve(host, Comp.ElevatedButton.HoveredContainerElevation)));
         Assert.Equal(
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Sys.Elevation.Level1Shadow)),
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Comp.ElevatedButton.FocusedContainerShadow)));
+            Assert.IsType<double>(TokenScan.Resolve(host, Sys.Elevation.Level1)),
+            Assert.IsType<double>(TokenScan.Resolve(host, Comp.ElevatedButton.FocusedContainerElevation)));
         Assert.Equal(
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Sys.Elevation.Level1Shadow)),
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Comp.ElevatedButton.PressedContainerShadow)));
+            Assert.IsType<double>(TokenScan.Resolve(host, Sys.Elevation.Level1)),
+            Assert.IsType<double>(TokenScan.Resolve(host, Comp.ElevatedButton.PressedContainerElevation)));
         Assert.Equal(
-            default,
-            Assert.IsType<BoxShadows>(TokenScan.Resolve(host, Comp.ElevatedButton.DisabledContainerShadow)));
+            0d,
+            Assert.IsType<double>(TokenScan.Resolve(host, Comp.ElevatedButton.DisabledContainerElevation)));
     }
 
     [AvaloniaFact]
@@ -142,7 +142,7 @@ public class ButtonStyleVariantTokenTests
     {
         Assert.False(new ElevatedButtonTokenSource().TryGetToken(Comp.FilledButton.ContainerColor, null, out _));
         Assert.False(new TonalButtonTokenSource().TryGetToken(Comp.OutlinedButton.OutlineColor, null, out _));
-        Assert.False(new OutlinedButtonTokenSource().TryGetToken(Comp.ElevatedButton.ContainerShadow, null, out _));
+        Assert.False(new OutlinedButtonTokenSource().TryGetToken(Comp.ElevatedButton.ContainerElevation, null, out _));
         Assert.False(new TextButtonTokenSource().TryGetToken(Sys.Color.Primary, null, out _));
     }
 }

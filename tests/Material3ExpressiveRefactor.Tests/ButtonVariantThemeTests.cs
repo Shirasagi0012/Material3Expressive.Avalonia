@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using Material3ExpressiveRefactor.Foundation.Rendering;
 using Xunit;
 
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
@@ -14,21 +15,18 @@ namespace Material3ExpressiveRefactor.Tests;
 
 /// <summary>
 /// The style axis applied: each named ControlTheme reproduces its baseline colors (and the
-/// elevated shadow / outlined border), inherited from the filled theme through BasedOn. Also the
-/// size axis: a size class re-points the metric slots live, and removing it reverts.
+/// elevated elevation / outlined border), inherited from the filled theme through BasedOn. Also
+/// the size axis: a size class re-points the metric slots live, and removing it reverts.
 /// </summary>
 public class ButtonVariantThemeTests
 {
-    private static Border Container(Button button) =>
-        button.GetVisualDescendants().OfType<Border>().First(b => b.Name == "PART_Container");
-
-    private static Border StateLayer(Button button) =>
-        button.GetVisualDescendants().OfType<Border>().First(b => b.Name == "PART_StateLayer");
+    private static MaterialSurface Container(Button button) =>
+        button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
 
     private static Color BrushColor(IBrush? brush) => Assert.IsType<ImmutableSolidColorBrush>(brush).Color;
 
     [AvaloniaFact]
-    public void ElevatedTheme_AppliesSurfaceAndShadow()
+    public void ElevatedTheme_AppliesSurfaceAndElevation()
     {
         var window = ButtonThemeFixture.ShowWindow(out var button, themeKey: "MaterialElevatedButtonTheme");
 
@@ -37,11 +35,11 @@ public class ButtonVariantThemeTests
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.Primary),
             BrushColor(button.Foreground));
 
-        // Resting shadow aliases the baked level-1 recipe.
-        var expected = Assert.IsType<BoxShadows>(TokenScan.Resolve(window, Sys.Elevation.Level1Shadow));
-        Assert.Equal(expected, Container(button).BoxShadow);
+        // The resting elevation aliases the sys.elevation level-1 DIP onto MaterialSurface.
+        var expected = Assert.IsType<double>(TokenScan.Resolve(window, Sys.Elevation.Level1));
+        Assert.Equal(expected, Container(button).Elevation);
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.Primary),
-            BrushColor(StateLayer(button).Background));
+            BrushColor(Container(button).StateLayerBrush));
     }
 
     [AvaloniaFact]
@@ -54,9 +52,9 @@ public class ButtonVariantThemeTests
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSecondaryContainer),
             BrushColor(button.Foreground));
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSecondaryContainer),
-            BrushColor(StateLayer(button).Background));
-        // No shadow slots on the tonal style: the container stays flat.
-        Assert.Equal(default, Container(button).BoxShadow);
+            BrushColor(Container(button).StateLayerBrush));
+        // No elevation slots on the tonal style: the surface stays flat.
+        Assert.Equal(0d, Container(button).Elevation);
     }
 
     [AvaloniaFact]
@@ -71,7 +69,7 @@ public class ButtonVariantThemeTests
             BrushColor(button.BorderBrush));
         Assert.Equal(1d, button.BorderThickness.Left);
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSurfaceVariant),
-            BrushColor(StateLayer(button).Background));
+            BrushColor(Container(button).StateLayerBrush));
     }
 
     [AvaloniaFact]
@@ -83,7 +81,7 @@ public class ButtonVariantThemeTests
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.Primary),
             BrushColor(button.Foreground));
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.Primary),
-            BrushColor(StateLayer(button).Background));
+            BrushColor(Container(button).StateLayerBrush));
     }
 
     [AvaloniaFact]

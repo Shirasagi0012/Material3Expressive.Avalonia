@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Headless.XUnit;
@@ -7,6 +8,7 @@ using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Material3ExpressiveRefactor.Foundation.Rendering;
 using Xunit;
 
 namespace Material3ExpressiveRefactor.Tests;
@@ -35,15 +37,14 @@ public class ButtonThemeTests
         Assert.Equal(14d, button.FontSize);
         Assert.Equal(FontWeight.Medium, button.FontWeight);
 
-        var container = button.GetVisualDescendants().OfType<Border>().First(b => b.Name == "PART_Container");
+        var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
         Assert.Equal(new CornerRadius(1000), container.CornerRadius);
 
-        // §7.4: state layer present, at rest, tinted with the (aliased) content color. The
-        // resting Background now comes from the theme's nested style, not the template.
-        var stateLayer = button.GetVisualDescendants().OfType<Border>().First(b => b.Name == "PART_StateLayer");
-        Assert.Equal(0d, stateLayer.Opacity);
+        // §7.4: the state layer is painted by MaterialSurface itself; at rest the tint is the
+        // (aliased) content color with zero opacity.
+        Assert.Equal(0d, container.StateLayerOpacity);
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnPrimary),
-            Assert.IsType<ImmutableSolidColorBrush>(stateLayer.Background).Color);
+            Assert.IsType<ImmutableSolidColorBrush>(container.StateLayerBrush).Color);
 
         var presenter = button.GetVisualDescendants().OfType<ContentPresenter>().First();
         Assert.Equal(0.1d, presenter.LetterSpacing);
@@ -62,5 +63,24 @@ public class ButtonThemeTests
 
         Assert.Equal(ButtonThemeFixture.SchemeColor(true, static s => s.Primary),
             Assert.IsType<ImmutableSolidColorBrush>(button.Background).Color);
+    }
+
+    [AvaloniaFact]
+    public void ImplicitTheme_AnimatesElevationAndStateLayerChanges()
+    {
+        // Upstream Elevation.kt tweens elevation between states (120ms incoming, FastOutSlowIn);
+        // the state-layer fade follows the same spec. The transition rides the filled theme's
+        // part style, inherited by every BasedOn variant.
+        ButtonThemeFixture.ShowWindow(out var button);
+        var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
+
+        var transitions = Assert.IsAssignableFrom<Transitions>(container.Transitions);
+        var elevation = transitions.OfType<DoubleTransition>()
+            .SingleOrDefault(t => t.Property == MaterialSurface.ElevationProperty);
+        Assert.NotNull(elevation);
+        Assert.Equal(TimeSpan.FromMilliseconds(120), elevation.Duration);
+
+        Assert.Contains(transitions.OfType<DoubleTransition>(),
+            t => t.Property == MaterialSurface.StateLayerOpacityProperty);
     }
 }

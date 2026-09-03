@@ -9,6 +9,12 @@
     <ItemGroup>
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="PropertyGenerator.Avalonia"/>
+        <!-- Direct API dependencies of the in-house symbol render stack
+             (Foundation/Rendering/Symbols): ISkiaSharpApiLeaseFeature from Avalonia.Skia, the
+             variable-font instancing API from SkiaSharp. They also flow transitively through
+             MaterialSymbols.Avalonia; the explicit references keep that from being load-bearing. -->
+        <PackageReference Include="Avalonia.Skia"/>
+        <PackageReference Include="SkiaSharp"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
