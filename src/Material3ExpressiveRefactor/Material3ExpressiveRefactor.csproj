@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -13,7 +13,6 @@
 
     <ItemGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
         <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities\MaterialColorUtilities.csproj"/>
-        <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialDesignTokens.Avalonia\MaterialDesignTokens.Avalonia.csproj"/>
         <!-- LoadingIndicator is the one component that genuinely morphs polygons. Button, FAB and
              chip press morphs are corner-radius lerps, and the wavy progress indicator's wave is a
              sampled sine — none of them need this. -->
@@ -25,15 +24,23 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
-        <PackageReference Include="Shirasagi0012.MaterialColorUtilities.Avalonia" />
+        <PackageReference Include="Shirasagi0012.MaterialColorUtilities" />
         <PackageReference Include="Shirasagi0012.MaterialShapes" />
         <PackageReference Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" />
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Material3ExpressiveRefactor.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
-        <ProjectReference Include="..\Material3Expressive.TokenGenerator\Material3Expressive.TokenGenerator.csproj"
-                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <!-- TokenGenerator is intentionally NOT referenced yet: token keys are hand-written
+             (Tokens/MaterialTokens.cs) and no *.jsonc token tables exist here. The generator
+             hard-requires a '*.canonical-tokens.json' AdditionalFile (M3ETOK005) whose owner is
+             MaterialDesignTokens.Avalonia — the very dependency this project dropped. Re-add the
+             analyzer together with a manifest AdditionalFile if/when jsonc-driven generation is
+             adopted. -->
     </ItemGroup>
     
 </Project>

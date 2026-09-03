@@ -2,7 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
 /// Consumption-side multi-hop token resolution (design doc §5).

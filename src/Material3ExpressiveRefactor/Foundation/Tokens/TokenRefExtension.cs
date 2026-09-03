@@ -1,7 +1,7 @@
 using Avalonia.Markup.Xaml;
 using Avalonia.Metadata;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
 /// <c>{m3:TokenRef}</c> — authors a <see cref="TokenRef"/> alias value for use as a token

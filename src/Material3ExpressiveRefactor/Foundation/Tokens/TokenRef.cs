@@ -1,4 +1,4 @@
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
 /// A reference to another token key — one of the three closed value forms a token entry may

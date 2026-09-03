@@ -7,7 +7,7 @@ using Avalonia.Markup.Xaml.XamlIl.Runtime;
 using Avalonia.Metadata;
 using Avalonia.Styling;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
 /// <c>{m3:Token}</c> — consumes a token with consumption-side multi-hop resolution (design doc §5).
@@ -20,8 +20,6 @@ namespace Material3ExpressiveRefactor.Foundation;
 /// </summary>
 public class TokenExtension : MarkupExtension
 {
-    public TokenExtension() { }
-
     public TokenExtension(MaterialTokenKey key)
     {
         Key = key;

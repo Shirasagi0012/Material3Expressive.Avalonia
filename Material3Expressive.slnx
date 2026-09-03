@@ -39,6 +39,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Material3Expressive.TokenGenerator.Tests/Material3Expressive.TokenGenerator.Tests.csproj" />
     <Project Path="tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj" />
+    <Project Path="tests/Material3ExpressiveRefactor.Tests/Material3ExpressiveRefactor.Tests.csproj" />
     <Project Path="tests/Material3Expressive.VisualTesting/Material3Expressive.VisualTesting.csproj" />
     <Project Path="tests/Material3Expressive.VisualTests/Material3Expressive.VisualTests.csproj" />
   </Folder>

@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
 /// Token identity. The object reference IS the identity — equality and hashing keep the

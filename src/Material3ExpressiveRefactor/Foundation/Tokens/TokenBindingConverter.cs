@@ -1,5 +1,4 @@
 using System.Globalization;
-
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
@@ -7,7 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
 /// The MultiBinding converter behind <see cref="TokenExtension"/>. values[0] is the consuming

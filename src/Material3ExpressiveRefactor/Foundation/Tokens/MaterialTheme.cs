@@ -1,22 +1,16 @@
-﻿using Avalonia.Collections;
+﻿using System.Collections.Specialized;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Metadata;
 using Avalonia.Styling;
 
-using System.Collections.Specialized;
-
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 public class MaterialTheme : ResourceProvider
 {
-    private readonly AvaloniaList<ITokenSource> _children = new()
-    {
-        ResetBehavior = ResetBehavior.Remove,
-    };
-
     public MaterialTheme()
     {
-        _children.CollectionChanged += OnChildrenChanged;
+        Children.CollectionChanged += OnChildrenChanged;
     }
 
     public override bool TryGetResource(object key, ThemeVariant? theme, out object? value)
@@ -27,9 +21,9 @@ public class MaterialTheme : ResourceProvider
             return false;
         }
 
-        for (var index = _children.Count - 1; index >= 0; index--)
+        for (var index = Children.Count - 1; index >= 0; index--)
         {
-            var source = _children[index];
+            var source = Children[index];
             if (source.TryGetToken(tokenKey, theme, out var sourceValue))
             {
                 value = sourceValue;
@@ -41,10 +35,13 @@ public class MaterialTheme : ResourceProvider
         return false;
     }
 
-    public override bool HasResources => true;
+    public override bool HasResources => Children.Count != 0;
 
     [Content]
-    public AvaloniaList<ITokenSource> Children => _children;
+    public AvaloniaList<ITokenSource> Children { get; } = new()
+    {
+        ResetBehavior = ResetBehavior.Remove,
+    };
 
     private void OnChildrenChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -54,7 +51,7 @@ public class MaterialTheme : ResourceProvider
 
     private void UpdateSourceSubscriptions(NotifyCollectionChangedEventArgs e)
     {
-        if (e.OldItems is not null)
+        if (e.OldItems is { })
         {
             foreach (var item in e.OldItems)
             {
@@ -63,7 +60,7 @@ public class MaterialTheme : ResourceProvider
             }
         }
 
-        if (e.NewItems is not null)
+        if (e.NewItems is { })
         {
             foreach (var item in e.NewItems)
             {

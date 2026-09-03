@@ -1,4 +1,4 @@
-namespace Material3ExpressiveRefactor.Foundation;
+namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
 /// Constrained derivation: the value of a color token with an opacity applied (design doc §5.3),
