@@ -1,0 +1,20 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <!--
+    Implicit theme for a standalone MaterialSurface: the M3 baseline surface and content
+    colors, resolved through {m3:Token} from the sys.color slots so the surface tracks the
+    active ColorScheme and theme variant. Component themes (Button & co.) drive their own
+    comp slots and never go through this theme.
+
+    MaterialSurface is a lookless part — it builds its chrome and overlay visuals itself — so
+    this theme carries property setters only, no Template. TextElement.Foreground is the
+    inherited content color: child text and MaterialSymbol icons pick it up by inheritance.
+  -->
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:MaterialSurface}" TargetType="m3:MaterialSurface">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}" />
+      <Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

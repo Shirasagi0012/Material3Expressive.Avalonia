@@ -1,0 +1,240 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <!--
+    The IconButton family on its two orthogonal upstream axes, mirroring Button.axaml:
+
+    - Style axis: one named ControlTheme per style. The standard theme carries the template and
+      the full size-class machinery; the other three are BasedOn diffs over it (colors, state-layer
+      tints, outline). The implicit {x:Type m3:IconButton} theme IS standard (M3 baseline).
+    - Size axis: the classes xsmall / medium / large / xlarge, nested in the standard theme and
+      inherited through BasedOn. No class = small, the M3 default.
+
+    Every consumed value is a comp slot resolved through {m3:Token}: colors/outline from the style
+    table, metrics/shape from the size tables. The default width option is square at every size
+    (width = DefaultLeadingSpace + IconSize + DefaultTrailingSpace = ContainerHeight), so MinWidth
+    simply binds the height slot; the narrow/wide options land with the width-option slice.
+    Interactions follow the §7.4 state-layer model exactly like the Button family; icon buttons
+    are flat upstream, so there is no elevation machinery. Ripple ink and the press shape-morph
+    (PressedContainerShape) belong to the deferred motion slice; the square opt-in
+    (ContainerShapeSquare) and toggle styles are their own slices.
+  -->
+  <Styles.Resources>
+
+    <ControlTheme x:Key="MaterialStandardIconButtonTheme" TargetType="m3:IconButton">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.ContentColor}}" />
+      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}" />
+      <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <!-- TextElement.Foreground re-asserts the owner's content color onto the part, same as
+               the Button template: a standalone MaterialSurface's implicit theme would otherwise
+               shadow the IconButton.Foreground inheritance. -->
+          <m3:MaterialSurface x:Name="PART_Container"
+                              Background="{TemplateBinding Background}"
+                              BorderBrush="{TemplateBinding BorderBrush}"
+                              BorderThickness="{TemplateBinding BorderThickness}"
+                              TextElement.Foreground="{TemplateBinding Foreground}"
+                              CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerShapeRound}}">
+            <m3:MaterialSymbol Symbol="{TemplateBinding Symbol}"
+                               Width="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
+                               Height="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+
+      <!-- §7.4: pseudo-class styles drive the state layer. Later selectors win on ties, so the
+           declaration order hover < focus < pressed is load-bearing. BasedOn variants re-declare
+           the StateLayerBrush setters with their own slots; the StateLayerOpacity setters are
+           shared sys.state tokens and are inherited unchanged. -->
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.StateLayerColor}}" />
+        <!-- The state-layer fade carries the incoming spec of upstream's 120ms elevation tween
+             (internal/Elevation.kt, cubic-bezier(0.4, 0, 0.2, 1)) for coherence with the Button
+             family; per-state timing lands with the motion slice. -->
+        <Setter Property="Transitions">
+          <Transitions>
+            <DoubleTransition Property="StateLayerOpacity" Duration="0:0:0.12">
+              <DoubleTransition.Easing>
+                <SplineEasing X1="0.4" Y1="0" X2="0.2" Y2="1" />
+              </DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Setter>
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.HoverStateLayerOpacity}}" />
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.HoverStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.FocusStateLayerOpacity}}" />
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.FocusedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.PressedStateLayerOpacity}}" />
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.PressedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.DisabledContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.DisabledContentColor}}" />
+      </Style>
+
+      <!-- Size axis. Each class re-points the container size, the corner shape and the icon size
+           at its own size table; the outline width is only consumed by the outlined theme, which
+           carries its own per-size override. -->
+      <Style Selector="^.xsmall">
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
+        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.xsmall /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerShapeRound}}" />
+      </Style>
+      <Style Selector="^.xsmall /template/ m3|MaterialSymbol">
+        <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.IconSize}}" />
+        <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.IconSize}}" />
+      </Style>
+
+      <Style Selector="^.medium">
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerHeight}}" />
+        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.medium /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerShapeRound}}" />
+      </Style>
+      <Style Selector="^.medium /template/ m3|MaterialSymbol">
+        <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.IconSize}}" />
+        <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.IconSize}}" />
+      </Style>
+
+      <Style Selector="^.large">
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerHeight}}" />
+        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.large /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerShapeRound}}" />
+      </Style>
+      <Style Selector="^.large /template/ m3|MaterialSymbol">
+        <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.IconSize}}" />
+        <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.IconSize}}" />
+      </Style>
+
+      <Style Selector="^.xlarge">
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerHeight}}" />
+        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.xlarge /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerShapeRound}}" />
+      </Style>
+      <Style Selector="^.xlarge /template/ m3|MaterialSymbol">
+        <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.IconSize}}" />
+        <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.IconSize}}" />
+      </Style>
+    </ControlTheme>
+
+    <!-- Filled: primary container with on-primary content. The disabled container is OnSurface at
+         0.10 — the icon button table's own opacity, not the sys 0.12. -->
+    <ControlTheme x:Key="MaterialFilledIconButtonTheme" TargetType="m3:IconButton"
+                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.ContentColor}}" />
+
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.StateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.HoverStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.FocusedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.PressedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.DisabledContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.DisabledContentColor}}" />
+      </Style>
+    </ControlTheme>
+
+    <!-- Tonal: secondary container with on-secondary-container content. -->
+    <ControlTheme x:Key="MaterialTonalIconButtonTheme" TargetType="m3:IconButton"
+                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.ContentColor}}" />
+
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.StateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.HoverStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.FocusedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.PressedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.DisabledContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.DisabledContentColor}}" />
+      </Style>
+    </ControlTheme>
+
+    <!-- Outlined: transparent container, outline-variant border whose width comes from the size
+         table. The disabled border is the outline color at the disabled-content opacity (the
+         upstream border derivation, not the raw token table's plain OutlineVariant). -->
+    <ControlTheme x:Key="MaterialOutlinedIconButtonTheme" TargetType="m3:IconButton"
+                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.ContentColor}}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.OutlineColor}}" />
+      <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.OutlinedOutlineWidth}}" />
+
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.StateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.HoverStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.FocusedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.PressedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.DisabledContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.DisabledContentColor}}" />
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.DisabledOutlineColor}}" />
+      </Style>
+
+      <!-- The outline width thickens at the two largest sizes. -->
+      <Style Selector="^.xsmall">
+        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.OutlinedOutlineWidth}}" />
+      </Style>
+      <Style Selector="^.medium">
+        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.OutlinedOutlineWidth}}" />
+      </Style>
+      <Style Selector="^.large">
+        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.OutlinedOutlineWidth}}" />
+      </Style>
+      <Style Selector="^.xlarge">
+        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.OutlinedOutlineWidth}}" />
+      </Style>
+    </ControlTheme>
+
+    <!-- The implicit IconButton theme IS standard (M3 baseline). BasedOn inherits the setters and
+         nested styles, and a derived theme's own setters win over the inherited ones on ties. -->
+    <ControlTheme x:Key="{x:Type m3:IconButton}" TargetType="m3:IconButton"
+                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}" />
+
+  </Styles.Resources>
+</Styles>
