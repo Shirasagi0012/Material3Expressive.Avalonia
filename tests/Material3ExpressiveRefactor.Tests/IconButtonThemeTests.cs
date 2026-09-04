@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3ExpressiveRefactor.Controls;
+using Material3ExpressiveRefactor.Foundation.Interaction;
 using Material3ExpressiveRefactor.Foundation.Rendering;
 using MaterialSymbols;
 using Xunit;
@@ -162,17 +163,16 @@ public class IconButtonThemeTests
     }
 
     [AvaloniaFact]
-    public void ImplicitTheme_AnimatesStateLayerChanges()
+    public void ImplicitTheme_OptsIntoMaterialInteraction()
     {
-        // Icon buttons are flat (no elevation tokens upstream), so only the state-layer fade
-        // rides the transition — same 120ms incoming spec as the Button family.
+        // Icon buttons are flat (no elevation tokens upstream), so the container carries no
+        // styled transitions at all. Feedback comes from MaterialInteraction: the standard theme
+        // opts the button in, and MaterialSurface's controller paints ripples and timed
+        // state-layer fades instead of a styled StateLayerOpacity transition.
         IconButtonThemeFixture.ShowWindow(out var button);
         var container = Container(button);
 
-        var transitions = Assert.IsAssignableFrom<Transitions>(container.Transitions);
-        var stateLayer = transitions.OfType<DoubleTransition>()
-            .SingleOrDefault(t => t.Property == MaterialSurface.StateLayerOpacityProperty);
-        Assert.NotNull(stateLayer);
-        Assert.Equal(TimeSpan.FromMilliseconds(120), stateLayer.Duration);
+        Assert.True(MaterialInteraction.GetIsInteractive(button));
+        Assert.Null(container.Transitions);
     }
 }

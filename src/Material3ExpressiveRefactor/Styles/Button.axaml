@@ -15,16 +15,18 @@
     Every consumed value is a comp slot (§7.1) resolved through {m3:Token}: colors/outline from
     the style table, metrics/shape/typography from the size tables, elevation as DIPs onto
     MaterialSurface.Elevation (rendered by MaterialSkiaShadow). Interactions follow the §7.4
-    state-layer model: pseudo-class styles drive PART_Container's StateLayerBrush/Opacity, which
-    MaterialSurface paints above the content, matching the upstream draw order (CommonRipple:
-    content → state layer → ripples). Ripple ink, press shape-morph and the focus ring belong to
-    the deferred motion slice.
+    state-layer model with the motion slice landed: MaterialInteraction.IsInteractive opts the
+    control in, and the owner's interaction controller drives the overlay — the pseudo-class
+    styles here only switch StateLayerBrush (which doubles as the ripple ink color, matching
+    upstream where both come from the content color), while opacity timing, press ripples and the
+    press shape-morph are the controller's job. The focus ring is still deferred.
     Nested facade types are referenced with the XAML '+' syntax — '{x:Static}' splits the
     argument at the first dot, so 'MaterialTokens.Comp.FilledButton.X' would not resolve.
   -->
   <Styles.Resources>
 
     <ControlTheme x:Key="MaterialFilledButtonTheme" TargetType="Button">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContentColor}}" />
       <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}" />
@@ -51,7 +53,8 @@
                               BorderBrush="{TemplateBinding BorderBrush}"
                               BorderThickness="{TemplateBinding BorderThickness}"
                               TextElement.Foreground="{TemplateBinding Foreground}"
-                              CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeRound}}">
+                              CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeRound}}"
+                              PressedCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.PressedContainerShape}}">
             <ContentPresenter x:Name="PART_ContentPresenter"
                               Content="{TemplateBinding Content}"
                               ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -64,26 +67,20 @@
         </ControlTemplate>
       </Setter>
 
-      <!-- §7.4: pseudo-class styles drive the state layer. Later selectors win on ties, so the
-           declaration order hover < focus < pressed is load-bearing: pressed must beat hover
-           when both pseudo-classes are active. BasedOn variants re-declare the StateLayerBrush
-           setters with their own slots; the StateLayerOpacity setters are shared sys.state tokens
-           and are inherited unchanged. -->
+      <!-- §7.4 with the motion slice: the controller owns StateLayerOpacity and the press ripple,
+           so pseudo-class styles only pick the layer's color. Later selectors win on ties, so the
+           declaration order hover < focus < pressed is load-bearing: pressed must beat hover when
+           both pseudo-classes are active, because its brush is the ripple ink. BasedOn variants
+           re-declare the StateLayerBrush setters with their own slots. -->
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.StateLayerColor}}" />
-        <!-- State changes animate: upstream tweens elevation 120ms in / 150ms out (hover-out
-             120ms) with cubic-bezier easings (internal/Elevation.kt); Transitions carry one
-             spec for both directions, so this takes the incoming spec — the one you feel.
-             The state-layer fade follows the same spec for coherence; the exact per-state
-             timing belongs to the ripple node upstream and lands with the motion slice. -->
+        <!-- Elevation animates: upstream tweens it 120ms in / 150ms out (hover-out 120ms) with
+             cubic-bezier easings (internal/Elevation.kt); Transitions carry one spec for both
+             directions, so this takes the incoming spec — the one you feel. The asymmetric exit
+             spec is a recorded follow-up of the motion slice. -->
         <Setter Property="Transitions">
           <Transitions>
             <DoubleTransition Property="Elevation" Duration="0:0:0.12">
-              <DoubleTransition.Easing>
-                <SplineEasing X1="0.4" Y1="0" X2="0.2" Y2="1" />
-              </DoubleTransition.Easing>
-            </DoubleTransition>
-            <DoubleTransition Property="StateLayerOpacity" Duration="0:0:0.12">
               <DoubleTransition.Easing>
                 <SplineEasing X1="0.4" Y1="0" X2="0.2" Y2="1" />
               </DoubleTransition.Easing>
@@ -92,15 +89,12 @@
         </Setter>
       </Style>
       <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.HoverStateLayerOpacity}}" />
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.HoverStateLayerColor}}" />
       </Style>
       <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.FocusStateLayerOpacity}}" />
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.FocusedStateLayerColor}}" />
       </Style>
       <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.PressedStateLayerOpacity}}" />
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.PressedStateLayerColor}}" />
       </Style>
       <Style Selector="^:disabled">
@@ -119,6 +113,7 @@
       </Style>
       <Style Selector="^.xsmall /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerShapeRound}}" />
+        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.PressedContainerShape}}" />
       </Style>
       <Style Selector="^.xsmall /template/ ContentPresenter">
         <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextTracking}}" />
@@ -134,6 +129,7 @@
       </Style>
       <Style Selector="^.medium /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeRound}}" />
+        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.PressedContainerShape}}" />
       </Style>
       <Style Selector="^.medium /template/ ContentPresenter">
         <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextTracking}}" />
@@ -149,6 +145,7 @@
       </Style>
       <Style Selector="^.large /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeRound}}" />
+        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.PressedContainerShape}}" />
       </Style>
       <Style Selector="^.large /template/ ContentPresenter">
         <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextTracking}}" />
@@ -164,6 +161,7 @@
       </Style>
       <Style Selector="^.xlarge /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeRound}}" />
+        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.PressedContainerShape}}" />
       </Style>
       <Style Selector="^.xlarge /template/ ContentPresenter">
         <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextTracking}}" />

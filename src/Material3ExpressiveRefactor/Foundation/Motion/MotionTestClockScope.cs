@@ -1,0 +1,76 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+namespace Material3ExpressiveRefactor.Foundation.Motion;
+
+/// <summary>
+/// Test-only owner for every <see cref="MaterialMotionController" /> created while the scope is active.
+/// </summary>
+/// <remarks>
+/// Enter the scope before constructing the controls under test, so their motion controllers become
+/// manual before they can request a host frame. The type is internal and exposed only to the
+/// repository's friend test assemblies.
+/// </remarks>
+internal sealed class MotionTestClockScope : IDisposable
+{
+    private static readonly AsyncLocal<MotionTestClockScope?> CurrentScope = new();
+
+    private readonly List<MaterialMotionController> _controllers = [];
+    private readonly HashSet<MaterialMotionController> _knownControllers = [];
+    private bool _disposed;
+
+    public MotionTestClockScope()
+    {
+        if (CurrentScope.Value is not null)
+            throw new InvalidOperationException("A Material motion test-clock scope is already active.");
+
+        CurrentScope.Value = this;
+    }
+
+    internal int ControllerCount => _controllers.Count;
+
+    internal static void Register(MaterialMotionController controller)
+    {
+        CurrentScope.Value?.Add(controller);
+    }
+
+    internal void AdvanceBy(TimeSpan delta)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (delta < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(delta), "Animation time cannot move backwards.");
+
+        // A tick can create another controller. Indexing lets that controller consume the same
+        // logical frame, matching a frame clock where all registered callbacks see one timestamp.
+        for (var index = 0; index < _controllers.Count; index++)
+            _controllers[index].AdvanceBy(delta);
+    }
+
+    internal void SettleAll()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        for (var index = 0; index < _controllers.Count; index++)
+            _controllers[index].SettleAll();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        if (!ReferenceEquals(CurrentScope.Value, this))
+            throw new InvalidOperationException("Material motion test-clock scopes must be disposed in activation order.");
+
+        CurrentScope.Value = null;
+        _disposed = true;
+    }
+
+    private void Add(MaterialMotionController controller)
+    {
+        if (!_knownControllers.Add(controller))
+            return;
+
+        controller.UseManualClock();
+        _controllers.Add(controller);
+    }
+}

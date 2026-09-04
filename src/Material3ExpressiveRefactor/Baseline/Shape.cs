@@ -42,6 +42,7 @@ public class ShapeTokenSource : ITokenSource
         [Sys.Shape.ExtraExtraLarge] = new CornerRadius(48),
         // Stadium: deliberately far larger than any real control extent; rendering clamps the
         // radii to a half-pill. CornerRadius is absolute DIPs — there is no percent form.
+        // TODO: Find if there is better way to express a 'full' corner radius
         [Sys.Shape.Full] = new CornerRadius(1000),
     }.ToFrozenDictionary();
 

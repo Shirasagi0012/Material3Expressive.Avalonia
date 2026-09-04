@@ -37,10 +37,14 @@ public class MotionTokenSource : ITokenSource
         [Sys.Motion.Spring.SpatialDefaultStiffness] = 380d,
         [Sys.Motion.Spring.SpatialFastDamping] = 0.6d,
         [Sys.Motion.Spring.SpatialFastStiffness] = 800d,
+        [Sys.Motion.Spring.SpatialSlowDamping] = 0.8d,
+        [Sys.Motion.Spring.SpatialSlowStiffness] = 200d,
         [Sys.Motion.Spring.EffectsDefaultDamping] = 1.0d,
         [Sys.Motion.Spring.EffectsDefaultStiffness] = 1600d,
         [Sys.Motion.Spring.EffectsFastDamping] = 1.0d,
         [Sys.Motion.Spring.EffectsFastStiffness] = 3800d,
+        [Sys.Motion.Spring.EffectsSlowDamping] = 1.0d,
+        [Sys.Motion.Spring.EffectsSlowStiffness] = 800d,
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) =>

@@ -37,9 +37,9 @@ public static partial class MaterialTokens
 
             /// <summary>
             /// Expressive spring parameters: spatial (position/size) and effects (opacity/color)
-            /// springs, each in default and fast variants. Values mirror the Compose M3 motion
-            /// scheme (damping 0.8/0.6 spatial, 1.0 effects; stiffness 380/800 spatial,
-            /// 1600/3800 effects).
+            /// springs, each in default, fast and slow variants. Values mirror the Compose M3
+            /// motion scheme (damping 0.8/0.6/0.8 spatial, 1.0 effects; stiffness 380/800/200
+            /// spatial, 1600/3800/800 effects).
             /// </summary>
             public static class Spring
             {
@@ -47,10 +47,14 @@ public static partial class MaterialTokens
                 public static readonly MaterialTokenKey<double> SpatialDefaultStiffness = new("md.sys.motion.spring.spatial-default-stiffness");
                 public static readonly MaterialTokenKey<double> SpatialFastDamping = new("md.sys.motion.spring.spatial-fast-damping");
                 public static readonly MaterialTokenKey<double> SpatialFastStiffness = new("md.sys.motion.spring.spatial-fast-stiffness");
+                public static readonly MaterialTokenKey<double> SpatialSlowDamping = new("md.sys.motion.spring.spatial-slow-damping");
+                public static readonly MaterialTokenKey<double> SpatialSlowStiffness = new("md.sys.motion.spring.spatial-slow-stiffness");
                 public static readonly MaterialTokenKey<double> EffectsDefaultDamping = new("md.sys.motion.spring.effects-default-damping");
                 public static readonly MaterialTokenKey<double> EffectsDefaultStiffness = new("md.sys.motion.spring.effects-default-stiffness");
                 public static readonly MaterialTokenKey<double> EffectsFastDamping = new("md.sys.motion.spring.effects-fast-damping");
                 public static readonly MaterialTokenKey<double> EffectsFastStiffness = new("md.sys.motion.spring.effects-fast-stiffness");
+                public static readonly MaterialTokenKey<double> EffectsSlowDamping = new("md.sys.motion.spring.effects-slow-damping");
+                public static readonly MaterialTokenKey<double> EffectsSlowStiffness = new("md.sys.motion.spring.effects-slow-stiffness");
             }
         }
     }

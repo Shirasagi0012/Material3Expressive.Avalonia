@@ -1,8 +1,11 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Metadata;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Interaction;
+using Material3ExpressiveRefactor.Foundation.Motion;
 using Material3ExpressiveRefactor.Foundation.Tokens;
 using Material3ExpressiveRefactor.Tokens;
 using MaterialSkiaShadow;
@@ -12,9 +15,8 @@ namespace Material3ExpressiveRefactor.Foundation.Rendering;
 /// <summary>
 /// The Material surface: one lookless template part that paints the whole chrome every component
 /// sits on. Paint order mirrors the upstream surface/ripple nodes: elevation shadow → background /
-/// border / clipped content → interaction state layer (Compose's CommonRipple.drawIndication draws
-/// content first, then the state layer, then ripple ink — ripple lands with the motion slice and
-/// will paint from the same overlay).
+/// border / clipped content → interaction layers (press ripples, then the state layer — Compose's
+/// CommonRipple.drawIndication draws content first, then state layer and ripple ink above it).
 /// <para>
 /// The class composes two private visuals instead of subclassing <see cref="Border"/>: Border's
 /// Render is sealed, and a parent's own paint always lands beneath its children, so neither "shadow
@@ -29,6 +31,14 @@ namespace Material3ExpressiveRefactor.Foundation.Rendering;
 /// shadow color resolves <c>md.sys.color.shadow</c> from this control's position unless
 /// <see cref="ShadowColor"/> is set. Elevation 0 (the default) skips the shadow, which is why flat
 /// and elevated components share this one part.
+/// </para>
+/// <para>
+/// When the surface is the template root of a control opted into
+/// <c>MaterialInteraction.IsInteractive</c>, the owner's MaterialInteractionController drives the
+/// overlay (ripples and timed state-layer fades) and, when <see cref="PressedCornerRadius"/> is
+/// set, springs the corners to the pressed shape on the DefaultEffects spring; otherwise the
+/// styled <see cref="StateLayerBrush"/>/<see cref="StateLayerOpacity"/> pair paints a static
+/// state layer.
 /// </para>
 /// </summary>
 public class MaterialSurface : Control
@@ -56,6 +66,15 @@ public class MaterialSurface : Control
     public static readonly StyledProperty<double> StateLayerOpacityProperty =
         AvaloniaProperty.Register<MaterialSurface, double>(nameof(StateLayerOpacity));
 
+    /// <summary>
+    /// The container's corners while pressed — the comp <c>PressedContainerShape</c> slot. With an
+    /// interaction owner attached, a press springs the corners between the styled
+    /// <see cref="CornerRadius"/> and this value (upstream: AnimatedShape on the DefaultEffects
+    /// spring). Null (the default) keeps the resting shape.
+    /// </summary>
+    public static readonly StyledProperty<CornerRadius?> PressedCornerRadiusProperty =
+        AvaloniaProperty.Register<MaterialSurface, CornerRadius?>(nameof(PressedCornerRadius));
+
     // The chrome property set mirrors Border's registrations (shared via AddOwner), so styles and
     // TemplateBindings talk to this part exactly like the Border it replaces.
     public static readonly StyledProperty<IBrush?> BackgroundProperty =
@@ -78,11 +97,15 @@ public class MaterialSurface : Control
 
     static MaterialSurface()
     {
-        AffectsRender<MaterialSurface>(ElevationProperty, ShadowColorProperty);
+        // The shadow's shape follows the corners, so both of its inputs invalidate this Render.
+        AffectsRender<MaterialSurface>(ElevationProperty, ShadowColorProperty, CornerRadiusProperty);
     }
 
     private readonly Border _chrome;
     private readonly StateLayerOverlay _overlay;
+    private MaterialInteractionController? _interaction;
+    private IDisposable? _interactionLease;
+    private AnimatedCornerRadius? _shapeMorph;
 
     public MaterialSurface()
     {
@@ -171,6 +194,18 @@ public class MaterialSurface : Control
         set => SetValue(StateLayerOpacityProperty, value);
     }
 
+    public CornerRadius? PressedCornerRadius
+    {
+        get => GetValue(PressedCornerRadiusProperty);
+        set => SetValue(PressedCornerRadiusProperty, value);
+    }
+
+    /// <summary>
+    /// The corners actually painted: the morph's value while a press shape-morph is live, the
+    /// styled <see cref="CornerRadius"/> otherwise. Chrome, clip, ripple and shadow all read this.
+    /// </summary>
+    internal CornerRadius EffectiveCornerRadius => _shapeMorph?.Current ?? CornerRadius;
+
     public override void Render(DrawingContext context)
     {
         // The shadow paints before the visual children (chrome + content + overlay).
@@ -182,7 +217,7 @@ public class MaterialSurface : Control
             ComposeShadowRenderer.Draw(
                 context,
                 this,
-                ComposeShadowShape.RoundedRectangle(bounds, CornerRadius),
+                ComposeShadowShape.RoundedRectangle(bounds, EffectiveCornerRadius),
                 ComposeShadowParameters.Material(Elevation, ResolveShadowColor()));
         }
 
@@ -202,6 +237,11 @@ public class MaterialSurface : Control
         var rect = new Rect(finalSize);
         _chrome.Arrange(rect);
         _overlay.Arrange(rect);
+
+        // The morph clamps its endpoints against the layout size; keep it current across resizes.
+        if (_shapeMorph is not null)
+            _shapeMorph.Size = finalSize;
+
         return finalSize;
     }
 
@@ -227,7 +267,24 @@ public class MaterialSurface : Control
         }
         else if (change.Property == CornerRadiusProperty)
         {
-            _chrome.CornerRadius = change.GetNewValue<CornerRadius>();
+            if (_shapeMorph is null)
+            {
+                _chrome.CornerRadius = change.GetNewValue<CornerRadius>();
+            }
+            else
+            {
+                // The resting shape moved under a live morph (e.g. a size-class change):
+                // retarget the animation instead of snapping the painted corners.
+                UpdateShapeMorph(_interaction?.Interaction.HasFlag(InteractionState.Pressed) ?? false);
+            }
+
+            _overlay.InvalidateVisual();
+        }
+        else if (change.Property == PressedCornerRadiusProperty)
+        {
+            if (_interaction is not null)
+                UpdateShapeMorph(_interaction.Interaction.HasFlag(InteractionState.Pressed));
+
             _overlay.InvalidateVisual();
         }
         else if (change.Property == PaddingProperty)
@@ -248,6 +305,98 @@ public class MaterialSurface : Control
         _chrome.Child = (Control?)e.NewValue;
     }
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+
+        // Interactive hosts: when the surface is the template root of a control whose theme opted
+        // in via MaterialInteraction.IsInteractive, the owner's controller takes over the overlay —
+        // state-layer alpha timing and ripple ink are its job, and the styled StateLayerOpacity
+        // stays unused. A surface with no such TemplatedParent (plain surfaces, cards) keeps the
+        // static styled path. A template re-application creates a fresh surface, so there is no
+        // re-parenting path to handle here.
+        if (TemplatedParent is Control host && MaterialInteraction.GetIsInteractive(host))
+        {
+            _interaction = MaterialInteraction.GetOrCreate(host);
+            _interactionLease = _interaction.Attach(this);
+        }
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+
+        // The morph's animation track rides the owner's motion controller, which outlives this
+        // surface — drop it explicitly or it would leak one track per detach.
+        if (_shapeMorph is { } morph)
+        {
+            _interaction?.Motion.Remove(morph.Progress);
+            _shapeMorph = null;
+            _chrome.CornerRadius = CornerRadius;
+        }
+
+        _interactionLease?.Dispose();
+        _interactionLease = null;
+        _interaction = null;
+    }
+
+    /// <summary>
+    /// Interaction frame callback: a ripple, a state-layer fade or the shape morph moved.
+    /// The chrome and the shadow follow the morphed corners; the overlay repaints either way.
+    /// </summary>
+    internal void OnInteractionFrame()
+    {
+        if (_shapeMorph is { } morph)
+        {
+            _chrome.CornerRadius = morph.Current;
+            if (Elevation > 0)
+                InvalidateVisual();
+        }
+
+        _overlay.InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Interaction state edge callback: drives the press shape-morph off the Pressed flag and
+    /// repaints the overlay for the state change.
+    /// </summary>
+    internal void OnInteractionChanged(InteractionState state)
+    {
+        UpdateShapeMorph(state.HasFlag(InteractionState.Pressed));
+        _overlay.InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Aims the shape morph at the pressed or resting corners. The first press with a
+    /// <see cref="PressedCornerRadius"/> configured creates the morph and registers it with the
+    /// owner's motion controller; upstream runs it on the DefaultEffects spring ("prevent any
+    /// bounce" — a shape squish must not overshoot).
+    /// </summary>
+    private void UpdateShapeMorph(bool pressed)
+    {
+        if (_interaction is null)
+            return;
+
+        var rest = CornerRadius;
+        var target = pressed && PressedCornerRadius is { } pressedRadius ? pressedRadius : rest;
+
+        if (_shapeMorph is null)
+        {
+            if (target.Equals(rest))
+                return; // no pressed shape configured, or already at rest
+
+            _shapeMorph = new AnimatedCornerRadius(rest, DefaultEffectsSpec()) { Size = Bounds.Size };
+            _interaction.Motion.Add(_shapeMorph.Progress);
+        }
+
+        _shapeMorph.Size = Bounds.Size;
+        _shapeMorph.AnimateTo(target, DefaultEffectsSpec());
+        _interaction.Motion.RequestFrame();
+    }
+
+    private SpringSpec DefaultEffectsSpec() =>
+        MotionSpecs.Resolve(TemplatedParent as IResourceHost ?? this, MotionRole.DefaultEffects, ActualThemeVariant);
+
     private Color ResolveShadowColor()
     {
         if (ShadowColor is { } color)
@@ -260,7 +409,9 @@ public class MaterialSurface : Control
     }
 
     /// <summary>
-    /// The always-on-top paint layer: state layer now, ripple ink when the motion slice lands.
+    /// The always-on-top paint layer. With an interaction owner attached it paints what the
+    /// owner's controller says (press ripples, then the state layer, both clipped to the corners);
+    /// otherwise it falls back to the styled StateLayerBrush/Opacity pair for plain surfaces.
     /// A visual-only child (no logical parent) that never participates in input or layout size.
     /// </summary>
     private sealed class StateLayerOverlay : Control
@@ -276,13 +427,22 @@ public class MaterialSurface : Control
 
         public override void Render(DrawingContext context)
         {
+            if (Bounds.Width <= 0 || Bounds.Height <= 0)
+                return;
+
+            if (_owner._interaction is { } interaction)
+            {
+                interaction.DrawLayers(context, _owner.StateLayerBrush, _owner.EffectiveCornerRadius, Bounds.Size);
+                return;
+            }
+
             var brush = _owner.StateLayerBrush;
             var opacity = _owner.StateLayerOpacity;
-            if (brush is null || opacity <= 0 || Bounds.Width <= 0 || Bounds.Height <= 0)
+            if (brush is null || opacity <= 0)
                 return;
 
             using (context.PushOpacity(opacity))
-                context.DrawRectangle(brush, null, new RoundedRect(new Rect(Bounds.Size), _owner.CornerRadius));
+                context.DrawRectangle(brush, null, new RoundedRect(new Rect(Bounds.Size), _owner.EffectiveCornerRadius));
         }
     }
 }

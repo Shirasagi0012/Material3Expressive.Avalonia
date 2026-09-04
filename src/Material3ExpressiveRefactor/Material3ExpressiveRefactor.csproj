@@ -49,8 +49,4 @@
              adopted. -->
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Foundation\Interaction\" />
-    </ItemGroup>
-    
 </Project>

@@ -8,6 +8,7 @@ using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Material3ExpressiveRefactor.Foundation.Interaction;
 using Material3ExpressiveRefactor.Foundation.Rendering;
 using Xunit;
 
@@ -66,13 +67,17 @@ public class ButtonThemeTests
     }
 
     [AvaloniaFact]
-    public void ImplicitTheme_AnimatesElevationAndStateLayerChanges()
+    public void ImplicitTheme_AnimatesElevationChanges()
     {
         // Upstream Elevation.kt tweens elevation between states (120ms incoming, FastOutSlowIn);
-        // the state-layer fade follows the same spec. The transition rides the filled theme's
-        // part style, inherited by every BasedOn variant.
+        // that transition rides the filled theme's part style, inherited by every BasedOn variant.
+        // The state layer is NOT a styled transition anymore: the theme opts the button into
+        // MaterialInteraction, and MaterialSurface's MaterialInteractionController paints the
+        // fade (15/45/150ms per state) itself.
         ButtonThemeFixture.ShowWindow(out var button);
         var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
+
+        Assert.True(MaterialInteraction.GetIsInteractive(button));
 
         var transitions = Assert.IsAssignableFrom<Transitions>(container.Transitions);
         var elevation = transitions.OfType<DoubleTransition>()
@@ -80,7 +85,7 @@ public class ButtonThemeTests
         Assert.NotNull(elevation);
         Assert.Equal(TimeSpan.FromMilliseconds(120), elevation.Duration);
 
-        Assert.Contains(transitions.OfType<DoubleTransition>(),
+        Assert.DoesNotContain(transitions.OfType<DoubleTransition>(),
             t => t.Property == MaterialSurface.StateLayerOpacityProperty);
     }
 }
