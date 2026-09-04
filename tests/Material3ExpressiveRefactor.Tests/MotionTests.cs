@@ -7,16 +7,16 @@ namespace Material3ExpressiveRefactor.Tests;
 
 /// <summary>
 /// The motion engine: closed-form springs, tweens and the frame scheduler. Ported from the legacy
-/// suite; specs come from <see cref="MotionSpecs" /> fallbacks (the Expressive scheme values),
-/// which also covers the token-pair assembly when no resource host is around.
+/// suite; specs are the <see cref="MotionScheme.Expressive" /> constants — the code fallbacks the
+/// baseline spring spec tokens mirror (pinned equal in BaselineSubsystemTests).
 /// </summary>
 public class SpringTests
 {
     private static readonly TimeSpan Frame60 = TimeSpan.FromSeconds(1.0 / 60);
     private static readonly TimeSpan Frame144 = TimeSpan.FromSeconds(1.0 / 144);
 
-    private static SpringAnimation Spring(MotionRole role) =>
-        new(0, MotionSpecs.Resolve(null, role));
+    private static SpringAnimation Spring(SpringSpec spec) =>
+        new(0, spec);
 
     /// <summary>Runs an animation to completion, returning how many frames it took.</summary>
     private static int RunToRest(IAnimation animation, TimeSpan frame, int maxFrames = 6000)
@@ -34,7 +34,7 @@ public class SpringTests
     [Fact]
     public void ASpring_SettlesExactlyOnItsTarget()
     {
-        var spring = Spring(MotionRole.DefaultSpatial);
+        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
         spring.AnimateTo(1);
 
         RunToRest(spring, Frame60);
@@ -49,8 +49,8 @@ public class SpringTests
     {
         // The closed-form solution is evaluated from the start of the leg, not integrated frame to
         // frame, so sampling more often must not change the trajectory.
-        var slow = Spring(MotionRole.DefaultSpatial);
-        var fast = Spring(MotionRole.DefaultSpatial);
+        var slow = Spring(MotionScheme.Expressive.DefaultSpatial);
+        var fast = Spring(MotionScheme.Expressive.DefaultSpatial);
         slow.AnimateTo(1);
         fast.AnimateTo(1);
 
@@ -68,8 +68,8 @@ public class SpringTests
     [Fact]
     public void ADroppedFrame_DoesNotChangeWhereTheSpringIs()
     {
-        var steady = Spring(MotionRole.DefaultSpatial);
-        var stuttering = Spring(MotionRole.DefaultSpatial);
+        var steady = Spring(MotionScheme.Expressive.DefaultSpatial);
+        var stuttering = Spring(MotionScheme.Expressive.DefaultSpatial);
         steady.AnimateTo(1);
         stuttering.AnimateTo(1);
 
@@ -86,7 +86,7 @@ public class SpringTests
     [Fact]
     public void ARetarget_KeepsTheVelocityItAlreadyHad()
     {
-        var spring = Spring(MotionRole.DefaultSpatial);
+        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
         spring.AnimateTo(1);
 
         for (var i = 0; i < 5; i++)
@@ -106,7 +106,7 @@ public class SpringTests
     [Fact]
     public void ARetargetToTheSamePlace_DoesNotRestartTheAnimation()
     {
-        var spring = Spring(MotionRole.DefaultSpatial);
+        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
         spring.AnimateTo(1);
 
         for (var i = 0; i < 5; i++)
@@ -121,7 +121,7 @@ public class SpringTests
     [Fact]
     public void ACriticallyDampedSpring_NeverOvershoots()
     {
-        var spring = Spring(MotionRole.DefaultEffects);
+        var spring = Spring(MotionScheme.Expressive.DefaultEffects);
         spring.AnimateTo(1);
 
         while (spring.IsRunning)
@@ -136,7 +136,7 @@ public class SpringTests
     {
         // Expressive's fast spatial spring is the bounciest thing in the scheme; bounce is the
         // point of it, so if this stops overshooting the port has gone wrong.
-        var spring = Spring(MotionRole.FastSpatial);
+        var spring = Spring(MotionScheme.Expressive.FastSpatial);
         spring.AnimateTo(1);
 
         var peak = 0.0;
@@ -152,8 +152,8 @@ public class SpringTests
     [Fact]
     public void AStifferSpring_SettlesSooner()
     {
-        var fast = Spring(MotionRole.FastEffects);
-        var slow = Spring(MotionRole.SlowEffects);
+        var fast = Spring(MotionScheme.Expressive.FastEffects);
+        var slow = Spring(MotionScheme.Expressive.SlowEffects);
         fast.AnimateTo(1);
         slow.AnimateTo(1);
 
@@ -190,7 +190,7 @@ public class SpringTests
     [Fact]
     public void SnapTo_CancelsMotion()
     {
-        var spring = Spring(MotionRole.DefaultSpatial);
+        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
         spring.AnimateTo(1);
         spring.Tick(Frame60);
         spring.SnapTo(0.25);

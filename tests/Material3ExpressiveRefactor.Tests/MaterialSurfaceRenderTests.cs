@@ -100,25 +100,6 @@ public class MaterialSurfaceRenderTests
     }
 
     [AvaloniaFact]
-    public void StateLayer_PaintsAboveContent()
-    {
-        var surface = ProbeSurface();
-        surface.StateLayerBrush = Brushes.Red;
-        surface.StateLayerOpacity = 0.5;
-        surface.Child = new Border { Background = Brushes.Green }; // #008000
-        var window = Show(surface);
-
-        using var frame = window.CaptureRenderedFrame()!;
-
-        // 0.5 red over opaque green → ~(128, 64, 0). Painted UNDER the content it would be
-        // pure green; this proves the overlay sits above the child.
-        var center = PixelAt(frame, 80, 80);
-        Assert.True(center.R is > 100 and < 160, $"R off: {center}");
-        Assert.True(center.G is > 40 and < 90, $"G off: {center}");
-        Assert.True(center.B < 20, $"B off: {center}");
-    }
-
-    [AvaloniaFact]
     public void RoundedClip_ClipsChildContent()
     {
         var surface = ProbeSurface();

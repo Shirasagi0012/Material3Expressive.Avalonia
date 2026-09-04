@@ -41,9 +41,8 @@ public class ButtonThemeTests
         var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
         Assert.Equal(new CornerRadius(1000), container.CornerRadius);
 
-        // §7.4: the state layer is painted by MaterialSurface itself; at rest the tint is the
-        // (aliased) content color with zero opacity.
-        Assert.Equal(0d, container.StateLayerOpacity);
+        // §7.4: the state layer is painted by MaterialSurface itself. At rest the controller's
+        // animated opacity is zero; the surface only carries the aliased content color.
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnPrimary),
             Assert.IsType<ImmutableSolidColorBrush>(container.StateLayerBrush).Color);
 
@@ -84,8 +83,5 @@ public class ButtonThemeTests
             .SingleOrDefault(t => t.Property == MaterialSurface.ShadowElevationProperty);
         Assert.NotNull(elevation);
         Assert.Equal(TimeSpan.FromMilliseconds(120), elevation.Duration);
-
-        Assert.DoesNotContain(transitions.OfType<DoubleTransition>(),
-            t => t.Property == MaterialSurface.StateLayerOpacityProperty);
     }
 }

@@ -70,7 +70,6 @@ public class MaterialSurfaceTests
         Assert.Equal(0d, surface.ShadowElevation);
         Assert.Null(surface.ShadowColor);
         Assert.Null(surface.StateLayerBrush);
-        Assert.Equal(0d, surface.StateLayerOpacity);
     }
 
     [AvaloniaFact]

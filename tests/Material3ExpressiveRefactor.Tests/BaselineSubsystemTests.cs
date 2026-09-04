@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Material3ExpressiveRefactor.Baseline;
 using Material3ExpressiveRefactor.Foundation;
+using Material3ExpressiveRefactor.Foundation.Motion;
 using Material3ExpressiveRefactor.Foundation.Tokens;
 using Material3ExpressiveRefactor.Tokens;
 using Xunit;
@@ -124,6 +125,26 @@ public class BaselineSubsystemTests
         Assert.Equal(1600d, Get<double>(source, MaterialTokens.Sys.Motion.Spring.EffectsDefaultStiffness));
         Assert.Equal(1.0d, Get<double>(source, MaterialTokens.Sys.Motion.Spring.EffectsFastDamping));
         Assert.Equal(3800d, Get<double>(source, MaterialTokens.Sys.Motion.Spring.EffectsFastStiffness));
+
+        // The composed spec keys hold SpringSpecRef derivations over the scalar pairs, not
+        // literal specs.
+        Assert.True(source.TryGetToken(MaterialTokens.Sys.Motion.Spring.SpatialDefault, null, out var specEntry));
+        Assert.IsType<SpringSpecRef>(specEntry);
+    }
+
+    [AvaloniaFact]
+    public void Motion_ComposedSpecs_MatchTheMotionSchemeFallbacks()
+    {
+        // The baseline tokens and the MotionScheme.Expressive fallback constants are two
+        // representations of the same upstream values — pin them equal so they cannot drift.
+        var host = HostIn(new MotionTokenSource());
+
+        Assert.Equal(MotionScheme.Expressive.DefaultSpatial, Assert.IsType<SpringSpec>(TokenScan.Resolve(host, MaterialTokens.Sys.Motion.Spring.SpatialDefault)));
+        Assert.Equal(MotionScheme.Expressive.FastSpatial, Assert.IsType<SpringSpec>(TokenScan.Resolve(host, MaterialTokens.Sys.Motion.Spring.SpatialFast)));
+        Assert.Equal(MotionScheme.Expressive.SlowSpatial, Assert.IsType<SpringSpec>(TokenScan.Resolve(host, MaterialTokens.Sys.Motion.Spring.SpatialSlow)));
+        Assert.Equal(MotionScheme.Expressive.DefaultEffects, Assert.IsType<SpringSpec>(TokenScan.Resolve(host, MaterialTokens.Sys.Motion.Spring.EffectsDefault)));
+        Assert.Equal(MotionScheme.Expressive.FastEffects, Assert.IsType<SpringSpec>(TokenScan.Resolve(host, MaterialTokens.Sys.Motion.Spring.EffectsFast)));
+        Assert.Equal(MotionScheme.Expressive.SlowEffects, Assert.IsType<SpringSpec>(TokenScan.Resolve(host, MaterialTokens.Sys.Motion.Spring.EffectsSlow)));
     }
 
     [AvaloniaFact]

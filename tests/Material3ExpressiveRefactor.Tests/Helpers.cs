@@ -10,8 +10,9 @@ namespace Material3ExpressiveRefactor.Tests;
 
 /// <summary>
 /// Reflection sweep over the static MaterialTokens facade: every declared key must be answered
-/// by the source under test, and literal values must match the key's TValue (aliases are only
-/// type-pinned at the end of their resolution chain, so they are skipped here).
+/// by the source under test, and literal values must match the key's TValue (TokenRef/WithAlpha/
+/// SpringSpecRef derivations are only type-pinned at the end of their resolution chain, so they
+/// are skipped here).
 /// </summary>
 internal static class TokenScan
 {
@@ -35,7 +36,7 @@ internal static class TokenScan
         foreach (var key in facadeSections.SelectMany(KeysUnder))
         {
             Assert.True(source.TryGetToken(key, null, out var value), $"miss: {key.DebugName}");
-            if (value is TokenRef or WithAlpha)
+            if (value is TokenRef or WithAlpha or SpringSpecRef)
                 continue;
             Assert.True(
                 key.ValueType.IsInstanceOfType(value),
@@ -51,8 +52,9 @@ internal static class TokenScan
 }
 
 /// <summary>
-/// Dictionary-backed <see cref="ITokenSource"/> for hand-planted literal / TokenRef / WithAlpha
-/// entries. <see cref="Set"/> raises <see cref="Changed"/> so tests can drive live updates.
+/// Dictionary-backed <see cref="ITokenSource"/> for hand-planted literal / TokenRef / WithAlpha /
+/// SpringSpecRef entries. <see cref="Set"/> raises <see cref="Changed"/> so tests can drive live
+/// updates.
 /// </summary>
 internal sealed class TestTokenSource : ITokenSource
 {

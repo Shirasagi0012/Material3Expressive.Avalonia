@@ -6,6 +6,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3ExpressiveRefactor.Foundation.Interaction;
 using Material3ExpressiveRefactor.Foundation.Motion;
@@ -350,6 +351,29 @@ public class MaterialInteractionControllerTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
     }
+
+    [AvaloniaFact]
+    public void CompletedShapeMorph_ReclampsWhenContainerIsResized()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = IconButtonThemeFixture.ShowWindow(out var button);
+        var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
+
+        var origin = button.TranslatePoint(default, window)!.Value;
+        var point = origin + new Point(button.Bounds.Width / 2, button.Bounds.Height / 2);
+        window.MouseDown(point, MouseButton.Left);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+        window.MouseUp(point, MouseButton.Left);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+        Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
+
+        button.Width = 56;
+        button.Height = 56;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(new Size(56, 56), container.Bounds.Size);
+        Assert.Equal(28, container.EffectiveCornerRadius.TopLeft, 6);
+    }
 }
 
 /// <summary>
@@ -362,7 +386,7 @@ public class AnimatedCornerRadiusTests
     private static readonly CornerRadius Stadium = new(1000);
     private static readonly CornerRadius Small = new(8);
     private static readonly CornerRadius Boxy = new(4);
-    private static readonly SpringSpec Spec = MotionSpecs.Resolve(null, MotionRole.DefaultEffects);
+    private static readonly SpringSpec Spec = MotionScheme.Expressive.DefaultEffects;
 
     [Fact]
     public void ItStartsAtRestOnItsInitialShape()

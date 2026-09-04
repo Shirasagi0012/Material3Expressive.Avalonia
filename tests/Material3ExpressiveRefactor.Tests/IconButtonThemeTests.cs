@@ -47,7 +47,6 @@ public class IconButtonThemeTests
 
         var container = Container(button);
         Assert.Equal(new CornerRadius(1000), container.CornerRadius); // CornerFull
-        Assert.Equal(0d, container.StateLayerOpacity);
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSurfaceVariant),
             BrushColor(container.StateLayerBrush));
 
@@ -168,7 +167,7 @@ public class IconButtonThemeTests
         // Icon buttons are flat (no elevation tokens upstream), so the container carries no
         // styled transitions at all. Feedback comes from MaterialInteraction: the standard theme
         // opts the button in, and MaterialSurface's controller paints ripples and timed
-        // state-layer fades instead of a styled StateLayerOpacity transition.
+        // state-layer fades directly.
         IconButtonThemeFixture.ShowWindow(out var button);
         var container = Container(button);
 
