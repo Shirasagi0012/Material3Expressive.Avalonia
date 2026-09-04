@@ -67,7 +67,7 @@
         </ControlTemplate>
       </Setter>
 
-      <!-- §7.4 with the motion slice: the controller owns StateLayerOpacity and the press ripple,
+      <!-- §7.4 with the motion slice: the controller owns state-layer opacity and the press ripple,
            so pseudo-class styles only pick the layer's color. Later selectors win on ties, so the
            declaration order hover < focus < pressed is load-bearing: pressed must beat hover when
            both pseudo-classes are active, because its brush is the ripple ink. BasedOn variants

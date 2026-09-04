@@ -1,16 +1,19 @@
 using System.Collections.Frozen;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Motion;
 using Material3ExpressiveRefactor.Foundation.Tokens;
 using static Material3ExpressiveRefactor.Tokens.MaterialTokens;
 
 namespace Material3ExpressiveRefactor.Baseline;
 
 /// <summary>
-/// The baseline motion tokens (design doc §4.2): standard durations as <see cref="TimeSpan"/> and
-/// the Expressive spring parameters as scalar damping/stiffness pairs. No Easing objects are
-/// stored — each control builds its own easing from these (stock <c>SpringEasing</c> takes
-/// Mass/Stiffness/Damping; mass is fixed at 1.0 upstream). Spring values mirror the Compose M3
-/// motion scheme. Theme-independent.
+/// The baseline motion tokens (design doc §4.2): standard durations as <see cref="TimeSpan"/>,
+/// the Expressive spring parameters as scalar damping/stiffness pairs, and the six composed
+/// specs as <see cref="SpringSpecRef"/> derivations over those scalars — so an override of one
+/// scalar flows into the composed spec. No Easing objects are stored — each control builds its
+/// own easing from the scalars (stock <c>SpringEasing</c> takes Mass/Stiffness/Damping; mass is
+/// fixed at 1.0 upstream). Spring values mirror the Compose M3 motion scheme
+/// (<see cref="MotionScheme.Expressive"/>, pinned equal by test). Theme-independent.
 /// </summary>
 public class MotionTokenSource : ITokenSource
 {
@@ -45,6 +48,13 @@ public class MotionTokenSource : ITokenSource
         [Sys.Motion.Spring.EffectsFastStiffness] = 3800d,
         [Sys.Motion.Spring.EffectsSlowDamping] = 1.0d,
         [Sys.Motion.Spring.EffectsSlowStiffness] = 800d,
+
+        [Sys.Motion.Spring.SpatialDefault] = new SpringSpecRef(Sys.Motion.Spring.SpatialDefaultDamping, Sys.Motion.Spring.SpatialDefaultStiffness),
+        [Sys.Motion.Spring.SpatialFast] = new SpringSpecRef(Sys.Motion.Spring.SpatialFastDamping, Sys.Motion.Spring.SpatialFastStiffness),
+        [Sys.Motion.Spring.SpatialSlow] = new SpringSpecRef(Sys.Motion.Spring.SpatialSlowDamping, Sys.Motion.Spring.SpatialSlowStiffness),
+        [Sys.Motion.Spring.EffectsDefault] = new SpringSpecRef(Sys.Motion.Spring.EffectsDefaultDamping, Sys.Motion.Spring.EffectsDefaultStiffness),
+        [Sys.Motion.Spring.EffectsFast] = new SpringSpecRef(Sys.Motion.Spring.EffectsFastDamping, Sys.Motion.Spring.EffectsFastStiffness),
+        [Sys.Motion.Spring.EffectsSlow] = new SpringSpecRef(Sys.Motion.Spring.EffectsSlowDamping, Sys.Motion.Spring.EffectsSlowStiffness),
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) =>

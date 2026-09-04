@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Material3ExpressiveRefactor.Foundation.Motion;
 
 namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
@@ -17,8 +18,8 @@ internal static class TokenResolver
 {
     /// <summary>
     /// Cycles are bounded by a fixed hop budget: a chain follows at most this many
-    /// TokenRef/WithAlpha references. Material's real chains are component → system →
-    /// reference (2–3 hops), so exceeding the budget means a cycle.
+    /// TokenRef/WithAlpha/SpringSpecRef references. Material's real chains are component →
+    /// system → reference (2–3 hops), so exceeding the budget means a cycle.
     /// </summary>
     private const int MaxHops = 5;
 
@@ -29,9 +30,9 @@ internal static class TokenResolver
     /// Resolves <paramref name="key"/> from the requester's position. The loop counts the hops:
     /// each TokenRef follow restarts the upward search from the same position and costs one
     /// iteration; running out of iterations means a cycle. The remaining budget is forwarded
-    /// into WithAlpha evaluation so that cycles routed through a derivation (e.g. an entry
-    /// referencing itself as its WithAlpha color) still terminate instead of overflowing
-    /// the stack.
+    /// into derivation evaluation so that cycles routed through one (e.g. an entry referencing
+    /// itself as its WithAlpha color or SpringSpecRef damping) still terminate instead of
+    /// overflowing the stack.
     /// </summary>
     private static bool TryResolveCore(IResourceHost host, MaterialTokenKey key, ThemeVariant? theme, int hopsLeft, out object? value)
     {
@@ -44,10 +45,13 @@ internal static class TokenResolver
             {
                 case TokenRef reference:
                     key = reference.Key; continue;
-                
+
                 case WithAlpha withAlpha:
                     return TryEvaluateWithAlpha(host, withAlpha, theme, hopsLeft, out value);
-                
+
+                case SpringSpecRef specRef:
+                    return TryEvaluateSpringSpec(host, specRef, theme, hopsLeft, out value);
+
                 default:
                     value = candidate;
                     return true;
@@ -81,6 +85,25 @@ internal static class TokenResolver
 
         var alpha = (byte)Math.Round(Math.Clamp(opacity, 0.0, 1.0) * color.A);
         value = Color.FromArgb(alpha, color.R, color.G, color.B);
+        return true;
+    }
+
+    private static bool TryEvaluateSpringSpec(IResourceHost host, SpringSpecRef specRef, ThemeVariant? theme, int hopsLeft, out object? value)
+    {
+        value = null;
+
+        if (!TryResolveCore(host, specRef.Damping, theme, hopsLeft, out var dampingValue) ||
+            dampingValue is not double damping)
+            return false;
+
+        if (!TryResolveCore(host, specRef.Stiffness, theme, hopsLeft, out var stiffnessValue) ||
+            stiffnessValue is not double stiffness)
+            return false;
+
+        value = new SpringSpec(
+            damping,
+            stiffness,
+            specRef.VisibilityThreshold ?? SpringSpec.DefaultVisibilityThreshold);
         return true;
     }
 }

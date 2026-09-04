@@ -1,7 +1,7 @@
 namespace Material3ExpressiveRefactor.Foundation.Tokens;
 
 /// <summary>
-/// A reference to another token key — one of the three closed value forms a token entry may
+/// A reference to another token key — one of the four closed value forms a token entry may
 /// hold (design doc §5.3). Resolved hop-by-hop from the consuming element's position (§5.1),
 /// so overriding either the referenced key or any intermediate hop takes effect (R1'/R2').
 /// Immutable and public so third parties can author default mappings.
