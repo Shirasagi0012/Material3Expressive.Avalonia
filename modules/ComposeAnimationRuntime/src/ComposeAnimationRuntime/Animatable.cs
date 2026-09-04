@@ -24,6 +24,7 @@ public sealed class Animatable<T>
     public T Velocity => _converter.ConvertFromVector(_velocity);
     public bool IsRunning => _animation is not null;
     public event Action<T>? ValueChanged;
+    public event Action<AnimationResult<T>>? Completed;
     public double Progress => _animation is { DurationSeconds: > 0 and var duration } ? Math.Clamp(_playTime.TotalSeconds / duration, 0, 1) : IsRunning ? 0 : 1;
 
     public void AnimateTo(T target, IAnimationSpec<T> spec)
@@ -82,7 +83,13 @@ public sealed class Animatable<T>
         ValueChanged?.Invoke(Value);
     }
 
-    public void Stop() => _animation = null;
+    public void Stop()
+    {
+        if (_animation is null)
+            return;
+        _animation = null;
+        Completed?.Invoke(new AnimationResult<T>(Value, Velocity, AnimationEndReason.Canceled));
+    }
     public void Settle() { if (_animation is not null) Finish(); }
 
     private void Finish()
@@ -95,5 +102,6 @@ public sealed class Animatable<T>
         _value = _target.Copy();
         _velocity.Reset();
         _animation = null;
+        Completed?.Invoke(new AnimationResult<T>(Value, Velocity, AnimationEndReason.Finished));
     }
 }

@@ -1,5 +1,4 @@
 using ComposeAnimationRuntime;
-using Avalonia;
 using Xunit;
 
 namespace ComposeAnimationRuntime.Tests;
@@ -121,12 +120,28 @@ public sealed class AnimatableTests
     }
 
     [Fact]
-    public void AvaloniaPointConverterAnimatesBothDimensions()
+    public void ArcReachesTarget()
     {
-        var converter = new PointVectorConverter();
-        var animation = new Animatable<Point>(new Point(0, 0), converter);
-        animation.AnimateTo(new Point(10, 20), new TweenSpec<Point>(converter, TimeSpan.FromSeconds(1)));
-        animation.Tick(TimeSpan.FromMilliseconds(500));
-        Assert.Equal(new Point(5, 10), animation.Value);
+        var converter = VectorConverter.Create(
+            value => new AnimationVector2D((float)value.X, (float)value.Y),
+            vector => new System.Numerics.Vector2(vector[0], vector[1]),
+            new System.Numerics.Vector2(0.001f));
+        var animation = new Animatable<System.Numerics.Vector2>(new(0, 0), converter);
+        animation.AnimateTo(new(10, 20), new ArcSpec<System.Numerics.Vector2>(converter, TimeSpan.FromSeconds(1)));
+        animation.Tick(TimeSpan.FromSeconds(1));
+        Assert.Equal(new System.Numerics.Vector2(10, 20), animation.Value);
     }
+
+    [Fact]
+    public void VisibilityRemainsVisibleUntilExitCompletes()
+    {
+        var spec = new TweenSpec<double>(new DoubleVectorConverter(), TimeSpan.FromMilliseconds(100));
+        var visibility = new VisibilityMotion(true, spec, spec);
+        visibility.Hide();
+        visibility.Tick(TimeSpan.FromMilliseconds(50));
+        Assert.Equal(VisibilityState.Visible, visibility.State);
+        visibility.Tick(TimeSpan.FromMilliseconds(50));
+        Assert.Equal(VisibilityState.Hidden, visibility.State);
+    }
+
 }

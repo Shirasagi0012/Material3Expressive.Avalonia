@@ -86,6 +86,48 @@ public sealed class AnimationVector4D : AnimationVector
     public override void Reset() { X = 0; Y = 0; Z = 0; W = 0; }
 }
 
+public sealed class AnimationVectorN : AnimationVector
+{
+    private readonly float[] _values;
+
+    public AnimationVectorN(int dimension)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(dimension, 0);
+        _values = new float[dimension];
+    }
+
+    public AnimationVectorN(IEnumerable<float> values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        _values = values.ToArray();
+        if (_values.Length == 0) throw new ArgumentException("At least one component is required.", nameof(values));
+    }
+
+    public override int Dimension => _values.Length;
+    public override float this[int index] { get => _values[index]; set => _values[index] = value; }
+    public override AnimationVector Copy() => new AnimationVectorN(_values);
+    public override void Reset() => Array.Clear(_values);
+}
+
+public static class VectorConverter
+{
+    public static IAnimationVectorConverter<T> Create<T>(Func<T, AnimationVector> toVector,
+        Func<AnimationVector, T> fromVector, T visibilityThreshold)
+    {
+        ArgumentNullException.ThrowIfNull(toVector);
+        ArgumentNullException.ThrowIfNull(fromVector);
+        return new DelegateVectorConverter<T>(toVector, fromVector, visibilityThreshold);
+    }
+
+    private sealed class DelegateVectorConverter<T>(Func<T, AnimationVector> toVector,
+        Func<AnimationVector, T> fromVector, T visibilityThreshold) : IAnimationVectorConverter<T>
+    {
+        public T VisibilityThreshold { get; } = visibilityThreshold;
+        public AnimationVector ConvertToVector(T value) => toVector(value);
+        public T ConvertFromVector(AnimationVector vector) => fromVector(vector);
+    }
+}
+
 public interface IAnimationVectorConverter<T>
 {
     AnimationVector ConvertToVector(T value);

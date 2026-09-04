@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\ComposeAnimationRuntime\ComposeAnimationRuntime.csproj" />
+    <ProjectReference Include="..\..\src\ComposeAnimationRuntime.Avalonia\ComposeAnimationRuntime.Avalonia.csproj" />
   </ItemGroup>
 </Project>

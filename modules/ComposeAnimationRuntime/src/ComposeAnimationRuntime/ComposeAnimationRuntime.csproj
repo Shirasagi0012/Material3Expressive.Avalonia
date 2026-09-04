@@ -11,7 +11,4 @@
     <Description>A native .NET animation runtime inspired by Jetpack Compose animation.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Avalonia" />
-  </ItemGroup>
 </Project>

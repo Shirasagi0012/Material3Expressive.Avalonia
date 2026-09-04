@@ -2,6 +2,8 @@
 
 `ComposeAnimationRuntime` is a native .NET animation engine for Avalonia-era applications. It follows the capability model of Jetpack Compose animation while using C# value types, explicit clocks, and imperative state objects.
 
+The solution contains two runtime packages. `ComposeAnimationRuntime` is UI-independent and can be sampled from tests, services, or other renderers. `ComposeAnimationRuntime.Avalonia` adds Avalonia property binding, common Avalonia value converters, and a `TopLevel.RequestAnimationFrame` host.
+
 The current alpha includes:
 
 - vectorized values through `IAnimationVectorConverter<T>`;
@@ -13,6 +15,9 @@ The current alpha includes:
 - finite and infinite repeat specifications;
 - lightweight state transition coordination;
 - Avalonia property binding and compositor frame hosting;
+- arbitrary-dimensional vectors and custom stateless trajectory specifications;
+- elliptical arc trajectories;
+- visibility enter/exit state coordination;
 - deterministic frame stepping through `Animatable<T>.Tick`;
 - an independent test project.
 
