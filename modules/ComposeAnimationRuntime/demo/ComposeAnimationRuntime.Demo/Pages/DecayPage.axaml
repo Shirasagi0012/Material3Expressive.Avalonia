@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ComposeAnimationRuntime.Demo.Pages.DecayPage">
+  <StackPanel Spacing="12">
+    <TextBlock Text="Decay" FontSize="28" FontWeight="SemiBold" />
+    <TextBlock Text="Inertial motion continues after a gesture is released." TextWrapping="Wrap" />
+    <Separator />
+    <Border Height="240" Background="#F5F6F8" CornerRadius="14">
+      <Canvas>
+        <Border x:Name="Box" Width="96" Height="96" CornerRadius="20" Background="#E87532" />
+      </Canvas>
+    </Border>
+    <Button Content="Release with velocity" HorizontalAlignment="Left" Click="OnAnimate" />
+    <TextBlock x:Name="Status" Text="Ready" Foreground="Gray" />
+  </StackPanel>
+</UserControl>

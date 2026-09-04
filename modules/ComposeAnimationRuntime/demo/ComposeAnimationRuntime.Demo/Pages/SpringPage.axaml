@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ComposeAnimationRuntime.Demo.Pages.SpringPage">
+  <StackPanel Spacing="12">
+    <TextBlock Text="Spring" FontSize="28" FontWeight="SemiBold" />
+    <TextBlock Text="A physics-based animation preserves motion when its target changes." TextWrapping="Wrap" />
+    <Separator />
+    <Border Height="240" Background="#F5F6F8" CornerRadius="14">
+      <Canvas x:Name="Stage">
+        <Border x:Name="Box" Width="96" Height="96" CornerRadius="20" Background="#4F7CFF" />
+      </Canvas>
+    </Border>
+    <Button Content="Animate spring" HorizontalAlignment="Left" Click="OnAnimate" />
+    <TextBlock x:Name="Status" Text="Ready" Foreground="Gray" />
+  </StackPanel>
+</UserControl>

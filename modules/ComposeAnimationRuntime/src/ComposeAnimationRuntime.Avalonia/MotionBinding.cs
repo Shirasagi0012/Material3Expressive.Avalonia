@@ -14,13 +14,7 @@ public static class MotionBinding
         owner.SetValue(property, animation.Value);
         void Apply(T value) => owner.SetValue(property, value);
         animation.ValueChanged += Apply;
-        return new BindingDisposable(() => animation.ValueChanged -= Apply);
-    }
-
-    private sealed class BindingDisposable(Action dispose) : IDisposable
-    {
-        private Action? _dispose = dispose;
-        public void Dispose() => Interlocked.Exchange(ref _dispose, null)?.Invoke();
+        return new MotionDisposable(() => animation.ValueChanged -= Apply);
     }
 }
 
@@ -34,12 +28,25 @@ public sealed class AvaloniaMotionHost : IDisposable
 
     public AvaloniaMotionHost(TopLevel topLevel) => _topLevel = topLevel ?? throw new ArgumentNullException(nameof(topLevel));
 
-    public void Register<T>(Animatable<T> animation)
+    public IDisposable Register<T>(Animatable<T> animation)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(animation);
-        _tracks.Add(new MotionTrack(animation.Tick, () => animation.IsRunning));
+        var track = new MotionTrack(animation.Tick, () => animation.IsRunning);
+        _tracks.Add(track);
         RequestFrame();
+        return new MotionDisposable(() => _tracks.Remove(track));
+    }
+
+    public IDisposable RegisterTrack(Func<TimeSpan, bool> tick, Func<bool> isRunning)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(tick);
+        ArgumentNullException.ThrowIfNull(isRunning);
+        var track = new MotionTrack(tick, isRunning);
+        _tracks.Add(track);
+        RequestFrame();
+        return new MotionDisposable(() => _tracks.Remove(track));
     }
 
     public void RequestFrame()
@@ -65,3 +72,9 @@ public sealed class AvaloniaMotionHost : IDisposable
 }
 
 internal sealed record MotionTrack(Func<TimeSpan, bool> Tick, Func<bool> IsRunning);
+
+internal sealed class MotionDisposable(Action dispose) : IDisposable
+{
+    private Action? _dispose = dispose;
+    public void Dispose() => Interlocked.Exchange(ref _dispose, null)?.Invoke();
+}
