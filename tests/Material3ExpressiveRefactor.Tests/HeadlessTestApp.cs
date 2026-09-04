@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Headless;
+using MaterialSymbols.Avalonia;
 using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(Material3ExpressiveRefactor.Tests.HeadlessTestAppBuilder))]
@@ -28,5 +29,8 @@ public static class HeadlessTestAppBuilder
                 UseHeadlessDrawing = false,
                 ShouldRenderOnUIThread = true,
                 Fps = 60,
-            });
+            })
+            // The Rounded family MaterialSymbol draws from; the explicit call does not rely on the
+            // package's module initializer being discovered at runtime.
+            .UseRoundedSymbols();
 }

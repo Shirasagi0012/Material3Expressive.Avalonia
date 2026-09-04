@@ -15,10 +15,10 @@ using Xunit;
 namespace Material3ExpressiveRefactor.Tests;
 
 /// <summary>
-/// Smoke tests for the in-house MaterialSymbol render stack: the Rounded font loads from the
-/// MaterialSymbols.Avalonia.Rounded assets, glyph outlines land as pixels, and the measure/brush
-/// conventions hold. Pixel probes render through the real Skia backend, same as
-/// MaterialSurfaceRenderTests.
+/// Smoke tests for MaterialSymbol — the MaterialSymbols.Avalonia module's control pinned to the
+/// Rounded family: the Rounded font loads from the MaterialSymbols.Avalonia.Rounded assets, glyph
+/// outlines land as pixels, and the measure/brush conventions hold. Pixel probes render through
+/// the real Skia backend, same as MaterialSurfaceRenderTests.
 /// </summary>
 public class MaterialSymbolTests
 {
