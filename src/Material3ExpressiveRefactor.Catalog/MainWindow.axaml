@@ -15,8 +15,9 @@
 
         <m3:IconButton Theme="{StaticResource MaterialFilledIconButtonTheme}" Symbol="Add" Classes="large"></m3:IconButton>
 
-        <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLow}}"
+        <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}"
                             Padding="40" Margin="16"
+                            TonalElevation="{m3:Token {x:Static m3:MaterialTokens+Sys+Elevation.Level1}}"
                             CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Large}}">
             <StackPanel  Spacing="16">
                 <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}"
