@@ -67,7 +67,7 @@ public class MaterialSurfaceTests
     {
         ShowSurface(out var surface, out _);
 
-        Assert.Equal(0d, surface.Elevation);
+        Assert.Equal(0d, surface.ShadowElevation);
         Assert.Null(surface.ShadowColor);
         Assert.Null(surface.StateLayerBrush);
         Assert.Equal(0d, surface.StateLayerOpacity);
@@ -112,5 +112,147 @@ public class MaterialSurfaceTests
             BrushColor(surface.Background));
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSurface),
             BrushColor(text.Foreground));
+    }
+
+    // Tonal elevation: the tint is a precomputed brush swap on the chrome (Background stays the
+    // raw token value), gated on the background being exactly the scheme surface color, and
+    // accumulated down nested surfaces (upstream: Surface.kt LocalAbsoluteTonalElevation,
+    // ColorScheme.kt surfaceColorAtElevation/applyTonalElevation). The expected colors replicate
+    // the upstream formula independently — no production helpers — so a drift in either the
+    // formula or the compositing shows up here.
+
+    private static Window ShowNestedSurfaces(out MaterialSurface outer, out MaterialSurface inner)
+    {
+        var resources = new ResourceDictionary();
+        resources.MergedDictionaries.Add(new MaterialResource
+        {
+            Children = { new ColorScheme() },
+        });
+
+        var window = new Window
+        {
+            Resources = resources,
+            RequestedThemeVariant = ThemeVariant.Light,
+        };
+        window.Styles.Add(LoadStyles("Surface.axaml"));
+
+        inner = new MaterialSurface { TonalElevation = 3, Child = new TextBlock { Text = "Inner" } };
+        outer = new MaterialSurface { TonalElevation = 1, Child = inner };
+        window.Content = outer;
+        window.Show();
+        return window;
+    }
+
+    private static Color ExpectedTonalColor(bool isDark, double elevation)
+    {
+        var surface = ButtonThemeFixture.SchemeColor(isDark, static s => s.Surface);
+        var tint = ButtonThemeFixture.SchemeColor(isDark, static s => s.SurfaceTint);
+        var alpha = ((4.5 * Math.Log(elevation + 1)) + 2) / 100;
+        return CompositeOver(tint, alpha, surface);
+    }
+
+    private static Color CompositeOver(Color foreground, double foregroundAlpha, Color background)
+    {
+        var fgAlpha = Math.Clamp((foreground.A / 255d) * foregroundAlpha, 0, 1);
+        var bgAlpha = background.A / 255d;
+        var outAlpha = fgAlpha + (bgAlpha * (1 - fgAlpha));
+        if (outAlpha <= 0)
+            return Colors.Transparent;
+
+        byte Channel(byte foregroundChannel, byte backgroundChannel) =>
+            (byte)Math.Round(
+                (((foregroundChannel / 255d) * fgAlpha) + ((backgroundChannel / 255d) * bgAlpha * (1 - fgAlpha))) / outAlpha * 255,
+                MidpointRounding.AwayFromZero);
+
+        return Color.FromArgb(
+            (byte)Math.Round(outAlpha * 255, MidpointRounding.AwayFromZero),
+            Channel(foreground.R, background.R),
+            Channel(foreground.G, background.G),
+            Channel(foreground.B, background.B));
+    }
+
+    [AvaloniaFact]
+    public void TonalElevation_Default_BackgroundUntinted()
+    {
+        ShowSurface(out var surface, out _);
+
+        Assert.Equal(0d, surface.TonalElevation);
+        Assert.Equal(0d, surface.AbsoluteTonalElevation);
+        Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.Surface),
+            BrushColor(surface.EffectiveBackground));
+    }
+
+    [AvaloniaFact]
+    public void TonalElevation_TintsSurfaceBackground()
+    {
+        ShowSurface(out var surface, out _);
+
+        surface.TonalElevation = 3;
+
+        Assert.Equal(ExpectedTonalColor(false, 3), BrushColor(surface.EffectiveBackground));
+        // The styled property itself stays the raw token brush; only the chrome's paint changes.
+        Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.Surface),
+            BrushColor(surface.Background));
+    }
+
+    [AvaloniaFact]
+    public void TonalElevation_NonSurfaceBackground_StaysVerbatim()
+    {
+        ShowSurface(out var surface, out _);
+        var container = ButtonThemeFixture.SchemeColor(false, static s => s.SurfaceContainer);
+        surface.Background = new ImmutableSolidColorBrush(container);
+
+        surface.TonalElevation = 3;
+
+        Assert.Equal(container, BrushColor(surface.EffectiveBackground));
+    }
+
+    [AvaloniaFact]
+    public void TonalElevation_NestedSurfaces_Accumulate()
+    {
+        ShowNestedSurfaces(out var outer, out var inner);
+
+        Assert.Equal(1d, outer.AbsoluteTonalElevation);
+        Assert.Equal(4d, inner.AbsoluteTonalElevation);
+        Assert.Equal(ExpectedTonalColor(false, 1), BrushColor(outer.EffectiveBackground));
+        Assert.Equal(ExpectedTonalColor(false, 4), BrushColor(inner.EffectiveBackground));
+    }
+
+    [AvaloniaFact]
+    public void TonalElevation_AncestorChange_PropagatesToDescendants()
+    {
+        ShowNestedSurfaces(out var outer, out var inner);
+
+        outer.TonalElevation = 6;
+
+        Assert.Equal(9d, inner.AbsoluteTonalElevation);
+        Assert.Equal(ExpectedTonalColor(false, 9), BrushColor(inner.EffectiveBackground));
+    }
+
+    [AvaloniaFact]
+    public void TonalElevation_DetachFromAncestor_DropsAccumulation()
+    {
+        var window = ShowNestedSurfaces(out var outer, out var inner);
+
+        // Re-host the inner surface standalone: still attached (so tokens resolve), but with no
+        // MaterialSurface ancestor left, the accumulated elevation drops back to its own value.
+        outer.Child = null;
+        window.Content = inner;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(3d, inner.AbsoluteTonalElevation);
+        Assert.Equal(ExpectedTonalColor(false, 3), BrushColor(inner.EffectiveBackground));
+    }
+
+    [AvaloniaFact]
+    public void TonalElevation_ThemeVariantSwitch_ReTints()
+    {
+        var window = ShowSurface(out var surface, out _);
+        surface.TonalElevation = 3;
+
+        window.RequestedThemeVariant = ThemeVariant.Dark;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(ExpectedTonalColor(true, 3), BrushColor(surface.EffectiveBackground));
     }
 }

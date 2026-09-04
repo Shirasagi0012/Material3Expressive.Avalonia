@@ -104,7 +104,7 @@ public class ButtonSizesTokenSource : ITokenSource
 /// Baseline defaults for the elevated Button slots (upstream ElevatedButtonTokens v0_11_0). The
 /// per-state elevations alias the <c>md.sys.elevation.level*</c> DIP levels: resting/focus/pressed
 /// at level 1, hover at level 2, disabled at level 0. They are consumed by the template part's
-/// <c>MaterialSurface.Elevation</c> and rendered by MaterialSkiaShadow. Immutable baseline:
+/// <c>MaterialSurface.ShadowElevation</c> and rendered by MaterialSkiaShadow. Immutable baseline:
 /// <see cref="Changed"/> is a documented no-op.
 /// </summary>
 public class ElevatedButtonTokenSource : ITokenSource

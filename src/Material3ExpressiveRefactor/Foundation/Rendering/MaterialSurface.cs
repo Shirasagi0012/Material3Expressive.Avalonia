@@ -2,8 +2,10 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Metadata;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Material3ExpressiveRefactor.Foundation.Interaction;
 using Material3ExpressiveRefactor.Foundation.Motion;
 using Material3ExpressiveRefactor.Foundation.Tokens;
@@ -26,11 +28,20 @@ namespace Material3ExpressiveRefactor.Foundation.Rendering;
 /// </para>
 /// <para>
 /// The shadow is drawn by MaterialSkiaShadow (the Skia point-light key/ambient model Compose
-/// uses), driven by <see cref="Elevation"/> in DIPs — the same semantics as the
+/// uses), driven by <see cref="ShadowElevation"/> in DIPs — the same semantics as the
 /// <c>md.sys.elevation.level*</c> tokens, so a comp elevation slot binds straight onto it. The
 /// shadow color resolves <c>md.sys.color.shadow</c> from this control's position unless
-/// <see cref="ShadowColor"/> is set. Elevation 0 (the default) skips the shadow, which is why flat
+/// <see cref="ShadowColor"/> is set. ShadowElevation 0 (the default) skips the shadow, which is why flat
 /// and elevated components share this one part.
+/// </para>
+/// <para>
+/// <see cref="TonalElevation"/> tints the background toward <c>md.sys.color.surface-tint</c> along
+/// the upstream log curve (ColorScheme.surfaceColorAtElevation) — only while the background is
+/// exactly the <c>md.sys.color.surface</c> color (the upstream applyTonalElevation gate), so
+/// components painted in a surfaceContainer* color never tint. Nested surfaces accumulate: a child
+/// resolves its color from the ancestors' sum plus its own value; shadow elevation never
+/// accumulates and never feeds the tint. The tinted color is precomputed into the brush handed to
+/// the chrome on change, so the render pass is the same solid fill as an untinted surface.
 /// </para>
 /// <para>
 /// When the surface is the template root of a control opted into
@@ -44,8 +55,8 @@ namespace Material3ExpressiveRefactor.Foundation.Rendering;
 public class MaterialSurface : Control
 {
     /// <summary>Physical elevation in DIPs; drives the Skia shadow. 0 (the default) draws none.</summary>
-    public static readonly StyledProperty<double> ElevationProperty =
-        AvaloniaProperty.Register<MaterialSurface, double>(nameof(Elevation));
+    public static readonly StyledProperty<double> ShadowElevationProperty =
+        AvaloniaProperty.Register<MaterialSurface, double>(nameof(ShadowElevation));
 
     /// <summary>
     /// Explicit shadow color. When null (the default), <c>md.sys.color.shadow</c> is resolved
@@ -53,6 +64,20 @@ public class MaterialSurface : Control
     /// </summary>
     public static readonly StyledProperty<Color?> ShadowColorProperty =
         AvaloniaProperty.Register<MaterialSurface, Color?>(nameof(ShadowColor));
+    
+    /// <summary>
+    /// Tonal elevation in DIPs: how strongly the background is tinted toward
+    /// <c>md.sys.color.surface-tint</c> (see the class remarks). Nested surfaces accumulate this
+    /// value; 0 (the default) paints the background verbatim.
+    /// </summary>
+    public static readonly StyledProperty<double> TonalElevationProperty =
+        AvaloniaProperty.Register<MaterialSurface, double>(nameof(TonalElevation));
+
+    /// <summary>The accumulated tonal elevation supplied to descendant material surfaces.</summary>
+    internal static readonly DirectProperty<MaterialSurface, double> AbsoluteTonalElevationProperty =
+        AvaloniaProperty.RegisterDirect<MaterialSurface, double>(
+            nameof(AbsoluteTonalElevation),
+            surface => surface.AbsoluteTonalElevation);
 
     /// <summary>
     /// The state-layer tint, painted over the content (upstream draw order) when
@@ -98,7 +123,7 @@ public class MaterialSurface : Control
     static MaterialSurface()
     {
         // The shadow's shape follows the corners, so both of its inputs invalidate this Render.
-        AffectsRender<MaterialSurface>(ElevationProperty, ShadowColorProperty, CornerRadiusProperty);
+        AffectsRender<MaterialSurface>(ShadowElevationProperty, ShadowColorProperty, CornerRadiusProperty);
     }
 
     private readonly Border _chrome;
@@ -106,6 +131,8 @@ public class MaterialSurface : Control
     private MaterialInteractionController? _interaction;
     private IDisposable? _interactionLease;
     private AnimatedCornerRadius? _shapeMorph;
+    private MaterialSurface? _tonalParent;
+    private double _absoluteTonalElevation;
 
     public MaterialSurface()
     {
@@ -121,14 +148,21 @@ public class MaterialSurface : Control
         ((ISetLogicalParent)_chrome).SetParent(this);
         LogicalChildren.Add(_chrome);
 
-        // The shadow color tracks a token, which no property-system invalidation reaches.
-        ResourcesChanged += (_, _) => InvalidateShadow();
-        ActualThemeVariantChanged += (_, _) => InvalidateShadow();
+        // The shadow color and the tonal tint both track tokens, which no property-system
+        // invalidation reaches.
+        ResourcesChanged += (_, _) => InvalidateTokenDrivenPaint();
+        ActualThemeVariantChanged += (_, _) => InvalidateTokenDrivenPaint();
+    }
+
+    private void InvalidateTokenDrivenPaint()
+    {
+        InvalidateShadow();
+        UpdateEffectiveBackground();
     }
 
     private void InvalidateShadow()
     {
-        if (Elevation > 0)
+        if (ShadowElevation > 0)
             InvalidateVisual();
     }
 
@@ -170,10 +204,10 @@ public class MaterialSurface : Control
         set => SetValue(PaddingProperty, value);
     }
 
-    public double Elevation
+    public double ShadowElevation
     {
-        get => GetValue(ElevationProperty);
-        set => SetValue(ElevationProperty, value);
+        get => GetValue(ShadowElevationProperty);
+        set => SetValue(ShadowElevationProperty, value);
     }
 
     public Color? ShadowColor
@@ -181,6 +215,17 @@ public class MaterialSurface : Control
         get => GetValue(ShadowColorProperty);
         set => SetValue(ShadowColorProperty, value);
     }
+
+    public double TonalElevation
+    {
+        get => GetValue(TonalElevationProperty);
+        set => SetValue(TonalElevationProperty, value);
+    }
+
+    internal double AbsoluteTonalElevation => _absoluteTonalElevation;
+
+    /// <summary>The brush the chrome actually paints: <see cref="Background"/> after the tonal tint.</summary>
+    internal IBrush? EffectiveBackground => _chrome.Background;
 
     public IBrush? StateLayerBrush
     {
@@ -212,13 +257,13 @@ public class MaterialSurface : Control
         // ComposeShadowRenderer requires an attached TopLevel (it reads the viewport light from
         // it); render only happens when attached, but stay defensive for offscreen hosts.
         var bounds = new Rect(Bounds.Size);
-        if (Elevation > 0 && bounds.Width > 0 && bounds.Height > 0 && TopLevel.GetTopLevel(this) is { })
+        if (ShadowElevation > 0 && bounds is { Width: > 0, Height: > 0 } && TopLevel.GetTopLevel(this) is { })
         {
             ComposeShadowRenderer.Draw(
                 context,
                 this,
                 ComposeShadowShape.RoundedRectangle(bounds, EffectiveCornerRadius),
-                ComposeShadowParameters.Material(Elevation, ResolveShadowColor()));
+                ComposeShadowParameters.Material(ShadowElevation, ResolveShadowColor()));
         }
 
         base.Render(context);
@@ -253,9 +298,18 @@ public class MaterialSurface : Control
         {
             ChildChanged(change);
         }
-        else if (change.Property == BackgroundProperty)
+        else if (change.Property == BackgroundProperty
+                 || change.Property == AbsoluteTonalElevationProperty)
         {
-            _chrome.Background = change.GetNewValue<IBrush?>();
+            UpdateEffectiveBackground();
+        }
+        else if (change.Property == TonalElevationProperty)
+        {
+            UpdateAbsoluteTonalElevation();
+        }
+        else if (change.Property == VisualParentProperty)
+        {
+            UpdateTonalParent();
         }
         else if (change.Property == BorderBrushProperty)
         {
@@ -309,6 +363,10 @@ public class MaterialSurface : Control
     {
         base.OnAttachedToVisualTree(e);
 
+        // Token resolution needs the resource ancestry, which only exists once attached.
+        UpdateTonalParent();
+        UpdateEffectiveBackground();
+
         // Interactive hosts: when the surface is the template root of a control whose theme opted
         // in via MaterialInteraction.IsInteractive, the owner's controller takes over the overlay —
         // state-layer alpha timing and ripple ink are its job, and the styled StateLayerOpacity
@@ -325,6 +383,8 @@ public class MaterialSurface : Control
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
+
+        SetTonalParent(null);
 
         // The morph's animation track rides the owner's motion controller, which outlives this
         // surface — drop it explicitly or it would leak one track per detach.
@@ -349,8 +409,7 @@ public class MaterialSurface : Control
         if (_shapeMorph is { } morph)
         {
             _chrome.CornerRadius = morph.Current;
-            if (Elevation > 0)
-                InvalidateVisual();
+            InvalidateShadow();
         }
 
         _overlay.InvalidateVisual();
@@ -406,6 +465,82 @@ public class MaterialSurface : Control
                value is Color resolved
             ? resolved
             : Colors.Black;
+    }
+
+    // Tonal elevation (upstream: Surface.kt LocalAbsoluteTonalElevation and ColorScheme.kt
+    // surfaceColorAtElevation/applyTonalElevation). Each surface sums its own TonalElevation onto
+    // the nearest ancestor surface's accumulated value. An inherited attached property cannot do
+    // this alone — a child that sets its own local sum stops inheriting, so it would miss later
+    // ancestor changes; hence the explicit subscription to the nearest MaterialSurface ancestor,
+    // which also keeps the change traffic on the surface chain instead of the whole subtree.
+
+    private void UpdateTonalParent()
+    {
+        SetTonalParent(this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault());
+    }
+
+    private void SetTonalParent(MaterialSurface? parent)
+    {
+        if (ReferenceEquals(_tonalParent, parent))
+        {
+            UpdateAbsoluteTonalElevation();
+            return;
+        }
+
+        if (_tonalParent is not null)
+            _tonalParent.PropertyChanged -= OnTonalParentPropertyChanged;
+
+        _tonalParent = parent;
+
+        if (_tonalParent is not null)
+            _tonalParent.PropertyChanged += OnTonalParentPropertyChanged;
+
+        UpdateAbsoluteTonalElevation();
+    }
+
+    private void OnTonalParentPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == AbsoluteTonalElevationProperty)
+            UpdateAbsoluteTonalElevation();
+    }
+
+    private void UpdateAbsoluteTonalElevation()
+    {
+        var inherited = _tonalParent?.AbsoluteTonalElevation ?? 0;
+        var resolved = Math.Max(0, inherited) + Math.Max(0, TonalElevation);
+        if (Math.Abs(resolved - _absoluteTonalElevation) < 0.000001)
+            return;
+
+        // The raise feeds both the subscribed descendants and this surface's own background
+        // refresh (OnPropertyChanged → UpdateEffectiveBackground).
+        SetAndRaise(AbsoluteTonalElevationProperty, ref _absoluteTonalElevation, resolved);
+    }
+
+    private void UpdateEffectiveBackground()
+    {
+        _chrome.Background = ResolveEffectiveBackground();
+    }
+
+    // Upstream gate (applyTonalElevation): the tint applies only while the background is exactly
+    // the scheme surface color — a surfaceContainer* or custom background is painted verbatim at
+    // any elevation. The tinted color is precomputed here, on change, so the render pass stays
+    // the same solid fill as an untinted surface.
+    private IBrush? ResolveEffectiveBackground()
+    {
+        if (Background is not ISolidColorBrush solid || _absoluteTonalElevation <= 0)
+            return Background;
+
+        if (!TokenResolver.TryResolve(this, MaterialTokens.Sys.Color.Surface, ActualThemeVariant, out var surfaceValue) ||
+            surfaceValue is not Color surface ||
+            !TokenResolver.TryResolve(this, MaterialTokens.Sys.Color.SurfaceTint, ActualThemeVariant, out var tintValue) ||
+            tintValue is not Color surfaceTint ||
+            solid.Color != surface)
+        {
+            return Background;
+        }
+
+        var alpha = ((4.5 * Math.Log(_absoluteTonalElevation + 1)) + 2) / 100;
+        return new ImmutableSolidColorBrush(ColorComposite.Over(surfaceTint, alpha, surface), solid.Opacity);
     }
 
     /// <summary>

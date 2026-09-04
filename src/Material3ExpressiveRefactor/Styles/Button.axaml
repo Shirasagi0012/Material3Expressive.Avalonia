@@ -80,7 +80,7 @@
              spec is a recorded follow-up of the motion slice. -->
         <Setter Property="Transitions">
           <Transitions>
-            <DoubleTransition Property="Elevation" Duration="0:0:0.12">
+            <DoubleTransition Property="ShadowElevation" Duration="0:0:0.12">
               <DoubleTransition.Easing>
                 <SplineEasing X1="0.4" Y1="0" X2="0.2" Y2="1" />
               </DoubleTransition.Easing>
@@ -178,11 +178,11 @@
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.ContentColor}}" />
 
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="Elevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.ContainerElevation}}" />
+        <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.ContainerElevation}}" />
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.StateLayerColor}}" />
       </Style>
       <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="Elevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.HoveredContainerElevation}}" />
+        <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.HoveredContainerElevation}}" />
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.HoverStateLayerColor}}" />
       </Style>
       <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
@@ -192,7 +192,7 @@
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.PressedStateLayerColor}}" />
       </Style>
       <Style Selector="^:disabled /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="Elevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.DisabledContainerElevation}}" />
+        <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.DisabledContainerElevation}}" />
       </Style>
       <Style Selector="^:disabled">
         <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedButton.DisabledContainerColor}}" />

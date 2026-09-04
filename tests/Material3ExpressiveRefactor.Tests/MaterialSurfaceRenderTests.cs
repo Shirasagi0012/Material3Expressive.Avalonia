@@ -68,7 +68,7 @@ public class MaterialSurfaceRenderTests
     public void Elevation_PaintsShadowBelowSurface()
     {
         var surface = ProbeSurface();
-        surface.Elevation = 12;
+        surface.ShadowElevation = 12;
         surface.CornerRadius = new CornerRadius(8);
         surface.Background = Brushes.White;
         var window = Show(surface);

@@ -8,8 +8,8 @@ namespace Material3ExpressiveRefactor.Baseline;
 /// <summary>
 /// The six elevation levels in DIPs (design doc §7.6, revised: the level→shadow derivation moved
 /// into the renderer). <c>MaterialSurface</c> turns a level into a Skia point-light shadow at draw
-/// time, with the shadow color resolved from <c>md.sys.color.shadow</c>; tonal elevation tint is
-/// deferred (§12). Theme-independent.
+/// time, with the shadow color resolved from <c>md.sys.color.shadow</c>, and into the tonal tint
+/// (<c>md.sys.color.surface-tint</c> overlaid on <c>md.sys.color.surface</c>). Theme-independent.
 /// </summary>
 public class ElevationTokenSource : ITokenSource
 {

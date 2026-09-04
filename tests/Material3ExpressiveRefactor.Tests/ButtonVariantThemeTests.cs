@@ -37,7 +37,7 @@ public class ButtonVariantThemeTests
 
         // The resting elevation aliases the sys.elevation level-1 DIP onto MaterialSurface.
         var expected = Assert.IsType<double>(TokenScan.Resolve(window, Sys.Elevation.Level1));
-        Assert.Equal(expected, Container(button).Elevation);
+        Assert.Equal(expected, Container(button).ShadowElevation);
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.Primary),
             BrushColor(Container(button).StateLayerBrush));
     }
@@ -54,7 +54,7 @@ public class ButtonVariantThemeTests
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSecondaryContainer),
             BrushColor(Container(button).StateLayerBrush));
         // No elevation slots on the tonal style: the surface stays flat.
-        Assert.Equal(0d, Container(button).Elevation);
+        Assert.Equal(0d, Container(button).ShadowElevation);
     }
 
     [AvaloniaFact]

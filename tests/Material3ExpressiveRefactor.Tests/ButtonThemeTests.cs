@@ -81,7 +81,7 @@ public class ButtonThemeTests
 
         var transitions = Assert.IsAssignableFrom<Transitions>(container.Transitions);
         var elevation = transitions.OfType<DoubleTransition>()
-            .SingleOrDefault(t => t.Property == MaterialSurface.ElevationProperty);
+            .SingleOrDefault(t => t.Property == MaterialSurface.ShadowElevationProperty);
         Assert.NotNull(elevation);
         Assert.Equal(TimeSpan.FromMilliseconds(120), elevation.Duration);
 

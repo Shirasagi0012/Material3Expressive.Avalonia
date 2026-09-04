@@ -19,25 +19,39 @@
                             Padding="40" Margin="16"
                             CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Large}}">
             <StackPanel  Spacing="16">
-                <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHighest}}"
+                <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}"
                                     Width="200" Height="200"
                                     CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Small}}"
-                                    Elevation="{Binding #ElevationSlider.Value}"
+                                    ShadowElevation="{Binding #ShadowElevationSlider.Value}"
+                                    TonalElevation="{Binding #ShadowElevationSlider.Value}"
                                     m3:MaterialInteraction.IsInteractive="True">
                 </m3:MaterialSurface>
 
                 <StackPanel>
-                    <Label Content="Elevation" />
+                    <Label Content="ShadowElevation" />
 
                     <Grid ColumnDefinitions="*,50">
 
-                        <Slider x:Name="ElevationSlider" Minimum="0" Maximum="50"></Slider>
+                        <Slider x:Name="ShadowElevationSlider" Minimum="0" Maximum="50"></Slider>
 
                         <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Margin="8,0,0,0"
-                                   Text="{Binding #ElevationSlider.Value  ,StringFormat='{}{0:F2}'}" />
+                                   Text="{Binding #ShadowElevationSlider.Value  ,StringFormat='{}{0:F2}'}" />
                     </Grid>
                 </StackPanel>
+                <!-- -->
+                <!-- <StackPanel> -->
+                <!--     <Label Content="TonalElevation" /> -->
+                <!-- -->
+                <!--     <Grid ColumnDefinitions="*,50"> -->
+                <!-- -->
+                <!--         <Slider x:Name="TonalElevationSlider" Minimum="0" Maximum="50"></Slider> -->
+                <!-- -->
+                <!--         <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" -->
+                <!--                    Margin="8,0,0,0" -->
+                <!--                    Text="{Binding #TonalElevationSlider.Value  ,StringFormat='{}{0:F2}'}" /> -->
+                <!--     </Grid> -->
+                <!-- </StackPanel> -->
             </StackPanel>
         </m3:MaterialSurface>
         <!-- -->
