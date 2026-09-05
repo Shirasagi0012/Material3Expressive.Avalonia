@@ -6,9 +6,19 @@ namespace ComposeAnimationRuntime.Avalonia;
 
 public sealed class SharedTransitionRoot : Panel
 {
+    internal static SharedTransitionRoot? LastCreated { get; private set; }
     public SharedParticipantRegistry Participants { get; } = new();
-    public Panel ContentLayer { get; } = new();
-    public Canvas Overlay { get; } = new() { IsHitTestVisible = false };
+    public Panel ContentLayer { get; } = new()
+    {
+        HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
+        VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Stretch,
+    };
+    public Canvas Overlay { get; } = new()
+    {
+        IsHitTestVisible = false,
+        HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
+        VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Stretch,
+    };
     public event EventHandler? TransitionCompleted;
     private readonly List<SharedBounds> _activeBounds = [];
     private readonly List<SharedElement> _activeElements = [];
@@ -17,9 +27,27 @@ public sealed class SharedTransitionRoot : Panel
 
     public SharedTransitionRoot()
     {
+        LastCreated = this;
         Children.Add(ContentLayer);
         Children.Add(Overlay);
         Overlay.ZIndex = int.MaxValue;
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        ContentLayer.Measure(availableSize);
+        Overlay.Measure(availableSize);
+        return new Size(
+            double.IsInfinity(availableSize.Width) ? ContentLayer.DesiredSize.Width : availableSize.Width,
+            double.IsInfinity(availableSize.Height) ? ContentLayer.DesiredSize.Height : availableSize.Height);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        var bounds = new Rect(finalSize);
+        ContentLayer.Arrange(bounds);
+        Overlay.Arrange(bounds);
+        return finalSize;
     }
 
     internal void Register(object key, Control control, SharedParticipantRole role = SharedParticipantRole.Active)
@@ -131,7 +159,13 @@ public sealed class SharedTransitionRoot : Panel
                 if (destination.IsTransitioning)
                     destination.RetargetTo(pair.Destination.Snapshot.RootBounds);
                 else
-                    destination.AnimateFrom(source.CurrentGeometry.Bounds);
+                {
+                    var sourceBounds = pair.Source.Snapshot.RootBounds.Width > 0 && pair.Source.Snapshot.RootBounds.Height > 0
+                        ? pair.Source.Snapshot.RootBounds : source.CurrentBounds;
+                    var destinationBounds = pair.Destination.Snapshot.RootBounds.Width > 0 && pair.Destination.Snapshot.RootBounds.Height > 0
+                        ? pair.Destination.Snapshot.RootBounds : destination.CurrentBounds;
+                    destination.AnimateFrom(sourceBounds, destinationBounds);
+                }
             }
             else if (pair.Source?.Control is SharedBounds exiting)
                 exiting.AnimateExit();
@@ -139,11 +173,7 @@ public sealed class SharedTransitionRoot : Panel
                 entering.AnimateEnter();
             else if (pair.Source?.Control is SharedElement sourceElement && pair.Destination?.Control is SharedElement destinationElement)
             {
-                sourceElement.MoveVisualToOverlay();
-                sourceElement.AnimateTo(pair.Destination.Snapshot.RootBounds);
-                destinationElement.InputPolicy = destinationElement.InputPolicy == SharedElementInputPolicy.TransferToDestination
-                    ? SharedElementInputPolicy.Preserve
-                    : destinationElement.InputPolicy;
+                sourceElement.AnimateTo(destinationElement, pair.Destination.Snapshot.RootBounds);
             }
             RegisterActive(pair.Source?.Control as SharedBounds);
             RegisterActive(pair.Destination?.Control as SharedBounds);
@@ -151,8 +181,6 @@ public sealed class SharedTransitionRoot : Panel
             RegisterActive(pair.Destination?.Control as SharedElement);
             if (pair.Source?.Control is SharedBounds sourcePlaceholderBounds)
                 AddPlaceholderLease(sourcePlaceholderBounds);
-            if (pair.Destination?.Control is SharedBounds destinationPlaceholderBounds)
-                AddPlaceholderLease(destinationPlaceholderBounds);
         }
     }
 
@@ -171,8 +199,6 @@ public sealed class SharedTransitionRoot : Panel
             }
             if (pair.Source?.Control is SharedBounds sourcePlaceholderBounds)
                 AddPlaceholderLease(sourcePlaceholderBounds);
-            if (pair.Destination?.Control is SharedBounds destinationPlaceholderBounds)
-                AddPlaceholderLease(destinationPlaceholderBounds);
         }
         transition.Settled += completed =>
         {
@@ -259,7 +285,7 @@ public sealed class SharedTransitionRoot : Panel
 
     private void RegisterActive(SharedBounds? bounds)
     {
-        if (bounds is null || _activeBounds.Contains(bounds)) return;
+        if (bounds is null || !bounds.IsTransitioning || _activeBounds.Contains(bounds)) return;
         _activeBounds.Add(bounds);
         bounds.TransitionCompleted += OnActiveTransitionCompleted;
     }

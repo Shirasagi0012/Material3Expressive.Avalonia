@@ -26,8 +26,8 @@ public readonly record struct SharedGeometry(
             from.Bounds.Height + (to.Bounds.Height - from.Bounds.Height) * progress);
         return new SharedGeometry(
             bounds,
-            progress < 1 ? from.Transform : to.Transform,
-            progress < 1 ? from.Clip : to.Clip,
+            LerpTransform(from.Transform, to.Transform, progress),
+            LerpClip(from.Clip, to.Clip, progress),
             from.Opacity + (to.Opacity - from.Opacity) * progress,
             progress < 1 ? from.ZIndex : to.ZIndex,
             new CornerRadius(
@@ -35,5 +35,29 @@ public readonly record struct SharedGeometry(
                 from.CornerRadius.TopRight + (to.CornerRadius.TopRight - from.CornerRadius.TopRight) * progress,
                 from.CornerRadius.BottomRight + (to.CornerRadius.BottomRight - from.CornerRadius.BottomRight) * progress,
                 from.CornerRadius.BottomLeft + (to.CornerRadius.BottomLeft - from.CornerRadius.BottomLeft) * progress));
+    }
+
+    private static ITransform? LerpTransform(ITransform? from, ITransform? to, double progress)
+    {
+        if (from is MatrixTransform fromMatrix && to is MatrixTransform toMatrix)
+            return new MatrixTransform(new Matrix(
+                fromMatrix.Matrix.M11 + (toMatrix.Matrix.M11 - fromMatrix.Matrix.M11) * progress,
+                fromMatrix.Matrix.M12 + (toMatrix.Matrix.M12 - fromMatrix.Matrix.M12) * progress,
+                fromMatrix.Matrix.M21 + (toMatrix.Matrix.M21 - fromMatrix.Matrix.M21) * progress,
+                fromMatrix.Matrix.M22 + (toMatrix.Matrix.M22 - fromMatrix.Matrix.M22) * progress,
+                fromMatrix.Matrix.M31 + (toMatrix.Matrix.M31 - fromMatrix.Matrix.M31) * progress,
+                fromMatrix.Matrix.M32 + (toMatrix.Matrix.M32 - fromMatrix.Matrix.M32) * progress));
+        return progress < 1 ? from : to;
+    }
+
+    private static Geometry? LerpClip(Geometry? from, Geometry? to, double progress)
+    {
+        if (from is RectangleGeometry fromRect && to is RectangleGeometry toRect)
+            return new RectangleGeometry(new Rect(
+                fromRect.Rect.X + (toRect.Rect.X - fromRect.Rect.X) * progress,
+                fromRect.Rect.Y + (toRect.Rect.Y - fromRect.Rect.Y) * progress,
+                fromRect.Rect.Width + (toRect.Rect.Width - fromRect.Rect.Width) * progress,
+                fromRect.Rect.Height + (toRect.Rect.Height - fromRect.Rect.Height) * progress));
+        return progress < 1 ? from : to;
     }
 }

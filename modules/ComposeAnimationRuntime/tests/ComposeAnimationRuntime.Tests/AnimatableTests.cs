@@ -322,6 +322,16 @@ public sealed class AnimatableTests
         Assert.True(coordinator.IsRunning);
     }
 
+    [Fact]
+    public void TransitionCoordinatorRejectsDuplicateTrackWhenConfigured()
+    {
+        var animation = new Animatable<float>(0, new ScalarVectorConverter());
+        var coordinator = new TransitionCoordinator(conflictPolicy: TransitionConflictPolicy.Reject);
+        coordinator.Add(animation);
+
+        Assert.Throws<InvalidOperationException>(() => coordinator.Add(animation));
+    }
+
     private sealed class TestTrack(Animatable<float> animation) : ITransitionTrack
     {
         public bool IsRunning => animation.IsRunning;

@@ -8,14 +8,15 @@ public sealed class SharedTransitionCoordinator
     private readonly List<SharedElement> _elements = [];
     private readonly TransitionCoordinator _coordinator;
 
-    public SharedTransitionCoordinator(IAnimationClock? clock = null)
+    public SharedTransitionCoordinator(IAnimationClock? clock = null, TransitionConflictPolicy conflictPolicy = TransitionConflictPolicy.IgnoreLowerPriority)
     {
-        _coordinator = new TransitionCoordinator(clock);
+        _coordinator = new TransitionCoordinator(clock, conflictPolicy);
         _coordinator.StateChanged += state => StateChanged?.Invoke(this, state);
     }
 
     public TransitionSessionState State => _coordinator.State;
     public bool IsRunning => _coordinator.IsRunning;
+    public TransitionConflictPolicy ConflictPolicy => _coordinator.ConflictPolicy;
     public event EventHandler<TransitionSessionState>? StateChanged;
 
     public void Add(SharedBounds bounds)
@@ -44,6 +45,7 @@ public sealed class SharedTransitionCoordinator
 
     public void Start() => _coordinator.Start();
     public bool Tick(TimeSpan delta) => _coordinator.Tick(delta);
+    public void Seek(TimeSpan playTime) => _coordinator.Seek(playTime);
     public void Pause() => _coordinator.Pause();
     public void Resume() => _coordinator.Resume();
     public void Complete() => _coordinator.Complete();

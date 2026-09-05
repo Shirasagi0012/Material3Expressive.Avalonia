@@ -5,18 +5,20 @@ public sealed class TransitionCoordinator
     private readonly TransitionSession _session;
     private readonly List<ITrack> _tracks = [];
 
-    public TransitionCoordinator(IAnimationClock? clock = null)
+    public TransitionCoordinator(IAnimationClock? clock = null, TransitionConflictPolicy conflictPolicy = TransitionConflictPolicy.IgnoreLowerPriority)
     {
+        ConflictPolicy = conflictPolicy;
         _session = new TransitionSession(clock);
         _session.StateChanged += state => StateChanged?.Invoke(state);
     }
 
     public TransitionSessionState State => _session.State;
+    public TransitionConflictPolicy ConflictPolicy { get; }
     public bool IsRunning => _session.IsRunning;
     public IAnimationClock? Clock => _session.Clock;
     public event Action<TransitionSessionState>? StateChanged;
 
-    public void Add<T>(Animatable<T> animation)
+    public void Add<T>(Animatable<T> animation, int priority = 0)
     {
         ArgumentNullException.ThrowIfNull(animation);
         if (_session.State != TransitionSessionState.Idle)
@@ -24,9 +26,11 @@ public sealed class TransitionCoordinator
         var existing = _tracks.FirstOrDefault(track => ReferenceEquals(track.Animation, animation));
         if (existing is not null)
         {
-            if (existing.Priority >= 0) return;
+            if (ConflictPolicy == TransitionConflictPolicy.Reject)
+                throw new InvalidOperationException("The animation is already registered with this coordinator.");
+            return;
         }
-        _tracks.Add(new Track<T>(animation, 0));
+        _tracks.Add(new Track<T>(animation, priority));
         _session.Add(animation.Tick, () => animation.IsRunning);
     }
 
@@ -39,7 +43,12 @@ public sealed class TransitionCoordinator
         if (_session.State != TransitionSessionState.Idle)
             throw new InvalidOperationException("Tracks can only be added before the coordinator starts.");
         var existing = _tracks.FirstOrDefault(item => ReferenceEquals(item.Animation, track));
-        if (existing is not null && existing.Priority >= priority) return;
+        if (existing is not null)
+        {
+            if (ConflictPolicy == TransitionConflictPolicy.Reject)
+                throw new InvalidOperationException("The track is already registered with this coordinator.");
+            return;
+        }
         if (existing is not null) _tracks.Remove(existing);
         _tracks.Add(new TrackAdapter(track, priority));
         _session.Add(track.Tick, () => track.IsRunning);
@@ -47,6 +56,11 @@ public sealed class TransitionCoordinator
 
     public void Start() => _session.Start();
     public bool Tick(TimeSpan delta) => _session.Tick(delta);
+    public void Seek(TimeSpan playTime)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(playTime, TimeSpan.Zero);
+        foreach (var track in _tracks) track.Seek(playTime);
+    }
     public void Pause() { _session.Pause(); foreach (var track in _tracks) track.Pause(); }
     public void Resume() { _session.Resume(); foreach (var track in _tracks) track.Resume(); }
     public void Complete() { foreach (var track in _tracks) track.Complete(); _session.Complete(); }
@@ -58,6 +72,7 @@ public sealed class TransitionCoordinator
         int Priority { get; }
         void Pause();
         void Resume();
+        void Seek(TimeSpan playTime);
         void Complete();
         void Cancel();
     }
@@ -68,6 +83,7 @@ public sealed class TransitionCoordinator
         public int Priority => priority;
         public void Pause() => animation.Pause();
         public void Resume() => animation.Resume();
+        public void Seek(TimeSpan playTime) => animation.Seek(playTime);
         public void Complete() => animation.Settle();
         public void Cancel() => animation.Stop();
     }
@@ -78,7 +94,14 @@ public sealed class TransitionCoordinator
         public int Priority => priority;
         public void Pause() => track.Pause();
         public void Resume() => track.Resume();
+        public void Seek(TimeSpan playTime) => track.Seek(playTime);
         public void Complete() => track.Complete();
         public void Cancel() => track.Cancel();
     }
+}
+
+public enum TransitionConflictPolicy
+{
+    IgnoreLowerPriority,
+    Reject,
 }

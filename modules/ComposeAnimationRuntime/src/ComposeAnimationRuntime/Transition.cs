@@ -57,14 +57,14 @@ public sealed class MotionTransition<TState>
     {
         TargetState = CurrentState = state;
         foreach (var target in _targets.Values) target(state);
-        foreach (var track in _tracks.Values) track.Settle();
+        foreach (var track in _tracks.Values) track.Complete();
         IsRunning = false;
         StateChanged?.Invoke(state);
     }
 
     public void Stop()
     {
-        foreach (var track in _tracks.Values) track.Stop();
+        foreach (var track in _tracks.Values) track.Cancel();
         IsRunning = false;
     }
 
@@ -75,21 +75,14 @@ public sealed class MotionTransition<TState>
         StateChanged?.Invoke(CurrentState);
     }
 
-    private interface ITransitionTrack
-    {
-        bool IsRunning { get; }
-        void Tick(TimeSpan delta);
-        void Seek(TimeSpan playTime);
-        void Settle();
-        void Stop();
-    }
-
     private sealed class TransitionTrack<TValue>(Animatable<TValue> animation) : ITransitionTrack
     {
         public bool IsRunning => animation.IsRunning;
-        public void Tick(TimeSpan delta) => animation.Tick(delta);
+        public bool Tick(TimeSpan delta) => animation.Tick(delta);
         public void Seek(TimeSpan playTime) => animation.Seek(playTime);
-        public void Settle() => animation.Settle();
-        public void Stop() => animation.Stop();
+        public void Pause() => animation.Pause();
+        public void Resume() => animation.Resume();
+        public void Complete() => animation.Settle();
+        public void Cancel() => animation.Stop();
     }
 }

@@ -198,6 +198,33 @@ public sealed class AvaloniaIntegrationTests
     }
 
     [Fact]
+    public void SharedGeometryInterpolatesMatrixAndRectangleClip()
+    {
+        var from = new SharedGeometry(
+            new Rect(0, 0, 10, 20),
+            new MatrixTransform(Matrix.Identity),
+            new RectangleGeometry(new Rect(0, 0, 10, 20)),
+            0,
+            1,
+            new CornerRadius(0));
+        var to = new SharedGeometry(
+            new Rect(20, 10, 30, 40),
+            new MatrixTransform(new Matrix(2, 0, 0, 2, 10, 12)),
+            new RectangleGeometry(new Rect(10, 5, 20, 30)),
+            1,
+            4,
+            new CornerRadius(8));
+
+        var value = SharedGeometry.Lerp(from, to, 0.5);
+
+        Assert.Equal(new Rect(10, 5, 20, 30), value.Bounds);
+        Assert.Equal(0.5, value.Opacity);
+        Assert.Equal(1, value.ZIndex);
+        Assert.Equal(new Rect(5, 2.5, 15, 25), ((RectangleGeometry)value.Clip!).Rect);
+        Assert.Equal(1.5, ((MatrixTransform)value.Transform!).Matrix.M11, 5);
+    }
+
+    [Fact]
     public void AnimatedContentCanReplaceVisualContentWithoutDuplicateParent()
     {
         var animated = new AnimatedContent();
@@ -417,6 +444,37 @@ public sealed class AvaloniaIntegrationTests
     }
 
     [Fact]
+    public void SharedElementTransfersVisualAndRestoresDestinationState()
+    {
+        var root = new SharedTransitionRoot();
+        var sourceVisual = new Button { DataContext = "source", IsHitTestVisible = true };
+        var destinationVisual = new Button { DataContext = "destination" };
+        var source = new SharedElement
+        {
+            TransitionRoot = root,
+            Mode = SharedElementMode.MoveVisual,
+            Child = sourceVisual,
+        };
+        var destination = new SharedElement
+        {
+            TransitionRoot = root,
+            InputPolicy = SharedElementInputPolicy.TransferToDestination,
+            UseDestinationDataContext = true,
+            DataContext = "destination-context",
+            Child = destinationVisual,
+        };
+        root.ContentLayer.Children.Add(source);
+        root.ContentLayer.Children.Add(destination);
+
+        Assert.True(source.MoveVisualToOverlay());
+        Assert.Same(sourceVisual, source.Child is null ? sourceVisual : null);
+        Assert.True(source.TransferVisualTo(destination));
+        Assert.Same(sourceVisual, destination.Child);
+        Assert.Equal("destination-context", sourceVisual.DataContext);
+        Assert.Null(destinationVisual.Parent);
+    }
+
+    [Fact]
     public void SharedTransitionRootControlsActiveBounds()
     {
         var root = new SharedTransitionRoot();
@@ -459,7 +517,7 @@ public sealed class AvaloniaIntegrationTests
     public void SharedElementMoveVisualUsesOverlayWithoutDuplicateParent()
     {
         var root = new SharedTransitionRoot();
-        var element = new SharedElement { Mode = SharedElementMode.MoveVisual, InputPolicy = SharedElementInputPolicy.DisableDuringTransition };
+        var element = new SharedElement { TransitionRoot = root, Mode = SharedElementMode.MoveVisual, InputPolicy = SharedElementInputPolicy.DisableDuringTransition };
         var visual = new Border { IsHitTestVisible = true };
         element.Child = visual;
         root.ContentLayer.Children.Add(element);

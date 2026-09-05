@@ -20,6 +20,11 @@ internal sealed partial class MainWindow : Window
     private void OnOpened(object? sender, EventArgs e)
     {
         _host = new AvaloniaMotionHost(this);
+        if (Environment.GetEnvironmentVariable("COMPOSE_SHARED_BOUNDS_TRACE") is not null)
+        {
+            _currentPage = new SharedBoundsPage();
+            PageHost.Content = _currentPage;
+        }
         AttachCurrentPage();
     }
 

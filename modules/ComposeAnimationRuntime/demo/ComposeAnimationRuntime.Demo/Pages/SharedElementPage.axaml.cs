@@ -24,6 +24,8 @@ internal sealed partial class SharedElementPage : MotionPageBase
         layout.Children.Add(_source);
         layout.Children.Add(_destination);
         Root.ContentLayer.Children.Add(layout);
+        _source.AttachClock(Host);
+        _destination.AttachClock(Host);
     }
 
     protected override void OnDetached()

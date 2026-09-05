@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimationRuntime;
@@ -16,6 +17,19 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
     private Size _layoutSize;
     private SharedGeometry _geometryTarget;
     private SharedGeometry _geometryStart;
+    private IDisposable? _transformLease;
+    private readonly MatrixTransform _motionTransform = new();
+
+    public SharedBounds()
+    {
+        _bounds.ValueChanged += ApplyBounds;
+        _bounds.Completed += _ =>
+        {
+            if (!_bounds.IsRunning)
+                ApplyVisualState(_geometryTarget);
+            RaiseCompletion();
+        };
+    }
 
     public static readonly StyledProperty<object?> KeyProperty = AvaloniaProperty.Register<SharedBounds, object?>(nameof(Key));
     public object? Key { get => GetValue(KeyProperty); set => SetValue(KeyProperty, value); }
@@ -24,6 +38,7 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
     public IAnimationClock? Clock { get; set; }
     public event EventHandler? TransitionCompleted;
     private bool _completionRaised;
+    private bool _layoutInitialized;
 
     public void AttachClock(IAnimationClock? clock)
     {
@@ -33,19 +48,13 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
         _host?.Dispose();
         _host = null;
         Clock = clock;
-        if (clock is not null && _bounds.IsRunning)
-            _clockRegistration = clock.Register(_bounds.Tick, () => _bounds.IsRunning);
-        else if (clock is null && TopLevel.GetTopLevel(this) is { } top)
-        {
-            _host = new AvaloniaMotionHost(top);
-            _host.Register(_bounds);
-        }
+        EnsureClock();
     }
     public bool IsTransitioning => _bounds.IsRunning;
-    public Rect CurrentBounds => _bounds.Value;
+    public Rect CurrentBounds => _layoutInitialized ? _bounds.Value : CaptureRootBounds();
     public SharedGeometry CurrentGeometry => new(
-        _bounds.Value,
-        RenderTransform,
+        CurrentBounds,
+        _transformLease is null ? RenderTransform : _geometryTarget.Transform,
         Clip,
         Opacity,
         ZIndex,
@@ -53,6 +62,7 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
 
     public void AnimateTo(SharedGeometry target)
     {
+        InitializeLayoutBounds();
         _geometryStart = CurrentGeometry;
         _geometryTarget = target;
         AnimateTo(target.Bounds);
@@ -60,6 +70,8 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
 
     public void SnapTo(SharedGeometry geometry)
     {
+        _layoutInitialized = true;
+        _geometryStart = _geometryTarget = geometry;
         ApplyVisualState(geometry);
         _layoutSize = geometry.Size;
         _bounds.SnapTo(geometry.Bounds);
@@ -70,26 +82,37 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
         base.OnAttachedToVisualTree(e);
         _root = this.FindAncestorOfType<SharedTransitionRoot>();
         if (_root is not null && Key is not null) { _root.Register(Key, this, Role); _registeredKey = Key; }
-        if (Clock is not null)
-            _clockRegistration = Clock.Register(_bounds.Tick, () => _bounds.IsRunning);
-        else if (TopLevel.GetTopLevel(this) is { } top)
-        {
-            _host = new AvaloniaMotionHost(top);
-            _host.Register(_bounds);
-        }
-        _bounds.ValueChanged += ApplyBounds;
-        var current = CaptureRootBounds();
-        _bounds.SnapTo(current);
-        _layoutSize = current.Size;
+        LayoutUpdated += OnLayoutUpdated;
+        EnsureClock();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _bounds.ValueChanged -= ApplyBounds;
+        CancelTransition();
+        LayoutUpdated -= OnLayoutUpdated;
         if (_root is not null && _registeredKey is not null) _root.Unregister(_registeredKey, this);
         _clockRegistration?.Dispose(); _clockRegistration = null;
         _host?.Dispose(); _host = null; _root = null; _registeredKey = null;
+        _transformLease?.Dispose();
+        _transformLease = null;
+        _layoutInitialized = false;
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        if (_layoutInitialized) ApplyBounds(_bounds.Value);
+    }
+
+    private void InitializeLayoutBounds()
+    {
+        if (_layoutInitialized) return;
+        var current = CaptureRootBounds();
+        _geometryStart = _geometryTarget = new SharedGeometry(current, RenderTransform, Clip, Opacity, ZIndex,
+            Child is Border border ? border.CornerRadius : default);
+        _bounds.SnapTo(current);
+        _layoutSize = current.Size;
+        _layoutInitialized = true;
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -105,6 +128,7 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
 
     public void AnimateTo(Rect target)
     {
+        InitializeLayoutBounds();
         _completionRaised = false;
         if (_geometryTarget.Bounds != target || _geometryTarget.Equals(default))
         {
@@ -112,15 +136,27 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
             _geometryTarget = new SharedGeometry(target, RenderTransform, Clip, Opacity, ZIndex);
         }
         _bounds.AnimateTo(target, new TweenSpec<Rect>(new RectVectorConverter(), Duration, Easings.FastOutSlowIn));
-        if (Clock is not null && _clockRegistration is null)
-            _clockRegistration = Clock.Register(_bounds.Tick, () => _bounds.IsRunning);
-        _host?.RequestFrame();
+        EnsureClock();
+    }
+
+    private void EnsureClock()
+    {
+        if (!_bounds.IsRunning) return;
+        _clockRegistration?.Dispose();
+        if (Clock is { } clock)
+            _clockRegistration = clock.Register(Tick, () => _bounds.IsRunning || _bounds.IsPaused);
+        else if (TopLevel.GetTopLevel(this) is { } top)
+        {
+            _host ??= new AvaloniaMotionHost(top);
+            _clockRegistration = _host.RegisterTrack(Tick, () => _bounds.IsRunning || _bounds.IsPaused);
+        }
     }
 
     public void RetargetTo(Rect target) => AnimateTo(target);
 
     public void SnapTo(Rect target)
     {
+        _layoutInitialized = true;
         _layoutSize = target.Size;
         _geometryTarget = _geometryStart = new SharedGeometry(target, RenderTransform, Clip, Opacity, ZIndex);
         _bounds.SnapTo(target);
@@ -148,10 +184,9 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
         }
     }
 
-    internal void AnimateFrom(Rect source)
+    internal void AnimateFrom(Rect source, Rect target)
     {
-        var target = CaptureRootBounds();
-        _bounds.SnapTo(source);
+        SnapTo(source);
         AnimateTo(target);
     }
 
@@ -179,16 +214,15 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
         RaiseCompletion();
     }
     public void PauseTransition() => _bounds.Pause();
-    public void ResumeTransition() => _bounds.Resume();
+    public void ResumeTransition() { _bounds.Resume(); EnsureClock(); }
     internal bool Tick(TimeSpan delta)
     {
-        var running = _bounds.Tick(delta);
-        if (!running) RaiseCompletion();
-        return running;
+        return _bounds.Tick(delta);
     }
 
     bool ITransitionTrack.IsRunning => IsTransitioning;
     bool ITransitionTrack.Tick(TimeSpan delta) => Tick(delta);
+    void ITransitionTrack.Seek(TimeSpan playTime) => _bounds.Seek(playTime);
     void ITransitionTrack.Pause() => PauseTransition();
     void ITransitionTrack.Resume() => ResumeTransition();
     void ITransitionTrack.Complete() => CompleteTransition();
@@ -204,19 +238,39 @@ public sealed class SharedBounds : Decorator, ITransitionTrack
     private Rect CaptureRootBounds() => _root is null ? Bounds : this.TranslateBoundsTo(_root);
     private void ApplyBounds(Rect value)
     {
+        if (!_layoutInitialized) return;
         var progress = _bounds.Progress;
-        Opacity = _geometryStart.Opacity + (_geometryTarget.Opacity - _geometryStart.Opacity) * progress;
-        Clip = progress >= 1 ? _geometryTarget.Clip : _geometryStart.Clip;
+        var geometry = SharedGeometry.Lerp(_geometryStart, _geometryTarget, progress);
+        Opacity = geometry.Opacity;
+        Clip = geometry.Clip;
         if (Child is Border border)
-            border.CornerRadius = progress >= 1 ? _geometryTarget.CornerRadius : _geometryStart.CornerRadius;
-        ZIndex = progress >= 1 ? _geometryTarget.ZIndex : _geometryStart.ZIndex;
+            border.CornerRadius = geometry.CornerRadius;
+        ZIndex = geometry.ZIndex;
         if (_root is not null)
         {
-            var local = value.Position - _root.Bounds.Position;
-            RenderTransform = progress >= 1 && _geometryTarget.Transform is not null
-                ? _geometryTarget.Transform
-                : _geometryStart.Transform ?? new TranslateTransform(local.X, local.Y);
-            Width = value.Width; Height = value.Height;
+            var parentToRoot = this.GetVisualParent()?.TransformToVisual(_root) ?? Matrix.Identity;
+            if (!parentToRoot.TryInvert(out var rootToParent)) return;
+            var origin = RenderTransformOrigin.ToPixels(Bounds.Size);
+            var authored = Matrix.CreateTranslation(-origin.X, -origin.Y)
+                * (geometry.Transform?.Value ?? Matrix.Identity)
+                * Matrix.CreateTranslation(origin.X, origin.Y);
+            var localToRoot = authored * Matrix.CreateTranslation(Bounds.X, Bounds.Y) * parentToRoot;
+            var natural = new Rect(Bounds.Size).TransformToAABB(localToRoot);
+            if (natural.Width > 0 && natural.Height > 0)
+            {
+                var motion = Matrix.CreateTranslation(-natural.X, -natural.Y)
+                    * Matrix.CreateScale(value.Width / natural.Width, value.Height / natural.Height)
+                    * Matrix.CreateTranslation(value.X, value.Y);
+                var transform = Matrix.CreateTranslation(origin.X, origin.Y) * localToRoot * motion
+                    * rootToParent * Matrix.CreateTranslation(-Bounds.X - origin.X, -Bounds.Y - origin.Y);
+                if (_motionTransform.Matrix != transform) _motionTransform.Matrix = transform;
+                _transformLease ??= SetValue(RenderTransformProperty, _motionTransform, BindingPriority.Animation);
+            }
+            if (value.Width > 0 && value.Height > 0)
+            {
+                Width = value.Width;
+                Height = value.Height;
+            }
         }
     }
 
