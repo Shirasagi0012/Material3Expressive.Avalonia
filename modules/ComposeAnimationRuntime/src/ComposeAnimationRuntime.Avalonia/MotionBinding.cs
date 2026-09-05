@@ -18,13 +18,15 @@ public static class MotionBinding
     }
 }
 
-public sealed class AvaloniaMotionHost : IDisposable
+public sealed class AvaloniaMotionHost : IAnimationClock, IDisposable
 {
     private readonly TopLevel _topLevel;
     private readonly List<MotionTrack> _tracks = [];
     private TimeSpan? _lastFrame;
     private bool _scheduled;
     private bool _disposed;
+
+    public TimeSpan Time { get; private set; }
 
     public AvaloniaMotionHost(TopLevel topLevel) => _topLevel = topLevel ?? throw new ArgumentNullException(nameof(topLevel));
 
@@ -49,6 +51,8 @@ public sealed class AvaloniaMotionHost : IDisposable
         return new MotionDisposable(() => _tracks.Remove(track));
     }
 
+    IDisposable IAnimationClock.Register(Func<TimeSpan, bool> tick, Func<bool> isRunning) => RegisterTrack(tick, isRunning);
+
     public void RequestFrame()
     {
         if (_disposed || _scheduled || _tracks.Count == 0) return;
@@ -64,6 +68,7 @@ public sealed class AvaloniaMotionHost : IDisposable
         _scheduled = false;
         var delta = _lastFrame is { } previous ? timestamp - previous : TimeSpan.Zero;
         _lastFrame = timestamp;
+        Time = timestamp;
         foreach (var track in _tracks)
             track.Tick(delta);
         if (!_tracks.Any(track => track.IsRunning())) _lastFrame = null;

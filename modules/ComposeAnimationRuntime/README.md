@@ -11,6 +11,7 @@ The current alpha includes:
 - spring, tween, and snap specifications;
 - exponential decay specifications for fling-style motion;
 - deterministic manual clocks for coordinated frame stepping;
+- shared `IAnimationClock` abstraction for deterministic and Avalonia-driven execution;
 - keyframe segments with per-segment easing;
 - finite and infinite repeat specifications;
 - lightweight state transition coordination;
@@ -18,6 +19,12 @@ The current alpha includes:
 - arbitrary-dimensional vectors and custom stateless trajectory specifications;
 - elliptical arc trajectories;
 - visibility enter/exit state coordination;
+- Avalonia `AnimatedVisibility`, `AnimatedContent`, `AnimatedSize`, and `AnimatedBounds` controls;
+- shared transition roots, participant pairing, shared bounds, and shared elements;
+- geometry and render-snapshot shared element modes;
+- pointer gesture surfaces with bounded drag, fling decay, and spring settling;
+- state-driven `AnimatedContent` factories with key-based identity;
+- layout snapshots and size-transform effects for enter/exit motion;
 - deterministic frame stepping through `Animatable<T>.Tick`;
 - an independent test project.
 
@@ -51,4 +58,38 @@ using var host = new AvaloniaMotionHost((TopLevel)control.GetVisualRoot()!);
 host.Register(opacity);
 opacity.AnimateTo(1, new TweenSpec<double>(converter, TimeSpan.FromMilliseconds(180)));
 host.RequestFrame();
+```
+
+Gesture-driven motion is available without coupling the core runtime to Avalonia:
+
+```csharp
+var gesture = new GestureController();
+gesture.SetBounds(Vector2.Zero, new Vector2(320, 640));
+gesture.Begin(pointer, timestamp);
+gesture.Update(pointer, timestamp);
+gesture.End(settleTarget: Vector2.Zero);
+```
+
+For deterministic tests or custom renderers, use the same clock contract:
+
+```csharp
+IControllableAnimationClock clock = new ManualAnimationClock();
+using var track = clock.Register(animation.Tick, () => animation.IsRunning);
+clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+```
+
+`AnimatedContent` is state-driven. `TargetState` is mapped to a visual by
+`ContentFactory`; `KeySelector` controls identity, so updates with the same key
+replace content in place while different keys run the configured transition:
+
+```csharp
+var content = new AnimatedContent
+{
+    ContentFactory = state => new TextBlock { Text = state?.ToString() },
+    KeySelector = state => state,
+    Transform = new ContentTransform(EnterTransition.FadeIn(), ExitTransition.FadeOut())
+};
+
+content.TargetState = "Loading";
+content.TargetState = "Ready";
 ```

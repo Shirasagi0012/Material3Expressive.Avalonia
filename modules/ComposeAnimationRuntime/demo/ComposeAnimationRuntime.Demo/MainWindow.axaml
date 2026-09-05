@@ -7,6 +7,7 @@
         Height="700"
         MinWidth="820"
         MinHeight="520"
+        RequestedThemeVariant="Light"
         Opened="OnOpened">
   <Grid ColumnDefinitions="220,*">
     <Border Grid.Column="0" Background="#F3F4F6" Padding="12">
@@ -17,6 +18,15 @@
         <ListBoxItem Content="Keyframes" />
         <ListBoxItem Content="Visibility" />
         <ListBoxItem Content="Transition" />
+        <ListBoxItem Content="AnimatedVisibility" />
+        <ListBoxItem Content="AnimatedContent" />
+        <ListBoxItem Content="AnimatedSize" />
+        <ListBoxItem Content="AnimatedBounds" />
+        <ListBoxItem Content="GestureSurface" />
+        <ListBoxItem Content="Path &amp; Bezier" />
+        <ListBoxItem Content="Transition Coordinator" />
+        <ListBoxItem Content="SharedBounds" />
+        <ListBoxItem Content="SharedElement" />
       </ListBox>
     </Border>
     <Border Grid.Column="1" Padding="28">

@@ -24,4 +24,8 @@ public sealed class VisibilityMotion
     public void Hide(IAnimationSpec<double>? spec = null) { _progress.AnimateTo(0, spec ?? _exitSpec); }
     public bool Tick(TimeSpan delta) { var running = _progress.Tick(delta); if (!running && _progress.Value <= 0) State = VisibilityState.Hidden; return running; }
     public void SnapTo(bool visible) { _progress.SnapTo(visible ? 1 : 0); State = visible ? VisibilityState.Visible : VisibilityState.Hidden; }
+    public void Pause() => _progress.Pause();
+    public void Resume() => _progress.Resume();
+    public void Complete() { _progress.Settle(); if (_progress.Value <= 0) State = VisibilityState.Hidden; }
+    public void Cancel() => _progress.Stop();
 }

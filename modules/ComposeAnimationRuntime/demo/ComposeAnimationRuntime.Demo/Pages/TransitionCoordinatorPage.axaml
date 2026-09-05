@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ComposeAnimationRuntime.Demo.Pages.TransitionCoordinatorPage">
+  <StackPanel Spacing="12">
+    <TextBlock Text="TransitionCoordinator" FontSize="28" FontWeight="SemiBold" />
+    <TextBlock Text="Coordinates multiple Animatable values and supports pause, resume, completion, and cancellation." TextWrapping="Wrap" />
+    <Separator />
+    <Border Height="220" Background="#F5F6F8" CornerRadius="14">
+      <Canvas>
+        <Border x:Name="PositionBox" Width="84" Height="84" CornerRadius="18" Background="#4F7CFF" />
+        <Border x:Name="OpacityBox" Width="84" Height="84" CornerRadius="18" Background="#E87532" Canvas.Top="110" />
+      </Canvas>
+    </Border>
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="Start" Click="OnStart" />
+      <Button Content="Pause" Click="OnPause" />
+      <Button Content="Resume" Click="OnResume" />
+      <Button Content="Complete" Click="OnComplete" />
+      <Button Content="Cancel" Click="OnCancel" />
+    </StackPanel>
+    <TextBlock x:Name="Status" Text="idle" Foreground="Gray" />
+  </StackPanel>
+</UserControl>

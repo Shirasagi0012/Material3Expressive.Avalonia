@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:motion="using:ComposeAnimationRuntime.Avalonia" x:Class="ComposeAnimationRuntime.Demo.Pages.AnimatedVisibilityPage">
+  <StackPanel Spacing="12">
+    <TextBlock Text="AnimatedVisibility" FontSize="28" FontWeight="SemiBold" />
+    <TextBlock Text="Content remains mounted while enter and exit effects are applied." TextWrapping="Wrap" />
+    <Separator />
+    <motion:AnimatedVisibility x:Name="Visibility" IsShown="True" Width="360" Height="90">
+      <Border Background="#7657D9" CornerRadius="16" Padding="20"><TextBlock Text="Visible content" Foreground="White" FontSize="20" /></Border>
+    </motion:AnimatedVisibility>
+    <StackPanel Orientation="Horizontal" Spacing="8"><Button Content="Show" Click="OnShow" /><Button Content="Hide" Click="OnHide" /></StackPanel>
+    <TextBlock x:Name="Status" Text="shown" Foreground="Gray" />
+  </StackPanel>
+</UserControl>

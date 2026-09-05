@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:motion="using:ComposeAnimationRuntime.Avalonia" x:Class="ComposeAnimationRuntime.Demo.Pages.SharedElementPage">
+  <StackPanel Spacing="12">
+    <TextBlock Text="SharedElement" FontSize="28" FontWeight="SemiBold" />
+    <TextBlock Text="Moves a visual through the shared transition overlay while the destination remains interactive." TextWrapping="Wrap" />
+    <Separator />
+    <motion:SharedTransitionRoot x:Name="Root" Height="260" Background="#F5F6F8" />
+    <Button Content="Run element transition" HorizontalAlignment="Left" Click="OnRun" />
+    <TextBlock x:Name="Status" Text="Ready" Foreground="Gray" />
+  </StackPanel>
+</UserControl>

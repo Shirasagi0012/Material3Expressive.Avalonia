@@ -47,6 +47,15 @@ internal sealed partial class MainWindow : Window
         "Keyframes" => new KeyframesPage(),
         "Visibility" => new VisibilityPage(),
         "Transition" => new TransitionPage(),
+        "AnimatedVisibility" => new AnimatedVisibilityPage(),
+        "AnimatedContent" => new AnimatedContentPage(),
+        "AnimatedSize" => new AnimatedSizePage(),
+        "AnimatedBounds" => new AnimatedBoundsPage(),
+        "GestureSurface" => new GestureSurfacePage(),
+        "Path & Bezier" => new PathBezierPage(),
+        "Transition Coordinator" => new TransitionCoordinatorPage(),
+        "SharedBounds" => new SharedBoundsPage(),
+        "SharedElement" => new SharedElementPage(),
         _ => new OverviewPage(),
     };
 

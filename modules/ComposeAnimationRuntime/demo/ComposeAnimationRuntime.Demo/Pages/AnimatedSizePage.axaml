@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:motion="using:ComposeAnimationRuntime.Avalonia" x:Class="ComposeAnimationRuntime.Demo.Pages.AnimatedSizePage">
+  <StackPanel Spacing="12">
+    <TextBlock Text="AnimatedSize" FontSize="28" FontWeight="SemiBold" />
+    <TextBlock Text="The container animates measured width and height as its child changes." TextWrapping="Wrap" />
+    <Separator />
+    <motion:AnimatedSize x:Name="Container" HorizontalAlignment="Left">
+      <Border x:Name="Card" Width="180" Height="56" Background="#2D9D78" CornerRadius="14" Padding="16"><TextBlock Text="Resizable content" Foreground="White" /></Border>
+    </motion:AnimatedSize>
+    <Button Content="Toggle size" HorizontalAlignment="Left" Click="OnToggle" />
+    <TextBlock x:Name="Status" Text="compact" Foreground="Gray" />
+  </StackPanel>
+</UserControl>

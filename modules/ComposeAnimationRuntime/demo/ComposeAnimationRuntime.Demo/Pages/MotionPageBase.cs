@@ -57,5 +57,21 @@ internal abstract class MotionPageBase : UserControl, IDisposable
     protected void RegisterTrack(Func<TimeSpan, bool> tick, Func<bool> isRunning)
         => _resources.Add(Host.RegisterTrack(tick, isRunning));
 
+    protected void BindValue<T>(Animatable<T> animation, Action<T> apply)
+    {
+        ArgumentNullException.ThrowIfNull(animation);
+        ArgumentNullException.ThrowIfNull(apply);
+        apply(animation.Value);
+        animation.ValueChanged += apply;
+        _resources.Add(new DelegateDisposable(() => animation.ValueChanged -= apply));
+        _resources.Add(Host.Register(animation));
+    }
+
     protected void RequestFrame() => Host.RequestFrame();
+
+    private sealed class DelegateDisposable(Action dispose) : IDisposable
+    {
+        private Action? _dispose = dispose;
+        public void Dispose() => Interlocked.Exchange(ref _dispose, null)?.Invoke();
+    }
 }

@@ -1,16 +1,38 @@
 namespace ComposeAnimationRuntime;
 
-/// <summary>Deterministic clock for driving a group of animations.</summary>
-public sealed class ManualAnimationClock
+public interface IAnimationClock
 {
-    private readonly List<Func<TimeSpan, bool>> _tracks = [];
+    TimeSpan Time { get; }
+    IDisposable Register(Func<TimeSpan, bool> tick, Func<bool> isRunning);
+}
+
+public interface IControllableAnimationClock : IAnimationClock
+{
+    bool AdvanceBy(TimeSpan delta);
+    void Settle();
+    void Reset();
+}
+
+/// <summary>Deterministic clock for driving a group of animations.</summary>
+public sealed class ManualAnimationClock : IControllableAnimationClock
+{
+    private readonly List<Track> _tracks = [];
 
     public TimeSpan Time { get; private set; }
 
     public void Register<T>(Animatable<T> animation)
     {
         ArgumentNullException.ThrowIfNull(animation);
-        _tracks.Add(animation.Tick);
+        Register(animation.Tick, () => animation.IsRunning);
+    }
+
+    public IDisposable Register(Func<TimeSpan, bool> tick, Func<bool> isRunning)
+    {
+        ArgumentNullException.ThrowIfNull(tick);
+        ArgumentNullException.ThrowIfNull(isRunning);
+        var track = new Track(tick, isRunning);
+        _tracks.Add(track);
+        return new DelegateDisposable(() => _tracks.Remove(track));
     }
 
     public bool AdvanceBy(TimeSpan delta)
@@ -22,10 +44,11 @@ public sealed class ManualAnimationClock
         var running = false;
         for (var index = _tracks.Count - 1; index >= 0; index--)
         {
-            if (_tracks[index](delta))
-                running = true;
+            var track = _tracks[index];
+            if (!track.Tick(delta) && !track.IsRunning() && _tracks.Contains(track))
+                _tracks.Remove(track);
             else
-                _tracks.RemoveAt(index);
+                running = true;
         }
 
         return running;
@@ -33,6 +56,12 @@ public sealed class ManualAnimationClock
 
     public void Settle()
     {
+        for (var frame = 0; frame < 10_000 && _tracks.Count > 0; frame++)
+        {
+            if (!AdvanceBy(TimeSpan.FromMilliseconds(16)))
+                break;
+        }
+
         _tracks.Clear();
     }
 
@@ -40,5 +69,12 @@ public sealed class ManualAnimationClock
     {
         _tracks.Clear();
         Time = TimeSpan.Zero;
+    }
+
+    private sealed record Track(Func<TimeSpan, bool> Tick, Func<bool> IsRunning);
+    private sealed class DelegateDisposable(Action dispose) : IDisposable
+    {
+        private Action? _dispose = dispose;
+        public void Dispose() => Interlocked.Exchange(ref _dispose, null)?.Invoke();
     }
 }

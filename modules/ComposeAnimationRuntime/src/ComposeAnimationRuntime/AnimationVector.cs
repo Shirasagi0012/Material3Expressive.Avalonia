@@ -157,4 +157,27 @@ public static class Easings
     public static Func<double, double> FastOutSlowIn { get; } = value => value * value * (3 - 2 * value);
     public static Func<double, double> EaseIn { get; } = value => value * value;
     public static Func<double, double> EaseOut { get; } = value => 1 - (1 - value) * (1 - value);
+
+    public static Func<double, double> CubicBezier(double x1, double y1, double x2, double y2)
+    {
+        if (new[] { x1, y1, x2, y2 }.Any(value => !double.IsFinite(value)))
+            throw new ArgumentOutOfRangeException(nameof(x1));
+        return value => CubicBezierSample(Math.Clamp(value, 0, 1), x1, y1, x2, y2);
+    }
+
+    private static double CubicBezierSample(double t, double x1, double y1, double x2, double y2)
+    {
+        var lower = 0d;
+        var upper = 1d;
+        for (var iteration = 0; iteration < 24; iteration++)
+        {
+            var u = (lower + upper) * 0.5;
+            var x = 3 * (1 - u) * (1 - u) * u * x1 + 3 * (1 - u) * u * u * x2 + u * u * u;
+            if (x < t) lower = u; else upper = u;
+        }
+        var uResult = (lower + upper) * 0.5;
+        return 3 * (1 - uResult) * (1 - uResult) * uResult * y1
+            + 3 * (1 - uResult) * uResult * uResult * y2
+            + uResult * uResult * uResult;
+    }
 }

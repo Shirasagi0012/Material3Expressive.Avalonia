@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:motion="using:ComposeAnimationRuntime.Avalonia" x:Class="ComposeAnimationRuntime.Demo.Pages.AnimatedBoundsPage">
+  <StackPanel Spacing="12">
+    <TextBlock Text="AnimatedBounds" FontSize="28" FontWeight="SemiBold" />
+    <TextBlock Text="Interpolates position and size toward a target rectangle." TextWrapping="Wrap" />
+    <Separator />
+    <Canvas Height="240" Background="#F5F6F8" ClipToBounds="True"><motion:AnimatedBounds x:Name="BoundsAnimator" TargetBounds="24,24,150,72"><Border Background="#D14B72" CornerRadius="14"><TextBlock Text="Target bounds" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border></motion:AnimatedBounds></Canvas>
+    <Button Content="Move bounds" HorizontalAlignment="Left" Click="OnMove" />
+    <TextBlock x:Name="Status" Text="origin" Foreground="Gray" />
+  </StackPanel>
+</UserControl>

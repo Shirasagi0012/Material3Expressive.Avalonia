@@ -9,6 +9,7 @@ public sealed class Animatable<T>
     private VectorAnimation? _animation;
     private TimeSpan _playTime;
     private AnimationVector _target;
+    private bool _isPaused;
 
     public Animatable(T initialValue, IAnimationVectorConverter<T> converter)
     {
@@ -22,7 +23,8 @@ public sealed class Animatable<T>
     public T Value => _converter.ConvertFromVector(_value);
     public T TargetValue => _converter.ConvertFromVector(_target);
     public T Velocity => _converter.ConvertFromVector(_velocity);
-    public bool IsRunning => _animation is not null;
+    public bool IsRunning => _animation is not null && !_isPaused;
+    public bool IsPaused => _animation is not null && _isPaused;
     public event Action<T>? ValueChanged;
     public event Action<AnimationResult<T>>? Completed;
     public double Progress => _animation is { DurationSeconds: > 0 and var duration } ? Math.Clamp(_playTime.TotalSeconds / duration, 0, 1) : IsRunning ? 0 : 1;
@@ -35,6 +37,7 @@ public sealed class Animatable<T>
         _target = nextTarget;
         _animation = spec.Create(_value.Copy(), _velocity.Copy(), _target.Copy());
         _playTime = TimeSpan.Zero;
+        _isPaused = false;
         if (_animation.DurationSeconds == 0)
             Finish();
     }
@@ -47,6 +50,7 @@ public sealed class Animatable<T>
         _target = _value.Copy();
         _animation = spec.Create(_value.Copy(), velocity, _target.Copy());
         _playTime = TimeSpan.Zero;
+        _isPaused = false;
     }
 
     public void SnapTo(T value)
@@ -55,6 +59,7 @@ public sealed class Animatable<T>
         _target = _value.Copy();
         _velocity.Reset();
         _animation = null;
+        _isPaused = false;
         _playTime = TimeSpan.Zero;
         ValueChanged?.Invoke(Value);
     }
@@ -62,7 +67,7 @@ public sealed class Animatable<T>
     public bool Tick(TimeSpan delta)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(delta, TimeSpan.Zero);
-        if (_animation is null) return false;
+        if (_animation is null || _isPaused) return _animation is not null;
         _playTime += delta;
         var state = _animation.Sample(_playTime);
         _value = state.Value;
@@ -88,7 +93,20 @@ public sealed class Animatable<T>
         if (_animation is null)
             return;
         _animation = null;
+        _isPaused = false;
         Completed?.Invoke(new AnimationResult<T>(Value, Velocity, AnimationEndReason.Canceled));
+    }
+
+    public void Pause()
+    {
+        if (_animation is not null)
+            _isPaused = true;
+    }
+
+    public void Resume()
+    {
+        if (_animation is not null)
+            _isPaused = false;
     }
     public void Settle() { if (_animation is not null) Finish(); }
 
@@ -102,6 +120,7 @@ public sealed class Animatable<T>
         _value = _target.Copy();
         _velocity.Reset();
         _animation = null;
+        ValueChanged?.Invoke(Value);
         Completed?.Invoke(new AnimationResult<T>(Value, Velocity, AnimationEndReason.Finished));
     }
 }
