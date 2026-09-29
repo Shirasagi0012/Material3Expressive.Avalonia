@@ -13,8 +13,7 @@ documentation remain available in Git history and the `refactor/1` checkout.
 - Components: Button and IconButton variants and sizes.
 - The current scalar animation implementation is temporary. The intended Compose animation
   implementation lives in a separate repository and has not been integrated.
-- The Compose reference producer under `tests/ComposeReference` is retained for future visual
-  comparisons. No visual parity suite currently tests this rewrite.
+- No Compose visual parity harness is connected to this rewrite yet.
 
 The implementation details and next work are recorded in [docs/START_HERE.md](docs/START_HERE.md).
 That document describes this rewrite; older architecture and roadmap documents were removed from
@@ -22,7 +21,7 @@ this branch because they described a different implementation.
 
 ## Work locally
 
-The repository uses the MaterialColorUtilities, MaterialShapes, and MaterialSymbols Git
+The repository uses the MaterialColorUtilities and MaterialSymbols Git
 submodules. Initialize them before building:
 
 ```powershell

@@ -1,9 +1,6 @@
 [submodule "modules/MaterialColorUtilities"]
 	path = modules/MaterialColorUtilities
 	url = https://github.com/Shirasagi0012/MaterialColorUtilities.git
-[submodule "modules/MaterialShapes"]
-	path = modules/MaterialShapes
-	url = https://github.com/Shirasagi0012/MaterialShapes
 [submodule "modules/MaterialSymbols"]
 	path = modules/MaterialSymbols
 	url = https://github.com/shirasagi0012/MaterialSymbols
