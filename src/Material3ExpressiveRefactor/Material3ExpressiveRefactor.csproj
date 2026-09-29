@@ -11,7 +11,7 @@
         <PackageReference Include="PropertyGenerator.Avalonia"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
+    <ItemGroup>
         <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities\MaterialColorUtilities.csproj"/>
         <!-- LoadingIndicator is the one component that genuinely morphs polygons. Button, FAB and
              chip press morphs are corner-radius lerps, and the wavy progress indicator's wave is a
@@ -23,24 +23,14 @@
         <ProjectReference Include="..\..\modules\MaterialSymbols\MaterialSymbols.Avalonia.Rounded\MaterialSymbols.Avalonia.Rounded.csproj"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
-        <PackageReference Include="Shirasagi0012.MaterialColorUtilities" />
-        <PackageReference Include="Shirasagi0012.MaterialShapes" />
-        <PackageReference Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" />
-    </ItemGroup>
-
     <ItemGroup>
         <InternalsVisibleTo Include="Material3ExpressiveRefactor.Tests" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
-        <!-- TokenGenerator is intentionally NOT referenced yet: token keys are hand-written
-             (Tokens/MaterialTokens.cs) and no *.jsonc token tables exist here. The generator
-             hard-requires a '*.canonical-tokens.json' AdditionalFile (M3ETOK005) whose owner is
-             MaterialDesignTokens.Avalonia — the very dependency this project dropped. Re-add the
-             analyzer together with a manifest AdditionalFile if/when jsonc-driven generation is
-             adopted. -->
+        <!-- Token identities are currently hand-authored in Tokens/MaterialTokens.*.cs.
+             No generator or JSONC token catalog is connected to this rewrite. -->
     </ItemGroup>
 
 </Project>

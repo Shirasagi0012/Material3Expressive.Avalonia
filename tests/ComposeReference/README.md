@@ -1,7 +1,8 @@
 # Compose reference producer
 
-The canonical producer documentation is now in
-[`docs/testing/compose-reference.md`](../../docs/testing/compose-reference.md).
+This Gradle project is retained as a source of executable Compose reference scenes. Its
+dependency versions are pinned in `build.gradle.kts` and the lockfile.
 
-Keep this local entry point so contributors starting in `tests/ComposeReference` can find the
-commands and pinned-reference contract without maintaining a second copy.
+The current Avalonia rewrite does not yet have a connected visual parity harness. Existing
+scenes may reflect the previous component library; validate each scene against the selected
+upstream revision before using it as an expected image. See [the rewrite starting point](../../docs/START_HERE.md).
