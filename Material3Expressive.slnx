@@ -1,9 +1,9 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Material3ExpressiveRefactor/Material3ExpressiveRefactor.csproj" />
-    <Project Path="src/Material3ExpressiveRefactor.Catalog/Material3ExpressiveRefactor.Catalog.csproj" />
+    <Project Path="src/Material3Expressive/Material3Expressive.csproj" />
+    <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Material3ExpressiveRefactor.Tests/Material3ExpressiveRefactor.Tests.csproj" />
+    <Project Path="tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj" />
   </Folder>
 </Solution>

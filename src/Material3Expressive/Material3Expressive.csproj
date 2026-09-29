@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia"/>
+        <PackageReference Include="PropertyGenerator.Avalonia"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities\MaterialColorUtilities.csproj"/>
+        <!-- Material Symbols Rounded is the first-party icon family for Material 3 Expressive.
+             It also moves the resolved render stack onto the repository's pinned SkiaSharp 4
+             baseline so variable fill, weight, grade and optical size remain available. -->
+        <ProjectReference Include="..\..\modules\MaterialSymbols\MaterialSymbols.Avalonia.Rounded\MaterialSymbols.Avalonia.Rounded.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Material3Expressive.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
+        <!-- Token identities are currently hand-authored in Tokens/MaterialTokens.*.cs.
+             No generator or JSONC token catalog is connected to this rewrite. -->
+    </ItemGroup>
+
+</Project>

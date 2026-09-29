@@ -28,8 +28,8 @@ submodules. Initialize them before building:
 git submodule update --init --recursive
 dotnet restore Material3Expressive.slnx
 dotnet build Material3Expressive.slnx --no-restore
-dotnet test tests/Material3ExpressiveRefactor.Tests/Material3ExpressiveRefactor.Tests.csproj --no-restore
-dotnet run --project src/Material3ExpressiveRefactor.Catalog
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --no-restore
+dotnet run --project src/Material3Expressive.Catalog
 ```
 
 **Fresh-clone limitation:** the current superproject commit pins at least one submodule commit

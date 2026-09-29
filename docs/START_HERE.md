@@ -1,7 +1,7 @@
 # Rewrite starting point
 
-This page is the current status and short work plan for `src/Material3ExpressiveRefactor`.
-It describes code in this branch, not the earlier `src/Material3Expressive` implementation.
+This page is the current status and short work plan for `src/Material3Expressive`
+on the `restart` branch. The previous implementation is available in the original worktree.
 
 ## What exists
 
@@ -12,7 +12,7 @@ It describes code in this branch, not the earlier `src/Material3Expressive` impl
 | Interaction | `Foundation/Interaction/` | State layers, ripples, and press-shape behaviour. |
 | Components | `Controls/`, `Styles/` | Button and IconButton families. The catalog demonstrates these and Surface. |
 | Motion | `Foundation/Motion/` | Current scalar spring/tween engine and frame scheduler. It will be migrated to the separate Compose animation implementation. |
-| Tests | `tests/Material3ExpressiveRefactor.Tests/` | Unit and headless tests for the current rewrite. No Compose visual parity harness is connected. |
+| Tests | `tests/Material3Expressive.Tests/` | Unit and headless tests for the current rewrite. No Compose visual parity harness is connected. |
 
 The old Raw-token → Material Value design documents described another implementation. This
 rewrite currently uses `MaterialTokenKey<T>`, `MaterialResource`, and `TokenExtension`.
