@@ -21,6 +21,8 @@
     <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/VisualParity/Material3Expressive.Parity/Material3Expressive.Parity.csproj" />
     <Project Path="tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj" />
+    <Project Path="tests/VisualParity/Material3Expressive.Parity.Tests/Material3Expressive.Parity.Tests.csproj" />
   </Folder>
 </Solution>

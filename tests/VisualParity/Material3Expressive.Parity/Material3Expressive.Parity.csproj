@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="ComposeAnimation.TestSupport" />
+    <ProjectReference Include="../../../src/Material3Expressive/Material3Expressive.csproj" />
+    <ProjectReference Include="../../../modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj" />
+  </ItemGroup>
+</Project>

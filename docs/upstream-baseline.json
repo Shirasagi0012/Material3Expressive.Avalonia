@@ -15,11 +15,20 @@
   },
   "producerDependencies": {
     "composeGradlePlugin": "1.13.0-alpha01",
-    "composeRuntimeUiFoundationAnimation": "1.13.0-alpha01",
+    "composeUiFoundationAnimation": "1.13.0-alpha01",
+    "composeRuntimeFacade": "org.jetbrains.compose.runtime:runtime-desktop:1.13.0-alpha01",
+    "resolvedJvmRuntime": "androidx.compose.runtime:runtime-desktop:1.13.0-alpha02",
+    "skiko": "0.152.0-alpha02",
+    "kotlinCompiler": "2.3.20",
+    "gradle": "9.7.1",
     "material3": "org.jetbrains.compose.material3:material3:1.13.0-alpha01",
     "material3Ripple": "org.jetbrains.compose.material3:material3-ripple:1.13.0-alpha01",
-    "resolvedDependencyGraphLocked": false,
-    "producerBuildAndRenderVerified": false
+    "dependencyLock": "tests/VisualParity/reference/gradle.lockfile",
+    "artifactVerification": "tests/VisualParity/reference/gradle/verification-metadata.xml",
+    "resolvedDependencyGraphLocked": true,
+    "producerBuildAndRenderVerified": true,
+    "verifiedEnvironment": "Windows x64; JDK 25.0.1; density=1; fontScale=1",
+    "verificationScope": "Locked producer build and real offscreen rendering; does not certify Avalonia component parity"
   },
   "sourceArtifacts": [
     {

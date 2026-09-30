@@ -1,0 +1,6 @@
+{
+  "id": "button.filled.dark",
+  "dark": true,
+  "component": "button",
+  "background": "#1C1B1F"
+}

@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "id": "button.filled.slot",
+  "component": "button",
+  "variant": "filled"
+}

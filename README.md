@@ -3,7 +3,8 @@
 基于 Avalonia 实现 Material 3 Expressive，以尽可能在视觉效果和动效上还原Compose material3为目标
 
 当前包含 Button、IconButton、Surface，以及 Token、颜色、图标、阴影和交互动画等基础能力。
-这些是现有实现范围，不代表所有组件已经对齐当前上游基线。当前尚未接入 Compose 视觉对比设施。
+这些是现有实现范围，不代表所有组件已经对齐当前上游基线。
+已接入 [Compose 视觉一致性测试](tests/VisualParity/README.md)，提供真实双端捕获、确定性动画回放及差异报告。
 
 ## 文档
 
@@ -12,6 +13,7 @@
 - [移植指南](docs/PORTING.md)：调查上游、实施移植、处理适配与记录决定。
 - [上游源码入口](AGENTS.md#上游源码)：日常移植所需的仓库位置与固定版本读取方式。
 - [基线选择与核验记录](docs/UPSTREAM_BASELINE.md)：升级上游、调查版本差异或维护参考产物时按需查阅；版本与校验值见 [JSON](docs/upstream-baseline.json)。
+- [视觉一致性测试](tests/VisualParity/README.md)：场景、运行命令、机器可读结果与当前验证边界。
 
 组件专属说明随组件放在 `Components/<组件>/README.md`，按需补充。
 重要本地设计在维护者确认后简要记录于 `docs/DECISIONS.md`，首次需要时再创建。
@@ -58,6 +60,7 @@ dotnet run --project src/Material3Expressive.Catalog
 - `src/Material3Expressive/`：控件库与主题入口。
 - `src/Material3Expressive.Catalog/`：测试与展示用 demo。
 - `tests/Material3Expressive.Tests/`：当前控件库测试。
+- `tests/VisualParity/`：Compose 参考端、Avalonia 捕获端、比较器及系统自身测试。
 - `modules/`：颜色、图标、阴影、字体等配套模块，部分为 Git 子模块。
 - `docs/`：通用架构、移植方法与上游依据。
 

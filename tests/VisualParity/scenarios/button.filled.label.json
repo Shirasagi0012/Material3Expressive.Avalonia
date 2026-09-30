@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "button.filled.label",
+  "component": "button",
+  "content": "text",
+  "required": [
+    "layout",
+    "raster",
+    "behavior",
+    "text",
+    "textLayers"
+  ]
+}

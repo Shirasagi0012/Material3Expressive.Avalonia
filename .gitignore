@@ -483,3 +483,8 @@ $RECYCLE.BIN/
 
 opencode.json
 /.agents/skills
+
+# Compose visual reference build/cache
+tests/VisualParity/reference/.gradle/
+tests/VisualParity/reference/.kotlin/
+tests/VisualParity/reference/build/

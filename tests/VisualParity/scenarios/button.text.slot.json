@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "id": "button.text.slot",
+  "component": "button",
+  "variant": "text"
+}

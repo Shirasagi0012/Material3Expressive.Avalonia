@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "id": "button.elevated.slot",
+  "component": "button",
+  "variant": "elevated"
+}

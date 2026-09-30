@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "motion.spring.irregular",
+  "component": "motion",
+  "motionSpec": "spring",
+  "framesUs": [
+    0,
+    7000,
+    16000,
+    29000,
+    45000,
+    69000,
+    84000,
+    100000,
+    150000,
+    220000,
+    400000,
+    600000
+  ],
+  "checkpoints": [
+    0,
+    1,
+    2,
+    4,
+    6,
+    9,
+    11
+  ],
+  "events": [
+    {
+      "atUs": 0,
+      "action": "target",
+      "value": 100
+    },
+    {
+      "atUs": 40000,
+      "action": "target",
+      "value": 0
+    },
+    {
+      "atUs": 65000,
+      "action": "target",
+      "value": 60
+    }
+  ],
+  "required": [
+    "layout",
+    "raster",
+    "motion",
+    "behavior"
+  ]
+}

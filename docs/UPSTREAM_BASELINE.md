@@ -5,7 +5,7 @@ reference-artifact work. Routine component porting does not require reading it; 
 repository locations and pinned-source commands in [AGENTS.md](../AGENTS.md#上游源码).
 
 Selected on 2026-09-30. These pins are the target for subsequent component migration and
-the forthcoming visual-parity producer. They do not certify that the existing Avalonia
+the visual-parity producer. They do not certify that the existing Avalonia
 implementation has already been migrated or visually verified against this target.
 
 Machine-readable pins and source-artifact checksums: [upstream-baseline.json](upstream-baseline.json).
@@ -24,12 +24,17 @@ The AndroidX commit timestamp is 2026-08-20 02:10:24 UTC. The Core commit timest
 The latter is the **Core** repository, not the similarly named `compose-multiplatform`
 repository containing the Gradle plugin, release notes and examples.
 
-For the future producer, pin `org.jetbrains.compose` and the Compose runtime, UI,
+For the producer, pin `org.jetbrains.compose` and the Compose runtime facade, UI,
 foundation, animation, Material3 and Material3 ripple dependencies to `1.13.0-alpha01`.
 The Gradle plugin uses the same release version but belongs to a different repository.
 Material3 must be declared explicitly; do not inherit the previous project's
 `material3:1.12.0-alpha03` dependency. The complete resolved dependency graph, compiler,
-JDK and native renderer checksums still need to be locked when the producer is built.
+JDK and native renderer are recorded by the [producer](../tests/VisualParity/README.md).
+Its compile/runtime graphs use Gradle strict dependency locking and SHA256 artifact verification.
+The JVM runtime facade forwards to `androidx.compose.runtime:runtime-desktop:1.13.0-alpha02`;
+Skiko resolves to `0.152.0-alpha02`. Do not substitute the facade version for the resolved runtime version.
+The producer was built and rendered on Windows x64 with JDK 25.0.1. This verifies that the reference
+can execute; component parity remains a separate per-scenario result.
 
 ## Why this pair
 
@@ -95,7 +100,7 @@ release notes and published sources differ.
 
 These counts cover the listed modules and source sets, not all of AndroidX or all
 platform implementations. The Desktop JAR checks establish source provenance; no
-producer was compiled or rendered during this baseline selection, and no visual or
+producer was compiled or rendered during the original baseline selection, and no visual or
 animation parity result is implied.
 
 ## Reading the pinned sources locally

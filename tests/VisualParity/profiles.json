@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "name": "strict-v1",
+  "provenance": "Conservative initial gate. No text or edge pixels are exempt. Raster calibration is not yet accepted.",
+  "layoutDip": 0.01,
+  "motionAbsolute": 0.001,
+  "channelDelta": 2,
+  "maximumDifferentPixels": 0
+}
