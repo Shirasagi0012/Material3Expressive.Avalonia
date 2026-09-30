@@ -105,9 +105,27 @@ public static class ComposeShadowRenderer
             var localToDevice = canvas.TotalMatrix;
             if (localToDevice.Persp0 != 0 || localToDevice.Persp1 != 0 || localToDevice.Persp2 != 1)
                 throw new NotSupportedException("Perspective transforms are outside MaterialSkiaShadow's first-stage contract.");
+            // DrawShadow converts the device light through the inverse CTM before dispatch.
+            // A singular CTM therefore produces no shadow on either native rendering path.
+            if (!localToDevice.TryInvert(out var deviceToLocal))
+                return;
 
             using var path = CreatePath(_shape);
-            var lightPosition = new SKPoint(_lighting.LightX, _lighting.LightY);
+            // Preserve DrawShadow's device -> local -> device float rounding.
+            var lightPosition = localToDevice.MapPoint(deviceToLocal.MapPoint(
+                new SKPoint(_lighting.LightX, _lighting.LightY)));
+            var ambientColor = MultiplyAlpha(
+                resolved.AmbientColor,
+                _lighting.AmbientAlpha * resolved.Opacity);
+            var spotColor = MultiplyAlpha(
+                resolved.SpotColor,
+                _lighting.SpotAlpha * resolved.Opacity);
+            if (lease.GrContext is not null && AnalyticShadowRenderer.TryDraw(
+                    canvas, path, localToDevice, resolved.ElevationPx, lightPosition,
+                    _lighting.LightZ, _lighting.LightRadius, resolved.TransparentOccluder,
+                    ambientColor, spotColor))
+                return;
+
             var ambient = ConvexShadowTessellator.MakeAmbient(
                 path,
                 localToDevice,
@@ -126,17 +144,11 @@ public static class ComposeShadowRenderer
             try
             {
                 canvas.SetMatrix(SKMatrix.Identity);
-                var ambientColor = MultiplyAlpha(
-                    resolved.AmbientColor,
-                    _lighting.AmbientAlpha * resolved.Opacity);
                 if (ambient is null)
                     DrawAmbientBlurFallback(canvas, path, localToDevice, resolved.ElevationPx, ambientColor);
                 else
                     DrawMesh(canvas, ambient, ambientColor, gaussianEffect);
 
-                var spotColor = MultiplyAlpha(
-                    resolved.SpotColor,
-                    _lighting.SpotAlpha * resolved.Opacity);
                 if (spot is null)
                 {
                     DrawSpotBlurFallback(

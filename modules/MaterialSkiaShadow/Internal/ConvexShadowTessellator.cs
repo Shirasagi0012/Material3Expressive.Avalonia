@@ -2,7 +2,7 @@
  * Copyright 2017 Google LLC
  *
  * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
+ * found in the LICENSE.Skia.txt file.
  *
  * Managed, deliberately scoped adaptation of Skia m150 SkShadowTessellator.cpp,
  * SkPolyUtils.cpp, and GrPathUtils.cpp. This implementation accepts one flat simple contour
@@ -22,10 +22,25 @@ internal static class ConvexShadowTessellator
         float elevationPx,
         bool transparent)
     {
-        var polygon = PathPolygon.CreateAmbient(path, localToDevice);
+        // AmbientVerticesFactory tessellates without translation, then translates the mesh.
+        // Quantizing the already translated contour changes fractional raster coverage.
+        var noTranslation = localToDevice;
+        noTranslation.TransX = 0;
+        noTranslation.TransY = 0;
+        var polygon = PathPolygon.CreateAmbient(path, noTranslation);
         var outset = ShadowMetrics.AmbientBlurRadius(elevationPx);
         var inset = outset * ShadowMetrics.AmbientReciprocalAlpha(elevationPx) - outset;
-        return new Builder(polygon.Path, [], elevationPx, transparent).TryBuild(inset, outset, false);
+        var mesh = new Builder(polygon.Path, [], elevationPx, transparent, path.Bounds)
+            .TryBuild(inset, outset, false);
+        if (mesh is not null)
+        {
+            for (var index = 0; index < mesh.Positions.Count; index++)
+            {
+                var point = mesh.Positions[index];
+                mesh.Positions[index] = new SKPoint(point.X + localToDevice.TransX, point.Y + localToDevice.TransY);
+            }
+        }
+        return mesh;
     }
 
     public static ShadowMesh? MakeSpot(
@@ -57,12 +72,15 @@ internal static class ConvexShadowTessellator
         var offsetLength = MathF.Sqrt(
             relativeSpot.Translation.X * relativeSpot.Translation.X +
             relativeSpot.Translation.Y * relativeSpot.Translation.Y);
-        var occluderCoversUmbra = !transparent &&
-            MathF.Abs(relativeSpot.Translation.X) <= 0.5f * deviceBounds.Width &&
-            MathF.Abs(relativeSpot.Translation.Y) <= 0.5f * deviceBounds.Height &&
+        var transparentUmbra = transparent ||
+            MathF.Abs(relativeSpot.Translation.X) > 0.5f * deviceBounds.Width ||
+            MathF.Abs(relativeSpot.Translation.Y) > 0.5f * deviceBounds.Height;
+        var occluderCoversUmbra = !transparentUmbra &&
             offsetLength * relativeSpot.Scale + relativeSpot.Scale < relativeSpot.Radius;
+        if (!transparentUmbra && !occluderCoversUmbra && !path.IsConvex)
+            transparentUmbra = true;
 
-        if (occluderCoversUmbra && localToDevice.Persp0 == 0 && localToDevice.Persp1 == 0)
+        if ((transparentUmbra || occluderCoversUmbra) && localToDevice.Persp0 == 0 && localToDevice.Persp1 == 0)
         {
             var noTranslation = localToDevice;
             noTranslation.TransX = 0;
@@ -79,7 +97,7 @@ internal static class ConvexShadowTessellator
                 noTranslation,
                 canonicalSpot.Scale,
                 canonicalSpot.Translation);
-            var canonicalMesh = new Builder(canonicalPolygon.Path, canonicalPolygon.Clip, elevationPx, false)
+            var canonicalMesh = new Builder(canonicalPolygon.Path, canonicalPolygon.Clip, elevationPx, transparentUmbra, path.Bounds)
                 .TryBuild(canonicalSpot.Radius, canonicalSpot.Radius, true);
             if (canonicalMesh is not null)
             {
@@ -105,7 +123,7 @@ internal static class ConvexShadowTessellator
             lightZ,
             lightRadius);
         var polygon = PathPolygon.CreateSpot(path, localToDevice, spot.Scale, spot.Translation);
-        return new Builder(polygon.Path, polygon.Clip, elevationPx, transparent)
+        return new Builder(polygon.Path, polygon.Clip, elevationPx, transparentUmbra, path.Bounds)
             .TryBuild(spot.Radius, spot.Radius, true);
     }
 
@@ -121,6 +139,7 @@ internal static class ConvexShadowTessellator
         private readonly List<SKPoint> _clipVectors = [];
         private readonly SKPoint _centroid;
         private readonly bool _isConvex;
+        private readonly SKRect _originalBounds;
         private bool _transparent;
         private bool _validUmbra = true;
         private readonly float _direction;
@@ -140,13 +159,15 @@ internal static class ConvexShadowTessellator
             PathPolygon polygon,
             List<SKPoint> clip,
             float elevationPx,
-            bool transparent)
+            bool transparent,
+            SKRect originalBounds)
         {
             if (elevationPx < 0 || !float.IsFinite(elevationPx))
                 throw new ArgumentOutOfRangeException(nameof(elevationPx));
             if (polygon.Points.Count < 3)
                 throw new NotSupportedException("MaterialSkiaShadow requires one finite contour.");
 
+            _originalBounds = originalBounds;
             _path = polygon.Points;
             _clip = clip;
             _centroid = polygon.Centroid;
@@ -259,26 +280,15 @@ internal static class ConvexShadowTessellator
 
         private ShadowMesh? BuildConcave(float inset, float outset)
         {
+            inset = MathF.Min(inset, MathF.Min(
+                MathF.Abs(_originalBounds.Width * 0.5f), MathF.Abs(_originalBounds.Height * 0.5f)));
             if (!SimplePolygonOffset.TryCreate(_path, inset, out var umbra, out var umbraIndices) ||
                 !SimplePolygonOffset.TryCreate(_path, -outset, out var penumbra, out var penumbraIndices) ||
                 umbra.Count == 0 || penumbra.Count == 0)
                 return null;
 
             StitchConcaveRings(umbra, umbraIndices, penumbra, penumbraIndices);
-            if (_transparent)
-                FillTransparentUmbra(umbra);
             return _mesh.Indices.Count > 0 ? _mesh : null;
-        }
-
-        private void FillTransparentUmbra(List<SKPoint> umbra)
-        {
-            var centerIndex = _mesh.Positions.Count;
-            AddVertex(_centroid, UmbraColor);
-            var firstIndex = _mesh.Positions.Count;
-            foreach (var point in umbra)
-                AddVertex(point, UmbraColor);
-            for (var index = 0; index < umbra.Count; index++)
-                AppendTriangle(centerIndex, firstIndex + index, firstIndex + (index + 1) % umbra.Count);
         }
 
         private void StitchConcaveRings(
@@ -287,6 +297,7 @@ internal static class ConvexShadowTessellator
             List<SKPoint> penumbra,
             List<int> penumbraIndices)
         {
+            var indexMap = new ushort[umbra.Count];
             var currentPenumbra = IndexOfMinimum(penumbraIndices);
             var currentUmbra = IndexOfMinimum(umbraIndices);
             var maximumPenumbraIndex = _path.Count - 1;
@@ -311,6 +322,7 @@ internal static class ConvexShadowTessellator
             var previousPenumbraIndex = 0;
             AddVertex(umbra[currentUmbra], UmbraColor);
             _previousUmbraIndex = 1;
+            indexMap[currentUmbra] = 1;
             var nextPenumbra = (currentPenumbra + 1) % penumbra.Count;
             var nextUmbra = (currentUmbra + 1) % umbra.Count;
             var guard = 0;
@@ -327,6 +339,7 @@ internal static class ConvexShadowTessellator
                     var currentPenumbraIndex = _mesh.Positions.Count - 1;
                     AddVertex(umbra[nextUmbra], UmbraColor);
                     var currentUmbraIndex = _mesh.Positions.Count - 1;
+                    indexMap[nextUmbra] = checked((ushort)currentUmbraIndex);
                     AppendQuad(previousPenumbraIndex, currentPenumbraIndex, _previousUmbraIndex, currentUmbraIndex);
                     previousPenumbraIndex = currentPenumbraIndex;
                     penumbraIndices[currentPenumbra] += _path.Count;
@@ -355,6 +368,7 @@ internal static class ConvexShadowTessellator
                 {
                     AddVertex(umbra[nextUmbra], UmbraColor);
                     var currentUmbraIndex = _mesh.Positions.Count - 1;
+                    indexMap[nextUmbra] = checked((ushort)currentUmbraIndex);
                     AppendTriangle(_previousUmbraIndex, previousPenumbraIndex, currentUmbraIndex);
                     _previousUmbraIndex = currentUmbraIndex;
                     umbraIndices[currentUmbra] += _path.Count;
@@ -368,6 +382,12 @@ internal static class ConvexShadowTessellator
             AddVertex(umbra[nextUmbra], UmbraColor);
             var finalUmbraIndex = _mesh.Positions.Count - 1;
             AppendQuad(previousPenumbraIndex, finalPenumbraIndex, _previousUmbraIndex, finalUmbraIndex);
+            if (_transparent)
+            {
+                // Native stitching retains the rings and any emitted ears if triangulation
+                // cannot finish; it does not replace the whole shadow with blur in this case.
+                SimplePolygonTriangulator.TryAppend(umbra, indexMap, _mesh.Indices);
+            }
         }
 
         private static int IndexOfMinimum(List<int> values)
@@ -757,7 +777,7 @@ internal static class ConvexShadowTessellator
 
             if (result.Count > 1 && EqualsWithinTolerance(result[0], result[^1], cleanupTolerance))
                 result.RemoveAt(result.Count - 1);
-            return IsConvexPolygon(result);
+            return SimplePolygonSweep.IsConvex(result);
         }
 
         private static bool TryComputeSegmentIntersection(
@@ -788,7 +808,8 @@ internal static class ConvexShadowTessellator
                     var secondLengthSquared = Dot(secondVector, secondVector);
                     if (!IsUsableVector(secondVector, secondLengthSquared))
                     {
-                        if (MathF.Sqrt(Dot(delta, delta)) <= NearlyZero)
+                        if (!float.IsFinite(delta.X) || !float.IsFinite(delta.Y) ||
+                            (delta.X == 0 && delta.Y == 0))
                         {
                             intersection = first.Origin;
                             firstParameter = 0;
@@ -878,26 +899,6 @@ internal static class ConvexShadowTessellator
             edges[edge.Next].Previous = edge.Previous;
             if (index == head)
                 head = edge.Next == index ? -1 : edge.Next;
-        }
-
-        private static bool IsConvexPolygon(List<SKPoint> polygon)
-        {
-            if (polygon.Count < 3)
-                return false;
-            var sign = 0;
-            for (var index = 0; index < polygon.Count; index++)
-            {
-                var cross = Cross(
-                    Subtract(polygon[(index + 1) % polygon.Count], polygon[index]),
-                    Subtract(polygon[(index + 2) % polygon.Count], polygon[(index + 1) % polygon.Count]));
-                if (MathF.Abs(cross) <= NearlyZero * NearlyZero)
-                    continue;
-                var currentSign = cross > 0 ? 1 : -1;
-                if (sign != 0 && sign != currentSign)
-                    return false;
-                sign = currentSign;
-            }
-            return sign != 0;
         }
 
         private sealed class InsetEdge
@@ -1020,12 +1021,12 @@ internal static class ConvexShadowTessellator
             SKPoint shadowTranslation)
         {
             var result = new PathPolygon();
+            var shadowTransform = SKMatrix.Concat(
+                new SKMatrix(shadowScale, 0, shadowTranslation.X, 0, shadowScale, shadowTranslation.Y, 0, 0, 1),
+                localToDevice);
             SKPoint ShadowTransform(SKPoint point)
             {
-                var device = localToDevice.MapPoint(point);
-                return new SKPoint(
-                    device.X * shadowScale + shadowTranslation.X,
-                    device.Y * shadowScale + shadowTranslation.Y);
+                return shadowTransform.MapPoint(point);
             }
 
             result.Walk(path, ShadowTransform, point => localToDevice.MapPoint(point));
@@ -1244,8 +1245,8 @@ internal static class ConvexShadowTessellator
             if (Points.Count > 2)
             {
                 _centroid = new SKPoint(
-                    _centroid.X / (3f * _area) + Points[0].X,
-                    _centroid.Y / (3f * _area) + Points[0].Y);
+                    _centroid.X * (1f / (3f * _area)) + Points[0].X,
+                    _centroid.Y * (1f / (3f * _area)) + Points[0].Y);
                 if (!CheckConvexity(Points[^2], Points[^1], Points[0]))
                 {
                     Points[0] = Points[^1];

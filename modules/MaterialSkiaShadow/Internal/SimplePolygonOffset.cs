@@ -1,11 +1,15 @@
+/*
+ * Copyright 2017 Google LLC
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE.Skia.txt file.
+ */
 using SkiaSharp;
 
 namespace MaterialSkiaShadow.Internal;
 
 /// <summary>
 /// Scoped managed adaptation of the m150 SkOffsetSimplePolygon support used by shadow
-/// tessellation. The intersection sweep is intentionally quadratic: Material contours contain
-/// tens, not thousands, of vertices and this keeps the port independent of Skia's private trees.
+/// tessellation, including the native sweep's contour validation and endpoint comparisons.
 /// </summary>
 internal static class SimplePolygonOffset
 {
@@ -31,7 +35,7 @@ internal static class SimplePolygonOffset
         }
 
         var winding = Winding(input);
-        if (winding == 0 || !IsSimple(input))
+        if (winding == 0 || !SimplePolygonSweep.IsSimple(input))
             return false;
 
         var normals = new SKPoint[input.Count];
@@ -190,7 +194,7 @@ internal static class SimplePolygonOffset
             polygonIndices.RemoveAt(polygonIndices.Count - 1);
         }
 
-        return Winding(polygon) * winding > 0 && IsSimple(polygon);
+        return Winding(polygon) * winding > 0 && SimplePolygonSweep.IsSimple(polygon);
     }
 
     private static void AddEdge(List<Edge> edges, SKPoint first, SKPoint last, int start, int end) =>
@@ -292,7 +296,7 @@ internal static class SimplePolygonOffset
                 var secondLengthSquared = Dot(secondVector, secondVector);
                 if (!Usable(secondVector, secondLengthSquared))
                 {
-                    if (MathF.Sqrt(Dot(delta, delta)) <= NearlyZero)
+                    if (!float.IsFinite(delta.X) || !float.IsFinite(delta.Y) || (delta.X == 0 && delta.Y == 0))
                     {
                         intersection = firstOrigin;
                         firstParameter = secondParameter = 0;
@@ -364,34 +368,6 @@ internal static class SimplePolygonOffset
             head = edge.Next == index ? -1 : edge.Next;
     }
 
-    private static bool IsSimple(IReadOnlyList<SKPoint> points)
-    {
-        if (points.Count < 3 || points.Any(point => !float.IsFinite(point.X) || !float.IsFinite(point.Y)))
-            return false;
-        for (var first = 0; first < points.Count; first++)
-        {
-            var firstNext = (first + 1) % points.Count;
-            for (var second = first + 1; second < points.Count; second++)
-            {
-                var secondNext = (second + 1) % points.Count;
-                if (first == second || firstNext == second || secondNext == first)
-                    continue;
-                if (SegmentsProperlyIntersect(points[first], points[firstNext], points[second], points[secondNext]))
-                    return false;
-            }
-        }
-        return true;
-    }
-
-    private static bool SegmentsProperlyIntersect(SKPoint a, SKPoint b, SKPoint c, SKPoint d)
-    {
-        var abC = ComputeSide(a, Subtract(b, a), c);
-        var abD = ComputeSide(a, Subtract(b, a), d);
-        var cdA = ComputeSide(c, Subtract(d, c), a);
-        var cdB = ComputeSide(c, Subtract(d, c), b);
-        return abC * abD < 0 && cdA * cdB < 0;
-    }
-
     private static int Winding(IReadOnlyList<SKPoint> points)
     {
         if (points.Count < 3)
@@ -432,7 +408,15 @@ internal static class SimplePolygonOffset
         positive ? numerator < 0 || numerator > denominator : numerator > 0 || numerator < denominator;
     private static bool Usable(SKPoint vector, float lengthSquared) =>
         float.IsFinite(vector.X) && float.IsFinite(vector.Y) && lengthSquared != 0;
-    private static bool EqualsWithinTolerance(SKPoint first, SKPoint second, float tolerance = NearlyZero) =>
+    // Despite its name, the no-tolerance SkPointPriv overload tests CanNormalize, which in
+    // the pinned version only rejects non-finite or exactly zero vectors. An epsilon here
+    // changes edge removal and whether low-elevation contours fall back to blur.
+    private static bool EqualsWithinTolerance(SKPoint first, SKPoint second)
+    {
+        var delta = Subtract(first, second);
+        return !float.IsFinite(delta.X) || !float.IsFinite(delta.Y) || (delta.X == 0 && delta.Y == 0);
+    }
+    private static bool EqualsWithinTolerance(SKPoint first, SKPoint second, float tolerance) =>
         MathF.Abs(first.X - second.X) <= tolerance && MathF.Abs(first.Y - second.Y) <= tolerance;
     private static float Dot(SKPoint first, SKPoint second) => first.X * second.X + first.Y * second.Y;
     private static float Cross(SKPoint first, SKPoint second) => first.X * second.Y - first.Y * second.X;
