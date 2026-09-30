@@ -10,11 +10,12 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Tokens;
 using MaterialSkiaShadow;
 
-namespace Material3Expressive.Foundation.Rendering;
+namespace Material3Expressive.Components;
 
 /// <summary>Hosts one child and paints a Material container around it.</summary>
 /// <remarks>

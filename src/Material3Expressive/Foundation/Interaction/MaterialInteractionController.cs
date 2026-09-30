@@ -9,8 +9,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Controls;
-using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Tokens;
 

@@ -1,7 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        xmlns:controls="clr-namespace:Material3Expressive.Controls"
         xmlns:baseline="clr-namespace:Material3Expressive.Baseline"
         x:Class="Material3Expressive.Styles.MaterialTheme">
     <Styles.Resources>
@@ -15,24 +14,24 @@
                     <baseline:ElevationTokenSource />
                     <baseline:MotionTokenSource />
 
-                    <controls:ButtonSizesTokenSource />
-                    <controls:FilledButtonTokenSource />
-                    <controls:ElevatedButtonTokenSource />
-                    <controls:TonalButtonTokenSource />
-                    <controls:OutlinedButtonTokenSource />
-                    <controls:TextButtonTokenSource />
+                    <m3:ButtonSizesTokenSource />
+                    <m3:FilledButtonTokenSource />
+                    <m3:ElevatedButtonTokenSource />
+                    <m3:TonalButtonTokenSource />
+                    <m3:OutlinedButtonTokenSource />
+                    <m3:TextButtonTokenSource />
 
-                    <controls:IconButtonSizesTokenSource />
-                    <controls:StandardIconButtonTokenSource />
-                    <controls:FilledIconButtonTokenSource />
-                    <controls:TonalIconButtonTokenSource />
-                    <controls:OutlinedIconButtonTokenSource />
+                    <m3:IconButtonSizesTokenSource />
+                    <m3:StandardIconButtonTokenSource />
+                    <m3:FilledIconButtonTokenSource />
+                    <m3:TonalIconButtonTokenSource />
+                    <m3:OutlinedIconButtonTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Styles.Resources>
     
-    <StyleInclude Source="Surface.axaml" />
-    <StyleInclude Source="Button.axaml" />
-    <StyleInclude Source="IconButton.axaml" />
+    <StyleInclude Source="/Components/Surface/Surface.axaml" />
+    <StyleInclude Source="/Components/Button/Button.axaml" />
+    <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
 </Styles>

@@ -12,7 +12,7 @@ using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using static Material3Expressive.Tokens.MaterialTokens;
 
-namespace Material3Expressive.Controls;
+namespace Material3Expressive.Components;
 
 /// <summary>
 /// Baseline defaults for the five Button size tables (upstream ButtonXSmall/Small/Medium/Large/

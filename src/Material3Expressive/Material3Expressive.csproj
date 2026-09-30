@@ -30,4 +30,11 @@
              No generator or JSONC token catalog is connected to this rewrite. -->
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Update="MaterialTheme.axaml.cs">
+        <DependentUpon>MaterialTheme.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+    </ItemGroup>
+
 </Project>

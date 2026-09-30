@@ -7,7 +7,7 @@ using Material3Expressive.Foundation.Tokens;
 using MaterialSymbols;
 using static Material3Expressive.Tokens.MaterialTokens;
 
-namespace Material3Expressive.Controls;
+namespace Material3Expressive.Components;
 
 /// <summary>
 /// An icon-only button (upstream IconButton): a <see cref="Button"/> whose content is a Material
