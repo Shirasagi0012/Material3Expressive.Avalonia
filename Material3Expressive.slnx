@@ -1,4 +1,21 @@
 <Solution>
+  <Folder Name="/modules/">
+    <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/MaterialColorUtilities.Avalonia.csproj" />
+    <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Gallery/MaterialColorUtilities.Gallery.csproj" />
+    <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Tests/MaterialColorUtilities.Tests.csproj" />
+    <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities/MaterialColorUtilities.csproj" />
+    <Project Path="modules/MaterialColorUtilities/MaterialDesignTokens.Avalonia/MaterialDesignTokens.Avalonia.csproj" />
+    <Project Path="modules/MaterialSkiaShadow.Tests/MaterialSkiaShadow.Tests.csproj" />
+    <Project Path="modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Gallery/MaterialSymbols.Avalonia.Gallery.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Outlined/MaterialSymbols.Avalonia.Outlined.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Rounded/MaterialSymbols.Avalonia.Rounded.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Sharp/MaterialSymbols.Avalonia.Sharp.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Tests/MaterialSymbols.Avalonia.Tests.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia/MaterialSymbols.Avalonia.csproj" />
+    <Project Path="modules/MaterialSymbols/MaterialSymbols.Generator/MaterialSymbols.Generator.csproj" />
+    <Project Path="modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Material3Expressive/Material3Expressive.csproj" />
     <Project Path="src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj" />
