@@ -3,7 +3,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Material3Expressive.Baseline;
-using Material3Expressive.Controls;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Tokens;
 using Xunit;

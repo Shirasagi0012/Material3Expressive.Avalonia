@@ -6,7 +6,7 @@ using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Material3Expressive.Controls;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Rendering;
 using MaterialSymbols;
@@ -15,7 +15,7 @@ using Xunit;
 namespace Material3Expressive.Tests;
 
 /// <summary>
-/// The compiled-AXAML path of the IconButton slice: Styles/IconButton.axaml loads, the implicit
+/// The compiled-AXAML path of the IconButton slice: Components/IconButton/IconButton.axaml loads, the implicit
 /// {x:Type m3:IconButton} theme applies the standard defaults, the named variant themes reproduce
 /// their baseline colors through BasedOn, and a size class re-points the metric slots live.
 /// Interaction states (pointer/keyboard) are verified manually for now.

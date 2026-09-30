@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
 using Xunit;
 

@@ -10,6 +10,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
 using Xunit;
 

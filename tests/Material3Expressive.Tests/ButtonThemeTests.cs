@@ -8,13 +8,14 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
 using Xunit;
 
 namespace Material3Expressive.Tests;
 
 /// <summary>
-/// The compiled-AXAML path of the Button slice: Styles/Button.axaml loads, the implicit
+/// The compiled-AXAML path of the Button slice: Components/Button/Button.axaml loads, the implicit
 /// {x:Type Button} theme applies the filled defaults (metrics now resolved from the shared
 /// small-size table), and the {m3:Token} setter bindings re-resolve on a ThemeVariant switch.
 /// Interaction states (pointer/keyboard) are verified manually for now.

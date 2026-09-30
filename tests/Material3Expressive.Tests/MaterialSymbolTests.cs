@@ -7,6 +7,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
 using MaterialSymbols;
 using SymbolVariation = MaterialSymbols.Avalonia.SymbolVariation;

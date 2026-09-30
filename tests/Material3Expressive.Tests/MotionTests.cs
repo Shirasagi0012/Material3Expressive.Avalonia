@@ -12,7 +12,7 @@ using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Tokens;
-using Material3Expressive.Controls;
+using Material3Expressive.Components;
 using Xunit;
 
 namespace Material3Expressive.Tests;

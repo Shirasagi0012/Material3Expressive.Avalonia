@@ -3,7 +3,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Material3Expressive.Baseline;
-using Material3Expressive.Controls;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Tokens;
 using MaterialColorUtilities.DynamicColors;
 using MaterialColorUtilities.HCT;
@@ -14,7 +14,7 @@ using Xunit;
 namespace Material3Expressive.Tests;
 
 /// <summary>
-/// Shared harness for the Button theme tests: loads the compiled Styles/Button.axaml, computes
+/// Shared harness for the Button theme tests: loads the compiled Components/Button/Button.axaml, computes
 /// the expected scheme colors straight from MaterialColorUtilities (same seed/spec as the
 /// baseline ColorScheme source), and shows a real headless window carrying the full baseline
 /// token set.
@@ -23,7 +23,7 @@ internal static class ButtonThemeFixture
 {
     public static Avalonia.Styling.Styles LoadButtonStyles() =>
         Assert.IsType<Avalonia.Styling.Styles>(
-            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Styles/Button.axaml")));
+            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Components/Button/Button.axaml")));
 
     public static Color SchemeColor(bool isDark, Func<DynamicScheme, ArgbColor> pick)
     {

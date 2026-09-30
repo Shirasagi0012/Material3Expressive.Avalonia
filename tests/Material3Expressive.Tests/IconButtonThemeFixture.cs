@@ -2,7 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Material3Expressive.Baseline;
-using Material3Expressive.Controls;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Tokens;
 using MaterialSymbols;
 using Xunit;
@@ -11,7 +11,7 @@ namespace Material3Expressive.Tests;
 
 /// <summary>
 /// Shared harness for the IconButton theme tests, mirroring <see cref="ButtonThemeFixture"/>:
-/// loads the compiled Styles/IconButton.axaml and shows a real headless window carrying the full
+/// loads the compiled Components/IconButton/IconButton.axaml and shows a real headless window carrying the full
 /// baseline token set plus the icon button sources, hosting one IconButton with a real symbol.
 /// Expected colors come from <see cref="ButtonThemeFixture.SchemeColor"/>.
 /// </summary>
@@ -19,7 +19,7 @@ internal static class IconButtonThemeFixture
 {
     public static Avalonia.Styling.Styles LoadIconButtonStyles() =>
         Assert.IsType<Avalonia.Styling.Styles>(
-            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Styles/IconButton.axaml")));
+            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Components/IconButton/IconButton.axaml")));
 
     /// <summary>
     /// Shows a window with the whole baseline token set and the IconButton styles, hosting one

@@ -11,6 +11,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Baseline;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using Xunit;
@@ -124,10 +125,10 @@ public class MaterialSurfaceRenderTests
     public void ElevatedButton_HoverPaintsStateLayer()
     {
         var styles = Assert.IsAssignableFrom<Avalonia.Styling.Styles>(
-            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Styles/MaterialTheme.axaml")));
+            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
         // The variant themes live in Button.axaml's own Styles.Resources, not in MaterialTheme's.
         var buttonStyles = Assert.IsAssignableFrom<Avalonia.Styling.Styles>(
-            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Styles/Button.axaml")));
+            AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Components/Button/Button.axaml")));
         var window = new MotionTestWindow()
         {
             Width = 200,

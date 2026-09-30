@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Baseline;
+using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using Xunit;
@@ -23,7 +24,7 @@ public class MaterialSurfaceTests
 {
     private static Avalonia.Styling.Styles LoadStyles(string name) =>
         Assert.IsAssignableFrom<Avalonia.Styling.Styles>(
-            AvaloniaXamlLoader.Load(new Uri($"avares://Material3Expressive/Styles/{name}")));
+            AvaloniaXamlLoader.Load(new Uri($"avares://Material3Expressive/{name}")));
 
     private static Color BrushColor(IBrush? brush) => Assert.IsType<ImmutableSolidColorBrush>(brush).Color;
 
@@ -41,7 +42,7 @@ public class MaterialSurfaceTests
             Resources = resources,
             RequestedThemeVariant = ThemeVariant.Light,
         };
-        window.Styles.Add(LoadStyles("Surface.axaml"));
+        window.Styles.Add(LoadStyles("Components/Surface/Surface.axaml"));
 
         text = new TextBlock { Text = "Hello" };
         surface = new MaterialSurface { Child = text };
@@ -133,7 +134,7 @@ public class MaterialSurfaceTests
             Resources = resources,
             RequestedThemeVariant = ThemeVariant.Light,
         };
-        window.Styles.Add(LoadStyles("Surface.axaml"));
+        window.Styles.Add(LoadStyles("Components/Surface/Surface.axaml"));
 
         inner = new MaterialSurface { TonalElevation = 3, Child = new TextBlock { Text = "Inner" } };
         outer = new MaterialSurface { TonalElevation = 1, Child = inner };
