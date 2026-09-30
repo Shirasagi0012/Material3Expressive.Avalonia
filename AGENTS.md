@@ -1,16 +1,41 @@
 # Material 3 Expressive
 
-基于 Avalonia 实现 Material 3 Expressive，目标是尽可能接近 Compose 的视觉效果、动画和交互手感。
+基于 Avalonia 实现 Material 3 Expressive，以固定版本的 Compose Material3 为依据，忠实移植其逻辑、视觉效果和交互行为。
 
 ## 项目结构
 
-- `src/Material3Expressive/`：控件库，包含基础能力、Token、控件和样式。
+- `src/Material3Expressive/`：控件库；`Components/` 按组件组织，`Foundation/` 提供共享能力，`Tokens/` 和 `Baseline/` 提供 Token 定义与默认值。
 - `src/Material3Expressive.Catalog/`：组件展示应用。
 - `tests/Material3Expressive.Tests/`：控件库测试。
 - `modules/`：颜色、图标、字体、阴影等配套模块与子模块。
-- `docs/START_HERE.md`：当前重写的实现说明与后续工作。
+
+## 开始工作
+
+- 环境、依赖和运行命令见 [README.md](README.md)。
+- 移植或修改组件前，按下方“上游源码”直接定位参考，阅读 [移植指南](docs/PORTING.md)和[架构说明](docs/ARCHITECTURE.md)中相关能力；组件目录有 README 时一并阅读。
+- 修改基础能力前，阅读架构说明并检查实际调用方。`docs/DECISIONS.md` 存在时，检查相关决定及其适用范围。
+- 文档只按需更新，不要求每个任务创建计划、对应表或决策记录。组件说明随组件放置；通用能力与接入规则留在架构说明。
 
 提交使用惯例式提交风格的提交信息。
+
+## 上游源码
+
+| 参考 | 本机仓库 | 固定版本字段（`docs/upstream-baseline.json`） |
+| --- | --- | --- |
+| AndroidX：Material3 逻辑的默认依据 | `D:\source\androidx` | `androidx.commit` |
+| Compose Multiplatform Core：桌面实现与可执行参考的源码 | `D:\source\compose-multiplatform-core` | `composeMultiplatformCore.commit` |
+
+按 JSON 中的 commit 读取，不以本地 HEAD 或浮动版本替代。在项目根目录可这样读取 Button：
+
+```powershell
+$upstream = Get-Content docs/upstream-baseline.json -Raw | ConvertFrom-Json
+git -C D:\source\androidx show "$($upstream.androidx.commit):compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt"
+git -C D:\source\compose-multiplatform-core show "$($upstream.composeMultiplatformCore.commit):compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt"
+```
+
+涉及平台实现时查看 Core；发现两者行为不同则明确提出，不自行混用。其他机器可使用不同的本地路径，
+仓库 URL 和固定 commit 仍以 JSON 为准。
+[基线选择与核验记录](docs/UPSTREAM_BASELINE.md)仅在升级上游、调查版本差异或维护参考产物时按需阅读，日常组件移植不必通读。
 
 ## 设计取向
 
@@ -24,9 +49,12 @@
 
 ## API 与移植
 
-- 上游源码与可执行参考固定在 `docs/UPSTREAM_BASELINE.md` 和 `docs/upstream-baseline.json`。读取指定 commit，不以本地上游工作区的 HEAD 或浮动版本替代；平台差异按基线文档处理。
+- 能直接移植的逻辑直接移植，保留算法、数据关系、状态转换、执行顺序和有意义的职责划分。不因本地写法更熟悉而重新设计或省略行为。
+- 先检查已有基础能力及其限制。能力不足时指出具体缺口，不在组件内静默建立重复机制，也不自行降级效果。
+- 框架适配必须说明具体原因与语义影响；已有明确决定可在其适用范围内直接复用。“更符合 Avalonia”本身不足以支持改写。
+- 新的非平凡 API、共享抽象、职责调整和上游语义偏离由维护者决定。先提供具体问题、推荐方案、必要的调用示例和影响，确认后实施；已有授权不重复确认，普通等价转换不增加审批步骤。确认后的重要决定按移植指南简要记录。
+- 分别说明尚未实现、未经验证和已接受的差异。本地现有代码或编译成功不能独自证明上游一致性，也不能证明某个设计已获批准。不得自行修改规范来迁就实现。
 - 重视经过使用场景推敲的统一 API；相似操作采用一致的命名、参数结构和返回语义。
-- 非平凡的 API 设计先给出简短草图和典型调用示例，必要时兼顾 C# 与 XAML；普通小改动不增加设计流程。
 - 实现前先了解已有基础能力和对应的上游实现。影响效果的算法、参数、状态转换与边界条件应便于与 Compose 对照。
 - 框架集成和对外 API 结合 C# 与 Avalonia 的使用方式设计。发生一致性、平台约束与复杂度的冲突时，说明具体取舍，不自行以近似效果替代既定目标。
 

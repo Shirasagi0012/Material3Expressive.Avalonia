@@ -1,11 +1,16 @@
-# Pinned Compose reference
+# Upstream baseline selection and verification
+
+This is a maintenance record for upstream upgrades, version-difference investigations and
+reference-artifact work. Routine component porting does not require reading it; use the
+repository locations and pinned-source commands in [AGENTS.md](../AGENTS.md#上游源码).
 
 Selected on 2026-09-30. These pins are the target for subsequent component migration and
 the forthcoming visual-parity producer. They do not certify that the existing Avalonia
 implementation has already been migrated or visually verified against this target.
 
 Machine-readable pins and source-artifact checksums: [upstream-baseline.json](upstream-baseline.json).
-Current implementation status and next work: [START_HERE.md](START_HERE.md).
+Current architecture and known gaps: [ARCHITECTURE.md](ARCHITECTURE.md).
+Component migration workflow: [PORTING.md](PORTING.md).
 
 ## Selected commits
 
