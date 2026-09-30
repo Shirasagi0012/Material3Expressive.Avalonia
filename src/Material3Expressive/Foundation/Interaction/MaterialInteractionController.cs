@@ -7,7 +7,9 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using Material3Expressive.Foundation.Motion;
+using ComposeAnimation;
+using ComposeAnimation.Runtime;
+using Material3Expressive.Controls;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Tokens;
@@ -38,12 +40,13 @@ namespace Material3Expressive.Foundation.Interaction;
 internal sealed class MaterialInteractionController
 {
     private readonly Control _owner;
-    private readonly MaterialMotionController _motion;
+    private VisualAnimationScope? _motion;
     private readonly List<RippleAnimation> _ripples = [];
-    private readonly List<InteractionState> _stateLayerInteractions = [];
+    private readonly List<InteractionState> _interactions = [];
     private readonly SolidColorBrush _alphaReplacedBrush = new();
 
-    private TweenAnimation? _stateLayerAlpha;
+    private Animatable<double>? _stateLayerAlpha;
+    private ButtonElevationController? _buttonElevation;
     private MaterialSurface? _presenter;
     private InteractionState _interaction;
     private InteractionState _shownInteraction;
@@ -57,10 +60,6 @@ internal sealed class MaterialInteractionController
     internal MaterialInteractionController(Control owner)
     {
         _owner = owner ?? throw new ArgumentNullException(nameof(owner));
-        _motion = new MaterialMotionController(owner);
-        _motion.BeforeOwnerFrame += RemoveCompletedRipples;
-        _motion.AfterOwnerFrame += PublishInteractionFrame;
-        _motion.Activate();
 
         _owner.PointerEntered += (_, _) => Set(InteractionState.Hovered, true);
         _owner.PointerExited += (_, _) => Set(InteractionState.Hovered, false);
@@ -96,13 +95,25 @@ internal sealed class MaterialInteractionController
         _owner.DetachedFromLogicalTree += OnDetachedFromLogicalTree;
         _owner.ResourcesChanged += (_, _) => OnTokensChanged();
         _owner.ActualThemeVariantChanged += (_, _) => OnTokensChanged();
+        _owner.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == InputElement.IsEffectivelyEnabledProperty)
+            {
+                if (!IsEnabled)
+                    ClearInputInteractions();
+                NotifyInteractionChanged();
+            }
+            else if (change.Property == MaterialButton.ElevationProperty)
+                UpdateButtonElevation();
+        };
     }
 
-    /// <summary>This owner's animations and the frame loop that drives them.</summary>
-    internal MaterialMotionController Motion => _motion;
+    /// <summary>The attached presenter's shared frame clock and cancellation lifetime.</summary>
+    internal VisualAnimationScope? Motion => _motion;
 
     /// <summary>Which interactions the owner is currently under.</summary>
     internal InteractionState Interaction => _interaction;
+    internal bool IsEnabled => _owner.IsEffectivelyEnabled;
 
     /// <summary>The state layer's current opacity, mid-fade included.</summary>
     internal double StateLayerOpacity => _stateLayerAlpha?.Value ?? 0;
@@ -127,17 +138,41 @@ internal sealed class MaterialInteractionController
     internal IDisposable Attach(MaterialSurface presenter)
     {
         ArgumentNullException.ThrowIfNull(presenter);
+        if (_presenter is not null && !ReferenceEquals(_presenter, presenter))
+            ResetAnimations();
         _presenter = presenter;
+        _motion ??= VisualAnimationScope.Create(_owner);
+        ResolveOpacities();
+        UpdateStateLayer();
         // Sync the state the surface missed before attaching (e.g. an already-hovered template
         // swap), so the first frame paints the right thing.
-        presenter.OnInteractionChanged(_interaction);
+        NotifyInteractionChanged();
         return new PresenterLease(this, presenter);
     }
 
     private void Detach(MaterialSurface presenter)
     {
         if (ReferenceEquals(_presenter, presenter))
+        {
+            ResetAnimations();
             _presenter = null;
+            ClearInputInteractions();
+        }
+    }
+
+    private void ResetAnimations()
+    {
+        _buttonElevation?.Dispose();
+        _buttonElevation = null;
+        _presenter?.ResetMotion();
+        var motion = _motion;
+        _motion = null;
+        motion?.Dispose();
+        _stateLayerAlpha = null;
+        _shownInteraction = InteractionState.None;
+        foreach (var ripple in _ripples.ToArray())
+            ripple.Dispose();
+        _ripples.Clear();
     }
 
     /// <summary>
@@ -185,7 +220,7 @@ internal sealed class MaterialInteractionController
             }
             else
             {
-                var radius = RippleRadius ?? RippleAnimationEndRadius(area.Size, bounded: false);
+                var radius = RippleRadius ?? RippleAnimation.EndRadius(area.Size, bounded: false);
                 using (context.PushOpacity(MaterialInteractionRendering.ComposeOpacity(opacity)))
                     context.DrawEllipse(composeColorBrush, null, area.Center, radius, radius);
             }
@@ -195,6 +230,8 @@ internal sealed class MaterialInteractionController
     /// <summary>Sets or clears one interaction flag.</summary>
     internal void Set(InteractionState flag, bool active)
     {
+        if (active && !IsEnabled)
+            return;
         var updated = active ? _interaction | flag : _interaction & ~flag;
         if (updated == _interaction)
             return;
@@ -203,39 +240,50 @@ internal sealed class MaterialInteractionController
         UpdateInteractionStack(flag, active);
         UpdateStateLayer();
         NotifyInteractionChanged();
-        Motion.RequestFrame();
-        _presenter?.OnInteractionFrame();
     }
 
     /// <summary>Begins the pressed state, raising a ripple at <paramref name="origin" />.</summary>
     internal void StartPress(Point origin)
     {
-        if (_interaction.HasFlag(InteractionState.Pressed))
+        if (!IsEnabled || _interaction.HasFlag(InteractionState.Pressed))
             return;
 
         Set(InteractionState.Pressed, true);
 
         var presenter = _presenter;
-        if (presenter is null || presenter.Bounds.Width <= 0 || presenter.Bounds.Height <= 0)
+        if (presenter is null || Motion is not { IsEnding: false } motion
+            || presenter.Bounds.Width <= 0 || presenter.Bounds.Height <= 0)
             return;
 
         // The press point is in owner coordinates; the ripple works in presenter-local ones.
         var local = _owner.TranslatePoint(origin, presenter) ?? origin;
-        var area = new Rect(presenter.Bounds.Size);
 
         // CommonRipple finishes every older animation before adding a new press. This matters for
         // rapid taps: the old wave is allowed to complete while the new one starts independently.
-        foreach (var existing in _ripples)
+        foreach (var existing in _ripples.ToArray())
             existing.Finish();
 
         var ripple = new RippleAnimation(
-            local - area.Position,
-            area.Size,
+            local,
+            presenter.Bounds.Size,
+            motion,
             IsRippleBounded,
             RippleRadius);
         _ripples.Add(ripple);
-        Motion.Add(ripple);
-        Motion.RequestFrame();
+        _ = ripple.Motion.Launch(async ct =>
+        {
+            try
+            {
+                await ripple.AnimateAsync(presenter.OnInteractionFrame, ct);
+            }
+            finally
+            {
+                _ripples.Remove(ripple);
+                // Request cleanup; the scope stays registered until this operation exits.
+                ripple.Dispose();
+                presenter.OnInteractionFrame();
+            }
+        }, "Ripple playback");
     }
 
     /// <summary>Ends the pressed state and lets any live ripple fade out.</summary>
@@ -246,10 +294,8 @@ internal sealed class MaterialInteractionController
 
         Set(InteractionState.Pressed, false);
 
-        foreach (var ripple in _ripples)
-            ripple.Release();
-
-        Motion.RequestFrame();
+        foreach (var ripple in _ripples.ToArray())
+            ripple.Finish();
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -297,65 +343,58 @@ internal sealed class MaterialInteractionController
 
     private void ClearInputInteractions()
     {
-        var hadInputInteraction = _interaction.HasFlag(InteractionState.Hovered)
-            || _interaction.HasFlag(InteractionState.Focused)
-            || _interaction.HasFlag(InteractionState.Pressed);
+        var hadInputInteraction = _interaction != InteractionState.None;
         var hadRipples = _ripples.Count != 0;
 
-        _interaction &= ~(InteractionState.Hovered | InteractionState.Focused | InteractionState.Pressed);
-        _stateLayerInteractions.RemoveAll(
-            static state => state is InteractionState.Hovered or InteractionState.Focused);
+        _interaction = InteractionState.None;
+        _interactions.Clear();
 
-        foreach (var ripple in _ripples)
-            Motion.Remove(ripple);
+        foreach (var ripple in _ripples.ToArray())
+            ripple.Dispose();
 
         _ripples.Clear();
-
-        // A released ripple can outlive Pressed while its fade completes. Clearing that transient
-        // animation is still a visual change even though the interaction flags are already clear;
-        // otherwise a detach can leave the owner showing one stale frame.
-        if (!hadInputInteraction && !hadRipples)
-            return;
 
         if (hadInputInteraction)
         {
             UpdateStateLayer();
             NotifyInteractionChanged();
         }
-
-        Motion.RequestFrame();
-        _presenter?.OnInteractionFrame();
-    }
-
-    /// <summary>Removes only interaction-owned transient ripples after they complete.</summary>
-    private void RemoveCompletedRipples()
-    {
-        // Completed ripples would otherwise accumulate for the control's lifetime.
-        for (var i = _ripples.Count - 1; i >= 0; i--)
+        else if (hadRipples)
         {
-            if (!_ripples[i].IsComplete)
-                continue;
-
-            Motion.Remove(_ripples[i]);
-            _ripples.RemoveAt(i);
+            // A released ripple can outlive Pressed; removing it still changes the visual.
+            _presenter?.OnInteractionFrame();
         }
-    }
-
-    private void PublishInteractionFrame()
-    {
-        _presenter?.OnInteractionFrame();
     }
 
     private void NotifyInteractionChanged()
     {
+        UpdateButtonElevation();
         _presenter?.OnInteractionChanged(_interaction);
+    }
+
+    private void UpdateButtonElevation()
+    {
+        if (_owner is not Button button || MaterialButton.GetElevation(button) is not { } values)
+        {
+            _buttonElevation?.Dispose();
+            _buttonElevation = null;
+            return;
+        }
+        if (_presenter is null || _motion is null || _motion.IsEnding)
+            return;
+
+        // Button.kt collects only press, hover, and focus; drag belongs to other components.
+        var interaction = _interactions.LastOrDefault(state => state is
+            InteractionState.Pressed or InteractionState.Hovered or InteractionState.Focused);
+        _buttonElevation ??= new ButtonElevationController(_presenter, _motion,
+            ButtonElevationController.Target(values, interaction, IsEnabled));
+        _buttonElevation.Update(values, interaction, IsEnabled);
     }
 
     private void OnTokensChanged()
     {
         ResolveOpacities();
         UpdateStateLayer();
-        Motion.RequestFrame();
         _presenter?.OnInteractionFrame();
     }
 
@@ -386,14 +425,12 @@ internal sealed class MaterialInteractionController
         // AndroidX stores entry interactions in arrival order and shows lastOrNull(). A fixed
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
-        var topmost = _stateLayerInteractions.Count == 0
-            ? InteractionState.None
-            : _stateLayerInteractions[^1];
+        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed);
 
         var targetOpacity = OpacityFor(topmost);
 
         if (topmost == _shownInteraction
-            && (_stateLayerAlpha is null || _stateLayerAlpha.Target == targetOpacity))
+            && (_stateLayerAlpha is null || _stateLayerAlpha.TargetValue == targetOpacity))
             return;
 
         // An idle controller should not allocate animation tracks merely because its owner was
@@ -406,20 +443,24 @@ internal sealed class MaterialInteractionController
             : StateLayer.FadeInDuration(topmost);
 
         _shownInteraction = topmost;
-        StateLayerAlpha.AnimateTo(targetOpacity, duration, Easings.Linear);
+        if (Motion is not { IsEnding: false } motion)
+            return;
+        var surface = _presenter;
+        if (_stateLayerAlpha is null)
+        {
+            _stateLayerAlpha = motion.CreateAnimatable(0d);
+            motion.SubscribeValue(_stateLayerAlpha, _ => surface?.OnInteractionFrame());
+        }
+        var alpha = _stateLayerAlpha;
+        _ = motion.Launch(ct => alpha.AnimateToAsync(targetOpacity,
+            new TweenSpec<double>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
     }
-
-    private TweenAnimation StateLayerAlpha =>
-        _stateLayerAlpha ??= Motion.AddTween(0, StateLayer.FadeInDuration(InteractionState.Hovered));
 
     private void UpdateInteractionStack(InteractionState flag, bool active)
     {
-        if (flag is not (InteractionState.Hovered or InteractionState.Focused or InteractionState.Dragged))
-            return;
-
-        _stateLayerInteractions.Remove(flag);
+        _interactions.Remove(flag);
         if (active)
-            _stateLayerInteractions.Add(flag);
+            _interactions.Add(flag);
     }
 
     private void DrawRipples(DrawingContext context, IBrush brush)
@@ -436,12 +477,6 @@ internal sealed class MaterialInteractionController
             // The rounded clip already antialiases the edge. Filling an ordinary rectangle avoids
             // antialiasing that edge a second time and producing a faint corner ring.
             context.DrawRectangle(brush, null, area);
-    }
-
-    private static double RippleAnimationEndRadius(Size bounds, bool bounded)
-    {
-        var covering = Math.Sqrt(bounds.Width * bounds.Width + bounds.Height * bounds.Height) / 2;
-        return bounded ? covering + 10 : covering;
     }
 
     private IBrush WithComposeReplacedAlpha(IBrush source)

@@ -81,16 +81,19 @@ public class ComposeOpacityTests
 
 /// <summary>
 /// The ripple state machine, ported from the old suite: three parallel curves, fade-out gated on
-/// release, and the quick-tap alpha snap. Pure animation ticks — no UI needed.
+/// release, and the quick-tap alpha snap, driven by the packaged runtime on a manual frame clock.
 /// </summary>
 public class RippleAnimationTests
 {
-    [Fact]
+    [AvaloniaFact]
     public void AQuickTap_CompletesTheWholeFadeInBeforeFadingOut()
     {
-        var ripple = new RippleAnimation(new Point(8, 12), new Size(100, 40));
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(8, 12), new Size(100, 40), clock.Scope);
+        clock.Track(ripple.AnimateAsync());
 
-        ripple.Tick(TimeSpan.FromMilliseconds(20));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(20));
         Assert.InRange(ripple.Value, 0.26, 0.27);
 
         ripple.Finish();
@@ -98,31 +101,37 @@ public class RippleAnimationTests
         // AndroidX snaps the drawn alpha to one for a release during fade-in, but the underlying
         // radius and centre animations still get their complete 225ms.
         Assert.Equal(1, ripple.Value);
-        ripple.Tick(TimeSpan.FromMilliseconds(204));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(204));
         Assert.Equal(1, ripple.Value);
         Assert.False(ripple.IsComplete);
 
-        // Cross the boundary rather than landing on it: TimeSpan.TotalSeconds is a binary
-        // floating-point value, so an exact 225ms can compare a fraction below one.
-        ripple.Tick(TimeSpan.FromMilliseconds(2));
+        // At exactly 225ms the expansion completes; fade-out begins on its next frame.
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(1));
         Assert.Equal(1, ripple.Value);
         Assert.True(ripple.IsRunning);
 
-        ripple.Tick(TimeSpan.FromMilliseconds(75));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(75));
         Assert.Equal(0.5, ripple.Value, 6);
         Assert.False(ripple.IsComplete);
 
-        ripple.Tick(TimeSpan.FromMilliseconds(75));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(75));
         Assert.Equal(0, ripple.Value);
         Assert.True(ripple.IsComplete);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ALongPress_HoldsAtFullExpansionUntilItIsFinished()
     {
-        var ripple = new RippleAnimation(new Point(8, 12), new Size(100, 40));
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(8, 12), new Size(100, 40), clock.Scope);
+        clock.Track(ripple.AnimateAsync());
 
-        ripple.Tick(TimeSpan.FromMilliseconds(225));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
 
         Assert.Equal(1, ripple.Value);
         Assert.False(ripple.IsRunning);
@@ -131,34 +140,40 @@ public class RippleAnimationTests
         ripple.Finish();
         Assert.True(ripple.IsRunning);
 
-        ripple.Tick(TimeSpan.FromMilliseconds(150));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(150));
         Assert.True(ripple.IsComplete);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AnUnboundedRipple_IsCentredAndHonoursItsExplicitRadius()
     {
-        var ripple = new RippleAnimation(
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(
             new Point(2, 3),
             new Size(80, 40),
+            clock.Scope,
             bounded: false,
             radius: 24);
 
+        clock.Track(ripple.AnimateAsync());
         Assert.False(ripple.IsBounded);
         Assert.Equal(new Point(40, 20), ripple.Center);
         Assert.Equal(24, ripple.TargetRadius);
 
-        ripple.Tick(TimeSpan.FromMilliseconds(100));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
 
         Assert.Equal(new Point(40, 20), ripple.Center);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AutomaticTargetRadius_FollowsMaterialThreeRules()
     {
+        using var clock = new MotionTestClockScope();
         // The half diagonal of an 80x60 layout is 50.
-        var bounded = new RippleAnimation(new Point(), new Size(80, 60));
-        var unbounded = new RippleAnimation(new Point(), new Size(80, 60), bounded: false);
+        using var bounded = new RippleAnimation(new Point(), new Size(80, 60), clock.Scope);
+        using var unbounded = new RippleAnimation(new Point(), new Size(80, 60), clock.Scope, bounded: false);
 
         Assert.Equal(60, bounded.TargetRadius);
         Assert.Equal(50, unbounded.TargetRadius);
@@ -191,10 +206,12 @@ public class MaterialInteractionControllerTests
         var controller = MaterialInteraction.GetOrCreate(button);
 
         controller.Set(InteractionState.Hovered, true);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0.08, controller.StateLayerOpacity, 6);
 
         controller.Set(InteractionState.Focused, true);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(46));
         Assert.Equal(0.10, controller.StateLayerOpacity, 6);
 
@@ -204,6 +221,7 @@ public class MaterialInteractionControllerTests
 
         // A later hover entry now sits above focus, matching RippleNode's interactions.lastOrNull.
         controller.Set(InteractionState.Hovered, true);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0.08, controller.StateLayerOpacity, 6);
     }
@@ -221,10 +239,12 @@ public class MaterialInteractionControllerTests
 
         Assert.True(controller.Interaction.HasFlag(InteractionState.Hovered));
 
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0.08, controller.StateLayerOpacity, 6);
 
         window.MouseMove(new Point(1, 1), RawInputModifiers.None);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0, controller.StateLayerOpacity, 6);
     }
@@ -246,12 +266,14 @@ public class MaterialInteractionControllerTests
         // A pointer-focus must not light the focus layer; Material shows it for keyboard focus.
         Assert.False(controller.Interaction.HasFlag(InteractionState.Focused));
 
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
         Assert.Equal(1, controller.RippleCount); // held at full expansion while pressed
 
         window.MouseUp(point, MouseButton.Left);
         Assert.False(controller.Interaction.HasFlag(InteractionState.Pressed));
 
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
         Assert.Equal(0, controller.RippleCount);
     }
@@ -291,6 +313,7 @@ public class MaterialInteractionControllerTests
         Assert.True(button.Focus(NavigationMethod.Tab));
         Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
 
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(46));
         Assert.Equal(0.10, controller.StateLayerOpacity, 6);
     }
@@ -312,6 +335,7 @@ public class MaterialInteractionControllerTests
         var restPixel = PixelAt(rest, px, py);
 
         window.MouseDown(new Point(px, py), MouseButton.Left);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
 
         Assert.Equal(1, controller.RippleCount);
@@ -341,13 +365,16 @@ public class MaterialInteractionControllerTests
         // The morph starts at the clamped half-pill (20 on a 40dp button), not the raw 1000.
         Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
 
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.InRange(container.EffectiveCornerRadius.TopLeft, 8 + 1e-6, 20 - 1e-6);
 
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.Equal(8, container.EffectiveCornerRadius.TopLeft, 6); // md.comp.icon-button.small.pressed-container-shape = sys.shape.small
 
         window.MouseUp(point, MouseButton.Left);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
     }
@@ -362,8 +389,10 @@ public class MaterialInteractionControllerTests
         var origin = button.TranslatePoint(default, window)!.Value;
         var point = origin + new Point(button.Bounds.Width / 2, button.Bounds.Height / 2);
         window.MouseDown(point, MouseButton.Left);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         window.MouseUp(point, MouseButton.Left);
+        clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
 
@@ -388,86 +417,103 @@ public class AnimatedCornerRadiusTests
     private static readonly CornerRadius Boxy = new(4);
     private static readonly SpringSpec Spec = MotionScheme.Expressive.DefaultEffects;
 
-    [Fact]
+    [AvaloniaFact]
     public void ItStartsAtRestOnItsInitialShape()
     {
-        var morph = new AnimatedCornerRadius(Small, Spec);
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Small, Spec, clock.Scope);
 
         Assert.False(morph.IsRunning);
         Assert.Equal(Small, morph.Current);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void TheStadiumShape_ClampsToTheHalfPillBeforeInterpolating()
     {
-        var morph = new AnimatedCornerRadius(Stadium, Spec) { Size = new Size(40, 40) };
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new Size(40, 40) };
         Assert.Equal(new CornerRadius(20), morph.Current);
 
-        morph.AnimateTo(Small);
-        morph.Progress.Tick(TimeSpan.FromMilliseconds(16));
+        clock.Track(morph.AnimateToAsync(Small));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
 
         var radius = morph.Current.TopLeft;
         Assert.True(radius is > 8 and < 20, $"expected an honest 20→8 morph, got {radius}");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ItMorphsToANewShapeAndArrives()
     {
-        var morph = new AnimatedCornerRadius(Stadium, Spec) { Size = new Size(40, 40) };
-        morph.AnimateTo(Small);
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new Size(40, 40) };
+        clock.Track(morph.AnimateToAsync(Small));
 
         Assert.True(morph.IsRunning);
 
-        while (morph.IsRunning)
-            morph.Progress.Tick(TimeSpan.FromSeconds(1.0 / 60));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromSeconds(1));
 
+        Assert.False(morph.IsRunning);
         Assert.Equal(Small, morph.Current);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void TheVisibleShape_DoesNotJumpWhenTheMorphIsReversed()
     {
-        var morph = new AnimatedCornerRadius(Stadium, Spec) { Size = new Size(40, 40) };
-        morph.AnimateTo(Small);
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new Size(40, 40) };
+        clock.Track(morph.AnimateToAsync(Small));
 
         for (var i = 0; i < 3; i++)
-            morph.Progress.Tick(TimeSpan.FromSeconds(1.0 / 60));
+        {
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.FromSeconds(1.0 / 60));
+        }
 
         var before = morph.Current;
-        morph.AnimateTo(Stadium);
+        clock.Track(morph.AnimateToAsync(Stadium));
         var after = morph.Current;
 
         Assert.Equal(before.TopLeft, after.TopLeft, 9);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AReversal_KeepsItsMomentum()
     {
-        var morph = new AnimatedCornerRadius(Stadium, Spec) { Size = new Size(40, 40) };
-        morph.AnimateTo(Small);
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new Size(40, 40) };
+        clock.Track(morph.AnimateToAsync(Small));
 
         for (var i = 0; i < 3; i++)
-            morph.Progress.Tick(TimeSpan.FromSeconds(1.0 / 60));
+        {
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.FromSeconds(1.0 / 60));
+        }
 
-        morph.AnimateTo(Stadium);
-        morph.Progress.Tick(TimeSpan.FromMilliseconds(1));
+        var radiusBeforeReversal = morph.Current.TopLeft;
+        clock.Track(morph.AnimateToAsync(Stadium));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(1));
 
         // Flipping progress means the velocity has to flip too, or the morph would stall and
         // restart. One millisecond in, it should still be heading the way it was.
-        Assert.True(morph.Progress.Value < 1.0);
+        Assert.True(morph.Current.TopLeft < radiusBeforeReversal);
         Assert.True(morph.IsRunning);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void RepeatedInterruption_StaysWithinTheEndpointRange()
     {
-        var morph = new AnimatedCornerRadius(Stadium, Spec) { Size = new Size(40, 40) };
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new Size(40, 40) };
         var targets = new[] { Small, Boxy, Stadium };
 
         for (var i = 0; i < 2000; i++)
         {
-            morph.AnimateTo(targets[i % targets.Length]);
-            morph.Progress.Tick(TimeSpan.FromMilliseconds(2));
+            clock.Track(morph.AnimateToAsync(targets[i % targets.Length]));
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(2));
         }
 
         // Freezing the visible corners mid-flight must not accumulate error: the value stays
@@ -477,16 +523,18 @@ public class AnimatedCornerRadiusTests
         Assert.InRange(current.TopLeft, 4 - 1e-9, 20 + 1e-9);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AnimatingToTheCurrentTarget_IsANoOp()
     {
-        var morph = new AnimatedCornerRadius(Stadium, Spec) { Size = new Size(40, 40) };
-        morph.AnimateTo(Small);
-        morph.Progress.Tick(TimeSpan.FromSeconds(1.0 / 60));
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new Size(40, 40) };
+        clock.Track(morph.AnimateToAsync(Small));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromSeconds(1.0 / 60));
 
-        var progress = morph.Progress.Value;
-        morph.AnimateTo(Small);
+        var progress = morph.Progress;
+        clock.Track(morph.AnimateToAsync(Small));
 
-        Assert.Equal(progress, morph.Progress.Value);
+        Assert.Equal(progress, morph.Progress);
     }
 }

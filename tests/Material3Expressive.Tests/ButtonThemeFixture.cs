@@ -65,7 +65,7 @@ internal static class ButtonThemeFixture
         // A Window roots itself at construction (StyledElement assigns _logicalRoot for
         // ILogicalRoot), so assigning Content attaches the button immediately and captures the
         // implicit theme at that moment. Styles must be in place before Content is set.
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Resources = resources,
             RequestedThemeVariant = ThemeVariant.Light,
@@ -74,6 +74,7 @@ internal static class ButtonThemeFixture
         window.Styles.Add(styles);
 
         button = new Button { Content = "OK" };
+
         if (themeKey is not null)
             button.Theme = Assert.IsType<ControlTheme>(styles.Resources[themeKey]);
         if (sizeClass is not null)

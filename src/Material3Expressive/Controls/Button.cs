@@ -1,7 +1,14 @@
 using System.Collections.Frozen;
+using System.Globalization;
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Avalonia.Styling;
+using ComposeAnimation;
+using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -103,8 +110,8 @@ public class ButtonSizesTokenSource : ITokenSource
 /// <summary>
 /// Baseline defaults for the elevated Button slots (upstream ElevatedButtonTokens v0_11_0). The
 /// per-state elevations alias the <c>md.sys.elevation.level*</c> DIP levels: resting/focus/pressed
-/// at level 1, hover at level 2, disabled at level 0. They are consumed by the template part's
-/// <c>MaterialSurface.ShadowElevation</c> and rendered by MaterialSkiaShadow. Immutable baseline:
+/// at level 1, hover at level 2, disabled at level 0. The theme combines them into
+/// <see cref="ButtonElevation"/> on the button; its animation feeds the surface. Immutable baseline:
 /// <see cref="Changed"/> is a documented no-op.
 /// </summary>
 public class ElevatedButtonTokenSource : ITokenSource
@@ -246,4 +253,99 @@ public class TonalButtonTokenSource : ITokenSource
 
     // Immutable baseline: the table never changes, so the event is a documented no-op.
     public event EventHandler? Changed { add { } remove { } }
+}
+
+/// <summary>Material options for Avalonia buttons using an interactive MaterialSurface template.</summary>
+public static class MaterialButton
+{
+    /// <summary>Interaction shadow heights, or null to leave the template's elevation unchanged.</summary>
+    public static readonly AttachedProperty<ButtonElevation?> ElevationProperty =
+        AvaloniaProperty.RegisterAttached<Button, ButtonElevation?>("Elevation", typeof(MaterialButton));
+
+    public static ButtonElevation? GetElevation(Button button) => button.GetValue(ElevationProperty);
+    public static void SetElevation(Button button, ButtonElevation? value) => button.SetValue(ElevationProperty, value);
+}
+
+/// <summary>Button shadow heights in DIPs. Configuration can be shared; animation state cannot.</summary>
+public sealed record ButtonElevation
+{
+    public double Default { get; init; }
+    public double Pressed { get; init; }
+    public double Focused { get; init; }
+    public double Hovered { get; init; }
+    public double Disabled { get; init; }
+
+    /// <summary>Combines five bindings in Default, Pressed, Focused, Hovered, Disabled order.</summary>
+    public static IMultiValueConverter FromValues { get; } = new ElevationConverter();
+
+    private sealed class ElevationConverter : IMultiValueConverter
+    {
+        public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) =>
+            values is [double rest, double pressed, double focused, double hovered, double disabled]
+                ? new ButtonElevation
+                {
+                    Default = rest, Pressed = pressed, Focused = focused,
+                    Hovered = hovered, Disabled = disabled
+                }
+                : AvaloniaProperty.UnsetValue;
+    }
+}
+
+/// <summary>Per-button playback of Button.kt's elevation policy.</summary>
+internal sealed class ButtonElevationController : IDisposable
+{
+    private readonly Animatable<double> _elevation;
+    private readonly VisualAnimationScope _motion;
+
+    internal ButtonElevationController(MaterialSurface surface, VisualAnimationScope parentScope, double initial)
+    {
+        _motion = parentScope.CreateChild("Elevation");
+        _elevation = _motion.CreateAnimatable(initial);
+        _motion.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, _elevation);
+    }
+
+    internal static double Target(ButtonElevation values, InteractionState interaction, bool enabled) =>
+        !enabled ? values.Disabled : interaction switch
+        {
+            InteractionState.Pressed => values.Pressed,
+            InteractionState.Focused => values.Focused,
+            InteractionState.Hovered => values.Hovered,
+            _ => values.Default
+        };
+
+    internal void Update(ButtonElevation values, InteractionState interaction, bool enabled)
+    {
+        var target = Target(values, interaction, enabled);
+        if (!enabled)
+        {
+            _ = _motion.Launch(ct => _elevation.SnapToAsync(target, ct), "Elevation snap");
+            return;
+        }
+        if (_elevation.TargetValue == target)
+            return;
+
+        // Button.kt infers the outgoing interaction from the previous target, in this order.
+        // Equal heights therefore behave like Compose even when several states share a token.
+        var from = _elevation.TargetValue == values.Pressed ? InteractionState.Pressed
+            : _elevation.TargetValue == values.Hovered ? InteractionState.Hovered
+            : _elevation.TargetValue == values.Focused ? InteractionState.Focused
+            : InteractionState.None;
+        if (from == InteractionState.None && interaction == InteractionState.None)
+        {
+            _ = _motion.Launch(ct => _elevation.SnapToAsync(target, ct), "Elevation snap");
+            return;
+        }
+
+        // material3/internal/Elevation.kt: incoming 120ms; outgoing hover 120ms, others 150ms.
+        var incoming = interaction != InteractionState.None;
+        _ = _motion.Launch(ct => _elevation.AnimateToAsync(target,
+            new TweenSpec<double>(TimeSpan.FromMilliseconds(incoming || from == InteractionState.Hovered ? 120 : 150),
+                easing: incoming ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
+            cancellationToken: ct), "Elevation");
+    }
+
+    public void Dispose()
+    {
+        _motion.Dispose();
+    }
 }

@@ -63,7 +63,7 @@ public class MaterialResourceTests
         var resources = new ResourceDictionary();
         resources.MergedDictionaries.Add(theme);
         var button = new Button();
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Content = button,
             Resources = resources,

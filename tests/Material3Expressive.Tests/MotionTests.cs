@@ -1,326 +1,393 @@
-using System;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using ComposeAnimation;
+using ComposeAnimation.Runtime;
+using ComposeAnimation.TestSupport;
+using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.Tokens;
+using Material3Expressive.Controls;
 using Xunit;
 
 namespace Material3Expressive.Tests;
 
-/// <summary>
-/// The motion engine: closed-form springs, tweens and the frame scheduler. Ported from the legacy
-/// suite; specs are the <see cref="MotionScheme.Expressive" /> constants — the code fallbacks the
-/// baseline spring spec tokens mirror (pinned equal in BaselineSubsystemTests).
-/// </summary>
-public class SpringTests
+/// <summary>Material behavior over the packaged Compose runtime, including intermediate frames.</summary>
+public class MaterialMotionTests
 {
-    private static readonly TimeSpan Frame60 = TimeSpan.FromSeconds(1.0 / 60);
-    private static readonly TimeSpan Frame144 = TimeSpan.FromSeconds(1.0 / 144);
+    private static MaterialSurface Surface(Button button) =>
+        button.GetVisualDescendants().OfType<MaterialSurface>().First();
 
-    private static SpringAnimation Spring(SpringSpec spec) =>
-        new(0, spec);
-
-    /// <summary>Runs an animation to completion, returning how many frames it took.</summary>
-    private static int RunToRest(IAnimation animation, TimeSpan frame, int maxFrames = 6000)
-    {
-        var frames = 0;
-        while (animation.IsRunning && frames < maxFrames)
-        {
-            animation.Tick(frame);
-            frames++;
-        }
-
-        return frames;
-    }
-
-    [Fact]
-    public void ASpring_SettlesExactlyOnItsTarget()
-    {
-        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
-        spring.AnimateTo(1);
-
-        RunToRest(spring, Frame60);
-
-        Assert.False(spring.IsRunning);
-        Assert.Equal(1.0, spring.Value);
-        Assert.Equal(0.0, spring.Velocity);
-    }
-
-    [Fact]
-    public void ASpring_LandsInTheSamePlaceAtAnyFrameRate()
-    {
-        // The closed-form solution is evaluated from the start of the leg, not integrated frame to
-        // frame, so sampling more often must not change the trajectory.
-        var slow = Spring(MotionScheme.Expressive.DefaultSpatial);
-        var fast = Spring(MotionScheme.Expressive.DefaultSpatial);
-        slow.AnimateTo(1);
-        fast.AnimateTo(1);
-
-        // 20 frames at 60Hz and 48 at 144Hz cover the same third of a second.
-        for (var i = 0; i < 20; i++)
-            slow.Tick(Frame60);
-
-        for (var i = 0; i < 48; i++)
-            fast.Tick(Frame144);
-
-        Assert.Equal(slow.Value, fast.Value, 6);
-        Assert.Equal(slow.Velocity, fast.Velocity, 4);
-    }
-
-    [Fact]
-    public void ADroppedFrame_DoesNotChangeWhereTheSpringIs()
-    {
-        var steady = Spring(MotionScheme.Expressive.DefaultSpatial);
-        var stuttering = Spring(MotionScheme.Expressive.DefaultSpatial);
-        steady.AnimateTo(1);
-        stuttering.AnimateTo(1);
-
-        for (var i = 0; i < 6; i++)
-            steady.Tick(Frame60);
-
-        stuttering.Tick(Frame60);
-        stuttering.Tick(Frame60 * 4); // four frames' worth arriving at once
-        stuttering.Tick(Frame60);
-
-        Assert.Equal(steady.Value, stuttering.Value, 9);
-    }
-
-    [Fact]
-    public void ARetarget_KeepsTheVelocityItAlreadyHad()
-    {
-        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
-        spring.AnimateTo(1);
-
-        for (var i = 0; i < 5; i++)
-            spring.Tick(Frame60);
-
-        var velocity = spring.Velocity;
-        Assert.True(velocity > 0, "the spring should be moving before it is interrupted");
-
-        spring.AnimateTo(0);
-
-        // Reversing mid-flight must not stall: the first frame after still moves the way it was.
-        spring.Tick(TimeSpan.FromMilliseconds(1));
-        Assert.True(spring.Velocity > 0, "a reversed spring keeps its momentum for a moment");
-        Assert.True(spring.Value > 0);
-    }
-
-    [Fact]
-    public void ARetargetToTheSamePlace_DoesNotRestartTheAnimation()
-    {
-        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
-        spring.AnimateTo(1);
-
-        for (var i = 0; i < 5; i++)
-            spring.Tick(Frame60);
-
-        var value = spring.Value;
-        spring.AnimateTo(1);
-
-        Assert.Equal(value, spring.Value);
-    }
-
-    [Fact]
-    public void ACriticallyDampedSpring_NeverOvershoots()
-    {
-        var spring = Spring(MotionScheme.Expressive.DefaultEffects);
-        spring.AnimateTo(1);
-
-        while (spring.IsRunning)
-        {
-            spring.Tick(Frame60);
-            Assert.True(spring.Value <= 1.0 + 1e-9, $"overshot to {spring.Value}");
-        }
-    }
-
-    [Fact]
-    public void AnUnderDampedSpring_Overshoots()
-    {
-        // Expressive's fast spatial spring is the bounciest thing in the scheme; bounce is the
-        // point of it, so if this stops overshooting the port has gone wrong.
-        var spring = Spring(MotionScheme.Expressive.FastSpatial);
-        spring.AnimateTo(1);
-
-        var peak = 0.0;
-        while (spring.IsRunning)
-        {
-            spring.Tick(Frame60);
-            peak = Math.Max(peak, spring.Value);
-        }
-
-        Assert.True(peak > 1.0, $"expected an overshoot, peaked at {peak}");
-    }
-
-    [Fact]
-    public void AStifferSpring_SettlesSooner()
-    {
-        var fast = Spring(MotionScheme.Expressive.FastEffects);
-        var slow = Spring(MotionScheme.Expressive.SlowEffects);
-        fast.AnimateTo(1);
-        slow.AnimateTo(1);
-
-        Assert.True(fast.DurationSeconds < slow.DurationSeconds);
-        Assert.True(RunToRest(fast, Frame60) < RunToRest(slow, Frame60));
-    }
-
-    [Theory]
-    [InlineData(0.5)]  // under-damped
-    [InlineData(1.0)]  // critically damped
-    [InlineData(1.8)]  // over-damped
-    public void EveryDampingRegime_ProducesAFiniteDuration(double dampingRatio)
-    {
-        var spring = new SpringAnimation(0, new SpringSpec(dampingRatio, 400));
-        spring.AnimateTo(1);
-
-        Assert.True(spring.DurationSeconds > 0);
-        Assert.True(double.IsFinite(spring.DurationSeconds));
-        Assert.True(spring.DurationSeconds < 30, $"{dampingRatio} took {spring.DurationSeconds}s");
-    }
-
-    [Fact]
-    public void AnUndampedSpring_SnapsRatherThanOscillatingForever()
-    {
-        // Nothing in Material is undamped, but a hand-authored scheme could be, and an animation
-        // that never ends would pin the render loop.
-        var spring = new SpringAnimation(0, new SpringSpec(0, 400));
-        spring.AnimateTo(1);
-
-        Assert.False(spring.IsRunning);
-        Assert.Equal(1.0, spring.Value);
-    }
-
-    [Fact]
-    public void SnapTo_CancelsMotion()
-    {
-        var spring = Spring(MotionScheme.Expressive.DefaultSpatial);
-        spring.AnimateTo(1);
-        spring.Tick(Frame60);
-        spring.SnapTo(0.25);
-
-        Assert.False(spring.IsRunning);
-        Assert.Equal(0.25, spring.Value);
-        Assert.Equal(0.0, spring.Velocity);
-    }
-}
-
-public class TweenTests
-{
-    [Fact]
-    public void ALinearTween_IsHalfwayAtHalfTime()
-    {
-        var tween = new TweenAnimation(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
-        tween.AnimateTo(1);
-        tween.Tick(TimeSpan.FromMilliseconds(50));
-
-        Assert.Equal(0.5, tween.Value, 6);
-    }
-
-    [Fact]
-    public void ATween_EndsOnItsTarget()
-    {
-        var tween = new TweenAnimation(0, TimeSpan.FromMilliseconds(100));
-        tween.AnimateTo(1);
-        tween.Tick(TimeSpan.FromMilliseconds(150));
-
-        Assert.False(tween.IsRunning);
-        Assert.Equal(1.0, tween.Value);
-    }
-
-    [Fact]
-    public void AZeroLengthTween_Snaps()
-    {
-        var tween = new TweenAnimation(0, TimeSpan.Zero);
-        tween.AnimateTo(1);
-
-        Assert.False(tween.IsRunning);
-        Assert.Equal(1.0, tween.Value);
-    }
-
-    [Theory]
-    [InlineData(0.0, 0.0)]
-    [InlineData(1.0, 1.0)]
-    public void FastOutSlowIn_PinsItsEndpoints(double fraction, double expected)
-    {
-        Assert.Equal(expected, Easings.FastOutSlowIn(fraction), 6);
-    }
-
-    [Fact]
-    public void FastOutSlowIn_AcceleratesThenDecelerates()
-    {
-        // cubic-bezier(0.4, 0, 0.2, 1) sits below the diagonal while it picks up speed and above it
-        // while it settles — the fast part is the middle, not the start.
-        Assert.True(Easings.FastOutSlowIn(0.25) < 0.25);
-        Assert.True(Easings.FastOutSlowIn(0.75) > 0.75);
-    }
-
-    [Fact]
-    public void LinearOutSlowIn_LeadsTheDiagonalThroughout()
-    {
-        // The entering curve has no acceleration phase, so it is ahead of linear from the start.
-        Assert.True(Easings.LinearOutSlowIn(0.25) > 0.25);
-        Assert.True(Easings.LinearOutSlowIn(0.75) > 0.75);
-    }
-
-    [Fact]
-    public void FastOutSlowIn_IsMonotonic()
-    {
-        var previous = 0.0;
-        for (var i = 1; i <= 100; i++)
-        {
-            var value = Easings.FastOutSlowIn(i / 100.0);
-            Assert.True(value >= previous, $"went backwards at {i}%");
-            previous = value;
-        }
-    }
-}
-
-public class MaterialMotionControllerTests
-{
-    [Fact]
-    public void ATestClockScopeOwnsControllersCreatedAfterActivation()
+    [AvaloniaFact]
+    public void InterruptedStateLayer_ContinuesWithTheIncomingTween()
     {
         using var clock = new MotionTestClockScope();
-        var controller = new MaterialMotionController(new Border());
-        var tween = controller.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
-        tween.AnimateTo(1);
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        controller.Set(InteractionState.Hovered, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(7.5));
+        Assert.Equal(0.04, controller.StateLayerOpacity, 6);
 
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(40));
-
-        Assert.Equal(1, clock.ControllerCount);
-        Assert.Equal(0.4, tween.Value, 6);
+        controller.Set(InteractionState.Focused, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(22.5));
+        Assert.Equal(0.07, controller.StateLayerOpacity, 6);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(22.5));
+        Assert.Equal(0.10, controller.StateLayerOpacity, 6);
+        Assert.Null(MotionTestClockScope.Error(button));
+        window.Close();
     }
 
-    [Fact]
-    public void ATestClockScopeRejectsNestedOwners()
+    [AvaloniaFact]
+    public void HoverElevation_UsesDifferentEntryAndExitCurves_WithoutOverwritingTargets()
     {
         using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var surface = Surface(button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        Assert.Equal(1, surface.ShadowElevation);
+        controller.Set(InteractionState.Hovered, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.Equal(1 + 2 * ComposeEasings.FastOutSlowIn.Ease(0.5), surface.ShadowElevation, 6);
+        Assert.Equal(1, MaterialButton.GetElevation(button)!.Default);
+        Assert.Equal(3, MaterialButton.GetElevation(button)!.Hovered);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.Equal(3, surface.ShadowElevation);
 
-        Assert.Throws<InvalidOperationException>(() => new MotionTestClockScope());
+        controller.Set(InteractionState.Hovered, false);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.Equal(2, surface.ShadowElevation, 6);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.Equal(1, surface.ShadowElevation);
+        Assert.Null(MotionTestClockScope.Error(button));
+        window.Close();
     }
 
-    [Fact]
-    public void AManualClockAdvancesByTheExactRequestedDuration()
+    [AvaloniaFact]
+    public void PressWhileHovered_LowersElevation_ThenReturnsToHover()
     {
-        var controller = new MaterialMotionController(new Border());
-        var tween = controller.AddTween(0, TimeSpan.FromMilliseconds(100), Easings.Linear);
-        controller.UseManualClock();
-        tween.AnimateTo(1);
-
-        Assert.Equal(0, tween.Value);
-
-        controller.AdvanceBy(TimeSpan.FromMilliseconds(40));
-        Assert.Equal(0.4, tween.Value, 6);
-
-        controller.AdvanceBy(TimeSpan.FromMilliseconds(60));
-        Assert.Equal(1, tween.Value);
-        Assert.False(tween.IsRunning);
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var surface = Surface(button);
+        controller.Set(InteractionState.Hovered, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
+        controller.StartPress(new Point(10, 10));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
+        Assert.Equal(1, surface.ShadowElevation);
+        controller.EndPress();
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
+        Assert.Equal(3, surface.ShadowElevation);
+        window.Close();
     }
 
-    [Fact]
-    public void AManualClockRejectsTimeMovingBackwards()
+    [AvaloniaFact]
+    public void FocusExit_Uses150Milliseconds_AndArrivalOrderSelectsElevation()
     {
-        var controller = new MaterialMotionController(new Border());
-        controller.UseManualClock();
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var surface = Surface(button);
+        MaterialButton.SetElevation(button, MaterialButton.GetElevation(button)! with { Focused = 5 });
+        controller.Set(InteractionState.Hovered, true);
+        controller.Set(InteractionState.Focused, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
+        Assert.Equal(5, surface.ShadowElevation);
+        controller.Set(InteractionState.Hovered, false);
+        Assert.Equal(5, surface.ShadowElevation);
+        controller.Set(InteractionState.Focused, false);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(75));
+        Assert.Equal(3, surface.ShadowElevation, 6);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(75));
+        Assert.Equal(1, surface.ShadowElevation);
+        window.Close();
+    }
 
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => controller.AdvanceBy(TimeSpan.FromMilliseconds(-1)));
+    [AvaloniaFact]
+    public void DisabledDuringMotion_SnapsElevation_AndClearsPress()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var controller = MaterialInteraction.GetOrCreate(button);
+        controller.Set(InteractionState.Hovered, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        controller.StartPress(new Point(10, 10));
+        button.IsEnabled = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(0, Surface(button).ShadowElevation);
+        Assert.Equal(0, controller.RippleCount);
+        Assert.Equal(InteractionState.None, controller.Interaction);
+        controller.StartPress(new Point(10, 10));
+        Assert.Equal(0, controller.RippleCount);
+        button.IsEnabled = true;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(1, Surface(button).ShadowElevation);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Detach_CancelsAllFrameWaiters_AndReattachHasNoStaleInput()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var controller = MaterialInteraction.GetOrCreate(button);
+        controller.Set(InteractionState.Hovered, true);
+        controller.StartPress(new Point(8, 8));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(30));
+        Assert.True(clock.PendingFrameCount > 0);
+        var oldMotion = controller.Motion!;
+        window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+        await oldMotion.DisposeAsync();
+        Assert.Equal(0, oldMotion.ActiveTaskCount);
+        Assert.Equal(0, oldMotion.ActiveChildCount);
+        Assert.Equal(0, oldMotion.SubscriptionCount);
+        Assert.Equal(0, oldMotion.BindingCount);
+        Assert.Null(oldMotion.LastError);
+        Assert.Equal(0, clock.PendingFrameCount);
+        Assert.Equal(0, controller.RippleCount);
+        Assert.Equal(InteractionState.None, controller.Interaction);
+
+        window.Content = button;
+        window.UpdateLayout();
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromSeconds(2));
+        Assert.Equal(1, Surface(button).ShadowElevation);
+        Assert.Equal(0, controller.StateLayerOpacity);
+        controller.StartPress(new Point(8, 8));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(30));
+        Assert.Equal(1, controller.RippleCount);
+        Assert.Null(MotionTestClockScope.Error(button));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void TemplateReplacement_CancelsOldShapeAndRipple_AndInitializesNewPresenter()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        controller.StartPress(new Point(8, 8));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(25));
+        var oldSurface = Surface(button);
+        button.Template = new FuncControlTemplate<Button>((_, _) => new MaterialSurface
+        {
+            CornerRadius = new CornerRadius(20),
+            PressedCornerRadius = new CornerRadius(4)
+        });
+        button.ApplyTemplate();
+        window.UpdateLayout();
+        var replacement = Surface(button);
+        Assert.NotSame(oldSurface, replacement);
+        Assert.Equal(0, controller.RippleCount);
+        controller.StartPress(new Point(8, 8));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+        Assert.Equal(4, replacement.EffectiveCornerRadius.TopLeft, 6);
+        Assert.Equal(oldSurface.CornerRadius, oldSurface.EffectiveCornerRadius);
+        Assert.Null(MotionTestClockScope.Error(button));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void RepeatedTaps_AllowOldRippleToFinish_AndEventuallyStopRequestingFrames()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        controller.StartPress(new Point(8, 8));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(20));
+        controller.EndPress();
+        controller.StartPress(new Point(16, 8));
+        Assert.Equal(2, controller.RippleCount);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
+        controller.EndPress();
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(150));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+        Assert.Equal(0, controller.RippleCount);
+        Assert.Equal(0, clock.PendingFrameCount);
+        Assert.Null(MotionTestClockScope.Error(button));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task LongLivedButton_1500RipplesReturnEveryRegistrationToBaseline()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var motion = controller.Motion!;
+        // Initialize persistent shape/elevation without a transient ripple in the baseline.
+        controller.Set(InteractionState.Pressed, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
+        controller.EndPress();
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(150));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+        await AnimationTestDispatcher.WaitUntilAsync(() => motion.ActiveTaskCount == 0);
+        var children = motion.ActiveChildCount;
+        var subscriptions = motion.SubscriptionCount;
+        var bindings = motion.BindingCount;
+        for (var i = 0; i < 1500; i++)
+        {
+            controller.StartPress(new Point(8, 8));
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(20));
+            controller.EndPress();
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(150));
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+            await AnimationTestDispatcher.WaitUntilAsync(() =>
+                motion.ActiveTaskCount == 0 && motion.ActiveChildCount == children);
+            Assert.Equal(0, controller.RippleCount);
+            Assert.Equal(0, motion.ActiveTaskCount);
+            Assert.Equal(0, motion.PendingAnimationCount);
+            Assert.Equal(children, motion.ActiveChildCount);
+            Assert.Equal(subscriptions, motion.SubscriptionCount);
+            Assert.Equal(bindings, motion.BindingCount);
+            Assert.Equal(0, clock.PendingFrameCount);
+        }
+        Assert.Null(MotionTestClockScope.Error(button));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void OwnerMotionTokenOverride_ReachesTheComposeSpring()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        button.Resources[MaterialTokens.Sys.Motion.Spring.EffectsDefault] =
+            new Material3Expressive.Foundation.Motion.SpringSpec(1, 100);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var surface = Surface(button);
+        controller.StartPress(new Point(8, 8));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
+        // Critical damping: p(t) = 1 - (1 + sqrt(k)*t) * exp(-sqrt(k)*t).
+        var progress = 1 - 2 * Math.Exp(-1);
+        var start = Math.Min(surface.Bounds.Width, surface.Bounds.Height) / 2;
+        Assert.Equal(start + (surface.PressedCornerRadius!.Value.TopLeft - start) * progress,
+            surface.EffectiveCornerRadius.TopLeft, 5);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void ZeroDurationScale_SettlesFiniteMotion_WithoutLeakingRippleWaitsOnDetach()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var controller = MaterialInteraction.GetOrCreate(button);
+        try
+        {
+            ((MotionTestWindow)window).MotionRoot.DurationScale = 0;
+            controller.Set(InteractionState.Hovered, true);
+            controller.StartPress(new Point(8, 8));
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.Zero);
+            Assert.Equal(0.08, controller.StateLayerOpacity, 6);
+            Assert.Equal(Surface(button).PressedCornerRadius, Surface(button).EffectiveCornerRadius);
+            Assert.Equal(0, clock.PendingFrameCount); // held ripple waits for release, not frames
+            controller.EndPress();
+            clock.SendFrame(clock.Now);
+            clock.AdvanceBy(TimeSpan.Zero);
+            Assert.Equal(0, controller.RippleCount);
+            Assert.Equal(3, Surface(button).ShadowElevation);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task TopLevelClock_AdvancesRealAsyncFrames_AndSurvivesRapidRetargeting()
+    {
+        // Deliberately no manual clock: exercise RequestAnimationFrame and dispatcher continuations.
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        try
+        {
+            var controller = MaterialInteraction.GetOrCreate(button);
+            var surface = Surface(button);
+            controller.StartPress(new Point(8, 8));
+            var start = surface.EffectiveCornerRadius.TopLeft;
+            for (var i = 0; i < 60 && surface.EffectiveCornerRadius.TopLeft == start; i++)
+            {
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+                await Task.Delay(16);
+            }
+            Assert.True(surface.EffectiveCornerRadius.TopLeft < start);
+
+            controller.EndPress();
+            controller.StartPress(new Point(12, 8));
+            controller.EndPress();
+            for (var i = 0; i < 100 && (controller.RippleCount != 0
+                || surface.EffectiveCornerRadius.TopLeft != start); i++)
+            {
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+                await Task.Delay(16);
+            }
+            Assert.Equal(start, surface.EffectiveCornerRadius.TopLeft, 6);
+            Assert.Equal(0, controller.RippleCount);
+            Assert.Null(MotionTestClockScope.Error(button));
+            window.Content = null;
+            Assert.Null(controller.Motion);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void SimultaneousControls_ShareInjectedTime_ButKeepIndependentMotion()
+    {
+        using var clock = new MotionTestClockScope();
+        var firstWindow = ButtonThemeFixture.ShowWindow(out var first);
+        var secondWindow = ButtonThemeFixture.ShowWindow(out var second);
+        var firstController = MaterialInteraction.GetOrCreate(first);
+        var secondController = MaterialInteraction.GetOrCreate(second);
+        firstController.Set(InteractionState.Hovered, true);
+        secondController.Set(InteractionState.Focused, true);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(7.5));
+        Assert.Equal(0.04, firstController.StateLayerOpacity, 6);
+        Assert.Equal(0.1 / 6, secondController.StateLayerOpacity, 6);
+        firstWindow.Close();
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(37.5));
+        Assert.Equal(0.10, secondController.StateLayerOpacity, 6);
+        Assert.Null(MotionTestClockScope.Error(second));
+        secondWindow.Close();
+        Assert.Equal(0, clock.PendingFrameCount);
     }
 }

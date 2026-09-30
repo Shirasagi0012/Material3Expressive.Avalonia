@@ -11,8 +11,8 @@ documentation remain available in Git history and the `refactor/1` checkout.
 - Rendering and interaction: `MaterialSurface`, Material Symbols, state layers, ripple, and
   pressed-corner animation.
 - Components: Button and IconButton variants and sizes.
-- The current scalar animation implementation is temporary. The intended Compose animation
-  implementation lives in a separate repository and has not been integrated.
+- Animation uses ComposeAnimation VisualAnimationScope for fixed root frames, lifetime,
+  tasks and value consumption. Material owns elevation, ripple and shape interaction rules.
 - No Compose visual parity harness is connected to this rewrite yet.
 
 The implementation details and next work are recorded in [docs/START_HERE.md](docs/START_HERE.md).

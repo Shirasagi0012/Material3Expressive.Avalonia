@@ -49,7 +49,7 @@ internal static class IconButtonThemeFixture
         resources.MergedDictionaries.Add(theme);
 
         // A Window roots itself at construction, so Styles must be in place before Content is set.
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Resources = resources,
             RequestedThemeVariant = ThemeVariant.Light,
@@ -58,6 +58,7 @@ internal static class IconButtonThemeFixture
         window.Styles.Add(styles);
 
         button = new IconButton { Symbol = MaterialSymbolCodepoint.Home };
+
         if (themeKey is not null)
             button.Theme = Assert.IsType<ControlTheme>(styles.Resources[themeKey]);
         if (sizeClass is not null)

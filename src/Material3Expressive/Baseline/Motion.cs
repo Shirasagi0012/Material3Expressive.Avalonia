@@ -10,9 +10,8 @@ namespace Material3Expressive.Baseline;
 /// The baseline motion tokens (design doc §4.2): standard durations as <see cref="TimeSpan"/>,
 /// the Expressive spring parameters as scalar damping/stiffness pairs, and the six composed
 /// specs as <see cref="SpringSpecRef"/> derivations over those scalars — so an override of one
-/// scalar flows into the composed spec. No Easing objects are stored — each control builds its
-/// own easing from the scalars (stock <c>SpringEasing</c> takes Mass/Stiffness/Damping; mass is
-/// fixed at 1.0 upstream). Spring values mirror the Compose M3 motion scheme
+/// scalar flows into the composed spec. Consumers convert the resolved data to ComposeAnimation
+/// runtime specs; no easing or playback state is stored here. Spring values mirror the Compose M3 motion scheme
 /// (<see cref="MotionScheme.Expressive"/>, pinned equal by test). Theme-independent.
 /// </summary>
 public class MotionTokenSource : ITokenSource

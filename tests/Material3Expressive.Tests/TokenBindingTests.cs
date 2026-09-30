@@ -44,7 +44,7 @@ public class TokenBindingTests
         resources.MergedDictionaries.Add(theme);
 
         button = new Button();
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Content = button,
             Resources = resources,

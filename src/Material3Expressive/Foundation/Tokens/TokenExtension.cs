@@ -20,6 +20,9 @@ namespace Material3Expressive.Foundation.Tokens;
 /// </summary>
 public class TokenExtension : MarkupExtension
 {
+    // Object-element syntax permits composing token bindings inside another MultiBinding.
+    public TokenExtension() { }
+
     public TokenExtension(MaterialTokenKey key)
     {
         Key = key;

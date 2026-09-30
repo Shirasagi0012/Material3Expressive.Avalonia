@@ -39,8 +39,8 @@ public static partial class MaterialTokens
         /// <summary>
         /// <c>md.comp.elevated-button.*</c> — elevated Button color and elevation slots (upstream
         /// ElevatedButtonTokens v0_11_0). Elevation is this style's defining feature; the per-state
-        /// levels are DIPs aliasing <c>md.sys.elevation.level*</c>, consumed by the template part's
-        /// <c>MaterialSurface.ShadowElevation</c>.
+        /// levels are DIPs aliasing <c>md.sys.elevation.level*</c>, combined by the theme into
+        /// <c>MaterialButton.Elevation</c>. Per-button animation supplies the surface's shadow height.
         /// </summary>
         public static class ElevatedButton
         {

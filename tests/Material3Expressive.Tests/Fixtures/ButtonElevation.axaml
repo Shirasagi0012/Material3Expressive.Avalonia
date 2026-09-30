@@ -1,0 +1,6 @@
+<Button xmlns="https://github.com/avaloniaui"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:MaterialButton.Elevation>
+    <m3:ButtonElevation Default="1" Pressed="2" Focused="4" Hovered="6" Disabled="0" />
+  </m3:MaterialButton.Elevation>
+</Button>

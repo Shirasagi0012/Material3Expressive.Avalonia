@@ -24,7 +24,7 @@ public class MaterialSymbolTests
 {
     private static Window Show(Control content, int size = 96)
     {
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Width = size,
             Height = size,

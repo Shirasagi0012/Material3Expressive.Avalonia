@@ -32,7 +32,7 @@ public class MaterialSurfaceRenderTests
         {
             Children = { new ColorScheme() },
         });
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Width = 160,
             Height = 160,
@@ -128,7 +128,7 @@ public class MaterialSurfaceRenderTests
         // The variant themes live in Button.axaml's own Styles.Resources, not in MaterialTheme's.
         var buttonStyles = Assert.IsAssignableFrom<Avalonia.Styling.Styles>(
             AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Styles/Button.axaml")));
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Width = 200,
             Height = 140,

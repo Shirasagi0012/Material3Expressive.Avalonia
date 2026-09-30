@@ -1,3 +1,5 @@
+using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
+using ComposeAnimation;
 using System;
 using Avalonia;
 using Avalonia.Controls;
@@ -293,15 +295,7 @@ public sealed class MaterialSurface : Control
     {
         base.OnDetachedFromVisualTree(e);
 
-        // The morph's animation track rides the owner's motion controller, which outlives this
-        // surface — drop it explicitly or it would leak one track per detach.
-        if (_shapeMorph is { } morph)
-        {
-            _interactionController?.Motion.Remove(morph.Progress);
-            _shapeMorph = null;
-            _chrome.CornerRadius = CornerRadius;
-        }
-
+        // The controller resets this presenter's motion when its attachment is released.
         _interactionAttachment?.Dispose();
         _interactionAttachment = null;
         _interactionController = null;
@@ -315,6 +309,15 @@ public sealed class MaterialSurface : Control
     {
         UpdateShapeMorph(state.HasFlag(InteractionState.Pressed));
         UpdateInteractionVisuals();
+    }
+
+    internal void ResetMotion()
+    {
+        _shapeMorph?.Dispose();
+        _shapeMorph = null;
+        _chrome.CornerRadius = CornerRadius;
+        InvalidateVisual();
+        _interactionOverlay.InvalidateVisual();
     }
 
     private void UpdateInteractionVisuals()
@@ -337,7 +340,7 @@ public sealed class MaterialSurface : Control
     private void UpdateShapeMorph(bool pressed)
     {
         var controller = _interactionController;
-        if (controller is null)
+        if (controller?.Motion is not { IsEnding: false } motion)
             return;
 
         var rest = CornerRadius;
@@ -352,13 +355,13 @@ public sealed class MaterialSurface : Control
         var spec = ResolveShapeMorphSpec();
         if (_shapeMorph is null)
         {
-            _shapeMorph = new AnimatedCornerRadius(rest, spec) { Size = Bounds.Size };
-            controller.Motion.Add(_shapeMorph.Progress);
+            _shapeMorph = new AnimatedCornerRadius(rest, spec, motion, UpdateInteractionVisuals)
+                { Size = Bounds.Size };
         }
 
         _shapeMorph.Size = Bounds.Size;
-        _shapeMorph.AnimateTo(target, spec);
-        controller.Motion.RequestFrame();
+        var shape = _shapeMorph;
+        _ = motion.Launch(ct => shape.AnimateToAsync(target, spec, ct), "Shape morph");
     }
 
     private SpringSpec ResolveShapeMorphSpec() =>

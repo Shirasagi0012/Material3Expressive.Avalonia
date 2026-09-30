@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "selectedOn": "2026-09-30",
+  "androidx": {
+    "repository": "https://github.com/androidx/androidx.git",
+    "commit": "f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea",
+    "material3Version": "1.5.0-alpha27",
+    "composeVersion": "1.13.0-alpha02"
+  },
+  "composeMultiplatformCore": {
+    "repository": "https://github.com/JetBrains/compose-multiplatform-core.git",
+    "commit": "a9e47e8aa04c95cfe572ab4297c770f3cbfb234e",
+    "tag": "v1.13.0-alpha01",
+    "version": "1.13.0-alpha01"
+  },
+  "producerDependencies": {
+    "composeGradlePlugin": "1.13.0-alpha01",
+    "composeRuntimeUiFoundationAnimation": "1.13.0-alpha01",
+    "material3": "org.jetbrains.compose.material3:material3:1.13.0-alpha01",
+    "material3Ripple": "org.jetbrains.compose.material3:material3-ripple:1.13.0-alpha01",
+    "resolvedDependencyGraphLocked": false,
+    "producerBuildAndRenderVerified": false
+  },
+  "sourceArtifacts": [
+    {
+      "coordinate": "androidx.compose.material3:material3:1.5.0-alpha27:sources",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/material3/material3/1.5.0-alpha27/material3-1.5.0-alpha27-sources.jar",
+      "sha256": "8a6ff6e724809c5bc548f5696433fc7dfafef58eea1ab5b6308e77bad21848bf",
+      "repositoryKey": "androidx",
+      "modulePath": "compose/material3/material3",
+      "scope": "commonMain",
+      "identicalKotlinFiles": 247
+    },
+    {
+      "coordinate": "org.jetbrains.compose.material3:material3-desktop:1.13.0-alpha01:sources",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/compose/material3/material3-desktop/1.13.0-alpha01/material3-desktop-1.13.0-alpha01-sources.jar",
+      "sha256": "9e877e3a22006e54ab9fe9ca8577c89689f59ed8078d0ce21d5b99759cf32688",
+      "repositoryKey": "composeMultiplatformCore",
+      "modulePath": "compose/material3/material3",
+      "scope": "allPackagedKotlinSources",
+      "identicalKotlinFiles": 351
+    },
+    {
+      "coordinate": "org.jetbrains.compose.material3:material3-ripple-desktop:1.13.0-alpha01:sources",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/compose/material3/material3-ripple-desktop/1.13.0-alpha01/material3-ripple-desktop-1.13.0-alpha01-sources.jar",
+      "sha256": "b23c70e54e994fab8ec21e4c4cd32c2691e9fe16ac0e83cc3b8f3035e7d20ea5",
+      "repositoryKey": "composeMultiplatformCore",
+      "modulePath": "compose/material3/material3-ripple",
+      "scope": "allPackagedKotlinSources",
+      "identicalKotlinFiles": 6
+    },
+    {
+      "coordinate": "org.jetbrains.compose.animation:animation-core-desktop:1.13.0-alpha01:sources",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/compose/animation/animation-core-desktop/1.13.0-alpha01/animation-core-desktop-1.13.0-alpha01-sources.jar",
+      "sha256": "82a541dcd390728c979b603be541e0d439bf97e6d8ab81e280265710c7f3342b",
+      "repositoryKey": "composeMultiplatformCore",
+      "modulePath": "compose/animation/animation-core",
+      "scope": "allPackagedKotlinSources",
+      "identicalKotlinFiles": 42
+    },
+    {
+      "coordinate": "org.jetbrains.compose.animation:animation-desktop:1.13.0-alpha01:sources",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/compose/animation/animation-desktop/1.13.0-alpha01/animation-desktop-1.13.0-alpha01-sources.jar",
+      "sha256": "a50c40d5a371110c32714f6b6e3ccc627c235104c99eb768714b33a2b25ce629",
+      "repositoryKey": "composeMultiplatformCore",
+      "modulePath": "compose/animation/animation",
+      "scope": "allPackagedKotlinSources",
+      "identicalKotlinFiles": 33
+    }
+  ]
+}

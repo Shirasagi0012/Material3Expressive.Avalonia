@@ -1,7 +1,8 @@
 using System;
 using Avalonia;
 using Avalonia.Media;
-using Material3Expressive.Foundation.Motion;
+using ComposeAnimation;
+using ComposeAnimation.Runtime;
 
 namespace Material3Expressive.Foundation.Interaction;
 
@@ -24,7 +25,7 @@ namespace Material3Expressive.Foundation.Interaction;
 /// Without it a quick tap produces a barely visible flicker.
 /// </para>
 /// </remarks>
-public sealed class RippleAnimation : IAnimation
+public sealed class RippleAnimation : IDisposable
 {
     private static readonly TimeSpan FadeIn = TimeSpan.FromMilliseconds(75);
     private static readonly TimeSpan RadiusGrowth = TimeSpan.FromMilliseconds(225);
@@ -33,9 +34,13 @@ public sealed class RippleAnimation : IAnimation
     /// <summary>A bounded ripple grows 10dp past the container's corner.</summary>
     private const double BoundedExtraRadius = 10;
 
-    private readonly TweenAnimation _alpha;
-    private readonly TweenAnimation _radiusFraction;
-    private readonly TweenAnimation _centerFraction;
+    private readonly Animatable<double> _alpha;
+    private readonly Animatable<double> _radiusFraction;
+    private readonly Animatable<double> _centerFraction;
+    private readonly TaskCompletionSource _finishSignal = new();
+    private readonly VisualAnimationScope _motion;
+    internal VisualAnimationScope Motion => _motion;
+    private Action? _onFrame;
 
     private readonly Point _origin;
     private readonly Point _center;
@@ -45,10 +50,15 @@ public sealed class RippleAnimation : IAnimation
 
     private bool _finishedFadingIn;
     private bool _finishRequested;
-    private bool _fadingOut;
+    private bool _started;
+    private bool _disposed;
 
-    public RippleAnimation(Point origin, Size bounds, bool bounded = true, double? radius = null)
+    /// <summary>Creates a ripple in its own child scope; disposing it leaves the parent active.</summary>
+    public RippleAnimation(Point origin, Size bounds, VisualAnimationScope parentScope,
+        bool bounded = true, double? radius = null)
     {
+        ArgumentNullException.ThrowIfNull(parentScope);
+        _motion = parentScope.CreateChild("Ripple");
         _bounded = bounded;
         _center = new Point(bounds.Width / 2, bounds.Height / 2);
         // CommonRipple deliberately discards the press position for an unbounded ripple. It
@@ -57,13 +67,12 @@ public sealed class RippleAnimation : IAnimation
         _startRadius = StartRadius(bounds);
         _endRadius = radius ?? EndRadius(bounds, bounded);
 
-        _alpha = new TweenAnimation(0, FadeIn, Easings.Linear);
-        _radiusFraction = new TweenAnimation(0, RadiusGrowth, Easings.FastOutSlowIn);
-        _centerFraction = new TweenAnimation(0, RadiusGrowth, Easings.Linear);
-
-        _alpha.AnimateTo(1);
-        _radiusFraction.AnimateTo(1);
-        _centerFraction.AnimateTo(1);
+        _alpha = _motion.CreateAnimatable(0d);
+        _radiusFraction = _motion.CreateAnimatable(0d);
+        _centerFraction = _motion.CreateAnimatable(0d);
+        _motion.SubscribeValue(_alpha, _ => _onFrame?.Invoke());
+        _motion.SubscribeValue(_radiusFraction, _ => _onFrame?.Invoke());
+        _motion.SubscribeValue(_centerFraction, _ => _onFrame?.Invoke());
     }
 
     /// <summary>The ripple's opacity multiplier, before the state layer's own opacity.</summary>
@@ -95,59 +104,50 @@ public sealed class RippleAnimation : IAnimation
             return;
 
         _finishRequested = true;
-        if (_finishedFadingIn)
-            BeginFadeOut();
+        _finishSignal.TrySetResult();
+        _onFrame?.Invoke();
     }
 
-    /// <summary>Compatibility name for ending the ripple associated with a released press.</summary>
-    public void Release() => Finish();
-
-    public bool Tick(TimeSpan delta)
+    /// <summary>Runs the three entry curves, waits for release, then fades out. One run per ripple.</summary>
+    public async Task AnimateAsync(Action? onFrame = null, CancellationToken cancellationToken = default)
     {
-        var alphaRunning = _alpha.Tick(delta);
-        var radiusRunning = _radiusFraction.Tick(delta);
-        var centerRunning = _centerFraction.Tick(delta);
-
-        // RippleAnimation.fadeIn() uses coroutineScope, so the phase completes only when alpha,
-        // radius, and centre have all arrived. Alpha reaches one at 75ms but radius/centre take
-        // 225ms. Starting fade-out at 75ms makes quick taps visibly collapse too early.
-        if (!_finishedFadingIn && !alphaRunning && !radiusRunning && !centerRunning)
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_started)
+            throw new InvalidOperationException("A ripple can only be played once.");
+        _started = true;
+        _onFrame = onFrame;
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(_motion.Lifetime, cancellationToken);
+        var token = lifetime.Token;
+        try
         {
+            await Task.WhenAll(
+                _alpha.AnimateToAsync(1, new TweenSpec<double>(FadeIn, easing: ComposeEasings.Linear),
+                    cancellationToken: token),
+                _radiusFraction.AnimateToAsync(1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.FastOutSlowIn),
+                    cancellationToken: token),
+                _centerFraction.AnimateToAsync(1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.Linear),
+                    cancellationToken: token));
+
+            // All three curves must finish, including the 225ms expansion on a quick tap.
             _finishedFadingIn = true;
-            if (_finishRequested)
-            {
-                BeginFadeOut();
-                return true;
-            }
+            await _finishSignal.Task.WaitAsync(token);
+            await _alpha.AnimateToAsync(0, new TweenSpec<double>(FadeOut, easing: ComposeEasings.Linear),
+                cancellationToken: token);
+            IsComplete = true;
         }
-
-        if (_fadingOut && !alphaRunning)
+        finally
         {
-            IsComplete = true;
-            return false;
+            lifetime.Cancel();
+            _onFrame = null;
         }
-
-        return alphaRunning || radiusRunning || centerRunning;
     }
 
-    public void Settle()
+    public void Dispose()
     {
-        _alpha.Settle();
-        _radiusFraction.Settle();
-        _centerFraction.Settle();
-
-        _finishedFadingIn = true;
-        if (_finishRequested)
-            IsComplete = true;
-    }
-
-    private void BeginFadeOut()
-    {
-        if (_fadingOut || IsComplete)
-            return;
-
-        _fadingOut = true;
-        _alpha.AnimateTo(0, FadeOut, Easings.Linear);
+        if (_disposed) return;
+        _disposed = true;
+        _motion.Dispose();
+        _onFrame = null;
     }
 
     /// <summary>
@@ -170,7 +170,7 @@ public sealed class RippleAnimation : IAnimation
         return Math.Max(bounds.Width, bounds.Height) * 0.3;
     }
 
-    private static double EndRadius(Size bounds, bool bounded)
+    internal static double EndRadius(Size bounds, bool bounded)
     {
         var covering = Math.Sqrt(bounds.Width * bounds.Width + bounds.Height * bounds.Height) / 2;
         return bounded ? covering + BoundedExtraRadius : covering;

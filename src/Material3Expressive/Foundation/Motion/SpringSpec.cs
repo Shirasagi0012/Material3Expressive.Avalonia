@@ -22,4 +22,8 @@ public readonly record struct SpringSpec(
 
     /// <summary>True when the spring cannot overshoot its target.</summary>
     public bool IsCriticallyDamped => DampingRatio >= 1.0;
+
+    /// <summary>Creates an execution spec for a scalar in this specification's units.</summary>
+    public ComposeAnimation.Runtime.SpringSpec<double> ToAnimationSpec() =>
+        new(DampingRatio, Stiffness, VisibilityThreshold);
 }

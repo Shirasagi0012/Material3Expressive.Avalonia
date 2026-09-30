@@ -36,7 +36,7 @@ public class MaterialSurfaceTests
         });
 
         // A Window roots itself at construction, so styles must be in place before Content is set.
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Resources = resources,
             RequestedThemeVariant = ThemeVariant.Light,
@@ -92,7 +92,7 @@ public class MaterialSurfaceTests
         // MaterialTheme.axaml carries the token stock plus both style sheets. The implicit
         // MaterialSurface theme also applies to PART_Container inside the Button template; the
         // template's own bindings (Template priority) must still win over the theme frame.
-        var window = new Window { RequestedThemeVariant = ThemeVariant.Light };
+        var window = new MotionTestWindow() { RequestedThemeVariant = ThemeVariant.Light };
         window.Styles.Add(LoadStyles("MaterialTheme.axaml"));
 
         var button = new Button { Content = "OK" };
@@ -128,7 +128,7 @@ public class MaterialSurfaceTests
             Children = { new ColorScheme() },
         });
 
-        var window = new Window
+        var window = new MotionTestWindow()
         {
             Resources = resources,
             RequestedThemeVariant = ThemeVariant.Light,

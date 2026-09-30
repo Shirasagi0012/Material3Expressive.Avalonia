@@ -1,5 +1,7 @@
 using System;
 using Avalonia;
+using ComposeAnimation;
+using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Motion;
 
 namespace Material3Expressive.Foundation.Interaction;
@@ -24,24 +26,37 @@ namespace Material3Expressive.Foundation.Interaction;
 /// error into the frozen value.
 /// </para>
 /// </remarks>
-public sealed class AnimatedCornerRadius
+public sealed class AnimatedCornerRadius : IDisposable
 {
-    private readonly SpringAnimation _progress;
+    private readonly VisualAnimationScope _motion;
+    private readonly Animatable<double> _progress;
+    private readonly Action? _onFrame;
+    private SpringSpec _spec;
     private CornerRadius _start;
     private CornerRadius _target;
+    private CornerRadius _requestedTarget;
+    private int _generation;
+    private bool _disposed;
 
-    public AnimatedCornerRadius(CornerRadius initial, SpringSpec spec)
+    /// <summary>Creates a morph in its own child scope; disposing it leaves the parent active.</summary>
+    public AnimatedCornerRadius(CornerRadius initial, SpringSpec spec, VisualAnimationScope parentScope,
+        Action? onFrame = null)
     {
+        ArgumentNullException.ThrowIfNull(parentScope);
+        _motion = parentScope.CreateChild("Shape");
         _start = initial;
         _target = initial;
-        _progress = new SpringAnimation(1.0, spec);
+        _requestedTarget = initial;
+        _spec = spec;
+        _onFrame = onFrame;
+        _progress = _motion.CreateAnimatable(1d);
     }
 
-    /// <summary>The animation to register with a material motion controller.</summary>
-    public IAnimation Progress => _progress;
+    /// <summary>The current interpolation fraction.</summary>
+    public double Progress => _progress.Value;
 
     /// <summary>The corners being animated towards, before clamping.</summary>
-    public CornerRadius Target => _target;
+    public CornerRadius Target => _requestedTarget;
 
     public bool IsRunning => _progress.IsRunning;
 
@@ -55,48 +70,66 @@ public sealed class AnimatedCornerRadius
     public CornerRadius Current =>
         Lerp(ClampToSize(_start), ClampToSize(_target), _progress.Value);
 
-    /// <summary>Jumps to corners without animating.</summary>
-    public void SnapTo(CornerRadius corners)
-    {
-        _start = corners;
-        _target = corners;
-        _progress.SnapTo(1.0);
-    }
-
     /// <summary>Starts morphing towards corners, or reverses if it is the one being left.</summary>
     /// <param name="corners">The corners to head for.</param>
     /// <param name="spec">A spring to switch to; the current one is kept when omitted.</param>
-    public void AnimateTo(CornerRadius corners, SpringSpec? spec = null)
+    public async Task AnimateToAsync(CornerRadius corners, SpringSpec? spec = null,
+        CancellationToken cancellationToken = default)
     {
-        if (_target.Equals(corners))
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_requestedTarget.Equals(corners))
             return;
 
+        var generation = ++_generation;
+        _requestedTarget = corners;
+        _spec = spec ?? _spec;
+        var progress = _progress.Value;
+        var velocity = _progress.Velocity;
+        CornerRadius start;
+        double initialProgress;
+        double initialVelocity;
         if (corners.Equals(_start))
         {
             // Reversal: keep the momentum by flipping progress and negating velocity.
-            _start = _target;
-            _target = corners;
-
-            var progress = _progress.Value;
-            var velocity = _progress.Velocity;
-
-            _progress.SnapTo(1.0 - progress);
-            _progress.AnimateTo(1.0, spec, -velocity);
-            return;
+            start = _target;
+            initialProgress = 1.0 - progress;
+            initialVelocity = -velocity;
+        }
+        else
+        {
+            // Preserve the visible shape for a third destination; exact endpoints avoid drift.
+            start = progress switch
+            {
+                1.0 => _target,
+                0.0 => _start,
+                _ => Lerp(ClampToSize(_start), ClampToSize(_target), progress)
+            };
+            initialProgress = 0;
+            initialVelocity = 0;
         }
 
-        // A new destination. Freeze what is on screen as the starting corners, taking the operand
-        // itself at a progress boundary so a rapid toggle accumulates no rounding error.
-        _start = _progress.Value switch
-        {
-            >= 1.0 => _target,
-            <= 0.0 => _start,
-            var progress => Lerp(ClampToSize(_start), ClampToSize(_target), progress)
-        };
+        // Snapping resets the progress coordinate system, not the visible shape. Publish only
+        // after both endpoints and progress agree; a Value subscription would expose half an update.
+        await _progress.SnapToAsync(initialProgress, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_disposed || generation != _generation)
+            throw new OperationCanceledException(new CancellationToken(true));
 
+        _start = start;
         _target = corners;
-        _progress.SnapTo(0.0);
-        _progress.AnimateTo(1.0, spec);
+        _onFrame?.Invoke();
+        if (_disposed || generation != _generation)
+            throw new OperationCanceledException(new CancellationToken(true));
+        await _progress.AnimateToAsync(1.0, _spec.ToAnimationSpec(), initialVelocity,
+            block: _ => _onFrame?.Invoke(), cancellationToken: cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _generation++;
+        _motion.Dispose();
     }
 
     internal static CornerRadius Lerp(CornerRadius from, CornerRadius to, double progress)
