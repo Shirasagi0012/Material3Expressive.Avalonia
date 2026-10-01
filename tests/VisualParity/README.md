@@ -9,9 +9,35 @@ Agent 通过文件系统读取 Markdown 与 YAML，无需调用查询脚本。
 
 | 要做什么 | 阅读位置 |
 | --- | --- |
-| 运行测试、查看结果、迁移旧结果 | 本文 |
-| 新增双端用例、选择现有例子、了解宿主边界 | [AUTHORING.md](AUTHORING.md) |
+| 运行测试、查看结果、了解格式版本 | 本文 |
+| 选择覆盖组合、测量和采样时机，编写双端用例 | [AUTHORING.md](AUTHORING.md) |
 | 理解测量定义、YAML、像素与差异状态 | [MEASUREMENTS.md](MEASUREMENTS.md) |
+
+## 源码结构
+
+```text
+Material3Expressive.Parity/
+  Program.cs                # CLI、筛选与运行流程
+  Cases/                    # 独立组件测试类、数据源和专用读数器
+  Execution/                # 自动发现、数据展开和实例执行
+  Protocol/                 # 元数据、采集事实、JSON 与规范像素
+  Capture/                  # 宿主、快照、通用读数、环境和参考进程
+  Comparison/               # 差分模型和比较算法
+  Results/                  # YAML、概览和 HTML 报告
+    Templates/              # HTML / CSS
+reference/src/main/kotlin/
+  Main.kt                   # Compose 进程入口
+  cases/                    # 与 C# 对应的组件场景
+  execution/                # 注解、场景发现与 suspend 调用
+  protocol/                 # 采集传输契约
+  capture/                  # Compose 宿主、快照与通用读数
+Material3Expressive.Parity.Tests/
+  Cases/ Protocol/ Capture/ Comparison/ Results/
+```
+
+新增或修改用例直接进入对应的 `*Cases` 文件，例如 [ButtonCases.cs](Material3Expressive.Parity/Cases/ButtonCases.cs)；
+通过 suite/scenario 标记自动发现，无中央目录和入口注册表。更具体的入口说明见 [AUTHORING](AUTHORING.md#实现入口)。
+各目录仍在同一程序集内；执行模型见编写文档。
 
 ## 输出与阅读
 
@@ -31,7 +57,7 @@ Agent 通过文件系统读取 Markdown 与 YAML，无需调用查询脚本。
       0000-initial.avalonia.full.rgba
       0000-initial.diff.full.png
       0000-initial.diff.full.rgba
-    case.yaml                # 身份、样本索引、执行错误、清理轨迹、自检结果
+    case.yaml                # 身份与实际配置、样本索引、执行错误、清理轨迹、自检结果
     environment.yaml         # 双端环境与二进制来源，每用例保存一次
     manifest.json            # 权威数据及图像的完整文件集合与哈希
     report.html              # 从这些 YAML 和像素文件生成
@@ -58,8 +84,9 @@ HTML 提供时间线、字段历史、原图/叠加/差异图、像素查询、�
 当前执行参考为 Windows x64、density=1、fontScale=1。需要 .NET 10、JDK（本机 JDK 25）、
 锁定 Gradle 依赖及项目 README 中的本地 ComposeAnimation NuGet 包。
 参考源码与制品版本按 [`upstream-baseline.json`](../../docs/upstream-baseline.json) 固定。
-YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行；首次使用先 build，
-list、render、compare 和 verify-reference 不自动构建。run、self-test 自动构建双端，capture-actual 只构建 Avalonia 端。
+YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行。
+run、self-test 自动构建双端；list、capture-actual 只构建 C# 项目。
+render 和 verify-reference 不自动构建，首次使用前执行 build。
 
 ```powershell
 ./tests/VisualParity/parity.ps1 build
@@ -84,24 +111,22 @@ list、render、compare 和 verify-reference 不自动构建。run、self-test �
 # 从公开结果重新生成概览和 HTML，不依赖采集缓存，也不执行两端组件。
 ./tests/VisualParity/parity.ps1 render --directory artifacts/visual-parity/<run>/cases/button.filled.press
 
-# 将旧 schema 2 用例转换到一个全新目录；旧采集包保持原样。
-./tests/VisualParity/parity.ps1 compare --directory artifacts/visual-parity/<old-run>/button.filled.press --output artifacts/visual-parity/converted-button
-
 # 校验内部 Compose 采集包及当前基线。
 ./tests/VisualParity/parity.ps1 verify-reference --directory <compose-capture-bundle>
 ```
 
-### 版本与迁移
+### 文件版本
 
-结果文件版本为 **schema 3**，用例元数据和双端采集传输协议仍为 **schema 2**。
-旧 `inspect` 已移除；读取概览和 YAML 即可替代查询。默认结果不再生成 `agent.json`、
-`comparison.json`、`summary.json` 或双端 `observations.json` 副本。schema 1 不自动升级。
+公开结果为 **schema 5**，用例元数据为 **schema 4**（suite/scenario 与必需的对象 config），双端采集协议仍为 **schema 2**。
+只支持当前格式，不读取旧元数据或旧结果，没有升级、回退或 `compare` 转换入口；旧产物需要重新运行生成。
 `render` 只更新派生的 Markdown/HTML，先验证权威文件集合、SHA256、样本身份和 PNG/RGBA 一致性。
-manifest 不包含这两个可重建的展示文件。结果目录可以独立复制和重新呈现。
+manifest 不包含这两个可重建的展示文件。当前结果目录可以独立复制和重新呈现。
 
 ## 缓存与完整性
 
-运行前冻结用例元数据。内部原始包、自检重复包和临时差分保存在
+用例数据源只在 C# 各组件测试类中维护，支持循环生成配置；发现、展开、校验和筛选后，
+运行器在捕获前冻结全部选中用例的完整 JSON，双端都读取它。元数据包含 config，整体参与参考缓存身份。
+公开的 `case.yaml` 保留实际配置。内部原始包、自检重复包和临时差分保存在
 `artifacts/visual-parity-captures/<id>/<case>/`，不混入公开结果；`case.yaml` 的 sourceBundle 保留诊断路径，
 但读取或重建报告不依赖它。参考缓存仍在 `artifacts/visual-parity-reference/`，命中后校验文件集合、
 SHA256、身份和像素协议。失败捕获不作为成功参考缓存。

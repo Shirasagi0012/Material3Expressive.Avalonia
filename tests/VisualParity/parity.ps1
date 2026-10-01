@@ -1,5 +1,5 @@
 param(
-    [Parameter(Position=0)][ValidateSet('run','list','compare','render','verify-reference','build','test','self-test','capture-actual')][string]$Command = 'run',
+    [Parameter(Position=0)][ValidateSet('run','list','render','verify-reference','build','test','self-test','capture-actual')][string]$Command = 'run',
     [Parameter(ValueFromRemainingArguments=$true)][string[]]$Arguments
 )
 $ErrorActionPreference = 'Stop'
@@ -14,7 +14,7 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Compose reference build failed.' }
         } finally { Pop-Location }
     }
-    if ($Command -in @('build','run','self-test','capture-actual')) {
+    if ($Command -in @('build','list','run','self-test','capture-actual')) {
         & dotnet restore $project --locked-mode
         if ($LASTEXITCODE -ne 0) { throw 'Locked NuGet restore failed.' }
         & dotnet build $project --no-restore --verbosity quiet

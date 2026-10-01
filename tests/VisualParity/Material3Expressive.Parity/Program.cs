@@ -11,7 +11,6 @@ public static class Program
         try
         {
             var root = FindRoot();
-            var parity = Path.Combine(root, "tests/VisualParity");
             var command = args.FirstOrDefault() ?? "help";
             for (var i = 1; i < args.Length; i++)
             {
@@ -39,42 +38,6 @@ public static class Program
                 return 0;
             }
 
-            if (command == "compare")
-            {
-                var directory = Option("--directory") ?? throw new ArgumentException("--directory is required");
-                var input = Path.Combine(directory, "case.json");
-                var caseMetadata = ParityJson.Read<CaseMetadata>(input);
-                caseMetadata.Validate();
-
-                Capture? Read(string side)
-                {
-                    var path = Path.Combine(directory, side);
-                    if (!Directory.Exists(path)) return null;
-                    ParityJson.Verify(path);
-                    var capture = ParityJson.Read<Capture>(Path.Combine(path, "observations.json"));
-                    if (capture.MetadataSha256 != ParityJson.Hash(input))
-                        throw new InvalidDataException("Capture metadata hash differs from case.json.");
-                    return capture;
-                }
-
-                var expected = Read("expected");
-                var actual = Read("actual");
-                if (expected is null && actual is null) throw new InvalidDataException("No capture bundles found.");
-                var destination = Path.GetFullPath(Option("--output") ?? throw new ArgumentException("compare requires --output NEW-DIRECTORY; source bundles are never modified."));
-                if (Directory.Exists(destination)) throw new IOException("Output must be a new directory.");
-                var scratch = Path.Combine(root, "artifacts/visual-parity-captures", Guid.NewGuid().ToString("N"), "comparison");
-                var comparison = ParityComparison.Run(caseMetadata, expected, actual, Path.Combine(directory, "expected"),
-                    Path.Combine(directory, "actual"), scratch);
-                var repeatPath = Path.Combine(directory, "repeatability.json");
-                ResultFiles.Write(destination, caseMetadata, comparison, expected, actual,
-                    Path.Combine(directory, "expected"), Path.Combine(directory, "actual"), scratch,
-                    File.Exists(repeatPath) ? JsonNode.Parse(File.ReadAllText(repeatPath)) : null);
-                var result = Report.Write(destination);
-                Console.WriteLine(ResultFiles.Overview(result));
-                Console.WriteLine("Overview: " + Path.Combine(destination, "overview.md"));
-                return ExitCode(comparison, args.Contains("--require-equal"));
-            }
-
             if (command == "render")
             {
                 var directory = Option("--directory") ?? throw new ArgumentException("--directory is required");
@@ -87,28 +50,23 @@ public static class Program
             if (command is not ("list" or "run" or "self-test" or "capture-actual"))
             {
                 Console.WriteLine(
-                    "parity list|run|self-test|capture-actual [--case ID|--family FAMILY] [--output NEW-DIRECTORY] [--refresh-reference] [--require-equal]\nparity compare --directory SCHEMA2-CASE --output NEW-DIRECTORY\nparity render|verify-reference --directory DIRECTORY\nRead overview.md and samples/*.yaml directly; inspect has been removed.");
+                    "parity list|run|self-test|capture-actual [--case ID|--family FAMILY] [--output NEW-DIRECTORY] [--refresh-reference] [--require-equal]\nparity render|verify-reference --directory DIRECTORY\nRead overview.md and samples/*.yaml directly.");
                 return command == "help" ? 0 : 2;
             }
 
-            var metadata = Directory.EnumerateFiles(Path.Combine(parity, "cases"), "*.json").Order().Select(ParityJson.Read<CaseMetadata>)
-                .ToArray();
-            foreach (var m in metadata)
-            {
-                m.Validate();
-                if (!Cases.Entries.ContainsKey(m.AvaloniaEntry))
-                    throw new InvalidDataException("Unknown Avalonia entry: " + m.AvaloniaEntry);
-            }
-
-            if (metadata.Select(m => m.Id).Distinct().Count() != metadata.Length) throw new InvalidDataException("Duplicate case ids.");
+            var scenarios = ScenarioDiscovery.Discover(typeof(Program).Assembly.GetTypes());
+            var metadata = ScenarioDiscovery.Expand(scenarios.Values);
             var selected = metadata.Where(m => Option("--case") is not { } id || m.Id == id)
-                .Where(m => Option("--family") is not { } family || m.Family == family).ToArray();
+                .Where(m => Option("--family") is not { } family || m.Suite == family).ToArray();
             if (selected.Length == 0) throw new ArgumentException("No cases matched.");
             if (command == "list")
             {
-                foreach (var m in selected) Console.WriteLine($"{m.Id,-30} {m.ComposeEntry} / {m.AvaloniaEntry}");
+                foreach (var m in selected) Console.WriteLine($"{m.Id,-30} {m.Suite} / {m.Scenario}");
                 return 0;
             }
+
+            if (command != "capture-actual")
+                ScenarioDiscovery.RequireReferenceScenarios(selected, await ReferenceProducer.DiscoverScenarios(root));
 
             var output = Path.GetFullPath(Option("--output") ?? Path.Combine(root, "artifacts/visual-parity",
                 DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..8]));
@@ -117,6 +75,9 @@ public static class Program
             var outcomes = new List<Comparison>();
             var unstable = false;
             var captureRoot = Path.Combine(root, "artifacts/visual-parity-captures", Guid.NewGuid().ToString("N"));
+            // Freeze every selected definition before either producer starts.
+            foreach (var m in selected)
+                ParityJson.Write(Path.Combine(captureRoot, m.Id, "case.json"), m);
             await using var session = HeadlessUnitTestSession.StartNew(typeof(ParityAppBuilder));
             foreach (var m in selected)
             {
@@ -125,7 +86,7 @@ public static class Program
                 JsonNode? repeatability = null;
                 Directory.CreateDirectory(directory);
                 var input = Path.Combine(directory, "case.json");
-                ParityJson.Write(input, m);
+
                 Capture? expected = null;
                 Capture? actual = null;
                 Comparison comparison;
@@ -143,10 +104,12 @@ public static class Program
                         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
                         var result = await session.Dispatch(async () =>
                         {
-                            var writer = new CaptureWriter(m, input, target, root, extra);
+                            var frozen = ParityJson.Read<CaseMetadata>(input);
+                            frozen.Validate();
+                            var writer = new CaptureWriter(frozen, input, target, root, extra);
                             try
                             {
-                                await Cases.Entries[m.AvaloniaEntry](writer);
+                                await scenarios[new(frozen.Suite, frozen.Scenario)].Execute(writer);
                             }
                             catch (Exception error)
                             {

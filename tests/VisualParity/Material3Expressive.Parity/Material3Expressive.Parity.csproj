@@ -7,7 +7,7 @@
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     </PropertyGroup>
     <ItemGroup>
-        <None Update="Report*.html;Report.styles.css" CopyToOutputDirectory="PreserveNewest"/>
+        <None Update="Results/Templates/*.html;Results/Templates/*.css" CopyToOutputDirectory="PreserveNewest"/>
         <PackageReference Include="Avalonia.Headless"/>
         <PackageReference Include="ComposeAnimation.TestSupport"/>
         <PackageReference Include="YamlDotNet"/>

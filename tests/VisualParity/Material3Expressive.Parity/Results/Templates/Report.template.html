@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visual parity report</title>
+    <style>/*PARITY_STYLES*/</style>
+</head>
+<body class="app">
+<div class="casebar">
+    <a class="button" id="allCases" aria-label="Back to case list" hidden>← All cases</a>
+    <div class="breadcrumb"><span id="family" class="muted"></span><span class="chevron">›</span><span
+            id="caseId"></span><span class="chevron">›</span>
+        <h1 id="title"></h1></div>
+    <div id="counts" class="counts" aria-label="Case coverage"></div>
+    <a class="button" href="overview.md">Overview ↗</a>
+    <a class="button" id="sampleFile" hidden>Sample YAML ↗</a>
+</div>
+<pre id="errors" class="notice error-banner" hidden></pre>
+<main class="shell">
+    <aside class="panel sidebar" aria-label="Report navigation">
+        <div class="tabs" role="tablist" aria-label="Navigation">
+            <button id="nav-samples" role="tab" aria-selected="true" aria-controls="samples-nav">Samples</button>
+            <button id="nav-fields" role="tab" aria-selected="false" aria-controls="fields-nav" tabindex="-1">Fields
+            </button>
+        </div>
+        <div class="sidebar-search"><input id="navSearch" type="search" placeholder="Filter samples…"
+                                           aria-label="Filter navigation"></div>
+        <div id="samples-nav" class="sidebar-content" role="tabpanel" aria-labelledby="nav-samples">
+            <div class="nav-header"><span>Time (µs)</span><span>Sample / stage</span><span>Δ / —</span></div>
+            <div id="timeline"></div>
+        </div>
+        <div id="fields-nav" class="sidebar-content" role="tabpanel" aria-labelledby="nav-fields" hidden>
+            <div id="histories"></div>
+        </div>
+        <div id="navFoot" class="sidebar-foot"></div>
+    </aside>
+    <div class="workspace">
+        <section class="panel measurements" aria-label="Sample measurements">
+            <div class="toolbar">
+                <div class="sample-heading"><h2 id="sampleTitle"></h2><small id="sampleInfo"></small></div>
+                <label>Point <select id="point" aria-label="Measurement point"></select></label>
+                <div class="pager">
+                    <button id="previous" aria-label="Previous sample">← Previous</button>
+                    <button id="next" aria-label="Next sample">Next →</button>
+                </div>
+            </div>
+            <div class="toolbar secondary">
+                <label>Dimension <select id="category">
+                    <option value="all">All</option>
+                    <option>geometry</option>
+                    <option>text</option>
+                    <option>properties</option>
+                    <option>motion</option>
+                </select></label>
+                <label><input id="equal" type="checkbox" checked> Show equal</label>
+                <input id="search" type="search" placeholder="Filter measurements…" aria-label="Filter measurements">
+                <small id="fieldCount"></small>
+            </div>
+            <div id="sampleNotice" class="notice" hidden></div>
+            <div id="fields" class="scroll"></div>
+        </section>
+        <section class="panel inspector" aria-label="Observation inspector">
+            <div class="tabs" role="tablist" aria-label="Inspector">
+                <button id="tab-details" role="tab" aria-selected="true" aria-controls="panel-details">Details</button>
+                <button id="tab-descriptor" role="tab" aria-selected="false" aria-controls="panel-descriptor"
+                        tabindex="-1">Descriptor
+                </button>
+                <button id="tab-trends" role="tab" aria-selected="false" aria-controls="panel-trends" tabindex="-1">
+                    Trends
+                </button>
+                <button id="tab-raster" role="tab" aria-selected="false" aria-controls="panel-raster" tabindex="-1">
+                    Raster
+                </button>
+                <button id="tab-trace" role="tab" aria-selected="false" aria-controls="panel-trace" tabindex="-1">
+                    Trace
+                </button>
+                <button id="tab-environment" role="tab" aria-selected="false" aria-controls="panel-environment"
+                        tabindex="-1">Environment
+                </button>
+                <button id="tab-raw" role="tab" aria-selected="false" aria-controls="panel-raw" tabindex="-1">Raw
+                </button>
+                <button id="tab-stability" role="tab" aria-selected="false" aria-controls="panel-stability"
+                        tabindex="-1" hidden>Repeatability
+                </button>
+            </div>
+            <div id="panel-details" class="tab-panel" role="tabpanel" aria-labelledby="tab-details">
+                <div class="detail-layout">
+                    <nav id="fieldTree" class="field-tree" aria-label="Fields in current point"></nav>
+                    <div id="fieldDetails" class="detail-content"></div>
+                </div>
+            </div>
+            <div id="panel-descriptor" class="tab-panel section-content" role="tabpanel"
+                 aria-labelledby="tab-descriptor" hidden></div>
+            <div id="panel-trends" class="tab-panel section-content" role="tabpanel" aria-labelledby="tab-trends"
+                 hidden></div>
+            <div id="panel-raster" class="tab-panel section-content" role="tabpanel" aria-labelledby="tab-raster"
+                 hidden>
+                <div class="controls">
+                    <label>Raster <select id="raster"></select></label>
+                    <label>Zoom <select id="zoom">
+                        <option>1</option>
+                        <option selected>2</option>
+                        <option>4</option>
+                        <option>8</option>
+                    </select></label>
+                    <label>Overlay <input id="opacity" type="range" min="0" max="100" value="50"
+                                          aria-label="Overlay opacity"></label>
+                    <label><input id="regions" type="checkbox"> Point regions</label>
+                    <label>Highlight Δ &gt; <input id="threshold" type="number" min="0" max="255" value="0"
+                                                   aria-label="Viewing channel threshold"></label>
+                </div>
+                <div id="rasterInfo" class="muted"></div>
+                <div id="rasterStats" class="raster-stats"></div>
+                <div class="pixel-reader">
+                    <div class="controls"><label>X <input id="pixelX" type="number" min="0" value="0"></label><label>Y
+                        <input id="pixelY" type="number" min="0" value="0"></label>
+                        <button id="readPixel">Read pixel</button>
+                        <button id="unpinPixel" hidden>Unpin</button>
+                        <small>Hover to inspect · click to pin</small></div>
+                    <pre id="pixel" aria-live="polite"></pre>
+                </div>
+                <div id="canvases" class="raster-grid"></div>
+                <details>
+                    <summary>Raster descriptors, metrics and point regions</summary>
+                    <pre id="metrics"></pre>
+                </details>
+            </div>
+            <div id="panel-trace" class="tab-panel section-content" role="tabpanel" aria-labelledby="tab-trace"
+                 hidden></div>
+            <div id="panel-environment" class="tab-panel section-content" role="tabpanel"
+                 aria-labelledby="tab-environment" hidden>
+                <div class="section-heading"><h2>Environment &amp; binary provenance</h2><small>Separate from component
+                    coverage</small></div>
+                <div id="environment"></div>
+            </div>
+            <div id="panel-raw" class="tab-panel section-content" role="tabpanel" aria-labelledby="tab-raw" hidden>
+                <div class="raw-toolbar"><label>Data <select id="rawMode">
+                    <option value="field">Selected field</option>
+                    <option value="sample">Selected sample</option>
+                    <option value="captures">Full captures</option>
+                    <option value="comparison">Full comparison</option>
+                </select></label><small>Original values · no display rounding</small><a href="overview.md">Overview
+                    ↗</a></div>
+                <pre id="raw"></pre>
+            </div>
+            <div id="panel-stability" class="tab-panel section-content" role="tabpanel" aria-labelledby="tab-stability"
+                 hidden></div>
+        </section>
+    </div>
+</main>
+<script>
+    'use strict';
+    const data = /*PARITY_DATA*/;
+    const $ = id => document.getElementById(id);
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[c]));
+    const c = data.comparison, samples = c.samples, histories = new Map(), decoded = new Map();
+    const state = {
+        sample: samples.find(s => s.status === 'different')?.id ?? samples[0]?.id,
+        point: null,
+        field: null,
+        navigation: 'samples',
+        tab: 'details',
+        collapsed: new Set(),
+        pinned: false
+    };
+    const statusLabel = s => ({
+        equal: 'Equal',
+        different: 'Different',
+        notCompared: 'Not compared',
+        error: 'Error'
+    }[s] ?? s);
+    const statusIcon = s => `<span class="status ${esc(s)}" role="img" aria-label="${esc(statusLabel(s))}" title="${esc(statusLabel(s))}">${{
+        equal: '✓',
+        different: '≠',
+        notCompared: '—',
+        error: '!'
+    }[s] ?? '?'}</span>`;
+    const chip = (label, value, cls = '') => `<span class="chip ${cls}">${label} <b>${value}</b></span>`;
+    const table = (headers, rows, cls = '') => `<table class="${cls}"><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+    const empty = text => `<div class="empty">${esc(text)}</div>`;
+    const current = () => samples.find(s => s.id === state.sample);
+    const point = () => current()?.points.find(p => p.id === state.point);
+    const field = () => point()?.fields.find(f => f.name === state.field);
+    const measurement = f => f.expected ?? f.actual;
+    const group = f => {
+        const d = measurement(f), line = f.name.match(/^line\.(\d+)\./);
+        return d?.category === 'text' ? (line ? 'text · line ' + line[1] : 'text · block') : (d?.category ?? 'other')
+    };
+    const sortFields = fs => [...fs].sort((a, b) => group(a).localeCompare(group(b), undefined, {numeric: true}) || a.name.localeCompare(b.name, undefined, {numeric: true}));
+    const componentNames = d => d?.components ?? (d?.definition === 'layout.box.local-size' && d?.kind === 'point' ? ['width', 'height'] : ({
+        number: ['value'],
+        point: ['x', 'y'],
+        range: ['start', 'endExclusive'],
+        rect: ['x', 'y', 'width', 'height'],
+        color: ['r', 'g', 'b', 'a'],
+        quad: ['p0.x', 'p0.y', 'p1.x', 'p1.y', 'p2.x', 'p2.y', 'p3.x', 'p3.y'],
+        matrix: ['m11', 'm12', 'm21', 'm22', 'm31', 'm32']
+    }[d?.kind] ?? []));
+    const semanticKey = x => JSON.stringify([...[x.f.expected, x.f.actual].map(d => d ? [d.category, d.kind, d.unit, d.space, d.definition, componentNames(d)] : null), x.p.expectedRole, x.p.actualRole, x.p.expectedParentId, x.p.actualParentId]);
+    const format = d => !d ? 'Absent' : d.status !== 'measured' ? statusLabel(d.status) : JSON.stringify(d.numbers ?? d.strings ?? d.boolean);
+    const fullFormat = d => d && d.status !== 'measured' ? d.status + ': ' + d.reason : format(d);
+    const preview = v => `<span class="value-preview mono" title="${esc(v)}">${esc(v)}</span>`;
+    const time = (e, a) => e === a ? (e ?? '—') : `${e ?? '—'} / ${a ?? '—'}`;
+
+    function coverage(s) {
+        const statuses = s.points.flatMap(p => p.fields.length ? p.fields.map(f => f.status) : [p.status]).concat(s.rasters.map(r => r.status));
+        return Object.fromEntries(['equal', 'different', 'notCompared'].map(t => [t, statuses.filter(x => x === t).length]));
+    }
+
+    for (const s of samples) for (const p of s.points) for (const f of p.fields) {
+        const key = p.id + '/' + f.name;
+        if (!histories.has(key)) histories.set(key, []);
+        histories.get(key).push({s, p, f});
+    }
+    $('title').textContent = data.metadata.title;
+    if (data.suiteHref) { $('allCases').href = data.suiteHref; $('allCases').hidden = false; }
+    $('caseId').textContent = data.metadata.id;
+    $('family').textContent = data.metadata.suite;
+    document.title = data.metadata.title + ' · Visual parity';
+    $('counts').innerHTML = chip('Observations', c.coverage.equal + c.coverage.different + c.coverage.notCompared) + chip('Equal', c.coverage.equal, 'equal') + chip('Different', c.coverage.different, 'different') + chip('Not compared', c.coverage.notCompared, 'notCompared') + chip('Errors', c.errors.length, c.errors.length ? 'error' : '');
+    $('counts').title = 'Field and raster observations across samples; counts are not completion percentages or independent defects.';
+    if (c.errors.length) {
+        $('errors').hidden = false;
+        $('errors').textContent = c.errors.join('\n');
+    }
+    $('navFoot').textContent = `${samples.length} samples · ${histories.size} field histories`;
+
+    function navigation() {
+        const q = $('navSearch').value.toLowerCase();
+        $('timeline').innerHTML = samples.filter(s => [s.id, s.expectedStage, s.actualStage, s.expectedTimeUs, s.actualTimeUs].join(' ').toLowerCase().includes(q)).map(s => {
+            const n = coverage(s);
+            return `<button class="sample-row" data-sample="${esc(s.id)}" aria-current="${s.id === state.sample}" title="${esc(s.id)} · ${esc(s.expectedStage)} / ${esc(s.actualStage)}"><span class="numeric">${esc(time(s.expectedTimeUs, s.actualTimeUs))}</span><span><span class="sample-name">${esc(s.id)}</span><small>${esc(time(s.expectedStage, s.actualStage))}</small></span><span class="delta-count ${n.different ? 'different' : n.notCompared ? 'notCompared' : 'equal'}">${n.different}${n.notCompared ? `<small>${n.notCompared} —</small>` : ''}</span></button>`;
+        }).join('') || empty(samples.length ? 'No matching samples.' : 'No samples captured.');
+        $('histories').innerHTML = [...histories].filter(([k]) => k.toLowerCase().includes(q)).map(([k, h]) => {
+            const changed = h.filter(x => x.f.status === 'different').length,
+                nc = h.filter(x => x.f.status === 'notCompared').length;
+            return `<button class="history-row" data-history="${esc(k)}" aria-current="${state.point + '/' + state.field === k}"><span class="history-name">${esc(k)}</span><span class="history-counts"><span class="${changed ? 'different' : 'equal'}">${changed} different</span><span>${nc} not compared</span></span></button>`;
+        }).join('') || empty('No matching fields.');
+    }
+
+    function selectSample(id, preferredPoint = state.point, preferredField = state.field) {
+        $('sampleFile').href = data.sampleFiles[id];
+        $('sampleFile').hidden = false;
+        state.sample = id;
+        const s = current();
+        state.point = s?.points.some(p => p.id === preferredPoint) ? preferredPoint : s?.points.find(p => p.fields.some(f => f.status === 'different'))?.id ?? s?.points[0]?.id;
+        const p = point();
+        state.field = p?.fields.some(f => f.name === preferredField) ? preferredField : sortFields(p?.fields ?? []).find(f => f.status === 'different')?.name ?? sortFields(p?.fields ?? [])[0]?.name;
+        state.pinned = false;
+        $('point').innerHTML = (s?.points ?? []).map(p => `<option value="${esc(p.id)}">${esc(p.id)} · ${esc(p.role ?? 'unpaired')}</option>`).join('');
+        $('point').value = state.point ?? '';
+        $('raster').innerHTML = (s?.rasters ?? []).map(r => `<option value="${esc(r.id)}">${esc(r.id)} · ${esc(statusLabel(r.status))}</option>`).join('');
+        $('previous').disabled = samples.indexOf(s) <= 0;
+        $('next').disabled = !s || samples.indexOf(s) >= samples.length - 1;
+        $('sampleTitle').textContent = s ? `${s.id}  (${time(s.expectedTimeUs, s.actualTimeUs)} µs)` : 'No samples captured';
+        $('sampleInfo').textContent = s ? `Stage: ${time(s.expectedStage, s.actualStage)} · Frame C / A: ${s.expectedFrameTimeUs ?? '—'} / ${s.actualFrameTimeUs ?? '—'} µs` : '';
+        $('sampleNotice').hidden = !(s?.reason || p?.reason);
+        $('sampleNotice').textContent = [...new Set([s?.reason, p?.reason].filter(Boolean))].join(' · ');
+        fields();
+        navigation();
+        rasters();
+    }
+
+    function visibleFields() {
+        return sortFields(point()?.fields ?? []).filter(f => ($('equal').checked || f.status !== 'equal') && ($('category').value === 'all' || measurement(f)?.category === $('category').value) && f.name.toLowerCase().includes($('search').value.toLowerCase()));
+    }
+
+    function fields() {
+        const p = point(), fs = visibleFields();
+        if (!fs.some(f => f.name === state.field)) state.field = fs.find(f => f.status === 'different')?.name ?? fs[0]?.name;
+        $('fieldCount').textContent = `${fs.length} / ${p?.fields.length ?? 0} fields`;
+        if (!p) {
+            $('fields').innerHTML = empty(current()?.reason ?? 'No measurement points in this sample.');
+            inspector();
+            return;
+        }
+        let previous = null;
+        const rows = [];
+        for (const f of fs) {
+            const g = group(f), d = measurement(f);
+            if (g !== previous) {
+                const members = fs.filter(x => group(x) === g),
+                    different = members.filter(x => x.status === 'different').length,
+                    nc = members.filter(x => x.status === 'notCompared').length;
+                rows.push(`<tr class="group"><td colspan="6"><button class="group-button" data-group="${esc(g)}" aria-expanded="${!state.collapsed.has(g)}">${state.collapsed.has(g) ? '▸' : '▾'} &nbsp;${esc(g)}<span>${different} different${nc ? ' · ' + nc + ' not compared' : ''}</span></button></td></tr>`);
+                previous = g;
+            }
+            if (state.collapsed.has(g)) continue;
+            rows.push(`<tr data-field="${esc(f.name)}" class="${esc(f.status)} ${state.field === f.name ? 'selected' : ''}"><td><button class="field-button" data-field="${esc(f.name)}" aria-label="Inspect ${esc(f.name)}">${esc(f.name)}</button></td><td class="value-cell">${preview(fullFormat(f.expected))}</td><td class="value-cell">${preview(fullFormat(f.actual))}</td><td class="value-cell">${preview(f.delta ? JSON.stringify(f.delta) : '—')}</td><td>${statusIcon(f.status)}</td><td class="unit">${esc(d?.unit)} / ${esc(d?.space)}</td></tr>`);
+        }
+        $('fields').innerHTML = rows.length ? table(['Field', 'Compose', 'Avalonia', 'Δ (A − C)', 'Equal?', 'Unit / Space'], rows, 'field-table') : empty('No fields match these filters.');
+        inspector();
+    }
+
+    function fact(label, d, f) {
+        const numbers = d?.numbers, strings = d?.strings;
+        let rows = '';
+        if (numbers) rows = table(['Component', 'Value'], numbers.map((v, i) => `<tr><td>${esc(componentNames(d)[i])}</td><td class="mono ${f.delta?.[i] !== undefined && f.delta[i] !== 0 ? 'component-changed' : ''}">${esc(v)}</td></tr>`));
+        else if (strings && d.kind === 'strings') rows = table(['Index', 'Value'], strings.map((v, i) => `<tr><td>${i}</td><td>${esc(v)}</td></tr>`));
+        return `<div class="fact"><div class="fact-label"><span class="side-dot ${label === 'Avalonia' ? 'actual' : ''}"></span>${label}</div><pre class="fact-value">${esc(fullFormat(d))}</pre>${rows}<div class="fact-footer">${d ? `${esc(d.status)} · ${esc(d.source)} · ${esc(d.kind)}` : 'No observation submitted'}</div></div>`;
+    }
+
+    function inspector() {
+        const p = point(), f = field(), fs = visibleFields();
+        let previous = null;
+        $('fieldTree').innerHTML = fs.map(x => {
+            const g = group(x), head = previous !== g ? `<div class="tree-group">${esc(g)}</div>` : '';
+            previous = g;
+            return head + `<button class="tree-button" data-field="${esc(x.name)}" aria-current="${x.name === state.field}" aria-label="Select ${esc(x.name)}"><span class="tree-name">${esc(x.name)}</span>${statusIcon(x.status)}</button>`
+        }).join('') || empty('No fields');
+        if (f) {
+            const d = measurement(f),
+                heading = `<div class="detail-title"><h2>${esc(d?.category)}.${esc(f.name)}</h2>${chip(esc(d?.unit) + ' / ' + esc(d?.space), '')}${chip(esc(d?.kind), '')}${chip(esc(statusLabel(f.status)), '', f.status)}</div>`;
+            const delta = f.delta ? table(['Component', 'Δ'], f.delta.map((v, i) => `<tr><td>${esc(componentNames(f.expected)[i])}</td><td class="mono ${v !== 0 ? 'component-changed' : ''}">${esc(v)}</td></tr>`)) : '';
+            $('fieldDetails').innerHTML = heading + `<div class="fact-grid">${fact('Compose', f.expected, f)}${fact('Avalonia', f.actual, f)}<div class="fact"><div class="fact-label">Δ (Avalonia − Compose)</div><pre class="fact-value">${esc(f.delta ? JSON.stringify(f.delta) : '—')}</pre>${delta}<div class="fact-footer">${f.delta ? 'Signed component differences' : f.status === 'notCompared' ? 'Values were not compared' : 'No numeric delta for this value kind'}</div></div></div>` + (f.reason ? `<div class="notice">${esc(f.reason)}</div>` : '');
+            const descriptors = ['status', 'category', 'kind', 'unit', 'space', 'definition', 'components', 'source', 'reason'];
+            $('panel-descriptor').innerHTML = heading + `<div class="two-columns">${['expected', 'actual'].map(side => `<div class="data-card"><h3>${side === 'expected' ? 'Compose' : 'Avalonia'}</h3>${table(['Descriptor', 'Value'], descriptors.map(k => `<tr><td class="key">${k}</td><td>${esc(k === 'components' ? JSON.stringify(componentNames(f[side])) : (f[side]?.[k] ?? '—'))}</td></tr>`))}</div>`).join('')}</div><details><summary>Sample timing, point identity and entry points</summary><div class="details-content">${sampleFacts()}</div></details>`;
+        } else {
+            $('fieldDetails').innerHTML = empty('Select a measurement field to inspect its exact values.');
+            $('panel-descriptor').innerHTML = sampleFacts();
+        }
+        trends();
+        raw();
+    }
+
+    function sampleFacts() {
+        const s = current(), p = point();
+        if (!s) return empty('No sample');
+        return table(['Fact', 'Compose', 'Avalonia'], [['Logical time (µs)', s.expectedTimeUs, s.actualTimeUs], ['Last frame (µs)', s.expectedFrameTimeUs, s.actualFrameTimeUs], ['Stage', s.expectedStage, s.actualStage], ['Point role', p?.expectedRole, p?.actualRole], ['Parent point', p?.expectedRole ? (p.expectedParentId ?? 'root') : 'absent', p?.actualRole ? (p.actualParentId ?? 'root') : 'absent'], ['Scenario', data.metadata.suite + '/' + data.metadata.scenario, data.metadata.suite + '/' + data.metadata.scenario]].map(row => `<tr>${row.map(v => `<td>${esc(v ?? '—')}</td>`).join('')}</tr>`));
+    }
+
+    function trends() {
+        const key = state.point + '/' + state.field, h = histories.get(key);
+        if (!h) {
+            $('panel-trends').innerHTML = empty('Select a field to inspect its sampled history.');
+            return;
+        }
+        const changed = h.filter(x => x.f.status === 'different'), nc = h.filter(x => x.f.status === 'notCompared'),
+            deltas = h.flatMap(x => x.f.delta ?? []), variants = new Set(h.map(semanticKey)).size;
+        let content = `<div class="section-heading"><h2>${esc(key)}</h2>${chip('Different', changed.length, 'different')}${chip('Not compared', nc.length, 'notCompared')}</div><p class="muted">First observed different sample: ${esc(changed[0]?.s.id ?? '—')} · Max |Δ|: <span class="mono">${variants === 1 && deltas.length ? Math.max(...deltas.map(Math.abs)) : '—'}</span></p>`;
+        // Plot each side against its own logical timestamp; absence remains a gap.
+        if (variants > 1) content += '<p class="notice">Descriptor or point identity variants: original values are retained below; combined curves and maxima are not generated.</p>';
+        if (variants === 1 && h.length > 1 && h.every(x => (!x.f.expected?.numbers || x.f.expected.numbers.length === 1) && (!x.f.actual?.numbers || x.f.actual.numbers.length === 1))) {
+            const values = h.flatMap(x => [x.f.expected?.numbers?.[0], x.f.actual?.numbers?.[0]]).filter(Number.isFinite),
+                times = h.flatMap(x => [x.s.expectedTimeUs, x.s.actualTimeUs]).filter(Number.isFinite);
+            if (values.length && times.length) {
+                const min = Math.min(...values), max = Math.max(...values), start = Math.min(...times),
+                    end = Math.max(...times), xp = t => 50 + (t - start) / (end - start || 1) * 560,
+                    yp = v => 100 - (v - min) / (max - min || 1) * 80;
+                let shapes = '';
+                for (const [side, color, timeKey] of [['expected', '#3565df', 'expectedTimeUs'], ['actual', '#d17b39', 'actualTimeUs']]) {
+                    let segment = [];
+                    const flush = () => {
+                        if (segment.length) shapes += `<polyline points="${segment.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+                        segment = [];
+                    };
+                    for (const x of h) {
+                        const v = x.f[side]?.numbers?.[0], t = x.s[timeKey];
+                        if (Number.isFinite(v) && Number.isFinite(t)) {
+                            segment.push(`${xp(t)},${yp(v)}`);
+                            shapes += `<circle cx="${xp(t)}" cy="${yp(v)}" r="2.5" fill="${color}"/>`;
+                        } else flush();
+                    }
+                    flush();
+                }
+                content += `<svg class="curve" viewBox="0 0 660 130" role="img" aria-label="Sampled field values, Compose blue and Avalonia orange"><path d="M50 15V100H610" fill="none" stroke="#dbe2ee"/>${shapes}<text x="50" y="118" font-size="10" fill="#737d94">${start} µs</text><text x="610" y="118" text-anchor="end" font-size="10" fill="#737d94">${end} µs</text></svg><p class="muted">Compose blue · Avalonia orange · y: ${min}…${max} ${esc(measurement(h[0].f)?.unit)} · sampled values</p>`;
+            }
+        }
+        content += table(['Sample', 'Time C / A (µs)', 'Compose', 'Avalonia', 'Δ (A − C)', 'Status'], h.map(x => `<tr><td><button class="field-button" data-history-sample="${esc(x.s.id)}">${esc(x.s.id)}</button></td><td class="mono">${esc(time(x.s.expectedTimeUs, x.s.actualTimeUs))}</td><td class="mono">${esc(fullFormat(x.f.expected))}</td><td class="mono">${esc(fullFormat(x.f.actual))}</td><td class="mono">${esc(x.f.delta ? JSON.stringify(x.f.delta) : '—')}</td><td>${statusIcon(x.f.status)}</td></tr>`));
+        $('panel-trends').innerHTML = content;
+    }
+
+    function raw() {
+        const mode = $('rawMode').value,
+            value = mode === 'field' ? field() : mode === 'sample' ? {
+                comparison: current(),
+                expected: data.expected?.samples.find(s => s.id === state.sample),
+                actual: data.actual?.samples.find(s => s.id === state.sample)
+            } : mode === 'captures' ? {expected: data.expected, actual: data.actual} : c;
+        $('raw').textContent = value ? JSON.stringify(value, null, 2) : 'No field selected.';
+    }
+
+    function bytes(side, s, id) {
+        const key = side + '/' + s + '/' + id;
+        if (!data.buffers[key]) return null;
+        if (!decoded.has(key)) decoded.set(key, Uint8Array.from(atob(data.buffers[key]), x => x.charCodeAt(0)));
+        return decoded.get(key);
+    }
+
+    function raster() {
+        return current()?.rasters.find(r => r.id === $('raster').value);
+    }
+
+    function readPixel(x, y) {
+        const r = raster();
+        if (!r) return;
+        const values = {};
+        for (const side of ['expected', 'actual']) {
+            const d = r[side], b = bytes(side, state.sample, r.id);
+            values[side] = d && b && Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < d.width && y < d.height ? [...b.subarray((y * d.width + x) * 4, (y * d.width + x) * 4 + 4)] : null;
+        }
+        const e = values.expected, a = values.actual, delta = e && a && r.metrics ? a.map((v, k) => v - e[k]) : null;
+        $('unpinPixel').hidden = !state.pinned;
+        $('pixelX').value = x;
+        $('pixelY').value = y;
+        $('pixel').textContent = `(${x}, ${y}) scene-px · straight-sRGBA8${state.pinned ? ' · pinned' : ''}\nCompose  ${e ? JSON.stringify(e) : 'outside / absent'}    Avalonia  ${a ? JSON.stringify(a) : 'outside / absent'}\nΔ signed ${delta ? JSON.stringify(delta) : 'not compared'}    Δ absolute ${delta ? JSON.stringify(delta.map(Math.abs)) : '—'}`;
+    }
+
+    function rasters() {
+        const s = current(), r = raster();
+        $('canvases').replaceChildren();
+        $('pixel').textContent = 'Hover a pixel to read the canonical RGBA bytes used by comparison.';
+        $('unpinPixel').hidden = true;
+        if (!r) {
+            $('rasterInfo').textContent = 'No raster captured at this sample.';
+            $('metrics').textContent = '';
+            $('rasterStats').innerHTML = '';
+            $('readPixel').disabled = true;
+            return;
+        }
+        $('readPixel').disabled = false;
+        $('metrics').textContent = JSON.stringify(r, null, 2);
+        $('rasterInfo').textContent = r.reason ?? `${statusLabel(r.status)} · ${r.expected?.width} × ${r.expected?.height} px · ${r.expected?.contribution}`;
+        const e = bytes('expected', s.id, r.id), a = bytes('actual', s.id, r.id), z = +$('zoom').value,
+            alpha = +$('opacity').value / 100,
+            threshold = Math.min(255, Math.max(0, Math.trunc(+$('threshold').value || 0)));
+        let highlighted = 0;
+        if (r.metrics && e && a) for (let i = 0; i < e.length; i += 4) if (Math.max(...[0, 1, 2, 3].map(k => Math.abs(a[i + k] - e[i + k]))) > threshold) highlighted++;
+        $('rasterStats').innerHTML = r.metrics ? `<span>Different pixels <b>${r.metrics.differentPixels}</b></span><span>Max channel Δ <b class="mono">${esc(JSON.stringify(r.metrics.maximumChannelDelta))}</b></span><span>Highlighted <b>${highlighted}</b> at Δ &gt; ${threshold}</span><span class="muted">Viewing threshold only · regions contain full composite pixels · region counts overlap</span>` : '';
+        const modes = r.metrics && e && a ? ['Compose', 'Avalonia', 'Overlay', 'Difference'] : ['Compose', 'Avalonia'];
+        for (const mode of modes) {
+            const side = mode === 'Avalonia' ? 'actual' : 'expected', d = r[side], b = side === 'actual' ? a : e;
+            if (!d || !b) continue;
+            const fig = document.createElement('figure'), cap = document.createElement('figcaption'),
+                scroll = document.createElement('div'), canvas = document.createElement('canvas');
+            cap.textContent = mode + (mode === 'Difference' ? ' · max |channel Δ|' : '');
+            scroll.className = 'canvas-scroll';
+            canvas.width = d.width;
+            canvas.height = d.height;
+            canvas.style.width = d.width * z + 'px';
+            canvas.style.height = d.height * z + 'px';
+            canvas.setAttribute('aria-label', mode + ' raster');
+            scroll.append(canvas);
+            fig.append(cap, scroll);
+            $('canvases').append(fig);
+            const ctx = canvas.getContext('2d'), img = ctx.createImageData(d.width, d.height);
+            for (let i = 0; i < b.length; i += 4) {
+                if (mode === 'Compose' || mode === 'Avalonia') img.data.set(b.subarray(i, i + 4), i);
+                else if (mode === 'Overlay') for (let k = 0; k < 4; k++) img.data[i + k] = Math.round(e[i + k] * (1 - alpha) + a[i + k] * alpha);
+                else {
+                    const delta = Math.max(...[0, 1, 2, 3].map(k => Math.abs(a[i + k] - e[i + k]))),
+                        v = delta > threshold ? delta : 0;
+                    img.data.set([v, v, v, 255], i);
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            if ($('regions').checked) {
+                ctx.strokeStyle = '#d43890';
+                ctx.lineWidth = 1;
+                for (const region of r.regions ?? []) {
+                    const [x, y, w, h] = region.bounds;
+                    ctx.strokeRect(x + .5, y + .5, Math.max(0, w - 1), Math.max(0, h - 1));
+                }
+            }
+            const coordinate = event => {
+                const rect = canvas.getBoundingClientRect();
+                return [Math.floor((event.clientX - rect.left) * d.width / rect.width), Math.floor((event.clientY - rect.top) * d.height / rect.height)];
+            };
+            canvas.onmousemove = event => {
+                if (!state.pinned) readPixel(...coordinate(event));
+            };
+            canvas.onclick = event => {
+                state.pinned = true;
+                readPixel(...coordinate(event));
+            };
+        }
+    }
+
+    function activateTab(id) {
+        state.tab = id;
+        for (const button of document.querySelectorAll('[aria-label="Inspector"] [role="tab"]')) {
+            const selected = button.id === 'tab-' + id;
+            button.setAttribute('aria-selected', selected);
+            button.tabIndex = selected ? 0 : -1;
+            $(button.getAttribute('aria-controls')).hidden = !selected;
+        }
+    }
+
+    function selectField(name, openDetails = false) {
+        state.field = name;
+        fields();
+        navigation();
+        if (openDetails) activateTab('details');
+    }
+
+    function wireTabs(list, activate) {
+        list.onclick = event => {
+            const b = event.target.closest('[role="tab"]');
+            if (b) activate(b);
+        };
+        list.onkeydown = event => {
+            const tabs = [...list.querySelectorAll('[role="tab"]')].filter(b => !b.hidden),
+                i = tabs.indexOf(document.activeElement);
+            let next;
+            if (event.key === 'ArrowRight') next = tabs[(i + 1) % tabs.length];
+            if (event.key === 'ArrowLeft') next = tabs[(i - 1 + tabs.length) % tabs.length];
+            if (event.key === 'Home') next = tabs[0];
+            if (event.key === 'End') next = tabs.at(-1);
+            if (next) {
+                event.preventDefault();
+                activate(next);
+                next.focus();
+            }
+        };
+    }
+
+    wireTabs(document.querySelector('[aria-label="Navigation"]'), b => {
+        state.navigation = b.id.slice(4);
+        for (const id of ['samples', 'fields']) {
+            $('nav-' + id).setAttribute('aria-selected', id === state.navigation);
+            $('nav-' + id).tabIndex = id === state.navigation ? 0 : -1;
+            $(id + '-nav').hidden = id !== state.navigation;
+        }
+        $('navSearch').placeholder = state.navigation === 'samples' ? 'Filter samples…' : 'Filter field histories…';
+        $('navSearch').value = '';
+        navigation();
+    });
+    wireTabs(document.querySelector('[aria-label="Inspector"]'), b => activateTab(b.id.slice(4)));
+    $('timeline').onclick = event => {
+        const b = event.target.closest('[data-sample]');
+        if (b) selectSample(b.dataset.sample);
+    };
+    $('histories').onclick = event => {
+        const b = event.target.closest('[data-history]');
+        if (b) {
+            const h = histories.get(b.dataset.history),
+                x = h.find(x => x.f.status === 'different') ?? h.find(x => x.f.status === 'notCompared') ?? h[0];
+            $('category').value = 'all';
+            $('equal').checked = true;
+            $('search').value = '';
+            selectSample(x.s.id, x.p.id, x.f.name);
+            activateTab('trends');
+        }
+    };
+    $('fields').onclick = event => {
+        const f = event.target.closest('[data-field]'), g = event.target.closest('[data-group]');
+        if (f) selectField(f.dataset.field, true);
+        if (g) {
+            const id = g.dataset.group;
+            state.collapsed.has(id) ? state.collapsed.delete(id) : state.collapsed.add(id);
+            fields();
+        }
+    };
+    $('fieldTree').onclick = event => {
+        const b = event.target.closest('[data-field]');
+        if (b) selectField(b.dataset.field);
+    };
+    $('panel-trends').onclick = event => {
+        const b = event.target.closest('[data-history-sample]');
+        if (b) selectSample(b.dataset.historySample);
+    };
+    $('previous').onclick = () => selectSample(samples[samples.findIndex(s => s.id === state.sample) - 1].id);
+    $('next').onclick = () => selectSample(samples[samples.findIndex(s => s.id === state.sample) + 1].id);
+    $('navSearch').oninput = navigation;
+    $('point').onchange = () => selectSample(state.sample, $('point').value);
+    for (const id of ['category', 'equal', 'search']) $(id).oninput = () => {
+        fields();
+        navigation();
+    };
+    for (const id of ['raster', 'zoom', 'opacity', 'regions', 'threshold']) $(id).oninput = () => {
+        state.pinned = false;
+        rasters();
+    };
+    $('readPixel').onclick = () => {
+        state.pinned = true;
+        readPixel(Number($('pixelX').value), Number($('pixelY').value));
+    };
+    $('unpinPixel').onclick = () => {
+        state.pinned = false;
+        $('unpinPixel').hidden = true;
+        readPixel(Number($('pixelX').value), Number($('pixelY').value));
+    };
+    $('rawMode').onchange = raw;
+    $('environment').innerHTML = table(['Key', 'Compose', 'Avalonia'], c.environment.map(f => `<tr><td>${esc(f.name)}</td><td><pre>${esc(f.expected?.strings?.[0] ?? '—')}</pre></td><td><pre>${esc(f.actual?.strings?.[0] ?? '—')}</pre></td></tr>`), 'environment-table');
+    $('panel-trace').innerHTML = `<div class="section-heading"><h2>Execution trace</h2><small>Recorded operations in submission order</small></div><div class="two-columns">${['expected', 'actual'].map(side => `<div class="data-card"><h3>${side === 'expected' ? 'Compose' : 'Avalonia'} · ${data[side]?.trace.length ?? 0} operations</h3>${table(['#', 'Time (µs)', 'Operation', 'Detail'], (data[side]?.trace ?? []).map(t => `<tr><td>${t.sequence}</td><td class="mono">${t.timeUs}</td><td>${esc(t.operation)}</td><td>${esc(t.detail)}</td></tr>`))}</div>`).join('')}</div>`;
+    if (data.repeatability) {
+        $('tab-stability').hidden = false;
+        $('panel-stability').innerHTML = `<div class="section-heading"><h2>Capture repeatability</h2><a href="case.yaml">YAML ↗</a></div><p class="muted">Capture stability is separate from component parity.</p>${table(['Check', 'Result', 'Recorded changes'], Object.entries(data.repeatability.results).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${chip(v.length ? 'Changed' : 'Stable', '', v.length ? 'different' : 'equal')}</td><td><pre>${esc(v.join('\n') || 'No changes')}</pre></td></tr>`))}`;
+    }
+    selectSample(state.sample);
+</script>
+</body>
+</html>

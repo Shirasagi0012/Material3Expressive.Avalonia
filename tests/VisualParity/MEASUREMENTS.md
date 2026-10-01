@@ -3,7 +3,7 @@
 本系统呈现提交的事实与差异，不推断来源、不修复数据、不用容差产生等价结论。
 先读取 `overview.md`，再读取 `samples/<序号>-<ID>.yaml`。完整数据在文件系统中，
 运行与目录结构见 [README](README.md)，编写入口和时钟边界见 [AUTHORING](AUTHORING.md)。
-本文描述结果 schema 3；版本迁移统一见 README。
+本文描述结果 schema 5；版本迁移统一见 README。
 
 ## 采样文件
 
@@ -27,7 +27,8 @@ rasterCollection 和 trace。序号只用于排序，sample ID 才是身份。
   不是相对 samples 子目录。像素、差分和 ROI 的统计含义不变。
 
 每个采样文件自包含，没有跨文件描述符字典、锚点或字段编号。
-case.yaml 保存元数据、样本索引、采集身份/错误、重复性和清理信息；environment.yaml 保存环境。
+case.yaml 的 metadata 保存用例身份、suite/scenario 与实际 config；它们来自运行前冻结的 schema 4 元数据。
+同一文件还保存样本索引、采集身份/错误、重复性和清理信息；environment.yaml 保存环境。
 manifest.json 验证全部权威文件；overview.md 和 report.html 可以从它们重新生成。
 
 ## 事实身份与分量

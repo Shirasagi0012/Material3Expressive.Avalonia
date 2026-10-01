@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 2,
-  "id": "surface.static",
-  "title": "Surface with explicit fill",
-  "family": "surface",
-  "composeEntry": "surfaceStatic",
-  "avaloniaEntry": "SurfaceStatic"
-}

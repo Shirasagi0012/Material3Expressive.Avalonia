@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 2,
-  "id": "button.filled.press",
-  "title": "Press and release timeline",
-  "family": "button",
-  "composeEntry": "buttonPressed",
-  "avaloniaEntry": "ButtonPressed"
-}

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visual parity · Reports</title>
+    <style>/*PARITY_STYLES*/</style>
+</head>
+<body>
+<header class="brandbar"><span class="brandmark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"
+                                                                         stroke="currentColor" stroke-width="2"><path
+        d="m8 6-5 6 5 6m8-12 5 6-5 6M14 3l-4 18"/></svg></span><span
+        class="product">Material 3 Expressive for Avalonia</span><span class="divider"></span><span>Visual Parity Test Report</span><a
+        class="button right" href="summary.md">↗ Summary</a></header>
+<main class="suite">
+    <div class="suite-intro"><h1>Visual parity reports</h1>
+        <p>Measured fields and rasters across both implementations. Differences and unpaired observations are counted
+            independently.</p></div>
+    <div id="summary" class="suite-summary" aria-label="Suite coverage"></div>
+    <section class="panel">
+        <div class="toolbar"><h2>Test cases</h2><input id="filter" type="search" placeholder="Filter cases…"
+                                                       aria-label="Filter cases"><label>Family <select id="family">
+            <option value="">All</option>
+        </select></label><label>Status <select id="status">
+            <option value="">All</option>
+            <option value="different">Different</option>
+            <option value="notCompared">Not compared</option>
+            <option value="equal">Equal</option>
+            <option value="error">Execution errors</option>
+        </select></label><small id="visibleCount"></small></div>
+        <div class="scroll">
+            <table class="suite-table">
+                <thead>
+                <tr>
+                    <th>Case</th>
+                    <th>Samples</th>
+                    <th>Equal</th>
+                    <th>Different</th>
+                    <th>Not compared</th>
+                    <th>Errors</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody id="cases"></tbody>
+            </table>
+        </div>
+    </section>
+    <div class="suite-footer"><span>Exact comparisons · original measurements preserved</span><span>Result schema 5</span>
+    </div>
+</main>
+<script>
+    'use strict';
+    const data =/*PARITY_DATA*/;
+    const $ = id => document.getElementById(id), esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[c]));
+    const totals = data.reduce((n, c) => ({
+        equal: n.equal + c.coverage.equal,
+        different: n.different + c.coverage.different,
+        notCompared: n.notCompared + c.coverage.notCompared,
+        errors: n.errors + c.errorCount
+    }), {equal: 0, different: 0, notCompared: 0, errors: 0});
+    $('summary').innerHTML = [['Cases', data.length, ''], ['Equal', totals.equal, 'equal'], ['Different', totals.different, 'different'], ['Not compared', totals.notCompared, 'notCompared'], ['Execution errors', totals.errors, totals.errors ? 'error' : '']].map(([k, v, s]) => `<div class="summary-card"><span>${k}</span><b class="${s}">${v}</b></div>`).join('');
+    $('family').innerHTML += [...new Set(data.map(c => c.suite).filter(Boolean))].sort().map(f => `<option>${esc(f)}</option>`).join('');
+
+    function render() {
+        const q = $('filter').value.toLowerCase(), family = $('family').value, status = $('status').value;
+        const cases = data.filter(c => [c.caseId, c.title, c.suite].join(' ').toLowerCase().includes(q) && (!family || c.suite === family) && (!status || (status === 'error' ? c.errorCount > 0 : status === 'equal' ? c.status === 'equal' : c.coverage[status] > 0)));
+        $('visibleCount').textContent = `${cases.length} / ${data.length} cases`;
+        $('cases').innerHTML = cases.map(c => {
+            const v = c.coverage, total = v.equal + v.different + v.notCompared,
+                href = 'cases/' + encodeURIComponent(c.caseId) + '/report.html';
+            return `<tr><td><a class="case-link" href="${href}">${esc(c.title ?? c.caseId)}</a><small>${esc(c.suite ?? '')} &nbsp;›&nbsp; ${esc(c.caseId)}</small><div class="coverage-track" aria-hidden="true">${['equal', 'different', 'notCompared'].map(s => `<span class="${s}" style="width:${total ? v[s] / total * 100 : 0}%"></span>`).join('')}</div></td><td>${c.sampleCount}</td><td class="equal">${v.equal}</td><td class="different">${v.different}</td><td class="notCompared">${v.notCompared}</td><td class="${c.errorCount ? 'error' : 'muted'}">${c.errorCount}</td><td><a class="button" href="${href}" aria-label="Open ${esc(c.caseId)}">Inspect →</a></td></tr>`
+        }).join('') || '<tr><td colspan="7" class="empty">No matching test cases.</td></tr>';
+    }
+
+    for (const id of ['filter', 'family', 'status']) $(id).oninput = render;
+    render();
+</script>
+</body>
+</html>
