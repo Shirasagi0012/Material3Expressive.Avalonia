@@ -16,6 +16,48 @@ public class ParityTests
         [new("initial", 0, "mounted", points, [])], [], []);
     static ProbePoint Point(params Measurement[] fields) => new("target", "container", null, fields);
     static Comparison Compare(Capture e, Capture a) => ParityComparison.Run(Metadata, e, a, "", "", Temp());
+    static JsonElement Json(object value) => JsonSerializer.SerializeToElement(value, ParityJson.Options);
+    [Fact]
+    public void StructuredIssuesListAllActualDescriptorConflicts()
+    {
+        var e = Measurement.Numeric("x", 1);
+        var a = e with { Unit = "px", Space = "text" };
+        var issue = ParityComparison.Field("x", e, a).Issue!;
+        Assert.Equal("descriptorMismatch", issue.Code); Assert.Equal(new[] { "unit", "space" }, issue.Members);
+        Assert.Equal("measurementAbsent", ParityComparison.Field("x", e, null).Issue!.Code);
+        var c = Capture("avalonia", Point(e));
+        var result = Compare(Capture("compose", Point(e)), c with { Samples = [c.Samples[0] with { FrameTimeUs = 12 }] });
+        Assert.Equal(new[] { "frameTimeUs" }, result.Samples.Single().Issue!.Members);
+        Assert.Equal("sampleMismatch", result.Samples.Single().Points.Single().Fields.Single().Issue!.Code);
+    }
+    [Fact]
+    public void NumericComponentMeaningParticipatesInPairing()
+    {
+        var coordinate = Measurement.Vector("value", "point", [20, 40], "dip", "local", "geometry");
+        var size = coordinate with { Components = ["width", "height"] };
+        Assert.Equal(new[] { "x", "y" }, coordinate.ComponentNames());
+        Assert.Equal("notCompared", ParityComparison.Field("value", coordinate, size).Status);
+        Assert.Contains("components", ParityComparison.Field("value", coordinate, size).Issue!.Members);
+        Assert.Throws<InvalidDataException>(() => (size with { Components = ["width", "width"] }).Validate());
+    }
+    [Theory]
+    [InlineData("A \r\n", 0, 4, 0, 2)]
+    [InlineData("\r\n", 0, 2, 0, 0)]
+    [InlineData("A\u2028", 0, 2, 0, 1)]
+    [InlineData("😀  \n", 0, 5, 0, 4)]
+    [InlineData("Save", 0, 5, 0, 4)]
+    [InlineData("A\nB", 0, 1, 0, 1)]
+    public void ContentRangeRemovesOnlyRealParagraphBreaksAndPreservesUtf16(string input, int start, int end, int expectedStart, int expectedEnd) =>
+        Assert.Equal(new double[] { expectedStart, expectedEnd }, TextRanges.Content(input, start, end));
+    [Fact]
+    public void CollectionIntentMustAgreeWithRastersAndExplainOmissions()
+    {
+        var c = Capture("compose", Point());
+        var sample = c.Samples[0] with { RasterCollection = [new("full", "notRequested", "No image at this step.")] };
+        (c with { Samples = [sample] }).Validate();
+        Assert.Throws<InvalidDataException>(() => (c with { Samples = [sample with { RasterCollection = [new("full", "captured")] }] }).Validate());
+        Assert.Throws<InvalidDataException>(() => (c with { Samples = [sample with { RasterCollection = [new("full", "notRequested")] }] }).Validate());
+    }
     [Fact]
     public void NoToleranceCanHideFractionalGeometryDifference()
     {
@@ -195,6 +237,30 @@ public class ParityTests
         var label = final.Points.Single(p => p.Id == "label"); Assert.Contains("Roboto", label.Measurements.Single(m => m.Name == "resolvedFonts").Strings!);
         Assert.Equal(new double[] { 0, 4 }, label.Measurements.Single(m => m.Name == "line.0.range").Numbers);
         Assert.True(label.Measurements.Single(m => m.Name == "line.0.nativeRange").Numbers![1] >= 4);
+        var container = result.Capture.Samples[0].Points.Single(p => p.Id == "container");
+        Assert.Equal("measured", container.Measurements.Single(m => m.Name == "cornerRadii").Status);
+        Assert.Equal(20, container.Measurements.Single(m => m.Name == "cornerRadii").Numbers![0]);
+        var pressed = result.Capture.Samples.Single(s => s.Id == "pressed-80000").Points.Single(p => p.Id == "interaction");
+        Assert.True(pressed.Measurements.Single(m => m.Name == "pressed").Boolean);
+        Assert.Equal(1, pressed.Measurements.Single(m => m.Name == "rippleCount").Numbers![0]);
+        Assert.Equal("notRequested", result.Capture.Samples.Single(s => s.Id == "pressed-32000").RasterCollection!.Single().Status);
+    }
+    [AvaloniaFact]
+    public async Task ParagraphBreakReaderPreservesInputConsumptionAndExcludesBreaksFromContent()
+    {
+        var result = await Actual("text.paragraph-breaks"); var fields = result.Capture.Samples.Single().Points.Single().Measurements;
+        var input = fields.Single(f => f.Name == "content").Strings![0];
+        var count = (int)fields.Single(f => f.Name == "lineCount").Numbers![0];
+        var consumed = "";
+        for (var i = 0; i < count; i++)
+        {
+            var range = fields.Single(f => f.Name == $"line.{i}.range").Numbers!;
+            var text = input[(int)range[0]..(int)range[1]];
+            Assert.False(text.EndsWith('\r') || text.EndsWith('\n') || text.EndsWith('\u2028') || text.EndsWith('\u2029'));
+            var native = fields.Single(f => f.Name == $"line.{i}.consumedRange").Numbers!;
+            consumed += input[(int)native[0]..(int)native[1]];
+        }
+        Assert.Equal(input, consumed);
     }
     [Fact]
     public void MetadataContainsEntriesInsteadOfAnExecutionLanguage()

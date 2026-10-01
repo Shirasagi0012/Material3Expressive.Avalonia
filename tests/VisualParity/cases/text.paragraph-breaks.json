@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "id": "text.paragraph-breaks",
+  "title": "CRLF, empty lines, UTF-16 and paragraph separators",
+  "family": "text",
+  "composeEntry": "textParagraphBreaks",
+  "avaloniaEntry": "TextParagraphBreaks"
+}

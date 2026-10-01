@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
 package parity
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.interaction.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,10 +15,11 @@ import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlinx.serialization.json.*
 object Cases {
     val entries:Map<String,suspend (CaptureWriter)->Unit> = mapOf(
         "surfaceStatic" to ::surfaceStatic,"buttonEnabled" to ::buttonEnabled,"buttonDisabled" to ::buttonDisabled,
-        "buttonPressed" to ::buttonPressed,"textWrapped" to ::textWrapped,"motionInterrupted" to ::motionInterrupted,"directObservation" to ::directObservation)
+        "buttonPressed" to ::buttonPressed,"textWrapped" to ::textWrapped,"textParagraphBreaks" to ::textParagraphBreaks,"motionInterrupted" to ::motionInterrupted,"directObservation" to ::directObservation)
     fun font(w:CaptureWriter)=FontFamily(listOf(400,500,700).map { weight -> Font(File(w.root,"modules/MaterialTypography.Roboto/Assets/Roboto.ttf"),
         weight=FontWeight(weight),variationSettings=FontVariation.Settings(FontVariation.weight(weight))) })
     @Composable fun Theme(writer:CaptureWriter, content:@Composable ()->Unit) {
@@ -38,10 +40,20 @@ object Cases {
     }
     class ButtonProbe {
         val allocation=Probe(); val label=Probe(); var clicks=0
-        fun points(enabled:Boolean)=listOf(ProbePoint("button","allocation",null,allocation.geometry()+listOf(flag("enabled",enabled),number("clicks",clicks.toDouble(),"count"))),
-            label.textPoint("label","button"))
+        val interactions=MutableInteractionSource(); val presses=mutableSetOf<PressInteraction.Press>(); val hovers=mutableSetOf<HoverInteraction.Enter>()
+        fun points(enabled:Boolean)=listOf(ProbePoint("button","allocation",null,allocation.geometry()+listOf(flag("enabled",enabled,source="declared"),number("clicks",clicks.toDouble(),"count"))),
+            label.textPoint("label","container"))+buttonMeasurements(allocation,presses.isNotEmpty(),hovers.isNotEmpty())
         @Composable fun Content(enabled:Boolean) {
-            Button({clicks++},ButtonDefaults.shapes(),allocation.modifier(),enabled=enabled) {
+            LaunchedEffect(interactions) {
+                interactions.interactions.collect { event -> when(event) {
+                    is PressInteraction.Press -> presses.add(event)
+                    is PressInteraction.Release -> presses.remove(event.press)
+                    is PressInteraction.Cancel -> presses.remove(event.press)
+                    is HoverInteraction.Enter -> hovers.add(event)
+                    is HoverInteraction.Exit -> hovers.remove(event.enter)
+                } }
+            }
+            Button({clicks++},ButtonDefaults.shapes(),allocation.modifier(),enabled=enabled,interactionSource=interactions) {
                 Text("Save",label.modifier(),onTextLayout={label.layout=it})
             }
         }
@@ -61,14 +73,16 @@ object Cases {
             h.input("move",center); h.input("down",center)
             for(time in listOf(16000L,32000L,80000L)) { h.frame(time); w.submit(h.snapshot("pressed-$time","pressed",b.points(true),time!=32000L)) }
             h.advanceTo(88000); h.input("up",center); h.frame(96000); w.submit(h.snapshot("released","released",b.points(true)))
-            h.frame(300000); w.submit(h.snapshot("settled","released",b.points(true)))
+            h.frame(300000); w.submit(h.snapshot("late-300000","released",b.points(true)))
         }
     }
-    suspend fun textWrapped(w:CaptureWriter) {
+    suspend fun textWrapped(w:CaptureWriter)=textCase(w,"Compose parity\nWrap a longer line with spaces.","wrapped")
+    suspend fun textParagraphBreaks(w:CaptureWriter)=textCase(w,"A \r\n\r\nB 😀  \nC\u2028D\u2029","paragraph-breaks")
+    suspend fun textCase(w:CaptureWriter,content:String,stage:String) {
         ComposeHost(w).use { h -> val p=Probe(); val family=font(w)
-            h.mount { Theme(w) { Text("Compose parity\nWrap a longer line with spaces.",Modifier.width(120.dp).then(p.modifier()),
+            h.mount { Theme(w) { Text(content,Modifier.width(120.dp).then(p.modifier()),
                 fontFamily=family,fontSize=14.sp,fontWeight=FontWeight.Normal,lineHeight=20.sp,letterSpacing=0.sp,color=Color(0xff6750a4),onTextLayout={p.layout=it}) } }
-            h.frame(-2000); h.frame(-1000); h.frame(0); w.submit(h.snapshot("initial","wrapped",listOf(p.textPoint("label",null))))
+            h.frame(-2000); h.frame(-1000); h.frame(0); w.submit(h.snapshot("initial",stage,listOf(p.textPoint("label",null))))
         }
     }
     suspend fun motionInterrupted(w:CaptureWriter) {
@@ -78,7 +92,7 @@ object Cases {
                     Box(Modifier.offset(x=(24+value.value).dp,y=64.dp).size(18.dp).then(p.modifier()).background(Color(0xff6750a4)))
                 } }
             h.frame(-2000); h.frame(-1000)
-            fun target(valueTo:Float) { w.record(h.timeUs,"target",valueTo.toString()); animationScope!!.launch { value.animateTo(valueTo,tween(100,easing=LinearEasing)) } }
+            fun target(valueTo:Float) { w.record(h.timeUs,"target",valueTo.toString(),buildJsonObject { put("value",valueTo);put("unit","dip") }); animationScope!!.launch { value.animateTo(valueTo,tween(100,easing=LinearEasing)) } }
             fun sample(id:String,image:Boolean) { w.submit(h.snapshot(id,"interrupted-tween",listOf(ProbePoint("marker","container",null,p.geometry()+listOf(
                 number("value",value.value.toDouble(),"dip",category="motion"),number("velocity",value.velocity.toDouble(),"dip/s",category="motion"),flag("running",value.isRunning,"motion")))),image)) }
             target(100f)

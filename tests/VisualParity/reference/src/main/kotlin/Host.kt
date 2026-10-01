@@ -13,6 +13,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
 import org.jetbrains.skia.*
 import java.io.File
+import kotlinx.serialization.json.*
 class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoCloseable {
     val scheduler=TestCoroutineScheduler()
     val scope=CoroutineScope(UnconfinedTestDispatcher(scheduler) + CoroutineExceptionHandler { _,e -> writer.errors+=e.stackTraceToString() })
@@ -39,7 +40,7 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoC
         val target=(time.coerceAtLeast(0))/1000
         scheduler.advanceTimeBy(target-scheduler.currentTime); scheduler.runCurrent()
         recomposer.performFrame(Math.addExact(1_000_000_000L,Math.multiplyExact(time,1000L))); frameTimeUs=time
-        writer.record(timeUs,"frame","origin=1000000us; one waiter batch"); draw()
+        writer.record(timeUs,"frame","origin=1000000us; one waiter batch",buildJsonObject { put("frameTimeUs",frameTimeUs);put("originUs",1_000_000) }); draw()
     }
     fun draw() {
         Snapshot.sendApplyNotifications(); scheduler.runCurrent(); scene.measureAndLayout()
@@ -52,7 +53,9 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoC
         scene.sendPointerEvent(when(operation) { "down"->PointerEventType.Press; "up"->PointerEventType.Release; "move"->PointerEventType.Move; else->error(operation) },
             position, buttons=PointerButtons(isPrimaryPressed=pressed), timeMillis=1000+timeUs.coerceAtLeast(0)/1000,
             type=PointerType.Mouse, button=if(operation=="down" || operation=="up") PointerButton.Primary else null)
-        scheduler.runCurrent(); writer.record(timeUs,"input","$operation (${position.x},${position.y})")
+        scheduler.runCurrent(); writer.record(timeUs,"input","$operation (${position.x},${position.y})",buildJsonObject {
+            put("action",operation);put("x",position.x);put("y",position.y);put("unit","dip");put("space","scene");put("pointerType","mouse");
+            put("button",if(operation=="move") JsonNull else JsonPrimitive("primary")) })
     }
     fun snapshot(id:String, stage:String, points:List<ProbePoint>, image:Boolean=true):Sample {
         val rasters=mutableListOf<RasterObservation>()
@@ -63,7 +66,8 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoC
             rasters+=rasterFromPng(writer,"full",path)
             writer.record(timeUs,"capture","passive surface snapshot; no draw/frame")
         }
-        return Sample(id,timeUs,stage,points,rasters,frameTimeUs)
+        return Sample(id,timeUs,stage,points,rasters,frameTimeUs,listOf(RasterCollection("full",if(rasters.isEmpty()) "notRequested" else "captured",
+            if(rasters.isEmpty()) "Case requested a measurement-only sample." else null)))
     }
     override fun close() { scene.close(); recomposer.close(); surface.close(); scope.cancel(); scheduler.runCurrent(); writer.record(timeUs,"dispose","scene/recomposer/scope") }
 }

@@ -13,7 +13,7 @@
 - [移植指南](docs/PORTING.md)：调查上游、实施移植、处理适配与记录决定。
 - [上游源码入口](AGENTS.md#上游源码)：日常移植所需的仓库位置与固定版本读取方式。
 - [基线选择与核验记录](docs/UPSTREAM_BASELINE.md)：升级上游、调查版本差异或维护参考产物时按需查阅；版本与校验值见 [JSON](docs/upstream-baseline.json)。
-- [视觉一致性测试](tests/VisualParity/README.md)：场景、运行命令、机器可读结果与当前验证边界。
+- [视觉一致性测试](tests/VisualParity/README.md)：运行命令与结果阅读；新增用例见[用例编写](tests/VisualParity/AUTHORING.md)。
 
 组件专属说明随组件放在 `Components/<组件>/README.md`，按需补充。
 重要本地设计在维护者确认后简要记录于 `docs/DECISIONS.md`，首次需要时再创建。

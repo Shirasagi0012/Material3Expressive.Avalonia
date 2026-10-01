@@ -1,32 +1,50 @@
+using System.Text;
 using System.Text.Json;
+
 namespace Material3Expressive.Parity;
 
 public static class Report
 {
-    public static void Write(string directory, CaseMetadata metadata, Comparison comparison, Capture? expected, Capture? actual)
+    // Read only the public result files; the private capture cache is not needed to render a report.
+    public static CaseResult Write(string directory)
     {
+        var result = ResultFiles.Read(directory);
         var buffers = new Dictionary<string, string>();
-        foreach (var (side, capture) in new[] { ("expected", expected), ("actual", actual) })
-            if (capture is not null) foreach (var sample in capture.Samples) foreach (var raster in sample.Rasters)
-            {
-                var path = Path.Combine(directory, side, raster.Pixels);
-                if (File.Exists(path)) buffers[side + "/" + sample.Id + "/" + raster.Id] = Convert.ToBase64String(File.ReadAllBytes(path));
-            }
-        JsonElement? repeatability = File.Exists(Path.Combine(directory, "repeatability.json"))
-            ? JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(directory, "repeatability.json"))) : null;
-        var data = JsonSerializer.Serialize(new { metadata, comparison, expected, actual, buffers, repeatability }, ParityJson.Options);
-        WriteTemplate(directory, "Report.template.html", data);
-    }
-    public static void Suite(string directory, List<Comparison> outcomes)
-    {
-        var cases = outcomes.Select(comparison =>
+        foreach (var (side, capture) in new[] { ("expected", result.Expected), ("actual", result.Actual) })
+            if (capture is not null)
+                foreach (var sample in capture.Samples)
+                foreach (var raster in sample.Rasters)
+                    buffers[side + "/" + sample.Id + "/" + raster.Id] = Convert.ToBase64String(PixelData.Read(directory, raster));
+        var data = JsonSerializer.Serialize(new
         {
-            var path = Path.Combine(directory, comparison.CaseId, "case.json");
-            var metadata = File.Exists(path) ? ParityJson.Read<CaseMetadata>(path) : null;
-            return new { comparison.CaseId, metadata?.Title, metadata?.Family, comparison.Status, comparison.Coverage,
-                ErrorCount = comparison.Errors.Length, SampleCount = comparison.Samples.Length };
-        });
-        WriteTemplate(directory, "Report.suite.template.html", JsonSerializer.Serialize(cases, ParityJson.Options));
+            metadata = result.Metadata, comparison = result.Comparison, expected = result.Expected, actual = result.Actual,
+            buffers, repeatability = result.Repeatability, sampleFiles = result.Samples,
+            suiteHref = new DirectoryInfo(directory).Parent?.Name == "cases" ? "../../report.html" : null
+        }, ParityJson.Options);
+        File.WriteAllText(Path.Combine(directory, "overview.md"), ResultFiles.Overview(result));
+        WriteTemplate(directory, "Report.template.html", data);
+        return result;
+    }
+
+    public static void Suite(string directory)
+    {
+        var results = Directory.EnumerateDirectories(Path.Combine(directory, "cases")).Order().Select(ResultFiles.Read).ToArray();
+        var entries = results.Select(result =>
+        {
+            var c = result.Comparison;
+            return new
+            {
+                c.CaseId, result.Metadata.Title, result.Metadata.Family, c.Status, c.Coverage,
+                ErrorCount = c.Errors.Length, SampleCount = c.Samples.Length
+            };
+        }).ToArray();
+        var summary = new StringBuilder("# Visual parity\n\nCounts are observations, not defects or completion percentages.\n\n");
+        summary.AppendLine("| Case | Status | Samples | Equal | Different | Not compared | Errors | Overview |");
+        summary.AppendLine("|---|---|---:|---:|---:|---:|---:|---|");
+        foreach (var c in entries)
+            summary.AppendLine($"| {c.CaseId} | {c.Status} | {c.SampleCount} | {c.Coverage.Equal} | {c.Coverage.Different} | {c.Coverage.NotCompared} | {c.ErrorCount} | [Read](cases/{c.CaseId}/overview.md) |");
+        File.WriteAllText(Path.Combine(directory, "summary.md"), summary.ToString());
+        WriteTemplate(directory, "Report.suite.template.html", JsonSerializer.Serialize(entries, ParityJson.Options));
     }
 
     static void WriteTemplate(string directory, string templateName, string data)
