@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "id": "text.wrapped",
+  "title": "Multiline wrapped text",
+  "family": "text",
+  "composeEntry": "textWrapped",
+  "avaloniaEntry": "TextWrapped"
+}

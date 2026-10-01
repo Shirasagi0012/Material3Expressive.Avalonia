@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "id": "protocol.direct",
+  "title": "Author-built observation without a host",
+  "family": "protocol",
+  "composeEntry": "directObservation",
+  "avaloniaEntry": "DirectObservation"
+}

@@ -109,8 +109,8 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
   和 [motion 测试](../tests/Material3Expressive.Tests/MotionTests.cs)可作为已有检查入口。
   TestSupport 的 `AdvanceBy` 每次发送一个帧，不插入起始帧；跟踪任务的异常应在推进和释放时暴露。
   测试存在不代表本轮已运行，也不代表 Compose 视觉对比或真实桌面交互已经验收。
-- [视觉一致性系统](../tests/VisualParity/README.md)已接入锁定依赖的 Compose 参考端、Avalonia Skia 捕获端、
-  共享场景和分层比较。首批覆盖 Surface、Button、IconButton、文本及 Animatable；按场景报告 PASS、FAIL、
-  UNVERIFIED 或 ERROR。测试使用已打包的 ComposeAnimation 和自定义帧时钟，每个时间点只发送一个动画帧；
-  检查点通过被动截图读取，文字辅助绘制保留布局且不发送帧。系统稳定性与组件一致性分别验收。
-  全新克隆与 CI 的已知限制见 [README](../README.md#本地开发)。
+- [视觉一致性系统](../tests/VisualParity/README.md)使用独立的双端用例入口，作者显式构建场景、推进时钟和提交测量快照。
+  元数据仅标识用例和两端入口，不定义通用场景或输入语言。schema 2 按样本、测量点和维度呈现精确差分，
+  equal、different 与 notCompared 分别计数；系统不推断原因，也不使用阈值或文字遮罩消除差异。
+  可选宿主将动画帧、框架绘制和被动捕获分开；系统重复性与组件一致性分别验证。实际能力及限制见测试 README。
+  全新克隆与 CI 的依赖限制见 [README](../README.md#本地开发)。

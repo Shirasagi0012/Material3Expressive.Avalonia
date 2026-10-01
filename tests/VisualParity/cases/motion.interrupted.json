@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "id": "motion.interrupted",
+  "title": "Interrupted linear tween",
+  "family": "motion",
+  "composeEntry": "motionInterrupted",
+  "avaloniaEntry": "MotionInterrupted"
+}

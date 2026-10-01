@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "id": "button.filled.disabled",
+  "title": "Disabled filled button",
+  "family": "button",
+  "composeEntry": "buttonDisabled",
+  "avaloniaEntry": "ButtonDisabled"
+}

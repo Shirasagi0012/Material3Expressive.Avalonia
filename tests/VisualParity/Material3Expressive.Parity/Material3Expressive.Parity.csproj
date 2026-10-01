@@ -5,6 +5,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
+    <None Update="Report*.html;Report.styles.css" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Avalonia.Headless" />
     <PackageReference Include="ComposeAnimation.TestSupport" />
     <ProjectReference Include="../../../src/Material3Expressive/Material3Expressive.csproj" />

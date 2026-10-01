@@ -1,209 +1,207 @@
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
-using ComposeAnimation.TestSupport;
 using Material3Expressive.Parity;
 using SkiaSharp;
 using Xunit;
-
+using System.Text.Json;
 [assembly: AvaloniaTestApplication(typeof(ParityAppBuilder))]
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
-
 namespace Material3Expressive.Parity.Tests;
 
 public class ParityTests
 {
-    private static ComparisonProfile Strict => new(1, "test", "Boundary/injection tests", .01, .001, 2, 0);
-    private static Scenario Fixture => new() { Id = "test.fixture", Component = "surface", Required = ["layout", "behavior"] };
-    private static readonly Dictionary<string, string> Environment = new()
-    {
-        ["platform"] = "windows", ["architecture"] = "x64", ["density"] = "1", ["fontScale"] = "1",
-        ["fontSha256"] = "font", ["symbolSha256"] = "symbol", ["colorSpace"] = "sRGB"
-    };
-    private static Capture Capture(string runner, double x = 0) => new(runner, "scenario", "baseline", Environment,
-        ["layout", "behavior", "motion"], [new(0, 0, null, [new("container", new(x, 0, 100, 50))],
-            new() { ["value"] = 0, ["velocity"] = 0 }, 0, true)], []);
-    private static Comparison Compare(Scenario scenario, Capture expected, Capture actual) =>
-        ParityComparison.Run(scenario, expected, actual, Strict, "", "", Temp());
-    private static string Temp() => Path.Combine(Path.GetTempPath(), "m3-parity-tests", Guid.NewGuid().ToString("N"));
-
+    static CaseMetadata Metadata => new(2, "test.fixture", "Fixture", "test", "unused", "DirectObservation");
+    static string Temp() => Path.Combine(Path.GetTempPath(), "m3-parity-v2", Guid.NewGuid().ToString("N"));
+    static Capture Capture(string runner, params ProbePoint[] points) => new(2, runner, Metadata.Id, "metadata", "baseline", new() { ["density"] = "1" },
+        [new("initial", 0, "mounted", points, [])], [], []);
+    static ProbePoint Point(params Measurement[] fields) => new("target", "container", null, fields);
+    static Comparison Compare(Capture e, Capture a) => ParityComparison.Run(Metadata, e, a, "", "", Temp());
     [Fact]
-    public void LayoutBoundaryAndInjectedPixelShift()
+    public void NoToleranceCanHideFractionalGeometryDifference()
     {
-        Assert.Equal("PASS", Compare(Fixture, Capture("compose"), Capture("avalonia", .009)).Status);
-        var result = Compare(Fixture, Capture("compose"), Capture("avalonia", 1));
-        Assert.Equal("FAIL", result.Status);
-        Assert.Contains(result.Findings, x => x.Subject == "container" && x.Metric == "x" && x.Delta == 1);
+        var e = Capture("compose", Point(Measurement.Numeric("x", 0)));
+        var a = Capture("avalonia", Point(Measurement.Numeric("x", .0000001)));
+        var result = Compare(e, a); Assert.Equal(1, result.Coverage.Different); Assert.Equal(.0000001, result.Samples[0].Points[0].Fields[0].Delta![0]);
     }
     [Fact]
-    public void MissingCapabilityCannotPass()
+    public void UnavailableBothSidesRemainsNotCompared()
     {
-        Assert.Equal("UNVERIFIED", Compare(Fixture with { Required = ["resolvedFont"] }, Capture("compose"), Capture("avalonia")).Status);
+        var field = Measurement.Unavailable("font", "text", "string", "none", "none", "No reader");
+        Assert.Equal("notCompared", Compare(Capture("compose", Point(field)), Capture("avalonia", Point(field))).Status);
+    }
+    [Theory]
+    [InlineData("unit")]
+    [InlineData("space")]
+    [InlineData("definition")]
+    [InlineData("kind")]
+    public void SemanticMismatchIsNotANumericDifference(string part)
+    {
+        var e = Measurement.Numeric("width", 10); var a = part switch
+        {
+            "unit" => e with { Unit = "px" },
+            "space" => e with { Space = "text" },
+            "definition" => e with { Definition = "glyph-ink-width" },
+            _ => e with { Kind = "point", Numbers = [10, 10] }
+        };
+        Assert.Equal("notCompared", ParityComparison.Field("width", e, a).Status);
     }
     [Fact]
-    public void FontCapabilityWithoutResolvedFactsCannotPass()
+    public void MissingFieldAndMissingPointAreVisibleSeparately()
     {
-        var e = Capture("compose"); var a = Capture("avalonia");
-        var node = new Node("label", new(0, 0, 100, 20), new("Save", 14, 400, [new(15, 30, 20, false)], []));
-        e = e with { Capabilities = ["resolvedFont"], Frames = [e.Frames[0] with { Nodes = [node] }] };
-        a = a with { Capabilities = ["resolvedFont"], Frames = [a.Frames[0] with { Nodes = [node] }] };
-        Assert.Equal("UNVERIFIED", Compare(Fixture with { Required = ["resolvedFont"] }, e, a).Status);
+        var e = Capture("compose", Point(Measurement.Numeric("width", 10)));
+        var a = Capture("avalonia", Point()); Assert.Equal(1, Compare(e, a).Coverage.NotCompared);
+        Assert.Equal("notCompared", Compare(e, Capture("avalonia")).Samples[0].Points.Single().Status);
     }
     [Fact]
-    public void MissingSamplesCannotPass()
+    public void SampleMatchingUsesIdsAndChecksTimeAndStage()
     {
-        var actual = Capture("avalonia");
-        actual = actual with { Frames = [actual.Frames[0] with { Values = [] }] };
-        Assert.Equal("UNVERIFIED", Compare(Fixture with { Required = ["motion"] }, Capture("compose"), actual).Status);
+        var e = Capture("compose", Point()); var a = Capture("avalonia", Point());
+        Assert.Equal("notCompared", Compare(e, a with { Samples = [a.Samples[0] with { TimeUs = 1 }] }).Samples.Single().Status);
+        Assert.Equal("notCompared", Compare(e, a with { Samples = [a.Samples[0] with { FrameTimeUs = 1 }] }).Samples.Single().Status);
+        Assert.Equal("notCompared", Compare(e, a with { Samples = [a.Samples[0] with { Stage = "pressed" }] }).Samples.Single().Status);
+        Assert.Equal(2, Compare(e, a with { Samples = [a.Samples[0] with { Id = "other" }] }).Coverage.NotCompared);
     }
     [Fact]
-    public void LateFrameAndWrongEnvironmentAreErrors()
+    public void BooleanFactsUseNativeBooleanValues()
     {
-        var a = Capture("avalonia");
-        Assert.Equal("ERROR", Compare(Fixture, Capture("compose"), a with { Frames = [a.Frames[0] with { TimeUs = 1 }] }).Status);
-        Assert.Equal("ERROR", Compare(Fixture, Capture("compose"), a with { Environment = new(Environment) { ["fontSha256"] = "other" } }).Status);
+        var e = Measurement.Flag("enabled", true); var a = Measurement.Flag("enabled", false);
+        e.Validate(); a.Validate();
+        Assert.Equal("different", ParityComparison.Field("enabled", e, a).Status);
+        Assert.Null(ParityComparison.Field("enabled", e, a).Delta);
     }
     [Fact]
-    public void VelocityResetIsDetected()
+    public void MismatchedParentRetainsBothFactsWithoutPairingThem()
     {
-        var e = Capture("compose"); var a = Capture("avalonia");
-        e = e with { Frames = [e.Frames[0] with { Values = new() { ["value"] = 10, ["velocity"] = 30 } }] };
-        a = a with { Frames = [a.Frames[0] with { Values = new() { ["value"] = 10, ["velocity"] = 0 } }] };
-        Assert.Contains(Compare(Fixture with { Required = ["motion"] }, e, a).Findings, x => x.Metric == "velocity" && x.Status == "FAIL");
+        var e = Capture("compose", new("root", "container", null, []), new("target", "container", "root", [Measurement.Numeric("x", 1)]));
+        var a = Capture("avalonia", Point(Measurement.Numeric("x", 2)));
+        var point = Compare(e, a).Samples.Single().Points.Single(p => p.Id == "target");
+        Assert.Equal("notCompared", point.Status); Assert.Equal("root", point.ExpectedParentId); Assert.Null(point.ActualParentId);
+        Assert.Equal(1, point.Fields.Single().Expected!.Numbers![0]); Assert.Equal(2, point.Fields.Single().Actual!.Numbers![0]);
+        Assert.Null(point.Fields.Single().Delta);
     }
     [Fact]
-    public void SmallMissingFeatureIsNotDilutedByBackground()
+    public void NumericVectorsKeepSignedDelta()
     {
-        using var e = new SKBitmap(240, 160); e.Erase(SKColors.White);
-        using var a = new SKBitmap(240, 160); a.Erase(SKColors.White);
-        e.SetPixel(120, 80, SKColors.Black);
-        var result = ImageComparison.Compare(e, a, SKColors.White, 2);
-        Assert.Equal(1, result.DifferentPixels);
-        Assert.Equal(255, result.MaximumChannelDelta);
-        Assert.True(result.ContourDistance > 1);
+        var e = Measurement.Vector("box", "rect", [10, 20, 30, 40], "dip", "scene", "geometry");
+        var a = e with { Numbers = [9, 20, 31, 39] };
+        Assert.Equal(new double[] { -1, 0, 1, -1 }, ParityComparison.Field("box", e, a).Delta);
     }
     [Fact]
-    public void ChannelThresholdBoundary()
+    public void DuplicateIdsCyclesAndNonfiniteValuesAreRejected()
     {
-        using var e = new SKBitmap(1, 1); e.Erase(new SKColor(100, 100, 100));
-        using var a = new SKBitmap(1, 1); a.Erase(new SKColor(102, 100, 100));
-        Assert.Equal(0, ImageComparison.Compare(e, a, SKColors.White, 2).DifferentPixels);
-        a.Erase(new SKColor(103, 100, 100));
-        Assert.Equal(1, ImageComparison.Compare(e, a, SKColors.White, 2).DifferentPixels);
+        var c = Capture("compose", Point(Measurement.Numeric("x", double.NaN))); Assert.Throws<InvalidDataException>(c.Validate);
+        c = Capture("compose", Point(), Point()); Assert.Throws<InvalidDataException>(c.Validate);
+        c = Capture("compose", new("a", "container", "b", []), new("b", "container", "a", [])); Assert.Throws<InvalidDataException>(c.Validate);
     }
     [Fact]
-    public void ManifestRejectsTampering()
+    public void ActualResolvedFontCannotBeSubstitutedForMissingFacts()
     {
-        var directory = Temp();
-        ParityJson.Write(Path.Combine(directory, "observations.json"), Capture("compose"));
-        ParityJson.Seal(directory, "compose", Environment);
-        ParityJson.Verify(directory);
-        File.AppendAllText(Path.Combine(directory, "observations.json"), " ");
-        Assert.Throws<InvalidDataException>(() => ParityJson.Verify(directory));
+        var e = Measurement.Unavailable("resolvedFonts", "text", "strings", "none", "none", "No API", "text.resolved-font-families");
+        var a = new Measurement("resolvedFonts", "text", "strings", "none", "none", "text.resolved-font-families", "runtime", Strings: ["Roboto"]);
+        Assert.Equal("notCompared", ParityComparison.Field("resolvedFonts", e, a).Status);
     }
     [Fact]
-    public void NestedManifestIsAlsoCoveredByArtifactIntegrity()
+    public void OnePixelAndAlphaDifferencesAreNotDilutedOrDiscarded()
     {
-        var directory = Temp();
-        ParityJson.Write(Path.Combine(directory, "observations.json"), Capture("compose"));
-        ParityJson.Write(Path.Combine(directory, "nested", "manifest.json"), new { input = 1 });
-        ParityJson.Seal(directory, "compose", Environment);
-        File.AppendAllText(Path.Combine(directory, "nested", "manifest.json"), " ");
-        Assert.Throws<InvalidDataException>(() => ParityJson.Verify(directory));
+        var e = new byte[240 * 160 * 4]; var a = (byte[])e.Clone(); a[(80 * 240 + 120) * 4 + 3] = 1;
+        var r = ParityComparison.Pixels(e, a, 240, 160, [0, 0, 240, 160]);
+        Assert.Equal(1, r.DifferentPixels); Assert.Equal(new[] { 120, 80, 1, 1 }, r.DifferenceBounds); Assert.Equal(1, r.MaximumChannelDelta[3]);
+        Assert.True(r.MeanChannelDelta[3] > 0); Assert.Equal(0, ParityComparison.Pixels(e, a, 240, 160, [0, 0, 10, 10]).DifferentPixels);
     }
     [Fact]
-    public async Task ManualClockDoesNotInsertFramesOrDeliverNewWaitersInSameBatch()
+    public void RasterRegionsUseUnionWithoutMovingImages()
     {
-        using var clock = new ManualAnimationFrameClock();
-        var first = clock.NextFrameAsync(TestContext.Current.CancellationToken).AsTask();
-        Task<TimeSpan>? second = null;
-        async Task Consume() { await first; second = clock.NextFrameAsync(default).AsTask(); }
-        var consuming = Consume();
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(17));
-        Assert.True(consuming.IsCompletedSuccessfully);
-        Assert.Equal(TimeSpan.FromMilliseconds(17), await first);
-        Assert.NotNull(second); Assert.False(second.IsCompleted);
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(17));
-        Assert.Equal(TimeSpan.FromMilliseconds(34), await second);
+        var ed = Temp(); var ad = Temp(); Directory.CreateDirectory(ed); Directory.CreateDirectory(ad);
+        using var bitmap = new SKBitmap(5, 5); bitmap.Erase(SKColors.White);
+        void Save(string directory) => File.WriteAllBytes(Path.Combine(directory, "image.png"), bitmap.Encode(SKEncodedImageFormat.Png, 100).ToArray());
+        Save(ed); bitmap.SetPixel(4, 4, SKColors.Black); Save(ad);
+        var er = PixelData.FromPng(ed, "full", "image.png"); var ar = PixelData.FromPng(ad, "full", "image.png");
+        Measurement Box(double x) => Measurement.Vector("box", "rect", [x, 0, 1, 1], "dip", "scene", "geometry", "layout.box.aabb.unclipped");
+        var e = Capture("compose", Point(Box(0))); var a = Capture("avalonia", Point(Box(2)));
+        e = e with { Samples = [e.Samples[0] with { Rasters = [er] }] }; a = a with { Samples = [a.Samples[0] with { Rasters = [ar] }] };
+        var r = ParityComparison.Run(Metadata, e, a, ed, ad, Temp()).Samples[0].Rasters.Single();
+        Assert.Equal(1, r.Metrics!.DifferentPixels); Assert.Equal(new[] { 0, 0, 3, 1 }, r.Regions!.Single().Bounds); Assert.Equal(0, r.Regions!.Single().Metrics.DifferentPixels);
+        var unpaired = a with { Samples = [a.Samples[0] with { Points = [a.Samples[0].Points[0] with { Role = "allocation" }] }] };
+        var unpairedRaster = ParityComparison.Run(Metadata,e,unpaired,ed,ad,Temp()).Samples[0].Rasters.Single();
+        Assert.Empty(unpairedRaster.Regions!); Assert.Equal(1,unpairedRaster.Metrics!.DifferentPixels);
+    }
+    [Fact]
+    public void ManifestRejectsTamperedOrAddedFiles()
+    {
+        var d = Temp(); var c = Capture("compose", Point()); ParityJson.Write(Path.Combine(d, "observations.json"), c); ParityJson.Seal(d, c.Runner, c.Environment); ParityJson.Verify(d);
+        File.WriteAllText(Path.Combine(d, "extra.txt"), "new"); Assert.Throws<InvalidDataException>(() => ParityJson.Verify(d)); File.Delete(Path.Combine(d, "extra.txt"));
+        File.AppendAllText(Path.Combine(d, "observations.json"), " "); Assert.Throws<InvalidDataException>(() => ParityJson.Verify(d));
+    }
+    [Fact]
+    public void ManifestRejectsInternallyInconsistentPixelsEvenWhenResealed()
+    {
+        var d = Temp(); Directory.CreateDirectory(d); using var bitmap = new SKBitmap(1, 1); bitmap.Erase(new SKColor(80, 120, 200, 128));
+        File.WriteAllBytes(Path.Combine(d, "image.png"), bitmap.Encode(SKEncodedImageFormat.Png, 100).ToArray()); var raster = PixelData.FromPng(d, "full", "image.png");
+        var c = Capture("compose", Point()); c = c with { Samples = [c.Samples[0] with { Rasters = [raster] }] };
+        ParityJson.Write(Path.Combine(d, "observations.json"), c); ParityJson.Seal(d, c.Runner, c.Environment); ParityJson.Verify(d);
+        var bytes = File.ReadAllBytes(Path.Combine(d, raster.Pixels)); bytes[0]++; File.WriteAllBytes(Path.Combine(d, raster.Pixels), bytes); ParityJson.Seal(d, c.Runner, c.Environment);
+        Assert.Throws<InvalidDataException>(() => ParityJson.Verify(d));
+    }
+    [Fact]
+    public void CanonicalDecodePreservesStraightRgbUnderZeroAlpha()
+    {
+        var directory=Temp();Directory.CreateDirectory(directory);
+        using var bitmap=new SKBitmap(new SKImageInfo(2,1,SKColorType.Rgba8888,SKAlphaType.Unpremul));
+        bitmap.SetPixel(0,0,new SKColor(80,120,200,0)); bitmap.SetPixel(1,0,new SKColor(81,121,201,128));
+        var path=Path.Combine(directory,"pixels.png");File.WriteAllBytes(path,bitmap.Encode(SKEncodedImageFormat.Png,100).ToArray());
+        var decoded=PixelData.DecodePng(path);
+        Assert.Equal(new byte[] {80,120,200,0,81,121,201,128},decoded.Bytes);
+    }
+    [Fact]
+    public void SubmitDetachesMutableCollections()
+    {
+        var root = Program.FindRoot(); var d = Temp(); var input = Path.Combine(d, "case.json"); ParityJson.Write(input, Metadata);
+        var writer = new CaptureWriter(Metadata, input, d, root); var field = Measurement.Numeric("value", 1); writer.Submit(new("initial", 0, "custom", [Point(field)], [])); field.Numbers![0] = 2;
+        Assert.Equal(1, writer.Finish().Samples.Single().Points.Single().Measurements.Single().Numbers![0]);
+    }
+    static async Task<(Capture Capture, string Directory)> Actual(string id, bool extra = false)
+    {
+        var root = Program.FindRoot(); var input = Path.Combine(root, $"tests/VisualParity/cases/{id}.json"); var m = ParityJson.Read<CaseMetadata>(input); var d = Temp(); var writer = new CaptureWriter(m, input, d, root, extra);
+        await Cases.Entries[m.AvaloniaEntry](writer); var capture = writer.Finish(); ParityJson.Verify(d); return (capture, d);
     }
     [AvaloniaFact]
-    public async Task ActualCaptureRepeatsWithoutAdvancingMotionDuringScreenshots()
+    public async Task InterruptedMotionRepeatsAndExtraImagesDoNotAdvanceClock()
     {
-        var root = Program.FindRoot();
-        var input = Path.Combine(root, "tests/VisualParity/scenarios/motion.tween.reverse.json");
-        var s = ParityJson.Read<Scenario>(input);
-        var first = Temp(); var second = Temp();
-        var a = await AvaloniaCapture.RunAsync(s, input, first, root);
-        var b = await AvaloniaCapture.RunAsync(s, input, second, root);
-        Assert.Empty(a.Errors); Assert.Empty(b.Errors);
-        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(a, ParityJson.Options), System.Text.Json.JsonSerializer.Serialize(b, ParityJson.Options));
-        foreach (var checkpoint in s.Checkpoints)
-            Assert.Equal(ParityJson.Hash(Path.Combine(first, $"frames/{checkpoint:D4}.png")), ParityJson.Hash(Path.Combine(second, $"frames/{checkpoint:D4}.png")));
+        var a = await Actual("motion.interrupted"); var b = await Actual("motion.interrupted"); var dense = await Actual("motion.interrupted", true);
+        Assert.Empty(a.Capture.Errors); Assert.Empty(Program.Stability(a.Directory, b.Directory)); Assert.Empty(Program.Stability(a.Directory, dense.Directory, true));
+        Assert.Equal(new long[] { -2000, -1000, 0, 16000, 40000, 56000, 80000, 140000, 160000 }, a.Capture.Trace.Where(t => t.Operation == "frame").Select(t => t.TimeUs));
     }
     [AvaloniaFact]
-    public async Task AddingScreenshotsDoesNotChangeAnimationSamples()
+    public async Task InterframeEventTimeAndPassiveCaptureKeepLastDeliveredFrame()
     {
-        var root = Program.FindRoot();
-        var input = Path.Combine(root, "tests/VisualParity/scenarios/motion.spring.reverse.json");
-        var sparse = ParityJson.Read<Scenario>(input);
-        var dense = sparse with { Checkpoints = Enumerable.Range(0, sparse.FramesUs.Length).ToArray() };
-        var a = await AvaloniaCapture.RunAsync(sparse, input, Temp(), root);
-        var b = await AvaloniaCapture.RunAsync(dense, input, Temp(), root);
-        for (var i = 0; i < a.Frames.Length; i++)
-            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(a.Frames[i] with { Image = null }, ParityJson.Options),
-                System.Text.Json.JsonSerializer.Serialize(b.Frames[i] with { Image = null }, ParityJson.Options));
+        var root = Program.FindRoot(); var directory = Temp(); var input = Path.Combine(directory,"case.json");
+        ParityJson.Write(input,Metadata); var writer = new CaptureWriter(Metadata,input,directory,root);
+        await using (var host = new AvaloniaHost(writer))
+        {
+            host.Mount(new Avalonia.Controls.Border()); host.Frame(0); host.AdvanceTo(5000); host.Draw();
+            Assert.Equal(0,host.FrameTimeUs); Assert.Equal(5000,host.TimeUs);
+            var sample = host.Snapshot("between", "between-frames", [], true);
+            Assert.Equal(5000,sample.TimeUs); Assert.Equal(0,sample.FrameTimeUs); writer.Submit(sample);
+            Assert.Equal(0,host.FrameTimeUs);
+        }
+        Assert.Single(writer.Finish().Trace,t=>t.Operation=="frame");
     }
     [AvaloniaFact]
-    public async Task ButtonUsesRealThemeAndInput()
+    public async Task RealButtonUsesNativeLabelAndRealInput()
     {
-        var root = Program.FindRoot();
-        var input = Path.Combine(root, "tests/VisualParity/scenarios/button.filled.quick-tap.json");
-        var s = ParityJson.Read<Scenario>(input);
-        var result = await AvaloniaCapture.RunAsync(s, input, Temp(), root);
-        Assert.Empty(result.Errors);
-        Assert.Equal(1, result.Frames[^1].Clicks);
-        Assert.Contains(result.Frames[0].Nodes, x => x.Id == "content");
-        Assert.Equal(40, result.Frames[0].Nodes.First(x => x.Id == "allocation").Bounds.Height);
+        var result = await Actual("button.filled.press"); Assert.Empty(result.Capture.Errors);
+        var final = result.Capture.Samples.Last(); Assert.Contains(result.Capture.Trace,t=>t.Operation=="advance"&&t.TimeUs==88000);
+        Assert.Equal(1, final.Points.Single(p => p.Id == "button").Measurements.Single(m => m.Name == "clicks").Numbers![0]);
+        var label = final.Points.Single(p => p.Id == "label"); Assert.Contains("Roboto", label.Measurements.Single(m => m.Name == "resolvedFonts").Strings!);
+        Assert.Equal(new double[] { 0, 4 }, label.Measurements.Single(m => m.Name == "line.0.range").Numbers);
+        Assert.True(label.Measurements.Single(m => m.Name == "line.0.nativeRange").Numbers![1] >= 4);
     }
-    [AvaloniaFact]
-    public async Task TextPaintSuppressionPreservesLayoutAndLeavesRealGlyphContribution()
+    [Fact]
+    public void MetadataContainsEntriesInsteadOfAnExecutionLanguage()
     {
-        var root = Program.FindRoot();
-        var input = Path.Combine(root, "tests/VisualParity/scenarios/text.latin.json");
-        var scenario = ParityJson.Read<Scenario>(input);
-        var directory = Temp(); var result = await AvaloniaCapture.RunAsync(scenario, input, directory, root);
-        Assert.Empty(result.Errors);
-        Assert.NotEmpty(result.Frames[0].Nodes.Single(x => x.Id == "label").Text!.ResolvedFonts);
-        using var full = SKBitmap.Decode(Path.Combine(directory, result.Frames[0].Image!));
-        using var suppressed = SKBitmap.Decode(Path.Combine(directory, result.Frames[0].WithoutTextImage!));
-        using var blank = new SKBitmap(full.Width, full.Height); blank.Erase(SKColors.White);
-        Assert.Equal(0, ImageComparison.Compare(suppressed, blank, SKColors.White, 0).DifferentPixels);
-        using var paint = ImageComparison.TextPaint(full, suppressed);
-        blank.Erase(SKColors.Black);
-        Assert.True(ImageComparison.Compare(paint, blank, SKColors.Black, 0).DifferentPixels > 0);
-    }
-    [AvaloniaFact]
-    public async Task DiagnosticPaintsDoNotChangeTextButtonInteractionAnimation()
-    {
-        var root = Program.FindRoot();
-        var input = Path.Combine(root, "tests/VisualParity/scenarios/button.filled.quick-tap.json");
-        var scenario = ParityJson.Read<Scenario>(input) with { Content = "text", Required = ["layout", "raster", "behavior", "text", "textLayers"] };
-        var dense = scenario with { Checkpoints = Enumerable.Range(0, scenario.FramesUs.Length).ToArray() };
-        var first = Temp(); var second = Temp();
-        await AvaloniaCapture.RunAsync(scenario, input, first, root);
-        await AvaloniaCapture.RunAsync(dense, input, second, root);
-        Assert.Empty(Program.CheckpointStability(first, second));
-    }
-    [AvaloniaFact]
-    public async Task RealComponentMutationIsVisibleToComparer()
-    {
-        var root = Program.FindRoot();
-        var input = Path.Combine(root, "tests/VisualParity/scenarios/surface.radius-12.json");
-        var scenario = ParityJson.Read<Scenario>(input);
-        var first = Temp(); var second = Temp();
-        var e = (await AvaloniaCapture.RunAsync(scenario, input, first, root)) with { Runner = "compose" };
-        var a = await AvaloniaCapture.RunAsync(scenario with { Radius = 0 }, input, second, root);
-        var result = ParityComparison.Run(scenario, e, a, Strict, first, second, Temp());
-        Assert.Equal("FAIL", result.Status);
-        Assert.Contains(result.Findings, x => x.Subject == "raster" && x.Metric == "differentPixels");
+        var root = Program.FindRoot(); foreach (var file in Directory.GetFiles(Path.Combine(root, "tests/VisualParity/cases"), "*.json"))
+        { var m = ParityJson.Read<CaseMetadata>(file); m.Validate(); Assert.True(Cases.Entries.ContainsKey(m.AvaloniaEntry)); }
+        var path = Path.Combine(Temp(), "invalid.json"); ParityJson.Write(path, new { schemaVersion = 2, id = "test.fixture", title = "t", family = "f", composeEntry = "c", avaloniaEntry = "a", events = new[] { "down" } });
+        Assert.Throws<JsonException>(() => ParityJson.Read<CaseMetadata>(path));
     }
 }

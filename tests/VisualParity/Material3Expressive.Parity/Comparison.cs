@@ -1,256 +1,124 @@
 using SkiaSharp;
-
 namespace Material3Expressive.Parity;
-
-public sealed record ComparisonProfile(int SchemaVersion, string Name, string Provenance, double LayoutDip,
-    double MotionAbsolute, int ChannelDelta, int MaximumDifferentPixels)
-{
-    public void Validate()
-    {
-        if (SchemaVersion != 1 || !double.IsFinite(LayoutDip) || LayoutDip < 0 || !double.IsFinite(MotionAbsolute)
-            || MotionAbsolute < 0 || ChannelDelta is < 0 or > 255 || MaximumDifferentPixels < 0 || string.IsNullOrWhiteSpace(Provenance))
-            throw new InvalidDataException("Invalid comparison profile.");
-    }
-}
-public sealed record RasterMetrics(int DifferentPixels, int MaximumChannelDelta, Bounds? DifferenceBounds,
-    double ExpectedInk, double ActualInk, double ContourDistance);
-
-public static class ImageComparison
-{
-    // Difference of the real full draw and paint-suppressed draw. This is a text paint
-    // contribution map, not an inferred alpha mask or a substitute for shaping evidence.
-    public static SKBitmap TextPaint(SKBitmap full, SKBitmap withoutText)
-    {
-        if (full.Width != withoutText.Width || full.Height != withoutText.Height)
-            throw new InvalidDataException("Text diagnostic dimensions differ.");
-        var result = new SKBitmap(full.Width, full.Height);
-        for (var y = 0; y < full.Height; y++)
-        for (var x = 0; x < full.Width; x++)
-        {
-            var a = full.GetPixel(x, y); var b = withoutText.GetPixel(x, y);
-            var d = (byte)Math.Max(Math.Max(Math.Abs(a.Red - b.Red), Math.Abs(a.Green - b.Green)),
-                Math.Max(Math.Abs(a.Blue - b.Blue), Math.Abs(a.Alpha - b.Alpha)));
-            result.SetPixel(x, y, new SKColor(d, d, d));
-        }
-        return result;
-    }
-    public static void Save(SKBitmap bitmap, string path)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        using var stream = File.Create(path); data.SaveTo(stream);
-    }
-    // Integer sRGB colors are decoded to unpremultiplied RGBA by Skia. Coordinates are never aligned.
-    public static RasterMetrics Compare(SKBitmap expected, SKBitmap actual, SKColor background,
-        int channelDelta, SKBitmap? difference = null, Bounds? region = null)
-    {
-        if (expected.Width != actual.Width || expected.Height != actual.Height)
-            throw new InvalidDataException("Image dimensions differ.");
-        var w = expected.Width; var h = expected.Height;
-        var different = 0; var maximum = 0; var minX = w; var minY = h; var maxX = -1; var maxY = -1;
-        var expectedMask = new bool[w * h]; var actualMask = new bool[w * h];
-        double expectedInk = 0, actualInk = 0;
-        int Delta(SKColor x, SKColor y) => Math.Max(Math.Max(Math.Abs(x.Red - y.Red), Math.Abs(x.Green - y.Green)),
-            Math.Max(Math.Abs(x.Blue - y.Blue), Math.Abs(x.Alpha - y.Alpha)));
-        for (var y = 0; y < h; y++)
-        for (var x = 0; x < w; x++)
-        {
-            if (region is not null && (x < region.X || y < region.Y || x >= region.X + region.Width || y >= region.Y + region.Height)) continue;
-            var e = expected.GetPixel(x, y); var a = actual.GetPixel(x, y);
-            var d = Delta(e, a);
-            maximum = Math.Max(maximum, d);
-            if (d > channelDelta)
-            {
-                different++; minX = Math.Min(minX, x); minY = Math.Min(minY, y); maxX = Math.Max(maxX, x); maxY = Math.Max(maxY, y);
-            }
-            difference?.SetPixel(x, y, d > channelDelta ? new SKColor(255, 0, (byte)d) : new SKColor(235, 235, 235));
-            var ei = Delta(e, background); var ai = Delta(a, background);
-            expectedInk += ei / 255d; actualInk += ai / 255d;
-            expectedMask[y * w + x] = ei > 16; actualMask[y * w + x] = ai > 16;
-        }
-        var eEdges = Edges(expectedMask, w, h); var aEdges = Edges(actualMask, w, h);
-        var eDistances = Distances(eEdges, w, h); var aDistances = Distances(aEdges, w, h);
-        var contour = Math.Max(eEdges.Select((v, i) => v ? aDistances[i] : 0).Max(),
-            aEdges.Select((v, i) => v ? eDistances[i] : 0).Max());
-        return new(different, maximum, maxX < 0 ? null : new(minX, minY, maxX - minX + 1, maxY - minY + 1),
-            expectedInk, actualInk, contour);
-    }
-    private static bool[] Edges(bool[] mask, int w, int h) => mask.Select((v, i) => v &&
-        (i % w == 0 || i % w == w - 1 || i < w || i >= mask.Length - w || !mask[i - 1] || !mask[i + 1] || !mask[i - w] || !mask[i + w])).ToArray();
-    private static double[] Distances(bool[] edges, int w, int h)
-    {
-        // Chamfer distance is diagnostic only; no acceptance threshold is inferred from it.
-        var d = edges.Select(x => x ? 0d : (double)(w + h)).ToArray();
-        for (var y = 0; y < h; y++)
-        for (var x = 0; x < w; x++)
-        {
-            var i = y * w + x;
-            if (x > 0) d[i] = Math.Min(d[i], d[i - 1] + 1);
-            if (y > 0) d[i] = Math.Min(d[i], d[i - w] + 1);
-            if (x > 0 && y > 0) d[i] = Math.Min(d[i], d[i - w - 1] + Math.Sqrt(2));
-            if (x + 1 < w && y > 0) d[i] = Math.Min(d[i], d[i - w + 1] + Math.Sqrt(2));
-        }
-        for (var y = h - 1; y >= 0; y--)
-        for (var x = w - 1; x >= 0; x--)
-        {
-            var i = y * w + x;
-            if (x + 1 < w) d[i] = Math.Min(d[i], d[i + 1] + 1);
-            if (y + 1 < h) d[i] = Math.Min(d[i], d[i + w] + 1);
-            if (x + 1 < w && y + 1 < h) d[i] = Math.Min(d[i], d[i + w + 1] + Math.Sqrt(2));
-            if (x > 0 && y + 1 < h) d[i] = Math.Min(d[i], d[i + w - 1] + Math.Sqrt(2));
-        }
-        return d;
-    }
-}
 
 public static class ParityComparison
 {
-    public static Comparison Run(Scenario s, Capture expected, Capture actual, ComparisonProfile profile,
-        string expectedDirectory, string actualDirectory, string resultDirectory)
+    public static FieldDifference Field(string name, Measurement? expected, Measurement? actual)
     {
-        profile.Validate();
-        var findings = new List<Finding>();
-        void Number(int frame, string subject, string metric, double e, double a, double tolerance)
+        if (expected is null || actual is null) return new(name, "notCompared", expected, actual, Reason: "Measurement absent on one side.");
+        if (expected.Status != "measured" || actual.Status != "measured")
+            return new(name, "notCompared", expected, actual, Reason: $"compose={expected.Status}; avalonia={actual.Status}");
+        if ((expected.Category, expected.Kind, expected.Unit, expected.Space, expected.Definition)
+            != (actual.Category, actual.Kind, actual.Unit, actual.Space, actual.Definition))
+            return new(name, "notCompared", expected, actual, Reason: "Measurement descriptors differ (category/kind/unit/space/definition).");
+        if (expected.Kind == "boolean") return new(name, expected.Boolean == actual.Boolean ? "equal" : "different", expected, actual);
+        if (expected.Numbers is { } numbers)
         {
-            if (!double.IsFinite(e) || !double.IsFinite(a)) findings.Add(new("ERROR", frame, subject, metric, Detail: "Nonfinite observation."));
-            else if (Math.Abs(e - a) > tolerance) findings.Add(new("FAIL", frame, subject, metric, e, a, a - e));
+            var delta = actual.Numbers!.Zip(numbers, (a, e) => a - e).ToArray();
+            return new(name, delta.All(x => x == 0) ? "equal" : "different", expected, actual, delta);
         }
-        foreach (var key in new[] { "platform", "architecture", "density", "fontScale", "fontSha256", "symbolSha256", "colorSpace" })
-            if (!expected.Environment.TryGetValue(key, out var e) || !actual.Environment.TryGetValue(key, out var a) || e != a)
-                findings.Add(new("ERROR", -1, "environment", key, Detail: "Reference and actual environments differ or omit required identity."));
-        if (expected.Runner != "compose" || actual.Runner != "avalonia" || expected.ScenarioSha256 != actual.ScenarioSha256
-            || expected.BaselineSha256 != actual.BaselineSha256)
-            findings.Add(new("ERROR", -1, "manifest", "identity", Detail: "Wrong runner, scenario or baseline."));
-        if (expected.Frames.Length != s.FramesUs.Length || actual.Frames.Length != s.FramesUs.Length)
-            findings.Add(new("ERROR", -1, "timeline", "frameCount", Detail: "Missing/extra frames."));
-        foreach (var capability in s.Required)
-            if (!expected.Capabilities.Contains(capability) || !actual.Capabilities.Contains(capability))
-                findings.Add(new("UNVERIFIED", -1, "capability", capability, Detail: "Required observation is unsupported by one or both runners."));
-        foreach (var error in expected.Errors.Concat(actual.Errors)) findings.Add(new("ERROR", -1, "runner", "failure", Detail: error));
-        if (findings.Any(x => x.Status == "ERROR")) return new(s.Id, "ERROR", findings.ToArray());
-        Directory.CreateDirectory(Path.Combine(resultDirectory, "diff"));
-        for (var i = 0; i < s.FramesUs.Length; i++)
+        return new(name, expected.Strings!.SequenceEqual(actual.Strings!) ? "equal" : "different", expected, actual);
+    }
+    public static Comparison Run(CaseMetadata metadata, Capture? expected, Capture? actual, string expectedDirectory,
+        string actualDirectory, string output, string kind = "parity")
+    {
+        expected?.Validate(); actual?.Validate();
+        var errors = (expected?.Errors ?? []).Select(x => "compose: " + x).Concat((actual?.Errors ?? []).Select(x => "avalonia: " + x)).ToList();
+        if (expected is not null && expected.Runner != "compose" || actual is not null && actual.Runner != "avalonia")
+            errors.Add("Capture runner roles differ.");
+        if (expected is not null && actual is not null &&
+            (expected.CaseId != metadata.Id || actual.CaseId != metadata.Id || expected.MetadataSha256 != actual.MetadataSha256 || expected.BaselineSha256 != actual.BaselineSha256))
+            errors.Add("Capture identity, metadata or baseline differs.");
+        var environments = Keys(expected?.Environment.Keys, actual?.Environment.Keys)
+            .Select(key => Field(key, expected?.Environment.TryGetValue(key, out var e) == true ? Measurement.Text(key, e) : null,
+                actual?.Environment.TryGetValue(key, out var a) == true ? Measurement.Text(key, a) : null)).ToArray();
+        // Runtime provenance differs intentionally; it is evidence, not component parity coverage.
+        var samples = Keys(expected?.Samples.Select(x => x.Id), actual?.Samples.Select(x => x.Id)).Select(id =>
         {
-            var e = expected.Frames[i]; var a = actual.Frames[i];
-            if (e.Index != i || a.Index != i || e.TimeUs != s.FramesUs[i] || a.TimeUs != s.FramesUs[i])
+            var e = expected?.Samples.SingleOrDefault(x => x.Id == id); var a = actual?.Samples.SingleOrDefault(x => x.Id == id);
+            var sampleReason = e is null || a is null || e.TimeUs != a.TimeUs || e.FrameTimeUs != a.FrameTimeUs || e.Stage != a.Stage || errors.Any(x => x is "Capture identity, metadata or baseline differs." or "Capture runner roles differ.")
+                ? "Sample absent, logical/frame timestamp, stage or capture identity differs." : null;
+            var points = Keys(e?.Points.Select(x => x.Id), a?.Points.Select(x => x.Id)).Select(pid =>
             {
-                findings.Add(new("ERROR", i, "timeline", "timestamp", Detail: "Frame order or timestamps differ.")); continue;
-            }
-            var requiredImage = s.Checkpoints.Contains(i) ? $"frames/{i:D4}.png" : null;
-            if ((s.Required.Contains("raster") || s.Required.Contains("textLayers")) && (e.Image != requiredImage || a.Image != requiredImage))
+                var ep = e?.Points.SingleOrDefault(x => x.Id == pid); var ap = a?.Points.SingleOrDefault(x => x.Id == pid);
+                var reason = sampleReason ?? (ep is null || ap is null || ep.Role != ap.Role || ep.ParentId != ap.ParentId
+                    ? $"Point absent or role/parent differs: compose={ep?.Role}/{ep?.ParentId}, avalonia={ap?.Role}/{ap?.ParentId}." : null);
+                var fields = Keys(ep?.Measurements.Select(x => x.Name), ap?.Measurements.Select(x => x.Name))
+                    .Select(name => reason is null ? Field(name, ep?.Measurements.SingleOrDefault(x => x.Name == name), ap?.Measurements.SingleOrDefault(x => x.Name == name))
+                        : new FieldDifference(name, "notCompared", ep?.Measurements.SingleOrDefault(x => x.Name == name), ap?.Measurements.SingleOrDefault(x => x.Name == name), Reason: reason)).ToArray();
+                return new PointDifference(pid, ep?.Role ?? ap?.Role, ep?.ParentId ?? ap?.ParentId, reason is null ? Status(fields.Select(x => x.Status)) : "notCompared", fields, reason, ep?.Role, ap?.Role, ep?.ParentId, ap?.ParentId);
+            }).ToArray();
+            var rasters = Keys(e?.Rasters.Select(x => x.Id), a?.Rasters.Select(x => x.Id)).Select(rid => sampleReason is not null
+                ? new RasterDifference(rid, "notCompared", e?.Rasters.SingleOrDefault(x => x.Id == rid), a?.Rasters.SingleOrDefault(x => x.Id == rid), Reason: sampleReason)
+                : Raster(id, rid, e!, a!, expectedDirectory, actualDirectory, output, expected!.Environment, actual!.Environment)).ToArray();
+            return new SampleDifference(id, e?.TimeUs, a?.TimeUs, e?.Stage ?? a?.Stage, sampleReason is null ? Status(points.Select(x => x.Status).Concat(rasters.Select(x => x.Status))) : "notCompared", points, rasters, sampleReason, e?.Stage, a?.Stage, e?.FrameTimeUs, a?.FrameTimeUs);
+        }).OrderBy(x => x.ExpectedTimeUs ?? x.ActualTimeUs).ThenBy(x => x.Id).ToArray();
+        var statuses = samples.SelectMany(s => s.Status == "notCompared" && s.Points.Length == 0 && s.Rasters.Length == 0 ? ["notCompared"]
+            : s.Points.SelectMany(p => p.Fields.Length == 0 ? ["notCompared"] : p.Fields.Select(f => f.Status)).Concat(s.Rasters.Select(x => x.Status))).ToArray();
+        return new(2, metadata.Id, errors.Count != 0 ? "error" : Status(statuses),
+            new(statuses.Count(x => x == "equal"), statuses.Count(x => x == "different"), statuses.Count(x => x == "notCompared")),
+            samples, errors.ToArray(), environments, kind);
+    }
+    public static IEnumerable<string> Keys(IEnumerable<string>? a, IEnumerable<string>? b) => (a ?? []).Concat(b ?? []).Distinct().Order();
+    public static string Status(IEnumerable<string> statuses)
+    {
+        var s = statuses.ToArray();
+        return s.Contains("different") ? "different" : s.Contains("notCompared") || s.Length == 0 ? "notCompared" : "equal";
+    }
+    static RasterDifference Raster(string sampleId, string id, Sample e, Sample a, string ed, string ad, string output,
+        Dictionary<string, string> ee, Dictionary<string, string> ae)
+    {
+        var er = e.Rasters.SingleOrDefault(x => x.Id == id); var ar = a.Rasters.SingleOrDefault(x => x.Id == id);
+        if (er is null || ar is null || (er.Width, er.Height, er.Format, er.Space, er.Contribution) != (ar.Width, ar.Height, ar.Format, ar.Space, ar.Contribution))
+            return new(id, "notCompared", er, ar, Reason: "Raster absent or dimensions/format/space/contribution differs.");
+        var eb = PixelData.Read(ed, er); var ab = PixelData.Read(ad, ar);
+        var metrics = Pixels(eb, ab, er.Width, er.Height, [0, 0, er.Width, er.Height]);
+        var regions = new List<RasterRegion>();
+        if (ee.GetValueOrDefault("density") == "1" && ae.GetValueOrDefault("density") == "1")
+            foreach (var pid in Keys(e.Points.Select(x => x.Id), a.Points.Select(x => x.Id)))
             {
-                findings.Add(new("ERROR", i, "capture", "imagePath", Detail: "Capture paths must match the explicit checkpoint schedule.")); continue;
+                var expectedPoint = e.Points.SingleOrDefault(x => x.Id == pid);
+                var actualPoint = a.Points.SingleOrDefault(x => x.Id == pid);
+                if (expectedPoint is null || actualPoint is null || expectedPoint.Role != actualPoint.Role || expectedPoint.ParentId != actualPoint.ParentId)
+                    continue;
+                double[]? Box(Sample s) => s.Points.SingleOrDefault(x => x.Id == pid)?.Measurements
+                    .SingleOrDefault(x => x.Name == "box" && x.Status == "measured" && x.Kind == "rect" && x.Unit == "dip"
+                        && x.Space == "scene" && x.Definition == "layout.box.aabb.unclipped")?.Numbers;
+                var x = Box(e); var y = Box(a);
+                if (x is null || y is null) continue;
+                int Clamp(double v, int max) => (int)Math.Clamp(v, 0, max);
+                var left = Clamp(Math.Floor(Math.Min(x[0], y[0])), er.Width); var top = Clamp(Math.Floor(Math.Min(x[1], y[1])), er.Height);
+                var right = Clamp(Math.Ceiling(Math.Max(x[0] + x[2], y[0] + y[2])), er.Width); var bottom = Clamp(Math.Ceiling(Math.Max(x[1] + x[3], y[1] + y[3])), er.Height);
+                var box = new[] { left, top, Math.Max(0, right - left), Math.Max(0, bottom - top) };
+                regions.Add(new(pid, box, Pixels(eb, ab, er.Width, er.Height, box)));
             }
-            if (s.Required.Contains("behavior"))
-            {
-                Number(i, "component", "clicks", e.Clicks, a.Clicks, 0);
-                if (e.Enabled != a.Enabled) findings.Add(new("FAIL", i, "component", "enabled"));
-            }
-            if (s.Required.Contains("motion") && expected.Capabilities.Contains("motion") && actual.Capabilities.Contains("motion"))
-            {
-                if (e.Values.Count == 0 || a.Values.Count == 0) findings.Add(new("UNVERIFIED", i, "motion", "samples", Detail: "Missing required animation samples."));
-                foreach (var key in new[] { "value", "velocity", "running" })
-                    if (!e.Values.ContainsKey(key) || !a.Values.ContainsKey(key)) findings.Add(new("UNVERIFIED", i, "motion", key));
-                foreach (var (key, value) in e.Values)
-                    if (a.Values.TryGetValue(key, out var v)) Number(i, "motion", key, value, v, profile.MotionAbsolute);
-                    else findings.Add(new("UNVERIFIED", i, "motion", key));
-            }
-            foreach (var node in e.Nodes)
-            {
-                var observed = a.Nodes.SingleOrDefault(x => x.Id == node.Id);
-                if (observed is null) { findings.Add(new("FAIL", i, node.Id, "missingNode")); continue; }
-                if (s.Required.Contains("layout"))
-                {
-                    Number(i, node.Id, "x", node.Bounds.X, observed.Bounds.X, profile.LayoutDip);
-                    Number(i, node.Id, "y", node.Bounds.Y, observed.Bounds.Y, profile.LayoutDip);
-                    Number(i, node.Id, "width", node.Bounds.Width, observed.Bounds.Width, profile.LayoutDip);
-                    Number(i, node.Id, "height", node.Bounds.Height, observed.Bounds.Height, profile.LayoutDip);
-                }
-                if (s.Required.Contains("text") && node.Id == "label")
-                {
-                    if (node.Text is null || observed.Text is null) { findings.Add(new("UNVERIFIED", i, node.Id, "textLayout")); continue; }
-                    var et = node.Text; var at = observed.Text;
-                    if (et.Text != at.Text) findings.Add(new("FAIL", i, node.Id, "textContent"));
-                    Number(i, node.Id, "fontSize", et.FontSize, at.FontSize, profile.LayoutDip);
-                    Number(i, node.Id, "fontWeight", et.FontWeight, at.FontWeight, 0);
-                    Number(i, node.Id, "letterSpacing", et.LetterSpacing, at.LetterSpacing, profile.LayoutDip);
-                    Number(i, node.Id, "lineCount", et.Lines.Length, at.Lines.Length, 0);
-                    for (var line = 0; line < Math.Min(et.Lines.Length, at.Lines.Length); line++)
-                    {
-                        Number(i, node.Id, $"line[{line}].baseline", et.Lines[line].Baseline, at.Lines[line].Baseline, profile.LayoutDip);
-                        Number(i, node.Id, $"line[{line}].width", et.Lines[line].Width, at.Lines[line].Width, profile.LayoutDip);
-                        Number(i, node.Id, $"line[{line}].height", et.Lines[line].Height, at.Lines[line].Height, profile.LayoutDip);
-                        if (et.Lines[line].Ellipsized != at.Lines[line].Ellipsized) findings.Add(new("FAIL", i, node.Id, $"line[{line}].ellipsis"));
-                    }
-                }
-                if (s.Required.Contains("resolvedFont") && node.Id == "label")
-                {
-                    if (node.Text?.ResolvedFonts.Length is not > 0 || observed.Text?.ResolvedFonts.Length is not > 0)
-                        findings.Add(new("UNVERIFIED", i, node.Id, "resolvedFont", Detail: "Runtime-resolved font facts are missing."));
-                    else if (!node.Text.ResolvedFonts.SequenceEqual(observed.Text.ResolvedFonts))
-                        findings.Add(new("FAIL", i, node.Id, "resolvedFont", Detail: "Runtime-resolved font families differ."));
-                }
-            }
-            foreach (var extra in a.Nodes.Where(x => e.Nodes.All(n => n.Id != x.Id))) findings.Add(new("FAIL", i, extra.Id, "extraNode"));
-            if (s.Checkpoints.Contains(i) && (s.Required.Contains("raster") || s.Required.Contains("textLayers")))
-            {
-                if (e.Image is null || a.Image is null) { findings.Add(new("UNVERIFIED", i, "raster", "capture")); continue; }
-                using var eb = SKBitmap.Decode(Path.Combine(expectedDirectory, e.Image)) ?? throw new InvalidDataException("Invalid reference image.");
-                using var ab = SKBitmap.Decode(Path.Combine(actualDirectory, a.Image)) ?? throw new InvalidDataException("Invalid actual image.");
-                if (eb.Width != s.ViewportWidth || eb.Height != s.ViewportHeight || ab.Width != eb.Width || ab.Height != eb.Height)
-                { findings.Add(new("ERROR", i, "raster", "dimensions")); continue; }
-                using var diff = new SKBitmap(eb.Width, eb.Height);
-                var metrics = ImageComparison.Compare(eb, ab, SKColor.Parse(s.Background), profile.ChannelDelta, diff);
-                ParityJson.Write(Path.Combine(resultDirectory, "diff", $"{i:D4}.json"), metrics);
-                var regions = e.Nodes.Select(node =>
-                {
-                    var other = a.Nodes.SingleOrDefault(x => x.Id == node.Id)?.Bounds ?? node.Bounds;
-                    var left = Math.Min(node.Bounds.X, other.X); var top = Math.Min(node.Bounds.Y, other.Y);
-                    var right = Math.Max(node.Bounds.X + node.Bounds.Width, other.X + other.Width);
-                    var bottom = Math.Max(node.Bounds.Y + node.Bounds.Height, other.Y + other.Height);
-                    var region = new Bounds(left, top, right - left, bottom - top);
-                    return new { node.Id, Bounds = region, Metrics = ImageComparison.Compare(eb, ab, SKColor.Parse(s.Background), profile.ChannelDelta, region: region) };
-                }).ToArray();
-                ParityJson.Write(Path.Combine(resultDirectory, "diff", $"{i:D4}.regions.json"), regions);
-                ImageComparison.Save(diff, Path.Combine(resultDirectory, "diff", $"{i:D4}.png"));
-                if (s.Required.Contains("raster") && metrics.DifferentPixels > profile.MaximumDifferentPixels)
-                    findings.Add(new("FAIL", i, "raster", "differentPixels", profile.MaximumDifferentPixels, metrics.DifferentPixels,
-                        Detail: $"Maximum channel delta {metrics.MaximumChannelDelta}; contour distance {metrics.ContourDistance:F3}px (diagnostic)."));
-                if (s.Required.Contains("textLayers"))
-                {
-                    var path = $"without-text/{i:D4}.png";
-                    if (e.WithoutTextImage is null || a.WithoutTextImage is null)
-                        findings.Add(new("UNVERIFIED", i, "textLayers", "capture", Detail: "Paint-suppressed captures are missing."));
-                    else if (e.WithoutTextImage != path || a.WithoutTextImage != path)
-                        findings.Add(new("ERROR", i, "textLayers", "imagePath"));
-                    else
-                    {
-                        using var ew = SKBitmap.Decode(Path.Combine(expectedDirectory, path)) ?? throw new InvalidDataException("Invalid reference text diagnostic.");
-                        using var aw = SKBitmap.Decode(Path.Combine(actualDirectory, path)) ?? throw new InvalidDataException("Invalid actual text diagnostic.");
-                        using var backgroundDiff = new SKBitmap(eb.Width, eb.Height);
-                        var background = ImageComparison.Compare(ew, aw, SKColor.Parse(s.Background), profile.ChannelDelta, backgroundDiff);
-                        using var ep = ImageComparison.TextPaint(eb, ew); using var ap = ImageComparison.TextPaint(ab, aw);
-                        using var paintDiff = new SKBitmap(eb.Width, eb.Height);
-                        var paint = ImageComparison.Compare(ep, ap, SKColors.Black, profile.ChannelDelta, paintDiff);
-                        ParityJson.Write(Path.Combine(resultDirectory, "diff", $"{i:D4}.text-layers.json"), new { withoutText = background, textPaint = paint });
-                        ImageComparison.Save(backgroundDiff, Path.Combine(resultDirectory, "diff-without-text", $"{i:D4}.png"));
-                        ImageComparison.Save(ep, Path.Combine(resultDirectory, "text-paint-expected", $"{i:D4}.png"));
-                        ImageComparison.Save(ap, Path.Combine(resultDirectory, "text-paint-actual", $"{i:D4}.png"));
-                        ImageComparison.Save(paintDiff, Path.Combine(resultDirectory, "diff-text-paint", $"{i:D4}.png"));
-                        if (background.DifferentPixels > profile.MaximumDifferentPixels)
-                            findings.Add(new("FAIL", i, "withoutText", "differentPixels", profile.MaximumDifferentPixels, background.DifferentPixels));
-                        // Text paint residuals remain governed by the full raster gate; no generous
-                        // glyph exception is created from this uncalibrated diagnostic.
-                    }
-                }
-            }
+        var diff = new byte[eb.Length];
+        using var bitmap = new SKBitmap(er.Width, er.Height);
+        for (var i = 0; i < diff.Length; i++) diff[i] = (byte)Math.Abs(ab[i] - eb[i]);
+        for (var y = 0; y < er.Height; y++) for (var x = 0; x < er.Width; x++)
+        {
+            var i = (y * er.Width + x) * 4; var m = diff.AsSpan(i, 4).ToArray().Max();
+            bitmap.SetPixel(x, y, new SKColor(m, m, m, 255));
         }
-        if (s.Required.Contains("text") && !expected.Frames.Any(x => x.Nodes.Any(n => n.Id == "label" && n.Text is not null)))
-            findings.Add(new("UNVERIFIED", -1, "label", "textLayout", Detail: "No text observations were collected."));
-        if (s.Required.Contains("resolvedFont") && !expected.Frames.Any(x => x.Nodes.Any(n => n.Id == "label" && n.Text?.ResolvedFonts.Length is > 0)))
-            findings.Add(new("UNVERIFIED", -1, "label", "resolvedFont", Detail: "No runtime-resolved font observations were collected."));
-        var status = new[] { "ERROR", "FAIL", "UNVERIFIED" }.FirstOrDefault(x => findings.Any(f => f.Status == x)) ?? "PASS";
-        return new(s.Id, status, findings.ToArray());
+        var image = $"diff/{sampleId}-{id}.png"; var pixels = $"diff/{sampleId}-{id}.rgba";
+        Directory.CreateDirectory(Path.Combine(output, "diff")); File.WriteAllBytes(Path.Combine(output, pixels), diff);
+        using (var data = bitmap.Encode(SKEncodedImageFormat.Png, 100)) File.WriteAllBytes(Path.Combine(output, image), data.ToArray());
+        return new(id, metrics.DifferentPixels == 0 ? "equal" : "different", er, ar, metrics, regions.ToArray(), image, pixels);
+    }
+    public static PixelMetrics Pixels(byte[] e, byte[] a, int width, int height, int[] region)
+    {
+        if (e.Length != checked(width * height * 4) || a.Length != e.Length || region.Length != 4
+            || region[0] < 0 || region[1] < 0 || region[2] < 0 || region[3] < 0 || region[0] + region[2] > width || region[1] + region[3] > height)
+            throw new InvalidDataException("Invalid raster buffer or region.");
+        long changed = 0; var max = new int[4]; var total = new long[4]; var left = width; var top = height; var right = -1; var bottom = -1;
+        for (var y = region[1]; y < region[1] + region[3]; y++) for (var x = region[0]; x < region[0] + region[2]; x++)
+        {
+            var different = false; var offset = (y * width + x) * 4;
+            for (var c = 0; c < 4; c++) { var d = Math.Abs(a[offset + c] - e[offset + c]); max[c] = Math.Max(max[c], d); total[c] += d; different |= d != 0; }
+            if (!different) continue;
+            changed++; left = Math.Min(left, x); top = Math.Min(top, y); right = Math.Max(right, x); bottom = Math.Max(bottom, y);
+        }
+        var count = (long)region[2] * region[3];
+        return new(changed, max, total.Select(x => count == 0 ? 0 : (double)x / count).ToArray(), changed == 0 ? null : [left, top, right - left + 1, bottom - top + 1]);
     }
 }

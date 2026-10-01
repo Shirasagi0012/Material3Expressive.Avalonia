@@ -1,5 +1,5 @@
 param(
-    [Parameter(Position=0)][ValidateSet('run','list','inspect','verify-reference','build','test','self-test','capture-actual')][string]$Command = 'run',
+    [Parameter(Position=0)][ValidateSet('run','list','compare','inspect','verify-reference','build','test','self-test','capture-actual')][string]$Command = 'run',
     [Parameter(ValueFromRemainingArguments=$true)][string[]]$Arguments
 )
 $ErrorActionPreference = 'Stop'
