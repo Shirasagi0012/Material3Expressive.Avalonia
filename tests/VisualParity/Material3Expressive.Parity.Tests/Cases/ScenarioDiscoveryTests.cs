@@ -7,16 +7,32 @@ namespace Material3Expressive.Parity.Tests;
 public class ScenarioDiscoveryTests
 {
     [Fact]
-    public void ProductionCasesAreStableAndConfigurationsShareScenarios()
+    public void DiscoveredCasesAreStableAndConfigurationsShareScenarios()
     {
-        var types = typeof(Program).Assembly.GetTypes();
+        var types = new[] { typeof(DataSuite), typeof(OtherDataSuite) };
         var first = ScenarioDiscovery.Expand(ScenarioDiscovery.Discover(types).Values);
         var reversed = ScenarioDiscovery.Expand(ScenarioDiscovery.Discover(types.Reverse()).Values);
-        Assert.Equal(new[] { "button.filled.disabled", "button.filled.enabled", "button.filled.press", "motion.interrupted",
-            "protocol.direct", "surface.static", "text.paragraph-breaks", "text.wrapped" }, first.Select(m => m.Id));
+        Assert.Equal(new[] { "data.disabled", "data.enabled", "other.sample" }, first.Select(m => m.Id));
         Assert.Equal(JsonSerializer.Serialize(first, ParityJson.Options), JsonSerializer.Serialize(reversed, ParityJson.Options));
-        var buttons = first.Where(m => m.Scenario == "static" && m.Suite == "button").ToArray();
-        Assert.Equal(new[] { false, true }, buttons.Select(m => m.ReadConfig<ButtonConfig>().Enabled));
+        var configurations = first.Where(m => m.Scenario == "record" && m.Suite == "data").ToArray();
+        Assert.Equal(new[] { false, true }, configurations.Select(m => m.ReadConfig<FixtureConfig>().Enabled));
+    }
+
+    [ParitySuite("data")]
+    public sealed class DataSuite
+    {
+        public static IEnumerable<CaseData<FixtureConfig>> Data() =>
+            [new("enabled", "Enabled", new(true, "a")), new("disabled", "Disabled", new(false, "b"))];
+        [ParityScenario("record", Data = nameof(Data))]
+        public Task Run(CaptureWriter writer) => Task.CompletedTask;
+    }
+
+    [ParitySuite("other")]
+    public sealed class OtherDataSuite
+    {
+        public static IEnumerable<CaseData<EmptyConfig>> Data() => [new("sample", "Sample", new())];
+        [ParityScenario("record", Data = nameof(Data))]
+        public Task Run(CaptureWriter writer) => Task.CompletedTask;
     }
 
     [Fact]

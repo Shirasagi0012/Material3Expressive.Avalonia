@@ -2,7 +2,7 @@
 
 本文说明用例选择、测量和采样规范，以及当前框架的接入方式与执行边界。
 作者负责场景和采样时机的正确性；框架负责忠实执行、记录事实、比较和展示结果。
-现有例子不代表组件覆盖完整，也不是新用例必须照搬的模板。
+下文示例用于说明编写方式，不代表组件覆盖完整，也不是新用例必须照搬的模板。
 运行命令见 [README](README.md)，事实定义与输出格式见 [MEASUREMENTS](MEASUREMENTS.md)。
 涉及组件时，先按[移植指南](../../docs/PORTING.md)读取固定上游；测试场景不能替代上游依据。
 
@@ -102,45 +102,32 @@ Sample("initial", screenshot: true, probes: [
 completed / settled 等名称需要明确的完成依据；仅在固定较晚时刻观察时，使用 late-300000 等描述。
 截图按验证和排查需要选择，不要求每个动态采样点都截图。
 
-## 组件文件与现有例子
+## 组件文件
 
 每个组件维护独立的 `XxxCases.cs` / `XxxCases.kt`，包含配置类型、数据源（仅 C#）、场景过程与专用测量。
 共享的主题、字体和布局辅助函数放在 `CaseDefaults`；没有中央场景类或手工入口注册表。
-
-| 用例 | 场景文件 | 当前范围 |
-| --- | --- | --- |
-| `button.filled.enabled` / `disabled` / `press` | [ButtonCases.cs](Material3Expressive.Parity/Cases/ButtonCases.cs)、[ButtonCases.kt](reference/src/main/kotlin/cases/ButtonCases.kt) | 静态状态和一次按压；disabled 没有施加点击，press 分别点击各端自身中心 |
-| `surface.static` | `SurfaceCases` | 单个静态容器 |
-| `text.wrapped` / `text.paragraph-breaks` | `TextCases` | 指定字体输入、纯色文字和 UTF-16 行范围，不证明 glyph ink 相同 |
-| `motion.interrupted` | `MotionCases` | 合成线性动画的目标中断，不代表组件全部动效 |
-| `protocol.direct` | `DirectCases` | 直接提交事实和透明像素夹具，不创建组件宿主 |
+框架自测的最小夹具位于独立测试项目，不依赖组件用例，也不参与生产用例发现。
 
 ## 定义测试类和数据源
 
-下面是现有 Button 静态场景的简化示例；场景体省略，接口与当前实现一致：
+下面是中性的接入示例；场景体省略，只说明声明和配置传输，不提供组件实现模板：
 
 ```csharp
-public sealed record ButtonConfig(bool Enabled, string Text);
+public sealed record ExampleConfig(double Value);
 
-[ParitySuite("button")]
-public sealed class ButtonCases
+[ParitySuite("example")]
+public sealed class ExampleCases
 {
-    public static IEnumerable<CaseData<ButtonConfig>> StaticConfigurations()
+    public static IEnumerable<CaseData<ExampleConfig>> Configurations()
     {
-        foreach (var enabled in new[] { true, false })
-        {
-            var state = enabled ? "enabled" : "disabled";
-            yield return new(
-                Id: $"filled.{state}",
-                Title: $"Filled button: {state}",
-                Config: new ButtonConfig(enabled, "Save"));
-        }
+        yield return new("low", "Low input", new ExampleConfig(1));
+        yield return new("high", "High input", new ExampleConfig(2));
     }
 
-    [ParityScenario("static", Data = nameof(StaticConfigurations))]
-    public async Task ButtonStatic(CaptureWriter writer)
+    [ParityScenario("static", Data = nameof(Configurations))]
+    public async Task Capture(CaptureWriter writer)
     {
-        var config = writer.Metadata.ReadConfig<ButtonConfig>();
+        var config = writer.Metadata.ReadConfig<ExampleConfig>();
         await using var host = new AvaloniaHost(writer);
         // 构建场景、初始化、读取事实并 writer.Submit(host.Snapshot(...))。
     }
@@ -150,7 +137,7 @@ public sealed class ButtonCases
 - 测试类标记 `ParitySuite`，是具有公开无参构造函数的公开、非抽象、非泛型类。
 - 场景是类中直接声明的公开实例方法，签名为 `Task Method(CaptureWriter)`，标记 `ParityScenario`。
 - Data 指向同一类中的公开静态无参方法，返回 `IEnumerable<CaseData<T>>`。单独用例也返回一项数据。
-- 完整用例 ID 为 `suite + "." + CaseData.Id`，例如 `button.filled.disabled`；不同场景的数据 ID 也不能重名。
+- 完整用例 ID 为 `suite + "." + CaseData.Id`，例如 `example.low`；不同场景的数据 ID 也不能重名。
   suite、scenario、数据 ID 使用小写字母、数字、点和短横线，以字母或数字开头，按语义命名，不依赖枚举下标。
 - suite/scenario 是双端执行身份，方法名和类名不参与传输。重命名 C# 方法不需要同步重命名 Kotlin 方法。
 
@@ -164,13 +151,13 @@ Compose 只实现场景，不重复维护用例矩阵：
 
 ```kotlin
 @Serializable
-data class ButtonConfig(val enabled: Boolean, val text: String)
+data class ExampleConfig(val value: Double)
 
-@ParitySuite("button")
-class ButtonCases {
+@ParitySuite("example")
+class ExampleCases {
     @ParityScenario("static")
-    suspend fun buttonStatic(writer: CaptureWriter) {
-        val config = writer.readConfig<ButtonConfig>()
+    suspend fun capture(writer: CaptureWriter) {
+        val config = writer.readConfig<ExampleConfig>()
         ComposeHost(writer).use { host ->
             // 使用真实 Compose API 构建场景，并提交对应样本。
         }
@@ -198,10 +185,12 @@ class ButtonCases {
 `capture-actual` 不启动参考端。run/self-test 在捕获前取得参考端场景索引，缺失入口直接报错，
 即使已有参考缓存也会核对。`--family` 按 suite ID 筛选，现有命令用法不变。
 
+以下占位符替换为实际 suite 和用例 ID：
+
 ```powershell
-./tests/VisualParity/parity.ps1 list --family button
-./tests/VisualParity/parity.ps1 run --case button.filled.disabled
-./tests/VisualParity/parity.ps1 self-test --case button.filled.disabled
+./tests/VisualParity/parity.ps1 list --family '<suite>'
+./tests/VisualParity/parity.ps1 run --case '<case-id>'
+./tests/VisualParity/parity.ps1 self-test --case '<case-id>'
 ./tests/VisualParity/parity.ps1 test
 ```
 
@@ -224,23 +213,11 @@ Point ID 在样本内唯一，Field 名在 Point 内唯一，双端按身份配�
 - ExtraImages 只在作者已定义的非截图采样点增加被动截图，不增加样本、帧或绘制。
 - 关闭窗口后等待动画根清理并检查残留任务；用例/动画/清理异常保留为执行错误。
 
-目前读数覆盖布局框、纯色文字样式与行布局、Avalonia 实际字体家族、按钮容器和单次 press 的 ripple，
-以及示例动画的 value/velocity/running。Compose 实际字体、文本真实 drawOrigin、glyphInk、完整 hit region
-尚未实现；两端行宽原值定义不同，暂不直接比较。具体语义见测量文档。
-没有宣称所有控件变体、键盘/焦点、Popup、原生桌面或跨平台已经覆盖。
+共享读数器提供几何和文字布局等通用事实；组件专用的视觉与行为读数由用例作者实现。
+现有通用读数的定义和限制见 [MEASUREMENTS](MEASUREMENTS.md)。
+框架能力或自测通过不代表所有控件变体、键盘/焦点、Popup、原生桌面或跨平台已经覆盖。
 
-### 读懂现有按钮时间线
-
-| 操作 | 当前例子的意义 |
-| --- | --- |
-| mount → frame(-2000) → frame(-1000) → frame(0) | 显式初始化帧；不是“所有组件两帧即可稳定”的保证 |
-| initial → move → down | 先记录初始状态，再在逻辑时间 0 施加输入 |
-| frame(16000/32000/80000) → sample | 观察按压过程；32000 点只测量 |
-| advanceTo(88000) → up | 在两帧之间释放，不额外投递动画帧 |
-| frame(96000) → released | 释放之后一次实际帧的结果 |
-| frame(300000) → late-300000 | 固定的较晚观察点，名称不宣称动画已经结束 |
-
-每次 Frame 只发送一个帧；从 96000 跳到 300000 不会补齐中间帧。
+每次 Frame 只发送一个帧；跳到较晚时间不会补齐中间帧。
 两端有相同的时间戳仍需核对输入顺序、动画注册、调度器与最后绘制的关系。
 若观察输入后但绘制前的状态，当前属性与截图可能属于不同阶段，不能默认截图已反映该输入。
 Compose probe 使用普通 holder，不能通过采集回调触发重组。
@@ -263,4 +240,4 @@ C# Program.cs 和 Kotlin Main.kt 保留为运行入口。框架测试按 Cases�
 测试项目根目录 ParityTests.cs 保存共享夹具，TestAssembly.cs 配置测试宿主。
 
 场景、输入、取样时间及测量内容均由作者决定。框架不自动发现控件属性，也不声明覆盖完整。
-按钮读数器的固定版本内部访问和已知限制见 [MEASUREMENTS](MEASUREMENTS.md#几何与按钮例子)。
+专用读数器也应明确来源与语义限制，不能用推测值替代无法采集的事实。

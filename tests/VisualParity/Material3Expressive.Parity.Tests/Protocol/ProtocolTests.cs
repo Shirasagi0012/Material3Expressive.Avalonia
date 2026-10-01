@@ -77,7 +77,7 @@ public partial class ParityTests
     [Fact]
     public void MetadataContainsEntriesInsteadOfAnExecutionLanguage()
     {
-        var scenarios = ScenarioDiscovery.Discover(typeof(Program).Assembly.GetTypes());
+        var scenarios = ScenarioDiscovery.Discover([typeof(ScenarioDiscoveryTests.DataSuite)]);
         foreach (var m in ScenarioDiscovery.Expand(scenarios.Values))
         { m.Validate(); Assert.True(scenarios.ContainsKey(new(m.Suite, m.Scenario))); }
         var path = Path.Combine(Temp(), "invalid.json"); ParityJson.Write(path, new { schemaVersion = 4, id = "test.fixture", title = "t", suite = "test", scenario = "a", config = new { }, events = new[] { "down" } });

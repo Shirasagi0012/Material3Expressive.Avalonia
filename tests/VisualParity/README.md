@@ -35,7 +35,7 @@ Material3Expressive.Parity.Tests/
   Cases/ Protocol/ Capture/ Comparison/ Results/
 ```
 
-新增或修改用例直接进入对应的 `*Cases` 文件，例如 [ButtonCases.cs](Material3Expressive.Parity/Cases/ButtonCases.cs)；
+新增或修改用例直接进入对应的 `*Cases` 文件，在 `Cases/` 与参考端 `cases/` 中创建相应文件；
 通过 suite/scenario 标记自动发现，无中央目录和入口注册表。更具体的入口说明见 [AUTHORING](AUTHORING.md#实现入口)。
 各目录仍在同一程序集内；执行模型见编写文档。
 
@@ -68,7 +68,7 @@ Material3Expressive.Parity.Tests/
 执行错误和重复性状态单独显示。计数表示观测次数，不是独立缺陷数或完成百分比。
 
 ```powershell
-$caseDirectory = 'artifacts/visual-parity/<run>/cases/button.filled.press'
+$caseDirectory = 'artifacts/visual-parity/<run>/cases/<case-id>'
 Get-Content "$caseDirectory/overview.md"
 Get-Content "$caseDirectory/samples/0002-pressed-32000.yaml"
 rg -n -C 8 'cornerRadii:|status: different' "$caseDirectory/samples"
@@ -84,18 +84,18 @@ HTML 提供时间线、字段历史、原图/叠加/差异图、像素查询、�
 当前执行参考为 Windows x64、density=1、fontScale=1。需要 .NET 10、JDK（本机 JDK 25）、
 锁定 Gradle 依赖及项目 README 中的本地 ComposeAnimation NuGet 包。
 参考源码与制品版本按 [`upstream-baseline.json`](../../docs/upstream-baseline.json) 固定。
-YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行。
+YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行；`<case-id>` 和 `<suite>` 替换为 list 输出的实际身份。
 run、self-test 自动构建双端；list、capture-actual 只构建 C# 项目。
 render 和 verify-reference 不自动构建，首次使用前执行 build。
 
 ```powershell
 ./tests/VisualParity/parity.ps1 build
 ./tests/VisualParity/parity.ps1 list
-./tests/VisualParity/parity.ps1 run --case button.filled.press
-./tests/VisualParity/parity.ps1 run --family button
+./tests/VisualParity/parity.ps1 run --case '<case-id>'
+./tests/VisualParity/parity.ps1 run --family '<suite>'
 ./tests/VisualParity/parity.ps1 run
 ./tests/VisualParity/parity.ps1 self-test
-./tests/VisualParity/parity.ps1 capture-actual --case text.wrapped
+./tests/VisualParity/parity.ps1 capture-actual --case '<case-id>'
 ./tests/VisualParity/parity.ps1 test
 ```
 
@@ -107,9 +107,15 @@ render 和 verify-reference 不自动构建，首次使用前执行 build。
 `self-test` 另做两端重复捕获和额外被动截图检查，结果保存到 `case.yaml` 的 repeatability，
 不稳定返回 2。普通 run 不自动重复捕获。自检稳定不表示组件一致。
 
+Avalonia 宿主的 `Draw()` 会处理 Dispatcher 工作以及待提交、待渲染的合成批次，
+包括渲染回调产生的后续提交；队列暂时为空不代表画面已经更新。它不发送动画帧，
+也不等待动画结束；`Snapshot()` 仍只读取已绘制的位图。该完成检查针对当前固定的
+Avalonia 12.1.2 和 UI 线程渲染模式，局部读取 `Compositor` 的内部批次字段；
+升级 Avalonia 或改变渲染线程模式时须重新核验，字段结构不匹配会报错。
+
 ```powershell
 # 从公开结果重新生成概览和 HTML，不依赖采集缓存，也不执行两端组件。
-./tests/VisualParity/parity.ps1 render --directory artifacts/visual-parity/<run>/cases/button.filled.press
+./tests/VisualParity/parity.ps1 render --directory 'artifacts/visual-parity/<run>/cases/<case-id>'
 
 # 校验内部 Compose 采集包及当前基线。
 ./tests/VisualParity/parity.ps1 verify-reference --directory <compose-capture-bundle>

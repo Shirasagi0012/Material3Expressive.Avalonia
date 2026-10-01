@@ -7,7 +7,7 @@ namespace Material3Expressive.Parity.Tests;
 
 public class ResultFilesTests
 {
-    static CaseMetadata Metadata => CaseMetadata.Create("test.files", "Files | <fixture>", "test", "unused", new ButtonConfig(false, "Save 😀\nnext"));
+    static CaseMetadata Metadata => CaseMetadata.Create("test.files", "Files | <fixture>", "test", "unused", new FixtureConfig(false, "Save 😀\nnext"));
     static string Temp() => Path.Combine(Path.GetTempPath(), "m3-parity-files", Guid.NewGuid().ToString("N"));
     static ProbePoint Point(params Measurement[] fields) => new("target", "container", null, fields);
     static Capture Capture(string runner, params Sample[] samples) => new(2, runner, Metadata.Id, "metadata", "baseline",
@@ -39,7 +39,7 @@ public class ResultFilesTests
         var changed = fields.Select(f => f.Name == "fraction" ? f with { Numbers = [2.25], Source = "runtime" } : f).ToArray();
         var actual = Capture("avalonia", Sample("initial", 0, Point(changed)));
         var (directory, result, original) = RoundTrip(expected, actual);
-        Assert.Equal(Metadata.ReadConfig<ButtonConfig>(), result.Metadata.ReadConfig<ButtonConfig>());
+        Assert.Equal(Metadata.ReadConfig<FixtureConfig>(), result.Metadata.ReadConfig<FixtureConfig>());
         Assert.Equal(original.Coverage, result.Comparison.Coverage);
         foreach (var side in new[] { (expected, result.Expected!), (actual, result.Actual!) })
         foreach (var field in side.Item1.Samples[0].Points[0].Measurements)

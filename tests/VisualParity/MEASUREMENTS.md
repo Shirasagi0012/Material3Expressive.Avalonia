@@ -55,25 +55,16 @@ Source 说明实际读数入口。`declared` 表示用例输入；`derived: ...`
 应说明转换规则并保留原生读数。样式属性、布局结果、上次绘制缓存与最终像素是不同证据，
 不能用其中一种冒充另一种。stage 和样本名称只是作者标签。
 
-## 几何与按钮例子
+## 通用读数与组件专用读数
 
 `layout.box.*` 表示未裁剪布局框，不是像素轮廓或命中范围。
-Button 例子分别提交 button/allocation、container/container、label/text-block 和 interaction/interaction。
-container 的父点是 button；label 与 interaction 的父点是 container。
-
-按钮读数器属于例子代码，不是框架统一组件采集接口。它读取固定版本的内部成员，缺少必需成员时
-保留执行错误，不通过搜索第一个相似对象或经验公式回退：
-
-- Compose：读取 BackgroundElement 的坐标、BackgroundNode.color 和上次 draw 的 lastOutline；
-  不调用 Shape.createOutline，不替换 Shape 或 indication。通过 hoisted MutableInteractionSource 的事件集合记录 press/hover。
-- Ripple：按固定 Core 的 `material3/material3-ripple` 路径读取启用 press 的 CommonRippleNode，
-  读取 animatedAlpha 和实际 ripple Animatable。半径、中心按固定 draw 表达式，从真实存储的端点和当前 fraction 推导。
-- Avalonia：读取具名 PART_Container、内部 chrome 和现有交互控制器；圆角原值保留为 nativeCornerRadii。
-  无边框的圆角经当前 Avalonia Skia `ToSKRoundRect` 的原生归一化后提交 cornerRadii；有边框的复杂路径明确 unsupported。
-- 单次 press 例子最多观察一个 ripple，ripple.0 属于这一事件。多按压用例必须由作者提供稳定事件身份。
+共享几何和文字读数器分别位于 C# `Capture/AvaloniaMeasurements.cs` 与 Kotlin `capture/Measurements.kt`。
+组件特有的形状、绘制和交互读数由用例作者按需实现，框架不提供统一组件属性采集清单。
 
 上次绘制缓存可能与动画当前值处于不同阶段；报告按各自来源陈述数据，不猜测或重算“应当画成什么”。
-当前没有完整命中区域、Compose 实际字体、真实文本绘制原点和 glyph ink 读数。
+需要访问固定版本内部成员时，应明确读数来源与适用范围；无法采集时保留错误或不可用原因，
+不能通过猜测节点、近似计算或改写组件行为来补齐事实。
+当前通用读数没有完整命中区域、Compose 实际字体、真实文本绘制原点和 glyph ink。
 
 ## 文字行范围
 
@@ -84,7 +75,7 @@ container 的父点是 button；label 与 interaction 的父点是 container。
 | consumedRange | `text.line.consumed-range.utf16.includes-paragraph-break.v1`：当前行起点到下一行起点，末行到输入末尾；包含段落分隔符 |
 
 这两类规范范围描述不同事实。空行允许空内容范围；代理对仍使用 UTF-16 索引。
-范围规范化不会修改原生数据或行起点。`text.paragraph-breaks` 例子覆盖 CRLF、空行、emoji、
+范围规范化不会修改原生数据或行起点。文字读数器的框架自测覆盖 CRLF、空行、emoji、
 尾随空格、U+2028 和 U+2029，仍保留框架真实行归属差异。
 旧 `text.line.source-range` 不被自动重新解释为新定义；跨新旧定义比较会标为 notCompared。
 行宽的尾随空白语义仍未统一，原值保留、定义分开。
@@ -129,7 +120,7 @@ Python 示例（需要 PyYAML；它只是可选的读取工具，不是运行框
 from pathlib import Path
 import yaml
 
-case = Path('artifacts/visual-parity/<run>/cases/button.filled.press')
+case = Path('artifacts/visual-parity/<run>/cases/<case-id>')
 for path in sorted((case / 'samples').glob('*.yaml')):
     sample = yaml.safe_load(path.read_text(encoding='utf-8'))
     field = sample['points']['container']['motion']['cornerRadii']

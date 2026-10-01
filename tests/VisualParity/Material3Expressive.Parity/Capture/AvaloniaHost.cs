@@ -7,6 +7,9 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.Rendering.Composition;
+using Avalonia.Rendering.Composition.Transport;
+using System.Reflection;
 using ComposeAnimation.TestSupport;
 using MaterialSymbols.Avalonia;
 using MaterialTypography.Roboto;
@@ -15,6 +18,8 @@ namespace Material3Expressive.Parity;
 
 public sealed class AvaloniaHost : IAsyncDisposable
 {
+    static readonly FieldInfo NextCommit = CompositionBatchField("_nextCommit");
+    static readonly FieldInfo PendingBatch = CompositionBatchField("_pendingBatch");
     readonly CaptureWriter writer;
     readonly ManualAnimationFrameClock clock = new(Dispatcher.UIThread.VerifyAccess);
     public AnimationTestWindow Window { get; }
@@ -59,19 +64,47 @@ public sealed class AvaloniaHost : IAsyncDisposable
 
     public void Draw()
     {
+        Dispatcher.UIThread.VerifyAccess();
+        var compositor = ElementComposition.GetElementVisual(Window)?.Compositor
+            ?? throw new InvalidOperationException("Mount the window before drawing.");
         for (var turn = 0; turn < 20; turn++)
         {
             Dispatcher.UIThread.RunJobs();
             AvaloniaHeadlessPlatform.ForceRenderTimerTick();
             Dispatcher.UIThread.RunJobs();
-            if (!Dispatcher.UIThread.HasJobsWithPriority(DispatcherPriority.SystemIdle))
+            // Processing a completed batch can submit another one without leaving a dispatcher job.
+            // Do not read the previous bitmap while that new batch is still awaiting a render tick.
+            if (!Dispatcher.UIThread.HasJobsWithPriority(DispatcherPriority.SystemIdle)
+                && !HasPendingCompositionWork(compositor))
             {
                 writer.Record(TimeUs, "draw", "dispatcher/layout/render; no animation frame");
                 return;
             }
         }
 
-        throw new TimeoutException("Render did not settle within 20 turns.");
+        throw new TimeoutException("Dispatcher/composition work did not finish within 20 render turns.");
+    }
+
+    static bool HasPendingCompositionWork(Compositor compositor)
+    {
+        if (NextCommit.GetValue(compositor) is not null) return true;
+        if (PendingBatch.GetValue(compositor) is not CompositionBatch batch) return false;
+        if (!batch.Rendered.IsCompleted) return true;
+        batch.Rendered.GetAwaiter().GetResult();
+        return false;
+    }
+
+    static FieldInfo CompositionBatchField(string name)
+    {
+        // Avalonia 12.1.2 has no public, read-only pending-work query. RequestCommit would create
+        // new work just to check for it. Keep this version-sensitive inspection local to the host.
+        // This assumes ParityAppBuilder's UI-thread renderer: ForceRenderTimerTick returns after
+        // rendering, even though Avalonia clears _pendingBatch as soon as it is Processed.
+        var field = typeof(Compositor).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (field?.FieldType != typeof(CompositionBatch))
+            throw new NotSupportedException($"Avalonia {typeof(Compositor).Assembly.GetName().Version}: " +
+                $"expected Compositor.{name} to be a CompositionBatch; review the parity render barrier.");
+        return field;
     }
 
     public void Input(string operation, Point position)
