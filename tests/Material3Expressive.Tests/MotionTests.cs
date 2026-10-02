@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ComposeAnimation;
@@ -22,6 +23,32 @@ public class MaterialMotionTests
 {
     private static MaterialSurface Surface(Button button) =>
         button.GetVisualDescendants().OfType<MaterialSurface>().First();
+
+    [AvaloniaFact]
+    public void IconButton_KeyboardPressAndDisable_FinishRippleAndClearInteractions()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = IconButtonThemeFixture.ShowWindow(out var button, "MaterialFilledIconButtonTheme");
+        try
+        {
+            var controller = MaterialInteraction.GetOrCreate(button);
+            button.Focus(NavigationMethod.Tab);
+            clock.SendFrame(clock.Now);
+            window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            Assert.True(controller.Interaction.HasFlag(InteractionState.Pressed));
+            Assert.Equal(1, controller.RippleCount);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            button.IsEnabled = false;
+            Assert.Equal(InteractionState.None, controller.Interaction);
+            Assert.Equal(1, controller.RippleCount);
+            window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            for (var frame = 0; frame < 30; frame++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(0, controller.RippleCount);
+            Assert.Equal(0, controller.StateLayerOpacity);
+            Assert.Null(MotionTestClockScope.Error(button));
+        }
+        finally { window.Close(); }
+    }
 
     [AvaloniaFact]
     public void InterruptedStateLayer_ContinuesWithTheIncomingTween()
@@ -133,9 +160,13 @@ public class MaterialMotionTests
         button.IsEnabled = false;
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(0, Surface(button).ShadowElevation);
-        Assert.Equal(0, controller.RippleCount);
+        // Fixed CommonRipple receives PressInteraction.Cancel on disabling: it finishes
+        // the existing entry/fade-out animation rather than removing the wave immediately.
+        Assert.Equal(1, controller.RippleCount);
         Assert.Equal(InteractionState.None, controller.Interaction);
         controller.StartPress(new Point(10, 10));
+        Assert.Equal(1, controller.RippleCount); // disabled input cannot add another wave
+        for (var frame = 0; frame < 30; frame++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0, controller.RippleCount);
         button.IsEnabled = true;
         Dispatcher.UIThread.RunJobs();

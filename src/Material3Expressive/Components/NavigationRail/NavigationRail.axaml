@@ -1,0 +1,81 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:NavigationRail}" TargetType="m3:NavigationRail">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:NavigationRailContentColor}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemContainerTheme">
+        <ControlTheme TargetType="ContentPresenter"><Setter Property="HorizontalAlignment" Value="Center" /></ControlTheme>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}">
+            <Border>
+              <Border.Padding>
+                <MultiBinding Converter="{x:Static m3:NavigationRailInsetsConverter.Instance}">
+                  <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
+                </MultiBinding>
+              </Border.Padding>
+              <m3:NavigationRailLayout ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.NarrowContainerWidth}}">
+                <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" />
+                <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </m3:NavigationRailLayout>
+            </Border>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:NavigationRailItem}" TargetType="m3:NavigationRailItem">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="SelectedIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.SelectedIconColor}}" />
+      <Setter Property="SelectedTextColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.SelectedTextColor}}" />
+      <Setter Property="IndicatorColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.IndicatorColor}}" />
+      <Setter Property="UnselectedIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.UnselectedIconColor}}" />
+      <Setter Property="UnselectedTextColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.UnselectedTextColor}}" />
+      <Setter Property="DisabledIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.DisabledIconColor}}" />
+      <Setter Property="DisabledTextColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.DisabledTextColor}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:NavigationRailItemLayout x:Name="PART_Layout"
+              Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
+              HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
+              AlwaysShowLabel="{TemplateBinding AlwaysShowLabel}"
+              ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.NarrowContainerWidth}}"
+              IndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ActiveIndicatorWidth}}"
+              IndicatorHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ActiveIndicatorHeight}}"
+              IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.IconSize}}"
+              IndicatorShape="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ActiveIndicatorShape}}">
+            <!-- Render options on the parent apply before the child's opacity is pushed. -->
+            <Border RenderOptions.RequiresFullOpacityHandling="True">
+              <Border x:Name="PART_Indicator" />
+            </Border>
+            <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" />
+            <Border RenderOptions.RequiresFullOpacityHandling="True">
+              <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Label}" ContentTemplate="{TemplateBinding LabelTemplate}"
+                FontFamily="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.Font}}"
+                FontSize="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.Size}}"
+                FontWeight="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.Weight}}"
+                LetterSpacing="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.LetterSpacing}}"
+                LineHeight="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.LineHeight}}" TextWrapping="Wrap" />
+            </Border>
+            <m3:MaterialSurface x:Name="PART_IndicatorRipple" Background="Transparent"
+                TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}"
+                CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ActiveIndicatorShape}}" />
+          </m3:NavigationRailItemLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

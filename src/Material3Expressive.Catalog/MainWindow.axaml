@@ -6,7 +6,22 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" RequestedThemeVariant="Light"
         x:Class="Material3Expressive.Catalog.MainWindow"
         Title="Material3Expressive.Catalog">
-    <StackPanel Spacing="16" Margin="32" Background="White">
+    <Grid ColumnDefinitions="Auto,*">
+      <m3:NavigationRail x:Name="DemoNavigationRail">
+        <m3:NavigationRail.Header>
+          <m3:IconButton Symbol="HomeAndGarden" Theme="{StaticResource MaterialFilledIconButtonTheme}" />
+        </m3:NavigationRail.Header>
+        <m3:NavigationRailItem Label="Home" IsSelected="True" Click="OnDestinationClick">
+          <m3:NavigationRailItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationRailItem.Icon>
+        </m3:NavigationRailItem>
+        <m3:NavigationRailItem Label="Search" AlwaysShowLabel="False" Click="OnDestinationClick">
+          <m3:NavigationRailItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationRailItem.Icon>
+        </m3:NavigationRailItem>
+        <m3:NavigationRailItem Label="Settings" Click="OnDestinationClick">
+          <m3:NavigationRailItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationRailItem.Icon>
+        </m3:NavigationRailItem>
+      </m3:NavigationRail>
+    <StackPanel Grid.Column="1" Spacing="16" Margin="32" Background="White">
         <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
         <Button Theme="{StaticResource MaterialElevatedButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
         <Button Theme="{StaticResource MaterialTonalButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
@@ -62,4 +77,5 @@
         <!-- <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="large" HorizontalAlignment="Center">Welcome to Avalonia!</Button> -->
         <!-- <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="xlarge" HorizontalAlignment="Center">Welcome to Avalonia!</Button> -->
     </StackPanel>
+    </Grid>
 </Window>

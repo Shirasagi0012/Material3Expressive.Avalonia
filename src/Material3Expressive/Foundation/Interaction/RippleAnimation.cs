@@ -156,7 +156,10 @@ public sealed class RippleAnimation : IDisposable
     /// </summary>
     public void Draw(DrawingContext context, IBrush brush, double opacity)
     {
-        var alpha = Value * opacity;
+        // CommonRipple first creates color.copy(alpha = pressedAlpha), which packs sRGB
+        // alpha to 8 bits, then RippleAnimation.draw copies color.alpha * animatedAlpha.
+        // Combining those operations before quantization changes the interior by one byte.
+        var alpha = Value * MaterialInteractionRendering.ComposeOpacity(opacity);
         if (alpha <= 0)
             return;
 

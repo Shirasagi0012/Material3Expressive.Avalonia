@@ -7,7 +7,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface 的实现与主题，按组件组织。组件可以组合其他组件，例如 Button 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail 的实现与主题，按组件组织。组件可以组合其他组件，例如 Button 和 NavigationRail 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
 | [Foundation/Motion/](../src/Material3Expressive/Foundation/Motion) | Material 动画描述及其到 ComposeAnimation 的转换。 |
@@ -78,6 +78,12 @@ Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefau
 控制器处理输入、交互顺序、状态层和 ripple；主题提供颜色和形状等参数。
 颜色、交互事实、反馈动画和绘制结果需要保持各自归属，不要仅用最终伪类状态替代具有顺序意义的交互记录。
 
+NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
+`MappedInteractionSource` 坐标；状态层和 ripple 不另建实现。键盘原点与当前固定 Desktop
+`AbstractClickableNode` 一致：初始为零，收到指针事件后缓存控件中心。禁用会取消交互并让既有
+ripple 完成进入与退出；禁用引起的状态层退出在重组对应帧之后启动。
+Rail 的布局、内容色匹配与 item 的四条动画轨迹保留在[组件目录](../src/Material3Expressive/Components/NavigationRail/README.md)。
+
 Button elevation 的当前实现可作为职责示例：`ButtonElevation` 保存状态高度，
 每个按钮自己的 `ButtonElevationController` 选择并动画化目标；Surface 的 `ShadowElevation` 消费当前绘制高度。
 可共享配置，但不能共享按钮的运行状态。动画优先级绑定在清理后恢复原属性值，不能破坏原有样式与绑定。
@@ -111,6 +117,8 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 
 - 已有 Button、IconButton 和 Surface，但需要逐项检查其 API、交互及视觉覆盖。现有 flat Button
   主题未配置 elevation、焦点呈现等处理，应在相应移植任务中核对，不能自动推广为所有桌面组件的设计规则。
+- 已有常规 NavigationRail / NavigationRailItem；不包含 WideNavigationRail 或 ModalWideNavigationRail。
+  验证范围与保留差异见[组件说明](../src/Material3Expressive/Components/NavigationRail/README.md)。
 - 原有 Material 动画规则的源码核对基于 AndroidX `ff0a0a99c4f0cfe95d75d5df615e51d399575922`。
   当时记录了状态层 15/45/150ms 淡入淡出、ripple 75ms 进入透明度与 225ms 扩张/中心移动、
   释放后的 150ms 淡出；快速点击仍完成扩张。按压圆角使用 DefaultEffects（damping 1、stiffness 1600）。

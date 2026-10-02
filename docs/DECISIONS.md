@@ -1,5 +1,16 @@
 # 已确认的设计决定
 
+## 常规 NavigationRail 的 Avalonia 入口与按压映射
+
+决定：Rail 使用 ItemsControl，提供 Header / HeaderTemplate、物理 WindowInsets（Thickness，Desktop 默认零）
+和 Background / Foreground；Item 继承 Button 的 Click / Command，提供 Icon / IconTemplate、Label / LabelTemplate、
+IsSelected、AlwaysShowLabel 与七项状态颜色。选中状态由应用持有，点击只请求导航。
+原因：把 Compose 内容 lambda 转换为 Avalonia 内容槽与模板，并保留上游 selectable 的外部选中语义。
+做法：复用共享交互控制器，增加内部 PressPositionMapper，按固定上游 token 差值映射 `(12, 0)`；
+不根据实际指示器位置反算，也不新增 ripple 实现。尺寸及动画计算继续按固定源码翻译。
+适用范围：常规 NavigationRail / NavigationRailItem；不决定 Wide 或 ModalWide 的 API，也不新增应用导航框架。
+确认：2026-10-03，维护者确认“采用推荐 API 与内部适配”；调用示例见[组件说明](../src/Material3Expressive/Components/NavigationRail/README.md)。
+
 ## Raster 降采样容差试用
 
 决定：保留固定 4× 捕获和原始精确差分，另以固定 4×4 sRGBA8 块平均得到 1× 比较数据。

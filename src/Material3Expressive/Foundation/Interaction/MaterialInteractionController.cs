@@ -49,6 +49,7 @@ internal sealed class MaterialInteractionController
     private MaterialSurface? _presenter;
     private InteractionState _interaction;
     private InteractionState _shownInteraction;
+    private Point _keyboardPressCenter;
 
     // Token-resolved state-layer opacities, falling back to the upstream constants in StateLayer.
     private double _hoverOpacity = StateLayer.Opacity(InteractionState.Hovered);
@@ -60,8 +61,9 @@ internal sealed class MaterialInteractionController
     {
         _owner = owner ?? throw new ArgumentNullException(nameof(owner));
 
-        _owner.PointerEntered += (_, _) => Set(InteractionState.Hovered, true);
-        _owner.PointerExited += (_, _) => Set(InteractionState.Hovered, false);
+        _owner.PointerEntered += (_, _) => { _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center; Set(InteractionState.Hovered, true); };
+        _owner.PointerExited += (_, _) => { _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center; Set(InteractionState.Hovered, false); };
+        _owner.PointerMoved += (_, _) => _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
         // Button-derived controls handle pointer presses in their class handler. Listen on the
         // tunnel route so Material feedback still sees the physical input before it is consumed.
         _owner.AddHandler(
@@ -99,7 +101,7 @@ internal sealed class MaterialInteractionController
             if (change.Property == InputElement.IsEffectivelyEnabledProperty)
             {
                 if (!IsEnabled)
-                    ClearInputInteractions();
+                    ClearInputInteractions(finishRipples: true, deferStateLayer: true);
                 NotifyInteractionChanged();
             }
             else if (change.Property == MaterialButton.ElevationProperty)
@@ -128,6 +130,10 @@ internal sealed class MaterialInteractionController
     /// interaction area's size.
     /// </summary>
     internal double? RippleRadius { get; set; }
+
+    // Components with an upstream MappedInteractionSource can supply its mapping while
+    // retaining this controller's input, ripple and lifecycle implementation.
+    internal Func<Point, Point>? PressPositionMapper { get; set; }
 
     /// <summary>
     /// Attaches the template's MaterialSurface as the render front-end, returning the lease that
@@ -255,7 +261,7 @@ internal sealed class MaterialInteractionController
             return;
 
         // The press point is in owner coordinates; the ripple works in presenter-local ones.
-        var local = _owner.TranslatePoint(origin, presenter) ?? origin;
+        var local = PressPositionMapper?.Invoke(origin) ?? (_owner.TranslatePoint(origin, presenter) ?? origin);
 
         // CommonRipple finishes every older animation before adding a new press. This matters for
         // rapid taps: the old wave is allowed to complete while the new one starts independently.
@@ -299,12 +305,14 @@ internal sealed class MaterialInteractionController
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
         if (e.GetCurrentPoint(_owner).Properties.IsLeftButtonPressed)
             StartPress(e.GetPosition(_owner));
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
         if (e.InitialPressMouseButton == MouseButton.Left)
             EndPress();
     }
@@ -317,9 +325,9 @@ internal sealed class MaterialInteractionController
         if (_owner is not Button || e.Key is not (Key.Space or Key.Enter))
             return;
 
-        StartPress(_presenter is { } presenter
-            ? presenter.Bounds.Center
-            : _owner.Bounds.Center);
+        // AbstractClickableNode starts centerOffset at zero and only updates it in
+        // onPointerEvent(bounds). Preserve that behavior even for keyboard-only input.
+        StartPress(_keyboardPressCenter);
     }
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
@@ -340,7 +348,7 @@ internal sealed class MaterialInteractionController
     private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) =>
         ClearInputInteractions();
 
-    private void ClearInputInteractions()
+    private void ClearInputInteractions(bool finishRipples = false, bool deferStateLayer = false)
     {
         var hadInputInteraction = _interaction != InteractionState.None;
         var hadRipples = _ripples.Count != 0;
@@ -349,13 +357,24 @@ internal sealed class MaterialInteractionController
         _interactions.Clear();
 
         foreach (var ripple in _ripples.ToArray())
-            ripple.Dispose();
-
-        _ripples.Clear();
+        {
+            if (finishRipples) ripple.Finish();
+            else ripple.Dispose();
+        }
+        if (!finishRipples) _ripples.Clear();
 
         if (hadInputInteraction)
         {
-            UpdateStateLayer();
+            // Clickable's enabled update disposes interactions during recomposition.
+            // Its StateLayer exit starts after that event frame, unlike pointer exits,
+            // whose interaction collector runs directly before the next animation frame.
+            if (deferStateLayer && Motion is { IsEnding: false } motion)
+                _ = motion.Launch(async ct =>
+                {
+                    await motion.Clock.NextFrameAsync(ct);
+                    UpdateStateLayer();
+                }, "Disabled state layer exit");
+            else UpdateStateLayer();
             NotifyInteractionChanged();
         }
         else if (hadRipples)
