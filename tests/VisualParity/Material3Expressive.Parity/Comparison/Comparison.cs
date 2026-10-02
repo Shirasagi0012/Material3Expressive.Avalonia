@@ -193,11 +193,9 @@ public static class ParityComparison
         }
 
         var image = $"diff/{sampleId}-{id}.png";
-        var pixels = $"diff/{sampleId}-{id}.rgba";
         Directory.CreateDirectory(Path.Combine(output, "diff"));
-        File.WriteAllBytes(Path.Combine(output, pixels), diff);
         using (var data = bitmap.Encode(SKEncodedImageFormat.Png, 100)) File.WriteAllBytes(Path.Combine(output, image), data.ToArray());
-        return new(id, metrics.DifferentPixels == 0 ? "equal" : "different", er, ar, metrics, regions.ToArray(), image, pixels);
+        return new(id, metrics.DifferentPixels == 0 ? "equal" : "different", er, ar, metrics, regions.ToArray(), image);
     }
 
     public static PixelMetrics Pixels(byte[] e, byte[] a, int width, int height, int[] region)

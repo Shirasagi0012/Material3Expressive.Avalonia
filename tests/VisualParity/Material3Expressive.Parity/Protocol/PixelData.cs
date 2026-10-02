@@ -21,19 +21,27 @@ public static class PixelData
 
     public static RasterObservation FromPng(string directory, string id, string image)
     {
-        var decoded = DecodePng(Path.Combine(directory, image));
-        var pixels = Path.ChangeExtension(image, ".rgba").Replace('\\', '/');
-        File.WriteAllBytes(Path.Combine(directory, pixels), decoded.Bytes);
-        return new(id, image, pixels, decoded.Width, decoded.Height);
+        var path = Path.Combine(directory, image);
+        var decoded = DecodePng(path);
+        // Persist the comparison pixels themselves: sRGB, 8 bit, straight alpha.
+        // A raw PNG decoder in the browser must not need ICC/gamma conversion.
+        using var colorSpace = SKColorSpace.CreateSrgb();
+        using var bitmap = new SKBitmap(new SKImageInfo(decoded.Width, decoded.Height,
+            SKColorType.Rgba8888, SKAlphaType.Unpremul, colorSpace));
+        System.Runtime.InteropServices.Marshal.Copy(decoded.Bytes, 0, bitmap.GetPixels(), decoded.Bytes.Length);
+        using var png = bitmap.Encode(SKEncodedImageFormat.Png, 100);
+        File.WriteAllBytes(path, png.ToArray());
+        return new(id, image, decoded.Width, decoded.Height);
     }
 
     public static byte[] Read(string directory, RasterObservation raster)
     {
-        var path = Path.GetFullPath(Path.Combine(directory, raster.Pixels));
+        var path = Path.GetFullPath(Path.Combine(directory, raster.Image));
         if (!path.StartsWith(Path.GetFullPath(directory) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Pixel path outside bundle.");
-        var bytes = File.ReadAllBytes(path);
-        if (bytes.Length != checked(raster.Width * raster.Height * 4)) throw new InvalidDataException("Pixel buffer size mismatch.");
-        return bytes;
+        var decoded = DecodePng(path);
+        if (decoded.Width != raster.Width || decoded.Height != raster.Height)
+            throw new InvalidDataException("PNG dimensions differ from observations.");
+        return decoded.Bytes;
     }
 }

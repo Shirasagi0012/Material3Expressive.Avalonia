@@ -28,7 +28,7 @@ public sealed class CaptureWriter(
 
     public Capture Finish()
     {
-        var capture = new Capture(2, "avalonia", Metadata.Id, ParityJson.Hash(input),
+        var capture = new Capture(4, "avalonia", Metadata.Id, ParityJson.Hash(input),
             ParityJson.Hash(Path.Combine(root, "docs/upstream-baseline.json")), EnvironmentInfo.Read(root),
             samples.ToArray(), trace.ToArray(), Errors.ToArray());
         capture.Validate();

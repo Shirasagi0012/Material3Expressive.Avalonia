@@ -7,7 +7,7 @@ import java.security.MessageDigest
 @Serializable data class Measurement(val name:String, val category:String, val kind:String, val unit:String, val space:String,
     val definition:String, val source:String, val status:String="measured", val numbers:List<Double>?=null, val strings:List<String>?=null, val reason:String?=null, val boolean:Boolean?=null, val components:List<String>?=null)
 @Serializable data class ProbePoint(val id:String, val role:String, val parentId:String?, val measurements:List<Measurement>)
-@Serializable data class RasterObservation(val id:String, val image:String, val pixels:String, val width:Int, val height:Int,
+@Serializable data class RasterObservation(val id:String, val image:String, val width:Int, val height:Int,
     val format:String="straight-srgba8", val space:String="scene-px", val contribution:String="full")
 @Serializable data class RasterCollection(val id:String, val status:String, val reason:String?=null)
 @Serializable data class Sample(val id:String, val timeUs:Long, val stage:String, val points:List<ProbePoint>, val rasters:List<RasterObservation>, val frameTimeUs:Long?=null, val rasterCollection:List<RasterCollection>?=null)

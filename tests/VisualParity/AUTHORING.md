@@ -234,7 +234,7 @@ Compose probe 使用普通 holder，不能通过采集回调触发重组。
 | [Protocol/](Material3Expressive.Parity/Protocol) | 元数据、采集事实、JSON 包校验、规范像素 | `protocol/` |
 | [Capture/](Material3Expressive.Parity/Capture) | 宿主、快照、通用读数、环境、Compose 进程与缓存 | `capture/` |
 | [Comparison/](Material3Expressive.Parity/Comparison) | 比较结果模型、事实配对与精确差分 | 参考端不负责比较 |
-| [Results/](Material3Expressive.Parity/Results) | YAML、概览、HTML；模板和 CSS 在 Templates/ | 参考端不负责报告 |
+| [Results/](Material3Expressive.Parity/Results) | YAML、Markdown 概览和 run 索引；交互前端在 report/ | 参考端不负责报告 |
 
 C# Program.cs 和 Kotlin Main.kt 保留为运行入口。框架测试按 Cases、Protocol、Capture、Comparison、Results 归类，
 测试项目根目录 ParityTests.cs 保存共享夹具，TestAssembly.cs 配置测试宿主。

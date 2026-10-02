@@ -38,19 +38,10 @@ public static class Program
                 return 0;
             }
 
-            if (command == "render")
-            {
-                var directory = Option("--directory") ?? throw new ArgumentException("--directory is required");
-                var result = Report.Write(directory);
-                Console.WriteLine(ResultFiles.Overview(result));
-                Console.WriteLine("Overview: " + Path.GetFullPath(Path.Combine(directory, "overview.md")));
-                return ExitCode(result.Comparison, args.Contains("--require-equal"));
-            }
-
             if (command is not ("list" or "run" or "self-test" or "capture-actual"))
             {
                 Console.WriteLine(
-                    "parity list|run|self-test|capture-actual [--case ID|--family FAMILY] [--output NEW-DIRECTORY] [--refresh-reference] [--require-equal]\nparity render|verify-reference --directory DIRECTORY\nRead overview.md and samples/*.yaml directly.");
+                    "parity list|run|self-test|capture-actual [--case ID|--family FAMILY] [--output NEW-DIRECTORY] [--refresh-reference] [--require-equal]\nparity verify-reference --directory DIRECTORY\nRead overview.md and samples/*.yaml directly.");
                 return command == "help" ? 0 : 2;
             }
 
@@ -68,13 +59,15 @@ public static class Program
             if (command != "capture-actual")
                 ScenarioDiscovery.RequireReferenceScenarios(selected, await ReferenceProducer.DiscoverScenarios(root));
 
-            var output = Path.GetFullPath(Option("--output") ?? Path.Combine(root, "artifacts/visual-parity",
+            var output = Path.GetFullPath(Option("--output") ?? Path.Combine(root, "artifacts/visual-parity/runs",
                 DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..8]));
             if (Directory.Exists(output)) throw new IOException("Output must be a new directory.");
             Directory.CreateDirectory(output);
             var outcomes = new List<Comparison>();
+            var run = new RunResults(output, selected.Length, command);
+            run.Save("running");
             var unstable = false;
-            var captureRoot = Path.Combine(root, "artifacts/visual-parity-captures", Guid.NewGuid().ToString("N"));
+            var captureRoot = Path.Combine(output, ".work");
             // Freeze every selected definition before either producer starts.
             foreach (var m in selected)
                 ParityJson.Write(Path.Combine(captureRoot, m.Id, "case.json"), m);
@@ -87,6 +80,8 @@ public static class Program
                 Directory.CreateDirectory(directory);
                 var input = Path.Combine(directory, "case.json");
 
+                var expectedDirectory = Path.Combine(directory, "expected");
+                var caseUnstable = false;
                 Capture? expected = null;
                 Capture? actual = null;
                 Comparison comparison;
@@ -94,9 +89,8 @@ public static class Program
                 {
                     if (command != "capture-actual")
                     {
-                        var reference = await ReferenceProducer.Capture(root, input, args.Contains("--refresh-reference"));
-                        ReferenceProducer.CopyBundle(reference, Path.Combine(directory, "expected"));
-                        expected = ParityJson.Read<Capture>(Path.Combine(directory, "expected/observations.json"));
+                        expectedDirectory = await ReferenceProducer.Capture(root, input, expectedDirectory, args.Contains("--refresh-reference"));
+                        expected = ParityJson.Read<Capture>(Path.Combine(expectedDirectory, "observations.json"));
                     }
 
                     async Task<Capture> Actual(string target, bool extra = false)
@@ -123,26 +117,24 @@ public static class Program
                     }
 
                     actual = await Actual(Path.Combine(directory, "actual"));
-                    comparison = ParityComparison.Run(m, expected, actual, Path.Combine(directory, "expected"),
+                    comparison = ParityComparison.Run(m, expected, actual, expectedDirectory,
                         Path.Combine(directory, "actual"), directory);
                     if (command == "self-test")
                     {
-                        var repeatReference = await ReferenceProducer.Capture(root, input, true);
-                        ReferenceProducer.CopyBundle(repeatReference, Path.Combine(directory, "expected-repeat"));
-                        var denseReference = await ReferenceProducer.Capture(root, input, true, true);
-                        ReferenceProducer.CopyBundle(denseReference, Path.Combine(directory, "expected-extra-images"));
+                        var repeatReference = await ReferenceProducer.Capture(root, input, Path.Combine(directory, "expected-repeat"), true);
+                        var denseReference = await ReferenceProducer.Capture(root, input, Path.Combine(directory, "expected-extra-images"), true, true);
                         await Actual(Path.Combine(directory, "actual-repeat"));
                         await Actual(Path.Combine(directory, "actual-extra-images"), true);
                         var stability = new Dictionary<string, string[]>
                         {
-                            ["compose.repeat"] = Stability(Path.Combine(directory, "expected"), Path.Combine(directory, "expected-repeat")),
-                            ["compose.extraImages"] = Stability(Path.Combine(directory, "expected"),
-                                Path.Combine(directory, "expected-extra-images"), true),
+                            ["compose.repeat"] = Stability(expectedDirectory, repeatReference),
+                            ["compose.extraImages"] = Stability(expectedDirectory, denseReference, true),
                             ["avalonia.repeat"] = Stability(Path.Combine(directory, "actual"), Path.Combine(directory, "actual-repeat")),
                             ["avalonia.extraImages"] = Stability(Path.Combine(directory, "actual"),
                                 Path.Combine(directory, "actual-extra-images"), true)
                         };
-                        unstable |= stability.Values.Any(x => x.Length != 0);
+                        caseUnstable = stability.Values.Any(x => x.Length != 0);
+                        unstable |= caseUnstable;
                         repeatability = ResultYaml.Node(new { kind = "repeatability", results = stability });
                         ParityJson.Write(Path.Combine(directory, "repeatability.json"), repeatability);
                         Console.WriteLine($"repeatability {m.Id}: {(stability.Values.All(x => x.Length == 0) ? "stable" : "changed")}");
@@ -150,21 +142,35 @@ public static class Program
                 }
                 catch (Exception error)
                 {
-                    comparison = ParityComparison.Run(m, expected, actual, Path.Combine(directory, "expected"),
+                    comparison = ParityComparison.Run(m, expected, actual, expectedDirectory,
                         Path.Combine(directory, "actual"), directory, executionError: error.ToString());
                 }
 
+                var keepDiagnostics = comparison.Errors.Length != 0 || caseUnstable;
                 ResultFiles.Write(resultDirectory, m, comparison, expected, actual,
-                    Path.Combine(directory, "expected"), Path.Combine(directory, "actual"), directory, repeatability);
-                var result = Report.Write(resultDirectory);
+                    expectedDirectory, Path.Combine(directory, "actual"), directory, repeatability,
+                    keepDiagnostics ? Path.GetRelativePath(resultDirectory, directory).Replace('\\', '/') : null);
+                var result = ResultFiles.Read(resultDirectory);
+                run.Add(result);
+                run.Save("running");
+                // Only this invocation's temporary case directory can be removed, after
+                // the independent result has been written and verified.
+                if (keepDiagnostics) Console.WriteLine("Diagnostics retained: " + directory);
+                else
+                {
+                    if (Path.GetDirectoryName(Path.GetFullPath(directory)) != Path.GetFullPath(captureRoot))
+                        throw new InvalidDataException("Temporary capture outside this run.");
+                    Directory.Delete(directory, recursive: true);
+                }
                 outcomes.Add(comparison);
                 Console.WriteLine(ResultFiles.Overview(result));
                 Console.WriteLine("Overview: " + Path.Combine(resultDirectory, "overview.md"));
             }
 
-            Report.Suite(output);
+            if (!Directory.EnumerateFileSystemEntries(captureRoot).Any()) Directory.Delete(captureRoot);
+            run.Save("completed");
             Console.WriteLine("Summary: " + Path.Combine(output, "summary.md"));
-            Console.WriteLine("Report: " + Path.Combine(output, "report.html"));
+            Console.WriteLine("Run index: " + Path.Combine(output, "run.yaml"));
             return unstable || outcomes.Any(x => x.Errors.Length != 0)
                 ? 2
                 : args.Contains("--require-equal")
@@ -177,9 +183,6 @@ public static class Program
             return 2;
         }
     }
-
-    static int ExitCode(Comparison comparison, bool requireEqual) => comparison.Errors.Length != 0 ? 2
-        : requireEqual ? comparison.Coverage.Different != 0 ? 1 : comparison.Coverage.NotCompared != 0 ? 3 : 0 : 0;
 
     public static string FindRoot()
     {

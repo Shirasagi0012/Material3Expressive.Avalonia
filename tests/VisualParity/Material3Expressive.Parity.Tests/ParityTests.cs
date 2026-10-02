@@ -6,7 +6,7 @@ public partial class ParityTests
 {
     static CaseMetadata Metadata => CaseMetadata.Create("test.fixture", "Fixture", "test", "direct", new NumericConfig(42));
     static string Temp() => Path.Combine(Path.GetTempPath(), "m3-parity-v2", Guid.NewGuid().ToString("N"));
-    static Capture Capture(string runner, params ProbePoint[] points) => new(2, runner, Metadata.Id, "metadata", "baseline", new() { ["density"] = "1" },
+    static Capture Capture(string runner, params ProbePoint[] points) => new(4, runner, Metadata.Id, "metadata", "baseline", new() { ["density"] = "1" },
         [new("initial", 0, "mounted", points, [])], [], []);
     static ProbePoint Point(params Measurement[] fields) => new("target", "container", null, fields);
     static Comparison Compare(Capture e, Capture a) => ParityComparison.Run(Metadata, e, a, "", "", Temp());

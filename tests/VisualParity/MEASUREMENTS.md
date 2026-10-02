@@ -3,7 +3,7 @@
 本系统呈现提交的事实与差异，不推断来源、不修复数据、不用容差产生等价结论。
 先读取 `overview.md`，再读取 `samples/<序号>-<ID>.yaml`。完整数据在文件系统中，
 运行与目录结构见 [README](README.md)，编写入口和时钟边界见 [AUTHORING](AUTHORING.md)。
-本文描述结果 schema 5；版本迁移统一见 README。
+本文描述结果 schema 7；版本迁移统一见 README。
 
 ## 采样文件
 
@@ -23,13 +23,14 @@ rasterCollection 和 trace。序号只用于排序，sample ID 才是身份。
 - rasterCollection 保留采集选择；null 表示未记录遗漏意图，不能解释成 notRequested。
 - trace 是各端从前一次 Sample 提交之后到当前提交（含）的完整操作片段，保留全局 sequence。
   case.yaml 的 traceTail 保存最后一次提交之后的操作，包括清理；sampleOrder 保存原始提交顺序。
-- rasters 按 ID 分组，共同图像描述合并，双端 image/pixels 路径分别保留。路径均相对用例目录，
+- rasters 按 ID 分组，共同图像描述合并，双端 image 路径分别保留。路径均相对用例目录，
   不是相对 samples 子目录。像素、差分和 ROI 的统计含义不变。
 
 每个采样文件自包含，没有跨文件描述符字典、锚点或字段编号。
 case.yaml 的 metadata 保存用例身份、suite/scenario 与实际 config；它们来自运行前冻结的 schema 4 元数据。
 同一文件还保存样本索引、采集身份/错误、重复性和清理信息；environment.yaml 保存环境。
-manifest.json 验证全部权威文件；overview.md 和 report.html 可以从它们重新生成。
+case.yaml 的 sampleSummaries 提供全部采样点的分类计数及图像采集选择，不复制字段详情。
+manifest.json 验证全部权威文件；overview.md 是派生概览，交互报告由独立应用按需读取这些文件。
 
 ## 事实身份与分量
 
@@ -84,7 +85,7 @@ Source 说明实际读数入口。`declared` 表示用例输入；`derived: ...`
 
 可选 Sample.rasterCollection 记录 captured / notRequested / unsupported / missing / error。
 captured 必须与实际 rasters 一一对应，其他状态必须附原因。宿主测量-only 样本明确写 notRequested；
-ExtraImages 可以将它改为 captured。老包缺少选择记录时，遗漏意图标为未知；任意未提交字段也仍为未知。
+ExtraImages 可以将它改为 captured。未记录选择时，遗漏意图标为未知；任意未提交字段也仍为未知。
 
 issue.code 是配对/比较操作的结果，不是组件故障诊断。members 中保留比较协议的 expected/actual 命名，分别对应 YAML 的 compose/avalonia：
 
@@ -102,13 +103,17 @@ issue.code 是配对/比较操作的结果，不是组件故障诊断。members 
 
 ## 图像与区域
 
-保留原始 PNG，以及从 PNG 直接解码的 **straight sRGBA8、行优先、RGBA 通道顺序**字节。
-逐通道比较包含 alpha 和透明像素 RGB；diff.rgba 为绝对通道差，diff.png 为最大通道差灰度图。
-规范 RGBA 允许不依赖任意图片库的预乘/色彩转换直接检查像素。
+双端采集时将 PNG 规范化为 **sRGB、8-bit、straight alpha**，持久化比较实际使用的像素。
+只保存 PNG，比较时按 **straight sRGBA8、行优先、RGBA 通道顺序**解码到内存。
+逐通道比较包含 alpha 和透明像素 RGB；diff.png 为最大通道差灰度图。
+四通道绝对差可由双端 PNG 重算，不另存 diff.rgba。
+前端 Worker 使用 fast-png 直接读取规范 PNG 的字节，保留透明像素 RGB 和半透明通道，
+避免浏览器 Canvas 预乘 Alpha 读回。原图直接引用 PNG，结构化比较统计仍以运行时记录为准；
+Worker 解码统计与记录不一致时显示错误，不静默重新判断通过。
 ROI 是同一测量点双端未裁剪布局框的并集，向外取整并裁到画布；统计的是 full 合成图，
 不代表对象独立贡献，重叠区域不能相加。
 
-HTML 的显示阈值只控制高亮，不改变任何底层数据。
+报告的显示阈值只控制高亮，不改变任何底层数据。
 
 ## 用文件工具读取
 
@@ -120,7 +125,7 @@ Python 示例（需要 PyYAML；它只是可选的读取工具，不是运行框
 from pathlib import Path
 import yaml
 
-case = Path('artifacts/visual-parity/<run>/cases/<case-id>')
+case = Path('artifacts/visual-parity/runs/<run>/cases/<case-id>')
 for path in sorted((case / 'samples').glob('*.yaml')):
     sample = yaml.safe_load(path.read_text(encoding='utf-8'))
     field = sample['points']['container']['motion']['cornerRadii']
@@ -131,9 +136,11 @@ for path in sorted((case / 'samples').glob('*.yaml')):
     print(sample['sample'], sample['timeUs'], field['status'], compose, avalonia)
 ```
 
-按需读取某个像素无需图片解码库：
+按需读取某个像素（以下使用 Pillow；项目生成的 sRGB PNG 可直接读取，外部带色彩配置的 PNG 应使用一致的 sRGB 转换）：
 
 ```python
+from PIL import Image
+
 sample = yaml.safe_load((case / 'samples/0000-initial.yaml').read_text(encoding='utf-8'))
 raster = sample['rasters']['full']
 def side(value, name):
@@ -143,12 +150,11 @@ x, y = 120, 80
 width = side(raster['width'], 'compose')
 height = side(raster['height'], 'compose')
 assert 0 <= x < width and 0 <= y < height
-pixels = (case / side(raster['pixels'], 'compose')).read_bytes()
-offset = (y * width + x) * 4
-print(list(pixels[offset:offset + 4]))  # straight sRGBA8
+with Image.open(case / side(raster['image'], 'compose')) as image:
+    print(image.convert('RGBA').getpixel((x, y)))
 ```
 
 目录支持批量读取、rg 上下文搜索和自行编程分析；不需要为字段历史、区域、像素分别调用接口。
-任意区域的直方图、行列统计可以直接从规范字节计算。
+任意区域的直方图、行列统计可以从 PNG 解码后的字节计算。
 报告保留全图及 point ROI 的不同像素数、通道 max/mean 和差异 AABB。
 同一字段跨样本分析前仍应检查语义、单位和点身份是否发生变化；首次观测到差异不等于实际起始时刻。

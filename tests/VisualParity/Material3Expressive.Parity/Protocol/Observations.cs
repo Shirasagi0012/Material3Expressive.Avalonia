@@ -126,7 +126,6 @@ public sealed record ProbePoint(string Id, string Role, string? ParentId, Measur
 public sealed record RasterObservation(
     string Id,
     string Image,
-    string Pixels,
     int Width,
     int Height,
     string Format = "straight-srgba8",
@@ -168,7 +167,7 @@ public sealed record Capture(
 {
     public void Validate()
     {
-        if (SchemaVersion != 2 || Runner is not ("compose" or "avalonia") || string.IsNullOrWhiteSpace(CaseId))
+        if (SchemaVersion != 4 || Runner is not ("compose" or "avalonia") || string.IsNullOrWhiteSpace(CaseId))
             throw new InvalidDataException("Invalid capture identity/schema.");
         if (Samples.Length == 0 && Errors.Length == 0)
             throw new InvalidDataException("A successful entry must submit at least one sample.");

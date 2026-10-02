@@ -1,5 +1,5 @@
 param(
-    [Parameter(Position=0)][ValidateSet('run','list','render','verify-reference','build','test','self-test','capture-actual')][string]$Command = 'run',
+    [Parameter(Position=0)][ValidateSet('run','list','report','verify-reference','build','test','self-test','capture-actual')][string]$Command = 'run',
     [Parameter(ValueFromRemainingArguments=$true)][string[]]$Arguments
 )
 $ErrorActionPreference = 'Stop'
@@ -7,6 +7,17 @@ $taskRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $project = Join-Path $PSScriptRoot 'Material3Expressive.Parity/Material3Expressive.Parity.csproj'
 Push-Location $taskRoot
 try {
+    if ($Command -eq 'report') {
+        Push-Location (Join-Path $PSScriptRoot 'report')
+        try {
+            if (-not (Test-Path 'node_modules')) {
+                & npm ci --no-audit --no-fund
+                if ($LASTEXITCODE -ne 0) { throw 'Report dependency installation failed.' }
+            }
+            & npm run dev -- @Arguments
+            exit $LASTEXITCODE
+        } finally { Pop-Location }
+    }
     if ($Command -in @('build','run','self-test')) {
         Push-Location (Join-Path $PSScriptRoot 'reference')
         try {

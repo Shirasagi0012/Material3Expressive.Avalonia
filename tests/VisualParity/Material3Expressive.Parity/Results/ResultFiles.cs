@@ -8,7 +8,7 @@ namespace Material3Expressive.Parity;
 public sealed record CaseResult(CaseMetadata Metadata, Comparison Comparison, Capture? Expected, Capture? Actual,
     Dictionary<string, string> Samples, JsonNode? Repeatability);
 
-// Public, self-contained case results. The producer's schema-2 bundles stay in the capture cache.
+// Public, self-contained case results. The producer's schema-4 bundles stay in the capture cache.
 // Every sample owns its facts, descriptors, collection decisions and preceding execution events.
 public static class ResultFiles
 {
@@ -29,7 +29,7 @@ public static class ResultFiles
     }
 
     public static void Write(string directory, CaseMetadata metadata, Comparison comparison, Capture? expected, Capture? actual,
-        string expectedDirectory, string actualDirectory, string diffDirectory, JsonNode? repeatability = null)
+        string expectedDirectory, string actualDirectory, string diffDirectory, JsonNode? repeatability = null, string? diagnostics = null)
     {
         if (Directory.Exists(directory)) throw new IOException("Result directory must be new.");
         Directory.CreateDirectory(directory);
@@ -92,8 +92,7 @@ public static class ResultFiles
             {
                 RasterObservation? Relocate(RasterObservation? raster, string source, string side) => raster is null ? null : raster with
                 {
-                    Image = Copy(source, raster.Image, stem + "." + side + "." + r.Id),
-                    Pixels = Copy(source, raster.Pixels, stem + "." + side + "." + r.Id)
+                    Image = Copy(source, raster.Image, stem + "." + side + "." + r.Id)
                 };
                 var er = Relocate(r.Expected, expectedDirectory, "compose");
                 var ar = Relocate(r.Actual, actualDirectory, "avalonia");
@@ -108,13 +107,12 @@ public static class ResultFiles
                 if (r.Issue is not null) raster["issue"] = N(r.Issue);
                 if (r.Reason is not null) raster["reason"] = r.Reason;
                 if (r.DifferenceImage is not null) raster["diffImage"] = Copy(diffDirectory, r.DifferenceImage, stem + ".diff." + r.Id);
-                if (r.DifferencePixels is not null) raster["diffPixels"] = Copy(diffDirectory, r.DifferencePixels, stem + ".diff." + r.Id);
                 rasters[r.Id] = raster;
             }
 
             var document = new JsonObject
             {
-                ["schemaVersion"] = 5, ["case"] = metadata.Id, ["sample"] = s.Id, ["status"] = s.Status,
+                ["schemaVersion"] = 7, ["case"] = metadata.Id, ["sample"] = s.Id, ["status"] = s.Status,
                 ["present"] = N(new[] { e is null ? null : "compose", a is null ? null : "avalonia" }.OfType<string>().ToArray()),
                 ["timeUs"] = Pair(N(s.ExpectedTimeUs), N(s.ActualTimeUs)),
                 ["frameTimeUs"] = Pair(N(s.ExpectedFrameTimeUs), N(s.ActualFrameTimeUs)),
@@ -135,22 +133,30 @@ public static class ResultFiles
         JsonNode? Header(Capture? capture, string side) => capture is null ? null : new JsonObject
         {
             ["runner"] = capture.Runner, ["caseId"] = capture.CaseId,
-            ["sourceBundle"] = string.IsNullOrEmpty(side == "compose" ? expectedDirectory : actualDirectory) ? null
-                : Path.GetFullPath(side == "compose" ? expectedDirectory : actualDirectory),
             ["metadataSha256"] = capture.MetadataSha256, ["baselineSha256"] = capture.BaselineSha256,
             ["errors"] = N(capture.Errors), ["sampleOrder"] = N(capture.Samples.Select(s => s.Id).ToArray()),
             ["traceTail"] = N(capture.Trace[tracePositions[side]..])
         };
         ResultYaml.Write(Path.Combine(directory, "case.yaml"), new JsonObject
         {
-            ["schemaVersion"] = 5, ["metadata"] = N(metadata), ["status"] = comparison.Status,
+            ["schemaVersion"] = 7, ["metadata"] = N(metadata), ["status"] = comparison.Status,
             ["kind"] = comparison.Kind, ["errors"] = N(comparison.Errors), ["samples"] = index,
+            ["sampleSummaries"] = N(comparison.Samples.Select(s => new
+            {
+                s.Id, s.Status, s.ExpectedTimeUs, s.ActualTimeUs, s.Stage,
+                categories = Categories.ToDictionary(category => category, category =>
+                    Counts(s.Points.SelectMany(p => p.Fields).Where(f => Category(f) == category).Select(f => f.Status))),
+                rasters = Counts(s.Rasters.Select(r => r.Status)),
+                collection = new { compose = expected?.Samples.SingleOrDefault(x => x.Id == s.Id)?.RasterCollection,
+                    avalonia = actual?.Samples.SingleOrDefault(x => x.Id == s.Id)?.RasterCollection }
+            }).ToArray()),
             ["captures"] = new JsonObject { ["compose"] = Header(expected, "compose"), ["avalonia"] = Header(actual, "avalonia") },
-            ["repeatability"] = repeatability?.DeepClone()
+            ["repeatability"] = repeatability?.DeepClone(), ["diagnostics"] = diagnostics
         });
         ResultYaml.Write(Path.Combine(directory, "environment.yaml"), new JsonObject
         { ["compose"] = N(expected?.Environment), ["avalonia"] = N(actual?.Environment) });
         Seal(directory);
+        File.WriteAllText(Path.Combine(directory, "overview.md"), Overview(Read(directory)));
     }
 
     static JsonObject Field(FieldDifference f, string category)
@@ -190,7 +196,7 @@ public static class ResultFiles
     {
         Verify(directory);
         var document = ResultYaml.Read(Path.Combine(directory, "case.yaml"));
-        if (Get<int>(document["schemaVersion"]) != 5) throw new InvalidDataException("Result schema 5 required.");
+        if (Get<int>(document["schemaVersion"]) != 7) throw new InvalidDataException("Result schema 7 required.");
         var metadata = Get<CaseMetadata>(document["metadata"]);
         metadata.Validate();
         var environment = ResultYaml.Read(Path.Combine(directory, "environment.yaml"));
@@ -202,7 +208,7 @@ public static class ResultFiles
         foreach (var (id, file) in files)
         {
             var s = ResultYaml.Read(Inside(directory, file));
-            if (Get<int>(s["schemaVersion"]) != 5 || Text(s["sample"]) != id || Text(s["case"]) != metadata.Id)
+            if (Get<int>(s["schemaVersion"]) != 7 || Text(s["sample"]) != id || Text(s["case"]) != metadata.Id)
                 throw new InvalidDataException("Sample identity differs from case index.");
             var points = new List<PointDifference>();
             foreach (var (pid, node) in s["points"]!.AsObject())
@@ -255,13 +261,13 @@ public static class ResultFiles
                 RasterObservation? Raster(string side)
                 {
                     if (!Get<string[]>(r["present"]).Contains(side)) return null;
-                    return new(rid, Text(Side(r["image"], side)), Text(Side(r["pixels"], side)),
+                    return new(rid, Text(Side(r["image"], side)),
                         Get<int>(Side(r["width"], side)), Get<int>(Side(r["height"], side)),
                         Text(Side(r["format"], side)), Text(Side(r["space"], side)), Text(Side(r["contribution"], side)));
                 }
                 rasters.Add(new(rid, Text(r["status"]), Raster("compose"), Raster("avalonia"),
                     Get<PixelMetrics?>(r["metrics"]), Get<RasterRegion[]?>(r["regions"]), r["diffImage"]?.GetValue<string>(),
-                    r["diffPixels"]?.GetValue<string>(), r["reason"]?.GetValue<string>(), Get<ComparisonIssue?>(r["issue"])));
+                    r["reason"]?.GetValue<string>(), Get<ComparisonIssue?>(r["issue"])));
             }
             var sample = new SampleDifference(id, Get<long?>(Side(s["timeUs"], "compose")), Get<long?>(Side(s["timeUs"], "avalonia")),
                 (Side(s["stage"], "compose") ?? Side(s["stage"], "avalonia"))?.GetValue<string>(), Text(s["status"]),
@@ -288,18 +294,13 @@ public static class ResultFiles
         {
             if (document["captures"]?[side] is not JsonObject header) return null;
             var order = Get<string[]>(header["sampleOrder"]);
-            var capture = new Capture(2, Text(header["runner"]), Text(header["caseId"]),
+            var capture = new Capture(4, Text(header["runner"]), Text(header["caseId"]),
                 Text(header["metadataSha256"]), Text(header["baselineSha256"]), Get<Dictionary<string, string>>(environment[side]),
                 order.Select(id => captures[side].Single(s => s.Id == id)).ToArray(),
                 traces[side].Concat(Get<TraceEvent[]>(header["traceTail"])).OrderBy(t => t.Sequence).ToArray(), Get<string[]>(header["errors"]));
             capture.Validate();
             foreach (var raster in capture.Samples.SelectMany(s => s.Rasters))
-            {
-                var decoded = PixelData.DecodePng(Inside(directory, raster.Image));
-                if (decoded.Width != raster.Width || decoded.Height != raster.Height ||
-                    !decoded.Bytes.SequenceEqual(PixelData.Read(directory, raster)))
-                    throw new InvalidDataException("PNG and canonical pixels differ.");
-            }
+                _ = PixelData.Read(directory, raster);
             return capture;
         }
         var expectedCapture = Capture("compose");
@@ -357,7 +358,7 @@ public static class ResultFiles
         var empty = c.Samples.Sum(s => s.Points.Count(p => p.Fields.Length == 0)) + c.Samples.Count(s => s.Points.Length == 0 && s.Rasters.Length == 0);
         if (empty != 0) b.AppendLine($"\nEmpty points/samples: {empty}; their missing coverage is not represented by category field counts.");
         b.AppendLine("\nSample files include both values, measurement definitions/sources, collection decisions and preceding trace events.");
-        b.AppendLine("[Case metadata, cleanup trace and repeatability](case.yaml) · [Environment](environment.yaml) · [Visual report](report.html)");
+        b.AppendLine("[Case metadata, cleanup trace and repeatability](case.yaml) · [Environment](environment.yaml)");
         return b.ToString();
     }
 
@@ -374,15 +375,15 @@ public static class ResultFiles
 
     static IEnumerable<string> Files(string directory) => Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
         .Select(p => Path.GetRelativePath(directory, p).Replace('\\', '/'))
-        .Where(p => p is not ("manifest.json" or "overview.md" or "report.html")).Order();
+        .Where(p => p is not ("manifest.json" or "overview.md")).Order();
 
     public static void Seal(string directory) => ParityJson.Write(Path.Combine(directory, "manifest.json"),
-        new { schemaVersion = 5, files = Files(directory).ToDictionary(p => p, p => ParityJson.Hash(Inside(directory, p))) });
+        new { schemaVersion = 7, files = Files(directory).ToDictionary(p => p, p => ParityJson.Hash(Inside(directory, p))) });
 
     public static void Verify(string directory)
     {
         var manifest = JsonNode.Parse(File.ReadAllText(Path.Combine(directory, "manifest.json")))!.AsObject();
-        if (Get<int>(manifest["schemaVersion"]) != 5) throw new InvalidDataException("Result manifest schema 5 required.");
+        if (Get<int>(manifest["schemaVersion"]) != 7) throw new InvalidDataException("Result manifest schema 7 required.");
         var files = Get<Dictionary<string, string>>(manifest["files"]);
         if (!files.ContainsKey("case.yaml") || !files.ContainsKey("environment.yaml") || !Files(directory).SequenceEqual(files.Keys.Order()))
             throw new InvalidDataException("Result file set differs from manifest.");

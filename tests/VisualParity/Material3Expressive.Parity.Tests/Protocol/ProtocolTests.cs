@@ -45,13 +45,15 @@ public partial class ParityTests
     }
 
     [Fact]
-    public void ManifestRejectsInternallyInconsistentPixelsEvenWhenResealed()
+    public void ManifestRejectsWrongPngDimensionsEvenWhenResealed()
     {
         var d = Temp(); Directory.CreateDirectory(d); using var bitmap = new SKBitmap(1, 1); bitmap.Erase(new SKColor(80, 120, 200, 128));
         File.WriteAllBytes(Path.Combine(d, "image.png"), bitmap.Encode(SKEncodedImageFormat.Png, 100).ToArray()); var raster = PixelData.FromPng(d, "full", "image.png");
         var c = Capture("compose", Point()); c = c with { Samples = [c.Samples[0] with { Rasters = [raster] }] };
         ParityJson.Write(Path.Combine(d, "observations.json"), c); ParityJson.Seal(d, c.Runner, c.Environment); ParityJson.Verify(d);
-        var bytes = File.ReadAllBytes(Path.Combine(d, raster.Pixels)); bytes[0]++; File.WriteAllBytes(Path.Combine(d, raster.Pixels), bytes); ParityJson.Seal(d, c.Runner, c.Environment);
+        Assert.Empty(Directory.GetFiles(d, "*.rgba"));
+        c = c with { Samples = [c.Samples[0] with { Rasters = [raster with { Width = 2 }] }] };
+        ParityJson.Write(Path.Combine(d, "observations.json"), c); ParityJson.Seal(d, c.Runner, c.Environment);
         Assert.Throws<InvalidDataException>(() => ParityJson.Verify(d));
     }
 
@@ -64,6 +66,25 @@ public partial class ParityTests
         var path=Path.Combine(directory,"pixels.png");File.WriteAllBytes(path,bitmap.Encode(SKEncodedImageFormat.Png,100).ToArray());
         var decoded=PixelData.DecodePng(path);
         Assert.Equal(new byte[] {80,120,200,0,81,121,201,128},decoded.Bytes);
+    }
+
+    [Theory]
+    [InlineData("straight-srgba8.png")]
+    [InlineData("linear-gamma.png")]
+    public void PersistedPngContainsTheCanonicalComparisonPixels(string name)
+    {
+        var path = Path.Combine(Temp(), "image.png");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.Copy(Path.Combine(Program.FindRoot(), "tests/VisualParity/report/tests/fixtures", name), path);
+        var expected = PixelData.DecodePng(path).Bytes;
+        var raster = PixelData.FromPng(Path.GetDirectoryName(path)!, "full", "image.png");
+        Assert.Equal(expected, PixelData.Read(Path.GetDirectoryName(path)!, raster));
+        if (name == "straight-srgba8.png")
+            Assert.Equal(new byte[] {80,120,200,0,81,121,201,128,255,40,10,255}, expected);
+        using var bitmap = SKBitmap.Decode(path);
+        Assert.NotNull(bitmap);
+        // Encoding sRGB comparison bytes must eliminate the input's linear gamma.
+        Assert.DoesNotContain("gAMA", System.Text.Encoding.ASCII.GetString(File.ReadAllBytes(path)));
     }
 
     [Fact]

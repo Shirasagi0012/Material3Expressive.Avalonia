@@ -45,7 +45,6 @@ public sealed record RasterDifference(
     PixelMetrics? Metrics = null,
     RasterRegion[]? Regions = null,
     string? DifferenceImage = null,
-    string? DifferencePixels = null,
     string? Reason = null,
     ComparisonIssue? Issue = null
 );

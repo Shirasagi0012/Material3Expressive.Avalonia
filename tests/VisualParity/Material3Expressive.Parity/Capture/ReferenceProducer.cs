@@ -15,7 +15,7 @@ public static class ReferenceProducer
                ?? throw new InvalidDataException("Empty Compose scenario index.");
     }
 
-    public static async Task<string> Capture(string root, string input, bool refresh, bool extraImages = false)
+    public static async Task<string> Capture(string root, string input, string fresh, bool refresh, bool extraImages = false)
     {
         var library = Path.Combine(root, "tests/VisualParity/reference/build/install/Material3ParityReference/lib");
         if (!Directory.Exists(library))
@@ -36,7 +36,7 @@ public static class ReferenceProducer
             System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture;
         identity += extraImages ? "extra-images" : "default-images";
         var key = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(identity)));
-        var cache = Path.Combine(root, "artifacts/visual-parity-reference", key);
+        var cache = Path.Combine(root, "artifacts/visual-parity/cache/reference", key);
         if (Directory.Exists(cache) && !refresh)
         {
             ParityJson.Verify(cache);
@@ -47,7 +47,7 @@ public static class ReferenceProducer
             return cache;
         }
 
-        var fresh = cache + "." + Guid.NewGuid().ToString("N");
+        if (Directory.Exists(fresh)) throw new IOException("Capture directory must be new.");
         Console.WriteLine("Compose capture: " + ParityJson.Read<CaseMetadata>(input).Id);
         var arguments = new List<string>
             { "-Djava.awt.headless=true", "-cp", Path.Combine(library, "*"), "parity.MainKt", input, fresh, root };
@@ -56,15 +56,23 @@ public static class ReferenceProducer
         ParityJson.Verify(fresh);
         var result = ParityJson.Read<Capture>(Path.Combine(fresh, "observations.json"));
         if (result.Errors.Length != 0) return fresh; // Failed captures remain reviewable, never cached as successful references.
-        if (Directory.Exists(cache)) return fresh; // Refresh is preserved independently for repeatability review.
+        if (refresh || Directory.Exists(cache)) return fresh; // Forced captures belong to this run, not the reusable cache.
+        Directory.CreateDirectory(Path.GetDirectoryName(cache)!);
+        // --output may be on a different volume. Publish a complete cache atomically
+        // on the cache's volume; the original stays in this run until export succeeds.
+        var staging = cache + "." + Guid.NewGuid().ToString("N");
         try
         {
-            Directory.Move(fresh, cache);
+            foreach (var file in Directory.EnumerateFiles(fresh, "*", SearchOption.AllDirectories))
+            {
+                var target = Path.Combine(staging, Path.GetRelativePath(fresh, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(file, target);
+            }
+            try { Directory.Move(staging, cache); }
+            catch (IOException) when (Directory.Exists(cache)) { return fresh; }
         }
-        catch (IOException) when (Directory.Exists(cache))
-        {
-            return fresh;
-        }
+        finally { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); }
 
         return cache;
     }
@@ -92,15 +100,5 @@ public static class ReferenceProducer
         var text = standardOutput + await stderr;
         if (process.ExitCode != 0) throw new InvalidOperationException($"{executable} exited {process.ExitCode}: {text}");
         return stdoutOnly ? standardOutput : text;
-    }
-
-    public static void CopyBundle(string source, string target)
-    {
-        foreach (var path in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
-        {
-            var destination = Path.Combine(target, Path.GetRelativePath(source, path));
-            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Copy(path, destination);
-        }
     }
 }

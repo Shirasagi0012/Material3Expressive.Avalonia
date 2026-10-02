@@ -53,17 +53,20 @@ class Probe {
 
 // Canonical conversion is usable without the scene host, including author-owned raster captures.
 fun rasterFromPng(writer:CaptureWriter,id:String,path:String):RasterObservation {
-    val file=java.io.File(writer.output,path); val pixels=path.removeSuffix(".png")+".rgba"
-    org.jetbrains.skia.Data.makeFromBytes(file.readBytes()).use { png -> org.jetbrains.skia.Codec.makeFromData(png).use { codec ->
-        val source=codec.imageInfo
-        val info=org.jetbrains.skia.ImageInfo(source.width,source.height,org.jetbrains.skia.ColorType.RGBA_8888,
-            org.jetbrains.skia.ColorAlphaType.UNPREMUL,org.jetbrains.skia.ColorSpace.sRGB)
-        org.jetbrains.skia.Bitmap().use { bitmap ->
-            check(bitmap.allocPixels(info)); codec.readPixels(bitmap)
-            java.io.File(writer.output,pixels).writeBytes(checkNotNull(bitmap.readPixels(info)))
-            return RasterObservation(id,path,pixels,bitmap.width,bitmap.height)
+    val file=java.io.File(writer.output,path)
+    org.jetbrains.skia.Data.makeFromBytes(file.readBytes()).use { png ->
+        org.jetbrains.skia.Codec.makeFromData(png).use { codec ->
+            val info=org.jetbrains.skia.ImageInfo(codec.imageInfo.width,codec.imageInfo.height,
+                org.jetbrains.skia.ColorType.RGBA_8888,org.jetbrains.skia.ColorAlphaType.UNPREMUL,org.jetbrains.skia.ColorSpace.sRGB)
+            org.jetbrains.skia.Bitmap().use { bitmap ->
+                check(bitmap.allocPixels(info)); codec.readPixels(bitmap)
+                org.jetbrains.skia.Image.makeFromBitmap(bitmap).use { image ->
+                    image.encodeToData(org.jetbrains.skia.EncodedImageFormat.PNG)!!.use { file.writeBytes(it.bytes) }
+                }
+                return RasterObservation(id,path,info.width,info.height)
+            }
         }
-    } }
+    }
 }
 
 // Protocol rule: preserve spaces and UTF-16 indices; only trim paragraph-break code units inside the native interval.

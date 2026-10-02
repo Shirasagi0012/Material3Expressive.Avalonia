@@ -35,13 +35,13 @@ public static class ParityJson
         var files = Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
             .Where(x => Path.GetFullPath(x) != Path.Combine(Path.GetFullPath(directory), "manifest.json"))
             .Order().ToDictionary(x => Path.GetRelativePath(directory, x).Replace('\\', '/'), Hash);
-        Write(Path.Combine(directory, "manifest.json"), new ArtifactManifest(2, runner, files, environment));
+        Write(Path.Combine(directory, "manifest.json"), new ArtifactManifest(4, runner, files, environment));
     }
 
     public static void Verify(string directory)
     {
         var manifest = Read<ArtifactManifest>(Path.Combine(directory, "manifest.json"));
-        if (manifest.SchemaVersion != 2 || !manifest.Files.ContainsKey("observations.json"))
+        if (manifest.SchemaVersion != 4 || !manifest.Files.ContainsKey("observations.json"))
             throw new InvalidDataException("Invalid artifact manifest.");
         var actualFiles = Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
             .Where(x => Path.GetFullPath(x) != Path.Combine(Path.GetFullPath(directory), "manifest.json"))
@@ -60,16 +60,7 @@ public static class ParityJson
         capture.Validate();
         foreach (var sample in capture.Samples)
         foreach (var raster in sample.Rasters)
-        {
-            var pixels = PixelData.Read(directory, raster);
-            var imagePath = Path.GetFullPath(Path.Combine(directory, raster.Image));
-            if (!imagePath.StartsWith(Path.GetFullPath(directory) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("Image path outside bundle.");
-            var decoded = PixelData.DecodePng(imagePath);
-            if (decoded.Width != raster.Width || decoded.Height != raster.Height)
-                throw new InvalidDataException("PNG dimensions differ from observations.");
-            if (!pixels.SequenceEqual(decoded.Bytes)) throw new InvalidDataException("Canonical bytes differ from decoded PNG pixels.");
-        }
+            _ = PixelData.Read(directory, raster);
 
         if (capture.Runner != manifest.Runner ||
             !capture.Environment.OrderBy(x => x.Key).SequenceEqual(manifest.Environment.OrderBy(x => x.Key)))

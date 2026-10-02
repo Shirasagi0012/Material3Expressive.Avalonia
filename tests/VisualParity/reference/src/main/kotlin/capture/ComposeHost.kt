@@ -33,7 +33,7 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoC
         scene=CanvasLayersComposeScene(recomposer,Density(1f),size=IntSize(width,height))
     }
     fun mount(content:@Composable ()->Unit) {
-        scene.setContent(content=content); draw(); writer.record(timeUs,"mount","240x160 DIP; density=1; no animation frame")
+        scene.setContent(content=content); draw(); writer.record(timeUs,"mount","${surface.width}x${surface.height} DIP; density=1; no animation frame")
     }
     fun frame(time:Long) {
         require(time>=timeUs); timeUs=time

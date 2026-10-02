@@ -10,7 +10,7 @@ public class ResultFilesTests
     static CaseMetadata Metadata => CaseMetadata.Create("test.files", "Files | <fixture>", "test", "unused", new FixtureConfig(false, "Save 😀\nnext"));
     static string Temp() => Path.Combine(Path.GetTempPath(), "m3-parity-files", Guid.NewGuid().ToString("N"));
     static ProbePoint Point(params Measurement[] fields) => new("target", "container", null, fields);
-    static Capture Capture(string runner, params Sample[] samples) => new(2, runner, Metadata.Id, "metadata", "baseline",
+    static Capture Capture(string runner, params Sample[] samples) => new(4, runner, Metadata.Id, "metadata", "baseline",
         new() { ["density"] = "1", ["version"] = runner }, samples, [], []);
     static Sample Sample(string id, long time, params ProbePoint[] points) => new(id, time, "ready", points, [],
         RasterCollection: [new("full", "notRequested", "Measurement only.")]);
@@ -181,7 +181,7 @@ public class ResultFilesTests
     }
 
     [Fact]
-    public void RasterAssetsAndReportCanBeReadAfterCaptureSourcesAreMoved()
+    public void RasterAssetsRemainIndependentAfterCaptureSourcesAreMoved()
     {
         var source = Temp();
         var expectedDirectory = Path.Combine(source, "expected");
@@ -203,16 +203,17 @@ public class ResultFilesTests
         var directory = Temp();
         ResultFiles.Write(directory, Metadata, comparison, e, a, expectedDirectory, actualDirectory, diff);
         Directory.Move(source, source + "-unavailable");
-        var result = Report.Write(directory);
+        var result = ResultFiles.Read(directory);
         var raster = result.Comparison.Samples[0].Rasters.Single();
         Assert.Equal(1, raster.Metrics!.DifferentPixels);
         Assert.Equal(new[] { 0, 0, 0, 1 }, raster.Metrics.MaximumChannelDelta);
         Assert.Equal(new byte[] { 80, 120, 200, 0 }, PixelData.Read(directory, raster.Expected!)[..4]);
-        Assert.True(File.Exists(Path.Combine(directory, raster.DifferencePixels!)));
+        Assert.True(File.Exists(Path.Combine(directory, raster.DifferenceImage!)));
+        Assert.Empty(Directory.GetFiles(directory, "*.rgba", SearchOption.AllDirectories));
         Assert.True(File.Exists(Path.Combine(directory, "overview.md")));
-        var html = File.ReadAllText(Path.Combine(directory, "report.html"));
-        Assert.Contains("sampleFiles", html); Assert.DoesNotContain("agent.json", html);
+        Assert.False(File.Exists(Path.Combine(directory, "report.html")));
+        Assert.NotNull(ResultYaml.Read(Path.Combine(directory, "case.yaml"))["sampleSummaries"]);
         var before = ResultFiles.Overview(result);
-        Assert.Equal(before, ResultFiles.Overview(Report.Write(directory)));
+        Assert.Equal(before, ResultFiles.Overview(ResultFiles.Read(directory)));
     }
 }
