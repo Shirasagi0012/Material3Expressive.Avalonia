@@ -104,22 +104,25 @@ Compose 的内容 lambda 映射为 Avalonia 内容对象/模板，WindowInsets �
 模板替换与重挂载；共享交互补充 IconButton 键盘按压中禁用及 ripple 生命周期回归。
 Catalog 已接入实际 header、三项导航和显式外部选择处理。
 
-本轮结果（2026-10-03）：控件库 211/211、parity 框架 101/101，通过；Catalog Release 构建通过。
-[完整 Rail 自检](../../../../artifacts/visual-parity/runs/20261002-183206-242f4921/summary.md)
-51 个用例均 stable、无执行错误，其中 49 个 equal、退选用例 withinTolerance、反向中断用例 different。
-`--require-match` 因保留的颜色差异返回 1，不宣称整个 suite 门禁通过。
+当前验证（2026-10-03，ComposeAnimation `0.2.1-alpha`）：控件库 222/222、parity 框架 101/101，通过；
+Catalog Release 构建通过。[完整 Rail 比较](../../../../artifacts/visual-parity/runs/color-converter-0.2.1-alpha-rail/summary.md)
+51 个用例、195 个样本，无执行错误或未比较项；49 个 equal，退选与反向中断两个用例 withinTolerance，
+`--require-match` 通过。此次完整 suite 为单次双端捕获；
+[反向中断双端重复自检](../../../../artifacts/visual-parity/runs/color-converter-0.2.1-alpha-reverse/summary.md)
+另行确认 stable 并通过门禁，不将这一项的重复性结论扩展到整套新包捕获。
 退选 16ms 差异只在指示器边缘：4× 原始 32 像素不同，最大通道差 7；1× 最大差 1，item 区域均值 0.00223。
-结构化事实相等，使用已有容差判断，未调整阈值。
-逻辑结果为 [navigation-rail-final-211.trx](../../../../artifacts/navigation-rail-tests/navigation-rail-final-211.trx)
-和 [parity-framework.trx](../../../../artifacts/navigation-rail-tests/parity-framework.trx)。
-补齐退场 label 自动化子节点后，逻辑回归仍为 211/211，
-[退选双端自检](../../../../artifacts/visual-parity/runs/20261002-184728-4d6441e1/summary.md)再次 stable 且通过现有容差。
+反向 160ms 的 4× 截图有 1 个像素的 G=1 差异，1× 比较精确相等。
+结构化事实相等，使用已有容差判断，未调整阈值。逻辑结果为
+[material-package.trx](../../../../artifacts/color-converter-0.2.1-alpha/tests/material-package.trx) 和
+[parity-framework-package.trx](../../../../artifacts/color-converter-0.2.1-alpha/tests/parity-framework-package.trx)。
 
-保留的基础能力差异：现有 ComposeAnimation.ColorConverter 使用 double 的直接 Oklab↔sRGB 转换，
-没有固定 Compose 的 ColorSpace 矩阵/浮点与 Half 打包过程。反向中断用例 65ms 的实际图标色
-为 Compose `[46,43,58,255]`、Avalonia `[47,43,58,255]`，该读数和截图保持 different。
-维护者要求本轮先忽略，稍后决定是否修正依赖；未修改依赖、参考基线、容差或失败用例。
-建议后续修正相邻 ComposeAnimation 的现有转换器，回归后以新本地 NuGet 版本接入，保持颜色 API 不变。
+此前保留的颜色差异已修复：维护者确认后，相邻 ComposeAnimation 的现有 ColorConverter
+改为固定上游的 sRGB / XYZ / Oklab 矩阵、Float 边界与 Half / 10 位 alpha 中间存储，
+TargetBasedAnimation 保留原始终值。通过本地 NuGet `0.2.1-alpha` 接入，公开颜色 API 不变。
+反向 65ms 的实际图标色两端均为 `[46,43,58,255]`，读数与该帧截图精确相等。
+依赖完整回归 772/772；独立上游数值、包消费证据和保留的 core 精度边界见
+[修复交付报告](../../../../artifacts/color-converter-0.2.1-alpha/README.md)。
+原来失败的[历史自检](../../../../artifacts/visual-parity/runs/20261002-183206-242f4921/summary.md)保留，未修改参考基线或失败证据。
 
 未经验证：真实文字/Material Symbols 与 Compose 的栅格一致性、桌面人工操作及实际屏幕阅读器体验。
 此次测试不构成这些场景的验收。Wide / ModalWide 属于本次范围之外。
@@ -128,5 +131,7 @@ Catalog 已接入实际 header、三项导航和显式外部选择处理。
 elevation / tonal 绘制差异。在修改前 `20261002-171655-937f8736` 与本轮产物中均可观察，
 例如 Space 197ms 的圆角 `13.137107849121094 / 11.302458763122559`、Elevated 禁用 400ms
 内容色 `[73,69,79,97] / [29,27,32,97]`；未扩展本次范围重写 Button。
-本轮 8 个 Button 回归中 baseline-press / quick-click 通过现有容差，其余 6 个仍 different；
-结果索引为 [button-regressions.txt](../../../../artifacts/navigation-rail-tests/button-regressions.txt)。
+新包下 8 个 Button 回归中 baseline-press / quick-click 通过现有容差，其余 6 个仍 different；
+98 个样本的事实、完整 raster 记录及已捕获双端 PNG 与此前产物一致。
+结果索引为 [button-regressions.json](../../../../artifacts/color-converter-0.2.1-alpha/button-regressions.json)，
+逐样本对照见 [button-before-after-evidence.json](../../../../artifacts/color-converter-0.2.1-alpha/button-before-after-evidence.json)。

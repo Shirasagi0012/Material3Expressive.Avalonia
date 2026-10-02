@@ -55,27 +55,8 @@
                                    Text="{Binding #ShadowElevationSlider.Value  ,StringFormat='{}{0:F2}'}" />
                     </Grid>
                 </StackPanel>
-                <!-- -->
-                <!-- <StackPanel> -->
-                <!--     <Label Content="TonalElevation" /> -->
-                <!-- -->
-                <!--     <Grid ColumnDefinitions="*,50"> -->
-                <!-- -->
-                <!--         <Slider x:Name="TonalElevationSlider" Minimum="0" Maximum="50"></Slider> -->
-                <!-- -->
-                <!--         <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" -->
-                <!--                    Margin="8,0,0,0" -->
-                <!--                    Text="{Binding #TonalElevationSlider.Value  ,StringFormat='{}{0:F2}'}" /> -->
-                <!--     </Grid> -->
-                <!-- </StackPanel> -->
             </StackPanel>
         </m3:MaterialSurface>
-        <!-- -->
-        <!-- <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="xsmall" HorizontalAlignment="Center">Welcome to Avalonia!</Button> -->
-        <!-- <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button> -->
-        <!-- <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="medium" HorizontalAlignment="Center">Welcome to Avalonia!</Button> -->
-        <!-- <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="large" HorizontalAlignment="Center">Welcome to Avalonia!</Button> -->
-        <!-- <Button Theme="{StaticResource MaterialFilledButtonTheme}" Classes="xlarge" HorizontalAlignment="Center">Welcome to Avalonia!</Button> -->
     </StackPanel>
     </Grid>
 </Window>

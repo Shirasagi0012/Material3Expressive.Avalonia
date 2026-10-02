@@ -9,6 +9,7 @@
 | --- | --- |
 | [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail 的实现与主题，按组件组织。组件可以组合其他组件，例如 Button 和 NavigationRail 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
+| [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
 | [Foundation/Motion/](../src/Material3Expressive/Foundation/Motion) | Material 动画描述及其到 ComposeAnimation 的转换。 |
 | [Foundation/Rendering/](../src/Material3Expressive/Foundation/Rendering) | 图标接入与颜色合成等辅助能力。 |
@@ -29,7 +30,7 @@
 - `MaterialResource` 组合多个来源，后加入的来源优先；来源的变更通知传入 Avalonia 资源系统。
 - `{m3:Token}` 在消费元素处解析值。每次跟随 `TokenRef` 都从同一消费位置重新查找，
   因而局部覆盖中间的 System Token 也能影响 Component Token。
-- 当前派生形式包括 `WithAlpha` 和 `SpringSpecRef`。解析有跳数限制；缺失、循环或超过限制时失败，
+- 当前派生形式包括 `WithAlpha`、`SpringSpecRef`、`TextStyleRef` 和 `TextUnit`。解析有跳数限制；缺失、循环或超过限制时失败，
   绑定通过 `UnsetValue` 回退，不改用外层同名定义掩盖无效的最近条目。
 - 资源和主题变化触发消费值更新。保留引用关系，不要在组件初始化时把动态 Token 提前展开为永久常量。
 
@@ -42,6 +43,17 @@
 
 这里的 `m3` 对应 `https://github.com/Shirasagi0012/Material3Expressive.Avalonia`。
 嵌套类型在 XAML 中用 `+` 表达。示例展示当前接入方式，不替代新组件对上游 Token 的调查。
+
+## 排版
+
+普通 TextBlock 使用 `MaterialText.Style="{m3:Typography TitleLarge}"` 选择聚合角色；
+容器通过 `MaterialText.DefaultStyle` 逐字段合并默认值。明确指定的 Style 不隐式合并环境，
+未指定字段不产生原生 Setter。原生局部值与绑定保留，由 Avalonia 属性系统决定最终值。
+投影样式位于控件自身 Styles 开头，具体就近规则与迁移影响见 [Typography](../src/Material3Expressive/Foundation/Typography/README.md)。
+
+TextStyle 只保存 DIP；sp/em 在 TokenResolver 消费位置换算。角色基线派生自现有五个标量键，
+覆盖整套角色后不再读取这些标量。Button 消费各尺寸 LabelTextStyle 并向内容提供默认值；
+NavigationRail 标签消费 LabelMedium。没有引入公开 MaterialTextBlock，也未替换 Avalonia 排版器。
 
 ## 颜色、图标与阴影
 

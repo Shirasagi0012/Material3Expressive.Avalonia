@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using Material3Expressive.Foundation.Typography;
 using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Tokens;
@@ -9,14 +10,16 @@ public static partial class MaterialTokens
     {
         /// <summary>
         /// <c>md.sys.typescale.*</c> — the fifteen type-scale roles plus their Expressive
-        /// emphasized counterparts, each fanned out into font / size / weight / letter-spacing /
-        /// line-height keys (§4.1: composite concepts fan out to flat scalars; §4.2 typography
-        /// row). Values stay plain stock types so stock property setters consume them directly.
+        /// emphasized counterparts. Each role exposes an aggregate Style and the five scalar
+        /// keys used by the baseline to derive it. Resolved lengths are DIPs.
         /// </summary>
         public static class TypeScale
         {
+            /// <summary>Local conversion input for sp, default 1. Not an upstream Material token or a DPI scale.</summary>
+            public static readonly MaterialTokenKey<double> FontScale = new("md.sys.typescale.font-scale");
             public static class DisplayLarge
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.display-large.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.display-large.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.display-large.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.display-large.weight");
@@ -26,6 +29,7 @@ public static partial class MaterialTokens
 
             public static class DisplayMedium
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.display-medium.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.display-medium.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.display-medium.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.display-medium.weight");
@@ -35,6 +39,7 @@ public static partial class MaterialTokens
 
             public static class DisplaySmall
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.display-small.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.display-small.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.display-small.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.display-small.weight");
@@ -44,6 +49,7 @@ public static partial class MaterialTokens
 
             public static class HeadlineLarge
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.headline-large.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.headline-large.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.headline-large.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.headline-large.weight");
@@ -53,6 +59,7 @@ public static partial class MaterialTokens
 
             public static class HeadlineMedium
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.headline-medium.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.headline-medium.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.headline-medium.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.headline-medium.weight");
@@ -62,6 +69,7 @@ public static partial class MaterialTokens
 
             public static class HeadlineSmall
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.headline-small.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.headline-small.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.headline-small.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.headline-small.weight");
@@ -71,6 +79,7 @@ public static partial class MaterialTokens
 
             public static class TitleLarge
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.title-large.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.title-large.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.title-large.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.title-large.weight");
@@ -80,6 +89,7 @@ public static partial class MaterialTokens
 
             public static class TitleMedium
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.title-medium.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.title-medium.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.title-medium.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.title-medium.weight");
@@ -89,6 +99,7 @@ public static partial class MaterialTokens
 
             public static class TitleSmall
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.title-small.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.title-small.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.title-small.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.title-small.weight");
@@ -98,6 +109,7 @@ public static partial class MaterialTokens
 
             public static class BodyLarge
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.body-large.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.body-large.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.body-large.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.body-large.weight");
@@ -107,6 +119,7 @@ public static partial class MaterialTokens
 
             public static class BodyMedium
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.body-medium.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.body-medium.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.body-medium.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.body-medium.weight");
@@ -116,6 +129,7 @@ public static partial class MaterialTokens
 
             public static class BodySmall
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.body-small.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.body-small.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.body-small.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.body-small.weight");
@@ -125,6 +139,7 @@ public static partial class MaterialTokens
 
             public static class LabelLarge
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.label-large.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.label-large.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.label-large.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.label-large.weight");
@@ -134,6 +149,7 @@ public static partial class MaterialTokens
 
             public static class LabelMedium
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.label-medium.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.label-medium.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.label-medium.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.label-medium.weight");
@@ -143,6 +159,7 @@ public static partial class MaterialTokens
 
             public static class LabelSmall
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.label-small.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.label-small.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.label-small.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.label-small.weight");
@@ -152,6 +169,7 @@ public static partial class MaterialTokens
 
             public static class DisplayLargeEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.display-large-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.display-large-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.display-large-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.display-large-emphasized.weight");
@@ -161,6 +179,7 @@ public static partial class MaterialTokens
 
             public static class DisplayMediumEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.display-medium-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.display-medium-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.display-medium-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.display-medium-emphasized.weight");
@@ -170,6 +189,7 @@ public static partial class MaterialTokens
 
             public static class DisplaySmallEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.display-small-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.display-small-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.display-small-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.display-small-emphasized.weight");
@@ -179,6 +199,7 @@ public static partial class MaterialTokens
 
             public static class HeadlineLargeEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.headline-large-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.headline-large-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.headline-large-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.headline-large-emphasized.weight");
@@ -188,6 +209,7 @@ public static partial class MaterialTokens
 
             public static class HeadlineMediumEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.headline-medium-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.headline-medium-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.headline-medium-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.headline-medium-emphasized.weight");
@@ -197,6 +219,7 @@ public static partial class MaterialTokens
 
             public static class HeadlineSmallEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.headline-small-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.headline-small-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.headline-small-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.headline-small-emphasized.weight");
@@ -206,6 +229,7 @@ public static partial class MaterialTokens
 
             public static class TitleLargeEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.title-large-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.title-large-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.title-large-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.title-large-emphasized.weight");
@@ -215,6 +239,7 @@ public static partial class MaterialTokens
 
             public static class TitleMediumEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.title-medium-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.title-medium-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.title-medium-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.title-medium-emphasized.weight");
@@ -224,6 +249,7 @@ public static partial class MaterialTokens
 
             public static class TitleSmallEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.title-small-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.title-small-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.title-small-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.title-small-emphasized.weight");
@@ -233,6 +259,7 @@ public static partial class MaterialTokens
 
             public static class BodyLargeEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.body-large-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.body-large-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.body-large-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.body-large-emphasized.weight");
@@ -242,6 +269,7 @@ public static partial class MaterialTokens
 
             public static class BodyMediumEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.body-medium-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.body-medium-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.body-medium-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.body-medium-emphasized.weight");
@@ -251,6 +279,7 @@ public static partial class MaterialTokens
 
             public static class BodySmallEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.body-small-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.body-small-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.body-small-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.body-small-emphasized.weight");
@@ -260,6 +289,7 @@ public static partial class MaterialTokens
 
             public static class LabelLargeEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.label-large-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.label-large-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.label-large-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.label-large-emphasized.weight");
@@ -269,6 +299,7 @@ public static partial class MaterialTokens
 
             public static class LabelMediumEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.label-medium-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.label-medium-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.label-medium-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.label-medium-emphasized.weight");
@@ -278,6 +309,7 @@ public static partial class MaterialTokens
 
             public static class LabelSmallEmphasized
             {
+                public static readonly MaterialTokenKey<TextStyle> Style = new("md.sys.typescale.label-small-emphasized.style");
                 public static readonly MaterialTokenKey<FontFamily> Font = new("md.sys.typescale.label-small-emphasized.font");
                 public static readonly MaterialTokenKey<double> Size = new("md.sys.typescale.label-small-emphasized.size");
                 public static readonly MaterialTokenKey<FontWeight> Weight = new("md.sys.typescale.label-small-emphasized.weight");

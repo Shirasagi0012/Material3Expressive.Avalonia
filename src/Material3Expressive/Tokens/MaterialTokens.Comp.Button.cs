@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Typography;
 using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Tokens;
@@ -130,6 +131,7 @@ public static partial class MaterialTokens
         /// <summary><c>md.comp.button-xsmall.*</c> — extra small button metrics (32dp).</summary>
         public static class ButtonXSmall
         {
+            public static readonly MaterialTokenKey<TextStyle> LabelTextStyle = new("md.comp.button-xsmall.label-text.style");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.button-xsmall.container.height");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.button-xsmall.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.button-xsmall.container.shape-square");
@@ -139,6 +141,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.button-xsmall.icon-label-space");
             public static readonly MaterialTokenKey<Thickness> OutlinedOutlineWidth = new("md.comp.button-xsmall.outlined-outline-width");
 
+            // Legacy scalar slots for custom themes. The stock theme consumes LabelTextStyle.
             public static readonly MaterialTokenKey<FontFamily> LabelTextFont = new("md.comp.button-xsmall.label-text.font");
             public static readonly MaterialTokenKey<double> LabelTextSize = new("md.comp.button-xsmall.label-text.size");
             public static readonly MaterialTokenKey<FontWeight> LabelTextWeight = new("md.comp.button-xsmall.label-text.weight");
@@ -149,6 +152,7 @@ public static partial class MaterialTokens
         /// <summary><c>md.comp.button-small.*</c> — small button metrics (40dp), the default size.</summary>
         public static class ButtonSmall
         {
+            public static readonly MaterialTokenKey<TextStyle> LabelTextStyle = new("md.comp.button-small.label-text.style");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.button-small.container.height");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.button-small.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.button-small.container.shape-square");
@@ -158,6 +162,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.button-small.icon-label-space");
             public static readonly MaterialTokenKey<Thickness> OutlinedOutlineWidth = new("md.comp.button-small.outlined-outline-width");
 
+            // Legacy scalar slots for custom themes. The stock theme consumes LabelTextStyle.
             public static readonly MaterialTokenKey<FontFamily> LabelTextFont = new("md.comp.button-small.label-text.font");
             public static readonly MaterialTokenKey<double> LabelTextSize = new("md.comp.button-small.label-text.size");
             public static readonly MaterialTokenKey<FontWeight> LabelTextWeight = new("md.comp.button-small.label-text.weight");
@@ -168,6 +173,7 @@ public static partial class MaterialTokens
         /// <summary><c>md.comp.button-medium.*</c> — medium button metrics (56dp).</summary>
         public static class ButtonMedium
         {
+            public static readonly MaterialTokenKey<TextStyle> LabelTextStyle = new("md.comp.button-medium.label-text.style");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.button-medium.container.height");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.button-medium.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.button-medium.container.shape-square");
@@ -177,6 +183,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.button-medium.icon-label-space");
             public static readonly MaterialTokenKey<Thickness> OutlinedOutlineWidth = new("md.comp.button-medium.outlined-outline-width");
 
+            // Legacy scalar slots for custom themes. The stock theme consumes LabelTextStyle.
             public static readonly MaterialTokenKey<FontFamily> LabelTextFont = new("md.comp.button-medium.label-text.font");
             public static readonly MaterialTokenKey<double> LabelTextSize = new("md.comp.button-medium.label-text.size");
             public static readonly MaterialTokenKey<FontWeight> LabelTextWeight = new("md.comp.button-medium.label-text.weight");
@@ -187,6 +194,7 @@ public static partial class MaterialTokens
         /// <summary><c>md.comp.button-large.*</c> — large button metrics (96dp).</summary>
         public static class ButtonLarge
         {
+            public static readonly MaterialTokenKey<TextStyle> LabelTextStyle = new("md.comp.button-large.label-text.style");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.button-large.container.height");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.button-large.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.button-large.container.shape-square");
@@ -196,6 +204,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.button-large.icon-label-space");
             public static readonly MaterialTokenKey<Thickness> OutlinedOutlineWidth = new("md.comp.button-large.outlined-outline-width");
 
+            // Legacy scalar slots for custom themes. The stock theme consumes LabelTextStyle.
             public static readonly MaterialTokenKey<FontFamily> LabelTextFont = new("md.comp.button-large.label-text.font");
             public static readonly MaterialTokenKey<double> LabelTextSize = new("md.comp.button-large.label-text.size");
             public static readonly MaterialTokenKey<FontWeight> LabelTextWeight = new("md.comp.button-large.label-text.weight");
@@ -206,6 +215,7 @@ public static partial class MaterialTokens
         /// <summary><c>md.comp.button-xlarge.*</c> — extra large button metrics (136dp).</summary>
         public static class ButtonXLarge
         {
+            public static readonly MaterialTokenKey<TextStyle> LabelTextStyle = new("md.comp.button-xlarge.label-text.style");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.button-xlarge.container.height");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.button-xlarge.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.button-xlarge.container.shape-square");
@@ -215,6 +225,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.button-xlarge.icon-label-space");
             public static readonly MaterialTokenKey<Thickness> OutlinedOutlineWidth = new("md.comp.button-xlarge.outlined-outline-width");
 
+            // Legacy scalar slots for custom themes. The stock theme consumes LabelTextStyle.
             public static readonly MaterialTokenKey<FontFamily> LabelTextFont = new("md.comp.button-xlarge.label-text.font");
             public static readonly MaterialTokenKey<double> LabelTextSize = new("md.comp.button-xlarge.label-text.size");
             public static readonly MaterialTokenKey<FontWeight> LabelTextWeight = new("md.comp.button-xlarge.label-text.weight");

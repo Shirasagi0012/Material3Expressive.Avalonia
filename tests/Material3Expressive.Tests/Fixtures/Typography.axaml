@@ -1,0 +1,29 @@
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <StackPanel.Resources>
+    <m3:TextStyle x:Key="Custom" FontSize="25" FontWeight="Bold" LineHeight="31" />
+  </StackPanel.Resources>
+  <StackPanel.Styles>
+    <Style Selector="TextBlock.styled">
+      <Setter Property="m3:MaterialText.Style"
+              Value="{m3:TextStyle BasedOn={m3:Typography LabelLarge}, FontWeight=Bold}" />
+    </Style>
+  </StackPanel.Styles>
+  <TextBlock x:Name="Styled" Classes="styled" Text="From setter" />
+  <TextBlock x:Name="Sizing" FontSize="26" IsVisible="False" />
+  <TextBlock x:Name="Bound" Text="Bound fields"
+             m3:MaterialText.Style="{m3:TextStyle BasedOn={m3:Typography BodyLarge}, FontSize={Binding #Sizing.FontSize}, FontFamily=Roboto, FontStyle=Italic, FontStretch=Condensed, TextAlignment=Center, Foreground=Green}" />
+  <TextBlock x:Name="Role" Text="Role" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+  <TextBlock x:Name="Derived" Text="Derived"
+             m3:MaterialText.Style="{m3:TextStyle BasedOn={m3:Typography TitleLarge}, FontWeight=Bold}" />
+  <TextBlock x:Name="Resource" Text="Resource" m3:MaterialText.Style="{StaticResource Custom}" />
+  <TextBlock x:Name="Colored" Text="Dynamic resource and token"
+             m3:MaterialText.Style="{m3:TextStyle BasedOn={DynamicResource Custom}, Foreground={m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}}" />
+  <StackPanel m3:MaterialText.DefaultStyle="{m3:Typography BodyLarge}">
+    <StackPanel>
+      <m3:MaterialText.DefaultStyle><m3:TextStyle FontWeight="Bold" /></m3:MaterialText.DefaultStyle>
+      <TextBlock x:Name="Inherited" Text="Inherited" />
+    </StackPanel>
+  </StackPanel>
+</StackPanel>

@@ -71,6 +71,7 @@ internal static class ButtonThemeFixture
             RequestedThemeVariant = ThemeVariant.Light,
         };
         var styles = LoadButtonStyles();
+        window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Foundation/Typography/Typography.axaml")));
         window.Styles.Add(styles);
 
         button = new Button { Content = "OK" };

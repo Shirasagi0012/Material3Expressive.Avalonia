@@ -19,8 +19,8 @@
     <PackageVersion Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="ComposeAnimation.Avalonia" Version="0.2.0-alpha.1" />
-    <PackageVersion Include="ComposeAnimation.TestSupport" Version="0.2.0-alpha.1" />
+    <PackageVersion Include="ComposeAnimation.Avalonia" Version="0.2.1-alpha" />
+    <PackageVersion Include="ComposeAnimation.TestSupport" Version="0.2.1-alpha" />
     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
     <PackageVersion Include="PropertyGenerator.Avalonia" Version="1.3.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />

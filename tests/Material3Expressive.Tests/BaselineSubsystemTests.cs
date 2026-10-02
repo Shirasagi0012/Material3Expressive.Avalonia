@@ -152,10 +152,10 @@ public class BaselineSubsystemTests
     {
         var source = new TypographyTokenSource();
 
-        Assert.Equal(16d, Get<double>(source, MaterialTokens.Sys.TypeScale.BodyLarge.Size));
+        Assert.Equal(16d, Assert.IsType<double>(TokenScan.Resolve(HostIn(source), MaterialTokens.Sys.TypeScale.BodyLarge.Size)));
         Assert.Equal(FontWeight.Regular, Get<FontWeight>(source, MaterialTokens.Sys.TypeScale.BodyLarge.Weight));
-        Assert.Equal(0.5d, Get<double>(source, MaterialTokens.Sys.TypeScale.BodyLarge.LetterSpacing));
-        Assert.Equal(24d, Get<double>(source, MaterialTokens.Sys.TypeScale.BodyLarge.LineHeight));
+        Assert.Equal(0.5d, Assert.IsType<double>(TokenScan.Resolve(HostIn(source), MaterialTokens.Sys.TypeScale.BodyLarge.LetterSpacing)));
+        Assert.Equal(24d, Assert.IsType<double>(TokenScan.Resolve(HostIn(source), MaterialTokens.Sys.TypeScale.BodyLarge.LineHeight)));
     }
 
     [AvaloniaFact]
@@ -167,7 +167,7 @@ public class BaselineSubsystemTests
         Assert.Equal(FontWeight.Bold, Get<FontWeight>(source, MaterialTokens.Sys.TypeScale.TitleMediumEmphasized.Weight));
         Assert.Equal(FontWeight.Bold, Get<FontWeight>(source, MaterialTokens.Sys.TypeScale.LabelMediumEmphasized.Weight));
         // Emphasized roles keep the base metrics.
-        Assert.Equal(14d, Get<double>(source, MaterialTokens.Sys.TypeScale.BodyMediumEmphasized.Size));
+        Assert.Equal(14d, Assert.IsType<double>(TokenScan.Resolve(HostIn(source), MaterialTokens.Sys.TypeScale.BodyMediumEmphasized.Size)));
     }
 
     [AvaloniaFact]

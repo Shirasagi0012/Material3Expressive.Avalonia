@@ -36,7 +36,7 @@ internal static class TokenScan
         foreach (var key in facadeSections.SelectMany(KeysUnder))
         {
             Assert.True(source.TryGetToken(key, null, out var value), $"miss: {key.DebugName}");
-            if (value is TokenRef or WithAlpha or SpringSpecRef)
+            if (value is TokenRef or WithAlpha or SpringSpecRef or TextStyleRef or TextUnit)
                 continue;
             Assert.True(
                 key.ValueType.IsInstanceOfType(value),

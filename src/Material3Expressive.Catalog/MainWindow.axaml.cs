@@ -12,7 +12,7 @@ public partial class MainWindow : Window
     {
         VisualAnimationScope.Initialize(this);
         InitializeComponent();
-        Animated.SetDurationScale(this, 4);
+        // Animated.SetDurationScale(this, 4);
     }
 
     private void OnDestinationClick(object? sender, RoutedEventArgs e)

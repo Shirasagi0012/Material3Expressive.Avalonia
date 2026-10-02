@@ -2,6 +2,8 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation.Typography;
+using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Foundation.Tokens;
 
@@ -18,8 +20,8 @@ internal static class TokenResolver
 {
     /// <summary>
     /// Cycles are bounded by a fixed hop budget: a chain follows at most this many
-    /// TokenRef/WithAlpha/SpringSpecRef references. Material's real chains are component →
-    /// system → reference (2–3 hops), so exceeding the budget means a cycle.
+    /// references/derivations. The typography chain can occupy all five steps:
+    /// component → aggregate → em → sp → font scale. Longer chains fail like cycles.
     /// </summary>
     private const int MaxHops = 5;
 
@@ -51,6 +53,21 @@ internal static class TokenResolver
 
                 case SpringSpecRef specRef:
                     return TryEvaluateSpringSpec(host, specRef, theme, hopsLeft, out value);
+
+                case TextStyleRef styleRef:
+                    return TryEvaluateTextStyle(host, styleRef, theme, hopsLeft, out value);
+
+                case TextUnit unit:
+                    value = null;
+                    var factorKey = unit.FontSize ?? MaterialTokens.Sys.TypeScale.FontScale;
+                    if (!TryResolveCore(host, factorKey, theme, hopsLeft, out var factorValue)
+                        || factorValue is not double factor || !double.IsFinite(factor) || factor <= 0)
+                        return false;
+                    var dip = unit.Value * factor;
+                    if (!double.IsFinite(dip))
+                        return false;
+                    value = dip;
+                    return true;
 
                 default:
                     value = candidate;
@@ -85,6 +102,23 @@ internal static class TokenResolver
 
         var alpha = (byte)Math.Round(Math.Clamp(opacity, 0.0, 1.0) * color.A);
         value = Color.FromArgb(alpha, color.R, color.G, color.B);
+        return true;
+    }
+
+    private static bool TryEvaluateTextStyle(IResourceHost host, TextStyleRef reference, ThemeVariant? theme, int hopsLeft, out object? value)
+    {
+        value = null;
+        if (!TryResolveCore(host, reference.Font, theme, hopsLeft, out var font) || font is not FontFamily family
+            || !TryResolveCore(host, reference.Size, theme, hopsLeft, out var size) || size is not double fontSize
+            || !TryResolveCore(host, reference.Weight, theme, hopsLeft, out var weight) || weight is not FontWeight fontWeight
+            || !TryResolveCore(host, reference.LetterSpacing, theme, hopsLeft, out var tracking) || tracking is not double letterSpacing
+            || !TryResolveCore(host, reference.LineHeight, theme, hopsLeft, out var height) || height is not double lineHeight)
+            return false;
+        value = new TextStyle
+        {
+            FontFamily = family, FontSize = fontSize, FontWeight = fontWeight,
+            LetterSpacing = letterSpacing, LineHeight = lineHeight,
+        };
         return true;
     }
 

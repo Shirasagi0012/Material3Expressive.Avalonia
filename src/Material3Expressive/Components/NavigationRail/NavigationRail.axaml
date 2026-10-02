@@ -64,11 +64,7 @@
             <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" />
             <Border RenderOptions.RequiresFullOpacityHandling="True">
               <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Label}" ContentTemplate="{TemplateBinding LabelTemplate}"
-                FontFamily="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.Font}}"
-                FontSize="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.Size}}"
-                FontWeight="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.Weight}}"
-                LetterSpacing="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.LetterSpacing}}"
-                LineHeight="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelMedium.LineHeight}}" TextWrapping="Wrap" />
+                m3:MaterialText.DefaultStyle="{m3:Typography LabelMedium}" TextWrapping="Wrap" />
             </Border>
             <m3:MaterialSurface x:Name="PART_IndicatorRipple" Background="Transparent"
                 TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}"

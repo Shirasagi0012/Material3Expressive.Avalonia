@@ -30,9 +30,7 @@
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContentColor}}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
-      <Setter Property="FontFamily" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextFont}}" />
-      <Setter Property="FontSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextSize}}" />
-      <Setter Property="FontWeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextWeight}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -68,8 +66,7 @@
                                 HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                 TextWrapping="Wrap"
-                                LetterSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextTracking}}"
-                                LineHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextLineHeight}}" />
+                                m3:TextStyleHost.IsEnabled="True" />
             </m3:MaterialSurface>
           </m3:ButtonLayout>
         </ControlTemplate>
@@ -101,9 +98,7 @@
            width is only consumed by the outlined theme, which carries its own per-size override. -->
       <Style Selector="^.xsmall">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContentPadding}}" />
-        <Setter Property="FontFamily" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextFont}}" />
-        <Setter Property="FontSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextSize}}" />
-        <Setter Property="FontWeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextWeight}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.xsmall /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerHeight}}" />
@@ -112,16 +107,10 @@
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerShapeRound}}" />
         <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.PressedContainerShape}}" />
       </Style>
-      <Style Selector="^.xsmall /template/ ContentPresenter">
-        <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextTracking}}" />
-        <Setter Property="LineHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextLineHeight}}" />
-      </Style>
 
       <Style Selector="^.medium">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContentPadding}}" />
-        <Setter Property="FontFamily" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextFont}}" />
-        <Setter Property="FontSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextSize}}" />
-        <Setter Property="FontWeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextWeight}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.medium /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerHeight}}" />
@@ -130,16 +119,10 @@
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeRound}}" />
         <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.PressedContainerShape}}" />
       </Style>
-      <Style Selector="^.medium /template/ ContentPresenter">
-        <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextTracking}}" />
-        <Setter Property="LineHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextLineHeight}}" />
-      </Style>
 
       <Style Selector="^.large">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContentPadding}}" />
-        <Setter Property="FontFamily" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextFont}}" />
-        <Setter Property="FontSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextSize}}" />
-        <Setter Property="FontWeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextWeight}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.large /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerHeight}}" />
@@ -148,16 +131,10 @@
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeRound}}" />
         <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.PressedContainerShape}}" />
       </Style>
-      <Style Selector="^.large /template/ ContentPresenter">
-        <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextTracking}}" />
-        <Setter Property="LineHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextLineHeight}}" />
-      </Style>
 
       <Style Selector="^.xlarge">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContentPadding}}" />
-        <Setter Property="FontFamily" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextFont}}" />
-        <Setter Property="FontSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextSize}}" />
-        <Setter Property="FontWeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextWeight}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.xlarge /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerHeight}}" />
@@ -165,10 +142,6 @@
       <Style Selector="^.xlarge /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeRound}}" />
         <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.PressedContainerShape}}" />
-      </Style>
-      <Style Selector="^.xlarge /template/ ContentPresenter">
-        <Setter Property="LetterSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextTracking}}" />
-        <Setter Property="LineHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextLineHeight}}" />
       </Style>
     </ControlTheme>
 
