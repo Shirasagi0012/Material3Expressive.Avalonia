@@ -1,21 +1,27 @@
 package parity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorProducer
+import androidx.compose.ui.graphics.colorspace.ColorSpaces
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
 // Ordinary holders. Recording coordinates or text layouts must not invalidate composition.
 class Probe {
+    private val density=ComposeHost.RenderScale.toFloat()
     var coordinates:LayoutCoordinates?=null
     var layout:TextLayoutResult?=null
     fun modifier()=Modifier.onGloballyPositioned { coordinates=it }
     fun geometry(c:LayoutCoordinates=checkNotNull(coordinates)):List<Measurement> {
         val corners=listOf(Offset.Zero,Offset(c.size.width.toFloat(),0f),Offset(c.size.width.toFloat(),c.size.height.toFloat()),Offset(0f,c.size.height.toFloat()))
-            .map { c.localToRoot(it) }
+            .map { c.localToRoot(it)/density }
         val left=corners.minOf { it.x }.toDouble(); val top=corners.minOf { it.y }.toDouble()
-        return listOf(vector("box","rect",listOf(left,top,corners.maxOf { it.x }-left,corners.maxOf { it.y }-top),"dip","scene","geometry","layout.box.aabb.unclipped","LayoutCoordinates.size + localToRoot"),
-            vector("corners","quad",corners.flatMap { listOf(it.x.toDouble(),it.y.toDouble()) },"dip","scene","geometry","layout.box.corners.unclipped","LayoutCoordinates.size + localToRoot"),
-            vector("size","point",listOf(c.size.width.toDouble(),c.size.height.toDouble()),"dip","local","geometry","layout.box.local-size","LayoutCoordinates.size",listOf("width","height")))
+        return listOf(vector("box","rect",listOf(left,top,corners.maxOf { it.x }-left,corners.maxOf { it.y }-top),"dip","scene","geometry","layout.box.aabb.unclipped","derived: (LayoutCoordinates.size + localToRoot) / density"),
+            vector("corners","quad",corners.flatMap { listOf(it.x.toDouble(),it.y.toDouble()) },"dip","scene","geometry","layout.box.corners.unclipped","derived: (LayoutCoordinates.size + localToRoot) / density"),
+            vector("size","point",listOf(c.size.width.toDouble()/density,c.size.height.toDouble()/density),"dip","local","geometry","layout.box.local-size","derived: LayoutCoordinates.size / density",listOf("width","height")))
     }
     fun textPoint(id:String,parentId:String?):ProbePoint {
         val t=checkNotNull(layout); val style=t.layoutInput.style
@@ -27,9 +33,31 @@ class Probe {
             unavailable("resolvedFonts","text","strings","none","none","TextLayoutResult does not expose resolved font families.","text.resolved-font-families"),
             unavailable("drawOrigin","text","point","dip","scene","No draw-origin reader installed."),
             unavailable("glyphInk","text","rect","dip","text","No glyph ink reader installed; caret boxes are not ink boxes."))).toMutableList()
-        val color=style.color
-        fields+=vector("color","color",listOf(color.red.toDouble(),color.green.toDouble(),color.blue.toDouble(),color.alpha.toDouble()),
-            "srgb","none","text","text.foreground.solid-srgba","TextLayoutResult.layoutInput.style.color")
+        // onTextLayout can retain an older draw style after a color-only update. Read the
+        // current node consumed by draw instead (fixed Core TextAnnotatedStringNode.draw).
+        val layoutNode=checkNotNull(field(checkNotNull(coordinates),"layoutNode"))
+        val head=checkNotNull(field(checkNotNull(field(layoutNode,"nodes")),"head"))
+        val textNodes=generateSequence(head) { field(it,"child") }
+            .filter { it.javaClass.name=="androidx.compose.foundation.text.modifiers.TextAnnotatedStringNode" }.toList()
+        fields+=if(textNodes.size!=1) {
+            unavailable("color","text","color","srgb","none",
+                "Current foreground reader requires one TextAnnotatedStringNode; found ${textNodes.size}.","text.foreground.solid-srgba")
+        } else {
+            val textNode=textNodes.single()
+            val currentStyle=field(textNode,"style") as TextStyle
+            if(currentStyle.brush!=null) {
+                unavailable("color","text","color","srgb","none","Current text paint uses a brush, not a solid color.","text.foreground.solid-srgba")
+            } else {
+                val overrideColor=(field(textNode,"overrideColor") as ColorProducer?)?.invoke() ?: Color.Unspecified
+                val color=when { overrideColor.isSpecified -> overrideColor; currentStyle.color.isSpecified -> currentStyle.color; else -> Color.Black }
+                if(color.colorSpace!=ColorSpaces.Srgb) {
+                    unavailable("color","text","color","srgb","none","Current solid text color is not sRGB.","text.foreground.solid-srgba")
+                } else {
+                    vector("color","color",listOf(color.red.toDouble(),color.green.toDouble(),color.blue.toDouble(),color.alpha.toDouble()),
+                        "srgb","none","text","text.foreground.solid-srgba","TextAnnotatedStringNode current style/overrideColor; same solid-color selection as draw")
+                }
+            }
+        }
         for(i in 0 until t.lineCount) {
             val p="line.$i."
             fields+=listOf(vector(p+"nativeRange","range",listOf(t.getLineStart(i).toDouble(),t.getLineEnd(i,visibleEnd=false).toDouble()),
@@ -41,14 +69,25 @@ class Probe {
                     (if(i+1<t.lineCount) t.getLineStart(i+1) else t.layoutInput.text.length).toDouble()),
                     "utf16","text","text","text.line.consumed-range.utf16.includes-paragraph-break.v1",
                     "derived: line start to next line start, or input length for final line; includes paragraph breaks"),
-                number(p+"top",t.getLineTop(i).toDouble(),"dip","text","text","text.line.top"),
-                number(p+"height",(t.getLineBottom(i)-t.getLineTop(i)).toDouble(),"dip","text","text","text.line.height"),
-                number(p+"baseline",t.getLineBaseline(i).toDouble(),"dip","text","text","text.line.baseline"),
-                number(p+"width",(t.getLineRight(i)-t.getLineLeft(i)).toDouble(),"dip","text","text","compose.line.left-right-extent"),
+                number(p+"top",t.getLineTop(i).toDouble()/density,"dip","text","text","text.line.top","derived: TextLayoutResult.getLineTop / density"),
+                number(p+"height",(t.getLineBottom(i)-t.getLineTop(i)).toDouble()/density,"dip","text","text","text.line.height","derived: (TextLayoutResult.getLineBottom - getLineTop) / density"),
+                number(p+"baseline",t.getLineBaseline(i).toDouble()/density,"dip","text","text","text.line.baseline","derived: TextLayoutResult.getLineBaseline / density"),
+                number(p+"width",(t.getLineRight(i)-t.getLineLeft(i)).toDouble()/density,"dip","text","text","compose.line.left-right-extent","derived: (TextLayoutResult.getLineRight - getLineLeft) / density"),
                 flag(p+"ellipsized",t.isLineEllipsized(i),"text","text.line.ellipsized"))
         }
         return ProbePoint(id,"text-block",parentId,fields)
     }
+}
+
+// Fixed-runtime passive readers share this lookup. Changed internal fields fail explicitly.
+internal fun field(value:Any,name:String):Any? {
+    var type:Class<*>?=value.javaClass
+    while(type!=null) {
+        val f=type.declaredFields.firstOrNull { it.name==name }
+        if(f!=null) { f.isAccessible=true; return f.get(value) }
+        type=type.superclass
+    }
+    error("Missing field $name on ${value.javaClass.name}")
 }
 
 // Canonical conversion is usable without the scene host, including author-owned raster captures.

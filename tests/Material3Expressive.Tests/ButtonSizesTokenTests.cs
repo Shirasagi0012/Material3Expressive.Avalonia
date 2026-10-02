@@ -55,12 +55,13 @@ public class ButtonSizesTokenTests
         Assert.Equal(96d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.ButtonLarge.ContainerHeight)));
         Assert.Equal(136d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.ButtonXLarge.ContainerHeight)));
 
-        // Horizontal-only padding; the template centers content vertically.
-        Assert.Equal(new Thickness(16, 0, 16, 0), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonXSmall.ContentPadding)));
-        Assert.Equal(new Thickness(16, 0, 16, 0), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonSmall.ContentPadding)));
-        Assert.Equal(new Thickness(24, 0, 24, 0), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonMedium.ContentPadding)));
-        Assert.Equal(new Thickness(48, 0, 48, 0), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonLarge.ContentPadding)));
-        Assert.Equal(new Thickness(64, 0, 64, 0), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonXLarge.ContentPadding)));
+        // ButtonDefaults.contentPaddingFor: no icon flags, precision-pointer sizing false.
+        // These are derived compound defaults, including the extra-small correction, not raw tokens.
+        Assert.Equal(new Thickness(12, 6), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonXSmall.ContentPadding)));
+        Assert.Equal(new Thickness(16, 10), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonSmall.ContentPadding)));
+        Assert.Equal(new Thickness(24, 16), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonMedium.ContentPadding)));
+        Assert.Equal(new Thickness(48, 32), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonLarge.ContentPadding)));
+        Assert.Equal(new Thickness(64, 48), Assert.IsType<Thickness>(TokenScan.Resolve(host, Comp.ButtonXLarge.ContentPadding)));
 
         Assert.Equal(20d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.ButtonSmall.IconSize)));
         Assert.Equal(24d, Assert.IsType<double>(TokenScan.Resolve(host, Comp.ButtonMedium.IconSize)));

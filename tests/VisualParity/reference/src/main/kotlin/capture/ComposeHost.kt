@@ -15,11 +15,12 @@ import org.jetbrains.skia.*
 import java.io.File
 import kotlinx.serialization.json.*
 class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoCloseable {
+    companion object { const val RenderScale=4 }
     val scheduler=TestCoroutineScheduler()
     val scope=CoroutineScope(UnconfinedTestDispatcher(scheduler) + CoroutineExceptionHandler { _,e -> writer.errors+=e.stackTraceToString() })
     val recomposer:FrameRecomposer
     val scene:ComposeScene
-    val surface=Surface.makeRasterN32Premul(width,height)
+    val surface=Surface.makeRasterN32Premul(Math.multiplyExact(width,RenderScale),Math.multiplyExact(height,RenderScale))
     var timeUs:Long=-2000; private set
     var frameTimeUs:Long?=null; private set
     fun advanceTo(time:Long) {
@@ -30,10 +31,10 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoC
     var pressed=false
     init {
         registerSkikoComposeImplementation(); recomposer=FrameRecomposer(scope.coroutineContext)
-        scene=CanvasLayersComposeScene(recomposer,Density(1f),size=IntSize(width,height))
+        scene=CanvasLayersComposeScene(recomposer,Density(RenderScale.toFloat()),size=IntSize(surface.width,surface.height))
     }
     fun mount(content:@Composable ()->Unit) {
-        scene.setContent(content=content); draw(); writer.record(timeUs,"mount","${surface.width}x${surface.height} DIP; density=1; no animation frame")
+        scene.setContent(content=content); draw(); writer.record(timeUs,"mount","${surface.width/RenderScale}x${surface.height/RenderScale} DIP; density=$RenderScale; no animation frame")
     }
     fun frame(time:Long) {
         require(time>=timeUs); timeUs=time
@@ -51,7 +52,7 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoC
         if(operation=="down") pressed=true
         if(operation=="up") pressed=false
         scene.sendPointerEvent(when(operation) { "down"->PointerEventType.Press; "up"->PointerEventType.Release; "move"->PointerEventType.Move; else->error(operation) },
-            position, buttons=PointerButtons(isPrimaryPressed=pressed), timeMillis=1000+timeUs.coerceAtLeast(0)/1000,
+            position*RenderScale.toFloat(), buttons=PointerButtons(isPrimaryPressed=pressed), timeMillis=1000+timeUs.coerceAtLeast(0)/1000,
             type=PointerType.Mouse, button=if(operation=="down" || operation=="up") PointerButton.Primary else null)
         scheduler.runCurrent(); writer.record(timeUs,"input","$operation (${position.x},${position.y})",buildJsonObject {
             put("action",operation);put("x",position.x);put("y",position.y);put("unit","dip");put("space","scene");put("pointerType","mouse");

@@ -32,9 +32,16 @@ public sealed record RasterRegion(
     string PointId,
     int[] Bounds,
     PixelMetrics Metrics,
-    string Basis = "union of expected/actual layout.box.aabb.unclipped; outward rounded and canvas clipped",
+    string Basis = "union of expected/actual layout.box.aabb.unclipped; scaled by density, outward rounded and canvas clipped",
     string Space = "scene-px",
     string Contribution = "full"
+);
+
+public sealed record RasterToleranceRegion(string? PointId, int[] Bounds, int MaximumChannelDelta, double MeanMaximumChannelDelta, bool Accepted);
+
+public sealed record RasterTolerance(
+    string Status, string Filter, int Scale, int MaximumChannelDeltaLimit, double MeanMaximumChannelDeltaLimit,
+    RasterToleranceRegion Full, RasterToleranceRegion[] Regions
 );
 
 public sealed record RasterDifference(
@@ -46,7 +53,9 @@ public sealed record RasterDifference(
     RasterRegion[]? Regions = null,
     string? DifferenceImage = null,
     string? Reason = null,
-    ComparisonIssue? Issue = null
+    ComparisonIssue? Issue = null,
+    string? ExactStatus = null,
+    RasterTolerance? Tolerance = null
 );
 
 public sealed record SampleDifference(
@@ -65,7 +74,7 @@ public sealed record SampleDifference(
     ComparisonIssue? Issue = null
 );
 
-public sealed record Coverage(int Equal, int Different, int NotCompared);
+public sealed record Coverage(int Equal, int Different, int NotCompared, int WithinTolerance = 0);
 
 public sealed record Comparison(
     int SchemaVersion,

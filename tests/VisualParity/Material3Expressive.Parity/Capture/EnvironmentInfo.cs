@@ -14,7 +14,7 @@ public static class EnvironmentInfo
         {
             ["platform"] = OperatingSystem.IsWindows() ? "windows" : OperatingSystem.IsLinux() ? "linux" : "macos",
             ["architecture"] = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant(),
-            ["density"] = "1",
+            ["density"] = AvaloniaHost.RenderScale.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["fontScale"] = "1",
             ["colorSpace"] = "sRGB",
             ["fontSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto.ttf")),

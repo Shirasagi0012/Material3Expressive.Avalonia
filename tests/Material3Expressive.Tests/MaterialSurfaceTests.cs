@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml;
@@ -71,6 +72,32 @@ public class MaterialSurfaceTests
         Assert.Equal(0d, surface.ShadowElevation);
         Assert.Null(surface.ShadowColor);
         Assert.Null(surface.StateLayerBrush);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(3, 3, 3, 3)]
+    [InlineData(2, 4, 6, 8)]
+    public void BorderThickness_DoesNotConsumeContentLayout(double left, double top, double right, double bottom)
+    {
+        var child = new Border { MinWidth = 30, MinHeight = 12 };
+        var surface = new MaterialSurface
+        {
+            Padding = new Thickness(5, 7, 11, 13),
+            BorderThickness = new Thickness(left, top, right, bottom),
+            BorderBrush = Brushes.Red,
+            Child = child,
+        };
+
+        surface.Measure(new Size(200, 200));
+        Assert.Equal(new Size(46, 32), surface.DesiredSize);
+        surface.Arrange(new Rect(0, 0, 70, 50));
+        Assert.Equal(new Rect(5, 7, 54, 30), child.Bounds);
+
+        surface.BorderThickness = new Thickness(10);
+        surface.Measure(new Size(200, 200));
+        surface.Arrange(new Rect(0, 0, 70, 50));
+        Assert.Equal(new Size(46, 32), surface.DesiredSize);
+        Assert.Equal(new Rect(5, 7, 54, 30), child.Bounds);
     }
 
     [AvaloniaFact]

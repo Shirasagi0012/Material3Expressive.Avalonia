@@ -35,11 +35,12 @@ const totals = computed(() =>
   run.value?.cases.reduce(
     (n, c) => ({
       equal: n.equal + c.coverage.equal,
+      withinTolerance: n.withinTolerance + c.coverage.withinTolerance,
       different: n.different + c.coverage.different,
       notCompared: n.notCompared + c.coverage.notCompared,
       errors: n.errors + c.errors,
     }),
-    { equal: 0, different: 0, notCompared: 0, errors: 0 },
+    { equal: 0, withinTolerance: 0, different: 0, notCompared: 0, errors: 0 },
   ),
 )
 const suites = computed(() =>
@@ -115,7 +116,9 @@ onUnmounted(() => clearInterval(timer))
                 ? 'Execution errors'
                 : key === 'equal'
                   ? 'Equal'
-                  : 'Different'
+                  : key === 'withinTolerance'
+                    ? 'Within tolerance'
+                    : 'Different'
           }}</span
           ><b :class="key === 'errors' ? 'error' : key">{{ count }}</b>
         </div>
@@ -132,6 +135,7 @@ onUnmounted(() => clearInterval(timer))
           ><select v-model="status" aria-label="Status">
             <option value="">All statuses</option>
             <option>equal</option>
+            <option>withinTolerance</option>
             <option>different</option>
             <option>notCompared</option>
             <option>error</option></select
@@ -144,6 +148,7 @@ onUnmounted(() => clearInterval(timer))
                 <th>Case</th>
                 <th>Samples</th>
                 <th>Equal</th>
+                <th>Within tolerance</th>
                 <th>Different</th>
                 <th>Not compared</th>
                 <th>Errors</th>
@@ -162,6 +167,7 @@ onUnmounted(() => clearInterval(timer))
                     <span
                       v-for="k in [
                         'equal',
+                        'withinTolerance',
                         'different',
                         'notCompared',
                       ] as const"
@@ -170,10 +176,12 @@ onUnmounted(() => clearInterval(timer))
                       :style="{
                         width:
                           (c.coverage.equal +
+                          c.coverage.withinTolerance +
                           c.coverage.different +
                           c.coverage.notCompared
                             ? (c.coverage[k] /
                                 (c.coverage.equal +
+                                  c.coverage.withinTolerance +
                                   c.coverage.different +
                                   c.coverage.notCompared)) *
                               100
@@ -185,6 +193,7 @@ onUnmounted(() => clearInterval(timer))
                 </td>
                 <td>{{ c.samples }}</td>
                 <td>{{ c.coverage.equal }}</td>
+                <td>{{ c.coverage.withinTolerance }}</td>
                 <td>{{ c.coverage.different }}</td>
                 <td>{{ c.coverage.notCompared }}</td>
                 <td>{{ c.errors }}</td>

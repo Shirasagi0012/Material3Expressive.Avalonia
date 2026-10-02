@@ -14,7 +14,7 @@ public static class Program
             var command = args.FirstOrDefault() ?? "help";
             for (var i = 1; i < args.Length; i++)
             {
-                if (args[i] is "--refresh-reference" or "--require-equal") continue;
+                if (args[i] is "--refresh-reference" or "--require-equal" or "--require-match") continue;
                 if (args[i] is not ("--case" or "--family" or "--output" or "--directory"))
                     throw new ArgumentException("Unknown argument: " + args[i]);
                 if (++i >= args.Length || args[i].StartsWith("--")) throw new ArgumentException("Missing option value.");
@@ -41,7 +41,7 @@ public static class Program
             if (command is not ("list" or "run" or "self-test" or "capture-actual"))
             {
                 Console.WriteLine(
-                    "parity list|run|self-test|capture-actual [--case ID|--family FAMILY] [--output NEW-DIRECTORY] [--refresh-reference] [--require-equal]\nparity verify-reference --directory DIRECTORY\nRead overview.md and samples/*.yaml directly.");
+                    "parity list|run|self-test|capture-actual [--case ID|--family FAMILY] [--output NEW-DIRECTORY] [--refresh-reference] [--require-equal|--require-match]\nparity verify-reference --directory DIRECTORY\nRead overview.md and samples/*.yaml directly.");
                 return command == "help" ? 0 : 2;
             }
 
@@ -173,8 +173,9 @@ public static class Program
             Console.WriteLine("Run index: " + Path.Combine(output, "run.yaml"));
             return unstable || outcomes.Any(x => x.Errors.Length != 0)
                 ? 2
-                : args.Contains("--require-equal")
-                    ? outcomes.Any(x => x.Coverage.Different != 0) ? 1 : outcomes.Any(x => x.Coverage.NotCompared != 0) ? 3 : 0
+                : args.Contains("--require-equal") || args.Contains("--require-match")
+                    ? outcomes.Any(x => x.Coverage.Different != 0 || args.Contains("--require-equal") && x.Coverage.WithinTolerance != 0)
+                        ? 1 : outcomes.Any(x => x.Coverage.NotCompared != 0) ? 3 : 0
                     : 0;
         }
         catch (Exception error)

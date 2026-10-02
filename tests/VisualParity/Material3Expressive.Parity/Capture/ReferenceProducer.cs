@@ -35,6 +35,7 @@ public static class ReferenceProducer
             + System.Runtime.InteropServices.RuntimeInformation.OSDescription +
             System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture;
         identity += extraImages ? "extra-images" : "default-images";
+        identity += "\nrender-scale=" + AvaloniaHost.RenderScale;
         var key = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(identity)));
         var cache = Path.Combine(root, "artifacts/visual-parity/cache/reference", key);
         if (Directory.Exists(cache) && !refresh)
@@ -42,7 +43,8 @@ public static class ReferenceProducer
             ParityJson.Verify(cache);
             var capture = ParityJson.Read<Capture>(Path.Combine(cache, "observations.json"));
             if (capture.Runner != "compose" || capture.Errors.Length != 0 || capture.MetadataSha256 != ParityJson.Hash(input)
-                || capture.BaselineSha256 != ParityJson.Hash(Path.Combine(root, "docs/upstream-baseline.json")))
+                || capture.BaselineSha256 != ParityJson.Hash(Path.Combine(root, "docs/upstream-baseline.json"))
+                || capture.Environment.GetValueOrDefault("density") != AvaloniaHost.RenderScale.ToString())
                 throw new InvalidDataException("Cached reference identity/failure mismatch.");
             return cache;
         }

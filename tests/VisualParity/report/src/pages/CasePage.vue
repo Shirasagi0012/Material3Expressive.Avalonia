@@ -97,6 +97,7 @@ const sampleCounts = (
   Object.values(s.categories).reduce(
     (n, c) => ({
       equal: n.equal + c.equal,
+      withinTolerance: n.withinTolerance + c.withinTolerance,
       different: n.different + c.different,
       notCompared: n.notCompared + c.notCompared,
     }),
@@ -108,11 +109,12 @@ const totals = computed(() =>
       const c = sampleCounts(s)
       return {
         equal: n.equal + c.equal,
+        withinTolerance: n.withinTolerance + c.withinTolerance,
         different: n.different + c.different,
         notCompared: n.notCompared + c.notCompared,
       }
     },
-    { equal: 0, different: 0, notCompared: 0 },
+    { equal: 0, withinTolerance: 0, different: 0, notCompared: 0 },
   ),
 )
 const rawValue = computed(() =>
@@ -257,7 +259,9 @@ const environmentKeys = computed(() =>
               ? 'Not compared'
               : status === 'different'
                 ? 'Different'
-                : 'Equal'
+                : status === 'withinTolerance'
+                  ? 'Within tolerance'
+                  : 'Equal'
           }}
           <b>{{ count }}</b></span
         >

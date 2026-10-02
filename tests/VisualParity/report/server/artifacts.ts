@@ -36,11 +36,11 @@ export function artifactPlugin(roots: string[]): Plugin {
           if (source === null) continue
           const run = parse(source) as Record<string, unknown>
           if (
-            run?.schemaVersion !== 7 ||
+            run?.schemaVersion !== 8 ||
             typeof run.id !== 'string' ||
             !Array.isArray(run.cases)
           )
-            throw new Error('Run schema 7 required')
+            throw new Error('Run schema 8 required')
           const key = createHash('sha256')
             .update(directory)
             .digest('hex')
@@ -125,8 +125,8 @@ export function artifactPlugin(roots: string[]): Plugin {
           const manifest = JSON.parse(
             await readFile(resolve(caseDirectory, 'manifest.json'), 'utf8'),
           )
-          if (manifest.schemaVersion !== 7)
-            throw new Error('Result schema 7 required')
+          if (manifest.schemaVersion !== 8)
+            throw new Error('Result schema 8 required')
           const name = parts.slice(2).join('/')
           if (
             name !== 'manifest.json' &&

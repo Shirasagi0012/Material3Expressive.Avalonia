@@ -3,7 +3,7 @@
 采集 Compose 与 Avalonia 的真实事实，按身份和语义精确比较。
 公开结果采用 **用例概览 → 单个采样点详情** 两层结构：运行时直接输出概览，
 Agent 通过文件系统读取 Markdown 与 YAML，无需调用查询脚本。
-系统不推断原因，不用容差、配准或文字遮罩消除差异。
+系统不推断原因，不进行配准或文字遮罩；结构化事实精确比较，Raster 另有明确的降采样容差判定，原始差异保留。
 
 ## 阅读入口
 
@@ -86,7 +86,7 @@ rg -n -C 8 'cornerRadii:|status: different' "$caseDirectory/samples"
 
 ## 运行
 
-当前执行参考为 Windows x64、density=1、fontScale=1。需要 .NET 10、JDK（本机 JDK 25）、
+当前执行参考为 Windows x64，固定 density=4、fontScale=1。需要 .NET 10、JDK（本机 JDK 25）、
 锁定 Gradle 依赖及项目 README 中的本地 ComposeAnimation NuGet 包。
 参考源码与制品版本按 [`upstream-baseline.json`](../../docs/upstream-baseline.json) 固定。
 YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行；`<case-id>` 和 `<suite>` 替换为 list 输出的实际身份。
@@ -111,11 +111,21 @@ verify-reference 不自动构建，首次使用前执行 build。
 
 输出默认在 `artifacts/visual-parity/runs/<run>/`；`--output <new-directory>` 指定新目录，不覆盖已有目录。
 每个用例结束即在终端打印其完整概览及绝对路径。`run` 生成结果成功返回 **0**，即使存在差异。
-`--require-equal` 显式启用严格门禁：存在差异返回 **1**，只有未比较项返回 **3**；执行错误优先返回 **2**。
+`--require-match` 接受 equal 与 withinTolerance；存在 different 返回 **1**，只有未比较项返回 **3**。
+`--require-equal` 要求原始事实完全相等，withinTolerance 也返回 **1**；两种门禁均以执行错误 **2** 优先。
 `capture-actual` 的参考缺失项目为 notCompared。门禁仅覆盖提交的事实，不证明测量没有遗漏。
 
 `self-test` 另做两端重复捕获和额外被动截图检查，结果保存到 `case.yaml` 的 repeatability，
 不稳定返回 2。普通 run 不自动重复捕获。自检稳定不表示组件一致。
+
+`run`、`self-test`、`capture-actual` 均固定使用双端真实 4× DPI 渲染，无倍率选项：
+320×240 DIP 的场景生成 1280×960 PNG，保留原始图和精确差分。Raster 另外用固定 4×4 块平均得到
+1× 比较数据：整图及每个非空点区域均须满足最大通道差 ≤20、平均逐像素最大通道差 ≤0.2（0～255）。
+原图不同但满足容差时标为 withinTolerance，不称为 equal；结构化事实与重复性自检仍精确比较。
+算法、区域边界与透明通道约定见 [MEASUREMENTS](MEASUREMENTS.md#raster-容差判定)。
+布局与输入仍使用 DIP，文字字号仍使用 sp；Compose 的物理像素测量换算回 DIP，
+图像取色与 ROI 使用实际像素。倍率记入 environment.yaml 的 density 并参与参考缓存身份；
+不同 density/fontScale 的图像不进行像素比较。提高 DPI 可能改变布局取整及字体度量。
 
 Avalonia 宿主的 `Draw()` 会处理 Dispatcher 工作以及待提交、待渲染的合成批次，
 包括渲染回调产生的后续提交；队列暂时为空不代表画面已经更新。它不发送动画帧，
@@ -130,7 +140,7 @@ Avalonia 12.1.2 和 UI 线程渲染模式，局部读取 `Compositor` 的内部�
 
 ### 文件版本
 
-公开结果与 run 索引为 **schema 7**，用例元数据为 **schema 4**（suite/scenario 与必需的对象 config），双端采集协议为 **schema 4**。
+公开结果与 run 索引为 **schema 8**（新增 withinTolerance 与 Raster 容差证据），用例元数据为 **schema 4**（suite/scenario 与必需的对象 config），双端采集协议为 **schema 4**。
 只支持当前格式，不读取旧元数据或旧结果，没有升级、回退或 `compare` 转换入口；旧产物需要重新运行生成。
 旧 `serve` / `render` 命令、HTML 模板及 .NET 报告服务器已删除，不提供兼容入口。
 case manifest 包含所有权威数据和图像，排除 manifest 本身和派生的 overview.md。

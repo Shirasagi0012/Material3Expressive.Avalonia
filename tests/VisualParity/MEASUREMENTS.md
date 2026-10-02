@@ -1,9 +1,9 @@
 # 测量语义与文件读取
 
-本系统呈现提交的事实与差异，不推断来源、不修复数据、不用容差产生等价结论。
+本系统呈现提交的事实与差异，不推断来源、不修复数据；Raster 的容差接受与原始事实完全相等分开记录。
 先读取 `overview.md`，再读取 `samples/<序号>-<ID>.yaml`。完整数据在文件系统中，
 运行与目录结构见 [README](README.md)，编写入口和时钟边界见 [AUTHORING](AUTHORING.md)。
-本文描述结果 schema 7；版本迁移统一见 README。
+本文描述结果 schema 8；版本迁移统一见 README。
 
 ## 采样文件
 
@@ -60,6 +60,9 @@ Source 说明实际读数入口。`declared` 表示用例输入；`derived: ...`
 
 `layout.box.*` 表示未裁剪布局框，不是像素轮廓或命中范围。
 共享几何和文字读数器分别位于 C# `Capture/AvaloniaMeasurements.cs` 与 Kotlin `capture/Measurements.kt`。
+Compose 的 onTextLayout 结果可能保留颜色更新前的 style；颜色读数从固定 Core 的
+TextAnnotatedStringNode 当前绘制状态取得，按 brush、overrideColor、style.color 的实际绘制分支读取。
+使用 brush 绘制、非 sRGB 纯色或不支持的文字节点明确记为 unsupported；固定内部字段变化时报错，不回退到旧布局颜色。
 组件特有的形状、绘制和交互读数由用例作者按需实现，框架不提供统一组件属性采集清单。
 
 上次绘制缓存可能与动画当前值处于不同阶段；报告按各自来源陈述数据，不猜测或重算“应当画成什么”。
@@ -110,10 +113,48 @@ issue.code 是配对/比较操作的结果，不是组件故障诊断。members 
 前端 Worker 使用 fast-png 直接读取规范 PNG 的字节，保留透明像素 RGB 和半透明通道，
 避免浏览器 Canvas 预乘 Alpha 读回。原图直接引用 PNG，结构化比较统计仍以运行时记录为准；
 Worker 解码统计与记录不一致时显示错误，不静默重新判断通过。
-ROI 是同一测量点双端未裁剪布局框的并集，向外取整并裁到画布；统计的是 full 合成图，
+ROI 是同一测量点双端未裁剪布局框的并集，先按 environment.density 从 DIP 换算到像素，
+再向外取整并裁到画布；统计的是 full 合成图，
 不代表对象独立贡献，重叠区域不能相加。
 
+4× 采集保持几何、文字行位置、规范圆角和阴影 elevation 的 DIP 语义。Compose 读数器将
+原生像素值除以 density；字号、字距的 sp 值及 UTF-16 范围不缩放。Button 默认只提交
+双端定义一致的规范圆角；排查时若另行采集原生圆角，必须保留各自单位和定义，不强行配对。
+Button 的 `button.container.normalized-visual-rounded-outline` 按可见物理左上、右上、右下、左下
+记录规范半径；Avalonia 根据 Surface 到窗口的实际 x 轴反射映射角的身份，Compose 读取已解析
+布局方向的绘制轮廓。旧 `button.container.normalized-rounded-outline` 不被自动重新解释。
+当前 Button 场景无旋转，布局默认只提交 box/size，不比较框架内部局部轴导致的四角排列差异。
+Button 几何内容的 color 来自实际绘制时使用的前景色，转换为 srgba8：Compose 使用 Color.toArgb()，
+Avalonia 保留字节 RGB，并将 Color.A × Brush.Opacity 四舍五入为字节 alpha。这是绘制颜色的
+8 位表示，不是从截图读取的最终合成像素，也不是输入配置的预期颜色。
+原始 PNG、metrics.differenceBounds 和 regions.bounds 始终使用实际像素；不同 density/fontScale
+的图像标为 notCompared。报告的不同像素总数不能直接用于比较不同倍率的严重程度。
+
 报告的显示阈值只控制高亮，不改变任何底层数据。
+
+## Raster 容差判定
+
+固定 4× 捕获的 Raster 同时记录两种结果：`exactStatus` 是原始 RGBA 逐字节比较，`metrics`、
+`regions` 和差分 PNG 也保持原始 4×；`tolerance` 是派生的 1× 判定。不会覆盖或重新编码原图。
+
+- 过滤算法固定为 `box-4x4-straight-srgba8-half-up`：从画布原点划分 4×4 块，R/G/B/A 各通道
+  独立累计原始字节，以 `(sum + 8) / 16` 整数除法四舍五入为 8 位值。直接平均 sRGB 编码数值，
+  不转换线性光、不进行配准或额外模糊。alpha 与完全透明像素的 RGB 也参与；这不是背景合成或感知距离。
+- 每个 1× 像素的误差为四个通道绝对差的最大值；区域均值包含区域内所有像素，包括零误差。
+  整图与每个非空配对点区域均须同时满足 **最大值 ≤20、均值 ≤0.2**，单位为 0～255，边界包含等号。
+- `tolerance.full` 覆盖整图；`tolerance.regions` 使用现有双端布局框并集，原始像素边界除以 4 后向外取整。
+  bounds 均为 1× 比较像素坐标，空区域不参与判定，多个区域分别判定而不累加。没有有效区域时只检查整图。
+  布局区域包含该处完整合成像素，不是单个控件的独立绘制。布局框外的阴影由整图检查覆盖，
+  尚无自动推导的阴影专用区域，其平均误差可能受背景面积稀释；需要局部约束时应提交相应测量区域。
+- `tolerance` 保存算法、倍率、两个阈值及各区域的最大值、均值和 accepted。只对 density=4 且宽高
+  为 4 的整数倍的图像应用；其他可配对输入保留精确判定且没有 tolerance，不能静默按其他比例缩放。
+
+Raster `status`：原始像素相等为 `equal`；原始不同但容差接受为 `withinTolerance`；超出容差为
+`different`；无法配对为 `notCompared`。样本/用例汇总优先级为 different → notCompared →
+withinTolerance → equal，执行错误优先为 error。coverage 单独统计 withinTolerance，不计入 equal。
+结构化字段和重复性自检继续精确比较；`--require-match` 接受容差内结果，`--require-equal` 保持严格。
+
+20 / 0.2 是本轮试用阈值，不是已校准的感知一致标准；状态不自动证明差异来自抗锯齿。
 
 ## 用文件工具读取
 

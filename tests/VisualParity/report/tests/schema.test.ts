@@ -16,10 +16,10 @@ it('keeps large YAML integers exact while safe counts remain usable numbers', ()
   expect(result).toEqual({ count: 13, ticks: 9007199254740993n, label: '001' })
 })
 it('rejects old results and mismatched sample identities', () => {
-  expect(() => document('schemaVersion: 6')).toThrow('schema 7')
+  expect(() => document('schemaVersion: 6')).toThrow('schema 8')
   expect(() =>
     sampleDocument(
-      'schemaVersion: 7\ncase: a\nsample: b\npoints: {}\nrasters: {}\ntrace: {}',
+      'schemaVersion: 8\ncase: a\nsample: b\npoints: {}\nrasters: {}\ntrace: {}',
       'a',
       'c',
     ),

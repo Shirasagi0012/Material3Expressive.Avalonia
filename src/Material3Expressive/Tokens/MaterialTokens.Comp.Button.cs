@@ -123,6 +123,9 @@ public static partial class MaterialTokens
         // Typography follows the composable's textStyleFor mapping (LabelLarge below medium,
         // TitleMedium at medium, HeadlineSmall at large, HeadlineLarge at extra large), which is
         // code rather than a token table upstream.
+        // ContentPadding is a local compound slot for ButtonDefaults.contentPaddingFor, not a
+        // generated upstream token. Its baseline uses no icon flags and precision-pointer sizing
+        // disabled; callers can override Padding or the compound slot for other configurations.
 
         /// <summary><c>md.comp.button-xsmall.*</c> — extra small button metrics (32dp).</summary>
         public static class ButtonXSmall

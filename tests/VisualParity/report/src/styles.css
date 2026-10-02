@@ -222,6 +222,7 @@ pre {
   font-variant-numeric: tabular-nums;
 }
 
+.chip.withinTolerance,
 .chip.equal {
   background: #e9f5ef;
   color: var(--green);
@@ -652,6 +653,7 @@ td {
   line-height: 1;
 }
 
+.withinTolerance,
 .equal {
   color: var(--green);
 }
@@ -1080,6 +1082,7 @@ canvas {
   min-width: 100px;
 }
 
+.coverage-track span.withinTolerance,
 .coverage-track span.equal {
   background: #73b6a0;
 }
@@ -1254,6 +1257,7 @@ canvas {
   white-space: nowrap;
   background: #f0f2f7;
 }
+.badge.withinTolerance,
 .badge.equal,
 .badge.stable {
   background: #e9f5ef;
@@ -1403,5 +1407,84 @@ canvas {
   }
   .case-page > .shell {
     flex: none;
+  }
+}
+
+/* Keep the four raster views in the inspector's first viewport. */
+.raster-inspector {
+  height: 100%;
+  container-type: inline-size;
+}
+.raster-primary {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.raster-primary > .controls {
+  padding: 0;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.raster-primary > p {
+  margin: 0;
+  flex-shrink: 0;
+}
+.raster-primary .raster-description small {
+  display: inline;
+  margin-left: 8px;
+}
+.raster-primary .raster-grid {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.raster-primary .raster-grid figure {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.raster-primary .raster-grid figcaption {
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+.raster-primary .image-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.image-scroll.fit-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.pixel-reader .pixel-readout {
+  width: auto;
+  font:
+    11px Consolas,
+    monospace;
+}
+.pixel-readout caption {
+  text-align: left;
+  padding: 6px 0;
+}
+.pixel-readout th,
+.pixel-readout td {
+  padding: 3px 10px;
+  text-align: right;
+}
+.pixel-readout th:first-child {
+  text-align: left;
+}
+@container (min-width: 750px) {
+  .raster-primary .raster-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
   }
 }

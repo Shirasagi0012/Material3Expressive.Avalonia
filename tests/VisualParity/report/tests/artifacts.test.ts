@@ -20,21 +20,21 @@ beforeAll(async () => {
     await writeFile(
       resolve(run, 'run.yaml'),
       stringify({
-        schemaVersion: 7,
+        schemaVersion: 8,
         id: 'same-name',
         state: 'running',
         cases: [],
         startedAt: `2026-10-0${i + 1}`,
       }),
     )
-    await writeFile(resolve(testCase, 'case.yaml'), 'schemaVersion: 7\n')
+    await writeFile(resolve(testCase, 'case.yaml'), 'schemaVersion: 8\n')
     await writeFile(
       resolve(testCase, 'manifest.json'),
       JSON.stringify({
-        schemaVersion: 7,
+        schemaVersion: 8,
         files: {
           'case.yaml': createHash('sha256')
-            .update('schemaVersion: 7\n')
+            .update('schemaVersion: 8\n')
             .digest('hex'),
         },
       }),
@@ -70,7 +70,7 @@ it('serves current indexes and sealed case facts without embedding sample data i
     await (
       await fetch(`${base}/api/runs/${key}/files/cases/test.example/case.yaml`)
     ).text(),
-  ).toBe('schemaVersion: 7\n')
+  ).toBe('schemaVersion: 8\n')
   const index = await (
     await fetch(`${base}/api/runs/${key}/files/run.yaml`)
   ).text()
@@ -85,7 +85,7 @@ it('sees newly completed runs and reports malformed indexes independently', asyn
   await writeFile(
     resolve(run, 'run.yaml'),
     stringify({
-      schemaVersion: 7,
+      schemaVersion: 8,
       id: 'new-run',
       state: 'completed',
       cases: [{}],

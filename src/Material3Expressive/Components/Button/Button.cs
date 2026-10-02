@@ -15,13 +15,14 @@ using static Material3Expressive.Tokens.MaterialTokens;
 namespace Material3Expressive.Components;
 
 /// <summary>
-/// Baseline defaults for the five Button size tables (upstream ButtonXSmall/Small/Medium/Large/
-/// XLargeTokens v0_11_0), shared by every button style. Shapes hop into the sys corner scale and
-/// typography into the sys type scale, following the composable's textStyleFor mapping (the size
-/// token files themselves carry no typography upstream). ContentPadding is horizontal-only: the
-/// template centers content vertically. One deviation from rendered Compose: the extra-small
-/// horizontal padding is the token value 16, whereas the composable hardcodes 12 with a TODO
-/// noting the token will be corrected — the token table is treated as canonical here.
+/// Baseline defaults for the five Button sizes, shared by every button style. Raw metrics come
+/// from ButtonXSmall/Small/Medium/Large/XLargeTokens v0_11_0 at docs/upstream-baseline.json's pins.
+/// Shapes hop into the sys corner scale; typography follows ButtonDefaults.textStyleFor.
+/// ContentPadding is a local compound slot derived from ButtonDefaults.contentPaddingFor with
+/// hasStartIcon/hasEndIcon false and shouldUsePrecisionPointerComponentSizing false, the upstream
+/// default. It includes the composable's extra-small 12dp correction and vertical padding, which
+/// are not raw size tokens. The precision-pointer branch (small vertical 8dp, icon side 12dp) is
+/// not represented by this immutable baseline.
 /// Immutable baseline: <see cref="Changed"/> is a documented no-op.
 /// </summary>
 public class ButtonSizesTokenSource : ITokenSource
@@ -32,7 +33,7 @@ public class ButtonSizesTokenSource : ITokenSource
         [Comp.ButtonXSmall.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.ButtonXSmall.ContainerShapeSquare] = new TokenRef(Sys.Shape.Medium),
         [Comp.ButtonXSmall.PressedContainerShape] = new TokenRef(Sys.Shape.Small),
-        [Comp.ButtonXSmall.ContentPadding] = new Thickness(16, 0, 16, 0),
+        [Comp.ButtonXSmall.ContentPadding] = new Thickness(12, 6),
         [Comp.ButtonXSmall.IconSize] = 20d,
         [Comp.ButtonXSmall.IconLabelSpace] = 8d,
         [Comp.ButtonXSmall.OutlinedOutlineWidth] = new Thickness(1),
@@ -46,7 +47,7 @@ public class ButtonSizesTokenSource : ITokenSource
         [Comp.ButtonSmall.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.ButtonSmall.ContainerShapeSquare] = new TokenRef(Sys.Shape.Medium),
         [Comp.ButtonSmall.PressedContainerShape] = new TokenRef(Sys.Shape.Small),
-        [Comp.ButtonSmall.ContentPadding] = new Thickness(16, 0, 16, 0),
+        [Comp.ButtonSmall.ContentPadding] = new Thickness(16, 10),
         [Comp.ButtonSmall.IconSize] = 20d,
         [Comp.ButtonSmall.IconLabelSpace] = 8d,
         [Comp.ButtonSmall.OutlinedOutlineWidth] = new Thickness(1),
@@ -60,7 +61,7 @@ public class ButtonSizesTokenSource : ITokenSource
         [Comp.ButtonMedium.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.ButtonMedium.ContainerShapeSquare] = new TokenRef(Sys.Shape.Large),
         [Comp.ButtonMedium.PressedContainerShape] = new TokenRef(Sys.Shape.Medium),
-        [Comp.ButtonMedium.ContentPadding] = new Thickness(24, 0, 24, 0),
+        [Comp.ButtonMedium.ContentPadding] = new Thickness(24, 16),
         [Comp.ButtonMedium.IconSize] = 24d,
         [Comp.ButtonMedium.IconLabelSpace] = 8d,
         [Comp.ButtonMedium.OutlinedOutlineWidth] = new Thickness(1),
@@ -74,7 +75,7 @@ public class ButtonSizesTokenSource : ITokenSource
         [Comp.ButtonLarge.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.ButtonLarge.ContainerShapeSquare] = new TokenRef(Sys.Shape.ExtraLarge),
         [Comp.ButtonLarge.PressedContainerShape] = new TokenRef(Sys.Shape.Large),
-        [Comp.ButtonLarge.ContentPadding] = new Thickness(48, 0, 48, 0),
+        [Comp.ButtonLarge.ContentPadding] = new Thickness(48, 32),
         [Comp.ButtonLarge.IconSize] = 32d,
         [Comp.ButtonLarge.IconLabelSpace] = 12d,
         [Comp.ButtonLarge.OutlinedOutlineWidth] = new Thickness(2),
@@ -88,7 +89,7 @@ public class ButtonSizesTokenSource : ITokenSource
         [Comp.ButtonXLarge.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.ButtonXLarge.ContainerShapeSquare] = new TokenRef(Sys.Shape.ExtraLarge),
         [Comp.ButtonXLarge.PressedContainerShape] = new TokenRef(Sys.Shape.Large),
-        [Comp.ButtonXLarge.ContentPadding] = new Thickness(64, 0, 64, 0),
+        [Comp.ButtonXLarge.ContentPadding] = new Thickness(64, 48),
         [Comp.ButtonXLarge.IconSize] = 40d,
         [Comp.ButtonXLarge.IconLabelSpace] = 16d,
         [Comp.ButtonXLarge.OutlinedOutlineWidth] = new Thickness(3),

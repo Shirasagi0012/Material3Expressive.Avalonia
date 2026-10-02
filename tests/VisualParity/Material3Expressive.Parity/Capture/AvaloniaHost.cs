@@ -18,6 +18,7 @@ namespace Material3Expressive.Parity;
 
 public sealed class AvaloniaHost : IAsyncDisposable
 {
+    public const int RenderScale = 4;
     static readonly FieldInfo NextCommit = CompositionBatchField("_nextCommit");
     static readonly FieldInfo PendingBatch = CompositionBatchField("_pendingBatch");
     readonly CaptureWriter writer;
@@ -46,10 +47,11 @@ public sealed class AvaloniaHost : IAsyncDisposable
     public void Mount(Control content)
     {
         Window.Content = content;
+        Window.SetRenderScaling(RenderScale);
         Window.Show();
-        if (Window.RenderScaling != 1) throw new NotSupportedException("This host requires rendering scale 1.");
+        if (Window.RenderScaling != RenderScale) throw new NotSupportedException("Headless render scale was not applied.");
         Draw();
-        writer.Record(TimeUs, "mount", $"{Window.Width}x{Window.Height} DIP; density=1; no animation frame");
+        writer.Record(TimeUs, "mount", $"{Window.Width}x{Window.Height} DIP; density={RenderScale}; no animation frame");
     }
 
     public void Frame(long timeUs)

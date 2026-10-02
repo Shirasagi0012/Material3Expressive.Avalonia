@@ -19,10 +19,11 @@ namespace Material3Expressive.Components;
 
 /// <summary>Hosts one child and paints a Material container around it.</summary>
 /// <remarks>
-/// The internal <see cref="Border"/> paints and clips the content; a sibling overlay paints
-/// interaction feedback above it. This composition is necessary because <see cref="Border.Render"/>
-/// is sealed and a control's own render pass precedes its visual children. The surface itself draws
-/// the shadow below both children.
+/// The internal <see cref="Border"/> paints the background and clips the content; sibling visuals
+/// paint interaction feedback and the border above it. Keeping the border separate preserves
+/// Compose's drawing order without consuming content space. <see cref="Border.Render"/> is sealed
+/// and a control's own render pass precedes its visual children, so the surface itself draws only
+/// the shadow below these visuals.
 /// <para>
 /// Tonal elevation accumulates through nested surfaces and tints only the theme surface color.
 /// Shadow elevation stays local. When used as an interactive control's template root, the surface
@@ -86,6 +87,7 @@ public sealed class MaterialSurface : Control
 
     private readonly Border _chrome;
     private readonly InteractionOverlay _interactionOverlay;
+    private readonly Border _outline;
     private MaterialInteractionController? _interactionController;
     private IDisposable? _interactionAttachment;
     private AnimatedCornerRadius? _shapeMorph;
@@ -96,14 +98,23 @@ public sealed class MaterialSurface : Control
         _chrome = new Border
         {
             ClipToBounds = true,
-            [!Border.BorderBrushProperty] = this[!BorderBrushProperty],
-            [!Border.BorderThicknessProperty] = this[!BorderThicknessProperty],
             [!Decorator.PaddingProperty] = this[!PaddingProperty],
             [!Decorator.ChildProperty] = this[!ChildProperty],
         };
         _interactionOverlay = new InteractionOverlay(this);
+        // Surface.kt applies border as a draw modifier, outside background/clip/interaction.
+        // Avalonia Border includes its thickness in layout, so only this childless visual paints it.
+        _outline = new Border
+        {
+            ClipToBounds = true,
+            IsHitTestVisible = false,
+            Focusable = false,
+            [!Border.BorderBrushProperty] = this[!BorderBrushProperty],
+            [!Border.BorderThicknessProperty] = this[!BorderThicknessProperty],
+        };
         VisualChildren.Add(_chrome);
         VisualChildren.Add(_interactionOverlay);
+        VisualChildren.Add(_outline);
 
         // Decorator owns the hosted child's logical and visual parenting. The overlay is visual-only.
         ((ISetLogicalParent)_chrome).SetParent(this);
@@ -221,6 +232,7 @@ public sealed class MaterialSurface : Control
         _chrome.Measure(availableSize);
         var desired = _chrome.DesiredSize;
         _interactionOverlay.Measure(desired);
+        _outline.Measure(desired);
         return desired;
     }
 
@@ -229,6 +241,7 @@ public sealed class MaterialSurface : Control
         var rect = new Rect(finalSize);
         _chrome.Arrange(rect);
         _interactionOverlay.Arrange(rect);
+        _outline.Arrange(rect);
 
         if (_shapeMorph is not null)
         {
@@ -316,7 +329,7 @@ public sealed class MaterialSurface : Control
     {
         _shapeMorph?.Dispose();
         _shapeMorph = null;
-        _chrome.CornerRadius = CornerRadius;
+        _chrome.CornerRadius = _outline.CornerRadius = CornerRadius;
         InvalidateVisual();
         _interactionOverlay.InvalidateVisual();
     }
@@ -334,6 +347,7 @@ public sealed class MaterialSurface : Control
             return false;
 
         _chrome.CornerRadius = cornerRadius;
+        _outline.CornerRadius = cornerRadius;
         InvalidateShadow();
         return true;
     }

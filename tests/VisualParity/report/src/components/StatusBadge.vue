@@ -2,6 +2,7 @@
 defineProps<{ status: string }>()
 const labels: Record<string, string> = {
   equal: 'Equal',
+  withinTolerance: 'Within tolerance',
   different: 'Different',
   notCompared: 'Not compared',
   error: 'Error',

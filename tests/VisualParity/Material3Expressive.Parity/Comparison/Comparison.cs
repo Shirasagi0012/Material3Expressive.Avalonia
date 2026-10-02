@@ -1,4 +1,5 @@
 using SkiaSharp;
+using System.Globalization;
 
 namespace Material3Expressive.Parity;
 
@@ -114,7 +115,8 @@ public static class ParityComparison
             : s.Points.SelectMany(p => p.Fields.Length == 0 ? ["notCompared"] : p.Fields.Select(f => f.Status))
                 .Concat(s.Rasters.Select(x => x.Status))).ToArray();
         return new(2, metadata.Id, errors.Count != 0 ? "error" : Status(statuses),
-            new(statuses.Count(x => x == "equal"), statuses.Count(x => x == "different"), statuses.Count(x => x == "notCompared")),
+            new(statuses.Count(x => x == "equal"), statuses.Count(x => x == "different"), statuses.Count(x => x == "notCompared"),
+                statuses.Count(x => x == "withinTolerance")),
             samples, errors.ToArray(), environments, kind);
     }
 
@@ -123,7 +125,8 @@ public static class ParityComparison
     public static string Status(IEnumerable<string> statuses)
     {
         var s = statuses.ToArray();
-        return s.Contains("different") ? "different" : s.Contains("notCompared") || s.Length == 0 ? "notCompared" : "equal";
+        return s.Contains("different") ? "different" : s.Contains("notCompared") || s.Length == 0 ? "notCompared"
+            : s.Contains("withinTolerance") ? "withinTolerance" : "equal";
     }
 
     static RasterDifference Raster(
@@ -147,7 +150,9 @@ public static class ParityComparison
         {
             er.Width != ar.Width ? "width" : null, er.Height != ar.Height ? "height" : null,
             er.Format != ar.Format ? "format" : null, er.Space != ar.Space ? "space" : null,
-            er.Contribution != ar.Contribution ? "contribution" : null
+            er.Contribution != ar.Contribution ? "contribution" : null,
+            ee.GetValueOrDefault("density") != ae.GetValueOrDefault("density") ? "density" : null,
+            ee.GetValueOrDefault("fontScale") != ae.GetValueOrDefault("fontScale") ? "fontScale" : null
         }.OfType<string>().ToArray();
         if (members.Length != 0)
             return new(id, "notCompared", er, ar, Reason: "Raster descriptors differ: " + string.Join(", ", members),
@@ -156,7 +161,8 @@ public static class ParityComparison
         var ab = PixelData.Read(ad, ar);
         var metrics = Pixels(eb, ab, er.Width, er.Height, [0, 0, er.Width, er.Height]);
         var regions = new List<RasterRegion>();
-        if (ee.GetValueOrDefault("density") == "1" && ae.GetValueOrDefault("density") == "1")
+        if (double.TryParse(ee.GetValueOrDefault("density"), NumberStyles.Float, CultureInfo.InvariantCulture, out var density)
+            && double.IsFinite(density) && density > 0)
             foreach (var pid in Keys(e.Points.Select(x => x.Id), a.Points.Select(x => x.Id)))
             {
                 var expectedPoint = e.Points.SingleOrDefault(x => x.Id == pid);
@@ -173,10 +179,10 @@ public static class ParityComparison
                 var y = Box(a);
                 if (x is null || y is null) continue;
                 int Clamp(double v, int max) => (int)Math.Clamp(v, 0, max);
-                var left = Clamp(Math.Floor(Math.Min(x[0], y[0])), er.Width);
-                var top = Clamp(Math.Floor(Math.Min(x[1], y[1])), er.Height);
-                var right = Clamp(Math.Ceiling(Math.Max(x[0] + x[2], y[0] + y[2])), er.Width);
-                var bottom = Clamp(Math.Ceiling(Math.Max(x[1] + x[3], y[1] + y[3])), er.Height);
+                var left = Clamp(Math.Floor(Math.Min(x[0], y[0]) * density), er.Width);
+                var top = Clamp(Math.Floor(Math.Min(x[1], y[1]) * density), er.Height);
+                var right = Clamp(Math.Ceiling(Math.Max(x[0] + x[2], y[0] + y[2]) * density), er.Width);
+                var bottom = Clamp(Math.Ceiling(Math.Max(x[1] + x[3], y[1] + y[3]) * density), er.Height);
                 var box = new[] { left, top, Math.Max(0, right - left), Math.Max(0, bottom - top) };
                 regions.Add(new(pid, box, Pixels(eb, ab, er.Width, er.Height, box)));
             }
@@ -195,7 +201,75 @@ public static class ParityComparison
         var image = $"diff/{sampleId}-{id}.png";
         Directory.CreateDirectory(Path.Combine(output, "diff"));
         using (var data = bitmap.Encode(SKEncodedImageFormat.Png, 100)) File.WriteAllBytes(Path.Combine(output, image), data.ToArray());
-        return new(id, metrics.DifferentPixels == 0 ? "equal" : "different", er, ar, metrics, regions.ToArray(), image);
+        var exactStatus = metrics.DifferentPixels == 0 ? "equal" : "different";
+        // Only the fixed 4x capture contract can use this tolerance. Other inputs retain exact comparison.
+        var tolerance = density == 4 && er.Width % 4 == 0 && er.Height % 4 == 0
+            ? AssessRaster(eb, ab, er.Width, er.Height, regions.ToArray()) : null;
+        var status = exactStatus == "equal" ? "equal" : tolerance?.Status == "withinTolerance" ? "withinTolerance" : "different";
+        return new(id, status, er, ar, metrics, regions.ToArray(), image, ExactStatus: exactStatus, Tolerance: tolerance);
+    }
+
+    public static RasterTolerance AssessRaster(byte[] expected, byte[] actual, int width, int height, RasterRegion[] regions)
+    {
+        const int factor = 4;
+        const int maximumLimit = 20;
+        const double meanLimit = 0.2;
+        if (width <= 0 || height <= 0 || width % factor != 0 || height % factor != 0 ||
+            expected.Length != checked(width * height * 4) || actual.Length != expected.Length)
+            throw new InvalidDataException("Raster tolerance requires complete 4x4 pixel blocks.");
+        var w = width / factor;
+        var h = height / factor;
+        var deltas = new byte[w * h];
+        // Average encoded straight-sRGBA8 channels independently, including alpha and hidden RGB.
+        // Integer sums and half-up rounding make results independent of resize libraries and floating point ties.
+        for (var y = 0; y < h; y++)
+        for (var x = 0; x < w; x++)
+        for (var c = 0; c < 4; c++)
+        {
+            var e = 0;
+            var a = 0;
+            for (var dy = 0; dy < factor; dy++)
+            for (var dx = 0; dx < factor; dx++)
+            {
+                var offset = (((y * factor + dy) * width) + x * factor + dx) * 4 + c;
+                e += expected[offset];
+                a += actual[offset];
+            }
+            var delta = Math.Abs((a + 8) / 16 - (e + 8) / 16);
+            deltas[y * w + x] = (byte)Math.Max(deltas[y * w + x], delta);
+        }
+
+        RasterToleranceRegion Measure(string? pointId, int[] box)
+        {
+            long sum = 0;
+            var max = 0;
+            for (var y = box[1]; y < box[1] + box[3]; y++)
+            for (var x = box[0]; x < box[0] + box[2]; x++)
+            {
+                var delta = deltas[y * w + x];
+                max = Math.Max(max, delta);
+                sum += delta;
+            }
+            var mean = (double)sum / ((long)box[2] * box[3]);
+            return new(pointId, box, max, mean, max <= maximumLimit && mean <= meanLimit);
+        }
+
+        var full = Measure(null, [0, 0, w, h]);
+        var local = new List<RasterToleranceRegion>();
+        foreach (var region in regions)
+        {
+            var b = region.Bounds;
+            if (b.Length != 4 || b.Any(v => v < 0) || (long)b[0] + b[2] > width || (long)b[1] + b[3] > height)
+                throw new InvalidDataException("Invalid raster tolerance region.");
+            if (b[2] == 0 || b[3] == 0) continue;
+            var left = b[0] / factor;
+            var top = b[1] / factor;
+            var right = (b[0] + b[2] + factor - 1) / factor;
+            var bottom = (b[1] + b[3] + factor - 1) / factor;
+            local.Add(Measure(region.PointId, [left, top, right - left, bottom - top]));
+        }
+        return new(full.Accepted && local.All(r => r.Accepted) ? "withinTolerance" : "different",
+            "box-4x4-straight-srgba8-half-up", 1, maximumLimit, meanLimit, full, local.ToArray());
     }
 
     public static PixelMetrics Pixels(byte[] e, byte[] a, int width, int height, int[] region)

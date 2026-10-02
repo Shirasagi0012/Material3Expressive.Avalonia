@@ -33,12 +33,14 @@ public class ButtonThemeTests
             Assert.IsType<ImmutableSolidColorBrush>(button.Background).Color);
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnPrimary),
             Assert.IsType<ImmutableSolidColorBrush>(button.Foreground).Color);
-        Assert.Equal(40d, button.MinHeight);
-        Assert.Equal(new Thickness(16, 0, 16, 0), button.Padding);
+        Assert.Equal(0d, button.MinHeight);
+        Assert.Equal(new Thickness(16, 10), button.Padding);
         Assert.Equal(14d, button.FontSize);
         Assert.Equal(FontWeight.Medium, button.FontWeight);
 
         var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
+        Assert.Equal(40d, container.Bounds.Height);
+        Assert.Equal(48d, button.Bounds.Height);
         Assert.Equal(new CornerRadius(1000), container.CornerRadius);
 
         // §7.4: the state layer is painted by MaterialSurface itself. At rest the controller's

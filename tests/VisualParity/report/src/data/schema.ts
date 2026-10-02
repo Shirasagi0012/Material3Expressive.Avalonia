@@ -7,10 +7,20 @@ export const categories = [
   'mixed',
 ] as const
 export type Category = (typeof categories)[number]
-export type Status = 'equal' | 'different' | 'notCompared' | 'error'
+export type Status =
+  | 'equal'
+  | 'withinTolerance'
+  | 'different'
+  | 'notCompared'
+  | 'error'
 export type Side = 'compose' | 'avalonia'
 export type Pair<T> = T | { compose: T; avalonia: T }
-export type Coverage = { equal: number; different: number; notCompared: number }
+export type Coverage = {
+  equal: number
+  withinTolerance: number
+  different: number
+  notCompared: number
+}
 export type Trace = {
   sequence: number
   timeUs: number
@@ -40,7 +50,7 @@ export type CaseEntry = {
   repeatability: string
 }
 export type Run = {
-  schemaVersion: 7
+  schemaVersion: 8
   key: string
   id: string
   command: string
@@ -52,7 +62,7 @@ export type Run = {
 }
 export type RunInfo = Omit<Run, 'cases'> & { completedCases: number }
 export type CaseDocument = {
-  schemaVersion: 7
+  schemaVersion: 8
   metadata: {
     id: string
     title: string
@@ -108,6 +118,16 @@ export type Metrics = {
 }
 export type Raster = {
   status: Status
+  exactStatus?: 'equal' | 'different'
+  tolerance?: {
+    status: 'withinTolerance' | 'different'
+    filter: string
+    scale: number
+    maximumChannelDeltaLimit: number
+    meanMaximumChannelDeltaLimit: number
+    full: ToleranceRegion
+    regions: ToleranceRegion[]
+  }
   present: Side[]
   image: Pair<string>
   width: Pair<number>
@@ -121,8 +141,15 @@ export type Raster = {
   reason?: string
   issue?: unknown
 }
+export type ToleranceRegion = {
+  pointId: string | null
+  bounds: number[]
+  maximumChannelDelta: number
+  meanMaximumChannelDelta: number
+  accepted: boolean
+}
 export type Sample = {
-  schemaVersion: 7
+  schemaVersion: 8
   case: string
   sample: string
   status: Status
@@ -178,9 +205,9 @@ export function document<T extends { schemaVersion: number }>(
   source: string,
 ): T {
   const result = parseYaml<T>(source)
-  if (!result || result.schemaVersion !== 7)
+  if (!result || result.schemaVersion !== 8)
     throw new Error(
-      'Result schema 7 required. Run the tests again to generate current results.',
+      'Result schema 8 required. Run the tests again to generate current results.',
     )
   return result
 }

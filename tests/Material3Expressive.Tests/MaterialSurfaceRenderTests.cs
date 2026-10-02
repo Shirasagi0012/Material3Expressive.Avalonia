@@ -122,6 +122,39 @@ public class MaterialSurfaceRenderTests
     }
 
     [AvaloniaFact]
+    public void Border_PaintsAboveFullSizeContentAndKeepsRoundedClip()
+    {
+        var surface = ProbeSurface();
+        surface.CornerRadius = new CornerRadius(25);
+        surface.BorderThickness = new Thickness(6);
+        surface.BorderBrush = Brushes.Red;
+        surface.Child = new Border { Background = Brushes.Blue };
+        var window = Show(surface);
+        try
+        {
+            using (var rounded = window.CaptureRenderedFrame()!)
+            {
+                Assert.Equal(new Size(100, 50), surface.Child.Bounds.Size);
+                Assert.Equal((255, 0, 0), PixelAt(rounded, 80, 57));
+                Assert.Equal((0, 0, 255), PixelAt(rounded, 80, 62));
+                Assert.Equal((255, 255, 255), PixelAt(rounded, 33, 58));
+                Assert.Equal((255, 255, 255), PixelAt(rounded, 80, 54));
+            }
+
+            surface.CornerRadius = default;
+            surface.BorderBrush = Brushes.Lime;
+            using var square = window.CaptureRenderedFrame()!;
+            Assert.Equal((0, 255, 0), PixelAt(square, 33, 58));
+            Assert.Equal((0, 255, 0), PixelAt(square, 80, 57));
+            Assert.Equal((0, 0, 255), PixelAt(square, 80, 62));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void ElevatedButton_HoverPaintsStateLayer()
     {
         var styles = Assert.IsAssignableFrom<Avalonia.Styling.Styles>(

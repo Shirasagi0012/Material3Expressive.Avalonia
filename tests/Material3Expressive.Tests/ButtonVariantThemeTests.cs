@@ -89,12 +89,12 @@ public class ButtonVariantThemeTests
     public void SizeClass_RePointsMetrics_AndReverts()
     {
         var window = ButtonThemeFixture.ShowWindow(out var button);
-        Assert.Equal(40d, button.MinHeight);
+        Assert.Equal(40d, button.GetVisualDescendants().OfType<ButtonLayout>().Single().ContainerMinHeight);
 
         button.Classes.Add("large");
 
-        Assert.Equal(96d, button.MinHeight);
-        Assert.Equal(new Thickness(48, 0, 48, 0), button.Padding);
+        Assert.Equal(96d, button.GetVisualDescendants().OfType<ButtonLayout>().Single().ContainerMinHeight);
+        Assert.Equal(new Thickness(48, 32), button.Padding);
         Assert.Equal(
             Assert.IsType<double>(TokenScan.Resolve(window, Sys.TypeScale.HeadlineSmall.Size)),
             button.FontSize);
@@ -111,7 +111,7 @@ public class ButtonVariantThemeTests
             presenter.LineHeight);
 
         button.Classes.Remove("large");
-        Assert.Equal(40d, button.MinHeight);
+        Assert.Equal(40d, button.GetVisualDescendants().OfType<ButtonLayout>().Single().ContainerMinHeight);
         Assert.Equal(14d, button.FontSize);
     }
 
@@ -120,6 +120,6 @@ public class ButtonVariantThemeTests
     {
         ButtonThemeFixture.ShowWindow(out var button, themeKey: "MaterialOutlinedButtonTheme", sizeClass: "xlarge");
         Assert.Equal(3d, button.BorderThickness.Left);
-        Assert.Equal(136d, button.MinHeight);
+        Assert.Equal(136d, button.GetVisualDescendants().OfType<ButtonLayout>().Single().ContainerMinHeight);
     }
 }

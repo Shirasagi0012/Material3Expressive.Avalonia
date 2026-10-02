@@ -4,9 +4,10 @@ import { side, format, type Sample, type Metrics } from '../data/schema'
 import { fileUrl } from '../data/artifacts'
 import type { Input, Output, ImageSource } from '../imaging/messages'
 import RasterCanvas from './RasterCanvas.vue'
+import StatusBadge from './StatusBadge.vue'
 const props = defineProps<{ run: string; caseId: string; sample: Sample }>()
 const rasterId = ref(''),
-  zoom = ref(2),
+  zoom = ref(0),
   opacity = ref(0.5),
   threshold = ref(0),
   regions = ref(false),
@@ -21,6 +22,7 @@ const bounds = ref([0, 0, 0, 0]),
   pinned = ref(false),
   regionError = ref('')
 const raster = computed(() => props.sample.rasters[rasterId.value])
+const scrollPosition = ref({ left: 0, top: 0 })
 const outlines = computed(() =>
   regions.value ? (raster.value?.regions?.map((r) => r.bounds) ?? []) : [],
 )
@@ -73,6 +75,7 @@ watch(
   () => [props.run, props.caseId, props.sample.sample, rasterId.value],
   () => {
     version++
+    scrollPosition.value = { left: 0, top: 0 }
     error.value = ''
     rendered.value = undefined
     inspected.value = undefined
@@ -144,49 +147,129 @@ function inspect(px: number, py: number, pin: boolean) {
     <p>No image captured at this sample.</p>
     <pre>{{ format(sample.rasterCollection) }}</pre>
   </div>
-  <div v-else>
-    <div class="controls">
-      <label
-        >Raster<select v-model="rasterId">
-          <option v-for="(_, id) in sample.rasters" :key="id">{{ id }}</option>
-        </select></label
-      ><label
-        >Zoom<select v-model.number="zoom">
-          <option v-for="n in [1, 2, 4, 8]" :key="n" :value="n">
-            {{ n }}×
-          </option>
-        </select></label
-      ><label
-        >Overlay<input
-          v-model.number="opacity"
-          type="range"
-          min="0"
-          max="1"
-          step=".01"
-          aria-label="Overlay opacity"
-          :disabled="!raster.metrics" /></label
-      ><label
-        >Highlight Δ &gt;<input
-          v-model.number="threshold"
-          type="number"
-          min="0"
-          max="255"
-          aria-label="Difference threshold"
-          :disabled="!raster.metrics" /></label
-      ><label><input v-model="regions" type="checkbox" />Point regions</label>
+  <div v-else class="raster-inspector">
+    <div class="raster-primary">
+      <div class="controls">
+        <label
+          >Raster<select v-model="rasterId">
+            <option v-for="(_, id) in sample.rasters" :key="id">
+              {{ id }}
+            </option>
+          </select></label
+        ><label
+          >Zoom<select v-model.number="zoom">
+            <option :value="0">Fit</option>
+            <option v-for="n in [1, 2, 4, 8]" :key="n" :value="n">
+              {{ n }}×
+            </option>
+          </select></label
+        ><label
+          >Overlay<input
+            v-model.number="opacity"
+            type="range"
+            min="0"
+            max="1"
+            step=".01"
+            aria-label="Overlay opacity"
+            :disabled="!raster.metrics" /></label
+        ><label
+          >Highlight Δ &gt;<input
+            v-model.number="threshold"
+            type="number"
+            min="0"
+            max="255"
+            aria-label="Difference threshold"
+            :disabled="!raster.metrics" /></label
+        ><label><input v-model="regions" type="checkbox" />Point regions</label>
+      </div>
+      <p v-if="loading">Decoding selected PNGs…</p>
+      <p v-if="error" class="error-message">{{ error }}</p>
+      <p v-if="raster.reason">{{ raster.reason }}</p>
+      <p v-if="raster.metrics" class="raster-description">
+        Raw 4× · Different pixels <b>{{ raster.metrics.differentPixels }}</b> ·
+        Max channel Δ <code>{{ raster.metrics.maximumChannelDelta }}</code> ·
+        Highlighted <b>{{ rendered?.highlighted ?? '…' }}</b
+        ><small
+          >Threshold affects the view only. Recorded comparison metrics are
+          authoritative.</small
+        >
+      </p>
+      <div v-if="raster.tolerance" class="raster-tolerance">
+        <p>
+          <StatusBadge :status="raster.status" />
+          1× comparison · max ≤
+          {{ raster.tolerance.maximumChannelDeltaLimit }} · mean ≤
+          {{ raster.tolerance.meanMaximumChannelDeltaLimit }} · Raw pixels:
+          {{ raster.exactStatus }}
+        </p>
+        <details>
+          <summary>1× tolerance metrics</summary>
+          <table>
+            <thead>
+              <tr>
+                <th>Region</th>
+                <th>Max Δ</th>
+                <th>Mean max Δ</th>
+                <th>Accepted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="r in [
+                  raster.tolerance.full,
+                  ...raster.tolerance.regions,
+                ]"
+                :key="r.pointId ?? 'full-image'"
+              >
+                <td>{{ r.pointId ?? 'Full image' }}</td>
+                <td>{{ r.maximumChannelDelta }}</td>
+                <td>{{ r.meanMaximumChannelDelta.toFixed(6) }}</td>
+                <td>{{ r.accepted ? 'Yes' : 'No' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <small
+            >Every region must meet both limits. Images and pixel inspection
+            below retain the original 4× pixels.</small
+          >
+        </details>
+      </div>
+      <div class="raster-grid">
+        <RasterCanvas
+          v-for="s in raster.present"
+          :key="s"
+          :label="s === 'compose' ? 'Compose' : 'Avalonia'"
+          :width="side(raster.width, s)"
+          :height="side(raster.height, s)"
+          :zoom="zoom"
+          :scroll-position="scrollPosition"
+          :src="fileUrl(run, `cases/${caseId}/${side(raster.image, s)}`)"
+          :regions="outlines"
+          @pixel="inspect"
+          @scroll="scrollPosition = $event"
+        /><template v-if="rendered"
+          ><RasterCanvas
+            label="Overlay"
+            :width="rendered.width"
+            :height="rendered.height"
+            :zoom="zoom"
+            :scroll-position="scrollPosition"
+            :pixels="rendered.overlay"
+            :regions="outlines"
+            @pixel="inspect"
+            @scroll="scrollPosition = $event" /><RasterCanvas
+            label="Difference · max |channel Δ|"
+            :width="rendered.width"
+            :height="rendered.height"
+            :zoom="zoom"
+            :scroll-position="scrollPosition"
+            :pixels="rendered.difference"
+            :regions="outlines"
+            @pixel="inspect"
+            @scroll="scrollPosition = $event"
+        /></template>
+      </div>
     </div>
-    <p v-if="loading">Decoding selected PNGs…</p>
-    <p v-if="error" class="error-message">{{ error }}</p>
-    <p v-if="raster.reason">{{ raster.reason }}</p>
-    <p v-if="raster.metrics" class="raster-description">
-      Different pixels <b>{{ raster.metrics.differentPixels }}</b> · Max channel
-      Δ <code>{{ raster.metrics.maximumChannelDelta }}</code> · Highlighted
-      <b>{{ rendered?.highlighted ?? '…' }}</b
-      ><small
-        >Threshold affects the view only. Recorded comparison metrics are
-        authoritative.</small
-      >
-    </p>
     <div class="pixel-reader">
       <div class="controls">
         <label
@@ -203,40 +286,40 @@ function inspect(px: number, py: number, pin: boolean) {
           Read pixel</button
         ><button v-if="pinned" @click="pinned = false">Unpin</button>
       </div>
-      <pre class="pixel-readout" aria-live="polite">{{
-        inspected
-          ? `(${inspected.x}, ${inspected.y}) · straight-sRGBA8\nCompose ${format(inspected.compose)}\nAvalonia ${format(inspected.avalonia)}\nΔ signed ${format(inspected.delta)}\nΔ absolute ${format(inspected.delta?.map(Math.abs))}`
-          : 'Hover a pixel to inspect; click to pin.'
-      }}</pre>
-    </div>
-    <div class="raster-grid">
-      <RasterCanvas
-        v-for="s in raster.present"
-        :key="s"
-        :label="s === 'compose' ? 'Compose' : 'Avalonia'"
-        :width="side(raster.width, s)"
-        :height="side(raster.height, s)"
-        :zoom="zoom"
-        :src="fileUrl(run, `cases/${caseId}/${side(raster.image, s)}`)"
-        :regions="outlines"
-        @pixel="inspect"
-      /><template v-if="rendered"
-        ><RasterCanvas
-          label="Overlay"
-          :width="rendered.width"
-          :height="rendered.height"
-          :zoom="zoom"
-          :pixels="rendered.overlay"
-          :regions="outlines"
-          @pixel="inspect" /><RasterCanvas
-          label="Difference · max |channel Δ|"
-          :width="rendered.width"
-          :height="rendered.height"
-          :zoom="zoom"
-          :pixels="rendered.difference"
-          :regions="outlines"
-          @pixel="inspect"
-      /></template>
+      <table v-if="inspected" class="pixel-readout" aria-live="polite">
+        <caption>
+          ({{
+            inspected.x
+          }},
+          {{
+            inspected.y
+          }}) · straight-sRGBA8
+        </caption>
+        <thead>
+          <tr>
+            <th>Pixel</th>
+            <th v-for="channel in ['R', 'G', 'B', 'A']" :key="channel">
+              {{ channel }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="row in [
+              { label: 'Compose', channels: inspected.compose },
+              { label: 'Avalonia', channels: inspected.avalonia },
+              { label: 'Δ signed', channels: inspected.delta },
+            ]"
+            :key="row.label"
+          >
+            <th>{{ row.label }}</th>
+            <td v-for="i in 4" :key="i">{{ row.channels?.[i - 1] ?? '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="pixel-readout">
+        Hover a pixel to inspect; click to pin.
+      </p>
     </div>
     <details>
       <summary>Recorded regions and metrics</summary>

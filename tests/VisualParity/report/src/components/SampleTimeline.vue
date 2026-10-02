@@ -15,7 +15,11 @@ defineEmits<{ select: [id: string] }>()
           <th v-for="c in categories" :key="c">
             {{ c }}<small>different / not compared</small>
           </th>
-          <th>Images<small>equal / different / not compared</small></th>
+          <th>
+            Images<small
+              >equal / within tolerance / different / not compared</small
+            >
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -41,9 +45,15 @@ defineEmits<{ select: [id: string] }>()
             {{ s.categories[c].different }} / {{ s.categories[c].notCompared }}
           </td>
           <td
-            v-if="s.rasters.equal + s.rasters.different + s.rasters.notCompared"
+            v-if="
+              s.rasters.equal +
+              s.rasters.withinTolerance +
+              s.rasters.different +
+              s.rasters.notCompared
+            "
           >
-            {{ s.rasters.equal }} / {{ s.rasters.different }} /
+            {{ s.rasters.equal }} / {{ s.rasters.withinTolerance }} /
+            {{ s.rasters.different }} /
             {{ s.rasters.notCompared }}
           </td>
           <td v-else>

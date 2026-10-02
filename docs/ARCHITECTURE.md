@@ -60,6 +60,19 @@ MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一�
 [MaterialSurface](../src/Material3Expressive/Components/Surface/MaterialSurface.cs) 是可被其他组件组合的容器组件，
 承担背景、边框、裁剪、阴影和累积 tonal elevation。内部 Border 承载内容和裁剪，独立覆盖层绘制交互反馈。
 几何使用 Avalonia DIP，Full 圆角按当前边界解析。
+描边由末层的无内容 Border 绘制，不参与内容尺寸计算；Padding 仍由内容 Border 处理。
+
+Button 模板内的局部 `ButtonLayout` 区分背景默认尺寸与外层交互留白：背景默认最小宽度为 58 DIP，
+高度由 size Token 提供，外层默认预留至少 48 DIP 并居中放置背景。默认背景高度不再写入
+`Button.MinHeight`；显式 Width/Height 或 MinWidth/MinHeight 仍由调用方设置，并覆盖相应默认值。
+它移植 `defaultMinSize` 与 `minimumInteractiveComponentSize` 的布局职责，不实现触屏目标扩展。
+自动字符串标签保持 Compose 的受约束段落宽度；普通裁剪保留完整文本布局，再在有限标签边界内绘制。
+省略号仍使用有限高度格式化。显式内容控件、ContentTemplate 和匹配的 DataTemplate 保留优先级。
+
+Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefaults.contentPaddingFor` 的默认参数，
+并非原始 Token：XS/S/M/L/XL 的水平/垂直值分别为 12/6、16/10、24/16、48/32、64/48 DIP。
+基线使用上游默认的 `shouldUsePrecisionPointerComponentSizing=false`；启用该分支时 Small 垂直值为 8，
+图标侧水平值为 12，当前不可变基线未实现这一分支。调用方可显式覆盖 Padding 或对应复合槽。
 
 目前交互组件通过 `MaterialInteraction.IsInteractive` 接入共享控制器，Surface 作为模板中的反馈呈现者。
 控制器处理输入、交互顺序、状态层和 ripple；主题提供颜色和形状等参数。

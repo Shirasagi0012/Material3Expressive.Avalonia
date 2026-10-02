@@ -7,7 +7,7 @@ public sealed class RunResults(string directory, int selectedCases, string comma
 {
     readonly DateTimeOffset startedAt = DateTimeOffset.UtcNow;
     readonly List<object> cases = [];
-    readonly StringBuilder summary = new("# Visual parity\n\nCounts are observations, not defects or completion percentages.\n\n| Case | Status | Samples | Equal | Different | Not compared | Errors | Overview |\n|---|---|---:|---:|---:|---:|---:|---|\n");
+    readonly StringBuilder summary = new("# Visual parity\n\nCounts are observations, not defects or completion percentages.\n\n| Case | Status | Samples | Equal | Within tolerance | Different | Not compared | Errors | Overview |\n|---|---|---:|---:|---:|---:|---:|---:|---|\n");
 
     public void Add(CaseResult result)
     {
@@ -19,7 +19,7 @@ public sealed class RunResults(string directory, int selectedCases, string comma
             repeatability = result.Repeatability is null ? "notChecked"
                 : result.Repeatability["results"]!.AsObject().Any(p => p.Value!.AsArray().Count != 0) ? "unstable" : "stable"
         });
-        summary.AppendLine($"| {c.CaseId} | {c.Status} | {c.Samples.Length} | {c.Coverage.Equal} | {c.Coverage.Different} | {c.Coverage.NotCompared} | {c.Errors.Length} | [Read](cases/{c.CaseId}/overview.md) |");
+        summary.AppendLine($"| {c.CaseId} | {c.Status} | {c.Samples.Length} | {c.Coverage.Equal} | {c.Coverage.WithinTolerance} | {c.Coverage.Different} | {c.Coverage.NotCompared} | {c.Errors.Length} | [Read](cases/{c.CaseId}/overview.md) |");
     }
 
     public void Save(string state)
@@ -27,7 +27,7 @@ public sealed class RunResults(string directory, int selectedCases, string comma
         var temporary = Path.Combine(directory, "run.yaml.tmp");
         ResultYaml.Write(temporary, ResultYaml.Node(new
         {
-            schemaVersion = 7, id = new DirectoryInfo(directory).Name, command, state, startedAt,
+            schemaVersion = 8, id = new DirectoryInfo(directory).Name, command, state, startedAt,
             finishedAt = state == "completed" ? (DateTimeOffset?)DateTimeOffset.UtcNow : null,
             selectedCases, cases
         })!);
