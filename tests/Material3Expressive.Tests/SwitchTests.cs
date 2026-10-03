@@ -17,6 +17,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Tokens;
 using Xunit;
 
@@ -261,6 +262,66 @@ public class SwitchTests
         Assert.Equal(Material3Expressive.Foundation.Interaction.InteractionState.None, controller.Interaction);
         window.MouseUp(new Point(1, 1), MouseButton.Left);
         Assert.False(box.IsChecked); window.Close();
+    }
+
+    public static IEnumerable<object[]> RippleCenters()
+    {
+        foreach (var state in new[] { false, true })
+        foreach (var warm in new[] { false, true })
+        foreach (var icon in new[] { false, true })
+        foreach (var direction in new[] { FlowDirection.LeftToRight, FlowDirection.RightToLeft })
+            yield return [state, warm, icon, direction, 1d];
+        yield return [false, true, false, FlowDirection.LeftToRight, 10d];
+    }
+
+    [AvaloniaTheory]
+    [MemberData(nameof(RippleCenters))]
+    public void RippleAndHover_RemainCenteredDuringPressDragAndRelease(bool state, bool warm, bool icon,
+        FlowDirection direction, double durationScale)
+    {
+        using var clock = new MotionTestClockScope();
+        var box = new ToggleSwitch { IsChecked = state, FlowDirection = direction };
+        if (icon) SwitchAppearance.SetThumbContent(box, new Border { Width = 16, Height = 16 });
+        var window = Show(box);
+        if (warm)
+        {
+            box.IsChecked = !state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
+            box.IsChecked = state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
+        }
+        Animated.SetDurationScale(window, durationScale);
+        var controller = MaterialInteraction.GetOrCreate(box);
+        var moving = Moving(box);
+        var start = moving.TranslatePoint(new Point(moving.Bounds.Width / 2, moving.Bounds.Height / 2), window)!.Value;
+        window.MouseMove(start); window.MouseDown(start, MouseButton.Left); window.UpdateLayout();
+        clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(240 * durationScale);
+        Assert.Equal(28, Thumb(box).PaintedSize); AssertCentered();
+        var sign = (state ? -1 : 1) * (direction == FlowDirection.RightToLeft ? -1 : 1);
+        var end = start + new Vector(sign * 16, 0);
+        window.MouseMove(end); window.UpdateLayout(); AssertCentered();
+        window.MouseUp(end, MouseButton.Left); window.UpdateLayout(); AssertCentered();
+        clock.SendFrame(clock.Now); window.UpdateLayout(); AssertCentered();
+        Advance(32 * durationScale); AssertCentered();
+        Advance(64 * durationScale); AssertCentered();
+        Advance(800 * durationScale); Assert.Equal(0, controller.RippleCount);
+        window.Close(); Assert.Null(window.MotionRoot.LastError);
+
+        void AssertCentered()
+        {
+            Assert.Equal(1, controller.RippleCount);
+            var surface = box.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            var drawing = new DrawingGroup();
+            using (var context = drawing.Open()) controller.DrawLayers(context, Brushes.Black, new CornerRadius(0), surface.Bounds.Size);
+            // Observe actual feedback drawing, including the live press wave and hover layer.
+            Assert.Equal(new Rect(surface.Bounds.Size).Center, drawing.GetBounds().Center);
+        }
+        void Advance(double milliseconds)
+        {
+            for (double time = 0; time < milliseconds; time += 16)
+            {
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(Math.Min(16, milliseconds - time)));
+                window.UpdateLayout();
+            }
+        }
     }
 
     [AvaloniaFact]

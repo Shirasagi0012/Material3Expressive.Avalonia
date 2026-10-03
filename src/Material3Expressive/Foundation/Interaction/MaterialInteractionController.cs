@@ -152,6 +152,10 @@ internal sealed class MaterialInteractionController
     /// </summary>
     internal double? RippleRadius { get; set; }
 
+    // Switch deliberately follows its resizing/moving thumb instead of freezing the local
+    // unbounded center from the first draw. Other callers retain the fixed Compose behavior.
+    internal bool RippleFollowsPresenterCenter { get; set; }
+
     // Components with an upstream MappedInteractionSource can supply its mapping while
     // retaining this controller's input, ripple and lifecycle implementation.
     internal Func<Point, Point>? PressPositionMapper { get; set; }
@@ -551,7 +555,7 @@ internal sealed class MaterialInteractionController
     private void DrawRipples(DrawingContext context, IBrush brush, Size size)
     {
         foreach (var ripple in _ripples)
-            ripple.Draw(context, brush, _pressedOpacity, size);
+            ripple.Draw(context, brush, _pressedOpacity, size, RippleFollowsPresenterCenter);
     }
 
     // Switch's ThumbNode measures its current animated size before launching the pressed snap.

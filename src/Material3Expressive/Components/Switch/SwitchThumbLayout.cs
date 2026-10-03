@@ -45,6 +45,7 @@ internal sealed class SwitchThumbLayout : Panel
         _interaction = MaterialInteraction.GetOrCreate(_owner);
         _interaction.IsRippleBounded = false;
         _interaction.RippleRadius = 20;
+        _interaction.RippleFollowsPresenterCenter = true;
         _motion = VisualAnimationScope.Create(this);
         // Observe the existing controller after its tunnel handlers, without another input
         // state machine or an activation path.

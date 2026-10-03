@@ -161,7 +161,8 @@ public sealed class RippleAnimation : IDisposable
     public void Draw(DrawingContext context, IBrush brush, double opacity)
         => Draw(context, brush, opacity, _initialBounds);
 
-    internal void Draw(DrawingContext context, IBrush brush, double opacity, Size size)
+    internal void Draw(DrawingContext context, IBrush brush, double opacity, Size size,
+        bool followUnboundedCenter = false)
     {
         InitializeDrawGeometry(size);
         // CommonRipple first creates color.copy(alpha = pressedAlpha), which packs sRGB
@@ -172,7 +173,8 @@ public sealed class RippleAnimation : IDisposable
             return;
 
         using (context.PushOpacity(MaterialInteractionRendering.ComposeOpacity(alpha)))
-            context.DrawEllipse(brush, null, Center, Radius, Radius);
+            context.DrawEllipse(brush, null,
+                followUnboundedCenter && !_bounded ? new Rect(size).Center : Center, Radius, Radius);
     }
 
     internal void InitializeDrawGeometry(Size size)

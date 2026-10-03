@@ -109,7 +109,7 @@ class SwitchCases {
                 else -> {
                     var pressTime=2000L
                     if(c.action=="warm-press") {
-                        mutate(1000,"state-change") { s.checked=true }; times(16000,400000)
+                        mutate(1000,"state-change") { s.checked=c.target=="on" }; times(16000,400000)
                         pressTime=402000
                     }
                     event(pressTime-1000,"move",center); event(pressTime,"down",center); sample("press")

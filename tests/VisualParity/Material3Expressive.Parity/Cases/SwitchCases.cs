@@ -63,6 +63,9 @@ public sealed class SwitchCases
         yield return Data("dynamic.transition.standard-motion", new(Action: "transition", StandardMotion: true));
         yield return Data("dynamic.transition.disabled", new(Enabled: false, Action: "transition"));
         yield return Data("dynamic.press.after-transition", new(Action: "warm-press"));
+        yield return Data("dynamic.press.after-transition.off", new(State: "on", Action: "warm-press", Target: "off"));
+        yield return Data("dynamic.press.after-transition.off.icon", new(State: "on", Thumb: "icon", Action: "warm-press", Target: "off"));
+        yield return Data("dynamic.press.after-transition.off.rtl", new(State: "on", Rtl: true, Action: "warm-press", Target: "off"));
         yield return Data("dynamic.drag.rtl", new(Rtl: true, Action: "drag"));
         yield return Data("dynamic.drag-end.rtl", new(Rtl: true, Action: "drag-end"));
     }
@@ -154,7 +157,7 @@ public sealed class SwitchCases
                 var pressTime = 2000L;
                 if (config.Action == "warm-press")
                 {
-                    Mutate(1000, "state-change", () => box.IsChecked = true); Times(16000, 400000);
+                    Mutate(1000, "state-change", () => box.IsChecked = config.Target == "on"); Times(16000, 400000);
                     pressTime = 402000;
                 }
                 Event(pressTime - 1000, "move", center); Event(pressTime, "down", center); Sample("press");

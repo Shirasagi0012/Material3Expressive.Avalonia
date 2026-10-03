@@ -72,14 +72,20 @@ Native KnobTransitions 不控制 Material 的尺寸/偏移动画；原生 Canvas
 已经到达端点时只收缩拇指；物理像素截断仍可能产生不足 1.5 px 的中心量化变化。
 捕获丢失或禁用也从当前姿态返回，恢复下一次拖动使用的原生位置；卸载取消待交接任务。
 2026-10-03，维护者确认“按下瞬间放大继续保持现状，拖动和动画的交接需要补齐”。
-这一适配只处理已接受的原生拖动，不改变普通切换、按压 SnapSpec、释放 spring 或 ripple 首绘几何，
+这一适配只处理已接受的原生拖动，不改变普通切换、按压 SnapSpec 或释放 spring，
 不增加公开 API。
 
 已经历状态动画后，ThumbNode 在按压测量中先读取当前尺寸，再启动 snap；Compose 的首个 ripple draw
 捕获该测量尺寸。Avalonia 可能在首次 render 前完成后续布局，因此 Switch 在该测量中调用共享控制器的
-内部 `InitializeRippleDrawGeometry` 锁定首次几何。波纹播放和绘制仍归共享层，公开 API 不变；
+内部 `InitializeRippleDrawGeometry` 保留首次测量决定的起始半径。波纹播放和绘制仍归共享层，公开 API 不变；
 2026-10-03，维护者确认“增加内部衔接方法，修复该波纹差异（推荐）”。
 共享决定与适用范围见 [DECISIONS](../../../../docs/DECISIONS.md#ripple-首次绘制几何与尺寸动画衔接)。
+
+2026-10-04，维护者要求“继续修复波纹的问题”。Switch 启用共享控制器内部的
+`RippleFollowsPresenterCenter`，让无界按压波纹在每次绘制时跟随当前 thumb 中心，
+与 hover/focus 圈保持同心，覆盖放大、收缩和原生拖动。此项明确偏离固定 Core 的首绘中心锁定；
+起始/目标半径、扩散与淡出时序、按压 SnapSpec、释放 FastSpatial 和拖动交接均保留。
+其他组件的波纹规则不变，既有 C#/XAML 用法不需要修改。
 
 轨道绘制顺序为背景、拇指内容及反馈、描边。拇指背景不裁剪内容，ripple 半径固定 20 DIP 且不裁剪。
 内容接受 Avalonia 布局约束：自动大小的内容可缩小；显式 Width/Height 可像 Compose requiredSize 一样溢出。
@@ -122,26 +128,31 @@ Core 的 `material3-ripple/{CommonRipple,RippleAnimation}.kt`。
 - [SwitchCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/SwitchCases.kt)
 - [SwitchTests.cs](../../../../tests/Material3Expressive.Tests/SwitchTests.cs)
 
-72 个 visual parity 用例覆盖开关、图标/空内容、亮暗主题、启用/禁用、全部自定义颜色槽、RTL、
+75 个 visual parity 用例覆盖开关、图标/空内容、亮暗主题、启用/禁用、全部自定义颜色槽、RTL、
 受限尺寸与内容的 preferred/required 大小；动态覆盖切换/反向/标准 motion、主题、禁用、
 按压/快速释放/取消/按压中禁用、动画后按压、hover、Space/Enter 和原生拖动。
 参考端执行固定组件，读取实际 ThumbNode 布局；不复制拇指算法作为期望值。
 拖动另覆盖端点松开、中途反向、拖出取消、已有状态动画后拖动，以及松开前、松开后未送帧、
-首帧和收尾过程。已接受的 Enter 与 12 个原生拖动用例仍精确比较并保留不同结果。
+首帧和收尾过程；波纹修复补充状态切换后 unchecked 按压、带图标和 RTL。
+已接受的原生输入与波纹中心适配仍精确比较并保留真实不同结果。
 
-2026-10-03 拖动交接修复后的 self-test：72/72 执行无错误，双端重复与额外被动截图均稳定；
-39 equal、20 withinTolerance、13 different（上述已接受用例）。全部 33 个静态用例 equal。
-Compose 与 Avalonia 均为本轮真实执行；另新采集并发布全部 72 个 Compose 缓存参考。
-控件库 431 项测试通过，Release 控件库与 Parity 项目构建通过，保留现有阴影模块 AVA3001 警告。
-未涉及拖动的原有 60 个用例，其 318 张 Avalonia 图像与修复前 switch-final 产物逐文件 SHA256 相同。
-在 off→on 的中途拖动中，修复前松开回到 scene 中心 70 DIP，修复后松开前后均为 86 DIP。
+2026-10-04 波纹同心修复后的 self-test：75/75 执行无错误，双端重复与额外被动截图均稳定；
+39 equal、11 withinTolerance、25 different。不同结果包含原生输入和此次已确认的波纹中心偏离，
+保留真实 Compose 参考，不放宽容差。全部 33 个静态用例 equal。
+Compose 与 Avalonia 均为本轮真实执行；另新采集并发布全部 75 个 Compose 缓存参考。
+控件库 451 项测试通过，Release 控件库与 Parity 项目构建通过，保留现有阴影模块 AVA3001 警告。
+原有 72 个 Switch 用例的 474 个采样，其状态、回调和 thumb 几何等结构化事实与拖动交接修复后完全相同。
+共享层的 7 个双端回归也执行成功且自检稳定；83 个采样 YAML 和 78 张 Avalonia 图像均与既有产物
+逐文件 SHA256 相同。CheckBox、NavigationRail/NavigationBar 的用例 equal；两个 Button 和一个
+IconButton 用例保留既有 different，不属于此次修复范围。
 
 本轮产物：
 
-- [双端概览](../../../../artifacts/visual-parity/runs/switch-drag-handoff/summary.md)
-- [交接读数与图片一致性证据](../../../../artifacts/tests/switch-drag/handoff-evidence.md)
-- [控件库回归结果](../../../../artifacts/tests/switch-drag/switch-drag-regression.trx)
+- [双端概览](../../../../artifacts/visual-parity/runs/switch-ripple-centered/summary.md)
+- [结构化事实和共享调用方回归证据](../../../../artifacts/tests/switch-ripple/ripple-evidence.md)
+- [控件库回归结果](../../../../artifacts/tests/switch-ripple/switch-ripple-regression.trx)
 
 headless 测试检查实际模板、绑定/事件/命令顺序、键盘、自动化、LTR/RTL 拖动、内容与颜色、
-idle 后动画和模板替换/卸载/重新挂载清理；共享 ripple 另有首次绘制尺寸的回归。
+idle 后动画和模板替换/卸载/重新挂载清理；反馈绘制检查覆盖首次/已有动画后的按压、带图标、
+LTR/RTL、拖动、收缩和 10 倍慢放；共享 ripple 另检查首次绘制半径与默认/有界中心不受此选择影响。
 视觉用例不包含文字。实际 OS 无障碍客户端、真实桌面手工交互与文字视觉未作双端验收。
