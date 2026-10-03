@@ -179,6 +179,46 @@ public class RippleAnimationTests
         Assert.Equal(60, bounded.TargetRadius);
         Assert.Equal(50, unbounded.TargetRadius);
     }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FirstDraw_CapturesResizedLayoutEvenAtZeroAlpha_AndKeepsIt(bool bounded)
+    {
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(2, 3), new Size(16, 16), clock.Scope, bounded, 20);
+        var drawing = new DrawingGroup();
+        using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(28, 28));
+        Assert.Equal(0, ripple.Value);
+        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
+        Assert.Equal(20, ripple.TargetRadius);
+        using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(24, 24));
+        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void FollowingThePresenterCenter_OnlyAffectsUnboundedDrawing(bool bounded, bool follow)
+    {
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(2, 3), new Size(16, 16), clock.Scope, bounded, 20);
+        ripple.InitializeDrawGeometry(new Size(16, 16));
+        Assert.Equal(4.8, ripple.Radius, 6);
+        clock.Track(ripple.AnimateAsync()); clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
+        foreach (var size in new[] { 28d, 24d, 16d })
+        {
+            var drawing = new DrawingGroup();
+            using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, .1, new Size(size, size), follow);
+            Assert.Equal(!bounded && follow ? new Point(size / 2, size / 2) : new Point(8, 8), drawing.GetBounds().Center);
+            Assert.Equal(20, ripple.Radius); Assert.Equal(20, ripple.TargetRadius);
+            Assert.Equal(new Point(8, 8), ripple.Center); // The upstream animation geometry stays frozen.
+        }
+    }
 }
 
 /// <summary>

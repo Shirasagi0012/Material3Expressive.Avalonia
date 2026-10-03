@@ -133,6 +133,17 @@
                         <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
                     </m3:ShortNavigationBarItem>
                 </m3:ShortNavigationBar>
+                <TextBlock Text="Switches" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <ToggleSwitch Content="Notifications" />
+                    <ToggleSwitch Content="Thumb icon" IsChecked="True">
+                        <m3:SwitchAppearance.ThumbContent>
+                            <m3:MaterialSymbol Symbol="Check" Width="16" Height="16" />
+                        </m3:SwitchAppearance.ThumbContent>
+                    </ToggleSwitch>
+                    <ToggleSwitch Content="Disabled" IsChecked="True" IsEnabled="False" />
+                    <ToggleSwitch Content="State label" OnContent="On" OffContent="Off" />
+                </StackPanel>
                 <TextBlock Text="Sliders" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <Grid ColumnDefinitions="*,Auto">
                     <Slider x:Name="VolumeSlider" Value="35" />

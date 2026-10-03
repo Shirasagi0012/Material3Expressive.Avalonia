@@ -8,7 +8,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar / CheckBox / RadioButton 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
@@ -158,6 +158,9 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 - [RadioButton](../src/Material3Expressive/Components/RadioButton/README.md) 使用原生 Avalonia RadioButton 的模板，
   保留已确认的原生状态/组互斥、键盘与内容组合；四槽颜色、圆点动画、布局与绘制由模板部件负责。
   默认 ripple/focus 复用共享交互能力，具体边界见组件说明。
+- [Switch](../src/Material3Expressive/Components/Switch/README.md) 使用原生 ToggleSwitch 的模板和
+  SwitchAppearance 附加属性，保留原生状态写回、键盘、拖动与自动化；模板部件移植 ThumbNode 布局与动画。
+  默认 ripple/focus 配置已实现，null 回调模式、可配置 inset focus ring 和外部 InteractionSource 映射未实现。
 - [Divider](../src/Material3Expressive/Components/Divider/README.md) 使用原生 Separator 的主题，
   通过附加属性选择 Horizontal / Vertical 方向、厚度与颜色；内部 Canvas 保留布局取整、
   原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。
