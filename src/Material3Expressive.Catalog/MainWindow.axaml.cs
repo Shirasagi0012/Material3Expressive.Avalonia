@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Overlays;
 using System.Linq;
 using System;
 
@@ -30,6 +31,12 @@ public partial class MainWindow : Window
         foreach (var item in DemoNavigationRail.Items.OfType<NavigationRailItem>())
             item.IsSelected = ReferenceEquals(item, sender);
     }
+
+    private void OnOpenDialog(object? sender, RoutedEventArgs e) => DemoDialog.IsOpen = true;
+    private void OnCloseDialog(object? sender, RoutedEventArgs e) => DemoDialog.IsOpen = false;
+    private void OnOpenNestedDialog(object? sender, RoutedEventArgs e) => DemoNestedDialog.IsOpen = true;
+    private void OnCloseNestedDialog(object? sender, RoutedEventArgs e) => DemoNestedDialog.IsOpen = false;
+    private void OnDialogDismissRequested(object? sender, DismissRequestedEventArgs e) => ((Dialog)sender!).IsOpen = false;
 
     private void OnChangeBadge(object? sender, RoutedEventArgs e)
     {

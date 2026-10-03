@@ -10,3 +10,4 @@ using Avalonia.Metadata;
 [assembly: XmlnsDefinition("https://github.com/Shirasagi0012/Material3Expressive.Avalonia", "Material3Expressive.Foundation.Rendering")]
 [assembly: XmlnsDefinition("https://github.com/Shirasagi0012/Material3Expressive.Avalonia", "Material3Expressive.Foundation.Interaction")]
 [assembly: XmlnsDefinition("https://github.com/Shirasagi0012/Material3Expressive.Avalonia", "Material3Expressive.Foundation.Typography")]
+[assembly: XmlnsDefinition("https://github.com/Shirasagi0012/Material3Expressive.Avalonia", "Material3Expressive.Foundation.Overlays")]

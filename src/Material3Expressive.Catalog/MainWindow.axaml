@@ -232,6 +232,35 @@
                         </m3:WideNavigationRailItem>
                     </m3:ModalWideNavigationRail>
                 </Grid>
+                <Button Content="Open Dialog" Click="OnOpenDialog" Theme="{StaticResource MaterialTonalButtonTheme}" />
+                <m3:Dialog x:Name="DemoDialog" Width="360" DismissRequested="OnDialogDismissRequested">
+                    <m3:MaterialSurface Padding="24" CornerRadius="28"
+                                        Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="Dialog" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+                            <TextBox PlaceholderText="Type here" Text="Editable content">
+                                <TextBox.ContextMenu>
+                                    <ContextMenu><MenuItem Header="Example action" /></ContextMenu>
+                                </TextBox.ContextMenu>
+                            </TextBox>
+                            <ComboBox SelectedIndex="0">
+                                <ComboBoxItem>First option</ComboBoxItem>
+                                <ComboBoxItem>Second option</ComboBoxItem>
+                            </ComboBox>
+                            <Button Content="Open another dialog" Click="OnOpenNestedDialog" />
+                            <Button Content="Close" Click="OnCloseDialog" Theme="{StaticResource MaterialTextButtonTheme}" />
+                            <m3:Dialog x:Name="DemoNestedDialog" Width="280" DismissRequested="OnDialogDismissRequested">
+                                <m3:MaterialSurface Padding="24" CornerRadius="28"
+                                                    Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}">
+                                    <StackPanel Spacing="16">
+                                        <TextBlock Text="Another dialog" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+                                        <Button Content="Back" Click="OnCloseNestedDialog" />
+                                    </StackPanel>
+                                </m3:MaterialSurface>
+                            </m3:Dialog>
+                        </StackPanel>
+                    </m3:MaterialSurface>
+                </m3:Dialog>
                 <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
                 <Button Theme="{StaticResource MaterialElevatedButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
                 <Button Theme="{StaticResource MaterialTonalButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>

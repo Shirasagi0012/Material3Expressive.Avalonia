@@ -43,6 +43,7 @@
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
+    <StyleInclude Source="/Foundation/Overlays/Dialog.axaml" />
     <StyleInclude Source="/Components/Button/Button.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />

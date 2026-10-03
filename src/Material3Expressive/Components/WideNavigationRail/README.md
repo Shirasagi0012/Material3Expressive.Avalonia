@@ -36,7 +36,7 @@ Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间�
   目标 Start 时不映射。默认焦点呈现使用固定 Compose 的 opacity 状态层。
   Top / Start 目标切换时复用 Surface 的卸载/挂载流程，按上游 indication 节点重建语义清空反馈；Button 的点击入口继续生效。
 - Token 保留 System 引用、disabled 0.38 alpha 与默认 padding 的尺寸派生关系；资源变化继续驱动模板和布局。
-- `ModalWideNavigationRail` 将同一个 ItemsPresenter 迁入 OverlayLayer，保留 item 对象和外部选中状态。
+- `ModalWideNavigationRail` 将同一个 ItemsPresenter 迁入 PopupOverlayLayer 内的模态 Popup，保留 item 对象和外部选中状态。
   非 hidden 模式按 movableContentOf 保留进行中的 Item 动画；hidden 模式在内容重新挂载时释放旧作用域，
   按当前目标初始化位置、选择与颜色，对齐上游首次组合内容的动画初值，不额外播放收起到展开的进入动画。
   hidden 的水平锚点动画归属 rail 状态，在浮层关闭后仍保留并完成；再次打开从收起锚点滑入。
@@ -93,8 +93,9 @@ Header、Icon、Label 接受内容与 DataTemplate，字符串 label 由普通 T
 点击、Command 和自动化 Select 只请求导航；应用维护 IsSelected 与各项互斥。
 Space / Enter 在松开时调用。自动化暴露 TabItem、选中状态和所属 rail；有 label 时抑制 icon 的重复描述。
 
-Modal 复用同一 State 和 item API。宿主须有 OverlayLayer（标准 Window 模板的 VisualLayerManager 可提供；
-自定义宿主使用 `VisualLayerManager EnableOverlayLayer="True"`）。浮层覆盖整个 TopLevel 客户区，不受 rail 的布局位置限制。
+Modal 复用同一 State 和 item API。宿主须有 PopupOverlayLayer（标准 Window 模板可提供；
+自定义 Window 模板需包含名为 `PART_VisualLayerManager` 的 VisualLayerManager）。
+浮层覆盖整个 TopLevel 客户区，不受 rail 的布局位置限制；仅在 Content 内启用普通 OverlayLayer 已不再足够。
 `Header` 用于收起态，`ExpandedHeader` 用于展开态；直接传 Control 时必须是两个实例。
 使用 Header 数据和 HeaderTemplate 时，展开槽默认复用数据与模板以生成第二份内容。
 
@@ -146,6 +147,11 @@ Modal 的宿主适配于同日确认“采用 OverlayLayer 与独立 ExpandedHea
 数据和模板可生成两份，直接传入 Control 时须提供两个实例。HideOnCollapse 的两条路径、拖动关闭和 Escape KeyUp 保留。
 范围为 Wide/Modal 的窗口宿主与 Header，不提供 Android predictive back，默认颜色、形状和动画仍来自固定上游。
 
+2026-10-04，维护者确认迁入共享 [Overlays](../../Foundation/Overlays/README.md)：
+宿主改为组件独立持有的 Avalonia Popup，强制使用 PopupOverlayLayer；上述普通 OverlayLayer 的历史选择被替代。
+客户区覆盖、Tab/Escape/Back、模态焦点和还原交给内部 ModalPresenter；Rail 的 State、同一 ItemsPresenter、
+独立 Header、遮罩动画、拖动和关闭时机保持原职责。没有套用基础 Dialog 的 200/100ms 居中缩放动画。
+
 ## 已接受的纵向动画改进
 
 2026-10-03，维护者确认不再复现固定 Compose 展开/收起过程中的整数布局抖动。
@@ -168,6 +174,13 @@ Modal 的宿主适配于同日确认“采用 OverlayLayer 与独立 ExpandedHea
 维护者明确本次不新增专门测试，改后的真实桌面视觉体验由维护者核验。
 
 ## 验证
+
+PopupOverlayLayer 迁移验证（2026-10-04）：控件库 510/510、Catalog Release 构建通过。
+Modal 全部 94 配置重新采集双端并自检，24 equal / 53 withinTolerance / 17 different，执行错误为 0，重复性稳定。
+对照此前冻结 Avalonia 构建重新采集的同一矩阵，308 采样的 3,898 项读数及 308 张 PNG 完全一致；
+最终 Escape 配对清理调整的四个配置另行自检并与迁移前结果一致。既有 Compose 差异没有被标为通过。
+测试宿主补齐 Window 的 `PART_VisualLayerManager` 与 Background 绑定，未改场景布局、时间线或容差。
+详情见 [Dialog / Rail 迁移证据](../../../../artifacts/dialog-foundation/README.md)。
 
 Catalog 临时启用了 [RailLayoutTrace](../../../Material3Expressive.Catalog/RailLayoutTrace.cs)，用于调查展开/收起时的坐标抖动。
 运行 Catalog，每次改变 rail 的目标状态后等待动画结束，会自动在

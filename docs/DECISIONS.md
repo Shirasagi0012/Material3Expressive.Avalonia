@@ -3,6 +3,22 @@
 本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件 README 保存；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
+## Dialog / Popup 的窗口内宿主与模态职责
+
+决定：组件各自持有 Avalonia Popup，显式使用 `ShouldUseOverlayLayer = true`，由原生 Popup 接入
+当前 TopLevel 的 PopupOverlayLayer，不创建独立 Window，不引入中央管理器。
+内部 ModalPresenter 复用客户区覆盖、焦点约束/还原、Escape/Back 和清理；组件保留自己的状态与动画。
+最上层模态按实际宿主顺序判定，子 overlay Popup 通过 PlacementTarget 链判定焦点归属。
+基础 Dialog 区分 IsOpen 目标与 IsPresented 实际呈现，DismissRequested 交给调用方决定是否关闭，
+退出动画期间保留模态层。普通 Popup 继续直接组合原生能力。
+原因：复用 Avalonia 弹层定位与承载，同时支持嵌套菜单和模态组件共享输入语义；普通 OverlayLayer
+继续供 ConnectedAnimation 等视觉覆盖能力消费。
+范围：基础 Dialog 与 ModalWideNavigationRail 迁移；不替代 Rail 的拖动、遮罩和运动，不包含 TextField。
+此项取代 Rail 2026-10-03 决定中的普通 OverlayLayer 宿主选择，其余 Header/State 等决定保持原范围。
+确认：2026-10-04，维护者明确选择 PopupOverlayLayer、拒绝独立窗口、认可组件独立持有 Popup，
+并授权基础 Dialog 和 Rail 迁移。接口、桌面动画来源及未实现/未经验证项见
+[Overlays 说明](../src/Material3Expressive/Foundation/Overlays/README.md)。
+
 ## 聚合 TextStyle 与 Token 层文字单位换算
 
 决定：通过不可变 TextStyle、MaterialText.Style/DefaultStyle、Typography 角色绑定及派生 XAML 扩展，

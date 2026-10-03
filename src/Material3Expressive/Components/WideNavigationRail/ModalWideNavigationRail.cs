@@ -15,6 +15,7 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation.Overlays;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Tokens;
 
@@ -52,15 +53,14 @@ public class ModalWideNavigationRail : WideNavigationRail
     private ContentPresenter? _expandedHeader;
     private Border? _expandedHeaderPadding, _scrim;
     private Control? _surface;
-    private OverlayLayer? _layer;
+    private readonly Popup _popup = new();
     private TopLevel? _topLevel;
-    private IInputElement? _previousFocus;
     private VisualAnimationScope? _scope;
     private Animatable<float>? _position, _alpha, _offset;
     private IDisposable? _alphaSubscription, _offsetSubscription;
     private CancellationTokenSource? _flingCancellation;
     private bool _samplingFling, _offsetDismissing;
-    private bool _pending, _scrimTarget, _focusRedirect, _dragging, _moving;
+    private bool _pending, _scrimTarget, _closingOverlay, _dragging, _moving;
     private float _width;
     private WideNavigationRailValue _anchorTarget;
     private IPointer? _pointer;
@@ -69,14 +69,16 @@ public class ModalWideNavigationRail : WideNavigationRail
     private Action? _restoreAfterDetach;
     internal bool IsMovingContent => _moving;
     internal bool HasFrameDrivenTarget => _samplingFling || _offsetDismissing;
-    internal bool IsModalVisible => _layer is not null;
+    internal bool IsModalVisible => _topLevel is not null;
     internal float PositionProgress => _position?.Value ?? (State.TargetValue == WideNavigationRailValue.Expanded ? 1 : 0);
     internal float ModalOffset => _offset?.Value ?? 0;
     internal float ScrimAlpha => _alpha?.Value ?? 0;
     internal override bool ComputeLayoutExpanded => false;
     internal override IEnumerable<WideNavigationRailItem> NavigationItems =>
-        (_layer is null ? (Visual)this : _overlay!).GetVisualDescendants().OfType<WideNavigationRailItem>();
+        (_topLevel is null ? (Visual)this : _overlay!).GetVisualDescendants().OfType<WideNavigationRailItem>();
     protected override Type StyleKeyOverride => typeof(ModalWideNavigationRail);
+
+    public ModalWideNavigationRail() => LogicalChildren.Add(_popup);
 
     static ModalWideNavigationRail() => AffectsMeasure<ModalWideNavigationRail>(HideOnCollapseProperty);
     protected override Size MeasureCore(Size availableSize)
@@ -88,8 +90,11 @@ public class ModalWideNavigationRail : WideNavigationRail
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         CloseOverlay(false);
+        _templateRoot?.Children.Remove(_popup);
+        if (_overlay is not null) { _overlay.DismissRequested -= OnModalDismissRequested; _overlay.Closed -= OnModalClosed; }
         base.OnApplyTemplate(e);
         _templateRoot = e.NameScope.Find<Grid>("PART_Root");
+        _templateRoot?.Children.Add(_popup);
         _inline = e.NameScope.Find<Control>("PART_Inline");
         _overlay = e.NameScope.Find<ModalWideNavigationRailOverlay>("PART_Overlay");
         _modalLayout = e.NameScope.Find<WideNavigationRailLayout>("PART_ModalLayout");
@@ -101,8 +106,8 @@ public class ModalWideNavigationRail : WideNavigationRail
         if (_overlay is not null)
         {
             _overlay.Owner = this;
-            _overlay.KeyUp += OnOverlayKeyUp;
-            _overlay.KeyDown += OnOverlayKeyDown;
+            _overlay.DismissRequested += OnModalDismissRequested;
+            _overlay.Closed += OnModalClosed;
             _overlay.AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel, true);
             _overlay.AddHandler(PointerMovedEvent, OnPointerMoved, RoutingStrategies.Tunnel, true);
             _overlay.AddHandler(PointerReleasedEvent, OnPointerReleased, RoutingStrategies.Tunnel, true);
@@ -199,8 +204,8 @@ public class ModalWideNavigationRail : WideNavigationRail
         if (_overlay is null || _modalLayout is null || !this.IsAttachedToVisualTree()) return;
         var visible = PositionProgress != 0;
         _modalLayout.Expanded = HideOnCollapse || PositionProgress >= 0.3f;
-        if (visible && _layer is null) OpenOverlay();
-        else if (!visible && _layer is not null) CloseOverlay(true);
+        if (visible && _topLevel is null) OpenOverlay();
+        else if (!visible && _topLevel is not null) CloseOverlay(true);
         if (visible) UpdateScrim();
     }
     private void OpenOverlay()
@@ -214,18 +219,13 @@ public class ModalWideNavigationRail : WideNavigationRail
         var initialAnchor = _anchorTarget;
         _anchorTarget = State.TargetValue;
         _topLevel = TopLevel.GetTopLevel(this)!;
-        _layer = OverlayLayer.GetOverlayLayer(_topLevel) ?? throw new InvalidOperationException("ModalWideNavigationRail requires a TopLevel with an OverlayLayer.");
-        _previousFocus = _topLevel.FocusManager?.GetFocusedElement();
         _templateRoot.Children.Remove(_overlay);
         _overlay.IsVisible = true;
-        _layer.Children.Add(_overlay);
+        _overlay.Open(_popup, this, focusContent: false);
         ((ISetInheritanceParent)_overlay).SetParent(this);
         // Only the retained rail uses movableContentOf upstream. Hidden content is
         // composed afresh: reattachment initializes item motion at its current targets.
         MoveItems(RailLayout, _modalLayout, !HideOnCollapse);
-        _topLevel.AddHandler(GotFocusEvent, OnTopLevelGotFocus, RoutingStrategies.Bubble, true);
-        _topLevel.BackRequested += OnBackRequested;
-        _overlay.Focus();
         _alpha = _scope!.CreateAnimatable(HideOnCollapse ? (initialAnchor == WideNavigationRailValue.Expanded ? 1f : 0f) : (PositionProgress >= .3f ? 1f : 0f));
         _scrimTarget = _alpha.Value == 1;
         _alphaSubscription = _scope!.SubscribeValue(_alpha, value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); });
@@ -250,18 +250,17 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void CloseOverlay(bool restoreFocus)
     {
-        if (_layer is null || _overlay is null) return;
+        if (_topLevel is null || _overlay is null) return;
         _flingCancellation?.Cancel();
         var pointer = _pointer;
         _pointer = null; _dragging = false;
         pointer?.Capture(null);
-        _topLevel!.RemoveHandler(GotFocusEvent, OnTopLevelGotFocus);
-        _topLevel.BackRequested -= OnBackRequested;
+        _closingOverlay = true;
         if (!restoreFocus && TopLevel.GetTopLevel(this) is null)
         {
             // Parent detach notifications precede child notifications. Reattach only
             // after that traversal, so feedback leases never see a half-detached tree.
-            _layer.Children.Remove(_overlay);
+            _overlay.Close(restoreFocus);
             _overlay.IsVisible = false;
             _restoreAfterDetach = () =>
             {
@@ -273,11 +272,11 @@ public class ModalWideNavigationRail : WideNavigationRail
         else
         {
             if (_modalLayout is not null && RailLayout is not null) MoveItems(_modalLayout, RailLayout, restoreFocus && !HideOnCollapse);
-            _layer.Children.Remove(_overlay);
+            _overlay.Close(restoreFocus);
             _overlay.IsVisible = false;
             _templateRoot?.Children.Add(_overlay);
         }
-        _layer = null; _topLevel = null;
+        _topLevel = null; _closingOverlay = false;
         if (_alpha is not null) _ = _alpha.StopAsync();
         _alphaSubscription?.Dispose(); _alphaSubscription = null;
         _alpha = null;
@@ -287,8 +286,6 @@ public class ModalWideNavigationRail : WideNavigationRail
             _offsetSubscription?.Dispose(); _offsetSubscription = null;
             _offset = null; _width = 0;
         }
-        if (restoreFocus && _previousFocus is Control { IsEffectivelyVisible: true, IsEffectivelyEnabled: true } focus) focus.Focus();
-        _previousFocus = null;
     }
     private void UpdateScrim()
     {
@@ -365,33 +362,15 @@ public class ModalWideNavigationRail : WideNavigationRail
         try { return State.CollapseAsync(cancellationToken); }
         finally { _offsetDismissing = false; }
     }
-    private void OnOverlayKeyUp(object? sender, KeyEventArgs e)
+    private void OnModalDismissRequested(object? sender, DismissRequestedEventArgs e)
     {
-        // This commonMain handler is unconditional, even when desktop back dismissal is disabled.
-        if (e.Key != Key.Escape) return;
-        e.Handled = true; _ = State.CollapseAsync();
+        // Rail's common Escape path remains independent of its platform Back setting.
+        if (e.Reason == DismissReason.Escape || e.Reason == DismissReason.Back && ShouldDismissOnBackPress)
+            _ = State.CollapseAsync();
     }
-    private void OnOverlayKeyDown(object? sender, KeyEventArgs e)
+    private void OnModalClosed(object? sender, EventArgs e)
     {
-        if (e.Key == Key.Tab && _overlay is not null)
-        {
-            var controls = _overlay.GetVisualDescendants().OfType<Control>().Where(control => control.Focusable && control.IsEffectivelyEnabled && control.IsEffectivelyVisible && KeyboardNavigation.GetIsTabStop(control)).ToArray();
-            var index = Array.IndexOf(controls, _topLevel?.FocusManager?.GetFocusedElement());
-            if (controls.Length > 0) controls[(index + (e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? controls.Length - 1 : 1) + controls.Length) % controls.Length].Focus(NavigationMethod.Tab);
-            else _overlay.Focus();
-            e.Handled = true;
-        }
-    }
-    private void OnBackRequested(object? sender, RoutedEventArgs e)
-    {
-        e.Handled = true;
-        if (ShouldDismissOnBackPress) _ = State.CollapseAsync();
-    }
-    private void OnTopLevelGotFocus(object? sender, FocusChangedEventArgs e)
-    {
-        if (_focusRedirect || _overlay is null || e.Source is Visual visual && (_overlay == visual || _overlay.IsVisualAncestorOf(visual))) return;
-        _focusRedirect = true;
-        try { _overlay.Focus(); } finally { _focusRedirect = false; }
+        if (!_closingOverlay) CloseOverlay(false);
     }
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -494,7 +473,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
 }
 
-internal sealed class ModalWideNavigationRailOverlay : Panel
+internal sealed class ModalWideNavigationRailOverlay : ModalPresenter
 {
     internal ModalWideNavigationRail? Owner;
     public ModalWideNavigationRailOverlay() { Focusable = true; FocusAdorner = null; }
