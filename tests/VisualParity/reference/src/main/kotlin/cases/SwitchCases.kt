@@ -78,14 +78,33 @@ class SwitchCases {
                     advance(81000); host.scene.sendKeyEvent(KeyEvent(key,KeyEventType.KeyDown)); host.scheduler.runCurrent(); host.draw(); host.frame(81000); sample("key-down"); times(96000,160000)
                     advance(161000); host.scene.sendKeyEvent(KeyEvent(key,KeyEventType.KeyUp)); host.scheduler.runCurrent(); host.draw(); host.frame(161000); sample("key-up"); times(176000,400000,800000)
                 }
-                "drag" -> {
+                "drag","drag-end","drag-return","drag-cancel","warm-drag" -> {
+                    var dragTime=0L
+                    if(c.action=="warm-drag") {
+                        mutate(1000,"state-change") { s.checked=c.state!="on" }; times(16000,400000)
+                        mutate(401000,"state-restore") { s.checked=c.state=="on" }; times(416000,800000)
+                        dragTime=800000
+                    }
                     val t=s.thumbCoordinates()
                     val start=t.localToRoot(Offset(t.size.width/2f,t.size.height/2f))/ComposeHost.RenderScale.toFloat()
                     val direction=(if(c.state=="off") 1 else -1)*(if(c.rtl) -1 else 1)
-                    val end=start+Offset(direction*16f,0f)
-                    event(1000,"move",start); event(2000,"down",start); sample("press")
-                    event(16000,"move",end); sample("drag")
-                    event(64000,"up",end); sample("release"); times(80000,160000,400000,800000)
+                    var end=start+Offset(direction*(if(c.action=="drag-end") 20f else 16f),0f)
+                    event(dragTime+1000,"move",start); event(dragTime+2000,"down",start); sample("press")
+                    event(dragTime+16000,"move",end); sample("drag")
+                    if(c.action=="drag-return") {
+                        end=start+Offset(direction*8f,0f)
+                        event(dragTime+48000,"move",end); sample("drag-return")
+                    }
+                    if(c.action=="drag-cancel") {
+                        event(dragTime+48000,"move",outside); sample("cancel")
+                        times(dragTime+64000,dragTime+80000,dragTime+160000,dragTime+400000)
+                        event(dragTime+401000,"up",outside); sample("release"); times(dragTime+416000,dragTime+800000)
+                    } else {
+                        advance(dragTime+64000); host.draw(); sample("pre-release")
+                        host.input("up",end); host.draw(); sample("release-before-frame")
+                        host.frame(dragTime+64000); sample("release")
+                        times(dragTime+80000,dragTime+96000,dragTime+160000,dragTime+400000,dragTime+800000)
+                    }
                 }
                 else -> {
                     var pressTime=2000L

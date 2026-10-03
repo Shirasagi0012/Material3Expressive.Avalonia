@@ -32,6 +32,8 @@ internal sealed class SwitchThumbLayout : Panel
     private float _sizePx, _offsetPx;
     private bool _updatePending;
     private bool _checked;
+    private bool _nativeDragging, _dragging, _dragHandoff;
+    private float _dragSizePx, _dragOffsetPx;
     internal double PaintedSize { get; private set; }
     internal double PaintedOffset { get; private set; }
 
@@ -51,7 +53,7 @@ internal sealed class SwitchThumbLayout : Panel
         _owner.AddHandler(InputElement.PointerMovedEvent, InputChanged, RoutingStrategies.Tunnel, true);
         _owner.AddHandler(InputElement.KeyDownEvent, InputChanged, RoutingStrategies.Tunnel, true);
         _owner.AddHandler(InputElement.KeyUpEvent, InputChanged, RoutingStrategies.Tunnel, true);
-        _owner.PointerCaptureLost += InputChanged;
+        _owner.PointerCaptureLost += CaptureLost;
         _owner.LostFocus += InputChanged;
         _owner.PropertyChanged += OwnerChanged;
         _owner.Classes.CollectionChanged += ClassesChanged;
@@ -67,7 +69,7 @@ internal sealed class SwitchThumbLayout : Panel
             owner.RemoveHandler(InputElement.PointerMovedEvent, InputChanged);
             owner.RemoveHandler(InputElement.KeyDownEvent, InputChanged);
             owner.RemoveHandler(InputElement.KeyUpEvent, InputChanged);
-            owner.PointerCaptureLost -= InputChanged;
+            owner.PointerCaptureLost -= CaptureLost;
             owner.LostFocus -= InputChanged;
             owner.PropertyChanged -= OwnerChanged;
             owner.Classes.CollectionChanged -= ClassesChanged;
@@ -77,26 +79,71 @@ internal sealed class SwitchThumbLayout : Panel
         _sizeAnim = _offsetAnim = null;
         _initialSize = _initialOffset = float.NaN;
         _updatePending = false;
+        _nativeDragging = _dragging = _dragHandoff = false;
         _owner = null; _interaction = null;
         base.OnDetachedFromVisualTree(e);
     }
 
     private void InputChanged(object? sender, RoutedEventArgs e) => InvalidateMeasure();
-    private void ClassesChanged(object? sender, NotifyCollectionChangedEventArgs e) => InvalidateMeasure();
+    private void ClassesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        var dragging = _owner?.Classes.Contains(":dragging") == true;
+        if (dragging != _nativeDragging)
+        {
+            _nativeDragging = dragging;
+            if (dragging) ReadDragPosition();
+            else EndDrag();
+        }
+        InvalidateMeasure();
+    }
     private void MovingChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == Canvas.LeftProperty) InvalidateMeasure();
+        if (e.Property != Canvas.LeftProperty) return;
+        if (_nativeDragging && _interaction?.Interaction.HasFlag(InteractionState.Pressed) == true)
+            ReadDragPosition();
+        InvalidateMeasure();
+    }
+    private void ReadDragPosition()
+    {
+        var left = Canvas.GetLeft(Children[0]);
+        // ToggleSwitch clears Canvas.Left before removing :dragging and writing IsChecked.
+        // Keep the last finite position until that native release sequence has finished.
+        if (!double.IsFinite(left)) return;
+        if (!_dragging) _offsetAnim?.Stop();
+        _dragging = true;
+        _dragOffsetPx = (float)((2 + left) * LayoutHelper.GetLayoutScale(this));
+    }
+    private void CaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        EndDrag();
+        InvalidateMeasure();
+    }
+    private void EndDrag()
+    {
+        if (!_dragging) return;
+        _dragging = false;
+        _dragHandoff = true;
+        _dragSizePx = (float)(PaintedSize * LayoutHelper.GetLayoutScale(this));
+        ScheduleThumbUpdate();
     }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == InputElement.IsEffectivelyEnabledProperty) InvalidateMeasure();
+        if (e.Property == InputElement.IsEffectivelyEnabledProperty)
+        {
+            if (_owner?.IsEffectivelyEnabled == false) EndDrag();
+            InvalidateMeasure();
+        }
         if (e.Property == SwitchAppearance.ThumbContentProperty || e.Property == SwitchAppearance.ThumbContentTemplateProperty)
             InvalidateMeasure();
         if (e.Property != Avalonia.Controls.Primitives.ToggleButton.IsCheckedProperty) return;
+        ScheduleThumbUpdate();
+    }
+    private void ScheduleThumbUpdate()
+    {
         if (_motion is not { IsEnding: false } motion || _updatePending) return;
         _updatePending = true;
-        // ThumbElement.update runs during recomposition. Animatable starts from the
-        // first measurement, rather than from a prior unanimated press.
+        // ThumbElement.update runs during recomposition. Ordinary state changes initialize
+        // from the first measurement; native drag release instead hands off the current pose.
         _ = motion.Launch(async ct =>
         {
             await motion.Clock.NextFrameAsync(ct);
@@ -104,10 +151,19 @@ internal sealed class SwitchThumbLayout : Panel
             _checked = _owner?.IsChecked == true;
             if (!float.IsNaN(_initialSize) && _sizeAnim is null)
             {
-                _sizeAnim = motion.CreateAnimatable(_initialSize);
-                _offsetAnim = motion.CreateAnimatable(_initialOffset);
+                _sizeAnim = motion.CreateAnimatable(_dragHandoff ? _dragSizePx : _initialSize);
+                _offsetAnim = motion.CreateAnimatable(_dragHandoff ? _dragOffsetPx : _initialOffset);
                 motion.SubscribeValue(_sizeAnim, value => { _sizePx = value; InvalidateMeasure(); });
                 motion.SubscribeValue(_offsetAnim, value => { _offsetPx = value; InvalidateMeasure(); });
+            }
+            if (_dragHandoff && _sizeAnim is { } size && _offsetAnim is { } offset)
+            {
+                // A drag owns the visible position, not the old animation's value or velocity.
+                // Resume both tracks together from the displayed pose after native writeback.
+                await Task.WhenAll(size.SnapToAsync(_dragSizePx, ct), offset.SnapToAsync(_dragOffsetPx, ct));
+                _dragHandoff = false;
+                if (!_dragging && _owner is { } owner)
+                    Canvas.SetLeft(Children[0], owner.IsChecked == true ? 20 : 0);
             }
             InvalidateMeasure();
         }, "Switch thumb update");
@@ -136,16 +192,17 @@ internal sealed class SwitchThumbLayout : Panel
             : new SpringSpec<float>(spring.DampingRatio, spring.Stiffness, 0.01f);
         var measuredSize = (int)(_sizeAnim is null ? size : _sizePx) / (double)scale;
         _interaction?.InitializeRippleDrawGeometry(new Size(measuredSize, measuredSize));
-        Animate(_sizeAnim, size); Animate(_offsetAnim, offset);
+        if (!_dragHandoff) Animate(_sizeAnim, size);
+        if (!_dragging && !_dragHandoff) Animate(_offsetAnim, offset);
         void Animate(Animatable<float>? track, float target)
         {
             if (track is null || track.TargetValue == target || _motion is not { IsEnding: false } motion) return;
             // ThumbNode launches animateTo directly; interruption retains current velocity.
             _ = motion.Launch(ct => track.AnimateToAsync(target, animationSpec, cancellationToken: ct), "Switch thumb animation");
         }
-        PaintedSize = (int)(_sizeAnim is null ? size : _sizePx) / (double)scale;
+        PaintedSize = (int)(_dragHandoff ? _dragSizePx : _sizeAnim is null ? size : _sizePx) / (double)scale;
         PaintedOffset = (int)(_offsetAnim is null ? offset : _offsetPx) / (double)scale;
-        if (_owner.Classes.Contains(":dragging")) PaintedOffset = 2 + Canvas.GetLeft(Children[0]);
+        if (_dragging || _dragHandoff) PaintedOffset = _dragOffsetPx / scale;
         Children[0].Measure(new Size(PaintedSize, PaintedSize));
         return new Size(20, 32);
     }

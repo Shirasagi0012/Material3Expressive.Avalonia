@@ -55,6 +55,8 @@ public sealed class SwitchCases
             yield return Data($"dynamic.disable.{state}", new(state, Thumb: "icon", Action: "enable"));
             yield return Data($"dynamic.theme.{state}", new(state, Thumb: "icon", Action: "theme"));
             yield return Data($"dynamic.drag.{state}", new(state, Action: "drag"));
+            foreach (var action in new[] { "drag-end", "drag-return", "drag-cancel", "warm-drag" })
+                yield return Data($"dynamic.{action}.{state}", new(state, Action: action));
         }
         foreach (var action in new[] { "quick", "cancel", "disable-press", "disabled-input", "hover", "space", "enter", "content" })
             yield return Data($"dynamic.input.{action}", new(Enabled: action != "disabled-input", Action: action));
@@ -62,6 +64,7 @@ public sealed class SwitchCases
         yield return Data("dynamic.transition.disabled", new(Enabled: false, Action: "transition"));
         yield return Data("dynamic.press.after-transition", new(Action: "warm-press"));
         yield return Data("dynamic.drag.rtl", new(Rtl: true, Action: "drag"));
+        yield return Data("dynamic.drag-end.rtl", new(Rtl: true, Action: "drag-end"));
     }
     static CaseData<SwitchConfig> Data(string id, SwitchConfig config) => new(id, id, config);
 
@@ -114,14 +117,39 @@ public sealed class SwitchCases
                 var key = config.Action == "space" ? Key.Space : Key.Enter;
                 Advance(81000); host.Window.KeyPress(key, RawInputModifiers.None, PhysicalKey.None, null); host.Draw(); host.Frame(81000); Sample("key-down"); Times(96000, 160000);
                 Advance(161000); host.Window.KeyRelease(key, RawInputModifiers.None, PhysicalKey.None, null); host.Draw(); host.Frame(161000); Sample("key-up"); Times(176000, 400000, 800000); break;
-            case "drag":
+            case "drag": case "drag-end": case "drag-return": case "drag-cancel": case "warm-drag":
+                var dragTime = 0L;
+                if (config.Action == "warm-drag")
+                {
+                    Mutate(1000, "state-change", () => box.IsChecked = config.State != "on"); Times(16000, 400000);
+                    Mutate(401000, "state-restore", () => box.IsChecked = config.State == "on"); Times(416000, 800000);
+                    dragTime = 800000;
+                }
                 var moving = box.GetVisualDescendants().Single(v => v.Name == "PART_MovingKnobs");
                 var start = moving.TranslatePoint(new Point(moving.Bounds.Width / 2, moving.Bounds.Height / 2), host.Window)!.Value;
                 var direction = (config.State == "off" ? 1 : -1) * (config.Rtl ? -1 : 1);
-                var end = start + new Vector(direction * 16, 0);
-                Event(1000, "move", start); Event(2000, "down", start); Sample("press");
-                Event(16000, "move", end); Sample("drag");
-                Event(64000, "up", end); Sample("release"); Times(80000, 160000, 400000, 800000); break;
+                var end = start + new Vector(direction * (config.Action == "drag-end" ? 20 : 16), 0);
+                Event(dragTime + 1000, "move", start); Event(dragTime + 2000, "down", start); Sample("press");
+                Event(dragTime + 16000, "move", end); Sample("drag");
+                if (config.Action == "drag-return")
+                {
+                    end = start + new Vector(direction * 8, 0);
+                    Event(dragTime + 48000, "move", end); Sample("drag-return");
+                }
+                if (config.Action == "drag-cancel")
+                {
+                    Event(dragTime + 48000, "move", outside); Sample("cancel");
+                    Times(dragTime + 64000, dragTime + 80000, dragTime + 160000, dragTime + 400000);
+                    Event(dragTime + 401000, "up", outside); Sample("release"); Times(dragTime + 416000, dragTime + 800000);
+                }
+                else
+                {
+                    Advance(dragTime + 64000); host.Draw(); Sample("pre-release");
+                    host.Input("up", end); host.Draw(); Sample("release-before-frame");
+                    host.Frame(dragTime + 64000); Sample("release");
+                    Times(dragTime + 80000, dragTime + 96000, dragTime + 160000, dragTime + 400000, dragTime + 800000);
+                }
+                break;
             default:
                 var pressTime = 2000L;
                 if (config.Action == "warm-press")

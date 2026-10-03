@@ -66,6 +66,15 @@ FastSpatial spring、按压 SnapSpec 与中断时的速度延续。
 动画通过现有 ComposeAnimation NuGet 与 VisualAnimationScope 接入和清理。
 Native KnobTransitions 不控制 Material 的尺寸/偏移动画；原生 Canvas.Left 用于实际拖动。
 
+拖动期间位置直接跟随原生 Canvas.Left，暂停旧的偏移动画。原生松开顺序为清空 Canvas.Left、
+移除 :dragging、写回 IsChecked；模板保留最后的拖动位置和实际尺寸，等待同一帧的状态更新完成，
+再将两条 Animatable 同步到该姿态并清除旧动画速度，使用原有 FastSpatial 收尾。
+已经到达端点时只收缩拇指；物理像素截断仍可能产生不足 1.5 px 的中心量化变化。
+捕获丢失或禁用也从当前姿态返回，恢复下一次拖动使用的原生位置；卸载取消待交接任务。
+2026-10-03，维护者确认“按下瞬间放大继续保持现状，拖动和动画的交接需要补齐”。
+这一适配只处理已接受的原生拖动，不改变普通切换、按压 SnapSpec、释放 spring 或 ripple 首绘几何，
+不增加公开 API。
+
 已经历状态动画后，ThumbNode 在按压测量中先读取当前尺寸，再启动 snap；Compose 的首个 ripple draw
 捕获该测量尺寸。Avalonia 可能在首次 render 前完成后续布局，因此 Switch 在该测量中调用共享控制器的
 内部 `InitializeRippleDrawGeometry` 锁定首次几何。波纹播放和绘制仍归共享层，公开 API 不变；
@@ -113,19 +122,25 @@ Core 的 `material3-ripple/{CommonRipple,RippleAnimation}.kt`。
 - [SwitchCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/SwitchCases.kt)
 - [SwitchTests.cs](../../../../tests/Material3Expressive.Tests/SwitchTests.cs)
 
-63 个 visual parity 用例覆盖开关、图标/空内容、亮暗主题、启用/禁用、全部自定义颜色槽、RTL、
+72 个 visual parity 用例覆盖开关、图标/空内容、亮暗主题、启用/禁用、全部自定义颜色槽、RTL、
 受限尺寸与内容的 preferred/required 大小；动态覆盖切换/反向/标准 motion、主题、禁用、
 按压/快速释放/取消/按压中禁用、动画后按压、hover、Space/Enter 和原生拖动。
 参考端执行固定组件，读取实际 ThumbNode 布局；不复制拇指算法作为期望值。
-已接受的 Enter 与三个 drag 用例仍精确比较并保留不同结果。
+拖动另覆盖端点松开、中途反向、拖出取消、已有状态动画后拖动，以及松开前、松开后未送帧、
+首帧和收尾过程。已接受的 Enter 与 12 个原生拖动用例仍精确比较并保留不同结果。
 
-2026-10-03 本轮 self-test：63/63 执行无错误，双端重复与额外被动截图均稳定；
-39 equal、20 withinTolerance、4 different（上述已接受用例）。全部 33 个静态用例 equal。
-Compose 与 Avalonia 均为本轮真实执行；另新采集并发布全部 63 个 Compose 缓存参考。
-控件库 399 项、Parity 框架 123 项测试通过，Release 整体构建通过（现有三个模块警告保留）。
-共享层回归的 CheckBox press/quick、NavigationRail/NavigationBar press 完全相等。
-两个 Button 和一个 IconButton press 用例仍有既有差异；41 个采样 YAML 与 36 张 Avalonia 图像
-均与修改前的冻结产物逐文件相同，不扩大本次 Switch 移植范围修复它们。
+2026-10-03 拖动交接修复后的 self-test：72/72 执行无错误，双端重复与额外被动截图均稳定；
+39 equal、20 withinTolerance、13 different（上述已接受用例）。全部 33 个静态用例 equal。
+Compose 与 Avalonia 均为本轮真实执行；另新采集并发布全部 72 个 Compose 缓存参考。
+控件库 431 项测试通过，Release 控件库与 Parity 项目构建通过，保留现有阴影模块 AVA3001 警告。
+未涉及拖动的原有 60 个用例，其 318 张 Avalonia 图像与修复前 switch-final 产物逐文件 SHA256 相同。
+在 off→on 的中途拖动中，修复前松开回到 scene 中心 70 DIP，修复后松开前后均为 86 DIP。
+
+本轮产物：
+
+- [双端概览](../../../../artifacts/visual-parity/runs/switch-drag-handoff/summary.md)
+- [交接读数与图片一致性证据](../../../../artifacts/tests/switch-drag/handoff-evidence.md)
+- [控件库回归结果](../../../../artifacts/tests/switch-drag/switch-drag-regression.trx)
 
 headless 测试检查实际模板、绑定/事件/命令顺序、键盘、自动化、LTR/RTL 拖动、内容与颜色、
 idle 后动画和模板替换/卸载/重新挂载清理；共享 ripple 另有首次绘制尺寸的回归。

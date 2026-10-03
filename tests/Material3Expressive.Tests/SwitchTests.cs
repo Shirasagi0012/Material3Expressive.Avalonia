@@ -15,6 +15,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using ComposeAnimation;
 using Material3Expressive.Components;
 using Material3Expressive.Tokens;
 using Xunit;
@@ -102,6 +103,137 @@ public class SwitchTests
         window.MouseUp(end, MouseButton.Left);
         Assert.Equal(distance > 10 ? !state : state, box.IsChecked);
         Assert.DoesNotContain(":dragging", box.Classes); window.Close();
+    }
+
+    public static IEnumerable<object[]> DragHandoffs()
+    {
+        foreach (var state in new[] { false, true })
+        foreach (var direction in new[] { FlowDirection.LeftToRight, FlowDirection.RightToLeft })
+        foreach (var distance in new[] { 6d, 16d, 20d })
+        foreach (var warm in new[] { false, true })
+            yield return [state, direction, distance, warm, 1d];
+        foreach (var state in new[] { false, true })
+        foreach (var direction in new[] { FlowDirection.LeftToRight, FlowDirection.RightToLeft })
+            yield return [state, direction, 20d, true, 10d];
+    }
+
+    [AvaloniaTheory]
+    [MemberData(nameof(DragHandoffs))]
+    public void DragRelease_ContinuesFromTheDisplayedPose(bool state, FlowDirection direction,
+        double distance, bool warm, double durationScale)
+    {
+        using var clock = new MotionTestClockScope();
+        var box = new ToggleSwitch { IsChecked = state, FlowDirection = direction }; var window = Show(box);
+        if (warm)
+        {
+            box.IsChecked = !state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
+            box.IsChecked = state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
+        }
+        Animated.SetDurationScale(window, durationScale);
+        var clicks = 0; box.Click += (_, _) => clicks++;
+        var moving = Moving(box);
+        var start = moving.TranslatePoint(new Point(moving.Bounds.Width / 2, moving.Bounds.Height / 2), window)!.Value;
+        var sign = (state ? -1 : 1) * (direction == FlowDirection.RightToLeft ? -1 : 1);
+        var end = start + new Vector(sign * distance, 0);
+        window.MouseDown(start, MouseButton.Left); window.UpdateLayout();
+        clock.SendFrame(clock.Now); window.UpdateLayout();
+        Assert.Equal(28, Thumb(box).PaintedSize);
+        window.MouseMove(end); window.UpdateLayout();
+        var releaseCenter = Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2;
+        window.MouseUp(end, MouseButton.Left); window.UpdateLayout();
+        Assert.Equal(distance > 10 ? !state : state, box.IsChecked);
+        Assert.Equal(28, Thumb(box).PaintedSize);
+        Assert.Equal(releaseCenter, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        clock.SendFrame(clock.Now); window.UpdateLayout();
+        Assert.Equal(releaseCenter, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        var targetCenter = box.IsChecked == true ? 36d : 16d;
+        var pixelRounding = 1.5 / LayoutHelper.GetLayoutScale(Thumb(box));
+        Advance(96 * durationScale, () =>
+        {
+            var center = Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2;
+            // Springs may overshoot the target; they must never restart behind the release pose.
+            // Independent physical-pixel truncation contributes <1px for offset and <.5px for radius.
+            if (targetCenter >= releaseCenter) Assert.True(center >= releaseCenter - pixelRounding, $"{releaseCenter} -> {center}");
+            if (targetCenter <= releaseCenter) Assert.True(center <= releaseCenter + pixelRounding, $"{releaseCenter} -> {center}");
+        });
+        Advance(800 * durationScale);
+        Assert.Equal(targetCenter, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        Assert.Equal(box.IsChecked == true ? 24 : 16, Thumb(box).PaintedSize);
+        Assert.Equal(0, clicks); window.Close(); Assert.Null(window.MotionRoot.LastError);
+
+        void Advance(double milliseconds, Action? check = null)
+        {
+            for (double time = 0; time < milliseconds; time += 16)
+            {
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(Math.Min(16, milliseconds - time)));
+                window.UpdateLayout(); check?.Invoke();
+            }
+        }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CancelledDrag_ReturnsFromItsCurrentPoseAndCanDragAgain(bool state)
+    {
+        using var clock = new MotionTestClockScope();
+        var box = new ToggleSwitch { IsChecked = state }; var window = Show(box);
+        Drag(16);
+        var releaseCenter = Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2;
+        window.MouseMove(new Point(1, 1)); window.UpdateLayout();
+        Assert.Equal(releaseCenter, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
+        window.MouseUp(new Point(1, 1), MouseButton.Left);
+        Assert.Equal(state, box.IsChecked);
+        Assert.Equal(state ? 36 : 16, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        Assert.Equal(state ? 20 : 0, Canvas.GetLeft(Moving(box)));
+        var end = Drag(20); window.MouseUp(end, MouseButton.Left); window.UpdateLayout();
+        clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
+        Assert.Equal(!state, box.IsChecked);
+        Assert.Equal(!state ? 36 : 16, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        window.Close(); Assert.Null(window.MotionRoot.LastError);
+
+        Point Drag(double distance)
+        {
+            var moving = Moving(box);
+            var start = moving.TranslatePoint(new Point(moving.Bounds.Width / 2, moving.Bounds.Height / 2), window)!.Value;
+            var end = start + new Vector((state ? -1 : 1) * distance, 0);
+            window.MouseDown(start, MouseButton.Left); window.UpdateLayout();
+            clock.SendFrame(clock.Now); window.UpdateLayout();
+            window.MouseMove(end); window.UpdateLayout(); return end;
+        }
+        void Advance(int milliseconds)
+        {
+            for (var time = 0; time < milliseconds; time += 16)
+            {
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout();
+            }
+        }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DisablingDuringDrag_HandsOffAndUnloadingCancelsPendingWork(bool unload)
+    {
+        using var clock = new MotionTestClockScope();
+        var box = new ToggleSwitch(); var window = Show(box);
+        var moving = Moving(box);
+        var start = moving.TranslatePoint(new Point(moving.Bounds.Width / 2, moving.Bounds.Height / 2), window)!.Value;
+        var end = start + new Vector(16, 0);
+        window.MouseDown(start, MouseButton.Left); window.UpdateLayout();
+        window.MouseMove(end); window.UpdateLayout();
+        box.IsEnabled = false; window.UpdateLayout();
+        Assert.Equal(32, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        if (unload) { window.Content = null; window.UpdateLayout(); }
+        clock.SendFrame(clock.Now); window.UpdateLayout();
+        for (var time = 0; time < 800; time += 16)
+        {
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout();
+        }
+        if (!unload) Assert.Equal(16, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
+        Assert.False(box.IsChecked); window.Close();
+        Assert.Equal(0, window.MotionRoot.ActiveTaskCount); Assert.Null(window.MotionRoot.LastError);
     }
 
     [AvaloniaFact]
