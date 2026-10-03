@@ -126,6 +126,7 @@ public class ModalWideNavigationRail : WideNavigationRail
         CloseOverlay(false);
         _scope?.Dispose(); _scope = null;
         _position = _alpha = _offset = null; _pending = false; _width = 0;
+        _offsetSubscription = null;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -135,6 +136,15 @@ public class ModalWideNavigationRail : WideNavigationRail
             || change.Property == ExpandedHeaderTemplateProperty || change.Property == ExpandedHeaderTopPaddingProperty)
             UpdateHeader();
         if (change.Property == HideOnCollapseProperty) RefreshPresentation();
+        if (change.Property == StateProperty)
+        {
+            // Upstream remember(state) recreates the anchored state for a new hoisted state.
+            _flingCancellation?.Cancel();
+            if (_offset is not null) _ = _offset.StopAsync();
+            _offsetSubscription?.Dispose(); _offsetSubscription = null;
+            _offset = null; _width = 0; _anchorTarget = State.TargetValue;
+            _overlay?.InvalidateMeasure();
+        }
     }
     internal override void UpdateExpansion()
     {
@@ -209,14 +219,19 @@ public class ModalWideNavigationRail : WideNavigationRail
         _overlay.IsVisible = true;
         _layer.Children.Add(_overlay);
         ((ISetInheritanceParent)_overlay).SetParent(this);
-        MoveItems(RailLayout, _modalLayout, true);
+        // Only the retained rail uses movableContentOf upstream. Hidden content is
+        // composed afresh: reattachment initializes item motion at its current targets.
+        MoveItems(RailLayout, _modalLayout, !HideOnCollapse);
         _topLevel.AddHandler(GotFocusEvent, OnTopLevelGotFocus, RoutingStrategies.Bubble, true);
         _topLevel.BackRequested += OnBackRequested;
         _overlay.Focus();
         _alpha = _scope!.CreateAnimatable(HideOnCollapse ? (initialAnchor == WideNavigationRailValue.Expanded ? 1f : 0f) : (PositionProgress >= .3f ? 1f : 0f));
         _scrimTarget = _alpha.Value == 1;
         _alphaSubscription = _scope!.SubscribeValue(_alpha, value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); });
-        _width = 0; _offset = null;
+        // ModalWideNavigationRailState remains remembered while hidden content is absent.
+        // Keep its anchors/offset across closes so reopening slides from the collapsed anchor.
+        if (!HideOnCollapse) { _width = 0; _offset = null; }
+        else if (_offset is not null) _ = AnimateOffset(State.TargetValue);
         _overlay.InvalidateMeasure();
     }
     private void MoveItems(WideNavigationRailLayout from, WideNavigationRailLayout to, bool preserveMotion)
@@ -256,17 +271,21 @@ public class ModalWideNavigationRail : WideNavigationRail
         }
         else
         {
-            if (_modalLayout is not null && RailLayout is not null) MoveItems(_modalLayout, RailLayout, restoreFocus);
+            if (_modalLayout is not null && RailLayout is not null) MoveItems(_modalLayout, RailLayout, restoreFocus && !HideOnCollapse);
             _layer.Children.Remove(_overlay);
             _overlay.IsVisible = false;
             _templateRoot?.Children.Add(_overlay);
         }
         _layer = null; _topLevel = null;
-        if (_offset is not null) _ = _offset.StopAsync();
         if (_alpha is not null) _ = _alpha.StopAsync();
-        _alphaSubscription?.Dispose(); _offsetSubscription?.Dispose();
-        _alphaSubscription = _offsetSubscription = null;
-        _offset = _alpha = null; _width = 0;
+        _alphaSubscription?.Dispose(); _alphaSubscription = null;
+        _alpha = null;
+        if (!HideOnCollapse)
+        {
+            if (_offset is not null) _ = _offset.StopAsync();
+            _offsetSubscription?.Dispose(); _offsetSubscription = null;
+            _offset = null; _width = 0;
+        }
         if (restoreFocus && _previousFocus is Control { IsEffectivelyVisible: true, IsEffectivelyEnabled: true } focus) focus.Focus();
         _previousFocus = null;
     }

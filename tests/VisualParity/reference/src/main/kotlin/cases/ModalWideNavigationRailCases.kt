@@ -57,6 +57,14 @@ class ModalWideNavigationRailCases {
             }
             sample("initial")
             when(config.action) {
+                "reopen" -> {
+                    mutate(1000,"first-open") { scene.scope.launch { scene.state.expand() } }
+                    times(16000,32000,64000,400000,1200000)
+                    mutate(1201000,"close") { scene.scope.launch { scene.state.collapse() } }
+                    times(1232000,1264000,1600000,2400000)
+                    mutate(2401000,"reopen") { scene.scope.launch { scene.state.expand() } }
+                    times(2416000,2432000,2464000,2800000,3600000)
+                }
                 "expand","collapse","reverse" -> {
                     mutate(1000,"expansion-change") { scene.scope.launch { scene.state.toggle() } }
                     times(16000,32000,64000,96000)

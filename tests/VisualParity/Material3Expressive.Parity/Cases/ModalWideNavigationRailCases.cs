@@ -53,6 +53,8 @@ public sealed class ModalWideNavigationRailCases
             yield return Data($"dynamic.hidden.{action}", new(true, true, true, Action: action));
         yield return Data("dynamic.hidden.rtl-drag-close", new(true, true, true, Rtl: true, Action: "drag-close"));
         yield return Data("dynamic.retained.drag-disabled", new(false, true, true, Action: "drag-close"));
+        foreach (var hide in new[] { false, true })
+            yield return Data($"dynamic.{Mode(hide)}.reopen", new(hide, false, true, Action: "reopen"));
     }
     private static string Mode(bool hide) => hide ? "hidden" : "retained";
     private static string Form(bool expanded) => expanded ? "expanded" : "collapsed";
@@ -87,6 +89,13 @@ public sealed class ModalWideNavigationRailCases
         Sample("initial");
         switch (config.Action)
         {
+            case "reopen":
+                Mutate(1000, "first-open", () => { _ = scene.Rail.State.ExpandAsync(); });
+                Times(16000, 32000, 64000, 400000, 1200000);
+                Mutate(1201000, "close", () => { _ = scene.Rail.State.CollapseAsync(); });
+                Times(1232000, 1264000, 1600000, 2400000);
+                Mutate(2401000, "reopen", () => { _ = scene.Rail.State.ExpandAsync(); });
+                Times(2416000, 2432000, 2464000, 2800000, 3600000); break;
             case "expand": case "collapse": case "reverse":
                 Mutate(1000, "expansion-change", () => { _ = scene.Rail.State.ToggleAsync(); });
                 Times(16000, 32000, 64000, 96000);

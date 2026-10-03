@@ -21,6 +21,62 @@ namespace Material3Expressive.Tests;
 public class ModalWideNavigationRailTests
 {
     [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OpeningContent_PreservesMotionOnlyForRetainedRail(bool hide)
+    {
+        using var clock = new MotionTestClockScope();
+        var rail = Rail(hide); var item = (WideNavigationRailItem)rail.Items[0]!;
+        var window = Show(rail);
+        try
+        {
+            for (var opening = 0; opening < 2; opening++)
+            {
+                // Changing selection while hidden must also initialize the next content instance,
+                // rather than carry a selection animation from an invisible collapsed presenter.
+                if (opening == 1) item.IsSelected = true;
+                _ = rail.State.ExpandAsync();
+                for (var frame = 0; !rail.IsModalVisible && frame < 12; frame++) Advance(clock, window, 1);
+                Assert.True(rail.IsModalVisible);
+                var layout = Part<WideNavigationRailItemLayout>(item, "PART_Layout");
+                if (hide)
+                {
+                    Assert.Equal(1f, layout.IconPositionProgress);
+                    Assert.Equal(opening == 1 ? 1f : 0f, layout.SelectionProgress);
+                    if (opening == 1) Assert.Equal(-220f, rail.ModalOffset);
+                }
+                else Assert.InRange(layout.IconPositionProgress, 0f, .99f);
+
+                Advance(clock, window);
+                Assert.Equal(1f, layout.IconPositionProgress);
+                _ = rail.State.CollapseAsync(); Advance(clock, window);
+                Assert.False(rail.IsModalVisible);
+            }
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void HiddenContent_NewStateDoesNotReuseCollapsedAnchors()
+    {
+        using var clock = new MotionTestClockScope();
+        var rail = Rail(true); var window = Show(rail);
+        try
+        {
+            _ = rail.State.ExpandAsync(); Advance(clock, window);
+            _ = rail.State.CollapseAsync(); Advance(clock, window);
+            Assert.False(rail.IsModalVisible);
+            Assert.Equal(-220f, rail.ModalOffset);
+            rail.State = new(WideNavigationRailValue.Expanded);
+            for (var frame = 0; !rail.IsModalVisible && frame < 12; frame++) Advance(clock, window, 1);
+            Assert.True(rail.IsModalVisible);
+            Assert.Equal(0f, rail.ModalOffset);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData(false, false, 96, false)]
     [InlineData(true, false, 0, false)]
     [InlineData(false, true, 96, true)]

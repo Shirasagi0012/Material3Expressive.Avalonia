@@ -36,7 +36,11 @@ Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间�
   目标 Start 时不映射。默认焦点呈现使用固定 Compose 的 opacity 状态层。
   Top / Start 目标切换时复用 Surface 的卸载/挂载流程，按上游 indication 节点重建语义清空反馈；Button 的点击入口继续生效。
 - Token 保留 System 引用、disabled 0.38 alpha 与默认 padding 的尺寸派生关系；资源变化继续驱动模板和布局。
-- `ModalWideNavigationRail` 将同一个 ItemsPresenter 迁入 OverlayLayer，保留 item、选中状态与进行中的动画。
+- `ModalWideNavigationRail` 将同一个 ItemsPresenter 迁入 OverlayLayer，保留 item 对象和外部选中状态。
+  非 hidden 模式按 movableContentOf 保留进行中的 Item 动画；hidden 模式在内容重新挂载时释放旧作用域，
+  按当前目标初始化位置、选择与颜色，对齐上游首次组合内容的动画初值，不额外播放收起到展开的进入动画。
+  hidden 的水平锚点动画归属 rail 状态，在浮层关闭后仍保留并完成；再次打开从收起锚点滑入。
+  替换 State 或卸载 rail 时释放该锚点状态，对齐上游 remember(state) 的生命周期。
   常驻模式始终保留收起态占位；隐藏模式不占布局空间，并以两条水平锚点处理滑出与拖动。
   position 与 scrim 使用 DefaultEffects，水平偏移使用 DefaultSpatial；modal 宽度使用 FastSpatial。
   拖动释放保留上游 LSQ2 速度计算、125 DIP/s 阈值、半程目标选择及 SnapFlingBehavior 的增量消费与边界停止。
