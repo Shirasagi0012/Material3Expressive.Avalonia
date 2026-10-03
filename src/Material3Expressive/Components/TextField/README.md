@@ -104,8 +104,10 @@ Outlined 从 66.5 增至 67 DIP 后回落；修复前 Avalonia 从 64 增至 67 
 ### 尚未实现与未经验证
 
 - SearchBar 展开、建议列表和键盘/IME 搜索动作流程未实现。Catalog 搜索示例只展示可复用输入槽。
-- SecureTextField、Compose keyboard options/action、InteractionSource 对外 API、任意非圆角 Shape、完整 Compose semantics 未移植。
-  原生 PasswordChar / RevealPassword 透传不等于 SecureTextField。
+- [SecureTextField](../SecureTextField/README.md) 已通过原生主题和附加策略实现 Hidden / Visible、
+  单行与复制/剪切限制；RevealLastTyped 暂缺，密码 automation / IME 语义仍有明确缺口。
+  单独的 PasswordChar / RevealPassword 透传不启用安全策略。
+- Compose keyboard options/action、InteractionSource 对外 API、任意非圆角 Shape、完整 Compose semantics 未移植。
 - 原生编辑行度量、换行、字体排版和鼠标光标定位保留平台语义；自动尺寸可能因此不同。
   不把几何槽位 parity 当作文字排版一致性证明。
 - 未进行真实 Windows IME 候选窗、系统剪贴板、触控或屏幕阅读器桌面验收；headless IME 测试只覆盖客户端合约。
