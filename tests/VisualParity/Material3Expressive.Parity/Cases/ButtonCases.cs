@@ -19,7 +19,8 @@ namespace Material3Expressive.Parity;
 public sealed record ButtonConfig(string Style = "filled", string Size = "small", string Shape = "round",
     bool Enabled = true, bool Dark = false, string Icon = "none", bool Rtl = false,
     double? Width = 240, string Custom = "none", bool Baseline = false, string Action = "none",
-    double? Height = null, bool Empty = false, double ContentWidth = 32, double ContentHeight = 16);
+    double? Height = null, bool Empty = false, double ContentWidth = 32, double ContentHeight = 16,
+    bool RequiredContentSize = false);
 
 [ParitySuite("button")]
 public sealed class ButtonCases
@@ -63,6 +64,9 @@ public sealed class ButtonCases
         yield return Data("static.layout.tall-content", new(Width: null, ContentHeight: 80));
         yield return Data("static.layout.constrained-width", new(Width: 30));
         yield return Data("static.layout.constrained-height", new(Height: 35));
+        // Required dimensions may overflow; preferred dimensions obey the incoming constraints.
+        yield return Data("static.layout.required-constrained-width", new(Width: 30, RequiredContentSize: true));
+        yield return Data("static.layout.required-constrained-height", new(Height: 35, RequiredContentSize: true));
         // Preserve the previous non-text empty-container regressions under real empty content.
         yield return Data("static.layout.empty-constrained-width", new(Empty: true, Width: 30));
         yield return Data("static.layout.empty-constrained-height", new(Empty: true, Height: 35));
@@ -275,7 +279,7 @@ public sealed class ButtonCases
                 if (config.Action == "disable")
                 {
                     AdvanceTo(76000); scene.Button.IsEnabled = false; writer.Record(76000, "mutation", "enabled=false");
-                    host.Draw(); Sample("disabled-during-press"); SamplesAt(92000, 225000, 400000);
+                    host.Draw(); Sample("disabled-during-press"); SamplesAt(80000, 92000, 96000, 112000, 128000, 225000, 400000);
                     Event(401000, "up", center); Sample("disabled-release");
                     AdvanceTo(402000); scene.Button.IsEnabled = true; writer.Record(402000, "mutation", "enabled=true");
                     host.Draw(); Sample("reenabled"); SamplesAt(418000, 600000); break;
@@ -359,8 +363,9 @@ public sealed class ButtonCases
                 });
             }
             if (config.Empty) { Button.Content = null; return; }
-            marker = new ButtonMarker { Name = "content", Width = config.ContentWidth, Height = config.ContentHeight,
+            marker = new ButtonMarker { Name = "content", PreferredSize = new Size(config.ContentWidth, config.ContentHeight),
                 VerticalAlignment = VerticalAlignment.Center };
+            if (config.RequiredContentSize) { marker.Width = config.ContentWidth; marker.Height = config.ContentHeight; }
             if (config.Icon == "none") { Button.Content = marker; return; }
             size ??= config.Size;
             var iconKey = size switch { "xsmall" => Comp.ButtonXSmall.IconSize, "medium" => Comp.ButtonMedium.IconSize, "large" => Comp.ButtonLarge.IconSize, "xlarge" => Comp.ButtonXLarge.IconSize, _ => Comp.ButtonSmall.IconSize };
@@ -382,7 +387,7 @@ public sealed class ButtonCases
             Button.Content = panel;
         }
 
-        public void SetContentWidth(double width) => marker!.Width = width;
+        public void SetContentWidth(double width) { marker!.PreferredSize = new Size(width, marker.PreferredSize.Height); marker.InvalidateMeasure(); }
 
         public void SetSize(string size)
         {
@@ -410,6 +415,41 @@ public sealed class ButtonCases
             if (xEnd.X < origin.X)
                 normalized = [normalized[2], normalized[3], normalized[0], normalized[1], normalized[6], normalized[7], normalized[4], normalized[5]];
             fields.Add(Measurement.Vector("cornerRadii", "quad", normalized, "dip", "container", "motion", "button.container.normalized-visual-rounded-outline", "derived: Border.CornerRadius cached at chrome; SKRoundRect.SetRectRadii normalization; actual Surface.TranslatePoint x-axis reflection mapped to visible physical TL/TR/BR/BL", CornerComponents));
+            if (!config.Baseline && config.Action is "press" or "quick" or "cancel" or "drag-back" or "reverse" or "disable" or "shape-change" or "space" or "enter" or "size")
+            {
+                // Passive diagnostics: distinguish target registration from the first animation
+                // frame. An uncreated morph has no progress/spec; do not synthesize its values.
+                var morph = typeof(MaterialSurface).GetField("_shapeMorph", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(surface)
+                    as Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
+                fields.Add(Measurement.Flag("shapeRunning", morph?.IsRunning == true, category: "motion",
+                    definition: "button.shape-animation.running", source: "MaterialSurface._shapeMorph?.IsRunning == true"));
+                foreach (var (name, unit, definition) in new[]
+                {
+                    ("shapeProgress", "fraction", "button.shape-animation.interpolation-progress"),
+                    ("shapeVelocity", "fraction/s", "button.shape-animation.interpolation-velocity"),
+                    ("shapeDampingRatio", "ratio", "button.shape-animation.spring-damping-ratio"),
+                    ("shapeStiffness", "stiffness", "button.shape-animation.spring-stiffness")
+                })
+                {
+                    if (morph is null)
+                        fields.Add(Measurement.Unavailable(name, "motion", "number", unit, "none",
+                            "MaterialSurface has not created a shape morph yet.", definition));
+                    else
+                    {
+                        var spec = (Material3Expressive.Foundation.Motion.SpringSpec)typeof(Material3Expressive.Foundation.Interaction.AnimatedCornerRadius)
+                            .GetField("_spec", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(morph)!;
+                        fields.Add(Measurement.Numeric(name, name switch
+                        {
+                            "shapeProgress" => morph.Progress,
+                            "shapeVelocity" => ((ComposeAnimation.Runtime.Animatable<float>)typeof(Material3Expressive.Foundation.Interaction.AnimatedCornerRadius)
+                                .GetField("_progress", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(morph)!).Velocity,
+                            "shapeDampingRatio" => spec.DampingRatio,
+                            _ => spec.Stiffness
+                        }, unit, category: "motion", definition: definition,
+                            source: name switch { "shapeProgress" => "AnimatedCornerRadius.Progress", "shapeVelocity" => "AnimatedCornerRadius._progress.Velocity", _ => "AnimatedCornerRadius._spec captured for this morph" }));
+                    }
+                }
+            }
             var buttonFields = LayoutBounds(Button).ToList();
             if (config.Action is "disable" or "disabled" || !config.Enabled && config.Action != "none")
                 buttonFields.Add(Measurement.Flag("enabled", Button.IsEffectivelyEnabled, definition: "button.enabled", source: "Button.IsEffectivelyEnabled"));
@@ -427,7 +467,7 @@ public sealed class ButtonCases
                 new("button", "button", null, buttonFields.ToArray()),
                 new("container", "container", "button", fields.ToArray())
             };
-            var contentGeometry = config.Width == null || config.Height != null || config.Icon != "none"
+            var contentGeometry = config.Width == null || config.Width < 64 || config.Height != null || config.Icon != "none"
                 || config.Shape == "asymmetric" || config.Custom == "padding";
             foreach (var content in Button.GetVisualDescendants().OfType<ButtonMarker>())
             {
@@ -465,6 +505,9 @@ public sealed class ButtonCases
         // alignment, but does not reverse the marker's local drawing coordinate system.
         protected override bool BypassFlowDirectionPolicies => true;
         public bool IsIcon { get; init; }
+        public Size PreferredSize { get; set; }
+        protected override Size MeasureOverride(Size availableSize) => new(
+            Math.Min(availableSize.Width, PreferredSize.Width), Math.Min(availableSize.Height, PreferredSize.Height));
         public IBrush? Paint { get; private set; }
         static ButtonMarker() => AffectsRender<ButtonMarker>(TextElement.ForegroundProperty);
         static readonly Geometry Arrow = Geometry.Parse("M 2,3 L 11,3 L 11,1 L 18,8 L 11,15 L 11,12 L 2,12 Z");

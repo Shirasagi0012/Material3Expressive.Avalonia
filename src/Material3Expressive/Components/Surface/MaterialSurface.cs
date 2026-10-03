@@ -1,6 +1,8 @@
 using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
 using ComposeAnimation;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -91,6 +93,14 @@ public sealed class MaterialSurface : Control
     private MaterialInteractionController? _interactionController;
     private IDisposable? _interactionAttachment;
     private AnimatedCornerRadius? _shapeMorph;
+    private CornerRadius _shapeRest;
+    private CornerRadius? _shapePressed;
+    private SpringSpec _shapeSpec;
+    private bool _shapeCommitPending;
+    private bool _shapeInteractionDeferred;
+    private int _shapeGeneration;
+    private CancellationTokenSource? _shapeEffect;
+    private Task? _shapeEffectTask;
     private double _absoluteTonalElevation;
 
     public MaterialSurface()
@@ -268,20 +278,14 @@ public sealed class MaterialSurface : Control
         }
         else if (change.Property == CornerRadiusProperty)
         {
-            if (_shapeMorph is not null)
-            {
-                // The resting shape moved under a live morph (e.g. a size-class change):
-                // retarget the animation instead of snapping the painted corners.
-                UpdateShapeMorph(_interactionController?.Interaction.HasFlag(InteractionState.Pressed) ?? false);
-            }
-
+            QueueShapeMorph();
             UpdateInteractionVisuals();
         }
         else if (change.Property == PressedCornerRadiusProperty)
         {
             if (_interactionController is not null)
             {
-                UpdateShapeMorph(_interactionController.Interaction.HasFlag(InteractionState.Pressed));
+                QueueShapeMorph();
                 UpdateInteractionVisuals();
             }
         }
@@ -321,12 +325,21 @@ public sealed class MaterialSurface : Control
     /// <summary>Updates the pressed shape when the interaction state changes.</summary>
     internal void OnInteractionChanged(InteractionState state)
     {
-        UpdateShapeMorph(state.HasFlag(InteractionState.Pressed));
+        _shapeInteractionDeferred = false;
+        QueueShapeMorph();
         UpdateInteractionVisuals();
     }
 
+    internal void DeferShapeInteraction() => _shapeInteractionDeferred = true;
+
     internal void ResetMotion()
     {
+        _shapeGeneration++;
+        _shapeCommitPending = false;
+        _shapeInteractionDeferred = false;
+        _shapeEffect?.Cancel();
+        _shapeEffect = null;
+        _shapeEffectTask = null;
         _shapeMorph?.Dispose();
         _shapeMorph = null;
         _chrome.CornerRadius = _outline.CornerRadius = CornerRadius;
@@ -352,31 +365,82 @@ public sealed class MaterialSurface : Control
         return true;
     }
 
-    private void UpdateShapeMorph(bool pressed)
+    private void QueueShapeMorph()
     {
-        var controller = _interactionController;
-        if (controller?.Motion is not { IsEnding: false } motion)
+        if (_interactionController?.Motion is not { IsEnding: false } motion)
             return;
 
-        var rest = CornerRadius;
-        var target = pressed && PressedCornerRadius is { } pressedRadius ? pressedRadius : rest;
-
-        if (_shapeMorph is null && target.Equals(rest))
+        // rememberAnimatedShape creates its initial state during composition. Subsequent
+        // interaction/configuration changes are committed by recomposition before its effect.
+        if (_shapeMorph is null && PressedCornerRadius is not null)
+            RecreateShapeMorph(motion, ResolveShapeMorphSpec());
+        if (_shapeCommitPending)
             return;
 
-        if (_shapeMorph is not null && _shapeMorph.Target.Equals(target))
-            return;
-
-        var spec = ResolveShapeMorphSpec();
-        if (_shapeMorph is null)
+        _shapeCommitPending = true;
+        var generation = _shapeGeneration;
+        _ = motion.Launch(async ct =>
         {
-            _shapeMorph = new AnimatedCornerRadius(rest, spec, motion, UpdateInteractionVisuals)
-                { Size = Bounds.Size };
-        }
+            await motion.Clock.NextFrameAsync(ct);
+            if (generation != _shapeGeneration)
+                return;
+            _shapeCommitPending = false;
+            if (_shapeInteractionDeferred)
+                return;
 
-        _shapeMorph.Size = Bounds.Size;
-        var shape = _shapeMorph;
-        _ = motion.Launch(ct => shape.AnimateToAsync(target, spec, ct), "Shape morph");
+            var spec = ResolveShapeMorphSpec();
+            var target = _interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true
+                && PressedCornerRadius is { } pressed ? pressed : CornerRadius;
+            var configurationChanged = _shapeRest != CornerRadius || _shapePressed != PressedCornerRadius
+                || !_shapeSpec.Equals(spec);
+            if (!configurationChanged && (_shapeMorph is null || _shapeMorph.Target == target))
+                return;
+
+            // LaunchedEffect cancels and joins the previous effect before running its replacement.
+            // This also lets Animatable finish cancellation before the morph reads its velocity.
+            _shapeEffect?.Cancel();
+            if (_shapeEffectTask is { } previous)
+            {
+                try { await previous; }
+                catch (OperationCanceledException) when (previous.IsCanceled) { }
+            }
+            ct.ThrowIfCancellationRequested();
+            if (generation != _shapeGeneration)
+                return;
+            // Button/IconButton key(shapes), and AnimatedShape remembers by animationSpec.
+            // A new configuration starts at its selected shape; a press keeps the existing state.
+            if (configurationChanged)
+                RecreateShapeMorph(motion, spec);
+
+            if (_shapeMorph is not { } shape)
+                return;
+            shape.Size = Bounds.Size;
+            using var effect = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            _shapeEffect = effect;
+            var task = _shapeEffectTask = shape.AnimateToAsync(target, spec, effect.Token);
+            try { await task; }
+            finally
+            {
+                if (ReferenceEquals(_shapeEffect, effect))
+                {
+                    _shapeEffect = null;
+                    _shapeEffectTask = null;
+                }
+            }
+        }, "Shape composition");
+    }
+
+    private void RecreateShapeMorph(VisualAnimationScope motion, SpringSpec spec)
+    {
+        _shapeMorph?.Dispose();
+        _shapeRest = CornerRadius;
+        _shapePressed = PressedCornerRadius;
+        _shapeSpec = spec;
+        var initial = _interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true
+            && PressedCornerRadius is { } pressed ? pressed : CornerRadius;
+        _shapeMorph = PressedCornerRadius is null ? null
+            : new AnimatedCornerRadius(initial, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size };
+        UpdateInteractionVisuals();
     }
 
     private SpringSpec ResolveShapeMorphSpec() =>
@@ -393,6 +457,7 @@ public sealed class MaterialSurface : Control
 
     private void RefreshTokenDrivenPaint()
     {
+        QueueShapeMorph();
         InvalidateShadow();
         UpdateEffectiveBackground();
     }

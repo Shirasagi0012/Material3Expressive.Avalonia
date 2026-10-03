@@ -91,6 +91,8 @@ Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefau
 
 目前交互组件通过 `MaterialInteraction.IsInteractive` 接入共享控制器，Surface 作为模板中的反馈呈现者。
 控制器处理输入、交互顺序、状态层和 ripple；主题提供颜色和形状等参数。
+键盘输入只用于维护交互反馈，不由共享控制器拦截 Enter 或执行点击。
+普通 Button/IconButton 保留 Avalonia 原生键盘激活；导航项继续使用各组件已有的键盘处理。
 颜色、交互事实、反馈动画和绘制结果需要保持各自归属，不要仅用最终伪类状态替代具有顺序意义的交互记录。
 
 NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
@@ -108,6 +110,10 @@ NavigationBar 的等权布局与动画见
 Button elevation 的当前实现可作为职责示例：`ButtonElevation` 保存状态高度，
 每个按钮自己的 `ButtonElevationController` 选择并动画化目标；Surface 的 `ShadowElevation` 消费当前绘制高度。
 可共享配置，但不能共享按钮的运行状态。动画优先级绑定在清理后恢复原属性值，不能破坏原有样式与绑定。
+Filled/Tonal 默认在 hover 升到 1 DIP；Outlined/Text 默认无 elevation 配置。
+圆角与 elevation 的交互目标在下一共享时钟帧合并提交，对应 Compose 重组后的 effect；
+状态层和 ripple 仍遵循各自的事件时序。圆角配置或 effects spring 改变时重建形状状态，
+更换目标先取消旧 effect，再沿用状态。待提交目标和 effect 都受呈现者的取消生命周期约束。
 这一示例不意味着其他组件都应采用 Button 的状态选择规则。
 
 ## 动画接入
@@ -136,8 +142,8 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 现有源码是后续工作的起点，不是批准所有既有取舍的依据。旧注释中的 `design doc §...` 是历史引用，
 不指向本文，也不构成当前规范；涉及相应代码时核对真实行为与固定上游。
 
-- 已有 Button、IconButton 和 Surface，但需要逐项检查其 API、交互及视觉覆盖。现有 flat Button
-  主题未配置 elevation、焦点呈现等处理，应在相应移植任务中核对，不能自动推广为所有桌面组件的设计规则。
+- 已有 Button、IconButton 和 Surface，但仍需逐项检查其 API、交互及视觉覆盖。
+  Button 的焦点环尚未实现；阴影绘制差异留待后续核对，不能据此修改上游默认 elevation。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
   Modal 使用当前 TopLevel 的 OverlayLayer；自定义宿主需提供启用 OverlayLayer 的 VisualLayerManager。

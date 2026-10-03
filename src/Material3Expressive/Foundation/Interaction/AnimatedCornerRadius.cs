@@ -2,7 +2,6 @@ using System;
 using Avalonia;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Motion;
 
 namespace Material3Expressive.Foundation.Interaction;
@@ -30,7 +29,7 @@ namespace Material3Expressive.Foundation.Interaction;
 public sealed class AnimatedCornerRadius : IDisposable
 {
     private readonly VisualAnimationScope _motion;
-    private readonly Animatable<double> _progress;
+    private readonly Animatable<float> _progress;
     private readonly Action? _onFrame;
     private SpringSpec _spec;
     private CornerRadius _start;
@@ -50,7 +49,7 @@ public sealed class AnimatedCornerRadius : IDisposable
         _requestedTarget = initial;
         _spec = spec;
         _onFrame = onFrame;
-        _progress = _motion.CreateAnimatable(1d);
+        _progress = _motion.CreateAnimatable(1f);
     }
 
     /// <summary>The current interpolation fraction.</summary>
@@ -87,13 +86,13 @@ public sealed class AnimatedCornerRadius : IDisposable
         var progress = _progress.Value;
         var velocity = _progress.Velocity;
         CornerRadius start;
-        double initialProgress;
-        double initialVelocity;
+        float initialProgress;
+        float initialVelocity;
         if (corners.Equals(_start))
         {
             // Reversal: keep the momentum by flipping progress and negating velocity.
             start = _target;
-            initialProgress = 1.0 - progress;
+            initialProgress = 1f - progress;
             initialVelocity = -velocity;
         }
         else
@@ -101,8 +100,8 @@ public sealed class AnimatedCornerRadius : IDisposable
             // Preserve the visible shape for a third destination; exact endpoints avoid drift.
             start = progress switch
             {
-                1.0 => _target,
-                0.0 => _start,
+                1f => _target,
+                0f => _start,
                 _ => Lerp(ClampToSize(_start), ClampToSize(_target), progress)
             };
             initialProgress = 0;
@@ -121,7 +120,8 @@ public sealed class AnimatedCornerRadius : IDisposable
         _onFrame?.Invoke();
         if (_disposed || generation != _generation)
             throw new OperationCanceledException(new CancellationToken(true));
-        await _progress.AnimateToAsync(1.0, _spec.ToAnimationSpec(), initialVelocity,
+        await _progress.AnimateToAsync(1f,
+            new ComposeAnimation.Runtime.SpringSpec<float>(_spec.DampingRatio, _spec.Stiffness, (float)_spec.VisibilityThreshold), initialVelocity,
             block: _ => _onFrame?.Invoke(), cancellationToken: cancellationToken);
     }
 
@@ -135,11 +135,14 @@ public sealed class AnimatedCornerRadius : IDisposable
 
     internal static CornerRadius Lerp(CornerRadius from, CornerRadius to, double progress)
     {
+        // Compose's corner interpolation and progress are Float, including each lerp operation.
+        var fraction = (float)progress;
+        float Interpolate(double start, double end) => (1f - fraction) * (float)start + fraction * (float)end;
         return new CornerRadius(
-            MathUtils.Lerp(from.TopLeft, to.TopLeft, progress),
-            MathUtils.Lerp(from.TopRight, to.TopRight, progress),
-            MathUtils.Lerp(from.BottomRight, to.BottomRight, progress),
-            MathUtils.Lerp(from.BottomLeft, to.BottomLeft, progress));
+            Interpolate(from.TopLeft, to.TopLeft),
+            Interpolate(from.TopRight, to.TopRight),
+            Interpolate(from.BottomRight, to.BottomRight),
+            Interpolate(from.BottomLeft, to.BottomLeft));
     }
 
     private CornerRadius ClampToSize(CornerRadius corners)

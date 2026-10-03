@@ -130,8 +130,8 @@ public class ElevatedButtonTokenSource : ITokenSource
         [Comp.ElevatedButton.HoverStateLayerColor] = new TokenRef(Comp.ElevatedButton.StateLayerColor),
         [Comp.ElevatedButton.PressedStateLayerColor] = new TokenRef(Comp.ElevatedButton.StateLayerColor),
         [Comp.ElevatedButton.FocusedStateLayerColor] = new TokenRef(Comp.ElevatedButton.StateLayerColor),
-        [Comp.ElevatedButton.DisabledContainerColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContainerOpacity),
-        [Comp.ElevatedButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContentOpacity),
+        [Comp.ElevatedButton.DisabledContainerColor] = new WithAlpha(Sys.Color.OnSurface, 0.10),
+        [Comp.ElevatedButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurfaceVariant, Sys.State.DisabledContentOpacity),
 
         [Comp.ElevatedButton.ContainerElevation] = new TokenRef(Sys.Elevation.Level1),
         [Comp.ElevatedButton.HoveredContainerElevation] = new TokenRef(Sys.Elevation.Level2),
@@ -151,8 +151,9 @@ public class ElevatedButtonTokenSource : ITokenSource
 /// Baseline defaults for the filled Button color slots (design doc §7.5). Component→system
 /// mappings are <see cref="TokenRef"/> entries resolved hop-by-hop at the consumption side
 /// (§5.1), and the disabled colors are <see cref="WithAlpha"/> derivations over
-/// <c>md.sys.color.on-surface</c> (§5.3/§7.4), so a local OnSurface override restyles disabled
-/// buttons too. Metrics/shape/typography live in <see cref="ButtonSizesTokenSource"/> — the size
+/// the component color/opacity defaults (container: OnSurface at 10%, content:
+/// OnSurfaceVariant at 38%). Local color overrides still restyle disabled buttons. Metrics/shape/typography
+/// live in <see cref="ButtonSizesTokenSource"/> — the size
 /// axis is orthogonal to the style axis upstream. Immutable baseline: <see cref="Changed"/> is a
 /// documented no-op.
 /// </summary>
@@ -166,8 +167,14 @@ public class FilledButtonTokenSource : ITokenSource
         [Comp.FilledButton.HoverStateLayerColor] = new TokenRef(Comp.FilledButton.StateLayerColor),
         [Comp.FilledButton.PressedStateLayerColor] = new TokenRef(Comp.FilledButton.StateLayerColor),
         [Comp.FilledButton.FocusedStateLayerColor] = new TokenRef(Comp.FilledButton.StateLayerColor),
-        [Comp.FilledButton.DisabledContainerColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContainerOpacity),
-        [Comp.FilledButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContentOpacity),
+        [Comp.FilledButton.DisabledContainerColor] = new WithAlpha(Sys.Color.OnSurface, 0.10),
+        [Comp.FilledButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurfaceVariant, Sys.State.DisabledContentOpacity),
+
+        [Comp.FilledButton.ContainerElevation] = new TokenRef(Sys.Elevation.Level0),
+        [Comp.FilledButton.HoveredContainerElevation] = new TokenRef(Sys.Elevation.Level1),
+        [Comp.FilledButton.FocusedContainerElevation] = new TokenRef(Sys.Elevation.Level0),
+        [Comp.FilledButton.PressedContainerElevation] = new TokenRef(Sys.Elevation.Level0),
+        [Comp.FilledButton.DisabledContainerElevation] = new TokenRef(Sys.Elevation.Level0),
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) =>
@@ -181,7 +188,7 @@ public class FilledButtonTokenSource : ITokenSource
 /// Baseline defaults for the outlined Button slots (upstream OutlinedButtonTokens v0_11_0). The
 /// container is transparent at rest and when disabled (upstream composable, not a token).
 /// DisabledOutlineColor follows the composable rather than the raw token table: it is the resting
-/// outline color with the disabled-container opacity applied, not the table's plain
+/// outline color with the component's 0.10 opacity applied, not the table's plain
 /// OutlineVariant. Immutable baseline: <see cref="Changed"/> is a documented no-op.
 /// </summary>
 public class OutlinedButtonTokenSource : ITokenSource
@@ -195,10 +202,10 @@ public class OutlinedButtonTokenSource : ITokenSource
         [Comp.OutlinedButton.PressedStateLayerColor] = new TokenRef(Comp.OutlinedButton.StateLayerColor),
         [Comp.OutlinedButton.FocusedStateLayerColor] = new TokenRef(Comp.OutlinedButton.StateLayerColor),
         [Comp.OutlinedButton.DisabledContainerColor] = Colors.Transparent,
-        [Comp.OutlinedButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContentOpacity),
+        [Comp.OutlinedButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurfaceVariant, Sys.State.DisabledContentOpacity),
 
         [Comp.OutlinedButton.OutlineColor] = new TokenRef(Sys.Color.OutlineVariant),
-        [Comp.OutlinedButton.DisabledOutlineColor] = new WithAlpha(Comp.OutlinedButton.OutlineColor, Sys.State.DisabledContainerOpacity),
+        [Comp.OutlinedButton.DisabledOutlineColor] = new WithAlpha(Comp.OutlinedButton.OutlineColor, 0.10),
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) =>
@@ -226,7 +233,7 @@ public class TextButtonTokenSource : ITokenSource
         [Comp.TextButton.PressedStateLayerColor] = new TokenRef(Comp.TextButton.StateLayerColor),
         [Comp.TextButton.FocusedStateLayerColor] = new TokenRef(Comp.TextButton.StateLayerColor),
         [Comp.TextButton.DisabledContainerColor] = Colors.Transparent,
-        [Comp.TextButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContentOpacity),
+        [Comp.TextButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurfaceVariant, Sys.State.DisabledContentOpacity),
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) =>
@@ -252,6 +259,12 @@ public class TonalButtonTokenSource : ITokenSource
         [Comp.TonalButton.FocusedStateLayerColor] = new TokenRef(Comp.TonalButton.StateLayerColor),
         [Comp.TonalButton.DisabledContainerColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContainerOpacity),
         [Comp.TonalButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurface, Sys.State.DisabledContentOpacity),
+
+        [Comp.TonalButton.ContainerElevation] = new TokenRef(Sys.Elevation.Level0),
+        [Comp.TonalButton.HoveredContainerElevation] = new TokenRef(Sys.Elevation.Level1),
+        [Comp.TonalButton.FocusedContainerElevation] = new TokenRef(Sys.Elevation.Level0),
+        [Comp.TonalButton.PressedContainerElevation] = new TokenRef(Sys.Elevation.Level0),
+        [Comp.TonalButton.DisabledContainerElevation] = new TokenRef(Sys.Elevation.Level0),
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) =>
@@ -302,6 +315,8 @@ internal sealed class ButtonElevationController : IDisposable
 {
     private readonly Animatable<double> _elevation;
     private readonly VisualAnimationScope _motion;
+    private (ButtonElevation Values, InteractionState Interaction, bool Enabled) _pending;
+    private bool _commitPending;
 
     internal ButtonElevationController(MaterialSurface surface, VisualAnimationScope parentScope, double initial)
     {
@@ -320,6 +335,22 @@ internal sealed class ButtonElevationController : IDisposable
         };
 
     internal void Update(ButtonElevation values, InteractionState interaction, bool enabled)
+    {
+        _pending = (values, interaction, enabled);
+        if (_commitPending || _motion.IsEnding)
+            return;
+        _commitPending = true;
+        _ = _motion.Launch(async ct =>
+        {
+            // Button.kt's LaunchedEffect runs after composition. Coalesce changes in that frame.
+            await _motion.Clock.NextFrameAsync(ct);
+            _commitPending = false;
+            var pending = _pending;
+            Apply(pending.Values, pending.Interaction, pending.Enabled);
+        }, "Elevation composition");
+    }
+
+    private void Apply(ButtonElevation values, InteractionState interaction, bool enabled)
     {
         var target = Target(values, interaction, enabled);
         if (!enabled)

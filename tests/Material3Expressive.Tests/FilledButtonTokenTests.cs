@@ -75,14 +75,17 @@ public class FilledButtonTokenTests
         Assert.Equal(byte.MaxValue, onSurface.A);
 
         var container = Assert.IsType<Color>(TokenScan.Resolve(host, Comp.FilledButton.DisabledContainerColor));
-        Assert.Equal((byte)Math.Round(0.12 * onSurface.A), container.A);
+        Assert.Equal((byte)Math.Round(0.10 * onSurface.A), container.A);
         Assert.Equal(onSurface.R, container.R);
         Assert.Equal(onSurface.G, container.G);
         Assert.Equal(onSurface.B, container.B);
 
         var content = Assert.IsType<Color>(TokenScan.Resolve(host, Comp.FilledButton.DisabledContentColor));
-        Assert.Equal((byte)Math.Round(0.38 * onSurface.A), content.A);
-        Assert.Equal(onSurface.R, content.R);
+        var onSurfaceVariant = Assert.IsType<Color>(TokenScan.Resolve(host, Sys.Color.OnSurfaceVariant));
+        Assert.Equal((byte)Math.Round(0.38 * onSurfaceVariant.A), content.A);
+        Assert.Equal(onSurfaceVariant.R, content.R);
+        Assert.Equal(onSurfaceVariant.G, content.G);
+        Assert.Equal(onSurfaceVariant.B, content.B);
     }
 
     [AvaloniaFact]

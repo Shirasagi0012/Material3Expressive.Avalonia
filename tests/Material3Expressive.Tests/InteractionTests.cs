@@ -356,8 +356,8 @@ public class MaterialInteractionControllerTests
         var window = IconButtonThemeFixture.ShowWindow(out var button);
         var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
 
-        // No press yet: the styled stadium token passes through untouched.
-        Assert.Equal(new CornerRadius(1000), container.EffectiveCornerRadius);
+        // AnimatedShape clamps its initial stadium to the measured half extent.
+        Assert.Equal(new CornerRadius(20), container.EffectiveCornerRadius);
 
         var origin = button.TranslatePoint(default, window)!.Value;
         var point = origin + new Point(button.Bounds.Width / 2, button.Bounds.Height / 2);
@@ -368,6 +368,8 @@ public class MaterialInteractionControllerTests
 
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6); // first animation frame
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.InRange(container.EffectiveCornerRadius.TopLeft, 8 + 1e-6, 20 - 1e-6);
 
         clock.SendFrame(clock.Now);
@@ -376,6 +378,7 @@ public class MaterialInteractionControllerTests
 
         window.MouseUp(point, MouseButton.Left);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
     }
@@ -394,6 +397,7 @@ public class MaterialInteractionControllerTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         window.MouseUp(point, MouseButton.Left);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
 

@@ -21,9 +21,8 @@ public static partial class MaterialTokens
         // buttons are their own component slice.
 
         /// <summary>
-        /// <c>md.comp.filled-button.*</c> — filled Button color slots (upstream FilledButtonTokens
-        /// v0_11_0). Upstream's elevation tokens (resting 0, hover 1) are recorded but not
-        /// transcribed: desktop hover shadows read as noise, and the motion slice can revisit.
+        /// <c>md.comp.filled-button.*</c> — filled Button color and elevation slots (upstream
+        /// FilledButtonTokens v0_11_0). Resting/pressed/focused/disabled elevation is 0, hover is 1 DIP.
         /// </summary>
         public static class FilledButton
         {
@@ -35,6 +34,12 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<Color> FocusedStateLayerColor = new("md.comp.filled-button.focus.state-layer-color");
             public static readonly MaterialTokenKey<Color> DisabledContainerColor = new("md.comp.filled-button.disabled.container.color");
             public static readonly MaterialTokenKey<Color> DisabledContentColor = new("md.comp.filled-button.disabled.content.color");
+
+            public static readonly MaterialTokenKey<double> ContainerElevation = new("md.comp.filled-button.container.elevation");
+            public static readonly MaterialTokenKey<double> HoveredContainerElevation = new("md.comp.filled-button.hover.container.elevation");
+            public static readonly MaterialTokenKey<double> FocusedContainerElevation = new("md.comp.filled-button.focus.container.elevation");
+            public static readonly MaterialTokenKey<double> PressedContainerElevation = new("md.comp.filled-button.pressed.container.elevation");
+            public static readonly MaterialTokenKey<double> DisabledContainerElevation = new("md.comp.filled-button.disabled.container.elevation");
         }
 
         /// <summary>
@@ -62,8 +67,8 @@ public static partial class MaterialTokens
         }
 
         /// <summary>
-        /// <c>md.comp.tonal-button.*</c> — filled tonal Button color slots (upstream
-        /// TonalButtonTokens v0_11_0). Elevation tokens omitted like the filled style's.
+        /// <c>md.comp.tonal-button.*</c> — filled tonal Button color and elevation slots (upstream
+        /// TonalButtonTokens v0_11_0). Resting/pressed/focused/disabled elevation is 0, hover is 1 DIP.
         /// </summary>
         public static class TonalButton
         {
@@ -75,6 +80,12 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<Color> FocusedStateLayerColor = new("md.comp.tonal-button.focus.state-layer-color");
             public static readonly MaterialTokenKey<Color> DisabledContainerColor = new("md.comp.tonal-button.disabled.container.color");
             public static readonly MaterialTokenKey<Color> DisabledContentColor = new("md.comp.tonal-button.disabled.content.color");
+
+            public static readonly MaterialTokenKey<double> ContainerElevation = new("md.comp.tonal-button.container.elevation");
+            public static readonly MaterialTokenKey<double> HoveredContainerElevation = new("md.comp.tonal-button.hover.container.elevation");
+            public static readonly MaterialTokenKey<double> FocusedContainerElevation = new("md.comp.tonal-button.focus.container.elevation");
+            public static readonly MaterialTokenKey<double> PressedContainerElevation = new("md.comp.tonal-button.pressed.container.elevation");
+            public static readonly MaterialTokenKey<double> DisabledContainerElevation = new("md.comp.tonal-button.disabled.container.elevation");
         }
 
         /// <summary>

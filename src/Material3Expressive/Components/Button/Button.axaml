@@ -38,6 +38,15 @@
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="m3:MaterialButton.Elevation">
+        <MultiBinding Converter="{x:Static m3:ButtonElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.PressedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.FocusedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.HoveredContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="Template">
         <ControlTemplate>
           <m3:ButtonLayout Width="{TemplateBinding Width}"
@@ -94,8 +103,7 @@
         <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContentColor}}" />
       </Style>
 
-      <!-- Size axis. Each class re-points every metric slot at its own size table; the outline
-           width is only consumed by the outlined theme, which carries its own per-size override. -->
+      <!-- Size axis. Metrics come from each size table; outlinedButtonBorder uses the small width. -->
       <Style Selector="^.xsmall">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContentPadding}}" />
         <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextStyle}}" />
@@ -183,6 +191,15 @@
                   BasedOn="{StaticResource MaterialFilledButtonTheme}">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalButton.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalButton.ContentColor}}" />
+      <Setter Property="m3:MaterialButton.Elevation">
+        <MultiBinding Converter="{x:Static m3:ButtonElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.PressedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.FocusedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.HoveredContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
 
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalButton.StateLayerColor}}" />
@@ -209,6 +226,7 @@
                   BasedOn="{StaticResource MaterialFilledButtonTheme}">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.ContentColor}}" />
+      <Setter Property="m3:MaterialButton.Elevation" Value="{x:Null}" />
       <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.OutlineColor}}" />
       <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.OutlinedOutlineWidth}}" />
 
@@ -230,19 +248,6 @@
         <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.DisabledOutlineColor}}" />
       </Style>
 
-      <!-- The outline width thickens at the two largest sizes. -->
-      <Style Selector="^.xsmall">
-        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.OutlinedOutlineWidth}}" />
-      </Style>
-      <Style Selector="^.medium">
-        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.OutlinedOutlineWidth}}" />
-      </Style>
-      <Style Selector="^.large">
-        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.OutlinedOutlineWidth}}" />
-      </Style>
-      <Style Selector="^.xlarge">
-        <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.OutlinedOutlineWidth}}" />
-      </Style>
     </ControlTheme>
 
     <!-- Text: transparent container, primary content. ContentColor follows the upstream
@@ -251,6 +256,7 @@
                   BasedOn="{StaticResource MaterialFilledButtonTheme}">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TextButton.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TextButton.ContentColor}}" />
+      <Setter Property="m3:MaterialButton.Elevation" Value="{x:Null}" />
 
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TextButton.StateLayerColor}}" />
