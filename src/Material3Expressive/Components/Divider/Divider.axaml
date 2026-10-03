@@ -1,0 +1,23 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialDividerTheme" TargetType="Separator">
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="m3:MaterialDivider.Thickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Divider.Thickness}}" />
+      <Setter Property="m3:MaterialDivider.Color" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Divider.Color}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:DividerPresenter Orientation="{TemplateBinding m3:MaterialDivider.Orientation}"
+                               Thickness="{TemplateBinding m3:MaterialDivider.Thickness}"
+                               Color="{TemplateBinding m3:MaterialDivider.Color}" />
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type Separator}" TargetType="Separator" BasedOn="{StaticResource MaterialDividerTheme}" />
+  </Styles.Resources>
+</Styles>
