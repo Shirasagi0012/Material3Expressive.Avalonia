@@ -27,7 +27,9 @@ group.Click += (_, _) => group.IsChecked = CalculateGroupState();
 `IsThreeState=true` 时 false → true → null → false。
 Enter 在 KeyDown 激活，Space 在 KeyUp 激活。
 这些原生语义由维护者确认保留，与 Compose 的外部状态写回、三态点击只发出请求、
-Enter 在 KeyUp 激活存在差异，见 [设计决定](../../../../docs/DECISIONS.md)。
+Enter 在 KeyUp 激活存在差异。采用模板复用原生状态和交互，避免两套相似控件与转发 API。
+2026-10-03，维护者要求合并为原生 CheckBox，并确认“这两方面保留原生状态切换和键盘行为即可。按这个方案实施”。
+范围仅为本次两态/三态模板，不以此批准其他视觉或语义偏离。
 
 Content 是 Avalonia 本地内容组合：48 DIP 指示器槽旁排列原生 ContentPresenter，
 默认间距 8 DIP，Padding 控制内容留白，支持 RTL、内容模板和 access key。
@@ -69,7 +71,9 @@ Cap、Join、MiterLimit 映射到 Skia Stroke。
 Join 始终按参数设置实际 Skia Paint。固定 Compose 桌面基线中，SkiaBackedPaint 的
 strokeJoin 缓存初值为 Round，底层却为 Miter；首次直接请求 Round 会跳过赋值而画成尖角。
 维护者已确认本地正确画出圆角，并接受 checkbox.static.stroke.round.on 的转角差异；
-默认 Miter 外观不受影响。该决定见 [设计决定](../../../../docs/DECISIONS.md)。
+固定依赖的独立 Paint 诊断已确认缓存 Round / native Miter，差异位于勾号转角。
+2026-10-03，维护者明确“这是上游bug，始终按参数画出圆角”。Cap、Join、MiterLimit 始终传入实际 Paint；
+默认 Miter 外观不受影响。范围仅为 CheckBox 自定义描边，不推广为其他上游 bug 的通用处理规则。
 
 ## 固定基线与实现
 
@@ -110,8 +114,10 @@ CheckBoxIndicator 用 Skia PathMeasure 绘制勾号片段，按上游分支选�
 检查实际模板、绑定写回、事件顺序、原生键盘和自动化、内容与 RTL、Token 与颜色、
 idle 后动画重启，以及模板替换/卸载/重新挂载的清理。
 
-维护者已确认本次保留原生范围，暂不提供 Compose `onClick=null` 的完全等价模式
-（含移除 toggleable 语义），见 [设计决定](../../../../docs/DECISIONS.md)。
+原生 CheckBox 没有移除 toggleable 自动化语义的开关，完全等价需要独立的只显示指示器，不能仅替换模板完成。
+2026-10-03，维护者确认“本次保留原生范围，记录 null 回调模式未实现（推荐）”。
+本次不提供 Compose `onClick=null` 的完全等价模式（含移除 toggleable 语义），不新增独立只显示指示器，
+也不改变原生自动化行为。
 应用可同时设置 IsHitTestVisible=false、Focusable=false、MaterialInteraction.IsInteractive=false
 阻止普通输入与 Material 反馈，但仍保留原生自动化 ToggleProvider；
 不能将它描述为完全等价的 null 回调模式。外部注入 Compose MutableInteractionSource 没有对象级映射。

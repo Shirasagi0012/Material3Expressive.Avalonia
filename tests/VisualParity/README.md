@@ -12,6 +12,7 @@ Agent 通过文件系统读取 Markdown 与 YAML，无需调用查询脚本。
 | 运行测试、查看结果、了解格式版本 | 本文 |
 | 选择覆盖组合、测量和采样时机，编写双端用例 | [AUTHORING.md](AUTHORING.md) |
 | 理解测量定义、YAML、像素与差异状态 | [MEASUREMENTS.md](MEASUREMENTS.md) |
+| 查阅框架取舍、适用范围和维护者确认依据 | [DECISIONS.md](DECISIONS.md) |
 
 ## 源码结构
 

@@ -2,6 +2,7 @@
 
 本文描述当前源码中的结构、可复用能力与接入约束，不代表所有既有设计均已作为长期方案获批，
 也不代表已经完成上游一致性验证。开发流程见[移植指南](PORTING.md)，参考仓库与读取方式见 [AGENTS.md](../AGENTS.md#上游源码)。
+组件决定随各组件 README 保存，跨组件的共享能力决定见 [DECISIONS.md](DECISIONS.md)。
 
 ## 结构与职责
 
@@ -92,7 +93,9 @@ Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefau
 目前交互组件通过 `MaterialInteraction.IsInteractive` 接入共享控制器，Surface 作为模板中的反馈呈现者。
 控制器处理输入、交互顺序、状态层和 ripple；主题提供颜色和形状等参数。
 键盘输入只用于维护交互反馈，不由共享控制器拦截 Enter 或执行点击。
-普通 Button/IconButton 保留 Avalonia 原生键盘激活；导航项继续使用各组件已有的键盘处理。
+激活由控件自身负责，具体语义见各组件 README，已有导航项的键盘处理保留。
+2026-10-03，维护者确认移除 Enter 接管：反馈接入不应改变应用命令时机，
+也无需在控制器中维护组件类型排除名单；该决定不统一各组件的键盘行为。
 颜色、交互事实、反馈动画和绘制结果需要保持各自归属，不要仅用最终伪类状态替代具有顺序意义的交互记录。
 
 NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
@@ -106,6 +109,7 @@ Rail / Wide / Modal / Bar 的动态 contentColorFor 绑定及物理 Insets 转�
 不扩展 Wide 的位置动画和平滑适配。见 [组件说明](../src/Material3Expressive/Components/ShortNavigationBar/README.md)。
 NavigationBar 的等权布局与动画见
 [组件说明](../src/Material3Expressive/Components/NavigationBar/README.md)。
+contentColorFor 绑定及物理 Insets 的共享迁移于 2026-10-03 随 NavigationBar 方案确认，原有公共入口与行为不变。
 
 Button elevation 的当前实现可作为职责示例：`ButtonElevation` 保存状态高度，
 每个按钮自己的 `ButtonElevationController` 选择并动画化目标；Surface 的 `ShadowElevation` 消费当前绘制高度。

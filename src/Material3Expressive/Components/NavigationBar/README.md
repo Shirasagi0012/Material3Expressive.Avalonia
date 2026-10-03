@@ -80,7 +80,10 @@ UnselectedTextColor、DisabledIconColor、DisabledTextColor。Background / Foreg
 
 Compose 内容 lambda 映射为 Avalonia 内容槽与模板，WindowInsets 为宿主提供的物理 Thickness，
 桌面默认零；RTL 不交换其物理边。没有 Compose 的嵌套 inset 消费环境。
-公共入口与 Foundation 的内部共享职责已经维护者确认，见 [DECISIONS](../../../../docs/DECISIONS.md)。
+这些入口保留 Compose RowScope 的内容组合与 selectable 的外部选择语义，同时支持 C#/XAML。
+2026-10-03，维护者确认“采用推荐 API 与内部共享适配”；范围为常规 NavigationBar / NavigationBarItem，
+不决定 ShortNavigationBar 的入口，不扩展 Wide 的纵向平滑偏离。
+contentColorFor 与物理 Insets 的共享职责见[架构说明](../../../../docs/ARCHITECTURE.md#surface-与交互组合)。
 
 ## 验证范围
 

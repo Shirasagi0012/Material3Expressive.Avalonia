@@ -53,6 +53,11 @@ setter 按源码顺序约束和吸附。程序更新 range 两端时，向上移
 模板的数据是当前实际 State。`ActualState` 可用于绑定默认轨道。`Interaction`、`StartInteraction`、
 `EndInteraction` 是只读共享交互标记，可绑定到自定义 Thumb；反馈跟随实际输入和焦点。
 
+2026-10-03，维护者确认上述数值入口、可选 State 和内容模板“采用推荐方案”。
+便捷属性内部持有 State，显式 State 的回调保留调用者写回职责；默认模板、布局与绘制消费同一状态。
+这样同时支持简洁的 C#/XAML 双向绑定、上游 hoisted state 和自定义内容，不要求应用先创建 State。
+范围仅为 Slider 家族的新 API，不改变其他组件或 Avalonia 原有 Slider。
+
 ```xml
 <m3:Slider Value="0.5">
     <m3:Slider.ThumbTemplate>
@@ -93,12 +98,20 @@ setter 按源码顺序约束和吸附。程序更新 range 两端时，向上移
 - **已接受的行为改进**：RangeSlider 按下时两端数值重合，首次有效水平拖动按数值方向选择 Thumb，之后固定选择。
   LTR 向左拉开起点、向右拉开终点，RTL 反转；只在释放事件出现水平位移时同样处理。
   不新增 API，没有拖动的点击、非重合手势、键盘和自动化保留原规则；拖动中合并后不会切换 Thumb。
-  固定 Compose 仍在按下时选择，因此重合用例保留真实行为/视觉差异。确认及范围见 `docs/DECISIONS.md`。
+  选择转移时同步转移按压反馈，保留非交叉约束、slop、取消和完成回调。
+  固定 Compose 在按下时选定 Thumb，重合时只能朝被选端允许的方向拉开，因此采用此改进；真实行为/视觉差异仍保留。
+  2026-10-03，维护者回复“就按你说的改”，确认首次有效水平拖动方向方案；范围仅为 RangeSlider 的指针手势。
 - **尚未实现，维护者明确延期**：可选 `LocalRippleThemeConfiguration.Focus.InsetRing` 及其焦点 padding/轨道间距。
-  本次范围为上游默认焦点模式，决定见 `docs/DECISIONS.md`。不提供近似焦点环或新共享配置。
+  固定基线的可选模式影响 Thumb 测量、padding 和 Track 间距，现有共享 Ripple 没有对应焦点配置。
+  2026-10-03，维护者确认“本次只交付默认焦点模式，明确记录 InsetRing 未实现”。
+  范围为本次三种 Slider；默认按压/拖动/聚焦的 Thumb 缩窄、range 独立焦点与自动化仍实现并验证，
+  不能据此声明全部 LocalRippleThemeConfiguration 分支已移植。不提供近似焦点环或新共享配置。
 - **已接受的差异**：single 拖动中禁用，当帧恢复 Thumb 尺寸；Compose 的子组合下一帧才恢复。
   四个 `slider.dynamic.disable.horizontal/vertical.0/3` 的 `disabled` 栅格差异保留。
-  同时采集的 feedback、数值、回调与布局相同，释放及后续帧一致。决定见 `docs/DECISIONS.md`。
+  同时采集的 feedback、数值、回调与布局相同，释放及后续帧一致。
+  固定 Core 的 FrameRecomposer 先应用父组合的 enabled 更新，Cancel 触发的 Thumb 状态下一帧才重组。
+  2026-10-03，维护者确认“保留即时绘制并记录差异（推荐）”，不引入人为帧延迟，不调整采样、容差或门禁。
+  范围仅为 Slider/VerticalSlider 拖动禁用瞬间，不扩展到后续帧、RangeSlider 或一般按压释放和键盘。
 - **未经验证**：真实桌面、触屏/触控笔、原生屏幕阅读器与平台 numpad 映射。当前自动化证据来自 Windows Skia headless。
 
 ## 验证入口

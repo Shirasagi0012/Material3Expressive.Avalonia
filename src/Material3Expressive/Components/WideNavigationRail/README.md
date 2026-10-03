@@ -136,12 +136,21 @@ await modal.State.ExpandAsync();
 | CollapsedCornerRadius / ExpandedCornerRadius | Modal 的收起和展开形状，默认 0 / 16 DIP |
 | ShouldDismissOnBackPress | 是否响应原生返回请求，默认 true；不影响 Escape KeyUp |
 
-内容槽、状态生命周期及 selectable 适配的确认依据见 [DECISIONS](../../../../docs/DECISIONS.md)。
+2026-10-03，维护者确认 Wide/Modal 的上述 API、内容槽、状态生命周期及 selectable 适配“采用推荐 API”。
+该选择保留上游 hoisted state、AnimatedNavigationItem 和 Arrangement 的职责与分支，支持 C#/XAML。
 形状使用现有 CornerRadius，最低交互尺寸使用当前 desktop 默认 48 DIP；没有新增通用 Modal/手势基础框架。
+
+Modal 的宿主适配于同日确认“采用 OverlayLayer 与独立 ExpandedHeader（推荐）”：
+固定 Compose Desktop 使用 Dialog；本地在当前 TopLevel 的 OverlayLayer 覆盖客户区、阻挡背景输入、
+限制并恢复焦点。Avalonia Control 不能同时属于两个父节点，因此收起与展开 Header 使用独立内容槽；
+数据和模板可生成两份，直接传入 Control 时须提供两个实例。HideOnCollapse 的两条路径、拖动关闭和 Escape KeyUp 保留。
+范围为 Wide/Modal 的窗口宿主与 Header，不提供 Android predictive back，默认颜色、形状和动画仍来自固定上游。
 
 ## 已接受的纵向动画改进
 
 2026-10-03，维护者确认不再复现固定 Compose 展开/收起过程中的整数布局抖动。
+依据为 125% 缩放的真实日志与固定源码中的多层 roundToPx、整数 lerp、居中截断和排列取整；
+维护者确认上游也存在抖动，并授权连续化布局改善体验。
 内置布局的项最小高度、项间距、纵向 indicator padding、内容高度、图标位置、居中偏移和整组排列
 保留小数物理像素；静态尺寸先按原来的规则取整，再由现有动画进度连续连接。
 居中与排列的整数端点偏差随进度平滑补偿，完整展开/收起及独立 Top / Start 覆盖保留原来的静态位置。
@@ -155,7 +164,8 @@ await modal.State.ExpandAsync();
 
 这项改进同时用于 Wide 与 Modal 的 WideNavigationRailItem；常规 NavigationRail 不在本次修改范围。
 展开/收起过程的 geometry 与 raster 可以偏离固定 Compose，因此相应 parity 用例继续保留真实 different，
-没有修改参考、夹具或容差来制造通过。决定见 [DECISIONS](../../../../docs/DECISIONS.md)。
+没有修改参考、夹具或容差来制造通过。该决定不改变 ComposeAnimation；静态端点继续核验。
+维护者明确本次不新增专门测试，改后的真实桌面视觉体验由维护者核验。
 
 ## 验证
 
@@ -205,6 +215,8 @@ Modal 独立入口为 [ModalWideNavigationRailCases.cs](../../../../tests/Visual
 
 保留差异：Indicator 使用 Avalonia 的 SaveLayer alpha 合成，与固定 Skiko 的 ModulateAlpha 每次 paint float 乘法有混色差异。
 退选 64ms 的像素为 Compose `#EEE7FA`、Avalonia `#EEE6F9`；维护者已决定暂缓新增绘制器。
+2026-10-03，维护者确认“暂留差异，之后处理”；范围仅为 Wide item 选择/退选时的 Indicator 混色，
+不视为已对齐，也不决定通用绘制基础能力。
 维护者另行调整 visual parity 容差，并明确无需为该差异追加测试。旧门限的失败记录不能作为新门限的结论。
 独立复现及使用的容差版本见 [移植证据](../../../../artifacts/wide-navigation-rail-port/README.md)。
 
@@ -212,6 +224,7 @@ Modal 独立入口为 [ModalWideNavigationRailCases.cs](../../../../tests/Visual
 平台范围为桌面，未提供 Android predictive back。
 
 已接受的鼠标速度适配（2026-10-03）：保留 Avalonia 的真实 PointerMoved 历史和固定 Compose Desktop 的 LSQ2 算法。
+维护者确认保留真实历史及释放轨迹差异；范围仅为 ModalWideNavigationRail 的鼠标拖动，目标选择算法与容差不变。
 固定 Core 的 `SyntheticEventSender.updatePointerPosition` 在内容重新布局后，以原坐标和时间戳重发鼠标 Move；
 这些零位移样本也进入速度拟合。Avalonia 没有对应重发路径。本次不在组件或夹具中复制样本。
 速度历史使用带时间戳的 PointerMoved；Avalonia 的 GetIntermediatePoints 不提供独立时间戳，不为其构造时间。

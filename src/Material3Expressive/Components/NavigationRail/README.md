@@ -88,7 +88,9 @@ Item 使用 Button 的 IsEnabled、Click、Command、CommandParameter、CanExecu
 
 Compose 的内容 lambda 映射为 Avalonia 内容对象/模板，WindowInsets 映射为宿主显式提供的 Thickness；
 没有 Compose 的嵌套 inset 消费环境。桌面默认 inset 为零。应用可用 StackPanel 等作为单个 header 根内容。
-这些入口与内部按压映射已经维护者确认，见 [DECISIONS](../../../../docs/DECISIONS.md)。
+这样既保留 Compose selectable 的外部选择语义，也能使用 C#/XAML 的内容和模板入口。
+2026-10-03，维护者确认“采用推荐 API 与内部适配”，包括以上入口和固定 `(12, 0)` 按压映射。
+范围仅为常规 NavigationRail / NavigationRailItem，不决定 Wide/Modal 的 API，也不引入应用导航框架。
 
 ## 验证与保留问题
 

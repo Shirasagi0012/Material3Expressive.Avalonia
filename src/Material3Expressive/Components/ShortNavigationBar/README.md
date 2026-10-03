@@ -58,6 +58,7 @@ home.Click += (_, _) => NavigateHome(); // 应用维护 IsSelected 及各项互�
 Items / ItemsSource / ItemTemplate 沿用 ItemsControl；模板直接生成 ShortNavigationBarItem。
 Icon / Label 接受内容与 DataTemplate，字符串使用 ContentPresenter 的 MaterialText 默认排版。
 标签存在就始终显示，没有 AlwaysShowLabel、RailExpanded 或位置动画。
+IconPosition 为非空的 NavigationItemIconPosition，默认 Top。
 Click / Command / CommandParameter / IsEnabled 使用 Button；Enter 与 Space 在 KeyUp 调用。
 自动化提供 TabItem、当前 IsSelected 和所属选择组；Select 只请求导航。
 NavigationItem 不清除图标语义，图标与标签均保留可访问子内容。
@@ -80,11 +81,16 @@ Avalonia 没有 Compose intrinsic API，组件局部测量内容槽来回答对�
 卸载和模板替换取消旧动画。布局需要有限宽度；横向无界宿主需设置 Width 或提供有限容器。
 WindowInsets 是物理 Thickness，桌面默认零，RTL 不交换物理边；没有嵌套 inset 消费环境。
 
+2026-10-03，维护者确认“采用推荐 API 与测量适配”：使用原生 ItemsControl 内容入口和组件局部固有尺寸查询，
+不引入通用 intrinsic 框架；范围仅为本次 ShortNavigationBar / ShortNavigationBarItem。
+Short 使用 NavigationItem，而 Wide 使用 AnimatedNavigationItem，因此保留两者不同的动画和布局职责。
+
 2026-10-03 维护者确认保留 Avalonia Width 语义：固定容器宽度，各项按排列分配。
 固定 Compose 的直接 Modifier.width / fillMaxWidth 把 minWidth 传给每项，再由 constraints.constrain
 放大为整个 Bar 宽度；352 DIP、3 项时三项均为 352 DIP 并溢出。
 正常 parity 由外层宿主提供有限最大宽度；static.upstream.direct-width 保留真实 different。
-固定参考、容差与比较状态不修改。确认依据见 [DECISIONS](../../../../docs/DECISIONS.md)。
+固定参考、容差与比较状态不修改。维护者确认“采用原生 Width 语义并记录差异（推荐）”；
+范围仅为 Bar 的容器 Width，不改写 Centered / EqualWeight 的整数算法及其他组件。
 
 ## 验证
 

@@ -21,7 +21,8 @@
 - [视觉一致性测试](tests/VisualParity/README.md)：运行命令与结果阅读；新增用例见[用例编写](tests/VisualParity/AUTHORING.md)。
 
 组件专属说明随组件放在 `Components/<组件>/README.md`，按需补充。
-重要本地设计在维护者确认后简要记录于 `docs/DECISIONS.md`，首次需要时再创建。
+已确认的组件设计就近记录在对应 README；跨组件的共享能力决定记录于 [docs/DECISIONS.md](docs/DECISIONS.md)。
+VisualParity 的设计决定见其[测试目录文档](tests/VisualParity/DECISIONS.md)。
 
 ## 本地开发
 
