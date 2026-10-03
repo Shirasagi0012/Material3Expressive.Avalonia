@@ -68,6 +68,12 @@ public sealed class ChipCases
             yield return Data($"dynamic.{kind}.{action}", new(kind, Enabled: action != "disabled-input", Icons: "start", Action: action));
         foreach (var action in new[] { "cancel", "disable-press", "space", "enter", "theme", "request-only" })
             yield return Data($"dynamic.filter.{action}", new("filter", Icons: "start", Action: action));
+        // Transparent flat Filter hover has an approved default elevation deviation; retain
+        // the real Compose defaults so raster and elevation differences remain observable.
+        foreach (var morph in new[] { false, true })
+        foreach (var selected in new[] { false, true })
+            yield return Data($"dynamic.filter.{(morph ? "morph" : "fixed")}.{(selected ? "selected" : "unselected")}.hover",
+                new("filter", morph, Selected: selected, Action: "hover"));
         foreach (var kind in new[] { "filter", "input" })
         foreach (var morph in new[] { false, true })
         foreach (var action in new[] { "icons", "reverse-icons", "selection", "reverse-selection", "press" })

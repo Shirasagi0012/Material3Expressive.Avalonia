@@ -34,7 +34,9 @@ public sealed class ChipTokenSource : ITokenSource
         [Comp.Chip.DisabledOutlineColor] = new WithAlpha(Sys.Color.OnSurface, 0.12),
         [Comp.Chip.OutlineWidth] = 1d,
         [Comp.Chip.FlatElevation] = new TokenRef(Sys.Elevation.Level0),
-        [Comp.Chip.FlatFilterHoverElevation] = new TokenRef(Sys.Elevation.Level1),
+        // Approved deviation from Chip.kt's Level1: transparent flat Filter backgrounds expose
+        // the native Ganesh shadow's inner ring. Keep hover feedback in the state layer.
+        [Comp.Chip.FlatFilterHoverElevation] = new TokenRef(Sys.Elevation.Level0),
         [Comp.Chip.ElevatedElevation] = new TokenRef(Sys.Elevation.Level1),
         [Comp.Chip.ElevatedHoverElevation] = new TokenRef(Sys.Elevation.Level2),
         [Comp.Chip.DisabledElevation] = new TokenRef(Sys.Elevation.Level0),

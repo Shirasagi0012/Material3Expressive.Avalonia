@@ -182,6 +182,43 @@ public class ChipTests
         Assert.Equal(0, surface.ShadowElevation); window.Close(); Assert.Equal(0, clock.PendingFrameCount);
     }
 
+    [AvaloniaTheory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void FlatFilterHover_DefaultHasNoShadowAndRetainsStateLayerAndOverrides(bool morph, bool selected)
+    {
+        using var clock = new MotionTestClockScope();
+        var chip = new FilterChip { Content = new Border { Width = 32, Height = 16 }, IsSelected = selected,
+            Shapes = morph ? new ChipShapes() : null };
+        var window = Show(chip);
+        try
+        {
+            var surface = Part<MaterialSurface>(chip, "PART_Container");
+            var center = chip.TranslatePoint(new Point(chip.Bounds.Width / 2, chip.Bounds.Height / 2), window)!.Value;
+            window.MouseMove(center);
+            void Settle()
+            {
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(160));
+            }
+            Settle();
+            Assert.Equal(0, surface.ShadowElevation);
+            Assert.Equal(0.08, MaterialInteraction.GetOrCreate(chip).StateLayerOpacity);
+            chip.Elevation = new ChipElevation(Hovered: 1); Settle();
+            Assert.Equal(1, surface.ShadowElevation);
+            chip.Elevation = null; Settle();
+            Assert.Equal(0, surface.ShadowElevation);
+            chip.Resources[MaterialTokens.Comp.Chip.FlatFilterHoverElevation] = 1d; Settle();
+            Assert.Equal(1, surface.ShadowElevation);
+            Assert.Equal(selected, chip.IsSelected);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     [AvaloniaFact]
     public void SelectableWidthLimit_PreservesExplicitMinimumAndWidth()
     {

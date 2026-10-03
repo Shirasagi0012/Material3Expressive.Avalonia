@@ -30,6 +30,8 @@ Filter / Input 的槽变化使用 Transition 的 size / alpha 轨迹，退出保
 重建状态。容器尺寸改变时重新计算轮廓，模板替换时释放调用方的图标控件与旧动画。
 Elevation 选择最后活跃的 press / focus / hover / drag；禁用直接到目标。
 进入 120ms FastOutSlowIn，退出 150ms Bezier(0.4,0,0.6,1)，hover 退出为 120ms。
+平面 Filter 的默认悬浮 elevation 为 0 DIP，Elevated Filter 仍为 3 DIP；选中状态不改变
+这套高度规则。平面 Filter 的这一默认值是下面记录的已确认上游偏离。
 
 应用管理 `IsSelected`。点击、命令或 automation Toggle 仅请求动作，不自动改选中状态。
 Filter / Input 的 automation 类型为 CheckBox，ToggleState 反映 IsSelected。
@@ -92,20 +94,30 @@ Core Desktop 的完整焦点事件影响 elevation；indication 单独过滤首�
 内部阴影 raster 与 Compose 不同；同一 Skiko 原生探针已复现 DIP 路径 + 4× CTM 与
 物理像素路径 + 1× CTM 的不同结果。本次保留共享模块现有接入，继续报告比较差异。
 
+2026-10-04 维护者批准将库中平面 Filter 的默认 hover elevation 从固定 Compose 的 1 DIP
+改为 0 DIP，适用于 Shapes=null / 非空、未选中 / 选中。透明背景的平面 Filter 悬浮时，
+Skia Ganesh 的原生阴影会暴露容器内部的灰色环；固定 Skiko 0.152.0-alpha02 的 GPU 原生
+drawShadow 与 Avalonia 桌面绘制均已复现，CPU 路径未出现同样灰环。该修正保留悬浮状态层、
+形状动画和其余 elevation 默认值，不修改共享阴影算法。它与前面的坐标接入差异是两项独立决定。
+显式 `Elevation = new ChipElevation(Hovered: 1)` 或覆盖
+`MaterialTokens.Comp.Chip.FlatFilterHoverElevation` 可以恢复上游高度，也会恢复该 GPU 效果。
+XAML 对应 `<m3:FilterChip.Elevation><m3:ChipElevation Hovered="1" /></m3:FilterChip.Elevation>`。
+双端参考继续使用真实 Compose 默认值，报告保留 hover elevation / raster 的已接受不同。
+
 ## 验证与剩余问题
 
 控件库测试覆盖默认尺寸、avatar 优先级 / opacity、外部选中、automation、实时内容色、
 原生 paint 优先级、编译 XAML 配置、detach / reattach、模板替换、形状替换与完成后的尺寸更新、
-elevation 顺序 / 禁用 snap 和宽度约束。
+elevation 顺序 / 禁用 snap、平面 Filter 悬浮状态层与高度覆盖和宽度约束。
 Catalog 展示四个家族、Elevated、形状、avatar 和禁用状态。
 
 VisualParity 的独立入口为
 `tests/VisualParity/Material3Expressive.Parity/Cases/ChipCases.cs` 与
-`tests/VisualParity/reference/src/main/kotlin/cases/ChipCases.kt`，共 203 项。
+`tests/VisualParity/reference/src/main/kotlin/cases/ChipCases.kt`，共 207 项。
 覆盖变体 / 主题 / 选中 / 禁用、槽与 RTL、尺寸约束、自定义颜色 / padding / border /
 elevation，以及 hover、按压、取消、禁用、中断、外部 selection、形状配置替换、
 完成变形后的尺寸更新、主题和键盘。
 使用真实组件和无文字的 marker，未验证文字 raster / 字体差异或真实桌面手动交互。
 
-保留的数值精度、阴影坐标及原生 Enter 激活时机差异分别按上面的决定处理。
+保留的数值精度、阴影坐标、平面 Filter 悬浮高度及原生 Enter 激活时机差异分别按上面的决定处理。
 具体运行结果及未通过采样见交付时给出的 artifacts 路径，不能将这些用例宣称为一致。
