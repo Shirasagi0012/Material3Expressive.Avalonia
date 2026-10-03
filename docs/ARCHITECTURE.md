@@ -190,6 +190,10 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
   自定义 Window 模板需包含 `PART_VisualLayerManager`；普通 Content 内的 OverlayLayer 不满足该条件。
   Dialog 的关闭请求、退出保留和焦点约束见 [Overlays](../src/Material3Expressive/Foundation/Overlays/README.md)。
   组件负责输入阻挡、焦点限制/恢复及展开内容迁移；各组件的验证范围与保留问题见对应说明。
+- [NavigationDrawer](../src/Material3Expressive/Components/NavigationDrawer/README.md) 的三种容器保留上游本地组合：
+  Modal 覆盖页面，Dismissible 推动原宽度页面，Permanent 分配剩余宽度。
+  Hoisted DrawerState 承担锚点、拖动和开关；可选 Sheet.State 接入过冲与离散 BackRequested。
+  它不接入 Rail/Dialog 的 Popup 模态宿主；内容、排版、物理 Insets 和 Surface 消费现有共享能力。
 - 原有 Material 动画规则的源码核对基于 AndroidX `ff0a0a99c4f0cfe95d75d5df615e51d399575922`。
   当时记录了状态层 15/45/150ms 淡入淡出、ripple 75ms 进入透明度与 225ms 扩张/中心移动、
   释放后的 150ms 淡出；快速点击仍完成扩张。按压圆角使用 DefaultEffects（damping 1、stiffness 1600）。

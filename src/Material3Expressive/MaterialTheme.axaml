@@ -27,6 +27,7 @@
                     <m3:TonalIconButtonTokenSource />
                     <m3:OutlinedIconButtonTokenSource />
                     <m3:NavigationRailTokenSource />
+                    <m3:NavigationDrawerTokenSource />
                     <m3:NavigationBarTokenSource />
                     <m3:ShortNavigationBarTokenSource />
                     <m3:WideNavigationRailTokenSource />
@@ -50,6 +51,7 @@
     <StyleInclude Source="/Components/Button/Button.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
+    <StyleInclude Source="/Components/NavigationDrawer/NavigationDrawer.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />
     <StyleInclude Source="/Components/ShortNavigationBar/ShortNavigationBar.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/WideNavigationRail.axaml" />

@@ -1,0 +1,92 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="NavigationDrawerTheme" TargetType="m3:NavigationDrawer">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:NavigationDrawerLayout x:Name="PART_Layout" Background="{TemplateBinding Background}">
+            <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+            <m3:DrawerScrim />
+            <ContentPresenter x:Name="PART_Drawer" Content="{TemplateBinding DrawerContent}"
+                ContentTemplate="{TemplateBinding DrawerContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
+          </m3:NavigationDrawerLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:PermanentNavigationDrawer}" TargetType="m3:PermanentNavigationDrawer" BasedOn="{StaticResource NavigationDrawerTheme}" />
+    <ControlTheme x:Key="{x:Type m3:DismissibleNavigationDrawer}" TargetType="m3:DismissibleNavigationDrawer" BasedOn="{StaticResource NavigationDrawerTheme}" />
+    <ControlTheme x:Key="{x:Type m3:ModalNavigationDrawer}" TargetType="m3:ModalNavigationDrawer" BasedOn="{StaticResource NavigationDrawerTheme}">
+      <Setter Property="ScrimBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ScrimColor}}" />
+    </ControlTheme>
+
+    <ControlTheme x:Key="DrawerSheetTheme" TargetType="m3:DrawerSheet">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.StandardContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Top" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:DrawerSheetLayout MaximumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ContainerWidth}}">
+            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+                TonalElevation="{TemplateBinding TonalElevation}" TextElement.Foreground="{TemplateBinding Foreground}">
+              <Border>
+                <Border.Padding>
+                  <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
+                    <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding>
+                </Border.Padding>
+                <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+              </Border>
+            </m3:MaterialSurface>
+          </m3:DrawerSheetLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:PermanentDrawerSheet}" TargetType="m3:PermanentDrawerSheet" BasedOn="{StaticResource DrawerSheetTheme}" />
+    <ControlTheme x:Key="{x:Type m3:DismissibleDrawerSheet}" TargetType="m3:DismissibleDrawerSheet" BasedOn="{StaticResource DrawerSheetTheme}" />
+    <ControlTheme x:Key="{x:Type m3:ModalDrawerSheet}" TargetType="m3:ModalDrawerSheet" BasedOn="{StaticResource DrawerSheetTheme}">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ModalContainerColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ContainerShape}}" />
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:NavigationDrawerItem}" TargetType="m3:NavigationDrawerItem">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ActiveIndicatorShape}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.LabelTextStyle}}" />
+      <Setter Property="SelectedContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.SelectedContainerColor}}" />
+      <Setter Property="UnselectedContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.UnselectedContainerColor}}" />
+      <Setter Property="SelectedIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.SelectedIconColor}}" />
+      <Setter Property="UnselectedIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.UnselectedIconColor}}" />
+      <Setter Property="SelectedTextColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.SelectedTextColor}}" />
+      <Setter Property="UnselectedTextColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.UnselectedTextColor}}" />
+      <Setter Property="SelectedBadgeColor" Value="{Binding SelectedTextColor, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="UnselectedBadgeColor" Value="{Binding UnselectedTextColor, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Surface" CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
+              StateLayerBrush="{m3:ContentColorFor AmbientContentColor={Binding Parent.(TextElement.Foreground), RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type m3:NavigationDrawerItem}}}}">
+            <m3:NavigationDrawerItemLayout ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ActiveIndicatorHeight}}">
+              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
+                  IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                  ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"
+                  m3:TextStyleHost.IsEnabled="True" />
+              <ContentPresenter x:Name="PART_Badge" Content="{TemplateBinding Badge}" ContentTemplate="{TemplateBinding BadgeTemplate}"
+                  IsVisible="{TemplateBinding Badge, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            </m3:NavigationDrawerItemLayout>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>
