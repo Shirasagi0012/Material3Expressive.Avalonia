@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.TextFieldDemo"
+        Title="Material TextField" Width="780" Height="740" RequestedThemeVariant="Light">
+  <ScrollViewer>
+    <StackPanel Margin="32" Spacing="24">
+      <TextBlock Text="TextField" FontSize="24" />
+      <TextBlock Text="Text fields with native text editing and Material styling." />
+      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="28" RowSpacing="24">
+        <TextBlock Text="Filled" /><TextBlock Grid.Column="1" Text="Outlined" />
+        <TextBox Grid.Row="1" Name="Filled" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="Name"
+                 PlaceholderText="Enter your name" m3:MaterialTextField.SupportingText="Try selection, IME input, paste, and undo" />
+        <TextBox Grid.Row="1" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Name"
+                 PlaceholderText="Enter your name" m3:MaterialTextField.SupportingText="Click the label, outline, or supporting text" />
+        <TextBox Grid.Row="2" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="Amount" Text="123.45"
+                 m3:MaterialTextField.Prefix="¥" m3:MaterialTextField.Suffix="CNY" />
+        <TextBox Grid.Row="2" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Amount" Text="123.45"
+                 m3:MaterialTextField.Prefix="¥" m3:MaterialTextField.Suffix="CNY" />
+        <TextBox Grid.Row="3" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="Description"
+                 AcceptsReturn="True" TextWrapping="Wrap" MinLines="3" MaxLines="5" Text="Multiline text&#10;Second line" />
+        <TextBox Grid.Row="3" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Email"
+                 Text="invalid" m3:MaterialTextField.IsError="True" m3:MaterialTextField.SupportingText="Check the email address format" />
+        <TextBox Grid.Row="4" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="Disabled" IsEnabled="False" Text="Text is preserved while disabled" />
+        <TextBox Grid.Row="4" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Read-only" IsReadOnly="True" Text="Select and copy this text" />
+      </Grid>
+      <TextBox Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Search" PlaceholderText="Type here, then click clear"
+               Name="SearchInput" MinWidth="0">
+        <TextBox.InnerLeftContent><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></TextBox.InnerLeftContent>
+        <TextBox.InnerRightContent><m3:IconButton Symbol="Close" Focusable="False" Click="ClearSearch" /></TextBox.InnerRightContent>
+      </TextBox>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Content="Toggle light / dark" Click="ToggleTheme" />
+        <Button Content="Toggle RTL" Click="ToggleDirection" />
+      </StackPanel>
+      <TextBlock Text="Try RTL layout, a narrow window, or larger text to check the layout. The search example demonstrates an input field with icons, without SearchBar expansion." TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</Window>

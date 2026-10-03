@@ -66,6 +66,7 @@
                         <m3:FloatingActionButtonMenuItem.Icon><m3:MaterialSymbol Symbol="Edit" Width="24" Height="24" /></m3:FloatingActionButtonMenuItem.Icon>
                     </m3:FloatingActionButtonMenuItem>
                 </m3:FloatingActionButtonMenu>
+                <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <TextBlock Text="RadioButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <RadioButton GroupName="CatalogRadio" Content="First" IsChecked="True" />

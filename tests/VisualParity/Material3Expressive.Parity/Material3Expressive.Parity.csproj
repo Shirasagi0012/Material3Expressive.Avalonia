@@ -8,6 +8,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Avalonia.Headless"/>
+        <PackageReference Include="Avalonia.Themes.Fluent"/>
         <PackageReference Include="ComposeAnimation.TestSupport"/>
         <PackageReference Include="YamlDotNet"/>
         <ProjectReference Include="../../../src/Material3Expressive/Material3Expressive.csproj"/>

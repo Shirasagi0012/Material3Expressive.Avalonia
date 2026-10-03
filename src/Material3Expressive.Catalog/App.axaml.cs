@@ -15,7 +15,9 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow();
+            desktop.MainWindow = System.Array.IndexOf(desktop.Args ?? [], "--text-fields") >= 0
+                ? new TextFieldDemo()
+                : new MainWindow();
         }
 
         base.OnFrameworkInitializationCompleted();
