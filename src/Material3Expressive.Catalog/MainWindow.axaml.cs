@@ -11,6 +11,7 @@ namespace Material3Expressive.Catalog;
 
 public partial class MainWindow : Window
 {
+    private void OnTooltipDemo(object? sender, RoutedEventArgs e) => new TooltipDemo().Show(this);
     private void OnNavigationDrawerDemo(object? sender, RoutedEventArgs e) => new NavigationDrawerDemo().Show(this);
     private void OnTextFieldDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new TextFieldDemo().Show(this);
     private void OnSecureTextFieldDemo(object? sender, RoutedEventArgs e) => new SecureTextFieldDemo().Show(this);
