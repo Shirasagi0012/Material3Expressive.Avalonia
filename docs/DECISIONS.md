@@ -1,5 +1,15 @@
 # 已确认的设计决定
 
+## RangeSlider 重合时按首次拖动方向选择 Thumb
+
+决定：按下时 ActiveRangeStart == ActiveRangeEnd 的手势，在首次有效水平拖动时按数值方向选起点或终点，随后固定该选择。
+原因：固定上游 Slider.kt 的 rangeSliderPressDragModifier 在按下时选定 Thumb；重合时只能向被选端允许的方向拉开，难以操作。
+做法与影响：减小数值选起点，增大数值选终点；RTL 换算方向。转移按压反馈，保留非交叉约束、slop、取消和完成回调。
+仅在释放事件出现水平位移的手势同样按方向选择；没有拖动的点击和非重合手势保留上游规则。
+范围：RangeSlider 的指针手势，不新增 API；拖动中才合并的区间不切换 Thumb，键盘和自动化不改变。
+验证保留真实固定 Compose 参考，重合方向用例的行为和视觉差异不豁免或改写比较规则。
+确认：2026-10-03，维护者回复“就按你说的改”，授权采用首次有效水平拖动方向方案。
+
 ## Slider 的数值入口、State 与内容模板
 
 决定：提供 Slider、VerticalSlider、RangeSlider，默认使用双向绑定数值属性（Value 或 RangeStart/RangeEnd），

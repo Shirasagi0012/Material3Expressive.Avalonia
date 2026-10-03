@@ -12,6 +12,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Tokens;
 using Xunit;
 using MSlider = Material3Expressive.Components.Slider;
@@ -312,6 +313,164 @@ public sealed class SliderTests
             Assert.Equal(0.1f, slider.ActualState.ActiveRangeStart); Assert.Equal(0.2f, slider.ActualState.ActiveRangeEnd);
         }
         finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData(false, true, 0)]
+    [InlineData(false, false, 0)]
+    [InlineData(true, true, 0)]
+    [InlineData(true, false, 0)]
+    [InlineData(false, true, 3)]
+    [InlineData(false, false, 3)]
+    [InlineData(true, true, 3)]
+    [InlineData(true, false, 3)]
+    public void OverlappingRange_DragChoosesDirectionAndKeepsThumb(bool rtl, bool start, int steps)
+    {
+        var state = new RangeSliderState(0.5f, 0.5f, steps);
+        var slider = new RangeSlider { Width = 280, State = state, FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var window = Show(slider); var finished = 0; state.OnValueChangeFinished = () => finished++;
+        try
+        {
+            var center = ThumbCenter(slider, window); var direction = (start ? -1 : 1) * (rtl ? -1 : 1);
+            var opened = center + new Vector(direction * 80, 0);
+            window.MouseDown(center, MouseButton.Left); window.UpdateLayout(); window.MouseMove(opened);
+            Assert.Equal(0.5f, start ? state.ActiveRangeEnd : state.ActiveRangeStart);
+            Assert.InRange(start ? state.ActiveRangeStart : state.ActiveRangeEnd, start ? 0.18f : 0.75f, start ? 0.25f : 0.82f);
+            Assert.Equal(InteractionState.Dragged, start ? slider.StartInteraction : slider.EndInteraction);
+            Assert.Equal(InteractionState.None, start ? slider.EndInteraction : slider.StartInteraction);
+            // Crossing the initial position closes the interval, but must not switch thumbs.
+            window.MouseMove(center - new Vector(direction * 60, 0));
+            Assert.Equal(0.5f, state.ActiveRangeStart); Assert.Equal(0.5f, state.ActiveRangeEnd);
+            Assert.Equal(InteractionState.Dragged, start ? slider.StartInteraction : slider.EndInteraction);
+            window.MouseMove(opened); window.MouseUp(opened, MouseButton.Left);
+            Assert.Equal(0.5f, start ? state.ActiveRangeEnd : state.ActiveRangeStart);
+            Assert.True(state.ActiveRangeStart < state.ActiveRangeEnd);
+            Assert.Equal(InteractionState.None, slider.StartInteraction | slider.EndInteraction); Assert.Equal(1, finished);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    public void OverlappingRange_ReleaseDisplacementChoosesDirection(bool rtl, bool start)
+    {
+        var state = new RangeSliderState(0.5f, 0.5f, 3);
+        var slider = new RangeSlider { Width = 280, State = state, FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var window = Show(slider); var finished = 0; state.OnValueChangeFinished = () => finished++;
+        try
+        {
+            var center = ThumbCenter(slider, window); var direction = (start ? -1 : 1) * (rtl ? -1 : 1);
+            window.MouseDown(center, MouseButton.Left); window.MouseUp(center + new Vector(direction * 80, 0), MouseButton.Left);
+            Assert.Equal(start ? 0.25f : 0.5f, state.ActiveRangeStart); Assert.Equal(start ? 0.5f : 0.75f, state.ActiveRangeEnd);
+            Assert.Equal(InteractionState.None, slider.StartInteraction | slider.EndInteraction); Assert.Equal(1, finished);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    public void OverlappingRange_TapKeepsPositionBasedSelection(bool rtl, bool start)
+    {
+        var state = new RangeSliderState(0.5f, 0.5f, 3);
+        var slider = new RangeSlider { Width = 280, State = state, FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var window = Show(slider);
+        try
+        {
+            var point = ThumbCenter(slider, window) + new Vector((start ? -1 : 1) * (rtl ? -1 : 1) * 80, 0);
+            window.MouseDown(point, MouseButton.Left); window.MouseUp(point, MouseButton.Left);
+            Assert.Equal(start ? 0.25f : 0.5f, state.ActiveRangeStart); Assert.Equal(start ? 0.5f : 0.75f, state.ActiveRangeEnd);
+            Assert.Equal(InteractionState.None, slider.StartInteraction | slider.EndInteraction);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData("vertical")]
+    [InlineData("disable")]
+    [InlineData("detach")]
+    public void OverlappingRange_CancelBeforeDirectionDoesNotLeakIntoNextGesture(string cancellation)
+    {
+        var state = new RangeSliderState(0.5f, 0.5f);
+        var slider = new RangeSlider { Width = 280, State = state }; var window = Show(slider);
+        var finished = 0; state.OnValueChangeFinished = () => finished++;
+        try
+        {
+            var center = ThumbCenter(slider, window); window.MouseDown(center, MouseButton.Left);
+            if (cancellation == "vertical") window.MouseMove(center + new Vector(0, 40));
+            else if (cancellation == "disable") { slider.IsEnabled = false; slider.IsEnabled = true; }
+            else { window.Content = null; window.Content = slider; }
+            window.UpdateLayout(); window.MouseUp(center, MouseButton.Left);
+            Assert.Equal(0.5f, state.ActiveRangeStart); Assert.Equal(0.5f, state.ActiveRangeEnd);
+            Assert.Equal(InteractionState.None, slider.StartInteraction | slider.EndInteraction); Assert.Equal(0, finished);
+            center = ThumbCenter(slider, window); var target = center - new Vector(80, 0);
+            window.MouseDown(center, MouseButton.Left); window.MouseMove(target); window.MouseUp(target, MouseButton.Left);
+            Assert.True(state.ActiveRangeStart < 0.5f); Assert.Equal(0.5f, state.ActiveRangeEnd); Assert.Equal(1, finished);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NonOverlappingRange_DragRetainsNearestThumbDespiteMovementDirection(bool rtl)
+    {
+        var state = new RangeSliderState(0.25f, 0.75f);
+        var slider = new RangeSlider { Width = 280, State = state, FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var window = Show(slider);
+        try
+        {
+            var center = ThumbCenter(slider, window); var target = center + new Vector((rtl ? -1 : 1) * 60, 0);
+            window.MouseDown(center, MouseButton.Left); window.MouseMove(target);
+            Assert.InRange(state.ActiveRangeStart, 0.45f, 0.49f); Assert.Equal(0.75f, state.ActiveRangeEnd);
+            Assert.Equal(InteractionState.Dragged, slider.StartInteraction); Assert.Equal(InteractionState.None, slider.EndInteraction);
+            window.MouseUp(target, MouseButton.Left);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OverlappingRange_JitterBelowSlopDoesNotChooseDragThumb(bool rtl)
+    {
+        var state = new RangeSliderState(0.5f, 0.5f);
+        var slider = new RangeSlider { Width = 280, State = state, FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var window = Show(slider);
+        try
+        {
+            var center = ThumbCenter(slider, window); window.MouseDown(center, MouseButton.Left);
+            window.MouseMove(center + new Vector((rtl ? -1 : 1) * 0.02, 0.08));
+            Assert.Equal(0.5f, state.ActiveRangeStart); Assert.Equal(0.5f, state.ActiveRangeEnd);
+            Assert.False((slider.StartInteraction | slider.EndInteraction).HasFlag(InteractionState.Dragged));
+            var target = center + new Vector((rtl ? 1 : -1) * 80, 0);
+            window.MouseMove(target); window.MouseUp(target, MouseButton.Left);
+            Assert.True(state.ActiveRangeStart < 0.5f); Assert.Equal(0.5f, state.ActiveRangeEnd);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData(false, 0f)]
+    [InlineData(true, 0f)]
+    [InlineData(false, 1f)]
+    [InlineData(true, 1f)]
+    public void OverlappingRange_AtBoundaryOpensInward(bool rtl, float value)
+    {
+        var state = new RangeSliderState(value, value, 3);
+        var slider = new RangeSlider { Width = 280, State = state, FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var window = Show(slider);
+        try
+        {
+            var center = ThumbCenter(slider, window); var target = center + new Vector((value == 0 ? 1 : -1) * (rtl ? -1 : 1) * 80, 0);
+            window.MouseDown(center, MouseButton.Left); window.MouseMove(target); window.MouseUp(target, MouseButton.Left);
+            Assert.Equal(value == 0 ? 0f : 0.75f, state.ActiveRangeStart); Assert.Equal(value == 0 ? 0.25f : 1f, state.ActiveRangeEnd);
+            Assert.Equal(InteractionState.None, slider.StartInteraction | slider.EndInteraction);
+        }
+        finally { window.Close(); }
+    }
+    private static Point ThumbCenter(RangeSlider slider, Window window)
+    {
+        var thumb = Part(slider, "PART_StartThumb").Child!;
+        return thumb.TranslatePoint(new Point(thumb.Bounds.Width / 2, thumb.Bounds.Height / 2), window)!.Value;
     }
     private static ContentPresenter Part(Control control, string name) => control.GetVisualDescendants().OfType<ContentPresenter>().Single(x => x.Name == name);
     private static Window Show(Control content)

@@ -73,7 +73,7 @@ public sealed class RangeSlider : TemplatedControl
     private IPointer? _pointer;
     private Point _down, _last;
     private float _pressX, _slop;
-    private bool _dragging, _draggingStart;
+    private bool _dragging, _draggingStart, _chooseThumbOnDrag;
     private InteractionState _startInteraction, _endInteraction;
     public static readonly DirectProperty<RangeSlider, InteractionState> StartInteractionProperty = AvaloniaProperty.RegisterDirect<RangeSlider, InteractionState>(nameof(StartInteraction), s => s.StartInteraction);
     public static readonly DirectProperty<RangeSlider, InteractionState> EndInteractionProperty = AvaloniaProperty.RegisterDirect<RangeSlider, InteractionState>(nameof(EndInteraction), s => s.EndInteraction);
@@ -166,6 +166,15 @@ public sealed class RangeSlider : TemplatedControl
         else if (e.Property == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) CancelGesture();
     }
     private float Scale => (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
+    private void ResolveDragThumb(double horizontalOffset)
+    {
+        if (!_chooseThumbOnDrag) return;
+        // Intentional deviation: an initially collapsed range chooses its thumb
+        // from the first horizontal drag direction, then keeps it for this gesture.
+        SetInteraction(InteractionState.Pressed, false);
+        _draggingStart = (ActualState.IsRtl ? -horizontalOffset : horizontalOffset) < 0;
+        _chooseThumbOnDrag = false;
+    }
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
@@ -174,6 +183,7 @@ public sealed class RangeSlider : TemplatedControl
         _pressX = ActualState.IsRtl ? ActualState.TotalWidth - (float)_down.X * Scale : (float)_down.X * Scale;
         var difference = MathF.Abs(ActualState.RawOffsetStart - _pressX).CompareTo(MathF.Abs(ActualState.RawOffsetEnd - _pressX));
         _draggingStart = difference != 0 ? difference < 0 : ActualState.RawOffsetStart > _pressX;
+        _chooseThumbOnDrag = ActualState.ActiveRangeStart == ActualState.ActiveRangeEnd;
         SetInteraction(InteractionState.Pressed, true);
         e.Pointer.Capture(StartPresenter?.GetVisualParent() as InputElement ?? this); e.Handled = true;
     }
@@ -185,6 +195,7 @@ public sealed class RangeSlider : TemplatedControl
         if (!_dragging && total.X * total.X + total.Y * total.Y >= _slop * _slop)
         {
             if (Math.Abs(total.X) <= Math.Abs(total.Y)) { CancelGesture(); return; }
+            ResolveDragThumb(total.X);
             SetInteraction(InteractionState.Pressed, false); SetInteraction(InteractionState.Dragged, true);
             var initial = _pressX - (_draggingStart ? ActualState.RawOffsetStart : ActualState.RawOffsetEnd);
             ActualState.Drag(_draggingStart, initial + (float)total.X * Scale * (ActualState.IsRtl ? -1 : 1));
@@ -203,11 +214,12 @@ public sealed class RangeSlider : TemplatedControl
             // The final up event is also part of rangeSliderPressDragModifier's slop loop.
             // A horizontal displacement on that event becomes an immediate completed drag.
             var total = e.GetPosition(this) - _down;
+            if (Math.Abs(total.X) > Math.Abs(total.Y)) ResolveDragThumb(total.X);
             var offset = _pressX - (_draggingStart ? ActualState.RawOffsetStart : ActualState.RawOffsetEnd);
             if (Math.Abs(total.X) > Math.Abs(total.Y)) offset += (float)total.X * Scale * (ActualState.IsRtl ? -1 : 1);
             ActualState.Drag(_draggingStart, offset);
         }
-        _dragging = ActualState.IsDragging = false;
+        _chooseThumbOnDrag = _dragging = ActualState.IsDragging = false;
         SetInteraction(InteractionState.Pressed | InteractionState.Dragged, false); Finish(); pointer.Capture(null); e.Handled = true;
     }
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e) { base.OnPointerCaptureLost(e); if (_pointer == e.Pointer) CancelGesture(); }
@@ -215,7 +227,7 @@ public sealed class RangeSlider : TemplatedControl
     {
         if (_pointer is null) return;
         var pointer = _pointer; var state = ActualState; _pointer = null; var dragging = _dragging;
-        _dragging = false; SetInteraction(InteractionState.Pressed | InteractionState.Dragged, false);
+        _chooseThumbOnDrag = _dragging = false; SetInteraction(InteractionState.Pressed | InteractionState.Dragged, false);
         // The upstream cancellation finally invokes gestureEndAction while its drag
         // guard still prevents reentrant layout from resetting the accumulated offsets.
         try { if (dragging) Finish(); }

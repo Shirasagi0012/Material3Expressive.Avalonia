@@ -90,6 +90,10 @@ setter 按源码顺序约束和吸附。程序更新 range 两端时，向上移
   替换 State 时通知自动化数值和边界变化。
 - 沿用 float 运算、不同入口的 tie 规则、原始偏移累积与非交叉约束。默认 Thumb 的按压、拖动、焦点
   宽度/高度减半是即时状态变化，上游没有尺寸过渡动画。
+- **已接受的行为改进**：RangeSlider 按下时两端数值重合，首次有效水平拖动按数值方向选择 Thumb，之后固定选择。
+  LTR 向左拉开起点、向右拉开终点，RTL 反转；只在释放事件出现水平位移时同样处理。
+  不新增 API，没有拖动的点击、非重合手势、键盘和自动化保留原规则；拖动中合并后不会切换 Thumb。
+  固定 Compose 仍在按下时选择，因此重合用例保留真实行为/视觉差异。确认及范围见 `docs/DECISIONS.md`。
 - **尚未实现，维护者明确延期**：可选 `LocalRippleThemeConfiguration.Focus.InsetRing` 及其焦点 padding/轨道间距。
   本次范围为上游默认焦点模式，决定见 `docs/DECISIONS.md`。不提供近似焦点环或新共享配置。
 - **已接受的差异**：single 拖动中禁用，当帧恢复 Thumb 尺寸；Compose 的子组合下一帧才恢复。
@@ -100,6 +104,7 @@ setter 按源码顺序约束和吸附。程序更新 range 两端时，向上移
 ## 验证入口
 
 `tests/Material3Expressive.Tests/SliderTests.cs` 覆盖状态、绑定、键盘、自动化、取消、生命周期、模板和 Token。
+重合手势回归覆盖双向拉开、RTL、连续/离散、反向后保持 Thumb、释放位移、slop 内抖动、取消后重试及范围端点。
 独立双端场景为 `tests/VisualParity/Material3Expressive.Parity/Cases/SliderCases.cs` 与
 `tests/VisualParity/reference/src/main/kotlin/cases/SliderCases.kt`，suite 为 `slider`。
 核心矩阵包括三种形态 × 连续/离散 × 启用/禁用 × LTR/RTL，并补充端点、主题、颜色、圆角、间距、
@@ -113,4 +118,4 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 ./tests/VisualParity/parity.ps1 self-test --family slider
 ```
 
-`self-test` 新采集双端并检查重复捕获及额外被动截图，不发布缓存参考；四处已接受差异仍会被严格匹配门禁拒绝。
+`self-test` 新采集双端并检查重复捕获及额外被动截图，不发布缓存参考；已接受的禁用中断及 range 重合拖动差异仍会被匹配门禁拒绝。

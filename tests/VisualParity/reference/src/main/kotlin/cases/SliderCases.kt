@@ -69,8 +69,15 @@ class SliderCases {
                 return
             }
             if(c.action=="cross-end") { val previous=a; a=b; b=previous }
+            if(c.action.startsWith("coincident-")) {
+                val direction=(if(c.action.startsWith("coincident-start")) -1 else 1)*(if(c.rtl) -1 else 1)
+                val coordinates=checkNotNull(s.thumb.coordinates)
+                a=coordinates.localToRoot(Offset(coordinates.size.width/2f,coordinates.size.height/2f))/ComposeHost.RenderScale.toFloat()
+                b=Offset(a.x+direction*74,a.y)
+            }
             event(1000,"move",a); event(2000,"down",a); sample("pressed")
-            if(c.action!="tap" && c.action!="release-jump") { event(16000,"move",if(c.action=="vertical-cancel") Offset(a.x,a.y+40) else b); sample("moved") }
+            if(c.action!="tap" && c.action!="release-jump" && !c.action.endsWith("-release")) { event(16000,"move",if(c.action=="vertical-cancel") Offset(a.x,a.y+40) else b); sample("moved") }
+            if(c.action.endsWith("-reverse")) { b=Offset(2*a.x-b.x,a.y); event(24000,"move",b); sample("reversed") }
             if(c.action=="disable") { host.advanceTo(17000); s.enabled=false; host.draw(); host.frame(17000); sample("disabled") }
             event(32000,"up",if(c.action=="tap") a else b); sample("released")
             host.frame(48000); sample("late")

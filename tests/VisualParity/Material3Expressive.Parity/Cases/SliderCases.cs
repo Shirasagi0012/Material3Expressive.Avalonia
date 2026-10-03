@@ -67,6 +67,16 @@ public sealed class SliderCases
         yield return Data("dynamic.range.start-crossing", new("range", Value: 0.25f, Action: "cross-start"));
         yield return Data("dynamic.range.end-crossing", new("range", Value: 0.25f, Action: "cross-end"));
         yield return Data("dynamic.range.coincident", new("range", Value: 0.5f, End: 0.5f, Action: "drag"));
+        // Keep the real pinned Compose component: direction-selected start drags
+        // intentionally differ after the maintainer-approved overlap improvement.
+        foreach (var rtl in new[] { false, true })
+        foreach (var steps in new[] { 0, 3 })
+        foreach (var end in new[] { "start", "end" })
+            yield return Data($"dynamic.range.coincident.{(rtl ? "rtl" : "ltr")}.{end}.{steps}", new("range", steps, Value: 0.5f, End: 0.5f, Rtl: rtl, Action: $"coincident-{end}"));
+        foreach (var rtl in new[] { false, true })
+        foreach (var end in new[] { "start", "end" })
+        foreach (var suffix in new[] { "reverse", "release" })
+            yield return Data($"dynamic.range.coincident.{(rtl ? "rtl" : "ltr")}.{end}.{suffix}", new("range", 3, Value: 0.5f, End: 0.5f, Rtl: rtl, Action: $"coincident-{end}-{suffix}"));
         yield return Data("dynamic.range.vertical-cancel", new("range", Action: "vertical-cancel"));
         yield return Data("dynamic.range.release-jump.ltr", new("range", Value: 0.25f, Action: "release-jump"));
         yield return Data("dynamic.range.release-jump.rtl", new("range", Value: 0.25f, Rtl: true, Action: "release-jump"));
@@ -194,8 +204,16 @@ public sealed class SliderCases
             return;
         }
         if (c.Action == "cross-end") (a, b) = (b, a);
+        if (c.Action.StartsWith("coincident-", StringComparison.Ordinal))
+        {
+            var direction = (c.Action.StartsWith("coincident-start", StringComparison.Ordinal) ? -1 : 1) * (c.Rtl ? -1 : 1);
+            var thumb = Part("PART_StartThumb").Child!;
+            a = thumb.TranslatePoint(new Point(thumb.Bounds.Width / 2, thumb.Bounds.Height / 2), host.Window)!.Value;
+            b = new Point(a.X + direction * 74, a.Y);
+        }
         Event(1000, "move", a); Event(2000, "down", a); Sample("pressed");
-        if (c.Action is not ("tap" or "release-jump")) { Event(16000, "move", c.Action == "vertical-cancel" ? new(a.X, a.Y + 40) : b); Sample("moved"); }
+        if (c.Action is not ("tap" or "release-jump") && !c.Action.EndsWith("-release", StringComparison.Ordinal)) { Event(16000, "move", c.Action == "vertical-cancel" ? new(a.X, a.Y + 40) : b); Sample("moved"); }
+        if (c.Action.EndsWith("-reverse", StringComparison.Ordinal)) { b = new Point(2 * a.X - b.X, a.Y); Event(24000, "move", b); Sample("reversed"); }
         if (c.Action == "disable") { host.AdvanceTo(17000); control.IsEnabled = false; host.Draw(); host.Frame(17000); Sample("disabled"); }
         Event(32000, "up", c.Action == "tap" ? a : b); Sample("released");
         host.Frame(48000); Sample("late");
