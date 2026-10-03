@@ -95,6 +95,9 @@ public sealed class MaterialSurface : Control
     private AnimatedCornerRadius? _shapeMorph;
     private CornerRadius _shapeRest;
     private CornerRadius? _shapePressed;
+    private CornerRadius? _shapeChecked;
+    private Border? _checkedOverlay;
+    private AnimatedButtonBorder? _animatedBorder;
     private SpringSpec _shapeSpec;
     private bool _shapeCommitPending;
     private bool _shapeInteractionDeferred;
@@ -116,11 +119,11 @@ public sealed class MaterialSurface : Control
         // Avalonia Border includes its thickness in layout, so only this childless visual paints it.
         _outline = new Border
         {
-            ClipToBounds = true,
+            // Compose's border modifier surrounds the shape clip. Clipping the border
+            // itself applies its rounded antialias coverage twice, especially in dark mode.
+            ClipToBounds = false,
             IsHitTestVisible = false,
             Focusable = false,
-            [!Border.BorderBrushProperty] = this[!BorderBrushProperty],
-            [!Border.BorderThicknessProperty] = this[!BorderThicknessProperty],
         };
         VisualChildren.Add(_chrome);
         VisualChildren.Add(_interactionOverlay);
@@ -210,7 +213,14 @@ public sealed class MaterialSurface : Control
     /// <summary>The corners currently used by the chrome, shadow, and interaction overlay.</summary>
     internal CornerRadius EffectiveCornerRadius => _chrome.CornerRadius;
 
-    private CornerRadius CurrentCornerRadius => _shapeMorph?.Current ?? CornerRadius;
+    internal CornerRadius SplitOpticalCornerRadius => _shapeMorph?.SplitOpticalCorners()
+        ?? EffectiveCornerRadius;
+
+    private CornerRadius SelectedCornerRadius =>
+        _interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true && PressedCornerRadius is { } pressed
+            ? pressed : ButtonSurfaceState.GetIsChecked(this) == true && ButtonSurfaceState.GetCheckedCornerRadius(this) is { } selected
+                ? selected : CornerRadius;
+    private CornerRadius CurrentCornerRadius => _shapeMorph?.Current ?? SelectedCornerRadius;
 
     public override void Render(DrawingContext context)
     {
@@ -248,17 +258,18 @@ public sealed class MaterialSurface : Control
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        var rect = new Rect(finalSize);
-        _chrome.Arrange(rect);
-        _interactionOverlay.Arrange(rect);
-        _outline.Arrange(rect);
-
         if (_shapeMorph is not null)
         {
             _shapeMorph.Size = finalSize;
             if (UpdateCornerRadius())
                 _interactionOverlay.InvalidateVisual();
         }
+        var rect = new Rect(finalSize);
+        _animatedBorder?.Arrange(finalSize);
+        _chrome.Arrange(rect);
+        _interactionOverlay.Arrange(rect);
+        _outline.Arrange(rect);
+        _checkedOverlay?.Arrange(rect);
 
         return finalSize;
     }
@@ -292,6 +303,11 @@ public sealed class MaterialSurface : Control
         else if (change.Property == StateLayerBrushProperty)
         {
             _interactionOverlay.InvalidateVisual();
+            UpdateCheckedOverlay();
+        }
+        else if (change.Property == BorderBrushProperty || change.Property == BorderThicknessProperty)
+        {
+            UpdateButtonBorder();
         }
     }
 
@@ -332,6 +348,72 @@ public sealed class MaterialSurface : Control
 
     internal void DeferShapeInteraction() => _shapeInteractionDeferred = true;
 
+    internal void OnButtonStateChanged()
+    {
+        QueueShapeMorph();
+        UpdateCheckedOverlay();
+        UpdateInteractionVisuals();
+    }
+
+    private void UpdateCheckedOverlay()
+    {
+        var opacity = ButtonSurfaceState.GetIsChecked(this) == true ? ButtonSurfaceState.GetCheckedOverlayOpacity(this) : 0;
+        if (_checkedOverlay is null && opacity > 0)
+        {
+            _checkedOverlay = new Border { IsHitTestVisible = false };
+            VisualChildren.Add(_checkedOverlay);
+            _checkedOverlay.Arrange(new Rect(Bounds.Size));
+        }
+        if (_checkedOverlay is { } overlay)
+        {
+            // DrawOutline(color, alpha) modulates the color before painting, rather
+            // than applying opacity to a separately rasterized layer.
+            if (StateLayerBrush is ISolidColorBrush solid)
+            {
+                var ink = solid.Color;
+                overlay.Background = new SolidColorBrush(Color.FromArgb(
+                    (byte)Math.Clamp((int)MathF.Floor(ink.A * (float)opacity + .5f), 0, 255), ink.R, ink.G, ink.B));
+                overlay.Opacity = solid.Opacity;
+            }
+            else
+            {
+                overlay.Background = StateLayerBrush;
+                overlay.Opacity = opacity;
+            }
+            overlay.CornerRadius = EffectiveCornerRadius;
+        }
+    }
+
+    private void UpdateButtonBorder()
+    {
+        if (ButtonSurfaceState.GetAnimateBorder(this) && _interactionController?.Motion is { IsEnding: false } motion)
+        {
+            _animatedBorder ??= new AnimatedButtonBorder(this, _outline, motion);
+            _animatedBorder.Update();
+        }
+        else
+        {
+            _outline.BorderBrush = BorderBrush;
+            _outline.BorderThickness = BorderThickness;
+            UpdateOutlineCornerRadius();
+        }
+    }
+
+    internal void UpdateOutlineCornerRadius()
+    {
+        // Avalonia Border draws a centered stroke on the inset rectangle, but keeps
+        // the supplied radius. Compose Border.kt subtracts half the stroke from the
+        // centerline radius so its outer contour equals the Surface shape.
+        var radius = EffectiveCornerRadius;
+        if (_outline.BorderThickness.IsUniform)
+        {
+            var half = _outline.BorderThickness.Left / 2;
+            radius = new(Math.Max(0, radius.TopLeft - half), Math.Max(0, radius.TopRight - half),
+                Math.Max(0, radius.BottomRight - half), Math.Max(0, radius.BottomLeft - half));
+        }
+        _outline.CornerRadius = radius;
+    }
+
     internal void ResetMotion()
     {
         _shapeGeneration++;
@@ -342,7 +424,14 @@ public sealed class MaterialSurface : Control
         _shapeEffectTask = null;
         _shapeMorph?.Dispose();
         _shapeMorph = null;
-        _chrome.CornerRadius = _outline.CornerRadius = CornerRadius;
+        _animatedBorder?.Dispose();
+        _animatedBorder = null;
+        _chrome.CornerRadius = _outline.CornerRadius = SelectedCornerRadius;
+        // ResetAnimations disposes the parent scope immediately after this callback.
+        // Paint the target without creating another child in that ending lifetime.
+        _outline.BorderBrush = BorderBrush;
+        _outline.BorderThickness = BorderThickness;
+        UpdateOutlineCornerRadius();
         InvalidateVisual();
         _interactionOverlay.InvalidateVisual();
     }
@@ -356,11 +445,25 @@ public sealed class MaterialSurface : Control
     private bool UpdateCornerRadius()
     {
         var cornerRadius = CurrentCornerRadius;
+        if (_shapeMorph is { Size.Height: > 0 } morph)
+        {
+            // CornerBasedShape.createOutline normalizes after interpolation (including
+            // spatial-spring overshoot). Keep chrome, ripple clip and shadow on that outline.
+            var extent = (float)Math.Min(morph.Size.Width, morph.Size.Height);
+            var left = (float)(cornerRadius.TopLeft + cornerRadius.BottomLeft);
+            var right = (float)(cornerRadius.TopRight + cornerRadius.BottomRight);
+            var leftScale = left > extent ? extent / left : 1f;
+            var rightScale = right > extent ? extent / right : 1f;
+            cornerRadius = new((float)cornerRadius.TopLeft * leftScale, (float)cornerRadius.TopRight * rightScale,
+                (float)cornerRadius.BottomRight * rightScale, (float)cornerRadius.BottomLeft * leftScale);
+        }
         if (_chrome.CornerRadius == cornerRadius)
             return false;
 
         _chrome.CornerRadius = cornerRadius;
-        _outline.CornerRadius = cornerRadius;
+        UpdateOutlineCornerRadius();
+        if (_checkedOverlay is { } overlay) overlay.CornerRadius = cornerRadius;
+        if (Child is SplitButtonOpticalLayout optical) optical.InvalidateArrange();
         InvalidateShadow();
         return true;
     }
@@ -372,7 +475,8 @@ public sealed class MaterialSurface : Control
 
         // rememberAnimatedShape creates its initial state during composition. Subsequent
         // interaction/configuration changes are committed by recomposition before its effect.
-        if (_shapeMorph is null && PressedCornerRadius is not null)
+        UpdateButtonBorder();
+        if (_shapeMorph is null && (PressedCornerRadius is not null || ButtonSurfaceState.GetCheckedCornerRadius(this) is not null))
             RecreateShapeMorph(motion, ResolveShapeMorphSpec());
         if (_shapeCommitPending)
             return;
@@ -389,11 +493,19 @@ public sealed class MaterialSurface : Control
                 return;
 
             var spec = ResolveShapeMorphSpec();
-            var target = _interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true
-                && PressedCornerRadius is { } pressed ? pressed : CornerRadius;
+            var target = SelectedCornerRadius;
             var configurationChanged = _shapeRest != CornerRadius || _shapePressed != PressedCornerRadius
-                || !_shapeSpec.Equals(spec);
-            if (!configurationChanged && (_shapeMorph is null || _shapeMorph.Target == target))
+                || _shapeChecked != ButtonSurfaceState.GetCheckedCornerRadius(this) || !_shapeSpec.Equals(spec);
+            var recreate = configurationChanged && (ButtonSurfaceState.GetResetOnShapeChange(this) || !_shapeSpec.Equals(spec));
+            if (configurationChanged && !recreate)
+            {
+                _shapeRest = CornerRadius;
+                _shapePressed = PressedCornerRadius;
+                _shapeChecked = ButtonSurfaceState.GetCheckedCornerRadius(this);
+            }
+            // SplitButton remembers by spec and keys its effect by the selected shape.
+            // Changing an inactive shape must not cancel an animation to the same target.
+            if (!recreate && (_shapeMorph is null || _shapeMorph.Target == target))
                 return;
 
             // LaunchedEffect cancels and joins the previous effect before running its replacement.
@@ -409,7 +521,7 @@ public sealed class MaterialSurface : Control
                 return;
             // Button/IconButton key(shapes), and AnimatedShape remembers by animationSpec.
             // A new configuration starts at its selected shape; a press keeps the existing state.
-            if (configurationChanged)
+            if (recreate)
                 RecreateShapeMorph(motion, spec);
 
             if (_shapeMorph is not { } shape)
@@ -435,21 +547,20 @@ public sealed class MaterialSurface : Control
         _shapeMorph?.Dispose();
         _shapeRest = CornerRadius;
         _shapePressed = PressedCornerRadius;
+        _shapeChecked = ButtonSurfaceState.GetCheckedCornerRadius(this);
         _shapeSpec = spec;
-        var initial = _interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true
-            && PressedCornerRadius is { } pressed ? pressed : CornerRadius;
-        _shapeMorph = PressedCornerRadius is null ? null
-            : new AnimatedCornerRadius(initial, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size };
+        _shapeMorph = PressedCornerRadius is null && _shapeChecked is null ? null
+            : new AnimatedCornerRadius(SelectedCornerRadius, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size };
         UpdateInteractionVisuals();
     }
 
     private SpringSpec ResolveShapeMorphSpec() =>
-        TryResolveToken(
+        ButtonSurfaceState.GetShapeSpec(this) ?? (TryResolveToken(
             TemplatedParent as IResourceHost ?? this,
             MaterialTokens.Sys.Motion.Spring.EffectsDefault,
             out SpringSpec spec)
             ? spec
-            : MotionScheme.Expressive.DefaultEffects;
+            : MotionScheme.Expressive.DefaultEffects);
 
     private Color ResolveShadowColor() =>
         ShadowColor ??

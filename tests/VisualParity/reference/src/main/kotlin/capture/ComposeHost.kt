@@ -31,7 +31,15 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platf
     var pressed=false
     init {
         registerSkikoComposeImplementation(); recomposer=FrameRecomposer(scope.coroutineContext)
-        scene=CanvasLayersComposeScene(recomposer,Density(RenderScale.toFloat()),size=IntSize(surface.width,surface.height),platformContext=platformContext)
+        // Empty has a zero WindowInfo.containerSize. Scene size controls layout but does
+        // not populate WindowInfo; Core uses it separately for desktop shadow lighting.
+        // Preserve explicit caller window environments (including popup/dialog contexts).
+        val context=if(platformContext.windowInfo.containerSize==IntSize.Zero) object:PlatformContext by platformContext {
+            override val windowInfo=object:WindowInfo by platformContext.windowInfo {
+                override val containerSize=IntSize(surface.width,surface.height)
+            }
+        } else platformContext
+        scene=CanvasLayersComposeScene(recomposer,Density(RenderScale.toFloat()),size=IntSize(surface.width,surface.height),platformContext=context)
     }
     fun mount(content:@Composable ()->Unit) {
         scene.setContent(content=content); draw(); writer.record(timeUs,"mount","${surface.width/RenderScale}x${surface.height/RenderScale} DIP; density=$RenderScale; no animation frame")

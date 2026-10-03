@@ -1,0 +1,209 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <m3:ToggleButtonColorConverter x:Key="ToggleContainerConverter" />
+    <m3:ToggleButtonColorConverter x:Key="ToggleContentConverter" Content="True" />
+    <ControlTheme x:Key="MaterialFilledToggleButtonTheme" TargetType="ToggleButton">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Full}}" />
+      <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeSquare}}" />
+      <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.SmallPressedShape}}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Background">
+        <MultiBinding Converter="{StaticResource ToggleContainerConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.ContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.CheckedContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{StaticResource ToggleContentConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.ContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.DisabledContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.CheckedContentColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="m3:MaterialButton.Elevation">
+        <MultiBinding Converter="{x:Static m3:ButtonElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.PressedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.FocusedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.HoveredContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}" ContainerMinWidth="0" ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}">
+            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" m3:ButtonSurfaceState.IsChecked="{TemplateBinding IsChecked}" m3:ButtonSurfaceState.CheckedCornerRadius="{TemplateBinding m3:ToggleButtonAppearance.CheckedCornerRadius}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialFast}}" m3:ButtonSurfaceState.AnimateBorder="True">
+              <m3:ButtonContentRow IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
+                <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:ToggleButtonAppearance.Icon}" ContentTemplate="{TemplateBinding m3:ToggleButtonAppearance.IconTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+              </m3:ButtonContentRow>
+            </m3:MaterialSurface>
+          </m3:ButtonLayout>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^.xsmall">
+        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContentPadding}}" />
+        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerShapeSquare}}" />
+        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.PressedContainerShape}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextStyle}}" />
+      </Style>
+      <Style Selector="^.xsmall /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.xsmall /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ExtraSmallIconSpacing}}" />
+      </Style>
+      <Style Selector="^.medium">
+        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContentPadding}}" />
+        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeSquare}}" />
+        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.PressedContainerShape}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextStyle}}" />
+      </Style>
+      <Style Selector="^.medium /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.medium /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.large">
+        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContentPadding}}" />
+        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeSquare}}" />
+        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.PressedContainerShape}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextStyle}}" />
+      </Style>
+      <Style Selector="^.large /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.large /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.xlarge">
+        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContentPadding}}" />
+        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeSquare}}" />
+        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.PressedContainerShape}}" />
+        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextStyle}}" />
+      </Style>
+      <Style Selector="^.xlarge /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.xlarge /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconLabelSpace}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialTonalToggleButtonTheme" TargetType="ToggleButton" BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
+      <Setter Property="Background">
+        <MultiBinding Converter="{StaticResource ToggleContainerConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalToggleButton.ContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalToggleButton.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalToggleButton.CheckedContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{StaticResource ToggleContentConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalToggleButton.ContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalToggleButton.DisabledContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalToggleButton.CheckedContentColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="m3:MaterialButton.Elevation">
+        <MultiBinding Converter="{x:Static m3:ButtonElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.PressedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.FocusedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.HoveredContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+TonalButton.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialElevatedToggleButtonTheme" TargetType="ToggleButton" BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
+      <Setter Property="Background">
+        <MultiBinding Converter="{StaticResource ToggleContainerConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedToggleButton.ContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedToggleButton.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedToggleButton.CheckedContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{StaticResource ToggleContentConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedToggleButton.ContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedToggleButton.DisabledContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedToggleButton.CheckedContentColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="m3:MaterialButton.Elevation">
+        <MultiBinding Converter="{x:Static m3:ButtonElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedButton.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedButton.PressedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedButton.FocusedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedButton.HoveredContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedButton.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialOutlinedToggleButtonTheme" TargetType="ToggleButton" BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
+      <Setter Property="Background">
+        <MultiBinding Converter="{StaticResource ToggleContainerConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedToggleButton.ContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedToggleButton.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedToggleButton.CheckedContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{StaticResource ToggleContentConverter}">
+          <Binding Path="(m3:ToggleButtonAppearance.Colors)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedToggleButton.ContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedToggleButton.DisabledContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedToggleButton.CheckedContentColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="m3:MaterialButton.Elevation" Value="{x:Null}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.OutlineColor}}" />
+      <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.OutlinedOutlineWidth}}" />
+      <Style Selector="^:checked">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="#00000000" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.DisabledOutlineColor}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type ToggleButton}" TargetType="ToggleButton" BasedOn="{StaticResource MaterialFilledToggleButtonTheme}" />
+  </Styles.Resources>
+</Styles>

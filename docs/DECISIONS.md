@@ -3,6 +3,22 @@
 本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件 README 保存；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
+## 实际焦点与桌面 indication 的输入模式过滤
+
+决定：共享控制器记录原生控件的实际焦点，包括鼠标和程序化焦点，供 elevation 使用；
+状态层单独遵循固定 Core `foundation/Indication.skiko.kt` 的输入模式过滤。
+原因：AndroidX 的 Focusable 发出真实 FocusInteraction，Core 桌面只在 indication 的输入端过滤它；
+鼠标点击后 Filled elevation 为 0、Elevated 为 1 DIP，仍显示 hover 0.08 而不是 focus 0.10。
+做法：内部 MaterialInputMode 按 TopLevel 跟踪按键导航与指针按钮输入，初始为键盘模式；
+Tab 或原生 Tab/Directional 焦点导航切入键盘模式，指针按下/释放切入指针模式。
+在获得焦点时保存是否向 indication 转发该事件，输入模式改变本身不合成新的焦点事件。
+`button.Focus()` 始终驱动实际焦点与 elevation，其视觉焦点反馈取决于当时的输入模式；
+`button.Focus(NavigationMethod.Tab)` 表达 Avalonia 的键盘焦点导航。对外 C#/XAML API 不变。
+范围：所有使用 MaterialInteractionController 的组件；子控件冒泡的焦点事件不视为父控件获得焦点。
+原生 Click/Command/键盘激活职责保持下文决定。没有增加 FocusRing 或新的公开 InteractionSource API。
+确认：2026-10-04，维护者先批准修复共享真实焦点策略及回归，核验 Core 桌面过滤分支后进一步选择
+“按 Core 桌面过滤 indication，保留真实焦点/elevation（推荐）”。
+
 ## 聚合 TextStyle 与 Token 层文字单位换算
 
 决定：通过不可变 TextStyle、MaterialText.Style/DefaultStyle、Typography 角色绑定及派生 XAML 扩展，

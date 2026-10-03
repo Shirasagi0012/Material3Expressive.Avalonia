@@ -20,6 +20,8 @@
                     <m3:TonalButtonTokenSource />
                     <m3:OutlinedButtonTokenSource />
                     <m3:TextButtonTokenSource />
+                    <m3:ToggleButtonTokenSource />
+                    <m3:SplitButtonTokenSource />
 
                     <m3:IconButtonSizesTokenSource />
                     <m3:StandardIconButtonTokenSource />
@@ -44,6 +46,8 @@
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
     <StyleInclude Source="/Components/Button/Button.axaml" />
+    <StyleInclude Source="/Components/ToggleButton/ToggleButton.axaml" />
+    <StyleInclude Source="/Components/SplitButton/SplitButton.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />

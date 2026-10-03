@@ -102,6 +102,12 @@ Button / IconButton 的主题将 owner `CornerRadius` 传给 Surface，默认按
 复用 Surface 的圆角状态和动画，不另建按钮形状控制器。尺寸 class 提供 owner 圆角的默认值，
 局部 CornerRadius 和按压目标不被尺寸 class 覆盖。
 
+[ToggleButton](../src/Material3Expressive/Components/ToggleButton/README.md) 使用原生状态及独立的四种主题，
+在 Surface 内部增加选中形状输入，复用共享变形、描边动画、elevation、状态层和 ripple。
+[SplitButton](../src/Material3Expressive/Components/SplitButton/README.md) 使用独立双槽容器，组合实际子控件；
+内部 ButtonLayout 的最小宽度及交互留白可配置，普通 Button 的默认值不变。
+这两个组件的公开 API、尺寸规则、配置重建差别与原生语义决定随组件记录。
+
 NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
 `MappedInteractionSource` 坐标；状态层和 ripple 不另建实现。键盘原点与当前固定 Desktop
 `AbstractClickableNode` 一致：初始为零，收到指针事件后缓存控件中心。禁用会取消交互并让既有

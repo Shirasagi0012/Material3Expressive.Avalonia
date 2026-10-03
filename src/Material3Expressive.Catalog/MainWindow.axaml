@@ -34,6 +34,47 @@
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
+                <TextBlock Text="ToggleButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <ToggleButton Content="Filled" />
+                    <ToggleButton Content="Tonal" IsChecked="True" Theme="{StaticResource MaterialTonalToggleButtonTheme}" />
+                    <ToggleButton Content="Elevated" Theme="{StaticResource MaterialElevatedToggleButtonTheme}" />
+                    <ToggleButton Content="Outlined" Theme="{StaticResource MaterialOutlinedToggleButtonTheme}" />
+                    <ToggleButton Content="Disabled" IsChecked="True" IsEnabled="False" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <ToggleButton Content="XS" Classes="xsmall" />
+                    <ToggleButton Content="Small" IsChecked="True" />
+                    <ToggleButton Content="Medium" Classes="medium" />
+                    <ToggleButton Content="Large" Classes="large" />
+                    <ToggleButton Content="XL" Classes="xlarge" />
+                </StackPanel>
+                <ToggleButton Content="Favorite" HorizontalAlignment="Left">
+                    <m3:ToggleButtonAppearance.Icon><m3:MaterialSymbol Symbol="Favorite" /></m3:ToggleButtonAppearance.Icon>
+                </ToggleButton>
+                <TextBlock Text="SplitButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialFilledSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton>
+                            <ToggleButton Theme="{StaticResource MaterialFilledSplitButtonTrailingTheme}">
+                                <Path Width="22" Height="22" Stretch="Uniform" Data="M 2,5 L 11,14 L 20,5 L 18,3 L 11,10 L 4,3 Z" Fill="{Binding $parent[ToggleButton].Foreground}" />
+                            </ToggleButton>
+                        </m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialTonalSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton><ToggleButton Content="…" IsChecked="True" Theme="{StaticResource MaterialTonalSplitButtonTrailingTheme}" /></m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialElevatedSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton><Button Content="…" Theme="{StaticResource MaterialElevatedSplitButtonTrailingTheme}" /></m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialOutlinedSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton><ToggleButton Content="…" Theme="{StaticResource MaterialOutlinedSplitButtonTrailingTheme}" /></m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                </StackPanel>
                 <TextBlock Text="RadioButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <RadioButton GroupName="CatalogRadio" Content="First" IsChecked="True" />

@@ -45,7 +45,7 @@ internal sealed class MaterialInteractionController
     private readonly List<InteractionState> _interactions = [];
     private readonly SolidColorBrush _alphaReplacedBrush = new();
 
-    private Animatable<double>? _stateLayerAlpha;
+    private Animatable<float>? _stateLayerAlpha;
     private ButtonElevationController? _buttonElevation;
     private MaterialSurface? _presenter;
     private InteractionState _interaction;
@@ -53,6 +53,7 @@ internal sealed class MaterialInteractionController
     private Point _keyboardPressCenter;
     private IPointer? _pressedPointer;
     private bool _hoverNeedsMove;
+    private bool _indicationFocused = true;
 
     // Token-resolved state-layer opacities, falling back to the upstream constants in StateLayer.
     private double _hoverOpacity = StateLayer.Opacity(InteractionState.Hovered);
@@ -172,7 +173,9 @@ internal sealed class MaterialInteractionController
             ResetAnimations();
         _presenter = presenter;
         _motion ??= VisualAnimationScope.Create(_owner);
+        MaterialInputMode.For(_owner);
         ResolveOpacities();
+        Set(InteractionState.Focused, _owner.IsFocused);
         UpdateStateLayer();
         // Sync the state the surface missed before attaching (e.g. an already-hovered template
         // swap), so the first frame paints the right thing.
@@ -392,11 +395,16 @@ internal sealed class MaterialInteractionController
 
     private void OnGotFocus(object? sender, FocusChangedEventArgs e)
     {
-        // Material shows the focus layer for keyboard focus only; a click that focuses a control
-        // already has a ripple to say so.
-        Set(
-            InteractionState.Focused,
-            e.NavigationMethod is NavigationMethod.Directional or NavigationMethod.Tab);
+        // Focusable.kt emits FocusInteraction for actual focus, including pointer and
+        // programmatic focus. Core's desktop indication filters the same event by input
+        // mode; elevation does not. Preserve the decision until the matching unfocus.
+        if (_owner.IsFocused)
+        {
+            var mode = MaterialInputMode.For(_owner);
+            mode?.ObserveFocusNavigation(e.NavigationMethod);
+            _indicationFocused = mode?.IsKeyboard ?? true;
+        }
+        Set(InteractionState.Focused, _owner.IsFocused);
     }
 
     private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) =>
@@ -514,9 +522,11 @@ internal sealed class MaterialInteractionController
         // AndroidX stores entry interactions in arrival order and shows lastOrNull(). A fixed
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
-        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed);
+        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed
+            && (state != InteractionState.Focused || _indicationFocused));
 
-        var targetOpacity = OpacityFor(topmost);
+        // Ripple.StateLayer stores and animates alpha as Float, including token values.
+        var targetOpacity = (float)OpacityFor(topmost);
 
         if (topmost == _shownInteraction
             && (_stateLayerAlpha is null || _stateLayerAlpha.TargetValue == targetOpacity))
@@ -537,12 +547,12 @@ internal sealed class MaterialInteractionController
         var surface = _presenter;
         if (_stateLayerAlpha is null)
         {
-            _stateLayerAlpha = motion.CreateAnimatable(0d);
+            _stateLayerAlpha = motion.CreateAnimatable(0f);
             motion.SubscribeValue(_stateLayerAlpha, _ => surface?.OnInteractionFrame());
         }
         var alpha = _stateLayerAlpha;
         _ = motion.Launch(ct => alpha.AnimateToAsync(targetOpacity,
-            new TweenSpec<double>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
+            new TweenSpec<float>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
     }
 
     private void UpdateInteractionStack(InteractionState flag, bool active)

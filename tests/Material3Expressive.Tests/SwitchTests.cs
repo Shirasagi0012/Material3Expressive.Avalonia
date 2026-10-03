@@ -259,7 +259,8 @@ public class SwitchTests
         window.MouseMove(point);
         Assert.True(controller.Interaction.HasFlag(Material3Expressive.Foundation.Interaction.InteractionState.Hovered));
         window.MouseMove(new Point(1, 1));
-        Assert.Equal(Material3Expressive.Foundation.Interaction.InteractionState.None, controller.Interaction);
+        // Leaving cancels hover/press; actual pointer focus remains until focus is lost.
+        Assert.Equal(Material3Expressive.Foundation.Interaction.InteractionState.Focused, controller.Interaction);
         window.MouseUp(new Point(1, 1), MouseButton.Left);
         Assert.False(box.IsChecked); window.Close();
     }
