@@ -1,0 +1,155 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTemplate x:Key="MaterialPrimaryTabIndicator">
+      <Border Background="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorColor}}"
+              Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorHeight}}"
+              CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorShape}}" />
+    </ControlTemplate>
+    <ControlTemplate x:Key="MaterialSecondaryTabIndicator">
+      <Border Background="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorColor}}"
+              Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorHeight}}" />
+    </ControlTemplate>
+    <ControlTemplate x:Key="MaterialTabDivider">
+      <Separator HorizontalAlignment="Stretch" />
+    </ControlTemplate>
+    <ControlTheme x:Key="MaterialTabScroller" TargetType="ScrollViewer">
+      <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Top" />
+      <Setter Property="ScrollViewer.BringIntoViewOnFocusChange" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ScrollContentPresenter x:Name="PART_ContentPresenter" Background="Transparent">
+            <ScrollContentPresenter.GestureRecognizers>
+              <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+                  CanVerticallyScroll="False" IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}"
+                  Offset="{Binding Offset, ElementName=PART_ContentPresenter}" Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+                  Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
+            </ScrollContentPresenter.GestureRecognizers>
+          </ScrollContentPresenter>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:TabRow}" TargetType="m3:TabRow">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryContentColor}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Indicator" Value="{StaticResource MaterialPrimaryTabIndicator}" />
+      <Setter Property="Divider" Value="{StaticResource MaterialTabDivider}" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:TabRowItemsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemContainerTheme">
+        <ControlTheme TargetType="ContentPresenter">
+          <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+          <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        </ControlTheme>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}">
+            <m3:TabRowChrome Owner="{Binding RelativeSource={RelativeSource TemplatedParent}}" ContentColor="{TemplateBinding Foreground}">
+              <TemplatedControl x:Name="PART_Divider" Template="{TemplateBinding Divider}" IsHitTestVisible="False" />
+              <ScrollViewer x:Name="PART_Scroller" Theme="{StaticResource MaterialTabScroller}">
+                <m3:TabRowContent>
+                  <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                </m3:TabRowContent>
+              </ScrollViewer>
+              <TemplatedControl x:Name="PART_Indicator" Template="{TemplateBinding Indicator}" IsHitTestVisible="False"
+                  DataContext="{Binding TabPositions, RelativeSource={RelativeSource AncestorType=m3:TabRow}}" />
+            </m3:TabRowChrome>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^[Variant=Secondary]">
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
+        <Setter Property="Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:Tab}" TargetType="m3:Tab">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent">
+            <m3:TabHeader x:Name="PART_Header" Background="Transparent" IsSelected="{TemplateBinding IsSelected}"
+                LabelTextStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LabelTextStyle}}"
+                ContentLayout="{TemplateBinding ContentLayout}" AmbientBrush="{TemplateBinding Foreground}"
+                SelectedContentColor="{TemplateBinding SelectedContentColor}" UnselectedContentColor="{TemplateBinding UnselectedContentColor}">
+              <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                  />
+              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" />
+            </m3:TabHeader>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialTabItemTheme" TargetType="TabItem">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Foreground" Value="{Binding ContentColor, RelativeSource={RelativeSource AncestorType=m3:TabRowChrome}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent">
+            <m3:TabHeader x:Name="PART_Header" Background="Transparent" IsSelected="{TemplateBinding IsSelected}"
+                LabelTextStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LabelTextStyle}}"
+                ContentLayout="{TemplateBinding m3:TabAppearance.ContentLayout}" AmbientBrush="{TemplateBinding Foreground}"
+                SelectedContentColor="{TemplateBinding m3:TabAppearance.SelectedContentColor}" UnselectedContentColor="{TemplateBinding m3:TabAppearance.UnselectedContentColor}">
+              <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"
+                  />
+              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" />
+            </m3:TabHeader>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialTabControlTheme" TargetType="TabControl">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="m3:TabRowAppearance.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryContentColor}}" />
+      <Setter Property="m3:TabRowAppearance.Indicator" Value="{StaticResource MaterialPrimaryTabIndicator}" />
+      <Setter Property="m3:TabRowAppearance.Divider" Value="{StaticResource MaterialTabDivider}" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:TabRowItemsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemContainerTheme" Value="{StaticResource MaterialTabItemTheme}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <DockPanel>
+            <m3:MaterialSurface x:Name="PART_TabRowSurface" DockPanel.Dock="Top" Background="{TemplateBinding Background}"
+                TextElement.Foreground="{TemplateBinding m3:TabRowAppearance.ContentColor}">
+              <m3:TabRowChrome Owner="{Binding RelativeSource={RelativeSource TemplatedParent}}" ContentColor="{TemplateBinding m3:TabRowAppearance.ContentColor}">
+                <TemplatedControl x:Name="PART_Divider" Template="{TemplateBinding m3:TabRowAppearance.Divider}" IsHitTestVisible="False" />
+                <ScrollViewer x:Name="PART_Scroller" Theme="{StaticResource MaterialTabScroller}">
+                  <m3:TabRowContent>
+                    <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                  </m3:TabRowContent>
+                </ScrollViewer>
+                <TemplatedControl x:Name="PART_Indicator" Template="{TemplateBinding m3:TabRowAppearance.Indicator}" IsHitTestVisible="False"
+                    DataContext="{Binding (m3:TabRowAppearance.TabPositions), RelativeSource={RelativeSource AncestorType=TabControl}}" />
+              </m3:TabRowChrome>
+            </m3:MaterialSurface>
+            <Panel ClipToBounds="True">
+              <ContentPresenter x:Name="PART_SelectedContentHost2" IsVisible="False" Margin="{TemplateBinding Padding}"
+                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+              <ContentPresenter x:Name="PART_SelectedContentHost" Margin="{TemplateBinding Padding}"
+                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </Panel>
+          </DockPanel>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^[(m3|TabRowAppearance.Variant)=Secondary]">
+        <Setter Property="m3:TabRowAppearance.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
+        <Setter Property="m3:TabRowAppearance.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type TabControl}" TargetType="TabControl" BasedOn="{StaticResource MaterialTabControlTheme}" />
+  </Styles.Resources>
+</Styles>

@@ -12,6 +12,7 @@ namespace Material3Expressive.Catalog;
 public partial class MainWindow : Window
 {
     private void OnTextFieldDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new TextFieldDemo().Show(this);
+    private void OnTabRowDemo(object? sender, RoutedEventArgs e) => new TabRowDemo().Show(this);
     private static readonly bool TraceWideRailLayout = false;
     private readonly RailLayoutTrace? _railLayoutTrace;
 

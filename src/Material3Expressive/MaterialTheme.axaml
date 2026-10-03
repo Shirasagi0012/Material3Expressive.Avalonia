@@ -39,6 +39,7 @@
                     <m3:FloatingActionButtonTokenSource />
                     <m3:TextFieldTokenSource />
                     <m3:ChipTokenSource />
+                    <m3:TabRowTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -63,4 +64,5 @@
     <StyleInclude Source="/Components/FloatingActionButton/FloatingActionButton.axaml" />
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
     <StyleInclude Source="/Components/Chip/Chip.axaml" />
+    <StyleInclude Source="/Components/TabRow/TabRow.axaml" />
 </Styles>
