@@ -31,6 +31,15 @@ public partial class MainWindow : Window
             item.IsSelected = ReferenceEquals(item, sender);
     }
 
+    private void OnChipClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not SelectableChip chip) return;
+        chip.SetCurrentValue(SelectableChip.IsSelectedProperty, !chip.IsSelected);
+        // Application-owned selection can add/remove the icon; the chip animates its visibility.
+        chip.LeadingIcon = chip.IsSelected ? new Material3Expressive.Foundation.Rendering.MaterialSymbol
+            { Symbol = MaterialSymbols.MaterialSymbolCodepoint.Check, Width = 18, Height = 18 } : null;
+    }
+
     private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
     {
         // Native CheckBox has already toggled. The application decides the group's meaning.

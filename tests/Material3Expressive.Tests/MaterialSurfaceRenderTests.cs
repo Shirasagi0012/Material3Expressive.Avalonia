@@ -26,6 +26,30 @@ namespace Material3Expressive.Tests;
 /// </summary>
 public class MaterialSurfaceRenderTests
 {
+    [AvaloniaFact]
+    public void UniformOutline_RoundsUpPhysicalStrokeWithoutMovingContent()
+    {
+        var child = new Border();
+        var surface = ProbeSurface();
+        surface.Background = Brushes.White;
+        surface.BorderBrush = Brushes.Red;
+        surface.BorderThickness = new Thickness(1.1);
+        surface.CornerRadius = new CornerRadius(8);
+        surface.Child = child;
+        var window = Show(surface);
+        window.SetRenderScaling(2);
+        window.UpdateLayout();
+        try
+        {
+            using var frame = window.CaptureRenderedFrame()!;
+            // ceil(1.1dp * 2) = 3 physical pixels, entirely inside the outer rectangle.
+            for (var y = 110; y < 113; y++) Assert.Equal((255, 0, 0), PixelAt(frame, 160, y));
+            Assert.Equal((255, 255, 255), PixelAt(frame, 160, 113));
+            Assert.Equal(new Size(100, 50), child.Bounds.Size);
+        }
+        finally { window.Close(); }
+    }
+
     private static Window Show(MaterialSurface surface)
     {
         var resources = new ResourceDictionary();

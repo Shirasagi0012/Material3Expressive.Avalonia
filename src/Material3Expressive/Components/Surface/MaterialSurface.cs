@@ -89,7 +89,7 @@ public sealed class MaterialSurface : Control
 
     private readonly Border _chrome;
     private readonly InteractionOverlay _interactionOverlay;
-    private readonly Border _outline;
+    private readonly SurfaceOutline _outline;
     private MaterialInteractionController? _interactionController;
     private IDisposable? _interactionAttachment;
     private AnimatedCornerRadius? _shapeMorph;
@@ -114,13 +114,13 @@ public sealed class MaterialSurface : Control
         _interactionOverlay = new InteractionOverlay(this);
         // Surface.kt applies border as a draw modifier, outside background/clip/interaction.
         // Avalonia Border includes its thickness in layout, so only this childless visual paints it.
-        _outline = new Border
+        _outline = new SurfaceOutline
         {
             ClipToBounds = true,
             IsHitTestVisible = false,
             Focusable = false,
-            [!Border.BorderBrushProperty] = this[!BorderBrushProperty],
-            [!Border.BorderThicknessProperty] = this[!BorderThicknessProperty],
+            [!SurfaceOutline.BorderBrushProperty] = this[!BorderBrushProperty],
+            [!SurfaceOutline.BorderThicknessProperty] = this[!BorderThicknessProperty],
         };
         VisualChildren.Add(_chrome);
         VisualChildren.Add(_interactionOverlay);
