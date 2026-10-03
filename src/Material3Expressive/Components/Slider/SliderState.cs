@@ -20,7 +20,7 @@ using Avalonia.Input;
 
 namespace Material3Expressive.Components;
 
-/// <summary>A closed pair of slider values, in the same float units as SliderState.</summary>
+/// <summary>A closed pair of range slider values in Compose float units.</summary>
 public readonly record struct SliderRange(float Start, float EndInclusive);
 
 // Direct translations of Slider.kt's shared float helpers. Ties select the first tick;
@@ -85,65 +85,6 @@ internal static class SliderMath
         };
         result = next is { } n ? Math.Clamp(n, minimum, maximum) : value;
         return next.HasValue;
-    }
-}
-
-/// <summary>Hoisted single-value state. Bounds and steps are fixed at construction, as in Compose.</summary>
-public sealed class SliderState : AvaloniaObject
-{
-    public static readonly DirectProperty<SliderState, float> ValueProperty = AvaloniaProperty.RegisterDirect<SliderState, float>(
-        nameof(Value), s => s.Value, (s, v) => s.Value = v, defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
-    public static readonly DirectProperty<SliderState, bool> IsDraggingProperty = AvaloniaProperty.RegisterDirect<SliderState, bool>(nameof(IsDragging), s => s.IsDragging);
-    private float _value;
-    private bool _isDragging;
-    internal float RawOffset, PressOffset;
-    internal float TotalWidth, TotalHeight, ThumbWidth, ThumbHeight;
-    internal bool IsRtl, ReverseVerticalDirection;
-    internal float[] TickFractions { get; }
-
-    public SliderState() : this(0) { }
-    public SliderState(float value, int steps = 0, float minimum = 0, float maximum = 1)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(steps);
-        if (minimum > maximum) throw new ArgumentException("Minimum must be at most Maximum.");
-        _value = value; Steps = steps; Minimum = minimum; Maximum = maximum; TickFractions = SliderMath.Ticks(steps);
-    }
-    public int Steps { get; }
-    public float Minimum { get; }
-    public float Maximum { get; }
-    public float Value
-    {
-        get => _value;
-        set => SetAndRaise(ValueProperty, ref _value, ShouldAutoSnap
-            ? SliderMath.Snap(Math.Clamp(value, Minimum, Maximum), TickFractions, Minimum, Maximum) : value);
-    }
-    public bool ShouldAutoSnap { get; set; } = true;
-    public bool IsVertical { get; internal set; }
-    public bool IsDragging { get => _isDragging; internal set => SetAndRaise(IsDraggingProperty, ref _isDragging, value); }
-    public float CoercedValueAsFraction => SliderMath.Fraction(Minimum, Maximum, Math.Clamp(Value, Minimum, Maximum));
-    /// <summary>When supplied, the callback owns writing Value. Otherwise user input writes Value directly.</summary>
-    public Action<float>? OnValueChange { get; set; }
-    public Action? OnValueChangeFinished { get; set; }
-
-    internal void Change(float value) { if (OnValueChange is { } callback) callback(value); else Value = value; }
-    internal void Press(float x, float y) => PressOffset = (IsVertical
-        ? ReverseVerticalDirection ? TotalHeight - y : y
-        : IsRtl ? TotalWidth - x : x) - RawOffset;
-    internal void DispatchRawDelta(float delta)
-    {
-        var maxPx = MathF.Max((IsVertical ? TotalHeight - ThumbHeight / 2 : TotalWidth - ThumbWidth / 2), 0);
-        var minPx = MathF.Min((IsVertical ? ThumbHeight : ThumbWidth) / 2, maxPx);
-        RawOffset += delta + PressOffset; PressOffset = 0;
-        var offset = SliderMath.Snap(RawOffset, TickFractions, minPx, maxPx);
-        var value = SliderMath.Scale(minPx, maxPx, offset, Minimum, Maximum);
-        if (value != Value) Change(value);
-    }
-    internal void Finish() { if (!IsDragging) OnValueChangeFinished?.Invoke(); }
-    internal bool SetProgress(float target)
-    {
-        var resolved = SliderMath.Progress(target, Minimum, Maximum, Steps);
-        if (resolved == Value) return false;
-        Change(resolved); OnValueChangeFinished?.Invoke(); return true;
     }
 }
 

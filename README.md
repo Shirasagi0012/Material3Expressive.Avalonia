@@ -6,7 +6,7 @@
 [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](src/Material3Expressive/Components/WideNavigationRail/README.md)、
 [NavigationBar / NavigationBarItem](src/Material3Expressive/Components/NavigationBar/README.md)、
 [ShortNavigationBar / ShortNavigationBarItem](src/Material3Expressive/Components/ShortNavigationBar/README.md)、
-[Slider / VerticalSlider / RangeSlider](src/Material3Expressive/Components/Slider/README.md)、
+[原生 Slider 水平/垂直主题 / RangeSlider](src/Material3Expressive/Components/Slider/README.md)、
 [原生 CheckBox 的两态/三态 Material 模板](src/Material3Expressive/Components/CheckBox/README.md)，以及 Token、颜色、图标、阴影和交互动画等基础能力。
 这些是现有实现范围，不代表所有组件已经对齐当前上游基线。
 已接入 [Compose 视觉一致性测试](tests/VisualParity/README.md)，提供真实双端捕获、确定性动画回放及差异报告。
