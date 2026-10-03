@@ -58,7 +58,7 @@
                         <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialFilledSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
                         <m3:SplitButton.TrailingButton>
                             <ToggleButton Theme="{StaticResource MaterialFilledSplitButtonTrailingTheme}">
-                                <Path Width="22" Height="22" Stretch="Uniform" Data="M 2,5 L 11,14 L 20,5 L 18,3 L 11,10 L 4,3 Z" Fill="{Binding $parent[ToggleButton].Foreground}" />
+                                <m3:MaterialSymbol Symbol="KeyboardArrowDown" Width="22" Height="22" />
                             </ToggleButton>
                         </m3:SplitButton.TrailingButton>
                     </m3:SplitButton>
