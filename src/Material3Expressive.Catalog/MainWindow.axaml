@@ -34,6 +34,22 @@
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
+                <TextBlock Text="RadioButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <RadioButton GroupName="CatalogRadio" Content="First" IsChecked="True" />
+                    <RadioButton GroupName="CatalogRadio" Content="Second" />
+                    <RadioButton GroupName="CatalogDisabledRadio" Content="Disabled selected" IsChecked="True" IsEnabled="False" />
+                    <RadioButton GroupName="CatalogDisabledRadio" Content="Disabled unselected" IsEnabled="False" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="16" FlowDirection="RightToLeft">
+                    <RadioButton GroupName="CatalogRadioRtl" Content="RTL first" IsChecked="True" />
+                    <RadioButton GroupName="CatalogRadioRtl" Content="RTL second" />
+                    <RadioButton GroupName="CatalogCustomRadio" Content="Custom color" IsChecked="True">
+                        <RadioButton.Resources>
+                            <Color x:Key="{x:Static m3:MaterialTokens+Comp+RadioButton.SelectedColor}">#008080</Color>
+                        </RadioButton.Resources>
+                    </RadioButton>
+                </StackPanel>
                 <TextBlock Text="CheckBox" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <CheckBox Content="Option" />

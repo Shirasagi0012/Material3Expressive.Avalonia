@@ -1,0 +1,39 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialRadioButtonTheme" TargetType="RadioButton">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography BodyLarge}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:RadioButtonLayout>
+            <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
+                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" Padding="2">
+              <m3:RadioButtonIndicator x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
+                  Colors="{TemplateBinding m3:RadioButtonAppearance.Colors}"
+                  SelectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.SelectedColor}}"
+                  UnselectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.UnselectedColor}}"
+                  DisabledSelectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.DisabledSelectedColor}}"
+                  DisabledUnselectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.DisabledUnselectedColor}}" />
+            </m3:MaterialSurface>
+            <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                RecognizesAccessKey="True" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+          </m3:RadioButtonLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type RadioButton}" TargetType="RadioButton" BasedOn="{StaticResource MaterialRadioButtonTheme}" />
+  </Styles.Resources>
+</Styles>
