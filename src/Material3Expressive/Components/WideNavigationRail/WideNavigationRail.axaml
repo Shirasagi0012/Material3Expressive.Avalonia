@@ -4,7 +4,7 @@
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:WideNavigationRail}" TargetType="m3:WideNavigationRail">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ContainerColor}}" />
-      <Setter Property="Foreground" Value="{m3:NavigationRailContentColor}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ContainerShape}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
@@ -29,7 +29,7 @@
                               TextElement.Foreground="{TemplateBinding Foreground}">
             <Border>
               <Border.Padding>
-                <MultiBinding Converter="{x:Static m3:NavigationRailInsetsConverter.Instance}">
+                <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                   <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                   <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                 </MultiBinding>

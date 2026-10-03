@@ -4,7 +4,7 @@
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:NavigationRail}" TargetType="m3:NavigationRail">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ContainerColor}}" />
-      <Setter Property="Foreground" Value="{m3:NavigationRailContentColor}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
       <Setter Property="ItemsPanel"><ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate></Setter>
@@ -16,7 +16,7 @@
           <m3:MaterialSurface Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}">
             <Border>
               <Border.Padding>
-                <MultiBinding Converter="{x:Static m3:NavigationRailInsetsConverter.Instance}">
+                <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                   <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                   <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                 </MultiBinding>

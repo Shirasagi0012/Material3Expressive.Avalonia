@@ -4,7 +4,7 @@
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:ModalWideNavigationRail}" TargetType="m3:ModalWideNavigationRail" BasedOn="{StaticResource {x:Type m3:WideNavigationRail}}">
       <Setter Property="ModalBackground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalContainerColor}}" />
-      <Setter Property="ModalForeground" Value="{m3:NavigationRailContentColor BackgroundProperty=ModalBackground}" />
+      <Setter Property="ModalForeground" Value="{m3:ContentColorFor BackgroundProperty=ModalBackground}" />
       <Setter Property="ScrimBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalScrimColor}}" />
       <Setter Property="CollapsedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ContainerShape}}" />
       <Setter Property="ExpandedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalContainerShape}}" />
@@ -14,7 +14,7 @@
             <m3:MaterialSurface x:Name="PART_Inline" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CollapsedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}">
               <Border>
                 <Border.Padding>
-                  <MultiBinding Converter="{x:Static m3:NavigationRailInsetsConverter.Instance}">
+                  <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                     <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                     <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                   </MultiBinding>
@@ -34,7 +34,7 @@
                 <m3:MaterialSurface Background="{TemplateBinding ModalBackground}" CornerRadius="{TemplateBinding ExpandedCornerRadius}" TextElement.Foreground="{TemplateBinding ModalForeground}">
                   <Border>
                     <Border.Padding>
-                      <MultiBinding Converter="{x:Static m3:NavigationRailInsetsConverter.Instance}">
+                      <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                         <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                         <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                       </MultiBinding>

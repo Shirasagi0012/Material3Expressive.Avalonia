@@ -4,8 +4,6 @@ using Avalonia.Controls.Templates;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.VisualTree;
-using Avalonia.Data.Converters;
-using System.Globalization;
 
 namespace Material3Expressive.Components;
 
@@ -35,15 +33,4 @@ public class NavigationRail : ItemsControl
         protected override string GetClassNameCore() => nameof(NavigationRail);
         protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Group;
     }
-}
-
-internal sealed class NavigationRailInsetsConverter : IMultiValueConverter
-{
-    public static IMultiValueConverter Instance { get; } = new NavigationRailInsetsConverter();
-    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) =>
-        values.Count == 2 && values[0] is Thickness insets && values[1] is Avalonia.Media.FlowDirection direction
-            // Border participates in Avalonia's RTL mirror. WindowInsets is physical,
-            // so undo that one logical-to-physical exchange at the template boundary.
-            ? direction == Avalonia.Media.FlowDirection.RightToLeft ? new Thickness(insets.Right, insets.Top, insets.Left, insets.Bottom) : insets
-            : AvaloniaProperty.UnsetValue;
 }

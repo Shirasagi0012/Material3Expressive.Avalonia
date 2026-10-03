@@ -1,6 +1,7 @@
 using ComposeAnimation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using System.Linq;
 using System;
@@ -28,6 +29,13 @@ public partial class MainWindow : Window
     {
         foreach (var item in DemoNavigationRail.Items.OfType<NavigationRailItem>())
             item.IsSelected = ReferenceEquals(item, sender);
+    }
+
+    private void OnBarDestinationClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is NavigationBarItem destination && destination.FindAncestorOfType<NavigationBar>() is { } bar)
+            foreach (var item in bar.Items.OfType<NavigationBarItem>())
+                item.IsSelected = ReferenceEquals(item, destination);
     }
 
     private async void OnToggleWideRail(object? sender, RoutedEventArgs e)

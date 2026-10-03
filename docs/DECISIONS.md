@@ -1,5 +1,17 @@
 # 已确认的设计决定
 
+## NavigationBar 的内容、选择与共享环境适配
+
+决定：NavigationBar 使用 ItemsControl 的 Items / ItemsSource / ItemTemplate，内置等宽布局和 8 DIP 间距，
+提供 Background / Foreground、TonalElevation（默认 Level0）和物理 WindowInsets（Thickness，桌面默认零）。
+NavigationBarItem 使用 Button 的 Click / Command / IsEnabled，提供 Icon / Label 及模板、外部 IsSelected、
+AlwaysShowLabel 与常规 Rail 同名的七项状态颜色。点击仅请求导航，应用维持选中状态。
+原因：保留 Compose RowScope 内容和 selectable 外部选择语义，同时支持 C# / XAML。
+做法：现有 contentColorFor 绑定和物理 Insets 转换移至 Foundation，Rail / Wide / Modal / Bar 共享，
+原有公共入口与行为不变。按压映射复用既有控制器，使用实际 Item 宽度与 Token 宽度的差及固定 12 DIP 纵向偏移。
+范围：常规 NavigationBar / NavigationBarItem；不决定 ShortNavigationBar 的入口，不扩展 Wide 的纵向平滑偏离。
+确认：2026-10-03，维护者确认“采用推荐 API 与内部共享适配”。使用示例见 NavigationBar 的组件 README。
+
 ## Modal rail 鼠标拖动速度保留 Avalonia 原生事件历史
 
 决定：使用 Avalonia 实际 PointerMoved 历史与固定 Compose Desktop 的 LSQ2 算法，不在组件或夹具中复制速度样本。

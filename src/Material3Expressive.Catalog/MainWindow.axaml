@@ -34,6 +34,33 @@
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
+                <TextBlock Text="NavigationBar" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <m3:NavigationBar x:Name="DemoNavigationBar">
+                    <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">
+                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Search" Click="OnBarDestinationClick">
+                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick">
+                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                    </m3:NavigationBarItem>
+                </m3:NavigationBar>
+                <TextBlock Text="Selected labels" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+                <m3:NavigationBar>
+                    <m3:NavigationBarItem Label="Home" AlwaysShowLabel="False" IsSelected="True" Click="OnBarDestinationClick">
+                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Search" AlwaysShowLabel="False" Click="OnBarDestinationClick">
+                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Settings" AlwaysShowLabel="False" Click="OnBarDestinationClick">
+                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Disabled" AlwaysShowLabel="False" IsEnabled="False">
+                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                    </m3:NavigationBarItem>
+                </m3:NavigationBar>
                 <Grid ColumnDefinitions="Auto,*" Height="360">
                     <m3:WideNavigationRail x:Name="DemoWideNavigationRail">
                         <m3:WideNavigationRail.Header>

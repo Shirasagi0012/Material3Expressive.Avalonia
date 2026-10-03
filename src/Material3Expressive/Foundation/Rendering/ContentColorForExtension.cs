@@ -9,13 +9,12 @@ using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation.Tokens;
 using Color = Material3Expressive.Tokens.MaterialTokens.Sys.Color;
 
-namespace Material3Expressive.Components;
+namespace Material3Expressive.Foundation.Rendering;
 
-// Navigation rail defaults use the same contentColorFor(containerColor).
-// Select inline or modal background without duplicating the role matching.
-internal sealed class NavigationRailContentColorExtension : MarkupExtension, IMultiValueConverter
+// Fixed Material contentColorFor role matching, with the ambient content color fallback.
+internal sealed class ContentColorForExtension : MarkupExtension, IMultiValueConverter
 {
-    public string BackgroundProperty { get; set; } = nameof(NavigationRail.Background);
+    public string BackgroundProperty { get; set; } = "Background";
     private static readonly (MaterialTokenKey<Avalonia.Media.Color> Background, MaterialTokenKey<Avalonia.Media.Color> Content)[] Roles =
     [
         (Color.Primary, Color.OnPrimary), (Color.Secondary, Color.OnSecondary),
