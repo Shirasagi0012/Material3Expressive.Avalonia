@@ -67,6 +67,7 @@
                     </m3:FloatingActionButtonMenuItem>
                 </m3:FloatingActionButtonMenu>
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
+                <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="TabRow demo" Click="OnTabRowDemo" HorizontalAlignment="Left" />
                 <Button Content="ScrollBar demo" Click="OnScrollBarDemo" HorizontalAlignment="Left" />

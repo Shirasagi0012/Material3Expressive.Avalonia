@@ -4,6 +4,7 @@
 
 当前包含 Button、IconButton、Surface、[Badge / BadgedBox](src/Material3Expressive/Components/Badge/README.md)、
 [NavigationRail / NavigationRailItem](src/Material3Expressive/Components/NavigationRail/README.md)、
+[Modal / Dismissible / Permanent NavigationDrawer、Sheet 与 Item](src/Material3Expressive/Components/NavigationDrawer/README.md)、
 [FloatingActionButton / ExtendedFloatingActionButton / ToggleFloatingActionButton / FAB Menu](src/Material3Expressive/Components/FloatingActionButton/README.md)、
 [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](src/Material3Expressive/Components/WideNavigationRail/README.md)、
 [NavigationBar / NavigationBarItem](src/Material3Expressive/Components/NavigationBar/README.md)、

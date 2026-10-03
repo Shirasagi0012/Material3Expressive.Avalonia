@@ -1,0 +1,68 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia" x:Class="Material3Expressive.Catalog.NavigationDrawerDemo"
+        Title="Navigation drawers" Width="980" Height="720" RequestedThemeVariant="Light">
+  <Grid RowDefinitions="Auto,*" RowSpacing="16" Margin="24">
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="Light / dark" Click="ToggleTheme" />
+      <Button Content="LTR / RTL" Click="ToggleDirection" />
+      <CheckBox x:Name="Gestures" Content="Gestures" IsChecked="True" />
+    </StackPanel>
+    <TabControl Grid.Row="1">
+      <TabItem Header="Modal">
+        <m3:ModalNavigationDrawer x:Name="Modal" GesturesEnabled="{Binding IsChecked, ElementName=Gestures}">
+          <m3:ModalNavigationDrawer.DrawerContent>
+            <m3:ModalDrawerSheet State="{Binding State, ElementName=Modal}">
+              <StackPanel Spacing="4" Margin="12,24">
+                <TextBlock Text="Mail" Margin="16,0,0,24" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+                <m3:NavigationDrawerItem Content="Inbox" IsSelected="True" Click="Navigate">
+                  <m3:NavigationDrawerItem.Icon><m3:MaterialSymbol Symbol="Inbox" Width="24" Height="24" /></m3:NavigationDrawerItem.Icon>
+                  <m3:NavigationDrawerItem.Badge><TextBlock Text="24" /></m3:NavigationDrawerItem.Badge>
+                </m3:NavigationDrawerItem>
+                <m3:NavigationDrawerItem Content="Sent" Click="Navigate"><m3:NavigationDrawerItem.Icon><m3:MaterialSymbol Symbol="Send" Width="24" Height="24" /></m3:NavigationDrawerItem.Icon></m3:NavigationDrawerItem>
+                <Separator Margin="16,12" />
+                <Button Content="Close drawer" Tag="modal" Click="ToggleDrawer" HorizontalAlignment="Left" />
+              </StackPanel>
+            </m3:ModalDrawerSheet>
+          </m3:ModalNavigationDrawer.DrawerContent>
+          <StackPanel Margin="24" Spacing="16">
+            <Button Content="Open modal drawer" Tag="modal" Click="ToggleDrawer" HorizontalAlignment="Left" />
+            <TextBlock Text="The drawer covers this page. Click its scrim or press Escape to close it." TextWrapping="Wrap" />
+            <TextBox Text="Page content remains in the local layout" />
+          </StackPanel>
+        </m3:ModalNavigationDrawer>
+      </TabItem>
+      <TabItem Header="Dismissible">
+        <m3:DismissibleNavigationDrawer x:Name="Dismissible" GesturesEnabled="{Binding IsChecked, ElementName=Gestures}">
+          <m3:DismissibleNavigationDrawer.DrawerContent>
+            <m3:DismissibleDrawerSheet State="{Binding State, ElementName=Dismissible}">
+              <StackPanel Spacing="4" Margin="12,24">
+                <m3:NavigationDrawerItem Content="Inbox" IsSelected="True" Click="Navigate" />
+                <m3:NavigationDrawerItem Content="Sent" Click="Navigate" />
+                <Button Content="Close" Tag="dismissible" Click="ToggleDrawer" HorizontalAlignment="Left" />
+              </StackPanel>
+            </m3:DismissibleDrawerSheet>
+          </m3:DismissibleNavigationDrawer.DrawerContent>
+          <Grid Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainer}}">
+            <StackPanel Margin="24" Spacing="16">
+              <Button Content="Toggle dismissible drawer" Tag="dismissible" Click="ToggleDrawer" HorizontalAlignment="Left" />
+              <TextBlock Text="The drawer pushes this page while preserving its measured width." TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+        </m3:DismissibleNavigationDrawer>
+      </TabItem>
+      <TabItem Header="Permanent">
+        <m3:PermanentNavigationDrawer>
+          <m3:PermanentNavigationDrawer.DrawerContent>
+            <m3:PermanentDrawerSheet>
+              <StackPanel Spacing="4" Margin="12,24">
+                <m3:NavigationDrawerItem Content="Inbox" IsSelected="True" Click="Navigate" />
+                <m3:NavigationDrawerItem Content="Sent" Click="Navigate" />
+              </StackPanel>
+            </m3:PermanentDrawerSheet>
+          </m3:PermanentNavigationDrawer.DrawerContent>
+          <TextBlock Margin="24" Text="A permanent sheet shares the available width with this page." TextWrapping="Wrap" />
+        </m3:PermanentNavigationDrawer>
+      </TabItem>
+    </TabControl>
+  </Grid>
+</Window>
