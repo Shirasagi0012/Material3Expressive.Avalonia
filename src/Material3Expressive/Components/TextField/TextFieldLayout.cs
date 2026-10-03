@@ -157,7 +157,8 @@ internal sealed partial class TextFieldLayout : Panel
         if (_owner == null || _label == null) return;
         _label.IsVisible = HasLabel;
         _placeholder.SetCurrentValue(ContentPresenter.ContentProperty, MaterialTextField.GetPlaceholder(_owner) ?? _owner.PlaceholderText);
-        var p = LabelProgress;
+        // Keep spatial overshoot for placement, but never extrapolate typography or measured size.
+        var p = Math.Clamp(LabelProgress, 0f, 1f);
         var large = LargeTextStyle ?? TextStyle.Empty;
         var small = SmallTextStyle ?? TextStyle.Empty;
         var labelStyle = large with
@@ -242,7 +243,8 @@ internal sealed partial class TextFieldLayout : Panel
     protected override Size MeasureOverride(Size available)
     {
         if (_owner == null) return base.MeasureOverride(available);
-        var p = LabelProgress;
+        // Keep spatial overshoot for placement, but never extrapolate typography or measured size.
+        var p = Math.Clamp(LabelProgress, 0f, 1f);
         _cutoutTop = Cutout ? Round((SmallTextStyle?.LineHeight ?? 16) / 2) : 0;
         var maxHeight = Math.Max(0, available.Height - _cutoutTop);
         _padding = _owner.IsSet(TextBox.PaddingProperty) ? _owner.Padding : new Thickness(16, HasLabel && Position == TextFieldLabelPosition.Inside ? 8 : 16);
@@ -350,10 +352,11 @@ internal sealed partial class TextFieldLayout : Panel
         Place(_placeholder, inputX, TextY(_placeholder), inputWidth);
         Place(_suffix, width - trailing - _suffix.DesiredSize.Width, TextY(_suffix));
         Place(_supporting, 0, yOffset + height, width);
-        var cutWidth = labelWidth * p;
+        var cutoutProgress = Math.Clamp(p, 0f, 1f);
+        var cutWidth = labelWidth * cutoutProgress;
         var cutLeft = Align(MaterialTextField.GetMinimizedLabelAlignment(_owner), Round(cutWidth), width - startPad - endPad) + startPad - 4;
-        _cutout = Cutout && cutWidth > 0 ? new Rect(Math.Max(0, cutLeft), yOffset - labelHeight * p / 2,
-            Math.Max(0, Math.Min(width, cutLeft + cutWidth + 8) - Math.Max(0, cutLeft)), labelHeight * p) : default;
+        _cutout = Cutout && cutWidth > 0 ? new Rect(Math.Max(0, cutLeft), yOffset - labelHeight * cutoutProgress / 2,
+            Math.Max(0, Math.Min(width, cutLeft + cutWidth + 8) - Math.Max(0, cutLeft)), labelHeight * cutoutProgress) : default;
         InvalidateDecoration();
         return finalSize;
     }

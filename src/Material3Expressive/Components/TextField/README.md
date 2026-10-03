@@ -86,6 +86,21 @@ Filled / Outlined TextField Tokens；前两个入口和内部装饰实现在两�
    重建装饰使标签、placeholder 和 affix 立即回到初态；这是双端禁用中断用例保留的已接受差异。
    维护者在本轮比较后明确选择连续动画；原生编辑器不因该选择重新套用模板。
 
+### 标签过冲与自动高度（2026-10-04）
+
+维护者确认：保留标签坐标的弹簧过冲，但将排版、测量和 outline 缺口尺寸的插值进度限制在 `[0, 1]`。
+原始动画值及其速度不变，标签坐标仍用原始进度；字号、行高、字距等排版插值不再超出两个端点。
+这是有意采用的上游行为适配，不改变 TextBox 的编辑状态、公开附加属性或模板用法。
+
+固定 Core 的真实自动高度失焦用例同样复现了撑高：4× 渲染、几何标签、无额外槽位时，
+Outlined 从 66.5 增至 67 DIP 后回落；修复前 Avalonia 从 64 增至 67 DIP。
+端点的 2.5 DIP 差异来自既有的原生空编辑行度量。修复后同一 Avalonia 用例的采样高度保持 64 DIP。
+此前动态用例固定外部高度 96，未覆盖这项自动测量行为。
+
+尺寸限制同时适用于聚焦方向的正向过冲，因此原 `dynamic.focus.*` 在 160000 µs 的标签/内容几何
+也会与未限制尺寸的 Compose 不同；这属于同一适配。真实内容变化仍可改变高度，并不冻结布局，
+也不保证任意自定义内容在整个焦点动画中恒高。
+
 ### 尚未实现与未经验证
 
 - SearchBar 展开、建议列表和键盘/IME 搜索动作流程未实现。Catalog 搜索示例只展示可复用输入槽。
@@ -115,7 +130,7 @@ dotnet test tests/Material3Expressive.Tests --filter FullyQualifiedName~TextFiel
 聚焦动态用例提交真实槽位几何和标签进度，常规采样不截图未虚拟化的原生 caret blink；其余场景保留完整原图。
 具体本轮结果和路径在交付说明中记录，run 成功只表示执行完成，self-test 稳定不等于双端一致。
 
-### 本轮验证结果（2026-10-04）
+### 首次移植验证结果（2026-10-04）
 
 - 控件库测试 423 通过，其中 TextField 15 项；VisualParity 框架测试 123 通过；Catalog 构建成功。
 - 最终普通比较：64 用例、158 采样点、0 执行错误；29 equal、27 withinTolerance、8 different。
@@ -132,3 +147,16 @@ dotnet test tests/Material3Expressive.Tests --filter FullyQualifiedName~TextFiel
   产物：`D:/Temporary/m3e-textfield/self-test-final-2/summary.md`。
 
 这些结果不把已接受的禁用差异、原生编辑测量或剩余浮点误差概称为“全部 parity 通过”。
+
+### 自动高度修复验证（2026-10-04）
+
+- 控件库测试 433 项通过，其中 TextField 25 项；新增 10 项覆盖空文本失焦、辅助文字与后续行位置、
+  有无前后缀、长标签、多行、自定义排版及过冲时重新聚焦。默认单行在逐帧检查中保持布局高度，
+  原始标签动画仍越过端点。检查在 headless 1× 下执行，不代表人工桌面验收。
+- Catalog 构建成功。完整 TextField self-test 72 用例、238 采样点：27 equal、27 withinTolerance、
+  18 different；0 执行错误，72/72 双端重复采集及额外被动截图检查稳定。
+- 本轮重新采集真实 Compose 与 Avalonia，非复用参考或仅重比较。新增 8 个自动高度 blur/refocus
+  用例保留真实差异；原有两个 focus 用例新增上述尺寸限制差异，其余原有用例分类保持不变。
+  文字场景在控件测试覆盖，双端 parity 使用非文字槽位；焦点动态主采样只读几何和进度。
+- 修复前双端证据：`D:/Temporary/m3e-textfield/blur-before/summary.md`。
+  修复后完整比较及重复性产物：`D:/Temporary/m3e-textfield/blur-fix-parity/summary.md`。

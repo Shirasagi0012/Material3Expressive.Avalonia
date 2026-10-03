@@ -74,6 +74,112 @@ public class TextFieldTests
         window.Close();
     }
 
+    [AvaloniaTheory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void EmptyBlurKeepsAutoHeightWhileLabelPositionOvershoots(bool outlined, bool affixes)
+    {
+        using var clock = new MotionTestClockScope();
+        var window = Show(out var box, outlined);
+        try
+        {
+            MaterialTextField.SetLabel(box, "姓名");
+            MaterialTextField.SetSupportingText(box, "辅助文字");
+            if (affixes)
+            {
+                MaterialTextField.SetPrefix(box, "¥");
+                MaterialTextField.SetSuffix(box, "CNY");
+            }
+            var panel = (StackPanel)window.Content!;
+            var following = new Border { Height = 8 };
+            panel.Children.Add(following);
+            Settle(clock, window);
+            var height = box.Bounds.Height;
+            var followingY = following.Bounds.Y;
+            var restingLabelY = Part<ContentPresenter>(box, "Label").Bounds.Y;
+            box.Focus(); Settle(clock, window);
+            panel.Children[0].Focus(); window.UpdateLayout();
+            var layout = Part<TextFieldLayout>(box, "PART_Decoration");
+            var label = Part<ContentPresenter>(box, "Label");
+            var overshot = false;
+            var positionOvershot = false;
+            for (var i = 0; i < 70; i++)
+            {
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout();
+                overshot |= layout.LabelProgress < 0;
+                positionOvershot |= layout.LabelProgress < 0 && label.Bounds.Y > restingLabelY;
+                Assert.Equal(height, box.Bounds.Height);
+                Assert.Equal(followingY, following.Bounds.Y);
+                Assert.InRange(label.FontSize, 12, 16);
+            }
+            Assert.True(overshot, "The spatial spring must retain its overshoot.");
+            Assert.True(positionOvershot, "Label placement must still use the raw spring progress.");
+            Assert.Equal(0, layout.LabelProgress);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false, "long-label")]
+    [InlineData(true, "long-label")]
+    [InlineData(false, "multiline")]
+    [InlineData(true, "multiline")]
+    [InlineData(false, "typography")]
+    [InlineData(true, "typography")]
+    public void BlurRefocusPreservesContentDrivenSizeAndTypographyBounds(bool outlined, string scenario)
+    {
+        using var clock = new MotionTestClockScope();
+        var window = Show(out var box, outlined);
+        try
+        {
+            var layout = Part<TextFieldLayout>(box, "PART_Decoration");
+            if (scenario == "long-label")
+                MaterialTextField.SetLabel(box, new TextBlock
+                {
+                    Text = "A long label that wraps across multiple lines in a narrow field",
+                    TextWrapping = TextWrapping.Wrap, MaxWidth = 140,
+                });
+            if (scenario == "multiline") { box.AcceptsReturn = true; box.MinLines = 3; }
+            if (scenario == "typography")
+            {
+                layout.LargeTextStyle = layout.LargeTextStyle! with { FontSize = 20, LineHeight = 30 };
+                layout.SmallTextStyle = layout.SmallTextStyle! with { FontSize = 14, LineHeight = 20 };
+            }
+            Settle(clock, window);
+            var restingHeight = box.Bounds.Height;
+            box.Focus(); Settle(clock, window);
+            ((StackPanel)window.Content!).Children[0].Focus(); window.UpdateLayout();
+            var label = Part<ContentPresenter>(box, "Label");
+            var sawOvershoot = false;
+            for (var i = 0; i < 70; i++)
+            {
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout();
+                Assert.InRange(label.FontSize, scenario == "typography" ? 14 : 12, scenario == "typography" ? 20 : 16);
+                if (layout.LabelProgress < 0)
+                {
+                    sawOvershoot = true;
+                    Assert.True(box.Bounds.Height <= restingHeight,
+                        $"Overshoot expanded {scenario} from {restingHeight} to {box.Bounds.Height}");
+                    break;
+                }
+            }
+            Assert.True(sawOvershoot);
+            // Reverse while velocity is nonzero, then verify both endpoint sizes remain reachable.
+            box.Focus(); Settle(clock, window);
+            Assert.Equal(1, layout.LabelProgress);
+            ((StackPanel)window.Content!).Children[0].Focus(); Settle(clock, window);
+            Assert.Equal(restingHeight, box.Bounds.Height);
+            if (scenario == "multiline")
+            {
+                box.MinLines = 5; window.UpdateLayout();
+                Assert.True(box.Bounds.Height > restingHeight, "Real content sizing must remain responsive.");
+            }
+        }
+        finally { window.Close(); }
+    }
+
     private static MotionTestWindow Show(out TextBox box, bool outlined = false)
     {
         var window = new MotionTestWindow { Width = 420, Height = 220, RequestedThemeVariant = ThemeVariant.Light };

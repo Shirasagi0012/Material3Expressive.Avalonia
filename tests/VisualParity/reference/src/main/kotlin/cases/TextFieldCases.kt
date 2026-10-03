@@ -54,6 +54,27 @@ class TextFieldCases {
         }
     }
 
+    @ParityScenario("auto-blur")
+    suspend fun autoBlur(writer:CaptureWriter) {
+        val config=writer.readConfig<TextFieldConfig>()
+        ComposeHost(writer,400,200).use { host ->
+            val scene=FieldScene(config)
+            host.mount { scene.Content() }; host.frame(-1000); host.frame(0)
+            fun sample(id:String)=writer.submit(host.snapshot(id,id,scene.measure(),image=false))
+            var next=16000L
+            fun advance(time:Long) { while(next<=time) { host.frame(next); next+=16000 }; host.advanceTo(time) }
+            scene.requester.requestFocus(); host.draw(); host.frame(1000)
+            advance(800000); sample("focused-800000")
+            scene.focusManager.clearFocus(); writer.record(800000,"mutation","blur"); host.draw(); host.frame(800000)
+            listOf(816000L,864000L,928000L,960000L,976000L,1008000L,1040000L,1200000L,1600000L).forEach {
+                advance(it); sample("time-$it")
+                if(config.action=="refocus" && it==976000L) {
+                    scene.requester.requestFocus(); writer.record(it,"mutation","refocus"); host.draw(); host.frame(it)
+                }
+            }
+        }
+    }
+
     private class FieldScene(val config:TextFieldConfig) {
         val field=Probe()
         val probes=linkedMapOf<String,Probe>()

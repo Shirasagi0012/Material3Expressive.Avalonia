@@ -52,6 +52,38 @@ public sealed class TextFieldCases
         foreach (var action in new[] { "focus", "reverse", "disable", "error", "theme" })
             yield return Data($"dynamic.{action}.{outline}", new(outline, outline ? "Cutout" : "Inside", Slots: true, Action: action, Height: 96));
     }
+    public static IEnumerable<CaseData<TextFieldConfig>> AutoBlurConfigurations()
+    {
+        foreach (var outline in new[] { false, true })
+        foreach (var slots in new[] { false, true })
+        foreach (var action in new[] { "blur", "refocus" })
+            yield return Data($"dynamic.auto-{action}.{outline}.{slots}",
+                new(outline, outline ? "Cutout" : "Inside", Slots: slots, Action: action));
+    }
+
+    [ParityScenario("auto-blur", Data = nameof(AutoBlurConfigurations))]
+    public async Task AutoBlur(CaptureWriter writer)
+    {
+        var config = writer.Metadata.ReadConfig<TextFieldConfig>();
+        await using var host = new AvaloniaHost(writer, 400, 200);
+        var scene = new FieldScene(host, config);
+        host.Mount(scene.Root); host.Frame(-1000); host.Frame(0);
+        void Sample(string id) => writer.Submit(host.Snapshot(id, id, scene.Measure(), image: false));
+        long next = 16000;
+        void Advance(long time) { while (next <= time) { host.Frame(next); next += 16000; } host.AdvanceTo(time); }
+        scene.Box.Focus(); host.Draw(); host.Frame(1000);
+        Advance(800000); Sample("focused-800000");
+        scene.FocusTarget.Focus(); writer.Record(800000, "mutation", "blur"); host.Draw(); host.Frame(800000);
+        foreach (var time in new long[] { 816000, 864000, 928000, 960000, 976000, 1008000, 1040000, 1200000, 1600000 })
+        {
+            Advance(time); Sample($"time-{time}");
+            if (config.Action == "refocus" && time == 976000)
+            {
+                scene.Box.Focus(); writer.Record(time, "mutation", "refocus"); host.Draw(); host.Frame(time);
+            }
+        }
+    }
+
     static CaseData<TextFieldConfig> Data(string id, TextFieldConfig config) => new(id.ToLowerInvariant(), id, config);
 
     [ParityScenario("static", Data = nameof(StaticConfigurations))]
