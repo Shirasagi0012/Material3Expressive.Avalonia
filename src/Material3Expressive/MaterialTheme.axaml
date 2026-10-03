@@ -27,6 +27,7 @@
                     <m3:TonalIconButtonTokenSource />
                     <m3:OutlinedIconButtonTokenSource />
                     <m3:NavigationRailTokenSource />
+                    <m3:WideNavigationRailTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -37,4 +38,6 @@
     <StyleInclude Source="/Components/Button/Button.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
+    <StyleInclude Source="/Components/WideNavigationRail/WideNavigationRail.axaml" />
+    <StyleInclude Source="/Components/WideNavigationRail/ModalWideNavigationRail.axaml" />
 </Styles>

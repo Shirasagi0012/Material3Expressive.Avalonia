@@ -11,10 +11,11 @@ using Color = Material3Expressive.Tokens.MaterialTokens.Sys.Color;
 
 namespace Material3Expressive.Components;
 
-// NavigationRail's default contentColorFor(containerColor). Keep this local until
-// another component actually needs the same color-role matching behavior.
+// Navigation rail defaults use the same contentColorFor(containerColor).
+// Select inline or modal background without duplicating the role matching.
 internal sealed class NavigationRailContentColorExtension : MarkupExtension, IMultiValueConverter
 {
+    public string BackgroundProperty { get; set; } = nameof(NavigationRail.Background);
     private static readonly (MaterialTokenKey<Avalonia.Media.Color> Background, MaterialTokenKey<Avalonia.Media.Color> Content)[] Roles =
     [
         (Color.Primary, Color.OnPrimary), (Color.Secondary, Color.OnSecondary),
@@ -35,7 +36,7 @@ internal sealed class NavigationRailContentColorExtension : MarkupExtension, IMu
     public override BindingBase ProvideValue(IServiceProvider serviceProvider)
     {
         var binding = new MultiBinding { Converter = this };
-        binding.Bindings.Add(new Binding(nameof(NavigationRail.Background)) { RelativeSource = new RelativeSource(RelativeSourceMode.Self) });
+        binding.Bindings.Add(new Binding(BackgroundProperty) { RelativeSource = new RelativeSource(RelativeSourceMode.Self) });
         binding.Bindings.Add(new Binding("(TextElement.Foreground)")
         {
             RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) { AncestorType = typeof(Control) },

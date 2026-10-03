@@ -14,7 +14,7 @@ import kotlinx.coroutines.test.*
 import org.jetbrains.skia.*
 import java.io.File
 import kotlinx.serialization.json.*
-class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoCloseable {
+class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platformContext:PlatformContext=PlatformContext.Empty()):AutoCloseable {
     companion object { const val RenderScale=4 }
     val scheduler=TestCoroutineScheduler()
     val scope=CoroutineScope(UnconfinedTestDispatcher(scheduler) + CoroutineExceptionHandler { _,e -> writer.errors+=e.stackTraceToString() })
@@ -31,7 +31,7 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160):AutoC
     var pressed=false
     init {
         registerSkikoComposeImplementation(); recomposer=FrameRecomposer(scope.coroutineContext)
-        scene=CanvasLayersComposeScene(recomposer,Density(RenderScale.toFloat()),size=IntSize(surface.width,surface.height))
+        scene=CanvasLayersComposeScene(recomposer,Density(RenderScale.toFloat()),size=IntSize(surface.width,surface.height),platformContext=platformContext)
     }
     fun mount(content:@Composable ()->Unit) {
         scene.setContent(content=content); draw(); writer.record(timeUs,"mount","${surface.width/RenderScale}x${surface.height/RenderScale} DIP; density=$RenderScale; no animation frame")

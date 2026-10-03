@@ -21,7 +21,53 @@
           <m3:NavigationRailItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationRailItem.Icon>
         </m3:NavigationRailItem>
       </m3:NavigationRail>
-    <StackPanel Grid.Column="1" Spacing="16" Margin="32" Background="White">
+    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="16" Margin="32" Background="White">
+        <Grid ColumnDefinitions="Auto,*" Height="360">
+          <m3:WideNavigationRail x:Name="DemoWideNavigationRail">
+            <m3:WideNavigationRail.Header>
+              <m3:IconButton Symbol="Menu" Click="OnToggleWideRail" />
+            </m3:WideNavigationRail.Header>
+            <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnWideDestinationClick">
+              <m3:WideNavigationRailItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:WideNavigationRailItem.Icon>
+            </m3:WideNavigationRailItem>
+            <m3:WideNavigationRailItem Label="Search" Click="OnWideDestinationClick">
+              <m3:WideNavigationRailItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:WideNavigationRailItem.Icon>
+            </m3:WideNavigationRailItem>
+            <m3:WideNavigationRailItem Label="Settings" Click="OnWideDestinationClick">
+              <m3:WideNavigationRailItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:WideNavigationRailItem.Icon>
+            </m3:WideNavigationRailItem>
+          </m3:WideNavigationRail>
+          <Border Grid.Column="1" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLow}}" Padding="16">
+            <TextBlock Text="Wide NavigationRail" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+          </Border>
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*" Height="360">
+          <m3:ModalWideNavigationRail x:Name="DemoModalRail">
+            <m3:ModalWideNavigationRail.Header><m3:IconButton Symbol="Menu" Click="OnToggleModalRail" /></m3:ModalWideNavigationRail.Header>
+            <m3:ModalWideNavigationRail.ExpandedHeader><m3:IconButton Symbol="Menu" Click="OnToggleModalRail" /></m3:ModalWideNavigationRail.ExpandedHeader>
+            <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick">
+              <m3:WideNavigationRailItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:WideNavigationRailItem.Icon>
+            </m3:WideNavigationRailItem>
+            <m3:WideNavigationRailItem Label="Search" Click="OnModalDestinationClick">
+              <m3:WideNavigationRailItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:WideNavigationRailItem.Icon>
+            </m3:WideNavigationRailItem>
+          </m3:ModalWideNavigationRail>
+          <StackPanel Grid.Column="1" Margin="16" Spacing="12">
+            <TextBlock Text="Modal Wide NavigationRail" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+            <Button Content="Toggle modal rail" Click="OnToggleModalRail" Theme="{StaticResource MaterialTonalButtonTheme}" />
+            <Button Content="Open hidden modal rail" Tag="hidden" Click="OnToggleModalRail" Theme="{StaticResource MaterialTonalButtonTheme}" />
+          </StackPanel>
+          <m3:ModalWideNavigationRail x:Name="DemoHiddenModalRail" HideOnCollapse="True">
+            <m3:ModalWideNavigationRail.ExpandedHeader><m3:IconButton Symbol="Menu" Tag="hidden" Click="OnToggleModalRail" /></m3:ModalWideNavigationRail.ExpandedHeader>
+            <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick">
+              <m3:WideNavigationRailItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:WideNavigationRailItem.Icon>
+            </m3:WideNavigationRailItem>
+            <m3:WideNavigationRailItem Label="Search" Click="OnModalDestinationClick">
+              <m3:WideNavigationRailItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:WideNavigationRailItem.Icon>
+            </m3:WideNavigationRailItem>
+          </m3:ModalWideNavigationRail>
+        </Grid>
         <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
         <Button Theme="{StaticResource MaterialElevatedButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
         <Button Theme="{StaticResource MaterialTonalButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
@@ -58,5 +104,6 @@
             </StackPanel>
         </m3:MaterialSurface>
     </StackPanel>
+    </ScrollViewer>
     </Grid>
 </Window>

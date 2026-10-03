@@ -1,0 +1,69 @@
+using Avalonia.Layout;
+
+namespace Material3Expressive.Components;
+
+/// <summary>The fixed Compose Arrangement.Vertical forms, including spaced alignment.</summary>
+public sealed record NavigationRailArrangement
+{
+    internal enum Form { Top, Center, Bottom, SpaceBetween, SpaceAround, SpaceEvenly, Spaced }
+    internal Form Kind { get; }
+    internal double Spacing { get; }
+    internal VerticalAlignment Alignment { get; }
+    private NavigationRailArrangement(Form kind, double spacing = 0, VerticalAlignment alignment = VerticalAlignment.Top)
+        => (Kind, Spacing, Alignment) = (kind, spacing, alignment);
+
+    public static NavigationRailArrangement Top { get; } = new(Form.Top);
+    public static NavigationRailArrangement Center { get; } = new(Form.Center);
+    public static NavigationRailArrangement Bottom { get; } = new(Form.Bottom);
+    public static NavigationRailArrangement SpaceBetween { get; } = new(Form.SpaceBetween);
+    public static NavigationRailArrangement SpaceAround { get; } = new(Form.SpaceAround);
+    public static NavigationRailArrangement SpaceEvenly { get; } = new(Form.SpaceEvenly);
+    public static NavigationRailArrangement SpacedBy(double spacing, VerticalAlignment alignment = VerticalAlignment.Top) => new(Form.Spaced, spacing, alignment);
+
+    internal int[] Arrange(int totalSize, int[] sizes, float density)
+    {
+        static int Round(float value) => (int)MathF.Floor(value + 0.5f);
+        var positions = new int[sizes.Length];
+        if (sizes.Length == 0) return positions;
+        var consumed = sizes.Sum();
+        var gap = Kind switch
+        {
+            Form.SpaceBetween => (totalSize - consumed) / (float)Math.Max(sizes.Length - 1, 1),
+            Form.SpaceAround => (totalSize - consumed) / (float)sizes.Length,
+            Form.SpaceEvenly => (totalSize - consumed) / (float)(sizes.Length + 1),
+            _ => 0f
+        };
+        var current = Kind switch
+        {
+            Form.Center => (totalSize - consumed) / 2f,
+            Form.Bottom => (float)(totalSize - consumed),
+            Form.SpaceAround => gap / 2,
+            Form.SpaceEvenly => gap,
+            _ => 0f
+        };
+        if (Kind == Form.Spaced)
+        {
+            // Arrangement.SpacedAligned clips each next space to the remaining size;
+            // alignment is applied to the measured group only when it fits.
+            var space = Round((float)Spacing * density);
+            var occupied = 0;
+            var lastSpace = 0;
+            for (var i = 0; i < sizes.Length; i++)
+            {
+                positions[i] = Math.Min(occupied, totalSize - sizes[i]);
+                lastSpace = Math.Min(space, totalSize - positions[i] - sizes[i]);
+                occupied = positions[i] + sizes[i] + lastSpace;
+            }
+            occupied -= lastSpace;
+            if (occupied < totalSize)
+            {
+                var offset = Alignment switch { VerticalAlignment.Center => Round((totalSize - occupied) / 2f), VerticalAlignment.Bottom => totalSize - occupied, _ => 0 };
+                for (var i = 0; i < positions.Length; i++) positions[i] += offset;
+            }
+            return positions;
+        }
+        for (var i = 0; i < sizes.Length; i++) { positions[i] = Round(current); current += sizes[i] + gap; }
+        return positions;
+    }
+}
+

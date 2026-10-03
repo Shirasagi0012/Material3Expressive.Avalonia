@@ -1,5 +1,48 @@
 # 已确认的设计决定
 
+## Modal rail 鼠标拖动速度保留 Avalonia 原生事件历史
+
+决定：使用 Avalonia 实际 PointerMoved 历史与固定 Compose Desktop 的 LSQ2 算法，不在组件或夹具中复制速度样本。
+原因：固定 Core SyntheticEventSender 在布局后以原坐标、原时间戳重发鼠标 Move，零位移也参与拟合；
+Avalonia 没有对应路径。反向快速拖动样例的速度为 Compose 1071.429、Avalonia 749.999 DIP/s。
+范围：ModalWideNavigationRail 的鼠标拖动释放轨迹；保留不同轨迹的 parity 证据，不修改目标选择算法或容差。
+确认：2026-10-03，维护者确认保留真实 PointerMoved 历史与相同 LSQ2 算法，并在组件 README 记录。
+
+## Modal Wide NavigationRail 的 OverlayLayer 宿主与独立展开 Header
+
+决定：在当前 TopLevel 的 OverlayLayer 中显示组件自有浮层，覆盖客户区、阻挡背景输入、限制并恢复焦点；
+保留 HideOnCollapse 的常驻收起态与滑出隐藏两条路径、拖动关闭和固定上游的 Escape KeyUp 行为。
+Header / HeaderTemplate 用于收起态；ExpandedHeader / ExpandedHeaderTemplate 用于展开态。
+数据与模板可生成两份 Header，直接传入 Control 时分别提供两个实例。
+原因：固定 Compose Desktop 使用 Dialog；Avalonia 的同一个 Control 无法同时属于两个父节点。
+范围：Wide/Modal 宿主适配，不提供 Android predictive back；默认颜色、形状及动画仍来自固定 Compose。
+确认：2026-10-03，维护者确认“采用 OverlayLayer 与独立 ExpandedHeader（推荐）”。
+
+## Wide item 的 float alpha 合成能力暂缓补齐
+
+决定：暂留当前 Indicator 的 SaveLayer 合成差异，不新增绘制基础能力，不视为已经对齐。
+依据：固定 Skiko `0.152.0-alpha02` 的 ModulateAlpha 使用每个 paint 的 float alpha 乘法；
+Avalonia 12.1.2 的普通 Opacity 在画刷消费处截断到 byte，RequiresFullOpacityHandling 使用 SaveLayer。
+独立 Skia 复现与 Wide Top item 退选 64ms 对应：Compose `#EEE7FA`，当前 SaveLayer `#EEE6F9`。
+范围：Wide item 选择/退选过程的 Indicator 混色；保留双端失败用例与复现，后续再决定内部绘制器。
+确认：2026-10-03，维护者选择“暂留差异，之后处理”。
+补充：同日维护者正在调整 visual parity 容差，以容忍大片每通道差不超过 1 的色块，
+并明确无需为此追加测试。保留合成路径差异与已有证据；旧版本容差下的失败不推断为新门限下仍失败。
+
+## Wide NavigationRail 的状态、内容槽和排列 API
+
+决定：WideNavigationRail / ModalWideNavigationRail 使用 ItemsControl 的内容与模板入口，
+共享可绑定 WideNavigationRailState；构造值为 Collapsed / Expanded，公开只读 TargetValue、CurrentValue、
+IsAnimating 和 ExpandAsync / CollapseAsync / ToggleAsync / SnapToAsync。动画方法在挂载后调用，
+卸载取消运行；重新挂载从保存的目标恢复。多个仍挂载的消费者可共享同一个状态。
+Rail 提供 Header / HeaderTemplate、WindowInsets、Background / Foreground、ContentPadding、CornerRadius
+及六种标准 Arrangement 和 SpacedBy。WideNavigationRailItem 通过 RailExpanded 默认跟随所属 rail，
+允许覆盖 Top / Start IconPosition，以及固定或展开/收起两套 IndicatorPadding；选中标签颜色分为 Top / Start。
+Icon / Label 内容与模板、外部 IsSelected、Click / Command 沿用已确认的内容槽及 selectable 适配。
+原因：保留上游 hoisted state、AnimatedNavigationItem 和 Arrangement 的职责与分支，支持 C# / XAML 使用。
+范围：Wide/Modal 的上述公共入口；Modal 的窗口宿主及双 Header 见单独决定。
+确认：2026-10-03，维护者确认“采用推荐 API”。
+
 ## 聚合 TextStyle 与 Token 层文字单位换算
 
 决定：通过不可变 TextStyle、MaterialText.Style/DefaultStyle、Typography 角色绑定及派生 XAML 扩展，
@@ -37,13 +80,14 @@ IsSelected、AlwaysShowLabel 与七项状态颜色。选中状态由应用持有
 ## Raster 降采样容差试用
 
 决定：保留固定 4× 捕获和原始精确差分，另以固定 4×4 sRGBA8 块平均得到 1× 比较数据。
-整图与每个非空配对点布局区域都要求最大通道差 ≤20、平均逐像素最大通道差 ≤0.2（0～255）。
+整图与每个非空配对点布局区域都要求最大通道差 ≤20、平均逐像素最大通道差 ≤1（0～255）。
 原始不同但接受的结果单列 withinTolerance，不改称 equal；结构化事实及重复性自检仍精确比较。
 公开结果升级为 schema 8，报告显示原始与容差证据；--require-match 使用容差，--require-equal 保持严格。
 原因：允许试用排除渲染器抗锯齿造成的边缘微差，并以区域均值限制大面积偏色。阈值尚待更多组件验证。
 适用范围：tests/VisualParity Raster 比较与报告；替代较早决定中 Raster 不使用容差的限制，不修改生产组件。
 具体算法、透明通道及阴影区域限制见 [MEASUREMENTS](../tests/VisualParity/MEASUREMENTS.md#raster-容差判定)。
-确认：2026-10-03，维护者认可 4× 渲染、1× 比较方案，并指定先试最大差 20、区域平均 0.2。
+确认：2026-10-03，维护者认可 4× 渲染、1× 比较方案，先试最大差 20、区域平均 0.2；
+在 NavigationRail 混色差异验证后，明确将区域平均上限改为 1，最大差仍为 20，不增加逐像素忽略规则。
 
 ## 视觉一致性结果的文件阅读结构
 

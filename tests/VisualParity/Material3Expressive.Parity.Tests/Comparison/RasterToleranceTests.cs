@@ -7,9 +7,12 @@ namespace Material3Expressive.Parity.Tests;
 public partial class ParityTests
 {
     [Theory]
-    [InlineData(20, 1, true)] // Both limits are inclusive: 20 / 100 = 0.2.
+    [InlineData(20, 5, true)] // Both limits are inclusive: 20 * 5 / 100 = 1.
     [InlineData(21, 1, false)]
-    [InlineData(1, 21, false)] // Low peak, but mean 0.21.
+    [InlineData(1, 100, true)] // A uniform one-level difference is accepted.
+    [InlineData(2, 50, true)] // Mean exactly 1, without a per-pixel deadband.
+    [InlineData(2, 51, false)] // Low peak, but mean 1.02.
+    [InlineData(2, 100, false)]
     public void RasterToleranceEnforcesPeakAndMean(int delta, int pixels, bool accepted)
     {
         var expected = new byte[400 * 4 * 4];
@@ -21,6 +24,8 @@ public partial class ParityTests
         Assert.Equal(delta * pixels / 100.0, result.Full.MeanMaximumChannelDelta);
         Assert.Equal(accepted, result.Full.Accepted);
         Assert.Equal(accepted ? "withinTolerance" : "different", result.Status);
+        Assert.Equal(20, result.MaximumChannelDeltaLimit);
+        Assert.Equal(1, result.MeanMaximumChannelDeltaLimit);
     }
 
     [Fact]
@@ -29,12 +34,12 @@ public partial class ParityTests
         var expected = new byte[400 * 4 * 4];
         var actual = (byte[])expected.Clone();
         for (var y = 0; y < 4; y++)
-        for (var x = 0; x < 4; x++) actual[(y * 400 + x) * 4] = 1;
+        for (var x = 0; x < 4; x++) actual[(y * 400 + x) * 4] = 2;
         var regions = new[] { new RasterRegion("content", [1, 0, 2, 4], ParityComparison.Pixels(expected, actual, 400, 4, [1, 0, 2, 4])) };
         var result = ParityComparison.AssessRaster(expected, actual, 400, 4, regions);
         Assert.True(result.Full.Accepted);
         Assert.Equal(new[] { 0, 0, 1, 1 }, result.Regions[0].Bounds);
-        Assert.Equal(1, result.Regions[0].MeanMaximumChannelDelta);
+        Assert.Equal(2, result.Regions[0].MeanMaximumChannelDelta);
         Assert.False(result.Regions[0].Accepted);
         Assert.Equal("different", result.Status);
     }

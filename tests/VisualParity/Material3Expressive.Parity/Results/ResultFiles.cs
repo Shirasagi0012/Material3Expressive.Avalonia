@@ -329,7 +329,7 @@ public static class ResultFiles
         var stability = repeatability is null ? "not checked" : repeatability.Any(p => p.Value!.AsArray().Count != 0) ? "changed" : "stable";
         b.AppendLine($"Status: {c.Status}; execution errors: {c.Errors.Length}; repeatability: {stability}.");
         b.AppendLine("Category cells: different / notCompared. Counts are observations, not defects or completion percentages.");
-        b.AppendLine("Raster: = exact, ≈ within tolerance (1x box average; max ≤20 and mean ≤0.2 in full image and every non-empty point region), ≠ different, ? not compared. Raw 4x differences remain in sample files.");
+        b.AppendLine("Raster: = exact, ≈ within tolerance (1x box average; full image and every non-empty point region must meet the recorded limits), ≠ different, ? not compared. Limits and raw 4x differences remain in sample files.");
         b.AppendLine("\n| Sample | Time µs (C / A if different) | Status | Geometry | Text | Properties | Motion | Mixed | Raster | Detail |");
         b.AppendLine("|---|---:|---|---:|---:|---:|---:|---:|---|---|");
         foreach (var s in c.Samples)
