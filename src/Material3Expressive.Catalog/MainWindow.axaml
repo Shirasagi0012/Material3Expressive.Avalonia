@@ -68,6 +68,7 @@
                 </m3:FloatingActionButtonMenu>
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
+                <Button Content="TabRow demo" Click="OnTabRowDemo" HorizontalAlignment="Left" />
                 <TextBlock Text="Chip" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>
                     <m3:AssistChip Content="Add to calendar" Margin="0,0,12,0">

@@ -8,6 +8,7 @@
 [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](src/Material3Expressive/Components/WideNavigationRail/README.md)、
 [NavigationBar / NavigationBarItem](src/Material3Expressive/Components/NavigationBar/README.md)、
 [ShortNavigationBar / ShortNavigationBarItem](src/Material3Expressive/Components/ShortNavigationBar/README.md)、
+[TabRow / Tab 及原生 TabControl 顶部水平主题](src/Material3Expressive/Components/TabRow/README.md)、
 [原生 Slider 水平/垂直主题 / RangeSlider](src/Material3Expressive/Components/Slider/README.md)、
 [原生 CheckBox 的两态/三态 Material 模板](src/Material3Expressive/Components/CheckBox/README.md)、
 [原生 RadioButton 的 Material 模板](src/Material3Expressive/Components/RadioButton/README.md)、
