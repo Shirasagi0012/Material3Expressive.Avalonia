@@ -1,0 +1,8 @@
+<StackPanel xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:FilterChip Content="Filter" IsSelected="True" Shapes="{m3:ChipShapes Shape=10, SelectedShape=16, PressedShape=6}">
+    <m3:FilterChip.Colors><m3:ChipColors SelectedContainerColor="#126E60" /></m3:FilterChip.Colors>
+    <m3:FilterChip.Elevation><m3:ChipElevation Default="2" Hovered="4" /></m3:FilterChip.Elevation>
+    <m3:FilterChip.Spacing><m3:ChipSpacing Leading="4" Trailing="8" /></m3:FilterChip.Spacing>
+  </m3:FilterChip>
+</StackPanel>

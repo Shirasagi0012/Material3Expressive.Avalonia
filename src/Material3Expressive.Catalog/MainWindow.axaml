@@ -67,6 +67,26 @@
                     </m3:FloatingActionButtonMenuItem>
                 </m3:FloatingActionButtonMenu>
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
+                <TextBlock Text="Chip" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <WrapPanel>
+                    <m3:AssistChip Content="Add to calendar" Margin="0,0,12,0">
+                        <m3:AssistChip.LeadingIcon><m3:MaterialSymbol Symbol="CalendarMonth" Width="18" Height="18" /></m3:AssistChip.LeadingIcon>
+                    </m3:AssistChip>
+                    <m3:AssistChip Content="Elevated assist" IsElevated="True" Margin="0,0,12,0" />
+                    <m3:SuggestionChip Content="Suggestion" Margin="0,0,12,0" />
+                    <m3:SuggestionChip Content="Elevated suggestion" IsElevated="True" />
+                </WrapPanel>
+                <WrapPanel>
+                    <m3:FilterChip Content="Filter" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:FilterChip Content="Selected" IsSelected="True" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:FilterChip Content="Shape morph" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:FilterChip Content="Elevated filter" IsElevated="True" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:InputChip Content="Contact" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0">
+                        <m3:InputChip.Avatar><Border Width="24" Height="24" Background="#E8DEF8"><m3:MaterialSymbol Symbol="Person" Width="18" Height="18" /></Border></m3:InputChip.Avatar>
+                        <m3:InputChip.TrailingIcon><m3:MaterialSymbol Symbol="Close" Width="18" Height="18" /></m3:InputChip.TrailingIcon>
+                    </m3:InputChip>
+                    <m3:InputChip Content="Disabled contact" IsSelected="True" IsEnabled="False" />
+                </WrapPanel>
                 <TextBlock Text="RadioButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <RadioButton GroupName="CatalogRadio" Content="First" IsChecked="True" />

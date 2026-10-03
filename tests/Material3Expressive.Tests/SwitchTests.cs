@@ -259,9 +259,17 @@ public class SwitchTests
         window.MouseMove(point);
         Assert.True(controller.Interaction.HasFlag(Material3Expressive.Foundation.Interaction.InteractionState.Hovered));
         window.MouseMove(new Point(1, 1));
-        Assert.Equal(Material3Expressive.Foundation.Interaction.InteractionState.None, controller.Interaction);
+        // Leaving cancels hover/press, while Core Desktop retains the native pointer focus.
+        Assert.True(box.IsFocused);
+        Assert.Equal(Material3Expressive.Foundation.Interaction.InteractionState.Focused, controller.Interaction);
         window.MouseUp(new Point(1, 1), MouseButton.Left);
-        Assert.False(box.IsChecked); window.Close();
+        Assert.False(box.IsChecked);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+        Assert.Equal(0, controller.StateLayerOpacity);
+        window.FocusManager.Focus(null);
+        Assert.Equal(Material3Expressive.Foundation.Interaction.InteractionState.None, controller.Interaction);
+        window.Close();
     }
 
     public static IEnumerable<object[]> RippleCenters()

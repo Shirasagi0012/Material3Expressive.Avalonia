@@ -78,3 +78,44 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 首绘测量仍决定起始半径，目标半径、扩散、透明度、取消与生命周期保持原实现。
 其他调用方保留固定 Core 的中心锁定和有界中心漂移，不增加公开 C#/XAML API。
 确认：维护者在先前提出的同心优化方案后要求“继续修复波纹的问题”，并提供新的错位截图。
+
+## Surface 均匀圆角描边
+
+决定：内部 SurfaceOutline 对均匀 Thickness / CornerRadius 直接移植固定 Compose Border.kt 的
+物理像素 ceil 与内缩 stroke；描边作为内容上方的视觉层，不消耗内容尺寸。
+小圆角使用外圆角减内矩形，大宽度使用填充；非均匀边框保留 Avalonia 原生 Border 路径。
+原生零 Thickness 保留无描边语义，公共 API 不变。
+原因：Chip 深色静态用例暴露角部差异，已有原生 Border 不符合固定上游的像素取整。
+范围：所有 MaterialSurface 调用方；Surface / Button / Chip 的相关渲染和回归需要共同检查。
+确认：2026-10-03，维护者明确批准共享 Surface 描边修正及 Surface / Button 回归。
+
+## Core Desktop 原生焦点反馈
+
+决定：共享控制器 Focused 跟随所有原生焦点，包括鼠标点击获得的焦点；控件继续负责激活。
+指针按下反馈在 Button 原生类处理之后观察，保留 Focus → Press 的交互顺序。
+原因：固定 AndroidX 的 RequestFocusOnClick 返回 false，固定 Core Desktop 返回 true；
+仅接受 Tab / Directional 焦点会让 Chip 点击释放后错误地恢复 hover elevation。
+范围：共享控制器调用方，不改变公开 API 或已确认的键盘激活职责。
+确认：2026-10-04，维护者批准按 Core Desktop 修正共享焦点反馈并回归 Button / IconButton / 导航项。
+实现同时按固定 Core `Indication.skiko.kt` 过滤 indication 的焦点源：首次鼠标聚焦不进入
+状态层，已经显示的键盘焦点层保留到失焦；输入模式改变不合成 Focus / Unfocus。
+内部按窗口保存输入模式，原生 Tab / Directional 导航接入 Keyboard，指针按键接入 Touch，
+程序化聚焦沿用当前窗口模式。elevation 的原始交互源仍保留所有焦点。
+
+## 本次保留 Tween / Bezier 精度差异
+
+决定：Chip 移植继续消费 ComposeAnimation 0.2.1-alpha，不修改其 FloatTweenSpec /
+CubicBezierEasing 的 double 运算。固定 Compose 的 Float 运算和不同求根路径可造成约
+0.0000006 DIP 的 elevation 差异。原始 motion 事实继续精确比较并报告不同。
+范围：本次 Chip 及共享回归所观察的数值差异，不接受时序、布局或可见效果的其他偏离。
+确认：2026-10-04，维护者在依赖修正与保留差异的具体方案中选择“本次保留并记录该精度差异”。
+
+## 本次保留阴影坐标接入差异
+
+决定：本次不改变 MaterialSkiaShadow 的 DIP 路径及 density CTM，保留其与 Compose Desktop
+物理像素路径 / 相应 CTM 的 raster 差异。公共 DIP elevation、光照和布局不变。
+原因：透明 AssistChip 的 6 DIP elevation 暴露内部阴影差异；独立 Skiko 原生探针使用同一
+轮廓、光照及标志，分别以 DIP 路径 + 4× CTM 和物理像素路径 + 1× CTM 绘制，复现两端结果。
+原生 tessellator 对路径坐标的敏感性使这两种坐标接入不等价。
+范围：本次观察到的阴影 raster，不接受其他布局、颜色或时序偏离；保留原始 PNG 和比较失败。
+确认：2026-10-04，维护者在坐标适配方案与保留差异中选择“本次保留并记录阴影差异”。

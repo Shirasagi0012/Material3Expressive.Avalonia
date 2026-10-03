@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -39,6 +40,7 @@ namespace Material3Expressive.Foundation.Interaction;
 /// </remarks>
 internal sealed class MaterialInteractionController
 {
+    private static readonly ConditionalWeakTable<TopLevel, DesktopInputMode> InputModes = new();
     private readonly Control _owner;
     private VisualAnimationScope? _motion;
     private readonly List<RippleAnimation> _ripples = [];
@@ -51,9 +53,10 @@ internal sealed class MaterialInteractionController
     private MaterialSurface? _presenter;
     private InteractionState _interaction;
     private InteractionState _shownInteraction;
-    private Point _keyboardPressCenter;
+    private Point? _keyboardPressCenter;
     private IPointer? _pressedPointer;
     private bool _hoverNeedsMove;
+    private bool _suppressFocusIndication;
 
     // Token-resolved state-layer opacities, falling back to the upstream constants in StateLayer.
     private double _hoverOpacity = StateLayer.Opacity(InteractionState.Hovered);
@@ -83,12 +86,12 @@ internal sealed class MaterialInteractionController
         };
         _owner.AddHandler(InputElement.PointerMovedEvent, OnPointerMoved,
             RoutingStrategies.Tunnel, handledEventsToo: true);
-        // Button-derived controls handle pointer presses in their class handler. Listen on the
-        // tunnel route so Material feedback still sees the physical input before it is consumed.
+        // The native class handler requests focus first. Observe the press afterwards (including
+        // handled events), matching Desktop clickable's Focus -> Press interaction order.
         _owner.AddHandler(
             InputElement.PointerPressedEvent,
             OnPointerPressed,
-            RoutingStrategies.Tunnel,
+            RoutingStrategies.Bubble,
             handledEventsToo: true);
         _owner.AddHandler(
             InputElement.PointerReleasedEvent,
@@ -107,6 +110,7 @@ internal sealed class MaterialInteractionController
             handledEventsToo: true);
         _owner.PointerCaptureLost += (_, _) => { _pressedPointer = null; EndPress(); };
         _owner.GotFocus += OnGotFocus;
+        _owner.AttachedToVisualTree += (_, _) => GetInputMode();
         _owner.LostFocus += (_, _) =>
         {
             EndPress();
@@ -136,6 +140,9 @@ internal sealed class MaterialInteractionController
 
     /// <summary>Which interactions the owner is currently under.</summary>
     internal InteractionState Interaction => _interaction;
+    // Chip.kt chooses the last active interaction, retaining its outgoing identity.
+    internal InteractionState LastInteraction => _interactions.LastOrDefault();
+    internal event Action? Changed;
     internal bool IsEnabled => _owner.IsEffectivelyEnabled;
 
     /// <summary>The state layer's current opacity, mid-fade included.</summary>
@@ -172,6 +179,7 @@ internal sealed class MaterialInteractionController
         if (_presenter is not null && !ReferenceEquals(_presenter, presenter))
             ResetAnimations();
         _presenter = presenter;
+        GetInputMode();
         _motion ??= VisualAnimationScope.Create(_owner);
         ResolveOpacities();
         UpdateStateLayer();
@@ -382,9 +390,13 @@ internal sealed class MaterialInteractionController
             return;
 
         // Observe feedback only; the owner retains its keyboard activation semantics.
-        // AbstractClickableNode starts centerOffset at zero and only updates it in
-        // onPointerEvent(bounds). Preserve that behavior even for keyboard-only input.
-        StartPress(_keyboardPressCenter);
+        // AbstractClickableNode starts centerOffset at zero in the clickable layout, which
+        // is the Surface container, not its outer minimum-interactive allocation. Mapped
+        // sources (navigation items) instead originate in the owner before their mapping.
+        // Pointer input replaces this zero with the last observed clickable bounds' centre.
+        var origin = _keyboardPressCenter ?? (PressPositionMapper is null && _presenter is { } surface
+            ? surface.TranslatePoint(default, _owner) ?? default : default);
+        StartPress(origin);
     }
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
@@ -395,12 +407,27 @@ internal sealed class MaterialInteractionController
 
     private void OnGotFocus(object? sender, FocusChangedEventArgs e)
     {
-        // Material shows the focus layer for keyboard focus only; a click that focuses a control
-        // already has a ripple to say so.
-        Set(
-            InteractionState.Focused,
-            e.NavigationMethod is NavigationMethod.Directional or NavigationMethod.Tab);
+        // Core Desktop's RequestFocusOnClick is enabled. Focusable emits Focus for pointer
+        // focus as well; it remains in the ordered source after the press is released.
+        // Indication.skiko.kt filters only the indication's source in Touch input mode.
+        // Once sent (or suppressed), keep that decision until Unfocus; changing input mode
+        // must not synthesize a new Focus or remove an existing one.
+        if (!_interaction.HasFlag(InteractionState.Focused))
+        {
+            var mode = GetInputMode();
+            if (mode is not null)
+            {
+                if (e.NavigationMethod == NavigationMethod.Pointer) mode.IsKeyboard = false;
+                else if (e.NavigationMethod is NavigationMethod.Tab or NavigationMethod.Directional)
+                    mode.IsKeyboard = true;
+            }
+            _suppressFocusIndication = mode is not null && !mode.IsKeyboard;
+        }
+        Set(InteractionState.Focused, true);
     }
+
+    private DesktopInputMode? GetInputMode() => TopLevel.GetTopLevel(_owner) is { } root
+        ? InputModes.GetValue(root, static window => new DesktopInputMode(window)) : null;
 
     private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) =>
         ClearInputInteractions();
@@ -413,6 +440,7 @@ internal sealed class MaterialInteractionController
 
         _interaction = InteractionState.None;
         _interactions.Clear();
+        _suppressFocusIndication = false;
 
         foreach (var ripple in _ripples.ToArray())
         {
@@ -444,6 +472,7 @@ internal sealed class MaterialInteractionController
 
     private void NotifyInteractionChanged(bool deferShape = false)
     {
+        Changed?.Invoke();
         UpdateButtonElevation();
         // Disabling cancels Clickable's press during composition. Its shape observer therefore
         // invalidates the following composition, unlike cancellation by a pointer event.
@@ -532,7 +561,8 @@ internal sealed class MaterialInteractionController
         // AndroidX stores entry interactions in arrival order and shows lastOrNull(). A fixed
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
-        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed);
+        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed
+            && (state != InteractionState.Focused || !_suppressFocusIndication));
 
         var targetOpacity = OpacityFor(topmost);
 
@@ -605,6 +635,26 @@ internal sealed class MaterialInteractionController
         var color = solid.Color;
         _alphaReplacedBrush.Color = Color.FromArgb(byte.MaxValue, color.R, color.G, color.B);
         return _alphaReplacedBrush;
+    }
+
+    // PlatformContext starts in Keyboard mode. RootNodeOwner switches to Touch on button
+    // pointer events, and back on keyboard focus navigation. Keep the mode per window, so
+    // programmatic focus after clicking another control sees the same platform state.
+    private sealed class DesktopInputMode
+    {
+        internal bool IsKeyboard = true;
+
+        internal DesktopInputMode(TopLevel root)
+        {
+            root.AddHandler(InputElement.PointerPressedEvent, (_, _) => IsKeyboard = false,
+                RoutingStrategies.Tunnel, handledEventsToo: true);
+            root.AddHandler(InputElement.PointerReleasedEvent, (_, _) => IsKeyboard = false,
+                RoutingStrategies.Tunnel, handledEventsToo: true);
+            root.AddHandler(InputElement.KeyDownEvent, (_, e) =>
+            {
+                if (e.Key == Key.Tab) IsKeyboard = true;
+            }, RoutingStrategies.Bubble);
+        }
     }
 
     /// <summary>Stops a surface from drawing controller state once its lease is disposed.</summary>

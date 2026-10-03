@@ -8,7 +8,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Badge、BadgedBox、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Badge、BadgedBox、Chip、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Chip / rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
@@ -77,7 +77,8 @@ MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一�
 [MaterialSurface](../src/Material3Expressive/Components/Surface/MaterialSurface.cs) 是可被其他组件组合的容器组件，
 承担背景、边框、裁剪、阴影和累积 tonal elevation。内部 Border 承载内容和裁剪，独立覆盖层绘制交互反馈。
 几何使用 Avalonia DIP，Full 圆角按当前边界解析。
-描边由末层的无内容 Border 绘制，不参与内容尺寸计算；Padding 仍由内容 Border 处理。
+描边由末层 SurfaceOutline 绘制，不参与内容尺寸计算；均匀圆角边框保留 Compose 的物理
+像素 ceil 与内缩 stroke，非均匀边框沿用原生 Border。Padding 仍由内容 Border 处理。
 
 Button 模板内的局部 `ButtonLayout` 区分背景默认尺寸与外层交互留白：背景默认最小宽度为 58 DIP，
 高度由 size Token 提供，外层默认预留至少 48 DIP 并居中放置背景。默认背景高度不再写入
@@ -129,6 +130,14 @@ FAB 使用自己的 `FloatingActionButtonElevationController`：保留最后一�
 即使 press/focus/default 高度相同也不丢失状态身份；配置变更先 snap 当前目标。
 它通过同一 `MaterialInteractionController` 和呈现者作用域接入，Surface 分别消费固定 tonal elevation
 与动画 shadow elevation。尺寸入口、受控 Toggle 与菜单布局见 [FAB 说明](../src/Material3Expressive/Components/FloatingActionButton/README.md)。
+
+Chip 使用自己的六状态 elevation 配置，消费共享控制器的最后活跃交互；形状和槽动画留在
+[组件目录](../src/Material3Expressive/Components/Chip/README.md)，不使用 Button 的 elevation 配置。
+共享控制器观察 Core Desktop 的所有原生焦点，指针按下位于原生焦点处理之后。
+状态层的焦点源按 Desktop 输入模式单独过滤，elevation 保留完整焦点事实。
+无指针历史的键盘 ripple 从 clickable 局部零点开始；导航项保留其源坐标映射。
+ContentColorFor 的可选内部 ambient 绑定用于 Chip 在标签 provider 外选择墨色，仍消费同一套
+实时背景 / Token / 环境绑定。相关确认依据见 [DECISIONS](DECISIONS.md)。
 
 ## 动画接入
 

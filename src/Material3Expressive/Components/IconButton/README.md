@@ -37,13 +37,12 @@ Enter 沿用 Avalonia 原生按下激活，Space 遵循原生 ClickMode；已接
 空内容通过产品的 `Symbol=None` 输入表达，保留模板的实际测量；不删除模板部件来模拟空内容。
 这套测试不验证 Material Symbols 字形或真实桌面显示效果。
 
-2026-10-03 合并前的 IconButton 分支：夹具测试 13/13 通过。4× Headless self-test 完整执行
+2026-10-04 Chip 共享描边 / Desktop 焦点修正后的回归：4× Headless self-test 完整执行
 115 个用例、539 个采样点，执行错误为 0；25 个用例 withinTolerance、90 个 different。
-114 例普通重复与额外被动截图均稳定；`dynamic.reverse` 的 Compose 普通重复采集在三个采样点出现
-最大 1 个通道值的像素差异，额外截图检查和 Avalonia 两项检查稳定。此结果不等于全部视觉一致。
-五种尺寸的 `Symbol=None` 夹具调整后分别重跑自检，结果稳定；`dynamic.reverse` 单例复跑仍出现
-相同三个采样点、最大 1 个通道值的 Compose 重复差异。
-上述结果对应分支的 Enter 松开激活；保留原生键盘行为的合并状态尚未重跑完整双端 self-test。
+114 例普通重复与额外被动截图均稳定；`dynamic.reverse` 的 Compose 额外截图检查在三个采样点
+出现最大 1 个通道值的像素差异，普通重复和 Avalonia 两项检查稳定，单例复测仍不稳定。
+此结果不等于全部视觉一致。键盘局部零点修正后，Space / Enter 另行补跑自检，仍有下列
+既有几何 / 默认值差异；Enter 保留已确认的原生按下激活。
 
 固定按压和显式目标的圆角已与上游对齐。其余尚未对齐的事实包括：
 
