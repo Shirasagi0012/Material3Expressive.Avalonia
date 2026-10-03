@@ -31,6 +31,21 @@ public partial class MainWindow : Window
             item.IsSelected = ReferenceEquals(item, sender);
     }
 
+    private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
+    {
+        // Native CheckBox has already toggled. The application decides the group's meaning.
+        var selected = GroupCheckBox.IsChecked != false;
+        GroupFirst.SetCurrentValue(CheckBox.IsCheckedProperty, selected);
+        GroupSecond.SetCurrentValue(CheckBox.IsCheckedProperty, selected);
+        GroupCheckBox.SetCurrentValue(CheckBox.IsCheckedProperty, selected);
+    }
+
+    private void OnGroupChildClick(object? sender, RoutedEventArgs e)
+    {
+        GroupCheckBox.SetCurrentValue(CheckBox.IsCheckedProperty,
+            GroupFirst.IsChecked == GroupSecond.IsChecked ? GroupFirst.IsChecked : null);
+    }
+
     private void OnBarDestinationClick(object? sender, RoutedEventArgs e)
     {
         if (sender is NavigationBarItem destination && destination.FindAncestorOfType<NavigationBar>() is { } bar)

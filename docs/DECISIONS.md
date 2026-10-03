@@ -24,6 +24,40 @@ ShortNavigationBarItem 使用 Button 的 Click / Command / IsEnabled，提供 Ic
 范围：ShortNavigationBar 的容器 Width；不改写 Centered / EqualWeight 的整数算法及其他组件。
 确认：2026-10-03，维护者确认“采用原生 Width 语义并记录差异（推荐）”。证据见组件 README。
 
+## CheckBox 合并两态/三态并保留原生状态与键盘
+
+决定：为原生 Avalonia.Controls.CheckBox 提供隐式 ControlTheme，不继承、不新增两个状态控件。
+IsChecked(bool?)、IsThreeState、双向绑定、Click/Command、键盘及自动化由原生实现持有；
+CheckBoxAppearance 的附加颜色/描边配置与内部模板部件移植固定上游的外观、布局和动画。
+原因：原生 CheckBox 已有两态/三态，模板能复用其状态和交互入口，避免相似控件与转发 API。
+影响：点击自动写回状态；三态按 false → true → null → false 循环，Click/Command 观察到更新后的状态；
+Enter 在 KeyDown 激活、Space 在 KeyUp 激活，与 Compose 外部写回、三态仅请求点击、Enter KeyUp 有区别。
+Content/ContentTemplate 在指示器旁组合原生内容，不修改指示器画布。
+范围：本次 CheckBox 两态/三态模板；不以此批准其他视觉或语义偏离。
+确认：2026-10-03，维护者要求合并为原生 CheckBox、考虑仅替换模板，并明确
+“这两方面保留原生状态切换和键盘行为即可。按这个方案实施”。使用方式见组件 README。
+
+## CheckBox 的 null 回调模式暂不提供等价实现
+
+决定：本次交付原生可交互两态/三态的 Material 模板，明确记录 Compose onClick=null 模式未实现。
+原因：原生 CheckBox 没有移除 toggleable 自动化语义的开关，完全等价需要独立只显示指示器，
+不能仅替换现有 CheckBox 模板完成。
+做法与影响：应用可设置 IsHitTestVisible=false、Focusable=false、MaterialInteraction.IsInteractive=false
+阻止普通用户输入与 Material 反馈，但原生 ToggleProvider 仍可改变状态，不视为 null 回调的等价移植。
+范围：本次 CheckBox 交付；不新增独立只显示指示器，不改变已有原生自动化行为。
+确认：2026-10-03，维护者选择“本次保留原生范围，记录 null 回调模式未实现（推荐）”。
+
+## CheckBox 的描边连接始终消费实际参数
+
+决定：Join=Round 始终画出圆角，按调用者的 Cap、Join、MiterLimit 设置实际 Skia Paint。
+原因：固定 Core 的 SkiaBackedPaint 将 strokeJoin 的缓存初值设为 Round，底层 Skia 初值却为 Miter；
+CanvasDrawScope.selectPaint 比较缓存后跳过首次 Round 的赋值，使请求圆角的勾号实际画成尖角。
+固定依赖的独立 Paint 诊断确认了缓存 Round / native Miter，checkbox.static.stroke.round.on 的差异位于勾号转角。
+做法与影响：保留正确的圆角参数含义，与桌面基线的首次 Round 绘制保留视觉差异；
+默认 Miter 描边不受影响，双端用例继续使用真实组件并报告 different。
+范围：本次 CheckBox 自定义描边；不扩展为其他上游 bug 的通用处理规则。
+确认：2026-10-03，维护者明确“这是上游bug，始终按参数画出圆角”。
+
 ## NavigationBar 的内容、选择与共享环境适配
 
 决定：NavigationBar 使用 ItemsControl 的 Items / ItemsSource / ItemTemplate，内置等宽布局和 8 DIP 间距，

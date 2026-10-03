@@ -31,6 +31,7 @@
                     <m3:ShortNavigationBarTokenSource />
                     <m3:WideNavigationRailTokenSource />
                     <m3:SliderTokenSource />
+                    <m3:CheckBoxTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -46,4 +47,5 @@
     <StyleInclude Source="/Components/WideNavigationRail/WideNavigationRail.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/ModalWideNavigationRail.axaml" />
     <StyleInclude Source="/Components/Slider/Slider.axaml" />
+    <StyleInclude Source="/Components/CheckBox/CheckBox.axaml" />
 </Styles>
