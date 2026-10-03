@@ -1,5 +1,29 @@
 # 已确认的设计决定
 
+## ShortNavigationBar 的内容、排列与测量适配
+
+决定：ShortNavigationBar 使用 ItemsControl 的 Items / ItemsSource / ItemTemplate，提供 EqualWeight / Centered
+两种 ShortNavigationBarArrangement、Background / Foreground 和物理 WindowInsets（桌面默认零）。
+ShortNavigationBarItem 使用 Button 的 Click / Command / IsEnabled，提供 Icon / Label 及模板、外部 IsSelected、
+非空的 NavigationItemIconPosition（默认 Top）以及与 Wide Item 同名的八项颜色属性。标签存在时始终显示；
+点击仅请求导航。内容色直接更新，只有指示器使用 DefaultSpatial；位置直接切换，不复用 Wide 的位置动画或纵向平滑偏离。
+默认 Foreground 依据上游默认容器的 SurfaceContainer 角色；自定义 Background 不改变默认内容色。
+原因：Short 使用 NavigationItem，而 Wide 使用 AnimatedNavigationItem，两条上游入口的动画及布局语义不同。
+做法：组件内部测量内容槽的固有尺寸，并翻译上游两种 MeasurePolicy；其他任意 Avalonia 内容使用原生 Measure。
+没有引入通用 intrinsic 框架；沿用现有动画作用域、交互、Inset 转换和 MathUtils。
+范围：本次 ShortNavigationBar / ShortNavigationBarItem。
+确认：2026-10-03，维护者确认“采用推荐 API 与测量适配”。示例见组件 README。
+
+## ShortNavigationBar 的固定宽度语义
+
+决定：保留 Avalonia 原生 Width 语义，固定 Bar 的容器宽度，各 Item 按排列分配宽度。
+原因：固定 Compose 的 Surface 传播 minWidth；两种 Short MeasurePolicy 又用原始 constraints.constrain
+约束每项。直接 Modifier.width(352.dp) 时三项各为 352 DIP 并溢出；本次稳定双端捕获证实这一行为。
+正常 parity 场景由外层宿主提供有限最大宽度，Bar 不设置 width；另外保留直接 width 用例的真实 different。
+不修改固定参考、容差或归类规则。C# `new ShortNavigationBar { Width = 352 }` / XAML `Width="352"` 正常分配。
+范围：ShortNavigationBar 的容器 Width；不改写 Centered / EqualWeight 的整数算法及其他组件。
+确认：2026-10-03，维护者确认“采用原生 Width 语义并记录差异（推荐）”。证据见组件 README。
+
 ## NavigationBar 的内容、选择与共享环境适配
 
 决定：NavigationBar 使用 ItemsControl 的 Items / ItemsSource / ItemTemplate，内置等宽布局和 8 DIP 间距，

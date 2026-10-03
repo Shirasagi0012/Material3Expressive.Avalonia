@@ -61,6 +61,33 @@
                         <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
                     </m3:NavigationBarItem>
                 </m3:NavigationBar>
+                <TextBlock Text="ShortNavigationBar — Top / EqualWeight" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <m3:ShortNavigationBar x:Name="DemoShortNavigationBar">
+                    <m3:ShortNavigationBarItem Label="Home" IsSelected="True" Click="OnShortBarDestinationClick">
+                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                    </m3:ShortNavigationBarItem>
+                    <m3:ShortNavigationBarItem Label="Search" IsSelected="False" Click="OnShortBarDestinationClick">
+                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                    </m3:ShortNavigationBarItem>
+                    <m3:ShortNavigationBarItem Label="Settings" IsSelected="False" Click="OnShortBarDestinationClick">
+                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                    </m3:ShortNavigationBarItem>
+                </m3:ShortNavigationBar>
+                <TextBlock Text="ShortNavigationBar — Start / Centered" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <m3:ShortNavigationBar Arrangement="Centered">
+                    <m3:ShortNavigationBarItem Label="Home" IconPosition="Start" IsSelected="True" IsEnabled="True" Click="OnShortBarDestinationClick">
+                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                    </m3:ShortNavigationBarItem>
+                    <m3:ShortNavigationBarItem Label="Search" IconPosition="Start" IsSelected="False" IsEnabled="True" Click="OnShortBarDestinationClick">
+                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                    </m3:ShortNavigationBarItem>
+                    <m3:ShortNavigationBarItem Label="Settings" IconPosition="Start" IsSelected="False" IsEnabled="True" Click="OnShortBarDestinationClick">
+                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                    </m3:ShortNavigationBarItem>
+                    <m3:ShortNavigationBarItem Label="Disabled" IconPosition="Start" IsSelected="False" IsEnabled="False" Click="OnShortBarDestinationClick">
+                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                    </m3:ShortNavigationBarItem>
+                </m3:ShortNavigationBar>
                 <TextBlock Text="Sliders" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="35" />
                 <m3:Slider Minimum="0" Maximum="100" Steps="9" Value="50" />

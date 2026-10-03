@@ -38,6 +38,13 @@ public partial class MainWindow : Window
                 item.IsSelected = ReferenceEquals(item, destination);
     }
 
+    private void OnShortBarDestinationClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is ShortNavigationBarItem destination && destination.FindAncestorOfType<ShortNavigationBar>() is { } bar)
+            foreach (var item in bar.Items.OfType<ShortNavigationBarItem>())
+                item.IsSelected = ReferenceEquals(item, destination);
+    }
+
     private async void OnToggleWideRail(object? sender, RoutedEventArgs e)
     {
         try { await DemoWideNavigationRail.State.ToggleAsync(); }

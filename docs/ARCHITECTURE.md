@@ -7,7 +7,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、Slider 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
@@ -100,7 +100,9 @@ ripple 完成进入与退出；禁用引起的状态层退出在重组对应帧�
 Rail 的布局、内容色匹配与 item 的四条动画轨迹保留在[组件目录](../src/Material3Expressive/Components/NavigationRail/README.md)。
 NavigationBarItem 使用同一按压映射入口，按实际 Item 宽度和固定上游偏移映射至胶囊。
 Rail / Wide / Modal / Bar 的动态 contentColorFor 绑定及物理 Insets 转换位于 Foundation/Rendering，
-各组件仍负责选择背景属性、内容环境和布局。NavigationBar 的等权布局与动画见
+各组件仍负责选择背景属性、内容环境和布局。ShortNavigationBar 使用独立的 intrinsic 查询与 EqualWeight / Centered 布局；其 NavigationItem 只有指示器动画，
+不扩展 Wide 的位置动画和平滑适配。见 [组件说明](../src/Material3Expressive/Components/ShortNavigationBar/README.md)。
+NavigationBar 的等权布局与动画见
 [组件说明](../src/Material3Expressive/Components/NavigationBar/README.md)。
 
 Button elevation 的当前实现可作为职责示例：`ButtonElevation` 保存状态高度，
