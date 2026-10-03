@@ -3,7 +3,8 @@
 基于 Avalonia 实现 Material 3 Expressive，以尽可能在视觉效果和动效上还原Compose material3为目标
 
 当前包含 Button、IconButton、Surface、[NavigationRail / NavigationRailItem](src/Material3Expressive/Components/NavigationRail/README.md)、
-[WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](src/Material3Expressive/Components/WideNavigationRail/README.md)，以及 Token、颜色、图标、阴影和交互动画等基础能力。
+[WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](src/Material3Expressive/Components/WideNavigationRail/README.md)、
+[Slider / VerticalSlider / RangeSlider](src/Material3Expressive/Components/Slider/README.md)，以及 Token、颜色、图标、阴影和交互动画等基础能力。
 这些是现有实现范围，不代表所有组件已经对齐当前上游基线。
 已接入 [Compose 视觉一致性测试](tests/VisualParity/README.md)，提供真实双端捕获、确定性动画回放及差异报告。
 

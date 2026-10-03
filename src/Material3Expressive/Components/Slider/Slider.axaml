@@ -1,0 +1,69 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Style Selector="m3|SliderThumb">
+        <Setter Property="ThumbColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleColor}}" />
+        <Setter Property="DisabledThumbColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledHandleColor}}" />
+        <Setter Property="SurfaceColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}" />
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleShape}}" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="m3|SliderTrack">
+        <Setter Property="TrackHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.InactiveTrackHeight}}" />
+        <Setter Property="ThumbTrackGapSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.ActiveHandleLeadingSpace}}" />
+        <Setter Property="TickSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.StopIndicatorSize}}" />
+        <Setter Property="StopIndicatorSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.StopIndicatorSize}}" />
+        <Setter Property="ActiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.ActiveTrackColor}}" />
+        <Setter Property="ActiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.InactiveTrackColor}}" />
+        <Setter Property="InactiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.InactiveTrackColor}}" />
+        <Setter Property="InactiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.ActiveTrackColor}}" />
+        <Setter Property="DisabledActiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledActiveTrackColor}}" />
+        <Setter Property="DisabledActiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledInactiveTrackColor}}" />
+        <Setter Property="DisabledInactiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledInactiveTrackColor}}" />
+        <Setter Property="DisabledInactiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledActiveTrackColor}}" />
+    </Style>
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:Slider}" TargetType="m3:Slider">
+            <Setter Property="ClipToBounds" Value="False" />
+            <Setter Property="ThumbWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />
+            <Setter Property="ThumbHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:SliderLayout Background="Transparent">
+                        <ContentPresenter Name="PART_Track" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                            <m3:SliderTrack State="{Binding ActualState, RelativeSource={RelativeSource AncestorType=m3:Slider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:Slider}}"
+                                            EnableCornerShrinking="{Binding IsVertical, RelativeSource={RelativeSource AncestorType=m3:Slider}}" />
+                        </ContentPresenter>
+                        <ContentPresenter Name="PART_Thumb" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                            <m3:SliderThumb Width="{Binding ThumbWidth, RelativeSource={RelativeSource AncestorType=m3:Slider}}" Height="{Binding ThumbHeight, RelativeSource={RelativeSource AncestorType=m3:Slider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:Slider}}" />
+                        </ContentPresenter>
+                    </m3:SliderLayout>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:VerticalSlider}" TargetType="m3:VerticalSlider" BasedOn="{StaticResource {x:Type m3:Slider}}">
+            <Setter Property="ThumbWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
+            <Setter Property="ThumbHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:RangeSlider}" TargetType="m3:RangeSlider">
+            <Setter Property="ClipToBounds" Value="False" />
+            <Setter Property="ThumbWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />
+            <Setter Property="ThumbHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:SliderLayout Background="Transparent">
+                        <ContentPresenter Name="PART_Track" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                            <m3:SliderTrack State="{Binding ActualState, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" />
+                        </ContentPresenter>
+                        <m3:SliderThumbPresenter Name="PART_StartThumb" Focusable="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                            <m3:SliderThumb Width="{Binding ThumbWidth, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" Height="{Binding ThumbHeight, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" />
+                        </m3:SliderThumbPresenter>
+                        <m3:SliderThumbPresenter Name="PART_EndThumb" Focusable="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                            <m3:SliderThumb Width="{Binding ThumbWidth, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" Height="{Binding ThumbHeight, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" />
+                        </m3:SliderThumbPresenter>
+                    </m3:SliderLayout>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

@@ -34,6 +34,22 @@
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
+                <TextBlock Text="Sliders" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <m3:Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="35" />
+                <m3:Slider Minimum="0" Maximum="100" Steps="9" Value="50" />
+                <m3:Slider Value="0.5" IsEnabled="False" />
+                <m3:Slider Value="0.35">
+                    <m3:Slider.TrackTemplate>
+                        <DataTemplate>
+                            <m3:SliderTrack State="{Binding}" IsCentered="True" EnableCornerShrinking="True" />
+                        </DataTemplate>
+                    </m3:Slider.TrackTemplate>
+                </m3:Slider>
+                <m3:RangeSlider Minimum="0" Maximum="100" Steps="9" RangeStart="20" RangeEnd="80" />
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <m3:VerticalSlider Height="180" Value="0.35" />
+                    <m3:VerticalSlider Height="180" Steps="3" Value="0.5" TopToBottom="False" />
+                </StackPanel>
                 <Grid ColumnDefinitions="Auto,*" Height="360">
                     <m3:WideNavigationRail x:Name="DemoWideNavigationRail">
                         <m3:WideNavigationRail.Header>
