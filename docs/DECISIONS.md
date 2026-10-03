@@ -25,3 +25,18 @@ Rail 反向 65ms 的 R=46/47 已由独立数值复现定位。范围为现有 by
 也未授权全局改变 core 的 double 精度或亚毫秒处理；若仍有相关差异，另行提出具体方案。
 接入：依照现有本地 NuGet 流程打包 Runtime / Avalonia / TestSupport，版本统一为 `0.2.1-alpha`。
 确认：2026-10-03，维护者批准修复方案，并指定“打包版本用0.2.1-alpha”。
+
+## 共享交互反馈与键盘激活职责
+
+决定：`MaterialInteractionController` 的键盘输入处理只维护交互反馈，激活由控件自身负责。
+共享控制器不拦截 Enter，不通过 automation Invoke 或其他路径代为点击，也不维护组件类型排除名单。
+原因：反馈接入不应改变应用命令的执行时机；接管 Enter 会与原生 Space 和导航项的键盘处理形成多套激活路径。
+做法：移除专用 Enter 激活状态和 KeyUp 点击分支，保留 Space / Enter 的按压反馈，
+并在释放、失焦或禁用时清理反馈。真实 Compose 参考、采样与比较规则保留，激活时机差异如实报告。
+影响与范围：共享控制器的键盘反馈接入遵循上述职责；普通 Button / IconButton 保留 Avalonia 原生激活，
+Enter 按下激活与固定 Compose 的松开激活不同，已作为框架适配接受，Space 遵循原生 ClickMode。
+导航项已有的释放激活保留；该决定不统一各组件的键盘行为。具体行为见
+[Button](../src/Material3Expressive/Components/Button/README.md#默认值与接入)与
+[IconButton](../src/Material3Expressive/Components/IconButton/README.md#形状与接入)说明。
+确认：2026-10-03，维护者要求“不需要Enter拦截了。然后将决策记录在案”，
+并进一步要求移除共享控制器中非必要的 Enter 特殊处理；此决定替代此前在 KeyUp 经 automation Invoke 激活的决定。
