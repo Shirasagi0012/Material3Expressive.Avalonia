@@ -179,6 +179,24 @@ public class RippleAnimationTests
         Assert.Equal(60, bounded.TargetRadius);
         Assert.Equal(50, unbounded.TargetRadius);
     }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FirstDraw_CapturesResizedLayoutEvenAtZeroAlpha_AndKeepsIt(bool bounded)
+    {
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(2, 3), new Size(16, 16), clock.Scope, bounded, 20);
+        var drawing = new DrawingGroup();
+        using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(28, 28));
+        Assert.Equal(0, ripple.Value);
+        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
+        Assert.Equal(20, ripple.TargetRadius);
+        using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(24, 24));
+        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
+    }
 }
 
 /// <summary>

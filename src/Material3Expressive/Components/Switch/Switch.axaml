@@ -1,0 +1,74 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialToggleSwitchTheme" TargetType="ToggleSwitch">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="OnContent" Value="{x:Null}" />
+      <Setter Property="OffContent" Value="{x:Null}" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography BodyLarge}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:SwitchLayout>
+            <m3:SwitchTrack IsChecked="{TemplateBinding IsChecked}" Colors="{TemplateBinding m3:SwitchAppearance.Colors}"
+                  CheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedThumbColor}}"
+                  CheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedTrackColor}}"
+                  CheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedBorderColor}}"
+                  CheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedIconColor}}"
+                  UncheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedThumbColor}}"
+                  UncheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedTrackColor}}"
+                  UncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedBorderColor}}"
+                  UncheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedIconColor}}"
+                  DisabledCheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedThumbColor}}"
+                  DisabledCheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedTrackColor}}"
+                  DisabledCheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedBorderColor}}"
+                  DisabledCheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedIconColor}}"
+                  DisabledUncheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedThumbColor}}"
+                  DisabledUncheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedTrackColor}}"
+                  DisabledUncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedBorderColor}}"
+                  DisabledUncheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedIconColor}}"
+                  SurfaceColor="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}">
+              <m3:SwitchThumbLayout x:Name="PART_SwitchKnob">
+                <Panel x:Name="PART_MovingKnobs" Background="Transparent">
+                  <Ellipse x:Name="PART_ThumbBackground" IsHitTestVisible="False" />
+                  <ContentPresenter x:Name="PART_ThumbContentPresenter"
+                        Content="{TemplateBinding m3:SwitchAppearance.ThumbContent}"
+                        ContentTemplate="{TemplateBinding m3:SwitchAppearance.ThumbContentTemplate}"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                  <m3:MaterialSurface x:Name="PART_ThumbSurface" Background="Transparent" CornerRadius="0"
+                                      StateLayerBrush="{TemplateBinding Foreground}" />
+                </Panel>
+              </m3:SwitchThumbLayout>
+            </m3:SwitchTrack>
+            <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                RecognizesAccessKey="True" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+            <ContentPresenter x:Name="PART_OnContentPresenter" IsVisible="False" Content="{TemplateBinding OnContent}"
+                ContentTemplate="{TemplateBinding OnContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                VerticalContentAlignment="Center" m3:TextStyleHost.IsEnabled="True" />
+            <ContentPresenter x:Name="PART_OffContentPresenter" Content="{TemplateBinding OffContent}"
+                ContentTemplate="{TemplateBinding OffContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                VerticalContentAlignment="Center" m3:TextStyleHost.IsEnabled="True" />
+          </m3:SwitchLayout>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked /template/ ContentPresenter#PART_OnContentPresenter">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked /template/ ContentPresenter#PART_OffContentPresenter">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch" BasedOn="{StaticResource MaterialToggleSwitchTheme}" />
+  </Styles.Resources>
+</Styles>

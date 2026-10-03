@@ -69,7 +69,17 @@ internal sealed class MaterialInteractionController
             _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
             if (!_hoverNeedsMove) Set(InteractionState.Hovered, true);
         };
-        _owner.PointerExited += (_, _) => { _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center; Set(InteractionState.Hovered, false); };
+        _owner.PointerExited += (_, e) =>
+        {
+            _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
+            // Avalonia 12 suppresses pointer-over when an implicitly captured template part
+            // differs from the current hit target. A resizing thumb can cause that while the
+            // pointer has stayed inside. Compose hoverable observes the owner's bounds.
+            if (_pressedPointer?.Captured is Visual captured
+                && (ReferenceEquals(captured, _owner) || _owner.IsVisualAncestorOf(captured))
+                && new Rect(_owner.Bounds.Size).Contains(e.GetPosition(_owner))) return;
+            Set(InteractionState.Hovered, false);
+        };
         _owner.AddHandler(InputElement.PointerMovedEvent, OnPointerMoved,
             RoutingStrategies.Tunnel, handledEventsToo: true);
         // Button-derived controls handle pointer presses in their class handler. Listen on the
@@ -219,11 +229,11 @@ internal sealed class MaterialInteractionController
             if (IsRippleBounded)
             {
                 using var rippleClip = context.PushClip(new RoundedRect(area, cornerRadius));
-                DrawRipples(context, composeColorBrush);
+                DrawRipples(context, composeColorBrush, size);
             }
             else
             {
-                DrawRipples(context, composeColorBrush);
+                DrawRipples(context, composeColorBrush, size);
             }
         }
 
@@ -338,6 +348,7 @@ internal sealed class MaterialInteractionController
 
         // Compose clickable cancels the gesture when it leaves the interaction bounds.
         // Releasing Avalonia's owned capture also clears Button.IsPressed and its pending click.
+        Set(InteractionState.Hovered, false);
         _pressedPointer = null;
         EndPress();
         if (e.Pointer.Captured is Visual captured
@@ -537,10 +548,18 @@ internal sealed class MaterialInteractionController
             _interactions.Add(flag);
     }
 
-    private void DrawRipples(DrawingContext context, IBrush brush)
+    private void DrawRipples(DrawingContext context, IBrush brush, Size size)
     {
         foreach (var ripple in _ripples)
-            ripple.Draw(context, brush, _pressedOpacity);
+            ripple.Draw(context, brush, _pressedOpacity, size);
+    }
+
+    // Switch's ThumbNode measures its current animated size before launching the pressed snap.
+    // Avalonia can settle the subsequent layout before the first render. Preserve the upstream
+    // first-draw geometry from that measurement without moving ripple playback into the layout.
+    internal void InitializeRippleDrawGeometry(Size size)
+    {
+        foreach (var ripple in _ripples) ripple.InitializeDrawGeometry(size);
     }
 
     private static void DrawStateLayer(DrawingContext context, IBrush brush, Rect area, double opacity)

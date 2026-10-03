@@ -43,11 +43,13 @@ public sealed class RippleAnimation : IDisposable
     internal VisualAnimationScope Motion => _motion;
     private Action? _onFrame;
 
-    private readonly Point _origin;
-    private readonly Point _center;
-    private readonly double _startRadius;
+    private Point _origin;
+    private Point _center;
+    private double _startRadius;
     private readonly double _endRadius;
     private readonly bool _bounded;
+    private readonly Size _initialBounds;
+    private bool _drawInitialized;
 
     private bool _finishedFadingIn;
     private bool _finishRequested;
@@ -61,6 +63,7 @@ public sealed class RippleAnimation : IDisposable
         ArgumentNullException.ThrowIfNull(parentScope);
         _motion = parentScope.CreateChild("Ripple");
         _bounded = bounded;
+        _initialBounds = bounds;
         _center = new Point(bounds.Width / 2, bounds.Height / 2);
         // CommonRipple deliberately discards the press position for an unbounded ripple. It
         // starts in the centre and therefore has no centre drift at all.
@@ -156,7 +159,11 @@ public sealed class RippleAnimation : IDisposable
     /// bounded node and deliberately omits it for an unbounded one.
     /// </summary>
     public void Draw(DrawingContext context, IBrush brush, double opacity)
+        => Draw(context, brush, opacity, _initialBounds);
+
+    internal void Draw(DrawingContext context, IBrush brush, double opacity, Size size)
     {
+        InitializeDrawGeometry(size);
         // CommonRipple first creates color.copy(alpha = pressedAlpha), which packs sRGB
         // alpha to 8 bits, then RippleAnimation.draw copies color.alpha * animatedAlpha.
         // Combining those operations before quantization changes the interior by one byte.
@@ -166,6 +173,20 @@ public sealed class RippleAnimation : IDisposable
 
         using (context.PushOpacity(MaterialInteractionRendering.ComposeOpacity(alpha)))
             context.DrawEllipse(brush, null, Center, Radius, Radius);
+    }
+
+    internal void InitializeDrawGeometry(Size size)
+    {
+        // RippleAnimation.draw captures these values on its first draw, even at zero alpha.
+        // Press feedback may resize the target between the input event and that draw (Switch).
+        // The target radius was already resolved by CommonRipple when the press was added.
+        if (!_drawInitialized)
+        {
+            _startRadius = StartRadius(size);
+            _center = new Point(size.Width / 2, size.Height / 2);
+            if (!_bounded) _origin = _center;
+            _drawInitialized = true;
+        }
     }
 
     /// <summary>Per the spec, the ripple starts at 30% of the container's largest dimension.</summary>

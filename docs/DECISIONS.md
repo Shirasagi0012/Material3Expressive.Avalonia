@@ -40,3 +40,16 @@ Enter 按下激活与固定 Compose 的松开激活不同，已作为框架适�
 [IconButton](../src/Material3Expressive/Components/IconButton/README.md#形状与接入)说明。
 确认：2026-10-03，维护者要求“不需要Enter拦截了。然后将决策记录在案”，
 并进一步要求移除共享控制器中非必要的 Enter 特殊处理；此决定替代此前在 KeyUp 经 automation Invoke 激活的决定。
+
+## Ripple 首次绘制几何与尺寸动画衔接
+
+决定：RippleAnimation 按固定 Core material3-ripple 在首次绘制（包含零 alpha）锁定起始半径、
+无界原点和目标中心；目标半径仍在添加 press 时解析。通常从 Surface 的实际绘制尺寸初始化。
+共享控制器增加内部 `InitializeRippleDrawGeometry(Size)`，允许 Switch 在按压测量中提前锁定
+这一几何，波纹动画、绘制和取消仍归共享层。
+原因：Switch ThumbNode 先测量当前 sizeAnim 值，再启动 pressed SnapSpec；固定 Compose 的
+首个 draw 使用该次测量尺寸。Avalonia 可能在首次 render 前已完成多轮布局，用扩张后的尺寸
+初始化会使动画后按压的波纹中心偏移约 2 DIP。
+范围：只处理有上游首绘测量依据的布局与绘制衔接，不提供新的公开交互 API，不建立组件内 ripple。
+其他组件仍在首次 render 初始化，不能未经核验推广 Switch 的提前初始化时机。
+确认：2026-10-03，维护者选择“增加内部衔接方法，修复该波纹差异（推荐）”。

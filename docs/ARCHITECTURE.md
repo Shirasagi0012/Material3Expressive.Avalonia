@@ -8,7 +8,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar / CheckBox 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、Switch 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar / CheckBox / Switch 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
@@ -155,6 +155,9 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 - [CheckBox](../src/Material3Expressive/Components/CheckBox/README.md) 使用原生 Avalonia CheckBox 的模板，
   合并两态与三态外观；CheckBoxAppearance 提供颜色与描边，内部模板部件负责布局和 Skia 绘制。
   原生状态切换与键盘差异已确认保留，具体覆盖与未实现分支见组件说明。
+- [Switch](../src/Material3Expressive/Components/Switch/README.md) 使用原生 ToggleSwitch 的模板和
+  SwitchAppearance 附加属性，保留原生状态写回、键盘、拖动与自动化；模板部件移植 ThumbNode 布局与动画。
+  默认 ripple/focus 配置已实现，null 回调模式、可配置 inset focus ring 和外部 InteractionSource 映射未实现。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
   Modal 使用当前 TopLevel 的 OverlayLayer；自定义宿主需提供启用 OverlayLayer 的 VisualLayerManager。
