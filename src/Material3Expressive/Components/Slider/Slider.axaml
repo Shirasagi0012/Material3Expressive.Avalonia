@@ -23,28 +23,60 @@
         <Setter Property="DisabledInactiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledActiveTrackColor}}" />
     </Style>
     <Styles.Resources>
-        <ControlTheme x:Key="{x:Type m3:Slider}" TargetType="m3:Slider">
-            <Setter Property="ClipToBounds" Value="False" />
-            <Setter Property="ThumbWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />
-            <Setter Property="ThumbHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
+        <ControlTheme x:Key="MaterialSliderTrackButtonTheme" TargetType="Button">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template"><ControlTemplate><Border Background="Transparent" /></ControlTemplate></Setter>
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialSliderThumbTheme" TargetType="Thumb">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <m3:SliderLayout Background="Transparent">
-                        <ContentPresenter Name="PART_Track" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-                            <m3:SliderTrack State="{Binding ActualState, RelativeSource={RelativeSource AncestorType=m3:Slider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:Slider}}"
-                                            EnableCornerShrinking="{Binding IsVertical, RelativeSource={RelativeSource AncestorType=m3:Slider}}" />
-                        </ContentPresenter>
-                        <ContentPresenter Name="PART_Thumb" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
-                            <m3:SliderThumb Width="{Binding ThumbWidth, RelativeSource={RelativeSource AncestorType=m3:Slider}}" Height="{Binding ThumbHeight, RelativeSource={RelativeSource AncestorType=m3:Slider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:Slider}}" />
-                        </ContentPresenter>
-                    </m3:SliderLayout>
+                    <m3:SliderThumb Name="PART_ThumbVisual" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}"
+                        Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}"
+                        Colors="{Binding (m3:SliderAppearance.Colors), RelativeSource={RelativeSource AncestorType=Slider}}" />
                 </ControlTemplate>
             </Setter>
+            <Style Selector="^ /template/ m3|SliderThumb[IsVertical=True]">
+                <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
+                <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />
+            </Style>
         </ControlTheme>
-        <ControlTheme x:Key="{x:Type m3:VerticalSlider}" TargetType="m3:VerticalSlider" BasedOn="{StaticResource {x:Type m3:Slider}}">
-            <Setter Property="ThumbWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
-            <Setter Property="ThumbHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />
+        <ControlTheme x:Key="MaterialSliderTheme" TargetType="Slider">
+            <Setter Property="ClipToBounds" Value="False" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
+            <Setter Property="m3:SliderAppearance.TrackHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.InactiveTrackHeight}}" />
+            <Setter Property="m3:SliderAppearance.ThumbTrackGapSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.ActiveHandleLeadingSpace}}" />
+            <Setter Property="m3:SliderAppearance.TickSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.StopIndicatorSize}}" />
+            <Setter Property="m3:SliderAppearance.StopIndicatorSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.StopIndicatorSize}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:MaterialSliderLayout>
+                        <m3:SliderTrack Name="PART_TrackVisual" IsHitTestVisible="False"
+                            Colors="{TemplateBinding m3:SliderAppearance.Colors}"
+                            IsCentered="{TemplateBinding m3:SliderAppearance.IsCentered}"
+                            TrackHeight="{TemplateBinding m3:SliderAppearance.TrackHeight}"
+                            TrackCornerSize="{TemplateBinding m3:SliderAppearance.TrackCornerSize}"
+                            TrackInsideCornerSize="{TemplateBinding m3:SliderAppearance.TrackInsideCornerSize}"
+                            ThumbTrackGapSize="{TemplateBinding m3:SliderAppearance.ThumbTrackGapSize}"
+                            EnableCornerShrinking="{TemplateBinding m3:SliderAppearance.EnableCornerShrinking}"
+                            TickSize="{TemplateBinding m3:SliderAppearance.TickSize}"
+                            StopIndicatorSize="{TemplateBinding m3:SliderAppearance.StopIndicatorSize}"
+                            ShowStopIndicator="{TemplateBinding m3:SliderAppearance.ShowStopIndicator}"
+                            />
+                        <m3:MaterialSliderTrack Name="PART_Track" Orientation="{TemplateBinding Orientation}"
+                            Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                            Value="{TemplateBinding Value, Mode=TwoWay}" IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                            <Track.DecreaseButton><Button Name="PART_DecreaseButton" Theme="{StaticResource MaterialSliderTrackButtonTheme}" /></Track.DecreaseButton>
+                            <Track.IncreaseButton><Button Name="PART_IncreaseButton" Theme="{StaticResource MaterialSliderTrackButtonTheme}" /></Track.IncreaseButton>
+                            <Thumb Name="PART_Thumb" Theme="{StaticResource MaterialSliderThumbTheme}" />
+                        </m3:MaterialSliderTrack>
+                    </m3:MaterialSliderLayout>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:vertical"><Setter Property="m3:SliderAppearance.EnableCornerShrinking" Value="True" /></Style>
         </ControlTheme>
+        <ControlTheme x:Key="{x:Type Slider}" TargetType="Slider" BasedOn="{StaticResource MaterialSliderTheme}" />
         <ControlTheme x:Key="{x:Type m3:RangeSlider}" TargetType="m3:RangeSlider">
             <Setter Property="ClipToBounds" Value="False" />
             <Setter Property="ThumbWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />

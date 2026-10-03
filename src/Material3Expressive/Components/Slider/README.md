@@ -1,134 +1,151 @@
-# Slider / VerticalSlider / RangeSlider
+# Slider / RangeSlider
 
-依据 `docs/upstream-baseline.json`：AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`、
+单值水平、垂直滑块使用 `Avalonia.Controls.Slider` 和 Material 主题；区间滑块仍使用 `RangeSlider`。
+外观依据 `docs/upstream-baseline.json`：AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`、
 Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
 两端 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Slider.kt` 相同。
-对应 `SliderImpl`、`RangeSliderImpl`、两个 State、键盘与 semantics helper、`SliderDefaults.Thumb/Track/CenteredTrack`。
-默认值来自固定 `tokens/SliderTokens.kt`；鼠标阈值依据 Core foundation 的 pointer slop 和 Desktop 的密度配置。
+默认外观来自 `SliderDefaults.Thumb/Track/CenteredTrack` 和 `tokens/SliderTokens.kt`；
+RangeSlider 的状态、键盘、semantics 和 pointer slop 也按此基线移植。
+原生单值交互依据项目依赖 Avalonia **12.1.2**，对应源码 tag commit `d3c867a9e2de379249b03dbeb3495bd7f076a81a`。
 
-## 使用
+## 使用与迁移
 
-加载 `MaterialTheme.axaml` 后，三个控件的模板和 Token 来源自动接入。
+加载 `MaterialTheme.axaml` 后，原生 Slider 的水平、垂直 Material 模板和 RangeSlider 模板自动接入。
 XAML 命名空间为 `xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"`。
 
 ```xml
-<m3:Slider Width="280" Minimum="0" Maximum="100" Steps="9"
-           Value="{Binding Volume, Mode=TwoWay}" />
-<m3:VerticalSlider Height="240" TopToBottom="False"
-                   Value="{Binding Level, Mode=TwoWay}" />
+<Slider Width="280" Minimum="0" Maximum="100" TickFrequency="10"
+        IsSnapToTickEnabled="True" SmallChange="10" LargeChange="10"
+        Value="{Binding Volume, Mode=TwoWay}" />
+<Slider Height="240" Orientation="Vertical" Minimum="0" Maximum="1"
+        SmallChange="0.01" LargeChange="0.1" Value="{Binding Level, Mode=TwoWay}" />
 <m3:RangeSlider Width="280" Minimum="0" Maximum="100"
                 RangeStart="{Binding Lower, Mode=TwoWay}"
                 RangeEnd="{Binding Upper, Mode=TwoWay}" />
 ```
 
-`Steps` 是端点之间的离散值数量；0 为连续轨道。`ValueChangeFinished` 在点击释放、拖动结束/取消、
-受支持键的 KeyUp 或产生改变的自动化 SetValue 后触发。垂直默认从上向下增加；RTL 只反转横向。
-Home/End、方向键、PageUp/PageDown 保留上游规则；连续键盘步长是完整数值范围的 1%。
+单值使用原生 `double` 数值；主题保留原生默认 Minimum=0、Maximum=100、SmallChange=1、LargeChange=10。
+原生垂直默认向上增大，向下增大设置 `IsDirectionReversed="True"`；横向支持该属性和原生 RTL 镜像。
+`Ticks` 优先于 `TickFrequency`，允许不规则刻度；`IsSnapToTickEnabled` 控制原生输入吸附。
+键盘步长由应用显式设置，不会由 Material 主题自动计算。
 
-需要持有状态时，设置可选 `State`。此时数值、范围和 steps 由 State 拥有，控件的便捷属性不参与更新。
+| 原单值 API | 新入口 / 行为 |
+| --- | --- |
+| `m3:Slider`、`m3:VerticalSlider` | 原生 `Slider`，垂直设置 `Orientation="Vertical"` |
+| `SliderState`、`State`、`ActualState` | 移除；由 ViewModel 持有并双向绑定 `Value` / `Minimum` / `Maximum` |
+| `Steps` | 等间隔用 `TickFrequency=(Maximum-Minimum)/(Steps+1)`，按需启用 `IsSnapToTickEnabled`；不规则刻度用 `Ticks` |
+| `TopToBottom` | 垂直使用 `IsDirectionReversed`，原生默认值为 False |
+| `ShouldAutoSnap` | 移除；程序赋值和自动化赋值遵循原生范围约束，不吸附 |
+| `OnValueChange` / 自定义 `ValueChanged` | 原生 `ValueChanged`：实际值改变才触发，也包含程序和绑定更新；没有调用者写回协议 |
+| `ValueChangeFinished` / `OnValueChangeFinished` | 移除；不补统一完成事件，也不以 `ValueChanged` 代替完成通知 |
+| `Colors`、Centered 和轨道绘制选项 | `SliderAppearance` 附加属性 |
+| `Thumb` / `ThumbTemplate`、`Track` / `TrackTemplate`、`ThumbWidth` / `ThumbHeight` | 使用原生 `ControlTheme` / `ControlTemplate` 定制模板部件 |
+| 单值控件的只读 `Interaction` | 移除；默认 `SliderThumb` 外观观察原生焦点和 `:pressed`；自定义模板可使用原生伪类 |
 
-```csharp
-using Material3Expressive.Components;
-using MSlider = Material3Expressive.Components.Slider;
+2026-10-03，维护者确认“原生 Slider + Material 主题，使用原生交互”及上述 State/API 调整，
+并明确“不补 ValueChangeFinished”。适用范围是单值 Slider；**RangeSlider / RangeSliderState 的 API 与交互保留**。
 
-var state = new SliderState(value: 0.35f, steps: 4, minimum: 0, maximum: 1);
-var slider = new MSlider { State = state, Width = 280 };
-state.OnValueChangeFinished = () => Save(state.Value);
-// 默认输入直接写入 State。提供回调后，调用者负责写回（与 Compose 相同）。
-state.OnValueChange = value => { state.Value = value; Preview(value); };
-state.ShouldAutoSnap = false; // 允许程序赋值不吸附；指针操作仍按轨道 tick 吸附
+## 单值外观与模板
 
-var rangeState = new RangeSliderState(0.2f, 0.8f, steps: 3);
-var range = new RangeSlider { State = rangeState, Width = 280 };
-```
-
-State 构造器和 setter 的行为保持上游区别：single 构造值不吸附；range 构造值先约束和排序但不吸附。
-setter 按源码顺序约束和吸附。程序更新 range 两端时，向上移动区间先设 End，向下移动先设 Start，
-避免旧的另一端限制新值。范围和 steps 在 State 构造后固定；修改它们应创建新 State。
-`rememberSaveable` 的跨重建保存由应用/ViewModel 持有数值承担。
-
-## Thumb 和 Track
-
-`Thumb` / `ThumbTemplate`、`Track` / `TrackTemplate` 可以替换内容；range 分别提供 Start/EndThumb 和模板。
-模板的数据是当前实际 State。`ActualState` 可用于绑定默认轨道。`Interaction`、`StartInteraction`、
-`EndInteraction` 是只读共享交互标记，可绑定到自定义 Thumb；反馈跟随实际输入和焦点。
-
-2026-10-03，维护者确认上述数值入口、可选 State 和内容模板“采用推荐方案”。
-便捷属性内部持有 State，显式 State 的回调保留调用者写回职责；默认模板、布局与绘制消费同一状态。
-这样同时支持简洁的 C#/XAML 双向绑定、上游 hoisted state 和自定义内容，不要求应用先创建 State。
-范围仅为 Slider 家族的新 API，不改变其他组件或 Avalonia 原有 Slider。
+`SliderAppearance` 只提供绘制选项：Colors、IsCentered、TrackHeight、TrackCornerSize（NaN 为半轨道高度）、
+TrackInsideCornerSize、ThumbTrackGapSize、EnableCornerShrinking、TickSize、StopIndicatorSize、ShowStopIndicator。
+默认轨道高 16、内侧圆角 2、间距 6、tick/stop 直径 4。
+普通水平轨道默认不缩小端点圆角；垂直默认启用。Centered 或自定义圆角对应的上游重载需要显式启用缩小。
 
 ```xml
-<m3:Slider Value="0.5">
-    <m3:Slider.ThumbTemplate>
-        <DataTemplate>
-            <m3:SliderThumb Width="12" Height="32"
-                Interaction="{Binding Interaction, RelativeSource={RelativeSource AncestorType=m3:Slider}}" />
-        </DataTemplate>
-    </m3:Slider.ThumbTemplate>
-    <m3:Slider.TrackTemplate>
-        <DataTemplate>
-            <m3:SliderTrack State="{Binding}" IsCentered="True"
-                            EnableCornerShrinking="True" TrackCornerSize="4"
-                            ThumbTrackGapSize="6" TrackInsideCornerSize="2" />
-        </DataTemplate>
-    </m3:Slider.TrackTemplate>
-</m3:Slider>
+<Slider Width="280" Minimum="-1" Maximum="1" Value="{Binding Balance}"
+        m3:SliderAppearance.IsCentered="True"
+        m3:SliderAppearance.EnableCornerShrinking="True"
+        m3:SliderAppearance.TrackCornerSize="4" />
 ```
 
-垂直自定义 Thumb 需设置 `IsVertical="True"` 并交换尺寸轴。`SliderColors` 提供十个最终颜色；
-默认禁用 Thumb 先与 Surface 合成，显式提供的 DisabledThumbColor 直接消费。
-`SliderTrack` 还提供 TickSize、StopIndicatorSize、ShowStopIndicator、DrawTick、DrawStopIndicator。
-绘制回调接收轨道局部 DIP 坐标和实际状态颜色。Centered 仅对 single State 有效。
-普通 single Track 默认不缩小端点圆角；垂直/Centered/自定义圆角对应的上游重载启用缩小，需设置
-`EnableCornerShrinking="True"`。range 的圆角 alignment line 与绘制圆角保持上游各自的计算规则。
+命名主题 `MaterialSliderTheme` 可通过 BasedOn 派生。保持原生 `PART_Track`（Track）、
+`PART_Thumb`（Thumb）和 Increase/Decrease Button 模板契约，让原生控件继续处理输入。
+例如仅替换 Thumb 内容：
 
-## 框架适配与范围
+```xml
+<ControlTheme x:Key="WideThumbSlider" TargetType="Slider"
+              BasedOn="{StaticResource MaterialSliderTheme}">
+    <Style Selector="^ /template/ Thumb#PART_Thumb">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <m3:SliderThumb Width="12" Height="32" />
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</ControlTheme>
+```
 
-- `SliderLayout` 用物理整数像素还原测量、离散圆角偏移、不等宽双 Thumb 校正及 minimumInteractiveComponentSize。
-  小于 requiredSizeIn 的外部约束仍保留内部最小尺寸，居中溢出；默认不裁剪，与 Compose 一致。
-  组件和绘制内容自行处理 RTL，绕过 Avalonia 自动镜像，避免重复反转。
-- 指针捕获位于模板布局节点；在 tunnel 阶段消费按压，保留 Compose 不自动请求鼠标焦点的行为。
-  键盘和程序聚焦仍有效。range 两端分别可聚焦，并各自提供 `IRangeValueProvider`；父控件为 Group。
-  自动化边界按上游沿对应轴扩展 10 DIP，不增加视觉尺寸；应用可为 Thumb 提供本地化的 AutomationProperties.Name，
-  例如 `<m3:SliderThumb AutomationProperties.Name="下限" />`；没有显式名称时使用英文默认值。
-  替换 State 时通知自动化数值和边界变化。
-- 沿用 float 运算、不同入口的 tie 规则、原始偏移累积与非交叉约束。默认 Thumb 的按压、拖动、焦点
-  宽度/高度减半是即时状态变化，上游没有尺寸过渡动画。
-- **已接受的行为改进**：RangeSlider 按下时两端数值重合，首次有效水平拖动按数值方向选择 Thumb，之后固定选择。
-  LTR 向左拉开起点、向右拉开终点，RTL 反转；只在释放事件出现水平位移时同样处理。
-  不新增 API，没有拖动的点击、非重合手势、键盘和自动化保留原规则；拖动中合并后不会切换 Thumb。
-  选择转移时同步转移按压反馈，保留非交叉约束、slop、取消和完成回调。
-  固定 Compose 在按下时选定 Thumb，重合时只能朝被选端允许的方向拉开，因此采用此改进；真实行为/视觉差异仍保留。
-  2026-10-03，维护者回复“就按你说的改”，确认首次有效水平拖动方向方案；范围仅为 RangeSlider 的指针手势。
-- **尚未实现，维护者明确延期**：可选 `LocalRippleThemeConfiguration.Focus.InsetRing` 及其焦点 padding/轨道间距。
-  固定基线的可选模式影响 Thumb 测量、padding 和 Track 间距，现有共享 Ripple 没有对应焦点配置。
-  2026-10-03，维护者确认“本次只交付默认焦点模式，明确记录 InsetRing 未实现”。
-  范围为本次三种 Slider；默认按压/拖动/聚焦的 Thumb 缩窄、range 独立焦点与自动化仍实现并验证，
-  不能据此声明全部 LocalRippleThemeConfiguration 分支已移植。不提供近似焦点环或新共享配置。
-- **已接受的差异**：single 拖动中禁用，当帧恢复 Thumb 尺寸；Compose 的子组合下一帧才恢复。
-  四个 `slider.dynamic.disable.horizontal/vertical.0/3` 的 `disabled` 栅格差异保留。
-  同时采集的 feedback、数值、回调与布局相同，释放及后续帧一致。
-  固定 Core 的 FrameRecomposer 先应用父组合的 enabled 更新，Cancel 触发的 Thumb 状态下一帧才重组。
-  2026-10-03，维护者确认“保留即时绘制并记录差异（推荐）”，不引入人为帧延迟，不调整采样、容差或门禁。
-  范围仅为 Slider/VerticalSlider 拖动禁用瞬间，不扩展到后续帧、RangeSlider 或一般按压释放和键盘。
-- **未经验证**：真实桌面、触屏/触控笔、原生屏幕阅读器与平台 numpad 映射。当前自动化证据来自 Windows Skia headless。
+垂直自定义 Thumb 应交换尺寸轴；`SliderThumb` 会读取原生 owner 的方向、焦点和按压状态。
+`SliderColors` 提供十个最终颜色；默认禁用 Thumb 与 Surface 合成，显式 DisabledThumbColor 直接消费。
+默认画笔部件为 `PART_TrackVisual`（SliderTrack），支持 DrawTick / DrawStopIndicator 绘制回调；
+回调接收轨道局部 DIP 坐标和实际状态颜色。
 
-## 验证入口
+`MaterialSliderLayout` / `MaterialSliderTrack` 是模板内部的布局适配：保留 Compose 的物理像素取整、
+离散圆角偏移、Thumb 间距、48 DIP 最小交互空间和受限尺寸；不处理指针、键盘或写入 Value。
+原生 Slider 继续使用完整 Track 边界和原生 Thumb / Button 处理输入，外观观察其结果。
 
-`tests/Material3Expressive.Tests/SliderTests.cs` 覆盖状态、绑定、键盘、自动化、取消、生命周期、模板和 Token。
-重合手势回归覆盖双向拉开、RTL、连续/离散、反向后保持 Thumb、释放位移、slop 内抖动、取消后重试及范围端点。
-独立双端场景为 `tests/VisualParity/Material3Expressive.Parity/Cases/SliderCases.cs` 与
+## RangeSlider
+
+`Steps` 是端点之间的离散值数量，0 为连续轨道；便捷属性内部持有 State。
+设置可选 `State` 后，数值、范围和 steps 由 State 拥有，控件便捷属性不参与更新。
+默认输入直接写入 State；提供回调后由调用者写回，与 Compose 相同。
+
+```csharp
+var state = new RangeSliderState(0.2f, 0.8f, steps: 3);
+var range = new RangeSlider { State = state, Width = 280 };
+state.OnValueChange = value =>
+{
+    state.ActiveRangeStart = value.Start;
+    state.ActiveRangeEnd = value.EndInclusive;
+};
+state.OnValueChangeFinished = () => Save(state.ActiveRangeStart, state.ActiveRangeEnd);
+```
+
+构造值先约束和排序但不吸附，setter 按源码顺序约束和吸附。
+程序移动区间时，向上先设 End，向下先设 Start，避免旧的另一端限制新值。
+范围和 steps 在 State 构造后固定，改变时创建新 State。ViewModel 负责跨重建保存。
+`ValueChangeFinished` 在点击释放、拖动结束/取消、受支持键 KeyUp 或产生改变的自动化赋值后触发。
+`StartThumb` / `EndThumb` / `Track` 及其内容模板、`ActualState`、只读 Start/EndInteraction 均保留。
+
+2026-10-03 维护者确认的 Range API、显式 State 的调用者写回职责及内容模板方案仍有效。
+`SliderLayout` 保留不等宽双 Thumb 校正、minimumInteractiveComponentSize 和居中溢出；
+RangeSlider 自行处理 RTL 并绕过自动镜像。两端分别可聚焦并提供 `IRangeValueProvider`，父控件为 Group；
+自动化边界沿轴扩展 10 DIP，可通过 Thumb 的 AutomationProperties.Name 提供本地化名称。
+指针捕获在模板布局节点的 tunnel 阶段处理，保留 Compose 不自动请求鼠标焦点的行为。
+
+**已接受的 Range 行为改进**：按下时两端重合，首次有效水平拖动按数值方向选择 Thumb，之后固定。
+LTR 向左拉开起点、向右拉开终点，RTL 反转；仅释放事件出现水平位移也同样处理。
+没有拖动的点击、非重合手势、键盘、自动化保留原规则，拖动中合并后不会切换 Thumb。
+选择转移同时转移反馈并保留非交叉约束、slop、取消和完成回调。
+固定 Compose 在按下时选定 Thumb，重合时只能朝被选端允许的方向拉开；真实差异仍保留。
+2026-10-03 维护者确认“就按你说的改”，范围仅为 RangeSlider 的指针手势。
+
+## 已接受差异、范围与验证
+
+单值已接受原生行为：按下轨道立即改变数值，原生拖动和捕获规则、鼠标自动聚焦、原生键盘/RTL/修饰键规则、
+double 数值、范围约束、程序与自动化赋值不吸附、原生自动化边界和通知、无统一完成回调。
+这些语义会与固定 Compose 不同，parity 使用真实 Compose 组件保留差异。
+`changes` 的两端定义分别是原生实际值改变事件和 Compose 请求回调，因此明确不可比较；单值 `finished` 标为不支持。
+默认 Thumb 沿运动轴缩窄由原生焦点/按压状态即时驱动，没有人为引入帧延迟。
+
+**尚未实现，维护者明确延期**：可选 `LocalRippleThemeConfiguration.Focus.InsetRing` 及其 padding/轨道间距。
+固定基线该模式影响 Thumb 测量和轨道间距，共享 Ripple 没有对应配置；2026-10-03 维护者确认
+“本次只交付默认焦点模式，明确记录 InsetRing 未实现”。不据此声明所有 Compose 焦点配置已移植。
+**未经验证**：真实桌面、触屏/触控笔、原生屏幕阅读器、平台 numpad 映射；自动化证据来自 Windows Skia headless。
+
+`tests/Material3Expressive.Tests/SliderTests.cs` 覆盖原生默认数值、普通原生模板对照输入与事件顺序、绑定、
+程序/自动化赋值、模板、颜色 Token、几何与不规则 Ticks，以及完整 Range 状态/绑定/自动化/重合手势回归。
+双端场景为 `tests/VisualParity/Material3Expressive.Parity/Cases/SliderCases.cs` 和
 `tests/VisualParity/reference/src/main/kotlin/cases/SliderCases.kt`，suite 为 `slider`。
-核心矩阵包括三种形态 × 连续/离散 × 启用/禁用 × LTR/RTL，并补充端点、主题、颜色、圆角、间距、
-Centered、长短及自动尺寸、受限/扩展尺寸、负数范围、不等宽 Thumb、程序赋值、拖动、键盘和中断。
-运行时修改 TrackCornerSize 同时更新绘制和离散 Thumb 的 alignment line。
-结果按本次运行的 `summary.md`、用例 `overview.md` 与逐样本 YAML/PNG 读取；重复性与双端一致性分别评价。
+矩阵保留水平/垂直/区间 × 连续/离散 × 启用/禁用 × LTR/RTL，以及边界、主题、颜色、尺寸、圆角、Centered、
+自定义 Thumb、程序赋值、拖动、键盘和中断。运行时改变圆角或 Ticks 会重新排列离散 Thumb。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter FullyQualifiedName~SliderTests
-./tests/VisualParity/parity.ps1 list --family slider
 ./tests/VisualParity/parity.ps1 self-test --family slider
 ```
 
-`self-test` 新采集双端并检查重复捕获及额外被动截图，不发布缓存参考；已接受的禁用中断及 range 重合拖动差异仍会被匹配门禁拒绝。
+结果从运行的 summary.md、overview.md 和逐样本 YAML/PNG 读取；执行、双端一致性和重复性分别评价。
+`self-test` 新采集双端并检查重复捕获及额外被动截图，不发布参考缓存。
+已接受差异与不可比较字段仍会被一致性门禁如实报告。

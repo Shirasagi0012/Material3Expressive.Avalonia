@@ -118,20 +118,20 @@
                     </m3:ShortNavigationBarItem>
                 </m3:ShortNavigationBar>
                 <TextBlock Text="Sliders" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
-                <m3:Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="35" />
-                <m3:Slider Minimum="0" Maximum="100" Steps="9" Value="50" />
-                <m3:Slider Value="0.5" IsEnabled="False" />
-                <m3:Slider Value="0.35">
-                    <m3:Slider.TrackTemplate>
-                        <DataTemplate>
-                            <m3:SliderTrack State="{Binding}" IsCentered="True" EnableCornerShrinking="True" />
-                        </DataTemplate>
-                    </m3:Slider.TrackTemplate>
-                </m3:Slider>
+                <Grid ColumnDefinitions="*,Auto">
+                    <Slider x:Name="VolumeSlider" Value="35" />
+                    <TextBlock Grid.Column="1" Margin="16,0,0,0" MinWidth="72" VerticalAlignment="Center"
+                               Text="{Binding #VolumeSlider.Value, StringFormat='Value: {0:F0}'}"
+                               m3:MaterialText.Style="{m3:Typography BodyMedium}" />
+                </Grid>
+                <Slider Minimum="0" Maximum="100" TickFrequency="10" IsSnapToTickEnabled="True" SmallChange="10" LargeChange="10" Value="50" />
+                <Slider Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1" Value="0.5" IsEnabled="False" />
+                <Slider Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1" Value="0.35"
+                        m3:SliderAppearance.IsCentered="True" m3:SliderAppearance.EnableCornerShrinking="True" />
                 <m3:RangeSlider Minimum="0" Maximum="100" Steps="9" RangeStart="20" RangeEnd="80" />
                 <StackPanel Orientation="Horizontal" Spacing="24">
-                    <m3:VerticalSlider Height="180" Value="0.35" />
-                    <m3:VerticalSlider Height="180" Steps="3" Value="0.5" TopToBottom="False" />
+                    <Slider Orientation="Vertical" IsDirectionReversed="True" Height="180" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1" Value="0.35" />
+                    <Slider Orientation="Vertical" Height="180" Minimum="0" Maximum="1" TickFrequency="0.25" IsSnapToTickEnabled="True" SmallChange="0.25" LargeChange="0.25" Value="0.5" />
                 </StackPanel>
                 <Grid ColumnDefinitions="Auto,*" Height="360">
                     <m3:WideNavigationRail x:Name="DemoWideNavigationRail">

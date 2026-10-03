@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -51,6 +52,38 @@ public sealed class SliderThumb : Control
     public static readonly StyledProperty<SliderColors?> ColorsProperty = AvaloniaProperty.Register<SliderThumb, SliderColors?>(nameof(Colors), null);
     public SliderColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
 
+    private Avalonia.Controls.Slider? _nativeOwner;
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _nativeOwner = this.GetVisualAncestors().OfType<Avalonia.Controls.Slider>().FirstOrDefault();
+        if (_nativeOwner is { } owner)
+        {
+            owner.PropertyChanged += NativeChanged;
+            owner.Classes.CollectionChanged += NativeClassesChanged;
+            RefreshNativeFeedback();
+        }
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_nativeOwner is { } owner)
+        {
+            owner.PropertyChanged -= NativeChanged;
+            owner.Classes.CollectionChanged -= NativeClassesChanged;
+        }
+        _nativeOwner = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+    private void NativeChanged(object? sender, AvaloniaPropertyChangedEventArgs e) => RefreshNativeFeedback();
+    private void NativeClassesChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshNativeFeedback();
+    private void RefreshNativeFeedback()
+    {
+        if (_nativeOwner is not { } owner) return;
+        SetCurrentValue(IsVerticalProperty, owner.Orientation == Orientation.Vertical);
+        SetCurrentValue(InteractionProperty, !owner.IsEffectivelyEnabled ? InteractionState.None
+            : (owner.IsFocused ? InteractionState.Focused : InteractionState.None)
+                | (owner.Classes.Contains(":pressed") ? InteractionState.Pressed : InteractionState.None));
+    }
     static SliderThumb() => AffectsRender<SliderThumb>(IsVerticalProperty, InteractionProperty, ThumbColorProperty, DisabledThumbColorProperty, SurfaceColorProperty, ColorsProperty, CornerRadiusProperty, IsEffectivelyEnabledProperty);
     public override void Render(DrawingContext context)
     {
@@ -67,7 +100,7 @@ public sealed class SliderThumb : Control
     }
 }
 
-/// <summary>Default Track/CenteredTrack. State accepts SliderState or RangeSliderState.</summary>
+/// <summary>Material track drawing. Range controls supply State; native Slider templates consume their owner.</summary>
 public sealed class SliderTrack : Control
 {
     protected override bool BypassFlowDirectionPolicies => true;
@@ -117,7 +150,12 @@ public sealed class SliderTrack : Control
     /// <summary>Override drawing in track-local DIP. ShowStopIndicator=false omits it and restores endpoint ticks.</summary>
     private Action<DrawingContext, Point, Color>? _drawStopIndicator;
     public Action<DrawingContext, Point, Color>? DrawStopIndicator { get => _drawStopIndicator; set { _drawStopIndicator = value; InvalidateVisual(); } }
-    internal bool Vertical => State is SliderState { IsVertical: true };
+    private Avalonia.Controls.Slider? _nativeOwner;
+    private INotifyCollectionChanged? _ticks;
+    internal bool Vertical => _nativeOwner?.Orientation == Orientation.Vertical;
+    internal float[] TickFractions => State is RangeSliderState range ? range.TickFractions
+        : _nativeOwner is { } owner ? SliderAppearance.TickFractions(owner) : [];
+
     static SliderTrack()
     {
         AffectsMeasure<SliderTrack>(StateProperty, TrackHeightProperty);
@@ -130,13 +168,16 @@ public sealed class SliderTrack : Control
         base.OnPropertyChanged(change);
         // This alignment line changes discrete thumb placement even when track size stays the same.
         if (change.Property == TrackCornerSizeProperty)
+        {
             this.GetVisualAncestors().OfType<SliderLayout>().FirstOrDefault()?.InvalidateArrange();
+            this.GetVisualParent()?.GetVisualChildren().OfType<MaterialSliderTrack>().FirstOrDefault()?.InvalidateArrange();
+        }
         if (change.Property == StateProperty)
         {
             if (change.OldValue is AvaloniaObject old) old.PropertyChanged -= StateChanged;
             if (change.NewValue is AvaloniaObject state)
             {
-                if (state is not SliderState and not RangeSliderState) throw new ArgumentException("SliderTrack requires SliderState or RangeSliderState.");
+                if (state is not RangeSliderState) throw new ArgumentException("SliderTrack.State requires RangeSliderState.");
                 if (this.IsAttachedToVisualTree()) state.PropertyChanged += StateChanged;
             }
         }
@@ -146,11 +187,35 @@ public sealed class SliderTrack : Control
     {
         base.OnAttachedToVisualTree(e);
         if (State is { } state) { state.PropertyChanged -= StateChanged; state.PropertyChanged += StateChanged; }
+        _nativeOwner = this.GetVisualAncestors().OfType<Avalonia.Controls.Slider>().FirstOrDefault();
+        if (_nativeOwner is { } owner) { owner.PropertyChanged += NativeChanged; SubscribeTicks(); InvalidateMeasure(); }
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (State is { } state) state.PropertyChanged -= StateChanged;
+        if (_nativeOwner is { } owner) owner.PropertyChanged -= NativeChanged;
+        if (_ticks is not null) _ticks.CollectionChanged -= TicksChanged;
+        _ticks = null; _nativeOwner = null;
         base.OnDetachedFromVisualTree(e);
+    }
+    private void NativeChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == Avalonia.Controls.Slider.TicksProperty) SubscribeTicks();
+        if (e.Property == Avalonia.Controls.Slider.OrientationProperty) InvalidateMeasure();
+        if (e.Property == Avalonia.Controls.Slider.TicksProperty || e.Property == Avalonia.Controls.Slider.TickFrequencyProperty)
+            this.GetVisualParent()?.GetVisualChildren().OfType<MaterialSliderTrack>().FirstOrDefault()?.InvalidateArrange();
+        InvalidateVisual();
+    }
+    private void SubscribeTicks()
+    {
+        if (_ticks is not null) _ticks.CollectionChanged -= TicksChanged;
+        _ticks = _nativeOwner?.Ticks;
+        if (_ticks is not null) _ticks.CollectionChanged += TicksChanged;
+    }
+    private void TicksChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        InvalidateVisual();
+        this.GetVisualParent()?.GetVisualChildren().OfType<MaterialSliderTrack>().FirstOrDefault()?.InvalidateArrange();
     }
     protected override Size MeasureOverride(Size available) => Vertical
         ? new(Math.Min(TrackHeight, available.Width), double.IsFinite(available.Height) ? available.Height : 0)
@@ -158,22 +223,27 @@ public sealed class SliderTrack : Control
 
     public override void Render(DrawingContext context)
     {
-        if (State is not SliderState && State is not RangeSliderState) return;
-        var single = State as SliderState; var range = State as RangeSliderState;
-        var vertical = Vertical; var rtl = FlowDirection == FlowDirection.RightToLeft; var rtlHorizontal = rtl && !vertical;
+        if (State is not RangeSliderState && _nativeOwner is null) return;
+        var range = State as RangeSliderState; var owner = _nativeOwner;
+        var vertical = Vertical;
+        var rtl = (FlowDirection == FlowDirection.RightToLeft) ^ (!vertical && owner?.IsDirectionReversed == true);
+        var rtlHorizontal = rtl && !vertical;
         var centered = range is null && IsCentered;
-        var ticks = single?.TickFractions ?? range!.TickFractions;
-        var fractionStart = range?.StartFraction ?? 0; var fractionEnd = single?.CoercedValueAsFraction ?? range!.EndFraction;
+        var ticks = TickFractions;
+        var fractionStart = range?.StartFraction ?? 0;
+        var fractionEnd = range?.EndFraction ?? SliderAppearance.Fraction(owner!);
         var scale = (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
         var width = (float)Bounds.Width * scale; var height = (float)Bounds.Height * scale;
         var corner = double.IsNaN(TrackCornerSize) ? (vertical ? width : height) / 2 : (float)TrackCornerSize * scale;
         var inside = (float)TrackInsideCornerSize * scale;
         var length = vertical ? height : width;
-        bool Endpoint(float fraction) => ticks.Length > 0 && (fraction == ticks[0] || fraction == ticks[^1]);
+        bool Endpoint(float fraction) => fraction == 0 || fraction == 1;
         float Position(float fraction) => ticks.Length > 0 && !Endpoint(fraction) ? (length - corner * 2) * fraction + corner : length * fraction;
         var valueStart = Position(fractionStart); var valueEnd = Position(fractionEnd); var center = length / 2;
-        var startThumb = range is not null ? range.StartThumbWidth : centered && fractionEnd <= 0.5f ? (vertical ? single!.ThumbHeight : single!.ThumbWidth) : 0;
-        var endThumb = range is not null ? range.EndThumbWidth : !centered || fractionEnd >= 0.5f ? (vertical ? single!.ThumbHeight : single!.ThumbWidth) : 0;
+        var nativeThumb = owner?.GetVisualDescendants().OfType<MaterialSliderTrack>().FirstOrDefault()?.Thumb;
+        var nativeExtent = (float)(vertical ? nativeThumb?.Bounds.Height ?? 0 : nativeThumb?.Bounds.Width ?? 0) * scale;
+        var startThumb = range is not null ? range.StartThumbWidth : centered && fractionEnd <= 0.5f ? nativeExtent : 0;
+        var endThumb = range is not null ? range.EndThumbWidth : !centered || fractionEnd >= 0.5f ? nativeExtent : 0;
         var startGap = (centered || range is not null) && ThumbTrackGapSize > 0 ? startThumb / 2 + (float)ThumbTrackGapSize * scale : 0;
         var endGap = ThumbTrackGapSize > 0 ? endThumb / 2 + (float)ThumbTrackGapSize * scale : 0;
         var shrinking = range is null && EnableCornerShrinking;
@@ -182,7 +252,7 @@ public sealed class SliderTrack : Control
         var inactive = enabled ? Colors?.InactiveTrackColor ?? InactiveTrackColor : Colors?.DisabledInactiveTrackColor ?? DisabledInactiveTrackColor;
         var activeTick = enabled ? Colors?.ActiveTickColor ?? ActiveTickColor : Colors?.DisabledActiveTickColor ?? DisabledActiveTickColor;
         var inactiveTick = enabled ? Colors?.InactiveTickColor ?? InactiveTickColor : Colors?.DisabledInactiveTickColor ?? DisabledInactiveTickColor;
-        using var transform = single is { IsVertical: true, ReverseVerticalDirection: true }
+        using var transform = vertical && owner?.IsDirectionReversed == false
             ? context.PushTransform(new Matrix(1, 0, 0, -1, 0, Bounds.Height)) : default;
         void Path(float from, float to, Color color, float startRadius, float endRadius)
         {
@@ -225,7 +295,7 @@ public sealed class SliderTrack : Control
         bool In(float value, float start, float end) => value >= start && value <= end;
         for (var i = 0; i < ticks.Length; i++)
         {
-            if (ShowStopIndicator && (((centered || range is not null) && i == 0) || i == ticks.Length - 1)) continue;
+            if (ShowStopIndicator && (((centered || range is not null) && ticks[i] == 0) || ticks[i] == 1)) continue;
             var position = SliderMath.Lerp(corner, length - corner, ticks[i]);
             var centerGap = valueEnd > center ? startGap : endGap;
             var thumbGap = centered ? valueEnd > center ? endGap : startGap : endGap;

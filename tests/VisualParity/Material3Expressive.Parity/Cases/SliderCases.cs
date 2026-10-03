@@ -8,7 +8,9 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
-using MSlider = Material3Expressive.Components.Slider;
+using NativeSlider = Avalonia.Controls.Slider;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 
 namespace Material3Expressive.Parity;
 
@@ -105,40 +107,48 @@ public sealed class SliderCases
         host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.SecondaryContainer] = Color.Parse(c.Dark ? "#4A4458" : "#E8DEF8");
         host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.OnSurface] = Color.Parse(c.Dark ? "#E6E0E9" : "#1D1B20");
         host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.Surface] = Color.Parse(c.Dark ? "#141218" : "#FEF7FF");
-        var value = new SliderState(c.Value, c.Steps, c.Minimum, c.Maximum); var range = new RangeSliderState(c.Value, c.End, c.Steps, c.Minimum, c.Maximum);
-        if (!c.Hoisted) value.Value = c.Value;
+        var range = new RangeSliderState(c.Value, c.End, c.Steps, c.Minimum, c.Maximum);
         range.ActiveRangeStart = c.Value; range.ActiveRangeEnd = c.End;
         var changes = 0; var finished = 0;
-        value.OnValueChange = v => { changes++; value.Value = v; };
         range.OnValueChange = v => { changes++; range.ActiveRangeStart = v.Start; range.ActiveRangeEnd = v.EndInclusive; };
-        value.OnValueChangeFinished = range.OnValueChangeFinished = () => finished++;
-        Control control = c.Kind switch
-        {
-            "vertical" => new VerticalSlider { State = value, TopToBottom = c.TopToBottom },
-            "range" => new RangeSlider { State = range },
-            _ => new MSlider { State = value },
-        };
+        range.OnValueChangeFinished = () => finished++;
+        var intervals = c.Steps > 0 ? c.Steps + 1 : 100;
+        var delta = (double)(c.Maximum - c.Minimum) / intervals;
+        Control control = c.Kind == "range" ? new RangeSlider { State = range }
+            : new NativeSlider { Minimum = c.Minimum, Maximum = c.Maximum, Value = c.Value,
+                Orientation = c.Kind == "vertical" ? Orientation.Vertical : Orientation.Horizontal,
+                IsDirectionReversed = c.Kind == "vertical" && c.TopToBottom,
+                TickFrequency = c.Steps > 0 ? delta : 0, IsSnapToTickEnabled = c.Steps > 0,
+                SmallChange = delta, LargeChange = delta * Math.Clamp(intervals / 10, 1, 10) };
         if (!c.AutoLength) { if (c.Kind == "vertical") control.Height = c.Length; else control.Width = c.Length; }
         if (c.CrossSize > 0) { if (c.Kind == "vertical") control.Width = c.CrossSize; else control.Height = c.CrossSize; }
         var colors = c.CustomColors ? Palette() : null;
-        var track = new SliderTrack { State = c.Kind == "range" ? range : value, Colors = colors,
-            IsCentered = c.Centered, EnableCornerShrinking = c.Kind == "vertical" || c.Centered || c.CustomCorners,
-            TrackCornerSize = c.CustomCorners ? 4 : double.NaN, ThumbTrackGapSize = c.Gap, ShowStopIndicator = c.Stop };
         SliderThumb Thumb(bool end = false) => new() { Width = c.Kind == "vertical" ? (c.CustomThumbs ? 32 : 44) : c.CustomThumbs ? end ? 20 : 12 : 4,
             Height = c.Kind == "vertical" ? c.CustomThumbs ? 12 : 4 : c.CustomThumbs ? end ? 50 : 32 : 44,
             IsVertical = c.Kind == "vertical", Colors = colors };
-        // Default thumbs are product-owned, so input feedback remains part of the component.
-        if (control is MSlider single)
+        if (control is NativeSlider single)
         {
-            single.Colors = colors; single.Track = track;
+            single.ValueChanged += (_, _) => changes++;
+            SliderAppearance.SetColors(single, colors);
+            SliderAppearance.SetIsCentered(single, c.Centered);
+            SliderAppearance.SetEnableCornerShrinking(single, c.Kind == "vertical" || c.Centered || c.CustomCorners);
+            SliderAppearance.SetTrackCornerSize(single, c.CustomCorners ? 4 : double.NaN);
+            SliderAppearance.SetThumbTrackGapSize(single, c.Gap);
+            SliderAppearance.SetShowStopIndicator(single, c.Stop);
             if (c.CustomThumbs)
             {
-                var custom = Thumb(); custom.Bind(SliderThumb.InteractionProperty, new Avalonia.Data.Binding(nameof(MSlider.Interaction)) { Source = single }); single.Thumb = custom;
+                var theme = new ControlTheme(typeof(NativeSlider)) { BasedOn = (ControlTheme)host.Window.FindResource("MaterialSliderTheme")! };
+                var style = new Style(s => s.Nesting().Template().OfType<Avalonia.Controls.Primitives.Thumb>().Name("PART_Thumb"));
+                style.Setters.Add(new Setter(TemplatedControl.TemplateProperty,
+                    new FuncControlTemplate<Avalonia.Controls.Primitives.Thumb>((_, _) => Thumb())));
+                theme.Children.Add(style); single.Theme = theme;
             }
         }
         else if (control is RangeSlider pair)
         {
-            pair.Colors = colors; pair.Track = track;
+            pair.Colors = colors;
+            pair.Track = new SliderTrack { State = range, Colors = colors,
+                TrackCornerSize = c.CustomCorners ? 4 : double.NaN, ThumbTrackGapSize = c.Gap, ShowStopIndicator = c.Stop };
             if (c.CustomThumbs)
             {
                 var start = Thumb(); var end = Thumb(true);
@@ -151,21 +161,25 @@ public sealed class SliderCases
         control.HorizontalAlignment = HorizontalAlignment.Left; control.VerticalAlignment = VerticalAlignment.Top;
         control.FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         host.Mount(new Panel { Margin = new Thickness(16), FlowDirection = control.FlowDirection, Children = { control } }); host.Frame(0);
+        var track = control.GetVisualDescendants().OfType<SliderTrack>().Single();
         ContentPresenter Part(string name) => control.GetVisualDescendants().OfType<ContentPresenter>().Single(p => p.Name == name);
         void Sample(string id)
         {
             var facts = new List<Measurement>(AvaloniaMeasurements.Geometry(control, host.Window))
             {
-                Measurement.Numeric("value", c.Kind == "range" ? range.ActiveRangeStart : value.Value, "value", definition: "slider.active-start"),
-                Measurement.Numeric("end", c.Kind == "range" ? range.ActiveRangeEnd : value.Value, "value", definition: "slider.active-end"),
-                Measurement.Numeric("changes", changes, "count", definition: "slider.value-change-callbacks"),
-                Measurement.Numeric("finished", finished, "count", definition: "slider.value-finished-callbacks"),
-                Measurement.Numeric("feedback", (control is MSlider one ? one.Interaction : ((RangeSlider)control).StartInteraction | ((RangeSlider)control).EndInteraction) == Material3Expressive.Foundation.Interaction.InteractionState.None ? 0 : 1,
+                Measurement.Numeric("value", c.Kind == "range" ? range.ActiveRangeStart : ((NativeSlider)control).Value, "value", definition: "slider.active-start"),
+                Measurement.Numeric("end", c.Kind == "range" ? range.ActiveRangeEnd : ((NativeSlider)control).Value, "value", definition: "slider.active-end"),
+                Measurement.Numeric("changes", changes, "count", definition: c.Kind == "range" ? "slider.value-change-callbacks" : "slider.native-value-changed-events"),
+                c.Kind == "range" ? Measurement.Numeric("finished", finished, "count", definition: "slider.value-finished-callbacks")
+                    : Measurement.Unavailable("finished", "properties", "number", "count", "none",
+                        "Native Slider has no unified value-finished callback; this API was intentionally removed.", "slider.value-finished-callbacks"),
+                Measurement.Numeric("feedback", (control is NativeSlider ? control.GetVisualDescendants().OfType<SliderThumb>().Single().Interaction : ((RangeSlider)control).StartInteraction | ((RangeSlider)control).EndInteraction) == Material3Expressive.Foundation.Interaction.InteractionState.None ? 0 : 1,
                     "boolean", definition: "slider.thumb-feedback-active"),
             };
             var points = new List<ProbePoint> { new("slider", "slider", null, facts.ToArray()), new("track", "track", "slider", AvaloniaMeasurements.Geometry(track, host.Window)) };
             foreach (var name in c.Kind == "range" ? new[] { "PART_StartThumb", "PART_EndThumb" } : new[] { "PART_Thumb" })
-                points.Add(new(name == "PART_EndThumb" ? "end-thumb" : "thumb", "thumb", "slider", AvaloniaMeasurements.Geometry(Part(name).Child!, host.Window)));
+                points.Add(new(name == "PART_EndThumb" ? "end-thumb" : "thumb", "thumb", "slider", AvaloniaMeasurements.Geometry(control is NativeSlider
+                    ? control.GetVisualDescendants().OfType<SliderThumb>().Single() : Part(name).Child!, host.Window)));
             writer.Submit(host.Snapshot(id, id, points.ToArray()));
         }
         void Event(long time, string action, Point p) { host.AdvanceTo(time); host.Input(action, p); host.Draw(); host.Frame(time); }
@@ -178,9 +192,10 @@ public sealed class SliderCases
             host.AdvanceTo(16000);
             if (c.Action == "program")
             {
-                value.Value = 0.86f; range.ActiveRangeEnd = 1; range.ActiveRangeStart = 0.6f;
+                if (control is NativeSlider native) native.Value = 0.86f;
+                else { range.ActiveRangeEnd = 1; range.ActiveRangeStart = 0.6f; }
             }
-            else if (c.Action == "corner") track.TrackCornerSize = 8;
+            else if (c.Action == "corner") { if (control is NativeSlider native) SliderAppearance.SetTrackCornerSize(native, 8); else track.TrackCornerSize = 8; }
             else
             {
                 host.Window.RequestedThemeVariant = ThemeVariant.Dark;

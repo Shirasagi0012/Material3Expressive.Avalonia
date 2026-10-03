@@ -7,35 +7,13 @@ using Avalonia.Automation.Provider;
 
 namespace Material3Expressive.Components;
 
-internal sealed class SliderAutomationPeer(Slider owner) : ControlAutomationPeer(owner), IRangeValueProvider
+internal static class SliderSemanticsBounds
 {
-    protected override Rect GetBoundingRectangleCore() => SemanticsBounds(owner, owner.IsVertical);
-    internal static Rect SemanticsBounds(Control control, bool vertical)
+    internal static Rect Get(Control control, bool vertical)
     {
         if (TopLevel.GetTopLevel(control) is not { } root || control.TransformToVisual(root) is not { } transform) return default;
-        // IncreaseHorizontal/VerticalSemanticsBounds adds 10dp without changing visual layout.
         var padding = vertical ? new Thickness(0, 10) : new Thickness(10, 0);
         return new Rect(control.Bounds.Size).Inflate(padding).TransformToAABB(transform);
-    }
-    internal void NotifyValue(float oldValue, float newValue) => RaisePropertyChangedEvent(RangeValuePatternIdentifiers.ValueProperty, (double)oldValue, (double)newValue);
-    internal void NotifyState(SliderState oldState, SliderState newState)
-    {
-        NotifyValue(oldState.Value, newState.Value);
-        RaisePropertyChangedEvent(RangeValuePatternIdentifiers.MinimumProperty, (double)oldState.Minimum, (double)newState.Minimum);
-        RaisePropertyChangedEvent(RangeValuePatternIdentifiers.MaximumProperty, (double)oldState.Maximum, (double)newState.Maximum);
-    }
-    protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Slider;
-    protected override string GetClassNameCore() => owner.GetType().Name;
-    public bool IsReadOnly => !owner.IsEffectivelyEnabled;
-    public double Minimum => owner.ActualState.Minimum;
-    public double Maximum => owner.ActualState.Maximum;
-    public double Value => owner.ActualState.Value;
-    public double SmallChange => (Maximum - Minimum) / (owner.ActualState.Steps > 0 ? owner.ActualState.Steps + 1 : 100);
-    public double LargeChange => SmallChange * Math.Clamp((owner.ActualState.Steps > 0 ? owner.ActualState.Steps + 1 : 100) / 10, 1, 10);
-    public void SetValue(double value)
-    {
-        if (IsReadOnly) throw new InvalidOperationException("The slider is disabled.");
-        owner.SetProgress((float)value);
     }
 }
 internal sealed class RangeSliderAutomationPeer(RangeSlider owner) : ControlAutomationPeer(owner)
@@ -47,7 +25,7 @@ internal sealed class RangeSliderAutomationPeer(RangeSlider owner) : ControlAuto
 }
 internal sealed class SliderThumbAutomationPeer(SliderThumbPresenter thumb) : ControlAutomationPeer(thumb), IRangeValueProvider
 {
-    protected override Rect GetBoundingRectangleCore() => SliderAutomationPeer.SemanticsBounds(thumb, false);
+    protected override Rect GetBoundingRectangleCore() => SliderSemanticsBounds.Get(thumb, false);
     internal void NotifyState(RangeSliderState oldState, RangeSliderState newState)
     {
         RaisePropertyChangedEvent(RangeValuePatternIdentifiers.ValueProperty,

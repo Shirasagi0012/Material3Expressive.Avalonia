@@ -15,7 +15,9 @@ using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Tokens;
 using Xunit;
-using MSlider = Material3Expressive.Components.Slider;
+using NativeSlider = Avalonia.Controls.Slider;
+using Avalonia.Controls.Primitives;
+using Avalonia.Styling;
 
 namespace Material3Expressive.Tests;
 
@@ -25,16 +27,244 @@ public sealed class SliderTests
     public void Tokens_AreCompleteAndKeepRoleReferences() => TokenScan.AssertComplete(new SliderTokenSource(), typeof(MaterialTokens.Comp.Slider));
 
     [AvaloniaFact]
-    public void State_PreservesConstructorAndSetterSnappingDistinction()
+    public void MaterialTheme_KeepsNativeNumericDefaultsAndAutomation()
     {
-        var state = new SliderState(0.36f, 3);
-        Assert.Equal(0.36f, state.Value);
-        state.Value = 0.36f; Assert.Equal(0.25f, state.Value);
-        state.Value = 0.375f; Assert.Equal(0.25f, state.Value); // first-tick tie
-        state.ShouldAutoSnap = false; state.Value = 1.2f;
-        Assert.Equal(1.2f, state.Value); Assert.Equal(1, state.CoercedValueAsFraction);
-        state.ShouldAutoSnap = true; state.Value = -1; Assert.Equal(0, state.Value);
+        var slider = new NativeSlider { Width = 280 }; var window = Show(slider);
+        try
+        {
+            Assert.Equal(0, slider.Minimum); Assert.Equal(100, slider.Maximum);
+            Assert.Equal(1, slider.SmallChange); Assert.Equal(10, slider.LargeChange);
+            Assert.IsType<Avalonia.Controls.Automation.Peers.SliderAutomationPeer>(ControlAutomationPeer.CreatePeerForElement(slider));
+        }
+        finally { window.Close(); }
     }
+    [AvaloniaTheory]
+    [InlineData(false, 280, 48, 276, 16)]
+    [InlineData(true, 48, 280, 16, 276)]
+    public void Defaults_KeepInteractiveSpaceOutsideThumb(bool vertical, double width, double height, double trackWidth, double trackHeight)
+    {
+        var slider = new NativeSlider { Maximum = 1, Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal };
+        if (vertical) slider.Height = 280; else slider.Width = 280;
+        var window = Show(slider);
+        try
+        {
+            Assert.Equal(new Size(width, height), slider.Bounds.Size);
+            Assert.Equal(new Size(trackWidth, trackHeight), slider.GetVisualDescendants().OfType<SliderTrack>().Single().Bounds.Size);
+            Assert.Equal(new Size(vertical ? 44 : 4, vertical ? 4 : 44), NativeThumb(slider).Bounds.Size);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaFact]
+    public void NativeTap_UpdatesOnPressAndPreservesTwoWayBinding()
+    {
+        var source = new NativeSlider { Value = 25 };
+        var slider = new NativeSlider { Width = 280 };
+        slider.Bind(NativeSlider.ValueProperty, new Avalonia.Data.Binding(nameof(NativeSlider.Value)) { Source = source, Mode = Avalonia.Data.BindingMode.TwoWay });
+        var changes = 0; slider.ValueChanged += (_, _) => changes++;
+        var window = Show(slider);
+        try
+        {
+            window.MouseDown(new Point(210, 24), MouseButton.Left);
+            Assert.InRange(source.Value, 74, 76); Assert.Equal(source.Value, slider.Value); Assert.Equal(1, changes);
+            window.MouseUp(new Point(210, 24), MouseButton.Left); Assert.Equal(1, changes);
+            source.Value = 10; window.UpdateLayout(); Assert.Equal(10, slider.Value);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData(false, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, true)]
+    public void MaterialTemplate_PreservesNativeInputAndEventOrder(bool vertical, bool reversed, bool rtl)
+    {
+        var material = Capture(false); var baseline = Capture(true);
+        Assert.Equal(baseline.Values, material.Values);
+        Assert.Equal(baseline.Events, material.Events);
+        (double[] Values, double[] Events) Capture(bool plain)
+        {
+            var slider = new NativeSlider { Width = vertical ? 48 : 280, Height = vertical ? 280 : 48,
+                Maximum = 1, Value = 0.25, SmallChange = 0.25, LargeChange = 0.5,
+                TickFrequency = 0.25, IsSnapToTickEnabled = true,
+                Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal, IsDirectionReversed = reversed,
+                FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+            if (plain) slider.Template = NativeTemplate(vertical);
+            var events = new List<double>(); slider.ValueChanged += (_, e) => events.Add(e.NewValue);
+            var window = Show(slider); var values = new List<double>();
+            try
+            {
+                var a = vertical ? new Point(24, 180) : new Point(180, 24);
+                var b = vertical ? new Point(24, 230) : new Point(230, 24);
+                window.MouseDown(a, MouseButton.Left); values.Add(slider.Value);
+                window.MouseMove(b); values.Add(slider.Value);
+                window.MouseUp(b, MouseButton.Left); values.Add(slider.Value);
+                window.UpdateLayout();
+                var thumb = NativeThumb(slider);
+                var thumbCenter = thumb.TranslatePoint(new Point(thumb.Bounds.Width / 2, thumb.Bounds.Height / 2), window)!.Value;
+                window.MouseDown(thumbCenter, MouseButton.Left); values.Add(slider.Value);
+                window.MouseMove(a); values.Add(slider.Value);
+                window.MouseUp(a, MouseButton.Left); values.Add(slider.Value);
+                slider.Focus();
+                foreach (var key in new[] { Key.Right, Key.Down, Key.PageUp, Key.Home, Key.End })
+                {
+                    window.KeyPress(key, RawInputModifiers.None, PhysicalKey.None, null); values.Add(slider.Value);
+                    window.KeyRelease(key, RawInputModifiers.None, PhysicalKey.None, null); values.Add(slider.Value);
+                }
+                return (values.ToArray(), events.ToArray());
+            }
+            finally { window.Close(); }
+        }
+    }
+    [AvaloniaFact]
+    public void ProgrammaticAndAutomationValues_KeepNativeCoercionWithoutTickSnapping()
+    {
+        var slider = new NativeSlider { Width = 280, Maximum = 1, TickFrequency = 0.25, IsSnapToTickEnabled = true, Value = 0.36 };
+        var window = Show(slider);
+        try
+        {
+            Assert.Equal(0.36, slider.Value);
+            var peer = ControlAutomationPeer.CreatePeerForElement(slider)!;
+            Assert.Equal(280, peer.GetBoundingRectangle().Width);
+            var provider = Assert.IsAssignableFrom<IRangeValueProvider>(peer);
+            provider.SetValue(0.375); Assert.Equal(0.375, slider.Value);
+            slider.Value = 1.2; Assert.Equal(1, slider.Value);
+            window.Content = null; window.Content = slider; window.UpdateLayout(); Assert.Equal(1, slider.Value);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaFact]
+    public void PointerFocusAndFeedback_FollowNativeSlider()
+    {
+        var slider = new NativeSlider { Width = 280 }; var other = new Avalonia.Controls.Button();
+        var window = Show(new StackPanel { Children = { slider, other } });
+        try
+        {
+            other.Focus();
+            window.MouseDown(new Point(140, 24), MouseButton.Left); window.MouseUp(new Point(140, 24), MouseButton.Left);
+            Assert.True(slider.IsFocused); Assert.False(other.IsFocused);
+            var visual = slider.GetVisualDescendants().OfType<SliderThumb>().Single();
+            Assert.True(visual.Interaction.HasFlag(InteractionState.Focused));
+            slider.IsEnabled = false; Assert.Equal(InteractionState.None, visual.Interaction);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaFact]
+    public void DerivedTheme_CustomizesNativeThumbAndKeepsLiveValueLayout()
+    {
+        var slider = new NativeSlider { Width = 280, Maximum = 1, Value = 0.5 };
+        var window = Show(slider);
+        try
+        {
+            var theme = new ControlTheme(typeof(NativeSlider)) { BasedOn = (ControlTheme)window.FindResource("MaterialSliderTheme")! };
+            var thumbStyle = new Style(s => s.Nesting().Template().OfType<Thumb>().Name("PART_Thumb"));
+            thumbStyle.Setters.Add(new Setter(TemplatedControl.TemplateProperty,
+                new FuncControlTemplate<Thumb>((_, _) => new Border { Width = 12, Height = 32, Background = Brushes.Red })));
+            theme.Children.Add(thumbStyle); slider.Theme = theme; window.UpdateLayout();
+            var thumb = NativeThumb(slider); Assert.Equal(new Size(12, 32), thumb.Bounds.Size);
+            var old = thumb.Bounds.X; slider.Value = 0.75; window.UpdateLayout(); Assert.True(thumb.Bounds.X > old);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaTheory]
+    [InlineData("horizontal")]
+    [InlineData("vertical")]
+    [InlineData("range")]
+    public void ConstrainedThumb_ObeysParentMaximum(string kind)
+    {
+        Control slider = kind switch
+        {
+            "vertical" => new NativeSlider { Height = 280, Width = 20, Orientation = Orientation.Vertical },
+            "range" => new RangeSlider { Width = 280, Height = 20 },
+            _ => new NativeSlider { Width = 280, Height = 20 },
+        };
+        var window = Show(slider);
+        try
+        {
+            foreach (var thumb in slider.GetVisualDescendants().OfType<SliderThumb>())
+                Assert.Equal(20, kind == "vertical" ? thumb.Bounds.Width : thumb.Bounds.Height);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaFact]
+    public void ChangingTrackCorner_UpdatesDiscreteThumbAlignment()
+    {
+        var slider = new NativeSlider { Width = 280, Maximum = 1, Value = 0.25, TickFrequency = 0.25, IsSnapToTickEnabled = true };
+        SliderAppearance.SetTrackCornerSize(slider, 8);
+        var window = Show(slider);
+        try
+        {
+            var previous = NativeThumb(slider).Bounds.X;
+            SliderAppearance.SetTrackCornerSize(slider, 4); window.UpdateLayout();
+            Assert.True(NativeThumb(slider).Bounds.X < previous);
+            slider.Ticks = new Avalonia.Collections.AvaloniaList<double> { 0, 0.25, 1 }; window.UpdateLayout();
+            slider.TickFrequency = 0; slider.Ticks.Clear(); window.UpdateLayout();
+            Assert.Equal(69, NativeThumb(slider).Bounds.X);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaFact]
+    public void IrregularTicks_KeepNativeInputAndAlignInteriorThumbs()
+    {
+        var slider = new NativeSlider { Width = 280, Maximum = 1, Value = 0.25,
+            Ticks = new Avalonia.Collections.AvaloniaList<double> { 0.75, 0.25 }, IsSnapToTickEnabled = true };
+        var window = Show(slider);
+        try
+        {
+            Assert.Equal(73, NativeThumb(slider).Bounds.X);
+            window.MouseDown(new Point(200, 24), MouseButton.Left);
+            window.MouseUp(new Point(200, 24), MouseButton.Left);
+            Assert.Equal(0.75, slider.Value);
+            slider.Value = 0; window.UpdateLayout(); Assert.Equal(0, NativeThumb(slider).Bounds.X);
+            slider.Value = 1; window.UpdateLayout(); Assert.Equal(276, NativeThumb(slider).Bounds.X);
+        }
+        finally { window.Close(); }
+    }
+    [AvaloniaFact]
+    public void TokenAndThemeUpdates_ReachDefaultParts()
+    {
+        var slider = new NativeSlider { Width = 280, IsEnabled = false }; var window = Show(slider);
+        try
+        {
+            var thumb = slider.GetVisualDescendants().OfType<SliderThumb>().Single();
+            var track = slider.GetVisualDescendants().OfType<SliderTrack>().Single();
+            window.Resources[MaterialTokens.Sys.Color.Surface] = Colors.Green;
+            window.Resources[MaterialTokens.Sys.Color.Primary] = Colors.Red;
+            window.Resources[MaterialTokens.Comp.Slider.InactiveTrackHeight] = 20d;
+            window.UpdateLayout();
+            Assert.Equal(Colors.Green, thumb.SurfaceColor); Assert.Equal(Colors.Red, track.ActiveTrackColor);
+            Assert.Equal(20, track.Bounds.Height);
+            window.RequestedThemeVariant = ThemeVariant.Dark; window.UpdateLayout();
+            Assert.Equal(Colors.Green, thumb.SurfaceColor); Assert.Equal(Colors.Red, track.ActiveTrackColor);
+        }
+        finally { window.Close(); }
+    }
+    private static Thumb NativeThumb(NativeSlider control) => control.GetVisualDescendants().OfType<Thumb>().Single(t => t.Name == "PART_Thumb");
+    private static IControlTemplate NativeTemplate(bool vertical) => new FuncControlTemplate<NativeSlider>((owner, scope) =>
+    {
+        var track = new Track { Name = "PART_Track", Orientation = owner.Orientation, IsDirectionReversed = owner.IsDirectionReversed,
+            Minimum = owner.Minimum, Maximum = owner.Maximum,
+            Thumb = new Thumb { Name = "PART_Thumb", Width = vertical ? 44 : 4, Height = vertical ? 4 : 44,
+                Template = new FuncControlTemplate<Thumb>((_, _) => new Border { Background = Brushes.Red }) },
+            IncreaseButton = TrackButton("PART_IncreaseButton"),
+            DecreaseButton = TrackButton("PART_DecreaseButton") };
+        scope.Register("PART_Track", track); scope.Register("PART_IncreaseButton", track.IncreaseButton); scope.Register("PART_DecreaseButton", track.DecreaseButton);
+        track.Bind(Track.ValueProperty, new Avalonia.Data.Binding(nameof(NativeSlider.Value)) { Source = owner, Mode = Avalonia.Data.BindingMode.TwoWay });
+        return track;
+        static Avalonia.Controls.Button TrackButton(string name) => new()
+        {
+            Name = name, Focusable = false,
+            Theme = new ControlTheme(typeof(Avalonia.Controls.Button))
+            {
+                Setters = { new Setter(TemplatedControl.TemplateProperty,
+                    new FuncControlTemplate<Avalonia.Controls.Button>((_, _) => new Border { Background = Brushes.Transparent })) }
+            }
+        };
+    });
+
     [AvaloniaFact]
     public void RangeState_SortsInitialValuesAndConstrainsEachThumb()
     {
@@ -44,90 +274,6 @@ public sealed class SliderTests
         Assert.Equal(0.25f, state.ActiveRangeStart); Assert.Equal(0.75f, state.ActiveRangeEnd);
         state.ActiveRangeStart = 5; Assert.Equal(state.ActiveRangeEnd, state.ActiveRangeStart);
         state.ActiveRangeEnd = -5; Assert.Equal(state.ActiveRangeStart, state.ActiveRangeEnd);
-    }
-    [AvaloniaTheory]
-    [InlineData(false, 280, 48, 276, 16)]
-    [InlineData(true, 48, 280, 16, 276)]
-    public void Defaults_KeepInteractiveSpaceOutsideThumb(bool vertical, double width, double height, double trackWidth, double trackHeight)
-    {
-        MSlider slider = vertical ? new VerticalSlider { Height = 280 } : new MSlider { Width = 280 };
-        var window = Show(slider);
-        try
-        {
-            Assert.Equal(new Size(width, height), slider.Bounds.Size);
-            var track = slider.GetVisualDescendants().OfType<SliderTrack>().Single();
-            Assert.Equal(new Size(trackWidth, trackHeight), track.Bounds.Size);
-            var thumb = slider.GetVisualDescendants().OfType<SliderThumb>().Single();
-            Assert.Equal(new Size(vertical ? 44 : 4, vertical ? 4 : 44), thumb.Bounds.Size);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void Tap_WritesOnlyOnReleaseAndPreservesValueBinding()
-    {
-        var source = new SliderState(0.25f);
-        var slider = new MSlider { Width = 280 };
-        slider.Bind(MSlider.ValueProperty, new Avalonia.Data.Binding(nameof(SliderState.Value)) { Source = source, Mode = Avalonia.Data.BindingMode.TwoWay });
-        var finished = 0; slider.ValueChangeFinished += (_, _) => finished++;
-        var window = Show(slider);
-        try
-        {
-            window.MouseDown(new Point(210, 24), MouseButton.Left); Assert.Equal(0.25f, source.Value);
-            window.MouseUp(new Point(210, 24), MouseButton.Left);
-            Assert.InRange(source.Value, 0.74f, 0.76f); Assert.Equal(source.Value, slider.Value); Assert.Equal(1, finished);
-            source.Value = 0.1f; window.UpdateLayout(); Assert.Equal(0.1f, slider.ActualState.Value);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaTheory]
-    [InlineData(false, true, Key.Right, 0.26f)]
-    [InlineData(false, false, Key.Right, 0.24f)]
-    [InlineData(true, true, Key.Down, 0.26f)]
-    [InlineData(true, false, Key.Down, 0.24f)]
-    public void Keyboard_UsesOnePercentAndDirection(bool vertical, bool forward, Key key, float expected)
-    {
-        MSlider slider = vertical ? new VerticalSlider { Height = 280, TopToBottom = forward, Value = 0.25f }
-            : new MSlider { Width = 280, Value = 0.25f, FlowDirection = forward ? FlowDirection.LeftToRight : FlowDirection.RightToLeft };
-        var window = Show(slider); var finished = 0; slider.ValueChangeFinished += (_, _) => finished++;
-        try
-        {
-            slider.Focus(); window.KeyPress(key, RawInputModifiers.None, PhysicalKey.None, null);
-            Assert.Equal(expected, slider.Value); Assert.Equal(0, finished);
-            window.KeyRelease(key, RawInputModifiers.None, PhysicalKey.None, null); Assert.Equal(1, finished);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void HoistedCallback_OwnsValueUntilItWritesBack()
-    {
-        var state = new SliderState(0.25f); var requested = 0f;
-        state.OnValueChange = value => requested = value;
-        var slider = new MSlider { Width = 280, State = state, Value = 0.9f };
-        var window = Show(slider);
-        try
-        {
-            slider.Focus(); window.KeyPress(Key.Right, RawInputModifiers.None, PhysicalKey.None, null);
-            Assert.Equal(0.26f, requested); Assert.Equal(0.25f, state.Value);
-            state.Value = requested; Assert.Equal(0.26f, state.Value);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void Automation_SnapsProgressAndFinishesOnlyForAChange()
-    {
-        var slider = new MSlider { Width = 280, Steps = 3, Value = 0.25f };
-        var window = Show(slider); var finished = 0; slider.ValueChangeFinished += (_, _) => finished++;
-        try
-        {
-            var peer = ControlAutomationPeer.CreatePeerForElement(slider)!;
-            Assert.Equal(AutomationControlType.Slider, peer.GetAutomationControlType());
-            Assert.Equal(300, peer.GetBoundingRectangle().Width); // visual width 280 plus semantics padding
-            var provider = Assert.IsAssignableFrom<IRangeValueProvider>(peer);
-            provider.SetValue(0.375); Assert.Equal(0.5, provider.Value); Assert.Equal(1, finished); // last-tick accessibility tie
-            provider.SetValue(0.5); Assert.Equal(1, finished);
-            slider.IsEnabled = false; Assert.True(provider.IsReadOnly); Assert.Throws<InvalidOperationException>(() => provider.SetValue(0.75));
-        }
-        finally { window.Close(); }
     }
     [AvaloniaFact]
     public void RangeAutomation_ExposesIndependentFocusableNonCrossingThumbs()
@@ -149,21 +295,6 @@ public sealed class SliderTests
         finally { window.Close(); }
     }
     [AvaloniaFact]
-    public void DisableAndDetach_CancelAnActiveDragAndRetainState()
-    {
-        var state = new SliderState(0.25f); var slider = new MSlider { Width = 280, State = state }; var finished = 0;
-        state.OnValueChangeFinished = () => finished++;
-        var window = Show(slider);
-        try
-        {
-            window.MouseDown(new Point(80, 24), MouseButton.Left); window.MouseMove(new Point(210, 24)); Assert.True(state.IsDragging);
-            slider.IsEnabled = false; Assert.False(state.IsDragging); Assert.Equal(1, finished);
-            var saved = state.Value; window.Content = null; slider.IsEnabled = true;
-            window.Content = slider; window.UpdateLayout(); Assert.Same(state, slider.ActualState); Assert.Equal(saved, state.Value);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
     public void RangeCancellation_ResizeInFinishedCallbackKeepsNextThumbSelectionCorrect()
     {
         var state = new RangeSliderState(0.25f, 0.75f);
@@ -176,85 +307,6 @@ public sealed class SliderTests
             slider.IsEnabled = false; slider.IsEnabled = true; window.UpdateLayout();
             window.MouseDown(new Point(60, 24), MouseButton.Left); window.MouseUp(new Point(60, 24), MouseButton.Left);
             Assert.InRange(state.ActiveRangeStart, 0.20f, 0.22f); Assert.Equal(0.75f, state.ActiveRangeEnd);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void CustomTemplates_ReceiveLiveStateAndControlMeasuredSize()
-    {
-        var state = new SliderState(0.5f); object? received = null;
-        var slider = new MSlider { Width = 280, State = state,
-            ThumbTemplate = new FuncDataTemplate<SliderState>((data, _) => { received = data; return new Border { Width = 12, Height = 32, Background = Brushes.Red }; }) };
-        var window = Show(slider);
-        try
-        {
-            Assert.Same(state, received); Assert.Equal(new Size(12, 32), Part(slider, "PART_Thumb").Child!.Bounds.Size);
-            var old = Part(slider, "PART_Thumb").Bounds.X; state.Value = 0.75f; window.UpdateLayout(); Assert.True(Part(slider, "PART_Thumb").Bounds.X > old);
-            slider.ThumbTemplate = null; window.UpdateLayout(); Assert.IsType<SliderThumb>(Part(slider, "PART_Thumb").Child);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaTheory]
-    [InlineData("horizontal")]
-    [InlineData("vertical")]
-    [InlineData("range")]
-    public void ConstrainedThumb_ObeysParentMaximum(string kind)
-    {
-        Control slider = kind switch
-        {
-            "vertical" => new VerticalSlider { Height = 280, Width = 20 },
-            "range" => new RangeSlider { Width = 280, Height = 20 },
-            _ => new MSlider { Width = 280, Height = 20 },
-        };
-        var window = Show(slider);
-        try
-        {
-            foreach (var thumb in slider.GetVisualDescendants().OfType<SliderThumb>())
-                Assert.Equal(20, kind == "vertical" ? thumb.Bounds.Width : thumb.Bounds.Height);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void PointerGesture_PreservesOtherFocusAndKeyboardFocusRemainsAvailable()
-    {
-        var other = new Avalonia.Controls.Button(); var slider = new MSlider { Width = 280 };
-        var panel = new StackPanel { Children = { slider, other } }; var window = Show(panel);
-        try
-        {
-            other.Focus(); Assert.True(other.IsFocused);
-            window.MouseDown(new Point(140, 24), MouseButton.Left); window.MouseUp(new Point(140, 24), MouseButton.Left);
-            Assert.True(other.IsFocused); Assert.False(slider.IsFocused);
-            slider.Focus(NavigationMethod.Tab); Assert.True(slider.IsFocused);
-            Assert.True(slider.Interaction.HasFlag(Material3Expressive.Foundation.Interaction.InteractionState.Focused));
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void ReplacingHoistedState_UpdatesDefaultTrackAndTemplate()
-    {
-        var previous = new SliderState(0.25f); var next = new SliderState(0.75f);
-        var slider = new MSlider { Width = 280, State = previous }; var window = Show(slider);
-        try
-        {
-            slider.State = next; window.UpdateLayout();
-            Assert.Same(next, slider.ActualState); Assert.Same(next, slider.GetVisualDescendants().OfType<SliderTrack>().Single().State);
-            var x = Part(slider, "PART_Thumb").Bounds.X;
-            previous.Value = 0.9f; window.UpdateLayout(); Assert.Equal(x, Part(slider, "PART_Thumb").Bounds.X);
-            next.Value = 0.1f; window.UpdateLayout(); Assert.True(Part(slider, "PART_Thumb").Bounds.X < x);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void ChangingTrackCorner_UpdatesDiscreteThumbAlignment()
-    {
-        var state = new SliderState(0.25f, 3);
-        var track = new SliderTrack { State = state, TrackCornerSize = 8, EnableCornerShrinking = true };
-        var slider = new MSlider { Width = 280, State = state, Track = track }; var window = Show(slider);
-        try
-        {
-            var previous = Part(slider, "PART_Thumb").Bounds.X;
-            track.TrackCornerSize = 4; window.UpdateLayout();
-            Assert.True(Part(slider, "PART_Thumb").Bounds.X < previous);
         }
         finally { window.Close(); }
     }
@@ -275,23 +327,6 @@ public sealed class SliderTests
             var upper = Assert.IsAssignableFrom<IRangeValueProvider>(children[1]);
             Assert.Equal(20, lower.Value); Assert.Equal(80, lower.Maximum); Assert.Equal(10, lower.Minimum);
             Assert.Equal(80, upper.Value); Assert.Equal(20, upper.Minimum); Assert.Equal(90, upper.Maximum);
-        }
-        finally { window.Close(); }
-    }
-    [AvaloniaFact]
-    public void TokenAndThemeUpdates_ReachDefaultParts()
-    {
-        var slider = new MSlider { Width = 280, IsEnabled = false }; var window = Show(slider);
-        try
-        {
-            var thumb = slider.GetVisualDescendants().OfType<SliderThumb>().Single();
-            var track = slider.GetVisualDescendants().OfType<SliderTrack>().Single();
-            window.Resources[MaterialTokens.Sys.Color.Surface] = Colors.Green;
-            window.Resources[MaterialTokens.Sys.Color.Primary] = Colors.Red;
-            window.UpdateLayout();
-            Assert.Equal(Colors.Green, thumb.SurfaceColor); Assert.Equal(Colors.Red, track.ActiveTrackColor);
-            window.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark; window.UpdateLayout();
-            Assert.Equal(Colors.Green, thumb.SurfaceColor); Assert.Equal(Colors.Red, track.ActiveTrackColor);
         }
         finally { window.Close(); }
     }
