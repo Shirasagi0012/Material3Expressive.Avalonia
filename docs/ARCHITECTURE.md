@@ -13,6 +13,7 @@
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
 | [Foundation/Motion/](../src/Material3Expressive/Foundation/Motion) | Material 动画描述及其到 ComposeAnimation 的转换。 |
+| [Foundation/Overlays/](../src/Material3Expressive/Foundation/Overlays/README.md) | 窗口内 Dialog 与共享 ModalPresenter；组件独立持有原生 Popup，使用 PopupOverlayLayer。 |
 | [Foundation/Rendering/](../src/Material3Expressive/Foundation/Rendering) | 图标接入与颜色合成等辅助能力。 |
 | [Tokens/](../src/Material3Expressive/Tokens) | `MaterialTokens` 的 Reference、System、Component 键；组件 Token 目前仍集中在这里。 |
 | [Baseline/](../src/Material3Expressive/Baseline) | 颜色、形状、字体、状态、elevation、motion 的默认 Token 来源。 |
@@ -171,7 +172,9 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
   原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
-  Modal 使用当前 TopLevel 的 OverlayLayer；自定义宿主需提供启用 OverlayLayer 的 VisualLayerManager。
+  Modal 使用当前 TopLevel 的 PopupOverlayLayer，通过组件自己的 Popup 和共享 ModalPresenter 接入。
+  自定义 Window 模板需包含 `PART_VisualLayerManager`；普通 Content 内的 OverlayLayer 不满足该条件。
+  Dialog 的关闭请求、退出保留和焦点约束见 [Overlays](../src/Material3Expressive/Foundation/Overlays/README.md)。
   组件负责输入阻挡、焦点限制/恢复及展开内容迁移；各组件的验证范围与保留问题见对应说明。
 - 原有 Material 动画规则的源码核对基于 AndroidX `ff0a0a99c4f0cfe95d75d5df615e51d399575922`。
   当时记录了状态层 15/45/150ms 淡入淡出、ripple 75ms 进入透明度与 225ms 扩张/中心移动、
