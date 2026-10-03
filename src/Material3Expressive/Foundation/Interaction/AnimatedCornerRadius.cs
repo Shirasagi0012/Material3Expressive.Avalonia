@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Motion;
 
 namespace Material3Expressive.Foundation.Interaction;
@@ -135,10 +136,10 @@ public sealed class AnimatedCornerRadius : IDisposable
     internal static CornerRadius Lerp(CornerRadius from, CornerRadius to, double progress)
     {
         return new CornerRadius(
-            from.TopLeft + (to.TopLeft - from.TopLeft) * progress,
-            from.TopRight + (to.TopRight - from.TopRight) * progress,
-            from.BottomRight + (to.BottomRight - from.BottomRight) * progress,
-            from.BottomLeft + (to.BottomLeft - from.BottomLeft) * progress);
+            MathUtils.Lerp(from.TopLeft, to.TopLeft, progress),
+            MathUtils.Lerp(from.TopRight, to.TopRight, progress),
+            MathUtils.Lerp(from.BottomRight, to.BottomRight, progress),
+            MathUtils.Lerp(from.BottomLeft, to.BottomLeft, progress));
     }
 
     private CornerRadius ClampToSize(CornerRadius corners)

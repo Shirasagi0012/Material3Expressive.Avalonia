@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Media;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Foundation.Interaction;
 
@@ -89,11 +90,11 @@ public sealed class RippleAnimation : IDisposable
     /// <summary>The fully expanded radius, including an explicit per-call-site override.</summary>
     public double TargetRadius => _endRadius;
 
-    public double Radius => _startRadius + (_endRadius - _startRadius) * _radiusFraction.Value;
+    public double Radius => MathUtils.Lerp(_startRadius, _endRadius, _radiusFraction.Value);
 
     public Point Center => new(
-        _origin.X + (_center.X - _origin.X) * _centerFraction.Value,
-        _origin.Y + (_center.Y - _origin.Y) * _centerFraction.Value);
+        MathUtils.Lerp(_origin.X, _center.X, _centerFraction.Value),
+        MathUtils.Lerp(_origin.Y, _center.Y, _centerFraction.Value));
 
     /// <summary>
     /// Requests completion. The fade-out starts only after all three fade-in animations finish.

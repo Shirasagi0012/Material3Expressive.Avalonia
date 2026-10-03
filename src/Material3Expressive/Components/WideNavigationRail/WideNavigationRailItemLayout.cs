@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Material3Expressive.Foundation;
 using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
@@ -58,9 +59,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
     {
         var layoutScale = LayoutHelper.GetLayoutScale(this);
         var density = (float)layoutScale;
-        int Px(double value) => double.IsFinite(value) ? (int)Math.Floor((float)value * density + 0.5f) : int.MaxValue / 4;
-        static int Round(float value) => (int)MathF.Floor(value + 0.5f);
-        static int Lerp(int a, int b, float progress) => a + (int)Math.Floor((b - a) * (double)progress + 0.5);
+        int Px(double value) => double.IsFinite(value) ? MathUtils.DipToPx((float)value, density) : int.MaxValue / 4;
         var maxWidth = Px(availableSize.Width);
         var maxHeight = Px(availableSize.Height);
         var position = Math.Max(0, IconPositionProgress);
@@ -92,7 +91,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
             var totalHeight = iconHeight + Px(padding * 2);
             var rippleWidth = Math.Min(totalWidth, maxWidth);
             var rippleHeight = Math.Min(totalHeight, maxHeight);
-            var indicatorWidth = Math.Min(Round(totalWidth * selection), maxWidth);
+            var indicatorWidth = Math.Min(MathUtils.RoundToInt(totalWidth * selection), maxWidth);
             innerWidth = Math.Min(rippleWidth + horizontalPadding * 2, maxWidth);
             innerHeight = Math.Min(Math.Max(rippleHeight, Math.Min(Px(48), maxHeight)), maxHeight);
             // This branch has no internal position animation; its original half-pixel
@@ -117,34 +116,34 @@ internal sealed class WideNavigationRailItemLayout : Panel
             var padHorizontal = Px(padding.Left + padding.Right);
             var collapsedPadding = IndicatorPadding ?? CollapsedIndicatorPadding;
             var expandedPadding = IndicatorPadding ?? ExpandedIndicatorPadding;
-            double VerticalPadding(double start, double end) => Px(start) + (Px(end) - Px(start)) * (double)paddingProgress;
+            double VerticalPadding(double start, double end) => MathUtils.Lerp(Px(start), Px(end), (double)paddingProgress);
             // Rounded static endpoints, continuous intermediate padding. Total and
             // individual padding retain their separate upstream rounding definitions.
             var padVertical = VerticalPadding(collapsedPadding.Top + collapsedPadding.Bottom, expandedPadding.Top + expandedPadding.Bottom);
             var startSpace = Px(Metric(MaterialTokens.Comp.WideNavigationRail.StartIconLabelSpace, 8));
             var topSpace = Px(Metric(MaterialTokens.Comp.WideNavigationRail.TopIconLabelSpace, 4));
-            var indicatorWidthProgress = Lerp(iconWidth, iconWidth + labelWidth + startSpace, position) + padHorizontal;
-            var indicatorHeightProgress = iconHeight + (Math.Max(iconHeight, labelHeight) - iconHeight) * (double)position + padVertical;
+            var indicatorWidthProgress = MathUtils.LerpRoundToInt(iconWidth, iconWidth + labelWidth + startSpace, position) + padHorizontal;
+            var indicatorHeightProgress = MathUtils.Lerp(iconHeight, Math.Max(iconHeight, labelHeight), (double)position) + padVertical;
             var rippleWidth = Math.Min(indicatorWidthProgress, maxWidth);
             var rippleHeight = Math.Min(indicatorHeightProgress, maxHeight);
-            var indicatorWidth = Math.Min(Round(indicatorWidthProgress * selection), maxWidth);
+            var indicatorWidth = Math.Min(MathUtils.RoundToInt(indicatorWidthProgress * selection), maxWidth);
             var indicatorHeight = Math.Min(indicatorHeightProgress, maxHeight);
             var widthTop = Math.Min(Math.Max(labelWidth, iconWidth + horizontalPadding * 2 + padHorizontal), maxWidth);
             var widthStart = Math.Min(rippleWidth + horizontalPadding, maxWidth);
             var width = widthTop + (widthStart - widthTop) * position;
-            innerWidth = Round(width);
+            innerWidth = MathUtils.RoundToInt(width);
             var heightTop = Math.Min(rippleHeight + topSpace + labelHeight, maxHeight);
             var heightStart = Math.Min(rippleHeight, maxHeight);
-            innerHeight = heightTop + (heightStart - heightTop) * (double)position;
+            innerHeight = MathUtils.Lerp(heightTop, heightStart, (double)position);
             var collapsedRippleHeight = Math.Min(iconHeight + Px(collapsedPadding.Top + collapsedPadding.Bottom), maxHeight);
             var expandedRippleHeight = Math.Min(Math.Max(iconHeight, labelHeight) + Px(expandedPadding.Top + expandedPadding.Bottom), maxHeight);
             _collapsedInnerHeight = Math.Min(collapsedRippleHeight + topSpace + labelHeight, maxHeight);
             _expandedInnerHeight = expandedRippleHeight;
             _tracePadding = padding;
-            _traceInnerHeightRaw = heightTop + (heightStart - heightTop) * (double)position;
+            _traceInnerHeightRaw = innerHeight;
             var rippleXTop = horizontalPadding;
-            var rippleXStart = Round((horizontalPadding + width - rippleWidth) / 2);
-            var rippleX = Lerp(rippleXTop, rippleXStart, position);
+            var rippleXStart = MathUtils.RoundToInt((horizontalPadding + width - rippleWidth) / 2);
+            var rippleX = MathUtils.LerpRoundToInt(rippleXTop, rippleXStart, position);
             var iconX = horizontalPadding + Px(padding.Left);
             var iconYTop = VerticalPadding(collapsedPadding.Top, expandedPadding.Top);
             var iconYStart = (innerHeight - iconHeight) / 2 - iconYTop;
@@ -185,7 +184,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
         // Continuous centering plus the endpoint residual of Placeable's integer
         // division. Item position and the rail's minimum height are independent axes
         // (including explicit Top/Start overrides), so blend all four combinations.
-        var offsetX = Math.Truncate((Math.Floor(finalSize.Width * density + 0.5) - _inner.Width) / 2);
+        var offsetX = Math.Truncate((MathUtils.DipToPx(finalSize.Width, density) - _inner.Width) / 2);
         var rawOffsetY = (finalSize.Height * density - _inner.Height) / 2;
         double Residual(int minimum, int content)
         {

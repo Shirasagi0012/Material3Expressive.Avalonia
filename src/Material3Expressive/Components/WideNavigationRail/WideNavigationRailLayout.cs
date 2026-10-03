@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Tokens;
@@ -116,7 +117,7 @@ internal sealed class WideNavigationRailLayout : Panel
     {
         var layoutScale = LayoutHelper.GetLayoutScale(this);
         var density = (float)layoutScale;
-        int Px(double value) => double.IsFinite(value) ? (int)Math.Floor(value * density + 0.5) : int.MaxValue / 4;
+        int Px(double value) => double.IsFinite(value) ? MathUtils.DipToPx(value, density) : int.MaxValue / 4;
         var maxWidth = Math.Min(Px(availableSize.Width), Px(Metric(MaterialTokens.Comp.WideNavigationRail.ExpandedContainerMaxWidth, 360) - ContentPadding.Left - ContentPadding.Right));
         var owner = TemplatedParent as WideNavigationRail ?? this.FindAncestorOfType<WideNavigationRail>();
         // ItemsControl owns the item logical parents; inheritance from ItemsPanel
@@ -214,11 +215,11 @@ internal sealed class WideNavigationRailItemsPanel : Panel
         foreach (var child in Children)
         {
             child.Measure(new Size(Math.Min(available.Width, ItemMaxWidth / layoutScale), Math.Max(0, available.Height - offset / layoutScale)));
-            var measuredWidth = (int)Math.Floor(child.DesiredSize.Width * density + 0.5);
+            var measuredWidth = MathUtils.DipToPx(child.DesiredSize.Width, density);
             // Preserve the comparison/storage order in WideNavigationRailLayout:
             // compare bare measured width, then store it plus horizontal padding.
             if (Expanded && ExpandedItemMaxWidth < measuredWidth)
-                ExpandedItemMaxWidth = measuredWidth + (int)Math.Floor(horizontalPadding * density + 0.5);
+                ExpandedItemMaxWidth = measuredWidth + MathUtils.DipToPx(horizontalPadding, density);
             offset = child.DesiredSize.Height * layoutScale;
             ItemsHeight += offset;
         }
@@ -251,11 +252,11 @@ internal sealed class WideNavigationRailItemsPanel : Panel
         var anchors = Children.Select(child => child.GetVisualDescendants().OfType<WideNavigationRailItemLayout>().FirstOrDefault()
             ?? child as WideNavigationRailItemLayout).ToArray();
         var endpointSizes = anchors.Select((item, i) => item?.ArrangementAnchorHeight
-            ?? (int)Math.Floor((sizes[i] - (i < sizes.Length - 1 ? Spacing : 0)) + 0.5)).ToArray();
+            ?? MathUtils.RoundToInt(sizes[i] - (i < sizes.Length - 1 ? Spacing : 0))).ToArray();
         for (var i = 0; i < endpointSizes.Length - 1; i++) endpointSizes[i] += GapMotion.Anchor;
         var weight = GapMotion.EndpointWeight * HeightMotion.EndpointWeight
             * anchors.Aggregate(1d, (value, item) => value * (item?.ArrangementAnchorWeight ?? 1));
-        var endpointTotal = (int)Math.Floor(total + 0.5);
+        var endpointTotal = MathUtils.RoundToInt(total);
         var exact = Arrangement.Arrange(endpointTotal, endpointSizes, density);
         var continuous = Arrangement.ArrangeContinuous(endpointTotal, endpointSizes.Select(value => (double)value).ToArray(), density);
         var offset = center ? -TopPadding : HeaderOffset;
@@ -280,10 +281,10 @@ internal readonly record struct WideNavigationRailVerticalValue(double Value, in
     }
     internal static WideNavigationRailVerticalValue FromDp(double value, double collapsed, double expanded, double scale)
     {
-        var start = (int)Math.Floor((float)collapsed * (float)scale + .5f);
-        var end = (int)Math.Floor((float)expanded * (float)scale + .5f);
+        var start = MathUtils.DipToPx((float)collapsed, (float)scale);
+        var end = MathUtils.DipToPx((float)expanded, (float)scale);
         var progress = collapsed == expanded ? 0 : (value - collapsed) / (expanded - collapsed);
-        return new(start + (end - start) * progress, start, end, progress);
+        return new(MathUtils.Lerp(start, end, progress), start, end, progress);
     }
 }
 

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Components;
 
@@ -38,7 +39,11 @@ internal sealed class NavigationRailItemLayout : Panel
     protected override Size MeasureOverride(Size availableSize)
     {
         var scale = LayoutHelper.GetLayoutScale(this);
-        double Px(double value) => Math.Floor(value * scale + 0.5);
+        double Px(double value)
+        {
+            var px = value * scale;
+            return px >= int.MinValue && px <= int.MaxValue ? MathUtils.RoundToInt(px) : Math.Floor(px + 0.5);
+        }
         var icon = Children[1];
         var label = Children[2];
         icon.Measure(availableSize);
@@ -49,7 +54,7 @@ internal sealed class NavigationRailItemLayout : Panel
         var totalWidth = iconWidth + Px(IndicatorWidth - IconSize);
         var indicatorHeight = iconHeight + Px((HasLabel ? IndicatorHeight : IndicatorWidth) - IconSize);
         Children[3].Measure(new Size(totalWidth / scale, indicatorHeight / scale));
-        Children[0].Measure(new Size(Math.Floor(totalWidth * progress + 0.5) / scale, indicatorHeight / scale));
+        Children[0].Measure(new Size(MathUtils.PxToDip(MathUtils.RoundToInt(totalWidth * progress), scale), indicatorHeight / scale));
         var width = Math.Max(Math.Min(Px(ItemMinWidth), Px(availableSize.Width)),
             Math.Max(iconWidth, HasLabel ? Math.Max(Px(label.DesiredSize.Width), Px(Children[0].DesiredSize.Width)) : totalWidth));
         var minimumHeight = double.IsNaN(Height) ? Math.Min(Px(MinHeight > 0 ? MinHeight : IndicatorWidth), Px(availableSize.Height)) : Px(availableSize.Height);
@@ -57,7 +62,7 @@ internal sealed class NavigationRailItemLayout : Panel
         {
             var padding = (float)((IndicatorHeight - IconSize) * scale / 2);
             var contentHeight = (float)iconHeight + padding + (float)(4 * scale) + (float)Px(label.DesiredSize.Height);
-            _layoutHeight = Math.Floor(contentHeight + Math.Max((minimumHeight - contentHeight) / 2, padding) * 2 + 0.5);
+            _layoutHeight = MathUtils.RoundToInt(contentHeight + Math.Max((minimumHeight - contentHeight) / 2, padding) * 2);
         }
         else
             _layoutHeight = Math.Min(Px(availableSize.Height), Math.Max(minimumHeight, Px(IndicatorWidth)));
@@ -67,7 +72,11 @@ internal sealed class NavigationRailItemLayout : Panel
     protected override Size ArrangeOverride(Size finalSize)
     {
         var scale = LayoutHelper.GetLayoutScale(this);
-        double Px(double value) => Math.Floor(value * scale + 0.5);
+        double Px(double value)
+        {
+            var px = value * scale;
+            return px >= int.MinValue && px <= int.MaxValue ? MathUtils.RoundToInt(px) : Math.Floor(px + 0.5);
+        }
         var width = Px(finalSize.Width);
         var height = Math.Max(Px(finalSize.Height), _layoutHeight);
         var apparentOffsetY = Math.Truncate((Px(finalSize.Height) - height) / 2);
@@ -79,7 +88,7 @@ internal sealed class NavigationRailItemLayout : Panel
         var labelHeight = Px(label.DesiredSize.Height);
         var progress = Math.Max(0, SizeProgress);
         var totalWidth = iconWidth + Px(IndicatorWidth - IconSize);
-        var indicatorWidth = Math.Floor(totalWidth * progress + 0.5);
+        var indicatorWidth = MathUtils.RoundToInt(totalWidth * progress);
         var indicatorHeight = iconHeight + Px((HasLabel ? IndicatorHeight : IndicatorWidth) - IconSize);
         double iconY, rippleY, labelY = 0;
         if (!HasLabel)
@@ -94,10 +103,10 @@ internal sealed class NavigationRailItemLayout : Panel
             var contentPadding = Math.Max(((float)height - contentHeight) / 2, padding);
             var selectedIconY = contentPadding;
             var unselectedIconY = AlwaysShowLabel ? selectedIconY : ((float)height - (float)iconHeight) / 2;
-            var offset = (unselectedIconY - selectedIconY) * (1 - progress);
-            iconY = Math.Floor(selectedIconY + offset + 0.5);
-            rippleY = Math.Floor(selectedIconY - padding + offset + 0.5);
-            labelY = Math.Floor(selectedIconY + (float)iconHeight + padding + (float)(4 * scale) + offset + 0.5);
+            var offset = MathUtils.Lerp(0f, unselectedIconY - selectedIconY, 1 - progress);
+            iconY = MathUtils.RoundToInt(selectedIconY + offset);
+            rippleY = MathUtils.RoundToInt(selectedIconY - padding + offset);
+            labelY = MathUtils.RoundToInt(selectedIconY + (float)iconHeight + padding + (float)(4 * scale) + offset);
         }
         void Place(Control child, double childWidth, double childHeight, double y) =>
             child.Arrange(new Rect(Math.Truncate((width - childWidth) / 2) / scale, (y + apparentOffsetY) / scale, childWidth / scale, childHeight / scale));

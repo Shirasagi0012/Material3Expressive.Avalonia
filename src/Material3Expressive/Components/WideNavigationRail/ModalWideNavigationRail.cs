@@ -13,6 +13,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Tokens;
@@ -310,7 +311,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     internal void UpdateAnchors(double measuredWidth)
     {
         if (_scope is not { IsEnding: false } scope) return;
-        var width = (float)Math.Floor(measuredWidth * LayoutHelper.GetLayoutScale(this) + .5);
+        var width = (float)MathUtils.DipToPx(measuredWidth, LayoutHelper.GetLayoutScale(this));
         if (_width == width) return;
         _width = width;
         if (_offset is null)
@@ -519,7 +520,7 @@ internal sealed class ModalWideNavigationRailOverlay : Panel
         var density = (float)LayoutHelper.GetLayoutScale(this);
         // draggableAnchors reverses RTL before roundToInt; Avalonia mirrors afterwards.
         var direction = FlowDirection == FlowDirection.RightToLeft ? -1 : 1;
-        var x = direction * Math.Floor(direction * (Owner?.ModalOffset ?? 0) + .5);
+        var x = direction * (double)MathUtils.RoundToInt(direction * (Owner?.ModalOffset ?? 0));
         surface.Arrange(new Rect(x / density, 0, surface.DesiredSize.Width, finalSize.Height));
         return finalSize;
     }

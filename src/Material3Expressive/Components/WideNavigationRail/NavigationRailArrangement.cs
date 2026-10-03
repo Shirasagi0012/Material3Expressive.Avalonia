@@ -1,4 +1,5 @@
 using Avalonia.Layout;
+using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Components;
 
@@ -22,7 +23,6 @@ public sealed record NavigationRailArrangement
 
     internal int[] Arrange(int totalSize, int[] sizes, float density)
     {
-        static int Round(float value) => (int)MathF.Floor(value + 0.5f);
         var positions = new int[sizes.Length];
         if (sizes.Length == 0) return positions;
         var consumed = sizes.Sum();
@@ -45,7 +45,7 @@ public sealed record NavigationRailArrangement
         {
             // Arrangement.SpacedAligned clips each next space to the remaining size;
             // alignment is applied to the measured group only when it fits.
-            var space = Round((float)Spacing * density);
+            var space = MathUtils.DipToPx((float)Spacing, density);
             var occupied = 0;
             var lastSpace = 0;
             for (var i = 0; i < sizes.Length; i++)
@@ -57,12 +57,12 @@ public sealed record NavigationRailArrangement
             occupied -= lastSpace;
             if (occupied < totalSize)
             {
-                var offset = Alignment switch { VerticalAlignment.Center => Round((totalSize - occupied) / 2f), VerticalAlignment.Bottom => totalSize - occupied, _ => 0 };
+                var offset = Alignment switch { VerticalAlignment.Center => MathUtils.RoundToInt((totalSize - occupied) / 2f), VerticalAlignment.Bottom => totalSize - occupied, _ => 0 };
                 for (var i = 0; i < positions.Length; i++) positions[i] += offset;
             }
             return positions;
         }
-        for (var i = 0; i < sizes.Length; i++) { positions[i] = Round(current); current += sizes[i] + gap; }
+        for (var i = 0; i < sizes.Length; i++) { positions[i] = MathUtils.RoundToInt(current); current += sizes[i] + gap; }
         return positions;
     }
 
@@ -90,7 +90,7 @@ public sealed record NavigationRailArrangement
         };
         if (Kind == Form.Spaced)
         {
-            var space = MathF.Floor((float)Spacing * density + .5f);
+            var space = MathUtils.DipToPx((float)Spacing, density);
             double occupied = 0, lastSpace = 0;
             for (var i = 0; i < sizes.Length; i++)
             {

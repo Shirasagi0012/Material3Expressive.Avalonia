@@ -13,6 +13,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Tokens;
@@ -102,7 +103,7 @@ public class WideNavigationRailItem : Button
         {
             if (EffectiveIconPosition != NavigationItemIconPosition.Top) return origin;
             var density = (float)LayoutHelper.GetLayoutScale(this);
-            var indicatorWidth = MathF.Floor((float)Metric(MaterialTokens.Comp.WideNavigationRail.ActiveIndicatorWidth, 56) * density + 0.5f) / density;
+            var indicatorWidth = MathUtils.DipToPx((float)Metric(MaterialTokens.Comp.WideNavigationRail.ActiveIndicatorWidth, 56), density) / density;
             return new Point(origin.X - (Bounds.Width - indicatorWidth) / 2, origin.Y - 12);
         };
         LostFocus += (_, _) => _activationKey = null;
