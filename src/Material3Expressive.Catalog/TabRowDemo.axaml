@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.TabRowDemo" Title="Material tabs" Width="640" Height="640">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20">
+      <TextBlock Text="Primary tabs · application selection" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:TabRow SelectedIndex="0">
+        <m3:Tab Content="Music" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Videos" Click="OnTabClick" />
+        <m3:Tab Content="Photos" Click="OnTabClick" />
+      </m3:TabRow>
+      <TextBlock Text="Secondary tabs · leading icons" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:TabRow Variant="Secondary" SelectedIndex="0">
+        <m3:Tab Content="Music" ContentLayout="Leading" IsSelected="True" Click="OnTabClick">
+          <m3:Tab.Icon><m3:MaterialSymbol Symbol="MusicNote" Width="24" Height="24" /></m3:Tab.Icon>
+        </m3:Tab>
+        <m3:Tab Content="Photos" ContentLayout="Leading" Click="OnTabClick">
+          <m3:Tab.Icon><m3:MaterialSymbol Symbol="Photo" Width="24" Height="24" /></m3:Tab.Icon>
+        </m3:Tab>
+      </m3:TabRow>
+      <TextBlock Text="Scrollable tabs" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:TabRow IsScrollable="True" SelectedIndex="0">
+        <m3:Tab Content="All albums" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Recently added" Click="OnTabClick" />
+        <m3:Tab Content="Favourites" Click="OnTabClick" />
+        <m3:Tab Content="Downloaded" Click="OnTabClick" />
+        <m3:Tab Content="Shared albums" Click="OnTabClick" />
+      </m3:TabRow>
+      <TextBlock Text="Native TabControl · selection and pages" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <TabControl m3:TabRowAppearance.Variant="Secondary" m3:TabRowAppearance.IsScrollable="True" Height="160">
+        <TabItem Header="Music"><TextBlock Text="Music library" Margin="16" /></TabItem>
+        <TabItem Header="Videos"><TextBlock Text="Video library" Margin="16" /></TabItem>
+        <TabItem Header="Photos"><TextBlock Text="Photo library" Margin="16" /></TabItem>
+        <TabItem Header="Downloads"><TextBlock Text="Downloads" Margin="16" /></TabItem>
+      </TabControl>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

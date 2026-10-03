@@ -45,14 +45,16 @@ internal sealed class MaterialInteractionController
     private readonly List<InteractionState> _interactions = [];
     private readonly SolidColorBrush _alphaReplacedBrush = new();
 
-    private Animatable<double>? _stateLayerAlpha;
+    private Animatable<float>? _stateLayerAlpha;
     private ButtonElevationController? _buttonElevation;
+    private FloatingActionButtonElevationController? _fabElevation;
     private MaterialSurface? _presenter;
     private InteractionState _interaction;
     private InteractionState _shownInteraction;
-    private Point _keyboardPressCenter;
+    private Point? _keyboardPressCenter;
     private IPointer? _pressedPointer;
     private bool _hoverNeedsMove;
+    private bool _indicationFocused = true;
 
     // Token-resolved state-layer opacities, falling back to the upstream constants in StateLayer.
     private double _hoverOpacity = StateLayer.Opacity(InteractionState.Hovered);
@@ -69,15 +71,25 @@ internal sealed class MaterialInteractionController
             _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
             if (!_hoverNeedsMove) Set(InteractionState.Hovered, true);
         };
-        _owner.PointerExited += (_, _) => { _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center; Set(InteractionState.Hovered, false); };
+        _owner.PointerExited += (_, e) =>
+        {
+            _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
+            // Avalonia 12 suppresses pointer-over when an implicitly captured template part
+            // differs from the current hit target. A resizing thumb can cause that while the
+            // pointer has stayed inside. Compose hoverable observes the owner's bounds.
+            if (_pressedPointer?.Captured is Visual captured
+                && (ReferenceEquals(captured, _owner) || _owner.IsVisualAncestorOf(captured))
+                && new Rect(_owner.Bounds.Size).Contains(e.GetPosition(_owner))) return;
+            Set(InteractionState.Hovered, false);
+        };
         _owner.AddHandler(InputElement.PointerMovedEvent, OnPointerMoved,
             RoutingStrategies.Tunnel, handledEventsToo: true);
-        // Button-derived controls handle pointer presses in their class handler. Listen on the
-        // tunnel route so Material feedback still sees the physical input before it is consumed.
+        // The native class handler requests focus first. Observe the press afterwards (including
+        // handled events), matching Desktop clickable's Focus -> Press interaction order.
         _owner.AddHandler(
             InputElement.PointerPressedEvent,
             OnPointerPressed,
-            RoutingStrategies.Tunnel,
+            RoutingStrategies.Bubble,
             handledEventsToo: true);
         _owner.AddHandler(
             InputElement.PointerReleasedEvent,
@@ -96,6 +108,7 @@ internal sealed class MaterialInteractionController
             handledEventsToo: true);
         _owner.PointerCaptureLost += (_, _) => { _pressedPointer = null; EndPress(); };
         _owner.GotFocus += OnGotFocus;
+        _owner.AttachedToVisualTree += (_, _) => MaterialInputMode.For(_owner);
         _owner.LostFocus += (_, _) =>
         {
             EndPress();
@@ -115,7 +128,7 @@ internal sealed class MaterialInteractionController
                 }
                 NotifyInteractionChanged(deferShape: !IsEnabled);
             }
-            else if (change.Property == MaterialButton.ElevationProperty)
+            else if (change.Property == MaterialButton.ElevationProperty || change.Property == FloatingActionButton.ElevationProperty)
                 UpdateButtonElevation();
         };
     }
@@ -125,6 +138,9 @@ internal sealed class MaterialInteractionController
 
     /// <summary>Which interactions the owner is currently under.</summary>
     internal InteractionState Interaction => _interaction;
+    // Chip.kt chooses the last active interaction, retaining its outgoing identity.
+    internal InteractionState LastInteraction => _interactions.LastOrDefault();
+    internal event Action? Changed;
     internal bool IsEnabled => _owner.IsEffectivelyEnabled;
 
     /// <summary>The state layer's current opacity, mid-fade included.</summary>
@@ -142,6 +158,10 @@ internal sealed class MaterialInteractionController
     /// </summary>
     internal double? RippleRadius { get; set; }
 
+    // Switch deliberately follows its resizing/moving thumb instead of freezing the local
+    // unbounded center from the first draw. Other callers retain the fixed Compose behavior.
+    internal bool RippleFollowsPresenterCenter { get; set; }
+
     // Components with an upstream MappedInteractionSource can supply its mapping while
     // retaining this controller's input, ripple and lifecycle implementation.
     internal Func<Point, Point>? PressPositionMapper { get; set; }
@@ -158,7 +178,11 @@ internal sealed class MaterialInteractionController
             ResetAnimations();
         _presenter = presenter;
         _motion ??= VisualAnimationScope.Create(_owner);
+        var inputMode = MaterialInputMode.For(_owner);
         ResolveOpacities();
+        if (_owner.IsFocused && !_interaction.HasFlag(InteractionState.Focused))
+            _indicationFocused = inputMode?.IsKeyboard ?? true;
+        Set(InteractionState.Focused, _owner.IsFocused);
         UpdateStateLayer();
         // Sync the state the surface missed before attaching (e.g. an already-hovered template
         // swap), so the first frame paints the right thing.
@@ -180,6 +204,8 @@ internal sealed class MaterialInteractionController
     {
         _buttonElevation?.Dispose();
         _buttonElevation = null;
+        _fabElevation?.Dispose();
+        _fabElevation = null;
         _presenter?.ResetMotion();
         var motion = _motion;
         _motion = null;
@@ -219,11 +245,11 @@ internal sealed class MaterialInteractionController
             if (IsRippleBounded)
             {
                 using var rippleClip = context.PushClip(new RoundedRect(area, cornerRadius));
-                DrawRipples(context, composeColorBrush);
+                DrawRipples(context, composeColorBrush, size);
             }
             else
             {
-                DrawRipples(context, composeColorBrush);
+                DrawRipples(context, composeColorBrush, size);
             }
         }
 
@@ -338,6 +364,7 @@ internal sealed class MaterialInteractionController
 
         // Compose clickable cancels the gesture when it leaves the interaction bounds.
         // Releasing Avalonia's owned capture also clears Button.IsPressed and its pending click.
+        Set(InteractionState.Hovered, false);
         _pressedPointer = null;
         EndPress();
         if (e.Pointer.Captured is Visual captured
@@ -364,9 +391,13 @@ internal sealed class MaterialInteractionController
             return;
 
         // Observe feedback only; the owner retains its keyboard activation semantics.
-        // AbstractClickableNode starts centerOffset at zero and only updates it in
-        // onPointerEvent(bounds). Preserve that behavior even for keyboard-only input.
-        StartPress(_keyboardPressCenter);
+        // AbstractClickableNode starts centerOffset at zero in the clickable layout, which
+        // is the Surface container, not its outer minimum-interactive allocation. Mapped
+        // sources (navigation items) instead originate in the owner before their mapping.
+        // Pointer input replaces this zero with the last observed clickable bounds' centre.
+        var origin = _keyboardPressCenter ?? (PressPositionMapper is null && _presenter is { } surface
+            ? surface.TranslatePoint(default, _owner) ?? default : default);
+        StartPress(origin);
     }
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
@@ -377,11 +408,16 @@ internal sealed class MaterialInteractionController
 
     private void OnGotFocus(object? sender, FocusChangedEventArgs e)
     {
-        // Material shows the focus layer for keyboard focus only; a click that focuses a control
-        // already has a ripple to say so.
-        Set(
-            InteractionState.Focused,
-            e.NavigationMethod is NavigationMethod.Directional or NavigationMethod.Tab);
+        // Focusable.kt emits FocusInteraction for actual focus, including pointer and
+        // programmatic focus. Core's desktop indication filters the same event by input
+        // mode; elevation does not. Preserve the decision until the matching unfocus.
+        if (_owner.IsFocused && !_interaction.HasFlag(InteractionState.Focused))
+        {
+            var mode = MaterialInputMode.For(_owner);
+            mode?.ObserveFocusNavigation(e.NavigationMethod);
+            _indicationFocused = mode?.IsKeyboard ?? true;
+        }
+        Set(InteractionState.Focused, _owner.IsFocused);
     }
 
     private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) =>
@@ -395,6 +431,7 @@ internal sealed class MaterialInteractionController
 
         _interaction = InteractionState.None;
         _interactions.Clear();
+        _indicationFocused = true;
 
         foreach (var ripple in _ripples.ToArray())
         {
@@ -426,6 +463,7 @@ internal sealed class MaterialInteractionController
 
     private void NotifyInteractionChanged(bool deferShape = false)
     {
+        Changed?.Invoke();
         UpdateButtonElevation();
         // Disabling cancels Clickable's press during composition. Its shape observer therefore
         // invalidates the following composition, unlike cancellation by a pointer event.
@@ -448,6 +486,21 @@ internal sealed class MaterialInteractionController
 
     private void UpdateButtonElevation()
     {
+        if (_owner is FloatingActionButton fab)
+        {
+            if (_presenter is null || _motion is null || _motion.IsEnding) return;
+            if (fab.Elevation is not { } elevation)
+            {
+                _fabElevation?.Dispose();
+                _fabElevation = null;
+                return;
+            }
+            var fabInteraction = _interactions.LastOrDefault(state => state is
+                InteractionState.Pressed or InteractionState.Hovered or InteractionState.Focused);
+            _fabElevation ??= new FloatingActionButtonElevationController(_presenter, _motion, elevation, fabInteraction);
+            _fabElevation.Update(elevation, fabInteraction);
+            return;
+        }
         if (_owner is not Button button || MaterialButton.GetElevation(button) is not { } values)
         {
             _buttonElevation?.Dispose();
@@ -499,9 +552,11 @@ internal sealed class MaterialInteractionController
         // AndroidX stores entry interactions in arrival order and shows lastOrNull(). A fixed
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
-        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed);
+        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed
+            && (state != InteractionState.Focused || _indicationFocused));
 
-        var targetOpacity = OpacityFor(topmost);
+        // Ripple.StateLayer stores and animates alpha as Float, including token values.
+        var targetOpacity = (float)OpacityFor(topmost);
 
         if (topmost == _shownInteraction
             && (_stateLayerAlpha is null || _stateLayerAlpha.TargetValue == targetOpacity))
@@ -522,12 +577,12 @@ internal sealed class MaterialInteractionController
         var surface = _presenter;
         if (_stateLayerAlpha is null)
         {
-            _stateLayerAlpha = motion.CreateAnimatable(0d);
+            _stateLayerAlpha = motion.CreateAnimatable(0f);
             motion.SubscribeValue(_stateLayerAlpha, _ => surface?.OnInteractionFrame());
         }
         var alpha = _stateLayerAlpha;
         _ = motion.Launch(ct => alpha.AnimateToAsync(targetOpacity,
-            new TweenSpec<double>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
+            new TweenSpec<float>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
     }
 
     private void UpdateInteractionStack(InteractionState flag, bool active)
@@ -537,10 +592,18 @@ internal sealed class MaterialInteractionController
             _interactions.Add(flag);
     }
 
-    private void DrawRipples(DrawingContext context, IBrush brush)
+    private void DrawRipples(DrawingContext context, IBrush brush, Size size)
     {
         foreach (var ripple in _ripples)
-            ripple.Draw(context, brush, _pressedOpacity);
+            ripple.Draw(context, brush, _pressedOpacity, size, RippleFollowsPresenterCenter);
+    }
+
+    // Switch's ThumbNode measures its current animated size before launching the pressed snap.
+    // Avalonia can settle the subsequent layout before the first render. Preserve the upstream
+    // first-draw geometry from that measurement without moving ripple playback into the layout.
+    internal void InitializeRippleDrawGeometry(Size size)
+    {
+        foreach (var ripple in _ripples) ripple.InitializeDrawGeometry(size);
     }
 
     private static void DrawStateLayer(DrawingContext context, IBrush brush, Rect area, double opacity)

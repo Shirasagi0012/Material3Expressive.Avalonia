@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Overlays;
 using System.Linq;
 using System;
 
@@ -10,6 +11,10 @@ namespace Material3Expressive.Catalog;
 
 public partial class MainWindow : Window
 {
+    private void OnTextFieldDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new TextFieldDemo().Show(this);
+    private void OnSecureTextFieldDemo(object? sender, RoutedEventArgs e) => new SecureTextFieldDemo().Show(this);
+    private void OnTabRowDemo(object? sender, RoutedEventArgs e) => new TabRowDemo().Show(this);
+    private void OnScrollBarDemo(object? sender, RoutedEventArgs e) => new ScrollBarDemo().Show(this);
     private static readonly bool TraceWideRailLayout = false;
     private readonly RailLayoutTrace? _railLayoutTrace;
     private object? _scaffoldTopBar;
@@ -53,6 +58,35 @@ public partial class MainWindow : Window
     private void OnScaffoldDirectionClick(object? sender, RoutedEventArgs e) =>
         DemoScaffold.FlowDirection = DemoScaffold.FlowDirection == Avalonia.Media.FlowDirection.LeftToRight
             ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
+    private void OnOpenDialog(object? sender, RoutedEventArgs e) => DemoDialog.IsOpen = true;
+    private void OnCloseDialog(object? sender, RoutedEventArgs e) => DemoDialog.IsOpen = false;
+    private void OnOpenNestedDialog(object? sender, RoutedEventArgs e) => DemoNestedDialog.IsOpen = true;
+    private void OnCloseNestedDialog(object? sender, RoutedEventArgs e) => DemoNestedDialog.IsOpen = false;
+    private void OnDialogDismissRequested(object? sender, DismissRequestedEventArgs e) => ((Dialog)sender!).IsOpen = false;
+
+    private void OnChangeBadge(object? sender, RoutedEventArgs e)
+    {
+        DemoBadge.Content = DemoBadge.Content switch { null => "8", "8" => "999+", _ => null };
+        Avalonia.Automation.AutomationProperties.SetName(DemoBadge,
+            DemoBadge.Content is { } count ? $"{count} notifications" : "New notifications");
+    }
+
+    private void OnToggleExtendedFab(object? sender, RoutedEventArgs e) => DemoExtendedFab.Expanded = !DemoExtendedFab.Expanded;
+    private void OnToggleFabVisibility(object? sender, RoutedEventArgs e) => DemoExtendedFab.AnimatedVisible = !DemoExtendedFab.AnimatedVisible;
+    private void OnFabCheckedChange(object? sender, FabCheckedChangeRequestedEventArgs e)
+    {
+        DemoToggleFab.IsChecked = DemoFabMenu.Expanded = e.IsChecked;
+    }
+    private void OnFabMenuItem(object? sender, RoutedEventArgs e) => DemoToggleFab.IsChecked = DemoFabMenu.Expanded = false;
+
+    private void OnChipClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not SelectableChip chip) return;
+        chip.SetCurrentValue(SelectableChip.IsSelectedProperty, !chip.IsSelected);
+        // Application-owned selection can add/remove the icon; the chip animates its visibility.
+        chip.LeadingIcon = chip.IsSelected ? new Material3Expressive.Foundation.Rendering.MaterialSymbol
+            { Symbol = MaterialSymbols.MaterialSymbolCodepoint.Check, Width = 18, Height = 18 } : null;
+    }
 
     private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
     {

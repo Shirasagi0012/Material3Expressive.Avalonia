@@ -33,6 +33,10 @@
           </m3:RadioButtonLayout>
         </ControlTemplate>
       </Setter>
+      <!-- Like the upstream selectable Row, native Content makes the whole row interactive. -->
+      <Style Selector="^:not(:empty) /template/ m3|RadioButtonLayout">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type RadioButton}" TargetType="RadioButton" BasedOn="{StaticResource MaterialRadioButtonTheme}" />
   </Styles.Resources>

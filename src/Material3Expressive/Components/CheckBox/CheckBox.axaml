@@ -44,6 +44,10 @@
           </m3:CheckBoxLayout>
         </ControlTemplate>
       </Setter>
+      <!-- Like the upstream toggleable Row, native Content makes the whole row interactive. -->
+      <Style Selector="^:not(:empty) /template/ m3|CheckBoxLayout">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type CheckBox}" TargetType="CheckBox" BasedOn="{StaticResource MaterialCheckBoxTheme}" />
   </Styles.Resources>

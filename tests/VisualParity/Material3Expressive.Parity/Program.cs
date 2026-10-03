@@ -201,7 +201,15 @@ public static class Program
                     var value = ResultFiles.Write(staging, m, comparison, expected, actual, expectedDirectory, actualDirectory,
                         directory, repeatability, keepDiagnostics ? Path.GetRelativePath(resultDirectory, directory).Replace('\\', '/') : null);
                     Directory.CreateDirectory(Path.GetDirectoryName(resultDirectory)!);
-                    Directory.Move(staging, resultDirectory);
+                    // Windows readers can briefly deny renaming a freshly written result tree.
+                    // Retry publication only; capture/comparison errors and persistent locks still fail.
+                    for (var attempt = 0; ; attempt++)
+                    {
+                        try { Directory.Move(staging, resultDirectory); break; }
+                        catch (IOException error) when (OperatingSystem.IsWindows() && attempt < 10
+                            && (error.HResult & 0xffff) is 5 or 32 or 33 && !Directory.Exists(resultDirectory))
+                        { Thread.Sleep(100); }
+                    }
                     return value;
                 });
                 if (!keepDiagnostics)

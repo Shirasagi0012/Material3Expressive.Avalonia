@@ -52,7 +52,7 @@
       <Setter Property="Template">
         <ControlTemplate>
           <!-- Compose selectable covers the whole item, including unpainted gaps. -->
-          <m3:ShortNavigationBarItemLayout x:Name="PART_Layout" Background="Transparent"
+          <m3:ShortNavigationBarItemLayout x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
               HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
               IconPosition="{TemplateBinding IconPosition}"

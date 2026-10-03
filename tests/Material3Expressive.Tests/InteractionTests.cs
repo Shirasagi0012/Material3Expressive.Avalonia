@@ -179,6 +179,46 @@ public class RippleAnimationTests
         Assert.Equal(60, bounded.TargetRadius);
         Assert.Equal(50, unbounded.TargetRadius);
     }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FirstDraw_CapturesResizedLayoutEvenAtZeroAlpha_AndKeepsIt(bool bounded)
+    {
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(2, 3), new Size(16, 16), clock.Scope, bounded, 20);
+        var drawing = new DrawingGroup();
+        using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(28, 28));
+        Assert.Equal(0, ripple.Value);
+        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
+        Assert.Equal(20, ripple.TargetRadius);
+        using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(24, 24));
+        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void FollowingThePresenterCenter_OnlyAffectsUnboundedDrawing(bool bounded, bool follow)
+    {
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(2, 3), new Size(16, 16), clock.Scope, bounded, 20);
+        ripple.InitializeDrawGeometry(new Size(16, 16));
+        Assert.Equal(4.8, ripple.Radius, 6);
+        clock.Track(ripple.AnimateAsync()); clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
+        foreach (var size in new[] { 28d, 24d, 16d })
+        {
+            var drawing = new DrawingGroup();
+            using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, .1, new Size(size, size), follow);
+            Assert.Equal(!bounded && follow ? new Point(size / 2, size / 2) : new Point(8, 8), drawing.GetBounds().Center);
+            Assert.Equal(20, ripple.Radius); Assert.Equal(20, ripple.TargetRadius);
+            Assert.Equal(new Point(8, 8), ripple.Center); // The upstream animation geometry stays frozen.
+        }
+    }
 }
 
 /// <summary>
@@ -264,19 +304,25 @@ public class MaterialInteractionControllerTests
 
         Assert.True(controller.Interaction.HasFlag(InteractionState.Pressed));
         Assert.Equal(1, controller.RippleCount);
-        // A pointer-focus must not light the focus layer; Material shows it for keyboard focus.
-        Assert.False(controller.Interaction.HasFlag(InteractionState.Focused));
+        // Core Desktop emits FocusInteraction for pointer focus as well.
+        Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
+        Assert.Equal(InteractionState.Pressed, controller.LastInteraction);
 
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
         Assert.Equal(1, controller.RippleCount); // held at full expansion while pressed
+        Assert.Equal(.08, controller.StateLayerOpacity, 6); // Desktop filters pointer focus from indication.
 
         window.MouseUp(point, MouseButton.Left);
         Assert.False(controller.Interaction.HasFlag(InteractionState.Pressed));
+        Assert.Equal(InteractionState.Focused, controller.LastInteraction);
 
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
         Assert.Equal(0, controller.RippleCount);
+        // Desktop filters mouse Focus only from the indication source, retaining hover ink.
+        Assert.Equal(0.08, controller.StateLayerOpacity, 6);
+        Assert.Equal(0, button.GetVisualDescendants().OfType<MaterialSurface>().Single().ShadowElevation);
     }
 
     [AvaloniaFact]
@@ -317,6 +363,140 @@ public class MaterialInteractionControllerTests
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(46));
         Assert.Equal(0.10, controller.StateLayerOpacity, 6);
+    }
+
+    [AvaloniaFact]
+    public void KeyboardRipple_StartsAtClickableZeroUntilPointerBoundsAreObserved()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var surface = button.GetVisualDescendants().OfType<MaterialSurface>().Single();
+        button.Focus(NavigationMethod.Tab);
+        window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.None, null);
+        var ripples = (List<RippleAnimation>)typeof(MaterialInteractionController)
+            .GetField("_ripples", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(controller)!;
+        Assert.Equal(default, Assert.Single(ripples).Center);
+
+        window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.None, null);
+        var point = button.TranslatePoint(new Rect(button.Bounds.Size).Center, window)!.Value;
+        window.MouseMove(point, RawInputModifiers.None);
+        window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.None, null);
+        Assert.Equal(new Rect(surface.Bounds.Size).Center, ripples.Last().Center);
+        window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.None, null);
+    }
+
+    [AvaloniaFact]
+    public void KeyboardFocusIndication_RemainsUntilUnfocusAfterMouseInput()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var origin = button.TranslatePoint(default, window)!.Value;
+        var point = origin + new Point(12, button.Bounds.Height / 2);
+
+        window.MouseMove(point, RawInputModifiers.None);
+        Assert.True(button.Focus(NavigationMethod.Tab));
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        window.MouseMove(new Point(1, 1), RawInputModifiers.None);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+
+        Assert.Equal(InteractionState.Focused, controller.LastInteraction);
+        Assert.Equal(0.10, controller.StateLayerOpacity, 6);
+        window.FocusManager.Focus(null);
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
+        Assert.Equal(0, controller.StateLayerOpacity, 6);
+    }
+
+    [AvaloniaFact]
+    public void MouseFocusIndication_IsNotSynthesizedWhenKeyboardModeChanges()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var origin = button.TranslatePoint(default, window)!.Value;
+        var point = origin + new Point(12, button.Bounds.Height / 2);
+
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        window.MouseMove(new Point(1, 1), RawInputModifiers.None);
+        // A keyboard navigation request which keeps the current focus does not emit Focus.
+        Assert.True(button.Focus(NavigationMethod.Tab));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+
+        Assert.Equal(InteractionState.Focused, controller.LastInteraction);
+        Assert.Equal(0, controller.StateLayerOpacity, 6);
+        window.FocusManager.Focus(null);
+        Assert.True(button.Focus(NavigationMethod.Tab));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
+        Assert.Equal(0.10, controller.StateLayerOpacity, 6);
+    }
+
+    [AvaloniaFact]
+    public void ProgrammaticFocus_UsesTheWindowsInputMode()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var first);
+        var second = new Button { Content = "Second" };
+        window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+        window.Content = new StackPanel { Children = { first, second } };
+        Dispatcher.UIThread.RunJobs();
+        var controller = MaterialInteraction.GetOrCreate(second);
+
+        Assert.True(second.Focus());
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
+        Assert.Equal(0.10, controller.StateLayerOpacity, 6);
+
+        var point = first.TranslatePoint(new Point(12, first.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        Assert.True(second.Focus());
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+        Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
+        Assert.Equal(0, controller.StateLayerOpacity, 6);
+    }
+
+    [AvaloniaFact]
+    public void ProgrammaticFocus_ShowsTheFocusLayerAndClearsOnDisable()
+    {
+        using var clock = new MotionTestClockScope();
+        ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        Assert.True(button.Focus());
+        Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(46));
+        Assert.Equal(.10, controller.StateLayerOpacity, 6);
+        button.IsEnabled = false;
+        Assert.False(controller.Interaction.HasFlag(InteractionState.Focused));
+    }
+
+    [AvaloniaFact]
+    public void ProgrammaticFocus_AfterPointerInputFiltersIndicationWithoutLosingActualFocus()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        window.MouseDown(new Point(1, 1), MouseButton.Left);
+        window.MouseUp(new Point(1, 1), MouseButton.Left);
+        Assert.True(button.Focus());
+        Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.Equal(0, controller.StateLayerOpacity);
+        // Changing input mode without a new focus interaction must not synthesize a focus layer.
+        window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.None, null);
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.True(button.IsFocused);
+        Assert.Equal(0, controller.StateLayerOpacity);
+        window.Close();
     }
 
     [AvaloniaFact]

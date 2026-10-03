@@ -3,14 +3,24 @@
 基于 Avalonia 实现 Material 3 Expressive，以尽可能在视觉效果和动效上还原Compose material3为目标
 
 当前包含 Button、IconButton、Surface、[Scaffold](src/Material3Expressive/Components/Scaffold/README.md)、
+[Badge / BadgedBox](src/Material3Expressive/Components/Badge/README.md)、
 [NavigationRail / NavigationRailItem](src/Material3Expressive/Components/NavigationRail/README.md)、
+[FloatingActionButton / ExtendedFloatingActionButton / ToggleFloatingActionButton / FAB Menu](src/Material3Expressive/Components/FloatingActionButton/README.md)、
 [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](src/Material3Expressive/Components/WideNavigationRail/README.md)、
 [NavigationBar / NavigationBarItem](src/Material3Expressive/Components/NavigationBar/README.md)、
 [ShortNavigationBar / ShortNavigationBarItem](src/Material3Expressive/Components/ShortNavigationBar/README.md)、
+[TabRow / Tab 及原生 TabControl 顶部水平主题](src/Material3Expressive/Components/TabRow/README.md)、
 [原生 Slider 水平/垂直主题 / RangeSlider](src/Material3Expressive/Components/Slider/README.md)、
+[原生 ScrollBar 的水平/垂直 Material 主题](src/Material3Expressive/Components/ScrollBar/README.md)、
 [原生 CheckBox 的两态/三态 Material 模板](src/Material3Expressive/Components/CheckBox/README.md)、
 [原生 RadioButton 的 Material 模板](src/Material3Expressive/Components/RadioButton/README.md)、
-[原生 Separator 的水平/竖直 Divider 主题](src/Material3Expressive/Components/Divider/README.md)，以及 Token、颜色、图标、阴影和交互动画等基础能力。
+[原生 ToggleSwitch 的 Material Switch 模板](src/Material3Expressive/Components/Switch/README.md)、
+[原生 TextBox 的 Filled / Outlined TextField 模板](src/Material3Expressive/Components/TextField/README.md)、
+[原生 TextBox 的 Filled / Outlined SecureTextField 主题与输入限制](src/Material3Expressive/Components/SecureTextField/README.md)、
+[原生 ToggleButton 的四种 Material 主题](src/Material3Expressive/Components/ToggleButton/README.md)、
+[双槽 SplitButton 及子按钮主题](src/Material3Expressive/Components/SplitButton/README.md)、
+[原生 Separator 的水平/竖直 Divider 主题](src/Material3Expressive/Components/Divider/README.md)、
+[Assist / Suggestion / Filter / Input Chip 及 Elevated 变体](src/Material3Expressive/Components/Chip/README.md)，以及 Token、颜色、图标、阴影和交互动画等基础能力。
 这些是现有实现范围，不代表所有组件已经对齐当前上游基线。
 已接入 [Compose 视觉一致性测试](tests/VisualParity/README.md)，提供真实双端捕获、确定性动画回放及差异报告。
 

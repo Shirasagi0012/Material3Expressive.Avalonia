@@ -34,6 +34,10 @@ Enter 在 KeyUp 激活存在差异。采用模板复用原生状态和交互，�
 Content 是 Avalonia 本地内容组合：48 DIP 指示器槽旁排列原生 ContentPresenter，
 默认间距 8 DIP，Padding 控制内容留白，支持 RTL、内容模板和 access key。
 Compose Checkbox 自身没有 Content 槽；通常由上层 Row 组合标签。
+有 Content 时，模板根布局用透明背景让整个控件矩形参与命中，包括指示器槽、内容间隙与 Padding；
+对应上游 `CheckboxWithTextSample` 把 `toggleable` 放在整行上的组合方式，行高仍使用本地已确认的 48 DIP 默认布局。
+没有 Content 时保留默认 24 × 24 DIP 指示器鼠标命中范围；上游预留的 48 × 48 DIP 是布局空间，
+不能等同于默认鼠标命中范围或触摸输入层的目标扩展。
 当前 parity 用例按仓库规定不包含文字，内容布局另有 headless 检查。
 
 ## 颜色与描边

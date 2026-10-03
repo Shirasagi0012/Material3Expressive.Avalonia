@@ -50,6 +50,11 @@ and `SKCanvas.DrawVertices`, with a shared immutable falloff image/shader.
 
 ## Validation boundary
 
+The FAB port corrected quadratic subdivision to the pinned native Ganesh path, including
+conics converted to quadratics. Module regression now checks that circles produce finite
+meshes; paired FAB captures exercise the correction through Compose's real RenderNode.
+The standalone probe counts below predate this correction and have not been rerun.
+
 Direct drawing was compared against native `ShadowUtils.drawShadow` in Skiko
 `0.152.0-alpha02` using temporary probes outside the project, independently of the renderer
 parity infrastructure under development:

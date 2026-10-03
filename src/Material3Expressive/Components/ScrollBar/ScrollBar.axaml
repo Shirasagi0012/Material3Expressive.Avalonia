@@ -1,0 +1,72 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Styles.Resources>
+        <ControlTheme x:Key="MaterialScrollBarPageButtonTheme" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <ControlTemplate><Border Background="{TemplateBinding Background}" /></ControlTemplate>
+            </Setter>
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialScrollBarThumbTheme" TargetType="Thumb">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:ScrollBarThumb Name="PART_ThumbVisual"
+                        CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource AncestorType=ScrollBar}}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialScrollBarTheme" TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.Shape}}" />
+            <Setter Property="m3:ScrollBarAppearance.Thickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.Thickness}}" />
+            <Setter Property="m3:ScrollBarAppearance.ThumbMinLength" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.ThumbMinLength}}" />
+            <Setter Property="m3:ScrollBarAppearance.UnhoverColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.UnhoverColor}}" />
+            <Setter Property="m3:ScrollBarAppearance.HoverColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.HoverColor}}" />
+            <Setter Property="m3:ScrollBarAppearance.HoverDuration" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.HoverDuration}}" />
+            <Style Selector="^:vertical">
+                <!-- Reuse the stock menu resource and commands without altering its definition. -->
+                <Setter Property="ContextFlyout" Value="{DynamicResource VerticalScrollBarContextFlyout}" />
+                <Setter Property="Width" Value="{Binding (m3:ScrollBarAppearance.Thickness), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Template">
+                    <ControlTemplate>
+                        <Border Background="{TemplateBinding Background}">
+                            <Track Name="PART_Track" Orientation="Vertical" IsDirectionReversed="True"
+                                   Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                                   Value="{TemplateBinding Value, Mode=TwoWay}" ViewportSize="{TemplateBinding ViewportSize}"
+                                   DeferThumbDrag="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}">
+                                <Track.DecreaseButton><RepeatButton Name="PART_PageUpButton" Theme="{StaticResource MaterialScrollBarPageButtonTheme}" AutomationProperties.Name="Page up" /></Track.DecreaseButton>
+                                <Track.IncreaseButton><RepeatButton Name="PART_PageDownButton" Theme="{StaticResource MaterialScrollBarPageButtonTheme}" AutomationProperties.Name="Page down" /></Track.IncreaseButton>
+                                <Thumb Name="PART_Thumb" Theme="{StaticResource MaterialScrollBarThumbTheme}"
+                                       Width="{TemplateBinding m3:ScrollBarAppearance.Thickness}"
+                                       MinHeight="{TemplateBinding m3:ScrollBarAppearance.ThumbMinLength}" AutomationProperties.Name="Position" />
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter>
+            </Style>
+            <Style Selector="^:horizontal">
+                <Setter Property="ContextFlyout" Value="{DynamicResource HorizontalScrollBarContextFlyout}" />
+                <Setter Property="Height" Value="{Binding (m3:ScrollBarAppearance.Thickness), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="Template">
+                    <ControlTemplate>
+                        <Border Background="{TemplateBinding Background}">
+                            <Track Name="PART_Track" Orientation="Horizontal"
+                                   Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                                   Value="{TemplateBinding Value, Mode=TwoWay}" ViewportSize="{TemplateBinding ViewportSize}"
+                                   DeferThumbDrag="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}">
+                                <Track.DecreaseButton><RepeatButton Name="PART_PageUpButton" Theme="{StaticResource MaterialScrollBarPageButtonTheme}" AutomationProperties.Name="Page left" /></Track.DecreaseButton>
+                                <Track.IncreaseButton><RepeatButton Name="PART_PageDownButton" Theme="{StaticResource MaterialScrollBarPageButtonTheme}" AutomationProperties.Name="Page right" /></Track.IncreaseButton>
+                                <Thumb Name="PART_Thumb" Theme="{StaticResource MaterialScrollBarThumbTheme}"
+                                       Height="{TemplateBinding m3:ScrollBarAppearance.Thickness}"
+                                       MinWidth="{TemplateBinding m3:ScrollBarAppearance.ThumbMinLength}" AutomationProperties.Name="Position" />
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter>
+            </Style>
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type ScrollBar}" TargetType="ScrollBar" BasedOn="{StaticResource MaterialScrollBarTheme}" />
+    </Styles.Resources>
+</Styles>

@@ -8,11 +8,12 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Scaffold、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Scaffold / rail / bar / CheckBox / RadioButton 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Scaffold、Badge、BadgedBox、Chip、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Scaffold / Chip / rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
 | [Foundation/Motion/](../src/Material3Expressive/Foundation/Motion) | Material 动画描述及其到 ComposeAnimation 的转换。 |
+| [Foundation/Overlays/](../src/Material3Expressive/Foundation/Overlays/README.md) | 窗口内 Dialog 与共享 ModalPresenter；组件独立持有原生 Popup，使用 PopupOverlayLayer。 |
 | [Foundation/Rendering/](../src/Material3Expressive/Foundation/Rendering) | 图标接入与颜色合成等辅助能力。 |
 | [Tokens/](../src/Material3Expressive/Tokens) | `MaterialTokens` 的 Reference、System、Component 键；组件 Token 目前仍集中在这里。 |
 | [Baseline/](../src/Material3Expressive/Baseline) | 颜色、形状、字体、状态、elevation、motion 的默认 Token 来源。 |
@@ -76,7 +77,10 @@ MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一�
 [MaterialSurface](../src/Material3Expressive/Components/Surface/MaterialSurface.cs) 是可被其他组件组合的容器组件，
 承担背景、边框、裁剪、阴影和累积 tonal elevation。内部 Border 承载内容和裁剪，独立覆盖层绘制交互反馈。
 几何使用 Avalonia DIP，Full 圆角按当前边界解析。
-描边由末层的无内容 Border 绘制，不参与内容尺寸计算；Padding 仍由内容 Border 处理。
+描边由末层 SurfaceOutline 绘制，不参与内容尺寸计算；均匀线宽保留 Compose 的物理像素 ceil，
+均匀圆角使用内缩 stroke，非对称圆角使用外轮廓减内缩轮廓。非均匀 Thickness 沿用原生 Border。
+描边动画提供连续线宽与原始外圆角，取整和内缩只由 SurfaceOutline 执行；普通零宽无描边，
+动画零宽使用 hairline。Padding 仍由内容 Border 处理。
 
 Button 模板内的局部 `ButtonLayout` 区分背景默认尺寸与外层交互留白：背景默认最小宽度为 58 DIP，
 高度由 size Token 提供，外层默认预留至少 48 DIP 并居中放置背景。默认背景高度不再写入
@@ -101,6 +105,12 @@ Button / IconButton 的主题将 owner `CornerRadius` 传给 Surface，默认按
 可空附加属性 `MaterialButton.PressedCornerRadius` 显式启用按压变形，null 关闭；模板直接绑定该属性，
 复用 Surface 的圆角状态和动画，不另建按钮形状控制器。尺寸 class 提供 owner 圆角的默认值，
 局部 CornerRadius 和按压目标不被尺寸 class 覆盖。
+
+[ToggleButton](../src/Material3Expressive/Components/ToggleButton/README.md) 使用原生状态及独立的四种主题，
+在 Surface 内部增加选中形状输入，复用共享变形、描边动画、elevation、状态层和 ripple。
+[SplitButton](../src/Material3Expressive/Components/SplitButton/README.md) 使用独立双槽容器，组合实际子控件；
+内部 ButtonLayout 的最小宽度及交互留白可配置，普通 Button 的默认值不变。
+这两个组件的公开 API、尺寸规则、配置重建差别与原生语义决定随组件记录。
 
 NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
 `MappedInteractionSource` 坐标；状态层和 ripple 不另建实现。键盘原点与当前固定 Desktop
@@ -130,6 +140,24 @@ Filled/Tonal 默认在 hover 升到 1 DIP；Outlined/Text 默认无 elevation �
 更换目标先取消旧 effect，再沿用状态。待提交目标和 effect 都受呈现者的取消生命周期约束。
 这一示例不意味着其他组件都应采用 Button 的状态选择规则。
 
+FAB 使用自己的 `FloatingActionButtonElevationController`：保留最后一个实际交互，
+即使 press/focus/default 高度相同也不丢失状态身份；配置变更先 snap 当前目标。
+它通过同一 `MaterialInteractionController` 和呈现者作用域接入，Surface 分别消费固定 tonal elevation
+与动画 shadow elevation。尺寸入口、受控 Toggle 与菜单布局见 [FAB 说明](../src/Material3Expressive/Components/FloatingActionButton/README.md)。
+
+Chip 使用自己的六状态 elevation 配置，消费共享控制器的最后活跃交互；形状和槽动画留在
+[组件目录](../src/Material3Expressive/Components/Chip/README.md)，不使用 Button 的 elevation 配置。
+共享控制器观察 Core Desktop 的所有原生焦点，指针按下位于原生焦点处理之后。
+状态层的焦点源按 Desktop 输入模式单独过滤，elevation 保留完整焦点事实。
+无指针历史的键盘 ripple 从 clickable 局部零点开始；导航项保留其源坐标映射。
+ContentColorFor 的可选内部 ambient 绑定用于 Chip 在标签 provider 外选择墨色，仍消费同一套
+实时背景 / Token / 环境绑定。相关确认依据见 [DECISIONS](DECISIONS.md)。
+
+SecureTextField 的原生 Filled / Outlined 主题复用 TextField 装饰，
+`MaterialSecureTextField.IsSecure` 负责单行、IME 提示和复制/剪切限制，显示仍由原生
+PasswordChar / RevealPassword 控制。该原生方案未替换 automation peer 或 IME 客户端；
+安全语义缺口和已确认的 RevealLastTyped 暂缺见[组件说明](../src/Material3Expressive/Components/SecureTextField/README.md)。
+
 ## 动画接入
 
 动画执行通过 NuGet 依赖 ComposeAnimation，准备方式见 [README](../README.md#本地开发)。
@@ -153,6 +181,11 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 
 ## 当前覆盖与待确认项
 
+原生 ScrollBar 使用 CMP Foundation 的交互式滚动条外观，固定厚度与 hover / drag 颜色动画。
+颜色映射至 OnSurface，位置、长度、输入、Visibility、菜单和 ScrollViewer 布局保留原生行为。
+外观入口、已确认适配及本组件不做 Compose parity 的范围见
+[ScrollBar](../src/Material3Expressive/Components/ScrollBar/README.md)。
+
 现有源码是后续工作的起点，不是批准所有既有取舍的依据。旧注释中的 `design doc §...` 是历史引用，
 不指向本文，也不构成当前规范；涉及相应代码时核对真实行为与固定上游。
 
@@ -164,12 +197,19 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 - [RadioButton](../src/Material3Expressive/Components/RadioButton/README.md) 使用原生 Avalonia RadioButton 的模板，
   保留已确认的原生状态/组互斥、键盘与内容组合；四槽颜色、圆点动画、布局与绘制由模板部件负责。
   默认 ripple/focus 复用共享交互能力，具体边界见组件说明。
+- [Switch](../src/Material3Expressive/Components/Switch/README.md) 使用原生 ToggleSwitch 的模板和
+  SwitchAppearance 附加属性，保留原生状态写回、键盘、拖动与自动化；模板部件移植 ThumbNode 布局与动画。
+  默认 ripple/focus 配置已实现，null 回调模式、可配置 inset focus ring 和外部 InteractionSource 映射未实现。
 - [Divider](../src/Material3Expressive/Components/Divider/README.md) 使用原生 Separator 的主题，
   通过附加属性选择 Horizontal / Vertical 方向、厚度与颜色；内部 Canvas 保留布局取整、
   原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。
+- [TabRow / Tab](../src/Material3Expressive/Components/TabRow/README.md) 提供受控的独立标签栏及原生 TabControl 顶部水平主题，
+  共用 intrinsic / 基线布局、内容颜色 Transition 和指示器 Animatable。原生页面呈现和选择仍由 TabControl 负责。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
-  Modal 使用当前 TopLevel 的 OverlayLayer；自定义宿主需提供启用 OverlayLayer 的 VisualLayerManager。
+  Modal 使用当前 TopLevel 的 PopupOverlayLayer，通过组件自己的 Popup 和共享 ModalPresenter 接入。
+  自定义 Window 模板需包含 `PART_VisualLayerManager`；普通 Content 内的 OverlayLayer 不满足该条件。
+  Dialog 的关闭请求、退出保留和焦点约束见 [Overlays](../src/Material3Expressive/Foundation/Overlays/README.md)。
   组件负责输入阻挡、焦点限制/恢复及展开内容迁移；各组件的验证范围与保留问题见对应说明。
 - 原有 Material 动画规则的源码核对基于 AndroidX `ff0a0a99c4f0cfe95d75d5df615e51d399575922`。
   当时记录了状态层 15/45/150ms 淡入淡出、ripple 75ms 进入透明度与 225ms 扩张/中心移动、

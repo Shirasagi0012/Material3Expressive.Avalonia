@@ -325,11 +325,8 @@ public class ModalWideNavigationRailTests
     };
     private static MotionTestWindow Show(Control rail, Control? page = null)
     {
-        var window = new MotionTestWindow { Width = 520, Height = 240 };
-        window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
         var root = new Grid(); if (page is not null) root.Children.Add(page); root.Children.Add(rail);
-        window.Content = new VisualLayerManager { EnableOverlayLayer = true, Child = root };
-        window.Show(); window.UpdateLayout(); return window;
+        return DialogTests.Show(root, 240);
     }
     private static void Advance(MotionTestClockScope clock, Window window, int frames = 80)
     {

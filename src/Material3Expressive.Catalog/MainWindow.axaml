@@ -3,9 +3,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:converters="using:Avalonia.Markup.Xaml.Converters"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" RequestedThemeVariant="Light"
         x:Class="Material3Expressive.Catalog.MainWindow"
         Title="Material3Expressive.Catalog">
+    <Window.Resources>
+        <converters:ColorToBrushConverter x:Key="FabIconBrushConverter" />
+    </Window.Resources>
     <Grid ColumnDefinitions="Auto,*">
         <m3:ModalWideNavigationRail x:Name="DemoNavigationRail">
             <m3:ModalWideNavigationRail.ExpandedHeader>
@@ -34,6 +38,99 @@
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
+                <TextBlock Text="FloatingActionButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <m3:FloatingActionButton Size="Small"><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButton>
+                    <m3:FloatingActionButton><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButton>
+                    <m3:FloatingActionButton Size="Medium"><m3:MaterialSymbol Symbol="Add" Width="28" Height="28" /></m3:FloatingActionButton>
+                    <m3:FloatingActionButton Size="Large"><m3:MaterialSymbol Symbol="Add" Width="36" Height="36" /></m3:FloatingActionButton>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <m3:ExtendedFloatingActionButton x:Name="DemoExtendedFab" Content="Create">
+                        <m3:ExtendedFloatingActionButton.Icon><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:ExtendedFloatingActionButton.Icon>
+                    </m3:ExtendedFloatingActionButton>
+                    <Button Content="Expand / collapse" Click="OnToggleExtendedFab" />
+                    <Button Content="Show / hide" Click="OnToggleFabVisibility" />
+                </StackPanel>
+                <m3:FloatingActionButtonMenu x:Name="DemoFabMenu" HorizontalAlignment="Left">
+                    <m3:FloatingActionButtonMenu.Button>
+                        <m3:ToggleFloatingActionButton x:Name="DemoToggleFab" Size="Medium" CheckedChangeRequested="OnFabCheckedChange">
+                            <m3:MaterialSymbol Symbol="Add" Width="{Binding IconSize, ElementName=DemoToggleFab}" Height="{Binding IconSize, ElementName=DemoToggleFab}"
+                                                Foreground="{Binding IconColor, ElementName=DemoToggleFab, Converter={StaticResource FabIconBrushConverter}}" />
+                        </m3:ToggleFloatingActionButton>
+                    </m3:FloatingActionButtonMenu.Button>
+                    <m3:FloatingActionButtonMenuItem Content="Create" Click="OnFabMenuItem">
+                        <m3:FloatingActionButtonMenuItem.Icon><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButtonMenuItem.Icon>
+                    </m3:FloatingActionButtonMenuItem>
+                    <m3:FloatingActionButtonMenuItem Content="Edit" Click="OnFabMenuItem">
+                        <m3:FloatingActionButtonMenuItem.Icon><m3:MaterialSymbol Symbol="Edit" Width="24" Height="24" /></m3:FloatingActionButtonMenuItem.Icon>
+                    </m3:FloatingActionButtonMenuItem>
+                </m3:FloatingActionButtonMenu>
+                <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
+                <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
+                <Button Content="TabRow demo" Click="OnTabRowDemo" HorizontalAlignment="Left" />
+                <Button Content="ScrollBar demo" Click="OnScrollBarDemo" HorizontalAlignment="Left" />
+                <TextBlock Text="Chip" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <WrapPanel>
+                    <m3:AssistChip Content="Add to calendar" Margin="0,0,12,0">
+                        <m3:AssistChip.LeadingIcon><m3:MaterialSymbol Symbol="CalendarMonth" Width="18" Height="18" /></m3:AssistChip.LeadingIcon>
+                    </m3:AssistChip>
+                    <m3:AssistChip Content="Elevated assist" IsElevated="True" Margin="0,0,12,0" />
+                    <m3:SuggestionChip Content="Suggestion" Margin="0,0,12,0" />
+                    <m3:SuggestionChip Content="Elevated suggestion" IsElevated="True" />
+                </WrapPanel>
+                <WrapPanel>
+                    <m3:FilterChip Content="Filter" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:FilterChip Content="Selected" IsSelected="True" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:FilterChip Content="Shape morph" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:FilterChip Content="Elevated filter" IsElevated="True" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:InputChip Content="Contact" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0">
+                        <m3:InputChip.Avatar><Border Width="24" Height="24" Background="#E8DEF8"><m3:MaterialSymbol Symbol="Person" Width="18" Height="18" /></Border></m3:InputChip.Avatar>
+                        <m3:InputChip.TrailingIcon><m3:MaterialSymbol Symbol="Close" Width="18" Height="18" /></m3:InputChip.TrailingIcon>
+                    </m3:InputChip>
+                    <m3:InputChip Content="Disabled contact" IsSelected="True" IsEnabled="False" />
+                </WrapPanel>
+                <TextBlock Text="ToggleButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <ToggleButton Content="Filled" />
+                    <ToggleButton Content="Tonal" IsChecked="True" Theme="{StaticResource MaterialTonalToggleButtonTheme}" />
+                    <ToggleButton Content="Elevated" Theme="{StaticResource MaterialElevatedToggleButtonTheme}" />
+                    <ToggleButton Content="Outlined" Theme="{StaticResource MaterialOutlinedToggleButtonTheme}" />
+                    <ToggleButton Content="Disabled" IsChecked="True" IsEnabled="False" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <ToggleButton Content="XS" Classes="xsmall" />
+                    <ToggleButton Content="Small" IsChecked="True" />
+                    <ToggleButton Content="Medium" Classes="medium" />
+                    <ToggleButton Content="Large" Classes="large" />
+                    <ToggleButton Content="XL" Classes="xlarge" />
+                </StackPanel>
+                <ToggleButton Content="Favorite" HorizontalAlignment="Left">
+                    <m3:ToggleButtonAppearance.Icon><m3:MaterialSymbol Symbol="Favorite" /></m3:ToggleButtonAppearance.Icon>
+                </ToggleButton>
+                <TextBlock Text="SplitButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialFilledSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton>
+                            <ToggleButton Theme="{StaticResource MaterialFilledSplitButtonTrailingTheme}">
+                                <m3:MaterialSymbol Symbol="KeyboardArrowDown" Width="22" Height="22" />
+                            </ToggleButton>
+                        </m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialTonalSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton><ToggleButton Content="…" IsChecked="True" Theme="{StaticResource MaterialTonalSplitButtonTrailingTheme}" /></m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialElevatedSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton><Button Content="…" Theme="{StaticResource MaterialElevatedSplitButtonTrailingTheme}" /></m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                    <m3:SplitButton>
+                        <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialOutlinedSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
+                        <m3:SplitButton.TrailingButton><ToggleButton Content="…" Theme="{StaticResource MaterialOutlinedSplitButtonTrailingTheme}" /></m3:SplitButton.TrailingButton>
+                    </m3:SplitButton>
+                </StackPanel>
                 <TextBlock Text="RadioButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <RadioButton GroupName="CatalogRadio" Content="First" IsChecked="True" />
@@ -134,13 +231,34 @@
                     <Separator Grid.Column="1" m3:MaterialDivider.Orientation="Vertical" />
                     <Border Grid.Column="2" Background="#D0BCFF" Margin="16,0,0,0" />
                 </Grid>
+                <TextBlock Text="Badges" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="24" VerticalAlignment="Center">
+                    <m3:BadgedBox>
+                        <m3:BadgedBox.Badge><m3:Badge /></m3:BadgedBox.Badge>
+                        <m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" />
+                    </m3:BadgedBox>
+                    <m3:BadgedBox>
+                        <m3:BadgedBox.Badge><m3:Badge x:Name="DemoBadge" Content="8" AutomationProperties.Name="8 notifications" /></m3:BadgedBox.Badge>
+                        <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
+                    </m3:BadgedBox>
+                    <m3:BadgedBox>
+                        <m3:BadgedBox.Badge><m3:Badge Content="999+" /></m3:BadgedBox.Badge>
+                        <m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" />
+                    </m3:BadgedBox>
+                    <Button Content="Change badge" Click="OnChangeBadge" />
+                </StackPanel>
                 <TextBlock Text="NavigationBar" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:NavigationBar x:Name="DemoNavigationBar">
                     <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">
                         <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
                     </m3:NavigationBarItem>
                     <m3:NavigationBarItem Label="Search" Click="OnBarDestinationClick">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                        <m3:NavigationBarItem.Icon>
+                            <m3:BadgedBox>
+                                <m3:BadgedBox.Badge><m3:Badge Content="99+" /></m3:BadgedBox.Badge>
+                                <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
+                            </m3:BadgedBox>
+                        </m3:NavigationBarItem.Icon>
                     </m3:NavigationBarItem>
                     <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick">
                         <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
@@ -188,6 +306,17 @@
                         <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
                     </m3:ShortNavigationBarItem>
                 </m3:ShortNavigationBar>
+                <TextBlock Text="Switches" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <ToggleSwitch Content="Notifications" />
+                    <ToggleSwitch Content="Thumb icon" IsChecked="True">
+                        <m3:SwitchAppearance.ThumbContent>
+                            <m3:MaterialSymbol Symbol="Check" Width="16" Height="16" />
+                        </m3:SwitchAppearance.ThumbContent>
+                    </ToggleSwitch>
+                    <ToggleSwitch Content="Disabled" IsChecked="True" IsEnabled="False" />
+                    <ToggleSwitch Content="State label" OnContent="On" OffContent="Off" />
+                </StackPanel>
                 <TextBlock Text="Sliders" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <Grid ColumnDefinitions="*,Auto">
                     <Slider x:Name="VolumeSlider" Value="35" />
@@ -255,6 +384,35 @@
                         </m3:WideNavigationRailItem>
                     </m3:ModalWideNavigationRail>
                 </Grid>
+                <Button Content="Open Dialog" Click="OnOpenDialog" Theme="{StaticResource MaterialTonalButtonTheme}" />
+                <m3:Dialog x:Name="DemoDialog" Width="360" DismissRequested="OnDialogDismissRequested">
+                    <m3:MaterialSurface Padding="24" CornerRadius="28"
+                                        Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="Dialog" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+                            <TextBox PlaceholderText="Type here" Text="Editable content">
+                                <TextBox.ContextMenu>
+                                    <ContextMenu><MenuItem Header="Example action" /></ContextMenu>
+                                </TextBox.ContextMenu>
+                            </TextBox>
+                            <ComboBox SelectedIndex="0">
+                                <ComboBoxItem>First option</ComboBoxItem>
+                                <ComboBoxItem>Second option</ComboBoxItem>
+                            </ComboBox>
+                            <Button Content="Open another dialog" Click="OnOpenNestedDialog" />
+                            <Button Content="Close" Click="OnCloseDialog" Theme="{StaticResource MaterialTextButtonTheme}" />
+                            <m3:Dialog x:Name="DemoNestedDialog" Width="280" DismissRequested="OnDialogDismissRequested">
+                                <m3:MaterialSurface Padding="24" CornerRadius="28"
+                                                    Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}">
+                                    <StackPanel Spacing="16">
+                                        <TextBlock Text="Another dialog" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+                                        <Button Content="Back" Click="OnCloseNestedDialog" />
+                                    </StackPanel>
+                                </m3:MaterialSurface>
+                            </m3:Dialog>
+                        </StackPanel>
+                    </m3:MaterialSurface>
+                </m3:Dialog>
                 <Button Theme="{StaticResource MaterialFilledButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
                 <Button Theme="{StaticResource MaterialElevatedButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
                 <Button Theme="{StaticResource MaterialTonalButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>

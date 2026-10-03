@@ -13,11 +13,17 @@ internal sealed class ButtonLayout : Decorator
 {
     public static readonly StyledProperty<double> ContainerMinHeightProperty =
         AvaloniaProperty.Register<ButtonLayout, double>(nameof(ContainerMinHeight));
+    public static readonly StyledProperty<double> ContainerMinWidthProperty =
+        AvaloniaProperty.Register<ButtonLayout, double>(nameof(ContainerMinWidth), 58);
+    public static readonly StyledProperty<double> MinimumInteractiveSizeProperty =
+        AvaloniaProperty.Register<ButtonLayout, double>(nameof(MinimumInteractiveSize), 48);
+    public double ContainerMinWidth { get => GetValue(ContainerMinWidthProperty); set => SetValue(ContainerMinWidthProperty, value); }
+    public double MinimumInteractiveSize { get => GetValue(MinimumInteractiveSizeProperty); set => SetValue(MinimumInteractiveSizeProperty, value); }
 
     private Size _containerSize;
     private double _interactiveSize;
 
-    static ButtonLayout() => AffectsMeasure<ButtonLayout>(ContainerMinHeightProperty);
+    static ButtonLayout() => AffectsMeasure<ButtonLayout>(ContainerMinHeightProperty, ContainerMinWidthProperty, MinimumInteractiveSizeProperty);
 
     public double ContainerMinHeight
     {
@@ -30,7 +36,7 @@ internal sealed class ButtonLayout : Decorator
         Child?.Measure(availableSize);
         var content = Child?.DesiredSize ?? default;
         var scale = LayoutHelper.GetLayoutScale(this);
-        var minimumWidth = MinWidth > 0 ? MinWidth : Math.Min(MathUtils.PxToDip(MathUtils.DipToPx(58, scale), scale), availableSize.Width);
+        var minimumWidth = MinWidth > 0 ? MinWidth : Math.Min(MathUtils.PxToDip(MathUtils.DipToPx(ContainerMinWidth, scale), scale), availableSize.Width);
         var minimumHeight = MinHeight > 0 ? MinHeight : Math.Min(MathUtils.PxToDip(MathUtils.DipToPx(ContainerMinHeight, scale), scale), availableSize.Height);
         _containerSize = new Size(
             double.IsNaN(Width) ? Math.Max(content.Width, minimumWidth) : availableSize.Width,
@@ -38,7 +44,7 @@ internal sealed class ButtonLayout : Decorator
 
         // Disabled components retain this spacing too. This reserves layout space;
         // touch target expansion is a separate input-layer responsibility upstream.
-        _interactiveSize = this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(48, scale), scale) : 0;
+        _interactiveSize = this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(MinimumInteractiveSize, scale), scale) : 0;
         return new Size(Math.Max(_containerSize.Width, _interactiveSize), Math.Max(_containerSize.Height, _interactiveSize));
     }
 

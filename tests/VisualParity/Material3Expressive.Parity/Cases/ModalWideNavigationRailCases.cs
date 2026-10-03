@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
@@ -138,6 +140,17 @@ public sealed class ModalWideNavigationRailCases
         public Scene(AvaloniaHost host, ModalWideNavigationRailConfig config)
         {
             _host = host; _config = config; SetTheme(config.Dark);
+            // Window enables its PopupOverlayLayer in this named template part.
+            // A VisualLayerManager placed in Content only enables the ordinary overlay.
+            host.Window.Template = new FuncControlTemplate<Window>((owner, scope) =>
+            {
+                var presenter = new ContentPresenter();
+                presenter.Bind(ContentPresenter.ContentProperty, owner.GetObservable(ContentControl.ContentProperty));
+                presenter.Bind(ContentPresenter.BackgroundProperty, owner.GetObservable(TemplatedControl.BackgroundProperty));
+                var layers = new VisualLayerManager { Name = "PART_VisualLayerManager", Child = presenter };
+                scope.Register(layers.Name, layers);
+                return layers;
+            });
             // Headless's existing mouse device, through its public runtime property.
             // The normal raw pipeline receives the same logical timestamps as Compose.
             _mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;

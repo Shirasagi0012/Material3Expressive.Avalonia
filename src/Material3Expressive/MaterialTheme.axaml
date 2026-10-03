@@ -20,6 +20,8 @@
                     <m3:TonalButtonTokenSource />
                     <m3:OutlinedButtonTokenSource />
                     <m3:TextButtonTokenSource />
+                    <m3:ToggleButtonTokenSource />
+                    <m3:SplitButtonTokenSource />
 
                     <m3:IconButtonSizesTokenSource />
                     <m3:StandardIconButtonTokenSource />
@@ -31,9 +33,16 @@
                     <m3:ShortNavigationBarTokenSource />
                     <m3:WideNavigationRailTokenSource />
                     <m3:SliderTokenSource />
+                    <m3:ScrollBarTokenSource />
                     <m3:CheckBoxTokenSource />
                     <m3:DividerTokenSource />
                     <m3:RadioButtonTokenSource />
+                    <m3:SwitchTokenSource />
+                    <m3:BadgeTokenSource />
+                    <m3:FloatingActionButtonTokenSource />
+                    <m3:TextFieldTokenSource />
+                    <m3:ChipTokenSource />
+                    <m3:TabRowTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -42,7 +51,10 @@
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
     <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
+    <StyleInclude Source="/Foundation/Overlays/Dialog.axaml" />
     <StyleInclude Source="/Components/Button/Button.axaml" />
+    <StyleInclude Source="/Components/ToggleButton/ToggleButton.axaml" />
+    <StyleInclude Source="/Components/SplitButton/SplitButton.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />
@@ -50,7 +62,15 @@
     <StyleInclude Source="/Components/WideNavigationRail/WideNavigationRail.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/ModalWideNavigationRail.axaml" />
     <StyleInclude Source="/Components/Slider/Slider.axaml" />
+    <StyleInclude Source="/Components/ScrollBar/ScrollBar.axaml" />
     <StyleInclude Source="/Components/CheckBox/CheckBox.axaml" />
     <StyleInclude Source="/Components/Divider/Divider.axaml" />
     <StyleInclude Source="/Components/RadioButton/RadioButton.axaml" />
+    <StyleInclude Source="/Components/Switch/Switch.axaml" />
+    <StyleInclude Source="/Components/Badge/Badge.axaml" />
+    <StyleInclude Source="/Components/FloatingActionButton/FloatingActionButton.axaml" />
+    <StyleInclude Source="/Components/TextField/TextField.axaml" />
+    <StyleInclude Source="/Components/SecureTextField/SecureTextField.axaml" />
+    <StyleInclude Source="/Components/Chip/Chip.axaml" />
+    <StyleInclude Source="/Components/TabRow/TabRow.axaml" />
 </Styles>

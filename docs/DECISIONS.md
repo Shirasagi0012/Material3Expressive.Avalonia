@@ -15,6 +15,21 @@
 或完整 Insets 框架，不改变既有 rail/bar 的行为。Scaffold 槽 API 与应用 Padding 的示例见
 [组件说明](../src/Material3Expressive/Components/Scaffold/README.md)。
 确认：2026-10-03，维护者对具体 API 和 C#/XAML 示例选择“采用推荐 API 和共享 ConsumePadding”。
+## Dialog / Popup 的窗口内宿主与模态职责
+
+决定：组件各自持有 Avalonia Popup，显式使用 `ShouldUseOverlayLayer = true`，由原生 Popup 接入
+当前 TopLevel 的 PopupOverlayLayer，不创建独立 Window，不引入中央管理器。
+内部 ModalPresenter 复用客户区覆盖、焦点约束/还原、Escape/Back 和清理；组件保留自己的状态与动画。
+最上层模态按实际宿主顺序判定，子 overlay Popup 通过 PlacementTarget 链判定焦点归属。
+基础 Dialog 区分 IsOpen 目标与 IsPresented 实际呈现，DismissRequested 交给调用方决定是否关闭，
+退出动画期间保留模态层。普通 Popup 继续直接组合原生能力。
+原因：复用 Avalonia 弹层定位与承载，同时支持嵌套菜单和模态组件共享输入语义；普通 OverlayLayer
+继续供 ConnectedAnimation 等视觉覆盖能力消费。
+范围：基础 Dialog 与 ModalWideNavigationRail 迁移；不替代 Rail 的拖动、遮罩和运动，不包含 TextField。
+此项取代 Rail 2026-10-03 决定中的普通 OverlayLayer 宿主选择，其余 Header/State 等决定保持原范围。
+确认：2026-10-04，维护者明确选择 PopupOverlayLayer、拒绝独立窗口、认可组件独立持有 Popup，
+并授权基础 Dialog 和 Rail 迁移。接口、桌面动画来源及未实现/未经验证项见
+[Overlays 说明](../src/Material3Expressive/Foundation/Overlays/README.md)。
 
 ## 聚合 TextStyle 与 Token 层文字单位换算
 
@@ -53,3 +68,76 @@ Enter 按下激活与固定 Compose 的松开激活不同，已作为框架适�
 [IconButton](../src/Material3Expressive/Components/IconButton/README.md#形状与接入)说明。
 确认：2026-10-03，维护者要求“不需要Enter拦截了。然后将决策记录在案”，
 并进一步要求移除共享控制器中非必要的 Enter 特殊处理；此决定替代此前在 KeyUp 经 automation Invoke 激活的决定。
+
+## Ripple 首次绘制几何与尺寸动画衔接
+
+决定：RippleAnimation 按固定 Core material3-ripple 在首次绘制（包含零 alpha）锁定起始半径、
+无界原点和目标中心；目标半径仍在添加 press 时解析。通常从 Surface 的实际绘制尺寸初始化。
+共享控制器增加内部 `InitializeRippleDrawGeometry(Size)`，允许 Switch 在按压测量中提前锁定
+这一几何，波纹动画、绘制和取消仍归共享层。
+原因：Switch ThumbNode 先测量当前 sizeAnim 值，再启动 pressed SnapSpec；固定 Compose 的
+首个 draw 使用该次测量尺寸。Avalonia 可能在首次 render 前已完成多轮布局，用扩张后的尺寸
+初始化会使动画后按压的波纹中心偏移约 2 DIP。
+范围：只处理有上游首绘测量依据的布局与绘制衔接，不提供新的公开交互 API，不建立组件内 ripple。
+其他组件仍在首次 render 初始化，不能未经核验推广 Switch 的提前初始化时机。
+确认：2026-10-03，维护者选择“增加内部衔接方法，修复该波纹差异（推荐）”。
+
+2026-10-04 补充，替代上述决定中 Switch 锁定绘制中心的部分：Switch 的无界按压波纹
+每次绘制都跟随 Surface 当前中心，与放大、收缩、拖动中的 thumb 及 hover/focus 圈保持同心。
+原因：首绘锁定的小尺寸中心会在 thumb 放大后向左上错位，收缩时又向右下错位。
+做法：共享控制器增加内部 `RippleFollowsPresenterCenter`，默认 false，仅 Switch 启用；
+RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实际绘制中心。
+首绘测量仍决定起始半径，目标半径、扩散、透明度、取消与生命周期保持原实现。
+其他调用方保留固定 Core 的中心锁定和有界中心漂移，不增加公开 C#/XAML API。
+确认：维护者在先前提出的同心优化方案后要求“继续修复波纹的问题”，并提供新的错位截图。
+
+## Surface 圆角描边
+
+决定：内部 SurfaceOutline 对均匀 Thickness 直接移植固定 Compose Border.kt 的物理像素 ceil
+与内缩 stroke；描边作为内容上方的视觉层，不消耗内容尺寸。
+均匀圆角保留中心线内缩、小圆角减内矩形和大宽度填充；非对称圆角以外轮廓减去完整线宽内缩的
+轮廓，各角独立缩减并限制为非负。非均匀 Thickness 保留 Avalonia 原生 Border 路径。
+普通 Surface 的零 Thickness 保留无描边语义，Toggle/Split 描边动画的零宽按 Compose 绘制 hairline。
+动画层只提供连续线宽、颜色与原始外圆角；物理取整、线宽限制及圆角内缩统一在绘制层执行一次。
+公共 API 不变。
+原因：Chip 深色静态用例暴露角部差异，已有原生 Border 不符合固定上游的像素取整。
+范围：所有 MaterialSurface 调用方；Surface / Button / Chip / ToggleButton / SplitButton 的相关渲染
+和回归需要共同检查。
+确认：2026-10-03，维护者明确批准共享 Surface 描边修正及 Surface / Button 回归。
+2026-10-04 合并 Toggle/Split 时，维护者批准保留共享 SurfaceOutline、接入新描边动画并补齐
+非对称圆角算法，避免分支的原生 Border 半线宽处理与共享绘制内缩叠加。
+
+## Core Desktop 原生焦点反馈
+
+决定：共享控制器 Focused 跟随所有原生焦点，包括鼠标和程序化焦点；控件继续负责激活。
+指针按下反馈在 Button 原生类处理之后观察，保留 Focus → Press 的交互顺序。
+原因：固定 AndroidX 的 RequestFocusOnClick 返回 false，固定 Core Desktop 返回 true；
+仅接受 Tab / Directional 焦点会让 Chip 点击释放后错误地恢复 hover elevation。
+范围：共享控制器调用方，不改变公开 API 或已确认的键盘激活职责。
+确认：2026-10-04，维护者批准按 Core Desktop 修正共享焦点反馈并回归 Button / IconButton / 导航项。
+实现同时按固定 Core `Indication.skiko.kt` 过滤 indication 的焦点源：首次鼠标聚焦不进入
+状态层，已经显示的键盘焦点层保留到失焦；输入模式改变不合成 Focus / Unfocus。
+内部 MaterialInputMode 按 TopLevel 保存输入模式，初始为 Keyboard；Tab 按键及原生 Tab / Directional
+导航接入 Keyboard，指针按下/释放或 Pointer 焦点导航接入 Touch，程序化聚焦沿用当前窗口模式。
+`button.Focus()` 驱动实际焦点与 elevation，其视觉焦点反馈取决于当时的输入模式；
+`button.Focus(NavigationMethod.Tab)` 表达 Avalonia 的键盘焦点导航。elevation 的原始交互源仍保留所有焦点。
+子控件冒泡的焦点事件不视为父控件获得焦点；对外 API 不变，没有增加 FocusRing 或 InteractionSource API。
+核验 Core 桌面过滤分支后，维护者进一步选择“按 Core 桌面过滤 indication，保留真实焦点/elevation（推荐）”。
+
+## 本次保留 Tween / Bezier 精度差异
+
+决定：Chip 移植继续消费 ComposeAnimation 0.2.1-alpha，不修改其 FloatTweenSpec /
+CubicBezierEasing 的 double 运算。固定 Compose 的 Float 运算和不同求根路径可造成约
+0.0000006 DIP 的 elevation 差异。原始 motion 事实继续精确比较并报告不同。
+范围：本次 Chip 及共享回归所观察的数值差异，不接受时序、布局或可见效果的其他偏离。
+确认：2026-10-04，维护者在依赖修正与保留差异的具体方案中选择“本次保留并记录该精度差异”。
+
+## 本次保留阴影坐标接入差异
+
+决定：本次不改变 MaterialSkiaShadow 的 DIP 路径及 density CTM，保留其与 Compose Desktop
+物理像素路径 / 相应 CTM 的 raster 差异。公共 DIP elevation、光照和布局不变。
+原因：透明 AssistChip 的 6 DIP elevation 暴露内部阴影差异；独立 Skiko 原生探针使用同一
+轮廓、光照及标志，分别以 DIP 路径 + 4× CTM 和物理像素路径 + 1× CTM 绘制，复现两端结果。
+原生 tessellator 对路径坐标的敏感性使这两种坐标接入不等价。
+范围：本次观察到的阴影 raster，不接受其他布局、颜色或时序偏离；保留原始 PNG 和比较失败。
+确认：2026-10-04，维护者在坐标适配方案与保留差异中选择“本次保留并记录阴影差异”。

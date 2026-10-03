@@ -1137,10 +1137,13 @@ internal static class ConvexShadowTessellator
 
         private void HandleQuadratic(SKPoint first, SKPoint control, SKPoint last)
         {
-            // Skiko publishes Ganesh as an extension. SK_GANESH is therefore absent while core
-            // SkShadowTessellator.cpp is compiled, selecting its coarse compatibility branch.
-            HandleLine(control);
-            HandleLine(last);
+            // SkBaseShadowTessellator::handleQuad's Ganesh path. The pinned Skiko
+            // RenderNode's rounded outline uses this subdivision, including the
+            // degeneracy check and GrPathUtils point-count cap.
+            var v0 = Subtract(control, first);
+            var v1 = Subtract(last, first);
+            if (MathF.Abs(Cross(v0, v1)) <= NearlyZero) return;
+            GenerateQuadratic(first, control, last, QuadraticPointCount(first, control, last));
         }
 
         // GrPathUtils::quadraticPointCount uses Wang's formula to cap recursive subdivision.

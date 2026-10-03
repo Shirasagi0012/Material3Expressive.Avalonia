@@ -1,0 +1,39 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type OverlayPopupHost}" TargetType="OverlayPopupHost">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <LayoutTransformControl LayoutTransform="{TemplateBinding Transform}">
+            <VisualLayerManager Name="PART_VisualLayerManager">
+              <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                                Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}" />
+            </VisualLayerManager>
+          </LayoutTransformControl>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:Dialog}" TargetType="m3:Dialog">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid x:Name="PART_Root">
+            <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
+              <Border x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
+              <Grid x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                    MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"
+                    MinHeight="{TemplateBinding MinHeight}" MaxHeight="{TemplateBinding MaxHeight}"
+                    Background="Transparent" RenderTransformOrigin="50%,50%">
+                <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}" />
+                <Image x:Name="PART_Snapshot" IsVisible="False" IsHitTestVisible="False" />
+              </Grid>
+            </m3:DialogPresenter>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

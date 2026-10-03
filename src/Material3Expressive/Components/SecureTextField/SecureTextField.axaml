@@ -1,0 +1,31 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialFilledSecureTextFieldTheme" TargetType="TextBox"
+                  BasedOn="{StaticResource MaterialFilledTextFieldTheme}">
+      <Setter Property="m3:MaterialSecureTextField.IsSecure" Value="True" />
+      <Setter Property="PasswordChar" Value="•" />
+      <Setter Property="RevealPassword" Value="False" />
+      <Setter Property="ContextFlyout">
+        <MenuFlyout>
+          <MenuItem Header="Paste" Command="{ReflectionBinding $parent[TextBox].Paste}"
+                    IsEnabled="{ReflectionBinding $parent[TextBox].CanPaste}" />
+          <MenuItem Header="Select all" Command="{ReflectionBinding $parent[TextBox].SelectAll}" />
+        </MenuFlyout>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialOutlinedSecureTextFieldTheme" TargetType="TextBox"
+                  BasedOn="{StaticResource MaterialOutlinedTextFieldTheme}">
+      <Setter Property="m3:MaterialSecureTextField.IsSecure" Value="True" />
+      <Setter Property="PasswordChar" Value="•" />
+      <Setter Property="RevealPassword" Value="False" />
+      <Setter Property="ContextFlyout">
+        <MenuFlyout>
+          <MenuItem Header="Paste" Command="{ReflectionBinding $parent[TextBox].Paste}"
+                    IsEnabled="{ReflectionBinding $parent[TextBox].CanPaste}" />
+          <MenuItem Header="Select all" Command="{ReflectionBinding $parent[TextBox].SelectAll}" />
+        </MenuFlyout>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

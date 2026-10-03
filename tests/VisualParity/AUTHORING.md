@@ -10,6 +10,9 @@
 `ComposeHost.RenderScale`；组件专用读数器同样将像素位置、半径和 elevation 除以
 该倍率后报告 DIP，保留原生像素时标为 px。字号、字距和 UTF-16 索引不随倍率相乘。
 
+ComposeHost 同时向默认平台 WindowInfo 提供实际窗口像素尺寸；仅设置 scene.size 不会更新
+WindowInfo，Core 的桌面阴影光照会单独读取后者。显式非零窗口环境由用例负责，宿主保留它。
+
 ## 用例分类与稳定输入
 
 用例分为静态和动态两类，组件用例 ID 分别采用 `<component>.static.*` 和
