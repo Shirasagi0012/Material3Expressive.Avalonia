@@ -68,6 +68,25 @@
                 </m3:FloatingActionButtonMenu>
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
+                <TextBlock Text="Segmented button" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <m3:SingleChoiceSegmentedButtonRow>
+                    <m3:SegmentedButton Content="Day" IsSelected="True" Click="OnSingleSegmentClick" />
+                    <m3:SegmentedButton Content="Week" Click="OnSingleSegmentClick" />
+                    <m3:SegmentedButton Content="Month" Click="OnSingleSegmentClick" />
+                </m3:SingleChoiceSegmentedButtonRow>
+                <m3:MultiChoiceSegmentedButtonRow>
+                    <m3:SegmentedButton Content="Unread" Click="OnMultiSegmentClick" />
+                    <m3:SegmentedButton Content="Starred" IsSelected="True" Click="OnMultiSegmentClick" />
+                    <m3:SegmentedButton Content="Archived" IsEnabled="False" />
+                </m3:MultiChoiceSegmentedButtonRow>
+                <m3:SingleChoiceSegmentedButtonRow BaseShape="8">
+                    <m3:SegmentedButton Content="List" Click="OnSingleSegmentClick">
+                        <m3:SegmentedButton.InactiveIcon><m3:MaterialSymbol Symbol="List" Width="18" Height="18" /></m3:SegmentedButton.InactiveIcon>
+                    </m3:SegmentedButton>
+                    <m3:SegmentedButton Content="Grid" IsSelected="True" Click="OnSingleSegmentClick">
+                        <m3:SegmentedButton.InactiveIcon><m3:MaterialSymbol Symbol="GridView" Width="18" Height="18" /></m3:SegmentedButton.InactiveIcon>
+                    </m3:SegmentedButton>
+                </m3:SingleChoiceSegmentedButtonRow>
                 <TextBlock Text="Chip" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>
                     <m3:AssistChip Content="Add to calendar" Margin="0,0,12,0">

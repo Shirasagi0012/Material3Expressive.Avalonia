@@ -41,6 +41,7 @@
                     <m3:FloatingActionButtonTokenSource />
                     <m3:TextFieldTokenSource />
                     <m3:ChipTokenSource />
+                    <m3:SegmentedButtonTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -68,4 +69,5 @@
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
     <StyleInclude Source="/Components/SecureTextField/SecureTextField.axaml" />
     <StyleInclude Source="/Components/Chip/Chip.axaml" />
+    <StyleInclude Source="/Components/SegmentedButton/SegmentedButton.axaml" />
 </Styles>

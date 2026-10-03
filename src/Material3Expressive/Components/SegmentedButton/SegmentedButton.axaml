@@ -1,0 +1,51 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialSegmentedButtonRowTheme" TargetType="m3:SegmentedButtonRow">
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Space" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.OutlineWidth}}" />
+      <Setter Property="BaseShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.Shape}}" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:SegmentedButtonItemsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemContainerTheme"><ControlTheme TargetType="ContentPresenter">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+      </ControlTheme></Setter>
+      <Setter Property="Template"><ControlTemplate><ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" ClipToBounds="False" /></ControlTemplate></Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:SingleChoiceSegmentedButtonRow}" TargetType="m3:SingleChoiceSegmentedButtonRow" BasedOn="{StaticResource MaterialSegmentedButtonRowTheme}" />
+    <ControlTheme x:Key="{x:Type m3:MultiChoiceSegmentedButtonRow}" TargetType="m3:MultiChoiceSegmentedButtonRow" BasedOn="{StaticResource MaterialSegmentedButtonRowTheme}" />
+    <ControlTheme x:Key="{x:Type m3:SegmentedButton}" TargetType="m3:SegmentedButton">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <!-- SegmentedButton uses the legacy ButtonDefaults.ContentPadding (8dp vertical),
+           not expressive contentPaddingFor(SmallContainerHeight). -->
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.LabelTextStyle}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template"><ControlTemplate>
+        <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+                        HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}"
+                        ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.ContainerHeight}}">
+          <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                              FlowDirection="LeftToRight"
+                              BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}"
+                              TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}">
+            <Border Padding="{TemplateBinding Padding}">
+              <!-- Upstream uses physical place(), not placeRelative(), for both slots. -->
+              <m3:SegmentedButtonContentLayout x:Name="PART_Layout" HorizontalAlignment="Stretch" VerticalAlignment="Center" FlowDirection="LeftToRight">
+                <m3:SegmentedButtonIconSlot x:Name="PART_Icon" />
+                <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          TextWrapping="Wrap" FlowDirection="{TemplateBinding FlowDirection}" m3:TextStyleHost.IsEnabled="True" />
+              </m3:SegmentedButtonContentLayout>
+            </Border>
+          </m3:MaterialSurface>
+        </m3:ButtonLayout>
+      </ControlTemplate></Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

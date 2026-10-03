@@ -112,6 +112,19 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 子控件冒泡的焦点事件不视为父控件获得焦点；对外 API 不变，没有增加 FocusRing 或 InteractionSource API。
 核验 Core 桌面过滤分支后，维护者进一步选择“按 Core 桌面过滤 indication，保留真实焦点/elevation（推荐）”。
 
+## AnimatedVisibility 中断规格与缩放中心
+
+决定：消费 ComposeAnimation `0.2.4-alpha`，按固定 Core 的 EnterExitTransition 修正
+fade / scale 在缺少 effect 或反向段中的默认 spring，以及 TransformOrigin 的比例坐标 spring。
+状态改变时仍保留 Transition 的 ResetNoSnap 重建规则，不增加公共 API 或组件内动画替代机制。
+原因：SegmentedButton 的 fade + scale 进入途中反向到 Exit.None 时，原 Snap fallback
+改变了中断后的曲线与内容清理时机；像素 Point / Snap origin 不等价于上游默认 spring。
+规格及使用范围见 [SegmentedButton](../src/Material3Expressive/Components/SegmentedButton/README.md)。
+范围：ComposeAnimation AnimatedVisibility 的现有调用方；消费项目继续使用本地 NuGet，
+不引入跨仓库 ProjectReference。依赖版本包含 0.2.3-alpha 已有改动。
+确认：2026-10-04，维护者批准在独立依赖 worktree 修正共享中断行为并提交，明确指定
+`0.2.4-alpha`。最初对通道重置的诊断经 ResetNoSnap 源码复核后纠正，最终保留原规则。
+
 ## 本次保留 Tween / Bezier 精度差异
 
 决定：Chip 移植继续消费 ComposeAnimation 0.2.1-alpha，不修改其 FloatTweenSpec /
