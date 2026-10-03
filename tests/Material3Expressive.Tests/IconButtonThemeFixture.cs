@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
@@ -26,7 +27,7 @@ internal static class IconButtonThemeFixture
     /// icon button. <paramref name="themeKey"/> applies a named variant theme,
     /// <paramref name="sizeClass"/> a size class.
     /// </summary>
-    public static Window ShowWindow(out IconButton button, string? themeKey = null, string? sizeClass = null)
+    public static Window ShowWindow(out IconButton button, string? themeKey = null, string? sizeClass = null, CornerRadius? pressedCornerRadius = null)
     {
         var theme = new MaterialResource
         {
@@ -58,6 +59,9 @@ internal static class IconButtonThemeFixture
         window.Styles.Add(styles);
 
         button = new IconButton { Symbol = MaterialSymbolCodepoint.Home };
+
+        if (pressedCornerRadius is not null)
+            MaterialButton.SetPressedCornerRadius(button, pressedCornerRadius);
 
         if (themeKey is not null)
             button.Theme = Assert.IsType<ControlTheme>(styles.Resources[themeKey]);

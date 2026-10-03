@@ -28,7 +28,7 @@ public class MaterialMotionTests
     public void QuickPressAndReleaseInOneFrame_DoesNotStartShapeMorph()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.StartPress(new Point(8, 8));
         controller.EndPress();
@@ -46,7 +46,7 @@ public class MaterialMotionTests
     public void ShapeConfigurationChanges_RecreateAtTheSelectedShape_AndCancelPendingWorkOnDetach()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         var surface = Surface(button);
         controller.StartPress(new Point(8, 8));
@@ -54,10 +54,10 @@ public class MaterialMotionTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(32));
         Assert.InRange(surface.EffectiveCornerRadius.TopLeft, 8.01, 19.99);
-        surface.PressedCornerRadius = new CornerRadius(14);
+        MaterialButton.SetPressedCornerRadius(button, new CornerRadius(14));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(14, surface.EffectiveCornerRadius.TopLeft);
-        surface.CornerRadius = new CornerRadius(12);
+        button.CornerRadius = new CornerRadius(12);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(14, surface.EffectiveCornerRadius.TopLeft);
         controller.EndPress();
@@ -101,7 +101,7 @@ public class MaterialMotionTests
     public void InterruptedStateLayer_ContinuesWithTheIncomingTween()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
@@ -123,7 +123,7 @@ public class MaterialMotionTests
     public void HoverElevation_UsesDifferentEntryAndExitCurves_WithoutOverwritingTargets()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme", pressedCornerRadius: new CornerRadius(8));
         var surface = Surface(button);
         var controller = MaterialInteraction.GetOrCreate(button);
         Assert.Equal(1, surface.ShadowElevation);
@@ -154,7 +154,7 @@ public class MaterialMotionTests
     public void PressWhileHovered_LowersElevation_ThenReturnsToHover()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme", pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         var surface = Surface(button);
         controller.Set(InteractionState.Hovered, true);
@@ -178,7 +178,7 @@ public class MaterialMotionTests
     public void FocusExit_Uses150Milliseconds_AndArrivalOrderSelectsElevation()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme", pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         var surface = Surface(button);
         MaterialButton.SetElevation(button, MaterialButton.GetElevation(button)! with { Focused = 5 });
@@ -205,7 +205,7 @@ public class MaterialMotionTests
     public void DisabledDuringMotion_SnapsElevation_AndClearsPress()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme", pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
@@ -235,7 +235,7 @@ public class MaterialMotionTests
     public async Task Detach_CancelsAllFrameWaiters_AndReattachHasNoStaleInput()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme", pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.Set(InteractionState.Hovered, true);
         controller.StartPress(new Point(8, 8));
@@ -275,7 +275,7 @@ public class MaterialMotionTests
     public void TemplateReplacement_CancelsOldShapeAndRipple_AndInitializesNewPresenter()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
@@ -306,7 +306,7 @@ public class MaterialMotionTests
     public void RepeatedTaps_AllowOldRippleToFinish_AndEventuallyStopRequestingFrames()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
@@ -333,7 +333,7 @@ public class MaterialMotionTests
     public async Task LongLivedButton_1500RipplesReturnEveryRegistrationToBaseline()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         var motion = controller.Motion!;
         // Initialize persistent shape/elevation without a transient ripple in the baseline.
@@ -380,7 +380,7 @@ public class MaterialMotionTests
     public void OwnerMotionTokenOverride_ReachesTheComposeSpring()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         button.Resources[MaterialTokens.Sys.Motion.Spring.EffectsDefault] =
             new Material3Expressive.Foundation.Motion.SpringSpec(1, 100);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
@@ -402,7 +402,7 @@ public class MaterialMotionTests
     public void ZeroDurationScale_SettlesFiniteMotion_WithoutLeakingRippleWaitsOnDetach()
     {
         using var clock = new MotionTestClockScope();
-        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
+        var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme", pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         try
         {
@@ -430,7 +430,7 @@ public class MaterialMotionTests
     public async Task TopLevelClock_AdvancesRealAsyncFrames_AndSurvivesRapidRetargeting()
     {
         // Deliberately no manual clock: exercise RequestAnimationFrame and dispatcher continuations.
-        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         try
         {
             var controller = MaterialInteraction.GetOrCreate(button);

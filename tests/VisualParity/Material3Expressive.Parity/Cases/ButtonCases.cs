@@ -20,7 +20,7 @@ public sealed record ButtonConfig(string Style = "filled", string Size = "small"
     bool Enabled = true, bool Dark = false, string Icon = "none", bool Rtl = false,
     double? Width = 240, string Custom = "none", bool Baseline = false, string Action = "none",
     double? Height = null, bool Empty = false, double ContentWidth = 32, double ContentHeight = 16,
-    bool RequiredContentSize = false);
+    bool RequiredContentSize = false, bool Morph = true);
 
 [ParitySuite("button")]
 public sealed class ButtonCases
@@ -85,6 +85,9 @@ public sealed class ButtonCases
     public static IEnumerable<CaseData<ButtonConfig>> DynamicConfigurations()
     {
         // Press shape differs at every size. Wrappers share the shape algorithm, colors do not.
+        // Existing press regressions explicitly opt into the shapes overload.
+        foreach (var style in Styles)
+            yield return Data($"dynamic.fixed-press.{style}", new(style, Action: "press", Morph: false));
         foreach (var size in Sizes)
         foreach (var shape in new[] { "round", "square" })
             yield return Data($"dynamic.press.filled.{size}.{shape}", new(Size: size, Shape: shape, Action: "press"));
@@ -286,7 +289,7 @@ public sealed class ButtonCases
                 }
                 if (config.Action == "shape-change")
                 {
-                    AdvanceTo(76000); scene.Surface.PressedCornerRadius = new CornerRadius(14);
+                    AdvanceTo(76000); MaterialButton.SetPressedCornerRadius(scene.Button, new CornerRadius(14));
                     writer.Record(76000, "mutation", "pressedShape=14dip"); host.Draw(); Sample("third-shape");
                 }
                 SamplesAt(120000, 225000, 400000);
@@ -301,6 +304,7 @@ public sealed class ButtonCases
         readonly CaptureWriter writer;
         int clicks;
         ButtonMarker? marker;
+        IDisposable? pressedShapeBinding;
         public Button Button { get; }
         public MaterialSurface Surface => Button.GetVisualDescendants().OfType<MaterialSurface>().Single();
 
@@ -317,7 +321,7 @@ public sealed class ButtonCases
             if (config.Size != "small") Button.Classes.Add(config.Size);
             if (config.Width is { } width) Button.Width = width;
             if (config.Height is { } height) Button.Height = height;
-            if (config.Shape != "round") host.Window.Resources[Sys.Shape.Full] = config.Shape == "asymmetric"
+            if (config.Shape != "round") Button.CornerRadius = config.Shape == "asymmetric"
                 // Avalonia mirrors the Button's local x-axis in RTL. The same local corners
                 // therefore supply Compose's start/end shape in both layout directions.
                 ? new CornerRadius(4, 16, 10, 2)
@@ -334,27 +338,15 @@ public sealed class ButtonCases
             Button.Click += (_, _) => clicks++;
         }
 
-        public void SetTheme(bool dark)
-        {
-            host.Window.RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light;
-            // Same fixed Compose ColorScheme inputs on both ends. This isolates Button from MCU.
-            host.Window.Resources[Sys.Color.Primary] = Color.Parse(dark ? "#D0BCFF" : "#6750A4");
-            host.Window.Resources[Sys.Color.OnPrimary] = Color.Parse(dark ? "#381E72" : "#FFFFFF");
-            host.Window.Resources[Sys.Color.SecondaryContainer] = Color.Parse(dark ? "#4A4458" : "#E8DEF8");
-            host.Window.Resources[Sys.Color.OnSecondaryContainer] = Color.Parse(dark ? "#E8DEF8" : "#1D192B");
-            host.Window.Resources[Sys.Color.OnSurface] = Color.Parse(dark ? "#E6E0E9" : "#1D1B20");
-            host.Window.Resources[Sys.Color.OnSurfaceVariant] = Color.Parse(dark ? "#CAC4D0" : "#49454F");
-            host.Window.Resources[Sys.Color.OutlineVariant] = Color.Parse(dark ? "#49454F" : "#CAC4D0");
-            host.Window.Resources[Sys.Color.SurfaceContainerLow] = Color.Parse(dark ? "#1D1B20" : "#F7F2FA");
-        }
+        public void SetTheme(bool dark) => CaseDefaults.SetThemeColors(host, dark);
 
         public void ConfigureContent(string? size = null)
         {
+            if (config.Morph && !config.Baseline) ConfigurePressedShape(size ?? config.Size);
             if (config.Baseline)
             {
-                // Configure the real surface after mounting. The older shape overload retains
-                // its supplied shape during press; the expressive ButtonShapes overload morphs.
-                Surface.PressedCornerRadius = null;
+                // Observe the mounted template. The older shape overload retains its supplied
+                // shape during press; the expressive ButtonShapes overload morphs.
                 var padding = Button.Padding;
                 writer.Record(host.TimeUs, "configuration", "baseline shape overload", new
                 {
@@ -393,6 +385,21 @@ public sealed class ButtonCases
         {
             foreach (var value in Sizes) Button.Classes.Remove(value);
             if (size != "small") Button.Classes.Add(size);
+            if (config.Morph && !config.Baseline) ConfigurePressedShape(size);
+        }
+
+        void ConfigurePressedShape(string size)
+        {
+            var key = size switch { "xsmall" => Comp.ButtonXSmall.PressedContainerShape, "medium" => Comp.ButtonMedium.PressedContainerShape,
+                "large" => Comp.ButtonLarge.PressedContainerShape, "xlarge" => Comp.ButtonXLarge.PressedContainerShape, _ => Comp.ButtonSmall.PressedContainerShape };
+            pressedShapeBinding?.Dispose();
+            pressedShapeBinding = Button.Bind(MaterialButton.PressedCornerRadiusProperty,
+                new TokenExtension(key).ProvideValue(new TokenServices()));
+        }
+
+        sealed class TokenServices : IServiceProvider
+        {
+            public object? GetService(Type serviceType) => null;
         }
 
         public ProbePoint[] Measure()
@@ -415,7 +422,7 @@ public sealed class ButtonCases
             if (xEnd.X < origin.X)
                 normalized = [normalized[2], normalized[3], normalized[0], normalized[1], normalized[6], normalized[7], normalized[4], normalized[5]];
             fields.Add(Measurement.Vector("cornerRadii", "quad", normalized, "dip", "container", "motion", "button.container.normalized-visual-rounded-outline", "derived: Border.CornerRadius cached at chrome; SKRoundRect.SetRectRadii normalization; actual Surface.TranslatePoint x-axis reflection mapped to visible physical TL/TR/BR/BL", CornerComponents));
-            if (!config.Baseline && config.Action is "press" or "quick" or "cancel" or "drag-back" or "reverse" or "disable" or "shape-change" or "space" or "enter" or "size")
+            if (!config.Baseline && config.Morph && config.Action is "press" or "quick" or "cancel" or "drag-back" or "reverse" or "disable" or "shape-change" or "space" or "enter" or "size")
             {
                 // Passive diagnostics: distinguish target registration from the first animation
                 // frame. An uncreated morph has no progress/spec; do not synthesize its values.

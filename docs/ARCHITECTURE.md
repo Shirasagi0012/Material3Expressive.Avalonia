@@ -98,6 +98,11 @@ Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefau
 也无需在控制器中维护组件类型排除名单；该决定不统一各组件的键盘行为。
 颜色、交互事实、反馈动画和绘制结果需要保持各自归属，不要仅用最终伪类状态替代具有顺序意义的交互记录。
 
+Button / IconButton 的主题将 owner `CornerRadius` 传给 Surface，默认按压保持该形状。
+可空附加属性 `MaterialButton.PressedCornerRadius` 显式启用按压变形，null 关闭；模板直接绑定该属性，
+复用 Surface 的圆角状态和动画，不另建按钮形状控制器。尺寸 class 提供 owner 圆角的默认值，
+局部 CornerRadius 和按压目标不被尺寸 class 覆盖。
+
 NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
 `MappedInteractionSource` 坐标；状态层和 ripple 不另建实现。键盘原点与当前固定 Desktop
 `AbstractClickableNode` 一致：初始为零，收到指针事件后缓存控件中心。禁用会取消交互并让既有

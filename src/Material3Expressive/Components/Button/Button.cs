@@ -277,6 +277,13 @@ public class TonalButtonTokenSource : ITokenSource
 /// <summary>Material options for Avalonia buttons using an interactive MaterialSurface template.</summary>
 public static class MaterialButton
 {
+    /// <summary>The corners while pressed, or null to retain the button's CornerRadius.</summary>
+    public static readonly AttachedProperty<CornerRadius?> PressedCornerRadiusProperty =
+        AvaloniaProperty.RegisterAttached<Button, CornerRadius?>("PressedCornerRadius", typeof(MaterialButton));
+
+    public static CornerRadius? GetPressedCornerRadius(Button button) => button.GetValue(PressedCornerRadiusProperty);
+    public static void SetPressedCornerRadius(Button button, CornerRadius? value) => button.SetValue(PressedCornerRadiusProperty, value);
+
     /// <summary>Interaction shadow heights, or null to leave the template's elevation unchanged.</summary>
     public static readonly AttachedProperty<ButtonElevation?> ElevationProperty =
         AvaloniaProperty.RegisterAttached<Button, ButtonElevation?>("Elevation", typeof(MaterialButton));

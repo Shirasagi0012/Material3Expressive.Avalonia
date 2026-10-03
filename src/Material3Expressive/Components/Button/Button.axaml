@@ -8,9 +8,8 @@
       full size-class machinery; the other four are BasedOn diffs over it (colors, state-layer
       tints, outline, elevation). The implicit {x:Type Button} theme IS filled (M3 baseline).
     - Size axis: the classes xsmall / medium / large / xlarge, nested in the filled theme and
-      inherited through BasedOn. No class = small, the M3 default. Class selectors run through
-      StyleClassActivator, so these styles apply at StyleTrigger priority and can re-point even
-      the template's inline {m3:Token} bindings.
+      inherited through BasedOn. No class = small. CornerRadius is configured on the owner;
+      explicit local values take precedence over size-class defaults.
 
     Every consumed value is a comp slot (§7.1) resolved through {m3:Token}: colors/outline from
     the style table, metrics/shape/typography from the size tables, elevation as DIPs onto
@@ -19,7 +18,7 @@
     control in, and the owner's interaction controller drives the overlay — the pseudo-class
     styles here only switch StateLayerBrush (which doubles as the ripple ink color, matching
     upstream where both come from the content color), while opacity timing, press ripples and the
-    press shape-morph are the controller's job. The focus ring is still deferred.
+    optional press shape-morph are the controller's job. The focus ring is still deferred.
     Nested facade types are referenced with the XAML '+' syntax — '{x:Static}' splits the
     argument at the first dot, so 'MaterialTokens.Comp.FilledButton.X' would not resolve.
   -->
@@ -27,6 +26,7 @@
 
     <ControlTheme x:Key="MaterialFilledButtonTheme" TargetType="Button">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeRound}}" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContentColor}}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
@@ -66,8 +66,8 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 TextElement.Foreground="{TemplateBinding Foreground}"
-                                CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeRound}}"
-                                PressedCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.PressedContainerShape}}">
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
               <m3:ButtonContentPresenter x:Name="PART_ContentPresenter"
                                 Content="{TemplateBinding Content}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -105,51 +105,39 @@
 
       <!-- Size axis. Metrics come from each size table; outlinedButtonBorder uses the small width. -->
       <Style Selector="^.xsmall">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerShapeRound}}" />
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContentPadding}}" />
         <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.xsmall /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerHeight}}" />
       </Style>
-      <Style Selector="^.xsmall /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerShapeRound}}" />
-        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.PressedContainerShape}}" />
-      </Style>
 
       <Style Selector="^.medium">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeRound}}" />
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContentPadding}}" />
         <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.medium /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerHeight}}" />
       </Style>
-      <Style Selector="^.medium /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeRound}}" />
-        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.PressedContainerShape}}" />
-      </Style>
 
       <Style Selector="^.large">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeRound}}" />
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContentPadding}}" />
         <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.large /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerHeight}}" />
       </Style>
-      <Style Selector="^.large /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeRound}}" />
-        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.PressedContainerShape}}" />
-      </Style>
 
       <Style Selector="^.xlarge">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeRound}}" />
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContentPadding}}" />
         <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.xlarge /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerHeight}}" />
-      </Style>
-      <Style Selector="^.xlarge /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeRound}}" />
-        <Setter Property="PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.PressedContainerShape}}" />
       </Style>
     </ControlTheme>
 
