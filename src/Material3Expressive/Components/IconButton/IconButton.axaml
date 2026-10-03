@@ -12,8 +12,8 @@
 
     Every consumed value is a comp slot resolved through {m3:Token}: colors/outline from the style
     table, metrics/shape from the size tables. The default width option is square at every size
-    (width = DefaultLeadingSpace + IconSize + DefaultTrailingSpace = ContainerHeight), so MinWidth
-    simply binds the height slot; the narrow/wide options land with the width-option slice.
+    (width = DefaultLeadingSpace + IconSize + DefaultTrailingSpace = ContainerHeight), so the container minimum width
+    binds the height slot; the narrow/wide options land with the width-option slice.
     Interactions follow the §7.4 state-layer model exactly like the Button family; icon buttons
     are flat upstream, so there is no elevation machinery. With the motion slice landed the
     controller owns opacity timing and the press ripple — these styles only switch the layer's
@@ -28,8 +28,6 @@
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerShapeRound}}" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.ContentColor}}" />
-      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}" />
-      <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
@@ -40,6 +38,10 @@
           <!-- TextElement.Foreground re-asserts the owner's content color onto the part, same as
                the Button template: a standalone MaterialSurface's implicit theme would otherwise
                shadow the IconButton.Foreground inheritance. -->
+          <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                           MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+                           ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}" ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}"
+                           HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
           <m3:MaterialSurface x:Name="PART_Container"
                               Background="{TemplateBinding Background}"
                               BorderBrush="{TemplateBinding BorderBrush}"
@@ -53,6 +55,7 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
           </m3:MaterialSurface>
+          </m3:ButtonLayout>
         </ControlTemplate>
       </Setter>
 
@@ -82,9 +85,15 @@
            at its own size table; the outline width is only consumed by the outlined theme, which
            carries its own per-size override. -->
       <Style Selector="^.xsmall">
+        <!-- The upstream extra-small helper is applied through Modifier.size(32dp),
+             outside minimumInteractiveComponentSize. Preserve that explicit constraint. -->
+        <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
+        <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerShapeRound}}" />
-        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
-        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.xsmall /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
       </Style>
       <Style Selector="^.xsmall /template/ m3|MaterialSymbol">
         <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.IconSize}}" />
@@ -93,8 +102,10 @@
 
       <Style Selector="^.medium">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerShapeRound}}" />
-        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerHeight}}" />
-        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.medium /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerHeight}}" />
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerHeight}}" />
       </Style>
       <Style Selector="^.medium /template/ m3|MaterialSymbol">
         <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.IconSize}}" />
@@ -103,8 +114,10 @@
 
       <Style Selector="^.large">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerShapeRound}}" />
-        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerHeight}}" />
-        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.large /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerHeight}}" />
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerHeight}}" />
       </Style>
       <Style Selector="^.large /template/ m3|MaterialSymbol">
         <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.IconSize}}" />
@@ -113,8 +126,10 @@
 
       <Style Selector="^.xlarge">
         <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerShapeRound}}" />
-        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerHeight}}" />
-        <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerHeight}}" />
+      </Style>
+      <Style Selector="^.xlarge /template/ m3|ButtonLayout">
+        <Setter Property="ContainerMinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerHeight}}" />
+        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerHeight}}" />
       </Style>
       <Style Selector="^.xlarge /template/ m3|MaterialSymbol">
         <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.IconSize}}" />

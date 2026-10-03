@@ -9,7 +9,7 @@ namespace Material3Expressive.Components;
 // Button.kt's defaultMinSize inside Surface.kt's minimumInteractiveComponentSize.
 // Avalonia exposes maximum space to MeasureOverride, so template bindings carry the
 // owner's explicit dimensions/minima separately from the default container size.
-internal sealed class ButtonLayout : Decorator
+internal sealed class ButtonLayout : Decorator, IMinimumInteractiveLayout
 {
     public static readonly StyledProperty<double> ContainerMinHeightProperty =
         AvaloniaProperty.Register<ButtonLayout, double>(nameof(ContainerMinHeight));
@@ -22,6 +22,15 @@ internal sealed class ButtonLayout : Decorator
 
     private Size _containerSize;
     private double _interactiveSize;
+    public Point MinimumInteractivePadding
+    {
+        get
+        {
+            var scale = LayoutHelper.GetLayoutScale(this);
+            return new Point(Math.Max(0, MathUtils.RoundToInt((_interactiveSize - _containerSize.Width) * scale / 2)) / scale,
+                Math.Max(0, MathUtils.RoundToInt((_interactiveSize - _containerSize.Height) * scale / 2)) / scale);
+        }
+    }
 
     static ButtonLayout() => AffectsMeasure<ButtonLayout>(ContainerMinHeightProperty, ContainerMinWidthProperty, MinimumInteractiveSizeProperty);
 

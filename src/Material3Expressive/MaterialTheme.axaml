@@ -40,6 +40,7 @@
                     <m3:SwitchTokenSource />
                     <m3:BadgeTokenSource />
                     <m3:FloatingActionButtonTokenSource />
+                    <m3:FloatingToolbarTokenSource />
                     <m3:TextFieldTokenSource />
                     <m3:ChipTokenSource />
                     <m3:TabRowTokenSource />
@@ -70,6 +71,7 @@
     <StyleInclude Source="/Components/Switch/Switch.axaml" />
     <StyleInclude Source="/Components/Badge/Badge.axaml" />
     <StyleInclude Source="/Components/FloatingActionButton/FloatingActionButton.axaml" />
+    <StyleInclude Source="/Components/FloatingToolbar/FloatingToolbar.axaml" />
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
     <StyleInclude Source="/Components/SecureTextField/SecureTextField.axaml" />
     <StyleInclude Source="/Components/Chip/Chip.axaml" />

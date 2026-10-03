@@ -86,6 +86,10 @@ Button 模板内的局部 `ButtonLayout` 区分背景默认尺寸与外层交互
 高度由 size Token 提供，外层默认预留至少 48 DIP 并居中放置背景。默认背景高度不再写入
 `Button.MinHeight`；显式 Width/Height 或 MinWidth/MinHeight 仍由调用方设置，并覆盖相应默认值。
 它移植 `defaultMinSize` 与 `minimumInteractiveComponentSize` 的布局职责，不实现触屏目标扩展。
+IconButton 复用 ButtonLayout，将 size class 的默认容器尺寸留在模板层，默认外层分配 48 DIP。
+ButtonLayout / FabLayout 的内部 MinimumInteractivePadding 对应上游 top/left 对齐线；
+Foundation.MinimumInteractiveAlignment 将后代读数换算到查询布局并按 min 合并，
+FloatingToolbar 用它实现最小交互留白的两轴平衡，未增加公共布局 API。
 自动字符串标签保持 Compose 的受约束段落宽度；普通裁剪保留完整文本布局，再在有限标签边界内绘制。
 省略号仍使用有限高度格式化。显式内容控件、ContentTemplate 和匹配的 DataTemplate 保留优先级。
 

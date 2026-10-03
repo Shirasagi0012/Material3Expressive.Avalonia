@@ -1,7 +1,7 @@
 namespace Material3Expressive.Components;
 
 // Fixed Compose Desktop Lsq2VelocityTracker / VelocityTracker1D (non-differential).
-// Local to the modal draggable; no second public interaction or animation system.
+// Used by modal rail and floating-toolbar drags; remains an internal source algorithm.
 internal sealed class RailVelocityTracker
 {
     private readonly (ulong Time, float Position)?[] _samples = new (ulong, float)?[20];
