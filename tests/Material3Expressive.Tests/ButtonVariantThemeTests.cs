@@ -54,7 +54,7 @@ public class ButtonVariantThemeTests
             BrushColor(button.Foreground));
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSecondaryContainer),
             BrushColor(Container(button).StateLayerBrush));
-        // No elevation slots on the tonal style: the surface stays flat.
+        // The tonal style rests at Level0 and rises to Level1 on hover.
         Assert.Equal(0d, Container(button).ShadowElevation);
     }
 
@@ -116,10 +116,16 @@ public class ButtonVariantThemeTests
     }
 
     [AvaloniaFact]
-    public void OutlinedTheme_SizeClass_ThickensOutline()
+    public void OutlinedTheme_SizeClass_UsesComposableOutlineDefault_AndKeepsLocalOverride()
     {
         ButtonThemeFixture.ShowWindow(out var button, themeKey: "MaterialOutlinedButtonTheme", sizeClass: "xlarge");
+        Assert.Equal(1d, button.BorderThickness.Left);
+        button.BorderThickness = new Thickness(3);
+        button.Classes.Remove("xlarge");
+        button.Classes.Add("large");
         Assert.Equal(3d, button.BorderThickness.Left);
+        button.Classes.Remove("large");
+        button.Classes.Add("xlarge");
         Assert.Equal(136d, button.GetVisualDescendants().OfType<ButtonLayout>().Single().ContainerMinHeight);
     }
 }

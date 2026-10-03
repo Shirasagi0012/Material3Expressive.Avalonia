@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Avalonia.Threading;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Components;
@@ -50,6 +53,9 @@ internal sealed class MaterialInteractionController
     private InteractionState _interaction;
     private InteractionState _shownInteraction;
     private Point _keyboardPressCenter;
+    private IPointer? _pressedPointer;
+    private bool _enterPressed;
+    private bool _hoverNeedsMove;
 
     // Token-resolved state-layer opacities, falling back to the upstream constants in StateLayer.
     private double _hoverOpacity = StateLayer.Opacity(InteractionState.Hovered);
@@ -61,9 +67,14 @@ internal sealed class MaterialInteractionController
     {
         _owner = owner ?? throw new ArgumentNullException(nameof(owner));
 
-        _owner.PointerEntered += (_, _) => { _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center; Set(InteractionState.Hovered, true); };
+        _owner.PointerEntered += (_, _) =>
+        {
+            _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
+            if (!_hoverNeedsMove) Set(InteractionState.Hovered, true);
+        };
         _owner.PointerExited += (_, _) => { _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center; Set(InteractionState.Hovered, false); };
-        _owner.PointerMoved += (_, _) => _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
+        _owner.AddHandler(InputElement.PointerMovedEvent, OnPointerMoved,
+            RoutingStrategies.Tunnel, handledEventsToo: true);
         // Button-derived controls handle pointer presses in their class handler. Listen on the
         // tunnel route so Material feedback still sees the physical input before it is consumed.
         _owner.AddHandler(
@@ -86,10 +97,11 @@ internal sealed class MaterialInteractionController
             OnKeyUp,
             RoutingStrategies.Tunnel,
             handledEventsToo: true);
-        _owner.PointerCaptureLost += (_, _) => EndPress();
+        _owner.PointerCaptureLost += (_, _) => { _pressedPointer = null; EndPress(); };
         _owner.GotFocus += OnGotFocus;
         _owner.LostFocus += (_, _) =>
         {
+            _enterPressed = false;
             EndPress();
             Set(InteractionState.Focused, false);
         };
@@ -101,8 +113,11 @@ internal sealed class MaterialInteractionController
             if (change.Property == InputElement.IsEffectivelyEnabledProperty)
             {
                 if (!IsEnabled)
+                {
+                    _hoverNeedsMove = true; // A re-enabled Compose hoverable waits for pointer input.
                     ClearInputInteractions(finishRipples: true, deferStateLayer: true);
-                NotifyInteractionChanged();
+                }
+                NotifyInteractionChanged(deferShape: !IsEnabled);
             }
             else if (change.Property == MaterialButton.ElevationProperty)
                 UpdateButtonElevation();
@@ -306,15 +321,42 @@ internal sealed class MaterialInteractionController
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
-        if (e.GetCurrentPoint(_owner).Properties.IsLeftButtonPressed)
+        if (IsEnabled && e.GetCurrentPoint(_owner).Properties.IsLeftButtonPressed)
+        {
+            _pressedPointer = e.Pointer;
             StartPress(e.GetPosition(_owner));
+        }
+    }
+
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
+        if (_hoverNeedsMove && IsEnabled)
+        {
+            _hoverNeedsMove = false;
+            Set(InteractionState.Hovered, new Rect(_owner.Bounds.Size).Contains(e.GetPosition(_owner)));
+        }
+        if (!ReferenceEquals(_pressedPointer, e.Pointer)
+            || new Rect(_owner.Bounds.Size).Contains(e.GetPosition(_owner)))
+            return;
+
+        // Compose clickable cancels the gesture when it leaves the interaction bounds.
+        // Releasing Avalonia's owned capture also clears Button.IsPressed and its pending click.
+        _pressedPointer = null;
+        EndPress();
+        if (e.Pointer.Captured is Visual captured
+            && (ReferenceEquals(captured, _owner) || _owner.IsVisualAncestorOf(captured)))
+            e.Pointer.Capture(null);
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
         if (e.InitialPressMouseButton == MouseButton.Left)
+        {
+            _pressedPointer = null;
             EndPress();
+        }
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
@@ -325,6 +367,14 @@ internal sealed class MaterialInteractionController
         if (_owner is not Button || e.Key is not (Key.Space or Key.Enter))
             return;
 
+        if (e.Key == Key.Enter && _owner is not (NavigationRailItem or WideNavigationRailItem))
+        {
+            e.Handled = true; // Native Button clicks on Enter down; Compose clicks on up.
+            if (!IsEnabled || _enterPressed)
+                return;
+            _enterPressed = true;
+        }
+
         // AbstractClickableNode starts centerOffset at zero and only updates it in
         // onPointerEvent(bounds). Preserve that behavior even for keyboard-only input.
         StartPress(_keyboardPressCenter);
@@ -332,8 +382,16 @@ internal sealed class MaterialInteractionController
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
-        if (_owner is Button && e.Key is (Key.Space or Key.Enter))
-            EndPress();
+        if (_owner is not Button button || e.Key is not (Key.Space or Key.Enter))
+            return;
+        EndPress();
+        if (e.Key != Key.Enter || _owner is NavigationRailItem or WideNavigationRailItem)
+            return;
+        e.Handled = true;
+        var activate = _enterPressed && IsEnabled && button.IsFocused;
+        _enterPressed = false;
+        if (activate && ControlAutomationPeer.CreatePeerForElement(button) is IInvokeProvider invoke)
+            invoke.Invoke(); // Native OnClick retains Command, Flyout and derived-button behavior.
     }
 
     private void OnGotFocus(object? sender, FocusChangedEventArgs e)
@@ -350,6 +408,8 @@ internal sealed class MaterialInteractionController
 
     private void ClearInputInteractions(bool finishRipples = false, bool deferStateLayer = false)
     {
+        _pressedPointer = null;
+        _enterPressed = false;
         var hadInputInteraction = _interaction != InteractionState.None;
         var hadRipples = _ripples.Count != 0;
 
@@ -375,7 +435,7 @@ internal sealed class MaterialInteractionController
                     UpdateStateLayer();
                 }, "Disabled state layer exit");
             else UpdateStateLayer();
-            NotifyInteractionChanged();
+            if (!deferStateLayer) NotifyInteractionChanged();
         }
         else if (hadRipples)
         {
@@ -384,10 +444,26 @@ internal sealed class MaterialInteractionController
         }
     }
 
-    private void NotifyInteractionChanged()
+    private void NotifyInteractionChanged(bool deferShape = false)
     {
         UpdateButtonElevation();
-        _presenter?.OnInteractionChanged(_interaction);
+        // Disabling cancels Clickable's press during composition. Its shape observer therefore
+        // invalidates the following composition, unlike cancellation by a pointer event.
+        if (deferShape && Motion is { IsEnding: false } motion)
+        {
+            _presenter?.DeferShapeInteraction();
+            _ = motion.Launch(async ct =>
+            {
+                await motion.Clock.NextFrameAsync(ct);
+                // Drain this frame's existing animation callbacks before registering the
+                // invalidated composition, as Core's frame recomposer does after sendFrame.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (!ct.IsCancellationRequested) _presenter?.OnInteractionChanged(_interaction);
+                }, DispatcherPriority.Background);
+            }, "Disabled shape interaction");
+        }
+        else _presenter?.OnInteractionChanged(_interaction);
     }
 
     private void UpdateButtonElevation()

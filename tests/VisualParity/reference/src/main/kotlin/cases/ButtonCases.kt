@@ -2,6 +2,9 @@
 package parity
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.*
@@ -29,7 +32,7 @@ data class ButtonConfig(val style:String="filled", val size:String="small", val 
     val enabled:Boolean=true, val dark:Boolean=false, val icon:String="none", val rtl:Boolean=false,
     val width:Double?=240.0, val custom:String="none", val baseline:Boolean=false,
     val action:String="none", val height:Double?=null, val empty:Boolean=false,
-    val contentWidth:Double=32.0, val contentHeight:Double=16.0)
+    val contentWidth:Double=32.0, val contentHeight:Double=16.0, val requiredContentSize:Boolean=false)
 
 @ParitySuite("button")
 class ButtonCases {
@@ -137,7 +140,7 @@ class ButtonCases {
                                 }
                                 "disable" -> {
                                     advanceTo(76000); state.enabled=false; writer.record(76000,"mutation","enabled=false")
-                                    host.draw(); sample("disabled-during-press"); samplesAt(92000,225000,400000)
+                                    host.draw(); sample("disabled-during-press"); samplesAt(80000,92000,96000,112000,128000,225000,400000)
                                     event(401000,"up",center); sample("disabled-release"); advanceTo(402000); state.enabled=true; writer.record(402000,"mutation","enabled=true")
                                     host.draw(); sample("reenabled"); samplesAt(418000,600000)
                                 }
@@ -241,6 +244,7 @@ class ButtonCases {
                 @Composable fun Marker(probe:Probe,id:String,icon:Boolean=false) {
                     val paint=LocalContentColor.current
                     val dimensions=if(icon) Modifier.size(ButtonDefaults.iconSizeFor(height))
+                        else if(config.requiredContentSize) Modifier.requiredSize(contentWidth.toFloat().dp,config.contentHeight.toFloat().dp)
                         else Modifier.size(contentWidth.toFloat().dp,config.contentHeight.toFloat().dp)
                     Canvas(probe.modifier().then(dimensions)) {
                         // A passive draw observation: this holder never invalidates composition.
@@ -288,7 +292,7 @@ class ButtonCases {
             if(config.action in listOf("focus","focus-hover","hover-focus","space","enter"))
                 buttonFields+=flag("focused",focused,definition="button.focused",source="Modifier.onFocusChanged")
             val points=mutableListOf(ProbePoint("button","button",null,buttonFields),containerPoint())
-            val contentGeometry=config.width==null || config.height!=null || config.icon!="none" || config.shape=="asymmetric" || config.custom=="padding"
+            val contentGeometry=config.width==null || config.width<64 || config.height!=null || config.icon!="none" || config.shape=="asymmetric" || config.custom=="padding"
             fun addContent(probe:Probe,id:String,role:String) {
                 val color=paintedColors[id]
                 val paint=if(color!=null) {
@@ -333,6 +337,27 @@ class ButtonCases {
                 fields+=number("shadowElevation",elevation/density,category="motion",definition="button.shadow-elevation",source="derived: Surface GraphicsLayerOwnerLayer.graphicsLayer.shadowElevation / density")
             // Core's rounded outline uses the visible physical axes, including RTL shape resolution.
             fields+=vector("cornerRadii","quad",radii.map { it/density },"dip","container","motion","button.container.normalized-visual-rounded-outline","derived: GraphicsLayerOwnerLayer.outline cached by updateLayerProperties / density; visible physical TL/TR/BR/BL",CornerComponents)
+            if(!config.baseline && config.action in listOf("press","quick","cancel","drag-back","reverse","disable","shape-change","space","enter","size")) {
+                // Fixed Core AnimatedShape.kt: read the already applied shape and its captured
+                // state without invoking a layer block, creating an outline, or advancing a frame.
+                val shape=checkNotNull(field(clipped.first,"lastShape"))
+                check(shape.javaClass.name=="androidx.compose.material3.internal.AnimatedShapeKt\$rememberAnimatedShape\$1\$1") {
+                    "Unexpected Button animated shape: ${shape.javaClass.name}"
+                }
+                val state=checkNotNull(field(shape,"\$state"))
+                @Suppress("UNCHECKED_CAST")
+                val progress=field(state,"progress") as Animatable<Float,AnimationVector1D>
+                val spec=field(state,"spec") as SpringSpec<*>
+                fields+=flag("shapeRunning",progress.isRunning,"motion","button.shape-animation.running","AnimatedShapeState.progress.isRunning")
+                fields+=number("shapeProgress",progress.value.toDouble(),"fraction",category="motion",
+                    definition="button.shape-animation.interpolation-progress",source="AnimatedShapeState.progress.value")
+                fields+=number("shapeVelocity",progress.velocity.toDouble(),"fraction/s",category="motion",
+                    definition="button.shape-animation.interpolation-velocity",source="AnimatedShapeState.progress.velocity")
+                fields+=number("shapeDampingRatio",spec.dampingRatio.toDouble(),"ratio",category="motion",
+                    definition="button.shape-animation.spring-damping-ratio",source="AnimatedShapeState.spec SpringSpec.dampingRatio captured for this morph")
+                fields+=number("shapeStiffness",spec.stiffness.toDouble(),"stiffness",category="motion",
+                    definition="button.shape-animation.spring-stiffness",source="AnimatedShapeState.spec SpringSpec.stiffness captured for this morph")
+            }
             return ProbePoint("container","container","button",fields)
         }
 

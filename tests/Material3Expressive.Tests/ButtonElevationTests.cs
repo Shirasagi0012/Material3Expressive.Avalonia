@@ -33,14 +33,17 @@ public class ButtonElevationTests
         var secondWindow = ButtonThemeFixture.ShowWindow(out var second);
         MaterialButton.SetElevation(first, values);
         MaterialButton.SetElevation(second, values);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         MaterialInteraction.GetOrCreate(first).Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         Assert.InRange(Surface(first).ShadowElevation, 1.01, 5.99);
         Assert.Equal(1, Surface(second).ShadowElevation);
         MaterialInteraction.GetOrCreate(second).Set(InteractionState.Focused, true);
         firstWindow.Close();
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(4, Surface(second).ShadowElevation);
         Assert.Same(values, MaterialButton.GetElevation(first));
@@ -60,6 +63,7 @@ public class ButtonElevationTests
         Assert.Equal(7, MaterialButton.GetElevation(button)!.Hovered);
         MaterialInteraction.GetOrCreate(button).Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         var current = Surface(button).ShadowElevation;
         Assert.Equal(1 + 6 * ComposeEasings.FastOutSlowIn.Ease(0.5), current, 6);
@@ -68,6 +72,7 @@ public class ButtonElevationTests
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(current, Surface(button).ShadowElevation, 6);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(9, Surface(button).ShadowElevation);
 
@@ -80,6 +85,7 @@ public class ButtonElevationTests
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(11, MaterialButton.GetElevation(button)!.Hovered);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(11, Surface(button).ShadowElevation);
         Assert.Null(MotionTestClockScope.Error(button));
@@ -95,11 +101,13 @@ public class ButtonElevationTests
         surface.ShadowElevation = 8;
         MaterialInteraction.GetOrCreate(button).Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         Assert.InRange(surface.ShadowElevation, 1.01, 2.99);
         MaterialButton.SetElevation(button, null);
         Assert.Equal(8, surface.ShadowElevation);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromSeconds(1));
         Assert.Equal(8, surface.ShadowElevation);
         Assert.Equal(0, clock.PendingFrameCount);
@@ -110,16 +118,18 @@ public class ButtonElevationTests
     }
 
     [AvaloniaFact]
-    public void SwitchingToFlatTheme_RemovesElevationPolicy()
+    public void SwitchingToOutlinedTheme_RemovesElevationPolicy()
     {
         using var clock = new MotionTestClockScope();
         var window = ButtonThemeFixture.ShowWindow(out var button, "MaterialElevatedButtonTheme");
         MaterialInteraction.GetOrCreate(button).Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
-        button.Theme = Assert.IsType<ControlTheme>(ButtonThemeFixture.LoadButtonStyles().Resources["MaterialFilledButtonTheme"]);
+        button.Theme = Assert.IsType<ControlTheme>(ButtonThemeFixture.LoadButtonStyles().Resources["MaterialOutlinedButtonTheme"]);
         window.UpdateLayout();
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromSeconds(1));
         Assert.Null(MaterialButton.GetElevation(button));
         Assert.Equal(0, Surface(button).ShadowElevation);
@@ -135,6 +145,7 @@ public class ButtonElevationTests
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         var oldSurface = Surface(button);
         button.Template = new FuncControlTemplate<Button>((_, _) => new MaterialSurface { ShadowElevation = 8 });
@@ -144,6 +155,7 @@ public class ButtonElevationTests
         Assert.NotSame(oldSurface, replacement);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(0, oldSurface.ShadowElevation);
         Assert.Equal(3, replacement.ShadowElevation);
@@ -161,17 +173,21 @@ public class ButtonElevationTests
         {
             Default = 1, Pressed = 3, Focused = 5, Hovered = 3
         });
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         controller.Set(InteractionState.Dragged, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(3, Surface(button).ShadowElevation);
         controller.Set(InteractionState.Hovered, false);
         // Button.kt matches the previous target to pressed before hover when their heights agree.
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(75));
         Assert.Equal(2, Surface(button).ShadowElevation, 6);
         clock.SendFrame(clock.Now);

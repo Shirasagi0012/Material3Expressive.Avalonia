@@ -25,6 +25,53 @@ public class MaterialMotionTests
         button.GetVisualDescendants().OfType<MaterialSurface>().First();
 
     [AvaloniaFact]
+    public void QuickPressAndReleaseInOneFrame_DoesNotStartShapeMorph()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        controller.StartPress(new Point(8, 8));
+        controller.EndPress();
+        for (var frame = 0; frame < 4; frame++)
+        {
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(20, Surface(button).EffectiveCornerRadius.TopLeft);
+        }
+        Assert.Equal(1, controller.RippleCount); // short taps still play their real ripple
+        window.Close();
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public void ShapeConfigurationChanges_RecreateAtTheSelectedShape_AndCancelPendingWorkOnDetach()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        var surface = Surface(button);
+        controller.StartPress(new Point(8, 8));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(32));
+        Assert.InRange(surface.EffectiveCornerRadius.TopLeft, 8.01, 19.99);
+        surface.PressedCornerRadius = new CornerRadius(14);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.Equal(14, surface.EffectiveCornerRadius.TopLeft);
+        surface.CornerRadius = new CornerRadius(12);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.Equal(14, surface.EffectiveCornerRadius.TopLeft);
+        controller.EndPress();
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(400));
+        Assert.Equal(12, surface.EffectiveCornerRadius.TopLeft);
+        controller.StartPress(new Point(8, 8));
+        window.Close(); // cancellation before the queued composition runs
+        Assert.Equal(0, clock.PendingFrameCount);
+        Assert.Equal(0, controller.RippleCount);
+    }
+
+    [AvaloniaFact]
     public void IconButton_KeyboardPressAndDisable_FinishRippleAndClearInteractions()
     {
         using var clock = new MotionTestClockScope();
@@ -82,6 +129,7 @@ public class MaterialMotionTests
         Assert.Equal(1, surface.ShadowElevation);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         Assert.Equal(1 + 2 * ComposeEasings.FastOutSlowIn.Ease(0.5), surface.ShadowElevation, 6);
         Assert.Equal(1, MaterialButton.GetElevation(button)!.Default);
@@ -92,6 +140,7 @@ public class MaterialMotionTests
 
         controller.Set(InteractionState.Hovered, false);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         Assert.Equal(2, surface.ShadowElevation, 6);
         clock.SendFrame(clock.Now);
@@ -110,13 +159,16 @@ public class MaterialMotionTests
         var surface = Surface(button);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         controller.StartPress(new Point(10, 10));
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(1, surface.ShadowElevation);
         controller.EndPress();
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(3, surface.ShadowElevation);
         window.Close();
@@ -133,12 +185,14 @@ public class MaterialMotionTests
         controller.Set(InteractionState.Hovered, true);
         controller.Set(InteractionState.Focused, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(5, surface.ShadowElevation);
         controller.Set(InteractionState.Hovered, false);
         Assert.Equal(5, surface.ShadowElevation);
         controller.Set(InteractionState.Focused, false);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(75));
         Assert.Equal(3, surface.ShadowElevation, 6);
         clock.SendFrame(clock.Now);
@@ -155,10 +209,12 @@ public class MaterialMotionTests
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.Set(InteractionState.Hovered, true);
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         controller.StartPress(new Point(10, 10));
         button.IsEnabled = false;
         Dispatcher.UIThread.RunJobs();
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0, Surface(button).ShadowElevation);
         // Fixed CommonRipple receives PressInteraction.Cancel on disabling: it finishes
         // the existing entry/fade-out animation rather than removing the wave immediately.
@@ -170,6 +226,7 @@ public class MaterialMotionTests
         Assert.Equal(0, controller.RippleCount);
         button.IsEnabled = true;
         Dispatcher.UIThread.RunJobs();
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(1, Surface(button).ShadowElevation);
         window.Close();
     }
@@ -183,6 +240,7 @@ public class MaterialMotionTests
         controller.Set(InteractionState.Hovered, true);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(30));
         Assert.True(clock.PendingFrameCount > 0);
         var oldMotion = controller.Motion!;
@@ -206,6 +264,7 @@ public class MaterialMotionTests
         Assert.Equal(0, controller.StateLayerOpacity);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(30));
         Assert.Equal(1, controller.RippleCount);
         Assert.Null(MotionTestClockScope.Error(button));
@@ -220,6 +279,7 @@ public class MaterialMotionTests
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(25));
         var oldSurface = Surface(button);
         button.Template = new FuncControlTemplate<Button>((_, _) => new MaterialSurface
@@ -234,6 +294,7 @@ public class MaterialMotionTests
         Assert.Equal(0, controller.RippleCount);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.Equal(4, replacement.EffectiveCornerRadius.TopLeft, 6);
         Assert.Equal(oldSurface.CornerRadius, oldSurface.EffectiveCornerRadius);
@@ -249,6 +310,7 @@ public class MaterialMotionTests
         var controller = MaterialInteraction.GetOrCreate(button);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(20));
         controller.EndPress();
         controller.StartPress(new Point(16, 8));
@@ -257,6 +319,7 @@ public class MaterialMotionTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
         controller.EndPress();
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(150));
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
@@ -279,6 +342,7 @@ public class MaterialMotionTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
         controller.EndPress();
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(150));
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
@@ -319,10 +383,12 @@ public class MaterialMotionTests
         var window = ButtonThemeFixture.ShowWindow(out var button);
         button.Resources[MaterialTokens.Sys.Motion.Spring.EffectsDefault] =
             new Material3Expressive.Foundation.Motion.SpringSpec(1, 100);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         var controller = MaterialInteraction.GetOrCreate(button);
         var surface = Surface(button);
         controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
         // Critical damping: p(t) = 1 - (1 + sqrt(k)*t) * exp(-sqrt(k)*t).
         var progress = 1 - 2 * Math.Exp(-1);

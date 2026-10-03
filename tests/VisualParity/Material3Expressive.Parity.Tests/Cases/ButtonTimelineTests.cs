@@ -38,7 +38,8 @@ public partial class ParityTests
             [
                 ("initial", 0), ("pointer-enter", 1000), ("down-event", 2000),
                 ("time-16000", 16000), ("time-32000", 32000), ("time-75000", 75000),
-                ("disabled-during-press", 76000), ("time-92000", 92000),
+                ("disabled-during-press", 76000), ("time-80000", 80000), ("time-92000", 92000),
+                ("time-96000", 96000), ("time-112000", 112000), ("time-128000", 128000),
                 ("time-225000", 225000), ("time-400000", 400000), ("disabled-release", 401000), ("reenabled", 402000),
                 ("time-418000", 418000), ("time-600000", 600000)
             ],
@@ -280,7 +281,7 @@ public partial class ParityTests
     [InlineData("disabled", 0)]
     [InlineData("quick", 1)]
     [InlineData("cancel", 0)]
-    [InlineData("drag-back", 1)]
+    [InlineData("drag-back", 0)]
     [InlineData("reverse", 2)]
     [InlineData("disable", 0)]
     public async Task ButtonPointerBranchesObserveRealClickCallbacks(string action, int expectedClicks)

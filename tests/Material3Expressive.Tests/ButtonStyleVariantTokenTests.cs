@@ -113,10 +113,10 @@ public class ButtonStyleVariantTokenTests
             Assert.IsType<Color>(TokenScan.Resolve(host, Comp.OutlinedButton.OutlineColor)));
 
         // The composable's derivation: resting outline color at the disabled-container opacity
-        // (0.12), NOT the raw DisabledOutlineColor token.
+        // (0.10), not the raw DisabledOutlineColor token.
         var outline = Assert.IsType<Color>(TokenScan.Resolve(host, Comp.OutlinedButton.OutlineColor));
         var disabled = Assert.IsType<Color>(TokenScan.Resolve(host, Comp.OutlinedButton.DisabledOutlineColor));
-        Assert.Equal((byte)Math.Round(0.12 * outline.A), disabled.A);
+        Assert.Equal((byte)Math.Round(0.10 * outline.A), disabled.A);
         Assert.Equal(outline.R, disabled.R);
         Assert.Equal(outline.G, disabled.G);
         Assert.Equal(outline.B, disabled.B);

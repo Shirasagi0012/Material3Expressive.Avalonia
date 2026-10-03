@@ -196,3 +196,16 @@ recompare 使用既有 run 重算比较，不把复用证据或旧重复性结�
 适用范围：WideNavigationRail、ModalWideNavigationRail 和 WideNavigationRailItem 的内置模板及纵向布局；
 不改变常规 NavigationRail、ComposeAnimation、视觉测试参考与容差。动态 parity 的真实差异保留，静态端点继续核验。
 确认：2026-10-03，维护者在分析和方案讨论后明确要求落地；不新增专门测试，改后的真实桌面视觉体验交其核验。
+
+
+## Button 的 Compose 时序与 Avalonia 输入接入
+
+决定：沿用共享时钟，将圆角与 Button elevation 的目标合并到下一帧，对应重组后 effect，
+不在用例中偏移帧或改变弹簧参数。圆角配置/动画 spec 改变时重建状态；目标改变先取消旧 effect，
+再沿用状态。Float 进度和插值复现固定 AnimatedShape.kt 与 MathHelpers.kt 的计算语义。
+指针移出交互范围即取消手势，通过释放本控件的实际 capture 同时取消 Avalonia Button 的待点击状态。
+普通 Button/IconButton 的 Enter 在 KeyUp 经原生 automation Invoke 路径激活，保留 Click/Command/Flyout；
+NavigationRailItem 与 WideNavigationRailItem 保留已有的组件键盘处理。
+受限内容夹具分别对照 Compose size 与 requiredSize，读取实际排列几何，不补偿组件布局。
+新增 Filled/Tonal 各五个 elevation token，沿用既有 ButtonElevation API；禁用颜色、opacity 与默认描边遵循固定上游实际 helper。
+确认：2026-10-03，维护者确认 Button 修复方案并要求实施；阴影绘制问题明确延期，本次不修改阴影算法。
