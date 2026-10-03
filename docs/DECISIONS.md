@@ -209,3 +209,15 @@ NavigationRailItem 与 WideNavigationRailItem 保留已有的组件键盘处理�
 受限内容夹具分别对照 Compose size 与 requiredSize，读取实际排列几何，不补偿组件布局。
 新增 Filled/Tonal 各五个 elevation token，沿用既有 ButtonElevation API；禁用颜色、opacity 与默认描边遵循固定上游实际 helper。
 确认：2026-10-03，维护者确认 Button 修复方案并要求实施；阴影绘制问题明确延期，本次不修改阴影算法。
+
+## Button / IconButton 的固定形状与显式按压目标
+
+决定：统一使用 owner `CornerRadius` 表示静止形状，可空附加属性 `MaterialButton.PressedCornerRadius`
+表示按压目标。默认 null，按压时保持静止形状；显式设置目标后复用既有 Surface 圆角动画。
+本地不拆分固定 shape 与变形 shapes 两个组件入口，也不新增 Shapes 配置或变形开关。
+原因：固定上游 Button.kt / IconButton.kt 同时提供这两种入口，本地需要支持固定形状，
+并允许调用方自定义按压圆角；当前圆角能力足以表达这项需求。
+形状默认与上游固定 shape 入口一致，当前 Expressive 尺寸与 Padding 保留，不随形状入口切换。
+默认行为从自动变形改为固定形状；需要原行为的调用方显式设置按压目标或绑定相应尺寸 Token。
+适用范围：五种 Button 主题和四种 IconButton 主题；其他消费 Surface 的组件不受影响。
+确认：2026-10-03，维护者确认使用 `m3:MaterialButton.PressedCornerRadius` 并要求实施。

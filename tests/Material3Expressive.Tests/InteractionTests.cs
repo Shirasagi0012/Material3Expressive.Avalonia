@@ -353,7 +353,7 @@ public class MaterialInteractionControllerTests
     public void Press_SpringsTheContainerShapeToThePressedToken()
     {
         using var clock = new MotionTestClockScope();
-        var window = IconButtonThemeFixture.ShowWindow(out var button);
+        var window = IconButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
 
         // AnimatedShape clamps its initial stadium to the measured half extent.
@@ -387,7 +387,7 @@ public class MaterialInteractionControllerTests
     public void CompletedShapeMorph_ReclampsWhenContainerIsResized()
     {
         using var clock = new MotionTestClockScope();
-        var window = IconButtonThemeFixture.ShowWindow(out var button);
+        var window = IconButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
 
         var origin = button.TranslatePoint(default, window)!.Value;

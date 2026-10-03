@@ -32,7 +32,7 @@ data class ButtonConfig(val style:String="filled", val size:String="small", val 
     val enabled:Boolean=true, val dark:Boolean=false, val icon:String="none", val rtl:Boolean=false,
     val width:Double?=240.0, val custom:String="none", val baseline:Boolean=false,
     val action:String="none", val height:Double?=null, val empty:Boolean=false,
-    val contentWidth:Double=32.0, val contentHeight:Double=16.0, val requiredContentSize:Boolean=false)
+    val contentWidth:Double=32.0, val contentHeight:Double=16.0, val requiredContentSize:Boolean=false, val morph:Boolean=true)
 
 @ParitySuite("button")
 class ButtonCases {
@@ -261,7 +261,7 @@ class ButtonCases {
                 }
             }
             // Call the actual family overload; no reimplementation of Surface/Row/interaction policy.
-            if(config.baseline) when(config.style) {
+            if(config.baseline || !config.morph) when(config.style) {
                 "elevated" -> ElevatedButton({clicks++},modifier,enabled,shape,colors,elevation,border,padding,interactions,content)
                 "tonal" -> FilledTonalButton({clicks++},modifier,enabled,shape,colors,elevation,border,padding,interactions,content)
                 "outlined" -> OutlinedButton({clicks++},modifier,enabled,shape,colors,elevation,border,padding,interactions,content)
@@ -337,7 +337,7 @@ class ButtonCases {
                 fields+=number("shadowElevation",elevation/density,category="motion",definition="button.shadow-elevation",source="derived: Surface GraphicsLayerOwnerLayer.graphicsLayer.shadowElevation / density")
             // Core's rounded outline uses the visible physical axes, including RTL shape resolution.
             fields+=vector("cornerRadii","quad",radii.map { it/density },"dip","container","motion","button.container.normalized-visual-rounded-outline","derived: GraphicsLayerOwnerLayer.outline cached by updateLayerProperties / density; visible physical TL/TR/BR/BL",CornerComponents)
-            if(!config.baseline && config.action in listOf("press","quick","cancel","drag-back","reverse","disable","shape-change","space","enter","size")) {
+            if(!config.baseline && config.morph && config.action in listOf("press","quick","cancel","drag-back","reverse","disable","shape-change","space","enter","size")) {
                 // Fixed Core AnimatedShape.kt: read the already applied shape and its captured
                 // state without invoking a layer block, creating an outline, or advancing a frame.
                 val shape=checkNotNull(field(clipped.first,"lastShape"))
