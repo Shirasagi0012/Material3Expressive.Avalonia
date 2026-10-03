@@ -133,6 +133,10 @@ internal sealed class ShortNavigationBarItemLayout : Panel
 
     protected override Size ArrangeOverride(Size finalSize)
     {
+        // NavigationItem.kt placeLabelAndStartIcon places the label before the icon.
+        // Badges can extend over the label, making this draw order observable.
+        Children[1].ZIndex = HasLabel && IconPosition == NavigationItemIconPosition.Start ? 1 : 0;
+        Children[3].ZIndex = 2;
         var scale = LayoutHelper.GetLayoutScale(this);
         var dx = (MathUtils.DipToPx(finalSize.Width, scale) - (int)_inner.Width) / 2;
         var dy = (MathUtils.DipToPx(finalSize.Height, scale) - (int)_inner.Height) / 2;

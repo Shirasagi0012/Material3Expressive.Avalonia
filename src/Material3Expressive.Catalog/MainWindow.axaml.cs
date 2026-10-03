@@ -31,6 +31,13 @@ public partial class MainWindow : Window
             item.IsSelected = ReferenceEquals(item, sender);
     }
 
+    private void OnChangeBadge(object? sender, RoutedEventArgs e)
+    {
+        DemoBadge.Content = DemoBadge.Content switch { null => "8", "8" => "999+", _ => null };
+        Avalonia.Automation.AutomationProperties.SetName(DemoBadge,
+            DemoBadge.Content is { } count ? $"{count} notifications" : "New notifications");
+    }
+
     private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
     {
         // Native CheckBox has already toggled. The application decides the group's meaning.
