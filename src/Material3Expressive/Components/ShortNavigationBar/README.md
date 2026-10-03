@@ -32,6 +32,10 @@ Start 带标签时胶囊包住图标和标签，两侧 16 DIP、图标到标签 
 无标签仍使用 TopIconOrIconOnlyMeasurePolicy，但采用目标位置的 padding，Top/Start 胶囊高度为 32/40 DIP。
 没有改成 Wide Item 的无标签圆形分支。
 
+Item 布局提供 Compose `badgeBounds()` 的上方和末端边界，供图标槽中的 BadgedBox 使用。
+Start 带标签时按 `placeLabelAndStartIcon` 保留标签先于图标、反馈最后的绘制顺序，
+因此图标中溢出的徽标可以覆盖标签。规则和双端覆盖见 [Badge / BadgedBox](../Badge/README.md)。
+
 内容色直接更新，两种位置均使用 LabelMedium。唯一 DefaultSpatial 进度同时驱动指示器透明度及居中展开宽度。
 宽度进度只下限钳制，保留过冲；绘制透明度限制在 0～1。目标下一帧提交，反向按 animateAsState
 Stop/restart 重置旧速度与帧锚点。位置切换立即布局；不使用 AnimatedNavigationItem 或 Wide 的纵向平滑偏离。

@@ -85,7 +85,7 @@
       <Setter Property="Template">
         <ControlTemplate>
           <!-- Compose selectable covers the whole item, including unpainted gaps. -->
-          <m3:WideNavigationRailItemLayout x:Name="PART_Layout" Background="Transparent"
+          <m3:WideNavigationRailItemLayout x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
               IndicatorShape="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ActiveIndicatorShape}}">
             <Border RenderOptions.RequiresFullOpacityHandling="True"><Border x:Name="PART_Indicator" /></Border>
             <Border>

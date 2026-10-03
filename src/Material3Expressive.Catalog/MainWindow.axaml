@@ -55,13 +55,34 @@
                     <CheckBox x:Name="GroupFirst" Content="First" IsChecked="True" Click="OnGroupChildClick" />
                     <CheckBox x:Name="GroupSecond" Content="Second" Click="OnGroupChildClick" />
                 </StackPanel>
+                <TextBlock Text="Badges" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="24" VerticalAlignment="Center">
+                    <m3:BadgedBox>
+                        <m3:BadgedBox.Badge><m3:Badge /></m3:BadgedBox.Badge>
+                        <m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" />
+                    </m3:BadgedBox>
+                    <m3:BadgedBox>
+                        <m3:BadgedBox.Badge><m3:Badge x:Name="DemoBadge" Content="8" AutomationProperties.Name="8 notifications" /></m3:BadgedBox.Badge>
+                        <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
+                    </m3:BadgedBox>
+                    <m3:BadgedBox>
+                        <m3:BadgedBox.Badge><m3:Badge Content="999+" /></m3:BadgedBox.Badge>
+                        <m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" />
+                    </m3:BadgedBox>
+                    <Button Content="Change badge" Click="OnChangeBadge" />
+                </StackPanel>
                 <TextBlock Text="NavigationBar" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:NavigationBar x:Name="DemoNavigationBar">
                     <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">
                         <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
                     </m3:NavigationBarItem>
                     <m3:NavigationBarItem Label="Search" Click="OnBarDestinationClick">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                        <m3:NavigationBarItem.Icon>
+                            <m3:BadgedBox>
+                                <m3:BadgedBox.Badge><m3:Badge Content="99+" /></m3:BadgedBox.Badge>
+                                <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
+                            </m3:BadgedBox>
+                        </m3:NavigationBarItem.Icon>
                     </m3:NavigationBarItem>
                     <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick">
                         <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
