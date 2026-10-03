@@ -119,7 +119,8 @@ internal sealed class MaterialInteractionController
         _owner.ActualThemeVariantChanged += (_, _) => OnTokensChanged();
         _owner.PropertyChanged += (_, change) =>
         {
-            if (change.Property == InputElement.IsEffectivelyEnabledProperty)
+            if (change.Property == InputElement.IsEffectivelyEnabledProperty
+                || change.Property == MaterialInteraction.IsInteractiveProperty)
             {
                 if (!IsEnabled)
                 {
@@ -141,7 +142,7 @@ internal sealed class MaterialInteractionController
     // Chip.kt chooses the last active interaction, retaining its outgoing identity.
     internal InteractionState LastInteraction => _interactions.LastOrDefault();
     internal event Action? Changed;
-    internal bool IsEnabled => _owner.IsEffectivelyEnabled;
+    internal bool IsEnabled => _owner.IsEffectivelyEnabled && MaterialInteraction.GetIsInteractive(_owner);
 
     /// <summary>The state layer's current opacity, mid-fade included.</summary>
     internal double StateLayerOpacity => _stateLayerAlpha?.Value ?? 0;
@@ -343,6 +344,9 @@ internal sealed class MaterialInteractionController
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
+        // A descendant button can consume the press. Observe the owner's native class
+        // handler above, rather than giving its clickable ancestor a second ripple.
+        if (_owner is Button { IsPressed: false }) return;
         if (IsEnabled && e.GetCurrentPoint(_owner).Properties.IsLeftButtonPressed)
         {
             _pressedPointer = e.Pointer;
@@ -387,7 +391,7 @@ internal sealed class MaterialInteractionController
         // Compose clickable emits a centred press for keyboard activation. Limit this bridge to
         // Button-derived owners so a space typed into an editor cannot start a ripple on its
         // surrounding container.
-        if (_owner is not Button || e.Key is not (Key.Space or Key.Enter))
+        if (_owner is not Button || !ReferenceEquals(e.Source, _owner) || e.Key is not (Key.Space or Key.Enter))
             return;
 
         // Observe feedback only; the owner retains its keyboard activation semantics.
@@ -402,7 +406,7 @@ internal sealed class MaterialInteractionController
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
-        if (_owner is Button && e.Key is (Key.Space or Key.Enter))
+        if (_owner is Button && ReferenceEquals(e.Source, _owner) && e.Key is (Key.Space or Key.Enter))
             EndPress();
     }
 
@@ -426,6 +430,10 @@ internal sealed class MaterialInteractionController
     private void ClearInputInteractions(bool finishRipples = false, bool deferStateLayer = false)
     {
         _pressedPointer = null;
+        // A new hoverable node waits for pointer input. The native owner can remain
+        // pointer-over while its feedback template is replaced, so no new Enter is
+        // guaranteed; the next Move must be able to restore hover as well.
+        _hoverNeedsMove = true;
         var hadInputInteraction = _interaction != InteractionState.None;
         var hadRipples = _ripples.Count != 0;
 

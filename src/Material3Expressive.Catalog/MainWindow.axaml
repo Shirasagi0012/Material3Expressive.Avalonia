@@ -68,6 +68,33 @@
                 </m3:FloatingActionButtonMenu>
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
+                <TextBlock Text="Card" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <WrapPanel>
+                    <m3:Card Width="180" Height="100" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16"><TextBlock Text="Filled" m3:MaterialText.Style="{m3:Typography TitleMedium}" /><TextBlock Text="Passive content" /></m3:CardColumn>
+                    </m3:Card>
+                    <m3:ElevatedCard Width="180" Height="100" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16"><TextBlock Text="Elevated" m3:MaterialText.Style="{m3:Typography TitleMedium}" /><TextBlock Text="Passive content" /></m3:CardColumn>
+                    </m3:ElevatedCard>
+                    <m3:OutlinedCard Width="180" Height="100" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16"><TextBlock Text="Outlined" m3:MaterialText.Style="{m3:Typography TitleMedium}" /><TextBlock Text="Passive content" /></m3:CardColumn>
+                    </m3:OutlinedCard>
+                </WrapPanel>
+                <WrapPanel>
+                    <m3:Card IsClickable="True" Click="OnCardClick" Width="180" Height="100" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16"><TextBlock Text="Filled" m3:MaterialText.Style="{m3:Typography TitleMedium}" /><TextBlock Text="Clickable content" /></m3:CardColumn>
+                    </m3:Card>
+                    <m3:ElevatedCard IsClickable="True" Click="OnCardClick" Width="180" Height="100" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16"><TextBlock Text="Elevated" m3:MaterialText.Style="{m3:Typography TitleMedium}" /><TextBlock Text="Clickable content" /></m3:CardColumn>
+                    </m3:ElevatedCard>
+                    <m3:OutlinedCard IsClickable="True" Click="OnCardClick" Width="180" Height="100" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16"><TextBlock Text="Outlined" m3:MaterialText.Style="{m3:Typography TitleMedium}" /><TextBlock Text="Clickable content" /></m3:CardColumn>
+                    </m3:OutlinedCard>
+                    <m3:OutlinedCard IsClickable="True" IsEnabled="False" Width="180" Height="100" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16"><TextBlock Text="Disabled" m3:MaterialText.Style="{m3:Typography TitleMedium}" /><TextBlock Text="Clickable content" /></m3:CardColumn>
+                    </m3:OutlinedCard>
+                </WrapPanel>
+                <TextBlock x:Name="DemoCardStatus" Text="Click a card" />
                 <TextBlock Text="Chip" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>
                     <m3:AssistChip Content="Add to calendar" Margin="0,0,12,0">
