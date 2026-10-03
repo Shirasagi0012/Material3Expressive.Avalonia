@@ -12,6 +12,44 @@ AlwaysShowLabel 与常规 Rail 同名的七项状态颜色。点击仅请求导�
 范围：常规 NavigationBar / NavigationBarItem；不决定 ShortNavigationBar 的入口，不扩展 Wide 的纵向平滑偏离。
 确认：2026-10-03，维护者确认“采用推荐 API 与内部共享适配”。使用示例见 NavigationBar 的组件 README。
 
+## RangeSlider 重合时按首次拖动方向选择 Thumb
+
+决定：按下时 ActiveRangeStart == ActiveRangeEnd 的手势，在首次有效水平拖动时按数值方向选起点或终点，随后固定该选择。
+原因：固定上游 Slider.kt 的 rangeSliderPressDragModifier 在按下时选定 Thumb；重合时只能向被选端允许的方向拉开，难以操作。
+做法与影响：减小数值选起点，增大数值选终点；RTL 换算方向。转移按压反馈，保留非交叉约束、slop、取消和完成回调。
+仅在释放事件出现水平位移的手势同样按方向选择；没有拖动的点击和非重合手势保留上游规则。
+范围：RangeSlider 的指针手势，不新增 API；拖动中才合并的区间不切换 Thumb，键盘和自动化不改变。
+验证保留真实固定 Compose 参考，重合方向用例的行为和视觉差异不豁免或改写比较规则。
+确认：2026-10-03，维护者回复“就按你说的改”，授权采用首次有效水平拖动方向方案。
+
+## Slider 的数值入口、State 与内容模板
+
+决定：提供 Slider、VerticalSlider、RangeSlider，默认使用双向绑定数值属性（Value 或 RangeStart/RangeEnd），
+另提供可选 SliderState / RangeSliderState；显式 State 拥有数值、范围及 steps。
+Thumb/Track 支持内容和 DataTemplate，range 两端各自提供 Thumb 槽，模板接收实际 State。
+原因：同时支持简洁的 C#/XAML 绑定、上游 hoisted state 与自定义内容组合，避免要求所有应用先建立 State。
+做法与影响：便捷属性内部持有 State；显式 State 的回调保留调用者写回职责；默认模板、布局与绘制消费相同状态。
+范围：Slider 家族新增 API；不改变其他组件或 Avalonia 原有 Slider。
+确认：2026-10-03，维护者对带 C#/XAML 示例的推荐方案回复“采用推荐方案”。
+
+## Slider 可选 InsetRing 焦点模式延期
+
+决定：本次交付上游默认焦点模式，明确保留 InsetRing 未实现；不补齐共享 RippleTheme 焦点配置。
+原因：固定基线的可选 InsetRing 会影响 Thumb 测量、padding 和 Track 间距，现有共享 Ripple 能力没有对应配置。
+影响：默认按压/拖动/聚焦的 Thumb 缩窄、独立 range 焦点与自动化仍实现并验证；
+不能据此声明全部 LocalRippleThemeConfiguration 分支已移植。
+范围：本次 Slider、VerticalSlider、RangeSlider；后续共享焦点配置任务需补齐并验证该分支。
+确认：2026-10-03，维护者回复“本次只交付默认焦点模式，明确记录 InsetRing 未实现”。
+
+## Slider 禁用中断保留 Avalonia 即时绘制
+
+决定：拖动中禁用时，当帧取消交互并恢复默认 Thumb 宽度，保留与 Compose 子组合重绘的一帧视觉差异。
+原因：固定 Core 的 FrameRecomposer 先应用父组合的 enabled 更新，DragInteraction.Cancel 使 Thumb 的状态
+在下一帧重组；同一 disabled 采样两端交互反馈已清空、数值与完成回调相同，Compose 位图仍为半宽 Thumb。
+做法：不引入人为帧延迟，不修改参考、采样、容差或门禁；保留四个 horizontal/vertical disable 用例的真实差异。
+范围：Slider 与 VerticalSlider 的拖动禁用瞬间；后续帧、RangeSlider、一般按压释放和键盘不据此豁免。
+确认：2026-10-03，维护者对含证据和两种方案的问题回复“保留即时绘制并记录差异（推荐）”。
+
 ## Modal rail 鼠标拖动速度保留 Avalonia 原生事件历史
 
 决定：使用 Avalonia 实际 PointerMoved 历史与固定 Compose Desktop 的 LSQ2 算法，不在组件或夹具中复制速度样本。

@@ -29,6 +29,7 @@
                     <m3:NavigationRailTokenSource />
                     <m3:NavigationBarTokenSource />
                     <m3:WideNavigationRailTokenSource />
+                    <m3:SliderTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -42,4 +43,5 @@
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/WideNavigationRail.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/ModalWideNavigationRail.axaml" />
+    <StyleInclude Source="/Components/Slider/Slider.axaml" />
 </Styles>
