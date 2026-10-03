@@ -17,7 +17,7 @@
 | [Baseline/](../src/Material3Expressive/Baseline) | 颜色、形状、字体、状态、elevation、motion 的默认 Token 来源。 |
 | [MaterialTheme.axaml](../src/Material3Expressive/MaterialTheme.axaml) | 装配默认 Token 来源并引入组件主题。 |
 
-`Components` 中涉及通用数值计算时，优先复用 [Foundation/MathUtils.cs](../src/Material3Expressive/Foundation/MathUtils.cs) 中语义匹配的方法；若舍入方式、精度或边界行为不同，应保留组件所需语义并说明原因。
+`MathUtils` 提供最近整数舍入、DIP 与物理像素转换和线性插值。`Components` 需要这些操作时优先使用对应方法。详见 [Foundation/MathUtils.cs](../src/Material3Expressive/Foundation/MathUtils.cs)。
 
 这是目录职责，不是已经由程序集隔离的严格分层。目前 `MaterialInteractionController` 仍直接引用
 `MaterialSurface` 和 `ButtonElevationController`；修改相关能力时需要检查组件调用方，不能假定 Foundation 与组件无关。
