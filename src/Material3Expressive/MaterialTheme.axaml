@@ -40,6 +40,7 @@
     </Styles.Resources>
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
+    <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
     <StyleInclude Source="/Components/Button/Button.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />

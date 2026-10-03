@@ -71,6 +71,61 @@
                     <CheckBox x:Name="GroupFirst" Content="First" IsChecked="True" Click="OnGroupChildClick" />
                     <CheckBox x:Name="GroupSecond" Content="Second" Click="OnGroupChildClick" />
                 </StackPanel>
+                <TextBlock Text="Scaffold" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <WrapPanel>
+                    <Button Content="Start" Tag="Start" Click="OnScaffoldPositionClick" />
+                    <Button Content="Center" Tag="Center" Click="OnScaffoldPositionClick" />
+                    <Button Content="End" Tag="End" Click="OnScaffoldPositionClick" />
+                    <Button Content="End overlay" Tag="EndOverlay" Click="OnScaffoldPositionClick" />
+                    <Button Content="Bars" Click="OnScaffoldBarsClick" />
+                    <Button Content="Snackbar" Click="OnScaffoldSnackbarClick" />
+                    <Button Content="RTL" Click="OnScaffoldDirectionClick" />
+                </WrapPanel>
+                <m3:Scaffold x:Name="DemoScaffold" Height="320" ContentWindowInsets="8,0,12,8">
+                    <m3:Scaffold.TopBar>
+                        <m3:MaterialSurface Height="48" Width="{Binding Bounds.Width, ElementName=DemoScaffold}"
+                            Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainer}}" Padding="16,8">
+                            <TextBlock Text="Screen title" VerticalAlignment="Center" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+                        </m3:MaterialSurface>
+                    </m3:Scaffold.TopBar>
+                    <m3:Scaffold.BottomBar>
+                        <m3:NavigationBar>
+                            <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">
+                                <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                            </m3:NavigationBarItem>
+                            <m3:NavigationBarItem Label="Search" Click="OnBarDestinationClick">
+                                <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                            </m3:NavigationBarItem>
+                            <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick">
+                                <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                            </m3:NavigationBarItem>
+                        </m3:NavigationBar>
+                    </m3:Scaffold.BottomBar>
+                    <m3:Scaffold.FloatingActionButton>
+                        <Button Content="+" Width="56" Height="56" CornerRadius="16" />
+                    </m3:Scaffold.FloatingActionButton>
+                    <m3:Scaffold.SnackbarHost>
+                        <m3:MaterialSurface Height="40" Width="240" Padding="16,8"
+                            Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.InverseSurface}}"
+                            TextElement.Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.InverseOnSurface}}">
+                            <TextBlock Text="Snackbar slot" VerticalAlignment="Center" />
+                        </m3:MaterialSurface>
+                    </m3:Scaffold.SnackbarHost>
+                    <ScrollViewer>
+                        <!-- Apply/consume padding inside the scroller, as in Compose's sample. -->
+                        <Border Padding="{Binding ContentPadding, ElementName=DemoScaffold}"
+                                m3:MaterialWindowInsets.ConsumePadding="{Binding ContentPadding, ElementName=DemoScaffold}">
+                            <StackPanel Spacing="12" Margin="16">
+                                <TextBlock Text="Scaffold content" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                                <TextBlock Text="{Binding ContentPadding, ElementName=DemoScaffold}" />
+                                <Border Height="64" Background="#E8DEF8" />
+                                <Border Height="64" Background="#D0BCFF" />
+                                <Border Height="64" Background="#E8DEF8" />
+                                <Border Height="64" Background="#D0BCFF" />
+                            </StackPanel>
+                        </Border>
+                    </ScrollViewer>
+                </m3:Scaffold>
                 <TextBlock Text="Divider" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <Separator />
                 <Separator Margin="16,0" m3:MaterialDivider.Thickness="2" m3:MaterialDivider.Color="#6750A4" />

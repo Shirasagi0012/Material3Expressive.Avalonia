@@ -8,7 +8,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 rail / bar / CheckBox / RadioButton 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Scaffold、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Scaffold / rail / bar / CheckBox / RadioButton 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
@@ -114,6 +114,12 @@ Rail / Wide / Modal / Bar 的动态 contentColorFor 绑定及物理 Insets 转�
 NavigationBar 的等权布局与动画见
 [组件说明](../src/Material3Expressive/Components/NavigationBar/README.md)。
 contentColorFor 绑定及物理 Insets 的共享迁移于 2026-10-03 随 NavigationBar 方案确认，原有公共入口与行为不变。
+
+[Scaffold](../src/Material3Expressive/Components/Scaffold/README.md) 组合五个内容槽，发布逻辑 ContentPadding，
+由调用方应用。Foundation/Rendering 的 `MaterialWindowInsets.ConsumePadding` 记录已应用的逻辑
+Padding，逐层累加并传播物理消费量；Scaffold 从宿主的 ContentWindowInsets 逐边扣除祖先消费。
+该附加属性不应用布局 Padding，不是完整系统 Insets API，也没有改变既有 rail/bar 的 Insets 行为。
+细节和适用范围见[共享决定](DECISIONS.md#padding-消费向嵌套-scaffold-传播)。
 
 Button elevation 的当前实现可作为职责示例：`ButtonElevation` 保存状态高度，
 每个按钮自己的 `ButtonElevationController` 选择并动画化目标；Surface 的 `ShadowElevation` 消费当前绘制高度。

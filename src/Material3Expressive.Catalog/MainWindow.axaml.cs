@@ -12,11 +12,17 @@ public partial class MainWindow : Window
 {
     private static readonly bool TraceWideRailLayout = false;
     private readonly RailLayoutTrace? _railLayoutTrace;
+    private object? _scaffoldTopBar;
+    private object? _scaffoldBottomBar;
+    private object? _scaffoldSnackbar;
 
     public MainWindow()
     {
         VisualAnimationScope.Initialize(this);
         InitializeComponent();
+        _scaffoldTopBar = DemoScaffold.TopBar;
+        _scaffoldBottomBar = DemoScaffold.BottomBar;
+        _scaffoldSnackbar = DemoScaffold.SnackbarHost;
         // Animated.SetDurationScale(this, 10);
         
         // Temporary jitter diagnostics. Set TraceWideRailLayout to false to disable capture.
@@ -30,6 +36,23 @@ public partial class MainWindow : Window
         foreach (var item in DemoNavigationRail.Items.OfType<NavigationRailItem>())
             item.IsSelected = ReferenceEquals(item, sender);
     }
+
+    private void OnScaffoldPositionClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string position } && Enum.TryParse<FabPosition>(position, out var value))
+            DemoScaffold.FloatingActionButtonPosition = value;
+    }
+    private void OnScaffoldBarsClick(object? sender, RoutedEventArgs e)
+    {
+        var show = DemoScaffold.TopBar is null;
+        DemoScaffold.TopBar = show ? _scaffoldTopBar : null;
+        DemoScaffold.BottomBar = show ? _scaffoldBottomBar : null;
+    }
+    private void OnScaffoldSnackbarClick(object? sender, RoutedEventArgs e) =>
+        DemoScaffold.SnackbarHost = DemoScaffold.SnackbarHost is null ? _scaffoldSnackbar : null;
+    private void OnScaffoldDirectionClick(object? sender, RoutedEventArgs e) =>
+        DemoScaffold.FlowDirection = DemoScaffold.FlowDirection == Avalonia.Media.FlowDirection.LeftToRight
+            ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
 
     private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
     {
