@@ -48,7 +48,8 @@
       <Setter Property="DisabledTextColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.DisabledTextColor}}" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:NavigationRailItemLayout x:Name="PART_Layout"
+          <!-- Compose selectable covers the whole item, including unpainted gaps. -->
+          <m3:NavigationRailItemLayout x:Name="PART_Layout" Background="Transparent"
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
               HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
               AlwaysShowLabel="{TemplateBinding AlwaysShowLabel}"

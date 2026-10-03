@@ -11,6 +11,10 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，Core
 两端 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`
 中的 `WideNavigationRail.kt` 和 `NavigationItem.kt` 分别相同；桌面交互与动画提交顺序按固定 Core 核对。
 
+Item 模板的布局容器使用透明背景，让整个矩形参与 hover 与点击命中，包括图标与标签之间的空隙、
+胶囊外的留白；反馈仍只绘制在胶囊内，对齐 NavigationItem.kt 外层 Box.selectable 与内层 indication。
+Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间均沿用实际 Item 边界。
+
 - `WideNavigationRail.axaml` 组合 Surface、物理 inset、内容 padding、header 和 ItemsPresenter。
   `WideNavigationRailLayout` 保留四条 animateDpAsState 轨迹：最小宽、宽度上限、项间距和项最小高度。
   默认宽度收起 96、展开至少 220、至多 360 DIP；header 与项内容决定是否继续增宽。

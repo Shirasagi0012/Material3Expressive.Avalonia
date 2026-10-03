@@ -24,6 +24,8 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，Compose Multiplatform Core
 - 复用共享 ripple 与状态层。MappedInteractionSource 按 token 宽度差映射 `(12, 0)`，
   不减去实际 pill 位置。无标签的 pill/ripple 为圆形；有标签使用 ActiveIndicatorShape。
   透明度在独立合成层处理，避免把 graphicsLayer alpha 提前量化进背景或标签画刷。
+  模板布局容器使用透明背景，让整个 Item 矩形参与 hover 与点击命中，包括图标与标签之间的空隙、
+  胶囊外的留白；反馈仍仅绘制在胶囊内，对齐上游外层 Box.selectable 与内层 indication 的分工。
 - `NavigationRailTokenSource` 保留动态 System Token 引用和禁用色 0.38 alpha 派生。
   容器默认内容色按上游 contentColorFor 的角色顺序匹配，未知容器色继承父级 Foreground；
   明确设置 Foreground 具有优先级。Item 的图标/标签颜色与 ripple 的容器环境色各自消费。

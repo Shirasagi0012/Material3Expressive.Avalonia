@@ -70,6 +70,16 @@ class NavigationRailCases {
                     event(1000,"move",center); sample("hover"); times(16000,80000)
                     event(81000,"move",outside); sample("exit"); times(96000,240000,400000)
                 }
+                "hover-area" -> {
+                    val label=checkNotNull(scene.label.coordinates)
+                    val gap=label.localToRoot(Offset(label.size.width/2f,-2f*ComposeHost.RenderScale))/ComposeHost.RenderScale.toFloat()
+                    event(1000,"move",gap); sample("gap-hover"); times(16000,80000)
+                    event(81000,"move",center); sample("icon-hover"); times(96000)
+                    val item=checkNotNull(scene.item.coordinates)
+                    val edge=item.localToRoot(Offset(ComposeHost.RenderScale.toFloat(),ComposeHost.RenderScale.toFloat()))/ComposeHost.RenderScale.toFloat()
+                    event(97000,"move",edge); sample("edge-hover"); times(160000)
+                    event(161000,"move",outside); sample("exit"); times(176000,400000)
+                }
                 "space", "enter" -> {
                     advance(1000); scene.requester.requestFocus(); host.draw(); sample("focus"); times(16000,80000)
                     val key=if(config.action=="space") Key.Spacebar else Key.Enter

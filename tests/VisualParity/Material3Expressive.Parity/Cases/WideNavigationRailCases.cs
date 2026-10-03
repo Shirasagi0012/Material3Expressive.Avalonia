@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -80,6 +81,8 @@ public sealed class WideNavigationRailCases
         foreach (var action in new[] { "expand", "reverse" })
             yield return Data($"dynamic.{action}.standard-motion", new(Header: true, Action: action, StandardMotion: true));
         yield return Data("dynamic.indicator-padding", new(Action: "expand", IndicatorPadding: "dynamic"));
+        foreach (var expanded in new[] { false, true })
+            yield return Data($"dynamic.item.{Form(expanded)}.hover-area", new(Expanded: expanded, Selected: false, Standalone: true, Action: "hover-area"));
     }
     static string Form(bool expanded) => expanded ? "expanded" : "collapsed";
     static CaseData<WideNavigationRailConfig> Data(string id, WideNavigationRailConfig config) => new(id, id.Replace('.', ' '), config);
@@ -140,6 +143,13 @@ public sealed class WideNavigationRailCases
             case "hover":
                 Event(1000, "move", center); Sample("hover"); Times(16000, 80000);
                 Event(81000, "move", outside); Sample("exit"); Times(96000, 240000, 400000); break;
+            case "hover-area":
+                var label = scene.Item.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().Single(c => c.Name == "PART_Label");
+                var gap = label.TranslatePoint(config.Expanded ? new Point(-4, label.Bounds.Height / 2) : new Point(label.Bounds.Width / 2, -2), host.Window)!.Value;
+                Event(1000, "move", gap); Sample("gap-hover"); Times(16000, 80000);
+                Event(81000, "move", center); Sample("icon-hover"); Times(96000);
+                Event(97000, "move", scene.Item.TranslatePoint(new Point(1, 1), host.Window)!.Value); Sample("edge-hover"); Times(160000);
+                Event(161000, "move", outside); Sample("exit"); Times(176000, 400000); break;
             case "space": case "enter":
                 Advance(1000); scene.Item.Focus(NavigationMethod.Tab); host.Draw(); Sample("focus"); Times(16000, 80000);
                 var key = config.Action == "space" ? Key.Space : Key.Enter;
