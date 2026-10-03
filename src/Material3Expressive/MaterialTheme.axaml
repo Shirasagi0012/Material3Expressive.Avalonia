@@ -62,5 +62,6 @@
     <StyleInclude Source="/Components/Badge/Badge.axaml" />
     <StyleInclude Source="/Components/FloatingActionButton/FloatingActionButton.axaml" />
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
+    <StyleInclude Source="/Components/SecureTextField/SecureTextField.axaml" />
     <StyleInclude Source="/Components/Chip/Chip.axaml" />
 </Styles>

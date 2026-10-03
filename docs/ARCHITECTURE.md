@@ -139,6 +139,11 @@ Chip 使用自己的六状态 elevation 配置，消费共享控制器的最后�
 ContentColorFor 的可选内部 ambient 绑定用于 Chip 在标签 provider 外选择墨色，仍消费同一套
 实时背景 / Token / 环境绑定。相关确认依据见 [DECISIONS](DECISIONS.md)。
 
+SecureTextField 的原生 Filled / Outlined 主题复用 TextField 装饰，
+`MaterialSecureTextField.IsSecure` 负责单行、IME 提示和复制/剪切限制，显示仍由原生
+PasswordChar / RevealPassword 控制。该原生方案未替换 automation peer 或 IME 客户端；
+安全语义缺口和已确认的 RevealLastTyped 暂缺见[组件说明](../src/Material3Expressive/Components/SecureTextField/README.md)。
+
 ## 动画接入
 
 动画执行通过 NuGet 依赖 ComposeAnimation，准备方式见 [README](../README.md#本地开发)。

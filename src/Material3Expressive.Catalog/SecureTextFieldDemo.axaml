@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.SecureTextFieldDemo"
+        Title="Material SecureTextField" Width="780" Height="600" RequestedThemeVariant="Light">
+  <ScrollViewer>
+    <StackPanel Margin="32" Spacing="24">
+      <TextBlock Text="SecureTextField" FontSize="24" />
+      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="28" RowSpacing="24">
+        <TextBlock Text="Filled" /><TextBlock Grid.Column="1" Text="Outlined" />
+        <TextBox Grid.Row="1" Name="FilledPassword" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
+                 m3:MaterialTextField.Label="Password" PlaceholderText="Enter your password"
+                 m3:MaterialTextField.SupportingText="Paste and select all are available">
+          <TextBox.InnerLeftContent><m3:MaterialSymbol Symbol="Lock" Width="24" Height="24" /></TextBox.InnerLeftContent>
+          <TextBox.InnerRightContent><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealFilled" /></TextBox.InnerRightContent>
+        </TextBox>
+        <TextBox Grid.Row="1" Grid.Column="1" Name="OutlinedPassword" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
+                 m3:MaterialTextField.Label="Password" PlaceholderText="Enter your password"
+                 m3:MaterialTextField.SupportingText="Copy and cut stay blocked while revealed">
+          <TextBox.InnerLeftContent><m3:MaterialSymbol Symbol="Lock" Width="24" Height="24" /></TextBox.InnerLeftContent>
+          <TextBox.InnerRightContent><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealOutlined" /></TextBox.InnerRightContent>
+        </TextBox>
+        <TextBox Grid.Row="2" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
+                 m3:MaterialTextField.Label="PIN" PasswordChar="*" Text="1234" />
+        <TextBox Grid.Row="2" Grid.Column="1" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
+                 m3:MaterialTextField.Label="Password" Text="example" m3:MaterialTextField.IsError="True"
+                 m3:MaterialTextField.SupportingText="Check your password" />
+        <TextBox Grid.Row="3" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
+                 m3:MaterialTextField.Label="Disabled" IsEnabled="False" Text="example" />
+        <TextBox Grid.Row="3" Grid.Column="1" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
+                 m3:MaterialTextField.Label="Read-only" IsReadOnly="True" Text="example" />
+      </Grid>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Content="Toggle light / dark" Click="ToggleTheme" />
+        <Button Content="Toggle RTL" Click="ToggleDirection" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
