@@ -34,6 +34,27 @@
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
+                <TextBlock Text="CheckBox" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <CheckBox Content="Option" />
+                    <CheckBox Content="Selected" IsChecked="True" />
+                    <CheckBox Content="Disabled" IsChecked="True" IsEnabled="False" />
+                    <CheckBox Content="Three states" IsThreeState="True" IsChecked="{x:Null}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <CheckBox Content="Rounded strokes" IsChecked="True">
+                        <m3:CheckBoxAppearance.CheckmarkStroke>
+                            <m3:CheckBoxStroke Width="3" Cap="Round" Join="Round" />
+                        </m3:CheckBoxAppearance.CheckmarkStroke>
+                        <m3:CheckBoxAppearance.OutlineStroke>
+                            <m3:CheckBoxStroke Width="3" />
+                        </m3:CheckBoxAppearance.OutlineStroke>
+                    </CheckBox>
+                    <CheckBox x:Name="GroupCheckBox" Content="Select group" IsThreeState="True"
+                              IsChecked="{x:Null}" Click="OnGroupCheckBoxClick" />
+                    <CheckBox x:Name="GroupFirst" Content="First" IsChecked="True" Click="OnGroupChildClick" />
+                    <CheckBox x:Name="GroupSecond" Content="Second" Click="OnGroupChildClick" />
+                </StackPanel>
                 <TextBlock Text="NavigationBar" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:NavigationBar x:Name="DemoNavigationBar">
                     <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">

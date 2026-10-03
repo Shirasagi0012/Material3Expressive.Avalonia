@@ -1,0 +1,50 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialCheckBoxTheme" TargetType="CheckBox">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography BodyLarge}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:CheckBoxLayout>
+            <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
+                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" Padding="2">
+              <m3:CheckBoxIndicator x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
+                  Colors="{TemplateBinding m3:CheckBoxAppearance.Colors}"
+                  CheckmarkStroke="{TemplateBinding m3:CheckBoxAppearance.CheckmarkStroke}"
+                  OutlineStroke="{TemplateBinding m3:CheckBoxAppearance.OutlineStroke}"
+                  CheckedCheckmarkColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.CheckedCheckmarkColor}}"
+                  UncheckedCheckmarkColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckedCheckmarkColor}}"
+                  CheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.CheckedBoxColor}}"
+                  UncheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckedBoxColor}}"
+                  DisabledCheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledCheckedBoxColor}}"
+                  DisabledUncheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledUncheckedBoxColor}}"
+                  DisabledIndeterminateBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledIndeterminateBoxColor}}"
+                  CheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.CheckedBorderColor}}"
+                  UncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckedBorderColor}}"
+                  DisabledBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledBorderColor}}"
+                  DisabledUncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledUncheckedBorderColor}}"
+                  DisabledIndeterminateBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledIndeterminateBorderColor}}"
+                  DisabledCheckmarkColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledCheckmarkColor}}" />
+            </m3:MaterialSurface>
+            <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                RecognizesAccessKey="True" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+          </m3:CheckBoxLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type CheckBox}" TargetType="CheckBox" BasedOn="{StaticResource MaterialCheckBoxTheme}" />
+  </Styles.Resources>
+</Styles>
