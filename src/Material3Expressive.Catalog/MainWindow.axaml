@@ -55,6 +55,14 @@
                     <CheckBox x:Name="GroupFirst" Content="First" IsChecked="True" Click="OnGroupChildClick" />
                     <CheckBox x:Name="GroupSecond" Content="Second" Click="OnGroupChildClick" />
                 </StackPanel>
+                <TextBlock Text="Divider" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <Separator />
+                <Separator Margin="16,0" m3:MaterialDivider.Thickness="2" m3:MaterialDivider.Color="#6750A4" />
+                <Grid Height="48" ColumnDefinitions="*,Auto,*">
+                    <Border Grid.Column="0" Background="#E8DEF8" Margin="0,0,16,0" />
+                    <Separator Grid.Column="1" m3:MaterialDivider.Orientation="Vertical" />
+                    <Border Grid.Column="2" Background="#D0BCFF" Margin="16,0,0,0" />
+                </Grid>
                 <TextBlock Text="NavigationBar" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:NavigationBar x:Name="DemoNavigationBar">
                     <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">

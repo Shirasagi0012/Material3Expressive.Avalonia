@@ -1,0 +1,6 @@
+<Separator xmlns="https://github.com/avaloniaui"
+           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+           xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+           x:Class="Material3Expressive.Tests.DividerFixture"
+           m3:MaterialDivider.Orientation="Vertical"
+           m3:MaterialDivider.Thickness="2.5" m3:MaterialDivider.Color="#126E60" />
