@@ -39,6 +39,10 @@ Enter 按下激活；采用四槽颜色 API；本次不实现完全等价的 Com
 Content 是已确认的 Avalonia 本地组合：48 DIP 指示器槽旁排列 ContentPresenter，默认间距 8 DIP，
 Padding 控制内容留白，保留 ContentTemplate、内容对齐、access key 和 RTL。
 Compose RadioButton 自身没有 Content 槽，应用通常在上层 Row 组合。
+有 Content 时，模板根布局用透明背景让整个控件矩形参与命中，包括指示器槽、内容间隙与 Padding；
+对应上游 `RadioGroupSample` 把 `selectable` 放在整行上的组合方式，行高仍使用本地已确认的 48 DIP 默认布局。
+没有 Content 时保留默认 24 × 24 DIP 指示器鼠标命中范围；上游预留的 48 × 48 DIP 是布局空间，
+不能等同于默认鼠标命中范围或触摸输入层的目标扩展。
 
 ## 颜色、绘制与动画
 
