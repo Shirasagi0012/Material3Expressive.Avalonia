@@ -10,6 +10,7 @@
 [ShortNavigationBar / ShortNavigationBarItem](src/Material3Expressive/Components/ShortNavigationBar/README.md)、
 [TabRow / Tab 及原生 TabControl 顶部水平主题](src/Material3Expressive/Components/TabRow/README.md)、
 [原生 Slider 水平/垂直主题 / RangeSlider](src/Material3Expressive/Components/Slider/README.md)、
+[原生 ScrollBar 的水平/垂直 Material 主题](src/Material3Expressive/Components/ScrollBar/README.md)、
 [原生 CheckBox 的两态/三态 Material 模板](src/Material3Expressive/Components/CheckBox/README.md)、
 [原生 RadioButton 的 Material 模板](src/Material3Expressive/Components/RadioButton/README.md)、
 [原生 ToggleSwitch 的 Material Switch 模板](src/Material3Expressive/Components/Switch/README.md)、
