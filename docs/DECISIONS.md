@@ -19,6 +19,29 @@
 并授权基础 Dialog 和 Rail 迁移。接口、桌面动画来源及未实现/未经验证项见
 [Overlays 说明](../src/Material3Expressive/Foundation/Overlays/README.md)。
 
+## Dialog 的平台宽度和 Escape 时机
+
+决定：Foundation Dialog 新增默认启用的 UsePlatformDefaultWidth，按固定 Core 的客户区短边选择
+320 / 440 / 580 DIP 平台上限；显式关闭该属性可保留此前的宽内容行为。
+Dialog 系列对未处理的 Escape KeyDown 发送关闭请求，内部控件处理该按键时不发送；
+ModalWideNavigationRail 保留现有 KeyDown/KeyUp 配对策略。
+原因：固定 Core `ComposeSceneLayerMeasurePolicy.kt` 提供平台宽度限制，Desktop 的
+`ComposeSceneMediator` / `BackNavigationEventInput` 在 KeyDown 处理未消费的 Escape。
+范围：Dialog、BasicAlertDialog、AlertDialog；不改变 Rail 的动画和关闭时机。
+确认：2026-10-04 维护者分别批准默认平台宽度属性及 Dialog 对齐固定 Core 的 KeyDown。
+组件继承、内容槽和默认桌面分支的确认见 [AlertDialog](../src/Material3Expressive/Components/AlertDialog/README.md)。
+
+## Dialog 的首帧与退出中重开
+
+决定：Dialog 按固定 Core 的 composition / LaunchedEffect 帧顺序启动动画；
+退出保留冻结内容和独立动画作用域，重开创建新入场，旧冻结层继续退出。
+入场中关闭时保留关闭重组帧的最终入场进度，退出时长使用该 progress × 100ms。
+原因：AlertDialog 双端用例确认，提前启动、取消旧退出层及提前取消入场会改变时序与叠层画面。
+范围：Foundation Dialog、BasicAlertDialog、AlertDialog；Rail 继续使用自己的动画。
+适配：Avalonia 使用实际 RenderScaling 的 RenderTargetBitmap 冻结内容，源矩形使用像素、布局与变换使用 DIP；
+局部启用整层透明度合成，保持 Core GraphicsLayer 的背景与内容一起淡入淡出语义。
+确认：2026-10-04 维护者批准首帧对齐与保留旧退出层，并要求检查 Foundation 退出缩放异常。
+
 ## 聚合 TextStyle 与 Token 层文字单位换算
 
 决定：通过不可变 TextStyle、MaterialText.Style/DefaultStyle、Typography 角色绑定及派生 XAML 扩展，

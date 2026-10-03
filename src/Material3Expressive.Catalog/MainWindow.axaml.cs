@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private void OnSecureTextFieldDemo(object? sender, RoutedEventArgs e) => new SecureTextFieldDemo().Show(this);
     private void OnTabRowDemo(object? sender, RoutedEventArgs e) => new TabRowDemo().Show(this);
     private void OnScrollBarDemo(object? sender, RoutedEventArgs e) => new ScrollBarDemo().Show(this);
+    private void OnAlertDialogDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new AlertDialogDemo().Show(this);
     private static readonly bool TraceWideRailLayout = false;
     private readonly RailLayoutTrace? _railLayoutTrace;
 

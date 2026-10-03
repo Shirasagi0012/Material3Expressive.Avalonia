@@ -19,6 +19,7 @@ internal class ModalPresenter : Panel
     private Control? _lastFocus;
     private bool _redirecting;
     private bool _escapeDown;
+    internal bool EscapeOnKeyDown { get; init; }
     private bool _restoreFocus = true;
 
     internal event EventHandler<DismissRequestedEventArgs>? DismissRequested;
@@ -192,7 +193,15 @@ internal class ModalPresenter : Panel
         }
         // A handled IME key-down must not become an Escape dismissal on key-up.
         if (e.Key == Key.Escape)
+        {
             _escapeDown = !e.Handled && IsActiveModal() && IsDirectInput(e.Source);
+            if (EscapeOnKeyDown && _escapeDown)
+            {
+                _escapeDown = false;
+                e.Handled = true;
+                DismissRequested?.Invoke(this, new(DismissReason.Escape));
+            }
+        }
     }
 
     private void OnModalKeyUp(object? sender, KeyEventArgs e)

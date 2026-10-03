@@ -1,0 +1,77 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:BasicAlertDialog}" TargetType="m3:BasicAlertDialog" BasedOn="{StaticResource {x:Type m3:Dialog}}">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid x:Name="PART_Root">
+            <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
+              <m3:DialogScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
+              <m3:BasicAlertDialogLayout x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  UsePlatformDefaultWidth="{TemplateBinding UsePlatformDefaultWidth}"
+                  Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                  MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"
+                  MinHeight="{TemplateBinding MinHeight}" MaxHeight="{TemplateBinding MaxHeight}"
+                  Background="Transparent" RenderTransformOrigin="50%,50%">
+                <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+              </m3:BasicAlertDialogLayout>
+            </m3:DialogPresenter>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:AlertDialog}" TargetType="m3:AlertDialog" BasedOn="{StaticResource {x:Type m3:BasicAlertDialog}}">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ContainerColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ContainerShape}}" />
+      <Setter Property="IconForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.IconColor}}" />
+      <Setter Property="TitleForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.HeadlineColor}}" />
+      <Setter Property="TextForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.SupportingTextColor}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid x:Name="PART_Root">
+            <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
+              <m3:DialogScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
+              <m3:BasicAlertDialogLayout x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  UsePlatformDefaultWidth="{TemplateBinding UsePlatformDefaultWidth}"
+                  Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                  MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"
+                  MinHeight="{TemplateBinding MinHeight}" MaxHeight="{TemplateBinding MaxHeight}"
+                  Background="Transparent" RenderTransformOrigin="50%,50%">
+                <Border x:Name="PART_DialogContent">
+                  <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                      CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{TemplateBinding TonalElevation}">
+                    <m3:AlertDialogColumn Margin="24">
+                      <ContentPresenter x:Name="PART_Icon" IsVisible="False" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
+                          Foreground="{TemplateBinding IconForeground}" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                      <ContentPresenter x:Name="PART_Title" IsVisible="False" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}"
+                          Foreground="{TemplateBinding TitleForeground}" HorizontalAlignment="Left" Margin="0,0,0,16"
+                          m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.HeadlineFont}}" TextWrapping="Wrap" />
+                      <ContentPresenter x:Name="PART_Text" IsVisible="False" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                          Foreground="{TemplateBinding TextForeground}" HorizontalAlignment="Left" Margin="0,0,0,24"
+                          m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.SupportingTextFont}}" TextWrapping="Wrap" />
+                      <m3:AlertDialogButtons x:Name="PART_Buttons" HorizontalAlignment="Right"
+                          m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}">
+                        <ContentPresenter x:Name="PART_Confirm" Content="{TemplateBinding ConfirmButton}" ContentTemplate="{TemplateBinding ConfirmButtonTemplate}"
+                            Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextColor}}" />
+                        <ContentPresenter x:Name="PART_Dismiss" IsVisible="False" Content="{TemplateBinding DismissButton}" ContentTemplate="{TemplateBinding DismissButtonTemplate}"
+                            Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextColor}}" />
+                      </m3:AlertDialogButtons>
+                    </m3:AlertDialogColumn>
+                  </m3:MaterialSurface>
+                </Border>
+              </m3:BasicAlertDialogLayout>
+            </m3:DialogPresenter>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:has-icon /template/ ContentPresenter#PART_Icon"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:has-title /template/ ContentPresenter#PART_Title"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:has-text /template/ ContentPresenter#PART_Text"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:has-dismiss /template/ ContentPresenter#PART_Dismiss"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:has-icon /template/ ContentPresenter#PART_Title"><Setter Property="HorizontalAlignment" Value="Center" /></Style>
+      <Style Selector="^[FlowDirection=RightToLeft]:not(:has-icon) /template/ ContentPresenter#PART_Title"><Setter Property="HorizontalAlignment" Value="Right" /></Style>
+      <Style Selector="^[FlowDirection=RightToLeft] /template/ ContentPresenter#PART_Text"><Setter Property="HorizontalAlignment" Value="Right" /></Style>
+      <Style Selector="^[FlowDirection=RightToLeft] /template/ m3|AlertDialogButtons#PART_Buttons"><Setter Property="HorizontalAlignment" Value="Left" /></Style>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

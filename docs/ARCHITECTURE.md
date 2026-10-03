@@ -204,6 +204,8 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
   Modal 使用当前 TopLevel 的 PopupOverlayLayer，通过组件自己的 Popup 和共享 ModalPresenter 接入。
   自定义 Window 模板需包含 `PART_VisualLayerManager`；普通 Content 内的 OverlayLayer 不满足该条件。
   Dialog 的关闭请求、退出保留和焦点约束见 [Overlays](../src/Material3Expressive/Foundation/Overlays/README.md)。
+  [BasicAlertDialog / AlertDialog](../src/Material3Expressive/Components/AlertDialog/README.md) 继承 Dialog 的宿主，
+  组件提供 Material 尺寸、Surface、内容环境和按钮排列；默认平台宽度由 Foundation 限制。
   组件负责输入阻挡、焦点限制/恢复及展开内容迁移；各组件的验证范围与保留问题见对应说明。
 - 原有 Material 动画规则的源码核对基于 AndroidX `ff0a0a99c4f0cfe95d75d5df615e51d399575922`。
   当时记录了状态层 15/45/150ms 淡入淡出、ripple 75ms 进入透明度与 225ms 扩张/中心移动、

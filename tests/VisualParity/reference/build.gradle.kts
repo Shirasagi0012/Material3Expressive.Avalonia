@@ -10,6 +10,9 @@ dependencies {
     implementation("org.jetbrains.compose.material3:material3:1.13.0-alpha01")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    // Already pinned on the producer runtime path. Dialog keyboard scenarios use the
+    // real desktop BackNavigationEventInput, whose supertype must be visible at compile time.
+    compileOnly("androidx.navigationevent:navigationevent-desktop:1.1.1") { isTransitive = false }
     // The first paired environment is Windows x64. Keep the same Skiko version, but avoid
     // fetching unused Linux/macOS native binaries from Desktop's new all-platform bundle.
     runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.152.0-alpha02")
