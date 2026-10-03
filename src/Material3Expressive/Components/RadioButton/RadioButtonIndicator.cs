@@ -157,14 +157,15 @@ internal sealed class RadioButtonIndicator : Control
                     Color = new SKColor(color.R, color.G, color.B,
                         (byte)Math.Clamp(Math.Round(color.A * lease.CurrentOpacity, MidpointRounding.AwayFromZero), 0, 255)) };
                 Circle(center - strokeWidth / 2);
-                if (dotRadius > 0)
+                // Accepted baseline deviation: do not turn a negative painted radius into an oval.
+                // Keep the spring state and timing intact; a sub-1-DIP rebound paints no dot.
+                var paintedRadius = dotRadius * scale - strokeWidth / 2;
+                if (paintedRadius > 0)
                 {
                     paint.Style = SKPaintStyle.Fill;
-                    Circle(dotRadius * scale - strokeWidth / 2);
+                    Circle(paintedRadius);
                 }
-                // Skiko Canvas.drawCircle delegates to drawOval, whose rectangle is sorted by Skia.
-                // A positive animated radius below 1 DIP therefore still draws a dot after subtracting
-                // half the stroke. SKCanvas.DrawCircle instead discards that negative painted radius.
+                // Preserve Skiko's drawOval path and Float arithmetic for positive radii.
                 void Circle(float radius)
                 {
                     var first = center - radius;

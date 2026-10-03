@@ -70,8 +70,11 @@ Token 为 `RadioButtonTokens` v0_117；内部 StyleableRadioButton 不属于本�
   不能套用 animateDpAsState 未被消费的默认 dpDefaultSpring 的 0.1。
 - 禁用颜色直接到目标，重新启用的颜色从新目标初始化；禁用不停止选择圆点动画。
 - 绘制使用 Skia Float 物理像素运算。Skiko 0.152.0-alpha02 的 Canvas.drawCircle 转发到 drawOval，
-  负绘制半径仍画出经过排序的椭圆；本地显式排序椭圆矩形保留该桌面路径。
-  因而选中/反向动画尾段仍可能出现小点，未擅自钳制半径或改变阈值。
+  负绘制半径仍画出经过排序的椭圆，使未选中动画的圆点消失后再次闪现。
+  2026-10-03 维护者确认“修正绘制，消除闪点（推荐）”：仅在最终绘制半径
+  `dotRadius * scale - strokeWidth / 2 > 0` 时绘制圆点。保留 spring 状态、参数、阈值和时序；
+  正半径仍使用相同椭圆路径。这是已接受的固定桌面基线视觉偏离，也消除选中动画初始
+  小于 1 DIP 的动画半径产生的负半径幻影点；C#/XAML 用法不变。
 - MaterialSurface 与共享交互控制器绘制不裁剪、固定半径 20 DIP 的 ripple、hover 和 focus 状态层。
   固定 RippleDefaults.ThemeConfiguration 使用 opacity focus；没有引入替代焦点环。
 
@@ -88,22 +91,33 @@ Compose 的外部 MutableInteractionSource 没有对象级跨框架映射；使�
 - [RadioButtonCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/RadioButtonCases.kt)
 - [RadioButtonTests.cs](../../../../tests/Material3Expressive.Tests/RadioButtonTests.cs)
 
-48 个 parity 用例：20 个静态覆盖选中/未选中 × 启用/禁用 × 亮暗主题、四槽自定义色、RTL、
-自动尺寸与受限宽高；28 个动态覆盖双向选择/反向、标准 motion、禁用选择、转换中禁用、
+50 个 parity 用例：20 个静态覆盖选中/未选中 × 启用/禁用 × 亮暗主题、四槽自定义色、RTL、
+自动尺寸与受限宽高；30 个动态覆盖双向选择/反向、标准 motion、禁用选择、转换中禁用、
 禁用/启用、主题/颜色切换、按压/快速释放/取消、按压中禁用、禁用输入、指示器槽边缘点击、
 hover、Space/Enter、已选中点击、RTL 输入、原生组互斥和回调不写回选择。
 两端调用实际组件；参考端保留真实 Compose 回调所有权。
 `dynamic.input.enter` 和 `dynamic.input.request-only` 如实保留已接受差异，不改比较门禁。
+两个 deselection-tail 用例每 16 ms 连续观察到 800 ms，分别使用 Expressive/Standard motion。
+绘制半径不大于零时的差异按上述决定保留，参考端仍使用原始固定 Compose，不补偿或遮罩。
 
 headless 测试检查真实模板、绑定写回/事件顺序、选择自动化、命名和隐式组、取消/禁用输入、
 Content/ContentTemplate/RTL、动态 Token/颜色、独立禁用动画规则、尾段 spring 阈值、
 idle 后重启、模板替换/卸载/重新挂载的清理。
+像素回归在正常与 10 倍时长下逐帧确认未选中圆点消失后不再出现，同时保持尾段 spring 状态。
 文字视觉、实际 OS 无障碍客户端、真实桌面手工交互和非 Windows 平台未经双端验收。
 
-2026-10-03 Windows 验证：控件库 Release 回归 387/387 通过，Catalog Release 构建通过；
+2026-10-03 首次移植 Windows 验证（修正闪点之前）：控件库 Release 回归 387/387 通过，Catalog Release 构建通过；
 RadioButton self-test 完成 48 个用例、317 个采样，46 个用例完全相等，另 2 个仅呈现上述已接受的
 Enter 时序与回调不写回差异。没有执行错误或未经比较的字段，重复采集及增加被动图片采样均稳定。
 该 self-test 重新采集两端，不发布参考快照，也未修改比较阈值。
+
+同日闪点修正验证：新增像素回归在修正前于动画时间 256 ms 失败（正常/10 倍时长均复现），
+修正后全库 Release 回归 389/389 通过，Catalog Release 构建通过。
+重新采集两端的 self-test 完成 50 个用例、421 个采样：43 个用例严格相等，2 个 withinTolerance，
+5 个 different；没有执行错误或未经比较字段，全部重复采集稳定。
+非严格相等的 7 个用例中，2 个仍为已接受的原生交互差异；其余 5 个为本次已接受的绘制边界修正，
+所有新增像素差异均位于中心 1 DIP 半径的原幻影点区域，几何、选择、启用状态与回调计数保持相等。
+Expressive/Standard 的连续采样均确认本地圆点消失后不再出现，Compose 参考保留原闪点。
 
 在项目根目录运行：
 

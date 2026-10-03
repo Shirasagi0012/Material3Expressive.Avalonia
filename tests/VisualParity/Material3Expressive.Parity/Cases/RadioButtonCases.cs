@@ -41,6 +41,8 @@ public sealed class RadioButtonCases
         foreach (var action in new[] { "transition", "reverse", "enable", "theme", "colors", "disable-transition" })
             yield return Data($"dynamic.{action}.{(selected ? "selected" : "unselected")}", new(selected, Action: action));
         yield return Data("dynamic.transition.standard-motion", new(Action: "transition", StandardMotion: true));
+        yield return Data("dynamic.transition.deselection-tail", new(true, Action: "deselection-tail"));
+        yield return Data("dynamic.transition.deselection-tail-standard", new(true, Action: "deselection-tail", StandardMotion: true));
         yield return Data("dynamic.transition.disabled", new(Enabled: false, Action: "transition"));
         yield return Data("dynamic.transition.custom-colors", new(CustomColors: true, Action: "transition"));
         foreach (var action in new[] { "press", "quick", "cancel", "disable-press", "disabled-input", "hover", "space", "enter", "request-only", "edge", "group" })
@@ -67,7 +69,7 @@ public sealed class RadioButtonCases
         await using var host = new AvaloniaHost(writer, 160, 128);
         var scene = new RadioScene(host, config);
         host.Mount(scene.Root); host.Frame(-1000); host.Frame(0);
-        void Sample(string id) => writer.Submit(host.Snapshot(id, id, scene.Measure(), image: id is not ("time-32000" or "time-112000")));
+        void Sample(string id) => writer.Submit(host.Snapshot(id, id, scene.Measure(), image: config.Action == "deselection-tail" || id is not ("time-32000" or "time-112000")));
         long nextFrame = 16000;
         void Advance(long time) { while (nextFrame <= time) { host.Frame(nextFrame); nextFrame += 16000; } host.AdvanceTo(time); }
         void Times(params long[] times) { foreach (var time in times) { Advance(time); host.Draw(); Sample($"time-{time}"); } }
@@ -80,6 +82,11 @@ public sealed class RadioButtonCases
         Sample("initial");
         switch (config.Action)
         {
+            case "deselection-tail":
+                Mutate(1000, "selection-change", () => radio.IsChecked = false);
+                // Observe every existing grid frame through disappearance and the final rebound.
+                // Sampling does not insert extra frames or change the fixed Compose reference.
+                Times(Enumerable.Range(1, 50).Select(frame => (long)frame * 16000).ToArray()); break;
             case "transition": case "reverse": case "disable-transition":
                 Mutate(1000, "selection-change", () => radio.IsChecked = !config.Selected);
                 Times(16000, 32000, 64000);

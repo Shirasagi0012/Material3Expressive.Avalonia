@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
@@ -13,6 +14,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using ComposeAnimation;
 using Material3Expressive.Components;
 using Material3Expressive.Tokens;
 using Xunit;
@@ -180,9 +182,48 @@ public class RadioButtonTests
         radio.IsChecked = false; clock.SendFrame(origin + TimeSpan.FromMilliseconds(65));
         for (var time = 80; time <= 400; time += 16) clock.SendFrame(origin + TimeSpan.FromMilliseconds(time));
         // Fixed motionScheme's explicit spring uses the 0.01 threshold, rather than dpDefaultSpring's 0.1.
-        // The still-positive trailing bounce draws a small dot through Skiko's negative-radius oval path.
+        // Keep the trailing bounce in animation state even when it has no positive painted radius.
         Assert.InRange(Part(radio).DotRadius, 0.01f, 0.02f);
         clock.SendFrame(origin + TimeSpan.FromMilliseconds(800)); Assert.Equal(0, Part(radio).DotRadius);
+        window.Close(); Assert.Null(window.MotionRoot.LastError);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(1)]
+    [InlineData(10)]
+    public void Deselection_DotDoesNotReappearAfterItDisappears(int durationScale)
+    {
+        using var clock = new MotionTestClockScope();
+        var radio = new RadioButton { IsChecked = true }; var window = Show(radio);
+        window.Background = Brushes.White;
+        Animated.SetDurationScale(window, durationScale);
+        var center = Center(window, radio);
+        // The central 10 DIP square contains the dot, but cannot touch the 9 DIP outer ring.
+        bool DotIsPainted()
+        {
+            using var frame = window.CaptureRenderedFrame()!;
+            using var buffer = frame.Lock();
+            var row = new byte[buffer.RowBytes];
+            for (var y = (int)center.Y - 5; y < (int)center.Y + 5; y++)
+            {
+                Marshal.Copy(buffer.Address + y * buffer.RowBytes, row, 0, row.Length);
+                for (var x = (int)center.X - 5; x < (int)center.X + 5; x++)
+                    if (row[x * 4] != 255 || row[x * 4 + 1] != 255 || row[x * 4 + 2] != 255) return true;
+            }
+            return false;
+        }
+        Assert.True(DotIsPainted());
+        var origin = clock.Now;
+        radio.IsChecked = false;
+        clock.SendFrame(origin + TimeSpan.FromMilliseconds(durationScale));
+        var disappeared = false;
+        for (var time = 16; time <= 800; time += 16)
+        {
+            clock.SendFrame(origin + TimeSpan.FromMilliseconds(time * durationScale));
+            if (!DotIsPainted()) disappeared = true;
+            else Assert.False(disappeared, $"Dot reappeared at animation time {time} ms (duration scale {durationScale}).");
+        }
+        Assert.True(disappeared); Assert.Equal(0, Part(radio).DotRadius);
         window.Close(); Assert.Null(window.MotionRoot.LastError);
     }
 

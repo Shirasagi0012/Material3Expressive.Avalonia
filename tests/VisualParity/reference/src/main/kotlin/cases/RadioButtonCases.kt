@@ -39,7 +39,7 @@ class RadioButtonCases {
         ComposeHost(writer,160,128).use { host ->
             val scene=RadioScene(config)
             host.mount { scene.Content() }; host.frame(-1000); host.frame(0)
-            fun sample(id:String)=writer.submit(host.snapshot(id,id,scene.measure(),image=id !in listOf("time-32000","time-112000")))
+            fun sample(id:String)=writer.submit(host.snapshot(id,id,scene.measure(),image=config.action=="deselection-tail" || id !in listOf("time-32000","time-112000")))
             var nextFrame=16000L
             fun advance(time:Long) { while(nextFrame<=time) { host.frame(nextFrame); nextFrame+=16000 }; host.advanceTo(time) }
             fun times(vararg times:Long) { times.forEach { advance(it); host.draw(); sample("time-$it") } }
@@ -53,6 +53,11 @@ class RadioButtonCases {
             val outside=Offset(155f,123f)
             sample("initial")
             when(config.action) {
+                "deselection-tail" -> {
+                    mutate(1000,"selection-change") { scene.selected=false }
+                    // Capture the unchanged frame grid, including the reference's small tail dot.
+                    times(*(1..50).map { it * 16000L }.toLongArray())
+                }
                 "transition","reverse","disable-transition" -> {
                     mutate(1000,"selection-change") { scene.selected=!config.selected }; times(16000,32000,64000)
                     if(config.action=="reverse") mutate(65000,"selection-reverse") { scene.selected=config.selected }
