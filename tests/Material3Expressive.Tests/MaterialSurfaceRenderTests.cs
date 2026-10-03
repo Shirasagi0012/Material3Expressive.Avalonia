@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -12,6 +13,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Baseline;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using Xunit;
@@ -50,7 +52,114 @@ public class MaterialSurfaceRenderTests
         finally { window.Close(); }
     }
 
-    private static Window Show(MaterialSurface surface)
+    [AvaloniaFact]
+    public void AsymmetricOutline_InsetsEachCornerAndKeepsContentSize()
+    {
+        var surface = ProbeSurface();
+        surface.CornerRadius = new CornerRadius(24, 8, 0, 16);
+        surface.BorderBrush = Brushes.Red;
+        surface.BorderThickness = new Thickness(6);
+        surface.Child = new Border { Background = Brushes.Blue };
+        var window = Show(surface);
+        window.SetRenderScaling(2);
+        window.UpdateLayout();
+        try
+        {
+            using var frame = window.CaptureRenderedFrame()!;
+            Assert.Equal(new Size(100, 50), surface.Child.Bounds.Size);
+            // Different outer corner cuts and a full-stroke inset, including a sharp corner.
+            Assert.Equal((255, 255, 255), PixelAt(frame, 66, 116));
+            Assert.Equal((255, 0, 0), PixelAt(frame, 254, 116));
+            Assert.Equal((255, 0, 0), PixelAt(frame, 254, 204));
+            Assert.Equal((255, 255, 255), PixelAt(frame, 66, 204));
+            Assert.Equal((255, 0, 0), PixelAt(frame, 80, 130));
+            Assert.Equal((0, 0, 255), PixelAt(frame, 86, 136));
+            Assert.Equal((255, 0, 0), PixelAt(frame, 160, 121));
+            Assert.Equal((0, 0, 255), PixelAt(frame, 160, 123));
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void AsymmetricOutline_FillsShapeWhenStrokeConsumesInterior()
+    {
+        var surface = ProbeSurface();
+        surface.CornerRadius = new CornerRadius(24, 8, 0, 16);
+        surface.BorderBrush = Brushes.Red;
+        surface.BorderThickness = new Thickness(30);
+        surface.Child = new Border { Background = Brushes.Blue };
+        var window = Show(surface);
+        try
+        {
+            using var frame = window.CaptureRenderedFrame()!;
+            Assert.Equal((255, 0, 0), PixelAt(frame, 80, 80));
+            Assert.Equal((255, 0, 0), PixelAt(frame, 127, 102));
+            Assert.Equal((255, 255, 255), PixelAt(frame, 33, 58));
+            Assert.Equal(new Size(100, 50), surface.Child.Bounds.Size);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0, true, 1)]
+    [InlineData(0, false, 0)]
+    [InlineData(1.1, true, 3)]
+    public void AnimatedOutline_UsesRawWidthAndRadiusWithPhysicalStroke(double width, bool animated, int pixels)
+    {
+        using var clock = new MotionTestClockScope();
+        var surface = ProbeSurface();
+        surface.CornerRadius = new CornerRadius(8);
+        surface.BorderBrush = Brushes.Red;
+        surface.BorderThickness = new Thickness(width);
+        surface.Child = new Border { Background = Brushes.Blue };
+        ButtonSurfaceState.SetAnimateBorder(surface, animated);
+        var button = new Button
+        {
+            Width = 100, Height = 50,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Template = new FuncControlTemplate<Button>((_, _) => surface),
+        };
+        MaterialInteraction.SetIsInteractive(button, true);
+        var window = Show(button);
+        window.SetRenderScaling(2);
+        window.UpdateLayout();
+        try
+        {
+            var outline = surface.GetVisualChildren().OfType<SurfaceOutline>().Single();
+            Assert.Equal(surface.EffectiveCornerRadius, outline.CornerRadius);
+            Assert.Equal(animated ? (double)(float)width : width, outline.BorderThickness.Top);
+            using var frame = window.CaptureRenderedFrame()!;
+            for (var y = 110; y < 110 + pixels; y++) Assert.Equal((255, 0, 0), PixelAt(frame, 160, y));
+            Assert.Equal((0, 0, 255), PixelAt(frame, 160, 110 + pixels));
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public void AsymmetricOutline_OverlappingCornersFollowTheBackgroundContour()
+    {
+        var surface = ProbeSurface();
+        surface.Width = 50;
+        surface.CornerRadius = new CornerRadius(40, 40, 0, 0);
+        surface.BorderBrush = Brushes.Red;
+        surface.BorderThickness = new Thickness(6);
+        surface.Child = new Border { Background = Brushes.Blue };
+        var window = Show(surface);
+        try
+        {
+            using var frame = window.CaptureRenderedFrame()!;
+            // Skia fits the two top radii to 25, so both background and border use that contour.
+            Assert.Equal((255, 0, 0), PixelAt(frame, 63, 63));
+            Assert.Equal((255, 255, 255), PixelAt(frame, 58, 58));
+            Assert.Equal((0, 0, 255), PixelAt(frame, 80, 80));
+            Assert.Equal((255, 0, 0), PixelAt(frame, 58, 102));
+        }
+        finally { window.Close(); }
+    }
+
+    private static Window Show(Control surface)
     {
         var resources = new ResourceDictionary();
         resources.MergedDictionaries.Add(new MaterialResource

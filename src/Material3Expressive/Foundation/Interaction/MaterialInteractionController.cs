@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -40,14 +39,13 @@ namespace Material3Expressive.Foundation.Interaction;
 /// </remarks>
 internal sealed class MaterialInteractionController
 {
-    private static readonly ConditionalWeakTable<TopLevel, DesktopInputMode> InputModes = new();
     private readonly Control _owner;
     private VisualAnimationScope? _motion;
     private readonly List<RippleAnimation> _ripples = [];
     private readonly List<InteractionState> _interactions = [];
     private readonly SolidColorBrush _alphaReplacedBrush = new();
 
-    private Animatable<double>? _stateLayerAlpha;
+    private Animatable<float>? _stateLayerAlpha;
     private ButtonElevationController? _buttonElevation;
     private FloatingActionButtonElevationController? _fabElevation;
     private MaterialSurface? _presenter;
@@ -56,7 +54,7 @@ internal sealed class MaterialInteractionController
     private Point? _keyboardPressCenter;
     private IPointer? _pressedPointer;
     private bool _hoverNeedsMove;
-    private bool _suppressFocusIndication;
+    private bool _indicationFocused = true;
 
     // Token-resolved state-layer opacities, falling back to the upstream constants in StateLayer.
     private double _hoverOpacity = StateLayer.Opacity(InteractionState.Hovered);
@@ -110,7 +108,7 @@ internal sealed class MaterialInteractionController
             handledEventsToo: true);
         _owner.PointerCaptureLost += (_, _) => { _pressedPointer = null; EndPress(); };
         _owner.GotFocus += OnGotFocus;
-        _owner.AttachedToVisualTree += (_, _) => GetInputMode();
+        _owner.AttachedToVisualTree += (_, _) => MaterialInputMode.For(_owner);
         _owner.LostFocus += (_, _) =>
         {
             EndPress();
@@ -179,9 +177,12 @@ internal sealed class MaterialInteractionController
         if (_presenter is not null && !ReferenceEquals(_presenter, presenter))
             ResetAnimations();
         _presenter = presenter;
-        GetInputMode();
         _motion ??= VisualAnimationScope.Create(_owner);
+        var inputMode = MaterialInputMode.For(_owner);
         ResolveOpacities();
+        if (_owner.IsFocused && !_interaction.HasFlag(InteractionState.Focused))
+            _indicationFocused = inputMode?.IsKeyboard ?? true;
+        Set(InteractionState.Focused, _owner.IsFocused);
         UpdateStateLayer();
         // Sync the state the surface missed before attaching (e.g. an already-hovered template
         // swap), so the first frame paints the right thing.
@@ -407,27 +408,17 @@ internal sealed class MaterialInteractionController
 
     private void OnGotFocus(object? sender, FocusChangedEventArgs e)
     {
-        // Core Desktop's RequestFocusOnClick is enabled. Focusable emits Focus for pointer
-        // focus as well; it remains in the ordered source after the press is released.
-        // Indication.skiko.kt filters only the indication's source in Touch input mode.
-        // Once sent (or suppressed), keep that decision until Unfocus; changing input mode
-        // must not synthesize a new Focus or remove an existing one.
-        if (!_interaction.HasFlag(InteractionState.Focused))
+        // Focusable.kt emits FocusInteraction for actual focus, including pointer and
+        // programmatic focus. Core's desktop indication filters the same event by input
+        // mode; elevation does not. Preserve the decision until the matching unfocus.
+        if (_owner.IsFocused && !_interaction.HasFlag(InteractionState.Focused))
         {
-            var mode = GetInputMode();
-            if (mode is not null)
-            {
-                if (e.NavigationMethod == NavigationMethod.Pointer) mode.IsKeyboard = false;
-                else if (e.NavigationMethod is NavigationMethod.Tab or NavigationMethod.Directional)
-                    mode.IsKeyboard = true;
-            }
-            _suppressFocusIndication = mode is not null && !mode.IsKeyboard;
+            var mode = MaterialInputMode.For(_owner);
+            mode?.ObserveFocusNavigation(e.NavigationMethod);
+            _indicationFocused = mode?.IsKeyboard ?? true;
         }
-        Set(InteractionState.Focused, true);
+        Set(InteractionState.Focused, _owner.IsFocused);
     }
-
-    private DesktopInputMode? GetInputMode() => TopLevel.GetTopLevel(_owner) is { } root
-        ? InputModes.GetValue(root, static window => new DesktopInputMode(window)) : null;
 
     private void OnDetachedFromLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e) =>
         ClearInputInteractions();
@@ -440,7 +431,7 @@ internal sealed class MaterialInteractionController
 
         _interaction = InteractionState.None;
         _interactions.Clear();
-        _suppressFocusIndication = false;
+        _indicationFocused = true;
 
         foreach (var ripple in _ripples.ToArray())
         {
@@ -562,9 +553,10 @@ internal sealed class MaterialInteractionController
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
         var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed
-            && (state != InteractionState.Focused || !_suppressFocusIndication));
+            && (state != InteractionState.Focused || _indicationFocused));
 
-        var targetOpacity = OpacityFor(topmost);
+        // Ripple.StateLayer stores and animates alpha as Float, including token values.
+        var targetOpacity = (float)OpacityFor(topmost);
 
         if (topmost == _shownInteraction
             && (_stateLayerAlpha is null || _stateLayerAlpha.TargetValue == targetOpacity))
@@ -585,12 +577,12 @@ internal sealed class MaterialInteractionController
         var surface = _presenter;
         if (_stateLayerAlpha is null)
         {
-            _stateLayerAlpha = motion.CreateAnimatable(0d);
+            _stateLayerAlpha = motion.CreateAnimatable(0f);
             motion.SubscribeValue(_stateLayerAlpha, _ => surface?.OnInteractionFrame());
         }
         var alpha = _stateLayerAlpha;
         _ = motion.Launch(ct => alpha.AnimateToAsync(targetOpacity,
-            new TweenSpec<double>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
+            new TweenSpec<float>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
     }
 
     private void UpdateInteractionStack(InteractionState flag, bool active)
@@ -635,26 +627,6 @@ internal sealed class MaterialInteractionController
         var color = solid.Color;
         _alphaReplacedBrush.Color = Color.FromArgb(byte.MaxValue, color.R, color.G, color.B);
         return _alphaReplacedBrush;
-    }
-
-    // PlatformContext starts in Keyboard mode. RootNodeOwner switches to Touch on button
-    // pointer events, and back on keyboard focus navigation. Keep the mode per window, so
-    // programmatic focus after clicking another control sees the same platform state.
-    private sealed class DesktopInputMode
-    {
-        internal bool IsKeyboard = true;
-
-        internal DesktopInputMode(TopLevel root)
-        {
-            root.AddHandler(InputElement.PointerPressedEvent, (_, _) => IsKeyboard = false,
-                RoutingStrategies.Tunnel, handledEventsToo: true);
-            root.AddHandler(InputElement.PointerReleasedEvent, (_, _) => IsKeyboard = false,
-                RoutingStrategies.Tunnel, handledEventsToo: true);
-            root.AddHandler(InputElement.KeyDownEvent, (_, e) =>
-            {
-                if (e.Key == Key.Tab) IsKeyboard = true;
-            }, RoutingStrategies.Bubble);
-        }
     }
 
     /// <summary>Stops a surface from drawing controller state once its lease is disposed.</summary>

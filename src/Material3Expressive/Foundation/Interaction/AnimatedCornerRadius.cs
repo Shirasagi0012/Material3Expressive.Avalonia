@@ -70,6 +70,26 @@ public sealed class AnimatedCornerRadius : IDisposable
     public CornerRadius Current =>
         Lerp(ClampToSize(_start), ClampToSize(_target), _progress.Value);
 
+    // SplitButton's OuterCornerSize is 100%, whereas the selected CircleShape is 50%.
+    // AnimatedShape.offset evaluates those corner sizes before outline normalization and
+    // clamps against height/2. The painted outline cannot supply this optical measurement.
+    internal CornerRadius SplitOpticalCorners()
+    {
+        CornerRadius Resolve(CornerRadius corners, bool circle)
+        {
+            var extent = Math.Min(Size.Width, Size.Height);
+            double Corner(double value) => value >= 1000 ? extent * (circle ? .5 : 1) : value;
+            return new(Corner(corners.TopLeft), Corner(corners.TopRight), Corner(corners.BottomRight), Corner(corners.BottomLeft));
+        }
+        // A full four-corner endpoint denotes CircleShape; asymmetric full corners are 100%.
+        static bool Circle(CornerRadius corners) => corners.TopLeft >= 1000 && corners.TopRight >= 1000
+            && corners.BottomRight >= 1000 && corners.BottomLeft >= 1000;
+        var current = Lerp(Resolve(_start, Circle(_start)), Resolve(_target, Circle(_target)), _progress.Value);
+        var maximum = Size.Height / 2;
+        return new(Math.Clamp(current.TopLeft, 0, maximum), Math.Clamp(current.TopRight, 0, maximum),
+            Math.Clamp(current.BottomRight, 0, maximum), Math.Clamp(current.BottomLeft, 0, maximum));
+    }
+
     /// <summary>Starts morphing towards corners, or reverses if it is the one being left.</summary>
     /// <param name="corners">The corners to head for.</param>
     /// <param name="spec">A spring to switch to; the current one is kept when omitted.</param>

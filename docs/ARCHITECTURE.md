@@ -77,8 +77,10 @@ MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一�
 [MaterialSurface](../src/Material3Expressive/Components/Surface/MaterialSurface.cs) 是可被其他组件组合的容器组件，
 承担背景、边框、裁剪、阴影和累积 tonal elevation。内部 Border 承载内容和裁剪，独立覆盖层绘制交互反馈。
 几何使用 Avalonia DIP，Full 圆角按当前边界解析。
-描边由末层 SurfaceOutline 绘制，不参与内容尺寸计算；均匀圆角边框保留 Compose 的物理
-像素 ceil 与内缩 stroke，非均匀边框沿用原生 Border。Padding 仍由内容 Border 处理。
+描边由末层 SurfaceOutline 绘制，不参与内容尺寸计算；均匀线宽保留 Compose 的物理像素 ceil，
+均匀圆角使用内缩 stroke，非对称圆角使用外轮廓减内缩轮廓。非均匀 Thickness 沿用原生 Border。
+描边动画提供连续线宽与原始外圆角，取整和内缩只由 SurfaceOutline 执行；普通零宽无描边，
+动画零宽使用 hairline。Padding 仍由内容 Border 处理。
 
 Button 模板内的局部 `ButtonLayout` 区分背景默认尺寸与外层交互留白：背景默认最小宽度为 58 DIP，
 高度由 size Token 提供，外层默认预留至少 48 DIP 并居中放置背景。默认背景高度不再写入
@@ -103,6 +105,12 @@ Button / IconButton 的主题将 owner `CornerRadius` 传给 Surface，默认按
 可空附加属性 `MaterialButton.PressedCornerRadius` 显式启用按压变形，null 关闭；模板直接绑定该属性，
 复用 Surface 的圆角状态和动画，不另建按钮形状控制器。尺寸 class 提供 owner 圆角的默认值，
 局部 CornerRadius 和按压目标不被尺寸 class 覆盖。
+
+[ToggleButton](../src/Material3Expressive/Components/ToggleButton/README.md) 使用原生状态及独立的四种主题，
+在 Surface 内部增加选中形状输入，复用共享变形、描边动画、elevation、状态层和 ripple。
+[SplitButton](../src/Material3Expressive/Components/SplitButton/README.md) 使用独立双槽容器，组合实际子控件；
+内部 ButtonLayout 的最小宽度及交互留白可配置，普通 Button 的默认值不变。
+这两个组件的公开 API、尺寸规则、配置重建差别与原生语义决定随组件记录。
 
 NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
 `MappedInteractionSource` 坐标；状态层和 ripple 不另建实现。键盘原点与当前固定 Desktop

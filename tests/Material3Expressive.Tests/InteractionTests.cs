@@ -311,6 +311,7 @@ public class MaterialInteractionControllerTests
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
         Assert.Equal(1, controller.RippleCount); // held at full expansion while pressed
+        Assert.Equal(.08, controller.StateLayerOpacity, 6); // Desktop filters pointer focus from indication.
 
         window.MouseUp(point, MouseButton.Left);
         Assert.False(controller.Interaction.HasFlag(InteractionState.Pressed));
@@ -321,6 +322,7 @@ public class MaterialInteractionControllerTests
         Assert.Equal(0, controller.RippleCount);
         // Desktop filters mouse Focus only from the indication source, retaining hover ink.
         Assert.Equal(0.08, controller.StateLayerOpacity, 6);
+        Assert.Equal(0, button.GetVisualDescendants().OfType<MaterialSurface>().Single().ShadowElevation);
     }
 
     [AvaloniaFact]
@@ -461,6 +463,40 @@ public class MaterialInteractionControllerTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
         Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
         Assert.Equal(0, controller.StateLayerOpacity, 6);
+    }
+
+    [AvaloniaFact]
+    public void ProgrammaticFocus_ShowsTheFocusLayerAndClearsOnDisable()
+    {
+        using var clock = new MotionTestClockScope();
+        ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        Assert.True(button.Focus());
+        Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(46));
+        Assert.Equal(.10, controller.StateLayerOpacity, 6);
+        button.IsEnabled = false;
+        Assert.False(controller.Interaction.HasFlag(InteractionState.Focused));
+    }
+
+    [AvaloniaFact]
+    public void ProgrammaticFocus_AfterPointerInputFiltersIndicationWithoutLosingActualFocus()
+    {
+        using var clock = new MotionTestClockScope();
+        var window = ButtonThemeFixture.ShowWindow(out var button);
+        var controller = MaterialInteraction.GetOrCreate(button);
+        window.MouseDown(new Point(1, 1), MouseButton.Left);
+        window.MouseUp(new Point(1, 1), MouseButton.Left);
+        Assert.True(button.Focus());
+        Assert.True(controller.Interaction.HasFlag(InteractionState.Focused));
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.Equal(0, controller.StateLayerOpacity);
+        // Changing input mode without a new focus interaction must not synthesize a focus layer.
+        window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.None, null);
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
+        Assert.True(button.IsFocused);
+        Assert.Equal(0, controller.StateLayerOpacity);
+        window.Close();
     }
 
     [AvaloniaFact]

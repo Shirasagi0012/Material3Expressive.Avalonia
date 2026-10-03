@@ -206,7 +206,7 @@ public class ChipTests
             }
             Settle();
             Assert.Equal(0, surface.ShadowElevation);
-            Assert.Equal(0.08, MaterialInteraction.GetOrCreate(chip).StateLayerOpacity);
+            Assert.Equal((double)0.08f, MaterialInteraction.GetOrCreate(chip).StateLayerOpacity);
             chip.Elevation = new ChipElevation(Hovered: 1); Settle();
             Assert.Equal(1, surface.ShadowElevation);
             chip.Elevation = null; Settle();

@@ -79,19 +79,25 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 其他调用方保留固定 Core 的中心锁定和有界中心漂移，不增加公开 C#/XAML API。
 确认：维护者在先前提出的同心优化方案后要求“继续修复波纹的问题”，并提供新的错位截图。
 
-## Surface 均匀圆角描边
+## Surface 圆角描边
 
-决定：内部 SurfaceOutline 对均匀 Thickness / CornerRadius 直接移植固定 Compose Border.kt 的
-物理像素 ceil 与内缩 stroke；描边作为内容上方的视觉层，不消耗内容尺寸。
-小圆角使用外圆角减内矩形，大宽度使用填充；非均匀边框保留 Avalonia 原生 Border 路径。
-原生零 Thickness 保留无描边语义，公共 API 不变。
+决定：内部 SurfaceOutline 对均匀 Thickness 直接移植固定 Compose Border.kt 的物理像素 ceil
+与内缩 stroke；描边作为内容上方的视觉层，不消耗内容尺寸。
+均匀圆角保留中心线内缩、小圆角减内矩形和大宽度填充；非对称圆角以外轮廓减去完整线宽内缩的
+轮廓，各角独立缩减并限制为非负。非均匀 Thickness 保留 Avalonia 原生 Border 路径。
+普通 Surface 的零 Thickness 保留无描边语义，Toggle/Split 描边动画的零宽按 Compose 绘制 hairline。
+动画层只提供连续线宽、颜色与原始外圆角；物理取整、线宽限制及圆角内缩统一在绘制层执行一次。
+公共 API 不变。
 原因：Chip 深色静态用例暴露角部差异，已有原生 Border 不符合固定上游的像素取整。
-范围：所有 MaterialSurface 调用方；Surface / Button / Chip 的相关渲染和回归需要共同检查。
+范围：所有 MaterialSurface 调用方；Surface / Button / Chip / ToggleButton / SplitButton 的相关渲染
+和回归需要共同检查。
 确认：2026-10-03，维护者明确批准共享 Surface 描边修正及 Surface / Button 回归。
+2026-10-04 合并 Toggle/Split 时，维护者批准保留共享 SurfaceOutline、接入新描边动画并补齐
+非对称圆角算法，避免分支的原生 Border 半线宽处理与共享绘制内缩叠加。
 
 ## Core Desktop 原生焦点反馈
 
-决定：共享控制器 Focused 跟随所有原生焦点，包括鼠标点击获得的焦点；控件继续负责激活。
+决定：共享控制器 Focused 跟随所有原生焦点，包括鼠标和程序化焦点；控件继续负责激活。
 指针按下反馈在 Button 原生类处理之后观察，保留 Focus → Press 的交互顺序。
 原因：固定 AndroidX 的 RequestFocusOnClick 返回 false，固定 Core Desktop 返回 true；
 仅接受 Tab / Directional 焦点会让 Chip 点击释放后错误地恢复 hover elevation。
@@ -99,8 +105,12 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 确认：2026-10-04，维护者批准按 Core Desktop 修正共享焦点反馈并回归 Button / IconButton / 导航项。
 实现同时按固定 Core `Indication.skiko.kt` 过滤 indication 的焦点源：首次鼠标聚焦不进入
 状态层，已经显示的键盘焦点层保留到失焦；输入模式改变不合成 Focus / Unfocus。
-内部按窗口保存输入模式，原生 Tab / Directional 导航接入 Keyboard，指针按键接入 Touch，
-程序化聚焦沿用当前窗口模式。elevation 的原始交互源仍保留所有焦点。
+内部 MaterialInputMode 按 TopLevel 保存输入模式，初始为 Keyboard；Tab 按键及原生 Tab / Directional
+导航接入 Keyboard，指针按下/释放或 Pointer 焦点导航接入 Touch，程序化聚焦沿用当前窗口模式。
+`button.Focus()` 驱动实际焦点与 elevation，其视觉焦点反馈取决于当时的输入模式；
+`button.Focus(NavigationMethod.Tab)` 表达 Avalonia 的键盘焦点导航。elevation 的原始交互源仍保留所有焦点。
+子控件冒泡的焦点事件不视为父控件获得焦点；对外 API 不变，没有增加 FocusRing 或 InteractionSource API。
+核验 Core 桌面过滤分支后，维护者进一步选择“按 Core 桌面过滤 indication，保留真实焦点/elevation（推荐）”。
 
 ## 本次保留 Tween / Bezier 精度差异
 
