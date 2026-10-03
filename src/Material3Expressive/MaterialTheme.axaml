@@ -34,6 +34,7 @@
                     <m3:CheckBoxTokenSource />
                     <m3:DividerTokenSource />
                     <m3:RadioButtonTokenSource />
+                    <m3:TextFieldTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -52,4 +53,5 @@
     <StyleInclude Source="/Components/CheckBox/CheckBox.axaml" />
     <StyleInclude Source="/Components/Divider/Divider.axaml" />
     <StyleInclude Source="/Components/RadioButton/RadioButton.axaml" />
+    <StyleInclude Source="/Components/TextField/TextField.axaml" />
 </Styles>

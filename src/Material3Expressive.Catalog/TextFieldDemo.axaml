@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.TextFieldDemo"
+        Title="Material TextField" Width="780" Height="740" RequestedThemeVariant="Light">
+  <ScrollViewer>
+    <StackPanel Margin="32" Spacing="24">
+      <TextBlock Text="TextField" FontSize="24" />
+      <TextBlock Text="原生 TextBox 编辑；Material 装饰使用模板和附加属性。" />
+      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="28" RowSpacing="24">
+        <TextBlock Text="Filled" /><TextBlock Grid.Column="1" Text="Outlined" />
+        <TextBox Grid.Row="1" Name="Filled" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="姓名"
+                 PlaceholderText="请输入姓名" m3:MaterialTextField.SupportingText="可测试选区、中文输入、剪贴板及撤销" />
+        <TextBox Grid.Row="1" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="姓名"
+                 PlaceholderText="请输入姓名" m3:MaterialTextField.SupportingText="点击标签、边框或这行辅助文字" />
+        <TextBox Grid.Row="2" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="金额" Text="123.45"
+                 m3:MaterialTextField.Prefix="¥" m3:MaterialTextField.Suffix="CNY" />
+        <TextBox Grid.Row="2" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="金额" Text="123.45"
+                 m3:MaterialTextField.Prefix="¥" m3:MaterialTextField.Suffix="CNY" />
+        <TextBox Grid.Row="3" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="说明"
+                 AcceptsReturn="True" TextWrapping="Wrap" MinLines="3" MaxLines="5" Text="多行文本&#10;第二行" />
+        <TextBox Grid.Row="3" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="电子邮箱"
+                 Text="invalid" m3:MaterialTextField.IsError="True" m3:MaterialTextField.SupportingText="请检查邮箱格式" />
+        <TextBox Grid.Row="4" Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="已禁用" IsEnabled="False" Text="文本仍由 TextBox 保存" />
+        <TextBox Grid.Row="4" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="只读" IsReadOnly="True" Text="可以选择并复制" />
+      </Grid>
+      <TextBox Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="搜索输入槽验证" PlaceholderText="输入后点击清除"
+               Name="SearchInput" MinWidth="0">
+        <TextBox.InnerLeftContent><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></TextBox.InnerLeftContent>
+        <TextBox.InnerRightContent><m3:IconButton Symbol="Close" Focusable="False" Click="ClearSearch" /></TextBox.InnerRightContent>
+      </TextBox>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Content="切换明暗" Click="ToggleTheme" />
+        <Button Content="切换 RTL" Click="ToggleDirection" />
+      </StackPanel>
+      <TextBlock Text="RTL、窄宽度和大字号用于暴露布局缺口；搜索仅验证编辑槽与图标，不包含 SearchBar 展开行为。" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</Window>
