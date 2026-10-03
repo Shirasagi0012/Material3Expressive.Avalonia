@@ -36,6 +36,7 @@
                     <m3:RadioButtonTokenSource />
                     <m3:SwitchTokenSource />
                     <m3:BadgeTokenSource />
+                    <m3:FloatingActionButtonTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -57,4 +58,5 @@
     <StyleInclude Source="/Components/RadioButton/RadioButton.axaml" />
     <StyleInclude Source="/Components/Switch/Switch.axaml" />
     <StyleInclude Source="/Components/Badge/Badge.axaml" />
+    <StyleInclude Source="/Components/FloatingActionButton/FloatingActionButton.axaml" />
 </Styles>

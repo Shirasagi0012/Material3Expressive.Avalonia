@@ -7,7 +7,7 @@ namespace MaterialSkiaShadow.Tests;
 public sealed class ConvexShadowTessellatorTests
 {
     [Fact]
-    public void CircleAmbientUsesBlurFallback()
+    public void CircleAmbientMeshIsFinite()
     {
         using var path = CreateCircle();
 
@@ -17,7 +17,9 @@ public sealed class ConvexShadowTessellatorTests
             elevationPx: 12,
             transparent: false);
 
-        Assert.Null(mesh);
+        // The pinned native build subdivides the conics through handleQuad's
+        // Ganesh path, producing a valid circle mesh instead of a coarse fallback.
+        AssertValidViewportMesh(mesh);
     }
 
     [Fact]

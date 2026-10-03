@@ -47,6 +47,7 @@ internal sealed class MaterialInteractionController
 
     private Animatable<double>? _stateLayerAlpha;
     private ButtonElevationController? _buttonElevation;
+    private FloatingActionButtonElevationController? _fabElevation;
     private MaterialSurface? _presenter;
     private InteractionState _interaction;
     private InteractionState _shownInteraction;
@@ -125,7 +126,7 @@ internal sealed class MaterialInteractionController
                 }
                 NotifyInteractionChanged(deferShape: !IsEnabled);
             }
-            else if (change.Property == MaterialButton.ElevationProperty)
+            else if (change.Property == MaterialButton.ElevationProperty || change.Property == FloatingActionButton.ElevationProperty)
                 UpdateButtonElevation();
         };
     }
@@ -194,6 +195,8 @@ internal sealed class MaterialInteractionController
     {
         _buttonElevation?.Dispose();
         _buttonElevation = null;
+        _fabElevation?.Dispose();
+        _fabElevation = null;
         _presenter?.ResetMotion();
         var motion = _motion;
         _motion = null;
@@ -463,6 +466,21 @@ internal sealed class MaterialInteractionController
 
     private void UpdateButtonElevation()
     {
+        if (_owner is FloatingActionButton fab)
+        {
+            if (_presenter is null || _motion is null || _motion.IsEnding) return;
+            if (fab.Elevation is not { } elevation)
+            {
+                _fabElevation?.Dispose();
+                _fabElevation = null;
+                return;
+            }
+            var fabInteraction = _interactions.LastOrDefault(state => state is
+                InteractionState.Pressed or InteractionState.Hovered or InteractionState.Focused);
+            _fabElevation ??= new FloatingActionButtonElevationController(_presenter, _motion, elevation, fabInteraction);
+            _fabElevation.Update(elevation, fabInteraction);
+            return;
+        }
         if (_owner is not Button button || MaterialButton.GetElevation(button) is not { } values)
         {
             _buttonElevation?.Dispose();

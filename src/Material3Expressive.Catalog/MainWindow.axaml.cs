@@ -45,6 +45,14 @@ public partial class MainWindow : Window
             DemoBadge.Content is { } count ? $"{count} notifications" : "New notifications");
     }
 
+    private void OnToggleExtendedFab(object? sender, RoutedEventArgs e) => DemoExtendedFab.Expanded = !DemoExtendedFab.Expanded;
+    private void OnToggleFabVisibility(object? sender, RoutedEventArgs e) => DemoExtendedFab.AnimatedVisible = !DemoExtendedFab.AnimatedVisible;
+    private void OnFabCheckedChange(object? sender, FabCheckedChangeRequestedEventArgs e)
+    {
+        DemoToggleFab.IsChecked = DemoFabMenu.Expanded = e.IsChecked;
+    }
+    private void OnFabMenuItem(object? sender, RoutedEventArgs e) => DemoToggleFab.IsChecked = DemoFabMenu.Expanded = false;
+
     private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
     {
         // Native CheckBox has already toggled. The application decides the group's meaning.

@@ -124,6 +124,11 @@ Filled/Tonal 默认在 hover 升到 1 DIP；Outlined/Text 默认无 elevation �
 更换目标先取消旧 effect，再沿用状态。待提交目标和 effect 都受呈现者的取消生命周期约束。
 这一示例不意味着其他组件都应采用 Button 的状态选择规则。
 
+FAB 使用自己的 `FloatingActionButtonElevationController`：保留最后一个实际交互，
+即使 press/focus/default 高度相同也不丢失状态身份；配置变更先 snap 当前目标。
+它通过同一 `MaterialInteractionController` 和呈现者作用域接入，Surface 分别消费固定 tonal elevation
+与动画 shadow elevation。尺寸入口、受控 Toggle 与菜单布局见 [FAB 说明](../src/Material3Expressive/Components/FloatingActionButton/README.md)。
+
 ## 动画接入
 
 动画执行通过 NuGet 依赖 ComposeAnimation，准备方式见 [README](../README.md#本地开发)。
