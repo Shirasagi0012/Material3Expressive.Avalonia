@@ -3,6 +3,7 @@
 基于 Avalonia 实现 Material 3 Expressive，以尽可能在视觉效果和动效上还原Compose material3为目标
 
 当前包含 Button、IconButton、Surface、[NavigationRail / NavigationRailItem](src/Material3Expressive/Components/NavigationRail/README.md)、
+[FloatingActionButton / ExtendedFloatingActionButton / ToggleFloatingActionButton / FAB Menu](src/Material3Expressive/Components/FloatingActionButton/README.md)、
 [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](src/Material3Expressive/Components/WideNavigationRail/README.md)、
 [NavigationBar / NavigationBarItem](src/Material3Expressive/Components/NavigationBar/README.md)、
 [ShortNavigationBar / ShortNavigationBarItem](src/Material3Expressive/Components/ShortNavigationBar/README.md)、

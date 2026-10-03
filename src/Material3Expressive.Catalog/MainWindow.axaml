@@ -3,9 +3,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:converters="using:Avalonia.Markup.Xaml.Converters"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" RequestedThemeVariant="Light"
         x:Class="Material3Expressive.Catalog.MainWindow"
         Title="Material3Expressive.Catalog">
+    <Window.Resources>
+        <converters:ColorToBrushConverter x:Key="FabIconBrushConverter" />
+    </Window.Resources>
     <Grid ColumnDefinitions="Auto,*">
         <m3:ModalWideNavigationRail x:Name="DemoNavigationRail">
             <m3:ModalWideNavigationRail.ExpandedHeader>
@@ -34,6 +38,34 @@
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
+                <TextBlock Text="FloatingActionButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <m3:FloatingActionButton Size="Small"><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButton>
+                    <m3:FloatingActionButton><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButton>
+                    <m3:FloatingActionButton Size="Medium"><m3:MaterialSymbol Symbol="Add" Width="28" Height="28" /></m3:FloatingActionButton>
+                    <m3:FloatingActionButton Size="Large"><m3:MaterialSymbol Symbol="Add" Width="36" Height="36" /></m3:FloatingActionButton>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <m3:ExtendedFloatingActionButton x:Name="DemoExtendedFab" Content="Create">
+                        <m3:ExtendedFloatingActionButton.Icon><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:ExtendedFloatingActionButton.Icon>
+                    </m3:ExtendedFloatingActionButton>
+                    <Button Content="Expand / collapse" Click="OnToggleExtendedFab" />
+                    <Button Content="Show / hide" Click="OnToggleFabVisibility" />
+                </StackPanel>
+                <m3:FloatingActionButtonMenu x:Name="DemoFabMenu" HorizontalAlignment="Left">
+                    <m3:FloatingActionButtonMenu.Button>
+                        <m3:ToggleFloatingActionButton x:Name="DemoToggleFab" Size="Medium" CheckedChangeRequested="OnFabCheckedChange">
+                            <m3:MaterialSymbol Symbol="Add" Width="{Binding IconSize, ElementName=DemoToggleFab}" Height="{Binding IconSize, ElementName=DemoToggleFab}"
+                                                Foreground="{Binding IconColor, ElementName=DemoToggleFab, Converter={StaticResource FabIconBrushConverter}}" />
+                        </m3:ToggleFloatingActionButton>
+                    </m3:FloatingActionButtonMenu.Button>
+                    <m3:FloatingActionButtonMenuItem Content="Create" Click="OnFabMenuItem">
+                        <m3:FloatingActionButtonMenuItem.Icon><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButtonMenuItem.Icon>
+                    </m3:FloatingActionButtonMenuItem>
+                    <m3:FloatingActionButtonMenuItem Content="Edit" Click="OnFabMenuItem">
+                        <m3:FloatingActionButtonMenuItem.Icon><m3:MaterialSymbol Symbol="Edit" Width="24" Height="24" /></m3:FloatingActionButtonMenuItem.Icon>
+                    </m3:FloatingActionButtonMenuItem>
+                </m3:FloatingActionButtonMenu>
                 <TextBlock Text="RadioButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <RadioButton GroupName="CatalogRadio" Content="First" IsChecked="True" />
