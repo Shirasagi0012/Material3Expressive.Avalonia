@@ -18,6 +18,7 @@
       <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:WideNavigationRailItemsPanel /></ItemsPanelTemplate></Setter>
       <Setter Property="ItemContainerTheme">
         <ControlTheme TargetType="ContentPresenter">
+          <Setter Property="UseLayoutRounding" Value="False" />
           <Setter Property="HorizontalAlignment" Value="Left" />
           <Setter Property="VerticalAlignment" Value="Top" />
         </ControlTheme>
@@ -37,7 +38,7 @@
                 <m3:WideNavigationRailLayout x:Name="PART_Layout" Expanded="{TemplateBinding LayoutExpanded}" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
                   <ContentPresenter x:Name="PART_Header" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"
                                     HorizontalAlignment="Left" VerticalAlignment="Top" />
-                  <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                  <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" UseLayoutRounding="False" />
                 </m3:WideNavigationRailLayout>
               </Border>
             </Border>
@@ -47,6 +48,7 @@
     </ControlTheme>
 
     <ControlTheme x:Key="{x:Type m3:WideNavigationRailItem}" TargetType="m3:WideNavigationRailItem">
+      <Setter Property="UseLayoutRounding" Value="False" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -85,10 +87,12 @@
           <m3:WideNavigationRailItemLayout x:Name="PART_Layout"
               IndicatorShape="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ActiveIndicatorShape}}">
             <Border RenderOptions.RequiresFullOpacityHandling="True"><Border x:Name="PART_Indicator" /></Border>
-            <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" />
+            <Border>
+              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" UseLayoutRounding="True" />
+            </Border>
             <Border RenderOptions.RequiresFullOpacityHandling="True">
               <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Label}" ContentTemplate="{TemplateBinding LabelTemplate}"
-                                TextWrapping="Wrap" />
+                                TextWrapping="Wrap" UseLayoutRounding="True" />
             </Border>
             <m3:MaterialSurface x:Name="PART_IndicatorRipple" Background="Transparent"
                 TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}"

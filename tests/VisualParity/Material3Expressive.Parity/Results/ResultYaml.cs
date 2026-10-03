@@ -66,6 +66,9 @@ public static class ResultYaml
         static JsonNode? Plain(string? value)
         {
             if (value is null or "null" or "~") return null;
+            // Most plain scalars are identifiers, not JSON. Avoid an exception per field.
+            if (value is "true" or "false") return JsonValue.Create(value == "true");
+            if (value.Length == 0 || value[0] is not ('-' or >= '0' and <= '9')) return JsonValue.Create(value);
             try { return JsonNode.Parse(value); }
             catch (JsonException) { return JsonValue.Create(value); }
         }

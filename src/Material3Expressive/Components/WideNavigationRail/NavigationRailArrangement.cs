@@ -65,5 +65,49 @@ public sealed record NavigationRailArrangement
         for (var i = 0; i < sizes.Length; i++) { positions[i] = Round(current); current += sizes[i] + gap; }
         return positions;
     }
+
+    // Same placement, clipping and alignment rules, without rounding each animated
+    // position. WideNavigationRailItemsPanel supplies the static rounding residual.
+    internal double[] ArrangeContinuous(double totalSize, double[] sizes, float density)
+    {
+        var positions = new double[sizes.Length];
+        if (sizes.Length == 0) return positions;
+        var consumed = sizes.Sum();
+        var gap = Kind switch
+        {
+            Form.SpaceBetween => (totalSize - consumed) / Math.Max(sizes.Length - 1, 1),
+            Form.SpaceAround => (totalSize - consumed) / sizes.Length,
+            Form.SpaceEvenly => (totalSize - consumed) / (sizes.Length + 1),
+            _ => 0
+        };
+        var current = Kind switch
+        {
+            Form.Center => (totalSize - consumed) / 2,
+            Form.Bottom => totalSize - consumed,
+            Form.SpaceAround => gap / 2,
+            Form.SpaceEvenly => gap,
+            _ => 0
+        };
+        if (Kind == Form.Spaced)
+        {
+            var space = MathF.Floor((float)Spacing * density + .5f);
+            double occupied = 0, lastSpace = 0;
+            for (var i = 0; i < sizes.Length; i++)
+            {
+                positions[i] = Math.Min(occupied, totalSize - sizes[i]);
+                lastSpace = Math.Min(space, totalSize - positions[i] - sizes[i]);
+                occupied = positions[i] + sizes[i] + lastSpace;
+            }
+            occupied -= lastSpace;
+            if (occupied < totalSize)
+            {
+                var offset = Alignment switch { VerticalAlignment.Center => (totalSize - occupied) / 2, VerticalAlignment.Bottom => totalSize - occupied, _ => 0 };
+                for (var i = 0; i < positions.Length; i++) positions[i] += offset;
+            }
+            return positions;
+        }
+        for (var i = 0; i < sizes.Length; i++) { positions[i] = current; current += sizes[i] + gap; }
+        return positions;
+    }
 }
 

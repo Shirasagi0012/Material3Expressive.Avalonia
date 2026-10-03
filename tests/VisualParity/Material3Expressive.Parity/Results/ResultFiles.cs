@@ -29,12 +29,13 @@ public static class ResultFiles
             all.Count(s => s == "withinTolerance"));
     }
 
-    public static void Write(string directory, CaseMetadata metadata, Comparison comparison, Capture? expected, Capture? actual,
+    public static CaseResult Write(string directory, CaseMetadata metadata, Comparison comparison, Capture? expected, Capture? actual,
         string expectedDirectory, string actualDirectory, string diffDirectory, JsonNode? repeatability = null, string? diagnostics = null)
     {
         if (Directory.Exists(directory)) throw new IOException("Result directory must be new.");
         Directory.CreateDirectory(directory);
         var index = new JsonObject();
+        var publishedSamples = new List<SampleDifference>();
         var tracePositions = new Dictionary<string, int> { ["compose"] = 0, ["avalonia"] = 0 };
 
         JsonNode? Trace(Capture? capture, string side, string sample)
@@ -89,6 +90,7 @@ public static class ResultFiles
             }
 
             var rasters = new JsonObject();
+            var publishedRasters = new List<RasterDifference>();
             foreach (var r in s.Rasters)
             {
                 RasterObservation? Relocate(RasterObservation? raster, string source, string side) => raster is null ? null : raster with
@@ -109,7 +111,9 @@ public static class ResultFiles
                 if (r.Regions is not null) raster["regions"] = N(r.Regions);
                 if (r.Issue is not null) raster["issue"] = N(r.Issue);
                 if (r.Reason is not null) raster["reason"] = r.Reason;
-                if (r.DifferenceImage is not null) raster["diffImage"] = Copy(diffDirectory, r.DifferenceImage, stem + ".diff." + r.Id);
+                var differenceImage = r.DifferenceImage is null ? null : Copy(diffDirectory, r.DifferenceImage, stem + ".diff." + r.Id);
+                if (differenceImage is not null) raster["diffImage"] = differenceImage;
+                publishedRasters.Add(r with { Expected = er, Actual = ar, DifferenceImage = differenceImage });
                 rasters[r.Id] = raster;
             }
 
@@ -131,6 +135,7 @@ public static class ResultFiles
             if (s.Issue is not null) document["issue"] = N(s.Issue);
             if (s.Reason is not null) document["reason"] = s.Reason;
             ResultYaml.Write(Inside(directory, file), document);
+            publishedSamples.Add(s with { Rasters = publishedRasters.ToArray() });
         }
 
         JsonNode? Header(Capture? capture, string side) => capture is null ? null : new JsonObject
@@ -159,7 +164,21 @@ public static class ResultFiles
         ResultYaml.Write(Path.Combine(directory, "environment.yaml"), new JsonObject
         { ["compose"] = N(expected?.Environment), ["avalonia"] = N(actual?.Environment) });
         Seal(directory);
-        File.WriteAllText(Path.Combine(directory, "overview.md"), Overview(Read(directory)));
+        Verify(directory);
+        // Return the same facts with exported image paths; disk round-trip checks belong in format tests.
+        Capture? RelocateCapture(Capture? capture, bool compose) => capture is null ? null : capture with
+        {
+            Samples = capture.Samples.Select(s => s with
+            {
+                Rasters = s.Rasters.Select(r => publishedSamples.Single(p => p.Id == s.Id).Rasters.Single(p => p.Id == r.Id))
+                    .Select(r => compose ? r.Expected! : r.Actual!).ToArray()
+            }).ToArray()
+        };
+        var result = new CaseResult(metadata, comparison with { Samples = publishedSamples.ToArray() },
+            RelocateCapture(expected, true), RelocateCapture(actual, false),
+            index.ToDictionary(p => p.Key, p => Text(p.Value)), repeatability);
+        File.WriteAllText(Path.Combine(directory, "overview.md"), Overview(result));
+        return result;
     }
 
     static JsonObject Field(FieldDifference f, string category)

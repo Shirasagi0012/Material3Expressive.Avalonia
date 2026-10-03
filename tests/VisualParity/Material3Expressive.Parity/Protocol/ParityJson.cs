@@ -28,7 +28,14 @@ public static class ParityJson
         File.WriteAllText(path, JsonSerializer.Serialize(value, Options));
     }
 
-    public static string Hash(string path) => Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(path)));
+    public static string Hash(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexStringLower(SHA256.HashData(stream));
+    }
+
+    public static string HashValue<T>(T value) => Convert.ToHexStringLower(
+        SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(value, Options)));
 
     public static void Seal(string directory, string runner, Dictionary<string, string> environment)
     {
@@ -38,7 +45,7 @@ public static class ParityJson
         Write(Path.Combine(directory, "manifest.json"), new ArtifactManifest(4, runner, files, environment));
     }
 
-    public static void Verify(string directory)
+    public static Capture Verify(string directory, bool decodePixels = true)
     {
         var manifest = Read<ArtifactManifest>(Path.Combine(directory, "manifest.json"));
         if (manifest.SchemaVersion != 4 || !manifest.Files.ContainsKey("observations.json"))
@@ -60,10 +67,12 @@ public static class ParityJson
         capture.Validate();
         foreach (var sample in capture.Samples)
         foreach (var raster in sample.Rasters)
-            _ = PixelData.Read(directory, raster);
+            if (decodePixels) _ = PixelData.Read(directory, raster);
+            else PixelData.Validate(directory, raster);
 
         if (capture.Runner != manifest.Runner ||
             !capture.Environment.OrderBy(x => x.Key).SequenceEqual(manifest.Environment.OrderBy(x => x.Key)))
             throw new InvalidDataException("Manifest and observation identity differ.");
+        return capture;
     }
 }

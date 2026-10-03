@@ -225,18 +225,21 @@ class ExampleCases {
 
 ```text
 发现测试类和场景 → 校验声明 → 展开 C# 数据源 → 校验并排序用例 ID
-    → --case / --family 筛选 → 核对选中场景在 Compose 端存在
-    → 冻结全部选中用例的 JSON → 双端分别创建实例并执行 → 比较和生成结果
+    → --case / --family 筛选 → 冻结全部选中用例的 JSON
+    → prepare-reference：核对 Compose 入口 → 独立实例采集 → 发布参考快照
+    → run：核对并固定参考快照 → 独立实例采集 Avalonia → 比较和生成结果
 ```
 
 `list` 只编译和发现 C#，不创建测试类实例、图形宿主或 Java 进程；它会调用静态数据源。
-`capture-actual` 不启动参考端。run/self-test 在捕获前取得参考端场景索引，缺失入口直接报错，
-即使已有参考缓存也会核对。`--family` 按 suite ID 筛选，现有命令用法不变。
+`capture-actual` 和普通 `run` 不启动参考端。`prepare-reference` / `self-test` 在捕获前取得
+参考端场景索引，缺失入口直接报错。`run` 检查参考实现、配置和捕获身份，参考不适用时要求重新准备。
+`--family` 按 suite ID 筛选。
 
 以下占位符替换为实际 suite 和用例 ID：
 
 ```powershell
 ./tests/VisualParity/parity.ps1 list --family '<suite>'
+./tests/VisualParity/parity.ps1 prepare-reference --family '<suite>'
 ./tests/VisualParity/parity.ps1 run --case '<case-id>'
 ./tests/VisualParity/parity.ps1 self-test --case '<case-id>'
 ./tests/VisualParity/parity.ps1 test
@@ -245,7 +248,9 @@ class ExampleCases {
 重复 suite/scenario、错误方法或数据源签名在发现时失败；重复用例 ID 在展开后失败。
 数据源枚举后配置序列化为独立对象，捕获前生成内部 `case.json`。双端读取同一份冻结的配置，
 完整元数据参与参考缓存身份，公开 `case.yaml` 的 metadata 保存 suite、scenario 和 config。
-当前参考端仍按捕获启动进程；复用 JVM 的批量执行尚未实现。
+参考端在一轮准备或自检中复用同一 JVM；每次捕获创建新的测试类实例、Host 和时钟，
+用例不能依赖其他用例执行过或依赖进程重启来清除自身静态状态。配置或参考源码改变后重新准备参考，
+仅修改 Avalonia 控件实现无需重新采集 Compose。
 
 用例成功入口至少提交一个 Sample。样本 ID 在捕获内唯一，时间不能倒退；同一时间可以有不同 ID 的样本。
 Point ID 在样本内唯一，Field 名在 Point 内唯一，双端按身份配对。领域对象关系不要求内部视图树一致。

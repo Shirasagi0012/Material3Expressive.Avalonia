@@ -22,7 +22,7 @@
                 <Border Padding="{TemplateBinding ContentPadding}">
                   <m3:WideNavigationRailLayout x:Name="PART_Layout" Expanded="False" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
                     <ContentPresenter x:Name="PART_Header" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                    <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                    <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" UseLayoutRounding="False" />
                   </m3:WideNavigationRailLayout>
                 </Border>
               </Border>

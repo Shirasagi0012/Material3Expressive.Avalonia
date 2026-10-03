@@ -20,8 +20,14 @@ public class ResultFilesTests
     {
         var directory = Temp();
         var comparison = ParityComparison.Run(Metadata, expected, actual, "", "", Temp(), executionError: executionError);
-        ResultFiles.Write(directory, Metadata, comparison, expected, actual, "", "", "");
-        return (directory, ResultFiles.Read(directory), comparison);
+        var published = ResultFiles.Write(directory, Metadata, comparison, expected, actual, "", "", "");
+        var read = ResultFiles.Read(directory);
+        Assert.Equal(ResultFiles.Overview(read), ResultFiles.Overview(published));
+        Assert.Equal(read.Comparison.Coverage, published.Comparison.Coverage);
+        Assert.Equal(read.Comparison.Errors, published.Comparison.Errors);
+        Assert.Equal(read.Comparison.Samples.SelectMany(s => s.Points.SelectMany(p => p.Fields.Select(f => (s.Id, p.Id, f.Name, f.Status)))),
+            published.Comparison.Samples.SelectMany(s => s.Points.SelectMany(p => p.Fields.Select(f => (s.Id, p.Id, f.Name, f.Status)))));
+        return (directory, read, comparison);
     }
 
     [Fact]
@@ -201,9 +207,11 @@ public class ResultFilesTests
         var diff = Path.Combine(source, "comparison");
         var comparison = ParityComparison.Run(Metadata, e, a, expectedDirectory, actualDirectory, diff);
         var directory = Temp();
-        ResultFiles.Write(directory, Metadata, comparison, e, a, expectedDirectory, actualDirectory, diff);
+        var published = ResultFiles.Write(directory, Metadata, comparison, e, a, expectedDirectory, actualDirectory, diff);
         Directory.Move(source, source + "-unavailable");
         var result = ResultFiles.Read(directory);
+        Assert.Equal(JsonSerializer.Serialize(result.Comparison, ParityJson.Options), JsonSerializer.Serialize(published.Comparison, ParityJson.Options));
+        Assert.Equal(result.Expected!.Samples[0].Rasters[0].Image, published.Expected!.Samples[0].Rasters[0].Image);
         var raster = result.Comparison.Samples[0].Rasters.Single();
         Assert.Equal(1, raster.Metrics!.DifferentPixels);
         Assert.Equal(new[] { 0, 0, 0, 1 }, raster.Metrics.MaximumChannelDelta);

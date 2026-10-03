@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFile, readdir, realpath, stat } from 'node:fs/promises'
 import { resolve, relative, isAbsolute, sep } from 'node:path'
 import { parse } from 'yaml'
+import { stringify } from 'yaml'
 import type { Plugin, ViteDevServer } from 'vite'
 
 export function artifactPlugin(roots: string[]): Plugin {
@@ -50,7 +51,7 @@ export function artifactPlugin(roots: string[]): Plugin {
           const { cases, ...metadata } = run
           runs.push({
             ...metadata,
-            completedCases: (cases as unknown[]).length,
+            completedCases: run.completedCases ?? (cases as unknown[]).length,
             key,
           })
         } catch (error) {
@@ -117,7 +118,19 @@ export function artifactPlugin(roots: string[]): Plugin {
               ? 'text/plain; charset=utf-8'
               : null
         if (!type) throw new Error('Unsupported artifact file')
-        const bytes = await readFile(target)
+        let bytes = await readFile(target)
+        if (file === 'run.yaml') {
+          const run = parse(bytes.toString('utf8'))
+          if (run.state === 'running' && run.progress === 'progress.jsonl') {
+            // Ignore a partial trailing append. The fixed-size index publishes the committed count.
+            const journal = await readFile(resolve(directory, 'progress.jsonl'), 'utf8').catch((error) => {
+              if (error.code === 'ENOENT') return ''
+              throw error
+            })
+            run.cases = journal.split('\n').slice(0, -1).slice(0, run.completedCases).map((line) => JSON.parse(line))
+            bytes = Buffer.from(stringify(run))
+          }
+        }
         // Detailed data and images are sealed case assets. Verify what is actually requested.
         if (parts[0] === 'cases') {
           if (parts.length < 3) throw new Error('Invalid case path')

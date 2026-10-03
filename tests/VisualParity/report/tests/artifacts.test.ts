@@ -121,3 +121,20 @@ it('refuses modified case data, private files, traversal and writes', async () =
   ).toBe(400)
   expect((await fetch(`${base}/api/runs`, { method: 'POST' })).status).toBe(405)
 })
+
+it('reads committed progress without loading case facts and ignores a partial final append', async () => {
+  const run = resolve(root, 'first', 'journal-run')
+  await mkdir(run)
+  await writeFile(resolve(run, 'run.yaml'), stringify({
+    schemaVersion: 8, id: 'journal-run', state: 'running', startedAt: '2026-10-04',
+    completedCases: 1, progress: 'progress.jsonl', cases: [],
+  }))
+  await writeFile(resolve(run, 'progress.jsonl'), '{"id":"test.completed","samples":3}\n{"id":"partial')
+  const listing = await (await fetch(`${base}/api/runs`)).json()
+  const entry = listing.runs.find((r: { id: string }) => r.id === 'journal-run')
+  expect(entry.completedCases).toBe(1)
+  expect(entry).not.toHaveProperty('cases')
+  const index = await (await fetch(`${base}/api/runs/${entry.key}/files/run.yaml`)).text()
+  expect(index).toContain('test.completed')
+  expect(index).not.toContain('partial')
+})

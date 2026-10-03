@@ -35,7 +35,8 @@ public class WideNavigationRailTests
         try
         {
             Assert.Equal(new Size(width, height), item.Bounds.Size);
-            Assert.Equal(new Rect(iconX, iconY, 24, 24), Part<ContentPresenter>(item, "PART_Icon").Bounds);
+            var icon = Part<ContentPresenter>(item, "PART_Icon");
+            Assert.Equal(new Rect(iconX, iconY, 24, 24), new Rect(icon.TranslatePoint(default, item)!.Value, icon.Bounds.Size));
         }
         finally { window.Close(); }
     }
@@ -54,7 +55,7 @@ public class WideNavigationRailTests
             Assert.Equal(new Size(width, 240), rail.Bounds.Size);
             Assert.Equal(itemHeight, item.Bounds.Height);
             Assert.Equal(44, item.TranslatePoint(default, rail)!.Value.Y);
-            Assert.Equal(iconY, Part<ContentPresenter>(item, "PART_Icon").Bounds.Y);
+            Assert.Equal(iconY, Part<ContentPresenter>(item, "PART_Icon").TranslatePoint(default, item)!.Value.Y);
             Assert.Equal(expanded, item.RailExpanded);
         }
         finally { window.Close(); }

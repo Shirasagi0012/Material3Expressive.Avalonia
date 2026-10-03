@@ -4,6 +4,18 @@ namespace Material3Expressive.Parity;
 
 public static class PixelData
 {
+    // Used at the bundle boundary when the comparison will decode the PNG once.
+    public static void Validate(string directory, RasterObservation raster)
+    {
+        var path = Path.GetFullPath(Path.Combine(directory, raster.Image));
+        if (!path.StartsWith(Path.GetFullPath(directory) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Pixel path outside bundle.");
+        using var stream = File.OpenRead(path);
+        using var codec = SKCodec.Create(stream) ?? throw new InvalidDataException("Invalid PNG.");
+        if (codec.EncodedFormat != SKEncodedImageFormat.Png || codec.Info.Width != raster.Width || codec.Info.Height != raster.Height)
+            throw new InvalidDataException("PNG format or dimensions differ from observations.");
+    }
+
     public static (int Width, int Height, byte[] Bytes) DecodePng(string path)
     {
         using var stream = File.OpenRead(path);

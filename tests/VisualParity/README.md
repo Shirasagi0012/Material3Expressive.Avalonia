@@ -1,7 +1,7 @@
 # Visual parity
 
 采集 Compose 与 Avalonia 的真实事实，按身份和语义精确比较。
-公开结果采用 **用例概览 → 单个采样点详情** 两层结构：运行时直接输出概览，
+公开结果采用 **用例概览 → 单个采样点详情** 两层结构：运行时输出进度和概览路径，
 Agent 通过文件系统读取 Markdown 与 YAML，无需调用查询脚本。
 系统不推断原因，不进行配准或文字遮罩；结构化事实精确比较，Raster 另有明确的降采样容差判定，原始差异保留。
 
@@ -44,6 +44,10 @@ report/                     # 独立 Vue 3 + TypeScript + Vite 应用
 新增或修改用例直接进入对应的 `*Cases` 文件，在 `Cases/` 与参考端 `cases/` 中创建相应文件；
 通过 suite/scenario 标记自动发现，无中央目录和入口注册表。更具体的入口说明见 [AUTHORING](AUTHORING.md#实现入口)。
 各目录仍在同一程序集内；执行模型见编写文档。
+
+`Capture/ReferenceCatalog.cs` 管理参考清单与失效判断，`ReferenceProducer.cs` 管理单个常驻 JVM；
+`Execution/BuildSnapshot.cs` 固定执行二进制。比较器仅消费捕获证据，不控制场景执行。
+`ResultFiles.Write` 返回已发布路径对应的事实，`Read` 用于独立回读；`RunResults` 只保留累计计数和计时。
 
 ## 输出与阅读
 
@@ -89,20 +93,30 @@ rg -n -C 8 'cornerRadii:|status: different' "$caseDirectory/samples"
 当前执行参考为 Windows x64，固定 density=4、fontScale=1。需要 .NET 10、JDK（本机 JDK 25）、
 锁定 Gradle 依赖及项目 README 中的本地 ComposeAnimation NuGet 包。
 参考源码与制品版本按 [`upstream-baseline.json`](../../docs/upstream-baseline.json) 固定。
+脚本默认以 Release 构建和运行，避免 Debug 的逐像素计算开销；需要调试时可直接用 dotnet 的 Debug 配置。
 YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行；`<case-id>` 和 `<suite>` 替换为 list 输出的实际身份。
-run、self-test 自动构建双端；list、capture-actual 只构建 C# 项目。
+prepare-reference、self-test 自动构建双端；run、recompare、list、capture-actual 只构建 C# 项目。
+普通 run 不启动 JVM，不隐式补采 Compose；参考缺失、配置或参考实现改变时，在 Avalonia 采集前列出问题。
 verify-reference 不自动构建，首次使用前执行 build。
 报告需要 Node.js 22.12+ 或 24+；仅查看已有结果无需启动 .NET 或 JVM。npm 依赖由 package-lock.json 锁定。
 
 ```powershell
 ./tests/VisualParity/parity.ps1 build
 ./tests/VisualParity/parity.ps1 list
+# 首次或修改参考场景/配置后准备；未变化的用例直接复用。
+./tests/VisualParity/parity.ps1 prepare-reference
 ./tests/VisualParity/parity.ps1 run --case '<case-id>'
 ./tests/VisualParity/parity.ps1 run --family '<suite>'
 ./tests/VisualParity/parity.ps1 run
 ./tests/VisualParity/parity.ps1 self-test
 ./tests/VisualParity/parity.ps1 capture-actual --case '<case-id>'
 ./tests/VisualParity/parity.ps1 test
+# 显式固定某次参考快照；省略时在运行开始读取 references/current.json。
+./tests/VisualParity/parity.ps1 run --reference '<snapshot.json>'
+# 强制重新采集参考并发布新快照，旧快照和捕获不覆盖。
+./tests/VisualParity/parity.ps1 prepare-reference --family '<suite>' --refresh-reference
+# 只重算已有双端证据；源 run 需要 plan.json，不重新采集，不沿用旧重复性结论。
+./tests/VisualParity/parity.ps1 recompare --directory '<run-directory>'
 
 # 只读浏览已有结果，不重新采集；打开终端输出的 localhost 地址，Ctrl+C 停止。
 ./tests/VisualParity/parity.ps1 report
@@ -110,12 +124,13 @@ verify-reference 不自动构建，首次使用前执行 build。
 ```
 
 输出默认在 `artifacts/visual-parity/runs/<run>/`；`--output <new-directory>` 指定新目录，不覆盖已有目录。
-每个用例结束即在终端打印其完整概览及绝对路径。`run` 生成结果成功返回 **0**，即使存在差异。
+每个用例结束即在终端打印紧凑进度、耗时和概览绝对路径。完整概览仍在 overview.md。
+`run` 生成结果成功返回 **0**，即使存在差异。
 `--require-match` 接受 equal 与 withinTolerance；存在 different 返回 **1**，只有未比较项返回 **3**。
 `--require-equal` 要求原始事实完全相等，withinTolerance 也返回 **1**；两种门禁均以执行错误 **2** 优先。
 `capture-actual` 的参考缺失项目为 notCompared。门禁仅覆盖提交的事实，不证明测量没有遗漏。
 
-`self-test` 另做两端重复捕获和额外被动截图检查，结果保存到 `case.yaml` 的 repeatability，
+`self-test` 不读取参考缓存，在同一常驻 JVM 中实际执行两端重复捕获和额外被动截图检查，结果保存到 `case.yaml` 的 repeatability，
 不稳定返回 2。普通 run 不自动重复捕获。自检稳定不表示组件一致。
 
 `run`、`self-test`、`capture-actual` 均固定使用双端真实 4× DPI 渲染，无倍率选项：
@@ -145,7 +160,10 @@ Avalonia 12.1.2 和 UI 线程渲染模式，局部读取 `Compositor` 的内部�
 旧 `serve` / `render` 命令、HTML 模板及 .NET 报告服务器已删除，不提供兼容入口。
 case manifest 包含所有权威数据和图像，排除 manifest 本身和派生的 overview.md。
 报告插件校验被请求产物的 schema 和 SHA256；前端校验样本身份，Worker 校验 PNG 尺寸及其像素统计与记录的一致性。
-`run.yaml` 是原子更新的导航索引：每个用例完成后更新，运行结束记录 completed；中断的 run 保留 running 状态。
+`run.yaml` 是原子更新的导航索引。运行中只保存计数、阶段累计时间和空 cases；
+每个已提交用例的摘要与阶段时间追加到 `progress.jsonl`，`summary.md` 也只追加一行。
+报告读取运行中索引时合并已提交的 journal 条目；结束时一次性生成包含完整 cases 的 run.yaml。
+中断的 run 保留 running 状态和已完成的用例文件，未发布的用例保存在 .work。
 当前 run 目录可独立复制，用下文配置加入浏览列表，不依赖采集缓存。
 
 ## 缓存与完整性
@@ -156,21 +174,38 @@ case manifest 包含所有权威数据和图像，排除 manifest 本身和派�
 
 ```text
 artifacts/visual-parity/
-  cache/reference/<key>/    # 可复用的 Compose 参考，仅 PNG 和采集描述
+  builds/<producer>/<hash>/ # 按内容冻结的可执行构建，避免运行中重建覆盖二进制
+  references/
+    current.json            # 最近成功准备的快照，run 启动时固定
+    snapshots/<id>.json     # 不可变参考清单，记录定义哈希、捕获位置和 manifest 哈希
+    captures/<id>/<case>/   # 成功的 Compose 捕获；多个快照可以引用同一捕获
+    .work/<id>/             # 准备阶段临时输入，失败时保留诊断
   runs/<run>/               # 自包含的正式结果
-    run.yaml / summary.md / cases/
+    plan.json               # 本轮用例、配置、runner 环境和固定参考清单
+    run.yaml / progress.jsonl / summary.md / cases/
     .work/<case>/           # 本轮临时采集；异常或不稳定时保留
 ```
 
-`--output` 只改变该次运行的位置，其临时工作目录也随运行保存；参考缓存的位置固定。
-直接读取参考缓存，不再为每次运行复制完整参考包。自检重采及强制刷新属于本轮 `.work`，
-不会不断向参考缓存追加随机目录。用例结果导出、校验和概览写出成功，且没有执行错误或自检不稳定时，
+`--output` 只改变测试运行的位置；参考库和构建快照位置固定。准备阶段用一个 JVM 顺序执行，
+只复用进程、场景发现和环境信息，每例仍创建独立 fixture、Host 和时钟。场景失败后终止该 JVM，
+不发布不完整参考清单。普通 run 使用单进程、单 UI 线程顺序采集 Avalonia，不引入进程池或数据库。
+参考身份包含 Kotlin 源码、已构建 JAR、Gradle 配置、固定基线、字体及平台；准备时也核对实际 JVM 环境。
+C# 控件库的实现和 DLL 不参与 Compose 参考身份；配置按冻结的完整元数据 JSON 哈希判断。
+部分准备会保留同一参考实现下其他已准备用例的引用；参考实现变化后，不沿用旧实现的条目。
+直接读取固定参考，不为本轮复制内部捕获包；公开结果仍复制必要图片，保持 run 自包含。
+用例结果先在本轮 .work 写出并校验，再原子发布到 cases。没有执行错误或自检不稳定时，
 自动删除**本轮创建**的临时用例目录；视觉差异本身保留在正式结果中，不阻止临时清理。
 失败或不稳定的用例保留临时文件，`case.yaml` 的 `diagnostics` 给出相对路径；进程中断也可能留下 `.work`。
 公开结果的读取和报告浏览不依赖 `.work` 或参考缓存；报告服务不暴露 `.work`。
-缓存命中后检查文件集合、SHA256、身份和 PNG，失败捕获不缓存。旧缓存及历史运行由使用者按需删除，
-不会自动迁移或清理。PNG 是唯一保存的像素来源，不生成 `.rgba`，报告不嵌入像素副本。
-`run --refresh-reference` 可强制重新采集 Compose 参考；这不会更改固定上游基线，也不会覆盖已有参考缓存。
+捕获读取检查文件集合、SHA256、身份及 PNG 头；比较时按样本解码图片并验证像素数据，不累计整轮像素。
+导出使用内存中的比较事实，不反复解析刚生成的 YAML；格式 round-trip 由测试覆盖。
+`verify-reference` 和公开结果独立回读仍完整解码校验。PNG 是唯一持久化像素来源。
+旧 cache/reference 不再作为隐式参考来源；执行 prepare-reference 建立新快照，不自动迁移或删除旧产物。
+构建快照、参考快照、捕获及历史运行由使用者管理。删除参考捕获前应检查保留快照的引用；公开 run 不依赖它们。
+
+阶段耗时以毫秒记录在 progress.jsonl 和最终 run.yaml：referenceRead/referenceCapture、actualCapture、
+comparison、export、selfTest（适用时）、total；run 另记录 startup 和执行 wall。
+外层脚本构建及首次冻结构建的开销不包含在执行 wall 内。当前没有自动重试、断点续跑、分布式调度或共享结果库。
 
 ## 报告应用
 

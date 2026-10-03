@@ -5,7 +5,8 @@ public sealed class CaptureWriter(
     string input,
     string output,
     string root,
-    bool extraImages = false
+    bool extraImages = false,
+    Dictionary<string, string>? environment = null
 )
 {
     readonly List<Sample> samples = [];
@@ -29,7 +30,8 @@ public sealed class CaptureWriter(
     public Capture Finish()
     {
         var capture = new Capture(4, "avalonia", Metadata.Id, ParityJson.Hash(input),
-            ParityJson.Hash(Path.Combine(root, "docs/upstream-baseline.json")), EnvironmentInfo.Read(root),
+            ParityJson.Hash(Path.Combine(root, "docs/upstream-baseline.json")),
+            environment is null ? EnvironmentInfo.Read(root) : new(environment),
             samples.ToArray(), trace.ToArray(), Errors.ToArray());
         capture.Validate();
         ParityJson.Write(Path.Combine(Output, "observations.json"), capture);

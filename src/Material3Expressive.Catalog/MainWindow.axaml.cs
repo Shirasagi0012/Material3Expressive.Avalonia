@@ -9,11 +9,19 @@ namespace Material3Expressive.Catalog;
 
 public partial class MainWindow : Window
 {
+    private static readonly bool TraceWideRailLayout = false;
+    private readonly RailLayoutTrace? _railLayoutTrace;
+
     public MainWindow()
     {
         VisualAnimationScope.Initialize(this);
         InitializeComponent();
-        // Animated.SetDurationScale(this, 4);
+        // Animated.SetDurationScale(this, 10);
+        
+        // Temporary jitter diagnostics. Set TraceWideRailLayout to false to disable capture.
+        if (TraceWideRailLayout)
+            _railLayoutTrace = new RailLayoutTrace(this, DemoWideNavigationRail, DemoNavigationRail, DemoHiddenModalRail);
+        Closed += (_, _) => _railLayoutTrace?.Dispose();
     }
 
     private void OnDestinationClick(object? sender, RoutedEventArgs e)
@@ -36,14 +44,14 @@ public partial class MainWindow : Window
 
     private async void OnToggleModalRail(object? sender, RoutedEventArgs e)
     {
-        var rail = (sender as Control)?.Tag as string == "hidden" ? DemoHiddenModalRail : DemoModalRail;
+        var rail = (sender as Control)?.Tag as string == "hidden" ? DemoHiddenModalRail :DemoNavigationRail ;
         try { await rail.State.ToggleAsync(); }
         catch (OperationCanceledException) { }
     }
 
     private void OnModalDestinationClick(object? sender, RoutedEventArgs e)
     {
-        var rail = DemoModalRail.Items.Contains(sender) ? DemoModalRail : DemoHiddenModalRail;
+        var rail = DemoNavigationRail.Items.Contains(sender) ? DemoNavigationRail : DemoHiddenModalRail;
         foreach (var item in rail.Items.OfType<WideNavigationRailItem>()) item.IsSelected = ReferenceEquals(item, sender);
     }
 }

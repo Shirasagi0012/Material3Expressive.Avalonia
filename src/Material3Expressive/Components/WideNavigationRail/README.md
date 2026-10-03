@@ -14,7 +14,9 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，Core
 - `WideNavigationRail.axaml` 组合 Surface、物理 inset、内容 padding、header 和 ItemsPresenter。
   `WideNavigationRailLayout` 保留四条 animateDpAsState 轨迹：最小宽、宽度上限、项间距和项最小高度。
   默认宽度收起 96、展开至少 220、至多 360 DIP；header 与项内容决定是否继续增宽。
-  像素取整、保存展开最大宽、反向时的宽度约束和逐项测量顺序按上游保留。
+  横向像素取整、保存展开最大宽、反向时的宽度约束和逐项测量顺序按上游保留。
+  物理像素转回 Avalonia DIP 时使用原始 double 布局缩放，避免 float 除法误差被默认 LayoutRounding
+  再向上取整成额外 1 像素，影响分数缩放下展开/收起动画的项高度、居中位置和排列。
   外层策略读取每项测量值；ItemsPanel 的总可用尺寸不变时，仍把子项测量失效传回外层，避免动画宽度滞后一帧。
 - `NavigationRailArrangement` 提供 Top、Center、Bottom、SpaceBetween、SpaceAround、SpaceEvenly 和 SpacedBy。
   Center 按整个容器居中；有 header 时其他排列使用 header 下方的空间。
@@ -129,7 +131,37 @@ await modal.State.ExpandAsync();
 内容槽、状态生命周期及 selectable 适配的确认依据见 [DECISIONS](../../../../docs/DECISIONS.md)。
 形状使用现有 CornerRadius，最低交互尺寸使用当前 desktop 默认 48 DIP；没有新增通用 Modal/手势基础框架。
 
+## 已接受的纵向动画改进
+
+2026-10-03，维护者确认不再复现固定 Compose 展开/收起过程中的整数布局抖动。
+内置布局的项最小高度、项间距、纵向 indicator padding、内容高度、图标位置、居中偏移和整组排列
+保留小数物理像素；静态尺寸先按原来的规则取整，再由现有动画进度连续连接。
+居中与排列的整数端点偏差随进度平滑补偿，完整展开/收起及独立 Top / Start 覆盖保留原来的静态位置。
+整组排列使用最近的端点组合，补偿权重在任意动画轴的中点平滑归零，避免端点切换新增跳变。
+
+移动的 item、ItemsPresenter、容器和布局面板关闭 UseLayoutRounding；图标和标签 ContentPresenter
+保留原来的内容测量取整，并由外层容器承载小数坐标。自定义模板或 ItemContainerTheme 若重新开启移动容器的
+取整，会再次量化位置。C# / XAML 公共 API 与用法没有变化，没有额外的动画轨迹或停稳后的切换路径。
+保留 spring 参数、过冲和中断速度、横向取整、标签透明度与 LabelMedium / LabelLarge 切换；
+字体样式改变导致的内容测量变化和布局公式本身的平缓折返不属于这次消除的整数抖动。
+
+这项改进同时用于 Wide 与 Modal 的 WideNavigationRailItem；常规 NavigationRail 不在本次修改范围。
+展开/收起过程的 geometry 与 raster 可以偏离固定 Compose，因此相应 parity 用例继续保留真实 different，
+没有修改参考、夹具或容差来制造通过。决定见 [DECISIONS](../../../../docs/DECISIONS.md)。
+
 ## 验证
+
+Catalog 临时启用了 [RailLayoutTrace](../../../Material3Expressive.Catalog/RailLayoutTrace.cs)，用于调查展开/收起时的坐标抖动。
+运行 Catalog，每次改变 rail 的目标状态后等待动画结束，会自动在
+`%TEMP%/Material3Expressive/rail-layout-traces/` 保存独立 JSONL，并在 Debug 输出中打印 `RailTrace saved:` 路径。
+Debug 输出也包含带 `RailTrace` 前缀的完整记录；Release 仍保存文件。
+记录以目标改变后的 Stopwatch 时间为横轴、布局观察次数为序号，并非屏幕呈现帧号；
+坐标为窗口客户区物理像素，保留小数。每项含实际边界、DesiredSize、UseLayoutRounding、图标与标签内容边界，
+以及原始项间距/最小高度、padding、内容高度、端点补偿前位置与补偿前后居中偏移。
+新记录的 layoutModel 为 continuous vertical geometry with Compose integer endpoints；
+补偿前读数以 BeforeEndpointCorrectionPx 命名，旧的整数布局日志保留原有字段。
+采集在 LayoutUpdated 之后读取，内存缓冲到相关布局动画结束再输出；不会主动送帧或重新布局。
+将 MainWindow 的 `TraceWideRailLayout` 改为 false 即可关闭此临时诊断。
 
 独立双端入口为 [WideNavigationRailCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/WideNavigationRailCases.cs)
 和 [WideNavigationRailCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/WideNavigationRailCases.kt)。
@@ -138,9 +170,24 @@ await modal.State.ExpandAsync();
 暗色、RTL、物理 inset、内容尺寸与约束、颜色与位置覆盖、SpacedBy，以及展开/收起/中断/快照、
 主题变化、选择、按压、取消、禁用、hover 和键盘激活。
 完整比较结果与重复性记录见 [移植证据](../../../../artifacts/wide-navigation-rail-port/README.md)。
-2026-10-03：控件库 264/264、parity 框架 105/105、Catalog Release 构建通过。
+原始移植验收（2026-10-03，纵向连续化之前）：控件库 264/264、parity 框架 105/105、Catalog Release 构建通过。
 Wide 最终 113 配置全部 equal/withinTolerance；Modal 92 配置双端重复性稳定，91 配置 equal/withinTolerance，
 唯一 different 为下方已接受的鼠标速度适配。equal 与 withinTolerance 分开计数，不宣称严格像素相等。
+
+纵向连续化验证（2026-10-03）：控件库 264/264、Catalog 构建通过，已有断言改读相对 item 的实际图标坐标，
+预期位置不变；未新增专门测试。使用当前 run 流程重新采集 Avalonia，复用 Compose 参考
+`20261003-061524-1838ca71`，没有重采 JVM 参考，也没有追加重复性自检。
+Wide 静态 81 equal / 4 withinTolerance，动态 10 equal / 7 withinTolerance / 11 different；
+Modal 静态 24 equal / 48 withinTolerance，动态 5 withinTolerance / 15 different。
+205 配置均无执行错误；相对改动前的 Avalonia 捕获，615 个样本的既有结构化读数只改变纵向几何，
+状态、颜色、点击次数及横向几何保持不变。Modal 原有鼠标速度适配仍保留。
+
+将维护者提供的 498 次原生布局观察中的动画输入与标签测量高度，回放到实际产品布局（125% 缩放）：
+Home 收起时原来的 `211 → 212 → 211 → 212 px` 变为 `211.699 → 211.656 → 211.607 → 211.556 px`，
+最终三项图标仍为 `207 / 292 / 377 px`。这是布局输入回放，不能替代本次真实桌面观感核验。
+三种 Catalog 展示均完成展开/收起的 Headless smoke，并正常生成六份诊断日志。
+报告、坐标曲线与回放入口见 [本次验证产物](../../../../artifacts/rail-jitter-diagnostics/README.md)；
+修改后的桌面视觉体验按维护者要求由其人工核验。
 
 Modal 独立入口为 [ModalWideNavigationRailCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ModalWideNavigationRailCases.cs)
 和 [ModalWideNavigationRailCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ModalWideNavigationRailCases.kt)。

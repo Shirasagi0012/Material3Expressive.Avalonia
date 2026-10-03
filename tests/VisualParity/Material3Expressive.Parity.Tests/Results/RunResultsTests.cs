@@ -7,6 +7,29 @@ namespace Material3Expressive.Parity.Tests;
 public class RunResultsTests
 {
     [Fact]
+    public void ThousandCasesAppendProgressWithoutGrowingRunningIndex()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "parity-run-index", Guid.NewGuid().ToString("N"));
+        var run = new RunResults(directory, 1000, "run");
+        run.Save("running");
+        for (var i = 0; i < 1000; i++)
+        {
+            var metadata = CaseMetadata.Create($"test.case-{i}", "Case", "test", "direct", new NumericConfig(i));
+            var comparison = new Comparison(2, metadata.Id, "equal", new(1, 0, 0), [], [], [], "parity");
+            run.Add(new(metadata, comparison, null, null, [], null), new() { ["actualCapture"] = 2 });
+            run.Save("running");
+        }
+        var index = ResultYaml.Read(Path.Combine(directory, "run.yaml"));
+        Assert.Equal(1000, index["completedCases"]!.GetValue<int>());
+        Assert.Empty(index["cases"]!.AsArray());
+        Assert.True(new FileInfo(Path.Combine(directory, "run.yaml")).Length < 1024);
+        Assert.Equal(1000, File.ReadLines(Path.Combine(directory, "progress.jsonl")).Count());
+        Assert.Equal(2000, index["timingsMs"]!["actualCapture"]!.GetValue<double>());
+        run.Save("completed");
+        Assert.Equal(1000, ResultYaml.Read(Path.Combine(directory, "run.yaml"))["cases"]!.AsArray().Count);
+    }
+
+    [Fact]
     public void RunIndexPublishesProgressAndStableCountsWithoutSampleFacts()
     {
         var directory = Path.Combine(Path.GetTempPath(), "parity-run-index", Guid.NewGuid().ToString("N"));
