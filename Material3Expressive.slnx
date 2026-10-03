@@ -4,7 +4,6 @@
     <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Gallery/MaterialColorUtilities.Gallery.csproj" />
     <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Tests/MaterialColorUtilities.Tests.csproj" />
     <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities/MaterialColorUtilities.csproj" />
-    <Project Path="modules/MaterialColorUtilities/MaterialDesignTokens.Avalonia/MaterialDesignTokens.Avalonia.csproj" />
     <Project Path="modules/MaterialSkiaShadow.Tests/MaterialSkiaShadow.Tests.csproj" />
     <Project Path="modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj" />
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia.Gallery/MaterialSymbols.Avalonia.Gallery.csproj" />
