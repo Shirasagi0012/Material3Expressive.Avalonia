@@ -167,6 +167,11 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 
 ## 当前覆盖与待确认项
 
+原生 ScrollBar 使用 CMP Foundation 的交互式滚动条外观，固定厚度与 hover / drag 颜色动画。
+颜色映射至 OnSurface，位置、长度、输入、Visibility、菜单和 ScrollViewer 布局保留原生行为。
+外观入口、已确认适配及本组件不做 Compose parity 的范围见
+[ScrollBar](../src/Material3Expressive/Components/ScrollBar/README.md)。
+
 现有源码是后续工作的起点，不是批准所有既有取舍的依据。旧注释中的 `design doc §...` 是历史引用，
 不指向本文，也不构成当前规范；涉及相应代码时核对真实行为与固定上游。
 

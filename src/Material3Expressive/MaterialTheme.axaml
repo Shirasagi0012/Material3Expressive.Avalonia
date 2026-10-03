@@ -31,6 +31,7 @@
                     <m3:ShortNavigationBarTokenSource />
                     <m3:WideNavigationRailTokenSource />
                     <m3:SliderTokenSource />
+                    <m3:ScrollBarTokenSource />
                     <m3:CheckBoxTokenSource />
                     <m3:DividerTokenSource />
                     <m3:RadioButtonTokenSource />
@@ -55,6 +56,7 @@
     <StyleInclude Source="/Components/WideNavigationRail/WideNavigationRail.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/ModalWideNavigationRail.axaml" />
     <StyleInclude Source="/Components/Slider/Slider.axaml" />
+    <StyleInclude Source="/Components/ScrollBar/ScrollBar.axaml" />
     <StyleInclude Source="/Components/CheckBox/CheckBox.axaml" />
     <StyleInclude Source="/Components/Divider/Divider.axaml" />
     <StyleInclude Source="/Components/RadioButton/RadioButton.axaml" />

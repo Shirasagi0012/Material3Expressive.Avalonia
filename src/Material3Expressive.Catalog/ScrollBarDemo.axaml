@@ -1,0 +1,31 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.ScrollBarDemo"
+        Title="ScrollBar" Width="640" Height="500">
+    <StackPanel Margin="24" Spacing="16">
+        <TextBlock Text="ScrollBar" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="24">
+            <ScrollBar Height="100" Maximum="75" ViewportSize="25" Value="15" />
+            <ScrollBar Grid.Column="1" Height="100" Maximum="75" ViewportSize="25" Value="40" FlowDirection="RightToLeft" />
+            <ScrollBar Grid.Column="2" Height="100" Maximum="75" ViewportSize="25" Value="25"
+                       CornerRadius="2" m3:ScrollBarAppearance.Thickness="12"
+                       m3:ScrollBarAppearance.UnhoverColor="#40126E60" m3:ScrollBarAppearance.HoverColor="#A0126E60" />
+            <StackPanel Grid.Column="3" Spacing="16">
+                <ScrollBar Orientation="Horizontal" Maximum="75" ViewportSize="25" Value="20" />
+                <ScrollBar Orientation="Horizontal" Maximum="75" ViewportSize="25" Value="20" FlowDirection="RightToLeft" />
+                <ScrollBar Orientation="Horizontal" Maximum="75" ViewportSize="25" Value="20" IsEnabled="False" />
+            </StackPanel>
+        </Grid>
+        <ScrollViewer Height="260" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Grid Width="900" Height="500" ColumnDefinitions="*,*,*" RowDefinitions="*,*">
+                <Border Background="#F3EDF7" Padding="24"><TextBlock Text="Top left" /></Border>
+                <Border Grid.Column="1" Background="#E8DEF8" />
+                <Border Grid.Column="2" Background="#D0BCFF" Padding="24"><TextBlock Text="Top right" /></Border>
+                <Border Grid.Row="1" Background="#CCC2DC" Padding="24"><TextBlock Text="Bottom left" /></Border>
+                <Border Grid.Row="1" Grid.Column="1" Background="#EADDFF" />
+                <Border Grid.Row="1" Grid.Column="2" Background="#FFD8E4" Padding="24"><TextBlock Text="Bottom right" /></Border>
+            </Grid>
+        </ScrollViewer>
+    </StackPanel>
+</Window>

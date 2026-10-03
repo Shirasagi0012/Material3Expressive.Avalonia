@@ -13,6 +13,7 @@ public partial class MainWindow : Window
 {
     private void OnTextFieldDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new TextFieldDemo().Show(this);
     private void OnSecureTextFieldDemo(object? sender, RoutedEventArgs e) => new SecureTextFieldDemo().Show(this);
+    private void OnScrollBarDemo(object? sender, RoutedEventArgs e) => new ScrollBarDemo().Show(this);
     private static readonly bool TraceWideRailLayout = false;
     private readonly RailLayoutTrace? _railLayoutTrace;
 
