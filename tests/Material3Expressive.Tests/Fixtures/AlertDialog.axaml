@@ -1,0 +1,7 @@
+<m3:AlertDialog xmlns="https://github.com/avaloniaui"
+              xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+              Title="Heading" AnimateTransition="False" IsOpen="True">
+              <TextBlock Text="Body" />
+              <m3:AlertDialog.IconTemplate><DataTemplate><Border Width="24" Height="24" /></DataTemplate></m3:AlertDialog.IconTemplate>
+              <m3:AlertDialog.ConfirmButton><Button Content="OK" /></m3:AlertDialog.ConfirmButton>
+            </m3:AlertDialog>

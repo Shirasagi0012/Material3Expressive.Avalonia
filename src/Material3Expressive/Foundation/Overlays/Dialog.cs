@@ -2,11 +2,11 @@ using Avalonia;
 using Avalonia.Animation.Easings;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
-using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -27,6 +27,7 @@ public class Dialog : ContentControl
     public static readonly StyledProperty<bool> DismissOnBackProperty = AvaloniaProperty.Register<Dialog, bool>(nameof(DismissOnBack), true);
     public static readonly StyledProperty<bool> DismissOnPointerOutsideProperty = AvaloniaProperty.Register<Dialog, bool>(nameof(DismissOnPointerOutside), true);
     public static readonly StyledProperty<bool> AnimateTransitionProperty = AvaloniaProperty.Register<Dialog, bool>(nameof(AnimateTransition), true);
+    public static readonly StyledProperty<bool> UsePlatformDefaultWidthProperty = AvaloniaProperty.Register<Dialog, bool>(nameof(UsePlatformDefaultWidth), true);
     public static readonly StyledProperty<IBrush?> ScrimBrushProperty = AvaloniaProperty.Register<Dialog, IBrush?>(nameof(ScrimBrush), new SolidColorBrush(Color.FromArgb(153, 0, 0, 0)).ToImmutable());
 
     public bool IsOpen { get => GetValue(IsOpenProperty); set => SetValue(IsOpenProperty, value); }
@@ -35,24 +36,24 @@ public class Dialog : ContentControl
     public bool DismissOnBack { get => GetValue(DismissOnBackProperty); set => SetValue(DismissOnBackProperty, value); }
     public bool DismissOnPointerOutside { get => GetValue(DismissOnPointerOutsideProperty); set => SetValue(DismissOnPointerOutsideProperty, value); }
     public bool AnimateTransition { get => GetValue(AnimateTransitionProperty); set => SetValue(AnimateTransitionProperty, value); }
+    public bool UsePlatformDefaultWidth { get => GetValue(UsePlatformDefaultWidthProperty); set => SetValue(UsePlatformDefaultWidthProperty, value); }
     public IBrush? ScrimBrush { get => GetValue(ScrimBrushProperty); set => SetValue(ScrimBrushProperty, value); }
     public event EventHandler<DismissRequestedEventArgs>? DismissRequested;
 
     private readonly Popup _popup = new();
     private Grid? _templateRoot, _surface;
     private DialogPresenter? _modal;
-    private ContentPresenter? _contentPresenter;
-    private Border? _scrim;
-    private Image? _snapshotImage;
-    private RenderTargetBitmap? _snapshot;
+    private Control? _contentPresenter;
+    private DialogScrim? _scrim;
     private VisualAnimationScope? _scope;
-    private Animatable<float>? _progress;
-    private CancellationTokenSource? _transition;
+    private VisualAnimationScope? _entrance;
+    private readonly List<ExitPresentation> _exits = [];
+    private float _progress;
     private bool _isPresented, _closing;
-    private int _version;
 
     internal Popup Popup => _popup;
-    internal float AppearanceProgress => _progress?.Value ?? 0;
+    internal float AppearanceProgress => _progress;
+    internal int ExitingPresentationCount => _exits.Count;
 
     public Dialog() => LogicalChildren.Add(_popup);
 
@@ -76,9 +77,13 @@ public class Dialog : ContentControl
         _templateRoot?.Children.Add(_popup);
         _modal = e.NameScope.Find<DialogPresenter>("PART_Modal");
         _surface = e.NameScope.Find<Grid>("PART_Surface");
-        _scrim = e.NameScope.Find<Border>("PART_Scrim");
-        _contentPresenter = e.NameScope.Find<ContentPresenter>("PART_ContentPresenter");
-        _snapshotImage = e.NameScope.Find<Image>("PART_Snapshot");
+        // Core animates a GraphicsLayer: opacity applies once to the composited
+        // surface and its contents, rather than separately to each primitive.
+        // The compositor pushes a visual's opacity before its own render options,
+        // so the containing presenter must supply the option to the child layer.
+        if (_modal is not null) RenderOptions.SetRequiresFullOpacityHandling(_modal, true);
+        _scrim = e.NameScope.Find<DialogScrim>("PART_Scrim");
+        _contentPresenter = e.NameScope.Find<Control>("PART_DialogContent") ?? e.NameScope.Find<Control>("PART_ContentPresenter");
         if (_modal is not null)
         {
             _modal.Scrim = _scrim;
@@ -99,7 +104,7 @@ public class Dialog : ContentControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         ClosePresentation(false);
-        _scope?.Dispose(); _scope = null; _progress = null;
+        _scope?.Dispose(); _scope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -111,23 +116,16 @@ public class Dialog : ContentControl
 
     private void UpdatePresentation()
     {
-        if (!this.IsAttachedToVisualTree() || _modal is null || _templateRoot is null || _surface is null) return;
-        if (IsOpen && IsPresented && !_closing || !IsOpen && !IsPresented) return;
-        _transition?.Cancel(); _transition?.Dispose();
-        _transition = new CancellationTokenSource();
-        var cancellation = _transition.Token;
-        var version = ++_version;
+        if (!this.IsAttachedToVisualTree() || _modal is null || _templateRoot is null || _surface is null || _scrim is null) return;
+        if (IsOpen && IsPresented && !_closing || !IsOpen && (_closing || !IsPresented)) return;
         _scope ??= VisualAnimationScope.Create(this);
-        if (_progress is null)
-        {
-            _progress = _scope.CreateAnimatable(0f);
-            _scope.SubscribeValue(_progress, UpdateAppearance);
-        }
 
         if (IsOpen)
         {
+            _entrance?.Dispose(); _entrance = null;
             _closing = false;
-            ClearSnapshot();
+            _surface.IsVisible = _scrim.IsVisible = true;
+            UpdateAppearance(AnimateTransition ? 0 : 1);
             if (!IsPresented)
             {
                 _templateRoot.Children.Remove(_modal);
@@ -135,89 +133,122 @@ public class Dialog : ContentControl
                 _modal.Open(_popup, this, focusContent: true);
                 IsPresented = true;
             }
+            else if (FocusManager.FindFirstFocusableElement(_surface) is { } first) first.Focus();
+            if (!AnimateTransition) return;
+            var entrance = _entrance = _scope.CreateChild("Dialog entrance");
+            _ = entrance.Launch(async ct =>
+            {
+                // Install the layer effect on the presentation's first composition
+                // frame. AnimateProgress establishes its timestamp on the next frame.
+                await entrance.Clock.NextFrameAsync(ct);
+                await AnimateProgress(entrance, 200, UpdateAppearance, ct);
+            }, "Dialog appearance");
         }
         else
         {
             _closing = true;
-            FreezeContent();
-        }
-
-        var entering = IsOpen;
-        var track = _progress;
-        var scope = _scope;
-        _ = scope.Launch(async lifetime =>
-        {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellation);
-            var ct = linked.Token;
-            ct.ThrowIfCancellationRequested();
-            await track.StopAsync();
-            ct.ThrowIfCancellationRequested();
-            if (AnimateTransition)
+            if (!AnimateTransition) { ClosePresentation(true); return; }
+            var entrance = _entrance;
+            var exit = FreezeContent();
+            _surface.IsVisible = _scrim.IsVisible = false;
+            _modal.Focus();
+            _ = exit.Scope.Launch(async ct =>
             {
-                // Fixed Core Dialog.skiko.kt: 200ms entrance, progress * 100ms exit;
-                // alpha .2..1, scale .95..1, translation 10..0 DIP.
-                var duration = entering ? 200 : 100 * track.Value;
-                await track.AnimateToAsync(entering ? 1 : 0,
-                    new TweenSpec<float>(TimeSpan.FromMilliseconds(duration), easing: DialogEaseOut.Instance), cancellationToken: ct);
-            }
-            else await track.SnapToAsync(entering ? 1 : 0, ct);
-            ct.ThrowIfCancellationRequested();
-            if (!entering && version == _version) ClosePresentation(true);
-        }, "Dialog appearance");
+                // Core disposes the entering composition after its animation has
+                // consumed this frame. Freeze that last progress for a partial exit.
+                await exit.Scope.Clock.NextFrameAsync(ct);
+                var initialProgress = exit.InitialProgress;
+                if (ReferenceEquals(_entrance, entrance))
+                {
+                    initialProgress = _progress;
+                    entrance?.Dispose(); _entrance = null;
+                }
+                ApplyAppearance(exit.Content, exit.Scrim, initialProgress);
+                await AnimateProgress(exit.Scope, 100 * initialProgress,
+                    value => ApplyAppearance(exit.Content, exit.Scrim, (1f - value) * initialProgress), ct);
+                RemoveExit(exit);
+                if (!IsOpen && _exits.Count == 0) ClosePresentation(true);
+            }, "Dialog disappearance");
+        }
+    }
+
+    private static async Task AnimateProgress(VisualAnimationScope scope, double durationMilliseconds, Action<float> update, CancellationToken ct)
+    {
+        if (durationMilliseconds == 0 || scope.DurationScale * scope.Host.GetValue(Animated.DurationScaleProperty) == 0)
+        {
+            update(1);
+            return;
+        }
+        await scope.Clock.AnimateAsync(new FloatConverter(), 0f, 1f,
+            animationSpec: new TweenSpec<float>(TimeSpan.FromMilliseconds(durationMilliseconds), easing: DialogEaseOut.Instance),
+            block: (value, _) => update(value), cancellationToken: ct);
     }
 
     private void UpdateAppearance(float progress)
     {
+        _progress = progress;
         if (_surface is null || _scrim is null) return;
-        var alpha = .2f + .8f * progress;
-        _surface.Opacity = alpha;
-        _scrim.Opacity = alpha;
-        var scale = 1f - (1f - progress) * .05f;
-        _surface.RenderTransform = new MatrixTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(0, 10f * (1f - progress)));
+        ApplyAppearance(_surface, _scrim, progress);
     }
 
-    private void FreezeContent()
+    private static void ApplyAppearance(Control surface, DialogScrim scrim, float progress)
     {
-        if (_contentPresenter is null || _snapshotImage is null || _snapshot is not null) return;
-        var size = _contentPresenter.Bounds.Size;
+        var alpha = .2f + .8f * progress;
+        surface.Opacity = alpha;
+        scrim.PaintOpacity = alpha;
+        var scale = 1f - (1f - progress) * .05f;
+        surface.RenderTransform = new MatrixTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(0, 10f * (1f - progress)));
+    }
+
+    private ExitPresentation FreezeContent()
+    {
+        var size = _surface!.Bounds.Size;
+        RenderTargetBitmap? bitmap = null;
         if (size.Width > 0 && size.Height > 0)
         {
             var scale = TopLevel.GetTopLevel(this)!.RenderScaling;
-            _snapshot = new RenderTargetBitmap(new PixelSize((int)Math.Ceiling(size.Width * scale), (int)Math.Ceiling(size.Height * scale)), new Vector(96 * scale, 96 * scale));
-            _snapshot.Render(_contentPresenter);
-            _snapshotImage.Source = _snapshot;
-            _snapshotImage.Width = size.Width;
-            _snapshotImage.Height = size.Height;
-            _snapshotImage.IsVisible = true;
+            bitmap = new RenderTargetBitmap(new PixelSize((int)Math.Ceiling(size.Width * scale), (int)Math.Ceiling(size.Height * scale)), new Vector(96 * scale, 96 * scale));
+            if (_contentPresenter is not null) bitmap.Render(_contentPresenter);
         }
-        _contentPresenter.IsVisible = false;
-        _modal?.Focus();
+        // ImmediateRenderer captures only the content subtree. Preserve the ancestor
+        // coordinate orientation when the snapshot becomes a sibling of the live surface.
+        var mirrored = _surface.GetSelfAndVisualAncestors().Aggregate(false, (result, visual) => result ^ visual.HasMirrorTransform);
+        var content = new DialogSnapshot(bitmap, size, bypassMirror: !mirrored) { Name = "PART_Snapshot" };
+        var scrim = new DialogScrim { Background = ScrimBrush is ISolidColorBrush solid
+            ? new ImmutableSolidColorBrush(solid.Color, solid.Opacity) : ScrimBrush };
+        var layer = new Grid { IsHitTestVisible = false, Children = { scrim, content } };
+        var exit = new ExitPresentation(layer, content, scrim, _scope!.CreateChild("Dialog exit"), _progress);
+        ApplyAppearance(content, scrim, _progress);
+        _modal!.Children.Insert(_modal.Children.Count - 2, layer);
+        _exits.Add(exit);
+        return exit;
     }
 
-    private void ClearSnapshot()
+    private void RemoveExit(ExitPresentation exit)
     {
-        if (_snapshotImage is not null) { _snapshotImage.Source = null; _snapshotImage.IsVisible = false; }
-        _snapshot?.Dispose(); _snapshot = null;
-        if (_contentPresenter is not null) _contentPresenter.IsVisible = true;
+        _exits.Remove(exit);
+        _modal?.Children.Remove(exit.Layer);
+        exit.Scope.Dispose();
+        exit.Content.Dispose();
     }
 
     private void ClosePresentation(bool restoreFocus)
     {
-        _version++;
-        _transition?.Cancel(); _transition?.Dispose(); _transition = null;
+        _entrance?.Dispose(); _entrance = null;
+        foreach (var exit in _exits.ToArray()) RemoveExit(exit);
         _modal?.Close(restoreFocus);
-        ClearSnapshot();
         IsPresented = false;
         _closing = false;
+        _progress = 0;
     }
 
     private void OnPresentationClosed(object? sender, EventArgs e)
     {
-        _version++;
-        _transition?.Cancel();
+        _entrance?.Dispose(); _entrance = null;
+        foreach (var exit in _exits.ToArray()) RemoveExit(exit);
         IsPresented = false;
         _closing = false;
-        ClearSnapshot();
+        _progress = 0;
         if (_modal is not null)
         {
             var modal = _modal;
@@ -249,10 +280,14 @@ public class Dialog : ContentControl
         internal static readonly DialogEaseOut Instance = new();
         public override double Ease(double progress) { var p = (float)progress; return -p * (p - 2f); }
     }
+
+    private sealed record ExitPresentation(Grid Layer, DialogSnapshot Content, DialogScrim Scrim,
+        VisualAnimationScope Scope, float InitialProgress);
 }
 
 internal sealed class DialogPresenter : ModalPresenter
 {
+    public DialogPresenter() => EscapeOnKeyDown = true;
     internal Control? Scrim;
     internal Action? OutsideReleased;
     private IPointer? _outsidePointer;

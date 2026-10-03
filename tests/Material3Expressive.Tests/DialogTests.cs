@@ -23,6 +23,79 @@ namespace Material3Expressive.Tests;
 public class DialogTests
 {
     [AvaloniaFact]
+    public void EntranceOpacity_CompositesOverlappingContentAsOneLayer()
+    {
+        using var clock = new MotionTestClockScope();
+        var content = new Grid { Width = 120, Height = 80, Background = Brushes.Red };
+        content.Children.Add(new Border { Width = 60, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left, Background = Brushes.Red });
+        var dialog = new Dialog { Content = content };
+        var window = Show(new Grid { Children = { dialog } });
+        window.Background = Brushes.White;
+        dialog.IsOpen = true; Advance(clock, window, 5);
+        Assert.InRange(dialog.AppearanceProgress, .1f, .9f);
+        using var frame = window.CaptureRenderedFrame()!;
+        using var buffer = frame.Lock();
+        var overlap = new byte[4]; var background = new byte[4];
+        Marshal.Copy(buffer.Address + 150 * buffer.RowBytes + 240 * 4, overlap, 0, 4);
+        Marshal.Copy(buffer.Address + 150 * buffer.RowBytes + 280 * 4, background, 0, 4);
+        Assert.Equal(background, overlap);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(1)]
+    [InlineData(1.25)]
+    [InlineData(1.5)]
+    [InlineData(2)]
+    [InlineData(4)]
+    public void ExitSnapshot_PreservesWholeContentAtRenderScaling(double scale)
+    {
+        using var clock = new MotionTestClockScope();
+        var content = new Grid { Width = 120, Height = 80, ColumnDefinitions = new("*,*"), RowDefinitions = new("*,*") };
+        foreach (var (brush, row, column) in new[] { (Brushes.Red, 0, 0), (Brushes.Green, 0, 1), (Brushes.Blue, 1, 0), (Brushes.Yellow, 1, 1) })
+        {
+            var quadrant = new Border { Background = brush };
+            Grid.SetRow(quadrant, row); Grid.SetColumn(quadrant, column); content.Children.Add(quadrant);
+        }
+        var dialog = new Dialog { Content = content };
+        var window = Show(new Grid { Children = { dialog } });
+        window.SetRenderScaling(scale); window.Background = Brushes.White;
+        dialog.IsOpen = true; Advance(clock, window, 20);
+        var expected = new[] { (255, 0, 0), (0, 128, 0), (0, 0, 255), (255, 255, 0) };
+        using (var frame = window.CaptureRenderedFrame()!) Assert.Equal(expected, Quadrants(frame));
+        dialog.IsOpen = false; Flush(window);
+        var snapshot = window.GetVisualDescendants().OfType<DialogSnapshot>().Single();
+        Assert.Equal(new PixelSize((int)Math.Ceiling(120 * scale), (int)Math.Ceiling(80 * scale)), snapshot.Bitmap!.PixelSize);
+        Assert.Equal(new Size(120, 80), snapshot.Bounds.Size);
+        using (var frame = window.CaptureRenderedFrame()!) Assert.Equal(expected, Quadrants(frame));
+
+        (int, int, int)[] Quadrants(WriteableBitmap frame)
+        {
+            using var buffer = frame.Lock();
+            return new[] { (230, 130), (290, 130), (230, 170), (290, 170) }.Select(point =>
+            {
+                var pixel = new byte[4];
+                Marshal.Copy(buffer.Address + (int)(point.Item2 * scale) * buffer.RowBytes + (int)(point.Item1 * scale) * 4, pixel, 0, 4);
+                return buffer.Format == Avalonia.Platform.PixelFormat.Rgba8888
+                    ? ((int)pixel[0], (int)pixel[1], (int)pixel[2]) : ((int)pixel[2], (int)pixel[1], (int)pixel[0]);
+            }).ToArray();
+        }
+    }
+
+    [AvaloniaFact]
+    public void RepeatedReopen_DetachDisposesAllFrozenLayers()
+    {
+        using var clock = new MotionTestClockScope();
+        var dialog = new Dialog { Content = new Border { Width = 120, Height = 80, Background = Brushes.Red } };
+        var window = Show(new Grid { Children = { dialog } });
+        dialog.IsOpen = true; Advance(clock, window, 20);
+        dialog.IsOpen = false; dialog.IsOpen = true; dialog.IsOpen = false; Flush(window);
+        Assert.Equal(2, dialog.ExitingPresentationCount); Assert.True(dialog.IsPresented);
+        window.Content = null; Flush(window);
+        Assert.Equal(0, dialog.ExitingPresentationCount); Assert.False(dialog.IsPresented);
+        Assert.Equal(0, window.MotionRoot.ActiveChildCount); Assert.Null(window.MotionRoot.LastError);
+    }
+
+    [AvaloniaFact]
     public void ExitSnapshot_RendersOldContent_AndReopenRendersNewContent()
     {
         using var clock = new MotionTestClockScope();
@@ -74,10 +147,11 @@ public class DialogTests
         input.AddHandler(InputElement.KeyDownEvent, (_, e) => { if (e.Key == Key.Escape && handleDown) e.Handled = true; });
         input.AddHandler(InputElement.KeyUpEvent, (_, e) => { if (e.Key == Key.Escape && handleUp) e.Handled = true; });
         window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape");
-        window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape"); Assert.Equal(0, requests);
+        Assert.Equal(1, requests); // Core BackNavigationEventInput handles unconsumed KeyDown.
+        window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape"); Assert.Equal(1, requests);
         handleDown = true; handleUp = false;
         window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape");
-        window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape"); Assert.Equal(0, requests);
+        window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape"); Assert.Equal(1, requests);
     }
 
     [AvaloniaFact]
@@ -183,7 +257,7 @@ public class DialogTests
         Assert.True(innerInput.IsFocused);
         input.Focus(); Assert.True(innerInput.IsFocused);
         window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape");
-        Assert.True(inner.IsOpen);
+        Assert.False(inner.IsOpen);
         window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, "Escape"); Flush(window);
         Assert.False(inner.IsPresented); Assert.True(outer.IsPresented); Assert.Equal(0, outerRequests);
         Assert.True(input.IsFocused);
@@ -216,7 +290,7 @@ public class DialogTests
     }
 
     [AvaloniaFact]
-    public void ExitRetainsFrozenPresentation_ReopenCancelsOldExit_DetachCleansUp()
+    public void ExitRetainsFrozenPresentation_ReopenKeepsOldExit_DetachCleansUp()
     {
         using var clock = new MotionTestClockScope();
         var dialog = new Dialog { Content = new Border { Background = Brushes.Red, Width = 120, Height = 80 } };
@@ -225,9 +299,12 @@ public class DialogTests
         Assert.Equal(1, dialog.AppearanceProgress);
         dialog.IsOpen = false; Flush(window);
         Assert.True(dialog.IsPresented);
-        Assert.NotNull(window.GetVisualDescendants().OfType<Image>().Single(i => i.Name == "PART_Snapshot").Source);
+        Assert.NotNull(window.GetVisualDescendants().OfType<DialogSnapshot>().Single().Bitmap);
         Advance(clock, window, 3);
-        dialog.IsOpen = true; Advance(clock, window, 20);
+        dialog.IsOpen = true;
+        Assert.Equal(1, dialog.ExitingPresentationCount); Assert.Equal(0, dialog.AppearanceProgress);
+        Advance(clock, window, 20);
+        Assert.Equal(0, dialog.ExitingPresentationCount);
         Assert.True(dialog.IsPresented); Assert.Equal(1, dialog.AppearanceProgress);
         dialog.IsOpen = false; Advance(clock, window, 20); Assert.False(dialog.IsPresented);
         dialog.IsOpen = true; Advance(clock, window, 3);

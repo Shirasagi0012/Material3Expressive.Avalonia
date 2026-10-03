@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.AlertDialogDemo" Width="680" Height="520" Title="Alert dialogs">
+  <Grid>
+    <StackPanel Margin="32" Spacing="16" HorizontalAlignment="Left">
+      <TextBlock Text="AlertDialog" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <Button Content="Open alert dialog" Click="OnOpenAlert" />
+      <Button Content="Open custom basic dialog" Click="OnOpenBasic" Theme="{StaticResource MaterialTonalButtonTheme}" />
+      <TextBlock x:Name="Result" Text="Choose an action" />
+    </StackPanel>
+    <m3:AlertDialog x:Name="Alert" Title="Delete this record?" DismissRequested="OnDismissRequested">
+      <m3:AlertDialog.Icon><m3:MaterialSymbol Symbol="Delete" Width="24" Height="24" /></m3:AlertDialog.Icon>
+      <TextBlock Text="The selected record will be removed. You can cancel to keep it." TextWrapping="Wrap" />
+      <m3:AlertDialog.ConfirmButton><Button Content="Delete" Click="OnConfirm" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.ConfirmButton>
+      <m3:AlertDialog.DismissButton><Button Content="Cancel" Click="OnCancel" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.DismissButton>
+    </m3:AlertDialog>
+    <m3:BasicAlertDialog x:Name="Basic" DismissRequested="OnDismissRequested" UsePlatformDefaultWidth="False" Width="380">
+      <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" CornerRadius="28" Padding="24">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Custom content" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+          <TextBox PlaceholderText="Name" />
+          <Button Content="Done" Click="OnCloseBasic" Theme="{StaticResource MaterialTextButtonTheme}" HorizontalAlignment="Right" />
+        </StackPanel>
+      </m3:MaterialSurface>
+    </m3:BasicAlertDialog>
+  </Grid>
+</Window>

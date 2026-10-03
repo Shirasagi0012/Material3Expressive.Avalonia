@@ -20,16 +20,16 @@
         <ControlTemplate>
           <Grid x:Name="PART_Root">
             <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
-              <Border x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
-              <Grid x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+              <m3:DialogScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
+              <m3:DialogLayout x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    UsePlatformDefaultWidth="{TemplateBinding UsePlatformDefaultWidth}"
                     Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
                     MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"
                     MinHeight="{TemplateBinding MinHeight}" MaxHeight="{TemplateBinding MaxHeight}"
                     Background="Transparent" RenderTransformOrigin="50%,50%">
                 <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
                                   ContentTemplate="{TemplateBinding ContentTemplate}" />
-                <Image x:Name="PART_Snapshot" IsVisible="False" IsHitTestVisible="False" />
-              </Grid>
+              </m3:DialogLayout>
             </m3:DialogPresenter>
           </Grid>
         </ControlTemplate>
