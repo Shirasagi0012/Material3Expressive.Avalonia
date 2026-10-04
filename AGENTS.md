@@ -13,11 +13,11 @@
 ## 开始工作
 
 - 环境、依赖和运行命令见 [README.md](README.md)。
-- 移植或修改组件前，按下方“上游源码”直接定位参考，阅读 [移植指南](docs/PORTING.md)和[架构说明](docs/ARCHITECTURE.md)中相关能力；组件目录有 README 时一并阅读。
+- 移植或修改组件前，按下方“上游源码”直接定位参考，阅读 [移植指南](docs/PORTING.md)和[架构说明](docs/ARCHITECTURE.md)中相关能力；组件目录有 README 时一并阅读；已有 INTERNALS.md 时同时阅读其维护说明。
 - 文档只按需更新，不要求每个任务创建计划、对应表或决策记录。
 - [视觉一致性测试](tests/VisualParity/README.md)：运行命令与结果阅读；新增用例见[用例编写](tests/VisualParity/AUTHORING.md)。
-- 修改基础能力前，阅读架构说明并检查实际调用方；检查能力说明及 `docs/DECISIONS.md` 中相关共享决定的适用范围。组件专属说明随组件放在 `Components/<组件>/README.md`，按需补充。通用能力与接入规则留在架构说明，跨组件的共享能力决定留在 `docs/DECISIONS.md`。VisualParity 的设计决定见其[测试目录文档](tests/VisualParity/DECISIONS.md)。
-- 已确认的组件设计就近记录在对应 README；跨组件的共享能力决定记录于 [docs/DECISIONS.md](docs/DECISIONS.md)。
+- 修改基础能力前，阅读架构说明并检查实际调用方；检查能力说明及 `docs/DECISIONS.md` 中相关共享决定的适用范围。组件用法放在 `Components/<组件>/README.md`；采用拆分结构的组件，其内部机制、移植差异和已确认决定放在同目录 `INTERNALS.md`，按需补充。通用能力与接入规则留在架构说明，跨组件的共享能力决定留在 `docs/DECISIONS.md`。VisualParity 的设计决定见其[测试目录文档](tests/VisualParity/DECISIONS.md)。
+- 已确认的组件设计就近记录在对应 INTERNALS.md（尚未拆分的组件暂存 README）；跨组件的共享能力决定记录于 [docs/DECISIONS.md](docs/DECISIONS.md)。
 - 提交使用惯例式提交风格的提交信息。
 
 ComposeAnimation 通过 NuGet 包接入；当前本地包源为相邻仓库的 `../ComposeAnimation/packages`。

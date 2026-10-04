@@ -26,7 +26,7 @@ XS / Small / Medium / Large / XL 尺寸。默认值依据
 
 需要旧的自动变形行为时，显式设置目标，也可绑定对应尺寸的
 `Comp.IconButtonSmall.PressedContainerShape` 等 Token。形状变化不改变尺寸和内容布局。
-形状入口的原因、范围及 2026-10-03 的维护者确认见 [Button 说明](../Button/README.md#默认值与接入)。
+形状入口的原因、范围及 2026-10-03 的维护者确认见 [Button 维护说明](../Button/INTERNALS.md#固定圆角加可空按压目标)。
 Enter 沿用 Avalonia 原生按下激活，Space 遵循原生 ClickMode；已接受的适配依据见
 [共享交互反馈与键盘激活职责](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)。
 

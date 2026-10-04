@@ -10,3 +10,22 @@
 到目前为止已经实现了多数基础组件，较全面的基础能力，不过很多依赖复杂功能的组件还没有实现。
 
 ## 安装与使用
+
+当前源码的依赖准备、最小桌面应用、主题/字体/动画初始化见[接入指南](docs/GETTING_STARTED.md)。
+
+- [Button](src/Material3Expressive/Components/Button/README.md)：主题、尺寸、命令与内容
+- [TextField](src/Material3Expressive/Components/TextField/README.md)：文本绑定、标签、内容槽与输入边界
+- 维护组件时先看[移植指南](docs/PORTING.md)；文档分工见[组件文档约定](docs/COMPONENT_DOCS.md)
+
+## 本地开发
+
+环境及依赖准备见[接入指南](docs/GETTING_STARTED.md#源码与依赖)。准备完成后，从仓库根目录运行：
+
+```powershell
+dotnet restore Material3Expressive.slnx
+dotnet build Material3Expressive.slnx --no-restore
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --no-restore
+dotnet run --project src/Material3Expressive.Catalog --no-restore
+```
+
+视觉对比另见 [VisualParity](tests/VisualParity/README.md)，其环境与通过含义和控件库测试不同。

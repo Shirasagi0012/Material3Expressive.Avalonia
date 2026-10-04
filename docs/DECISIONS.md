@@ -1,6 +1,6 @@
 # 共享能力的已确认决定
 
-本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件 README 保存；
+本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件维护文档保存（已拆分时为 INTERNALS.md，否则为 README）；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
 ## Padding 消费向嵌套 Scaffold 传播

@@ -21,7 +21,7 @@
 不能只看主函数或正常状态截图就判定实现完整。
 
 根据组件能力检查状态顺序、取消与中断、禁用状态、内容尺寸、RTL、语义和无障碍等边界，
-不适用的内容不必机械展开。同时查阅[架构说明](ARCHITECTURE.md)、实际调用方、组件 README
+不适用的内容不必机械展开。同时查阅[架构说明](ARCHITECTURE.md)、实际调用方、组件维护文档（已拆分时为 INTERNALS.md，否则为 README）
 中的已确认决定，以及 `docs/DECISIONS.md` 中适用的共享能力决定，识别可复用能力和具体缺口。
 涉及 VisualParity 时，从其[阅读入口](../tests/VisualParity/README.md#阅读入口)查阅规则与决定。
 
@@ -101,7 +101,8 @@
 | 信息 | 位置 |
 | --- | --- |
 | 通用结构、能力与接入限制 | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| 组件范围、映射、特殊适配、缺口及已确认决定 | 组件目录的 README，就近融入对应段落 |
+| 组件使用入口、常用参数与使用边界 | 组件目录的 README，约定见 [COMPONENT_DOCS.md](COMPONENT_DOCS.md) |
+| 组件映射、机制、特殊适配、缺口及已确认决定 | 组件目录的 INTERNALS.md；尚未拆分的组件暂存 README |
 | 跨组件的共享能力决定 | [DECISIONS.md](DECISIONS.md)，按需记录 |
 | VisualParity 的设计决定 | [测试目录的 DECISIONS.md](../tests/VisualParity/DECISIONS.md) |
 | 用例覆盖、测量和采样规则 | [AUTHORING.md](../tests/VisualParity/AUTHORING.md) |

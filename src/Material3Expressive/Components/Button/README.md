@@ -1,74 +1,162 @@
 # Button
 
-使用 Avalonia `Button`，五种主题共享尺寸、内容布局与交互能力。默认值依据
-[固定上游](../../../../docs/upstream-baseline.json)的 `Button.kt` 及组件 Token。
+这里使用 Avalonia 原生 `Button`，由 Material 主题提供五种外观、五档尺寸和交互反馈；
+不需要改成另一个按钮控件。命令、事件和内容仍使用 Avalonia 的公开 API。
+首次使用请先完成[项目接入](../../../../docs/GETTING_STARTED.md)。
+
+实现映射、设计依据和一致性边界见 [INTERNALS.md](INTERNALS.md)。
+
+## 最小示例
+
+在已加载 Material 主题的应用中，下面就是默认 Filled / Small 按钮：
+
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Button Content="保存" />
+</UserControl>
+```
+
+后续 XAML 片段使用相同的命名空间。
+
+## 选择外观与尺寸
+
+通过 `Theme` 选择外观；五种主题共享尺寸 class 和内容布局：
+
+| 外观 | `Theme` 资源名 | 默认表现 |
+| --- | --- | --- |
+| Filled | `MaterialFilledButtonTheme` | 主色填充；也是未指定 Theme 时的默认值 |
+| Elevated | `MaterialElevatedButtonTheme` | 低层级表面色与阴影 |
+| Tonal | `MaterialTonalButtonTheme` | 次要容器色填充 |
+| Outlined | `MaterialOutlinedButtonTheme` | 透明背景与描边 |
+| Text | `MaterialTextButtonTheme` | 透明背景、无描边 |
+
+```xml
+<StackPanel Spacing="12">
+  <Button Content="保存" />
+  <Button Content="新建" Theme="{StaticResource MaterialElevatedButtonTheme}" />
+  <Button Content="完成" Theme="{StaticResource MaterialTonalButtonTheme}" />
+  <Button Content="取消" Theme="{StaticResource MaterialOutlinedButtonTheme}" />
+  <Button Content="了解更多" Theme="{StaticResource MaterialTextButtonTheme}" />
+</StackPanel>
+```
+
+每个按钮只选一档尺寸 class。Small 不需要 class；没有额外的 `small` 或 `square` 尺寸/形状开关。
+
+| 尺寸 | `Classes` | 默认容器最小高度（DIP） |
+| --- | --- | --- |
+| Extra small | `xsmall` | 32 |
+| Small | 不设置 | 40 |
+| Medium | `medium` | 56 |
+| Large | `large` | 96 |
+| Extra large | `xlarge` | 136 |
+
+```xml
+<Button Content="继续" Classes="medium"
+        Theme="{StaticResource MaterialTonalButtonTheme}" />
+```
+
+尺寸 class 一起选择圆角、Padding 和标签排版。表中的高度不是固定 `Height`：内容可以把按钮撑高，
+父布局约束也会影响结果。默认容器最小宽度为 58 DIP；未显式约束时外层预留至少 48 DIP 的布局空间，
+所以空的 Small 按钮通常占高 48 DIP，背景高 40 DIP；Extra small 的背景为 32 DIP，外层仍为 48 DIP。
+这层留白不会扩大鼠标可点击区域。显式 `Width` / `Height`、`MinWidth` / `MinHeight` 可覆盖相应默认约束。
+
+默认水平靠左、垂直居中；需要铺满父布局时设置 `HorizontalAlignment="Stretch"`。
+
+## 命令、事件与状态
+
+绑定现有 ViewModel 的 `ICommand`，参数用原生 `CommandParameter`：
+
+```xml
+<Button Content="保存"
+        Command="{Binding SaveCommand}"
+        CommandParameter="{Binding SelectedItem}" />
+```
+
+这里假设 `DataContext` 提供这些成员；启用编译绑定的视图还需声明对应的 `x:DataType`。
+也可使用原生 `Click` 事件，例如 `<Button Content="保存" Click="OnSaveClick" />`，
+并在该视图的 code-behind 中实现处理器。两种方式都不需要 Material 专用事件。
+
+- `IsEnabled="False"` 显示禁用外观并禁止激活；`Command.CanExecute` 继续由原生 Button 处理
+- 悬停、键盘焦点和按压自动显示状态层或 ripple，无需手动设置伪类
+- 按下后将指针移出交互范围会取消这次手势，移回再释放也不会点击；下一次按下可正常激活
+- Enter 按下时激活，重复 KeyDown 沿用原生处理；Space 遵循原生 `ClickMode`。已执行的命令不会因随后失焦或禁用而撤回，按压反馈则会清理
+- 程序化 `Focus()` 的视觉焦点反馈取决于当前输入模式；需要表达键盘导航焦点时，可在 C# 中调用 `button.Focus(NavigationMethod.Tab)`（`Avalonia.Input`）
+
+## 内容与排版
+
+`Content` 可以是字符串或任意控件，也支持原生 `ContentTemplate` 和匹配的 `DataTemplate`。
+普通字符串自动应用当前尺寸的标签排版、换行和有限边界内裁剪；自定义内容控件与模板优先。
+要自行控制文本省略号、图标和排列，可直接组合内容：
+
+```xml
+<Button>
+  <StackPanel Orientation="Horizontal" Spacing="8">
+    <m3:MaterialSymbol Symbol="Add" Width="20" Height="20"
+                       VerticalAlignment="Center" />
+    <TextBlock Text="新建" VerticalAlignment="Center" />
+  </StackPanel>
+</Button>
+```
+
+上例为 Small 的内容组合。普通 Button 没有 `LeadingIcon` / `TrailingIcon` 槽，
+也不会自动识别图标、设置其大小或调整间距；切换尺寸时由内容布局同步调整。
+文字默认值通过 `MaterialText.DefaultStyle` 传给内容，显式文字设置仍可覆盖；
+更多排版用法见 [Typography](../../Foundation/Typography/README.md)。
 
 ## 默认值与接入
 
-- 默认按压不变形，静止形状使用按钮自身的 `CornerRadius`。尺寸 class 提供圆角默认值，
-  显式局部值优先于这些默认值，模板将其传给 Surface。
-- 可空附加属性 `m3:MaterialButton.PressedCornerRadius` 控制按压目标；默认 null 保持静止形状，
-  设置值后复用已有圆角动画，恢复 null 关闭变形。Button 和 IconButton 使用同一入口。
-  本次只改变形状入口和默认行为，仍保留当前 Expressive 尺寸与 Padding。
-- Outlined 的默认描边遵循 `outlinedButtonBorder()`，所有尺寸均为 1 DIP。
-  大尺寸原始 Token 的 2/3 DIP 保留，显式 `BorderThickness` 仍可覆盖默认值。
-- Filled/Elevated 的禁用背景使用 OnSurface × 0.10；Outlined 的禁用描边使用 OutlineVariant × 0.10。
-  Filled/Elevated/Outlined/Text 的禁用内容使用 OnSurfaceVariant × 0.38，Tonal 使用 OnSurface × 0.38。
-  Tonal 的禁用背景仍为 OnSurface × 0.12；系统禁用容器 opacity 未修改。
-- Filled/Tonal 各新增五个 elevation Token：`ContainerElevation`、`PressedContainerElevation`、
-  `FocusedContainerElevation`、`HoveredContainerElevation`、`DisabledContainerElevation`。
-  默认高度依次为 0、0、0、1、0 DIP，仍使用已有 `MaterialButton.Elevation` / `ButtonElevation`。
-  Outlined/Text 默认配置为 null；局部 null 或自定义配置保留原有覆盖语义。
-- 圆角与 elevation 目标在共享时钟帧合并提交，对应 Compose 的重组与 effect。
-  圆角配置或 spring 改变时，从当前选定形状重建状态；更换目标先取消旧 effect。
-  圆角进度及插值按上游 Float 语义计算，弹簧参数与测试帧网格未调整。
-- 指针移出交互范围即取消手势，移回后释放不会点击。
-- 普通 Button/IconButton 保留 Avalonia 原生键盘激活：Enter 在按下时激活，Space 遵循原生 ClickMode。
-  重复 KeyDown 沿用原生处理；已执行的命令不因随后失焦或禁用而撤回，
-  按压反馈仍在释放、失焦或禁用时清理。Enter 激活时机与固定 Compose 的松开激活不同，
-  已接受的适配依据见[共享交互反馈与键盘激活职责](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)。
-
-上述圆角、elevation、颜色及指针修复于 2026-10-03 经维护者确认实施；
-受限内容夹具分别对应 Compose 的 size / requiredSize，读取实际排列几何，不补偿组件布局。
-本次不调整弹簧参数或测试帧，阴影算法明确延期，不能据此接受阴影差异。
+默认按压保持 `CornerRadius`，但仍有 ripple。需要形状变化时显式设置可空附加属性
+`MaterialButton.PressedCornerRadius`：
 
 ```xml
-<!-- 固定形状：按压时仍为 20 DIP -->
-<Button Content="Save" CornerRadius="20" />
+<!-- 固定圆角：按压时仍为 20 DIP -->
+<Button Content="保存" CornerRadius="20" />
 
-<!-- 显式启用变形：20 → 8 DIP，释放时恢复 -->
-<Button Content="Save" CornerRadius="20"
+<!-- 显式启用变形：按压至 8 DIP，释放后恢复 -->
+<Button Content="保存" CornerRadius="20"
         m3:MaterialButton.PressedCornerRadius="8" />
 
-<!-- 使用已有 Small 按钮的按压 Token -->
-<Button Content="Save"
+<!-- 选择 Small 的按压形状 Token -->
+<Button Content="保存"
         m3:MaterialButton.PressedCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.PressedContainerShape}}" />
 ```
 
-C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`；传 null 恢复固定形状。
-属性支持非对称 `CornerRadius`、样式和绑定。原先依赖自动按压变形的调用方需要显式设置这个属性；
-旧的尺寸形状 Token 保留，但主题不再自动消费 `PressedContainerShape`。切换尺寸时，需要按尺寸改变
-按压形状的调用方也应通过样式或绑定更新目标；显式目标不会被尺寸 class 覆盖。
+C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`
+（`Material3Expressive.Components`、`Avalonia`）；传 `null` 恢复固定形状。
+属性支持绑定、样式和非对称圆角。局部 `CornerRadius` 和显式按压目标不会被尺寸 class 覆盖，
+切换尺寸时如需不同的按压目标，应通过自己的样式或绑定更新。
+从旧的自动按压变形行为迁移时，需要显式设置 `PressedCornerRadius`；主题不再自动消费按压形状 Token。
 
-2026-10-03，维护者确认使用 `m3:MaterialButton.PressedCornerRadius` 并要求实施。
-固定上游 Button.kt / IconButton.kt 同时提供固定 shape 与变形 shapes 入口；本地用静止圆角和可空按压目标表达，
-不拆成两个组件入口，也不新增 Shapes 配置或变形开关。默认形状行为对应上游固定 shape 入口，
-当前 Expressive 尺寸与 Padding 保留，不随形状入口切换。
-范围为五种 Button 主题和四种 IconButton 主题，其他消费 Surface 的组件不受影响。
+常用自定义入口：
 
-## 验证与保留问题
+- `Background` / `Foreground`：容器色和内容色
+- `Padding`、内容对齐、`ContentTemplate`：内容布局
+- `CornerRadius`：静止圆角；圆角方形也通过此属性或对应形状 Token 表达
+- `BorderBrush` / `BorderThickness`：描边；Outlined 默认在所有尺寸均为 1 DIP
+- `m3:MaterialButton.Elevation`：各交互状态的阴影高度；Filled / Tonal 默认悬停升到 1 DIP，Outlined / Text 默认无 elevation 配置
 
-2026-10-04 Chip 共享描边 / Desktop 焦点修正后的回归：4× Headless self-test 完整执行
-188 个用例、932 个采样点，执行错误为 0。25 个用例 equal、133 个 withinTolerance、30 个仍 different。
-按压、释放、反向中断、禁用和 shape 配置更换的动画圆角、进度与运行状态已对齐。
-首选尺寸遵守约束，强制尺寸允许溢出，双端夹具分别对应 Compose `size` 与 `requiredSize`。
-五种主题默认固定形状按压用例的圆角读数与上游一致。
-187 例普通重复捕获与额外被动截图均稳定；`dynamic.repress` 的 Compose 普通重复采集
-在四个采样点出现最大 1 个通道值的像素差异，单例复测仍不稳定。
-Avalonia 两项检查和 Compose 额外截图检查均稳定。键盘局部零点修正后，Space / elevated Space /
-Enter 分别补跑自检；Space 在容差内，Enter 保留已确认的原生按下激活差异。
+例如自定义一组阴影高度：
 
-属性变更当帧的即时更新，以及更换 pressed shape 后的状态层像素仍未对齐；
-这些问题未被确立为可接受的语义偏离。Tween / Bezier 精度保留按共享决定处理。
-阴影坐标接入本次保留的具体范围见 [共享决定](../../../../docs/DECISIONS.md#本次保留阴影坐标接入差异)，
-其他保留问题不因执行回归而自动成为已接受的差异。字体场景和真实桌面视觉体验未在本轮验证。
+```xml
+<Button Content="新建">
+  <m3:MaterialButton.Elevation>
+    <m3:ButtonElevation Default="1" Pressed="1" Focused="1"
+                        Hovered="3" Disabled="0" />
+  </m3:MaterialButton.Elevation>
+</Button>
+```
+
+设 `m3:MaterialButton.Elevation="{x:Null}"` 会移除按钮的交互高度策略，恢复模板本身的高度值。
+局部颜色或描边值可能覆盖主题的禁用样式；自定义外观时请同时检查启用与禁用状态。
+状态层和 ripple 的墨色来自主题 Token，不能假定修改 `Foreground` 会同时重配它们。
+需要保持各状态联动时，优先按[共享接入说明](../../../../docs/GETTING_STARTED.md)使用 Token 覆盖。
+
+## 使用边界
+
+- Material 焦点环尚未实现；当前键盘焦点反馈来自状态层，主题关闭了原生 `FocusAdorner`
+- 普通 Button 不提供选中/切换状态，需要此行为时见 [ToggleButton](../ToggleButton/README.md)
+- 默认尺寸与 Padding 未实现上游 precision-pointer 紧凑分支；需要更紧凑布局时可显式覆盖尺寸与 `Padding`
+- 替换整个 `Template` 后，不保证保留 Material 的布局、形状动画或交互反馈接入
+- 当前实现不是完整视觉一致性承诺；未决差异、验证入口及已接受适配见 [INTERNALS.md](INTERNALS.md#一致性边界与验证)
