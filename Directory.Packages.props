@@ -19,8 +19,9 @@
     <PackageVersion Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="ComposeAnimation.Avalonia" Version="0.2.7-alpha" />
-    <PackageVersion Include="ComposeAnimation.TestSupport" Version="0.2.7-alpha" />
+    <PackageVersion Include="Shirasagi0012.ComposeAnimation.Avalonia" Version="0.2.8-alpha" />
+    <PackageVersion Include="Shirasagi0012.ComposeAnimation.TestSupport" Version="0.2.8-alpha" />
+    <PackageVersion Include="Shirasagi0012.SmoothScroll.Avalonia" Version="12.0.0" />
     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
     <PackageVersion Include="PropertyGenerator.Avalonia" Version="1.3.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
@@ -33,8 +34,7 @@
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="YamlDotNet" Version="16.3.0" />
-    
-    <PackageVersion Include="Avalonia.Markup.Xaml.Loader" Version="$(AvaloniaVersion)"/>
-    <PackageVersion Include="HotAvalonia" Version="3.1.4"/>
+    <PackageVersion Include="Avalonia.Markup.Xaml.Loader" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="HotAvalonia" Version="3.1.4" />
   </ItemGroup>
 </Project>

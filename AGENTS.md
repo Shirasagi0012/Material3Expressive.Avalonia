@@ -20,15 +20,10 @@
 - 已确认的组件设计就近记录在对应 INTERNALS.md（尚未拆分的组件暂存 README）；跨组件的共享能力决定记录于 [docs/DECISIONS.md](docs/DECISIONS.md)。
 - 提交使用惯例式提交风格的提交信息。
 
-ComposeAnimation 通过 NuGet 包接入；当前本地包源为相邻仓库的 `../ComposeAnimation/packages`。
-准备与中央版本一致的 `ComposeAnimation.Runtime`、`ComposeAnimation.Avalonia`、
-`ComposeAnimation.TestSupport` 三个包。如果尚未生成，在相邻 ComposeAnimation 仓库可用的前提下执行：
-
-```powershell
-[xml]$packageVersions = Get-Content ./Directory.Packages.props
-$composeVersion = ($packageVersions.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'ComposeAnimation.Avalonia').Version
-& ../ComposeAnimation/pack.ps1 -Version $composeVersion
-```
+ComposeAnimation 与 SmoothScroll 通过 `Shirasagi0012.*` NuGet 包接入，版本由
+[Directory.Packages.props](Directory.Packages.props) 管理，GitHub Packages 包源及映射由
+[nuget.config](nuget.config) 管理。依赖准备与包源访问见[接入指南](docs/GETTING_STARTED.md#源码与依赖)，
+不再要求相邻 ComposeAnimation 本地包目录，不改成跨仓库 ProjectReference。
 
 ## 本地开发
 
@@ -41,8 +36,7 @@ $composeVersion = ($packageVersions.Project.ItemGroup.PackageVersion | Where-Obj
 git submodule update --init --recursive
 ```
 
-打包脚本拒绝覆盖同版本产物；已有匹配包时直接复用。需要改变依赖内容时使用新的包版本并同步中央版本，
-不要改成跨仓库的 ComposeAnimation `ProjectReference`。更换本地包源位置时同步调整 NuGet 配置。
+需要改变依赖内容时使用新的包版本并同步中央版本；不要把包源凭证提交到仓库。
 
 准备好依赖后执行：
 
