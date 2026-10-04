@@ -15,6 +15,7 @@
 [原生 Slider 水平/垂直主题 / RangeSlider](src/Material3Expressive/Components/Slider/README.md)、
 [Linear / Circular Progress Indicator 及波浪、确定与不确定模式](src/Material3Expressive/Components/ProgressIndicator/README.md)、
 [原生 ScrollBar 的水平/垂直 Material 主题](src/Material3Expressive/Components/ScrollBar/README.md)、
+[原生 ScrollViewer 的平滑滚动主题](src/Material3Expressive/Components/ScrollViewer/README.md)、
 [原生 CheckBox 的两态/三态 Material 模板](src/Material3Expressive/Components/CheckBox/README.md)、
 [原生 RadioButton 的 Material 模板](src/Material3Expressive/Components/RadioButton/README.md)、
 [原生 ToggleSwitch 的 Material Switch 模板](src/Material3Expressive/Components/Switch/README.md)、
@@ -66,6 +67,9 @@ $composeVersion = ($packageVersions.Project.ItemGroup.PackageVersion | Where-Obj
 
 打包脚本拒绝覆盖同版本产物；已有匹配包时直接复用。需要改变依赖内容时使用新的包版本并同步中央版本，
 不要改成跨仓库的 ComposeAnimation `ProjectReference`。更换本地包源位置时同步调整 NuGet 配置。
+
+SmoothScroll 使用 `modules/SmoothScroll.Avalonia` 子模块，通过 `ProjectReference` 直接引用其
+`SmoothScroll.Avalonia.Controls` 工程，随主项目一起构建。
 
 准备好依赖后执行：
 

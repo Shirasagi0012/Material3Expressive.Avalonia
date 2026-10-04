@@ -57,6 +57,7 @@ internal sealed class DefaultTopAppBarScrollBehavior : TopAppBarScrollBehavior
     }
     internal TopScrollKind Kind { get; }
     private Func<bool> CanScroll { get; }
+    internal bool CanScrollForComposition() => CanScroll();
     public override TopAppBarState State { get; }
     public override bool IsPinned => Kind == TopScrollKind.Pinned;
     private readonly IAnimationSpec<float>? _snap;
@@ -108,6 +109,7 @@ internal sealed class DefaultBottomAppBarScrollBehavior : BottomAppBarScrollBeha
         NestedScrollConnection = new Connection(this);
     }
     private Func<bool> CanScroll { get; }
+    internal bool CanScrollForComposition() => CanScroll();
     public override BottomAppBarState State { get; }
     public override bool IsPinned => false;
     private readonly IAnimationSpec<float>? _snap;

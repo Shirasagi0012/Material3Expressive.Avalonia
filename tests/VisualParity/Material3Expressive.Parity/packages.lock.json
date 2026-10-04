@@ -145,7 +145,8 @@
           "Shirasagi0012.Material3Expressive.Avalonia.Shadow": "[0.2.0-alpha, )",
           "Shirasagi0012.MaterialColorUtilities": "[0.4.0-alpha, )",
           "Shirasagi0012.MaterialShapes": "[0.1.2-alpha, )",
-          "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": "[0.1.2-alpha, )"
+          "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": "[0.1.2-alpha, )",
+          "SmoothScroll.Avalonia": "[1.0.0, )"
         }
       },
       "Shirasagi0012.Material3Expressive.Avalonia.Shadow": {
@@ -188,6 +189,19 @@
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.2, )"
+        }
+      },
+      "SmoothScroll.Avalonia": {
+        "type": "Project",
+        "dependencies": {
+          "Avalonia": "[12.0.0, )",
+          "SmoothScroll.Avalonia.Interaction": "[1.0.0, )"
+        }
+      },
+      "smoothscroll.avalonia.interaction": {
+        "type": "Project",
+        "dependencies": {
+          "Avalonia": "[12.0.0, )"
         }
       },
       "Avalonia": {

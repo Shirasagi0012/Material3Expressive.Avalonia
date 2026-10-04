@@ -3,7 +3,6 @@
 依据 `docs/upstream-baseline.json` 固定的 `AppBar.kt`，AndroidX 与 Core 的该文件相同。
 提供七种顶部栏（Top、CenterAligned、Medium、Large、MediumFlexible、LargeFlexible、TwoRows）和
 Bottom / FlexibleBottom，以及上游名称的 Defaults、Colors、State、ScrollBehavior / nested connection。
-2026-10-04 维护者确认 AppBarScrollScope、ItemsControl actions、双标题生成模板和下述槽规则。
 
 ## 槽与布局
 
@@ -24,8 +23,9 @@ MediumFlexible 112/136、LargeFlexible 120/152（无/有副标题），TwoRows �
 Automation 将栏与标题声明为 Group；fraction < .5 只暴露展开标题，否则只暴露折叠标题，
 导航/动作保留普通控件语义。上游 heightOffsetLimit 是普通字段，其 onSizeChanged 写入不主动使标题失效；
 后续被观察的 offset 或配置更新才重读标题 fraction，容器 drawBehind 可当前帧读取新值。
-Avalonia 对外仍保留上限属性通知，组件内部观察范围遵循上游。12.1.2 会剔除有效 opacity <= .003 的节点；极小非零标题 alpha
-使用原生 opacity mask 保留实际透明度，其余值使用完整组透明度，不改写曲线或比较容差。
+Avalonia 对外仍保留上限属性通知，组件内部观察范围遵循上游。12.1.2 会剔除有效 opacity <= .003 的节点；
+UI 布局下的标题对极小非零 alpha 使用原生 opacity mask 保留实际透明度，其余值使用完整组透明度。
+合成路径目前直接驱动 opacity，仍受该极小透明度剔除限制；这是待解决的视觉差异，不是已批准的曲线改写。
 
 Bottom 默认动作项与可选 `FloatingActionButton / FloatingActionButtonTemplate`；FAB 顶部留 8、末端留 12 DIP。
 CustomContent 或其模板非 null 时替换整个动作/FAB 区域，保留外部 padding、insets、背景、tonal elevation
@@ -39,32 +39,63 @@ HorizontalArrangement 支持 Start/Center/End/SpaceBetween/SpaceAround/SpaceEven
 WindowInsets 是物理 left/top/right/bottom Thickness，桌面默认零；ContentPadding 为逻辑 start/top/end/bottom。
 整数布局使用实际 density，MaterialWindowInsets.ConsumePadding 扣除祖先已消费的 inset。
 
-## 滚动与模板
+## 物理滚动与合成布局
+
+MaterialTheme 自带 ScrollViewer 主题，使用 SmoothScroll 的 ScrollViewerPresenter，不依赖 FluentTheme。
+SmoothScroll 子模块通过 ProjectReference 接入，依赖准备方式见[根 README](../../../../README.md#本地开发)。
+AppBarScrollScope 将标准 Scaffold 中的实际 TopAppBar / BottomAppBar 与物理主 ScrollViewer
+连接到同一 compositor。使用方式是下方的 Scope + behavior + Scaffold.ContentPadding。
+
+指针、直接滚轮和惯性帧共用 SmoothScroll 的常规增量入口，AppBar 是可选的纵向 pre/post 参与者；
+一次增量按 pre → 正文 → post 分配。Material 层负责栏的消费规则、状态和布局桥接。
+
+支持内置 Pinned / EnterAlways / ExitUntilCollapsed 和底栏 ExitAlways。内部事务用正向 DIP 表示内容
+向前滚动；公开 AppBar 状态继续是负向折叠的物理 px。顶栏只消费实际变化量，剩余量在同一帧交给正文；
+底栏观察正文消费量，不重复扣除。正文使用 SmoothScroll 惯性，结束后栏独立 spring 吸附；该路径不采用
+behavior.FlingAnimationSpec 的 Compose decay。显式 spring snap 参数和 null 禁用 snap 仍生效。
+
+栏高、标题位置/透明度、背景色、正文位置及裁剪视口由同一组合成输出驱动；底栏关联的 FAB/snackbar
+位置随动。UI 线程恢复后，数值状态更新真实 Measure/Arrange、ContentPadding 和 ScrollViewer.Offset。
+新 UI 布局成为下一次合成补偿的基准，不把栏的位移写进正文 Offset。直接拖动栏沿用已有 UI 路径。
+
+Avalonia 12.1.2 的适配包括：首次 expression 主动求值、动画停止后恢复客户端基准值、绑定前同步原生
+Size/Opacity，及动态纯色 visual 的重绘失效补齐。这些桥接依赖固定版本的 composition 行为，升级时需重验。
+
+自动合成连接要求：
+
+- Scope/栏引用同一个内置 behavior，使用标准栏模板；snap 为默认 spring、显式 SpringSpec 或 null。
+- Scaffold 有一个物理主 ScrollViewer，正文根填满 Scaffold 并消费 ContentPadding（见示例）；允许正文内嵌套滚动器。
+- 没有祖先 ScrollViewer、额外正文变换或原生 horizontal/vertical snap points。
+
+主正文内的滚动器保留原生 SmoothScroll：内层自己滚动时不驱动外层 AppBar，也不改变主正文视口。
+内层到边界后，下一笔滚轮输入按 IsScrollChainingEnabled 自然冒泡到主正文，才驱动正文和栏；
+触摸沿用 SmoothScroll 原有捕获接力。单次输入跨边界的剩余量和已启动惯性的余速不额外分配给父层。
+内层列表/编辑区保留各自的逻辑单位、虚拟化和编辑交互。
+
+逻辑主正文、嵌套 AppBarScrollScope、自定义 behavior、非 spring snap、不同正文布局及主正文原生 snap points
+暂不支持自动 AppBar 联动；正文继续由其 presenter 滚动。
+Scope 只持有一个主正文及连接；多个主候选不按视觉树顺序任选。正文内部滚动器及 Scaffold 的栏/覆盖槽不参与主正文选择。
+Scope 不修改 ScrollViewer 的模板或主题；自定义模板中实际的 SmoothScroll presenter 在满足相同布局条件时也可接入。
+模板/行为/内容切换、detach/re-attach 会重建并释放连接。
+自定义 ScrollViewer 模板应使用 SmoothScroll 的 ScrollViewerPresenter；内容等 owner 属性采用 TemplateBinding，
+使模板退出时解除内容归属。默认主题及模板绑定说明见 [ScrollViewer](../ScrollViewer/README.md)。
+`canScroll` 和 `isScrollingContentAtStart` 在 UI 输入前及布局时求值；UI 忙碌期间沿用最后快照。
+直接 Offset、键盘、BringIntoView、滚动条定位和程序化定位动画不进入 pre/post 位移消费协议。
+
+UI 忙碌时，公开状态、滚动条滑块/自动隐藏、辅助功能与命中测试仍依赖 UI 更新；虚拟化新内容不能凭空生成。
+合成运动覆盖已呈现的正文和栏。AppBar 参与者接入时不支持缩放及 overscroll，正文在有效范围内夹取；
+原生 snap points 场景只保留正文自身滚动，不自动联动 AppBar。
+
+## 显式 UI 协议与直接拖动
 
 AppBarScrollScope 包围屏幕，栏和 Scope 引用同一个 behavior。顶部提供 Pinned/EnterAlways/ExitUntilCollapsed，
 底部 ExitAlways。状态/协议为物理 px、速度 px/s；尺寸和 Avalonia Offset 为 DIP/原生逻辑单位。
 默认 fling 从挂载的栏或 Scope 读取 density，snap 从 Material motion token 解析；显式 spec 重载允许
 分别传 null 禁用 decay/snap。求解使用 ComposeAnimation NuGet，spring 参数保留上游 Float 精度。
 
-pre 从外到内、每层 top→bottom；post 从内到外、每层 bottom→top。原生内嵌 viewer 在边界向祖先传递
-剩余位移和速度；connection 返回消费量。行为替换、Scope detach、模板替换、新输入取消旧惯性/吸附。
-Scope 只适配归它直接拥有的 viewer，嵌套作用域不会重复登记同一 viewer。
-
-核验 Fluent 12.1.2 标准模板身份后，Scope 使用保留全部原生部件/绑定的模板，其中 PART_ContentPresenter
-为 AppBarScrollContentPresenter。两个 ScrollBar、键盘、BringIntoView、水平/Shift 滚动和 native snap point
-收尾仍走原生控件。适配只在 Scope 内启用；Template/ControlTheme/Style 提供的自定义模板不被覆盖，
-清除覆盖可恢复标准适配。自定义模板可显式使用公开 AppBarScrollContentPresenter（保留原生 theme/bindings/parts）。
-标准适配使用 SetCurrentValue 保留模板的值来源和优先级；后来加入的普通 Style 或更新的 Binding 仍可替换它。
-模板须把 Background 绑定到 presenter，使空白正文区域参与原生命中测试，例如：
-
-```xml
-<m3:AppBarScrollContentPresenter Name="PART_ContentPresenter"
-    Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
-    ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}" />
-```
-
-这是 presenter 接入片段；完整原生部件、snap 绑定和水平 recognizer 见同目录 AppBarScrollScope.axaml。
-任意滚动宿主可在 UI 线程调用公开协议：
+显式分发的 pre 从外到内、每层 top→bottom；post 从内到外、每层 bottom→top，connection 返回消费量。
+这条协议用于自定义宿主和行为验证，不自动接管原生 viewer 的滚轮、触摸或惯性。
+任意滚动宿主可在 UI 线程调用：
 
 ```csharp
 Vector consumed = scope.DispatchScroll(deltaPx, remaining => ConsumeContentPixels(remaining));
@@ -73,16 +104,13 @@ Vector consumedVelocity = await scope.DispatchFlingAsync(velocityPxPerSecond,
 // 内容 inertia 每帧也经 DispatchScroll(..., AppBarScrollSource.SideEffect)。
 ```
 
-标准 viewer 保留 Avalonia 的 50 DIP wheel step、逻辑单位、Shift 与 RTL；不宣称 wheel 步长与 Compose 平台相同。
-垂直 touch/pen 用原生 GestureRecognizer/capture 接入，保留边界识别与释放速度，正文惯性走 Compose spline；
-水平保留原生 recognizer。12.1.2 关闭的 inertia-starting 事件构造函数用局部 UnsafeAccessor 接通 snap point
-生命周期，升级时须复核。直接拖动使用 Core Desktop 的 18 DIP touch slop / .125 DIP mouse slop。
+直接拖动栏使用 Core Desktop 的 18 DIP touch slop / .125 DIP mouse slop，并调用 behavior 的 settle。
 Lsq2 速度追踪从 Rail 原样提取共用。TouchExplorationEnabled 由宿主接入辅助服务，只禁用底栏直接拖动和
 隐藏布局，nested connection 保留，对应上游 activeScrollBehavior 范围。
 
 ## 使用
 
-先加载 FluentTheme、MaterialTheme，每个 TopLevel 加载内容前初始化 VisualAnimationScope.Initialize(window)。
+加载 MaterialTheme，每个 TopLevel 加载内容前初始化 VisualAnimationScope.Initialize(window)。
 ViewModel 提供 TopBehavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(new TopAppBarState())，
 BottomBehavior = BottomAppBarDefaults.ExitAlwaysScrollBehavior(new BottomAppBarState())。
 
@@ -112,22 +140,20 @@ BottomBehavior = BottomAppBarDefaults.ExitAlwaysScrollBehavior(new BottomAppBarS
 Width/Height 绑定表达正文根 fillMaxSize；Scaffold 不自动给正文加 padding。
 复杂副标题数据应另提供 SubtitleTemplate。`bar.CollapsedTitle = null` 清空折叠标题，
 `bar.ClearValue(TopAppBar.CollapsedTitleProperty)` 恢复回退。Catalog 的 AppBar 按钮或 `--app-bars` 展示组件。
+Catalog 默认使用物理主正文接入合成滚动；勾选 `Nested scrolling` 加入独立滚动的列表和编辑区，
+主正文继续使用合成连接。切换该选项会重置正文和栏的位置。
 
 ## 验证边界
 
-AppBarTests 验证槽、实际模板树、样式/绑定/null/ClearValue、语义与布局；AppBarScrollTests 验证真实 RawTouch/
-native wheel、消费顺序、真实剩余速度、嵌套/迁移、嵌入控件、上下栏 Scaffold、惯性/吸附/中断与 1×/2× density。
-VisualParity 的 AppBarCases.cs / AppBarCases.kt 独立调用真实组件，覆盖非文字布局/颜色、排列边界、折叠、
-动态配置、四种 behavior、fling/snap 端点与中断、直接鼠标拖动/fling。参考使用 Expressive motion 和
-Core Desktop density-scaled slop。文字 glyph/hinting、真实屏幕阅读器和硬件触摸不由这些夹具证明。
-桌面输入另见 tests/DesktopInput/AppBarInputProbe；RawTouch 模式验证 Win32 后端、实际 DPI、实时帧与渲染器，
-不等于 OS WM_POINTER 投递或硬件触摸。OS 模式先核验命中自己的窗口，锁屏覆盖时报失败并停止注入。
+验证入口及覆盖范围：
 
-2026-10-04 合入主线时使用 ComposeAnimation `0.2.6-alpha` 验证：Release 全解决方案构建、
-791 项控件测试和 123 项 Parity 框架测试通过。112 项全量 self-test 重新采集双端、重复捕获并检查
-额外被动截图，全部稳定；110 项严格一致、2 项在既有容差内，无执行错误或未比较项。
-428 个采样的 9076 项结构化事实全部相等；396 张请求的 Raster 中 393 张严格一致、3 张在容差内。
-逐样本比较状态与分支交付报告一致，原始 4× 图像差异保留。
-报告见 [appbar-merge-20261004](../../../../artifacts/visual-parity/runs/appbar-merge-20261004/summary.md)。
-Win32 RawTouch 探针在实际 1.25× DPI 窗口通过上下栏消费、正文惯性、中断、直接拖动和吸附检查，
-没有动画异常；本次未验证 OS 触摸投递、硬件触摸、屏幕阅读器或文字 glyph/hinting。
+- [AppBarTests](../../../../tests/Material3Expressive.Tests/AppBarTests.cs)：槽、实际模板树、样式/绑定/null/ClearValue、语义与布局。
+- [AppBarScrollTests](../../../../tests/Material3Expressive.Tests/AppBarScrollTests.cs)：显式分发协议及栏的直接拖动、吸附与中断。
+- [AppBarSmoothScrollTests](../../../../tests/Material3Expressive.Tests/AppBarSmoothScrollTests.cs)：主正文路由滚轮/RawTouch、布局衔接、独立嵌套、逻辑模式、模板/主题切换、迁移及连接生命周期。
+- [AppBarCompositionTests](../../../../tests/Material3Expressive.Tests/AppBarCompositionTests.cs)：合成与 UI 布局路径的渲染对照、布局基准更新、分数偏移与断开后的恢复。
+- VisualParity 的 [AppBarCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/AppBarCases.cs) / [AppBarCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/AppBarCases.kt)：真实组件的非文字布局/颜色、排列边界、折叠、动态配置、四种 behavior、fling/snap 端点与中断、直接鼠标拖动/fling。参考使用 Expressive motion 和 Core Desktop density-scaled slop；这些用例不替代 SmoothScroll 正文集成检查。
+- [MaterialScrollProbe](../../../../tests/DesktopInput/MaterialScrollProbe/README.md)：真实 Win32 窗口中的栏/正文布局、惯性及 UI 阻塞期间的合成运动；数值 trace、离屏布局图与可选屏幕逐帧测量分别报告。
+- [AppBarInputProbe](../../../../tests/DesktopInput/AppBarInputProbe/README.md)：Win32 后端、实际 DPI、实时帧下的触摸消费、惯性、中断和直接拖动。RawTouch 与 OS 注入是独立模式；OS 模式先核验命中自己的窗口，遮挡或锁屏时报失败并停止注入。
+
+测试覆盖说明不代表当前修订已全部运行。RawTouch 不证明 OS WM_POINTER 投递，OS 注入也不替代硬件触摸；
+文字 glyph/hinting、真实屏幕阅读器及 UI 阻塞时的辅助功能/命中测试仍需单独验收。

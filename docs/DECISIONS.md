@@ -167,19 +167,58 @@ fade / scale 在缺少 effect 或反向段中的默认 spring，以及 Transform
 
 决定：公开 AppBarScrollScope 包围屏幕，栏与 Scope 使用同一个 ScrollBehavior。
 协议以物理像素和 px/s 表达消费量；pre 外到内、每层 top→bottom，post 内到外、每层 bottom→top。
-Scope 按最近祖先归属登记 ScrollViewer，嵌套作用域不重复适配；移出、detach、行为或模板替换及新输入
-取消旧惯性/吸附并释放登记。标准 Fluent 12.1.2 模板先核验身份，再仅在 Scope 内替换 presenter，
-保留原生滚动条、键盘、BringIntoView、水平滚动和 snap point 生命周期。
-模板适配用 SetCurrentValue 保留值来源和优先级，不通过较高优先级的 class trigger 遮蔽后加入的普通样式。
-自定义 Template/ControlTheme/Style 保留，显式 AppBarScrollContentPresenter 或 DispatchScroll /
-DispatchFlingAsync 接入协议；不以继承 ScrollViewer 代替真实消费和剩余速度的传递。
+Scope 只连接其 Scaffold 正文槽内唯一的主 ScrollViewer；内层独立，不建立多个正文连接。
+移出、detach、行为或模板替换及新输入取消旧惯性/吸附并释放连接。接入按实际 SmoothScroll presenter
+及物理滚动/布局能力判断；Scope 不改写 Template/ControlTheme/Style，不订阅内层 viewer 的模板变化。
+自定义宿主可显式使用 DispatchScroll / DispatchFlingAsync；该协议不自动创建或替换正文滚动引擎。
 
-垂直 touch/pen 用 GestureRecognizer/capture 接入，正文惯性与栏的 decay/snap 复用 ComposeAnimation。
+正文 touch/pen、捕获接力和惯性由 SmoothScroll 接入；直接拖动栏及其 settle 保留 ComposeAnimation。
 原 Rail 的 Lsq2 VelocityTracker 原样移入内部 Foundation/Input，由 Rail 与 AppBar 共用。
 没有新增通用输入框架或完整系统 insets 框架；标题和 Bottom 自定义内容的槽规则留在组件 README。
-12.1.2 的 inertia-starting 事件构造使用局部 UnsafeAccessor，升级 Avalonia 时须复核。
 确认：2026-10-04，维护者采用修订后的 AppBarScrollScope 及槽规则，要求保留自定义模板、嵌套和生命周期，
 并分别验证组件 parity 与真实桌面输入集成。
+同日维护者审核后明确移除 Fluent ScrollViewer 接入、自动模板替换及旧 AppBarScrollContentPresenter，
+批准只保留 SmoothScroll 正文路径、单主正文连接及已有显式分发/直接拖动 API。
+本决定取代此前 Fluent 标准模板身份核验、SetCurrentValue 替换及旧正文 spline/snap 适配规则。
+
+## 普通物理滚动与 AppBar 的合成接入
+
+决定：普通 ScrollViewer 使用 Material 自有主题与 SmoothScroll presenter，保留 Avalonia 的公开控件和
+Offset。标准 Scaffold 的真实 AppBar 与物理正文共享 compositor 上的滚动事务、动态范围和视觉输出；
+Material 消费规则及布局知识保留在本库，依赖中只增加通用参与者、数值回读与合成属性支持。
+主项目通过 ProjectReference 直接消费 SmoothScroll 子模块；参与者协议位于 Interaction 命名空间，
+数值输出及合成适配工具位于 Composition 命名空间，仍属于同一个程序集。
+
+此路径使用 SmoothScroll 的惯性，不要求与 Compose 物理曲线一致。顶栏只返回实际消费的位移，边界剩余量
+在同一帧交给正文；底栏观察正文消费，正文结束后独立 spring 吸附。直接拖动栏保留已有 UI 输入/settle。
+公开 AppBar 状态仍以物理像素表示，内部滚动事务用 DIP；spring 规格在物理像素中求值。
+
+范围：连接物理主视口、内置 behavior、标准栏模板及 Scaffold.ContentPadding 布局。
+逻辑主正文、嵌套 AppBarScrollScope、主正文原生 snap points、自定义 behavior 和其他布局暂不自动联动 AppBar。
+不回退旧正文引擎；使用 SmoothScroll presenter 的自定义模板可在满足相同布局条件时接入。
+自定义回调只在 UI 线程求值，compositor 消费快照。公开 Offset 与状态是 UI 回读值，不是跨线程实时接口。
+确认：维护者明确选择基于 SmoothScroll、接受小型通用扩展，并授权实现普通物理滚动与真实 AppBar、验证布局衔接。
+本阶段未承诺完整通用嵌套滚动引擎、逻辑虚拟化抗阻塞、统一手势框架或新的公开滚动控制器 API。
+
+补充决定（2026-10-04）：保留 SmoothScroll 的原生边界冒泡和触摸捕获接力。主正文内的滚动器独立滚动，
+不驱动外层 AppBar；内层到边界后下一笔输入交给主正文，才驱动正文与栏。不增加部分余量或惯性跨层分配。
+维护者明确选择了该行为，并审阅同意 ConfigureVerticalScroll 的可选
+Func<double, bool>? canConsumeAtBoundary 参数：仅在 UI 线程根据快照查询额外参与者能否消费方向位移，
+正 DIP 增加 Offset，查询不改变状态，null/false 沿用原生判界；清除参与者时清除回调。
+该参数不传递滚动量、不跨线程读取控件，也不建立共享栏状态或多 tracker 惯性会话。
+
+2026-10-04 补充：维护者批准将已验证的参与者消费接入 SmoothScroll 主路径。
+普通指针、直接滚轮和惯性帧共用增量事务，状态不再按参与者存在与否选择两套移动方法；
+tracker 统一计算有效范围并提交横纵向位置。普通弹性回弹、参与者纵向夹取与现有 zoom/snap
+限制保留；绝对定位及定位动画不进入 pre/post。UI 冒泡查询仍使用只读快照。
+2026-10-05 维护者批准完成公开协议和辅助入口的命名迁移：去除实验前缀，使用 AttachVerticalScroll、
+ConfigureVerticalScroll、RunOnScrollParticipant、DispatchToUI、ApplyVerticalScrollDelta、
+CompleteVerticalScroll 和 CancelScroll。挂载生命周期移入 ScrollPresenter 主文件，删除无调用的
+额外正文位移入口及其表达式分支；原型公开惯性启动入口已删除，桌面探针通过路由滚轮启动惯性，
+固定初速度检查由子模块测试调用内部 StartInertia。独立探针也通过 ProjectReference 消费当前源码。
+子模块默认 Avalonia 版本同步对齐主库的 12.1.2，删除已无消费者的 SmoothScroll 本地 NuGet 版本配置；
+ComposeAnimation 的本地 NuGet 接入保持不变。
+本次替代此前暂留实验命名和原型入口的规则；消费顺序、单位、边界冒泡、取消语义及现有 zoom/snap 限制不变。
 
 ## 本次保留 Tween / Bezier 精度差异
 
