@@ -17,7 +17,7 @@ namespace Material3Expressive.Baseline;
 /// </summary>
 public class TypographyTokenSource : ITokenSource
 {
-    private static readonly FontFamily Roboto = new("Roboto");
+    private static readonly FontFamily Roboto = new("fonts:Roboto#Roboto, Roboto, $Default");
 
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
