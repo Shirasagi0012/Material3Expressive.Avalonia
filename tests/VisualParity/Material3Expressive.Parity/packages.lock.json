@@ -24,11 +24,11 @@
       },
       "ComposeAnimation.TestSupport": {
         "type": "Direct",
-        "requested": "[0.2.3-alpha, )",
-        "resolved": "0.2.3-alpha",
-        "contentHash": "YfoSLQGFD7eoYeiWB5bDNWa7GZdri5qtnsghEeZSq4Ij/HNEF2716ofVhKtGAcUqdHdZk/N6hQLLo6Uzm4M1LA==",
+        "requested": "[0.2.5-alpha, )",
+        "resolved": "0.2.5-alpha",
+        "contentHash": "0FtXAF7oMaDrg2wU3uiKVSl2PtfQq/1OBlPfx839EFU1NgjuHCXpjIdWiYZ3hATjKEghK1tJu5jQsUbUotaY0g==",
         "dependencies": {
-          "ComposeAnimation.Avalonia": "0.2.3-alpha"
+          "ComposeAnimation.Avalonia": "0.2.5-alpha"
         }
       },
       "YamlDotNet": {
@@ -73,8 +73,8 @@
       },
       "ComposeAnimation.Runtime": {
         "type": "Transitive",
-        "resolved": "0.2.3-alpha",
-        "contentHash": "FBmQ3PsmUvfbgmXcllQ1D6GqnJozqQjSY8IKsimeu6/Dx+EY9269AfwY0nWJD4AlDbIzOHrdPju2EbpUDAdbLg==",
+        "resolved": "0.2.5-alpha",
+        "contentHash": "MY+FXieaxZZ12dnIwUXAzVv8vjsDWz590kStYgFqeEarliseiRXIFHbmnhVzqz+Kt58blR5j0RpWVW1Yt1UeSA==",
         "dependencies": {
           "Avalonia": "12.1.2",
           "CommunityToolkit.Mvvm": "8.4.2"
@@ -140,7 +140,7 @@
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.2, )",
-          "ComposeAnimation.Avalonia": "[0.2.3-alpha, )",
+          "ComposeAnimation.Avalonia": "[0.2.5-alpha, )",
           "PropertyGenerator.Avalonia": "[1.3.1, )",
           "Shirasagi0012.Material3Expressive.Avalonia.Shadow": "[0.2.0-alpha, )",
           "Shirasagi0012.MaterialColorUtilities": "[0.4.0-alpha, )",
@@ -211,12 +211,12 @@
       },
       "ComposeAnimation.Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[0.2.3-alpha, )",
-        "resolved": "0.2.3-alpha",
-        "contentHash": "aXDjjYuoaW+qNMVovj71kVWbPxKJpi7cU2B+gIu/f9s1pekjHqfzVTzgBHyimbyQdyrvpqaxwv1GbaVAELEjFQ==",
+        "requested": "[0.2.5-alpha, )",
+        "resolved": "0.2.5-alpha",
+        "contentHash": "EuOF94CMswqU+Mpg6tevl7xcnYyYAjowqxy6hrybu21lEQxGkwN2H9CueTewAimEllp7hvxjnxeJp7F1NDZ7AQ==",
         "dependencies": {
           "Avalonia": "12.1.2",
-          "ComposeAnimation.Runtime": "0.2.3-alpha"
+          "ComposeAnimation.Runtime": "0.2.5-alpha"
         }
       },
       "PropertyGenerator.Avalonia": {
