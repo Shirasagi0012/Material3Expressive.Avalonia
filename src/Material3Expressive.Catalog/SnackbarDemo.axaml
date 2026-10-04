@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.SnackbarDemo" Width="760" Height="620" Title="Snackbar">
+  <Grid RowDefinitions="*,Auto">
+    <ScrollViewer>
+      <StackPanel Margin="32" Spacing="20">
+        <TextBlock Text="SnackbarHost" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <WrapPanel>
+          <Button Content="Short · 4 s" Click="OnShort" Margin="0,0,12,12" />
+          <Button Content="Long · 10 s" Click="OnLong" Margin="0,0,12,12" />
+          <Button Content="Undo / Dismiss" Click="OnUndo" Margin="0,0,12,12" />
+          <Button Content="Queue two" Click="OnQueue" Margin="0,0,12,12" />
+          <Button Content="Cancel requests" Click="OnCancel" Margin="0,0,12,12" />
+        </WrapPanel>
+        <TextBlock x:Name="Result" Text="Results for actions, dismissals, timeouts, and cancellations appear here." TextWrapping="Wrap" />
+        <TextBlock Text="Custom Snackbar slots" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <m3:Snackbar Content="Connection failed" HorizontalAlignment="Stretch">
+          <m3:Snackbar.Action>
+            <Button Content="Retry" Theme="{StaticResource MaterialSnackbarActionButtonTheme}"
+                    Foreground="{Binding ActionForeground, RelativeSource={RelativeSource AncestorType=m3:Snackbar}}" Click="OnRetry" />
+          </m3:Snackbar.Action>
+        </m3:Snackbar>
+        <m3:Snackbar ActionOnNewLine="True" HorizontalAlignment="Stretch">
+          <m3:Snackbar.Content>
+            <TextBlock Text="Here is a multi-line message. The action is on the next line; content follows text baselines.&#10;The app handles commands and dismissal for custom buttons." TextWrapping="Wrap" />
+          </m3:Snackbar.Content>
+          <m3:Snackbar.Action>
+            <Button Content="Got it" Theme="{StaticResource MaterialSnackbarActionButtonTheme}"
+                    Foreground="{Binding ActionForeground, RelativeSource={RelativeSource AncestorType=m3:Snackbar}}" Click="OnCustomAction" />
+          </m3:Snackbar.Action>
+        </m3:Snackbar>
+      </StackPanel>
+    </ScrollViewer>
+    <m3:SnackbarHost x:Name="Messages" Grid.Row="1" HorizontalAlignment="Stretch">
+      <m3:SnackbarHost.SnackbarTemplate>
+        <DataTemplate><m3:Snackbar Data="{Binding}" DismissActionText="Dismiss" /></DataTemplate>
+      </m3:SnackbarHost.SnackbarTemplate>
+    </m3:SnackbarHost>
+  </Grid>
+</Window>
