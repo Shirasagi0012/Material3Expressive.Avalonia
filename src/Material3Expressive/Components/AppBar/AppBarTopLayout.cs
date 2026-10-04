@@ -7,6 +7,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Rendering.Composition;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using ComposeAnimation;
@@ -16,6 +17,7 @@ using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Foundation.Typography;
+using SmoothScroll.Avalonia.Composition;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
@@ -48,6 +50,34 @@ internal sealed class AppBarTopChrome : Panel
     private int _limitHeight;
     private static readonly CubicBezierEasing TitleAlpha = new(.8f, 0, .8f, .15f);
     private static readonly ColorConverter ColorConverter = new();
+    private AppBarCompositionVisuals? _composition;
+    private Control? _compositionBackground;
+    private CompositionSolidColorVisual? _compositionBackgroundVisual;
+    private bool _compositionHasColor;
+    internal bool CompositionEnabled => _composition is not null;
+    internal (Color Base, Color Scrolled, bool TwoRows) GetCompositionColors() =>
+        (BaseContainer, Owner.Colors?.ScrolledContainerColor ?? ScrolledColor, Owner.HasTwoRows);
+    internal void SetComposition(CompositionVector3Output? offsets, CompositionVector3Output? appearance, CompositionColorOutput? color = null)
+    {
+        _composition?.Dispose();
+        if (_compositionBackground is { } previous)
+        {
+            ElementComposition.SetElementChildVisual(previous, null);
+            Children.Remove(previous);
+        }
+        _compositionBackground = null; _compositionBackgroundVisual = null;
+        _composition = offsets is not null && appearance is not null ? new(offsets, appearance, color) : null;
+        _lastLimitHeight = int.MinValue;
+        _compositionHasColor = color is not null;
+        Background = _composition is null ? new SolidColorBrush(PaintedContainerColor) : Brushes.Transparent;
+        if (_composition is not null)
+        {
+            _compositionBackground = new Border { ZIndex = -1, IsHitTestVisible = false };
+            Children.Add(_compositionBackground);
+        }
+        UpdateAppearance();
+        Small.InvalidateMeasure(); Expanded.InvalidateMeasure(); InvalidateMeasure(); InvalidateVisual();
+    }
     internal Color PaintedContainerColor { get; private set; }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -63,6 +93,16 @@ internal sealed class AppBarTopChrome : Panel
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _composition?.Dispose(); _composition = null;
+        if (_compositionBackground is { } background)
+        {
+            ElementComposition.SetElementChildVisual(background, null);
+            Children.Remove(background);
+        }
+        _compositionBackground = null; _compositionBackgroundVisual = null;
+        _compositionHasColor = false;
+        Background = new SolidColorBrush(PaintedContainerColor);
+        UpdateAppearance();
         if (_state is not null) _state.PropertyChanged -= StateChanged;
         _state = null;
         _drag?.Dispose(); _drag = null;
@@ -84,7 +124,7 @@ internal sealed class AppBarTopChrome : Panel
         // Its onSizeChanged write must not invalidate title layers or composition.
         if (e.Property == TopAppBarState.HeightOffsetLimitProperty) { UpdateAppearance(false); return; }
         UpdateAppearance();
-        if (Children.Count == 2) { Small.InvalidateMeasure(); Expanded.InvalidateMeasure(); }
+        if (Children.Count >= 2) { Small.InvalidateMeasure(); Expanded.InvalidateMeasure(); }
         InvalidateMeasure();
     }
     internal void OwnerChanged(AvaloniaPropertyChangedEventArgs change)
@@ -95,14 +135,14 @@ internal sealed class AppBarTopChrome : Panel
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (Children.Count == 2 && TemplatedParent is TopAppBar &&
+        if (Children.Count >= 2 && TemplatedParent is TopAppBar &&
             (change.Property == BaseColorProperty || change.Property == ScrolledColorProperty || change.Property == NavigationColorProperty ||
              change.Property == TitleColorProperty || change.Property == SubtitleColorProperty || change.Property == ActionColorProperty))
         { UpdateAppearance(); InvalidateMeasure(); }
     }
     private void ConfigureRows()
     {
-        if (Children.Count != 2) return;
+        if (Children.Count < 2) return;
         var owner = Owner;
         if (owner.HasTwoRows && owner.Title is Control && owner.TitleTemplate is null && ReferenceEquals(owner.ResolveTitle(true), owner.Title))
             throw new InvalidOperationException("A two-row AppBar needs data/TitleTemplate to generate two title trees, or a separate CollapsedTitle control.");
@@ -132,10 +172,15 @@ internal sealed class AppBarTopChrome : Panel
         for (var i = 0; i < 4; i++) first[i] = MathUtils.Lerp((float)first[i], (float)last[i], Math.Clamp(fraction, 0, 1));
         return ColorConverter.From(first);
     }
-    private void Paint(Color color) { PaintedContainerColor = color; Background = new SolidColorBrush(color); }
+    private void Paint(Color color)
+    {
+        PaintedContainerColor = color;
+        Background = CompositionEnabled ? Brushes.Transparent : new SolidColorBrush(color);
+        if (!_compositionHasColor && _compositionBackground is Border background) background.Background = new SolidColorBrush(color);
+    }
     private void UpdateAppearance(bool updateTitles = true)
     {
-        if (Children.Count != 2 || TemplatedParent is not TopAppBar owner) return;
+        if (Children.Count < 2 || TemplatedParent is not TopAppBar owner) return;
         var title = new SolidColorBrush(owner.Colors?.TitleContentColor ?? TitleColor);
         var subtitle = new SolidColorBrush(owner.Colors?.SubtitleContentColor ?? SubtitleColor);
         Small.Title.SetColors(title, subtitle); Expanded.Title.SetColors(title, subtitle);
@@ -144,8 +189,8 @@ internal sealed class AppBarTopChrome : Panel
         var fraction = _state?.CollapsedFraction ?? 0;
         if (updateTitles)
         {
-            Small.Title.SetLayerAlpha(owner.HasTwoRows ? (float)TitleAlpha.Ease(fraction) : 1);
-            Expanded.Title.SetLayerAlpha(1 - fraction);
+            Small.Title.SetLayerAlpha(CompositionEnabled ? 1 : owner.HasTwoRows ? (float)TitleAlpha.Ease(fraction) : 1);
+            Expanded.Title.SetLayerAlpha(CompositionEnabled ? 1 : 1 - fraction);
             Small.Title.HiddenSemantics = owner.HasTwoRows && fraction < .5;
             Expanded.Title.HiddenSemantics = fraction >= .5;
         }
@@ -196,7 +241,10 @@ internal sealed class AppBarTopChrome : Panel
         Expanded.Measure(new Size(constraint.Width, double.IsFinite(constraint.Height) ? Math.Max(0, Px(constraint.Height) - _smallHeight) / scale : double.PositiveInfinity));
         _expandedHeight = owner.HasTwoRows ? Px(Expanded.DesiredSize.Height) : 0;
         // adjustHeightOffsetLimit is outside windowInsetsPadding on the single row.
-        _limitHeight = owner.HasTwoRows ? _expandedHeight : _smallHeight + _top + _bottom;
+        _limitHeight = owner.HasTwoRows ? (CompositionEnabled ? Expanded.MaximumHeight : _expandedHeight) :
+            (CompositionEnabled ? Small.MaximumHeight : _smallHeight) + _top + _bottom;
+        _compositionBackground?.Measure(new Size(availableSize.Width,
+            (_top + Small.MaximumHeight + _bottom + (owner.HasTwoRows ? Expanded.MaximumHeight : 0)) / scale));
         return new Size(availableSize.Width, (_top + _smallHeight + _bottom + _expandedHeight) / scale);
     }
     protected override Size ArrangeOverride(Size finalSize)
@@ -205,13 +253,44 @@ internal sealed class AppBarTopChrome : Panel
         // FlowDirection mirrors local coordinates; choose the logical side before placing.
         var start = FlowDirection == FlowDirection.RightToLeft ? _right : _left;
         var width = Math.Max(0, MathUtils.DipToPx(finalSize.Width, scale) - _left - _right);
-        Small.Arrange(new Rect(start / scale, _top / scale, width / scale, _smallHeight / scale));
-        if (Owner.HasTwoRows) Expanded.Arrange(new Rect(start / scale, (_top + _smallHeight + _bottom) / scale, width / scale, _expandedHeight / scale));
+        Small.Arrange(new Rect(start / scale, _top / scale, width / scale, (CompositionEnabled ? Small.MaximumHeight : _smallHeight) / scale));
+        if (Owner.HasTwoRows) Expanded.Arrange(new Rect(start / scale, (_top + _smallHeight + _bottom) / scale, width / scale, (CompositionEnabled ? Expanded.MaximumHeight : _expandedHeight) / scale));
+        if (_composition is { } composition)
+        {
+            // TemplatedControl's static owner clip follows the delayed UI height.
+            // Chrome supplies the live clip for the stock AppBar template instead.
+            composition.Bind(Owner, "ClipToBounds", "false");
+            var height = Owner.HasTwoRows ? $"{AppBarCompositionVisuals.Number((_top + _smallHeight + _bottom) / scale)} + {Expanded.CompositionHeight(scale)}" :
+                $"{AppBarCompositionVisuals.Number((_top + _bottom) / scale)} + {Small.CompositionHeight(scale)}";
+            composition.Bind(this, "ClipToBounds", "true");
+            // Bounds changes after ArrangeOverride returns; synchronize the size that
+            // the renderer will see, rather than cancelling the binding with old bounds.
+            composition.Bind(this, "Size", $"Vector2({AppBarCompositionVisuals.Number(finalSize.Width)}, {height})", finalSize);
+            Small.BindComposition(composition, scale);
+            if (Owner.HasTwoRows) Expanded.BindComposition(composition, scale);
+            if (_compositionBackground is { } background)
+            {
+                var fullHeight = (_top + Small.MaximumHeight + _bottom + (Owner.HasTwoRows ? Expanded.MaximumHeight : 0)) / scale;
+                background.Arrange(new Rect(0, 0, finalSize.Width, fullHeight));
+                if (_compositionHasColor && _compositionBackgroundVisual is null && ElementComposition.GetElementVisual(background) is { } backgroundParent)
+                {
+                    _compositionBackgroundVisual = backgroundParent.Compositor.CreateAnimatedSolidColorVisual();
+                    _compositionBackgroundVisual.Color = PaintedContainerColor;
+                    ElementComposition.SetElementChildVisual(background, _compositionBackgroundVisual);
+                }
+                if (_compositionBackgroundVisual is { } backgroundVisual)
+                {
+                    backgroundVisual.Size = new Vector(finalSize.Width, fullHeight);
+                    composition.Bind(backgroundVisual, "Color", "colorOutput.Value");
+                }
+            }
+        }
         // onSizeChanged observes the placed integer size, not every measure pass.
         if (_state is not null && _limitHeight != _lastLimitHeight)
-        { _lastLimitHeight = _limitHeight; _state.HeightOffsetLimit = -(_limitHeight - _state.HeightOffset); }
+        { _lastLimitHeight = _limitHeight; _state.HeightOffsetLimit = CompositionEnabled ? -_limitHeight : -(_limitHeight - _state.HeightOffset); }
         return finalSize;
     }
+
 }
 
 internal sealed class AppBarTopRow : Panel
@@ -223,6 +302,44 @@ internal sealed class AppBarTopRow : Panel
     internal bool Lower { get; set; }
     internal AppBarTitle Title => (AppBarTitle)Children[1];
     private int _height, _maxHeight, _width, _navWidth, _actionsWidth, _titleWidth, _titleHeight, _navHeight, _actionsHeight;
+    internal int MaximumHeight => _maxHeight;
+    internal string CompositionHeight(double scale) => Lower || !Chrome.Owner.HasTwoRows ?
+        $"Max(0, {_maxHeight} + Floor(-offsets.Value.X * {AppBarCompositionVisuals.Number(scale)} + 0.5)) / {AppBarCompositionVisuals.Number(scale)}" :
+        AppBarCompositionVisuals.Number(_maxHeight / scale);
+
+    internal void BindComposition(AppBarCompositionVisuals composition, double scale)
+    {
+        var height = CompositionHeight(scale);
+        composition.Bind(this, "Size", $"Vector2({AppBarCompositionVisuals.Number(_width / scale)}, {height})");
+        composition.Bind(Title, "Opacity", Chrome.Owner.HasTwoRows ? Lower ? "appearance.Value.Y" : "appearance.Value.X" : "1");
+        if (!Lower && Chrome.Owner.HasTwoRows) return;
+        var padding = Padding;
+        var top = MathUtils.DipToPx(padding.Top, scale);
+        var bottom = MathUtils.DipToPx(padding.Bottom, scale);
+        var liveContentHeight = $"(({height}) * {AppBarCompositionVisuals.Number(scale)} + {top - bottom})";
+        for (var i = 0; i < Children.Count; i++)
+        {
+            var child = Children[i];
+            var childHeight = i == 0 ? _navHeight : i == 1 ? _titleHeight : _actionsHeight;
+            string liveY;
+            if (Lower && i == 1)
+            {
+                var titleBottom = MathUtils.DipToPx(Chrome.Owner.TitleBottomPadding, scale);
+                var pad = titleBottom - (_titleHeight - Title.LastBaseline(scale));
+                if (pad + _titleHeight > _maxHeight) pad -= pad + _titleHeight - _maxHeight;
+                // Avalonia's expression parser associates consecutive subtraction to
+                // the right. Group the original layout's left-to-right arithmetic.
+                liveY = $"({liveContentHeight} - {_titleHeight}) - {(titleBottom == 0 ? 0 : Math.Max(0, pad))}";
+            }
+            else
+            {
+                var value = $"({liveContentHeight} - {childHeight}) / 2";
+                // Kotlin/C# integer division truncates toward zero, including clipped negative Y.
+                liveY = $"(({value}) < 0 ? -Floor(-({value})) : Floor({value}))";
+            }
+            composition.Bind(child, "Translation", $"Vector3(0, ({liveY}) / {AppBarCompositionVisuals.Number(scale)} - {AppBarCompositionVisuals.Number(child.Bounds.Y)}, 0)");
+        }
+    }
     private Thickness Padding => !Chrome.Owner.HasTwoRows ? Chrome.Owner.ContentPadding : default;
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -248,7 +365,7 @@ internal sealed class AppBarTopRow : Panel
         var owner = Chrome.Owner;
         var scale = LayoutHelper.GetLayoutScale(this);
         int Px(double value) => MathUtils.DipToPx((float)value, (float)scale);
-        var contentHeight = _height + Px(Padding.Top) - Px(Padding.Bottom);
+        var contentHeight = (Chrome.CompositionEnabled ? _maxHeight : _height) + Px(Padding.Top) - Px(Padding.Bottom);
         Children[0].Arrange(new Rect(Px(Padding.Left) / scale, (contentHeight - _navHeight) / 2 / scale, _navWidth / scale, _navHeight / scale));
         var start = Math.Max(Px(12), _navWidth);
         var x = owner.TitleHorizontalAlignment switch { HorizontalAlignment.Center => MathUtils.RoundToInt((_width - _titleWidth) / 2f), HorizontalAlignment.Right => _width - _titleWidth, _ => 0 };

@@ -7,3 +7,6 @@
 [submodule "modules/MaterialShapes"]
 	path = modules/MaterialShapes
 	url = https://github.com/Shirasagi0012/MaterialShapes.git
+[submodule "modules/SmoothScroll.Avalonia"]
+	path = modules/SmoothScroll.Avalonia
+	url = https://github.com/Shirasagi0012/SmoothScroll.Avalonia

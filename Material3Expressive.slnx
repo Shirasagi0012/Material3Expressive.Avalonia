@@ -15,6 +15,8 @@
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Avalonia/MaterialSymbols.Avalonia.csproj" />
     <Project Path="modules/MaterialSymbols/MaterialSymbols.Generator/MaterialSymbols.Generator.csproj" />
     <Project Path="modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj" />
+    <Project Path="modules/SmoothScroll.Avalonia/src/SmoothScroll.Avalonia.Controls/SmoothScroll.Avalonia.Controls.csproj" />
+    <Project Path="modules/SmoothScroll.Avalonia/src/SmoothScroll.Avalonia.Interaction/SmoothScroll.Avalonia.Interaction.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Material3Expressive/Material3Expressive.csproj" />

@@ -288,6 +288,8 @@ public sealed class ScrollBarTests
         var window = Show(viewer, fluent: true);
         try
         {
+            // SmoothScroll connects to its owner on Loaded, after the first layout pass.
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
             var bar = Part<ScrollBar>(viewer, "PART_VerticalScrollBar");
             Assert.IsType<ScrollBarThumb>(Part<ScrollBarThumb>(bar, "PART_ThumbVisual"));
             Assert.Equal(viewer.Viewport.Height, bar.ViewportSize);

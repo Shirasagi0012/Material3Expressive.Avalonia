@@ -61,7 +61,6 @@
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
     <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />
     <StyleInclude Source="/Components/AppBar/AppBar.axaml" />
-    <StyleInclude Source="/Components/AppBar/AppBarScrollScope.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
     <StyleInclude Source="/Foundation/Overlays/Dialog.axaml" />
     <StyleInclude Source="/Components/AlertDialog/AlertDialog.axaml" />
@@ -77,6 +76,7 @@
     <StyleInclude Source="/Components/WideNavigationRail/ModalWideNavigationRail.axaml" />
     <StyleInclude Source="/Components/Slider/Slider.axaml" />
     <StyleInclude Source="/Components/ScrollBar/ScrollBar.axaml" />
+    <StyleInclude Source="/Components/ScrollViewer/ScrollViewer.axaml" />
     <StyleInclude Source="/Components/CheckBox/CheckBox.axaml" />
     <StyleInclude Source="/Components/Divider/Divider.axaml" />
     <StyleInclude Source="/Components/RadioButton/RadioButton.axaml" />

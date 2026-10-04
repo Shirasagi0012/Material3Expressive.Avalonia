@@ -194,14 +194,34 @@ ComposeAnimation 0.2.7-alpha 的 `DelayAsync` 等待普通协程时间，不请�
 - `RippleAnimation` 同样拥有子作用域并可释放；启动 `AnimateAsync`，释放按压时调用 `Finish`。
   调用方需要观察任务并处理正常中断取消，取消和释放应清除等待。两类效果都不暴露手工 `Tick`。
 
-## AppBar 滚动与共享输入
+## 滚动与 AppBar 接入
 
-AppBarScrollScope 为屏幕 opt-in nested scroll 入口，协议使用物理 px/px/s，ScrollViewer Offset 保持
-DIP 或原生逻辑单位。只适配核验后的 Fluent 12.1.2 标准模板，保留 scrollbar parts、键盘和 BringIntoView；
-自定义模板由调用方选择公开 presenter 或显式 dispatch。嵌套、行为/模板替换、迁移与 detach 管理连接和取消。
-消费顺序和模板规则见 [AppBar](../src/Material3Expressive/Components/AppBar/README.md)。
+MaterialTheme 为原生 ScrollViewer 提供独立主题，以 SmoothScroll 的 ScrollViewerPresenter 实现普通物理
+滚动和惯性。滚动条、键盘、BringIntoView 与公开 Offset 仍经 Avalonia；逻辑内容保留逻辑单位。
+依赖通过 ProjectReference 直接引用 `modules/SmoothScroll.Avalonia` 子模块，
+准备方式见[根 README](../README.md#本地开发)。
+
+SmoothScroll 内部以常规 tracker 增量入口执行指针、直接滚轮和惯性帧的 pre/content/post；
+未安装参与者时 pre/post 消费为零。状态负责输入时序和物理积分，tracker 负责统一正文消费、
+有效范围与横纵向位置提交。绝对 Offset、BringIntoView、定位动画及缩放位置调整共用范围和
+提交逻辑，保留目标定位语义，不进入位移消费协议。参与者协议位于 SmoothScroll.Avalonia.Interaction，
+数值输出与合成适配工具位于 SmoothScroll.Avalonia.Composition，仍属于同一个程序集。
+
+AppBarScrollScope 保留物理 px/px/s 的公开 nested-scroll 协议。标准 Scaffold、物理主 ScrollViewer、
+内置 AppBar behavior 和 ContentPadding 布局可以连接同一 compositor：每帧先分配栏/正文位移，再同步
+标题、栏高、正文位置与裁剪视口。UI 线程回读数值状态并完成真实布局；回读不是下一帧运动的前提。
+Material 的规则、状态和布局桥接在 AppBar 目录，SmoothScroll 只提供通用参与者、动态边界和合成输出。
+
+主正文内的嵌套滚动器保留原生 SmoothScroll；内层滚动不驱动外层栏，到边界后按 chaining 设置
+自然冒泡，主正文接收输入时才驱动栏。不增加跨 tracker 位移/惯性分配。
+Scope 只持有一个主正文连接，以实际 SmoothScroll presenter 的物理滚动能力识别接入，不改写 Template/Theme。
+显式 SmoothScroll 模板也可在满足相同布局条件时接入；Scaffold 的栏/覆盖槽及正文内部滚动器不登记为主正文。
+逻辑主正文、嵌套 AppBarScrollScope、主正文原生 snap points、自定义 behavior 或不支持的布局暂不自动联动 AppBar。
+正文继续按原 presenter 滚动；没有 Fluent 或旧 UI 正文引擎回退。自定义宿主仍可显式调用物理 px/px/s 分发协议。
+切换、迁移与 detach 释放连接，旧状态回读通过 generation/sequence 过滤。具体边界及使用示例见
+[AppBar](../src/Material3Expressive/Components/AppBar/README.md) 和 [ScrollViewer](../src/Material3Expressive/Components/ScrollViewer/README.md)。
 Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪器，供 Rail、NavigationDrawer、AppBar 与 FloatingToolbar 使用，
-不增加公开手势框架。惯性与吸附继续使用 ComposeAnimation。
+不增加公开手势框架。普通物理惯性使用 SmoothScroll；Material 栏的 spring 吸附使用 ComposeAnimation 求值器。
 
 ## 当前覆盖与待确认项
 

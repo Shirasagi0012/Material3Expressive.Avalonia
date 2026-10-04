@@ -1,0 +1,48 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:smooth="using:SmoothScroll.Avalonia.Controls">
+  <Styles.Resources>
+    <ControlTemplate x:Key="MaterialScrollViewerTemplate" TargetType="ScrollViewer">
+      <Grid ColumnDefinitions="*,Auto" RowDefinitions="*,Auto">
+        <smooth:ScrollViewerPresenter Name="PART_ContentPresenter"
+            Content="{TemplateBinding Content}"
+            ContentTemplate="{TemplateBinding ContentTemplate}"
+            Padding="{TemplateBinding Padding}"
+            Background="{TemplateBinding Background}"
+            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+            Offset="{TemplateBinding Offset}"
+            IsScrollChainingEnabled="{TemplateBinding IsScrollChainingEnabled}"
+            ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}"
+            HorizontalSnapPointsAlignment="{TemplateBinding HorizontalSnapPointsAlignment}"
+            HorizontalSnapPointsType="{TemplateBinding HorizontalSnapPointsType}"
+            VerticalSnapPointsAlignment="{TemplateBinding VerticalSnapPointsAlignment}"
+            VerticalSnapPointsType="{TemplateBinding VerticalSnapPointsType}" />
+        <!-- Native ScrollBar attaches its range, value, visibility, paging and deferred-drag
+             bindings to the templated ScrollViewer. Auto tracks reserve its actual thickness. -->
+        <ScrollBar Name="PART_HorizontalScrollBar" Grid.Row="1" Orientation="Horizontal" />
+        <ScrollBar Name="PART_VerticalScrollBar" Grid.Column="1" Orientation="Vertical" />
+      </Grid>
+    </ControlTemplate>
+    <ControlTheme x:Key="MaterialScrollViewerTheme" TargetType="ScrollViewer">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Template" Value="{StaticResource MaterialScrollViewerTemplate}" />
+      <Style Selector="^ /template/ smooth|ScrollViewerPresenter#PART_ContentPresenter">
+        <Setter Property="HorizontalScrollMode" Value="Enabled" />
+        <Setter Property="VerticalScrollMode" Value="Enabled" />
+        <Setter Property="IsHorizontalMeasureInfinite" Value="True" />
+        <Setter Property="IsVerticalMeasureInfinite" Value="True" />
+      </Style>
+      <Style Selector="^[HorizontalScrollBarVisibility=Disabled] /template/ smooth|ScrollViewerPresenter#PART_ContentPresenter">
+        <Setter Property="HorizontalScrollMode" Value="Disabled" />
+        <Setter Property="IsHorizontalMeasureInfinite" Value="False" />
+      </Style>
+      <Style Selector="^[VerticalScrollBarVisibility=Disabled] /template/ smooth|ScrollViewerPresenter#PART_ContentPresenter">
+        <Setter Property="VerticalScrollMode" Value="Disabled" />
+        <Setter Property="IsVerticalMeasureInfinite" Value="False" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type ScrollViewer}" TargetType="ScrollViewer"
+                  BasedOn="{StaticResource MaterialScrollViewerTheme}" />
+  </Styles.Resources>
+</Styles>
