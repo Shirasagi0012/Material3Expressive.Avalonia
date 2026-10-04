@@ -68,6 +68,12 @@ public partial class MainWindow : Window
             { Symbol = MaterialSymbols.MaterialSymbolCodepoint.Check, Width = 18, Height = 18 } : null;
     }
 
+    private void OnCardClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Card card && ReferenceEquals(e.Source, card))
+            DemoCardStatus.Text = $"{card.GetType().Name} clicked";
+    }
+
     private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
     {
         // Native CheckBox has already toggled. The application decides the group's meaning.

@@ -33,6 +33,19 @@ internal sealed class ContentColorForExtension : MarkupExtension, IMultiValueCon
         (Color.TertiaryFixedDim, Color.OnTertiaryFixed),
     ];
 
+    // CardDefaults resolves the enabled container before selecting its disabled content color.
+    // Keep the same role order and ambient fallback as the live XAML binding below.
+    internal static IBrush? Resolve(Control owner, Avalonia.Media.Color background, IBrush? ambient)
+    {
+        foreach (var (container, content) in Roles)
+            if (TokenResolver.TryResolve(owner, container, owner.ActualThemeVariant, out var candidate)
+                && candidate is Avalonia.Media.Color color && color == background
+                && TokenResolver.TryResolve(owner, content, owner.ActualThemeVariant, out var ink)
+                && ink is Avalonia.Media.Color result)
+                return new ImmutableSolidColorBrush(result);
+        return ambient;
+    }
+
     public override BindingBase ProvideValue(IServiceProvider serviceProvider)
     {
         var binding = new MultiBinding { Converter = this };

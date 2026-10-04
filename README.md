@@ -21,7 +21,8 @@
 [双槽 SplitButton 及子按钮主题](src/Material3Expressive/Components/SplitButton/README.md)、
 [原生 Separator 的水平/竖直 Divider 主题](src/Material3Expressive/Components/Divider/README.md)、
 [Assist / Suggestion / Filter / Input Chip 及 Elevated 变体](src/Material3Expressive/Components/Chip/README.md)、
-[BasicAlertDialog / AlertDialog](src/Material3Expressive/Components/AlertDialog/README.md)，以及 Token、颜色、图标、阴影和交互动画等基础能力。
+[BasicAlertDialog / AlertDialog](src/Material3Expressive/Components/AlertDialog/README.md)、
+[Card / ElevatedCard / OutlinedCard 的普通与可点击入口](src/Material3Expressive/Components/Card/README.md)，以及 Token、颜色、图标、阴影和交互动画等基础能力。
 这些是现有实现范围，不代表所有组件已经对齐当前上游基线。
 已接入 [Compose 视觉一致性测试](tests/VisualParity/README.md)，提供真实双端捕获、确定性动画回放及差异报告。
 
