@@ -1,12 +1,43 @@
-# TooltipBox / PlainTooltip
+# ToolTip / TooltipBox / PlainTooltip
 
-依据 `docs/upstream-baseline.json` 中固定的 AndroidX `Tooltip.kt`、`internal/BasicTooltip.kt`、
-`PlainTooltipTokens.kt` 及 Core 对应实现。Material 布局、Token、定位和状态规则相同；
-Popup 的平台行为取固定 Core 桌面实现。
+TooltipBox / PlainTooltip 依据 `docs/upstream-baseline.json` 中固定的 AndroidX `Tooltip.kt`、
+`internal/BasicTooltip.kt`、`PlainTooltipTokens.kt` 及 Core 对应实现；Popup 的平台行为取固定
+Core 桌面实现。原生 ToolTip 复用静态外观 Token，采用下述已确认的 Avalonia 行为。
 
 ## 使用
 
-引入 MaterialTheme。TooltipBox 的 Content / ContentTemplate 是锚点，Tooltip / TooltipTemplate
+引入 MaterialTheme 后，普通说明使用原生 `ToolTip.Tip`；主题为自动创建的 ToolTip 提供 PlainTooltip
+Token、BodySmall 文字环境、8×4 DIP padding、40×24 DIP 最小尺寸及 200 DIP 最大宽度。
+原生 Width / Height / MinWidth / MaxWidth 等约束正常生效；局部值可以覆盖主题默认值。
+
+```xml
+<Button Content="关闭" ToolTip.Tip="关闭当前窗口" />
+<Button Content="帮助" ToolTip.Placement="Bottom" ToolTip.VerticalOffset="4">
+  <ToolTip.Tip>
+    <TextBlock TextWrapping="Wrap">
+      <Run Text="使用说明" FontWeight="SemiBold" /><LineBreak />
+      <Run Text="包含尚未保存的本地修改。" />
+    </TextBlock>
+  </ToolTip.Tip>
+</Button>
+```
+
+原生提示直接显隐，不启动 ComposeAnimation。悬停延迟、连续切换、关闭、禁用控件处理和
+程序化 `ToolTip.IsOpen` 均保留 Avalonia 服务规则，不增加行为控制器或修改 ToolTipService。
+MaterialTheme 在锚点上提供 Top、VerticalOffset=-4、ShouldUseOverlayLayer=true 默认值；
+方向翻转、滑动、边界尺寸调整及 RTL 定位由 Avalonia 处理，翻转后不保证仍有 4 DIP 间距。
+原生默认 ShowDelay=400ms、BetweenShowDelay=100ms；调用方仍可覆盖已有附加属性。
+
+2026-10-04，维护者选择原生入口以静态视觉接近为目标，接受其输入、定位、尺寸约束及动画
+与 Compose 的差异。需要提示内按钮、长按、焦点输入或完整显式状态控制时使用 TooltipBox；
+不通过原生提示的内容按钮承担这些需求。任意文本内容不代表已实现 Compose RichTooltip。
+
+原生入口的 Headless 检查使用真实服务和 overlay Popup，覆盖显示与关闭、绑定内容、
+内联格式、动态 Token 和显式原生约束。`native-tooltip` 双端用例只比较静态 surface，
+以非文字内容覆盖明暗、RTL、尺寸边界和局部外观覆盖；不评价原生定位与 Compose 的一致性。
+Catalog 的默认悬停显示路径已有 Headless 检查，真实桌面交互及双端文字栅格尚未经验证。
+
+TooltipBox 的 Content / ContentTemplate 是锚点，Tooltip / TooltipTemplate
 是提示槽。PlainTooltip 提供提示的 Surface，也可以单独用于布局。
 
 ```xml
@@ -110,7 +141,7 @@ Compose Float 与 Avalonia Double 矩阵的末位表示差异当作精确布局�
 未处理完 `onPlaced` 写入引起的提示层重测；完善 Compose draw 完成检查后，
 移动、尺寸变化和方向切换均在原时间点对齐，无需在产品中额外延迟 Popup 定位。
 
-本轮最终验证：Release 解决方案构建成功，控件库 751 项测试及 parity 框架 123 项测试通过。
+TooltipBox / PlainTooltip 移植验证：Release 解决方案构建成功，控件库 751 项测试及 parity 框架 123 项测试通过。
 PlainTooltip 的 30 个双端场景全部在容差内且重复捕获稳定；TooltipBox 的 80 个场景
 全部稳定，结构化状态与几何事实一致，70 个场景相等或在容差内，10 个仅有上述已接受的
 动画时序截图差异。原始差分保留，未放宽容差或修改基线。
