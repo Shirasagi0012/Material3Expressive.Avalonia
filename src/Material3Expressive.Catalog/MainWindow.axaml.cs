@@ -6,6 +6,7 @@ using Material3Expressive.Components;
 using Material3Expressive.Foundation.Overlays;
 using System.Linq;
 using System;
+using System.Threading;
 
 namespace Material3Expressive.Catalog;
 
@@ -28,7 +29,7 @@ public partial class MainWindow : Window
     private readonly RailLayoutTrace? _railLayoutTrace;
     private object? _scaffoldTopBar;
     private object? _scaffoldBottomBar;
-    private object? _scaffoldSnackbar;
+    private readonly CancellationTokenSource _scaffoldSnackbarRequests = new();
 
     public MainWindow()
     {
@@ -36,13 +37,17 @@ public partial class MainWindow : Window
         InitializeComponent();
         _scaffoldTopBar = DemoScaffold.TopBar;
         _scaffoldBottomBar = DemoScaffold.BottomBar;
-        _scaffoldSnackbar = DemoScaffold.SnackbarHost;
         // Animated.SetDurationScale(this, 10);
         
         // Temporary jitter diagnostics. Set TraceWideRailLayout to false to disable capture.
         if (TraceWideRailLayout)
             _railLayoutTrace = new RailLayoutTrace(this, DemoWideNavigationRail, DemoNavigationRail, DemoHiddenModalRail);
-        Closed += (_, _) => _railLayoutTrace?.Dispose();
+        Closed += (_, _) =>
+        {
+            _scaffoldSnackbarRequests.Cancel();
+            _scaffoldSnackbarRequests.Dispose();
+            _railLayoutTrace?.Dispose();
+        };
     }
 
     private void OnDestinationClick(object? sender, RoutedEventArgs e)
@@ -62,8 +67,16 @@ public partial class MainWindow : Window
         DemoScaffold.TopBar = show ? _scaffoldTopBar : null;
         DemoScaffold.BottomBar = show ? _scaffoldBottomBar : null;
     }
-    private void OnScaffoldSnackbarClick(object? sender, RoutedEventArgs e) =>
-        DemoScaffold.SnackbarHost = DemoScaffold.SnackbarHost is null ? _scaffoldSnackbar : null;
+    private async void OnScaffoldSnackbarClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await DemoScaffoldSnackbar.State.ShowSnackbarAsync(
+                sender is FloatingActionButton ? "New item created" : "Scaffold positions this message above the FAB",
+                withDismissAction: true, cancellationToken: _scaffoldSnackbarRequests.Token);
+        }
+        catch (OperationCanceledException) when (_scaffoldSnackbarRequests.IsCancellationRequested) { }
+    }
     private void OnScaffoldDirectionClick(object? sender, RoutedEventArgs e) =>
         DemoScaffold.FlowDirection = DemoScaffold.FlowDirection == Avalonia.Media.FlowDirection.LeftToRight
             ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
