@@ -25,6 +25,7 @@
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="README.md" />
+        <None Update="OFL.txt" Pack="true" PackagePath="OFL.txt" />
     </ItemGroup>
 
     <ItemGroup>

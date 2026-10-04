@@ -9,7 +9,7 @@
     <ItemGroup>
         <PackageReference Include="Avalonia.Headless"/>
         <PackageReference Include="Avalonia.Themes.Fluent"/>
-        <PackageReference Include="ComposeAnimation.TestSupport"/>
+        <PackageReference Include="Shirasagi0012.ComposeAnimation.TestSupport"/>
         <PackageReference Include="YamlDotNet"/>
         <ProjectReference Include="../../../src/Material3Expressive/Material3Expressive.csproj"/>
         <ProjectReference Include="../../../modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj"/>
