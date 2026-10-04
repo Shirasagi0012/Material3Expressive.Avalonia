@@ -6,10 +6,25 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackageId>Shirasagi0012.Material3Expressive.Avalonia</PackageId>
+        <Version>0.0.1</Version>
+        <Authors>Shirasagi0012</Authors>
+        <Description>Material 3 Expressive theme and controls for Avalonia, ported from Compose Material3.</Description>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>avalonia;material-design;material3;material-you;expressive;theming;dynamic-color</PackageTags>
+        <PackageProjectUrl>https://github.com/Shirasagi0012/Material3Expressive.Avalonia</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Shirasagi0012/Material3Expressive.Avalonia</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia"/>
-        <PackageReference Include="ComposeAnimation.Avalonia"/>
         <PackageReference Include="PropertyGenerator.Avalonia"/>
+        <PackageReference Include="Shirasagi0012.ComposeAnimation.Avalonia"/>
+        <PackageReference Include="Shirasagi0012.SmoothScroll.Avalonia" />
     </ItemGroup>
 
     <ItemGroup>
@@ -21,7 +36,11 @@
 
         <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj" />
         <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
-        <ProjectReference Include="..\..\modules\SmoothScroll.Avalonia\src\SmoothScroll.Avalonia.Controls\SmoothScroll.Avalonia.Controls.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
+        <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
     </ItemGroup>
 
     <ItemGroup>

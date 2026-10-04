@@ -136,17 +136,25 @@
           "Microsoft.CodeAnalysis.Common": "[4.14.0]"
         }
       },
-      "material3expressive": {
+      "Shirasagi0012.SmoothScroll.Avalonia.Interaction": {
+        "type": "Transitive",
+        "resolved": "12.0.0",
+        "contentHash": "eoOxYJznVAw5u+8xOOQsoPwCQlmjx2/65xgbp8CW/3g/Ys1wWJTWDFVJ0oDi3nQIIgItMxU+oo5UxpxWhhfQJA==",
+        "dependencies": {
+          "Avalonia": "12.0.0"
+        }
+      },
+      "Shirasagi0012.Material3Expressive.Avalonia": {
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.2, )",
-          "ComposeAnimation.Avalonia": "[0.2.7-alpha, )",
           "PropertyGenerator.Avalonia": "[1.3.1, )",
+          "Shirasagi0012.ComposeAnimation.Avalonia": "(, )",
           "Shirasagi0012.Material3Expressive.Avalonia.Shadow": "[0.2.0-alpha, )",
           "Shirasagi0012.MaterialColorUtilities": "[0.4.0-alpha, )",
           "Shirasagi0012.MaterialShapes": "[0.1.2-alpha, )",
           "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": "[0.1.2-alpha, )",
-          "SmoothScroll.Avalonia": "[1.0.0, )"
+          "Shirasagi0012.SmoothScroll.Avalonia": "[12.0.0, )"
         }
       },
       "Shirasagi0012.Material3Expressive.Avalonia.Shadow": {
@@ -189,19 +197,6 @@
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.2, )"
-        }
-      },
-      "SmoothScroll.Avalonia": {
-        "type": "Project",
-        "dependencies": {
-          "Avalonia": "[12.0.0, )",
-          "SmoothScroll.Avalonia.Interaction": "[1.0.0, )"
-        }
-      },
-      "smoothscroll.avalonia.interaction": {
-        "type": "Project",
-        "dependencies": {
-          "Avalonia": "[12.0.0, )"
         }
       },
       "Avalonia": {
@@ -248,6 +243,16 @@
         "dependencies": {
           "Avalonia": "11.3.0",
           "Microsoft.CodeAnalysis.CSharp": "4.14.0"
+        }
+      },
+      "Shirasagi0012.SmoothScroll.Avalonia": {
+        "type": "CentralTransitive",
+        "requested": "[12.0.0, )",
+        "resolved": "12.0.0",
+        "contentHash": "im6ITcg1cECQBT/OkiulJAwqqS1atahZ9QNN/ENbdUFNc+QRpP4mM2S2cJUBY4Xq+fRpZ7IrCsLf57QPgez50g==",
+        "dependencies": {
+          "Avalonia": "12.0.0",
+          "Shirasagi0012.SmoothScroll.Avalonia.Interaction": "12.0.0"
         }
       },
       "SkiaSharp": {
