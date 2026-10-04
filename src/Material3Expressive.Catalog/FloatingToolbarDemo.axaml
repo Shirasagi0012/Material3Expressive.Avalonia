@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.FloatingToolbarDemo"
+        Title="Floating toolbar" Width="700" Height="660">
+  <StackPanel Margin="24" Spacing="16">
+    <CheckBox x:Name="Expansion" Content="Expanded" IsChecked="True" />
+    <m3:HorizontalFloatingToolbar Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
+      <m3:HorizontalFloatingToolbar.LeadingContent><m3:IconButton Symbol="ArrowBack" /></m3:HorizontalFloatingToolbar.LeadingContent>
+      <m3:HorizontalFloatingToolbar.TrailingContent><m3:IconButton Symbol="MoreVert" /></m3:HorizontalFloatingToolbar.TrailingContent>
+      <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
+    </m3:HorizontalFloatingToolbar>
+    <m3:HorizontalFloatingToolbar Classes="vibrant" Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
+      <m3:HorizontalFloatingToolbar.FloatingActionButton>
+        <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}">
+          <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
+        </m3:FloatingActionButton>
+      </m3:HorizontalFloatingToolbar.FloatingActionButton>
+      <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /><m3:IconButton Symbol="Delete" /></StackPanel>
+    </m3:HorizontalFloatingToolbar>
+    <Grid ColumnDefinitions="*,*" Height="220">
+      <m3:VerticalFloatingToolbar Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
+        <m3:VerticalFloatingToolbar.LeadingContent><m3:IconButton Symbol="ArrowUpward" /></m3:VerticalFloatingToolbar.LeadingContent>
+        <StackPanel><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
+      </m3:VerticalFloatingToolbar>
+      <m3:VerticalFloatingToolbar Grid.Column="1" Classes="vibrant" FloatingActionButtonPosition="Top" Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
+        <m3:VerticalFloatingToolbar.FloatingActionButton>
+          <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}">
+            <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
+          </m3:FloatingActionButton>
+        </m3:VerticalFloatingToolbar.FloatingActionButton>
+        <StackPanel><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
+      </m3:VerticalFloatingToolbar>
+    </Grid>
+    <Grid Height="160" ClipToBounds="True">
+      <ScrollViewer x:Name="ScrollContent"><StackPanel Spacing="16">
+        <TextBlock Text="Scroll to hide the toolbar" />
+        <Border Height="600" Background="#EADDFF" />
+      </StackPanel></ScrollViewer>
+      <m3:HorizontalFloatingToolbar x:Name="ScrollingToolbar" VerticalAlignment="Bottom" Margin="16" ScrollSource="{Binding #ScrollContent}">
+        <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
+      </m3:HorizontalFloatingToolbar>
+    </Grid>
+  </StackPanel>
+</Window>

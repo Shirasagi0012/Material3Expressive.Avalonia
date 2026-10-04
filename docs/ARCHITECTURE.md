@@ -86,6 +86,10 @@ Button 模板内的局部 `ButtonLayout` 区分背景默认尺寸与外层交互
 高度由 size Token 提供，外层默认预留至少 48 DIP 并居中放置背景。默认背景高度不再写入
 `Button.MinHeight`；显式 Width/Height 或 MinWidth/MinHeight 仍由调用方设置，并覆盖相应默认值。
 它移植 `defaultMinSize` 与 `minimumInteractiveComponentSize` 的布局职责，不实现触屏目标扩展。
+IconButton 复用 ButtonLayout，将 size class 的默认容器尺寸留在模板层，默认外层分配 48 DIP。
+ButtonLayout / FabLayout 的内部 MinimumInteractivePadding 对应上游 top/left 对齐线；
+Foundation.MinimumInteractiveAlignment 将后代读数换算到查询布局并按 min 合并，
+FloatingToolbar 用它实现最小交互留白的两轴平衡，未增加公共布局 API。
 自动字符串标签保持 Compose 的受约束段落宽度；普通裁剪保留完整文本布局，再在有限标签边界内绘制。
 省略号仍使用有限高度格式化。显式内容控件、ContentTemplate 和匹配的 DataTemplate 保留优先级。
 
@@ -196,7 +200,7 @@ AppBarScrollScope 为屏幕 opt-in nested scroll 入口，协议使用物理 px/
 DIP 或原生逻辑单位。只适配核验后的 Fluent 12.1.2 标准模板，保留 scrollbar parts、键盘和 BringIntoView；
 自定义模板由调用方选择公开 presenter 或显式 dispatch。嵌套、行为/模板替换、迁移与 detach 管理连接和取消。
 消费顺序和模板规则见 [AppBar](../src/Material3Expressive/Components/AppBar/README.md)。
-Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪器，供 Rail、NavigationDrawer 与 AppBar 使用，
+Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪器，供 Rail、NavigationDrawer、AppBar 与 FloatingToolbar 使用，
 不增加公开手势框架。惯性与吸附继续使用 ComposeAnimation。
 
 ## 当前覆盖与待确认项

@@ -28,6 +28,9 @@ public class IconButtonThemeTests
     private static MaterialSymbol Symbol(IconButton button) =>
         button.GetVisualDescendants().OfType<MaterialSymbol>().First();
 
+    private static ButtonLayout Layout(IconButton button) =>
+        button.GetVisualDescendants().OfType<ButtonLayout>().Single();
+
     private static Color BrushColor(IBrush? brush) => Assert.IsType<ImmutableSolidColorBrush>(brush).Color;
 
     [AvaloniaFact]
@@ -41,9 +44,11 @@ public class IconButtonThemeTests
         Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSurfaceVariant),
             BrushColor(button.Foreground));
 
-        // Small is the default size; the default width option is square (MinWidth = MinHeight).
-        Assert.Equal(40d, button.MinHeight);
-        Assert.Equal(40d, button.MinWidth);
+        // Default container metrics are separate from public minima and 48dp allocation.
+        Assert.Equal(0d, button.MinHeight);
+        Assert.Equal(0d, button.MinWidth);
+        Assert.Equal(40d, Layout(button).ContainerMinHeight);
+        Assert.Equal(40d, Layout(button).ContainerMinWidth);
 
         var container = Container(button);
         Assert.Equal(new CornerRadius(1000), container.CornerRadius); // CornerFull
@@ -103,7 +108,7 @@ public class IconButtonThemeTests
     {
         IconButtonThemeFixture.ShowWindow(out var button, themeKey: "MaterialOutlinedIconButtonTheme", sizeClass: "xlarge");
         Assert.Equal(3d, button.BorderThickness.Left);
-        Assert.Equal(136d, button.MinHeight);
+        Assert.Equal(136d, Layout(button).ContainerMinHeight);
     }
 
     [AvaloniaFact]
@@ -129,19 +134,19 @@ public class IconButtonThemeTests
     public void SizeClass_RePointsMetrics_AndReverts()
     {
         IconButtonThemeFixture.ShowWindow(out var button);
-        Assert.Equal(40d, button.MinHeight);
+        Assert.Equal(40d, Layout(button).ContainerMinHeight);
         Assert.Equal(24d, Symbol(button).Width);
 
         button.Classes.Add("large");
 
-        Assert.Equal(96d, button.MinHeight);
-        Assert.Equal(96d, button.MinWidth);
+        Assert.Equal(96d, Layout(button).ContainerMinHeight);
+        Assert.Equal(96d, Layout(button).ContainerMinWidth);
         Assert.Equal(new CornerRadius(1000), Container(button).CornerRadius);
         Assert.Equal(32d, Symbol(button).Width);
         Assert.Equal(32d, Symbol(button).Height);
 
         button.Classes.Remove("large");
-        Assert.Equal(40d, button.MinHeight);
+        Assert.Equal(40d, Layout(button).ContainerMinHeight);
         Assert.Equal(24d, Symbol(button).Width);
     }
 

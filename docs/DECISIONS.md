@@ -27,6 +27,18 @@ AvaloniaHost 可显式接入，在送帧前推进延时；未接入的旧用例�
 范围：普通协程等待与确定的测试时间源；不改写 animation-core 算法，不引入 Compose Runtime。
 确认：2026-10-04 维护者在说明协程与 animation-core 职责后明确授权修改 ComposeAnimation。
 
+## 最小交互布局与工具栏对齐读数
+
+决定：IconButton 和 Button 共用已有 ButtonLayout，尺寸 Token 提供可见容器的默认尺寸，
+外层默认分配至少 48 DIP；显式 Width/Height、MinWidth/MinHeight 保留调用方约束。
+XS class 对应上游显式 size(32dp)，继续以 32 DIP 约束外层；Small 默认容器 40 DIP、外层 48 DIP。
+ButtonLayout / FabLayout 提供内部最小交互 top/left 对齐读数，Foundation 合并后代读数，
+FloatingToolbar 按固定上游 minimumInteractiveBalancedPadding 动画补齐两轴留白差。
+原因：原有 Small IconButton 的 40 DIP 外层尺寸缺少上游的 48 DIP 布局分配，
+工具栏也无法读取可见容器和交互分配的差值。这里只预留布局空间，不实现 Android 的额外触屏目标扩展。
+范围：Button / IconButton / FAB 的内部读数与 IconButton 布局；其他颜色、描边及选择语义不随之改变。
+确认：2026-10-04，维护者接受 FloatingToolbar API 方案第 3 项，并要求完成相关回归。
+
 ## Dialog / Popup 的窗口内宿主与模态职责
 
 决定：组件各自持有 Avalonia Popup，显式使用 `ShouldUseOverlayLayer = true`，由原生 Popup 接入
