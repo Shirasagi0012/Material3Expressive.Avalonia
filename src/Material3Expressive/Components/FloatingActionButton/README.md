@@ -1,62 +1,80 @@
-# Floating action buttons
+# FloatingActionButton
 
-依据 `docs/upstream-baseline.json` 固定的 AndroidX `FloatingActionButton.kt`、
-`FloatingActionButtonMenu.kt` 及相关 Fab / ExtendedFab / FabMenuBaseline tokens 移植；
-桌面参考使用同一 JSON 固定的 Compose Multiplatform Core。两个基线的组件实现一致。
+本组件族包含图标 FAB、Extended FAB、受控 Toggle FAB 和内联 FAB 菜单。
+它们有独立控件类型，按钮命令与 Click 仍沿用 Avalonia Button。
+先完成[公共接入](../../../../docs/GETTING_STARTED.md)，实现与移植边界见 [INTERNALS.md](INTERNALS.md)。
 
-## 入口与尺寸
-
-| Compose 入口 | Avalonia 入口 |
-| --- | --- |
-| Floating / Small / Medium / LargeFloatingActionButton | `FloatingActionButton.Size = Default / Small / Medium / Large` |
-| 四种 Extended FAB 的内容槽重载 | `ExtendedFloatingActionButton.Content`，`Icon = null` |
-| 四种 Extended FAB 的 text + icon 重载 | `ExtendedFloatingActionButton.Content` + `Icon` + `Expanded` |
-| FloatingActionButtonMenu / MenuItem | `FloatingActionButtonMenu.Button` + `Items` / `FloatingActionButtonMenuItem` |
-| ToggleFloatingActionButton / checkedProgress | `ToggleFloatingActionButton.IsChecked` / `CheckedProgress` |
-| Modifier.animateFloatingActionButton | `FloatingActionButton.AnimatedVisible`，同样适用于 Extended FAB |
-
-图标 FAB 的容器尺寸为 56 / 40 / 80 / 96 DIP，小 FAB 另有 48 DIP 最小交互分配。
-Extended FAB 的高度为 56 / 56 / 80 / 96 DIP。内容槽不强制图标大小；建议普通/小尺寸使用 24，
-中尺寸使用 `FloatingActionButtonDefaults.MediumIconSize`（28），大尺寸使用 `LargeIconSize`（36）。
-Large 的 36 及 Medium/Large Extended 的 12/16 图标文字间距保留上游 composable 的明确修正，
-原始 token 的 32 及 16/20 不被改写。
-
-`Background`、`Foreground`、`CornerRadius`、`ContentTemplate`、`Command`、`Click` 等复用 Button 的入口。
-`IconTemplate`、`ButtonTemplate` 支持数据槽。字符串内容使用共享的 Button 文字呈现者与对应 typography。
-
-## 使用
-
-加载 `MaterialTheme.axaml` 后可以直接使用：
-示例的 `converters` 对应 `xmlns:converters="using:Avalonia.Markup.Xaml.Converters"`。
+## 最小示例
 
 ```xml
-<Window.Resources>
-  <converters:ColorToBrushConverter x:Key="FabIconBrushConverter" />
-</Window.Resources>
-
-<m3:FloatingActionButton Size="Large" Click="Create">
-  <m3:MaterialSymbol Symbol="Add" Width="36" Height="36" />
-</m3:FloatingActionButton>
-
-<m3:ExtendedFloatingActionButton Content="Create"
-    Expanded="{Binding Expanded}" AnimatedVisible="{Binding ShowAction}">
-  <m3:ExtendedFloatingActionButton.Icon>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:FloatingActionButton AutomationProperties.Name="新建">
     <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
+  </m3:FloatingActionButton>
+</UserControl>
+```
+
+后续片段使用相同命名空间。图标内容自行提供尺寸及有意义的无障碍名称；容器不会缩放任意 Content。
+
+## 尺寸与 Extended 内容
+
+| Size | 图标 FAB 容器 | Extended 高度 | 建议图标尺寸 |
+| --- | --- | --- | --- |
+| Default | 56 × 56 DIP | 56 DIP | 24 DIP |
+| Small | 40 × 40 DIP，外层至少 48 DIP 分配 | 56 DIP | 24 DIP |
+| Medium | 80 × 80 DIP | 80 DIP | 28 DIP |
+| Large | 96 × 96 DIP | 96 DIP | 36 DIP |
+
+尺寸用 `Size`，不是普通 Button 的尺寸 class。建议图标尺寸也可在 C# 中取
+`FloatingActionButtonDefaults.MediumIconSize` / `LargeIconSize`。
+
+```xml
+<m3:ExtendedFloatingActionButton Content="新建" Size="Medium" Expanded="True">
+  <m3:ExtendedFloatingActionButton.Icon>
+    <m3:MaterialSymbol Symbol="Add" Width="28" Height="28" />
   </m3:ExtendedFloatingActionButton.Icon>
 </m3:ExtendedFloatingActionButton>
+```
 
-<m3:FloatingActionButtonMenu x:Name="Actions" Expanded="{Binding Expanded}"
-    MenuAlignment="End" MaxHeight="320">
+不设置 Icon 时采用纯内容入口；提供 Icon 后，`Expanded` 控制图标+文字入口的展开/收起。
+Content / ContentTemplate、Icon / IconTemplate 均支持普通数据和模板。字符串采用相应尺寸排版。
+`Background`、`Foreground`、`CornerRadius`、`Command` / `CommandParameter`、Click 和 IsEnabled
+使用按钮入口。绑定 Command 时 DataContext 需提供相应 ICommand；事件需在视图中实现处理器。
+
+## 显隐与 elevation
+
+用 `AnimatedVisible` 控制带缩放/透明度的显示，适用于普通和 Extended FAB；直接 IsVisible 不执行此过渡。
+隐藏动画到 alpha 为零后才移除布局。可用 HiddenScale、VisibilityAlignment、VisibilityScaleSpec /
+VisibilityAlphaSpec 定制；默认缩到 0.2，枢轴为逻辑 BottomEnd。
+
+Elevation 配置可在 C# 中替换（`Material3Expressive.Components`）：
+
+```csharp
+fab.Elevation = FloatingActionButtonDefaults.LoweredElevation();
+fab.AnimatedVisible = false;
+```
+
+这里 `fab` 是视图中现有的 FloatingActionButton。默认 elevation 的静止/按压/焦点/悬停值为
+6/6/6/8 DIP；LoweredElevation 为 1/1/1/3。阴影状态与 tonal elevation 的具体关联见维护说明。
+
+## 受控 Toggle 与菜单
+
+`ToggleFloatingActionButton` 激活时发送 `CheckedChangeRequested`，不自行改写 IsChecked。
+菜单的 Expanded 也由应用管理，选择某项后是否关闭需应用决定。下面 XAML 片段放入视图，
+并将 C# 处理器放入同一视图的 code-behind：
+
+```xml
+<m3:FloatingActionButtonMenu x:Name="Actions" MenuAlignment="End" MaxHeight="320">
   <m3:FloatingActionButtonMenu.Button>
-    <m3:ToggleFloatingActionButton x:Name="Toggle" IsChecked="{Binding Expanded}"
-        CheckedChangeRequested="RequestExpanded">
-      <m3:MaterialSymbol Symbol="Add"
-          Width="{Binding IconSize, ElementName=Toggle}"
-          Height="{Binding IconSize, ElementName=Toggle}"
-          Foreground="{Binding IconColor, ElementName=Toggle, Converter={StaticResource FabIconBrushConverter}}" />
+    <m3:ToggleFloatingActionButton x:Name="ActionToggle" Size="Medium"
+                                  CheckedChangeRequested="OnActionToggleRequested"
+                                  AutomationProperties.Name="更多操作">
+      <m3:MaterialSymbol Symbol="Add" Width="28" Height="28" />
     </m3:ToggleFloatingActionButton>
   </m3:FloatingActionButtonMenu.Button>
-  <m3:FloatingActionButtonMenuItem Content="Edit" Command="{Binding EditCommand}">
+  <m3:FloatingActionButtonMenuItem Content="编辑">
     <m3:FloatingActionButtonMenuItem.Icon>
       <m3:MaterialSymbol Symbol="Edit" Width="24" Height="24" />
     </m3:FloatingActionButtonMenuItem.Icon>
@@ -64,82 +82,28 @@ Large 的 36 及 Medium/Large Extended 的 12/16 图标文字间距保留上游 
 </m3:FloatingActionButtonMenu>
 ```
 
-Toggle 是受控状态：激活发出反转请求，不自行写入 `IsChecked`。调用方接受请求后更新状态，
-同时决定菜单的展开状态及菜单操作后的收起策略。C# 示例：
-
 ```csharp
-using Material3Expressive.Components;
-using Material3Expressive.Foundation.Rendering;
-using MaterialSymbols;
-
-var toggle = new ToggleFloatingActionButton { Size = FloatingActionButtonSize.Medium };
-var menu = new FloatingActionButtonMenu { Button = toggle };
-toggle.CheckedChangeRequested += (_, e) =>
+private void OnActionToggleRequested(object? sender,
+    Material3Expressive.Components.FabCheckedChangeRequestedEventArgs e)
 {
-    toggle.IsChecked = e.IsChecked;
-    menu.Expanded = e.IsChecked;
-};
-menu.Items.Add(new FloatingActionButtonMenuItem { Content = "Edit", Command = editCommand });
-
-var fab = new FloatingActionButton
-{
-    Content = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Add, Width = 24, Height = 24 },
-    Elevation = FloatingActionButtonDefaults.LoweredElevation()
-};
-fab.AnimatedVisible = false;
+    ActionToggle.IsChecked = e.IsChecked;
+    Actions.Expanded = e.IsChecked;
+}
 ```
 
-`MaterialSymbolCodepoint` 来自 `MaterialSymbols` 命名空间；Catalog 给出可编译的 XAML 示例。
-Toggle 的 `ContainerColor`、`ContainerSize`、`ContainerCornerRadius` 可接收进度函数，
-例如 `ContainerSize = ToggleFloatingActionButtonDefaults.ContainerSize(80, 56)`。
-图标可绑定 `IconSize`/`IconColor`；自定义图标变化可以直接消费 `CheckedProgress` 及 defaults 提供的映射函数。
-`IconColor` 是 `Color`，绑定到 `Foreground` 等 `IBrush` 属性时使用 Avalonia 的 `ColorToBrushConverter`。
+菜单是内联布局，不是 Popup。Items 保持源顺序、从底部开始显示；Button / ButtonTemplate 是独立槽。
+受限高度下只滚动条目，按钮固定，收起期间关闭列表滚动输入；展开时从按钮 Tab / Down 可移入首个可见条目。
 
-## 行为与适配
+Toggle 的动画读数为 `CheckedProgress`、`IconSize` 和 `IconColor`。上例刻意保持固定图标；
+若要图标随进度变化，绑定 IconSize 到宽高，IconColor（Color）经 Avalonia `ColorToBrushConverter`
+转为画刷。完整绑定见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+ContainerColor / ContainerSize / ContainerCornerRadius 接受进度函数，可用
+`ToggleFloatingActionButtonDefaults` 的映射函数定制。Toggle 使用 Default / Medium / Large 三档默认造型，
+不将普通 FAB 的 Small 40 DIP 规则套给它。
 
-2026-10-03，维护者确认两个尺寸化按钮类型、菜单 Button/Items 槽、受控 Toggle 的
-IsChecked/CheckedProgress/CheckedChangeRequested，以及 AnimatedVisible 入口。
-此 API 合并 Compose 的尺寸入口与重载，不合并其不同的布局和动画分支。
+## 使用边界
 
-- Default Extended 保留 AnimatedVisibility 的整数宽度、展开/收起不同 spring、alpha 规格和中断回到 Visible 的默认 spring。
-  Expressive Extended 保留浮点宽度进度、FastSpatial / FastEffects，以及全部收起后才移除文字槽。
-- FAB elevation 保留最后一个实际 press/focus/hover 交互，避免把相同高度误认成同一状态；
-  tonal elevation 固定取配置的 Default。修改配置先 snap 当前目标，再处理交互目标。动画优先级绑定随作用域清理。
-- Toggle 保留外层初始尺寸、内层向逻辑 TopEnd 收缩、Oklab 颜色插值、动态圆角、固定阴影和显式 ripple 半径。
-  内容按上游整数除法居中，图标尺寸按物理像素取整；checked 反向保留 AnimateAsState 的取消与重启规则。
-  任意内容默认继承环境 Foreground，图标动画为显式绑定。`IconColor` 的绑定适用于可设置颜色的图标，
-  2026-10-04，维护者确认本次使用 IconSize / IconColor 绑定入口；Compose animateIcon 对任意位图或复合内容的
-  整层 SrcIn tint 留作独立基础能力任务，不计入本次已确认交付范围。
-- 菜单保留从底部开始的整数 stagger、每项独立宽度/alpha、自然内容宽度、按钮底部留白及逻辑对齐。
-  动态增项在放置阶段初始化动画值，透明度独立更新条目图层，避免菜单总尺寸不变时冻结旧值。
-  高度受限时使用内部 ScrollViewer / ScrollContentPresenter，提供原生滚轮、触摸惯性和焦点带入视口，
-  收起期间关闭滚动输入；按钮不随列表滚动。滚轮距离与触摸手势由 Avalonia 平台实现决定。
-- 隐藏动画 alpha 为零才移除布局，默认缩放到 0.2、逻辑 BottomEnd 枢轴内缩一个物理像素。
-  RTL 使用 Avalonia 的视觉树镜像；内部布局保持逻辑坐标。部分透明时启用整组 opacity，阴影与填充一起淡出。
-- Button 的命令、焦点和无障碍复用框架实现。Toggle 提供受控 IToggleProvider，禁用时拒绝切换。
-  Enter 的原生 keydown 激活沿用共享的已接受决定，见 `docs/DECISIONS.md`。
-
-动画依赖 `ComposeAnimation 0.2.2-alpha`（修复提交 `307e4b8`）：spring 预计时长按 Compose 的整数毫秒截断，
-避免 threshold=1 的菜单 stagger 在帧边界多延后一帧。通过本地 NuGet 包接入，没有跨仓库 ProjectReference。
-
-## 验证入口与边界
-
-`tests/Material3Expressive.Tests/FloatingActionButtonTests.cs` 检查尺寸、可见性、状态请求、无障碍、主题角色、
-图标绑定、Token 覆盖、卸载重挂、整数放置、菜单焦点与受限滚动。独立双端场景位于
-`FloatingActionButtonCases.cs` / `FloatingActionButtonCases.kt`，
-suite 为 `floating-action-button`，包含四尺寸、内容重载、主题、约束、RTL、elevation、输入、展开/反向、
-Toggle 图标、菜单增项及显隐场景。参考端调用真实 Compose API，并提供真实窗口像素尺寸与桌面环境。
-
-```powershell
-./tests/VisualParity/parity.ps1 self-test --family floating-action-button --require-match
-./tests/VisualParity/parity.ps1 prepare-reference --family floating-action-button
-./tests/VisualParity/parity.ps1 run --family floating-action-button --require-match
-```
-
-实际结果与剩余差异以本次交付的 run 路径为准。Raster 的 withinTolerance 不表示逐像素相等；
-当前 parity 使用几何色块覆盖内容槽，不评价文字栅格。自动化 headless 和参考回归不代替真人桌面验收。
-
-2026-10-04 的最终自检覆盖 111 个 FAB 用例：双端新捕获、110 个 withinTolerance / 1 个 equal、重复捕获稳定，
-执行错误和 notCompared 均为 0。控件库 420 项、阴影模块 7 项、ComposeAnimation 774 项回归通过，
-Release 与 Catalog 构建通过。附加的 `button.dynamic.hover.elevated` 回归截图均在容差内，
-但既有 Double tween 与 Compose Float 的 elevation 精确读数仍有差异，不计为该 Button 用例通过。
+任意内容不会自动获得图标 tint，整层 SrcIn tint 尚未实现。图标 Color 绑定仅适用于可设置颜色的内容。
+菜单滚轮与触摸惯性由 Avalonia 平台决定；原生 Enter 按下激活的适配沿用共享决定。
+几何双端测试不证明文字、字体图标、真实桌面输入或所有平台一致。
+更多内部时序、历史差异及验证入口见 [INTERNALS](INTERNALS.md#验证与边界)。

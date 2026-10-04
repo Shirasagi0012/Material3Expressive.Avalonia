@@ -1,71 +1,96 @@
 # FloatingToolbar
 
-`HorizontalFloatingToolbar` / `VerticalFloatingToolbar` 移植固定
-[AndroidX / Core 基线](../../../../docs/upstream-baseline.json)的 `FloatingToolbar.kt`。
-两份 Material3 源文件在该基线相同；动画还对照固定 `EnterExitTransition.kt` 和
-`Transition.kt`，滚动测量对照 Foundation `Scroll.kt` / UI `Placeable.kt`。
+`HorizontalFloatingToolbar` / `VerticalFloatingToolbar` 提供横向或纵向的浮动操作区，
+可以组合常驻内容、可收起的两侧内容或 FAB。先完成[公共接入](../../../../docs/GETTING_STARTED.md)，
+实现与移植依据见 [INTERNALS.md](INTERNALS.md)。
 
-## 入口与使用
-
-两种方向共用 `FloatingToolbar : ContentControl`。普通入口用 `Content`、
-`LeadingContent` / `TrailingContent` 及各自的模板；`Expanded` 只隐藏两侧槽。
-提供 `FloatingActionButton` / `FloatingActionButtonTemplate` 后选择 FAB 入口，两侧槽不参与该布局。
-该入口收起时仅显示 FAB，仍保留完整布局占位；FAB 从 56 DIP 动画到 80 DIP。
-横向 FAB 位置为 `Start` / `End`，纵向为 `Top` / `Bottom`，默认 End / Bottom。
+## 最小示例
 
 ```xml
-<m3:HorizontalFloatingToolbar Expanded="{Binding ToolbarExpanded}">
-  <m3:HorizontalFloatingToolbar.LeadingContent>
-    <m3:IconButton Symbol="ArrowBack" />
-  </m3:HorizontalFloatingToolbar.LeadingContent>
-  <StackPanel Orientation="Horizontal">
-    <m3:IconButton Symbol="Edit" />
-    <m3:IconButton Symbol="Share" />
-  </StackPanel>
-</m3:HorizontalFloatingToolbar>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:HorizontalFloatingToolbar>
+    <m3:HorizontalFloatingToolbar.LeadingContent>
+      <m3:IconButton Symbol="ArrowBack" AutomationProperties.Name="返回" />
+    </m3:HorizontalFloatingToolbar.LeadingContent>
+    <StackPanel Orientation="Horizontal">
+      <m3:IconButton Symbol="Edit" AutomationProperties.Name="编辑" />
+      <m3:IconButton Symbol="Share" AutomationProperties.Name="分享" />
+    </StackPanel>
+  </m3:HorizontalFloatingToolbar>
+</UserControl>
+```
 
+后续片段沿用相同命名空间。工具栏是 ContentControl；按钮的 Click、Command、禁用和图标名称由内部
+按钮自己处理，工具栏不代理操作。应用负责把它放到屏幕所需位置，例如用 Grid 对齐及 Margin。
+
+## 槽位、收起与 FAB
+
+普通入口的 `Content` 始终保留，Expanded 控制 LeadingContent / TrailingContent。
+三处各有对应 Template 属性，允许普通数据或控件。若提供 FloatingActionButton 或其模板，
+会切换成 FAB 入口，两侧槽不参与布局；收起只显示 FAB，但仍保留完整布局占位。
+
+```xml
 <m3:VerticalFloatingToolbar Classes="vibrant" FloatingActionButtonPosition="Top"
-                           Expanded="{Binding ToolbarExpanded}">
+                           Expanded="True">
   <m3:VerticalFloatingToolbar.FloatingActionButton>
-    <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}">
+    <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}"
+                             AutomationProperties.Name="新建">
       <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
     </m3:FloatingActionButton>
   </m3:VerticalFloatingToolbar.FloatingActionButton>
   <StackPanel>
-    <m3:IconButton Symbol="Edit" />
-    <m3:IconButton Symbol="Share" />
+    <m3:IconButton Symbol="Edit" AutomationProperties.Name="编辑" />
+    <m3:IconButton Symbol="Share" AutomationProperties.Name="分享" />
   </StackPanel>
 </m3:VerticalFloatingToolbar>
 ```
 
-默认 Standard 使用 SurfaceContainer，`vibrant` class 使用 PrimaryContainer；
-`Foreground` 通过 ContentColorFor 得到默认内容环境色。覆盖 Background、Foreground、Padding、
-CornerRadius、ExpandedShadowElevation、CollapsedShadowElevation 可改变对应参数。
-ExpandedShadowElevation 为 null 时选择普通入口 0 / FAB 入口 1 DIP；收起默认 0 DIP。
-FAB 的 `AnimationSpec` 接受 `IFiniteAnimationSpec<float>`，默认 FastSpatial。
-普通入口的槽使用上游 FastSpatial，交互留白使用 DefaultEffects。
-默认 Padding 为 8 DIP，cross axis 最小尺寸为 64 DIP；ScreenOffset=16 由调用方的定位/Margin 应用。
-上游原始 ContainerBetweenSpace Token 不等于 Row/Column 的默认 Spacing，本地不插入额外间距。
+横向 FAB 位置为 Start / End，默认 End；纵向为 Top / Bottom，默认 Bottom。
+内置 FAB 入口从 56 DIP 过渡到 80 DIP。自定义 FAB 应能 Stretch 到槽位尺寸；显式固定 Width/Height
+会限制自身内容，不能期望工具栏自动取消该约束。
+Expanded 可以绑定应用状态，启用编译绑定时声明 DataContext 类型。
 
-`MaterialStandardFloatingToolbarFabTheme` / `MaterialVibrantFloatingToolbarFabTheme` 对应上游两个
-FAB helper：背景分别为 PrimaryContainer / TertiaryContainer，默认、按下和聚焦 elevation=3，hover=6。
-模板保留原有 FAB 的交互和可见性能力，按 Compose Box 的规则将动画中的内容中心取整到物理像素。
-自定义 FAB 内容需 Stretch 到槽的尺寸，显式固定 Width/Height 会限制其自身内容，和上游自定义
-FAB 应使用 fillMaxSize 的要求对应。
+## 默认值与定制
 
-## 滚动和无障碍
+默认 Standard 背景为 SurfaceContainer，`vibrant` class 改为 PrimaryContainer；Foreground
+通过内容色角色提供默认环境，子控件显式选色仍优先。常用入口是 Background、Foreground、Padding、
+CornerRadius、ExpandedShadowElevation 和 CollapsedShadowElevation。
+
+默认 Padding 为 8 DIP，交叉轴最小尺寸为 64 DIP；屏幕边缘 16 DIP 偏移由调用者 Margin/布局表达，
+不会自动添加。ExpandedShadowElevation 为 null 时普通入口取 0、FAB 入口取 1 DIP，收起默认 0。
+工具栏不强制内容 StackPanel 的 Spacing。
+
+`MaterialStandardFloatingToolbarFabTheme` / `MaterialVibrantFloatingToolbarFabTheme` 分别提供
+PrimaryContainer / TertiaryContainer FAB 背景；静止、按压、焦点高度 3 DIP，悬停 6 DIP。
+FAB 入口的 AnimationSpec 接受 `IFiniteAnimationSpec<float>`，默认 FastSpatial；普通槽动画规格固定使用
+相应 Material 默认值。嵌入的 IconButton 自身边界见 [IconButton](../IconButton/README.md)。
+
+## 随滚动退出与展开
+
+退出整个工具栏和展开槽位是不同能力。以下 C# 放在已初始化视图中，`toolbar` 与 `scrollViewer`
+分别是现有 FloatingToolbar 和 ScrollViewer；使用 `Material3Expressive.Components` 命名空间。
 
 ```csharp
 var behavior = FloatingToolbarDefaults.ExitAlwaysScrollBehavior(
     FloatingToolbarExitDirection.Bottom);
 toolbar.ScrollBehavior = behavior;
 toolbar.ScrollSource = scrollViewer;
+```
 
-// 自定义宿主传入实际已消费距离及剩余速度，向上为负。
-behavior.OnPostScroll(consumedY: -24f);
-float remainingVelocity = await behavior.OnPostFlingAsync(availableY: -400f);
+ScrollSource 观察实际已消费 OffsetDelta，不额外消费输入。公开状态 `FloatingToolbarState` 中
+OffsetLimit、Offset、ContentOffset 的单位是 DIP，速度是 DIP/s，向上为负。
+一个 behavior 只能连接一个可见工具栏；切换或卸载时会清理旧 settling 和订阅。
 
-using var subscription = FloatingToolbarDefaults.FloatingToolbarVerticalNestedScroll(
+当前自动接入没有原生 nested-scroll 剩余 fling velocity 回调；自定义宿主如需结束后的 settling，
+应在已挂载工具栏上调用 `await behavior.OnPostFlingAsync(remainingVelocity)`，没有剩余速度可传 0。
+手动输入距离时用 OnPostScroll，避免与 ScrollSource 对同一距离重复报告。
+
+只想根据阈值改变 Expanded 时，可使用独立展开辅助订阅：
+
+```csharp
+var subscription = FloatingToolbarDefaults.FloatingToolbarVerticalNestedScroll(
     scrollViewer,
     expanded: () => viewModel.ToolbarExpanded,
     onExpand: () => viewModel.ToolbarExpanded = true,
@@ -75,62 +100,17 @@ using var subscription = FloatingToolbarDefaults.FloatingToolbarVerticalNestedSc
     collapseScrollDistanceThreshold: 40);
 ```
 
-`FloatingToolbarState` 保存 OffsetLimit、Offset、ContentOffset，距离公开为 DIP，速度为 DIP/s；
-保留上游 Float 运算、钳制、方向、衰减后 snap 和返回剩余速度。默认 spline / snap 在实际 density
-的物理像素中计算后换回 DIP，自定义规格按公开 DIP 单位工作。OffsetLimit 单独改变时不会自动钳制 Offset。
-一个 behavior 只接入一个可见工具栏；脱离视觉树、更换 behavior 或触摸探索模式会取消旧 settling 和订阅。
-工具栏自身可按 ExitDirection 拖动，上游释放速度不随 exit direction 再次反向的规则也保留。
+此片段假设 viewModel 提供 ToolbarExpanded 并绑定工具栏。将返回的 IDisposable 保存在视图中，
+在卸载或更换来源时调用 `subscription.Dispose()`；不要让短暂初始化方法的 using 声明立即结束订阅。
+辅助订阅只发通知，不隐藏工具栏、不替应用写 Expanded；修改方向或阈值时重新订阅。
+不要将这里的 DIP 协议与 [AppBar](../AppBar/README.md) 的物理 px 协议混用。
 
-`ScrollSource` 观察 ScrollViewer 的实际 OffsetDelta（转换符号），不把 wheel delta 当作已消费距离，
-不额外消费输入。Avalonia 没有上游的 nested-scroll 剩余 fling velocity 回调；原生滚动不会自动调用
-OnPostFlingAsync，自定义宿主在结束后显式传入速度（无剩余速度可传 0 来 snap）。
-展开辅助订阅不隐藏整个工具栏、不写 Expanded，应用决定如何响应通知；同步回调后的状态立即读取，
-其他应用状态改变在下次实际滚动前读取。阈值/方向在订阅时确定，修改时释放并重新订阅。
+## 无障碍与使用边界
 
-宿主使用 `TouchExplorationEnabled` 接入服务状态。启用时取消滚动接入并强制展开，automation 的
-Expand/Collapse provider 保留上游独立的 forceCollapse 标志；Expand 只清除此标志，应用 Expanded
-仍为 false 且未启用探索时不会强制展开。普通入口 Offset 非零时禁止后代聚焦，恢复时释放原属性值。
+宿主需提供实际 `TouchExplorationEnabled` 状态，启用后取消滚动接入并强制展开。
+automation 的 Expand/Collapse 保留独立的强制收起状态；Expand 只清除此状态，不保证在应用
+Expanded=false 且未启用探索时展开。普通入口 Offset 非零时后代不可聚焦，回到原位后恢复。
 
-2026-10-04 维护者已确认共享 ContentControl / 槽 API、主题及 FAB 位置枚举、DIP 滚动状态与显式 fling、
-宿主提供探索状态及 automation 适配，另行确认 IDisposable 展开辅助订阅。原生 ScrollViewer 的剩余速度
-缺口属于上述已接受的框架适配。48 DIP IconButton 布局及内部交互对齐读数的确认见
-[共享决定](../../../../docs/DECISIONS.md#最小交互布局与工具栏对齐读数)。
-
-分支交付时，维护者选择保留 ComposeAnimation 0.2.2-alpha 并记录 Transition 空闲唤醒缺口；
-旧产物曾出现 FAB 在同一 64ms 输入下为 68 / 73.25 DIP，以及重复捕获不稳定。
-合入时主分支已使用包含 Transition 唤醒修正的 0.2.7-alpha，本组件沿用中央依赖版本。
-本轮全量双端自检未再观测到上述差异，验证范围见下文；没有为工具栏另建动画引擎。
-
-## 验证边界
-
-双端入口为 `tests/VisualParity/Material3Expressive.Parity/Cases/FloatingToolbarCases.cs` 与
-`tests/VisualParity/reference/src/main/kotlin/cases/FloatingToolbarCases.kt`，调用真实组件 API。
-覆盖方向、普通/FAB 两类入口、FAB 位置、Expanded、Standard/Vibrant、亮/暗色、RTL、槽组合、
-空内容、受限/溢出布局、Padding/形状/颜色/elevation 覆盖、展开/收起/反向、主题和四方向滚动、snap/fling。
-矩形内容使用受父约束的固有尺寸，对应 Modifier.size；Avalonia 的强制 Control.Width 在受限 Arrange
-仍可能溢出，不用它替代参考的可被约束尺寸。文字、字体图标和实际桌面显示不在该 suite 的验证范围。
-
-2026-10-04 合入主分支后，使用 ComposeAnimation 0.2.7-alpha 的 4× Headless 全量 self-test
-独立重采双端 172 例、490 个采样点：76 equal、96 withinTolerance，执行错误为 0，
-所有普通重复和额外被动截图检查稳定。2,520 项结构化读数全部 equal；448 张请求的
-Raster 对比为 240 equal / 208 withinTolerance。withinTolerance 不代表原始像素严格相等。
-与分支交付的 `20261003-230510-6f81b8b1` 对照，9 个 FAB 动画 different 用例均转为
-withinTolerance，其余用例状态保持；包括曾不稳定的 balanced-padding 和 FAB reverse 场景。
-结果位于 `artifacts/visual-parity/runs/floating-toolbar-merge-20261004/summary.md`。
-分支原有对比、自检与诊断产物仍保留于原交付 worktree，属于 0.2.2-alpha 下的历史证据。
-
-`FloatingToolbarTests.cs` 检查 Token、状态钳制、占位、对齐、无障碍、实际 ScrollViewer 消费、
-订阅释放、拖动、内容移出时的焦点恢复及 detach 清理。合入后 Release 全解决方案构建、
-819 项控件测试及 124 项 Parity 系统测试通过。
-共享 IconButton 的 115 例双端 self-test 全部稳定，56 withinTolerance / 59 different，
-用例及采样事实的比较状态均与分支交付结果相同。既有 ambient 颜色、Outlined 描边与其他
-未对齐事实见其[组件说明](../IconButton/README.md)；工具栏内容环境不会覆盖子控件显式选择的颜色。
-实际桌面触屏惯性、宿主辅助技术服务和字体排版尚未经运行验证。
-
-```powershell
-./tests/VisualParity/parity.ps1 prepare-reference --family floating-toolbar
-./tests/VisualParity/parity.ps1 run --family floating-toolbar
-./tests/VisualParity/parity.ps1 self-test --family floating-toolbar
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --no-restore
-dotnet run --project src/Material3Expressive.Catalog
-```
+真实触屏惯性、辅助技术服务和字体排版尚需桌面验收。几何双端测试不证明实际图标/文字相同；
+旧依赖动画问题的当前范围见 [INTERNALS](INTERNALS.md#历史问题与验证入口)。
+完整组合见 [FloatingToolbarDemo](../../../Material3Expressive.Catalog/FloatingToolbarDemo.axaml)。

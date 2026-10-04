@@ -1,123 +1,107 @@
 # Chip
 
-`AssistChip`、`SuggestionChip`、`FilterChip`、`InputChip` 对应固定 Compose `Chip.kt` 的四个家族。
-Assist / Suggestion / Filter 的 Elevated 入口合并为 `IsElevated`；Filter / Input 的形状重载通过
-非空 `Shapes` 启用。依据为 `docs/upstream-baseline.json` 中 AndroidX
-`f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，桌面交互依据 Core
-`a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 Chip.kt 相同。
-主要入口为 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Chip.kt`
-中的 Chip / SelectableChip、ChipContent、AnimatingChipContent、ChipArrangement 与 ChipElevation；
-默认值来自同目录 `tokens/` 的四个家族 Token 和 ChipsTokens。
+Chip 适合紧凑的操作、建议、筛选和已输入项目。库提供 `AssistChip`、`SuggestionChip`、`FilterChip`、
+`InputChip` 四个 Button 派生控件；先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
+实现映射与适配依据见 [INTERNALS](INTERNALS.md)。
 
-## 默认值与接入
+## 最小示例
 
-控件继承 Avalonia Button，提供原生 `Content` / `ContentTemplate`、`Click` / `Command`、
-`LeadingIcon` / `TrailingIcon` 及对应 Template；Input 额外提供 `Avatar` / `AvatarTemplate`。
-Suggestion 不显示 trailing 槽。Avatar 优先于 leadingIcon，默认圆形裁剪，禁用时仅 avatar 包装层
-应用 0.38 opacity。图标 / avatar 尺寸由内容决定，建议使用默认 Token 所对应的 18 / 24 DIP。
-
-默认容器高度 32 DIP、交互最小高度 48 DIP、圆角 Small（8 DIP）、LabelLarge 排版。
-`Shapes=null` 使用前后 8 DIP 间距；启用 Shapes 时随槽存在与否使用 4 / 8 DIP 的紧凑间距。
-Input 的内容 padding 保留 avatar / leading / trailing 的组合规则。
-布局按物理像素舍入，leading / trailing 先测量，标签消费剩余约束；selectable 默认最大宽度
-1000 DIP，显式 Width / MinWidth 保留外层约束语义。RTL 通过 Avalonia 的子树反射实现。
-
-默认形状没有按压变形。`Shapes="{m3:ChipShapes}"` 使用 Medium / Full / Small 的
-未选中 / 选中 / 按压圆角，按 FastSpatial spring 变化。
-Filter / Input 的槽变化使用 Transition 的 size / alpha 轨迹，退出保留最后非空内容，
-反向中断保留运行状态；固定与形状重载使用各自上游 motion Token。
-形状配置按解析后的三个圆角值比较，等值配置不重置动画；不同配置对应上游 key(shapes)
-重建状态。容器尺寸改变时重新计算轮廓，模板替换时释放调用方的图标控件与旧动画。
-Elevation 选择最后活跃的 press / focus / hover / drag；禁用直接到目标。
-进入 120ms FastOutSlowIn，退出 150ms Bezier(0.4,0,0.6,1)，hover 退出为 120ms。
-平面 Filter 的默认悬浮 elevation 为 0 DIP，Elevated Filter 仍为 3 DIP；选中状态不改变
-这套高度规则。平面 Filter 的这一默认值是下面记录的已确认上游偏离。
-
-应用管理 `IsSelected`。点击、命令或 automation Toggle 仅请求动作，不自动改选中状态。
-Filter / Input 的 automation 类型为 CheckBox，ToggleState 反映 IsSelected。
-外部 selection 更新向 automation 客户端发送 ToggleState 变更。
-Trailing 槽仍属于 Chip 的点击区域，移除动作由应用处理。
+在已加载 Material 主题的应用中：
 
 ```xml
-<!-- xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia" -->
-<m3:FilterChip Content="Filter" IsSelected="{Binding IsSelected}"
-               Command="{Binding SelectCommand}" Shapes="{m3:ChipShapes}"
-               IsElevated="True">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <StackPanel Spacing="8">
+    <m3:AssistChip Content="添加到日历" />
+    <m3:SuggestionChip Content="明天" IsElevated="True" />
+    <m3:FilterChip Content="未读" IsSelected="True" />
+    <m3:InputChip Content="联系人" IsEnabled="False" />
+  </StackPanel>
+</UserControl>
+```
+
+后续片段使用相同命名空间。Assist/Suggestion/Filter 以 `IsElevated` 选择 Elevated 外观，
+Input 没有此入口。默认容器高32、交互布局最小高48 DIP，圆角8 DIP，标签使用 LabelLarge。
+
+## 选择、命令与事件
+
+Assist/Suggestion 用原生 `Click` 或 `Command` 发起动作。
+Filter/Input 的 `IsSelected` 由应用管理，点击、命令或 automation Toggle 都只请求动作，不自动改选中状态：
+
+```xml
+<m3:FilterChip Content="未读" IsSelected="{Binding IsUnread}"
+               Command="{Binding ToggleUnreadCommand}" />
+```
+
+假设 DataContext 提供 IsUnread 和负责更改它的 ICommand ToggleUnreadCommand；
+编译绑定需声明对应 x:DataType。事件方式可使用 `Click="OnFilterClick"`，并由视图处理器写回 IsSelected。
+仅绑定 IsSelected 而不处理动作不会自动切换。
+Filter/Input 提供 CheckBox/Toggle 自动化，选中值变化会通知自动化客户端。
+Enter 按下激活，Space 沿用原生 ClickMode；`IsEnabled="False"` 禁止输入并显示禁用状态。
+
+## 标签、图标与头像
+
+`Content` / `ContentTemplate` 为标签，`LeadingIcon` / `TrailingIcon` 及对应 Template 为图标槽。
+Suggestion 不显示 trailing 槽。Input 另有 Avatar / AvatarTemplate，头像优先于 leading 图标，
+默认圆形裁剪，禁用时仅头像包装层应用0.38透明度。
+
+```xml
+<m3:InputChip Content="联系人">
+  <m3:InputChip.Avatar>
+    <Border Width="24" Height="24" Background="#6750A4" />
+  </m3:InputChip.Avatar>
+  <m3:InputChip.TrailingIcon>
+    <m3:MaterialSymbol Symbol="Close" Width="18" Height="18" />
+  </m3:InputChip.TrailingIcon>
+</m3:InputChip>
+```
+
+图标/头像尺寸由内容决定，常用默认参考为18/24 DIP；不要将同一 Control 实例放进多个槽。
+Trailing 仍属于整个 Chip 的点击区域，没有独立移除命令或事件；删除与选择动作由应用决定。
+Leading/trailing 先测量，标签使用剩余宽度；RTL 自动镜像布局。
+
+## 形状与局部定制
+
+Filter/Input 的 `Shapes` 为 null 时使用固定形状；显式启用后，未选中/选中/按压采用
+Medium/Full/Small 圆角并带形状与槽动画：
+
+```xml
+<m3:FilterChip Content="收藏" IsSelected="True" Shapes="{m3:ChipShapes}">
   <m3:FilterChip.LeadingIcon>
     <m3:MaterialSymbol Symbol="Check" Width="18" Height="18" />
   </m3:FilterChip.LeadingIcon>
+  <m3:FilterChip.Colors>
+    <m3:ChipColors SelectedContainerColor="#E8DEF8" SelectedLabelColor="#211A2E" />
+  </m3:FilterChip.Colors>
 </m3:FilterChip>
 ```
 
-```csharp
-public partial class ChipViewModel : ObservableObject
-{
-    [ObservableProperty] public partial bool IsSelected { get; set; }
-    [RelayCommand] private void Select() => IsSelected = !IsSelected;
-}
+`ChipShapes.Shape` / SelectedShape / PressedShape 可分别覆盖圆角。
+`Colors` 的未指定槽继续跟随 Token；Background、Foreground、BorderBrush、BorderThickness、Padding
+的原生局部值/绑定优先于默认样式。不同图标与标签拥有各自颜色，不能把所有槽都视为单一 Foreground。
+`Spacing` 可用 ChipSpacing 定义逻辑前/后间距；null 使用固定入口的8 DIP，或形状入口按槽存在选择4/8 DIP。
+Input Padding 还随头像/图标组合调整。
 
-var chip = new InputChip
-{
-    Content = "Contact",
-    Shapes = new ChipShapes { SelectedShape = new CornerRadius(16) },
-    Spacing = new ChipSpacing(4, 8),
-    Colors = new ChipColors { SelectedContainerColor = Color.Parse("#E8DEF8") },
-    Elevation = new ChipElevation(Hovered: 3),
-};
-chip.Click += (_, _) => chip.IsSelected = !chip.IsSelected;
+`Elevation=null` 使用当前变体默认高度；显式 ChipElevation 覆盖交互高度。需要完全无阴影时将
+Default/Pressed/Focused/Hovered/Dragged/Disabled 全设0（Dragged 的构造默认值为8）。
+平面 Filter 默认 hover elevation 为0，Elevated Filter 为3；需要恢复上游平面悬停高度可写：
+
+```xml
+<m3:FilterChip Content="上游悬停高度">
+  <m3:FilterChip.Elevation>
+    <m3:ChipElevation Hovered="1" />
+  </m3:FilterChip.Elevation>
+</m3:FilterChip>
 ```
 
-`Colors` 的空槽跟随 Token，`Elevation=null` 使用当前变体默认值；全零 ChipElevation 关闭阴影。
-`Spacing=null` 使用当前重载默认间距。原生 Background / Foreground / BorderBrush /
-BorderThickness / Padding 的显式值与绑定优先于组件默认值。
-Surface 的 ripple 墨色通过实时 contentColorFor 绑定选择，透明或非主题背景沿用 Chip 外层
-内容环境，标签和图标各自拥有颜色 provider。
-资源与模板已由 MaterialTheme 装配；应用仍需按项目 README 初始化 VisualAnimationScope。
+透明背景下恢复1 DIP阴影可能重新出现已观察到的 GPU 内部灰环，详见维护说明。
 
-## 已确认的适配与边界
+## 使用边界
 
-2026-10-03 维护者批准四个 Button 派生控件、外部选中状态、IsElevated、内容槽及状态颜色 /
-elevation 配置的 API；ChipShapes 本次支持圆角，ChipSpacing 提供前后间距。
-任意路径 / 切角 Shape 和通用 Compose Arrangement **尚未实现**。
-没有公开 hoisted MutableInteractionSource；输入与反馈消费现有共享控制器。
-原生 Enter 在按下时激活，与 Compose 松开激活不同，沿用共享键盘职责的已确认适配。
-默认 opacity 焦点反馈已接入；可配置 inset focus ring 尚未实现。
-
-2026-10-04 维护者选择本次保留 ComposeAnimation 0.2.1-alpha 的 Tween / Bezier 数值精度。
-它使用 double 运算，固定 Compose 使用 Float；例如 64ms elevation 约相差 0.0000006 DIP。
-这是已接受的数值差异，原始事实比较继续报告 different，不舍入读数或放宽门禁。
-共享描边与 Core Desktop 鼠标焦点的决定见 [共享决定](../../../../docs/DECISIONS.md)。
-Core Desktop 的完整焦点事件影响 elevation；indication 单独过滤首次鼠标聚焦，已显示的
-键盘焦点层保留到失焦，输入模式切换不合成焦点事件。
-
-2026-10-04 维护者选择本次保留阴影坐标差异。透明背景与自定义 6 DIP elevation 下，
-内部阴影 raster 与 Compose 不同；同一 Skiko 原生探针已复现 DIP 路径 + 4× CTM 与
-物理像素路径 + 1× CTM 的不同结果。本次保留共享模块现有接入，继续报告比较差异。
-
-2026-10-04 维护者批准将库中平面 Filter 的默认 hover elevation 从固定 Compose 的 1 DIP
-改为 0 DIP，适用于 Shapes=null / 非空、未选中 / 选中。透明背景的平面 Filter 悬浮时，
-Skia Ganesh 的原生阴影会暴露容器内部的灰色环；固定 Skiko 0.152.0-alpha02 的 GPU 原生
-drawShadow 与 Avalonia 桌面绘制均已复现，CPU 路径未出现同样灰环。该修正保留悬浮状态层、
-形状动画和其余 elevation 默认值，不修改共享阴影算法。它与前面的坐标接入差异是两项独立决定。
-显式 `Elevation = new ChipElevation(Hovered: 1)` 或覆盖
-`MaterialTokens.Comp.Chip.FlatFilterHoverElevation` 可以恢复上游高度，也会恢复该 GPU 效果。
-XAML 对应 `<m3:FilterChip.Elevation><m3:ChipElevation Hovered="1" /></m3:FilterChip.Elevation>`。
-双端参考继续使用真实 Compose 默认值，报告保留 hover elevation / raster 的已接受不同。
-
-## 验证与剩余问题
-
-控件库测试覆盖默认尺寸、avatar 优先级 / opacity、外部选中、automation、实时内容色、
-原生 paint 优先级、编译 XAML 配置、detach / reattach、模板替换、形状替换与完成后的尺寸更新、
-elevation 顺序 / 禁用 snap、平面 Filter 悬浮状态层与高度覆盖和宽度约束。
-Catalog 展示四个家族、Elevated、形状、avatar 和禁用状态。
-
-VisualParity 的独立入口为
-`tests/VisualParity/Material3Expressive.Parity/Cases/ChipCases.cs` 与
-`tests/VisualParity/reference/src/main/kotlin/cases/ChipCases.kt`，共 207 项。
-覆盖变体 / 主题 / 选中 / 禁用、槽与 RTL、尺寸约束、自定义颜色 / padding / border /
-elevation，以及 hover、按压、取消、禁用、中断、外部 selection、形状配置替换、
-完成变形后的尺寸更新、主题和键盘。
-使用真实组件和无文字的 marker，未验证文字 raster / 字体差异或真实桌面手动交互。
-
-保留的数值精度、阴影坐标、平面 Filter 悬浮高度及原生 Enter 激活时机差异分别按上面的决定处理。
-具体运行结果及未通过采样见交付时给出的 artifacts 路径，不能将这些用例宣称为一致。
+Selectable Chip 默认最大宽度1000 DIP，显式 Width/MinWidth 保留调用方约束。
+当前 Shapes 仅支持圆角矩形；任意路径/切角 Shape、通用 Compose Arrangement、外部
+MutableInteractionSource 和可配置 inset focus ring 尚未实现。
+精度、阴影与原生键盘的已知差异不等于完整视觉一致；真实文字/字体、系统屏幕阅读器和桌面手工体验
+未由无字形 headless 用例证明。
+四族、Elevated、形状、头像和禁用组合见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

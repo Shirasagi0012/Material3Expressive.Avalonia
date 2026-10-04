@@ -92,9 +92,9 @@ DialogPresenter 局部提供整层透明度合成选项：Avalonia 在子视觉�
 `DialogTests` 覆盖嵌套、焦点还原、真实 TextBox/ContextMenu、Tab、关闭请求、内容模板与资源更新、
 窗口尺寸改变、退出/重开/卸载及与 Modal Rail 叠放。Catalog 提供嵌套 Dialog、编辑框与下拉框供桌面验证。
 退出快照另覆盖 1×、1.25×、1.5×、2×、4× 的完整四象限内容，整层透明度与多次重开卸载均有回归。
-本轮双端验证结果见 [AlertDialog 说明](../../Components/AlertDialog/README.md#验证与边界)。
+AlertDialog 的验证范围与复现入口见[维护说明](../../Components/AlertDialog/INTERNALS.md#一致性边界与验证)。
 
 本次合并后控件库 670/670、Parity 框架 123/123、Catalog Release 构建通过，包含 Dialog / AlertDialog / Modal Rail 共 51 项回归。
 此前 PopupOverlayLayer 迁移时，Rail 的 94 配置双端重复性稳定，迁移前后 308 张采样图及
 3,898 项结构化值完全一致；Compose 的既有差异保留。这是先前迁移的证据，
-本轮未重新采集 Rail 双端。[先前迁移产物](../../../../artifacts/dialog-foundation/README.md)。
+该历史记录不表示后续文档整理重跑了 Rail；复核入口见 [Rail 维护说明](../../Components/WideNavigationRail/INTERNALS.md)。

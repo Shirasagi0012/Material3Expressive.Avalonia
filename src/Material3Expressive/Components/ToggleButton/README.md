@@ -1,92 +1,93 @@
 # ToggleButton
 
-使用 Avalonia 原生 `ToggleButton`，提供 Filled、Tonal、Elevated、Outlined 四种 Material 主题。
-依据 [固定基线](../../../../docs/upstream-baseline.json) 的 `ToggleButton.kt`、`Button.kt`、
-`internal/AnimatedShape.kt` 与组件 Token；这些组件文件在固定 AndroidX/Core 提交中相同。
+使用 Avalonia 原生 `ToggleButton` 表达可开关的操作，Material 主题提供 Filled、Tonal、Elevated、Outlined
+四种外观及选中/按压形状。先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
+维护依据和差异边界见 [INTERNALS](INTERNALS.md)。
 
-## 使用与默认值
+## 最小示例
+
+在已加载 Material 主题的应用中：
 
 ```xml
-<ToggleButton Content="Pin" IsChecked="{Binding IsPinned}"
-              Theme="{StaticResource MaterialFilledToggleButtonTheme}" />
-<ToggleButton Content="Pin" Classes="medium"
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <ToggleButton Content="固定" IsChecked="True" />
+</UserControl>
+```
+
+默认 Filled/Small；后续片段沿用上述命名空间。
+
+## 外观、尺寸与状态
+
+| 外观 | Theme 资源 |
+| --- | --- |
+| Filled（默认） | MaterialFilledToggleButtonTheme |
+| Tonal | MaterialTonalToggleButtonTheme |
+| Elevated | MaterialElevatedToggleButtonTheme |
+| Outlined | MaterialOutlinedToggleButtonTheme |
+
+```xml
+<ToggleButton Content="固定" Classes="medium"
               Theme="{StaticResource MaterialTonalToggleButtonTheme}"
-              m3:ToggleButtonAppearance.CheckedCornerRadius="16"
-              m3:MaterialButton.PressedCornerRadius="12">
+              IsChecked="{Binding IsPinned, Mode=TwoWay}"
+              Command="{Binding SavePinCommand}" />
+```
+
+假设 DataContext 提供可写 IsPinned 与 ICommand SavePinCommand；编译绑定需声明 x:DataType。
+原生控件先切换状态再发 Click/Command，IsChecked 默认双向绑定。
+可用 `Click="OnPinClick"` 连接 code-behind 处理器。Enter 按下激活，Space 默认松开激活。
+IsChecked=null 按未选中绘制；IsThreeState 是原生扩展，不代表另一种 Material 选中外观。
+禁用使用 IsEnabled=false，禁用颜色不再区分选中。
+
+默认Small不设class，其他用 `xsmall` / `medium` / `large` / `xlarge`；一次选择一档。
+容器最小高分别32/40/56/96/136 DIP，外层默认预留至少48 DIP布局空间，不是鼠标目标扩展。
+本族没有普通Button的58 DIP默认最小宽度；显式尺寸和MinWidth/MinHeight保留调用方约束。
+
+## 标签、图标与圆角
+
+Content/ContentTemplate 是标签槽，自动字符串复用 Button 的排版；图标使用附加槽，
+其尺寸盒与间距自动跟随当前尺寸：
+
+```xml
+<ToggleButton Content="收藏">
   <m3:ToggleButtonAppearance.Icon>
-    <m3:MaterialSymbol Symbol="PushPin" />
+    <m3:MaterialSymbol Symbol="Favorite" />
   </m3:ToggleButtonAppearance.Icon>
 </ToggleButton>
 ```
 
-主题键为 `MaterialFilledToggleButtonTheme`、`MaterialTonalToggleButtonTheme`、
-`MaterialElevatedToggleButtonTheme`、`MaterialOutlinedToggleButtonTheme`；隐式主题为 Filled。
-默认 Small，`xsmall` / `medium` / `large` / `xlarge` class 选择其他尺寸。
-背景最低高度为 32/40/56/96/136 DIP，外层保留至少 48 DIP 的交互布局空间，
-没有普通 Button 的 58 DIP 默认最小宽度。显式尺寸与 MinWidth/MinHeight 优先。
+`ToggleButtonAppearance.IconTemplate` 支持数据模板；MaterialSymbol 继承内容色，自定义图形需自行绑定前景色。
+本族默认就有形变：按压目标优先于选中目标，选中优先于静止圆角。
 
-`Content` / `ContentTemplate` 是标签槽，`ToggleButtonAppearance.Icon` / `IconTemplate` 是可选图标槽。
-图标固定盒尺寸和间距遵循 `ButtonDefaults.iconSizeFor` / `iconSpacingFor`；XS 间距为 4 DIP，
-不是原始 ButtonXSmall Token 的 8 DIP。自动字符串标签复用 Button 的内容环境与受约束排版。
-图标内容需要使用前景色时，显式绑定 `Foreground` 或使用 `MaterialSymbol`。
-
-`ToggleButtonAppearance.Colors` 可指定六槽颜色；null 使用实时主题 Token。
-`Background`、`Foreground` 的局部值仍按 Avalonia 属性优先级覆盖默认主题。
-
-```csharp
-var toggle = new ToggleButton { Content = "Pin", IsChecked = false };
-ToggleButtonAppearance.SetCheckedCornerRadius(toggle, new CornerRadius(12));
-MaterialButton.SetPressedCornerRadius(toggle, new CornerRadius(6));
-ToggleButtonAppearance.SetColors(toggle, new ToggleButtonColors(
-    ContainerColor: Colors.LightGray, ContentColor: Colors.Black,
-    DisabledContainerColor: Color.Parse("#1A1C1B1F"), DisabledContentColor: Colors.Gray,
-    CheckedContainerColor: Colors.Navy, CheckedContentColor: Colors.White));
+```xml
+<ToggleButton Content="固定" CornerRadius="20"
+              m3:ToggleButtonAppearance.CheckedCornerRadius="12"
+              m3:MaterialButton.PressedCornerRadius="6" />
 ```
 
-## 状态与适配
+静止用原生 CornerRadius，选中用 CheckedCornerRadius，按压复用 MaterialButton.PressedCornerRadius。
+Small默认按压角6 DIP。显式局部值优先于尺寸默认值；若需完全固定圆角，将静止和选中设为相同值，
+并将 PressedCornerRadius 设为 `{x:Null}`。
 
-按压形状优先于选中形状，选中形状优先于静止形状。静止值来自 `CornerRadius`，选中目标来自
-`ToggleButtonAppearance.CheckedCornerRadius`，按压目标复用 `MaterialButton.PressedCornerRadius`。
-Small 的默认按压角为 6 DIP。形状使用 FastSpatial，描边宽度使用 FastSpatial 的 Dp 弹簧
-（默认可见阈值 0.4 DIP），实色描边颜色使用 DefaultEffects。形状配置变化按上游重建状态，
-反向与第三目标中断复用共享 AnimatedCornerRadius；绘制轮廓在插值之后按边界归一化。
-Elevation、状态层、ripple 和生命周期复用已有共享能力。禁用颜色不区分选中状态。
-描边动画交给共享 SurfaceOutline：按上游向上取整为物理像素，均匀圆角中心线内缩半个线宽，
-非对称圆角使用外轮廓减内缩轮廓，动画层不再次修改圆角。
-焦点与 indication 的桌面输入模式过滤见[共享决定](../../../../docs/DECISIONS.md)。
+## 颜色与使用边界
 
-2026-10-04，维护者确认采用原生 ToggleButton 和上述附加外观 API。
-状态由原生控件切换，Click/Command 观察切换后的值，IsChecked 保留原生双向绑定默认值；
-Enter 按下激活，Space 默认松开激活，自动化沿用原生 ToggleButton peer。
-`IsChecked=null` 按未选中显示，原生三态为本地扩展。Compose 的受控 `checked/onCheckedChange`
-调用关系通过绑定表达，属性写入当帧与 Compose 下一次重组更新的时机不同。
-这些适配也适用于 SplitButton 的原生尾部 ToggleButton。
+Background/Foreground、BorderBrush/BorderThickness、Padding和内容对齐可按原生属性定制。
+整套颜色用附加 `ToggleButtonAppearance.Colors` 的不可变 `ToggleButtonColors`，
+六槽为普通/禁用/选中的 container/content；C# 通过 SetColors 传入，null恢复动态主题Token。
+局部Token更适合只改一个状态：
 
-当前公开形状入口只表达圆角矩形，没有任意 Shape/CutCornerShape 入口；未提供 Compose
-`MutableInteractionSource` 的对象映射。外层不裁剪，内部 Surface 仍裁剪背景、内容与反馈。
+```xml
+<ToggleButton Content="固定" IsChecked="True">
+  <ToggleButton.Resources>
+    <Color x:Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.CheckedContainerColor}">#126E60</Color>
+    <Color x:Key="{x:Static m3:MaterialTokens+Comp+FilledToggleButton.CheckedContentColor}">#FFFFFF</Color>
+  </ToggleButton.Resources>
+</ToggleButton>
+```
 
-## 验证
-
-独立双端用例为 `ToggleButtonCases.cs` / `ToggleButtonCases.kt`，实际调用产品主题和真实 Compose API。
-覆盖四种外观、五种尺寸、选中/未选中、禁用、暗色、六槽自定义颜色、图标、空内容、RTL、尺寸约束，
-以及选择、按压、释放、反向、第三目标、配置更新、取消、快速点击、禁用中断、键盘、主题更新。
-颜色标记替代字体；这些测试不证明字体栅格、屏幕阅读器或真实桌面体验一致。
-2026-10-04 的 4× Headless self-test 完整执行 104 例、306 个采样点：7 equal、76 withinTolerance、
-21 different，执行错误为 0，全部普通重复捕获与额外被动截图检查稳定。80 个静态用例均 equal 或
-withinTolerance。参考端与 Avalonia 都是本轮执行，没有复用旧参考或仅重比较。
-不同结果保留原生 Enter 按下激活及属性/主题/禁用更新当帧的时机差异；三个 hover 用例在 64ms 的
-共享 elevation 读数仍有约 0.0000003–0.0000006 DIP 精度残差，这项残差未认定为已接受差异。
-颜色标记场景中的后续默认形状、光学位置、状态层与收尾帧已对齐到既定容差。
-
-合并主分支后，控件库 614 项、Parity 框架 123 项和阴影模块 7 项测试通过，Release solution
-（含 Catalog）构建通过。共享 Button/IconButton/Chip/CheckBox/RadioButton/Switch/NavigationBar
-的 16 例自检均执行成功且稳定：10 例 equal/withinTolerance，6 例保留原生 Enter、elevation 精度、
-已确认的平面 Filter hover 高度、IconButton 40/48 DIP 分配及 Switch 按压/释放 raster 差异。
-不能宣称共享组件全部 parity 通过。
-合并中保留 SurfaceOutline 并补齐非对称描边、重叠角半径的绘制缩放，新增 6 项像素回归。
-最后一次修正后另执行 10 例描边自检，9 例 equal/withinTolerance、1 例保留切换当帧差异，
-执行无错误且全部稳定；这些用例的双端 PNG 与本轮全量/共享捕获完全相同。
-非常大的非对称圆角、运行中更改约束与任意自定义内容排版组合尚未验证完整 Shape 等价性。
-
-产物：[双端概览](../../../../artifacts/visual-parity/runs/toggle-split-merge-toggle-20261004/summary.md)、
-[合并验证与保留问题](../../../../artifacts/test-results/toggle-split-merge/validation.md)。
+本主题直接用 Foreground 作为 Surface 反馈墨色。局部颜色可能覆盖禁用默认值，需一并检查禁用状态。
+当前形状只支持圆角矩形，没有任意Shape或外部MutableInteractionSource对象映射。
+模板内部Surface裁剪背景、内容与反馈；替换模板需自行保留这些接入。
+当前无字形回归不能证明真实字体、屏幕阅读器或桌面体验一致。
+四种外观和尺寸见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

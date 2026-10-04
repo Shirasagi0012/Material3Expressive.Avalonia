@@ -1,246 +1,127 @@
-# WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem
+# WideNavigationRail / ModalWideNavigationRail
 
-Wide rail 支持展开、收起、排列和外部选中状态；独立 item 可以覆盖 Top / Start 图标位置。
-Modal rail 支持常驻收起态与收起后隐藏两种模式，在当前窗口客户区显示浮层与 scrim。
+`WideNavigationRail` 在窄图标列与宽标签列之间展开/收起，目的地使用 `WideNavigationRailItem`。
+`ModalWideNavigationRail` 在当前窗口客户区展开为浮层。只需要固定窄侧栏时见
+[NavigationRail](../NavigationRail/README.md)。首次使用请完成[公共接入](../../../../docs/GETTING_STARTED.md)。
 
-## 源码与实现
+## 最小示例
 
-固定基线见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：
-AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，Core
-`a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
-两端 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`
-中的 `WideNavigationRail.kt` 和 `NavigationItem.kt` 分别相同；桌面交互与动画提交顺序按固定 Core 核对。
-
-Item 模板的布局容器使用透明背景，让整个矩形参与 hover 与点击命中，包括图标与标签之间的空隙、
-胶囊外的留白；反馈仍只绘制在胶囊内，对齐 NavigationItem.kt 外层 Box.selectable 与内层 indication。
-Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间均沿用实际 Item 边界。
-
-- `WideNavigationRail.axaml` 组合 Surface、物理 inset、内容 padding、header 和 ItemsPresenter。
-  `WideNavigationRailLayout` 保留四条 animateDpAsState 轨迹：最小宽、宽度上限、项间距和项最小高度。
-  默认宽度收起 96、展开至少 220、至多 360 DIP；header 与项内容决定是否继续增宽。
-  横向像素取整、保存展开最大宽、反向时的宽度约束和逐项测量顺序按上游保留。
-  物理像素转回 Avalonia DIP 时使用原始 double 布局缩放，避免 float 除法误差被默认 LayoutRounding
-  再向上取整成额外 1 像素，影响分数缩放下展开/收起动画的项高度、居中位置和排列。
-  外层策略读取每项测量值；ItemsPanel 的总可用尺寸不变时，仍把子项测量失效传回外层，避免动画宽度滞后一帧。
-- `NavigationRailArrangement` 提供 Top、Center、Bottom、SpaceBetween、SpaceAround、SpaceEvenly 和 SpacedBy。
-  Center 按整个容器居中；有 header 时其他排列使用 header 下方的空间。
-  SpacedBy(0, Center) 仍按剩余空间居中，不能替换标准 Center。
-- `WideNavigationRailState` 使用 DefaultSpatial Animatable，保留动画中断时的速度。
-  TargetValue 是目标；CurrentValue 只有原始值恰好等于 1 时才为 Expanded，空间 spring 的过冲期间也为 Collapsed。
-  实际布局和 item 的展开目标跟随 TargetValue。
-- `WideNavigationRailItemLayout` 翻译 AnimatedMeasurePolicy / placeAnimatedLabelAndIcon，含纯 icon 分支。
-  选择尺寸与透明度共用一条 DefaultSpatial 轨迹，Top→Start 位置使用另一条轨迹，标签颜色使用 DefaultEffects。
-  图标颜色按上游直接更新。标签透明度为 `4 * (progress - .5)^2`；padding 插值裁到 0..1，布局保留空间 spring 过冲。
-  Top 标签样式在目标 Top 且进度小于 .5 时为 LabelMedium，其余为 LabelLarge。
-- Item 复用共享交互控制器和 Surface ripple。目标 Top 时按实际 item 宽、56 DIP 指示器宽和固定 12 DIP 纵向偏移映射按压；
-  目标 Start 时不映射。默认焦点呈现使用固定 Compose 的 opacity 状态层。
-  Top / Start 目标切换时复用 Surface 的卸载/挂载流程，按上游 indication 节点重建语义清空反馈；Button 的点击入口继续生效。
-- Token 保留 System 引用、disabled 0.38 alpha 与默认 padding 的尺寸派生关系；资源变化继续驱动模板和布局。
-- `ModalWideNavigationRail` 将同一个 ItemsPresenter 迁入 PopupOverlayLayer 内的模态 Popup，保留 item 对象和外部选中状态。
-  非 hidden 模式按 movableContentOf 保留进行中的 Item 动画；hidden 模式在内容重新挂载时释放旧作用域，
-  按当前目标初始化位置、选择与颜色，对齐上游首次组合内容的动画初值，不额外播放收起到展开的进入动画。
-  hidden 的水平锚点动画归属 rail 状态，在浮层关闭后仍保留并完成；再次打开从收起锚点滑入。
-  替换 State 或卸载 rail 时释放该锚点状态，对齐上游 remember(state) 的生命周期。
-  常驻模式始终保留收起态占位；隐藏模式不占布局空间，并以两条水平锚点处理滑出与拖动。
-  position 与 scrim 使用 DefaultEffects，水平偏移使用 DefaultSpatial；modal 宽度使用 FastSpatial。
-  拖动释放保留上游 LSQ2 速度计算、125 DIP/s 阈值、半程目标选择及 SnapFlingBehavior 的增量消费与边界停止。
-  程序化偏移动画允许过冲。拖动关闭回调仍属于锚点任务，新目标替换该任务时一并取消其等待的外部状态动画。
-  因此上游拖动关闭后可能出现 TargetValue=Collapsed、CurrentValue=Expanded、IsAnimating=false，不强行统一两个状态。
-- Modal 阻挡背景指针输入、限制 Tab 和程序化焦点、关闭时恢复先前焦点。Escape 在 KeyUp 关闭；
-  ShouldDismissOnBackPress 仅控制 TopLevel.BackRequested，不关闭上游 commonMain 的 Escape KeyUp 分支。
-  自动化暴露 pane 和可 Invoke 的 scrim，默认英文名称为 Navigation rail / Close rail，可用 AutomationProperties.Name 覆盖。
-
-## 使用
-
-加载 MaterialTheme，并按项目 [README](../../../../README.md) 初始化 TopLevel 的 VisualAnimationScope。
-构造状态或未挂载时的 SnapToAsync 可以设置初值；动画方法应在控件挂载后调用。
-
-```csharp
-public WideNavigationRailState RailState { get; } = new(WideNavigationRailValue.Collapsed);
-
-// 挂载后，在 UI 线程调用；再次操作或卸载会取消之前的任务。
-await RailState.ToggleAsync();
-```
+Rail 默认创建独立的 Collapsed 状态，默认宽 96 DIP；展开宽度由内容决定，默认范围 220–360 DIP。
+下面显示初始选择；应用负责选择和展开动作。
 
 ```xml
-<m3:WideNavigationRail xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-                       State="{Binding RailState}">
-  <m3:WideNavigationRail.Header>
-    <m3:IconButton Symbol="Menu" Command="{Binding ToggleRail}" />
-  </m3:WideNavigationRail.Header>
-  <m3:WideNavigationRailItem Label="主页" IsSelected="{Binding IsHomeSelected}"
-                            Command="{Binding NavigateHome}">
-    <m3:WideNavigationRailItem.Icon>
-      <m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" />
-    </m3:WideNavigationRailItem.Icon>
-  </m3:WideNavigationRailItem>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Grid ColumnDefinitions="Auto,*">
+    <m3:WideNavigationRail x:Name="Rail">
+      <m3:WideNavigationRail.Header>
+        <m3:IconButton Symbol="Menu" />
+      </m3:WideNavigationRail.Header>
+      <m3:WideNavigationRailItem Label="主页" IsSelected="True">
+        <m3:WideNavigationRailItem.Icon>
+          <m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" />
+        </m3:WideNavigationRailItem.Icon>
+      </m3:WideNavigationRailItem>
+      <m3:WideNavigationRailItem Label="搜索">
+        <m3:WideNavigationRailItem.Icon>
+          <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
+        </m3:WideNavigationRailItem.Icon>
+      </m3:WideNavigationRailItem>
+    </m3:WideNavigationRail>
+    <TextBlock Grid.Column="1" Margin="24" Text="页面内容" />
+  </Grid>
+</UserControl>
+```
+
+后续片段沿用相同命名空间。`Items` / `ItemsSource` / `ItemTemplate` 沿用 ItemsControl，
+数据模板应生成 WideNavigationRailItem。
+
+## 展开状态与目的地
+
+在事件处理器或 ViewModel 命令中调用同一个 `WideNavigationRailState`；动画方法必须在挂载后、UI 线程调用：
+
+```csharp
+// Rail 是上方已挂载的具名控件；这些是可选操作，不要求依次执行。
+await Rail.State.ToggleAsync();
+await Rail.State.ExpandAsync();
+await Rail.State.CollapseAsync();
+```
+
+状态构造器或未挂载时的 SnapToAsync 可设置初值。State 可绑定到 ViewModel；同一宿主中多个 Rail 可共享状态，
+最后一个消费者卸载时取消动画，重挂载从保存的目标恢复。方法接受 CancellationToken，反向操作可取消旧任务。
+布局跟随 `TargetValue`；`CurrentValue` 不是稳定的“当前宽/窄”指示器，弹簧过冲时也可能返回 Collapsed。
+
+```xml
+<m3:WideNavigationRailItem Label="主页" IsSelected="{Binding IsHomeSelected}"
+                          Command="{Binding NavigateHome}" />
+```
+
+片段假设 DataContext 提供相应状态和 ICommand，编译绑定需声明 x:DataType。
+Click、Command、Enter/Space 松开、自动化 Select 都只请求导航；应用负责更新 IsSelected 和互斥选择。
+支持 CommandParameter、CanExecute 与 IsEnabled。无标签目的地应设置 AutomationProperties.Name。
+
+## 内容、排列与定制
+
+Header / HeaderTemplate、Icon / IconTemplate、Label / LabelTemplate 接受内容和数据模板。
+字符串标签随布局使用 LabelMedium / LabelLarge；显式文字控件可覆盖排版。
+Item 的可空 `IconPosition` 默认跟随 Rail 的展开目标；显式 Top / Start 可以独立固定位置。
+独立 Item 可用 RailExpanded 选择目标形态。IndicatorPadding 非空时固定指示器留白，
+否则在 CollapsedIndicatorPadding / ExpandedIndicatorPadding 之间插值。
+
+```xml
+<m3:WideNavigationRail Arrangement="{x:Static m3:NavigationRailArrangement.Center}"
+                       ContentPadding="0,24,0,0">
+  <m3:WideNavigationRailItem Label="主页" IsSelected="True" IconPosition="Start" />
 </m3:WideNavigationRail>
 ```
 
-```csharp
-var rail = new WideNavigationRail
-{
-    State = new(WideNavigationRailValue.Expanded),
-    Arrangement = NavigationRailArrangement.SpacedBy(8, VerticalAlignment.Center)
-};
-var home = new WideNavigationRailItem { Icon = homeIcon, Label = "主页", IsSelected = true };
-rail.Items.Add(home);
-home.Click += (_, _) => NavigateHome();
-```
+Arrangement 还有 Top、Bottom、SpaceBetween、SpaceAround、SpaceEvenly；它们使用 x:Static 对象，
+不是枚举字符串。自定义等距排列用 C# 的
+`NavigationRailArrangement.SpacedBy(8, Avalonia.Layout.VerticalAlignment.Center)`。
+标准 Center 相对整栏居中，有 Header 时其他排列使用 Header 下方空间；SpacedBy 的 Center 与标准 Center 不同。
 
-Rail 使用 ItemsControl 的 Items / ItemsSource / ItemTemplate；数据模板生成 WideNavigationRailItem。
-Header、Icon、Label 接受内容与 DataTemplate，字符串 label 由普通 TextBlock 消费聚合默认排版。
-点击、Command 和自动化 Select 只请求导航；应用维护 IsSelected 与各项互斥。
-Space / Enter 在松开时调用。自动化暴露 TabItem、选中状态和所属 rail；有 label 时抑制 icon 的重复描述。
+WindowInsets 为物理 Thickness，桌面默认零，RTL 不交换物理边；ContentPadding 为逻辑边，默认顶部 44 DIP。
+Background / Foreground / CornerRadius 控制容器。Item 可分别覆盖 SelectedIconColor、IndicatorColor、
+两种位置的 SelectedTextColorTopIconPosition / SelectedTextColorStartIconPosition，以及未选中和禁用内容色。
+环境 Foreground 不能代替这些状态色；统一定制见[公共 Token 接入](../../../../docs/GETTING_STARTED.md)。
 
-Modal 复用同一 State 和 item API。宿主须有 PopupOverlayLayer（标准 Window 模板可提供；
-自定义 Window 模板需包含名为 `PART_VisualLayerManager` 的 VisualLayerManager）。
-浮层覆盖整个 TopLevel 客户区，不受 rail 的布局位置限制；仅在 Content 内启用普通 OverlayLayer 已不再足够。
-`Header` 用于收起态，`ExpandedHeader` 用于展开态；直接传 Control 时必须是两个实例。
-使用 Header 数据和 HeaderTemplate 时，展开槽默认复用数据与模板以生成第二份内容。
+## 模态 Rail
+
+Modal 与普通 Rail 共用 State 和 Item API。`HideOnCollapse="False"` 保留收起态占位；true 不占布局空间，
+并启用水平拖动关闭。展开浮层覆盖整个 TopLevel 客户区，与 Rail 在页面中的位置无关。
 
 ```xml
-<m3:ModalWideNavigationRail State="{Binding RailState}" HideOnCollapse="True"
-                          Header="{Binding MenuData}" HeaderTemplate="{StaticResource MenuTemplate}">
-  <m3:WideNavigationRailItem Icon="{Binding HomeIcon}" Label="主页"
-                            IsSelected="{Binding IsHomeSelected}" Command="{Binding NavigateHome}" />
+<m3:ModalWideNavigationRail x:Name="ModalRail" HideOnCollapse="True">
+  <m3:ModalWideNavigationRail.Header>
+    <m3:IconButton Symbol="Menu" />
+  </m3:ModalWideNavigationRail.Header>
+  <m3:ModalWideNavigationRail.ExpandedHeader>
+    <m3:IconButton Symbol="Menu" />
+  </m3:ModalWideNavigationRail.ExpandedHeader>
+  <m3:WideNavigationRailItem Label="主页" IsSelected="True" />
 </m3:ModalWideNavigationRail>
 ```
 
-```csharp
-var modal = new ModalWideNavigationRail
-{
-    State = new(WideNavigationRailValue.Collapsed),
-    HideOnCollapse = false,
-    Header = collapsedMenuButton,
-    ExpandedHeader = expandedMenuButton
-};
-modal.Items.Add(new WideNavigationRailItem { Icon = homeIcon, Label = "主页", IsSelected = true });
-// 挂载后：
-await modal.State.ExpandAsync();
-```
+此片段默认关闭，可从页面外部按钮的处理器调用 `await ModalRail.State.ExpandAsync()`。
+Header 用于收起态，ExpandedHeader 用于展开态；直接传 Control 时必须为两个实例。
+使用 Header 数据及 HeaderTemplate 时，展开槽默认复用数据和模板生成第二份内容。
+ExpandedHeaderTopPadding 提供展开 Header 的额外顶部留白。
 
-| 配置 | 语义 |
-| --- | --- |
-| State | 可绑定的展开状态；同一宿主中多个 rail 可共享，最后一个消费者卸载时取消动画，重挂载从保存目标恢复 |
-| Background / Foreground / CornerRadius | 容器和内容环境；默认内容色复用 contentColorFor 角色匹配，未知容器色继承环境 |
-| WindowInsets | 物理 left/top/right/bottom，桌面默认零；RTL 不交换物理边，没有 Compose 的嵌套 inset 消费环境 |
-| ContentPadding | 逻辑 start/top/end/bottom，默认 top 44 DIP |
-| RailExpanded / IconPosition | 默认继承 rail 展开目标；IconPosition 可独立指定 Top 或 Start |
-| IndicatorPadding | 非空时固定 padding；否则按位置进度插值 CollapsedIndicatorPadding / ExpandedIndicatorPadding |
-| SelectedIconColor / IndicatorColor | 选中图标和指示器色 |
-| SelectedTextColorTopIconPosition / SelectedTextColorStartIconPosition | 两种目标位置的选中标签色 |
-| UnselectedIconColor / UnselectedTextColor / DisabledIconColor / DisabledTextColor | 未选中与禁用内容色 |
-| HideOnCollapse | false 保留收起态占位；true 隐藏占位并启用水平拖动关闭 |
-| ExpandedHeader / ExpandedHeaderTemplate / ExpandedHeaderTopPadding | 独立展开内容及额外 top padding，默认 0 |
-| ModalBackground / ModalForeground / ScrimBrush | 浮层内容环境及 scrim 色；默认 scrim 为主题 Scrim 的 0.32 alpha |
-| CollapsedCornerRadius / ExpandedCornerRadius | Modal 的收起和展开形状，默认 0 / 16 DIP |
-| ShouldDismissOnBackPress | 是否响应原生返回请求，默认 true；不影响 Escape KeyUp |
+宿主需要 PopupOverlayLayer，标准 Window 模板可提供；自定义 Window 模板须包含名为
+`PART_VisualLayerManager` 的 VisualLayerManager。仅在页面中启用普通 OverlayLayer 不足以承载当前实现。
+浮层背景/内容色使用 ModalBackground / ModalForeground，遮罩为 ScrimBrush；
+CollapsedCornerRadius / ExpandedCornerRadius 默认 0 / 16 DIP。
 
-2026-10-03，维护者确认 Wide/Modal 的上述 API、内容槽、状态生命周期及 selectable 适配“采用推荐 API”。
-该选择保留上游 hoisted state、AnimatedNavigationItem 和 Arrangement 的职责与分支，支持 C#/XAML。
-形状使用现有 CornerRadius，最低交互尺寸使用当前 desktop 默认 48 DIP；没有新增通用 Modal/手势基础框架。
+Modal 阻挡背景输入并约束焦点，关闭后恢复原焦点。Escape 在 KeyUp 关闭，
+ShouldDismissOnBackPress 只控制 TopLevel.BackRequested，不禁用 Escape。
+默认辅助技术名称为 Navigation rail / Close rail，可通过 AutomationProperties.Name 提供本地化名称。
 
-Modal 的宿主适配于同日确认“采用 OverlayLayer 与独立 ExpandedHeader（推荐）”：
-固定 Compose Desktop 使用 Dialog；本地在当前 TopLevel 的 OverlayLayer 覆盖客户区、阻挡背景输入、
-限制并恢复焦点。Avalonia Control 不能同时属于两个父节点，因此收起与展开 Header 使用独立内容槽；
-数据和模板可生成两份，直接传入 Control 时须提供两个实例。HideOnCollapse 的两条路径、拖动关闭和 Escape KeyUp 保留。
-范围为 Wide/Modal 的窗口宿主与 Header，不提供 Android predictive back，默认颜色、形状和动画仍来自固定上游。
+## 使用边界
 
-2026-10-04，维护者确认迁入共享 [Overlays](../../Foundation/Overlays/README.md)：
-宿主改为组件独立持有的 Avalonia Popup，强制使用 PopupOverlayLayer；上述普通 OverlayLayer 的历史选择被替代。
-客户区覆盖、Tab/Escape/Back、模态焦点和还原交给内部 ModalPresenter；Rail 的 State、同一 ItemsPresenter、
-独立 Header、遮罩动画、拖动和关闭时机保持原职责。没有套用基础 Dialog 的 200/100ms 居中缩放动画。
+展开/收起的纵向布局有已确认的连续化适配；自定义模板或 ItemContainerTheme 若给移动容器重新启用
+UseLayoutRounding，会重新量化运动。真实文字、触屏拖动、屏幕阅读器以及跨 TopLevel 共享 State 尚未验收。
+本组件面向桌面，未提供 Android predictive back；Indicator 混色仍有已记录的未解决差异。
 
-## 已接受的纵向动画改进
-
-2026-10-03，维护者确认不再复现固定 Compose 展开/收起过程中的整数布局抖动。
-依据为 125% 缩放的真实日志与固定源码中的多层 roundToPx、整数 lerp、居中截断和排列取整；
-维护者确认上游也存在抖动，并授权连续化布局改善体验。
-内置布局的项最小高度、项间距、纵向 indicator padding、内容高度、图标位置、居中偏移和整组排列
-保留小数物理像素；静态尺寸先按原来的规则取整，再由现有动画进度连续连接。
-居中与排列的整数端点偏差随进度平滑补偿，完整展开/收起及独立 Top / Start 覆盖保留原来的静态位置。
-整组排列使用最近的端点组合，补偿权重在任意动画轴的中点平滑归零，避免端点切换新增跳变。
-
-移动的 item、ItemsPresenter、容器和布局面板关闭 UseLayoutRounding；图标和标签 ContentPresenter
-保留原来的内容测量取整，并由外层容器承载小数坐标。自定义模板或 ItemContainerTheme 若重新开启移动容器的
-取整，会再次量化位置。C# / XAML 公共 API 与用法没有变化，没有额外的动画轨迹或停稳后的切换路径。
-保留 spring 参数、过冲和中断速度、横向取整、标签透明度与 LabelMedium / LabelLarge 切换；
-字体样式改变导致的内容测量变化和布局公式本身的平缓折返不属于这次消除的整数抖动。
-
-这项改进同时用于 Wide 与 Modal 的 WideNavigationRailItem；常规 NavigationRail 不在本次修改范围。
-展开/收起过程的 geometry 与 raster 可以偏离固定 Compose，因此相应 parity 用例继续保留真实 different，
-没有修改参考、夹具或容差来制造通过。该决定不改变 ComposeAnimation；静态端点继续核验。
-维护者明确本次不新增专门测试，改后的真实桌面视觉体验由维护者核验。
-
-## 验证
-
-PopupOverlayLayer 迁移验证（2026-10-04）：控件库 510/510、Catalog Release 构建通过。
-Modal 全部 94 配置重新采集双端并自检，24 equal / 53 withinTolerance / 17 different，执行错误为 0，重复性稳定。
-对照此前冻结 Avalonia 构建重新采集的同一矩阵，308 采样的 3,898 项读数及 308 张 PNG 完全一致；
-最终 Escape 配对清理调整的四个配置另行自检并与迁移前结果一致。既有 Compose 差异没有被标为通过。
-测试宿主补齐 Window 的 `PART_VisualLayerManager` 与 Background 绑定，未改场景布局、时间线或容差。
-详情见 [Dialog / Rail 迁移证据](../../../../artifacts/dialog-foundation/README.md)。
-
-Catalog 临时启用了 [RailLayoutTrace](../../../Material3Expressive.Catalog/RailLayoutTrace.cs)，用于调查展开/收起时的坐标抖动。
-运行 Catalog，每次改变 rail 的目标状态后等待动画结束，会自动在
-`%TEMP%/Material3Expressive/rail-layout-traces/` 保存独立 JSONL，并在 Debug 输出中打印 `RailTrace saved:` 路径。
-Debug 输出也包含带 `RailTrace` 前缀的完整记录；Release 仍保存文件。
-记录以目标改变后的 Stopwatch 时间为横轴、布局观察次数为序号，并非屏幕呈现帧号；
-坐标为窗口客户区物理像素，保留小数。每项含实际边界、DesiredSize、UseLayoutRounding、图标与标签内容边界，
-以及原始项间距/最小高度、padding、内容高度、端点补偿前位置与补偿前后居中偏移。
-新记录的 layoutModel 为 continuous vertical geometry with Compose integer endpoints；
-补偿前读数以 BeforeEndpointCorrectionPx 命名，旧的整数布局日志保留原有字段。
-采集在 LayoutUpdated 之后读取，内存缓冲到相关布局动画结束再输出；不会主动送帧或重新布局。
-将 MainWindow 的 `TraceWideRailLayout` 改为 false 即可关闭此临时诊断。
-
-独立双端入口为 [WideNavigationRailCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/WideNavigationRailCases.cs)
-和 [WideNavigationRailCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/WideNavigationRailCases.kt)。
-两端调用真实组件，以确定尺寸几何内容验证布局、颜色与动画，文字栅格按 AUTHORING 不纳入 parity。
-矩阵包括两种形态 × 六种标准排列 × header 有无，独立 item 的位置/label/selection/enabled，
-暗色、RTL、物理 inset、内容尺寸与约束、颜色与位置覆盖、SpacedBy，以及展开/收起/中断/快照、
-主题变化、选择、按压、取消、禁用、hover 和键盘激活。
-完整比较结果与重复性记录见 [移植证据](../../../../artifacts/wide-navigation-rail-port/README.md)。
-原始移植验收（2026-10-03，纵向连续化之前）：控件库 264/264、parity 框架 105/105、Catalog Release 构建通过。
-Wide 最终 113 配置全部 equal/withinTolerance；Modal 92 配置双端重复性稳定，91 配置 equal/withinTolerance，
-唯一 different 为下方已接受的鼠标速度适配。equal 与 withinTolerance 分开计数，不宣称严格像素相等。
-
-纵向连续化验证（2026-10-03）：控件库 264/264、Catalog 构建通过，已有断言改读相对 item 的实际图标坐标，
-预期位置不变；未新增专门测试。使用当前 run 流程重新采集 Avalonia，复用 Compose 参考
-`20261003-061524-1838ca71`，没有重采 JVM 参考，也没有追加重复性自检。
-Wide 静态 81 equal / 4 withinTolerance，动态 10 equal / 7 withinTolerance / 11 different；
-Modal 静态 24 equal / 48 withinTolerance，动态 5 withinTolerance / 15 different。
-205 配置均无执行错误；相对改动前的 Avalonia 捕获，615 个样本的既有结构化读数只改变纵向几何，
-状态、颜色、点击次数及横向几何保持不变。Modal 原有鼠标速度适配仍保留。
-
-将维护者提供的 498 次原生布局观察中的动画输入与标签测量高度，回放到实际产品布局（125% 缩放）：
-Home 收起时原来的 `211 → 212 → 211 → 212 px` 变为 `211.699 → 211.656 → 211.607 → 211.556 px`，
-最终三项图标仍为 `207 / 292 / 377 px`。这是布局输入回放，不能替代本次真实桌面观感核验。
-三种 Catalog 展示均完成展开/收起的 Headless smoke，并正常生成六份诊断日志。
-报告、坐标曲线与回放入口见 [本次验证产物](../../../../artifacts/rail-jitter-diagnostics/README.md)；
-修改后的桌面视觉体验按维护者要求由其人工核验。
-
-Modal 独立入口为 [ModalWideNavigationRailCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ModalWideNavigationRailCases.cs)
-和 [ModalWideNavigationRailCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ModalWideNavigationRailCases.kt)。
-92 个配置覆盖 HideOnCollapse × 两种形态 × 六种排列 × header 有无，以及 RTL、颜色、inset、约束、
-展开、反向、scrim、Escape、主题变化和拖动/快速释放。参考端提供实际桌面环境的客户区像素尺寸、窗口焦点与密度缩放 touch slop。
-真实坐标通过公开 LayoutCoordinates 链读取，避免固定 Core RectManager 缓存与当前绘制位置暂时不一致。
-
-保留差异：Indicator 使用 Avalonia 的 SaveLayer alpha 合成，与固定 Skiko 的 ModulateAlpha 每次 paint float 乘法有混色差异。
-退选 64ms 的像素为 Compose `#EEE7FA`、Avalonia `#EEE6F9`；维护者已决定暂缓新增绘制器。
-2026-10-03，维护者确认“暂留差异，之后处理”；范围仅为 Wide item 选择/退选时的 Indicator 混色，
-不视为已对齐，也不决定通用绘制基础能力。
-维护者另行调整 visual parity 容差，并明确无需为该差异追加测试。旧门限的失败记录不能作为新门限的结论。
-独立复现及使用的容差版本见 [移植证据](../../../../artifacts/wide-navigation-rail-port/README.md)。
-
-未经验证：真实文字和字体图标栅格一致性、人工桌面操作、实际屏幕阅读器体验、触屏拖动，以及跨 TopLevel 共享状态。
-平台范围为桌面，未提供 Android predictive back。
-
-已接受的鼠标速度适配（2026-10-03）：保留 Avalonia 的真实 PointerMoved 历史和固定 Compose Desktop 的 LSQ2 算法。
-维护者确认保留真实历史及释放轨迹差异；范围仅为 ModalWideNavigationRail 的鼠标拖动，目标选择算法与容差不变。
-固定 Core 的 `SyntheticEventSender.updatePointerPosition` 在内容重新布局后，以原坐标和时间戳重发鼠标 Move；
-这些零位移样本也进入速度拟合。Avalonia 没有对应重发路径。本次不在组件或夹具中复制样本。
-速度历史使用带时间戳的 PointerMoved；Avalonia 的 GetIntermediatePoints 不提供独立时间戳，不为其构造时间。
-`modal-wide-navigation-rail.dynamic.hidden.fling-return` 的反向快速拖动，在最后三个 Move 的源历史中每个样本出现两次，
-Compose 为 1071.429 DIP/s，Avalonia 为 749.999 DIP/s；目标选择相同，但释放后的轨迹存在差异。
-读数来自真实输入，诊断历史和最终采样见 [移植证据](../../../../artifacts/wide-navigation-rail-port/README.md)。
+Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示 Wide 与两种 Modal 模式；
+状态生命周期、适配依据及复现入口见 [INTERNALS.md](INTERNALS.md)。

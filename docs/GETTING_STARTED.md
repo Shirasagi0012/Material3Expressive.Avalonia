@@ -190,4 +190,4 @@ dotnet run --project examples/HelloMaterial/HelloMaterial.csproj
 - 外观依赖真实字体与平台渲染，构建或 headless 测试通过不等于各平台文字、IME 和视觉一致性已验收
 
 继续阅读 [Button](../src/Material3Expressive/Components/Button/README.md) 或
-[TextField](../src/Material3Expressive/Components/TextField/README.md)。
+[TextField](../src/Material3Expressive/Components/TextField/README.md)，或从[全部组件](COMPONENTS.md)查找其他入口。

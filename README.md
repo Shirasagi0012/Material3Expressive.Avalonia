@@ -20,6 +20,7 @@
 
 当前源码的依赖准备、最小桌面应用、主题/字体/动画初始化见[接入指南](docs/GETTING_STARTED.md)。
 
+- [全部组件](docs/COMPONENTS.md)：按用途浏览组件用法与维护说明
 - [Button](src/Material3Expressive/Components/Button/README.md)：主题、尺寸、命令与内容
 - [TextField](src/Material3Expressive/Components/TextField/README.md)：文本绑定、标签、内容槽与输入边界
 - 维护组件时先看[移植指南](docs/PORTING.md)；文档分工见[组件文档约定](docs/COMPONENT_DOCS.md)

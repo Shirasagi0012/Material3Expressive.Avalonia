@@ -1,25 +1,62 @@
 # Switch
 
-为原生 `Avalonia.Controls.ToggleSwitch` 提供固定 Compose Material3 Switch 的 Material 模板，
-不增加 Switch 子类。`MaterialTheme.axaml` 引入隐式主题；`MaterialToggleSwitchTheme` 可显式引用或派生。
+用 Avalonia 原生 `ToggleSwitch` 表达开关设置；Material 主题提供轨道、拇指、动画与反馈，
+不增加 Switch 子类。先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
+原生适配、拖动交接和验证边界见 [INTERNALS](INTERNALS.md)。
 
-## 使用
+## 最小示例
 
-`IsChecked`、双向绑定、Click/Command、Content/ContentTemplate、键盘和 Toggle 自动化由原生控件负责。
-`SwitchAppearance` 仅增加 `ThumbContent`、`ThumbContentTemplate` 和 `Colors` 三个附加属性。
+在已加载 Material 主题的应用中：
 
 ```xml
-<ToggleSwitch Content="通知" IsChecked="{Binding Enabled}">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <StackPanel>
+    <ToggleSwitch Content="接收通知" IsChecked="True" />
+    <ToggleSwitch Content="显示状态" OnContent="开启" OffContent="关闭" />
+    <ToggleSwitch Content="暂不可用" IsEnabled="False" />
+  </StackPanel>
+</UserControl>
+```
+
+隐式主题是 `MaterialToggleSwitchTheme`，也可显式引用或派生；后续片段使用同样的命名空间。
+
+## 绑定、点击与拖动
+
+```xml
+<ToggleSwitch Content="接收通知"
+              IsChecked="{Binding NotificationsEnabled, Mode=TwoWay}"
+              Command="{Binding SaveNotificationCommand}" />
+```
+
+假设 `DataContext` 提供可写的状态属性和 `ICommand`；编译绑定需相应 `x:DataType`。
+`IsChecked` 原生默认双向绑定，点击时先切换再触发 `Click` / `Command`。
+事件方式可用 `Click="OnNotificationClick"`，处理器需在该视图 code-behind 中实现。
+Enter 按下激活，Space 默认松开激活。
+
+原生拇指拖动跨过 3 DIP 阈值后按半程选择状态；拖动改变状态不会触发 Click/Command，
+需要保存每种输入造成的更改时，应观察或绑定 `IsChecked`，不能只依赖点击命令。
+`IsChecked=null` 按未选中绘制，原生 `IsThreeState` 和三态自动化仍存在，但没有 Material 第三种外观。
+`IsEnabled="False"` 禁止输入并显示禁用状态。
+
+## 标签与拇指内容
+
+`Content` / `ContentTemplate` 是轨道外的标签，默认 BodyLarge；
+`OnContent` / `OffContent` 默认 null，显式设置后显示当前状态标签，也有对应 Template。
+默认内容间距 8 DIP，`Padding` 控制外部内容留白，支持 RTL 和 access key。
+
+`SwitchAppearance.ThumbContent` / `ThumbContentTemplate` 是拇指内部槽，模板数据来自 ThumbContent：
+
+```xml
+<ToggleSwitch Content="已连接" IsChecked="True">
   <m3:SwitchAppearance.ThumbContent>
     <m3:MaterialSymbol Symbol="Check" Width="16" Height="16" />
   </m3:SwitchAppearance.ThumbContent>
 </ToggleSwitch>
-<ToggleSwitch Content="连接" IsChecked="True" IsEnabled="False" />
-<ToggleSwitch OnContent="开启" OffContent="关闭" />
 ```
 
-`m3` 命名空间为 `https://github.com/Shirasagi0012/Material3Expressive.Avalonia`。
-MaterialSymbol 和文字继承拇指的实际 iconColor；任意 Path 可这样消费同一内容环境：
+MaterialSymbol 和文字继承当前 iconColor。自定义 Path 可绑定同一内容环境：
 
 ```xml
 <ToggleSwitch>
@@ -31,128 +68,29 @@ MaterialSymbol 和文字继承拇指的实际 iconColor；任意 Path 可这样�
 </ToggleSwitch>
 ```
 
-```csharp
-using Avalonia.Controls;
-using Material3Expressive.Components;
-using Material3Expressive.Foundation.Rendering;
-using Material3Expressive.Tokens;
+默认轨道为 52×32 DIP，外部布局槽 52×48 DIP；拇指未选中且无有效 intrinsic 内容时为 16 DIP，
+选中或有内容时为 24 DIP，按压为 28 DIP。自动尺寸的内容接受布局约束，显式 Width/Height 可溢出；
+拇指背景不裁剪内容。原生 `KnobTransitions` 不控制 Material 拇指尺寸/位置动画。
 
-var toggle = new ToggleSwitch { IsChecked = true, Content = "通知" };
-SwitchAppearance.SetThumbContent(toggle, new MaterialSymbol
-{
-    Symbol = MaterialSymbols.MaterialSymbolCodepoint.Check, Width = 16, Height = 16
-});
-// Colors 为 null 时动态消费 Token，可局部覆盖单个颜色槽。
-window.Resources[MaterialTokens.Comp.Switch.CheckedTrackColor] = Avalonia.Media.Colors.Teal;
+## 颜色与使用边界
+
+`Foreground` 控制轨道外内容和交互反馈；拇指内容使用独立 iconColor。
+不指定 `SwitchAppearance.Colors` 时动态读取组件 Token，例如：
+
+```xml
+<ToggleSwitch IsChecked="True">
+  <ToggleSwitch.Resources>
+    <Color x:Key="{x:Static m3:MaterialTokens+Comp+Switch.CheckedTrackColor}">#008080</Color>
+  </ToggleSwitch.Resources>
+</ToggleSwitch>
 ```
 
-`ThumbContentTemplate` 使用 Avalonia IDataTemplate，模板数据来自 ThumbContent。
-Content 保留为轨道外的原生标签；OnContent/OffContent 默认 null，显式设置后显示对应状态标签。
-默认标签间距为 8 DIP，Padding 控制外部内容留白，支持 RTL 和 access key。
-Compose Switch 自身没有这些标签槽；通常由上层 Row 组合。
+完整配色用 C# 的 `SwitchAppearance.SetColors(toggle, colors)`，`SwitchColors` 在
+`Material3Expressive.Components` 中提供 checked/unchecked、enabled/disabled 的 thumb/track/border/icon
+十六个最终绘制色；传 null 恢复 Token。默认禁用色合成至 Surface，显式颜色不重复合成。
+状态颜色即时切换，不做颜色渐变。
 
-## 颜色、尺寸与动画
-
-`SwitchColors` 保留上游 16 个最终绘制颜色槽，分别为 checked/unchecked、enabled/disabled 的
-thumb、track、border、icon。`SwitchAppearance.Colors` 为 null 时使用动态组件 Token，
-默认禁用颜色按上游关系预合成到当前 Surface；显式 SwitchColors 使用其最终颜色，不再合成。
-状态切换直接选择颜色，不增加颜色动画。Foreground 控制外部内容和 ripple/state layer 的环境色，
-拇指内容使用独立 iconColor。
-
-轨道 52×32 DIP、描边 2 DIP，默认交互槽 52×48 DIP。
-未选中且无有效 intrinsic 内容时拇指为 16 DIP，选中或有内容为 24 DIP，按压为 28 DIP。
-按固定 ThumbNode 保留尺寸/偏移目标、物理像素截断、首次测量的惰性 Animatable，
-FastSpatial spring、按压 SnapSpec 与中断时的速度延续。
-动画通过现有 ComposeAnimation NuGet 与 VisualAnimationScope 接入和清理。
-Native KnobTransitions 不控制 Material 的尺寸/偏移动画；原生 Canvas.Left 用于实际拖动。
-
-拖动期间位置直接跟随原生 Canvas.Left，暂停旧的偏移动画。原生松开顺序为清空 Canvas.Left、
-移除 :dragging、写回 IsChecked；模板保留最后的拖动位置和实际尺寸，等待同一帧的状态更新完成，
-再将两条 Animatable 同步到该姿态并清除旧动画速度，使用原有 FastSpatial 收尾。
-已经到达端点时只收缩拇指；物理像素截断仍可能产生不足 1.5 px 的中心量化变化。
-捕获丢失或禁用也从当前姿态返回，恢复下一次拖动使用的原生位置；卸载取消待交接任务。
-2026-10-03，维护者确认“按下瞬间放大继续保持现状，拖动和动画的交接需要补齐”。
-这一适配只处理已接受的原生拖动，不改变普通切换、按压 SnapSpec 或释放 spring，
-不增加公开 API。
-
-已经历状态动画后，ThumbNode 在按压测量中先读取当前尺寸，再启动 snap；Compose 的首个 ripple draw
-捕获该测量尺寸。Avalonia 可能在首次 render 前完成后续布局，因此 Switch 在该测量中调用共享控制器的
-内部 `InitializeRippleDrawGeometry` 保留首次测量决定的起始半径。波纹播放和绘制仍归共享层，公开 API 不变；
-2026-10-03，维护者确认“增加内部衔接方法，修复该波纹差异（推荐）”。
-共享决定与适用范围见 [DECISIONS](../../../../docs/DECISIONS.md#ripple-首次绘制几何与尺寸动画衔接)。
-
-2026-10-04，维护者要求“继续修复波纹的问题”。Switch 启用共享控制器内部的
-`RippleFollowsPresenterCenter`，让无界按压波纹在每次绘制时跟随当前 thumb 中心，
-与 hover/focus 圈保持同心，覆盖放大、收缩和原生拖动。此项明确偏离固定 Core 的首绘中心锁定；
-起始/目标半径、扩散与淡出时序、按压 SnapSpec、释放 FastSpatial 和拖动交接均保留。
-其他组件的波纹规则不变，既有 C#/XAML 用法不需要修改。
-
-轨道绘制顺序为背景、拇指内容及反馈、描边。拇指背景不裁剪内容，ripple 半径固定 20 DIP 且不裁剪。
-内容接受 Avalonia 布局约束：自动大小的内容可缩小；显式 Width/Height 可像 Compose requiredSize 一样溢出。
-不能将 Avalonia 显式大小等同于 Compose preferred size。
-
-## 原生适配与确认范围
-
-2026-10-03，维护者先确认“采用继承方案，保留原生拖动并接受额外行为”，
-随后提出直接使用 ToggleSwitch、模板和附加属性，并确认“可以。继续”。
-最终方案沿用原生控件，不新增子类，保留上述已确认的原生行为：
-
-- IsChecked 由控件自动写回，Click/Command 时已更新；Compose 通过回调要求外部写回。
-- Space 在 KeyUp 激活，Enter 在 KeyDown 激活；固定 Compose Enter 在 KeyUp 激活。
-- 保留原生拇指拖动、3 DIP 阈值和半程状态选择；固定 Compose 尚未实现 swipe。
-  原生拖动改变状态时不触发 Click/Command，应用可观察 IsChecked。
-- 原生 nullable IsChecked / IsThreeState 仍可使用；null 按 unchecked 绘制，自动化保留原生三态。
-  Compose Switch 仅接受 Boolean，这不是新增的 Material 三态外观。
-- 固定 Avalonia 12.1.2 的原生 peer 报告 ControlType.Button，并提供 TogglePattern；
-  保留这一原生自动化身份，没有另行映射 Compose Role.Switch。
-
-2026-10-03，维护者确认“本次保留原生范围，记录 null 回调模式未实现（推荐）”。
-因此不提供 Compose `onCheckedChange=null` 的完全等价模式：原生 ToggleSwitch 没有同时移除
-输入、48 DIP 最小交互槽与 ToggleProvider 的开关。IsEnabled=false 仍完整支持。
-关闭 IsHitTestVisible、Focusable 和 MaterialInteraction.IsInteractive 也不移除原生 ToggleProvider，
-不能宣称等价于 null 回调模式。
-
-同日维护者确认本次采用默认 ripple/focus 配置，将可配置 `Focus.InsetRing` 与外部
-`MutableInteractionSource` 的对象映射记录为未实现。默认 Tab 焦点状态层和键盘反馈仍实现。
-
-## 固定基线与验证入口
-
-基线身份见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)。
-AndroidX 与 Compose Core 的 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt`
-在固定 commit 的 blob 相同；尺寸/色彩对应 SwitchTokens v0_210，桌面 ripple 进一步核对
-Core 的 `material3-ripple/{CommonRipple,RippleAnimation}.kt`。
-
-独立双端入口：
-
-- [SwitchCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/SwitchCases.cs)
-- [SwitchCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/SwitchCases.kt)
-- [SwitchTests.cs](../../../../tests/Material3Expressive.Tests/SwitchTests.cs)
-
-75 个 visual parity 用例覆盖开关、图标/空内容、亮暗主题、启用/禁用、全部自定义颜色槽、RTL、
-受限尺寸与内容的 preferred/required 大小；动态覆盖切换/反向/标准 motion、主题、禁用、
-按压/快速释放/取消/按压中禁用、动画后按压、hover、Space/Enter 和原生拖动。
-参考端执行固定组件，读取实际 ThumbNode 布局；不复制拇指算法作为期望值。
-拖动另覆盖端点松开、中途反向、拖出取消、已有状态动画后拖动，以及松开前、松开后未送帧、
-首帧和收尾过程；波纹修复补充状态切换后 unchecked 按压、带图标和 RTL。
-已接受的原生输入与波纹中心适配仍精确比较并保留真实不同结果。
-
-2026-10-04 波纹同心修复后的 self-test：75/75 执行无错误，双端重复与额外被动截图均稳定；
-39 equal、11 withinTolerance、25 different。不同结果包含原生输入和此次已确认的波纹中心偏离，
-保留真实 Compose 参考，不放宽容差。全部 33 个静态用例 equal。
-Compose 与 Avalonia 均为本轮真实执行；另新采集并发布全部 75 个 Compose 缓存参考。
-控件库 451 项测试通过，Release 控件库与 Parity 项目构建通过，保留现有阴影模块 AVA3001 警告。
-原有 72 个 Switch 用例的 474 个采样，其状态、回调和 thumb 几何等结构化事实与拖动交接修复后完全相同。
-共享层的 7 个双端回归也执行成功且自检稳定；83 个采样 YAML 和 78 张 Avalonia 图像均与既有产物
-逐文件 SHA256 相同。CheckBox、NavigationRail/NavigationBar 的用例 equal；两个 Button 和一个
-IconButton 用例保留既有 different，不属于此次修复范围。
-
-本轮产物：
-
-- [双端概览](../../../../artifacts/visual-parity/runs/switch-ripple-centered/summary.md)
-- [结构化事实和共享调用方回归证据](../../../../artifacts/tests/switch-ripple/ripple-evidence.md)
-- [控件库回归结果](../../../../artifacts/tests/switch-ripple/switch-ripple-regression.trx)
-
-headless 测试检查实际模板、绑定/事件/命令顺序、键盘、自动化、LTR/RTL 拖动、内容与颜色、
-idle 后动画和模板替换/卸载/重新挂载清理；反馈绘制检查覆盖首次/已有动画后的按压、带图标、
-LTR/RTL、拖动、收缩和 10 倍慢放；共享 ripple 另检查首次绘制半径与默认/有界中心不受此选择影响。
-视觉用例不包含文字。实际 OS 无障碍客户端、真实桌面手工交互与文字视觉未作双端验收。
+不提供完全等价的 Compose `onCheckedChange=null` 模式；关闭普通输入仍保留原生 ToggleProvider。
+默认原生自动化 peer 的 ControlType 为 Button 并提供 TogglePattern，不另外映射为 Compose Role.Switch。
+可配置 inset focus ring 和外部 MutableInteractionSource 尚未实现；文字、实际屏幕阅读器和真实桌面
+双端体验未经完整验收。示例见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

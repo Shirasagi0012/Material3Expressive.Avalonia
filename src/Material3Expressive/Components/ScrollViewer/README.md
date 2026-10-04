@@ -1,44 +1,52 @@
 # ScrollViewer
 
-MaterialTheme 为原生 `Avalonia.Controls.ScrollViewer` 提供默认主题；无需 FluentTheme。
-公开类型、Offset、滚动条、键盘命令和 automation 仍由 Avalonia 持有，模板的
-`PART_ContentPresenter` 使用 SmoothScroll 子模块的 `ScrollViewerPresenter`。
-这是 Avalonia 平滑滚动集成，不是 Compose Material3 的独立 ScrollViewer 组件移植。
+使用原生 Avalonia `ScrollViewer`，Material 主题提供默认外观和 SmoothScroll presenter。
+公开内容、Offset、滚动条、键盘命令与 automation 仍是 Avalonia API。
+先完成[公共接入](../../../../docs/GETTING_STARTED.md)；实现与滚动协议见 [INTERNALS.md](INTERNALS.md)。
+
+## 最小示例
 
 ```xml
-<ScrollViewer HorizontalScrollBarVisibility="Disabled"
-              VerticalScrollBarVisibility="Auto">
-  <StackPanel><!-- Scrollable content --></StackPanel>
-</ScrollViewer>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <ScrollViewer Height="240" HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="16">
+      <TextBlock Text="滚动内容" />
+      <Border Height="600" Background="#EADDFF" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
 ```
 
-`MaterialScrollViewerTheme` 可通过 BasedOn 派生；`MaterialScrollViewerTemplate` 可在自定义主题中复用。
-AppBarScrollScope 按实际 SmoothScroll presenter 的能力接入，不核验模板身份，也不修改应用的 Theme / Template。
-内容、ContentTemplate、Padding、内容对齐、Offset、chaining、inertia 和 snap 参数从 owner 绑定到 presenter。
-透明背景让空白视口也能接收指针输入。
+滚动方向需要有限的视口约束；示例用 Height，也可由 Grid 的有限行高提供。
+沿滚动方向放入无限测量的外层布局时，内容可能全部展开而无需滚动。
+本主题自身不依赖 FluentTheme；若需滚动条的基础菜单或其他原生控件主题，仍按公共接入加载基础主题。
 
-水平 / 垂直滚动条使用 Material ScrollBar 主题和原生 `PART_HorizontalScrollBar` /
-`PART_VerticalScrollBar`。Grid 的 Auto 行列预留可见滚动条厚度；Auto 无需滚动时收回空间，
-Hidden 允许滚动但不显示滚动条，Disabled 同时关闭该轴滚动与无限测量。
-range、value、paging、AllowAutoHide 和 deferred drag 继续消费 Avalonia 原生绑定。
+## 滚动与内容
 
-`ILogicalScrollable` 的 extent / viewport / offset 和步进保持内容声明的逻辑单位；
-Material TextField 内部原生 ScrollViewer 也使用该主题，保留 TextPresenter 与原生编辑语义。
-AppBar 的物理 px / px/s 协议及屏幕组合接入规则见 [AppBar](../AppBar/README.md)。
+- `Auto` 在需要时显示滚动条并预留其厚度，不需要时收回空间
+- `Hidden` 允许滚动但隐藏滚动条；`Disabled` 同时关闭该方向滚动与无限测量
+- `Content` / `ContentTemplate`、`Padding`、内容对齐、chaining、inertia 和 snap 属性继续从 owner 传给 presenter
+- `Offset` 使用原生 `Vector`；可以绑定应用状态，或在 C# 中设置 `viewer.Offset = new Vector(0, 120)`（`Avalonia`）
+- 使用 `ScrollChanged` 观察实际变化；指针滚轮量不等于最终消费距离
 
-SmoothScroll 的普通指针、直接滚轮和惯性逐帧位移共用 tracker 的增量消费入口；
-AppBar 作为可选纵向 pre/post 参与者接入。未安装参与者时 pre/post 消费为零，
-横纵向位移一起提交；正文、定位动画和几何校正共用有效范围。
-普通 touch/pen 保留弹性回弹，AppBar 保留当前夹取正文的规则；直接 Offset、BringIntoView
-和程序化定位动画不经过 pre/post。参与者协议使用 SmoothScroll.Avalonia.Interaction，
-合成输出使用 SmoothScroll.Avalonia.Composition；原生 ScrollViewer 的 C#/XAML 用法不变。
+逻辑滚动内容实现 `ILogicalScrollable` 时，extent / viewport / offset 和步进使用内容声明的逻辑单位，
+不能一概当作 DIP。TextField 内部的 ScrollViewer 同样使用这个主题，编辑器行为仍归原生 TextBox。
+滚动条颜色、厚度与独立使用见 [ScrollBar](../ScrollBar/README.md)。
 
-SmoothScroll 子模块通过 ProjectReference 接入，依赖准备方式见[根 README](../../../../README.md#本地开发)。
-[ScrollViewerTests](../../../../tests/Material3Expressive.Tests/ScrollViewerTests.cs) 覆盖普通物理布局、逻辑内容与 TextField 集成；
-AppBar 正文输入与嵌套接入见 [AppBar 的验证边界](../AppBar/README.md#验证边界)。
+## 主题与 AppBar 接入
 
-2026-10-05 合入主分支时，Release 全解决方案构建、973 项控件测试及 124 项 Parity 系统测试通过。
-固定 SmoothScroll 提交 `81f5516` 的 133 项测试在显式 `AvaloniaVersion=12.1.2` 下通过；
-子模块默认仍声明 12.0.0，主库最终解析 12.1.2。MainWindow Scaffold demo 的 Headless 检查
-在位置回读并同步布局后验证鼠标显示/关闭消息、FAB、Bars/RTL/位置切换及窗口关闭取消。
-该检查不证明动画期间的布局坐标逐帧同步，也不代替实体桌面输入验收。
+`MaterialScrollViewerTheme` 可通过 `BasedOn` 派生，`MaterialScrollViewerTemplate` 可供自定义主题复用。
+默认透明 Background 让空白视口也能接收指针输入。替换模板时需保留原生命名部件及相应绑定；
+普通 ScrollContentPresenter 不会自动具有 SmoothScroll 的参与者能力。
+
+AppBar 的屏幕组合使用 `AppBarScrollScope`，根据实际 presenter 能力连接，不要求某个 Theme 身份，
+也不改写应用的 Theme / Template。主正文、Padding 放置和物理 px / px/s 协议见
+[AppBar](../AppBar/README.md)，不要与 FloatingToolbar 的 DIP 回调混用。
+普通滚动与 AppBar 的输入分配、程序化定位例外见 [INTERNALS](INTERNALS.md#输入与合成接入)。
+
+实际桌面触屏/触控笔、惯性、辅助技术及动画期间坐标的完整验收仍需针对平台执行。
+Catalog 的 [ScrollBarDemo](../../../Material3Expressive.Catalog/ScrollBarDemo.axaml) 展示普通 ScrollViewer，
+[MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示 Scaffold 组合。

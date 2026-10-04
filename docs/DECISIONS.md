@@ -65,7 +65,7 @@ ModalWideNavigationRail 保留现有 KeyDown/KeyUp 配对策略。
 `ComposeSceneMediator` / `BackNavigationEventInput` 在 KeyDown 处理未消费的 Escape。
 范围：Dialog、BasicAlertDialog、AlertDialog；不改变 Rail 的动画和关闭时机。
 确认：2026-10-04 维护者分别批准默认平台宽度属性及 Dialog 对齐固定 Core 的 KeyDown。
-组件继承、内容槽和默认桌面分支的确认见 [AlertDialog](../src/Material3Expressive/Components/AlertDialog/README.md)。
+组件继承、内容槽和默认桌面分支的确认见 [AlertDialog](../src/Material3Expressive/Components/AlertDialog/INTERNALS.md)。
 
 ## Dialog 的首帧与退出中重开
 
@@ -178,7 +178,7 @@ fade / scale 在缺少 effect 或反向段中的默认 spring，以及 Transform
 状态改变时仍保留 Transition 的 ResetNoSnap 重建规则，不增加公共 API 或组件内动画替代机制。
 原因：SegmentedButton 的 fade + scale 进入途中反向到 Exit.None 时，原 Snap fallback
 改变了中断后的曲线与内容清理时机；像素 Point / Snap origin 不等价于上游默认 spring。
-规格及使用范围见 [SegmentedButton](../src/Material3Expressive/Components/SegmentedButton/README.md)。
+规格及使用范围见 [SegmentedButton](../src/Material3Expressive/Components/SegmentedButton/INTERNALS.md)。
 范围：ComposeAnimation AnimatedVisibility 的现有调用方；消费项目继续使用本地 NuGet，
 不引入跨仓库 ProjectReference。依赖版本包含 0.2.3-alpha 已有改动。
 确认：2026-10-04，维护者批准在独立依赖 worktree 修正共享中断行为并提交，明确指定

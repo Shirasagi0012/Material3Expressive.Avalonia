@@ -1,163 +1,120 @@
 # ToolTip / TooltipBox / PlainTooltip
 
-TooltipBox / PlainTooltip 依据 `docs/upstream-baseline.json` 中固定的 AndroidX `Tooltip.kt`、
-`internal/BasicTooltip.kt`、`PlainTooltipTokens.kt` 及 Core 对应实现；Popup 的平台行为取固定
-Core 桌面实现。原生 ToolTip 复用静态外观 Token，采用下述已确认的 Avalonia 行为。
+普通悬停说明使用 Avalonia 原生 `ToolTip.Tip`，Material 主题为它提供静态外观。
+需要锚点焦点、长按、显示状态或提示内动作时，使用库的 `TooltipBox`，并以 `PlainTooltip`
+提供提示表面。先完成[公共接入](../../../../docs/GETTING_STARTED.md)；TooltipBox 动画需要
+窗口在加载内容前初始化动画作用域。实现与已确认差异见 [INTERNALS.md](INTERNALS.md)。
 
-## 使用
+## 最小示例
 
-引入 MaterialTheme 后，普通说明使用原生 `ToolTip.Tip`；主题为自动创建的 ToolTip 提供 PlainTooltip
-Token、BodySmall 文字环境、8×4 DIP padding、40×24 DIP 最小尺寸及 200 DIP 最大宽度。
-原生 Width / Height / MinWidth / MaxWidth 等约束正常生效；局部值可以覆盖主题默认值。
+以下视图放在使用标准 Window 模板的窗口中，无需 ViewModel：
 
 ```xml
-<Button Content="关闭" ToolTip.Tip="关闭当前窗口" />
-<Button Content="帮助" ToolTip.Placement="Bottom" ToolTip.VerticalOffset="4">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <StackPanel Spacing="24">
+    <Button Content="保存" ToolTip.Tip="保存当前更改" />
+    <m3:TooltipBox AnchorPosition="Above">
+      <m3:TooltipBox.Tooltip>
+        <m3:PlainTooltip Content="查看帮助" />
+      </m3:TooltipBox.Tooltip>
+      <Button Content="帮助" />
+    </m3:TooltipBox>
+  </StackPanel>
+</UserControl>
+```
+
+后续片段沿用相同命名空间。两种入口均在窗口内 overlay Popup 呈现，窗口模板需提供
+原生 popup layer；自定义 Window 模板的要求见 [Overlays 接入](../../Foundation/Overlays/README.md#接入)。
+
+## 原生 ToolTip
+
+`ToolTip.Tip` 可接收字符串或任意内容，原生 `ToolTip.IsOpen`、显示延迟和定位属性继续有效：
+
+```xml
+<Button Content="同步" ToolTip.Placement="Bottom" ToolTip.VerticalOffset="4">
   <ToolTip.Tip>
     <TextBlock TextWrapping="Wrap">
-      <Run Text="使用说明" FontWeight="SemiBold" /><LineBreak />
-      <Run Text="包含尚未保存的本地修改。" />
+      <Run Text="同步项目" FontWeight="SemiBold" /><LineBreak />
+      <Run Text="包含尚未上传的本地更改。" />
     </TextBlock>
   </ToolTip.Tip>
 </Button>
 ```
 
-原生提示直接显隐，不启动 ComposeAnimation。悬停延迟、连续切换、关闭、禁用控件处理和
-程序化 `ToolTip.IsOpen` 均保留 Avalonia 服务规则，不增加行为控制器或修改 ToolTipService。
-MaterialTheme 在锚点上提供 Top、VerticalOffset=-4、ShouldUseOverlayLayer=true 默认值；
-方向翻转、滑动、边界尺寸调整及 RTL 定位由 Avalonia 处理，翻转后不保证仍有 4 DIP 间距。
-原生默认 ShowDelay=400ms、BetweenShowDelay=100ms；调用方仍可覆盖已有附加属性。
+默认最小尺寸 40×24 DIP、最大宽度 200 DIP，padding 为 8×4 DIP，使用 BodySmall。
+锚点默认 Top、VerticalOffset=-4、ShouldUseOverlayLayer=true；原生服务处理翻转与边界约束，
+翻转后不保证仍有 4 DIP 间距。默认 ShowDelay=400ms、BetweenShowDelay=100ms，可按原生属性覆盖。
+显隐直接完成，没有 ComposeAnimation 过渡；禁用控件、连续切换和关闭规则均沿用 Avalonia。
+原生入口不承担提示内按钮交互，任意文本内容也不代表已实现 RichTooltip。
 
-2026-10-04，维护者选择原生入口以静态视觉接近为目标，接受其输入、定位、尺寸约束及动画
-与 Compose 的差异。需要提示内按钮、长按、焦点输入或完整显式状态控制时使用 TooltipBox；
-不通过原生提示的内容按钮承担这些需求。任意文本内容不代表已实现 Compose RichTooltip。
+## TooltipBox 的状态与输入
 
-原生入口的 Headless 检查使用真实服务和 overlay Popup，覆盖显示与关闭、绑定内容、
-内联格式、动态 Token 和显式原生约束。`native-tooltip` 双端用例只比较静态 surface，
-以非文字内容覆盖明暗、RTL、尺寸边界和局部外观覆盖；不评价原生定位与 Compose 的一致性。
-Catalog 的默认悬停显示路径已有 Headless 检查，真实桌面交互及双端文字栅格尚未经验证。
-
-TooltipBox 的 Content / ContentTemplate 是锚点，Tooltip / TooltipTemplate
-是提示槽。PlainTooltip 提供提示的 Surface，也可以单独用于布局。
+`Content` / `ContentTemplate` 是锚点；`Tooltip` / `TooltipTemplate` 是提示槽。
+未指定 `State` 时，每个 Box 自建非持续状态；直接 `new TooltipState()` 则默认持续显示。
+需要绑定时由 ViewModel 提供 `TooltipState`，每个 Box 使用独立实例；编译绑定还需 `x:DataType`。
 
 ```xml
-<m3:TooltipBox AnchorPosition="Above" State="{Binding HelpTooltip}">
-  <m3:TooltipBox.Tooltip>
-    <m3:PlainTooltip Content="关闭" />
-  </m3:TooltipBox.Tooltip>
-  <m3:IconButton Symbol="Close" />
+<m3:TooltipBox x:Name="Help" EnableUserInput="False" AnchorPosition="End">
+  <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="操作提示" /></m3:TooltipBox.Tooltip>
+  <Button Content="帮助" />
 </m3:TooltipBox>
 ```
 
+在所属视图代码中可调用 `Help.State.ShowAsync()`；下面片段假设 `Help` 是上述 Box，
+`cancellationToken` 来自页面或操作的生命周期：
+
 ```csharp
-var group = new MutatorMutex(); // ComposeAnimation.Runtime
-var state = new TooltipState(isPersistent: false, mutatorMutex: group);
-var box = new TooltipBox
+using System;
+using ComposeAnimation.Runtime;
+
+try
 {
-    Content = new Button { Content = "帮助" },
-    Tooltip = new PlainTooltip { Content = "查看说明", TooltipMaxWidth = 240 },
-    State = state,
-    AnchorPosition = TooltipAnchorPosition.Above
-};
-// ShowAsync 持续等待，不是在首次出现时返回。
-try { await state.ShowAsync(MutatePriority.Default, cancellationToken); }
-catch (OperationCanceledException) { /* 超时、被另一提示打断或调用方取消 */ }
-state.Dismiss();
+    await Help.State.ShowAsync(MutatePriority.Default, cancellationToken);
+}
+catch (OperationCanceledException)
+{
+    // 超时、其他提示抢占或调用方取消都会结束等待。
+}
 ```
 
-同一 MutatorMutex 串行管理显示请求：相同或更高优先级打断旧请求，较低优先级被取消。
-默认使用 TooltipDefaults.GlobalMutatorMutex，让提示互斥；独立组可同时显示。
-每个 TooltipBox 使用独立 TooltipState，不将同一状态连接到多个 Transition。
-直接构造 TooltipState 默认持续显示，与上游 TooltipState 工厂一致；
-TooltipBox 未指定 State 时创建非持续状态，与 rememberTooltipState 一致。
+`ShowAsync` 等待显示操作结束，不是在首次出现时返回。`State.Dismiss()` 请求隐藏；
+非持续 UserInput 请求即使隐藏也会继续等待打断、取消或卸载。
+默认提示共享互斥组；相同或更高优先级会打断旧请求，较低优先级请求被取消。
+需要独立组时向 `new TooltipState(isPersistent: false, mutatorMutex: group)` 传入自己的
+`ComposeAnimation.Runtime.MutatorMutex`，不同组可同时显示。
 
-未提供 DismissRequested 处理器时，外部按下调用 State.Dismiss()。有处理器时应用拥有关闭决定：
+鼠标进入显示、离开关闭非持续提示；焦点和触摸/笔长按也可显示，Escape KeyDown 关闭并消费按键。
+`EnableUserInput="False"` 关闭这些输入入口，不影响程序调用。
+外部按下默认隐藏；订阅 `DismissRequested` 后由应用负责决定，例如：
 
 ```csharp
-box.DismissRequested += (_, _) => state.Dismiss();
+Help.DismissRequested += (_, _) => Help.State.Dismiss();
 ```
 
-## 布局与行为
+`IsVisible` 包含退出阶段；Popup 到退出动画完成才移除。非持续 Default / PreventUserInput
+请求默认在 1500ms 超时，焦点/长按流程另负责其关闭时机。
 
-PlainTooltip 默认反色容器与内容色、ExtraSmall 圆角、BodySmall 文字环境，padding 为 8×4 DIP，
-内部默认宽度 40–200 DIP、高度至少 24 DIP，tonal / shadow elevation 均为 0。
-Background、Foreground、CornerRadius、Padding、ContentTemplate、TonalElevation、ShadowElevation
-可覆盖默认外观。TooltipMaxWidth 表达上游 maxWidth；显式 Width / Height 及调用方约束在
-默认尺寸约束之外，因此 Width=300 或 Width=20 仍按明确尺寸布局。
+## 定位、内容与外观
 
-AnchorPosition 支持 Above / Below / Left / Right / Start / End，Spacing 默认 4 DIP。
-上游算法以物理像素计算：居中采用整数截断，空间不足时翻到另一侧，再限制在客户区内；
-提示大于客户区时原点限制为 0。Start / End 依照 FlowDirection 解析。
-变换后的锚点保留 Core Popup 的 `positionInWindow + local size`，不改成变换四角的包围盒。
-读取窗口原点时撤销 Avalonia 自动 RTL 镜像对起点的影响，保留显式 RenderTransform；
-镜像可能来自锚点自身或父容器。
-PositionProvider 可替换计算，ITooltipPositionProvider 的参数及返回值均为物理窗口像素。
+`AnchorPosition` 支持 Above / Below / Left / Right / Start / End，`Spacing` 默认 4 DIP。
+不足时翻到另一侧并限制在客户区内；Start / End 跟随 `FlowDirection`。
+自定义 `ITooltipPositionProvider` 的输入与输出均为物理窗口像素。
+提示不增加锚点的布局尺寸；PlainTooltip 也能单独用于普通布局。
 
-鼠标进入以 UserInput 显示，离开仅关闭非持续状态。锚点焦点、触摸或笔长按以
-PreventUserInput 显示；Escape KeyDown 关闭并消费事件。EnableUserInput=false 关闭这些入口，
-应用仍可调用 ShowAsync。长按阈值取平台 HoldWaitDuration，消费长按后的释放事件。
-Automation Invoke 表达锚点的长按操作；提示提供 ToolTip 类型与 Assertive live setting。
+PlainTooltip 用 `Background`、`Foreground`、`CornerRadius`、`Padding`、`ContentTemplate`
+覆盖外观，`TonalElevation` / `ShadowElevation` 默认均为 0。
+`TooltipMaxWidth` 默认 200；内部最小尺寸为 40×24 DIP。显式 `Width` / `Height` 及调用方约束
+位于默认限制外，可让宽度小于 40 或大于 200。文字默认 BodySmall，长内容按可用宽度换行。
+动态主题定制见[公共 Token 入口](../../../../docs/GETTING_STARTED.md#主题与定制)。
 
-非持续 Default / PreventUserInput 请求在 1500ms 超时。UserInput 请求等待打断或卸载，
-非持续 Dismiss 不结束该显示任务；PreventUserInput 的 finally 不自动关闭，由焦点或
-长按释放流程负责。这些看起来特殊的分支直接保留固定上游行为。
-IsVisible 是 Transition.CurrentState || Transition.TargetState，退出期间保持 Popup，
-到真实 Transition 完成后才卸载；锚点卸载会取消自己的等待与输入任务。
+## 使用边界
 
-Popup 使用 Avalonia overlay layer，窗口模板须提供 VisualLayerManager / OverlayLayer。
-独立 Popup 显示任意提示内容，锚点仍是唯一参与父布局的内容。
-graphicsLayer 的缩放与整体透明度映射为同一容器的 RenderTransform 与整体透明度合成，
-局部关闭 Popup 宿主裁剪，使显式阴影按 Core clippingEnabled=false 绘制。
-
-## 已确认范围与验证边界
-
-2026-10-04，维护者批准上述 TooltipBox / TooltipState / 定位 API。
-本轮仅实现默认无 caret 分支；caret 形状及背景、裁剪、阴影的路径并集尚未实现。
-不提供会暗中忽略的 CaretShape 属性；RichTooltip 不属于本轮范围。
-
-维护者选择固定 Core 桌面语义：Popup 不抢焦点。HasAction=true 且可见时消费 Tab，
-但不会把键盘焦点转移到提示动作；这是固定 Core 的已知桌面限制。
-本轮没有套用 AndroidX 的强制 focusable 分支。
-
-Headless 测试覆盖状态默认值、优先级与超时、显式尺寸、Token 和文字环境、
-Popup 保留与卸载、鼠标、焦点 / Escape / Tab、外部按下、自动化入口与合成触摸 / 笔事件。
-双端 `PlainTooltipCases` 覆盖外观、尺寸边界和主题 / 内容变化，`TooltipBoxCases` 覆盖
-定位方向、窗口边缘、RTL、明暗与阴影，以及进出场、中断、鼠标、焦点、关闭请求和布局变化。
-动态几何观察未变换 Popup 与局部尺寸；实际动画由同时间线截图比较，避免将
-Compose Float 与 Avalonia Double 矩阵的末位表示差异当作精确布局事实。
-
-双端夹具使用非文字内容；文字排版与栅格一致性、物理触摸 / 笔设备、屏幕阅读器播报
-及操作系统桌面交互尚未经验证。
-
-2026-10-04，维护者接受本组件的动画目标提交时序差异：ComposeAnimation 的 Transition
-立即跟随 TargetState，固定 Core 则在采样当前动画后的重组帧末提交。保留现有共享 API，
-不增加手动同步开关；进场首帧及中断时采样的值和速度可能不同，动态截图原始差异保留。
-这项决定只适用于 Tooltip 的目标提交时序。
-
-当前使用本地 NuGet `ComposeAnimation 0.2.5-alpha`；该版本修复空闲 Transition 的
-异步唤醒竞态，不增加目标同步 API。依赖通过包接入，不引用相邻仓库的项目。
-
-锚点移动场景保留移动后的首次采样及同一动画帧的再次绘制采样。诊断证实旧参考宿主
-未处理完 `onPlaced` 写入引起的提示层重测；完善 Compose draw 完成检查后，
-移动、尺寸变化和方向切换均在原时间点对齐，无需在产品中额外延迟 Popup 定位。
-
-2026-10-04 合入主分支后：Release 全解决方案构建、880 项控件测试及 124 项 Parity 系统测试通过。
-使用 ComposeAnimation 0.2.7-alpha 独立重采双端并执行普通重复与额外被动截图检查：
-
-- PlainTooltip：30 例全部 withinTolerance，37 个采样点的 185 项结构化事实全部 equal。
-- 原生 ToolTip 静态 surface：18 例全部 equal，90 项结构化事实全部 equal。
-- TooltipBox：80 例为 1 equal / 69 withinTolerance / 10 different，204 个采样点的
-  2,308 项结构化事实全部 equal；10 例保留上述已接受的动画时序截图差异。
-
-三个套件全部重复稳定、执行错误为 0。与分支交付的 `20261004-063707-d8737f6c`、
-`20261004-080637-63f70b7e`、`20261004-063439-fab49709` 对照，用例及采样事实的比较状态均无变化。
-原始差分保留，未放宽容差或修改基线。结果分别位于：
-
-- `artifacts/visual-parity/runs/plain-tooltip-merge-20261004/summary.md`
-- `artifacts/visual-parity/runs/native-tooltip-merge-20261004/summary.md`
-- `artifacts/visual-parity/runs/tooltip-box-merge-20261004/summary.md`
-
-针对共享 Compose draw 完成检查的 4 个代表回归全部匹配且稳定：AlertDialog interrupt、
-FloatingToolbar horizontal End FAB reverse、LoadingIndicator sparse plain、AppBar medium interrupt。
-产物位于 `artifacts/visual-parity/runs/tooltip-host-merge-20261004-<case-id>/summary.md`。
-这是代表场景回归，不等于重跑上述组件的全量套件；桌面设备与文字栅格验证范围保持上文限制。
+caret 和 RichTooltip 尚未实现，没有会被忽略的 CaretShape 属性。
+TooltipBox 按固定 Core 桌面行为不抢焦点；`HasAction="True"` 且可见时消费 Tab，
+但不会将键盘焦点送到提示按钮，不宜把它当成完整键盘可操作弹窗。
+提示提供 ToolTip automation 与 Assertive live setting，实际屏幕阅读器播报、物理触摸/笔设备、
+文字像素及 OS 桌面交互尚未经验证。动画提交时序有已接受差异，见
+[一致性边界](INTERNALS.md#一致性边界与验证)。完整使用例子见
+[TooltipDemo](../../../Material3Expressive.Catalog/TooltipDemo.axaml)。

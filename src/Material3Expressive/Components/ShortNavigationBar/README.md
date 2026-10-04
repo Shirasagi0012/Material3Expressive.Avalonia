@@ -1,120 +1,88 @@
 # ShortNavigationBar / ShortNavigationBarItem
 
-本组件移植固定 Compose ShortNavigationBar，不改变常规 Bar 或 Wide Rail。
-基线见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX
-`f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，桌面 Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
-两端 ShortNavigationBar.kt 和 NavigationItem.kt 的源码 blob 分别相同。
+`ShortNavigationBar` 是库提供的短导航条，默认高度 64 DIP；目的地使用 `ShortNavigationBarItem`。
+它支持顶部/起始侧图标及两种排列，与常规 [NavigationBar](../NavigationBar/README.md) 是独立入口。
+首次使用请完成[公共接入](../../../../docs/GETTING_STARTED.md)。
 
-## 上游与实现
+## 最小示例
 
-- ShortNavigationBar.kt：两个公共入口、两种 ContentMeasurePolicy 与默认值。
-- NavigationItem.kt：NavigationItem、TopIconOrIconOnlyMeasurePolicy、StartIconMeasurePolicy、三个 placement 函数，
-  animateIndicatorProgressAsState、StyledLabel、MappedInteractionSource。
-- tokens/NavigationBarTokens.kt、NavigationBarVerticalItemTokens.kt、NavigationBarHorizontalItemTokens.kt。
-- Core ui/layout/MeasurePolicy.kt：默认 intrinsic 用 DefaultIntrinsicMeasurable 重放 measure。
-
-[ShortNavigationBar.cs](ShortNavigationBar.cs) 提供容器与选择组语义，
-[ShortNavigationBarItemsPanel.cs](ShortNavigationBarItemsPanel.cs) 翻译两种排列。
-[ShortNavigationBarItem.cs](ShortNavigationBarItem.cs) 负责选择、内容色、指示器动画、键盘与自动化；
-[ShortNavigationBarItemLayout.cs](ShortNavigationBarItemLayout.cs) 翻译非动画位置布局与固有尺寸，
-[ShortNavigationBar.axaml](ShortNavigationBar.axaml) 保留 Surface、内容槽、Typography 和反馈组合。
-Token 在 [ShortNavigationBarTokenSource.cs](ShortNavigationBarTokenSource.cs) 与
-[MaterialTokens.Comp.ShortNavigationBar.cs](../../Tokens/MaterialTokens.Comp.ShortNavigationBar.cs)，由 MaterialTheme 装配。
-
-默认高度 64 DIP，无项间距。EqualWeight 用整数除法分配等宽，余数留在逻辑末尾。
-Centered 按数量计算留白：1～6 项单侧比例为 30/25/20/15/10/5%，超过 6 项为零。
-先查询固有高度以统一增高，再按固有宽度扩大 Centered 项宽，最大不超过容器宽度 / 项数；
-每项增量分别执行整数 / 2 减少留白。Top/无标签的默认 intrinsic 不采用实际胶囊宽度：
-DefaultIntrinsicMeasurable 下空 ripple 槽宽度为零；Start 带标签则有显式宽度公式。
-
-Top 使用上方 6 DIP 留白，24 DIP 图标的胶囊为 56×32，图标与标签间为 8 DIP。
-Start 带标签时胶囊包住图标和标签，两侧 16 DIP、图标到标签 4 DIP、上下 8 DIP。
-无标签仍使用 TopIconOrIconOnlyMeasurePolicy，但采用目标位置的 padding，Top/Start 胶囊高度为 32/40 DIP。
-没有改成 Wide Item 的无标签圆形分支。
-
-Item 布局提供 Compose `badgeBounds()` 的上方和末端边界，供图标槽中的 BadgedBox 使用。
-Start 带标签时按 `placeLabelAndStartIcon` 保留标签先于图标、反馈最后的绘制顺序，
-因此图标中溢出的徽标可以覆盖标签。规则和双端覆盖见 [Badge / BadgedBox](../Badge/README.md)。
-
-内容色直接更新，两种位置均使用 LabelMedium。唯一 DefaultSpatial 进度同时驱动指示器透明度及居中展开宽度。
-宽度进度只下限钳制，保留过冲；绘制透明度限制在 0～1。目标下一帧提交，反向按 animateAsState
-Stop/restart 重置旧速度与帧锚点。位置切换立即布局；不使用 AnimatedNavigationItem 或 Wide 的纵向平滑偏离。
-
-## 使用
-
-Top / EqualWeight 推荐用于小屏，Start / Centered 推荐用于较宽屏。
+下面采用默认 Top 图标和 EqualWeight 排列，显示初始选择；点击后的导航与选择由应用接入。
+布局需要有限宽度，放入横向无界容器时应显式设置 Width。
 
 ```xml
-<m3:ShortNavigationBar xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-                       Arrangement="Centered">
-  <m3:ShortNavigationBarItem Icon="{Binding HomeIcon}" Label="主页" IconPosition="Start"
-                            IsSelected="{Binding IsHomeSelected}" Command="{Binding NavigateHome}" />
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:ShortNavigationBar VerticalAlignment="Bottom">
+    <m3:ShortNavigationBarItem Label="主页" IsSelected="True">
+      <m3:ShortNavigationBarItem.Icon>
+        <m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" />
+      </m3:ShortNavigationBarItem.Icon>
+    </m3:ShortNavigationBarItem>
+    <m3:ShortNavigationBarItem Label="搜索">
+      <m3:ShortNavigationBarItem.Icon>
+        <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
+      </m3:ShortNavigationBarItem.Icon>
+    </m3:ShortNavigationBarItem>
+  </m3:ShortNavigationBar>
+</UserControl>
+```
+
+后续片段沿用相同命名空间。`Items` / `ItemsSource` / `ItemTemplate` 使用 `ItemsControl`，
+数据模板应直接生成 `ShortNavigationBarItem`。
+
+## 排列、位置与选择
+
+Top / EqualWeight 适合较窄布局，Start / Centered 适合较宽布局；控件不会按窗口宽度自动切换。
+`IconPosition="Start"` 是逻辑起始侧，跟随 RTL。
+
+```xml
+<m3:ShortNavigationBar Arrangement="Centered">
+  <m3:ShortNavigationBarItem Label="主页" IconPosition="Start"
+                            IsSelected="{Binding IsHomeSelected}"
+                            Command="{Binding NavigateHome}" />
+  <m3:ShortNavigationBarItem Label="搜索" IconPosition="Start"
+                            IsSelected="{Binding IsSearchSelected}"
+                            Command="{Binding NavigateSearch}" />
 </m3:ShortNavigationBar>
 ```
 
-```csharp
-var bar = new ShortNavigationBar { Arrangement = ShortNavigationBarArrangement.EqualWeight };
-var home = new ShortNavigationBarItem { Icon = icon, Label = "主页", IsSelected = true };
-bar.Items.Add(home);
-home.Click += (_, _) => NavigateHome(); // 应用维护 IsSelected 及各项互斥。
+此片段假设 `DataContext` 提供相应状态和命令；图标槽为简洁起见省略。
+启用编译绑定时声明对应 `x:DataType`。应用负责互斥选择，Click、Command、自动化 Select 不修改 `IsSelected`。
+支持 `CommandParameter`、`IsEnabled`、`Command.CanExecute`；Enter / Space 在松开时请求激活。
+
+- `EqualWeight` 均分宽度；`Centered` 依目的地数量和内容尺寸在两侧留白
+- Label 非空就一直显示，null 使用纯图标布局；没有 `AlwaysShowLabel`
+- 切换 `IconPosition` 会立即重新布局，不播放 Wide Rail 的位置动画
+- 没有 `RailExpanded`，需要展开/收起时使用 [WideNavigationRail](../WideNavigationRail/README.md)
+
+## 内容与外观
+
+`Icon` / `IconTemplate` 与 `Label` / `LabelTemplate` 接受内容或数据；文字默认 LabelMedium，
+显式子控件可覆盖排版。图标中可放 [BadgedBox](../Badge/README.md)，内置布局为其提供徽标边界。
+图标与标签都保留可访问子内容；纯图标目的地应设置 `AutomationProperties.Name`。
+
+```xml
+<m3:ShortNavigationBarItem Label="收藏" IsSelected="True" IconPosition="Start"
+                          SelectedIconColor="Teal"
+                          SelectedTextColorStartIconPosition="Teal"
+                          IndicatorColor="LightCyan" />
 ```
 
-Items / ItemsSource / ItemTemplate 沿用 ItemsControl；模板直接生成 ShortNavigationBarItem。
-Icon / Label 接受内容与 DataTemplate，字符串使用 ContentPresenter 的 MaterialText 默认排版。
-标签存在就始终显示，没有 AlwaysShowLabel、RailExpanded 或位置动画。
-IconPosition 为非空的 NavigationItemIconPosition，默认 Top。
-Click / Command / CommandParameter / IsEnabled 使用 Button；Enter 与 Space 在 KeyUp 调用。
-自动化提供 TabItem、当前 IsSelected 和所属选择组；Select 只请求导航。
-NavigationItem 不清除图标语义，图标与标签均保留可访问子内容。
+Top 与 Start 的选中标签色分别使用 `SelectedTextColorTopIconPosition` 和
+`SelectedTextColorStartIconPosition`；另外可覆盖选中/未选中/禁用图标、未选中/禁用标签和 IndicatorColor。
+Bar 的 Foreground 默认来自 SurfaceContainer 对应的 OnSurface；自定义 Background 不会自动重选内容色，
+如需改变环境色应同时设置 Foreground。统一主题定制见[公共 Token 接入](../../../../docs/GETTING_STARTED.md)。
 
-八项颜色属性与 Wide Item 同名：SelectedIconColor、SelectedTextColorTopIconPosition、
-SelectedTextColorStartIconPosition、IndicatorColor、UnselectedIconColor、UnselectedTextColor、DisabledIconColor、DisabledTextColor。
-Top 选中标签默认为 Secondary，Start 为 OnSecondaryContainer；禁用内容使用未选中色的 0.38 alpha。
-默认 Foreground 使用默认 SurfaceContainer 对应的 OnSurface；自定义 Background 不自动改选内容色，
-如需改变可显式设置 Foreground。内嵌 Surface 继承环境的累积 tonal elevation，Short 不新增 TonalElevation 参数。
+`WindowInsets` 是宿主提供的物理 Thickness，默认零，RTL 不交换边；没有嵌套 inset 消费。
+内嵌 Surface 继承环境的累积 tonal elevation，但 Short Bar 没有独立的 TonalElevation 参数。
 
-## Avalonia 适配
+## 使用边界
 
-复用 VisualAnimationScope / ComposeAnimation、MaterialInteractionController、Surface、MathUtils 和物理 Insets 转换。
-整个 Item 矩形可点击与 hover，包括未绘制间隙。Top 按压坐标偏移为
-((实际 Item 宽度 − Token 指示器宽度 56 DIP) / 2, 12 DIP)，Start 使用原始 Item 坐标。
-不按真实胶囊位置补偿，宽图标仍使用 Token 宽度。
+显式 Width 使用 Avalonia 的容器宽度语义，各项仍按排列分配；与固定 Compose 直接 width 修饰的边界行为
+存在已接受差异。旧验证在按压中切换 IconPosition 后观察到额外 hover；当前已有反馈节点重挂路径，
+但该场景是否消除差异尚缺新的双端核验，不能由代码变化推断已对齐。
+真实文字、图标栅格和桌面辅助技术仍需单独验证。
 
-Avalonia 没有 Compose intrinsic API，组件局部测量内容槽来回答对应查询；其他任意内容使用原生 Measure。
-固定槽位会隐藏 DesiredSize 变化，局部布局失效通知 Bar 重新查询固有尺寸。
-卸载和模板替换取消旧动画。布局需要有限宽度；横向无界宿主需设置 Width 或提供有限容器。
-WindowInsets 是物理 Thickness，桌面默认零，RTL 不交换物理边；没有嵌套 inset 消费环境。
-
-2026-10-03，维护者确认“采用推荐 API 与测量适配”：使用原生 ItemsControl 内容入口和组件局部固有尺寸查询，
-不引入通用 intrinsic 框架；范围仅为本次 ShortNavigationBar / ShortNavigationBarItem。
-Short 使用 NavigationItem，而 Wide 使用 AnimatedNavigationItem，因此保留两者不同的动画和布局职责。
-
-2026-10-03 维护者确认保留 Avalonia Width 语义：固定容器宽度，各项按排列分配。
-固定 Compose 的直接 Modifier.width / fillMaxWidth 把 minWidth 传给每项，再由 constraints.constrain
-放大为整个 Bar 宽度；352 DIP、3 项时三项均为 352 DIP 并溢出。
-正常 parity 由外层宿主提供有限最大宽度；static.upstream.direct-width 保留真实 different。
-固定参考、容差与比较状态不修改。维护者确认“采用原生 Width 语义并记录差异（推荐）”；
-范围仅为 Bar 的容器 Width，不改写 Centered / EqualWeight 的整数算法及其他组件。
-
-## 验证
-
-独立双端入口为 [ShortNavigationBarCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ShortNavigationBarCases.cs)
-和 [ShortNavigationBarCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ShortNavigationBarCases.kt)。
-参考调用真实 Compose API，Avalonia 调用产品组件。非文字几何继承实际内容色，没有夹具偏移。
-覆盖排列 × 位置 × 标签有无 × 选中 × 禁用，项数边界、余数、窄空间、宽/高图标及标签、
-固定高度、暗色、RTL/inset、颜色覆盖、默认内容色和嵌套 Surface；动态覆盖选择、反向、按压、取消、
-禁用、主题、键盘、完整 hover 区域、位置与排列切换、标签移除恢复和同一内容尺寸变化。
-
-本次结果见 [移植产物](../../../../artifacts/short-navigation-bar-port/README.md)。
-目前完整回归 354 项通过，parity 104 用例 / 326 采样：86 equal、16 withinTolerance、2 different，执行错误和未比较项均为零。
-两项 different 为已接受的直接 Width 语义及按压中切换位置后额外 hover；后者内部 indication 重挂方案待确认。
-Compose 104 个参考均为本轮新采集，完整比较重新采集 Avalonia；新增场景的双端重复捕获与被动截图自检稳定。
-真实文字排版与 MaterialSymbols 栅格、人工桌面交互及屏幕阅读器体验未经验证；当前 parity 排除文字。
-
-```powershell
-./tests/VisualParity/parity.ps1 list --family short-navigation-bar
-./tests/VisualParity/parity.ps1 prepare-reference --family short-navigation-bar
-./tests/VisualParity/parity.ps1 run --family short-navigation-bar
-```
-
-直接 width 的已接受差异仍使整族 require-match 返回 1，须读取 summary 与对应采样。
+Catalog 入口在 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)；
+测量规则、已确认适配和复现入口见 [INTERNALS.md](INTERNALS.md)。
