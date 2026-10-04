@@ -142,7 +142,7 @@ public class TooltipBox : ContentControl
         if (change.Property == EnableUserInputProperty && !EnableUserInput) ReleasePointer();
         if (change.Property == AnchorPositionProperty || change.Property == SpacingProperty || change.Property == PositionProviderProperty
             || change.Property == FlowDirectionProperty || change.Property == RenderTransformProperty
-            || change.Property == RenderTransformOriginProperty) UpdatePosition(force: true);
+            || change.Property == RenderTransformOriginProperty || change.Property == HasMirrorTransformProperty) UpdatePosition(force: true);
     }
 
     private void AttachState()
@@ -202,7 +202,13 @@ public class TooltipBox : ContentControl
     {
         // Core Popup.onPlaced uses positionInWindow() plus the parent's local size,
         // not the axis-aligned bounds of its transformed corners.
-        return new Rect(this.TranslatePoint(default, _topLevel!)!.Value, Bounds.Size);
+        // Avalonia implements RTL with automatic mirror transforms, while Core's
+        // layout coordinates still start at the physical left of the node.
+        var mirrored = false;
+        for (Visual? visual = this; visual is not null && visual != _topLevel; visual = visual.GetVisualParent())
+            mirrored ^= visual.HasMirrorTransform;
+        var origin = mirrored ? new Point(Bounds.Width, 0) : default;
+        return new Rect(this.TranslatePoint(origin, _topLevel!)!.Value, Bounds.Size);
     }
 
     private void UpdatePosition(bool force = false)

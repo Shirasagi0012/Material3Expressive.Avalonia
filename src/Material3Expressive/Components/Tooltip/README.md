@@ -58,6 +58,8 @@ AnchorPosition 支持 Above / Below / Left / Right / Start / End，Spacing 默�
 上游算法以物理像素计算：居中采用整数截断，空间不足时翻到另一侧，再限制在客户区内；
 提示大于客户区时原点限制为 0。Start / End 依照 FlowDirection 解析。
 变换后的锚点保留 Core Popup 的 `positionInWindow + local size`，不改成变换四角的包围盒。
+读取窗口原点时撤销 Avalonia 自动 RTL 镜像对起点的影响，保留显式 RenderTransform；
+镜像可能来自锚点自身或父容器。
 PositionProvider 可替换计算，ITooltipPositionProvider 的参数及返回值均为物理窗口像素。
 
 鼠标进入以 UserInput 显示，离开仅关闭非持续状态。锚点焦点、触摸或笔长按以
@@ -96,7 +98,19 @@ Compose Float 与 Avalonia Double 矩阵的末位表示差异当作精确布局�
 双端夹具使用非文字内容；文字排版与栅格一致性、物理触摸 / 笔设备、屏幕阅读器播报
 及操作系统桌面交互尚未经验证。
 
-当前动态移植尚未完成：ComposeAnimation 0.2.3-alpha 的 Transition 自动立即提交目标，
-而固定 Core 在重组帧末提交；空闲 Transition 的异步唤醒还使退出首帧存在重复性差异。
-锚点移动后的 Popup 更新也比固定 Core 提前一帧。上述问题尚未修复或被接受，
-需要补齐目标同步能力后继续动态回归；不能把静态容差通过解释为 TooltipBox 完成。
+2026-10-04，维护者接受本组件的动画目标提交时序差异：ComposeAnimation 的 Transition
+立即跟随 TargetState，固定 Core 则在采样当前动画后的重组帧末提交。保留现有共享 API，
+不增加手动同步开关；进场首帧及中断时采样的值和速度可能不同，动态截图原始差异保留。
+这项决定只适用于 Tooltip 的目标提交时序。
+
+当前使用本地 NuGet `ComposeAnimation 0.2.5-alpha`；该版本修复空闲 Transition 的
+异步唤醒竞态，不增加目标同步 API。依赖通过包接入，不引用相邻仓库的项目。
+
+锚点移动场景保留移动后的首次采样及同一动画帧的再次绘制采样。诊断证实旧参考宿主
+未处理完 `onPlaced` 写入引起的提示层重测；完善 Compose draw 完成检查后，
+移动、尺寸变化和方向切换均在原时间点对齐，无需在产品中额外延迟 Popup 定位。
+
+本轮最终验证：Release 解决方案构建成功，控件库 751 项测试及 parity 框架 123 项测试通过。
+PlainTooltip 的 30 个双端场景全部在容差内且重复捕获稳定；TooltipBox 的 80 个场景
+全部稳定，结构化状态与几何事实一致，70 个场景相等或在容差内，10 个仅有上述已接受的
+动画时序截图差异。原始差分保留，未放宽容差或修改基线。

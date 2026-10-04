@@ -21,6 +21,33 @@ namespace Material3Expressive.Tests;
 
 public class TooltipBoxTests
 {
+    [AvaloniaTheory]
+    [InlineData(false, 1)]
+    [InlineData(true, 1)]
+    [InlineData(false, 2)]
+    [InlineData(true, 2)]
+    public void RtlAnchor_UsesPhysicalOriginWithLocalSize(bool parentRtl, double scale)
+    {
+        using var clock = new MotionTestClockScope();
+        var tooltip = new PlainTooltip { Content = new Border { Width = 64, Height = 8 } };
+        var box = Box(tooltip, new(initialIsVisible: true, mutatorMutex: new()));
+        box.FlowDirection = FlowDirection.RightToLeft;
+        box.RenderTransform = new ScaleTransform(scale, scale);
+        var window = DialogTests.Show(new Grid
+        {
+            FlowDirection = parentRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
+            Children = { box }
+        });
+        // Avalonia mirrors RTL coordinates; Core's positionInWindow starts at
+        // the physical left of the layout node, including its explicit scale.
+        var anchorOrigin = box.TranslatePoint(new Point(box.Bounds.Width, 0), window)!.Value;
+        var first = tooltip.TranslatePoint(default, window)!.Value;
+        var last = tooltip.TranslatePoint(new Point(tooltip.Bounds.Width, 0), window)!.Value;
+        var tooltipOrigin = new Point(Math.Min(first.X, last.X), first.Y);
+        Assert.Equal(new Point(anchorOrigin.X - 28, anchorOrigin.Y - 28), tooltipOrigin);
+        Assert.Equal(new Size(24, 24), box.Bounds.Size);
+    }
+
     [AvaloniaFact]
     public void TransformedAnchor_UsesWindowOriginAndLocalSizeLikeCorePopup()
     {

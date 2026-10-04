@@ -56,7 +56,13 @@ import kotlinx.serialization.Serializable
                     val point=checkNotNull(scene.outside.coordinates).localToWindow(Offset(8f,8f)*ComposeHost.RenderScale.toFloat())/ComposeHost.RenderScale.toFloat()
                     change(1000,"down"){host.input("move",point);host.input("down",point)};change(2000,"up"){host.input("up",point)};times(16000,64000,224000,400000)
                 }
-                "resize" -> {change(1000,"move"){scene.x=4;scene.y=4};change(2000,"grow"){scene.anchorWidth=40;scene.contentWidth=160.0};change(3000,"direction"){scene.position="End"}}
+                "resize" -> {
+                    change(1000,"move"){scene.x=4;scene.y=4}
+                    // Retain the first sample, then observe a further render turn
+                    // without advancing the animation clock.
+                    host.draw();sample("move-redraw")
+                    change(2000,"grow"){scene.anchorWidth=40;scene.contentWidth=160.0};change(3000,"direction"){scene.position="End"}
+                }
             }
         }
     }

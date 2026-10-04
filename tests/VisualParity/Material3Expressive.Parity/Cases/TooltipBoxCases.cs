@@ -36,6 +36,7 @@ public sealed class TooltipBoxCases
         yield return Data("static.tall", new(ContentHeight: 220));
         yield return Data("static.elevated", new(Elevation: 6));
         yield return Data("static.scaled-anchor", new(AnchorScale: 2));
+        yield return Data("static.scaled-anchor.rtl", new(AnchorScale: 2, Rtl: true));
     }
     public static IEnumerable<CaseData<TooltipBoxConfig>> DynamicConfigurations()
     {
@@ -148,6 +149,9 @@ public sealed class TooltipBoxCases
                 Change(2000, "up", () => host.Input("up", point)); Times(16000, 64000, 224000, 400000); break;
             case "resize":
                 Change(1000, "move", () => { Canvas.SetLeft(box, 4); Canvas.SetTop(box, 4); });
+                // Observe layout invalidation from Popup placement in another render
+                // turn at the same animation-frame timestamp; retain the first sample.
+                host.Draw(); Sample("move-redraw");
                 Change(2000, "grow", () => { anchor.Width = 40; content.PreferredWidth = 160; });
                 Change(3000, "direction", () => box.AnchorPosition = TooltipAnchorPosition.End); break;
         }
