@@ -20,11 +20,6 @@
 - 已确认的组件设计就近记录在对应 INTERNALS.md（尚未拆分的组件暂存 README）；跨组件的共享能力决定记录于 [docs/DECISIONS.md](docs/DECISIONS.md)。
 - 提交使用惯例式提交风格的提交信息。
 
-ComposeAnimation 与 SmoothScroll 通过 `Shirasagi0012.*` NuGet 包接入，版本由
-[Directory.Packages.props](Directory.Packages.props) 管理，GitHub Packages 包源及映射由
-[nuget.config](nuget.config) 管理。依赖准备与包源访问见[接入指南](docs/GETTING_STARTED.md#源码与依赖)，
-不再要求相邻 ComposeAnimation 本地包目录，不改成跨仓库 ProjectReference。
-
 ## 本地开发
 
 需要 .NET 10 SDK 和 PowerShell。框架与包版本由
