@@ -170,6 +170,10 @@ Material 层仍负责 Token、目标选择、时序规则及绘制；不要在�
 detach、模板替换与重新附着需要处理旧作用域及绑定的生命周期。根帧源固定，运行中不切换时钟；根的
 `AnimationFailed` / `LastError` 用于诊断。
 
+ComposeAnimation 0.2.7-alpha 的 `DelayAsync` 等待普通协程时间，不请求动画帧，也不受 DurationScale 影响。
+生产初始化默认使用 `TimeProvider.System`；测试可通过 `Initialize(topLevel, clock, timeProvider)` 显式
+注入延时时间源，子作用域与 Popup 继承它。动画时钟和延时时间轴分别推进，Draw/Snapshot 不推进二者。
+
 现有 Material 动画入口：
 
 - `SpringSpecRef` 在消费处解析 damping/stiffness，`SpringSpec.ToAnimationSpec()` 转换为运行时 spring。

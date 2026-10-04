@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.LoadingIndicatorDemo" Title="Loading indicators" Width="440" Height="400">
+    <StackPanel Margin="24" Spacing="24">
+        <TextBlock Text="Progress" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <Slider x:Name="ProgressSlider" Minimum="0" Maximum="1" Value="0.5" />
+        <StackPanel Orientation="Horizontal" Spacing="24">
+            <m3:LoadingIndicator IsIndeterminate="False" Progress="{Binding #ProgressSlider.Value}" />
+            <m3:ContainedLoadingIndicator IsIndeterminate="False" Progress="{Binding #ProgressSlider.Value}" />
+        </StackPanel>
+        <TextBlock Text="Indeterminate" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <StackPanel Orientation="Horizontal" Spacing="24">
+            <m3:LoadingIndicator />
+            <m3:ContainedLoadingIndicator />
+            <m3:ContainedLoadingIndicator CornerRadius="12" />
+        </StackPanel>
+    </StackPanel>
+</Window>

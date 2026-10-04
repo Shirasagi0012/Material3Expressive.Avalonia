@@ -3,6 +3,17 @@
 本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件 README 保存；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
+## 普通协程延时与动画帧时钟
+
+决定：ComposeAnimation 的根 VisualAnimationScope 接入 .NET TimeProvider，子作用域和 Popup 继承；
+DelayAsync 使用同一时间源，并连接调用方及作用域取消。保留旧 Initialize 重载默认使用系统时间。
+原因：LoadingIndicator.kt 并发运行 spring 与 kotlinx.coroutines.delay(650)，后者不是 animation-core
+求解器，也不受动画帧或 DurationScale 控制。用 Tween 或下一帧计时替代会改变循环及稀疏帧行为。
+接入：本地 NuGet Runtime/Avalonia/TestSupport 统一使用 0.2.7-alpha。测试使用 ManualTimeProvider，
+AvaloniaHost 可显式接入，在送帧前推进延时；未接入的旧用例保持原有时间环境，Draw/Snapshot 仍被动。
+范围：普通协程等待与确定的测试时间源；不改写 animation-core 算法，不引入 Compose Runtime。
+确认：2026-10-04 维护者在说明协程与 animation-core 职责后明确授权修改 ComposeAnimation。
+
 ## Dialog / Popup 的窗口内宿主与模态职责
 
 决定：组件各自持有 Avalonia Popup，显式使用 `ShouldUseOverlayLayer = true`，由原生 Popup 接入

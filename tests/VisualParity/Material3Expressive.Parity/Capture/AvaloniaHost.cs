@@ -23,6 +23,7 @@ public sealed class AvaloniaHost : IAsyncDisposable
     static readonly FieldInfo PendingBatch = CompositionBatchField("_pendingBatch");
     readonly CaptureWriter writer;
     readonly ManualAnimationFrameClock clock = new(Dispatcher.UIThread.VerifyAccess);
+    readonly ManualTimeProvider? delayTime;
     public AnimationTestWindow Window { get; }
     public long TimeUs { get; private set; } = -2000;
     bool hasFrame;
@@ -32,13 +33,17 @@ public sealed class AvaloniaHost : IAsyncDisposable
     {
         if (timeUs < TimeUs) throw new InvalidOperationException("Time cannot move backwards.");
         TimeUs = timeUs;
-        writer.Record(timeUs, "advance", "logical event time only; no animation frame; framework delay timers are not virtualized");
+        AdvanceDelays(timeUs);
+        writer.Record(timeUs, "advance", delayTime is null
+            ? "logical event time only; no animation frame; framework delay timers are not virtualized"
+            : "logical event time and coroutine delay scheduler (1ms); no animation frame");
     }
 
-    public AvaloniaHost(CaptureWriter writer, int width = 240, int height = 160)
+    public AvaloniaHost(CaptureWriter writer, int width = 240, int height = 160, ManualTimeProvider? delayTime = null)
     {
         this.writer = writer;
-        Window = new(clock) { Width = width, Height = height, Background = Brushes.White, RequestedThemeVariant = ThemeVariant.Light };
+        this.delayTime = delayTime;
+        Window = new(clock, delayTime ?? TimeProvider.System) { Width = width, Height = height, Background = Brushes.White, RequestedThemeVariant = ThemeVariant.Light };
         Window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
         Window.AnimationRoot.DurationScale = 1;
         Window.AnimationRoot.AnimationFailed += (_, e) => writer.Errors.Add($"{e.OperationLabel}: {e.Exception}");
@@ -58,10 +63,25 @@ public sealed class AvaloniaHost : IAsyncDisposable
     {
         if (timeUs < TimeUs) throw new InvalidOperationException("Clock cannot move backwards.");
         TimeUs = timeUs;
+        AdvanceDelays(timeUs);
         clock.SendFrame(TimeSpan.FromTicks(checked(10_000_000 + timeUs * 10)));
         hasFrame = true;
         writer.Record(timeUs, "frame", "origin=1000000us; one waiter batch", new { frameTimeUs = FrameTimeUs, originUs = 1_000_000 });
         Draw();
+    }
+
+    void AdvanceDelays(long timeUs)
+    {
+        if (delayTime is null) return;
+        var target = TimeSpan.FromMilliseconds(Math.Max(timeUs, 0) / 1000);
+        // Like Compose's scheduler, resume delay continuations before sending the frame.
+        // Pump at integer milliseconds so a continuation that starts another delay anchors
+        // to its due time even when the observation skips a large interval. No render/frame.
+        while (delayTime.Elapsed < target)
+        {
+            delayTime.AdvanceBy(TimeSpan.FromTicks(Math.Min(TimeSpan.TicksPerMillisecond, (target - delayTime.Elapsed).Ticks)));
+            Dispatcher.UIThread.RunJobs();
+        }
     }
 
     public void Draw()
