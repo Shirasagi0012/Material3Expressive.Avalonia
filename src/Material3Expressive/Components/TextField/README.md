@@ -1,6 +1,6 @@
 # TextField
 
-原生 `TextBox` + 显式 Material `ControlTheme` + `MaterialTextField` 附加属性。
+原生 `TextBox` + Material `ControlTheme` + `MaterialTextField` 附加属性。
 没有公开的基础编辑控件、TextBox 子类、编辑状态副本或输入事务层。
 `TextFieldLayout` / `TextFieldDecoration` 是模板内部的测量、绘制和动画部件。
 
@@ -8,9 +8,13 @@
 
 应用先加载 Avalonia 基础主题（Catalog 使用 Fluent），再加载 `MaterialTheme`。
 基础主题继续为原生 ScrollViewer、滚动条和编辑菜单提供模板。
-Material 主题只在显式选择时应用，不替换普通 TextBox。
+未指定 `Theme` 的 `TextBox` 使用隐式主题，`BasedOn` `MaterialFilledTextFieldTheme`。
 
 ```xml
+<TextBox Text="{Binding Name}"
+         m3:MaterialTextField.Label="姓名"
+         PlaceholderText="请输入姓名" />
+
 <TextBox Theme="{StaticResource MaterialFilledTextFieldTheme}"
          Text="{Binding Name}"
          m3:MaterialTextField.Label="姓名"

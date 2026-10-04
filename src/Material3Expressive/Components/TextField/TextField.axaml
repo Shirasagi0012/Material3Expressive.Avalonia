@@ -166,5 +166,7 @@
       <Style Selector="^:disabled /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledSuffixColor}}" /></Style>
       <Style Selector="^:disabled /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledSupportingColor}}" /></Style>
     </ControlTheme>
+    <!-- Implicit TextBox theme is filled. BasedOn applies the filled setters; Outlined and Secure stay explicit. -->
+    <ControlTheme x:Key="{x:Type TextBox}" TargetType="TextBox" BasedOn="{StaticResource MaterialFilledTextFieldTheme}" />
   </Styles.Resources>
 </Styles>

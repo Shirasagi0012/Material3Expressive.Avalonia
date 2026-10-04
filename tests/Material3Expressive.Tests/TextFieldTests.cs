@@ -22,6 +22,27 @@ namespace Material3Expressive.Tests;
 
 public class TextFieldTests
 {
+    [AvaloniaFact]
+    public void ImplicitTextBoxThemeIsBasedOnFilled()
+    {
+        var window = new MotionTestWindow { Width = 420, Height = 160, RequestedThemeVariant = ThemeVariant.Light };
+        window.Styles.Add(new FluentTheme());
+        window.Styles.Add(new MaterialTheme());
+        var box = new TextBox { HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
+        window.Content = box;
+        window.Show();
+        window.UpdateLayout();
+        try
+        {
+            var filled = (ControlTheme)window.FindResource("MaterialFilledTextFieldTheme")!;
+            var implicitTheme = (ControlTheme)window.FindResource(typeof(TextBox))!;
+            Assert.Same(filled, implicitTheme.BasedOn);
+            Assert.False(MaterialTextField.GetOutlined(box));
+            Assert.IsType<TextFieldLayout>(Part<TextFieldLayout>(box, "PART_Decoration"));
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]
