@@ -1,0 +1,41 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Style Selector=":is(m3|ProgressIndicator)">
+        <Setter Property="Color" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ProgressIndicator.ActiveIndicatorColor}}" />
+        <Setter Property="TrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ProgressIndicator.TrackColor}}" />
+    </Style>
+    <Style Selector="m3|LinearProgressIndicator">
+        <Setter Property="ContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.Height}}" />
+        <Setter Property="GapSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.TrackActiveSpace}}" />
+        <Setter Property="StopSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.StopSize}}" />
+    </Style>
+    <Style Selector="m3|CircularProgressIndicator">
+        <Setter Property="ContainerWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.Size}}" />
+        <Setter Property="ContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.Size}}" />
+        <Setter Property="StrokeWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.TrackThickness}}" />
+        <Setter Property="GapSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.TrackActiveSpace}}" />
+        <Style Selector="^[IsIndeterminate=True]">
+            <Setter Property="TrackColor" Value="Transparent" />
+        </Style>
+    </Style>
+    <Style Selector="m3|LinearWavyProgressIndicator">
+        <Setter Property="ActiveThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.ActiveThickness}}" />
+        <Setter Property="TrackThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.TrackThickness}}" />
+        <Setter Property="ClipToBounds" Value="True" />
+        <Setter Property="ContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.WaveHeight}}" />
+        <Setter Property="DefaultWavelength" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.ActiveWaveWavelength}}" />
+        <Setter Property="GapSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.TrackActiveSpace}}" />
+        <Setter Property="StopSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.StopSize}}" />
+        <Style Selector="^[IsIndeterminate=True]">
+            <Setter Property="DefaultWavelength" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LinearProgressIndicator.IndeterminateActiveWaveWavelength}}" />
+        </Style>
+    </Style>
+    <Style Selector="m3|CircularWavyProgressIndicator">
+        <Setter Property="ActiveThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.ActiveThickness}}" />
+        <Setter Property="TrackThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.TrackThickness}}" />
+        <Setter Property="ContainerWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.WaveSize}}" />
+        <Setter Property="ContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.WaveSize}}" />
+        <Setter Property="DefaultWavelength" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.ActiveWaveWavelength}}" />
+        <Setter Property="GapSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CircularProgressIndicator.TrackActiveSpace}}" />
+    </Style>
+</Styles>

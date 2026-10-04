@@ -206,6 +206,8 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
   原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。
 - [TabRow / Tab](../src/Material3Expressive/Components/TabRow/README.md) 提供受控的独立标签栏及原生 TabControl 顶部水平主题，
   共用 intrinsic / 基线布局、内容颜色 Transition 和指示器 Animatable。原生页面呈现和选择仍由 TabControl 负责。
+- [Progress Indicator](../src/Material3Expressive/Components/ProgressIndicator/README.md) 提供四个独立控件的确定与不确定模式。
+  ComposeAnimation 管理动画，Skia 保留 Canvas/PathMeasure 绘制；圆形波浪的 Polygon/Morph 消费固定 MaterialShapes 子模块。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
   Modal 使用当前 TopLevel 的 PopupOverlayLayer，通过组件自己的 Popup 和共享 ModalPresenter 接入。

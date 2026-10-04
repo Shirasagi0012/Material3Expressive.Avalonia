@@ -70,6 +70,7 @@
                 <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="TabRow demo" Click="OnTabRowDemo" HorizontalAlignment="Left" />
+                <Button Content="Progress Indicator demo" Click="OnProgressIndicatorDemo" HorizontalAlignment="Left" />
                 <Button Content="ScrollBar demo" Click="OnScrollBarDemo" HorizontalAlignment="Left" />
                 <Button Content="AlertDialog demo" Click="OnAlertDialogDemo" HorizontalAlignment="Left" />
                 <TextBlock Text="Card" m3:MaterialText.Style="{m3:Typography TitleMedium}" />

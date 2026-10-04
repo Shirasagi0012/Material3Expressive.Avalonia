@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/modules/">
+    <Project Path="modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj" />
     <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Avalonia/MaterialColorUtilities.Avalonia.csproj" />
     <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Gallery/MaterialColorUtilities.Gallery.csproj" />
     <Project Path="modules/MaterialColorUtilities/MaterialColorUtilities.Tests/MaterialColorUtilities.Tests.csproj" />
