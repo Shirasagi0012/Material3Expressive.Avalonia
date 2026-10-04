@@ -4,3 +4,6 @@
 [submodule "modules/MaterialSymbols"]
 	path = modules/MaterialSymbols
 	url = https://github.com/shirasagi0012/MaterialSymbols
+[submodule "modules/MaterialShapes"]
+	path = modules/MaterialShapes
+	url = https://github.com/Shirasagi0012/MaterialShapes.git

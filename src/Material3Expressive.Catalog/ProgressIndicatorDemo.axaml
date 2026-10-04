@@ -1,0 +1,30 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.ProgressIndicatorDemo"
+        Title="Progress indicators" Width="560" Height="600">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="24">
+      <TextBlock Text="Progress" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <Slider x:Name="ProgressSlider" Minimum="0" Maximum="1" Value="0.5" />
+      <m3:LinearProgressIndicator Progress="{Binding #ProgressSlider.Value}" />
+      <m3:LinearWavyProgressIndicator Progress="{Binding #ProgressSlider.Value}" />
+      <StackPanel Orientation="Horizontal" Spacing="32">
+        <m3:CircularProgressIndicator Progress="{Binding #ProgressSlider.Value}" />
+        <m3:CircularWavyProgressIndicator Progress="{Binding #ProgressSlider.Value}" />
+      </StackPanel>
+      <TextBlock Text="Indeterminate" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:LinearProgressIndicator IsIndeterminate="True" />
+      <m3:LinearWavyProgressIndicator IsIndeterminate="True" />
+      <StackPanel Orientation="Horizontal" Spacing="32">
+        <m3:CircularProgressIndicator IsIndeterminate="True" />
+        <m3:CircularWavyProgressIndicator IsIndeterminate="True" />
+      </StackPanel>
+      <TextBlock Text="Independent wave and track strokes" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:LinearWavyProgressIndicator Progress="{Binding #ProgressSlider.Value}" Wavelength="30" WaveSpeed="0">
+        <m3:LinearWavyProgressIndicator.Stroke><m3:ProgressIndicatorStroke Width="6" /></m3:LinearWavyProgressIndicator.Stroke>
+        <m3:LinearWavyProgressIndicator.TrackStroke><m3:ProgressIndicatorStroke Width="2" /></m3:LinearWavyProgressIndicator.TrackStroke>
+      </m3:LinearWavyProgressIndicator>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

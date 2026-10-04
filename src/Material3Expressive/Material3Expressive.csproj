@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj" />
         <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
         <!-- Token identities are currently hand-authored in Tokens/MaterialTokens.*.cs.
              No generator or JSONC token catalog is connected to this rewrite. -->
