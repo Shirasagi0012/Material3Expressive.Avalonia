@@ -124,6 +124,24 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 子控件冒泡的焦点事件不视为父控件获得焦点；对外 API 不变，没有增加 FocusRing 或 InteractionSource API。
 核验 Core 桌面过滤分支后，维护者进一步选择“按 Core 桌面过滤 indication，保留真实焦点/elevation（推荐）”。
 
+## AppBar 与原生滚动接入
+
+决定：公开 AppBarScrollScope 包围屏幕，栏与 Scope 使用同一个 ScrollBehavior。
+协议以物理像素和 px/s 表达消费量；pre 外到内、每层 top→bottom，post 内到外、每层 bottom→top。
+Scope 按最近祖先归属登记 ScrollViewer，嵌套作用域不重复适配；移出、detach、行为或模板替换及新输入
+取消旧惯性/吸附并释放登记。标准 Fluent 12.1.2 模板先核验身份，再仅在 Scope 内替换 presenter，
+保留原生滚动条、键盘、BringIntoView、水平滚动和 snap point 生命周期。
+模板适配用 SetCurrentValue 保留值来源和优先级，不通过较高优先级的 class trigger 遮蔽后加入的普通样式。
+自定义 Template/ControlTheme/Style 保留，显式 AppBarScrollContentPresenter 或 DispatchScroll /
+DispatchFlingAsync 接入协议；不以继承 ScrollViewer 代替真实消费和剩余速度的传递。
+
+垂直 touch/pen 用 GestureRecognizer/capture 接入，正文惯性与栏的 decay/snap 复用 ComposeAnimation。
+原 Rail 的 Lsq2 VelocityTracker 原样移入内部 Foundation/Input，由 Rail 与 AppBar 共用。
+没有新增通用输入框架或完整系统 insets 框架；标题和 Bottom 自定义内容的槽规则留在组件 README。
+12.1.2 的 inertia-starting 事件构造使用局部 UnsafeAccessor，升级 Avalonia 时须复核。
+确认：2026-10-04，维护者采用修订后的 AppBarScrollScope 及槽规则，要求保留自定义模板、嵌套和生命周期，
+并分别验证组件 parity 与真实桌面输入集成。
+
 ## 本次保留 Tween / Bezier 精度差异
 
 决定：Chip 移植继续消费 ComposeAnimation 0.2.1-alpha，不修改其 FloatTweenSpec /

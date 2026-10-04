@@ -3,6 +3,7 @@
 基于 Avalonia 实现 Material 3 Expressive，以尽可能在视觉效果和动效上还原Compose material3为目标
 
 当前包含 Button、IconButton、Surface、[Scaffold](src/Material3Expressive/Components/Scaffold/README.md)、
+[Top / Bottom AppBar](src/Material3Expressive/Components/AppBar/README.md)、
 [Badge / BadgedBox](src/Material3Expressive/Components/Badge/README.md)、
 [NavigationRail / NavigationRailItem](src/Material3Expressive/Components/NavigationRail/README.md)、
 [FloatingActionButton / ExtendedFloatingActionButton / ToggleFloatingActionButton / FAB Menu](src/Material3Expressive/Components/FloatingActionButton/README.md)、

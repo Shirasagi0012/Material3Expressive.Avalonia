@@ -15,7 +15,9 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = System.Array.IndexOf(desktop.Args ?? [], "--secure-text-fields") >= 0
+            desktop.MainWindow = System.Array.IndexOf(desktop.Args ?? [], "--app-bars") >= 0
+                ? new AppBarDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--secure-text-fields") >= 0
                 ? new SecureTextFieldDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--text-fields") >= 0
                 ? new TextFieldDemo()

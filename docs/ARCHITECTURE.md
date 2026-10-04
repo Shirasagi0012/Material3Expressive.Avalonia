@@ -179,6 +179,15 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
 - `RippleAnimation` 同样拥有子作用域并可释放；启动 `AnimateAsync`，释放按压时调用 `Finish`。
   调用方需要观察任务并处理正常中断取消，取消和释放应清除等待。两类效果都不暴露手工 `Tick`。
 
+## AppBar 滚动与共享输入
+
+AppBarScrollScope 为屏幕 opt-in nested scroll 入口，协议使用物理 px/px/s，ScrollViewer Offset 保持
+DIP 或原生逻辑单位。只适配核验后的 Fluent 12.1.2 标准模板，保留 scrollbar parts、键盘和 BringIntoView；
+自定义模板由调用方选择公开 presenter 或显式 dispatch。嵌套、行为/模板替换、迁移与 detach 管理连接和取消。
+消费顺序和模板规则见 [AppBar](../src/Material3Expressive/Components/AppBar/README.md)。
+Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪器，供 Rail 与 AppBar 使用，
+不增加公开手势框架。惯性与吸附继续使用 ComposeAnimation。
+
 ## 当前覆盖与待确认项
 
 原生 ScrollBar 使用 CMP Foundation 的交互式滚动条外观，固定厚度与 hover / drag 颜色动画。

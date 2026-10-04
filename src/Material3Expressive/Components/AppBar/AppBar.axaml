@@ -1,0 +1,78 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:TopAppBar}" TargetType="m3:TopAppBar">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContainerColor}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:AppBarActionsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemContainerTheme">
+        <ControlTheme TargetType="ContentPresenter">
+          <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+          <Setter Property="VerticalContentAlignment" Value="Center" />
+        </ControlTheme>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:AppBarTopChrome x:Name="PART_Chrome"
+              BaseColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContainerColor}}"
+              ScrolledColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ScrolledContainerColor}}"
+              NavigationColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.NavigationIconColor}}"
+              TitleColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.TitleColor}}"
+              SubtitleColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SubtitleColor}}"
+              ActionColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ActionIconColor}}">
+            <m3:AppBarTopRow ClipToBounds="True">
+              <Border Padding="4,0,0,0">
+                <ContentPresenter Content="{TemplateBinding NavigationIcon}" ContentTemplate="{TemplateBinding NavigationIconTemplate}" />
+              </Border>
+              <m3:AppBarTitle>
+                <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              </m3:AppBarTitle>
+              <Border Padding="0,0,4,0">
+                <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </Border>
+            </m3:AppBarTopRow>
+            <m3:AppBarTopRow ClipToBounds="True">
+              <Border Padding="4,0,0,0" />
+              <m3:AppBarTitle>
+                <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              </m3:AppBarTitle>
+              <Border Padding="0,0,4,0" />
+            </m3:AppBarTopRow>
+          </m3:AppBarTopChrome>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:BottomAppBar}" TargetType="m3:BottomAppBar">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.BottomContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:AppBarActionsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemContainerTheme">
+        <ControlTheme TargetType="ContentPresenter">
+          <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+          <Setter Property="VerticalContentAlignment" Value="Center" />
+        </ControlTheme>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:AppBarBottomChrome x:Name="PART_Chrome" ClipToBounds="False">
+            <m3:MaterialSurface Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}"
+                                TonalElevation="{TemplateBinding TonalElevation}">
+              <m3:AppBarBottomRow>
+              <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              </m3:AppBarBottomRow>
+            </m3:MaterialSurface>
+          </m3:AppBarBottomChrome>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

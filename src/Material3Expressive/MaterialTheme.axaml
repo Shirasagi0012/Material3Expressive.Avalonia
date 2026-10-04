@@ -43,6 +43,7 @@
                     <m3:TextFieldTokenSource />
                     <m3:ChipTokenSource />
                     <m3:TabRowTokenSource />
+                    <m3:AppBarTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -50,6 +51,8 @@
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
     <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />
+    <StyleInclude Source="/Components/AppBar/AppBar.axaml" />
+    <StyleInclude Source="/Components/AppBar/AppBarScrollScope.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
     <StyleInclude Source="/Foundation/Overlays/Dialog.axaml" />
     <StyleInclude Source="/Components/Button/Button.axaml" />

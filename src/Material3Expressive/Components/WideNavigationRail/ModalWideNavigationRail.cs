@@ -14,6 +14,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Input;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Overlays;
 using Material3Expressive.Foundation.Tokens;
@@ -65,7 +66,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     private WideNavigationRailValue _anchorTarget;
     private IPointer? _pointer;
     private Point _down, _last;
-    private readonly RailVelocityTracker _velocity = new();
+    private readonly VelocityTracker _velocity = new();
     private Action? _restoreAfterDetach;
     internal bool IsMovingContent => _moving;
     internal bool HasFrameDrivenTarget => _samplingFling || _offsetDismissing;
