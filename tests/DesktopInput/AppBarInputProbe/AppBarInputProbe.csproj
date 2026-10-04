@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis><ApplicationManifest>../../../src/Material3Expressive.Catalog/app.manifest</ApplicationManifest></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" /><PackageReference Include="Avalonia.Themes.Fluent" />
+    <ProjectReference Include="../../../src/Material3Expressive/Material3Expressive.csproj" />
+  </ItemGroup>
+</Project>

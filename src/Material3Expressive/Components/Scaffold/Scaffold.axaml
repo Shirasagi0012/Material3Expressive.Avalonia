@@ -1,0 +1,33 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:Scaffold}" TargetType="m3:Scaffold">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Background}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}"
+                              TextElement.Foreground="{TemplateBinding Foreground}">
+            <!-- Tree order preserves top bar -> body -> snackbar -> FAB -> bottom bar traversal;
+                 ZIndex independently follows Scaffold.kt's painting order. -->
+            <m3:ScaffoldLayout x:Name="PART_Layout">
+              <ContentPresenter x:Name="PART_TopBar" ZIndex="1" Content="{TemplateBinding TopBar}" ContentTemplate="{TemplateBinding TopBarTemplate}"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              <ContentPresenter x:Name="PART_ContentPresenter" ZIndex="0" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+              <ContentPresenter x:Name="PART_SnackbarHost" ZIndex="2" Content="{TemplateBinding SnackbarHost}" ContentTemplate="{TemplateBinding SnackbarHostTemplate}"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              <ContentPresenter x:Name="PART_FloatingActionButton" ZIndex="4" Content="{TemplateBinding FloatingActionButton}" ContentTemplate="{TemplateBinding FloatingActionButtonTemplate}"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              <ContentPresenter x:Name="PART_BottomBar" ZIndex="3" Content="{TemplateBinding BottomBar}" ContentTemplate="{TemplateBinding BottomBarTemplate}"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+            </m3:ScaffoldLayout>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

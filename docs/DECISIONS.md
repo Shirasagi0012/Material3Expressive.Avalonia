@@ -3,6 +3,19 @@
 本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件 README 保存；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
+## Padding 消费向嵌套 Scaffold 传播
+
+决定：`MaterialWindowInsets.ConsumePadding` 为 Control 提供逻辑 start/top/end/bottom 的已应用 Padding 输入，
+按固定 Compose `consumeWindowInsets(PaddingValues)` 逐层累加，转换为物理边并向后代传播。
+输入不自动应用 Padding；Scaffold 按物理边扣除祖先消费量并钳制到零。
+原因：现有物理 Thickness 转换不包含祖先消费环境，不能独自保留 Scaffold 的嵌套 Insets 语义。
+做法：独立输入与内部继承的物理总量；提供者跟踪父环境、FlowDirection 与重挂载，非提供者直接继承。
+组件仍负责选择 Insets 和布局，宿主仍负责提供实际系统 Insets。
+范围：本次 Scaffold 及 PaddingValues 消费的共享入口，不扩展为 WindowInsets union、自动系统栏/IME
+或完整 Insets 框架，不改变既有 rail/bar 的行为。Scaffold 槽 API 与应用 Padding 的示例见
+[组件说明](../src/Material3Expressive/Components/Scaffold/README.md)。
+确认：2026-10-03，维护者对具体 API 和 C#/XAML 示例选择“采用推荐 API 和共享 ConsumePadding”。
+
 ## Dialog / Popup 的窗口内宿主与模态职责
 
 决定：组件各自持有 Avalonia Popup，显式使用 `ShouldUseOverlayLayer = true`，由原生 Popup 接入
@@ -149,6 +162,24 @@ fade / scale 在缺少 effect 或反向段中的默认 spring，以及 Transform
 `0.2.4-alpha`。最初对通道重置的诊断经 ResetNoSnap 源码复核后纠正，最终保留原规则。
 2026-10-04 合入主线时，维护者指定升级为已打包的 `0.2.6-alpha`；该版本保留上述修正，
 并包含 spring 时长按整数毫秒截断和 Transition 在所属线程唤醒的修正，继续通过本地 NuGet 接入。
+
+## AppBar 与原生滚动接入
+
+决定：公开 AppBarScrollScope 包围屏幕，栏与 Scope 使用同一个 ScrollBehavior。
+协议以物理像素和 px/s 表达消费量；pre 外到内、每层 top→bottom，post 内到外、每层 bottom→top。
+Scope 按最近祖先归属登记 ScrollViewer，嵌套作用域不重复适配；移出、detach、行为或模板替换及新输入
+取消旧惯性/吸附并释放登记。标准 Fluent 12.1.2 模板先核验身份，再仅在 Scope 内替换 presenter，
+保留原生滚动条、键盘、BringIntoView、水平滚动和 snap point 生命周期。
+模板适配用 SetCurrentValue 保留值来源和优先级，不通过较高优先级的 class trigger 遮蔽后加入的普通样式。
+自定义 Template/ControlTheme/Style 保留，显式 AppBarScrollContentPresenter 或 DispatchScroll /
+DispatchFlingAsync 接入协议；不以继承 ScrollViewer 代替真实消费和剩余速度的传递。
+
+垂直 touch/pen 用 GestureRecognizer/capture 接入，正文惯性与栏的 decay/snap 复用 ComposeAnimation。
+原 Rail 的 Lsq2 VelocityTracker 原样移入内部 Foundation/Input，由 Rail 与 AppBar 共用。
+没有新增通用输入框架或完整系统 insets 框架；标题和 Bottom 自定义内容的槽规则留在组件 README。
+12.1.2 的 inertia-starting 事件构造使用局部 UnsafeAccessor，升级 Avalonia 时须复核。
+确认：2026-10-04，维护者采用修订后的 AppBarScrollScope 及槽规则，要求保留自定义模板、嵌套和生命周期，
+并分别验证组件 parity 与真实桌面输入集成。
 
 ## 本次保留 Tween / Bezier 精度差异
 

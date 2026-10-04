@@ -1,8 +1,8 @@
-namespace Material3Expressive.Components;
+namespace Material3Expressive.Foundation.Input;
 
 // Fixed Compose Desktop Lsq2VelocityTracker / VelocityTracker1D (non-differential).
-// Local to the modal draggable; no second public interaction or animation system.
-internal sealed class RailVelocityTracker
+// Shared by Material draggable and scrollable hosts; input positions retain their caller units.
+internal sealed class VelocityTracker
 {
     private readonly (ulong Time, float Position)?[] _samples = new (ulong, float)?[20];
     private int _index;

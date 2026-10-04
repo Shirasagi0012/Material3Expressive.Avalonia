@@ -1,0 +1,31 @@
+<!-- Avalonia Fluent ScrollViewer template at 12.1.2, with the opt-in presenter substituted.
+     Copyright Avalonia contributors, MIT License. ScrollBar parts, bindings and separator stay native. -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTemplate x:Key="AppBarStandardScrollViewerTemplate" TargetType="ScrollViewer">
+      <Grid ColumnDefinitions="*,Auto" RowDefinitions="*,Auto">
+        <m3:AppBarScrollContentPresenter Name="PART_ContentPresenter" Grid.Row="0" Grid.Column="0"
+          Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+          HorizontalSnapPointsType="{TemplateBinding HorizontalSnapPointsType}" VerticalSnapPointsType="{TemplateBinding VerticalSnapPointsType}"
+          HorizontalSnapPointsAlignment="{TemplateBinding HorizontalSnapPointsAlignment}" VerticalSnapPointsAlignment="{TemplateBinding VerticalSnapPointsAlignment}"
+          ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
+          <m3:AppBarScrollContentPresenter.GestureRecognizers>
+            <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+              CanVerticallyScroll="False"
+              IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
+              Offset="{Binding Offset, ElementName=PART_ContentPresenter}" Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+              Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
+          </m3:AppBarScrollContentPresenter.GestureRecognizers>
+        </m3:AppBarScrollContentPresenter>
+        <ScrollBar Name="PART_HorizontalScrollBar" Orientation="Horizontal" Grid.Row="1" />
+        <ScrollBar Name="PART_VerticalScrollBar" Orientation="Vertical" Grid.Column="1" />
+        <Panel Name="PART_ScrollBarsSeparator" Grid.Row="1" Grid.Column="1"
+               Background="{DynamicResource ScrollViewerScrollBarsSeparatorBackground}" Opacity="0">
+          <Panel.Transitions><Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.1" /></Transitions></Panel.Transitions>
+        </Panel>
+      </Grid>
+    </ControlTemplate>
+  </Styles.Resources>
+</Styles>

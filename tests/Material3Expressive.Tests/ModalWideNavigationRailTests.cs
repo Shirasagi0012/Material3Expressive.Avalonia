@@ -253,7 +253,7 @@ public class ModalWideNavigationRailTests
     [Fact]
     public void DesktopVelocity_UsesLeastSquaresAndStoppedPointerWindow()
     {
-        var tracker = new RailVelocityTracker(); tracker.Add(0, 100); tracker.Add(16, 84); tracker.Add(32, 68);
+        var tracker = new Material3Expressive.Foundation.Input.VelocityTracker(); tracker.Add(0, 100); tracker.Add(16, 84); tracker.Add(32, 68);
         Assert.InRange(tracker.Calculate(32), -1000.1, -999.9);
         Assert.Equal(0, tracker.Calculate(73));
         tracker.Reset(); tracker.Add(0, 100); tracker.Add(16, 116);

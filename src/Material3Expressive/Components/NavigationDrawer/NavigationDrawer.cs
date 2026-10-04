@@ -12,6 +12,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
+using Material3Expressive.Foundation.Input;
 
 namespace Material3Expressive.Components;
 
@@ -30,7 +31,7 @@ public abstract class NavigationDrawer : ContentControl
     private IPointer? _pointer;
     private Point _down, _last;
     private bool _dragging;
-    private readonly RailVelocityTracker _velocity = new();
+    private readonly VelocityTracker _velocity = new();
     private VisualAnimationScope? _focusScope;
     private int _focusGeneration;
 

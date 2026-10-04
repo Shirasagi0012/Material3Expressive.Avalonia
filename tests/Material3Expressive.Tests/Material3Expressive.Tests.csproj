@@ -5,6 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
+        <!-- Exercise the pinned platform raw-touch route, not synthetic scroll notifications. -->
+        <AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis>
     </PropertyGroup>
 
     <ItemGroup>

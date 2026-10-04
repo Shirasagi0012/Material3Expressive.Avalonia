@@ -48,12 +48,16 @@
                     <m3:CardTokenSource />
                     <m3:SegmentedButtonTokenSource />
                     <m3:ProgressIndicatorTokenSource />
+                    <m3:AppBarTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Styles.Resources>
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
+    <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />
+    <StyleInclude Source="/Components/AppBar/AppBar.axaml" />
+    <StyleInclude Source="/Components/AppBar/AppBarScrollScope.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
     <StyleInclude Source="/Foundation/Overlays/Dialog.axaml" />
     <StyleInclude Source="/Components/AlertDialog/AlertDialog.axaml" />

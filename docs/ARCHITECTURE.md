@@ -8,7 +8,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Badge、BadgedBox、Chip、SegmentedButton、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Chip / SegmentedButton / rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Scaffold、Badge、BadgedBox、Chip、SegmentedButton、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Scaffold / Chip / SegmentedButton / rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
@@ -125,6 +125,12 @@ NavigationBar 的等权布局与动画见
 [组件说明](../src/Material3Expressive/Components/NavigationBar/README.md)。
 contentColorFor 绑定及物理 Insets 的共享迁移于 2026-10-03 随 NavigationBar 方案确认，原有公共入口与行为不变。
 
+[Scaffold](../src/Material3Expressive/Components/Scaffold/README.md) 组合五个内容槽，发布逻辑 ContentPadding，
+由调用方应用。Foundation/Rendering 的 `MaterialWindowInsets.ConsumePadding` 记录已应用的逻辑
+Padding，逐层累加并传播物理消费量；Scaffold 从宿主的 ContentWindowInsets 逐边扣除祖先消费。
+该附加属性不应用布局 Padding，不是完整系统 Insets API，也没有改变既有 rail/bar 的 Insets 行为。
+细节和适用范围见[共享决定](DECISIONS.md#padding-消费向嵌套-scaffold-传播)。
+
 Button elevation 的当前实现可作为职责示例：`ButtonElevation` 保存状态高度，
 每个按钮自己的 `ButtonElevationController` 选择并动画化目标；Surface 的 `ShadowElevation` 消费当前绘制高度。
 可共享配置，但不能共享按钮的运行状态。动画优先级绑定在清理后恢复原属性值，不能破坏原有样式与绑定。
@@ -179,6 +185,15 @@ detach、模板替换与重新附着需要处理旧作用域及绑定的生命�
   反向或第三目标切换也不能暴露暂时不一致的形状。
 - `RippleAnimation` 同样拥有子作用域并可释放；启动 `AnimateAsync`，释放按压时调用 `Finish`。
   调用方需要观察任务并处理正常中断取消，取消和释放应清除等待。两类效果都不暴露手工 `Tick`。
+
+## AppBar 滚动与共享输入
+
+AppBarScrollScope 为屏幕 opt-in nested scroll 入口，协议使用物理 px/px/s，ScrollViewer Offset 保持
+DIP 或原生逻辑单位。只适配核验后的 Fluent 12.1.2 标准模板，保留 scrollbar parts、键盘和 BringIntoView；
+自定义模板由调用方选择公开 presenter 或显式 dispatch。嵌套、行为/模板替换、迁移与 detach 管理连接和取消。
+消费顺序和模板规则见 [AppBar](../src/Material3Expressive/Components/AppBar/README.md)。
+Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪器，供 Rail、NavigationDrawer 与 AppBar 使用，
+不增加公开手势框架。惯性与吸附继续使用 ComposeAnimation。
 
 ## 当前覆盖与待确认项
 
