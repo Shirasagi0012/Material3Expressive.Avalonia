@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.TooltipDemo" Width="640" Height="520" Title="Tooltips">
+  <StackPanel Margin="40" Spacing="24">
+    <TextBlock Text="ToolTip.Tip" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <StackPanel Orientation="Horizontal" Spacing="24">
+      <Button x:Name="NativeTipAnchor" Content="Save" ToolTip.Tip="Save changes" />
+      <Button x:Name="NativeMultilineAnchor" Content="Sync">
+        <ToolTip.Tip>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="Sync this project" FontWeight="SemiBold" /><LineBreak />
+            <Run Text="Includes local changes that have not been uploaded." />
+          </TextBlock>
+        </ToolTip.Tip>
+      </Button>
+      <Button Content="Below" ToolTip.Tip="Custom placement" ToolTip.Placement="Bottom" ToolTip.VerticalOffset="4" />
+    </StackPanel>
+    <TextBlock Text="TooltipBox + PlainTooltip" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="Hover or focus an anchor. Escape dismisses its tooltip." TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="32">
+      <m3:TooltipBox AnchorPosition="Above">
+        <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="Add to your collection" /></m3:TooltipBox.Tooltip>
+        <m3:IconButton Symbol="Add" />
+      </m3:TooltipBox>
+      <m3:TooltipBox AnchorPosition="Below">
+        <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="Save changes" /></m3:TooltipBox.Tooltip>
+        <Button Content="Save" />
+      </m3:TooltipBox>
+      <m3:TooltipBox AnchorPosition="End">
+        <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="Settings" /></m3:TooltipBox.Tooltip>
+        <m3:IconButton Symbol="Settings" />
+      </m3:TooltipBox>
+    </StackPanel>
+    <m3:TooltipBox x:Name="Programmatic" EnableUserInput="False">
+      <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="This tooltip was shown from code" /></m3:TooltipBox.Tooltip>
+      <Button Content="Show tooltip" Click="OnShow" />
+    </m3:TooltipBox>
+  </StackPanel>
+</Window>

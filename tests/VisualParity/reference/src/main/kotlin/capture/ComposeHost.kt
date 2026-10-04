@@ -52,9 +52,19 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platf
         writer.record(timeUs,"frame","origin=1000000us; one waiter batch",buildJsonObject { put("frameTimeUs",frameTimeUs);put("originUs",1_000_000) }); draw()
     }
     fun draw() {
-        Snapshot.sendApplyNotifications(); scheduler.runCurrent(); scene.measureAndLayout()
-        surface.canvas.clear(Color.TRANSPARENT); scene.draw(surface.canvas.asComposeCanvas()); scheduler.runCurrent()
-        writer.record(timeUs,"draw","snapshot/scheduler/layout/render; no animation frame")
+        repeat(20) {
+            Snapshot.sendApplyNotifications(); scheduler.runCurrent(); scene.measureAndLayout()
+            surface.canvas.clear(Color.TRANSPARENT); scene.draw(surface.canvas.asComposeCanvas()); scheduler.runCurrent()
+            // Popup.onPlaced writes its anchor bounds during layout. Notify the
+            // snapshot observers before deciding whether that draw has settled;
+            // the write can request another popup measure/layout in this turn.
+            Snapshot.sendApplyNotifications(); scheduler.runCurrent()
+            if(!scene.hasPendingMeasureOrLayout && !scene.hasPendingDraw) {
+                writer.record(timeUs,"draw","snapshot/scheduler/layout/render settled; no animation frame")
+                return
+            }
+        }
+        error("Compose measure/layout/draw did not finish within 20 render turns.")
     }
     fun input(operation:String, position:Offset) {
         if(operation=="down") pressed=true

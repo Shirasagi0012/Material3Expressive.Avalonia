@@ -149,6 +149,11 @@ Avalonia 宿主的 `Draw()` 会处理 Dispatcher 工作以及待提交、待渲�
 Avalonia 12.1.2 和 UI 线程渲染模式，局部读取 `Compositor` 的内部批次字段；
 升级 Avalonia 或改变渲染线程模式时须重新核验，字段结构不匹配会报错。
 
+Compose 宿主的 `draw()` 在绘制后提交 snapshot 通知，再检查公开的
+`hasPendingMeasureOrLayout` / `hasPendingDraw`；存在失效工作时继续布局和绘制。
+例如 Popup 的 `onPlaced` 在布局期间写入锚点状态，会请求提示层重测。
+最多处理 20 轮，未完成则报错；不推进动画帧，也不在 Snapshot 中补绘制。
+
 ```powershell
 # 校验内部 Compose 采集包及当前基线。
 ./tests/VisualParity/parity.ps1 verify-reference --directory <compose-capture-bundle>

@@ -51,6 +51,7 @@
                     <m3:ProgressIndicatorTokenSource />
                     <m3:AppBarTokenSource />
                     <m3:LoadingIndicatorTokenSource />
+                    <m3:PlainTooltipTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -80,6 +81,7 @@
     <StyleInclude Source="/Components/RadioButton/RadioButton.axaml" />
     <StyleInclude Source="/Components/Switch/Switch.axaml" />
     <StyleInclude Source="/Components/Badge/Badge.axaml" />
+    <StyleInclude Source="/Components/Tooltip/Tooltip.axaml" />
     <StyleInclude Source="/Components/FloatingActionButton/FloatingActionButton.axaml" />
     <StyleInclude Source="/Components/FloatingToolbar/FloatingToolbar.axaml" />
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
