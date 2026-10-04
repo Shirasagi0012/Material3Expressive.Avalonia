@@ -14,6 +14,7 @@
 [TabRow / Tab 及原生 TabControl 顶部水平主题](src/Material3Expressive/Components/TabRow/README.md)、
 [原生 Slider 水平/垂直主题 / RangeSlider](src/Material3Expressive/Components/Slider/README.md)、
 [Linear / Circular Progress Indicator 及波浪、确定与不确定模式](src/Material3Expressive/Components/ProgressIndicator/README.md)、
+[LoadingIndicator / ContainedLoadingIndicator](src/Material3Expressive/Components/LoadingIndicator/README.md)、
 [原生 ScrollBar 的水平/垂直 Material 主题](src/Material3Expressive/Components/ScrollBar/README.md)、
 [原生 CheckBox 的两态/三态 Material 模板](src/Material3Expressive/Components/CheckBox/README.md)、
 [原生 RadioButton 的 Material 模板](src/Material3Expressive/Components/RadioButton/README.md)、

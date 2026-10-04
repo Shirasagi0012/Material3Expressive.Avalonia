@@ -1,0 +1,16 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Style Selector=":is(m3|LoadingIndicatorBase)">
+        <Setter Property="ContainerWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LoadingIndicator.ContainerWidth}}" />
+        <Setter Property="ContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LoadingIndicator.ContainerHeight}}" />
+        <Setter Property="IndicatorSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LoadingIndicator.ActiveSize}}" />
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LoadingIndicator.ContainerShape}}" />
+    </Style>
+    <Style Selector="m3|LoadingIndicator">
+        <Setter Property="Color" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LoadingIndicator.ActiveIndicatorColor}}" />
+    </Style>
+    <Style Selector="m3|ContainedLoadingIndicator">
+        <Setter Property="IndicatorColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LoadingIndicator.ContainedActiveColor}}" />
+        <Setter Property="ContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+LoadingIndicator.ContainedContainerColor}}" />
+    </Style>
+</Styles>

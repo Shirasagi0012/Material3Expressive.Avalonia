@@ -49,6 +49,7 @@
                     <m3:SegmentedButtonTokenSource />
                     <m3:ProgressIndicatorTokenSource />
                     <m3:AppBarTokenSource />
+                    <m3:LoadingIndicatorTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -86,4 +87,5 @@
     <StyleInclude Source="/Components/Card/Card.axaml" />
     <StyleInclude Source="/Components/SegmentedButton/SegmentedButton.axaml" />
     <StyleInclude Source="/Components/ProgressIndicator/ProgressIndicator.axaml" />
+    <StyleInclude Source="/Components/LoadingIndicator/LoadingIndicator.axaml" />
 </Styles>
