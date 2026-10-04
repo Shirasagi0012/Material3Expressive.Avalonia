@@ -17,7 +17,9 @@ public static class EnvironmentInfo
             ["density"] = AvaloniaHost.RenderScale.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["fontScale"] = "1",
             ["colorSpace"] = "sRGB",
-            ["fontSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto.ttf")),
+            ["fontSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Regular.ttf")),
+            ["fontMediumSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf")),
+            ["fontBoldSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf")),
             ["symbolSha256"] =
                 ParityJson.Hash(Path.Combine(root, "modules/MaterialSymbols/assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf")),
             ["avalonia"] = typeof(Application).Assembly.GetName().Version!.ToString(),

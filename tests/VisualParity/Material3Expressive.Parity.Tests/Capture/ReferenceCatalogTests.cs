@@ -20,7 +20,8 @@ public class ReferenceCatalogTests
             "tests/VisualParity/reference/gradle.properties", "tests/VisualParity/reference/gradle.lockfile",
             "tests/VisualParity/reference/gradle/verification-metadata.xml",
             "tests/VisualParity/reference/gradle/wrapper/gradle-wrapper.properties",
-            "docs/upstream-baseline.json", "modules/MaterialTypography.Roboto/Assets/Roboto.ttf",
+            "docs/upstream-baseline.json", "modules/MaterialTypography.Roboto/Assets/Roboto-Regular.ttf",
+            "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf", "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf",
             "modules/MaterialSymbols/assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf"
         };
         foreach (var path in paths)
@@ -36,6 +37,13 @@ public class ReferenceCatalogTests
         File.WriteAllText(Path.Combine(root, paths[0]), "original");
         File.AppendAllText(Path.Combine(root, paths[1]), "producer change");
         Assert.NotEqual(first, ReferenceCatalog.ProducerFingerprint(root));
+        File.WriteAllText(Path.Combine(root, paths[1]), "original");
+        foreach (var path in paths.Where(p => p.EndsWith(".ttf") && p.Contains("MaterialTypography.Roboto")))
+        {
+            File.AppendAllText(Path.Combine(root, path), "font change");
+            Assert.NotEqual(first, ReferenceCatalog.ProducerFingerprint(root));
+            File.WriteAllText(Path.Combine(root, path), "original");
+        }
     }
 
     [Fact]

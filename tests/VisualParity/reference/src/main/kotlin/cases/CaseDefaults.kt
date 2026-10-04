@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable class EmptyConfig
 object CaseDefaults {
-    fun font(w:CaptureWriter)=FontFamily(listOf(400,500,700).map { weight -> Font(File(w.root,"modules/MaterialTypography.Roboto/Assets/Roboto.ttf"),
-        weight=FontWeight(weight),variationSettings=FontVariation.Settings(FontVariation.weight(weight))) })
+    fun font(w:CaptureWriter)=FontFamily(listOf(400 to "Regular",500 to "Medium",700 to "Bold").map { (weight, style) ->
+        Font(File(w.root,"modules/MaterialTypography.Roboto/Assets/Roboto-$style.ttf"),weight=FontWeight(weight)) })
     @Composable fun Theme(writer:CaptureWriter, content:@Composable ()->Unit) {
         val family=remember { font(writer) }
         val type=Typography().let { it.copy(labelLarge=it.labelLarge.copy(fontFamily=family)) }
