@@ -102,6 +102,6 @@ Catalog 入口为 [MainWindow.axaml](../../../Material3Expressive.Catalog/MainWi
 旧完整比较重新采集 Avalonia 与全部 Compose 参考，新增场景做了双端重复捕获与被动截图自检；
 不将新增场景的稳定结论扩大为完整矩阵均做过同样自检。
 
-本次文档整理没有重新运行这些测试。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
+上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/ShortNavigationBar/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。

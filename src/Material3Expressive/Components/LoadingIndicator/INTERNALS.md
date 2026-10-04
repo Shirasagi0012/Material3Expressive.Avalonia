@@ -73,7 +73,7 @@ automation、模式/列表变更、Token、XAML、延时/帧与清理。
 旧合并记录中结构化事实相等、raster 严格相等或在既定容差内，重复与额外被动截图均稳定。
 当时依赖升级还回归圆/线波浪循环、AppBar 吸附中断、SegmentedButton 反向四个代表场景，
 并非这些组件的全量重验。详细历史数字及环境见固定提交，未跟踪产物不作为永久链接。
-本次文档拆分未重跑：
+以下为复现入口，实际结果需以新生成报告为准：
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~LoadingIndicatorTests"

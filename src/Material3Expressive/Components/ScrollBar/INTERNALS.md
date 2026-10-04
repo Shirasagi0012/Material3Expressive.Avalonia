@@ -47,4 +47,4 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ```
 
 真实桌面、触屏/触控笔与屏幕阅读器未经上述 headless 检查证明。测试来源和历史确认范围保留，
-本次文档拆分不新增设计批准，也不把未执行的测试写为当前通过。
+后续结果需按实际执行范围报告，不能从测试源码或历史确认推定当前通过。

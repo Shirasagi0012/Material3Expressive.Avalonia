@@ -22,7 +22,7 @@ Chip 适合紧凑的操作、建议、筛选和已输入项目。库提供 `Assi
 ```
 
 后续片段使用相同命名空间。Assist/Suggestion/Filter 以 `IsElevated` 选择 Elevated 外观，
-Input 没有此入口。默认容器高32、交互布局最小高48 DIP，圆角8 DIP，标签使用 LabelLarge。
+Input 没有此入口。默认容器高 32、交互布局最小高 48 DIP，圆角 8 DIP，标签使用 LabelLarge。
 
 ## 选择、命令与事件
 
@@ -34,17 +34,17 @@ Filter/Input 的 `IsSelected` 由应用管理，点击、命令或 automation To
                Command="{Binding ToggleUnreadCommand}" />
 ```
 
-假设 DataContext 提供 IsUnread 和负责更改它的 ICommand ToggleUnreadCommand；
-编译绑定需声明对应 x:DataType。事件方式可使用 `Click="OnFilterClick"`，并由视图处理器写回 IsSelected。
-仅绑定 IsSelected 而不处理动作不会自动切换。
+假设 `DataContext` 提供 `IsUnread` 和负责更改它的 `ICommand ToggleUnreadCommand`；
+编译绑定需声明对应 `x:DataType`。事件方式可使用 `Click="OnFilterClick"`，并由视图处理器写回 `IsSelected`。
+仅绑定 `IsSelected` 而不处理动作不会自动切换。
 Filter/Input 提供 CheckBox/Toggle 自动化，选中值变化会通知自动化客户端。
-Enter 按下激活，Space 沿用原生 ClickMode；`IsEnabled="False"` 禁止输入并显示禁用状态。
+Enter 按下激活，`Space` 沿用原生 ClickMode；`IsEnabled="False"` 禁止输入并显示禁用状态。
 
 ## 标签、图标与头像
 
-`Content` / `ContentTemplate` 为标签，`LeadingIcon` / `TrailingIcon` 及对应 Template 为图标槽。
-Suggestion 不显示 trailing 槽。Input 另有 Avatar / AvatarTemplate，头像优先于 leading 图标，
-默认圆形裁剪，禁用时仅头像包装层应用0.38透明度。
+`Content` / `ContentTemplate` 为标签，`LeadingIcon` / `TrailingIcon` 及对应 `Template` 为图标槽。
+Suggestion 不显示 trailing 槽。Input 另有 `Avatar` / `AvatarTemplate`，头像优先于 leading 图标，
+默认圆形裁剪，禁用时仅头像包装层应用 0.38 透明度。
 
 ```xml
 <m3:InputChip Content="联系人">
@@ -57,7 +57,7 @@ Suggestion 不显示 trailing 槽。Input 另有 Avatar / AvatarTemplate，头�
 </m3:InputChip>
 ```
 
-图标/头像尺寸由内容决定，常用默认参考为18/24 DIP；不要将同一 Control 实例放进多个槽。
+图标/头像尺寸由内容决定，常用默认参考为 18/24 DIP；不要将同一 Control 实例放进多个槽。
 Trailing 仍属于整个 Chip 的点击区域，没有独立移除命令或事件；删除与选择动作由应用决定。
 Leading/trailing 先测量，标签使用剩余宽度；RTL 自动镜像布局。
 
@@ -77,15 +77,15 @@ Medium/Full/Small 圆角并带形状与槽动画：
 </m3:FilterChip>
 ```
 
-`ChipShapes.Shape` / SelectedShape / PressedShape 可分别覆盖圆角。
-`Colors` 的未指定槽继续跟随 Token；Background、Foreground、BorderBrush、BorderThickness、Padding
-的原生局部值/绑定优先于默认样式。不同图标与标签拥有各自颜色，不能把所有槽都视为单一 Foreground。
-`Spacing` 可用 ChipSpacing 定义逻辑前/后间距；null 使用固定入口的8 DIP，或形状入口按槽存在选择4/8 DIP。
-Input Padding 还随头像/图标组合调整。
+`ChipShapes.Shape` / `SelectedShape` / `PressedShape` 可分别覆盖圆角。
+`Colors` 的未指定槽继续跟随 Token；`Background`、`Foreground`、`BorderBrush`、`BorderThickness`、`Padding`
+的原生局部值/绑定优先于默认样式。不同图标与标签拥有各自颜色，不能把所有槽都视为单一 `Foreground`。
+`Spacing` 可用 `ChipSpacing` 定义逻辑前/后间距；null 使用固定入口的 8 DIP，或形状入口按槽存在选择 4/8 DIP。
+Input `Padding` 还随头像/图标组合调整。
 
-`Elevation=null` 使用当前变体默认高度；显式 ChipElevation 覆盖交互高度。需要完全无阴影时将
-Default/Pressed/Focused/Hovered/Dragged/Disabled 全设0（Dragged 的构造默认值为8）。
-平面 Filter 默认 hover elevation 为0，Elevated Filter 为3；需要恢复上游平面悬停高度可写：
+`Elevation=null` 使用当前变体默认高度；显式 `ChipElevation` 覆盖交互高度。需要完全无阴影时将
+`Default`/`Pressed`/`Focused`/`Hovered`/`Dragged`/`Disabled` 全设 0（`Dragged` 的构造默认值为 8）。
+平面 Filter 默认 hover elevation 为 0，Elevated Filter 为 3；需要恢复上游平面悬停高度可写：
 
 ```xml
 <m3:FilterChip Content="上游悬停高度">
@@ -95,12 +95,12 @@ Default/Pressed/Focused/Hovered/Dragged/Disabled 全设0（Dragged 的构造默�
 </m3:FilterChip>
 ```
 
-透明背景下恢复1 DIP阴影可能重新出现已观察到的 GPU 内部灰环，详见维护说明。
+透明背景下恢复 1 DIP 阴影可能重新出现已观察到的 GPU 内部灰环，详见维护说明。
 
 ## 使用边界
 
-Selectable Chip 默认最大宽度1000 DIP，显式 Width/MinWidth 保留调用方约束。
-当前 Shapes 仅支持圆角矩形；任意路径/切角 Shape、通用 Compose Arrangement、外部
+Selectable Chip 默认最大宽度 1000 DIP，显式 `Width`/`MinWidth` 保留调用方约束。
+当前 `Shapes` 仅支持圆角矩形；任意路径/切角 `Shape`、通用 Compose Arrangement、外部
 MutableInteractionSource 和可配置 inset focus ring 尚未实现。
 精度、阴影与原生键盘的已知差异不等于完整视觉一致；真实文字/字体、系统屏幕阅读器和桌面手工体验
 未由无字形 headless 用例证明。

@@ -45,7 +45,7 @@ Skia 使用 Float 物理像素运算；Surface 与共享控制器提供无界、
 2026-10-03，维护者选择“采用原生模板并接受上述范围（推荐）”：保留原生状态更新、组互斥、
 Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，与 Compose 仅回调并由应用写回不同。
 使用原生主题复用输入与自动化，不额外建立相似子类；接受范围不包含其他视觉差异。
-同时明确本次不实现完全等价的 `onClick=null` 模式，原生选择自动化不能靠禁用普通输入移除。
+同时明确该阶段不实现完全等价的 `onClick=null` 模式，原生选择自动化不能靠禁用普通输入移除。
 
 另一个已确认视觉适配是消除负半径闪点。固定 Skiko `0.152.0-alpha02` 的 drawCircle 转到 drawOval，
 负半径仍可通过排序后椭圆绘出中心点，使取消选择的尾段圆点消失后又闪现。
@@ -71,6 +71,8 @@ Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，�
 
 ## 验证入口
 
+- [SelectionControlHitTests.cs](../../../../tests/Material3Expressive.Tests/SelectionControlHitTests.cs)：
+  有内容整行的指示器留白、间隙、Padding 命中；LTR/RTL、内容模板、禁用、取消及动态增删 Content
 - [控件测试](../../../../tests/Material3Expressive.Tests/RadioButtonTests.cs)：分组、绑定/事件顺序、自动化、内容/RTL、禁用颜色独立规则、尾段 spring、正常/慢放闪点像素与 idle/模板生命周期。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/RadioButtonCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/RadioButtonCases.kt)
@@ -86,4 +88,5 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 `self-test` 重新采集双端并检查重复捕获及额外被动截图的稳定性；执行完成、稳定、
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
-不得修改门禁来隐藏差异。上述命令是复现入口，不表示本次文档整理已执行它们。
+不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
+分别说明执行错误、双端差异、稳定性及未覆盖项。

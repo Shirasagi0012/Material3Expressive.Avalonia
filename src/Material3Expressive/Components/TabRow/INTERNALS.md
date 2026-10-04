@@ -110,6 +110,6 @@ NativeTabControl_DirectionalFocusRetainsNativeSelection、ContentResize_ReplaysR
 ScrollableRow_UserInputInterruptsCenteringAndDetachCancelsFrames 与真实多行基线。
 双端覆盖四种 Row、两入口、各内容布局、RTL/主题/颜色/内容变化、窄/受限尺寸、模板槽、反向与初始居中。
 
-本次文档整理没有重新运行这些测试。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
+上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/TabRow/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。

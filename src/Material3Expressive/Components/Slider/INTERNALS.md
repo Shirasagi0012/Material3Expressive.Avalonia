@@ -98,4 +98,5 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 `self-test` 重新采集双端并检查重复捕获及额外被动截图的稳定性；执行完成、稳定、
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
-不得修改门禁来隐藏差异。上述命令是复现入口，不表示本次文档整理已执行它们。
+不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
+分别说明执行错误、双端差异、稳定性及未覆盖项。

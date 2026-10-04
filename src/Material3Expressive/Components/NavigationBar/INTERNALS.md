@@ -94,6 +94,6 @@ Catalog 入口为 [MainWindow.axaml](../../../Material3Expressive.Catalog/MainWi
 动态用例覆盖选择反向、两种 motion、全矩形 hover、按压/取消/快点、禁用、换主题、键盘和非标准图标按压映射。
 两端调用真实组件，使用同样事件顺序与连续 16ms 帧网格；几何标签/图标用于隔离字体栅格。
 
-本次文档整理没有重新运行这些测试。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
+上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/NavigationBar/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。

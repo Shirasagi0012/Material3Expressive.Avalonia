@@ -67,4 +67,4 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ```
 
 还应根据所改共享能力选择 Button、Chip、Toggle/Split 等调用方回归。测试源码是可复查入口，
-不是本次文档整理已执行全部渲染检查的声明；双端运行与比较规则见 [VisualParity](../../../../tests/VisualParity/README.md)。
+不独自证明全部渲染检查通过；双端运行与比较规则见 [VisualParity](../../../../tests/VisualParity/README.md)。

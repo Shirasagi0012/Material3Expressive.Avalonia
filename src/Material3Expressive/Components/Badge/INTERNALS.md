@@ -84,7 +84,7 @@ FirstBaseline/LastBaseline 的缺口，不新增全库 alignment-line 机制。�
 
 旧记录的结构化事实和原始 4× raster 均精确相等，双端重复及额外被动截图稳定；
 它使用非文字夹具，不能据此声明字形一致。历史统计与环境见固定提交，原来的未跟踪产物链接
-改由正式测试复现。本次文档拆分未重跑：
+改由正式测试复现。以下为复现入口，实际结果需以新生成报告为准：
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~BadgeTests"

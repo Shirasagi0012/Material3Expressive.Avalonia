@@ -36,11 +36,11 @@
 再次点击已选项不会取消选择，`IsThreeState` 不改变这一单选行为。
 状态更新和组互斥发生在 `Click` / `Command` 前；不是仅向应用发出选择请求。
 也可设置 `Click="OnDeliveryClick"`，并在视图 code-behind 实现处理器。
-Enter 按下激活，Space 默认松开激活；`IsEnabled="False"` 阻止激活并使用禁用颜色。
+Enter 按下激活，`Space` 默认松开激活；`IsEnabled="False"` 阻止激活并使用禁用颜色。
 
 `Content` / `ContentTemplate` 支持文本和任意内容，默认 BodyLarge，保留内容对齐、access key 和 RTL。
-标签位于 48 DIP 指示器槽旁，默认间距为 `Padding="8,0,0,0"`；无 Content 时忽略这层 Padding。
-有内容时整行含间隙和 Padding 参与命中；无内容时默认鼠标命中为 24×24 DIP。
+标签位于 48 DIP 指示器槽旁，默认间距为 `Padding="8,0,0,0"`；无 `Content` 时忽略这层 `Padding`。
+有内容时整行含间隙和 `Padding` 参与命中；无内容时默认鼠标命中为 24×24 DIP。
 48×48 DIP 是默认布局空间，不是扩大鼠标或触屏命中区域的承诺。
 
 ## 调整颜色

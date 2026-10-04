@@ -49,6 +49,8 @@ Automation Invoke 表达锚点的长按显示，提示提供 ToolTip / Assertive
 
 `IsVisible = CurrentState || TargetState`，退出期间保留 Popup，Transition 真正完成后移除。
 更换状态或卸载取消旧等待、输入、帧与动画作用域，不影响其他 Box。
+缩放目标在 0.8/1 之间，使用 SpatialFast；透明度目标在 0/1 之间，使用 EffectsFast。
+规格从动态 Motion Token 解析，缺省回退 Expressive.FastSpatial/FastEffects，Float 可见阈值为 .01。
 缩放和透明度作用于同一容器，父级开启整层透明度合成；局部解除 Popup 宿主裁剪以保留
 Core clippingEnabled=false 的阴影，不应为了匹配截图裁掉显式 shadow elevation。
 
@@ -89,7 +91,7 @@ Start/End 按 FlowDirection 解析。变换锚点仍使用 Core 的 `positionInW
 旧合并记录中三个 suite 结构化事实均相等、重复稳定；Plain/native 静态图匹配，TooltipBox
 保留上述时序造成的 different。代表性共享 draw 回归涉及 AlertDialog 中断、FloatingToolbar
 反向、LoadingIndicator 稀疏帧、AppBar 中断，不等于这些族的全量复验。
-详细历史统计见固定提交；未跟踪的 artifacts 不作为当前可访问证据。本次文档拆分未重跑：
+详细历史统计见固定提交；未跟踪的 artifacts 不作为当前可访问证据。以下为复现入口，实际结果需以新生成报告为准：
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~Tooltip|FullyQualifiedName~ToolTip"

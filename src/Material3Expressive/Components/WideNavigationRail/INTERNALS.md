@@ -135,7 +135,7 @@ Indicator 的 Avalonia SaveLayer alpha 合成与固定 Skiko ModulateAlpha 每�
 旧 125% 布局输入回放取维护者的 498 次观察，将 Home 收起时 `211 → 212 → 211 → 212 px`
 变为 `211.699 → 211.656 → 211.607 → 211.556 px`，终点三项图标仍是 `207 / 292 / 377 px`。
 这是实际产品布局的输入回放，不能替代真实桌面观感核验。维护者要求改后桌面视觉由其人工核验，
-本次文档没有新的人工验收证据。
+后续验收需补充相应的真实桌面观察，不能从回放数字推定完成。
 
 PopupOverlayLayer 迁移的旧回归重新采集同矩阵并做重复自检，与冻结的迁移前 Avalonia 在读数和 PNG 上一致，
 既有 Compose different 保留；测试宿主补齐 VisualLayerManager / Background，不改布局、时间线和容差。
@@ -189,6 +189,6 @@ Modal 增加 HideOnCollapse、scrim、Escape、隐藏拖动/快速释放；参�
 位置通过公开 LayoutCoordinates 链读取，避免固定 Core RectManager 缓存与当前绘制暂时不一致。
 这些用例调用真实组件、以几何内容隔离字体栅格；仍应分别读取静态端点和动态预期 different。
 
-本次文档整理没有重新运行这些测试。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
+上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/WideNavigationRail/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。

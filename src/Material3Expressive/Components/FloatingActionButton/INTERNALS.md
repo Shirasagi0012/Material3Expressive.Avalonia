@@ -72,7 +72,7 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 run --family floating-action-button --require-match
 ```
 
-拆分前自检记录中 FAB 场景重复采集稳定且位于既定 raster 容差内；这是旧基线环境记录，不是本次执行结果。
+拆分前自检记录中 FAB 场景重复采集稳定且位于既定 raster 容差内；这是旧基线环境记录，不自动适用于后续版本。
 附加 `button.dynamic.hover.elevated` 的 Double/Float elevation 精确读数仍有差异，不能算该 Button 用例通过。
 Raster withinTolerance 不等于原始像素相同；几何内容不评价文字栅格，headless 不替代真实桌面验收。
 结果解释见 [VisualParity](../../../../tests/VisualParity/README.md)。

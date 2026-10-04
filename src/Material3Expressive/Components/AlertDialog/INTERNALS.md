@@ -8,14 +8,14 @@ AlertDialog 内容与按钮布局，以及 Foundation Dialog 模板合约。
 固定版本以 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：AndroidX
 `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 `1.5.0-alpha27`）为默认逻辑依据，
 Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0-alpha01`）为桌面分支依据。
-下述 Material3 文件路径均相对于 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`。
+下述 Material3 commonMain 文件路径相对于 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`。
 
 | 上游文件 / 关键符号 | 本地职责 |
 | --- | --- |
 | `AlertDialog.kt`：`BasicAlertDialog`、`AlertDialogContent`、`AlertDialogFlowRow` | [BasicAlertDialog.cs](BasicAlertDialog.cs)、[AlertDialog.cs](AlertDialog.cs)、[AlertDialogLayout.cs](AlertDialogLayout.cs) 的尺寸、槽存在性和布局 |
 | `tokens/DialogTokens.kt` | [DialogTokenSource.cs](DialogTokenSource.cs)、[AlertDialog.axaml](AlertDialog.axaml) 的 Surface、颜色及文字环境 |
-| Core `skikoMain/.../AlertDialog.skiko.kt` 的 Material 入口 | 保留与 AndroidX 相同的 Material 内容逻辑，宿主复用 Foundation |
-| Core UI `Dialog.skiko.kt`、`ComposeSceneLayerMeasurePolicy.kt`，桌面 `BackNavigationEventInput` | [Foundation Dialog](../../Foundation/Overlays/Dialog.cs)：Popup、平台宽度、模态、关闭请求及进出场 |
+| Core [AlertDialog.skiko.kt](https://github.com/JetBrains/compose-multiplatform-core/blob/a9e47e8aa04c95cfe572ab4297c770f3cbfb234e/compose/material3/material3/src/skikoMain/kotlin/androidx/compose/material3/AlertDialog.skiko.kt) 的 Material 入口 | 保留与 AndroidX 相同的 Material 内容逻辑，宿主复用 Foundation |
+| Core UI [Dialog.skiko.kt](https://github.com/JetBrains/compose-multiplatform-core/blob/a9e47e8aa04c95cfe572ab4297c770f3cbfb234e/compose/ui/ui/src/skikoMain/kotlin/androidx/compose/ui/window/Dialog.skiko.kt)、[ComposeSceneLayerMeasurePolicy.kt](https://github.com/JetBrains/compose-multiplatform-core/blob/a9e47e8aa04c95cfe572ab4297c770f3cbfb234e/compose/ui/ui/src/skikoMain/kotlin/androidx/compose/ui/window/ComposeSceneLayerMeasurePolicy.kt)，桌面 `BackNavigationEventInput` | [Foundation Dialog](../../Foundation/Overlays/Dialog.cs)：Popup、平台宽度、模态、关闭请求及进出场 |
 
 不添加上游已废弃的任意内容 AlertDialog 重载；其用途由 BasicAlertDialog 表达。
 定位固定上游的方式见 [AGENTS](../../../../AGENTS.md#上游源码)，不要用浮动 HEAD 替代基线。
@@ -90,4 +90,4 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 ```
 
 运行前按 [VisualParity](../../../../tests/VisualParity/README.md) 准备其参考环境，按
-[公共接入](../../../../docs/GETTING_STARTED.md) 解析当前依赖。本次文档拆分未运行这些命令。
+[公共接入](../../../../docs/GETTING_STARTED.md) 解析当前依赖。这些命令是复现入口，实际结果需以新生成报告为准。

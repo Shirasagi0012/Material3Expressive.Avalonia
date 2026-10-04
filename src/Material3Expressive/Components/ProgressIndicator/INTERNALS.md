@@ -75,7 +75,7 @@ Avalonia 不允许 Render 内 InvalidateVisual。订阅初始值由当前绘制�
 旧记录的 Windows 双端结果中结构化事实相等、raster 严格相等或在既有容差内、重复稳定；
 不能外推到真实桌面播放、其他平台、屏幕阅读器或自定义 PathEffect，这些仍未经验证。
 历史统计及环境见固定提交；没有把原始 4× raster 差异消除或重分类。
-本次文档拆分未运行以下命令：
+以下为复现入口，实际结果需以新生成报告为准：
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~ProgressIndicatorTests"

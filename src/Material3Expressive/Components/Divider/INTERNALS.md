@@ -44,7 +44,7 @@ Separator 的尺寸与属性优先级保留原生语义；附加 Color 不读取
 [拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Divider/README.md)保留维护者在移植任务中提出的 Separator 主题与方向附加属性方案。
 Thickness/Color 直接映射上游参数，不新增公开控件或通用布局层；方向仅把两个 Compose API
 映射到同一原生模板，不改变线条算法。原记录未声称本组件新增已接受的视觉/算法偏离，
-本次拆分也不从实现反推额外授权。
+现有实现也不能独自证明额外设计已经获批。
 
 ## 一致性边界与验证
 
@@ -58,7 +58,7 @@ Thickness/Color 直接映射上游参数，不新增公开控件或通用布局�
 idle-layout 在不送帧/不绘制时检查最终布局，self-test 另有被动截图。
 
 历史视觉参考只覆盖 Windows x64、density=4；其他 DPI、平台和真实 OS 无障碍客户端未经双端验收。
-本次文档拆分未运行下列命令，不以编译通过替代渲染一致性：
+以下为复现入口，实际结果需以新生成报告为准；编译通过不等于渲染一致性：
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~DividerTests"

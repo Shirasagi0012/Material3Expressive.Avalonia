@@ -88,7 +88,7 @@ Avalonia 没有 Compose 的 dismiss 语义入口，当前项 Pane AutomationPeer
 旧合并记录中两 suite 结构化事实相等、raster 在既定容差内且重复稳定。旧 Catalog headless smoke
 曾用真实主题、字体与窗口点击动作/等待退出，但专用探针与截图未跟踪；当前可复现入口是上面的
 正式测试与 [Catalog 源码](../../../Material3Expressive.Catalog/SnackbarDemo.axaml)，不声称探针仍可运行。
-历史统计与环境见固定提交，本次文档拆分未重跑：
+历史统计与环境见固定提交，以下为复现入口，实际结果需以新生成报告为准：
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~Snackbar"

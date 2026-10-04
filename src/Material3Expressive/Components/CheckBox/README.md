@@ -36,11 +36,11 @@
 两态点击依次 false → true → false；三态依次 false → true → null → false。
 原生控件先更新状态再发出 `Click` / `Command`，聚合选择可在处理器或命令中写回计算结果，
 并非仅请求应用切换。`Click="OnToggleClick"` 需要视图 code-behind 提供该处理器。
-Enter 在按下时激活，Space 默认在松开时激活；禁用阻止输入。
+Enter 在按下时激活，`Space` 默认在松开时激活；禁用阻止输入。
 
 `Content` / `ContentTemplate` 支持字符串、控件与数据模板，默认 BodyLarge 排版，保留 access key 和 RTL。
-标签位于 48 DIP 指示器槽旁，默认间距来自 `Padding="8,0,0,0"`；无 Content 时不使用这层 Padding。
-有内容时整行（含间隙和 Padding）参与命中；无内容时默认鼠标命中区域为 24×24 DIP 指示器区域。
+标签位于 48 DIP 指示器槽旁，默认间距来自 `Padding="8,0,0,0"`；无 `Content` 时不使用这层 `Padding`。
+有内容时整行（含间隙和 `Padding`）参与命中；无内容时默认鼠标命中区域为 24×24 DIP 指示器区域。
 48×48 DIP 默认布局留白不等于扩大鼠标命中区，也不是触屏输入层的目标扩展。
 
 ## 颜色与描边

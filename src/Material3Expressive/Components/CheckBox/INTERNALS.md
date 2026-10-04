@@ -25,6 +25,8 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 默认布局槽 48 DIP。不提前采用 flag 开启后的 18 DIP 画布或新勾号坐标。
 `DisabledCheckmarkColor` 保留公开槽，但此分支仍用 checkedCheckmarkColor 绘制禁用勾号。
 透明色使用透明黑，不能用 Avalonia 透明白替换而改变颜色插值。
+默认描边按 `floor(2 * density)` 取物理像素宽度，显式 Stroke 则将 DIP 直接乘 density；
+Dashes / DashOffset 也是绝对 DIP，不是 Avalonia Pen 的笔宽倍数。
 
 CheckBoxLayout 的受限居中先按正常 48 DIP 槽舍入，再对受约束偏移截断，不能合并为一次连续计算。
 有 Content 时透明根布局让整行参与命中；无 Content 时只保留默认 24×24 DIP 指示器命中区域。
@@ -53,7 +55,7 @@ Surface 与共享交互控制器提供无界、固定 20 DIP 半径的 ripple。
 
 自定义描边另有明确例外：固定 Core 的 SkiaBackedPaint 缓存初始 Join 为 Round，底层实际为 Miter；
 首次请求 Round 可跳过底层赋值。独立 Paint 诊断将 `checkbox.static.stroke.round.on` 差异定位在勾号转角。
-维护者同日要求“这是上游bug，始终按参数画出圆角”。本地始终将 Cap / Join / MiterLimit 写入真实 Paint，
+维护者同日要求“这是上游 bug，始终按参数画出圆角”。本地始终将 Cap / Join / MiterLimit 写入真实 Paint，
 默认 Miter 不受影响；仅适用于 CheckBox 自定义描边，不构成修复所有上游 bug 的通用授权。
 
 同日维护者选择“本次保留原生范围，记录 null 回调模式未实现（推荐）”。原生控件没有移除
@@ -75,6 +77,8 @@ RTL 和尺寸约束。`dynamic.input.enter`、`dynamic.input.tri-cycle` 与 `sta
 
 ## 验证入口
 
+- [SelectionControlHitTests.cs](../../../../tests/Material3Expressive.Tests/SelectionControlHitTests.cs)：
+  有内容整行的指示器留白、间隙、Padding 命中；LTR/RTL、内容模板、禁用、取消及动态增删 Content
 - [控件测试](../../../../tests/Material3Expressive.Tests/CheckBoxTests.cs)：原生状态/绑定写回与事件顺序、键盘/自动化、内容/RTL、颜色 Token、idle 重启和模板/卸载清理。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/CheckBoxCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/CheckBoxCases.kt)
@@ -90,4 +94,5 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 `self-test` 重新采集双端并检查重复捕获及额外被动截图的稳定性；执行完成、稳定、
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
-不得修改门禁来隐藏差异。上述命令是复现入口，不表示本次文档整理已执行它们。
+不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
+分别说明执行错误、双端差异、稳定性及未覆盖项。

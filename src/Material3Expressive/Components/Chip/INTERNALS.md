@@ -21,10 +21,10 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 
 ## 内容、布局与状态不变量
 
-默认容器32 DIP、交互最小高48 DIP、Small圆角8 DIP、LabelLarge。
-固定入口前后间距8 DIP；Shapes 非空按实际槽采用4/8 DIP紧凑间距，Input Padding 保留 avatar/leading/trailing
+默认容器 32 DIP、交互最小高 48 DIP、Small 圆角 8 DIP、LabelLarge。
+固定入口前后间距 8 DIP；Shapes 非空按实际槽采用 4/8 DIP 紧凑间距，Input Padding 保留 avatar/leading/trailing
 组合规则。布局按物理像素舍入，leading/trailing 先测量，标签消费剩余约束。
-Selectable 的默认1000 DIP最大宽度不吞掉显式 Width/MinWidth；RTL 使用 Avalonia 子树反射。
+Selectable 的默认 1000 DIP 最大宽度不吞掉显式 Width/MinWidth；RTL 使用 Avalonia 子树反射。
 
 头像优先于 leading 图标，默认圆形裁剪，禁用只降低头像包装层 opacity，不降低整条内容。
 Suggestion 不显示 trailing；其他 trailing 与 Chip 共享动作区域。
@@ -46,8 +46,8 @@ Filter/Input 槽以 Transition 的 size/alpha 轨迹进入退出，退出保留�
 释放调用方图标的父级关系，重新挂载按当前状态建立动画。
 
 Elevation 选择最后活跃的 press/focus/hover/drag；禁用 snap。
-进入为120ms FastOutSlowIn，退出150ms Bezier(0.4,0,0.6,1)，hover退出120ms。
-选中不改变高度策略；平面 Filter 默认 hover 为0而 Elevated 为3 DIP。
+进入为 120ms FastOutSlowIn，退出 150ms Bezier(0.4,0,0.6,1)，hover 退出 120ms。
+选中不改变高度策略；平面 Filter 默认 hover 为 0 而 Elevated 为 3 DIP。
 null Elevation 表示变体默认，全零配置才关闭所有交互阴影。
 
 ## 已确认的组件选择
@@ -55,10 +55,10 @@ null Elevation 表示变体默认，全零配置才关闭所有交互阴影。
 确认依据与历史观测保留自[拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Chip/README.md)。
 以下只保留影响维护判断的决定和边界；旧测试数量、依赖版本及临时报告路径不是当前验证结果。
 
-2026-10-03，维护者批准四个 Button 派生控件、外部选中职责、IsElevated、内容槽及颜色/elevation配置，
+2026-10-03，维护者批准四个 Button 派生控件、外部选中职责、IsElevated、内容槽及颜色/elevation 配置，
 并以 ChipShapes 圆角和 ChipSpacing 前后间距表达当前能力；不由此扩大到任意 Shape 或通用 Arrangement。
 
-2026-10-04，维护者批准平面 Filter 的默认 hover elevation 从固定 Compose 的1改为0 DIP，
+2026-10-04，维护者批准平面 Filter 的默认 hover elevation 从固定 Compose 的 1 改为 0 DIP，
 范围为 Shapes=null/非空、未选中/选中。透明平面 Filter 悬浮时，Skia Ganesh GPU drawShadow 会暴露容器内部灰环；
 固定 Skiko `0.152.0-alpha02` 原生 GPU 探针与 Avalonia 桌面均复现，CPU 未出现同样灰环。
 修改仅在该默认高度，保留 hover 状态层、形状动画和其余高度，不修改共享阴影算法。
@@ -80,13 +80,13 @@ null Elevation 表示变体默认，全零配置才关闭所有交互阴影。
 尚未实现任意路径/切角 Shape、通用 Compose Arrangement、hoisted MutableInteractionSource、
 可配置 inset focus ring。圆角配置和逻辑前后间距不能描述这些上游能力的全部范围。
 
-旧双端观测中的64ms elevation约0.0000006 DIP数值差异、阴影坐标差异、平面 Filter hover高度及
-Enter时机分别按上述明确范围处理。没有把其余时序、布局或视觉差异一并认定为已接受。
+旧双端观测中的 64ms elevation 约 0.0000006 DIP 数值差异、阴影坐标差异、平面 Filter hover 高度及
+Enter 时机分别按上述明确范围处理。没有把其余时序、布局或视觉差异一并认定为已接受。
 双端使用无字形 marker，文字 raster/字体、屏幕阅读器及真实桌面手工体验未经这些用例验收。
 
 ## 验证入口
 
-- [控件测试](../../../../tests/Material3Expressive.Tests/ChipTests.cs)：容器/交互尺寸、avatar优先级、外部选择/自动化、实时颜色与原生paint优先级、编译XAML配置、形状更换/完成后resize、elevation顺序及模板/卸载清理。
+- [控件测试](../../../../tests/Material3Expressive.Tests/ChipTests.cs)：容器/交互尺寸、avatar 优先级、外部选择/自动化、实时颜色与原生 paint 优先级、编译 XAML 配置、形状更换/完成后 resize、elevation 顺序及模板/卸载清理。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ChipCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ChipCases.kt)
 - [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml) 提供真实内容组合；其事件处理见
@@ -101,4 +101,5 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 `self-test` 重新采集双端并检查重复捕获及额外被动截图的稳定性；执行完成、稳定、
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
-不得修改门禁来隐藏差异。上述命令是复现入口，不表示本次文档整理已执行它们。
+不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
+分别说明执行错误、双端差异、稳定性及未覆盖项。

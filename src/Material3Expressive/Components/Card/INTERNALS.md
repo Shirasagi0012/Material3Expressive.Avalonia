@@ -88,7 +88,7 @@ focus ring、任意路径/切角 Shape、完整 ColumnScope。Drag 高度分支�
 
 旧合并记录全部用例重复稳定，但仍保留动画数值、Enter 时机与半透明阴影的 different，
 不得称为全量通过。历史统计/环境可查固定提交，未跟踪 artifacts 不作长期链接。
-本次文档拆分未执行以下命令：
+以下为复现入口，实际结果需以新生成报告为准：
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~CardTests"

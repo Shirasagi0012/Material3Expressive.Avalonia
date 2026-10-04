@@ -73,6 +73,8 @@ nullable IsChecked / IsThreeState 和原生 Toggle 自动化身份保留，null 
 
 ## 验证入口
 
+- [InteractionTests.cs](../../../../tests/Material3Expressive.Tests/InteractionTests.cs)：
+  首次绘制的 ripple 半径、跟随 presenter 中心的选择，以及默认/有界中心不受 Switch 选项影响
 - [控件测试](../../../../tests/Material3Expressive.Tests/SwitchTests.cs)：实际模板、绑定/命令顺序、键盘/自动化、LTR/RTL 拖动与取消、当前姿态交接、颜色/内容、波纹同心（含慢放）与模板/卸载清理。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/SwitchCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/SwitchCases.kt)
@@ -88,4 +90,5 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 `self-test` 重新采集双端并检查重复捕获及额外被动截图的稳定性；执行完成、稳定、
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
-不得修改门禁来隐藏差异。上述命令是复现入口，不表示本次文档整理已执行它们。
+不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
+分别说明执行错误、双端差异、稳定性及未覆盖项。
