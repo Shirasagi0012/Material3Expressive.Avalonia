@@ -22,6 +22,8 @@ internal sealed class ButtonLayout : Decorator, IMinimumInteractiveLayout
 
     private Size _containerSize;
     private double _interactiveSize;
+    // Alignment-line consumers need the measured container, rather than recomputing its minima.
+    internal Size ContainerSize => _containerSize;
     public Point MinimumInteractivePadding
     {
         get

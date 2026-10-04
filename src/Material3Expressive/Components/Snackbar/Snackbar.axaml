@@ -1,0 +1,131 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:Snackbar}" TargetType="m3:Snackbar">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerShape}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}" />
+      <Setter Property="ActionForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextColor}}" />
+      <Setter Property="DataActionForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextColor}}" />
+      <Setter Property="DismissActionForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.IconColor}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Padding="{TemplateBinding Padding}">
+            <Border x:Name="PART_DataInset">
+              <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                  CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
+                  ShadowElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerElevation}}">
+                <m3:SnackbarLayout x:Name="PART_Layout" ActionOnNewLine="{TemplateBinding ActionOnNewLine}"
+                    m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}">
+                  <!-- Reuse the paragraph-width/overflow handling already used by default labels. -->
+                  <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                      ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                      HorizontalContentAlignment="Left" VerticalContentAlignment="Top" TextWrapping="Wrap" />
+                  <Grid x:Name="PART_Action" IsVisible="False">
+                    <ContentPresenter x:Name="PART_CustomAction" IsVisible="False" Content="{TemplateBinding Action}"
+                        ContentTemplate="{TemplateBinding ActionTemplate}" Foreground="{TemplateBinding ActionForeground}"
+                        HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                        m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
+                    <Button x:Name="PART_DataAction" IsVisible="False" VerticalAlignment="Top"
+                        Content="{Binding Data.Visuals.ActionLabel, RelativeSource={RelativeSource TemplatedParent}}"
+                        Foreground="{TemplateBinding DataActionForeground}" Theme="{StaticResource MaterialSnackbarActionButtonTheme}" />
+                  </Grid>
+                  <Grid x:Name="PART_Dismiss" IsVisible="False">
+                    <ContentPresenter x:Name="PART_CustomDismiss" IsVisible="False" Content="{TemplateBinding DismissAction}"
+                        ContentTemplate="{TemplateBinding DismissActionTemplate}" Foreground="{TemplateBinding DismissActionForeground}"
+                        HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
+                    <m3:TooltipBox x:Name="PART_DismissTooltip" IsVisible="False" AnchorPosition="Above">
+                      <m3:TooltipBox.Tooltip><m3:PlainTooltip /></m3:TooltipBox.Tooltip>
+                      <m3:IconButton x:Name="PART_DataDismiss" Foreground="{TemplateBinding DismissActionForeground}"
+                          AutomationProperties.Name="{TemplateBinding DismissActionText}"
+                          Theme="{StaticResource MaterialSnackbarDismissButtonTheme}" />
+                    </m3:TooltipBox>
+                  </Grid>
+                </m3:SnackbarLayout>
+              </m3:MaterialSurface>
+            </Border>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:has-data /template/ Border#PART_DataInset"><Setter Property="Margin" Value="12" /></Style>
+      <Style Selector="^:data-content /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Content" Value="{Binding Data.Visuals.Message, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+      <Style Selector="^:has-action /template/ Grid#PART_Action"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:has-dismiss /template/ Grid#PART_Dismiss"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:custom-action /template/ ContentPresenter#PART_CustomAction"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:custom-dismiss /template/ ContentPresenter#PART_CustomDismiss"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:data-action /template/ Button#PART_DataAction"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:data-dismiss /template/ m3|TooltipBox#PART_DismissTooltip"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^[FlowDirection=RightToLeft] /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="HorizontalContentAlignment" Value="Right" /></Style>
+      <Style Selector="^[FlowDirection=RightToLeft] /template/ ContentPresenter#PART_CustomAction"><Setter Property="HorizontalContentAlignment" Value="Right" /></Style>
+      <Style Selector="^[FlowDirection=RightToLeft] /template/ ContentPresenter#PART_CustomDismiss"><Setter Property="HorizontalContentAlignment" Value="Right" /></Style>
+    </ControlTheme>
+    <!-- The data overload uses the simple TextButton overload's 12/8 padding. -->
+    <ControlTheme x:Key="MaterialSnackbarActionButtonTheme" TargetType="Button"
+                  BasedOn="{StaticResource MaterialTextButtonTheme}">
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialSnackbarDismissButtonTheme" TargetType="m3:IconButton"
+                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+              MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+              HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}"
+              ContainerMinWidth="40" ContainerMinHeight="40">
+            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}">
+              <!-- Fixed Core's internal Filled.Close vector, independent of the symbol font. -->
+              <Path Data="M19,6.41 L17.59,5 L12,10.59 L6.41,5 L5,6.41 L10.59,12 L5,17.59 L6.41,19 L12,13.41 L17.59,19 L19,17.59 L13.41,12 Z"
+                  Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.IconSize}}"
+                  Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.IconSize}}"
+                  Fill="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </m3:MaterialSurface>
+          </m3:ButtonLayout>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:SnackbarHost}" TargetType="m3:SnackbarHost">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="SnackbarTemplate">
+        <DataTemplate><m3:Snackbar Data="{Binding}" /></DataTemplate>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate><Grid x:Name="PART_Items" ClipToBounds="False" /></ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>
