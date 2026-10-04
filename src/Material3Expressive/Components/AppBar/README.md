@@ -152,8 +152,6 @@ Catalog 默认使用物理主正文接入合成滚动；勾选 `Nested scrolling
 - [AppBarSmoothScrollTests](../../../../tests/Material3Expressive.Tests/AppBarSmoothScrollTests.cs)：主正文路由滚轮/RawTouch、布局衔接、独立嵌套、逻辑模式、模板/主题切换、迁移及连接生命周期。
 - [AppBarCompositionTests](../../../../tests/Material3Expressive.Tests/AppBarCompositionTests.cs)：合成与 UI 布局路径的渲染对照、布局基准更新、分数偏移与断开后的恢复。
 - VisualParity 的 [AppBarCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/AppBarCases.cs) / [AppBarCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/AppBarCases.kt)：真实组件的非文字布局/颜色、排列边界、折叠、动态配置、四种 behavior、fling/snap 端点与中断、直接鼠标拖动/fling。参考使用 Expressive motion 和 Core Desktop density-scaled slop；这些用例不替代 SmoothScroll 正文集成检查。
-- [MaterialScrollProbe](../../../../tests/DesktopInput/MaterialScrollProbe/README.md)：真实 Win32 窗口中的栏/正文布局、惯性及 UI 阻塞期间的合成运动；数值 trace、离屏布局图与可选屏幕逐帧测量分别报告。
-- [AppBarInputProbe](../../../../tests/DesktopInput/AppBarInputProbe/README.md)：Win32 后端、实际 DPI、实时帧下的触摸消费、惯性、中断和直接拖动。RawTouch 与 OS 注入是独立模式；OS 模式先核验命中自己的窗口，遮挡或锁屏时报失败并停止注入。
 
-测试覆盖说明不代表当前修订已全部运行。RawTouch 不证明 OS WM_POINTER 投递，OS 注入也不替代硬件触摸；
-文字 glyph/hinting、真实屏幕阅读器及 UI 阻塞时的辅助功能/命中测试仍需单独验收。
+测试覆盖说明不代表当前修订已全部运行。RawTouch 测试不证明系统触摸投递；硬件触摸、文字 glyph/hinting、
+真实屏幕阅读器及 UI 阻塞时的辅助功能/命中测试仍需单独验收。

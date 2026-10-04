@@ -34,4 +34,5 @@ AppBar 作为可选纵向 pre/post 参与者接入。未安装参与者时 pre/p
 合成输出使用 SmoothScroll.Avalonia.Composition；原生 ScrollViewer 的 C#/XAML 用法不变。
 
 SmoothScroll 子模块通过 ProjectReference 接入，依赖准备方式见[根 README](../../../../README.md#本地开发)。
-测试区分普通物理布局、逻辑内容与 TextField 集成；真实桌面滚动输入的验证范围见相关 DesktopInput 记录。
+[ScrollViewerTests](../../../../tests/Material3Expressive.Tests/ScrollViewerTests.cs) 覆盖普通物理布局、逻辑内容与 TextField 集成；
+AppBar 正文输入与嵌套接入见 [AppBar 的验证边界](../AppBar/README.md#验证边界)。

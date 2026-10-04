@@ -214,8 +214,9 @@ tracker 统一计算有效范围并提交横纵向位置。普通弹性回弹、
 2026-10-05 维护者批准完成公开协议和辅助入口的命名迁移：去除实验前缀，使用 AttachVerticalScroll、
 ConfigureVerticalScroll、RunOnScrollParticipant、DispatchToUI、ApplyVerticalScrollDelta、
 CompleteVerticalScroll 和 CancelScroll。挂载生命周期移入 ScrollPresenter 主文件，删除无调用的
-额外正文位移入口及其表达式分支；原型公开惯性启动入口已删除，桌面探针通过路由滚轮启动惯性，
-固定初速度检查由子模块测试调用内部 StartInertia。独立探针也通过 ProjectReference 消费当前源码。
+额外正文位移入口及其表达式分支；原型公开惯性启动入口已删除，固定初速度检查由子模块测试调用内部
+StartInertia。验证阶段的桌面探针通过路由输入启动惯性，并通过 ProjectReference 消费当前源码；
+临时探针及其专用采样钩子现已移除，保留正式回归测试、VisualParity 与 Catalog 使用示例。
 子模块默认 Avalonia 版本同步对齐主库的 12.1.2，删除已无消费者的 SmoothScroll 本地 NuGet 版本配置；
 ComposeAnimation 的本地 NuGet 接入保持不变。
 本次替代此前暂留实验命名和原型入口的规则；消费顺序、单位、边界冒泡、取消语义及现有 zoom/snap 限制不变。

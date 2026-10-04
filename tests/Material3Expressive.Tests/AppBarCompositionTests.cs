@@ -60,7 +60,7 @@ public class AppBarCompositionTests
             var config = new AppBarScrollConfiguration(TopScrollKind.ExitUntilCollapsed, range / density, 0, density,
                 true, false, false, true, colors.TwoRows, colors.Base, colors.Scrolled,
                 null, null, new AppBarSpring(1, 1600, .01f), 1000, 1000);
-            var initial = new AppBarScrollSnapshot(0, 0, range * fraction / density, 0, 0, 0, 0, 1000, false);
+            var initial = new AppBarScrollSnapshot(0, 0, range * fraction / density, 0, 0, 0, 0, 1000);
             chrome.SetComposition(offsets, appearance, color); Render(window);
             tracker.ConfigureVerticalScroll(new RenderParticipantFactory(config, initial,
                 offsets.Writer, appearance.Writer, color.Writer));

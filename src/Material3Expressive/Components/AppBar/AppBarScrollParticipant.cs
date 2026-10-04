@@ -32,7 +32,7 @@ internal readonly record struct AppBarScrollConfiguration(
 internal readonly record struct AppBarScrollSnapshot(
     long Generation, long Sequence, double TopCollapsed, double BottomHidden,
     double TopContentOffset, double BottomContentOffset,
-    double BodyOffset, double Viewport, bool IsSettling);
+    double BodyOffset, double Viewport);
 
 internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
 {
@@ -48,8 +48,6 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
     private long _colorStarted;
     private double _lastDirection;
     private bool _detached;
-    // Internal diagnostics used by the desktop probe; invoked with numeric values on compositor.
-    internal Action<AppBarScrollSnapshot>? Observe { get; set; }
     private static readonly CubicBezierEasing TitleAlpha = new(.8f, 0, .8f, .15f);
     private static readonly ColorConverter Colors = new();
 
@@ -207,10 +205,8 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
             }
         }
         _color.SetValue(_paintedColor);
-        var snapshot = new AppBarScrollSnapshot(_generation, ++_sequence, _top, _bottom, _topContent, _bottomContent,
-            _body, LiveViewport, _topSnap is not null || _bottomSnap is not null);
-        Observe?.Invoke(snapshot);
-        _publish(snapshot);
+        _publish(new(_generation, ++_sequence, _top, _bottom, _topContent, _bottomContent,
+            _body, LiveViewport));
     }
 
     private static Color Interpolate(Color a, Color b, float fraction)

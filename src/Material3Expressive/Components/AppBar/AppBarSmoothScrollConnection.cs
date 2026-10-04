@@ -174,7 +174,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             -(_bottomBehavior?.State.HeightOffset ?? 0) / density,
             (_topBehavior?.State.ContentOffset ?? 0) / density,
             (_bottomBehavior?.State.ContentOffset ?? 0) / density,
-            _viewer.Offset.Y, _viewer.Viewport.Height, false);
+            _viewer.Offset.Y, _viewer.Viewport.Height);
     }
 
     private AppBarScrollConfiguration ReadConfiguration(bool refreshGeometry = false)

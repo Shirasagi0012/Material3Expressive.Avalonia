@@ -26,7 +26,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Material3Expressive.Tests" />
-        <InternalsVisibleTo Include="MaterialScrollProbe" />
     </ItemGroup>
 
     <ItemGroup>
