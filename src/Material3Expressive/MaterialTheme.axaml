@@ -46,6 +46,7 @@
                     <m3:TabRowTokenSource />
                     <m3:DialogTokenSource />
                     <m3:CardTokenSource />
+                    <m3:SegmentedButtonTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -78,4 +79,5 @@
     <StyleInclude Source="/Components/Chip/Chip.axaml" />
     <StyleInclude Source="/Components/TabRow/TabRow.axaml" />
     <StyleInclude Source="/Components/Card/Card.axaml" />
+    <StyleInclude Source="/Components/SegmentedButton/SegmentedButton.axaml" />
 </Styles>

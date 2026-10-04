@@ -1,0 +1,10 @@
+<m3:SingleChoiceSegmentedButtonRow xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                  xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+                                  BaseShape="8" Space="2">
+  <m3:SegmentedButton Content="Day" IsSelected="True" ActiveIcon="active" InactiveIcon="inactive" Padding="16,8" BorderThickness="2">
+    <m3:SegmentedButton.Colors><m3:SegmentedButtonColors ActiveContainerColor="#126E60" ActiveContentColor="#F0E080" /></m3:SegmentedButton.Colors>
+    <m3:SegmentedButton.ActiveIconTemplate><DataTemplate><Border Width="18" Height="18" Background="Red" /></DataTemplate></m3:SegmentedButton.ActiveIconTemplate>
+    <m3:SegmentedButton.InactiveIconTemplate><DataTemplate><Border Width="18" Height="18" Background="Blue" /></DataTemplate></m3:SegmentedButton.InactiveIconTemplate>
+  </m3:SegmentedButton>
+  <m3:SegmentedButton Content="Week" ShowSelectionIcon="False" />
+</m3:SingleChoiceSegmentedButtonRow>

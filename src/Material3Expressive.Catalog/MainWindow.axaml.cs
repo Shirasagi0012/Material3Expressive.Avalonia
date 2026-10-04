@@ -74,6 +74,17 @@ public partial class MainWindow : Window
             DemoCardStatus.Text = $"{card.GetType().Name} clicked";
     }
 
+    private void OnSingleSegmentClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is SegmentedButton segment && segment.FindAncestorOfType<SingleChoiceSegmentedButtonRow>() is { } row)
+            foreach (var item in row.Items.OfType<SegmentedButton>()) item.IsSelected = ReferenceEquals(item, segment);
+    }
+
+    private void OnMultiSegmentClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is SegmentedButton segment) segment.SetCurrentValue(SegmentedButton.IsSelectedProperty, !segment.IsSelected);
+    }
+
     private void OnGroupCheckBoxClick(object? sender, RoutedEventArgs e)
     {
         // Native CheckBox has already toggled. The application decides the group's meaning.

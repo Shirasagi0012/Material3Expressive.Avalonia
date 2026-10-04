@@ -8,7 +8,7 @@
 
 | 位置 | 当前职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Badge、BadgedBox、Chip、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Chip / rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
+| [Components/](../src/Material3Expressive/Components) | Button、IconButton、Surface、Badge、BadgedBox、Chip、SegmentedButton、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Chip / SegmentedButton / rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。 |
 | [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
 | [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
 | [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
