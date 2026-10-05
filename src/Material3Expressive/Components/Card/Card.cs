@@ -1,18 +1,14 @@
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
-using Avalonia.Data;
+using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Rendering;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
@@ -21,10 +17,21 @@ public class Card : Button
 {
     public static readonly StyledProperty<bool> IsClickableProperty = AvaloniaProperty.Register<Card, bool>(nameof(IsClickable));
     public bool IsClickable { get => GetValue(IsClickableProperty); set => SetValue(IsClickableProperty, value); }
-    public static readonly StyledProperty<CardColors?> ColorsProperty = AvaloniaProperty.Register<Card, CardColors?>(nameof(Colors));
-    public CardColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
-    public static readonly StyledProperty<CardElevation?> ElevationProperty = AvaloniaProperty.Register<Card, CardElevation?>(nameof(Elevation));
-    public CardElevation? Elevation { get => GetValue(ElevationProperty); set => SetValue(ElevationProperty, value); }
+    public static readonly StyledProperty<Color> ContainerColorProperty = AvaloniaProperty.Register<Card, Color>(nameof(ContainerColor));
+    public Color ContainerColor { get => GetValue(ContainerColorProperty); set => SetValue(ContainerColorProperty, value); }
+    public static readonly StyledProperty<IBrush?> ContentColorProperty = AvaloniaProperty.Register<Card, IBrush?>(nameof(ContentColor));
+    public IBrush? ContentColor { get => GetValue(ContentColorProperty); set => SetValue(ContentColorProperty, value); }
+    public static readonly StyledProperty<Color> DisabledContainerColorProperty = AvaloniaProperty.Register<Card, Color>(nameof(DisabledContainerColor));
+    public Color DisabledContainerColor { get => GetValue(DisabledContainerColorProperty); set => SetValue(DisabledContainerColorProperty, value); }
+    public static readonly StyledProperty<IBrush?> DisabledContentColorProperty = AvaloniaProperty.Register<Card, IBrush?>(nameof(DisabledContentColor));
+    public IBrush? DisabledContentColor { get => GetValue(DisabledContentColorProperty); set => SetValue(DisabledContentColorProperty, value); }
+    public static readonly StyledProperty<CardElevation> ElevationProperty = AvaloniaProperty.Register<Card, CardElevation>(nameof(Elevation), new CardElevation(), validate: value => value is not null);
+    public CardElevation Elevation { get => GetValue(ElevationProperty); set => SetValue(ElevationProperty, value); }
+
+    internal static readonly StyledProperty<IControlTemplate?> DefaultTemplateProperty = AvaloniaProperty.Register<Card, IControlTemplate?>(nameof(DefaultTemplate));
+    internal IControlTemplate? DefaultTemplate { get => GetValue(DefaultTemplateProperty); set => SetValue(DefaultTemplateProperty, value); }
+    internal static readonly StyledProperty<Cursor?> DefaultCursorProperty = AvaloniaProperty.Register<Card, Cursor?>(nameof(DefaultCursor));
+    internal Cursor? DefaultCursor { get => GetValue(DefaultCursorProperty); set => SetValue(DefaultCursorProperty, value); }
 
     private MaterialSurface? _surface;
     private MaterialInteractionController? _interaction;
@@ -33,14 +40,7 @@ public class Card : Button
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationTask;
     private double? _passiveElevation;
-    private bool _pending, _refreshing;
-    private Control? _ambient;
-
-    public Card()
-    {
-        ResourcesChanged += (_, _) => Refresh();
-        ActualThemeVariantChanged += (_, _) => Refresh();
-    }
+    private bool _pending;
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -54,8 +54,6 @@ public class Card : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _ambient = Parent as Control;
-        if (_ambient is not null) _ambient.PropertyChanged += AmbientChanged;
         _passiveElevation = null;
         Refresh();
         InitializeMotion();
@@ -63,16 +61,9 @@ public class Card : Button
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        if (_ambient is not null) _ambient.PropertyChanged -= AmbientChanged;
-        _ambient = null;
         _passiveElevation = null;
         DisposeMotion();
         base.OnDetachedFromVisualTree(e);
-    }
-
-    private void AmbientChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property == TextElement.ForegroundProperty) Refresh();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -85,7 +76,6 @@ public class Card : Button
             // presenter releases its feedback lifetime, including any press in progress.
             MaterialInteraction.SetIsInteractive(this, IsClickable);
             PseudoClasses.Set(":clickable", IsClickable);
-            SetValue(FocusableProperty, IsClickable, BindingPriority.Style);
             UpdateIsEffectivelyEnabled();
             if (!IsClickable)
             {
@@ -101,85 +91,31 @@ public class Card : Button
             }
             Refresh();
         }
-        else if (change.Property == ColorsProperty || change.Property == ElevationProperty
+        else if (change.Property == ElevationProperty
                  || change.Property == IsEffectivelyEnabledProperty) Refresh();
     }
 
-    private T Resolve<T>(MaterialTokenKey<T> key) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is T result
-            ? result : throw new InvalidOperationException($"Card requires token {key}.");
-
     private void Refresh()
     {
-        if (_surface is null || _refreshing
-            || !TokenResolver.TryResolve(this, Comp.FilledCard.ContainerColor, ActualThemeVariant, out _)) return;
-        _refreshing = true;
-        try
-        {
-            var outlined = this is OutlinedCard;
-            var elevated = this is ElevatedCard;
-            var baseColor = Resolve(outlined ? Comp.OutlinedCard.ContainerColor
-                : elevated ? Comp.ElevatedCard.ContainerColor : Comp.FilledCard.ContainerColor);
-            var normal = Colors?.ContainerColor ?? baseColor;
-            var ambient = _ambient is null ? null : TextElement.GetForeground(_ambient);
-            var normalInk = Colors?.ContentColor is { } explicitInk ? new SolidColorBrush(explicitInk)
-                : ContentColorForExtension.Resolve(this, normal, ambient);
-            var enabled = !IsClickable || IsEffectivelyEnabled;
-            Color Alpha(Color color, double alpha) => Color.FromArgb((byte)Math.Round(alpha * 255, MidpointRounding.AwayFromZero), color.R, color.G, color.B);
-            var disabledBase = outlined ? baseColor : Resolve(elevated ? Comp.ElevatedCard.DisabledContainerColor : Comp.FilledCard.DisabledContainerColor);
-            var disabled = outlined ? disabledBase : ColorComposite.Over(Alpha(disabledBase,
-                Resolve(elevated ? Comp.ElevatedCard.DisabledContainerOpacity : Comp.FilledCard.DisabledContainerOpacity)), 1,
-                elevated ? disabledBase : baseColor);
-            SetValue(BackgroundProperty, new SolidColorBrush(enabled ? normal : Colors?.DisabledContainerColor ?? disabled), BindingPriority.Style);
-            var ink = enabled ? normalInk : Colors?.DisabledContentColor is { } disabledInk ? new SolidColorBrush(disabledInk)
-                : normalInk is ISolidColorBrush solid ? new SolidColorBrush(Alpha(solid.Color, .38)) : normalInk;
-            SetValue(ForegroundProperty, ink, BindingPriority.Style);
-            if (outlined)
-            {
-                var outline = enabled ? Resolve(Comp.OutlinedCard.OutlineColor)
-                    : ColorComposite.Over(Alpha(Resolve(Comp.OutlinedCard.DisabledOutlineColor), Resolve(Comp.OutlinedCard.DisabledOutlineOpacity)),
-                        1, Resolve(Comp.ElevatedCard.ContainerColor));
-                SetValue(BorderBrushProperty, new SolidColorBrush(outline), BindingPriority.Style);
-                SetValue(BorderThicknessProperty, new Thickness(Resolve(Comp.OutlinedCard.OutlineWidth)), BindingPriority.Style);
-            }
-            // With no InteractionSource, CardElevation.shadowElevation returns
-            // remember { mutableStateOf(defaultElevation) }, without a value key.
-            if (!IsClickable) _surface.ShadowElevation = _passiveElevation ??= Values().Default!.Value;
-            else QueueElevation();
-        }
-        finally { _refreshing = false; }
-    }
-
-    private CardElevation Values()
-    {
-        var value = Elevation;
-        var elevated = this is ElevatedCard;
-        var outlined = this is OutlinedCard;
-        var rest = value?.Default ?? Resolve(outlined ? Comp.OutlinedCard.ContainerElevation : elevated ? Comp.ElevatedCard.ContainerElevation : Comp.FilledCard.ContainerElevation);
-        return new CardElevation
-        {
-            Default = rest,
-            Pressed = value?.Pressed ?? (outlined ? rest : Resolve(elevated ? Comp.ElevatedCard.PressedContainerElevation : Comp.FilledCard.PressedContainerElevation)),
-            Focused = value?.Focused ?? (outlined ? rest : Resolve(elevated ? Comp.ElevatedCard.FocusContainerElevation : Comp.FilledCard.FocusContainerElevation)),
-            // CardDefaults.outlinedCardElevation deliberately uses defaultElevation, not HoverContainerElevation.
-            Hovered = value?.Hovered ?? (outlined ? rest : Resolve(elevated ? Comp.ElevatedCard.HoverContainerElevation : Comp.FilledCard.HoverContainerElevation)),
-            Dragged = value?.Dragged ?? Resolve(outlined ? Comp.OutlinedCard.DraggedContainerElevation : elevated ? Comp.ElevatedCard.DraggedContainerElevation : Comp.FilledCard.DraggedContainerElevation),
-            Disabled = value?.Disabled ?? Resolve(outlined ? Comp.OutlinedCard.DisabledContainerElevation : elevated ? Comp.ElevatedCard.DisabledContainerElevation : Comp.FilledCard.DisabledContainerElevation),
-        };
+        if (_surface is null || !this.IsAttachedToVisualTree()) return;
+        // With no InteractionSource, the upstream elevation is remembered without a value key.
+        // Keep the initial effective configuration until the mode or visual mount changes.
+        if (!IsClickable) _surface.ShadowElevation = _passiveElevation ??= Elevation.Default;
+        else QueueElevation();
     }
 
     internal static double Target(CardElevation values, InteractionState interaction, bool enabled) =>
-        (!enabled ? values.Disabled : interaction switch
+        !enabled ? values.Disabled : interaction switch
         {
             InteractionState.Pressed => values.Pressed, InteractionState.Hovered => values.Hovered,
             InteractionState.Focused => values.Focused, InteractionState.Dragged => values.Dragged, _ => values.Default,
-        })!.Value;
+        };
 
     private void InitializeMotion()
     {
         if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _motion is not null) return;
         _motion = VisualAnimationScope.Create(this);
-        _elevation = _motion.CreateAnimatable(Target(Values(), _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled));
+        _elevation = _motion.CreateAnimatable(Target(Elevation, _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled));
         _motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
     }
 
@@ -195,7 +131,7 @@ public class Card : Button
             await Task.Yield();
             ct.ThrowIfCancellationRequested();
             _pending = false;
-            var values = Values();
+            var values = Elevation;
             var interaction = _interaction?.LastInteraction ?? InteractionState.None;
             var target = Target(values, interaction, IsEffectivelyEnabled);
             if (_elevation is not { } elevation || elevation.TargetValue == target) return;

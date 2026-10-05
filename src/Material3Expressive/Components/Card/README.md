@@ -55,23 +55,26 @@
 它不提供完整 ColumnScope 的 weight / alignBy；直接用 StackPanel 也可以，但保留其原生测量语义。
 卡片 `Padding` 或内容 `Margin` 都可用于留白。
 
-`Colors` / `Elevation` 是可共享配置，各可空槽或整个配置为 null 时使用当前外观默认值：
+正常态与禁用态分别使用 `ContainerColor` / `ContentColor`、`DisabledContainerColor` /
+`DisabledContentColor`。容器色为 Color，内容色为 IBrush，保留环境非纯色画刷。
+这些都是独立 Avalonia 属性，支持 Style、Binding、局部值和 ClearValue。
+`Elevation` 是完整、不可变的六状态配置；设置一个新配置会整体替换，省略成员就是 0，
+不会逐字段从主题补值。清除 Elevation 的局部值恢复当前主题配置：
 
 ```xml
-<m3:OutlinedCard IsClickable="True" IsEnabled="False">
-  <m3:OutlinedCard.Colors>
-    <m3:CardColors ContainerColor="#E8DEF8" ContentColor="#1D192B"
-                   DisabledContentColor="#79747E" />
-  </m3:OutlinedCard.Colors>
+<m3:OutlinedCard IsClickable="True" IsEnabled="False"
+                 ContainerColor="#E8DEF8" ContentColor="#1D192B"
+                 DisabledContentColor="#79747E">
   <m3:OutlinedCard.Elevation>
-    <m3:CardElevation Default="0" Hovered="2" Pressed="0" Disabled="0" />
+    <m3:CardElevation Default="0" Hovered="2" Pressed="0"
+                      Focused="0" Dragged="3" Disabled="0" />
   </m3:OutlinedCard.Elevation>
   <TextBlock Text="暂不可用" Margin="16" />
 </m3:OutlinedCard>
 ```
 
-原生 `Background` / `Foreground` / `BorderBrush` / `BorderThickness` / `CornerRadius`
-的显式值或绑定优先于默认值。未设置内容色时，默认从启用容器颜色推导匹配的 On 色，
+原生 `Background` / `Foreground` 是当前状态的最终画刷；它们以及 `BorderBrush` /
+`BorderThickness` / `CornerRadius` 的普通用户 Style、显式值或绑定优先于主题默认值。未设置内容色时，默认从启用容器颜色推导匹配的 On 色，
 无法匹配主题角色时继承外层内容色。统一定制见[公共 Token 接入](../../../../docs/GETTING_STARTED.md#主题与定制)。
 
 普通卡片会记住初次挂载的 Default elevation；后来替换 Elevation 或默认 Token 不会更新此高度，

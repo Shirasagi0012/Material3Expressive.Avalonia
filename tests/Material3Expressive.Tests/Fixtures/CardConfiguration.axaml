@@ -1,10 +1,8 @@
 <m3:OutlinedCard xmlns="https://github.com/avaloniaui"
                  xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-                 IsClickable="True" Width="160" Height="96">
-  <m3:OutlinedCard.Colors>
-    <m3:CardColors ContainerColor="#126E60" ContentColor="#FFFFFF"
-                   DisabledContainerColor="#EEEEEE" DisabledContentColor="#616161" />
-  </m3:OutlinedCard.Colors>
+                 IsClickable="True" Width="160" Height="96"
+                 ContainerColor="#126E60" ContentColor="#FFFFFF"
+                 DisabledContainerColor="#EEEEEE" DisabledContentColor="#616161">
   <m3:OutlinedCard.Elevation>
     <m3:CardElevation Default="2" Pressed="3" Focused="4" Hovered="5" Dragged="9" Disabled="1" />
   </m3:OutlinedCard.Elevation>

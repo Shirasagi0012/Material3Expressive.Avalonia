@@ -20,6 +20,15 @@
 这里说明职责，不代表独立 Surface 已涵盖 Compose 所有 clickable / selectable / toggleable 重载。
 交互输入、语义及点击执行属于外部 owner。
 
+## 配置输入
+
+Surface 主题将系统 Shadow、Surface、SurfaceTint、EffectsDefault 和四个 state-layer opacity
+Token 绑定到内部配置属性；绘制、形状动画和共享交互控制器只消费属性有效值，不自行解析 Token
+或回退到另一套 Material 常量。ShadowColor 的 null 仍明确表示使用主题 DefaultShadowColor。
+模板的 ButtonSurfaceState.ShapeSpec 是可选的形状规格输入，非 null 时优先于 ShapeAnimation；
+当前动画捕获规格和后续配置重建规则不变。资源、主题和挂载位置的更新由绑定传入，状态与动画
+生命周期仍由现有 Surface/controller 负责。
+
 ## 绘制与布局不变量
 
 绘制顺序为 Surface 自身阴影、`_chrome` 背景与被裁剪的 Child、交互覆盖、独立描边；

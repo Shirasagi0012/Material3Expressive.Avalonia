@@ -15,7 +15,7 @@ public static class MaterialDivider
 
     /// <summary>DIP stroke width. Zero is a device hairline and keeps zero layout thickness.</summary>
     public static readonly AttachedProperty<double> ThicknessProperty =
-        AvaloniaProperty.RegisterAttached<Separator, double>("Thickness", typeof(MaterialDivider), 1);
+        AvaloniaProperty.RegisterAttached<Separator, double>("Thickness", typeof(MaterialDivider));
     public static double GetThickness(Separator owner) => owner.GetValue(ThicknessProperty);
     public static void SetThickness(Separator owner, double value) => owner.SetValue(ThicknessProperty, value);
 

@@ -11,8 +11,6 @@ using Avalonia.Threading;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Components;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Foundation.Interaction;
 
@@ -55,12 +53,6 @@ internal sealed class MaterialInteractionController
     private IPointer? _pressedPointer;
     private bool _hoverNeedsMove;
     private bool _indicationFocused = true;
-
-    // Token-resolved state-layer opacities, falling back to the upstream constants in StateLayer.
-    private double _hoverOpacity = StateLayer.Opacity(InteractionState.Hovered);
-    private double _focusOpacity = StateLayer.Opacity(InteractionState.Focused);
-    private double _pressedOpacity = StateLayer.Opacity(InteractionState.Pressed);
-    private double _draggedOpacity = StateLayer.Opacity(InteractionState.Dragged);
 
     internal MaterialInteractionController(Control owner)
     {
@@ -115,8 +107,6 @@ internal sealed class MaterialInteractionController
             Set(InteractionState.Focused, false);
         };
         _owner.DetachedFromLogicalTree += OnDetachedFromLogicalTree;
-        _owner.ResourcesChanged += (_, _) => OnTokensChanged();
-        _owner.ActualThemeVariantChanged += (_, _) => OnTokensChanged();
         _owner.PropertyChanged += (_, change) =>
         {
             if (change.Property == InputElement.IsEffectivelyEnabledProperty
@@ -180,7 +170,6 @@ internal sealed class MaterialInteractionController
         _presenter = presenter;
         _motion ??= VisualAnimationScope.Create(_owner);
         var inputMode = MaterialInputMode.For(_owner);
-        ResolveOpacities();
         if (_owner.IsFocused && !_interaction.HasFlag(InteractionState.Focused))
             _indicationFocused = inputMode?.IsKeyboard ?? true;
         Set(InteractionState.Focused, _owner.IsFocused);
@@ -526,32 +515,18 @@ internal sealed class MaterialInteractionController
         _buttonElevation.Update(values, interaction, IsEnabled);
     }
 
-    private void OnTokensChanged()
+    internal void UpdateStateLayerConfiguration()
     {
-        ResolveOpacities();
         UpdateStateLayer();
         _presenter?.OnInteractionFrame();
     }
 
-    private void ResolveOpacities()
-    {
-        _hoverOpacity = Resolve(MaterialTokens.Sys.State.HoverStateLayerOpacity, InteractionState.Hovered);
-        _focusOpacity = Resolve(MaterialTokens.Sys.State.FocusStateLayerOpacity, InteractionState.Focused);
-        _pressedOpacity = Resolve(MaterialTokens.Sys.State.PressedStateLayerOpacity, InteractionState.Pressed);
-        _draggedOpacity = Resolve(MaterialTokens.Sys.State.DraggedStateLayerOpacity, InteractionState.Dragged);
-
-        double Resolve(MaterialTokenKey<double> key, InteractionState state) =>
-            TokenResolver.TryResolve(_owner, key, _owner.ActualThemeVariant, out var value) && value is double d
-                ? d
-                : StateLayer.Opacity(state);
-    }
-
     private double OpacityFor(InteractionState interaction) => interaction switch
     {
-        InteractionState.Hovered => _hoverOpacity,
-        InteractionState.Focused => _focusOpacity,
-        InteractionState.Pressed => _pressedOpacity,
-        InteractionState.Dragged => _draggedOpacity,
+        InteractionState.Hovered => _presenter?.HoverStateLayerOpacity ?? 0,
+        InteractionState.Focused => _presenter?.FocusStateLayerOpacity ?? 0,
+        InteractionState.Pressed => _presenter?.PressedStateLayerOpacity ?? 0,
+        InteractionState.Dragged => _presenter?.DraggedStateLayerOpacity ?? 0,
         _ => 0
     };
 
@@ -603,7 +578,7 @@ internal sealed class MaterialInteractionController
     private void DrawRipples(DrawingContext context, IBrush brush, Size size)
     {
         foreach (var ripple in _ripples)
-            ripple.Draw(context, brush, _pressedOpacity, size, RippleFollowsPresenterCenter);
+            ripple.Draw(context, brush, OpacityFor(InteractionState.Pressed), size, RippleFollowsPresenterCenter);
     }
 
     // Switch's ThumbNode measures its current animated size before launching the pressed snap.

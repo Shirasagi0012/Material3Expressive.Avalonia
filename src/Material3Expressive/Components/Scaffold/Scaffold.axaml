@@ -3,6 +3,8 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:Scaffold}" TargetType="m3:Scaffold">
+      <Setter Property="FloatingActionButtonPosition" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Scaffold.FloatingActionButtonPosition}}" />
+      <Setter Property="ContentWindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Scaffold.ContentWindowInsets}}" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Background}}" />
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />

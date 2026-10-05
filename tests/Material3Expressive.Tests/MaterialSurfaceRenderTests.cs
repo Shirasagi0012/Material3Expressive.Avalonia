@@ -164,7 +164,7 @@ public class MaterialSurfaceRenderTests
         var resources = new ResourceDictionary();
         resources.MergedDictionaries.Add(new MaterialResource
         {
-            Children = { new ColorScheme() },
+            Children = { new ColorScheme(), new StateTokenSource(), new MotionTokenSource() },
         });
         var window = new MotionTestWindow()
         {
@@ -173,14 +173,16 @@ public class MaterialSurfaceRenderTests
             Resources = resources,
             RequestedThemeVariant = ThemeVariant.Light,
             Background = Brushes.White,
-            Content = surface,
         };
+        window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Components/Surface/Surface.axaml")));
+        window.Content = surface;
         window.Show();
         return window;
     }
 
     private static MaterialSurface ProbeSurface() => new()
     {
+        Background = null, // Paint probes deliberately choose an empty fill over the themed default.
         Width = 100,
         Height = 50,
         HorizontalAlignment = HorizontalAlignment.Center,

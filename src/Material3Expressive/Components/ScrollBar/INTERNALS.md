@@ -17,6 +17,10 @@
 - [ScrollBarThumb.cs](ScrollBarThumb.cs)：观察实际 hover / drag 并中断更新颜色，不拥有原生数值状态
 - [ScrollBarTokenSource.cs](ScrollBarTokenSource.cs)：OnSurface 派生默认色；`Comp.ScrollBar` 是本项目为 CMP Foundation 样式建立的主题槽，并非上游生成的 Material3 Token
 
+厚度、最小长度、颜色和时长的基线只保留在 ScrollBarTokenSource，附加属性不重复数值默认值。
+方向样式只选择内部尺寸、菜单和模板候选，公开 Width/Height/ContextFlyout/Template 由普通
+主题 Setter 绑定；用户 Style、Binding、LocalValue 不被方向触发器压制。
+
 ## 已确认适配与机制
 
 依据[拆分前确认记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/ScrollBar/README.md)，

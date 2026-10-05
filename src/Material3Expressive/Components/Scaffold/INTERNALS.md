@@ -15,7 +15,9 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 固定两端布局逻辑一致。`Scaffold` / `ScaffoldLayout` 对应 [Scaffold.cs](Scaffold.cs)、
 [ScaffoldLayout.cs](ScaffoldLayout.cs) 与 [Scaffold.axaml](Scaffold.axaml)；`FabPosition` 是本地同名枚举，
 `ScaffoldDefaults.contentWindowInsets` 映射为宿主提供的物理 ContentWindowInsets。
-Scaffold 没有专属组件 Token 表，背景使用系统 Background，内容色使用共享 ContentColorFor。
+固定上游没有 Scaffold 组件 Token 表。本地 ScaffoldTokenSource 保存已有 FAB 位置和桌面零 Insets
+默认参数，主题将它们绑定到有效属性；背景使用系统 Background，内容色使用共享 ContentColorFor。
+ContentPadding、已消费 Insets、槽存在性和实际位置属于运行状态，16 DIP FAB 间距属于布局算法。
 
 ## 测量、排列与模板合约
 

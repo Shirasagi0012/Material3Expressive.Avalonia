@@ -10,6 +10,7 @@ public sealed class CardTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Card.DisabledContentOpacity] = 0.38d,
         [Comp.FilledCard.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainerHighest),
         [Comp.FilledCard.ContainerShape] = new TokenRef(Sys.Shape.Medium),
         [Comp.FilledCard.ContainerElevation] = new TokenRef(Sys.Elevation.Level0),
