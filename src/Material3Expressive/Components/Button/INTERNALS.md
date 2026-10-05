@@ -27,6 +27,29 @@
 
 该映射用于定位关键职责，不构成全部上游依赖或完整一致性的证明；验证应按文末入口分别报告。
 
+## 配置流与覆盖优先级
+
+ButtonSizesTokenSource 与各外观 TokenSource 保存基线和 TokenRef；主题负责按尺寸、外观及禁用状态
+选择默认配置，Avalonia 属性系统合并用户 Style、绑定和局部值，模板再把有效配置送入布局和 Surface。
+涉及公开配置的尺寸 class 与 `:disabled` 条件只更新内部 [ButtonThemeProperties](ButtonThemeProperties.cs) 的默认候选；
+`Padding`、`CornerRadius`、`Background`、`Foreground` 等公开属性通过主题级绑定消费候选。
+不能把条件 Setter 直接写回公开属性，否则 StyleTrigger 会压过普通用户 Style。
+内部候选不持有另一套 nullable 默认值链，也不是供应用设置的 API。
+
+`Comp.Button.MinWidth` 与 `MinimumInteractiveSize` 默认分别为 58/48 DIP，由 ButtonLayout 自身主题
+送入内部属性；不再把 Material 数字存进该类型的属性元数据，也不回写 owner 的 MinWidth/MinHeight。
+`ExtraSmallIconSpacing` 保存 `iconSpacingFor` 的 4 DIP 派生默认，供共享按钮族引用。
+容器高度、图标尺寸/间距等只属于模板的配置直接绑定内部部件，不要求为每个 Token 增加公开属性。
+
+例如 Medium Token → 内部 Padding 候选 → 主题级 `Button.Padding` → 内容布局；用户 Style 设置 Padding
+后切换尺寸仍保持用户配置，清除局部值后按剩余样式与当前 Token 重新合并。
+资源替换、主题变体与重挂载仍从当前消费者环境解析，动画只更新 Surface 呈现值，不修改公开配置。
+`ButtonElevation` 保留为五个确定高度组成的完整值，由主题 MultiBinding 动态组装；它与每实例控制器的
+运行状态分开，未被本次 nullable 配置清理删除。
+
+这一路径按维护者 2026-10-05 确认的配置组织实施；目的仅是让已有条件默认值服从 Avalonia 覆盖机制，
+不改变下文记录的输入、动画、精度及未决上游差异。
+
 ## 模板与默认值
 
 `MaterialFilledButtonTheme` 持有完整模板和尺寸选择器；另四种主题用 `BasedOn` 改变颜色、描边和
@@ -151,7 +174,7 @@ ButtonLayout 分开处理可见容器的默认最小值与外层 48 DIP 留白�
 
 | 范围 | 仓库内入口 |
 | --- | --- |
-| 默认主题、变体与 Token | [ButtonThemeTests](../../../../tests/Material3Expressive.Tests/ButtonThemeTests.cs)、[ButtonVariantThemeTests](../../../../tests/Material3Expressive.Tests/ButtonVariantThemeTests.cs)、[ButtonSizesTokenTests](../../../../tests/Material3Expressive.Tests/ButtonSizesTokenTests.cs)、[ButtonStyleVariantTokenTests](../../../../tests/Material3Expressive.Tests/ButtonStyleVariantTokenTests.cs) |
+| 默认主题、变体与 Token | [ButtonConfigurationTests](../../../../tests/Material3Expressive.Tests/ButtonConfigurationTests.cs)（普通 Style 优先级、清除恢复、实时布局 Token、完整 elevation 和模板动效配置）、[ButtonThemeTests](../../../../tests/Material3Expressive.Tests/ButtonThemeTests.cs)、[ButtonVariantThemeTests](../../../../tests/Material3Expressive.Tests/ButtonVariantThemeTests.cs)、[ButtonSizesTokenTests](../../../../tests/Material3Expressive.Tests/ButtonSizesTokenTests.cs)、[ButtonStyleVariantTokenTests](../../../../tests/Material3Expressive.Tests/ButtonStyleVariantTokenTests.cs) |
 | 布局与字符串模板 | [ButtonLayoutTests](../../../../tests/Material3Expressive.Tests/ButtonLayoutTests.cs)、[ButtonTextLayoutTests](../../../../tests/Material3Expressive.Tests/ButtonTextLayoutTests.cs) |
 | 原生输入、形状与高度生命周期 | [ButtonInputTests](../../../../tests/Material3Expressive.Tests/ButtonInputTests.cs)、[ButtonShapeApiTests](../../../../tests/Material3Expressive.Tests/ButtonShapeApiTests.cs)、[ButtonElevationTests](../../../../tests/Material3Expressive.Tests/ButtonElevationTests.cs) |
 | 双端场景与动态采样 | [Avalonia ButtonCases](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ButtonCases.cs)、[Compose ButtonCases](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ButtonCases.kt)、[ButtonTimelineTests](../../../../tests/VisualParity/Material3Expressive.Parity.Tests/Cases/ButtonTimelineTests.cs) |

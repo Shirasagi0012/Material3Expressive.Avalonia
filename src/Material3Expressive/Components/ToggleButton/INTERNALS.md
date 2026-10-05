@@ -21,6 +21,25 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | `shapeByInteraction` / `rememberAnimatedShape` | [ButtonSurfaceState.cs](ButtonSurfaceState.cs) 将三形状状态输入共享 MaterialSurface / AnimatedCornerRadius |
 | `animateBorderStrokeAsState` | [AnimatedButtonBorder.cs](AnimatedButtonBorder.cs) 连接共享 SurfaceOutline |
 
+## 配置流与完整值
+
+ToggleButtonTokenSource 保存颜色、Small 按压角及动效基线，系统色和 spring 继续以 TokenRef 引用。
+主题将 checked/enabled 条件与 Token 组合成原生 Background/Foreground 的默认值；可选的
+`ToggleButtonColors` 是六个确定 Color 的完整不可变值，整体替换颜色表，null 才表示使用主题 Token。
+它没有逐槽缺省搜索，和完整 `ButtonElevation` 一样继续保留。
+
+尺寸条件的 Padding、排版、checked/pressed 圆角，以及 Outlined 的选中/禁用描边候选由内部
+[ButtonThemeProperties](../Button/ButtonThemeProperties.cs) 承接，再由主题级绑定送入公开配置。
+这样普通用户 Style 与局部值/绑定可以覆盖条件默认，清除后恢复当前状态和 Token；控制器不回写这些输入。
+共享 ButtonLayout 的交互尺寸由 `Comp.Button.MinimumInteractiveSize` 提供，Toggle 仍明确令容器最小宽为 0。
+XS 间距的现有 `Comp.ToggleButton.ExtraSmallIconSpacing` 引用共享 `Comp.Button.ExtraSmallIconSpacing`，
+保留 4 DIP 的上游 helper 修正而非原始 XS Token 的 8 DIP。
+
+形状、边宽和边色默认分别由 `Comp.ToggleButton.ShapeAnimation`、`BorderWidthAnimation`、
+`BorderColorAnimation` 进入模板的 ButtonSurfaceState 配置，再供 AnimatedButtonBorder/形状状态使用。
+AnimatedButtonBorder 读取有效配置，不自行通过 resolver 重取系统 spring；动画仍只生成 Surface 的呈现结果。
+上述组织按维护者 2026-10-05 的配置迁移确认实施，不改变以下目标合并、反向与卸载时序。
+
 ## 模板与动画不变量
 
 ButtonLayout 的 ContainerMinWidth 为 0，没有普通 Button 的 58 DIP 默认值；五档高度与外层 48 DIP 留白分开。
@@ -30,7 +49,7 @@ ButtonLayout 的 ContainerMinWidth 为 0，没有普通 Button 的 58 DIP 默认
 iconSpacingFor 为 4 DIP，不能使用原始 ButtonXSmall 的 8 DIP。无图标时 Toggle 保留自然尺寸标签居中；
 这与普通 Button / SplitButton 的完整分配行为不同。标签使用 ButtonContentPresenter，任意图标需自己消费前景色或用 MaterialSymbol。
 颜色转换把实时 Token、可选六槽配置、原生 IsChecked/IsEffectivelyEnabled 组合为背景/内容色；
-null 按未选中，禁用忽略选中状态。原生局部值/绑定仍优先。
+IsChecked=null 按未选中，禁用忽略选中状态。普通用户 Style、原生局部值/绑定仍优先。
 
 三形状优先级为 pressed > checked > rest；Small 按压角 6 DIP。
 形状用 FastSpatial，配置变化按上游重建状态，反向和第三目标复用共享 AnimatedCornerRadius。
@@ -74,7 +93,7 @@ IsChecked 先变更再触发 Click/Command，Enter 按下、Space 默认松开�
 
 ## 验证入口
 
-- [控件测试](../../../../tests/Material3Expressive.Tests/ToggleSplitButtonTests.cs)：三形状/尺寸、原生键盘顺序、双向/nullable 绑定、图标色与生命周期，以及 Split 独立按钮和光学布局。
+- [控件测试](../../../../tests/Material3Expressive.Tests/ToggleSplitButtonTests.cs)：三形状/尺寸、原生键盘顺序、双向/nullable 绑定、图标色与生命周期，以及 Split 独立按钮和光学布局；[ButtonConfigurationTests](../../../../tests/Material3Expressive.Tests/ButtonConfigurationTests.cs) 检查 Style/局部值优先与描边动画消费模板配置。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ToggleButtonCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ToggleButtonCases.kt)
 - [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml) 提供真实内容组合；其事件处理见

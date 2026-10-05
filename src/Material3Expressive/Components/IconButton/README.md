@@ -51,7 +51,7 @@
 | `large` | 96 / 32 |
 | `xlarge` | 136 / 40 |
 
-Small 的外层默认布局为 48×48，容器 40×40；XS 显式约束外层与容器均为 32×32。
+Small 的外层默认布局为 48×48，容器 40×40；XS 的主题默认 Width/Height 为 32，外层与容器均为 32×32。
 其他尺寸按各自容器边长布局；留白不扩大鼠标点击区域。
 `Width`/`Height`、`MinWidth`/`MinHeight` 保留显式约束；未设置的公开 `MinWidth`/`MinHeight` 为 0，
 不要据其推断默认容器尺寸，需要布局读数时看实际 `Bounds`。
@@ -73,11 +73,17 @@ Small 的外层默认布局为 48×48，容器 40×40；XS 显式约束外层与
                m3:MaterialButton.PressedCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.PressedContainerShape}}" />
 ```
 
-尺寸 class 不覆盖局部静止圆角或显式按压目标；形状变化不改变内容/尺寸布局。
+尺寸 class 提供默认值，普通用户 Style、局部值或绑定均可覆盖静止圆角、按压目标和 Width/Height；
+XS 的 32 DIP 也不是强制尺寸。形状变化不改变内容/尺寸布局。
 圆角方形通过 `CornerRadius` 或 `ContainerShapeSquare` Token 表达，没有独立 square class。
 `Background`/`Foreground` 调整背景/图标，`BorderBrush`/`BorderThickness` 调整描边。
 状态层/ripple 颜色来自主题 Token，不保证随局部 `Foreground` 同步；需要各状态一致时优先
 [Token 覆盖](../../../../docs/GETTING_STARTED.md)，并检查禁用状态。
+
+主题默认颜色和描边同样可被普通 Style、局部值或绑定覆盖，禁用不会强制替换这些设置；
+需要禁用差异时用自己的状态样式或对应 Token。清除局部值后恢复剩余样式或当前尺寸/状态的主题默认值，
+如 `iconButton.ClearValue(IconButton.WidthProperty)`（`iconButton` 为当前实例）会重新采用当前尺寸默认值。
+资源和主题变更会继续更新未被覆盖的默认配置。
 
 ## 使用边界
 

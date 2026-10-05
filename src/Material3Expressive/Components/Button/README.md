@@ -57,10 +57,12 @@
         Theme="{StaticResource MaterialTonalButtonTheme}" />
 ```
 
-尺寸 class 一起选择圆角、Padding 和标签排版。表中的高度不是固定 `Height`：内容可以把按钮撑高，
+尺寸 class 一起选择默认圆角、Padding 和标签排版。表中的高度不是固定 `Height`：内容可以把按钮撑高，
 父布局约束也会影响结果。默认容器最小宽度为 58 DIP；未显式约束时外层预留至少 48 DIP 的布局空间，
 所以空的 Small 按钮通常占高 48 DIP，背景高 40 DIP；Extra small 的背景为 32 DIP，外层仍为 48 DIP。
 这层留白不会扩大鼠标可点击区域。显式 `Width` / `Height`、`MinWidth` / `MinHeight` 可覆盖相应默认约束。
+要调整一处作用域的共享布局默认，可覆盖 `Comp.Button.MinWidth` / `MinimumInteractiveSize` Token；
+它们也影响同一作用域中消费这些默认值的其他按钮布局。
 
 默认水平靠左、垂直居中；需要铺满父布局时设置 `HorizontalAlignment="Stretch"`。
 
@@ -125,7 +127,7 @@
 
 C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`
 （`Material3Expressive.Components`、`Avalonia`）；传 `null` 恢复固定形状。
-属性支持绑定、样式和非对称圆角。局部 `CornerRadius` 和显式按压目标不会被尺寸 class 覆盖，
+属性支持绑定、样式和非对称圆角。普通用户 Style、局部值或绑定设置的 `CornerRadius` 和按压目标不会被尺寸 class 覆盖，
 切换尺寸时如需不同的按压目标，应通过自己的样式或绑定更新。
 从旧的自动按压变形行为迁移时，需要显式设置 `PressedCornerRadius`；主题不再自动消费按压形状 Token。
 
@@ -149,7 +151,11 @@ C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`
 ```
 
 设 `m3:MaterialButton.Elevation="{x:Null}"` 会移除按钮的交互高度策略，恢复模板本身的高度值。
-局部颜色或描边值可能覆盖主题的禁用样式；自定义外观时请同时检查启用与禁用状态。
+普通用户 Style、局部值和绑定都会覆盖相应的主题默认配置，包括尺寸 class 与禁用状态选择的默认值。
+因此固定设置颜色或描边后，禁用时也保留该设置；需要禁用差异时再用自己的状态样式或 Token 表达。
+清除局部值（例如 `button.ClearValue(Button.PaddingProperty)`，`button` 为按钮实例）后，
+恢复剩余用户样式或当前尺寸的主题默认值，而非创建时的旧值。
+默认配置中的 Token 会随资源、主题和所在作用域更新；显式覆盖保持生效，移除后重新使用实时默认值。
 状态层和 ripple 的墨色来自主题 Token，不能假定修改 `Foreground` 会同时重配它们。
 需要保持各状态联动时，优先按[共享接入说明](../../../../docs/GETTING_STARTED.md)使用 Token 覆盖。
 

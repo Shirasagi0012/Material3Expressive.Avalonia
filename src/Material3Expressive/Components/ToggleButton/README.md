@@ -69,14 +69,15 @@ Avalonia 属性身份；新代码建议使用共享名称。两种写法不要�
 ```
 
 静止用原生 `CornerRadius`，选中用 `CheckedCornerRadius`，按压复用 `MaterialButton.PressedCornerRadius`。
-Small 默认按压角 6 DIP。显式局部值优先于尺寸默认值；若需完全固定圆角，将静止和选中设为相同值，
+Small 默认按压角 6 DIP。普通用户 Style、局部值或绑定优先于尺寸默认值；若需完全固定圆角，将静止和选中设为相同值，
 并将 `PressedCornerRadius` 设为 `{x:Null}`。
 
 ## 颜色与使用边界
 
 `Background`/`Foreground`、`BorderBrush`/`BorderThickness`、`Padding` 和内容对齐可按原生属性定制。
 整套颜色用附加 `ToggleButtonAppearance.Colors` 的不可变 `ToggleButtonColors`，
-六槽为普通/禁用/选中的 container/content；C# 通过 SetColors 传入，null 恢复动态主题 Token。
+六槽为普通/禁用/选中的 container/content，必须整体给定，不是逐字段可空的覆盖包；
+C# 通过 `ToggleButtonAppearance.SetColors` 传入，null 恢复动态主题 Token。
 局部 Token 更适合只改一个状态：
 
 ```xml
@@ -88,7 +89,11 @@ Small 默认按压角 6 DIP。显式局部值优先于尺寸默认值；若需�
 </ToggleButton>
 ```
 
-本主题直接用 `Foreground` 作为 Surface 反馈墨色。局部颜色可能覆盖禁用默认值，需一并检查禁用状态。
+本主题直接用 `Foreground` 作为 Surface 反馈墨色。普通用户 Style、局部值与绑定可覆盖当前颜色、描边、
+Padding 和形状，选中/禁用或尺寸变化不会替换这些设置；需要状态差异时由自己的样式或 Token 表达。
+清除局部值后恢复剩余样式或当前状态、尺寸和资源下的主题默认值。`ToggleButtonColors` 与
+`MaterialButton.Elevation` 的完整 `ButtonElevation` 配置仍可使用；形状和描边的动效默认可覆盖
+`Comp.ToggleButton.ShapeAnimation`、`BorderWidthAnimation`、`BorderColorAnimation` Token。
 当前形状只支持圆角矩形，没有任意 `Shape` 或外部 MutableInteractionSource 对象映射。
 模板内部 Surface 裁剪背景、内容与反馈；替换模板需自行保留这些接入。
 当前无字形回归不能证明真实字体、屏幕阅读器或桌面体验一致。
