@@ -5,7 +5,11 @@
 
 ## 默认配置数据流
 
+内部 motion 输入以 null 表示尚未绑定；挂载、重挂或资源临时失效时不构造无效弹簧，恢复后提交当前目标。已有动画保留其已捕获规格，不以 Expressive 常量补齐配置。
+
 单/双行高度由主题 Token 绑定到 SnackbarLayout 配置属性，属性变化触发重新测量；布局不再直接查询 Token 或补 48/68 常量。Host 的缩放/透明度规格同样通过主题配置输入，FIFO、退出保留和目标提交帧不变。
+
+默认数据动作/关闭按钮的父级前景输入绑定 ButtonThemeProperties 候选，由按钮主题转发到原生有效 Foreground；禁用默认、用户普通 Style 和局部值仍按正常优先级工作。Snackbar 动作主题的 12/8 Padding 与 LabelLarge 同样作为候选进入现有 size-class 路径，`.medium` 等尺寸配置不会被派生主题截断。Padding 基线保存在 ActionContentPadding Token。
 
 ## 固定上游与本地入口
 

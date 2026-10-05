@@ -18,12 +18,12 @@ namespace Material3Expressive.Components;
 // Template part: paint and animation only. Native RadioButton owns selection, grouping and automation.
 internal sealed class RadioButtonIndicator : Control
 {
-    public static readonly StyledProperty<Foundation.Motion.SpringSpec> DotAnimationProperty =
-        AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec>(nameof(DotAnimation));
-    public Foundation.Motion.SpringSpec DotAnimation { get => GetValue(DotAnimationProperty); set => SetValue(DotAnimationProperty, value); }
-    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ColorAnimationProperty =
-        AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec>(nameof(ColorAnimation));
-    public Foundation.Motion.SpringSpec ColorAnimation { get => GetValue(ColorAnimationProperty); set => SetValue(ColorAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec?> DotAnimationProperty =
+        AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec?>(nameof(DotAnimation));
+    public Foundation.Motion.SpringSpec? DotAnimation { get => GetValue(DotAnimationProperty); set => SetValue(DotAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec?> ColorAnimationProperty =
+        AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec?>(nameof(ColorAnimation));
+    public Foundation.Motion.SpringSpec? ColorAnimation { get => GetValue(ColorAnimationProperty); set => SetValue(ColorAnimationProperty, value); }
 
     public static readonly StyledProperty<bool?> IsCheckedProperty = AvaloniaProperty.Register<RadioButtonIndicator, bool?>(nameof(IsChecked), false);
     public bool? IsChecked { get => GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }
@@ -84,7 +84,8 @@ internal sealed class RadioButtonIndicator : Control
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == IsCheckedProperty || change.Property == IsEffectivelyEnabledProperty ||
+        if (change.Property == DotAnimationProperty || change.Property == ColorAnimationProperty ||
+            change.Property == IsCheckedProperty || change.Property == IsEffectivelyEnabledProperty ||
             change.Property == ColorsProperty || change.Property.PropertyType == typeof(Color)) UpdateTargets();
     }
 
@@ -100,9 +101,8 @@ internal sealed class RadioButtonIndicator : Control
             _pending = false;
             if (_dotRadius is not { } dot || _color is not { } color) return;
             var radiusTarget = RadiusTarget;
-            if (dot.TargetValue != radiusTarget)
+            if (dot.TargetValue != radiusTarget && DotAnimation is { } spatial)
             {
-                var spatial = DotAnimation;
                 _ = motion.Launch(async token =>
                 {
                     // Fixed AnimateAsState.restartAnimation cancels its previous job before animateTo.
@@ -116,6 +116,7 @@ internal sealed class RadioButtonIndicator : Control
             var colorTarget = ColorTarget;
             // Disabled removes animateColorAsState; re-enabling creates a fresh state at its target.
             var animate = IsEffectivelyEnabled && _colorsEnabled;
+            if (animate && ColorAnimation is null) return;
             _colorsEnabled = IsEffectivelyEnabled;
             if (animate ? color.TargetValue == colorTarget : !color.IsRunning && color.Value == colorTarget && color.TargetValue == colorTarget) return;
             var effects = ColorAnimation;
@@ -123,7 +124,7 @@ internal sealed class RadioButtonIndicator : Control
             {
                 await color.StopAsync();
                 token.ThrowIfCancellationRequested();
-                if (animate) await color.AnimateToAsync(colorTarget, new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness), cancellationToken: token);
+                if (animate) await color.AnimateToAsync(colorTarget, new SpringSpec<Color>(effects!.Value.DampingRatio, effects.Value.Stiffness), cancellationToken: token);
                 else await color.SnapToAsync(colorTarget);
             }, "RadioButton color");
         }, "RadioButton targets");

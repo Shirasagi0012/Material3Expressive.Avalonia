@@ -21,9 +21,9 @@ namespace Material3Expressive.Components;
 // Also PART_SwitchKnob: native ToggleSwitch owns Canvas.Left and drag activation.
 internal sealed class SwitchThumbLayout : Panel
 {
-    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ThumbAnimationProperty =
-        AvaloniaProperty.Register<SwitchThumbLayout, Foundation.Motion.SpringSpec>(nameof(ThumbAnimation));
-    public Foundation.Motion.SpringSpec ThumbAnimation { get => GetValue(ThumbAnimationProperty); set => SetValue(ThumbAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec?> ThumbAnimationProperty =
+        AvaloniaProperty.Register<SwitchThumbLayout, Foundation.Motion.SpringSpec?>(nameof(ThumbAnimation));
+    public Foundation.Motion.SpringSpec? ThumbAnimation { get => GetValue(ThumbAnimationProperty); set => SetValue(ThumbAnimationProperty, value); }
 
 
     private ToggleSwitch? _owner;
@@ -85,6 +85,12 @@ internal sealed class SwitchThumbLayout : Panel
         _nativeDragging = _dragging = _dragHandoff = false;
         _owner = null; _interaction = null;
         base.OnDetachedFromVisualTree(e);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == ThumbAnimationProperty) InvalidateMeasure();
     }
 
     private void InputChanged(object? sender, RoutedEventArgs e) => InvalidateMeasure();
@@ -189,9 +195,6 @@ internal sealed class SwitchThumbLayout : Panel
         {
             _initialSize = size; _initialOffset = offset;
         }
-        var spring = ThumbAnimation;
-        IFiniteAnimationSpec<float> animationSpec = pressed ? new SnapSpec<float>()
-            : new SpringSpec<float>(spring.DampingRatio, spring.Stiffness, 0.01f);
         var measuredSize = (int)(_sizeAnim is null ? size : _sizePx) / (double)scale;
         _interaction?.InitializeRippleDrawGeometry(new Size(measuredSize, measuredSize));
         if (!_dragHandoff) Animate(_sizeAnim, size);
@@ -199,6 +202,9 @@ internal sealed class SwitchThumbLayout : Panel
         void Animate(Animatable<float>? track, float target)
         {
             if (track is null || track.TargetValue == target || _motion is not { IsEnding: false } motion) return;
+            if (!pressed && ThumbAnimation is null) return;
+            IFiniteAnimationSpec<float> animationSpec = pressed ? new SnapSpec<float>()
+                : new SpringSpec<float>(ThumbAnimation!.Value.DampingRatio, ThumbAnimation.Value.Stiffness, 0.01f);
             // ThumbNode launches animateTo directly; interruption retains current velocity.
             _ = motion.Launch(ct => track.AnimateToAsync(target, animationSpec, cancellationToken: ct), "Switch thumb animation");
         }

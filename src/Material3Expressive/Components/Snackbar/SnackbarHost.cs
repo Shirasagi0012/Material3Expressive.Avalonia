@@ -18,12 +18,12 @@ namespace Material3Expressive.Components;
 /// <summary>Displays the current data, retains exiting items, and applies the Core desktop timeout.</summary>
 public class SnackbarHost : TemplatedControl
 {
-    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> ScaleAnimationProperty =
-        AvaloniaProperty.Register<SnackbarHost, Foundation.Motion.SpringSpec>(nameof(ScaleAnimation));
-    internal Foundation.Motion.SpringSpec ScaleAnimation { get => GetValue(ScaleAnimationProperty); set => SetValue(ScaleAnimationProperty, value); }
-    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> OpacityAnimationProperty =
-        AvaloniaProperty.Register<SnackbarHost, Foundation.Motion.SpringSpec>(nameof(OpacityAnimation));
-    internal Foundation.Motion.SpringSpec OpacityAnimation { get => GetValue(OpacityAnimationProperty); set => SetValue(OpacityAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec?> ScaleAnimationProperty =
+        AvaloniaProperty.Register<SnackbarHost, Foundation.Motion.SpringSpec?>(nameof(ScaleAnimation));
+    internal Foundation.Motion.SpringSpec? ScaleAnimation { get => GetValue(ScaleAnimationProperty); set => SetValue(ScaleAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec?> OpacityAnimationProperty =
+        AvaloniaProperty.Register<SnackbarHost, Foundation.Motion.SpringSpec?>(nameof(OpacityAnimation));
+    internal Foundation.Motion.SpringSpec? OpacityAnimation { get => GetValue(OpacityAnimationProperty); set => SetValue(OpacityAnimationProperty, value); }
 
 
     public static readonly StyledProperty<SnackbarHostState> StateProperty = AvaloniaProperty.Register<SnackbarHost, SnackbarHostState>(nameof(State));
@@ -72,7 +72,7 @@ public class SnackbarHost : TemplatedControl
     {
         base.OnPropertyChanged(change);
         if (change.Property == StateProperty && _scope is not null) ObserveState();
-        if (change.Property == SnackbarTemplateProperty) RequestUpdate();
+        if (change.Property == SnackbarTemplateProperty || change.Property == ScaleAnimationProperty || change.Property == OpacityAnimationProperty) RequestUpdate();
     }
     private void ObserveState(bool initial = false)
     {
@@ -104,7 +104,7 @@ public class SnackbarHost : TemplatedControl
     }
     private void UpdateCurrent()
     {
-        if (_scope is null || _scope.IsEnding) return;
+        if (_scope is null || _scope.IsEnding || ScaleAnimation is not { } scaleSpec || OpacityAnimation is not { } opacitySpec) return;
         var current = State.CurrentSnackbarData;
         if (ReferenceEquals(_current, current)) return;
         _current = current;
@@ -144,13 +144,13 @@ public class SnackbarHost : TemplatedControl
             {
                 var alpha = AnimateOpacity();
                 var scale = item.Scale.AnimateToAsync(visible ? 1f : .8f,
-                    Spec(ScaleAnimation), cancellationToken: token);
+                    Spec(scaleSpec), cancellationToken: token);
                 await Task.WhenAll(alpha, scale);
 
                 async Task AnimateOpacity()
                 {
                     await item.Opacity.AnimateToAsync(visible ? 1f : 0f,
-                        Spec(OpacityAnimation), cancellationToken: token);
+                        Spec(opacitySpec), cancellationToken: token);
                     if (!ReferenceEquals(item.Data, _current))
                     {
                         _items.Remove(item); _panel?.Children.Remove(item.Presenter);

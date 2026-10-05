@@ -34,7 +34,7 @@
                         m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
                     <Button x:Name="PART_DataAction" IsVisible="False" VerticalAlignment="Top"
                         Content="{Binding Data.Visuals.ActionLabel, RelativeSource={RelativeSource TemplatedParent}}"
-                        Foreground="{TemplateBinding DataActionForeground}" Theme="{StaticResource MaterialSnackbarActionButtonTheme}" />
+                        m3:ButtonThemeProperties.Foreground="{TemplateBinding DataActionForeground}" Theme="{StaticResource MaterialSnackbarActionButtonTheme}" />
                   </Grid>
                   <Grid x:Name="PART_Dismiss" IsVisible="False">
                     <ContentPresenter x:Name="PART_CustomDismiss" IsVisible="False" Content="{TemplateBinding DismissAction}"
@@ -42,7 +42,7 @@
                         HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
                     <m3:TooltipBox x:Name="PART_DismissTooltip" IsVisible="False" AnchorPosition="Above">
                       <m3:TooltipBox.Tooltip><m3:PlainTooltip /></m3:TooltipBox.Tooltip>
-                      <m3:IconButton x:Name="PART_DataDismiss" Foreground="{TemplateBinding DismissActionForeground}"
+                      <m3:IconButton x:Name="PART_DataDismiss" m3:ButtonThemeProperties.Foreground="{TemplateBinding DismissActionForeground}"
                           AutomationProperties.Name="{TemplateBinding DismissActionText}"
                           Theme="{StaticResource MaterialSnackbarDismissButtonTheme}" />
                     </m3:TooltipBox>
@@ -70,8 +70,8 @@
     <!-- The data overload uses the simple TextButton overload's 12/8 padding. -->
     <ControlTheme x:Key="MaterialSnackbarActionButtonTheme" TargetType="Button"
                   BasedOn="{StaticResource MaterialTextButtonTheme}">
-      <Setter Property="Padding" Value="12,8" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
+      <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionContentPadding}}" />
+      <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
       </Style>

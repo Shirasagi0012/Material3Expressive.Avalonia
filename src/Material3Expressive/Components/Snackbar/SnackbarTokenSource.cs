@@ -10,6 +10,7 @@ public sealed class SnackbarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Snackbar.ActionContentPadding] = new Avalonia.Thickness(12, 8),
         [Comp.Snackbar.ScaleAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.Snackbar.OpacityAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
         [Comp.Snackbar.ActionFocusLabelTextColor] = new TokenRef(Sys.Color.InversePrimary),

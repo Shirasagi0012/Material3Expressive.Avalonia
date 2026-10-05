@@ -3,6 +3,8 @@
 使用入口见 [README](README.md)。维护时必须区分原生 ToolTip 的主题与服务适配、PlainTooltip
 的内容表面，以及 TooltipBox 的状态/Popup 路径，不能以原生静态测试证明 Box 的行为一致。
 
+Box 内部 motion 输入未就绪时，通过已有 Transition preparation reservation 保留 TooltipState 的未完成状态；撤下子通道并保留当前姿态与速度。规格恢复后重建通道、续接当前目标并释放 reservation，不完成或替换外部 State，也不提供替代曲线。
+
 ## 默认配置数据流
 
 TooltipBox 的缩放/透明度规格由 Box Token 引用系统 motion，经主题绑定内部配置属性；Transition 捕获当前属性，不再自行解析 Token 或补 Expressive 默认。PlainTooltip 仍只负责静态表面。

@@ -12,6 +12,7 @@ public static partial class MaterialTokens
     {
         public static class Snackbar
         {
+            public static readonly MaterialTokenKey<Thickness> ActionContentPadding = new("md.comp.snackbar.action-content-padding");
             public static readonly MaterialTokenKey<SpringSpec> ScaleAnimation = new("md.comp.snackbar.scale-animation");
             public static readonly MaterialTokenKey<SpringSpec> OpacityAnimation = new("md.comp.snackbar.opacity-animation");
 

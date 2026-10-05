@@ -23,12 +23,12 @@ namespace Material3Expressive.Components;
 /// <summary>Hosts an anchor and presents its tooltip using the fixed Compose desktop behavior.</summary>
 public class TooltipBox : ContentControl
 {
-    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> ScaleAnimationProperty =
-        AvaloniaProperty.Register<TooltipBox, Foundation.Motion.SpringSpec>(nameof(ScaleAnimation));
-    internal Foundation.Motion.SpringSpec ScaleAnimation { get => GetValue(ScaleAnimationProperty); set => SetValue(ScaleAnimationProperty, value); }
-    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> OpacityAnimationProperty =
-        AvaloniaProperty.Register<TooltipBox, Foundation.Motion.SpringSpec>(nameof(OpacityAnimation));
-    internal Foundation.Motion.SpringSpec OpacityAnimation { get => GetValue(OpacityAnimationProperty); set => SetValue(OpacityAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec?> ScaleAnimationProperty =
+        AvaloniaProperty.Register<TooltipBox, Foundation.Motion.SpringSpec?>(nameof(ScaleAnimation));
+    internal Foundation.Motion.SpringSpec? ScaleAnimation { get => GetValue(ScaleAnimationProperty); set => SetValue(ScaleAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec?> OpacityAnimationProperty =
+        AvaloniaProperty.Register<TooltipBox, Foundation.Motion.SpringSpec?>(nameof(OpacityAnimation));
+    internal Foundation.Motion.SpringSpec? OpacityAnimation { get => GetValue(OpacityAnimationProperty); set => SetValue(OpacityAnimationProperty, value); }
 
 
     public static readonly StyledProperty<object?> TooltipProperty = AvaloniaProperty.Register<TooltipBox, object?>(nameof(Tooltip));
@@ -61,6 +61,12 @@ public class TooltipBox : ContentControl
     private VisualAnimationScope? _scope, _stateScope;
     private TooltipState? _activeState;
     private Transition<bool>? _transition;
+    private Transition<bool>.DeferredAnimation<float>? _scaleAnimation, _opacityAnimation;
+    private Transition<bool>.TransitionAnimationState<float>? _scaleChannel, _opacityChannel;
+    private IDisposable? _scaleSubscription, _opacitySubscription;
+    private TransitionPreparationLease? _configurationPending;
+    private AnimationVector? _heldScaleVelocity, _heldOpacityVelocity;
+    private bool _hasHeldAppearance;
     private float _scale = .8f, _alpha;
     private bool _receivedKeyboardFocus;
     private IPointer? _heldPointer;
@@ -144,6 +150,7 @@ public class TooltipBox : ContentControl
         {
             ReleasePointer(); DetachState(); AttachState();
         }
+        if (change.Property == ScaleAnimationProperty || change.Property == OpacityAnimationProperty) ConfigureMotion();
         if (change.Property == EnableUserInputProperty && !EnableUserInput) ReleasePointer();
         if (change.Property == AnchorPositionProperty || change.Property == SpacingProperty || change.Property == PositionProviderProperty
             || change.Property == FlowDirectionProperty || change.Property == RenderTransformProperty
@@ -156,14 +163,43 @@ public class TooltipBox : ContentControl
         _activeState.PropertyChanged += OnStateChanged;
         var scope = _stateScope = _scope!.CreateChild("Tooltip state");
         var transition = _transition = scope.CreateTransition(_activeState.Transition, "Tooltip appearance");
-        var scale = _transition.AnimateFloat(visible => visible ? 1f : .8f,
-            _ => Spec(ScaleAnimation), "Tooltip scale");
-        var alpha = _transition.AnimateFloat(visible => visible ? 1f : 0f,
-            _ => Spec(OpacityAnimation), "Tooltip alpha");
-        scope.SubscribeValue(scale, value => { _scale = value; UpdateAppearance(); });
-        scope.SubscribeValue(alpha, value => { _alpha = value; UpdateAppearance(); });
+        ConfigureMotion();
         _ = scope.Launch(ct => transition.RunAsync(ct), "Tooltip transition");
         UpdatePresentation();
+    }
+
+    private void ConfigureMotion()
+    {
+        if (_transition is not { } transition || _stateScope is not { IsEnding: false } scope) return;
+        if (ScaleAnimation is null || OpacityAnimation is null)
+        {
+            // Keep TooltipState unfinished while theme inputs are temporarily unavailable.
+            // The reservation is lifecycle readiness, not an alternative animation curve.
+            _configurationPending ??= transition.BeginPreparation();
+            if (_scaleChannel is not null && _opacityChannel is not null)
+            {
+                _heldScaleVelocity = AnimationVector.From(_scaleChannel.VelocityVector);
+                _heldOpacityVelocity = AnimationVector.From(_opacityChannel.VelocityVector);
+                _hasHeldAppearance = true;
+                _scaleSubscription?.Dispose(); _opacitySubscription?.Dispose();
+                _scaleAnimation?.Dispose(); _opacityAnimation?.Dispose();
+                _scaleChannel = _opacityChannel = null;
+            }
+            return;
+        }
+        if (_scaleChannel is not null) return;
+        _scaleAnimation = transition.CreateDeferredAnimation(new FloatConverter(), "Tooltip scale");
+        _opacityAnimation = transition.CreateDeferredAnimation(new FloatConverter(), "Tooltip alpha");
+        _scaleChannel = _hasHeldAppearance
+            ? _scaleAnimation.Animate(_ => Spec(ScaleAnimation!.Value), _scale, _heldScaleVelocity, visible => visible ? 1f : .8f)
+            : _scaleAnimation.Animate(_ => Spec(ScaleAnimation!.Value), visible => visible ? 1f : .8f);
+        _opacityChannel = _hasHeldAppearance
+            ? _opacityAnimation.Animate(_ => Spec(OpacityAnimation!.Value), _alpha, _heldOpacityVelocity, visible => visible ? 1f : 0f)
+            : _opacityAnimation.Animate(_ => Spec(OpacityAnimation!.Value), visible => visible ? 1f : 0f);
+        _scaleSubscription = scope.SubscribeValue(_scaleChannel, value => { _scale = value; UpdateAppearance(); });
+        _opacitySubscription = scope.SubscribeValue(_opacityChannel, value => { _alpha = value; UpdateAppearance(); });
+        _configurationPending?.Dispose(); _configurationPending = null;
+        _hasHeldAppearance = false; _heldScaleVelocity = _heldOpacityVelocity = null;
     }
 
     private static SpringSpec<float> Spec(Foundation.Motion.SpringSpec spec) =>
@@ -174,6 +210,10 @@ public class TooltipBox : ContentControl
         if (_activeState is not null) { _activeState.PropertyChanged -= OnStateChanged; _activeState.OnDispose(); }
         _stateScope?.Dispose(); _stateScope = null;
         _transition?.Dispose(); _transition = null;
+        _configurationPending = null;
+        _scaleChannel = _opacityChannel = null; _scaleAnimation = _opacityAnimation = null;
+        _scaleSubscription = _opacitySubscription = null;
+        _hasHeldAppearance = false; _heldScaleVelocity = _heldOpacityVelocity = null;
         _activeState = null;
     }
 

@@ -19,15 +19,15 @@ namespace Material3Expressive.Components;
 // Private template part; it owns paint and animation, never changes the native CheckBox state.
 internal sealed class CheckBoxIndicator : Control
 {
-    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ShapeAnimationProperty =
-        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec>(nameof(ShapeAnimation));
-    public Foundation.Motion.SpringSpec ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
-    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ColorAnimationProperty =
-        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec>(nameof(ColorAnimation));
-    public Foundation.Motion.SpringSpec ColorAnimation { get => GetValue(ColorAnimationProperty); set => SetValue(ColorAnimationProperty, value); }
-    public static readonly StyledProperty<Foundation.Motion.SpringSpec> UncheckColorAnimationProperty =
-        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec>(nameof(UncheckColorAnimation));
-    public Foundation.Motion.SpringSpec UncheckColorAnimation { get => GetValue(UncheckColorAnimationProperty); set => SetValue(UncheckColorAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec?> ShapeAnimationProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec?>(nameof(ShapeAnimation));
+    public Foundation.Motion.SpringSpec? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec?> ColorAnimationProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec?>(nameof(ColorAnimation));
+    public Foundation.Motion.SpringSpec? ColorAnimation { get => GetValue(ColorAnimationProperty); set => SetValue(ColorAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec?> UncheckColorAnimationProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec?>(nameof(UncheckColorAnimation));
+    public Foundation.Motion.SpringSpec? UncheckColorAnimation { get => GetValue(UncheckColorAnimationProperty); set => SetValue(UncheckColorAnimationProperty, value); }
 
     protected override bool BypassFlowDirectionPolicies => true;
     public static readonly StyledProperty<bool?> IsCheckedProperty = AvaloniaProperty.Register<CheckBoxIndicator, bool?>(nameof(IsChecked), false);
@@ -101,14 +101,7 @@ internal sealed class CheckBoxIndicator : Control
             interaction.RippleRadius = 20;
         }
         _motion = VisualAnimationScope.Create(this);
-        _transition = _motion.CreateTransition(IsChecked, "CheckBox shape");
-        var draw = _transition.AnimateFloat(state => state == false ? 0 : 1, segment =>
-            segment.InitialState == false || segment.TargetState != false ? Spatial() : new SnapSpec<float>(TimeSpan.FromMilliseconds(100)));
-        var gravitation = _transition.AnimateFloat(state => state is null ? 1 : 0, segment =>
-            segment.InitialState == false ? new SnapSpec<float>() :
-            segment.TargetState == false ? new SnapSpec<float>(TimeSpan.FromMilliseconds(100)) : Spatial());
-        _motion.SubscribeValue(draw, value => { DrawFraction = value; InvalidateVisual(); });
-        _motion.SubscribeValue(gravitation, value => { CenterGravitation = value; InvalidateVisual(); });
+        EnsureShapeTransition();
         _checkColor = _motion.CreateAnimatable(CheckTarget);
         _boxColor = _motion.CreateAnimatable(BoxTarget);
         _borderColor = _motion.CreateAnimatable(BorderTarget);
@@ -116,6 +109,19 @@ internal sealed class CheckBoxIndicator : Control
         _motion.SubscribeValue(_checkColor, value => { PaintedCheckmark = value; InvalidateVisual(); });
         _motion.SubscribeValue(_boxColor, value => { PaintedBox = value; InvalidateVisual(); });
         _motion.SubscribeValue(_borderColor, value => { PaintedBorder = value; InvalidateVisual(); });
+    }
+
+    private void EnsureShapeTransition()
+    {
+        if (_transition is not null || _motion is not { IsEnding: false } motion || ShapeAnimation is null) return;
+        _transition = motion.CreateTransition(IsChecked, "CheckBox shape");
+        var draw = _transition.AnimateFloat(state => state == false ? 0 : 1, segment =>
+            segment.InitialState == false || segment.TargetState != false ? Spatial() : new SnapSpec<float>(TimeSpan.FromMilliseconds(100)));
+        var gravitation = _transition.AnimateFloat(state => state is null ? 1 : 0, segment =>
+            segment.InitialState == false ? new SnapSpec<float>() :
+            segment.TargetState == false ? new SnapSpec<float>(TimeSpan.FromMilliseconds(100)) : Spatial());
+        motion.SubscribeValue(draw, value => { DrawFraction = value; InvalidateVisual(); });
+        motion.SubscribeValue(gravitation, value => { CenterGravitation = value; InvalidateVisual(); });
         _transition.PropertyChanged += TransitionChanged;
     }
 
@@ -139,14 +145,16 @@ internal sealed class CheckBoxIndicator : Control
     {
         base.OnPropertyChanged(change);
         if (change.Property == CheckmarkStrokeProperty || change.Property == OutlineStrokeProperty) InvalidateVisual();
-        if (change.Property == IsCheckedProperty || change.Property == IsEffectivelyEnabledProperty ||
+        if (change.Property == ShapeAnimationProperty) EnsureShapeTransition();
+        if (change.Property == ShapeAnimationProperty || change.Property == ColorAnimationProperty || change.Property == UncheckColorAnimationProperty ||
+            change.Property == IsCheckedProperty || change.Property == IsEffectivelyEnabledProperty ||
             change.Property == ColorsProperty || change.Property.PropertyType == typeof(Color))
             UpdateTargets();
     }
 
     private IFiniteAnimationSpec<float> Spatial()
     {
-        var spec = ShapeAnimation;
+        var spec = ShapeAnimation!.Value;
         return new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f);
     }
     private void TransitionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
@@ -166,19 +174,20 @@ internal sealed class CheckBoxIndicator : Control
         {
             await motion.Clock.NextFrameAsync(ct);
             _pending = false;
-            if (_transition is null || _checkColor is null || _boxColor is null || _borderColor is null) return;
-            var targetChanged = _transition.TargetState != IsChecked;
-            _transition.UpdateTarget(IsChecked);
+            if (_checkColor is null || _boxColor is null || _borderColor is null) return;
+            var targetChanged = ShapeAnimation is not null && _transition is not null && _transition.TargetState != IsChecked;
+            if (ShapeAnimation is not null) _transition?.UpdateTarget(IsChecked);
             if (targetChanged && (_transitionTask is null || _transitionTask.IsCompleted))
             {
                 _transitionRun?.Dispose();
                 _transitionRun = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                _transitionTask = motion.Launch(_ => _transition.RunAsync(_transitionRun.Token), "CheckBox transition");
+                _transitionTask = motion.Launch(_ => _transition!.RunAsync(_transitionRun.Token), "CheckBox transition");
             }
             var spec = IsChecked == false
                 ? UncheckColorAnimation
                 : ColorAnimation;
-            var colorSpec = new SpringSpec<Color>(spec.DampingRatio, spec.Stiffness);
+            if (spec is not { } configuredColor) return;
+            var colorSpec = new SpringSpec<Color>(configuredColor.DampingRatio, configuredColor.Stiffness);
             Restart(_checkColor, CheckTarget, true);
             // Disabled removes animateColorAsState; enabling creates a fresh animation already at target.
             var animate = IsEffectivelyEnabled && _colorsEnabled;
