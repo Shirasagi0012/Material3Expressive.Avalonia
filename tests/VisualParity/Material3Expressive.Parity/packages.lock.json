@@ -22,15 +22,6 @@
           "Avalonia": "12.1.2"
         }
       },
-      "ComposeAnimation.TestSupport": {
-        "type": "Direct",
-        "requested": "[0.2.7-alpha, )",
-        "resolved": "0.2.7-alpha",
-        "contentHash": "4YNGz577NiJ3WVvH54yGnsrywRQPGhRgoehAR8aY7GSI6JxFuYRt7rEHmB3xXVhDk36L9tDCQSVPPjd96RAQkQ==",
-        "dependencies": {
-          "ComposeAnimation.Avalonia": "0.2.7-alpha"
-        }
-      },
       "YamlDotNet": {
         "type": "Direct",
         "requested": "[16.3.0, )",
@@ -70,15 +61,6 @@
         "type": "Transitive",
         "resolved": "8.4.2",
         "contentHash": "WadCzGEc2U+3e20avRLng4qNtt4zoOGWrdUISqJWrHe3/FSnrYjuM5Sb4yQb09LhkBXrrI4Zt3dLKgRMbItsrg=="
-      },
-      "ComposeAnimation.Runtime": {
-        "type": "Transitive",
-        "resolved": "0.2.7-alpha",
-        "contentHash": "976vGUsCnT2eHTmh0F3oF9U1UZEvTeLZ+pjhNAAL1WulYJZUAJB0kaAwqiSza7J5L5gwp6lA1egJ/rfnJC+0fA==",
-        "dependencies": {
-          "Avalonia": "12.1.2",
-          "CommunityToolkit.Mvvm": "8.4.2"
-        }
       },
       "HarfBuzzSharp": {
         "type": "Transitive",
@@ -136,6 +118,18 @@
           "Microsoft.CodeAnalysis.Common": "[4.14.0]"
         }
       },
+      "Shirasagi0012.MaterialSymbols.Avalonia": {
+        "type": "Transitive",
+        "resolved": "0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81",
+        "contentHash": "uUpsBo4dwNr+Ns3W/vCT+zydxHk6z0wQVK8siVvYNBxS/lrFMGlZiUBLbwiZ4jF6si8UxUCo+O2bDK0qUybcFw==",
+        "dependencies": {
+          "Avalonia": "12.1.0",
+          "Avalonia.Skia": "12.1.0",
+          "SkiaSharp": "4.150.1",
+          "SkiaSharp.NativeAssets.Linux": "4.150.1",
+          "SkiaSharp.NativeAssets.WebAssembly": "4.150.1"
+        }
+      },
       "Shirasagi0012.SmoothScroll.Avalonia.Interaction": {
         "type": "Transitive",
         "resolved": "12.0.0",
@@ -144,16 +138,36 @@
           "Avalonia": "12.0.0"
         }
       },
+      "Shirasagi0012.ComposeAnimation.Avalonia": {
+        "type": "Project",
+        "dependencies": {
+          "Avalonia": "[12.1.2, )",
+          "Shirasagi0012.ComposeAnimation.Runtime": "[0.2.9-alpha, )"
+        }
+      },
+      "Shirasagi0012.ComposeAnimation.Runtime": {
+        "type": "Project",
+        "dependencies": {
+          "Avalonia": "[12.1.2, )",
+          "CommunityToolkit.Mvvm": "[8.4.2, )"
+        }
+      },
+      "Shirasagi0012.ComposeAnimation.TestSupport": {
+        "type": "Project",
+        "dependencies": {
+          "Shirasagi0012.ComposeAnimation.Avalonia": "[0.2.9-alpha, )"
+        }
+      },
       "Shirasagi0012.Material3Expressive.Avalonia": {
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.2, )",
           "PropertyGenerator.Avalonia": "[1.3.1, )",
-          "Shirasagi0012.ComposeAnimation.Avalonia": "(, )",
-          "Shirasagi0012.Material3Expressive.Avalonia.Shadow": "[0.2.0-alpha, )",
-          "Shirasagi0012.MaterialColorUtilities": "[0.4.0-alpha, )",
-          "Shirasagi0012.MaterialShapes": "[0.1.2-alpha, )",
-          "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": "[0.1.2-alpha, )",
+          "Shirasagi0012.ComposeAnimation.Avalonia": "[0.2.9-alpha, )",
+          "Shirasagi0012.Material3Expressive.Avalonia.Shadow": "[0.0.2, )",
+          "Shirasagi0012.MaterialColorUtilities": "[0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c, )",
+          "Shirasagi0012.MaterialShapes": "[0.1.3-alpha, )",
+          "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": "[0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81, )",
           "Shirasagi0012.SmoothScroll.Avalonia": "[12.0.0, )"
         }
       },
@@ -167,30 +181,10 @@
           "SkiaSharp.NativeAssets.WebAssembly": "[4.150.1, )"
         }
       },
-      "Shirasagi0012.MaterialColorUtilities": {
-        "type": "Project"
-      },
       "Shirasagi0012.MaterialShapes": {
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.0, )"
-        }
-      },
-      "Shirasagi0012.MaterialSymbols.Avalonia": {
-        "type": "Project",
-        "dependencies": {
-          "Avalonia": "[12.1.0, )",
-          "Avalonia.Skia": "[12.1.0, )",
-          "SkiaSharp": "[4.150.1, )",
-          "SkiaSharp.NativeAssets.Linux": "[4.150.1, )",
-          "SkiaSharp.NativeAssets.WebAssembly": "[4.150.1, )"
-        }
-      },
-      "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": {
-        "type": "Project",
-        "dependencies": {
-          "Avalonia": "[12.1.0, )",
-          "Shirasagi0012.MaterialSymbols.Avalonia": "[0.1.2-alpha, )"
         }
       },
       "Shirasagi0012.MaterialTypography.Roboto": {
@@ -225,16 +219,6 @@
           "SkiaSharp.NativeAssets.WebAssembly": "3.119.4"
         }
       },
-      "ComposeAnimation.Avalonia": {
-        "type": "CentralTransitive",
-        "requested": "[0.2.7-alpha, )",
-        "resolved": "0.2.7-alpha",
-        "contentHash": "Fn+RbyXjMeKjd9FJ7djjQ6b52KjaeU6ECVEpSX4/SuTEwrRdSW6yhpej5kjgg8swkFDXJEZdJAE2d1rLzO04Ug==",
-        "dependencies": {
-          "Avalonia": "12.1.2",
-          "ComposeAnimation.Runtime": "0.2.7-alpha"
-        }
-      },
       "PropertyGenerator.Avalonia": {
         "type": "CentralTransitive",
         "requested": "[1.3.1, )",
@@ -243,6 +227,22 @@
         "dependencies": {
           "Avalonia": "11.3.0",
           "Microsoft.CodeAnalysis.CSharp": "4.14.0"
+        }
+      },
+      "Shirasagi0012.MaterialColorUtilities": {
+        "type": "CentralTransitive",
+        "requested": "[0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c, )",
+        "resolved": "0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c",
+        "contentHash": "NHpXNB1ODI0UMlLkE/8EMYiP7ER6DGPI0YtMF1bEfukM/f1qhMGZLrhDTW3dziWiJhu7CaE2I1crhAgzxjM83Q=="
+      },
+      "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": {
+        "type": "CentralTransitive",
+        "requested": "[0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81, )",
+        "resolved": "0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81",
+        "contentHash": "12j8chKsO8uX9grnPsUjy78HH+EYbY0vQSSHToA291VjWjcce3UxNO8jE+WzBdt6LP1vFD1sgaQEaI0HBAV6Bg==",
+        "dependencies": {
+          "Avalonia": "12.1.0",
+          "Shirasagi0012.MaterialSymbols.Avalonia": "0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81"
         }
       },
       "Shirasagi0012.SmoothScroll.Avalonia": {

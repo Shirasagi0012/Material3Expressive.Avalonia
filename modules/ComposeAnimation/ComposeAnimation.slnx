@@ -1,0 +1,7 @@
+<Solution>
+    <Project Path="Catalog/Catalog.csproj"/>
+    <Project Path="ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj"/>
+    <Project Path="ComposeAnimation.Runtime/ComposeAnimation.Runtime.csproj"/>
+    <Project Path="ComposeAnimation.TestSupport/ComposeAnimation.TestSupport.csproj"/>
+    <Project Path="ComposeAnimation.Test/ComposeAnimation.Test.csproj"/>
+</Solution>

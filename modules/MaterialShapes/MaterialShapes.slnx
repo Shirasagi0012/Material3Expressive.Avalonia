@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Packages.props" />
+    <File Path="LICENSE.txt" />
+  </Folder>
+  <Project Path="MaterialShapes.Gallery/MaterialShapes.Gallery.csproj" Id="23e689d3-e60c-4259-aa7c-46e1f9e277c2" />
+  <Project Path="MaterialShapes.Test/MaterialShapes.Test.csproj" Id="5f1661ab-6a79-4db8-b277-3e21d903c18a" />
+  <Project Path="MaterialShapes/MaterialShapes.csproj" />
+</Solution>

@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" x:Class="Catalog.Demos.Bounds.BoundsScrollFrameDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+            <StackPanel Spacing="6">
+                <TextBlock Classes="demo-heading" Text="立即跟随"/>
+                <Border Classes="demo-stage" Padding="0" Height="240" ClipToBounds="True" HorizontalAlignment="Stretch">
+                    <ca:LookaheadBox x:Name="FollowScene">
+                        <ca:LookaheadScrollViewport x:Name="FollowViewport">
+                            <ca:LookaheadBox Height="700" Background="{DynamicResource CatalogFaintSurfaceBrush}">
+                                <ca:AnimatedBounds x:Name="FollowCard" TargetSize="150,180" Margin="0,100,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <ca:LookaheadTextBlock FontSize="13" TextWrapping="Wrap" Background="{DynamicResource CatalogActorTintBrush}" Text="跟随滚动位置。"/>
+                                </ca:AnimatedBounds>
+                            </ca:LookaheadBox>
+                        </ca:LookaheadScrollViewport>
+                    </ca:LookaheadBox>
+                </Border>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="6">
+                <TextBlock Classes="demo-heading" Text="动画跟随"/>
+                <Border Classes="demo-stage" Padding="0" Height="240" ClipToBounds="True" HorizontalAlignment="Stretch">
+                    <ca:LookaheadBox x:Name="ChaseScene">
+                        <ca:LookaheadScrollViewport x:Name="ChaseViewport">
+                            <ca:LookaheadBox Height="700" Background="{DynamicResource CatalogFaintSurfaceBrush}">
+                                <ca:AnimatedBounds x:Name="ChaseCard" TargetSize="150,180" Margin="0,100,0,0" AnimateMotionFrameOfReference="True" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <ca:LookaheadTextBlock FontSize="13" TextWrapping="Wrap" Background="{DynamicResource CatalogActorTintBrush}" Text="平滑追赶滚动位置。"/>
+                                </ca:AnimatedBounds>
+                            </ca:LookaheadBox>
+                        </ca:LookaheadScrollViewport>
+                    </ca:LookaheadBox>
+                </Border>
+            </StackPanel>
+        </Grid>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="ScrollButton" Click="ScrollButton_OnClick">两个一起滚动 +60</Button>
+            <Button x:Name="ResetButton" Click="ResetButton_OnClick">重置滚动</Button>
+            <Button x:Name="TargetButton" Click="TargetButton_OnClick">移动 + 改尺寸</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="360" x:Class="Catalog.Demos.Visibility.VisibilityBasicDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Height="300" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ca:AnimatedVisibility x:Name="Visibility" Visible="{Binding #VisibilityToggle.IsChecked}" HorizontalAlignment="Center" Label="Details">
+                    <ca:AnimatedVisibility.Enter>
+                        <ca:EnterTransitionGroup>
+                            <ca:FadeIn/>
+                            <ca:ExpandVertically ExpandFrom="Top"/>
+                        </ca:EnterTransitionGroup>
+                    </ca:AnimatedVisibility.Enter>
+                    <ca:AnimatedVisibility.Exit>
+                        <ca:ExitTransitionGroup>
+                            <ca:FadeOut>
+                                <ca:FadeOut.Spec>
+                                    <ca:DoubleTweenSpec Duration="0:0:0.35"/>
+                                </ca:FadeOut.Spec>
+                            </ca:FadeOut>
+                            <ca:ShrinkVertically ShrinkTowards="Top"/>
+                        </ca:ExitTransitionGroup>
+                    </ca:AnimatedVisibility.Exit>
+                    <Border Width="420" Classes="demo-actor" Padding="24">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="详情" FontSize="22"/>
+                            <TextBlock Text="展开的内容" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </ca:AnimatedVisibility>
+                <TextBlock Text="后续内容" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <ToggleSwitch x:Name="VisibilityToggle" IsChecked="True" Content="显示详情"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

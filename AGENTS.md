@@ -8,7 +8,7 @@
 - `src/Material3Expressive.Catalog/`：组件展示应用。
 - `tests/Material3Expressive.Tests/`：控件库测试。
 - `tests/VisualParity/`：Compose 参考端、Avalonia 捕获端、比较器及系统自身测试。
-- `modules/`：颜色、图标、阴影、字体等配套模块，部分为 Git 子模块。
+- `modules/`：ComposeAnimation、MaterialShapes、阴影、字体等仓内源码模块；颜色、图标和 SmoothScroll 通过 NuGet 接入。
 
 ## 开始工作
 
@@ -22,18 +22,9 @@
 
 ## 本地开发
 
-需要 .NET 10 SDK 和 PowerShell。框架与包版本由
-[Directory.Packages.props](Directory.Packages.props) 管理，包来源由 [nuget.config](nuget.config) 管理。
+需要 .NET 10 SDK 和 PowerShell。
 
-先在仓库根目录初始化子模块：
-
-```powershell
-git submodule update --init --recursive
-```
-
-需要改变依赖内容时使用新的包版本并同步中央版本；不要把包源凭证提交到仓库。
-
-准备好依赖后执行：
+准备好后执行：
 
 ```powershell
 dotnet restore Material3Expressive.slnx

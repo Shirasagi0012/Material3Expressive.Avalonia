@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="240" x:Class="Catalog.Demos.Properties.PropertiesAnimationDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Height="300" HorizontalAlignment="Stretch">
+            <Border x:Name="Box" Classes="demo-actor" Width="100" Height="100" VerticalAlignment="Center">
+                <ca:Animated.Properties>
+                    <ca:AnimatedPropertyCollection>
+                        <ca:AnimatedDouble Property="{x:Static Border.WidthProperty}">
+                            <ca:AnimatedDouble.Spec>
+                                <!-- <ca:DoubleTweenSpec Duration="0:0:0.5" Easing="BounceEaseOut"/> -->
+                                <ca:DoubleSpringSpec DampingRatio="0.5" Stiffness="10"/>
+                            </ca:AnimatedDouble.Spec>
+                        </ca:AnimatedDouble>
+                    </ca:AnimatedPropertyCollection>
+                </ca:Animated.Properties>
+            </Border>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="ToggleButton" Click="ToggleButton_OnClick">切换宽度</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

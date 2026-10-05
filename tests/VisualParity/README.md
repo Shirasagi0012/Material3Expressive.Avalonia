@@ -92,7 +92,10 @@ rg -n -C 8 'cornerRadii:|status: different' "$caseDirectory/samples"
 ## 运行
 
 当前执行参考为 Windows x64，固定 density=4、fontScale=1。需要 .NET 10、JDK（本机 JDK 25）、
-锁定 Gradle 依赖及项目 README 中的本地 ComposeAnimation NuGet 包。
+锁定 Gradle 依赖及项目 README 中的 NuGet 包源凭据。
+Avalonia 捕获端通过 ProjectReference 使用仓内 ComposeAnimation.TestSupport，修改动画源码后直接重新构建。
+`Material3Expressive.Parity/packages.lock.json` 记录外部包与仓内项目依赖；变更依赖后用
+`dotnet restore Material3Expressive.slnx --force-evaluate` 更新，不再准备本地 ComposeAnimation 包。
 参考源码与制品版本按 [`upstream-baseline.json`](../../docs/upstream-baseline.json) 固定。
 脚本默认以 Release 构建和运行，避免 Debug 的逐像素计算开销；需要调试时可直接用 dotnet 的 Debug 配置。
 YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行；`<case-id>` 和 `<suite>` 替换为 list 输出的实际身份。

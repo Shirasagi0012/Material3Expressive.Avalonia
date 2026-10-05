@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Shirasagi0012</Authors>
+    <RepositoryUrl>https://github.com/Shirasagi0012/Material3Expressive.Avalonia</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+</Project>

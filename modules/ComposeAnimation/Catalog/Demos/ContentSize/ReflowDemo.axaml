@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="420" x:Class="Catalog.Demos.ContentSize.ReflowDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" HorizontalAlignment="Stretch" Height="400">
+            <StackPanel Spacing="12" VerticalAlignment="Top">
+                <ca:AnimatedContentSize x:Name="List" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <ca:AnimatedContentSize.AnimationSpec>
+                        <ca:SizeSpringSpec/>
+                    </ca:AnimatedContentSize.AnimationSpec>
+                    <StackPanel x:Name="ItemsPanel" Spacing="8"/>
+                </ca:AnimatedContentSize>
+                <Border x:Name="SiblingMarker" Classes="demo-zone-b" HorizontalAlignment="Left" CornerRadius="8" Padding="12">
+                    <TextBlock Text="后续内容"/>
+                </Border>
+            </StackPanel>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="AddButton" Click="AddButton_OnClick">添加</Button>
+            <Button x:Name="RemoveButton" Click="RemoveButton_OnClick">移除</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

@@ -64,10 +64,11 @@ NavigationRail 标签消费 LabelMedium；WideNavigationRailItem 按目标位置
 
 | 能力 | 本地入口与边界 |
 | --- | --- |
-| 颜色计算 | [MaterialColorUtilities](../modules/MaterialColorUtilities/README.md) 提供颜色算法；[ColorScheme](../src/Material3Expressive/Baseline/ColorScheme.cs) 将其结果接入本项目 Token。颜色角色是算法计算结果，局部覆盖输出的 reference palette 不会反向重新生成角色。 |
-| 可变字体图标 | [MaterialSymbols.Avalonia](../modules/MaterialSymbols/MaterialSymbols.Avalonia/README.md) 提供 fill、weight、grade、optical size 等轴；[MaterialSymbol](../src/Material3Expressive/Foundation/Rendering/MaterialSymbol.cs) 是本项目入口，当前使用 Rounded 字体包。组件消费已有渲染器，不另行实现字体轮廓绘制。 |
+| 颜色计算 | [MaterialColorUtilities](https://github.com/Shirasagi0012/MaterialColorUtilities) 提供颜色算法；[ColorScheme](../src/Material3Expressive/Baseline/ColorScheme.cs) 将其结果接入本项目 Token。颜色角色是算法计算结果，局部覆盖输出的 reference palette 不会反向重新生成角色。 |
+| 可变字体图标 | [MaterialSymbols.Avalonia](https://github.com/Shirasagi0012/MaterialSymbols) 提供 fill、weight、grade、optical size 等轴；[MaterialSymbol](../src/Material3Expressive/Foundation/Rendering/MaterialSymbol.cs) 是本项目入口，当前使用 Rounded 字体包。组件消费已有渲染器，不另行实现字体轮廓绘制。 |
 | 阴影 | [MaterialSkiaShadow](../modules/MaterialSkiaShadow/README.md) 提供与 Compose Desktop/Skiko 对应的 Skia 阴影绘制；Surface 负责接入实际几何、缩放及绘制环境。模块目前支持单个平面简单轮廓的线段、二次曲线与 conic，不支持 cubic、透视、倾斜 Z 平面、方向光和非 Skia 后端。 |
 
+颜色算法和 MaterialSymbols Rounded 字体通过 NuGet 接入，版本由根中央包版本文件指定。
 MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一。具体依赖来源以项目文件和 NuGet 配置为准。
 配套模块有各自的上游版本与限制；模块级的移植或渲染验证不自动证明本项目的组件集成正确。
 遇到能力缺口时说明缺少的语义，不在组件中悄悄替换为近似算法。
@@ -171,7 +172,8 @@ PasswordChar / RevealPassword 控制。该原生方案未替换 automation peer 
 
 ## 动画接入
 
-动画执行通过 NuGet 依赖 ComposeAnimation，准备方式见 [README](../README.md#本地开发)。
+动画执行通过仓内 ProjectReference 依赖 `modules/ComposeAnimation`，与主库共同构建和调试。
+Runtime、Avalonia 与 TestSupport 仍分别产出 NuGet 包，版本与发布方式见 [README](../README.md#版本与发布)。
 Material 层仍负责 Token、目标选择、时序规则及绘制；不要在组件中另建动画求解器或逐帧驱动循环。
 
 每个应用 TopLevel 在加载 XAML 或内容前调用 `VisualAnimationScope.Initialize(topLevel)`。
@@ -198,8 +200,6 @@ ComposeAnimation 0.2.7-alpha 的 `DelayAsync` 等待普通协程时间，不请�
 
 MaterialTheme 为原生 ScrollViewer 提供独立主题，以 SmoothScroll 的 ScrollViewerPresenter 实现普通物理
 滚动和惯性。滚动条、键盘、BringIntoView 与公开 Offset 仍经 Avalonia；逻辑内容保留逻辑单位。
-依赖通过 ProjectReference 直接引用 `modules/SmoothScroll.Avalonia` 子模块，
-准备方式见[根 README](../README.md#本地开发)。
 
 SmoothScroll 内部以常规 tracker 增量入口执行指针、直接滚轮和惯性帧的 pre/content/post；
 未安装参与者时 pre/post 消费为零。状态负责输入时序和物理积分，tracker 负责统一正文消费、
@@ -230,8 +230,7 @@ Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪�
 外观入口、已确认适配及本组件不做 Compose parity 的范围见
 [ScrollBar](../src/Material3Expressive/Components/ScrollBar/README.md)。
 
-现有源码是后续工作的起点，不是批准所有既有取舍的依据。旧注释中的 `design doc §...` 是历史引用，
-不指向本文，也不构成当前规范；涉及相应代码时核对真实行为与固定上游。
+现有源码是后续工作的起点，不是批准所有既有取舍的依据。涉及相应代码时核对真实行为与固定上游。
 
 - 已有 Button、IconButton 和 Surface，但仍需逐项检查其 API、交互及视觉覆盖。
   Button 的焦点环尚未实现；阴影绘制差异留待后续核对，不能据此修改上游默认 elevation。
@@ -250,7 +249,7 @@ Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪�
 - [TabRow / Tab](../src/Material3Expressive/Components/TabRow/README.md) 提供受控的独立标签栏及原生 TabControl 顶部水平主题，
   共用 intrinsic / 基线布局、内容颜色 Transition 和指示器 Animatable。原生页面呈现和选择仍由 TabControl 负责。
 - [Progress Indicator](../src/Material3Expressive/Components/ProgressIndicator/README.md) 提供四个独立控件的确定与不确定模式。
-  ComposeAnimation 管理动画，Skia 保留 Canvas/PathMeasure 绘制；圆形波浪的 Polygon/Morph 消费固定 MaterialShapes 子模块。
+  ComposeAnimation 管理动画，Skia 保留 Canvas/PathMeasure 绘制；圆形波浪的 Polygon/Morph 消费仓内 `modules/MaterialShapes` 源码模块。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
   Modal 使用当前 TopLevel 的 PopupOverlayLayer，通过组件自己的 Popup 和共享 ModalPresenter 接入。

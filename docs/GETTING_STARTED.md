@@ -6,23 +6,24 @@
 ## 源码与依赖
 
 需要 .NET 10 SDK；VisualParity 脚本另需 PowerShell。
-Avalonia、SkiaSharp 与 ComposeAnimation 的版本由 [Directory.Packages.props](../Directory.Packages.props)
-固定，包源及映射见 [nuget.config](../nuget.config)。不要只升级其中一个包而忽略原生渲染依赖。
+Avalonia、SkiaSharp 与外部依赖的版本见根目录 [Directory.Packages.props](../Directory.Packages.props)，
+包源及映射见 [nuget.config](../nuget.config)。仓内模块保留各自的项目及中央包配置，
+不要只升级其中一个包而忽略原生渲染依赖。
 
 ```powershell
-git clone --recurse-submodules https://github.com/Shirasagi0012/Material3Expressive.Avalonia.git
+git clone https://github.com/Shirasagi0012/Material3Expressive.Avalonia.git
 cd Material3Expressive.Avalonia
-git submodule update --init --recursive
 ```
 
-当前源码从 GitHub Packages 源 `https://nuget.pkg.github.com/Shirasagi0012/index.json`
-恢复 `Shirasagi0012.*` 依赖，包括 ComposeAnimation 和 SmoothScroll；其余依赖按源映射恢复。
-当前配置不再依赖相邻 `../ComposeAnimation/packages`，也不需要先在相邻仓库执行打包脚本。
+当前仓库不使用 Git 子模块。ComposeAnimation、MaterialShapes、MaterialSkiaShadow 和
+MaterialTypography.Roboto 直接随仓库提供，主库通过仓内 ProjectReference 消费它们。
+MaterialColorUtilities、MaterialSymbols Rounded 与 SmoothScroll 使用 `Shirasagi0012.*` NuGet 包；
+不需要相邻依赖仓库、旧 submodule 目录或预先执行本地打包脚本。
 
-首次使用需让自己的 NuGet 环境能读取该包源。身份验证方式见
+首次使用需让自己的 NuGet 环境能读取 GitHub Packages 源
+`https://nuget.pkg.github.com/Shirasagi0012/index.json`。身份验证方式见
 [GitHub Packages 的 NuGet 说明](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry)；
 凭证放在用户配置或受支持的凭证管理器中，不写入仓库。若 restore 返回 401/403，先检查账户的包读取权限。
-不要把旧的无前缀 `ComposeAnimation.*` 包当作当前 `Shirasagi0012.ComposeAnimation.*` 的替代品。
 
 ```powershell
 dotnet restore src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj
@@ -38,8 +39,10 @@ dotnet run --project src/Material3Expressive.Catalog --no-restore -- --text-fiel
 目标包源与上文相同；Roboto 字体模块使用独立包 `Shirasagi0012.MaterialTypography.Roboto`。
 安装发布包时，以包源实际可用版本及对应版本文档为准，不把项目文件中的默认 Version 当作已经发布的证明。
 
-仓库的 [发布工作流](../.github/workflows/publish-nuget.yml)通过手动运行选择 tag，
-去掉 tag 的 `v` 前缀作为包版本，打包主库、Shadow 与 Roboto 并推送至 GitHub Packages。
+仓库的 [发布工作流](../.github/workflows/publish-nuget.yml)通过手动运行选择 ref，
+使用各项目 csproj 声明的版本，打包 ComposeAnimation Runtime/Avalonia/TestSupport、
+MaterialShapes、Shadow、Roboto 与主库，再按依赖顺序推送至 GitHub Packages。
+工作流不会从 tag 名推导版本。
 新增工作流、源码构建成功或[已有 Release](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/releases)
 都不单独证明某次包发布已完成。不要从配套模块的历史版本推断主库可用版本；旧版包不保证包含当前源码的 API。
 

@@ -17,7 +17,7 @@
 | animation 的 `EnterExitTransition.kt` / `Transition.kt` | [FloatingToolbarVisibility](FloatingToolbarVisibility.cs)与共享 ComposeAnimation |
 | Foundation `Scroll.kt`、UI `Placeable.kt` | 受限滚动测量、物理像素放置与布局对齐 |
 
-当前依赖由[中央版本](../../../../Directory.Packages.props)管理；不在组件文档维持旧的本地 NuGet 安装步骤。
+当前 ComposeAnimation 随仓库源码构建，外部依赖遵循相应中央包配置；接入方式统一见[公共接入](../../../../docs/GETTING_STARTED.md)。
 
 ## 已确认适配与职责
 

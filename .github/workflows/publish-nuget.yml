@@ -1,126 +1,76 @@
-name: Publish NuGet Package
+name: Publish NuGet Packages
 
 on:
     workflow_dispatch:
-        inputs:
-            git_tag:
-                description: Optional git tag to build and publish. Leave empty to use the latest version tag.
-                required: false
-                type: string
 
 permissions:
     contents: read
     packages: write
 
 env:
-    LIBRARY_PROJECT_PATH: src/Material3Expressive/Material3Expressive.csproj
-    SHADOW_PROJECT_PATH: modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj
-    ROBOTO_PROJECT_PATH: modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj
     PACKAGE_OUTPUT_DIR: artifacts/nuget
-    CI_NUGET_CONFIG: .github/nuget.config
     NUGET_SOURCE: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+    NuGetPackageSourceCredentials_shirasagi0012: >-
+        Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
 
 jobs:
     publish:
         runs-on: ubuntu-latest
-        env:
-            NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }};ValidAuthenticationTypes=Basic
 
         steps:
-            - name: Checkout repository
+            - name: Checkout selected ref
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-                  fetch-tags: true
-                  submodules: recursive
-
-            - name: Resolve tag and derive package version
-              shell: bash
-              run: |
-                  set -euo pipefail
-
-                  resolved_tag="${{ inputs.git_tag }}"
-
-                  if [[ -z "$resolved_tag" ]]; then
-                    resolved_tag="$(git tag --sort=-v:refname | head -n 1)"
-                  fi
-
-                  if [[ -z "$resolved_tag" ]]; then
-                    echo "No git tags were found. Provide a tag manually or create a version tag first."
-                    exit 1
-                  fi
-
-                  git rev-parse --verify "refs/tags/$resolved_tag" >/dev/null 2>&1
-
-                  git checkout --force "$resolved_tag"
-                  git submodule update --init --recursive
-
-                  version="$resolved_tag"
-                  version="${version#v}"
-
-                  if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-                    echo "Tag '$resolved_tag' cannot be converted to a valid NuGet version."
-                    exit 1
-                  fi
-
-                  echo "RESOLVED_TAG=$resolved_tag" >> "$GITHUB_ENV"
-                  echo "PACKAGE_VERSION=$version" >> "$GITHUB_ENV"
-
-            - name: Show resolved tag
-              run: echo "Publishing from tag ${{ env.RESOLVED_TAG }} with package version ${{ env.PACKAGE_VERSION }}"
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
-                  dotnet-version: |
-                      8.0.x
-                      10.0.x
+                  dotnet-version: 10.0.x
 
-            - name: Restore library
-              run: dotnet restore ${{ env.LIBRARY_PROJECT_PATH }} --configfile ${{ env.CI_NUGET_CONFIG }}
+            - name: Pack all libraries with their project versions
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  projects=(
+                    modules/ComposeAnimation/ComposeAnimation.Runtime/ComposeAnimation.Runtime.csproj
+                    modules/ComposeAnimation/ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj
+                    modules/ComposeAnimation/ComposeAnimation.TestSupport/ComposeAnimation.TestSupport.csproj
+                    modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj
+                    modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj
+                    modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj
+                    src/Material3Expressive/Material3Expressive.csproj
+                  )
+                  for project in "${projects[@]}"; do
+                    dotnet pack "$project" --configuration Release --output "$PACKAGE_OUTPUT_DIR"
+                  done
 
-            - name: Restore shadow
-              run: dotnet restore ${{ env.SHADOW_PROJECT_PATH }} --configfile ${{ env.CI_NUGET_CONFIG }}
-
-            - name: Restore Roboto
-              run: dotnet restore ${{ env.ROBOTO_PROJECT_PATH }} --configfile ${{ env.CI_NUGET_CONFIG }}
-
-            - name: Pack library
-              run: >
-                  dotnet pack ${{ env.LIBRARY_PROJECT_PATH }}
-                  --configuration Release
-                  --no-restore
-                  -p:PackageVersion=${{ env.PACKAGE_VERSION }}
-                  --output ${{ env.PACKAGE_OUTPUT_DIR }}
-
-            - name: Pack shadow
-              run: >
-                  dotnet pack ${{ env.SHADOW_PROJECT_PATH }}
-                  --configuration Release
-                  --no-restore
-                  -p:PackageVersion=${{ env.PACKAGE_VERSION }}
-                  --output ${{ env.PACKAGE_OUTPUT_DIR }}
-
-            - name: Pack Roboto
-              run: >
-                  dotnet pack ${{ env.ROBOTO_PROJECT_PATH }}
-                  --configuration Release
-                  --no-restore
-                  -p:PackageVersion=${{ env.PACKAGE_VERSION }}
-                  --output ${{ env.PACKAGE_OUTPUT_DIR }}
-
-            - name: Upload package artifact
+            - name: Upload package artifacts
               uses: actions/upload-artifact@v4
               with:
-                  name: Material3Expressive.${{ env.PACKAGE_VERSION }}
-                  path: ${{ env.PACKAGE_OUTPUT_DIR }}/*.nupkg
+                  name: NuGet.${{ github.sha }}
+                  path: |
+                      ${{ env.PACKAGE_OUTPUT_DIR }}/*.nupkg
+                      ${{ env.PACKAGE_OUTPUT_DIR }}/*.snupkg
                   if-no-files-found: error
 
-            - name: Push to NuGet
-              run: >
-                  dotnet nuget push "${{ env.PACKAGE_OUTPUT_DIR }}/*.nupkg"
-                  --configfile ${{ env.CI_NUGET_CONFIG }}
-                  --source ${{ env.NUGET_SOURCE }}
-                  --api-key ${{ secrets.GITHUB_TOKEN }}
-                  --skip-duplicate
-                  --no-symbols
+            - name: Push packages in dependency order
+              shell: bash
+              env:
+                  NUGET_API_KEY: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  set -euo pipefail
+                  packages=(
+                    Shirasagi0012.ComposeAnimation.Runtime
+                    Shirasagi0012.ComposeAnimation.Avalonia
+                    Shirasagi0012.ComposeAnimation.TestSupport
+                    Shirasagi0012.MaterialShapes
+                    Shirasagi0012.Material3Expressive.Avalonia.Shadow
+                    Shirasagi0012.MaterialTypography.Roboto
+                    Shirasagi0012.Material3Expressive.Avalonia
+                  )
+                  for package in "${packages[@]}"; do
+                    for package_file in "$PACKAGE_OUTPUT_DIR/$package".[0-9]*.nupkg; do
+                      dotnet nuget push "$package_file" \
+                        --source "$NUGET_SOURCE" --api-key "$NUGET_API_KEY" \
+                        --skip-duplicate --no-symbols
+                    done
+                  done

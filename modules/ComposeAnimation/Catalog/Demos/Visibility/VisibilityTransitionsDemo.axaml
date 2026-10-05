@@ -1,0 +1,7 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="340" x:Class="Catalog.Demos.Visibility.VisibilityTransitionsDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" HorizontalAlignment="Stretch">
+            <UniformGrid x:Name="EffectsGrid" Columns="4" VerticalAlignment="Center"/>
+        </Border>
+    </StackPanel>
+</UserControl>

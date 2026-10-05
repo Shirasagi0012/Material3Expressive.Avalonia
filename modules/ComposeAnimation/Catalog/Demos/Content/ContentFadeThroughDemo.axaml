@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="320" x:Class="Catalog.Demos.Content.ContentFadeThroughDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Height="300" HorizontalAlignment="Stretch">
+            <ca:AnimatedContent x:Name="Pages" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <!-- 初始内容与 Card("Foo", 200, 120) 保持一致。 -->
+                <Border Classes="demo-actor" CornerRadius="8" Width="200" Height="120" Tag="Foo">
+                    <TextBlock Text="Foo" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </ca:AnimatedContent>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="FooButton" Click="FooButton_OnClick">Foo</Button>
+            <Button x:Name="BarButton" Click="BarButton_OnClick">Bar</Button>
+            <Button x:Name="BazButton" Click="BazButton_OnClick">Baz</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

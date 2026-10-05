@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>Shirasagi0012.ComposeAnimation.TestSupport</PackageId>
+        <Version>0.2.9-alpha</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj" />
+  </ItemGroup>
+</Project>
