@@ -39,6 +39,9 @@ internal sealed class ExtendedFabLayout : Panel
     private VisualAnimationScope? _scope;
     private Animatable<float>? _width, _alpha;
     private Animatable<float>? _classicWidth;
+    private Task? _classicWidthTask, _classicAlphaTask;
+    private int _classicTransitionId;
+    private bool _classicTransitionActive, _classicSegmentExpanded, _classicReturningToVisible, _classicWidthChanging;
     private int _labelExtentPx;
     private bool _fullyCollapsed;
     private bool _classicCurrentExpanded;
@@ -64,7 +67,10 @@ internal sealed class ExtendedFabLayout : Panel
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
+        ++_classicTransitionId;
+        _classicTransitionActive = false;
         _scope?.Dispose(); _scope = null; _width = _alpha = _classicWidth = null; _pending = _needsTransition = false;
+        _classicWidthTask = _classicAlphaTask = null;
         base.OnDetachedFromVisualTree(e);
     }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -84,7 +90,10 @@ internal sealed class ExtendedFabLayout : Panel
         base.OnPropertyChanged(change);
         if (change.Property == ExpandWidthMotionProperty || change.Property == CollapseWidthMotionProperty ||
             change.Property == ExpandAlphaMotionProperty || change.Property == CollapseAlphaMotionProperty)
+        {
             QueueTransition();
+            if (_classicTransitionActive && _owner?.Expanded == true) InvalidateMeasure();
+        }
     }
     private void QueueTransition()
     {
@@ -105,17 +114,55 @@ internal sealed class ExtendedFabLayout : Panel
             // to DefaultSizeAnimationSpec/DefaultAlphaSpring, not its enter spec.
             var returningToVisible = classic && expanded && _classicCurrentExpanded && _classicWidth?.IsRunning == true;
             _needsTransition = false;
-            var widthAnimation = classic && _classicWidth is not null
-                ? _classicWidth.AnimateToAsync(expanded ? _labelExtentPx : 0,
-                    returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1)
-                        : widthSpec, cancellationToken: ct)
-                : _width!.AnimateToAsync(expanded ? 1 : 0, widthSpec, cancellationToken: ct);
-            await Task.WhenAll(widthAnimation,
-                _alpha!.AnimateToAsync(expanded ? 1 : 0, returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 0.01f) : alphaSpec, cancellationToken: ct));
-            _classicCurrentExpanded = expanded;
-            _fullyCollapsed = !_owner.Expanded && (classic ? _classicWidth?.Value == 0 : _width!.Value == 0);
-            InvalidateMeasure();
+            if (classic && _classicWidth is not null)
+            {
+                var transitionId = ++_classicTransitionId;
+                _classicTransitionActive = true;
+                _classicSegmentExpanded = expanded;
+                _classicReturningToVisible = returningToVisible;
+                var widthAnimation = StartClassicWidth(expanded ? _labelExtentPx : 0,
+                    returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1) : widthSpec, ct);
+                var alphaAnimation = _classicAlphaTask = _alpha!.AnimateToAsync(expanded ? 1 : 0,
+                    returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 0.01f) : alphaSpec, cancellationToken: ct);
+                try { await Task.WhenAll(widthAnimation, alphaAnimation); }
+                finally { CompleteClassicTransition(transitionId); }
+            }
+            else
+            {
+                // This segment no longer belongs to the classic width channel. Retire
+                // its completion bookkeeping before the shared alpha task is replaced.
+                ++_classicTransitionId;
+                _classicTransitionActive = false;
+                _classicWidthTask = _classicAlphaTask = null;
+                await Task.WhenAll(_width!.AnimateToAsync(expanded ? 1 : 0, widthSpec, cancellationToken: ct),
+                    _alpha!.AnimateToAsync(expanded ? 1 : 0, alphaSpec, cancellationToken: ct));
+                _classicCurrentExpanded = expanded;
+                _fullyCollapsed = !_owner.Expanded && (classic ? _classicWidth?.Value == 0 : _width!.Value == 0);
+                InvalidateMeasure();
+            }
         }, "Extended FAB transition");
+    }
+    private Task StartClassicWidth(float target, SpringSpec<float> spec, CancellationToken cancellationToken)
+    {
+        // MutatorMutex may complete the interrupted task inline. Do not let its
+        // completion settle this segment before the replacement task is installed.
+        _classicWidthChanging = true;
+        try { return _classicWidthTask = _classicWidth!.AnimateToAsync(target, spec, cancellationToken: cancellationToken); }
+        finally { _classicWidthChanging = false; }
+    }
+    private void CompleteClassicTransition(int transitionId)
+    {
+        if (!_classicTransitionActive || transitionId != _classicTransitionId || _classicWidthChanging ||
+            _scope is not { IsEnding: false } || _classicWidthTask?.IsCompletedSuccessfully != true ||
+            _classicAlphaTask?.IsCompletedSuccessfully != true) return;
+        // A changed full size can still be waiting for a valid width specification.
+        if (_classicSegmentExpanded && _owner is { Expanded: true, Size: FloatingActionButtonSize.Default, HasIcon: true } &&
+            _classicWidth!.TargetValue != _labelExtentPx) return;
+        _classicTransitionActive = false;
+        _classicCurrentExpanded = _classicSegmentExpanded;
+        _fullyCollapsed = _owner?.Expanded == false && _classicWidth!.Value == 0;
+        _classicWidthTask = _classicAlphaTask = null;
+        InvalidateMeasure();
     }
     protected override Size MeasureOverride(Size available)
     {
@@ -138,10 +185,37 @@ internal sealed class ExtendedFabLayout : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var labelExtent = _labelWidth;
         _labelExtentPx = MathUtils.DipToPx(labelExtent, scale);
-        if (classic && hasIcon && _classicWidth is null && _scope is { } scope)
+        if (classic && hasIcon && _scope is { IsEnding: false } scope)
         {
-            _classicWidth = scope.CreateAnimatable(expanded ? (float)_labelExtentPx : 0, new ClassicWidthConverter(), 1);
-            scope.SubscribeValue(_classicWidth, _ => InvalidateMeasure());
+            if (_classicWidth is null)
+            {
+                _classicWidth = scope.CreateAnimatable(expanded ? (float)_labelExtentPx : 0, new ClassicWidthConverter(), 1);
+                scope.SubscribeValue(_classicWidth, _ => InvalidateMeasure());
+            }
+            else if (_classicTransitionActive && _classicSegmentExpanded && expanded && !_needsTransition && !_pending &&
+                     _classicWidth.TargetValue != _labelExtentPx && FabMotion.TrySpring(ExpandWidthMotion, out var widthSpec, 1))
+            {
+                // DeferredAnimation's full-size target is recomputed in measure. Retarget
+                // only width, preserving its rounded current value and vector velocity;
+                // alpha continues the existing segment without a restart.
+                var transitionId = _classicTransitionId;
+                var widthAnimation = StartClassicWidth(_labelExtentPx,
+                    _classicReturningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1) : widthSpec,
+                    scope.Lifetime);
+                _ = scope.Launch(async _ =>
+                {
+                    try { await widthAnimation; }
+                    finally { CompleteClassicTransition(transitionId); }
+                }, "Extended FAB measured width");
+            }
+            else if (!_classicTransitionActive && expanded && _classicCurrentExpanded && !_needsTransition && !_pending &&
+                     !_classicWidth.IsRunning && _alpha?.IsRunning != true && _classicWidth.Value != _labelExtentPx)
+            {
+                // EnterExitTransition drops its size animation once Visible is settled:
+                // normal measurement uses the current full size. Synchronize the stored
+                // integer extent too, so the next collapse starts at the displayed width.
+                _ = _classicWidth.SnapToAsync(_labelExtentPx);
+            }
         }
         if (!hasIcon)
             _rowWidth = Math.Max(MinimumWidth, start + end + _labelWidth);

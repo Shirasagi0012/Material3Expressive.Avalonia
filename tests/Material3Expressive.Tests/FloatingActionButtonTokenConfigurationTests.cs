@@ -395,6 +395,46 @@ public class FloatingActionButtonTokenConfigurationTests
         finally { window.Close(); }
     }
 
+    [AvaloniaFact]
+    public void ClassicExtended_SettledGapTracksNaturalBounds_AndNextCollapseStartsAtThatWidth()
+    {
+        var icon = Icon(); var label = new Border { Width = 160, Height = 16 };
+        var fab = new ExtendedFloatingActionButton { Icon = icon, Content = label };
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            Frames(clock, window, 2);
+            var clip = Part<FabLabelClip>(fab);
+            Assert.Equal(172, clip.Bounds.Width);
+            var initialWidth = fab.Bounds.Width;
+            var initialLabelX = label.TranslatePoint(default, fab)!.Value.X;
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 21d;
+            Flush(window);
+            Assert.Equal(initialWidth + 9, fab.Bounds.Width);
+            Assert.Equal(181, clip.DesiredSize.Width);
+            Assert.Equal(181, clip.Bounds.Width);
+            Assert.Equal(initialLabelX + 9, label.TranslatePoint(default, fab)!.Value.X);
+            Assert.Equal(clip.Bounds.Width, label.TranslatePoint(default, clip)!.Value.X + label.Bounds.Width);
+            Assert.Equal(0, clock.PendingFrameCount); // Settled size changes are ordinary measurement.
+
+            fab.Expanded = false;
+            Flush(window);
+            Assert.Equal(181, clip.Bounds.Width); // No jump back to the old saved 172px extent.
+            Frames(clock, window, 70);
+            Assert.Equal(56, fab.Bounds.Width);
+            fab.Expanded = true;
+            Frames(clock, window, 70);
+            Assert.Equal(initialWidth + 9, fab.Bounds.Width);
+            Assert.Equal(181, clip.Bounds.Width);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 14d;
+            Flush(window);
+            Assert.Equal(initialWidth + 2, fab.Bounds.Width);
+            Assert.Equal(174, clip.Bounds.Width);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaTheory]
     [InlineData(0)]
     [InlineData(1)]
@@ -655,6 +695,309 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.Equal(35, MaterialIcon.GetDefaultSize(iconPresenter));
         }
         finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ClassicExtended_RapidGapRetargetsPreserveValueVelocityAndTheAlphaTask()
+    {
+        var fab = ClassicFab(); var comparison = ClassicFab();
+        using var clock = new MotionTestClockScope(); var window = Show(new StackPanel { Children = { fab, comparison } });
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            var comparisonLayout = Part<ExtendedFabLayout>(comparison);
+            fab.Expanded = comparison.Expanded = true;
+            Frames(clock, window, 4);
+            var width = ClassicWidth(layout);
+            var alphaTask = ClassicField(layout, "_classicAlphaTask");
+            Assert.True(width.IsRunning);
+            Assert.True(width.State.VelocityVector[0] > 0);
+            foreach (var gap in new[] { 20d, 35d, 8d, 29d })
+            {
+                var before = width.State;
+                fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = gap;
+                Flush(window);
+                Assert.Equal(before.Value, width.Value);
+                Assert.Equal(before.VelocityVector[0], width.State.VelocityVector[0]);
+                Assert.Equal(160 + gap, width.TargetValue);
+                Assert.Same(alphaTask, ClassicField(layout, "_classicAlphaTask"));
+                Assert.True((bool)ClassicField(layout, "_classicTransitionActive")!);
+                Assert.True(width.IsRunning);
+            }
+            for (var i = 0; i < 10; i++)
+            {
+                Frames(clock, window, 1);
+                Assert.Equal(comparisonLayout.LabelAlpha, layout.LabelAlpha);
+            }
+            Frames(clock, window, 70);
+            Assert.Equal(189, Part<FabLabelClip>(fab).Bounds.Width);
+            Assert.Equal(236, fab.Bounds.Width);
+            AssertClassicSettled(layout);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ClassicExtended_SpringTokenAloneDoesNotRestartAnUnchangedWidthTarget()
+    {
+        var fab = ClassicFab(); var comparison = ClassicFab();
+        using var clock = new MotionTestClockScope(); var window = Show(new StackPanel { Children = { fab, comparison } });
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            var comparisonLayout = Part<ExtendedFabLayout>(comparison);
+            fab.Expanded = comparison.Expanded = true;
+            Frames(clock, window, 4);
+            var widthTask = ClassicField(layout, "_classicWidthTask");
+            var alphaTask = ClassicField(layout, "_classicAlphaTask");
+            fab.Resources[Comp.ExtendedFabPrimary.ExpandWidthMotion] = new MotionSpring(1, 60);
+            Flush(window);
+            Assert.Same(widthTask, ClassicField(layout, "_classicWidthTask"));
+            Assert.Same(alphaTask, ClassicField(layout, "_classicAlphaTask"));
+            for (var i = 0; i < 8; i++)
+            {
+                Frames(clock, window, 1);
+                Assert.Equal(ClassicWidth(comparisonLayout).Value, ClassicWidth(layout).Value);
+                Assert.Equal(comparisonLayout.LabelAlpha, layout.LabelAlpha);
+            }
+            // A new measured target does consume the current width specification.
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 40d;
+            Flush(window);
+            Assert.Equal(200, ClassicWidth(layout).TargetValue);
+            Assert.NotSame(widthTask, ClassicField(layout, "_classicWidthTask"));
+            Assert.Same(alphaTask, ClassicField(layout, "_classicAlphaTask"));
+            Frames(clock, window, 140);
+            Assert.Equal(200, Part<FabLabelClip>(fab).Bounds.Width);
+            AssertClassicSettled(layout);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ClassicExtended_GapRetargetsAndVisibilityReversalsReachTheLatestExtent()
+    {
+        var fab = ClassicFab();
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            fab.Expanded = true;
+            Frames(clock, window, 4);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 32d;
+            Flush(window);
+            Assert.Equal(192, ClassicWidth(layout).TargetValue);
+            fab.Expanded = false;
+            Frames(clock, window, 3);
+            var collapseTask = ClassicField(layout, "_classicWidthTask");
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 19d;
+            Flush(window);
+            Assert.Equal(0, ClassicWidth(layout).TargetValue);
+            Assert.Same(collapseTask, ClassicField(layout, "_classicWidthTask"));
+            fab.Expanded = true;
+            Frames(clock, window, 2);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 43d;
+            Flush(window);
+            Frames(clock, window, 1);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 15d;
+            Flush(window);
+            fab.Expanded = false;
+            Frames(clock, window, 3);
+            fab.Expanded = true;
+            Frames(clock, window, 4);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 27d;
+            Flush(window);
+            Frames(clock, window, 100);
+            Assert.Equal(187, Part<FabLabelClip>(fab).Bounds.Width);
+            Assert.Equal(234, fab.Bounds.Width);
+            Assert.Equal(1, layout.LabelAlpha);
+            AssertClassicSettled(layout);
+            fab.Expanded = false;
+            Frames(clock, window, 70);
+            Assert.Equal(56, fab.Bounds.Width);
+            Assert.Equal(0, layout.LabelAlpha);
+            Assert.False(Part<FabLabelClip>(fab).IsVisible);
+            AssertClassicSettled(layout);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ClassicExtended_DeferredMeasuredTargetCannotReportTheOldSegmentAsComplete()
+    {
+        var fab = ClassicFab();
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            fab.Expanded = true;
+            Frames(clock, window, 4);
+            var alphaTask = ClassicField(layout, "_classicAlphaTask");
+            fab.Resources[Comp.ExtendedFabPrimary.ExpandWidthMotion] = new TokenRef(MissingMotion);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 30d;
+            Flush(window);
+            Assert.Equal(172, ClassicWidth(layout).TargetValue);
+            Frames(clock, window, 70);
+            Assert.Equal(172, Part<FabLabelClip>(fab).Bounds.Width);
+            Assert.Equal(190, Part<FabLabelClip>(fab).DesiredSize.Width);
+            Assert.True((bool)ClassicField(layout, "_classicTransitionActive")!);
+            fab.Resources.Remove(Comp.ExtendedFabPrimary.ExpandWidthMotion);
+            Flush(window);
+            Assert.Equal(190, ClassicWidth(layout).TargetValue);
+            Assert.Same(alphaTask, ClassicField(layout, "_classicAlphaTask"));
+            Frames(clock, window, 70);
+            Assert.Equal(190, Part<FabLabelClip>(fab).Bounds.Width);
+            AssertClassicSettled(layout);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ClassicExtended_DetachCancelsRetargetTasks_AndReattachmentDoesNotReuseThem()
+    {
+        var fab = ClassicFab(); var host = new Panel { Children = { fab } };
+        using var clock = new MotionTestClockScope(); var window = Show(host);
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            fab.Expanded = true;
+            Frames(clock, window, 4);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 28d;
+            Flush(window);
+            var oldWidth = ClassicWidth(layout);
+            var oldWidthTask = Assert.IsAssignableFrom<Task>(ClassicField(layout, "_classicWidthTask"));
+            var oldAlphaTask = Assert.IsAssignableFrom<Task>(ClassicField(layout, "_classicAlphaTask"));
+            host.Children.Remove(fab);
+            Frames(clock, window, 2);
+            Assert.True(oldWidthTask.IsCanceled);
+            Assert.True(oldAlphaTask.IsCanceled);
+            AssertClassicSettled(layout);
+            Assert.Null(ClassicField(layout, "_scope"));
+            Assert.Equal(0, clock.PendingFrameCount);
+            host.Children.Add(fab);
+            Flush(window);
+            Assert.NotSame(oldWidth, ClassicWidth(layout));
+            Assert.Equal(188, Part<FabLabelClip>(fab).Bounds.Width);
+            AssertClassicSettled(layout);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 31d;
+            Flush(window);
+            Assert.Equal(191, Part<FabLabelClip>(fab).Bounds.Width);
+            fab.Expanded = false;
+            Frames(clock, window, 4);
+            host.Children.Remove(fab);
+            Frames(clock, window, 2);
+            AssertClassicSettled(layout);
+            Assert.Equal(0, clock.PendingFrameCount);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(FloatingActionButtonSize.Medium)]
+    [InlineData(FloatingActionButtonSize.Large)]
+    public void ClassicExtended_CrossSizeReversalRetiresOldCompletionBeforeReturningToDefault(FloatingActionButtonSize expressiveSize)
+    {
+        var fab = ClassicFab();
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            fab.Expanded = true;
+            Frames(clock, window, 4);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 24d;
+            Flush(window);
+            Assert.True((bool)ClassicField(layout, "_classicTransitionActive")!);
+            fab.Size = expressiveSize;
+            fab.Expanded = false;
+            Frames(clock, window, 3);
+            AssertClassicSettled(layout);
+            Frames(clock, window, 70);
+            fab.Size = FloatingActionButtonSize.Default;
+            fab.Expanded = true;
+            Frames(clock, window, 4);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 32d;
+            Flush(window);
+            Frames(clock, window, 70);
+            Assert.Equal(192, Part<FabLabelClip>(fab).Bounds.Width);
+            Assert.Equal(239, fab.Bounds.Width);
+            AssertClassicSettled(layout);
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 18d;
+            Flush(window);
+            Assert.Equal(178, Part<FabLabelClip>(fab).Bounds.Width);
+            Assert.Equal(225, fab.Bounds.Width);
+            AssertClassicSettled(layout);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ClassicExtended_ReturningToVisibleRetargetKeepsThe400SpringSegment()
+    {
+        var fab = ClassicFab(); fab.Expanded = true;
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            fab.Expanded = false;
+            Frames(clock, window, 4);
+            fab.Expanded = true;
+            Frames(clock, window, 2);
+            Assert.True((bool)ClassicField(layout, "_classicReturningToVisible")!);
+            // The Visible -> Visible segment uses its fixed interruption spring,
+            // even if the ordinary expand specification is changed before retarget.
+            fab.Resources[Comp.ExtendedFabPrimary.ExpandWidthMotion] = new MotionSpring(1, 60);
+            Flush(window);
+            var width = ClassicWidth(layout);
+            var before = width.State;
+            var alphaTask = ClassicField(layout, "_classicAlphaTask");
+            var expected = new TargetBasedAnimation<float>(
+                new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1), before.TypeConverter,
+                before.Value, 196f, initialVelocityVector: AnimationVector.From(before.VelocityVector));
+            fab.Resources[Comp.ExtendedFabPrimary.IconLabelSpace] = 36d;
+            Flush(window);
+            Assert.Equal(before.Value, width.Value);
+            // SpringSimulation's critical t=0 derivative evaluates -omega*x +
+            // (v + omega*x), which reconstructs v with double cancellation roundoff
+            // (observed 2.27e-13). Pin that analytic result exactly, and separately
+            // require preservation to 12 decimal places; the integer trajectory below
+            // remains exact rather than weakening the actual motion comparison.
+            var initialVelocity = new double[1];
+            expected.GetVelocityVector(TimeSpan.Zero, initialVelocity);
+            Assert.Equal(initialVelocity[0], width.State.VelocityVector[0]);
+            Assert.Equal(before.VelocityVector[0], width.State.VelocityVector[0], precision: 12);
+            Assert.Equal(196, width.TargetValue);
+            Assert.Same(alphaTask, ClassicField(layout, "_classicAlphaTask"));
+            for (var frame = 1; frame <= 8; frame++)
+            {
+                Frames(clock, window, 1);
+                Assert.Equal(expected.GetValue(TimeSpan.FromMilliseconds(frame * 16)), width.Value);
+            }
+            Frames(clock, window, 70);
+            Assert.Equal(196, Part<FabLabelClip>(fab).Bounds.Width);
+            AssertClassicSettled(layout);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    private static ExtendedFloatingActionButton ClassicFab() => new()
+    {
+        Expanded = false, Icon = Icon(), Content = new Border { Width = 160, Height = 16 }
+    };
+    private static object? ClassicField(ExtendedFabLayout layout, string name) =>
+        typeof(ExtendedFabLayout).GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(layout);
+    private static Animatable<float> ClassicWidth(ExtendedFabLayout layout) =>
+        Assert.IsType<Animatable<float>>(ClassicField(layout, "_classicWidth"));
+    private static void AssertClassicSettled(ExtendedFabLayout layout)
+    {
+        Assert.False((bool)ClassicField(layout, "_classicTransitionActive")!);
+        Assert.Null(ClassicField(layout, "_classicWidthTask"));
+        Assert.Null(ClassicField(layout, "_classicAlphaTask"));
     }
 
     private static readonly MaterialTokenKey<MotionSpring> MissingMotion = new("test.fab.missing-motion");

@@ -61,8 +61,18 @@ Animatable 触发其内部默认 spring。detach 清理待提交状态，重新�
 
 模板中手写的最外层 MultiBinding 明确使用 Template priority，内部属性的局部配置和 ClearValue
 不会被绑定默认的 LocalValue 优先级遮住；ControlTheme Setter 内绑定仍由 Setter 确定优先级。
-FabLabelClip.Gap 变化会失效自身测量缓存；Expressive 分支仅修改间距 Token 也会更新实际 label 位置和容器宽度。
-Classic 整数宽度的记忆、目标取样和中断策略保持原逻辑，不随此缓存修正重新定义。
+FabLabelClip.Gap 变化会失效自身测量缓存；修改间距 Token 会更新实际 label 位置和容器宽度。
+Classic 稳态展开时按当前实测整数宽度同步保存值，避免旧动画宽度裁掉更新后的 label，
+并让下次收起从实际显示宽度开始。依据固定 AndroidX/Core 的 `EnterExitTransition.kt`：
+`trackActiveEnter` / `trackActiveExit` 在 Visible 稳态清除 active transition，`createModifier`
+不再创建 sizeAnimation，measure 使用当前 measuredSize。这里不是额外的尺寸动画，也不是缺失规格回退。
+在途展开重新测得完整宽度时，只重定向 classic 宽通道，保留当前整数值、向量速度和 alpha 任务。
+这对应 `EnterExitTransition.measure` 每次以 fullSize 调用 DeferredAnimation，及固定 `Transition.kt`
+的 `updateTargetValue` 仅在目标改变时重建动画。仅修改 spring Token 而宽度目标未变，不重启动画；
+几何目标改变时才按当前 segment 选择规格，保留 Visible→Visible 的 400 spring 分支。
+完成判断观察当前宽任务及原 alpha 任务；被尺寸重定向取消的旧宽任务不会使 transition 提前完成或永不完成。
+待配置恢复的最新 extent 也参与完成条件。代次隔离反向/重新附着，settle 与 detach 都清除保存的任务引用。
+未改变 ComposeAnimation 协议，也未新增公共 API 或通用动画调度器。
 固定 elevation 进入/退出算法、Interrupted Visible→Visible 的默认 spring、整数居中及最小交互
 48 DIP 保留为上游/已确认布局算法，不因出现常数而引入额外公共配置。
 
