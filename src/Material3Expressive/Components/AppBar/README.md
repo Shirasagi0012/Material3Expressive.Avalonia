@@ -72,9 +72,27 @@ HorizontalArrangement 还支持 Start、Center、End、SpaceBetween、SpaceAroun
 Spacing 只用于 SpacedBy，允许负间距。自定义内容根负责自己的内部排列。
 
 `WindowInsets` 使用物理 left/top/right/bottom，桌面默认零；`ContentPadding` 使用逻辑 start/top/end/bottom。
-Top 的 `Colors` 是 `TopAppBarColors` 配置，包含普通/滚动背景和各槽内容色；
-Bottom 使用 Background / Foreground / TonalElevation。需要统一跟随主题的配置，优先使用
-[公共 Token 覆盖](../../../../docs/GETTING_STARTED.md)。
+Top 的普通容器色使用 `Background`，滚动端色使用 `ScrolledContainerColor`；内容槽使用
+`NavigationIconContentColor`、`TitleContentColor`、`SubtitleContentColor`、`ActionIconContentColor`。
+Top 的颜色插值支持纯色 Background；显式 null 表示透明，非纯色在布局时抛出 ArgumentException。
+Bottom 使用 Background / Foreground / TonalElevation，仍支持原有 Surface 刷子能力。
+需要统一跟随主题的配置，优先使用[公共 Token 覆盖](../../../../docs/GETTING_STARTED.md)。
+
+```xml
+<m3:MediumFlexibleTopAppBar Title="收件箱" Subtitle="个人账户"
+                            Background="#FFF7FF" ScrolledContainerColor="#F3EDF7"
+                            TitleContentColor="#1D1B20" />
+```
+
+默认高度、ContentPadding、WindowInsets、底栏 TonalElevation / HorizontalArrangement 由主题接入 AppBar Token。
+副标题数据或模板非 null 时，Flexible / TwoRows 的主题选择带副标题的高度；不覆盖显式 ExpandedHeight。
+普通默认实例的 ExpandedHeight 返回主题选出的有限值；显式设置 NaN / 正无穷仍保留输入，并在布局时使用当前主题默认高度。
+FlexibleBottomAppBar 的非有限或非正 ExpandedHeight 同样使用当前默认高度。
+ClearValue 恢复当前主题配置，例如 `bar.ClearValue(TopAppBar.ExpandedHeightProperty)`。
+动画只改变呈现结果，不写回 ExpandedHeight、Background 或端点颜色。
+
+显式 fling 可直接使用 `DecayAnimationSpec.SplineBasedDecay<float>(density)`（ComposeAnimation.Runtime）；
+显式 snap 传 `IAnimationSpec<float>`，null 仍禁用对应动画。
 
 ## 滚动联动
 

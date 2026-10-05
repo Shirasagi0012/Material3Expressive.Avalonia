@@ -21,8 +21,7 @@ public class ReferenceCatalogTests
             "tests/VisualParity/reference/gradle/verification-metadata.xml",
             "tests/VisualParity/reference/gradle/wrapper/gradle-wrapper.properties",
             "docs/upstream-baseline.json", "modules/MaterialTypography.Roboto/Assets/Roboto-Regular.ttf",
-            "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf", "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf",
-            "modules/MaterialSymbols/assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf"
+            "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf", "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf"
         };
         foreach (var path in paths)
         {

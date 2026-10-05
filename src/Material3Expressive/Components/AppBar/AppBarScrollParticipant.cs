@@ -16,23 +16,41 @@ internal readonly record struct AppBarSpring(double Damping, double Stiffness, f
     internal static bool TryRead(IAnimationSpec<float>? spec, out AppBarSpring? result)
     {
         result = spec is SpringSpec<float> spring
-            ? new(spring.DampingRatio, spring.Stiffness, spring.VisibilityThreshold) : null;
+            ? new(spring.DampingRatio, spring.Stiffness, spring.VisibilityThreshold)
+            : null;
         return spec is null || spec.GetType() == typeof(SpringSpec<float>);
     }
+
     internal SpringSpec<float> Create() => new(Damping, Stiffness, Threshold);
 }
 
 internal readonly record struct AppBarScrollConfiguration(
-    TopScrollKind? TopKind, double TopRange, double BottomRange, double Density,
-    bool TopEnabled, bool BottomEnabled, bool SuppressBottomLayout, bool ContentAtStart,
-    bool TwoRows, Color BaseColor, Color ScrolledColor,
-    AppBarSpring? TopSnap, AppBarSpring? BottomSnap, AppBarSpring ColorSpring,
-    double ExpandedViewport, double Extent);
+    TopScrollKind? TopKind,
+    double TopRange,
+    double BottomRange,
+    double Density,
+    bool TopEnabled,
+    bool BottomEnabled,
+    bool SuppressBottomLayout,
+    bool ContentAtStart,
+    bool TwoRows,
+    Color BaseColor,
+    Color ScrolledColor,
+    AppBarSpring? TopSnap,
+    AppBarSpring? BottomSnap,
+    AppBarSpring ColorSpring,
+    double ExpandedViewport,
+    double Extent);
 
 internal readonly record struct AppBarScrollSnapshot(
-    long Generation, long Sequence, double TopCollapsed, double BottomHidden,
-    double TopContentOffset, double BottomContentOffset,
-    double BodyOffset, double Viewport);
+    long Generation,
+    long Sequence,
+    double TopCollapsed,
+    double BottomHidden,
+    double TopContentOffset,
+    double BottomContentOffset,
+    double BodyOffset,
+    double Viewport);
 
 internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
 {
@@ -51,11 +69,19 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
     private static readonly CubicBezierEasing TitleAlpha = new(.8f, 0, .8f, .15f);
     private static readonly ColorConverter Colors = new();
 
-    internal AppBarScrollParticipant(AppBarScrollConfiguration config, AppBarScrollSnapshot initial,
-        CompositionVector3OutputWriter offsets, CompositionVector3OutputWriter appearance,
-        CompositionColorOutputWriter color, Action<AppBarScrollSnapshot> publish)
+    internal AppBarScrollParticipant(
+        AppBarScrollConfiguration config,
+        AppBarScrollSnapshot initial,
+        CompositionVector3OutputWriter offsets,
+        CompositionVector3OutputWriter appearance,
+        CompositionColorOutputWriter color,
+        Action<AppBarScrollSnapshot> publish)
     {
-        _config = config; _offsets = offsets; _appearance = appearance; _color = color; _publish = publish;
+        _config = config;
+        _offsets = offsets;
+        _appearance = appearance;
+        _color = color;
+        _publish = publish;
         _paintedColor = _targetColor = config.BaseColor;
         SetState(initial);
     }
@@ -64,7 +90,8 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
     {
         var rangeChanged = _config.TopRange != config.TopRange || _config.BottomRange != config.BottomRange;
         _config = config;
-        if (rangeChanged) _topSnap = _bottomSnap = null;
+        if (rangeChanged)
+            _topSnap = _bottomSnap = null;
         _top = Math.Clamp(_top, 0, config.TopRange);
         _bottom = Math.Clamp(_bottom, 0, config.BottomRange);
         Output();
@@ -75,7 +102,8 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
         _generation = state.Generation;
         _top = Math.Clamp(state.TopCollapsed, 0, _config.TopRange);
         _bottom = Math.Clamp(state.BottomHidden, 0, _config.BottomRange);
-        _topContent = state.TopContentOffset; _bottomContent = state.BottomContentOffset;
+        _topContent = state.TopContentOffset;
+        _bottomContent = state.BottomContentOffset;
         _body = state.BodyOffset;
         _topSnap = _bottomSnap = null;
         Output();
@@ -102,9 +130,12 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
             _bottomContent -= selfConsumed;
             _bottom = Math.Clamp(_bottom + selfConsumed, 0, _config.BottomRange);
         }
-        if (!_config.TopEnabled) return 0;
+
+        if (!_config.TopEnabled)
+            return 0;
         _topContent -= selfConsumed;
-        if (_config.TopKind != TopScrollKind.ExitUntilCollapsed || context.Delta >= 0) return 0;
+        if (_config.TopKind != TopScrollKind.ExitUntilCollapsed || context.Delta >= 0)
+            return 0;
         var old = _top;
         _top = Math.Clamp(_top + context.Delta, 0, _config.TopRange);
         return _top - old;
@@ -112,9 +143,8 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
 
     public ScrollBounds GetVerticalBounds(in ScrollMovementContext context) =>
         new(0, Math.Max(0, _config.Extent - LiveViewport));
-
-    private double LiveViewport => Math.Max(0, _config.ExpandedViewport +
-        Quantize(_top) + (_config.SuppressBottomLayout ? 0 : Quantize(_bottom)));
+    private double LiveViewport =>
+        Math.Max(0, _config.ExpandedViewport + Quantize(_top) + (_config.SuppressBottomLayout ? 0 : Quantize(_bottom)));
 
     public void OnScrollCompleted(in ScrollMovementResult result)
     {
@@ -137,19 +167,33 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
         if (_lastDirection < 0 && _body <= 1e-7)
         {
             _topContent = 0;
-            if (_bottom == 0 || _bottom == _config.BottomRange) _bottomContent = 0;
+            if (_bottom == 0 || _bottom == _config.BottomRange)
+                _bottomContent = 0;
         }
-        _topSnap = StartSnap(_top, _config.TopRange, _config.TopEnabled && _config.TopKind != TopScrollKind.Pinned ? _config.TopSnap : null, _config.Density);
-        _bottomSnap = StartSnap(_bottom, _config.BottomRange, _config.BottomEnabled ? _config.BottomSnap : null, _config.Density);
+
+        _topSnap = StartSnap(
+            _top,
+            _config.TopRange,
+            _config.TopEnabled && _config.TopKind != TopScrollKind.Pinned ? _config.TopSnap : null,
+            _config.Density);
+        _bottomSnap = StartSnap(
+            _bottom,
+            _config.BottomRange,
+            _config.BottomEnabled ? _config.BottomSnap : null,
+            _config.Density);
         Output();
     }
 
     private static TargetBasedAnimation<float>? StartSnap(double position, double range, AppBarSpring? spring, double density)
     {
-        if (spring is null || range <= 0 || position / range < .01 || position >= range) return null;
+        if (spring is null || range <= 0 || position / range < .01 || position >= range)
+            return null;
         // Existing AppBar animation specs and their visibility threshold are physical-pixel
         // quantities. Keep the evaluator in those units; only the scroll protocol uses DIP.
-        return new(spring.Value.Create(), new FloatConverter(), (float)(position * density),
+        return new(
+            spring.Value.Create(),
+            new FloatConverter(),
+            (float)(position * density),
             (float)(position / range < .5 ? 0 : range * density));
     }
 
@@ -159,61 +203,88 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
         if (_topSnap is { } top)
         {
             _top = Math.Clamp(top.GetValue(time) / _config.Density, 0, _config.TopRange);
-            if (top.IsFinished(time)) _topSnap = null;
+            if (top.IsFinished(time))
+                _topSnap = null;
         }
+
         if (_bottomSnap is { } bottom)
         {
             _bottom = Math.Clamp(bottom.GetValue(time) / _config.Density, 0, _config.BottomRange);
-            if (bottom.IsFinished(time)) _bottomSnap = null;
+            if (bottom.IsFinished(time))
+                _bottomSnap = null;
         }
+
         Output();
-        return _topSnap is not null || _bottomSnap is not null || _colorAnimation is not null;
+        return _topSnap is { } || _bottomSnap is { } || _colorAnimation is { };
     }
 
-    public void OnCancelled() { _topSnap = _bottomSnap = null; _colorAnimation = null; }
-    public void Detach() { _detached = true; OnCancelled(); }
+    public void OnCancelled()
+    {
+        _topSnap = _bottomSnap = null;
+        _colorAnimation = null;
+    }
 
-    private double Quantize(double value) => -MathUtils.RoundToInt(-value * _config.Density) / _config.Density;
+    public void Detach()
+    {
+        _detached = true;
+        OnCancelled();
+    }
+
+    private double Quantize(double value) =>
+        -MathUtils.RoundToInt(-value * _config.Density) / _config.Density;
 
     private void Output()
     {
-        if (_detached) return;
+        if (_detached)
+            return;
         var fraction = _config.TopRange > 0 ? (float)(_top / _config.TopRange) : 0;
         _offsets.SetValue(new Vector3D(Quantize(_top), _config.SuppressBottomLayout ? 0 : Quantize(_bottom), _body));
-        _appearance.SetValue(new Vector3D(_config.TwoRows ? TitleAlpha.Ease(fraction) : 1,
-            1 - fraction, fraction));
-        var overlap = !_config.ContentAtStart && _topContent == 0 ? 1 : _config.TopRange > 0
-            ? Math.Clamp(Math.Abs(_topContent) / _config.TopRange, 0, 1) : 0;
+        _appearance.SetValue(new Vector3D(_config.TwoRows ? TitleAlpha.Ease(fraction) : 1, 1 - fraction, fraction));
+        var overlap = !_config.ContentAtStart && _topContent == 0
+            ? 1
+            : _config.TopRange > 0
+                ? Math.Clamp(Math.Abs(_topContent) / _config.TopRange, 0, 1)
+                : 0;
         var target = _config.TwoRows
-            ? Interpolate(_config.BaseColor, _config.ScrolledColor, (float)ComposeEasings.FastOutLinearIn.Ease(fraction))
+            ? Interpolate(
+                _config.BaseColor,
+                _config.ScrolledColor,
+                (float)ComposeEasings.FastOutLinearIn.Ease(fraction))
             : overlap > .01 ? _config.ScrolledColor : _config.BaseColor;
-        if (_config.TwoRows) _paintedColor = _targetColor = target;
+        if (_config.TwoRows)
+            _paintedColor = _targetColor = target;
         else
         {
             if (target != _targetColor)
             {
-                _targetColor = target; _colorStarted = Stopwatch.GetTimestamp();
+                _targetColor = target;
+                _colorStarted = Stopwatch.GetTimestamp();
                 // Same default effects spring as the existing single-row chrome.
                 var spring = _config.ColorSpring;
                 _colorAnimation = new(new SpringSpec<Color>(spring.Damping, spring.Stiffness), Colors, _paintedColor, target);
             }
+
             if (_colorAnimation is { } animation)
             {
                 var time = Stopwatch.GetElapsedTime(_colorStarted);
                 _paintedColor = animation.GetValue(time);
-                if (animation.IsFinished(time)) _colorAnimation = null;
+                if (animation.IsFinished(time))
+                    _colorAnimation = null;
             }
         }
+
         _color.SetValue(_paintedColor);
-        _publish(new(_generation, ++_sequence, _top, _bottom, _topContent, _bottomContent,
-            _body, LiveViewport));
+        _publish(new(_generation, ++_sequence, _top, _bottom, _topContent, _bottomContent, _body, LiveViewport));
     }
 
     private static Color Interpolate(Color a, Color b, float fraction)
     {
-        Span<double> first = stackalloc double[4]; Span<double> last = stackalloc double[4];
-        Colors.To(a, first); Colors.To(b, last);
-        for (var i = 0; i < 4; i++) first[i] = MathUtils.Lerp((float)first[i], (float)last[i], fraction);
+        Span<double> first = stackalloc double[4];
+        Span<double> last = stackalloc double[4];
+        Colors.To(a, first);
+        Colors.To(b, last);
+        for (var i = 0; i < 4; i++)
+            first[i] = MathUtils.Lerp((float)first[i], (float)last[i], fraction);
         return Colors.From(first);
     }
 }

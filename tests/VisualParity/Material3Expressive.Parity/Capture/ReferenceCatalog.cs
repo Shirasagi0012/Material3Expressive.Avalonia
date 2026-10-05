@@ -23,8 +23,7 @@ public static class ReferenceCatalog
             .Concat(new[] { "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "gradle.lockfile",
                 "gradle/verification-metadata.xml", "gradle/wrapper/gradle-wrapper.properties" }.Select(p => Path.Combine(reference, p)))
             .Concat(new[] { "docs/upstream-baseline.json", "modules/MaterialTypography.Roboto/Assets/Roboto-Regular.ttf",
-                "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf", "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf",
-                "modules/MaterialSymbols/assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf" }.Select(p => Path.Combine(root, p)))
+                "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf", "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf" }.Select(p => Path.Combine(root, p)))
             .Order(StringComparer.Ordinal).ToDictionary(p => Path.GetRelativePath(root, p).Replace('\\', '/'), ParityJson.Hash);
         return ParityJson.HashValue(new { files, density = AvaloniaHost.RenderScale,
             platform = RuntimeInformation.OSDescription, architecture = RuntimeInformation.ProcessArchitecture.ToString() });

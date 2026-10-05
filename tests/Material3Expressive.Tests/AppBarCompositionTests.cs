@@ -39,7 +39,8 @@ public class AppBarCompositionTests
         bar.CollapsedTitleTemplate = new FuncDataTemplate<object>((_, _) => new Border { Width = 60, Height = 16, Background = Brushes.Blue });
         bar.NavigationIcon = new Border { Width = 32, Height = 32, Background = Brushes.Lime };
         bar.Items.Add(new Border { Width = 40, Height = 24, Background = Brushes.Yellow });
-        bar.Colors = new TopAppBarColors(ContainerColor: Color.Parse("#FFFDF7FE"), ScrolledContainerColor: Color.Parse("#FFE6DFEB"));
+        bar.Background = new SolidColorBrush(Color.Parse("#FFFDF7FE"));
+        bar.ScrolledContainerColor = Color.Parse("#FFE6DFEB");
         var window = new MotionTestWindow { Width = 300, Height = 180, WindowDecorations = WindowDecorations.None,
             Background = Brushes.White };
         window.Styles.Add((Avalonia.Styling.Styles)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));

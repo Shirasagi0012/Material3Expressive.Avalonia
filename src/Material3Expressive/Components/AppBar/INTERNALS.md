@@ -18,10 +18,53 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 | --- | --- |
 | TopAppBar、CenterAlignedTopAppBar、Medium/Large、Flexible、TwoRows 入口 | [TopAppBar.cs](TopAppBar.cs)、[AppBarTopLayout.cs](AppBarTopLayout.cs)、[AppBar.axaml](AppBar.axaml)：槽、标题树、测量/摆放和视觉桥接 |
 | BottomAppBar、FlexibleBottomAppBar | [BottomAppBar.cs](BottomAppBar.cs)、[AppBarBottomLayout.cs](AppBarBottomLayout.cs)：动作/FAB/自定义内容、排列与隐藏布局 |
-| TopAppBarState / BottomAppBarState、Defaults / Colors | [AppBarState.cs](AppBarState.cs)、[AppBarDefaults.cs](AppBarDefaults.cs)、[AppBarTokenSource.cs](AppBarTokenSource.cs)、[组件 Token](../../Tokens/MaterialTokens.Comp.AppBar.cs) |
+| TopAppBarState / BottomAppBarState、行为工厂 / 配置基线 | [AppBarState.cs](AppBarState.cs)、[AppBarDefaults.cs](AppBarDefaults.cs)、[AppBarTokenSource.cs](AppBarTokenSource.cs)、[组件 Token](../../Tokens/MaterialTokens.Comp.AppBar.cs) |
 | ScrollBehavior、nestedScrollConnection、settleAppBar | [AppBarScrollBehavior.cs](AppBarScrollBehavior.cs)、[AppBarDirectDrag.cs](AppBarDirectDrag.cs)、[AppBarVerticalGesture.cs](AppBarVerticalGesture.cs) |
 | 本地原生滚动接入 | [AppBarScrollScope.cs](AppBarScrollScope.cs)、[AppBarSmoothScrollConnection.cs](AppBarSmoothScrollConnection.cs)：主视口筛选、接入/释放与布局衔接 |
 | 本地合成参与者 | [AppBarScrollParticipant.cs](AppBarScrollParticipant.cs)、[AppBarCompositionVisuals.cs](AppBarCompositionVisuals.cs)：DIP 事务与物理状态桥接、合成输出 |
+
+## 配置组织试点（2026-10-05）
+
+维护者本轮授权将默认配置接到主题 / Avalonia 属性，并确认：删除 nullable `TopAppBarColors` 包装，
+普通容器复用 Background，其余五槽采用独立 Color 属性；Top Background 的 null 表示透明，非纯色明确报错。
+旧实现忽略 null / 非纯色并再次读取默认 Token 的行为不再保留。Bottom 的 Surface 刷子不受影响。
+本任务未要求保留旧发布版本的源 / 二进制兼容；仓内调用方同步迁移，不保留旧配置入口或兼容包装。
+
+| 原入口 / 成员 | 当前归属与理由 |
+| --- | --- |
+| TopAppBarExpandedHeight、MediumAppBarCollapsedHeight、LargeAppBarCollapsedHeight | SmallExpandedHeight / CollapsedHeight Token；折叠高度引用小栏默认高度 |
+| MediumAppBarExpandedHeight、LargeAppBarExpandedHeight | MediumExpandedHeight / LargeExpandedHeight Token |
+| MediumFlexibleAppBarWithoutSubtitleExpandedHeight、MediumFlexibleAppBarWithSubtitleExpandedHeight | MediumFlexibleExpandedHeight / MediumFlexibleWithSubtitleExpandedHeight Token |
+| LargeFlexibleAppBarWithoutSubtitleExpandedHeight、LargeFlexibleAppBarWithSubtitleExpandedHeight | LargeFlexibleExpandedHeight / LargeFlexibleWithSubtitleExpandedHeight Token |
+| Top ContentPadding、WindowInsets | 同名 Token → 主题 Setter → 有效配置属性 |
+| Bottom ContainerHeight、FlexibleBottomAppBarHeight、ContentPadding、FlexibleContentPadding、WindowInsets | Bottom / FlexibleBottom 对应高度、Padding、Insets Token；删除属性元数据和类型静态构造器的数字副本 |
+| Bottom ContainerElevation、FlexibleContainerElevation | BottomTonalElevation / FlexibleBottomTonalElevation Token → TonalElevation |
+| 标题逻辑对齐 | TitleAlignment / CenterTitleAlignment Token → TitleHorizontalAlignment；保留整个顶部族的 StyleKey |
+| Bottom / Flexible 默认排列 | BottomArrangement / FlexibleBottomArrangement Token → HorizontalArrangement；Spacing 的零值和 SpacedBy 的负间距仍是原算法语义 |
+| Colors()、TopAppBarColors、TopAppBar.Colors | 删除；颜色 Token → Background / 五槽 Color 属性；无 nullable 逐字段优先级 |
+| 排版角色选择与内部 Token 绑定 | 主题变体样式 → 展开 / 折叠标题部件的 TextStyle 配置；仍保留系统排版 Token 引用与资源更新 |
+| 单行颜色动画内部 motion 查询 | ContainerColorAnimation Token 引用 EffectsDefault → 模板内部配置 → UI / compositor 求值器；每次新目标捕获当前规格 |
+| Top / Bottom SnapAnimationSpec 固定属性 | 删除重复的固定规格入口；动态 behavior 默认路径按下述确认保留 |
+| Top / Bottom FlingAnimationSpec 工厂 | 删除重复的默认 API；behavior 仍按 density 调用既有 SplineBasedDecay，显式调用方可直接使用动画库 |
+| Pinned / EnterAlways / ExitUntilCollapsed / ExitAlwaysScrollBehavior 及显式 spec 重载 | 保留原行为工厂、状态身份、回调、订阅和挂载生命周期，不把运行时对象放入 TokenSource |
+| 插值、TitleAlpha、TitleBottomPadding、4 DIP 标题留白、FAB 8 / 12 DIP 留白 | 保留实际布局 / 绘制职责中的算法与常量，不机械公开为 Token |
+
+Top 主题通过变体伪类和 `:subtitle`（Subtitle 或 SubtitleTemplate 非 null）选出一个内部 DefaultExpandedHeight。
+主题把它绑定到 ExpandedHeight 的主题优先级；用户 Style / Binding / LocalValue 仍由 Avalonia 合并。
+这个内部值还用于上游指定的 NaN / 正无穷（FlexibleBottom 另有非有限 / 非正）规范化，保留原输入，
+不是一般性的用户选项回退链，也没有新增只读公共 Effective / Actual 属性。负无穷 Top 高度仍触发原有有限值检查。
+底栏变体默认值与居中标题对齐通过主题内部 MultiBinding 选择候选 Token。局部
+AppBarVariantDefaultConverter 只表达这两种类型条件，避免伪类 Setter 的 StyleTrigger 优先级压过普通用户 Style，
+同时保留原组件族 StyleKey；未新增公共 Options 或变体主题切换 API。
+
+完整示例：AppBarTokenSource 提供 MediumFlexibleWithSubtitleExpandedHeight = 136 → 控件有副标题事实 →
+主题 :medium-flexible:subtitle 选择该 Token → 默认 ExpandedHeight = 136 → AppBarTopRow 计算两行几何。
+局部 ExpandedHeight = 180 由 Avalonia 覆盖主题；滚动偏移只改变呈现高度，ClearValue 后恢复当前主题选择。
+颜色、排版和颜色动画基线保留 TokenRef，不在 TokenSource 中解析成实例快照。
+
+维护者本轮确认保留 behavior 的动态 snap 特例：挂载的栏 / Scope 仍读取系统 motion Token，未挂载时仍使用
+Expressive fallback；显式 spec / null 继续由 behavior 持有。它尚未经过“主题 → 配置属性”的统一路径，
+后续需要决定动画配置 API 与 behavior 的职责后再迁移。本轮不改变 state 所有权，不将该特例推广给呈现配置。
 
 ## 槽、标题与布局不变量
 
@@ -103,6 +146,9 @@ AppBarScrollScope 包围屏幕，栏和 Scope 引用同一个 behavior。顶部�
 
 显式分发的 pre 从外到内、每层 top→bottom；post 从内到外、每层 bottom→top，connection 返回消费量。
 这条协议用于自定义宿主和行为验证，不自动接管原生 viewer 的滚轮、触摸或惯性。
+`AppBarScrollScope.Test.cs` 保存这套显式分发及其 pre/post 辅助方法，仍随控件库编译并保留公共 API。
+`AppBarScrollScope.cs` 保存 SmoothScroll 连接生命周期，以及显式 fling 和真实栏直接拖动共用的
+取消任务登记；分发部分通过 Register/Unregister 接入同一取消生命周期，不建立第二份任务集合。
 任意滚动宿主可在 UI 线程调用：
 
 ```csharp
@@ -130,6 +176,10 @@ clock 为所用动画帧时钟，token 为调用方 CancellationToken；Vector �
 [AppBar 接入决定](../../../../docs/DECISIONS.md#appbar-与原生滚动接入)与
 [合成决定](../../../../docs/DECISIONS.md#普通物理滚动与-appbar-的合成接入)，不能把旧 Fluent 自动模板替换方案恢复为当前能力。
 
+本轮另查见已有未实现差异：固定 AppBar.kt 的双行入口也对 CollapsedHeight 的 NaN / 正无穷使用默认折叠高度，
+当前本地仍在布局时抛出有限值检查异常。本轮尚未修改这一输入契约，是否在本次补齐另向维护者提出；
+不能将现有异常行为视作已批准的上游偏离。
+
 已观察到的未解决差异是合成路径极小非零标题 opacity 仍被 Avalonia 剔除；UI 路径的 opacity mask 处理
 不等于合成路径已修复，也不是授权改写上游曲线。当前合成能力不支持 zoom/overscroll，
 只能移动已经呈现的内容；UI 忙碌时公开状态、滚动条滑块/自动隐藏、辅助功能、命中测试与虚拟化新内容仍受 UI 更新限制。
@@ -142,7 +192,7 @@ UI 阻塞时辅助功能与命中测试仍需专项验收。组件 parity 不评
 从仓库根目录执行，环境与结果含义见 [VisualParity](../../../../tests/VisualParity/README.md)：
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~AppBarTests
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~AppBar
 ./tests/VisualParity/parity.ps1 prepare-reference --family appbar
 ./tests/VisualParity/parity.ps1 run --family appbar
 ./tests/VisualParity/parity.ps1 self-test --family appbar
@@ -154,6 +204,7 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 [Compose 用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/AppBarCases.kt)是已跟踪的复现入口。
 Catalog 入口为 [AppBarDemo.cs](../../../Material3Expressive.Catalog/AppBarDemo.cs)。
 
+- [AppBarConfigurationTests](../../../../tests/Material3Expressive.Tests/AppBarConfigurationTests.cs)：默认基线、局部资源、普通样式 / 绑定 / ClearValue、副标题及模板变化、主题 / 挂载位置更新、高度特殊值、颜色动画与输入隔离、独立颜色迁移
 - [AppBarScrollTests](../../../../tests/Material3Expressive.Tests/AppBarScrollTests.cs)：显式协议、直接拖动、吸附/中断
 - [AppBarSmoothScrollTests](../../../../tests/Material3Expressive.Tests/AppBarSmoothScrollTests.cs)：主正文滚轮/RawTouch、嵌套、逻辑模式、模板/主题切换及连接生命周期
 - [AppBarCompositionTests](../../../../tests/Material3Expressive.Tests/AppBarCompositionTests.cs)：合成/UI 渲染对照、布局基准、分数偏移与断连恢复

@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using ComposeAnimation;
@@ -89,8 +88,7 @@ public sealed class AppBarDemo : Window
         TopAppBar bar = _variant.SelectedIndex switch { 1 => new CenterAlignedTopAppBar(), 2 => new MediumTopAppBar(), 3 => new LargeTopAppBar(),
             4 => new MediumFlexibleTopAppBar(), 5 => new LargeFlexibleTopAppBar(), 6 => new TwoRowsTopAppBar(), _ => new TopAppBar() };
         bar.Title = "Material 3 Expressive";
-        bar.TitleTemplate = new FuncDataTemplate<string>((data, _) => new TextBlock { Text = data });
-        if (_variant.SelectedIndex >= 4) { bar.Subtitle = "Independent expanded and collapsed titles"; bar.SubtitleTemplate = new FuncDataTemplate<string>((data, _) => new TextBlock { Text = data }); }
+        if (_variant.SelectedIndex >= 4) bar.Subtitle = "Independent expanded and collapsed titles";
         bar.NavigationIcon = Action(MaterialSymbolCodepoint.Menu, "Menu");
         bar.Items.Add(Action(MaterialSymbolCodepoint.Search, "Search")); bar.Items.Add(Action(MaterialSymbolCodepoint.MoreVert, "More actions"));
         bar.ScrollBehavior = _behavior.SelectedIndex switch { 0 => TopAppBarDefaults.PinnedScrollBehavior(_top, isScrollingContentAtStart: () => _bodyScroll.Offset.Y == 0),

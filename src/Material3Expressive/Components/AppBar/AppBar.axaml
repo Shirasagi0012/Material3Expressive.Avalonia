@@ -3,10 +3,31 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:TopAppBar}" TargetType="m3:TopAppBar">
+      <Setter Property="TitleHorizontalAlignment">
+        <MultiBinding Converter="{x:Static m3:AppBarVariantDefaultConverter.CenterAligned}">
+          <Binding RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.TitleAlignment}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.CenterTitleAlignment}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContainerColor}}" />
+      <Setter Property="ScrolledContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ScrolledContainerColor}}" />
+      <Setter Property="NavigationIconContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.NavigationIconColor}}" />
+      <Setter Property="TitleContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.TitleColor}}" />
+      <Setter Property="SubtitleContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SubtitleColor}}" />
+      <Setter Property="ActionIconContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ActionIconColor}}" />
+      <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SmallExpandedHeight}}" />
+      <Setter Property="ExpandedHeight" Value="{Binding DefaultExpandedHeight, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="CollapsedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.CollapsedHeight}}" />
+      <Setter Property="ContentPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContentPadding}}" />
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.WindowInsets}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Top" />
-      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:AppBarActionsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <m3:AppBarActionsPanel />
+        </ItemsPanelTemplate>
+      </Setter>
       <Setter Property="ItemContainerTheme">
         <ControlTheme TargetType="ContentPresenter">
           <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -16,17 +37,14 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:AppBarTopChrome x:Name="PART_Chrome"
-              BaseColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContainerColor}}"
-              ScrolledColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ScrolledContainerColor}}"
-              NavigationColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.NavigationIconColor}}"
-              TitleColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.TitleColor}}"
-              SubtitleColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SubtitleColor}}"
-              ActionColor="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ActionIconColor}}">
+              ContainerColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContainerColorAnimation}}">
             <m3:AppBarTopRow ClipToBounds="True">
               <Border Padding="4,0,0,0">
                 <ContentPresenter Content="{TemplateBinding NavigationIcon}" ContentTemplate="{TemplateBinding NavigationIconTemplate}" />
               </Border>
-              <m3:AppBarTitle>
+              <m3:AppBarTitle x:Name="PART_CollapsedTitle"
+                  TitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SmallTitleStyle}}"
+                  SubtitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SmallSubtitleStyle}}">
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
               </m3:AppBarTitle>
@@ -36,7 +54,9 @@
             </m3:AppBarTopRow>
             <m3:AppBarTopRow ClipToBounds="True">
               <Border Padding="4,0,0,0" />
-              <m3:AppBarTitle>
+              <m3:AppBarTitle x:Name="PART_ExpandedTitle"
+                  TitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleTitleStyle}}"
+                  SubtitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleSubtitleStyle}}">
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
               </m3:AppBarTitle>
@@ -45,14 +65,82 @@
           </m3:AppBarTopChrome>
         </ControlTemplate>
       </Setter>
+      <Style Selector="^:medium">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:large">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.LargeExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:medium-flexible">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:two-rows">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:large-flexible">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.LargeFlexibleExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:medium-flexible:subtitle">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleWithSubtitleExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:two-rows:subtitle">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleWithSubtitleExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:large-flexible:subtitle">
+        <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.LargeFlexibleWithSubtitleExpandedHeight}}" />
+      </Style>
+      <Style Selector="^:medium /template/ m3|AppBarTitle#PART_ExpandedTitle">
+        <Setter Property="TitleStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumTitleStyle}}" />
+      </Style>
+      <Style Selector="^:large /template/ m3|AppBarTitle#PART_ExpandedTitle">
+        <Setter Property="TitleStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.LargeTitleStyle}}" />
+      </Style>
+      <Style Selector="^:large-flexible /template/ m3|AppBarTitle#PART_ExpandedTitle">
+        <Setter Property="TitleStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.LargeFlexibleTitleStyle}}" />
+        <Setter Property="SubtitleStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.LargeFlexibleSubtitleStyle}}" />
+      </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:BottomAppBar}" TargetType="m3:BottomAppBar">
+      <Setter Property="DefaultExpandedHeight">
+        <MultiBinding Converter="{x:Static m3:AppBarVariantDefaultConverter.FlexibleBottom}">
+          <Binding RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.BottomExpandedHeight}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.FlexibleBottomExpandedHeight}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="ExpandedHeight" Value="{Binding DefaultExpandedHeight, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="ContentPadding">
+        <MultiBinding Converter="{x:Static m3:AppBarVariantDefaultConverter.FlexibleBottom}">
+          <Binding RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.BottomContentPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.FlexibleBottomContentPadding}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.BottomWindowInsets}}" />
+      <Setter Property="TonalElevation">
+        <MultiBinding Converter="{x:Static m3:AppBarVariantDefaultConverter.FlexibleBottom}">
+          <Binding RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.BottomTonalElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.FlexibleBottomTonalElevation}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="HorizontalArrangement">
+        <MultiBinding Converter="{x:Static m3:AppBarVariantDefaultConverter.FlexibleBottom}">
+          <Binding RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.BottomArrangement}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+AppBar.FlexibleBottomArrangement}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.BottomContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Top" />
-      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:AppBarActionsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <m3:AppBarActionsPanel />
+        </ItemsPanelTemplate>
+      </Setter>
       <Setter Property="ItemContainerTheme">
         <ControlTheme TargetType="ContentPresenter">
           <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -65,9 +153,9 @@
             <m3:MaterialSurface Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}"
                                 TonalElevation="{TemplateBinding TonalElevation}">
               <m3:AppBarBottomRow>
-              <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
-              <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-              <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
               </m3:AppBarBottomRow>
             </m3:MaterialSurface>
           </m3:AppBarBottomChrome>

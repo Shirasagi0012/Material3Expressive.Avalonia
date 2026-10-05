@@ -245,7 +245,22 @@ public sealed class AppBarCases
         }
         internal void SetColors(bool custom)
         {
-            ((TopAppBar)Bar).Colors = custom ? new(Color.Parse("#FF336699"), Color.Parse("#FF228866"), Color.Parse("#FFDD7722"), Color.Parse("#FF8866AA"), Color.Parse("#FF008877"), Color.Parse("#FF223344")) : null;
+            var bar = (TopAppBar)Bar;
+            if (custom)
+            {
+                bar.Background = new SolidColorBrush(Color.Parse("#FF336699"));
+                bar.ScrolledContainerColor = Color.Parse("#FF228866");
+                bar.NavigationIconContentColor = Color.Parse("#FFDD7722");
+                bar.TitleContentColor = Color.Parse("#FF8866AA");
+                bar.ActionIconContentColor = Color.Parse("#FF008877");
+                bar.SubtitleContentColor = Color.Parse("#FF223344");
+            }
+            else
+            {
+                foreach (var property in new AvaloniaProperty[] { TopAppBar.BackgroundProperty, TopAppBar.ScrolledContainerColorProperty,
+                    TopAppBar.NavigationIconContentColorProperty, TopAppBar.TitleContentColorProperty,
+                    TopAppBar.ActionIconContentColorProperty, TopAppBar.SubtitleContentColorProperty }) bar.ClearValue(property);
+            }
         }
         internal void Input(string action, Point position)
         {

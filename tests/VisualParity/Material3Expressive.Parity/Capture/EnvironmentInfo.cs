@@ -1,4 +1,6 @@
 using Avalonia;
+using Avalonia.Platform;
+using System.Security.Cryptography;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using ComposeAnimation.TestSupport;
@@ -20,8 +22,7 @@ public static class EnvironmentInfo
             ["fontSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Regular.ttf")),
             ["fontMediumSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf")),
             ["fontBoldSha256"] = ParityJson.Hash(Path.Combine(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf")),
-            ["symbolSha256"] =
-                ParityJson.Hash(Path.Combine(root, "modules/MaterialSymbols/assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf")),
+            ["symbolSha256"] = SymbolHash(),
             ["avalonia"] = typeof(Application).Assembly.GetName().Version!.ToString(),
             ["skia"] = typeof(SkiaSharp.SKBitmap).Assembly.GetName().Version!.ToString(),
             ["composeAnimation"] = typeof(VisualAnimationScope).Assembly.GetName().Version!.ToString(),
@@ -38,5 +39,11 @@ public static class EnvironmentInfo
             ["dotnet"] = Environment.Version.ToString()
         };
         return environment;
+    }
+
+    private static string SymbolHash()
+    {
+        using var font = new StandardAssetLoader().Open(new Uri($"avares://{typeof(MaterialSymbols.Avalonia.RoundedSymbols).Assembly.GetName().Name}/Assets/MaterialSymbolsRounded.ttf"));
+        return Convert.ToHexStringLower(SHA256.HashData(font));
     }
 }
