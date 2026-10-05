@@ -47,7 +47,7 @@ public sealed class SliderThumb : Control
     public Color DisabledThumbColor { get => GetValue(DisabledThumbColorProperty); set => SetValue(DisabledThumbColorProperty, value); }
     public static readonly StyledProperty<Color> SurfaceColorProperty = AvaloniaProperty.Register<SliderThumb, Color>(nameof(SurfaceColor), default);
     public Color SurfaceColor { get => GetValue(SurfaceColorProperty); set => SetValue(SurfaceColorProperty, value); }
-    public static readonly StyledProperty<CornerRadius> CornerRadiusProperty = AvaloniaProperty.Register<SliderThumb, CornerRadius>(nameof(CornerRadius), new CornerRadius(double.PositiveInfinity));
+    public static readonly StyledProperty<CornerRadius> CornerRadiusProperty = AvaloniaProperty.Register<SliderThumb, CornerRadius>(nameof(CornerRadius));
     public CornerRadius CornerRadius { get => GetValue(CornerRadiusProperty); set => SetValue(CornerRadiusProperty, value); }
     public static readonly StyledProperty<SliderColors?> ColorsProperty = AvaloniaProperty.Register<SliderThumb, SliderColors?>(nameof(Colors), null);
     public SliderColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
@@ -108,11 +108,11 @@ public sealed class SliderTrack : Control
     public AvaloniaObject? State { get => GetValue(StateProperty); set => SetValue(StateProperty, value); }
     public static readonly StyledProperty<SliderColors?> ColorsProperty = AvaloniaProperty.Register<SliderTrack, SliderColors?>(nameof(Colors), null);
     public SliderColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
-    public static readonly StyledProperty<double> TrackHeightProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(TrackHeight), 16);
+    public static readonly StyledProperty<double> TrackHeightProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(TrackHeight));
     public double TrackHeight { get => GetValue(TrackHeightProperty); set => SetValue(TrackHeightProperty, value); }
-    public static readonly StyledProperty<double> ThumbTrackGapSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(ThumbTrackGapSize), 6);
+    public static readonly StyledProperty<double> ThumbTrackGapSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(ThumbTrackGapSize));
     public double ThumbTrackGapSize { get => GetValue(ThumbTrackGapSizeProperty); set => SetValue(ThumbTrackGapSizeProperty, value); }
-    public static readonly StyledProperty<double> TrackInsideCornerSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(TrackInsideCornerSize), 2);
+    public static readonly StyledProperty<double> TrackInsideCornerSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(TrackInsideCornerSize));
     public double TrackInsideCornerSize { get => GetValue(TrackInsideCornerSizeProperty); set => SetValue(TrackInsideCornerSizeProperty, value); }
     public static readonly StyledProperty<double> TrackCornerSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(TrackCornerSize), double.NaN);
     public double TrackCornerSize { get => GetValue(TrackCornerSizeProperty); set => SetValue(TrackCornerSizeProperty, value); }
@@ -122,9 +122,9 @@ public sealed class SliderTrack : Control
     public bool EnableCornerShrinking { get => GetValue(EnableCornerShrinkingProperty); set => SetValue(EnableCornerShrinkingProperty, value); }
     public static readonly StyledProperty<bool> ShowStopIndicatorProperty = AvaloniaProperty.Register<SliderTrack, bool>(nameof(ShowStopIndicator), true);
     public bool ShowStopIndicator { get => GetValue(ShowStopIndicatorProperty); set => SetValue(ShowStopIndicatorProperty, value); }
-    public static readonly StyledProperty<double> TickSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(TickSize), 4);
+    public static readonly StyledProperty<double> TickSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(TickSize));
     public double TickSize { get => GetValue(TickSizeProperty); set => SetValue(TickSizeProperty, value); }
-    public static readonly StyledProperty<double> StopIndicatorSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(StopIndicatorSize), 4);
+    public static readonly StyledProperty<double> StopIndicatorSizeProperty = AvaloniaProperty.Register<SliderTrack, double>(nameof(StopIndicatorSize));
     public double StopIndicatorSize { get => GetValue(StopIndicatorSizeProperty); set => SetValue(StopIndicatorSizeProperty, value); }
 
     public static readonly StyledProperty<Color> ActiveTrackColorProperty = AvaloniaProperty.Register<SliderTrack, Color>(nameof(ActiveTrackColor), default);

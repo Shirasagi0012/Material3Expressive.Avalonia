@@ -6,7 +6,11 @@
       <Setter Property="IsHitTestVisible" Value="False" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.Color}}" />
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
-      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.Shape}}" />
+      <Setter Property="DefaultShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.Shape}}" />
+      <Setter Property="DefaultContentPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.ContentPadding}}" />
+      <Setter Property="CornerRadius" Value="{Binding DefaultShape, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="Padding" Value="{Binding DefaultContentPadding, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{Binding DefaultLabelStyle, RelativeSource={RelativeSource Self}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -25,9 +29,9 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^:has-content">
-        <Setter Property="Padding" Value="4,0" />
-        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeLabelTextFont}}" />
-        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeShape}}" />
+        <Setter Property="DefaultContentPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeContentPadding}}" />
+        <Setter Property="DefaultLabelStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeLabelTextFont}}" />
+        <Setter Property="DefaultShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeShape}}" />
         <Style Selector="^ /template/ m3|BadgeLayout#PART_Layout">
           <Setter Property="MinimumSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeSize}}" />
         </Style>

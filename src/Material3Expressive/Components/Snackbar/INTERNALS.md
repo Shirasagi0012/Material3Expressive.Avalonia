@@ -3,6 +3,10 @@
 使用方法见 [README](README.md)。组件分为外观/布局、应用请求状态与 Host 呈现生命周期三层；
 不要把 Host 的卸载与应用请求的取消合并。
 
+## 默认配置数据流
+
+单/双行高度由主题 Token 绑定到 SnackbarLayout 配置属性，属性变化触发重新测量；布局不再直接查询 Token 或补 48/68 常量。Host 的缩放/透明度规格同样通过主题配置输入，FIFO、退出保留和目标提交帧不变。
+
 ## 固定上游与本地入口
 
 固定版本见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX

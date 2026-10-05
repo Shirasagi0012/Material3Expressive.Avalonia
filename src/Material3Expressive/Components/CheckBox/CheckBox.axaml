@@ -8,7 +8,7 @@
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ContentPadding}}" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
@@ -18,7 +18,10 @@
           <m3:CheckBoxLayout>
             <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
                                 StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" Padding="2">
-              <m3:CheckBoxIndicator x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
+              <m3:CheckBoxIndicator ShapeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ShapeAnimation}}"
+                  ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ColorAnimation}}"
+                  UncheckColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckColorAnimation}}"
+                  x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
                   Colors="{TemplateBinding m3:CheckBoxAppearance.Colors}"
                   CheckmarkStroke="{TemplateBinding m3:CheckBoxAppearance.CheckmarkStroke}"
                   OutlineStroke="{TemplateBinding m3:CheckBoxAppearance.OutlineStroke}"

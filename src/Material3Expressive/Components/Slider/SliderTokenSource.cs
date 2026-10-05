@@ -10,6 +10,9 @@ public sealed class SliderTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Slider.VerticalEnableCornerShrinking] = true,
+        [Comp.Slider.EnableCornerShrinking] = false,
+        [Comp.Slider.TrackInsideCornerSize] = 2d,
         [Comp.Slider.HandleColor] = new TokenRef(Sys.Color.Primary),
         [Comp.Slider.ActiveTrackColor] = new TokenRef(Sys.Color.Primary),
         [Comp.Slider.InactiveTrackColor] = new TokenRef(Sys.Color.SecondaryContainer),

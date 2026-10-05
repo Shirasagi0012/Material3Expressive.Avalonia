@@ -12,17 +12,23 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 using SkiaSharp;
-using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
 // Private template part; it owns paint and animation, never changes the native CheckBox state.
 internal sealed class CheckBoxIndicator : Control
 {
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ShapeAnimationProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec>(nameof(ShapeAnimation));
+    public Foundation.Motion.SpringSpec ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ColorAnimationProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec>(nameof(ColorAnimation));
+    public Foundation.Motion.SpringSpec ColorAnimation { get => GetValue(ColorAnimationProperty); set => SetValue(ColorAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> UncheckColorAnimationProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec>(nameof(UncheckColorAnimation));
+    public Foundation.Motion.SpringSpec UncheckColorAnimation { get => GetValue(UncheckColorAnimationProperty); set => SetValue(UncheckColorAnimationProperty, value); }
+
     protected override bool BypassFlowDirectionPolicies => true;
     public static readonly StyledProperty<bool?> IsCheckedProperty = AvaloniaProperty.Register<CheckBoxIndicator, bool?>(nameof(IsChecked), false);
     public bool? IsChecked { get => GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }
@@ -140,7 +146,7 @@ internal sealed class CheckBoxIndicator : Control
 
     private IFiniteAnimationSpec<float> Spatial()
     {
-        var spec = Resolve(MaterialTokens.Sys.Motion.Spring.SpatialDefault, MotionScheme.Expressive.DefaultSpatial);
+        var spec = ShapeAnimation;
         return new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f);
     }
     private void TransitionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
@@ -150,8 +156,6 @@ internal sealed class CheckBoxIndicator : Control
         if (args.PropertyName == nameof(Transition.IsRunning) && _transition?.IsRunning == false)
             _transitionRun?.Cancel();
     }
-    private MotionSpring Resolve(MaterialTokenKey<MotionSpring> key, MotionSpring fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is MotionSpring spec ? spec : fallback;
 
     private void UpdateTargets()
     {
@@ -172,8 +176,8 @@ internal sealed class CheckBoxIndicator : Control
                 _transitionTask = motion.Launch(_ => _transition.RunAsync(_transitionRun.Token), "CheckBox transition");
             }
             var spec = IsChecked == false
-                ? Resolve(MaterialTokens.Sys.Motion.Spring.EffectsFast, MotionScheme.Expressive.FastEffects)
-                : Resolve(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects);
+                ? UncheckColorAnimation
+                : ColorAnimation;
             var colorSpec = new SpringSpec<Color>(spec.DampingRatio, spec.Stiffness);
             Restart(_checkColor, CheckTarget, true);
             // Disabled removes animateColorAsState; enabling creates a fresh animation already at target.

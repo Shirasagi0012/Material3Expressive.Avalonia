@@ -11,6 +11,8 @@ public sealed class DialogTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Dialog.MaxWidth] = 560d,
+        [Comp.Dialog.MinWidth] = 280d,
         [Comp.Dialog.ActionLabelTextColor] = new TokenRef(Sys.Color.Primary),
         [Comp.Dialog.ActionFocusLabelTextColor] = new TokenRef(Sys.Color.Primary),
         [Comp.Dialog.ActionHoverLabelTextColor] = new TokenRef(Sys.Color.Primary),

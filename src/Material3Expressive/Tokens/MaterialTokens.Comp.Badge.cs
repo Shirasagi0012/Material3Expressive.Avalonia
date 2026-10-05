@@ -11,6 +11,8 @@ public static partial class MaterialTokens
     {
         public static class Badge
         {
+            public static readonly MaterialTokenKey<Thickness> LargeContentPadding = new("md.comp.badge.large-content-padding");
+            public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.badge.content-padding");
             public static readonly MaterialTokenKey<Color> Color = new("md.comp.badge.color");
             public static readonly MaterialTokenKey<Color> LargeColor = new("md.comp.badge.large-color");
             public static readonly MaterialTokenKey<Color> LargeLabelTextColor = new("md.comp.badge.large-label-text-color");

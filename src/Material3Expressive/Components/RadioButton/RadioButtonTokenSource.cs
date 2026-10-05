@@ -9,6 +9,9 @@ public sealed class RadioButtonTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.RadioButton.ContentPadding] = new Avalonia.Thickness(8, 0, 0, 0),
+        [Comp.RadioButton.DotAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.RadioButton.ColorAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.RadioButton.SelectedColor] = new TokenRef(Sys.Color.Primary),
         [Comp.RadioButton.UnselectedColor] = new TokenRef(Sys.Color.OnSurfaceVariant),
         [Comp.RadioButton.DisabledSelectedColor] = new WithAlpha(Sys.Color.OnSurface, 0.38),

@@ -11,17 +11,20 @@ using Avalonia.Skia;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 using SkiaSharp;
-using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
 // Template part: paint and animation only. Native RadioButton owns selection, grouping and automation.
 internal sealed class RadioButtonIndicator : Control
 {
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> DotAnimationProperty =
+        AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec>(nameof(DotAnimation));
+    public Foundation.Motion.SpringSpec DotAnimation { get => GetValue(DotAnimationProperty); set => SetValue(DotAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ColorAnimationProperty =
+        AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec>(nameof(ColorAnimation));
+    public Foundation.Motion.SpringSpec ColorAnimation { get => GetValue(ColorAnimationProperty); set => SetValue(ColorAnimationProperty, value); }
+
     public static readonly StyledProperty<bool?> IsCheckedProperty = AvaloniaProperty.Register<RadioButtonIndicator, bool?>(nameof(IsChecked), false);
     public bool? IsChecked { get => GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }
     public static readonly StyledProperty<RadioButtonColors?> ColorsProperty = AvaloniaProperty.Register<RadioButtonIndicator, RadioButtonColors?>(nameof(Colors));
@@ -85,8 +88,6 @@ internal sealed class RadioButtonIndicator : Control
             change.Property == ColorsProperty || change.Property.PropertyType == typeof(Color)) UpdateTargets();
     }
 
-    private MotionSpring Resolve(MaterialTokenKey<MotionSpring> key, MotionSpring fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is MotionSpring spec ? spec : fallback;
 
     private void UpdateTargets()
     {
@@ -101,7 +102,7 @@ internal sealed class RadioButtonIndicator : Control
             var radiusTarget = RadiusTarget;
             if (dot.TargetValue != radiusTarget)
             {
-                var spatial = Resolve(MaterialTokens.Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial);
+                var spatial = DotAnimation;
                 _ = motion.Launch(async token =>
                 {
                     // Fixed AnimateAsState.restartAnimation cancels its previous job before animateTo.
@@ -117,7 +118,7 @@ internal sealed class RadioButtonIndicator : Control
             var animate = IsEffectivelyEnabled && _colorsEnabled;
             _colorsEnabled = IsEffectivelyEnabled;
             if (animate ? color.TargetValue == colorTarget : !color.IsRunning && color.Value == colorTarget && color.TargetValue == colorTarget) return;
-            var effects = Resolve(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects);
+            var effects = ColorAnimation;
             _ = motion.Launch(async token =>
             {
                 await color.StopAsync();

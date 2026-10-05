@@ -8,7 +8,7 @@
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.ContentPadding}}" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
@@ -18,7 +18,9 @@
           <m3:RadioButtonLayout>
             <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
                                 StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" Padding="2">
-              <m3:RadioButtonIndicator x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
+              <m3:RadioButtonIndicator DotAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.DotAnimation}}"
+                  ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.ColorAnimation}}"
+                  x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
                   Colors="{TemplateBinding m3:RadioButtonAppearance.Colors}"
                   SelectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.SelectedColor}}"
                   UnselectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.UnselectedColor}}"

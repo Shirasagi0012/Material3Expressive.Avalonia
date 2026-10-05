@@ -3,6 +3,10 @@
 本文面向维护者；使用入口见 [README](README.md)。范围包括 BasicAlertDialog 的默认尺寸、
 AlertDialog 内容与按钮布局，以及 Foundation Dialog 模板合约。
 
+## 默认配置数据流
+
+Material 软最小/最大宽度由 Dialog Token 经主题传入 BasicAlertDialogLayout 的内部配置属性，变化触发测量。显式 Width/MinWidth/MaxWidth 继续位于这些软默认值之外，未改为公开硬约束，也不改变 Foundation 平台宽度规则。
+
 ## 固定上游与本地入口
 
 固定版本以 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：AndroidX

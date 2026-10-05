@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Motion;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Tokens;
 
@@ -10,6 +11,9 @@ public static partial class MaterialTokens
         // SwitchDefaults.defaultSwitchColors, fixed SwitchTokens v0_210.
         public static class Switch
         {
+            public static readonly MaterialTokenKey<Avalonia.Thickness> ContentPadding = new("md.comp.switch.content-padding");
+            public static readonly MaterialTokenKey<SpringSpec> ThumbAnimation = new("md.comp.switch.thumb-animation");
+
             public static readonly MaterialTokenKey<Color> CheckedThumbColor = new("md.comp.switch.checked-thumb-color");
             public static readonly MaterialTokenKey<Color> CheckedTrackColor = new("md.comp.switch.checked-track-color");
             public static readonly MaterialTokenKey<Color> CheckedBorderColor = new("md.comp.switch.checked-border-color");

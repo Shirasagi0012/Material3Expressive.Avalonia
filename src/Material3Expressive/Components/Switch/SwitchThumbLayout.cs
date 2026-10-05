@@ -15,15 +15,17 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
 // Also PART_SwitchKnob: native ToggleSwitch owns Canvas.Left and drag activation.
 internal sealed class SwitchThumbLayout : Panel
 {
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ThumbAnimationProperty =
+        AvaloniaProperty.Register<SwitchThumbLayout, Foundation.Motion.SpringSpec>(nameof(ThumbAnimation));
+    public Foundation.Motion.SpringSpec ThumbAnimation { get => GetValue(ThumbAnimationProperty); set => SetValue(ThumbAnimationProperty, value); }
+
+
     private ToggleSwitch? _owner;
     private MaterialInteractionController? _interaction;
     private VisualAnimationScope? _motion;
@@ -187,8 +189,7 @@ internal sealed class SwitchThumbLayout : Panel
         {
             _initialSize = size; _initialOffset = offset;
         }
-        var spring = TokenResolver.TryResolve(this, MaterialTokens.Sys.Motion.Spring.SpatialFast, ActualThemeVariant, out var value)
-            && value is Foundation.Motion.SpringSpec spec ? spec : MotionScheme.Expressive.FastSpatial;
+        var spring = ThumbAnimation;
         IFiniteAnimationSpec<float> animationSpec = pressed ? new SnapSpec<float>()
             : new SpringSpec<float>(spring.DampingRatio, spring.Stiffness, 0.01f);
         var measuredSize = (int)(_sizeAnim is null ? size : _sizePx) / (double)scale;

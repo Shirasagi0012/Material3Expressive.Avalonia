@@ -11,6 +11,8 @@ public static partial class MaterialTokens
     {
         public static class Dialog
         {
+            public static readonly MaterialTokenKey<double> MaxWidth = new("md.comp.dialog.maxwidth");
+            public static readonly MaterialTokenKey<double> MinWidth = new("md.comp.dialog.minwidth");
             public static readonly MaterialTokenKey<Color> ActionLabelTextColor = new("md.comp.dialog.action-label-text-color");
             public static readonly MaterialTokenKey<Color> ActionFocusLabelTextColor = new("md.comp.dialog.action-focus-label-text-color");
             public static readonly MaterialTokenKey<Color> ActionHoverLabelTextColor = new("md.comp.dialog.action-hover-label-text-color");

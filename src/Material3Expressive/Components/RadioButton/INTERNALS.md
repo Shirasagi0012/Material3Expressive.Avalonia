@@ -2,6 +2,10 @@
 
 使用方法见 [README](README.md)。原生控件负责选中、分组和自动化，模板部件只负责绘制与动画。
 
+## 默认配置数据流
+
+圆点及颜色动画规格由组件 Token 引用系统 motion，经主题传入 Indicator 配置属性；状态切换捕获当前有效规格，不在内部解析 Token 或补 Expressive 默认。完整 RadioButtonColors 的整组替换语义保持不变。
+
 ## 固定上游与本地入口
 
 基线身份见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX

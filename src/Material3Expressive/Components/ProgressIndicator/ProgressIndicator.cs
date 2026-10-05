@@ -34,20 +34,20 @@ public abstract class ProgressIndicator : Control
         AvaloniaProperty.Register<ProgressIndicator, Color>(nameof(TrackColor));
     public Color TrackColor { get => GetValue(TrackColorProperty); set => SetValue(TrackColorProperty, value); }
     public static readonly StyledProperty<double> GapSizeProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>(nameof(GapSize), 4);
+        AvaloniaProperty.Register<ProgressIndicator, double>(nameof(GapSize));
     public double GapSize { get => GetValue(GapSizeProperty); set => SetValue(GapSizeProperty, value); }
 
     // Theme-only token inputs: preferred size, not Width/Height constraints.
     public static readonly StyledProperty<double> ContainerWidthProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerWidth", 240);
+        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerWidth");
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ContainerWidth { get => GetValue(ContainerWidthProperty); set => SetValue(ContainerWidthProperty, value); }
     public static readonly StyledProperty<double> ContainerHeightProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerHeight", 4);
+        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerHeight");
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ContainerHeight { get => GetValue(ContainerHeightProperty); set => SetValue(ContainerHeightProperty, value); }
     public static readonly StyledProperty<double> DefaultWavelengthProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>("DefaultWavelength", 40);
+        AvaloniaProperty.Register<ProgressIndicator, double>("DefaultWavelength");
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double DefaultWavelength { get => GetValue(DefaultWavelengthProperty); set => SetValue(DefaultWavelengthProperty, value); }
 

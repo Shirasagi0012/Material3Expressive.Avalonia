@@ -9,11 +9,13 @@ public static partial class MaterialTokens
     {
         public static class ProgressIndicator
         {
+            public static readonly MaterialTokenKey<PenLineCap> StrokeCap = new("md.comp.progress-indicator.stroke-cap");
             public static readonly MaterialTokenKey<Color> ActiveIndicatorColor = new("md.comp.progress-indicator.active-indicator.color");
             public static readonly MaterialTokenKey<Color> TrackColor = new("md.comp.progress-indicator.track.color");
         }
         public static class LinearProgressIndicator
         {
+            public static readonly MaterialTokenKey<double> Width = new("md.comp.linear-progress-indicator.width");
             public static readonly MaterialTokenKey<double> Height = new("md.comp.linear-progress-indicator.height");
             public static readonly MaterialTokenKey<double> WaveHeight = new("md.comp.linear-progress-indicator.wave.height");
             public static readonly MaterialTokenKey<double> ActiveThickness = new("md.comp.linear-progress-indicator.active.thickness");
@@ -25,6 +27,7 @@ public static partial class MaterialTokens
         }
         public static class CircularProgressIndicator
         {
+            public static readonly MaterialTokenKey<Color> IndeterminateTrackColor = new("md.comp.circular-progress-indicator.indeterminate-track.color");
             public static readonly MaterialTokenKey<double> Size = new("md.comp.circular-progress-indicator.size");
             public static readonly MaterialTokenKey<double> WaveSize = new("md.comp.circular-progress-indicator.wave.size");
             public static readonly MaterialTokenKey<double> ActiveThickness = new("md.comp.circular-progress-indicator.active.thickness");

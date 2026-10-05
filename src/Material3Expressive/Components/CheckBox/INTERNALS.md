@@ -2,6 +2,10 @@
 
 使用入口见 [README](README.md)。本组件只替换原生 CheckBox 的外观，不接管其状态、命令和自动化。
 
+## 默认配置数据流
+
+勾号形变及选中/取消颜色动画规格由组件 Token 引用系统 motion，经主题传入 Indicator 配置属性；动画只读取当前有效规格，不在内部重新解析 Token 或补 Expressive 默认。完整 CheckBoxColors 与描边的 null 语义保持不变。
+
 ## 固定上游与本地入口
 
 基线身份见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX

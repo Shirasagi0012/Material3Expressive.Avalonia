@@ -11,11 +11,11 @@ public abstract class WavyProgressIndicator : ProgressIndicator
         AvaloniaProperty.Register<WavyProgressIndicator, ProgressIndicatorStroke?>(nameof(TrackStroke));
     public ProgressIndicatorStroke? TrackStroke { get => GetValue(TrackStrokeProperty); set => SetValue(TrackStrokeProperty, value); }
     public static readonly StyledProperty<double> ActiveThicknessProperty =
-        AvaloniaProperty.Register<WavyProgressIndicator, double>(nameof(ActiveThickness), 4);
+        AvaloniaProperty.Register<WavyProgressIndicator, double>(nameof(ActiveThickness));
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ActiveThickness { get => GetValue(ActiveThicknessProperty); set => SetValue(ActiveThicknessProperty, value); }
     public static readonly StyledProperty<double> TrackThicknessProperty =
-        AvaloniaProperty.Register<WavyProgressIndicator, double>(nameof(TrackThickness), 4);
+        AvaloniaProperty.Register<WavyProgressIndicator, double>(nameof(TrackThickness));
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double TrackThickness { get => GetValue(TrackThicknessProperty); set => SetValue(TrackThicknessProperty, value); }
     internal ProgressIndicatorStroke ActiveStroke => Stroke ?? new(ActiveThickness);
@@ -41,7 +41,7 @@ public abstract class WavyProgressIndicator : ProgressIndicator
 public sealed class LinearWavyProgressIndicator : WavyProgressIndicator
 {
     public static readonly StyledProperty<double> StopSizeProperty =
-        AvaloniaProperty.Register<LinearWavyProgressIndicator, double>(nameof(StopSize), 4);
+        AvaloniaProperty.Register<LinearWavyProgressIndicator, double>(nameof(StopSize));
     public double StopSize { get => GetValue(StopSizeProperty); set => SetValue(StopSizeProperty, value); }
 }
 

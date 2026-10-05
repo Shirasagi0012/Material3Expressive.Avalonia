@@ -11,6 +11,8 @@ public sealed class BadgeTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Badge.LargeContentPadding] = new Avalonia.Thickness(4, 0),
+        [Comp.Badge.ContentPadding] = default(Avalonia.Thickness),
         [Comp.Badge.Color] = new TokenRef(Sys.Color.Error),
         [Comp.Badge.LargeColor] = new TokenRef(Sys.Color.Error),
         [Comp.Badge.LargeLabelTextColor] = new TokenRef(Sys.Color.OnError),

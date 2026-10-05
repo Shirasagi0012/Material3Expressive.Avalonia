@@ -20,7 +20,8 @@
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                   CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
                   ShadowElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerElevation}}">
-                <m3:SnackbarLayout x:Name="PART_Layout" ActionOnNewLine="{TemplateBinding ActionOnNewLine}"
+                <m3:SnackbarLayout SingleLineContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SingleLineContainerHeight}}"
+                    TwoLinesContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.TwoLinesContainerHeight}}" x:Name="PART_Layout" ActionOnNewLine="{TemplateBinding ActionOnNewLine}"
                     m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}">
                   <!-- Reuse the paragraph-width/overflow handling already used by default labels. -->
                   <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
@@ -117,6 +118,9 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:SnackbarHost}" TargetType="m3:SnackbarHost">
+      <Setter Property="ScaleAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ScaleAnimation}}" />
+      <Setter Property="OpacityAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.OpacityAnimation}}" />
+
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="HorizontalAlignment" Value="Center" />
       <Setter Property="VerticalAlignment" Value="Top" />

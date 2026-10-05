@@ -16,7 +16,6 @@ public static class TooltipDefaults
     public static readonly MutatorMutex GlobalMutatorMutex = new();
     public static readonly TimeSpan TooltipDuration = TimeSpan.FromMilliseconds(1500);
     public const double Spacing = 4;
-    public const double PlainTooltipMaxWidth = 200;
 
     public static ITooltipPositionProvider CreatePositionProvider(TooltipAnchorPosition position = TooltipAnchorPosition.Above,
         double spacing = Spacing, double renderScaling = 1) => new PositionProvider(position, spacing, renderScaling);

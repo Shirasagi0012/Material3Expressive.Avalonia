@@ -45,9 +45,9 @@ public sealed class RangeSlider : TemplatedControl
     public int Steps { get => GetValue(StepsProperty); set => SetValue(StepsProperty, value); }
     public static readonly StyledProperty<SliderColors?> ColorsProperty = AvaloniaProperty.Register<RangeSlider, SliderColors?>(nameof(Colors), null);
     public SliderColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
-    public static readonly StyledProperty<double> ThumbWidthProperty = AvaloniaProperty.Register<RangeSlider, double>(nameof(ThumbWidth), 4);
+    public static readonly StyledProperty<double> ThumbWidthProperty = AvaloniaProperty.Register<RangeSlider, double>(nameof(ThumbWidth));
     public double ThumbWidth { get => GetValue(ThumbWidthProperty); set => SetValue(ThumbWidthProperty, value); }
-    public static readonly StyledProperty<double> ThumbHeightProperty = AvaloniaProperty.Register<RangeSlider, double>(nameof(ThumbHeight), 44);
+    public static readonly StyledProperty<double> ThumbHeightProperty = AvaloniaProperty.Register<RangeSlider, double>(nameof(ThumbHeight));
     public double ThumbHeight { get => GetValue(ThumbHeightProperty); set => SetValue(ThumbHeightProperty, value); }
     public static readonly StyledProperty<object?> StartThumbProperty = AvaloniaProperty.Register<RangeSlider, object?>(nameof(StartThumb), null);
     public object? StartThumb { get => GetValue(StartThumbProperty); set => SetValue(StartThumbProperty, value); }

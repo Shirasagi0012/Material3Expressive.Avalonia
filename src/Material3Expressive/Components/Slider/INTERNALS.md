@@ -2,6 +2,10 @@
 
 使用方法与单值 API 迁移见 [README](README.md)。单值保留原生交互，RangeSlider 保留独立状态及输入。
 
+## 默认配置数据流
+
+Track 的尺寸、间隙、内部圆角与 Range thumb 默认尺寸由 TokenSource 经主题接到有效属性；不在属性元数据重复基线。垂直圆角收缩默认由主题 MultiBinding 选择，保持普通主题优先级，因此用户普通 Style、Binding 与局部值可覆盖；NaN 圆角、完整 Colors 及 State 的语义不变。
+
 ## 固定上游与本地入口
 
 基线身份见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX

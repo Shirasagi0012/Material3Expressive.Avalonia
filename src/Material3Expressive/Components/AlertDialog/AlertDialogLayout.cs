@@ -9,12 +9,18 @@ namespace Material3Expressive.Components;
 // the corresponding default, rather than forcing a caller's 100 DIP width back to 280.
 internal sealed class BasicAlertDialogLayout : DialogLayout
 {
+    public static readonly StyledProperty<double> DefaultMinWidthProperty = AvaloniaProperty.Register<BasicAlertDialogLayout, double>(nameof(DefaultMinWidth));
+    public double DefaultMinWidth { get => GetValue(DefaultMinWidthProperty); set => SetValue(DefaultMinWidthProperty, value); }
+    public static readonly StyledProperty<double> DefaultMaxWidthProperty = AvaloniaProperty.Register<BasicAlertDialogLayout, double>(nameof(DefaultMaxWidth));
+    public double DefaultMaxWidth { get => GetValue(DefaultMaxWidthProperty); set => SetValue(DefaultMaxWidthProperty, value); }
+    static BasicAlertDialogLayout() => AffectsMeasure<BasicAlertDialogLayout>(DefaultMinWidthProperty, DefaultMaxWidthProperty);
+
     protected override bool BypassFlowDirectionPolicies => true;
     protected override Size MeasureOverride(Size availableSize)
     {
-        var maximum = double.IsNaN(Width) && double.IsPositiveInfinity(MaxWidth) ? 560 : availableSize.Width;
+        var maximum = double.IsNaN(Width) && double.IsPositiveInfinity(MaxWidth) ? DefaultMaxWidth : availableSize.Width;
         var size = base.MeasureOverride(new Size(Math.Min(maximum, availableSize.Width), availableSize.Height));
-        var minimum = double.IsNaN(Width) && MinWidth == 0 ? 280 : MinWidth;
+        var minimum = double.IsNaN(Width) && MinWidth == 0 ? DefaultMinWidth : MinWidth;
         return new Size(Math.Max(size.Width, Math.Min(minimum, Math.Min(maximum, availableSize.Width))), size.Height);
     }
 }

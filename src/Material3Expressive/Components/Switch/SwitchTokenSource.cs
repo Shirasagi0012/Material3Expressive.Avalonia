@@ -12,6 +12,8 @@ public sealed class SwitchTokenSource : ITokenSource
     // as SwitchDefaults.colors does. Explicit SwitchColors already contains final colors.
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Switch.ContentPadding] = new Avalonia.Thickness(8, 0, 0, 0),
+        [Comp.Switch.ThumbAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.Switch.CheckedThumbColor] = new TokenRef(Sys.Color.OnPrimary),
         [Comp.Switch.CheckedTrackColor] = new TokenRef(Sys.Color.Primary),
         [Comp.Switch.CheckedBorderColor] = Color.FromArgb(0, 0, 0, 0),

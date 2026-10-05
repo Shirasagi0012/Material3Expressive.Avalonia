@@ -2,6 +2,10 @@
 
 使用方法见 [README](README.md)。原生 ToggleSwitch 负责状态、输入和自动化，模板连接固定 Switch 视觉。
 
+## 默认配置数据流
+
+Thumb 动画规格由组件 Token 引用 SpatialFast，经主题传入 SwitchThumbLayout 配置属性。测量与动画只消费该有效输入；按压 Snap、拖动交接、颜色合成和物理取整保持原规则。
+
 ## 固定上游与本地入口
 
 基线身份见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX

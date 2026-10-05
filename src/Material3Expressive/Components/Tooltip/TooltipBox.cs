@@ -17,20 +17,25 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Hosts an anchor and presents its tooltip using the fixed Compose desktop behavior.</summary>
 public class TooltipBox : ContentControl
 {
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> ScaleAnimationProperty =
+        AvaloniaProperty.Register<TooltipBox, Foundation.Motion.SpringSpec>(nameof(ScaleAnimation));
+    internal Foundation.Motion.SpringSpec ScaleAnimation { get => GetValue(ScaleAnimationProperty); set => SetValue(ScaleAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> OpacityAnimationProperty =
+        AvaloniaProperty.Register<TooltipBox, Foundation.Motion.SpringSpec>(nameof(OpacityAnimation));
+    internal Foundation.Motion.SpringSpec OpacityAnimation { get => GetValue(OpacityAnimationProperty); set => SetValue(OpacityAnimationProperty, value); }
+
+
     public static readonly StyledProperty<object?> TooltipProperty = AvaloniaProperty.Register<TooltipBox, object?>(nameof(Tooltip));
     public static readonly StyledProperty<IDataTemplate?> TooltipTemplateProperty = AvaloniaProperty.Register<TooltipBox, IDataTemplate?>(nameof(TooltipTemplate));
     public static readonly StyledProperty<TooltipState?> StateProperty = AvaloniaProperty.Register<TooltipBox, TooltipState?>(nameof(State));
     public static readonly StyledProperty<TooltipAnchorPosition> AnchorPositionProperty = AvaloniaProperty.Register<TooltipBox, TooltipAnchorPosition>(nameof(AnchorPosition));
-    public static readonly StyledProperty<double> SpacingProperty = AvaloniaProperty.Register<TooltipBox, double>(nameof(Spacing), TooltipDefaults.Spacing);
+    public static readonly StyledProperty<double> SpacingProperty = AvaloniaProperty.Register<TooltipBox, double>(nameof(Spacing));
     public static readonly StyledProperty<ITooltipPositionProvider?> PositionProviderProperty = AvaloniaProperty.Register<TooltipBox, ITooltipPositionProvider?>(nameof(PositionProvider));
     public static readonly StyledProperty<bool> EnableUserInputProperty = AvaloniaProperty.Register<TooltipBox, bool>(nameof(EnableUserInput), true);
     public static readonly StyledProperty<bool> HasActionProperty = AvaloniaProperty.Register<TooltipBox, bool>(nameof(HasAction));
@@ -152,20 +157,17 @@ public class TooltipBox : ContentControl
         var scope = _stateScope = _scope!.CreateChild("Tooltip state");
         var transition = _transition = scope.CreateTransition(_activeState.Transition, "Tooltip appearance");
         var scale = _transition.AnimateFloat(visible => visible ? 1f : .8f,
-            _ => Spec(Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial), "Tooltip scale");
+            _ => Spec(ScaleAnimation), "Tooltip scale");
         var alpha = _transition.AnimateFloat(visible => visible ? 1f : 0f,
-            _ => Spec(Sys.Motion.Spring.EffectsFast, MotionScheme.Expressive.FastEffects), "Tooltip alpha");
+            _ => Spec(OpacityAnimation), "Tooltip alpha");
         scope.SubscribeValue(scale, value => { _scale = value; UpdateAppearance(); });
         scope.SubscribeValue(alpha, value => { _alpha = value; UpdateAppearance(); });
         _ = scope.Launch(ct => transition.RunAsync(ct), "Tooltip transition");
         UpdatePresentation();
     }
 
-    private SpringSpec<float> Spec(MaterialTokenKey<Foundation.Motion.SpringSpec> key, Foundation.Motion.SpringSpec fallback)
-    {
-        var spec = TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec resolved ? resolved : fallback;
-        return new(spec.DampingRatio, spec.Stiffness, .01f);
-    }
+    private static SpringSpec<float> Spec(Foundation.Motion.SpringSpec spec) =>
+        new(spec.DampingRatio, spec.Stiffness, .01f);
 
     private void DetachState()
     {

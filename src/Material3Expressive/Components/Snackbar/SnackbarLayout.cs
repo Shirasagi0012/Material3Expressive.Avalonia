@@ -6,13 +6,16 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
 internal sealed class SnackbarLayout : Panel
 {
+    public static readonly StyledProperty<double> SingleLineContainerHeightProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(SingleLineContainerHeight));
+    public double SingleLineContainerHeight { get => GetValue(SingleLineContainerHeightProperty); set => SetValue(SingleLineContainerHeightProperty, value); }
+    public static readonly StyledProperty<double> TwoLinesContainerHeightProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(TwoLinesContainerHeight));
+    public double TwoLinesContainerHeight { get => GetValue(TwoLinesContainerHeightProperty); set => SetValue(TwoLinesContainerHeightProperty, value); }
+
     public static readonly StyledProperty<bool> ActionOnNewLineProperty = Snackbar.ActionOnNewLineProperty.AddOwner<SnackbarLayout>();
     public bool ActionOnNewLine { get => GetValue(ActionOnNewLineProperty); set => SetValue(ActionOnNewLineProperty, value); }
     private Size _layoutSize;
@@ -21,7 +24,7 @@ internal sealed class SnackbarLayout : Panel
     private Control Message => Children[0];
     private Control Action => Children[1];
     private Control Dismiss => Children[2];
-    static SnackbarLayout() => AffectsMeasure<SnackbarLayout>(ActionOnNewLineProperty);
+    static SnackbarLayout() => AffectsMeasure<SnackbarLayout>(ActionOnNewLineProperty, SingleLineContainerHeightProperty, TwoLinesContainerHeightProperty);
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -84,7 +87,7 @@ internal sealed class SnackbarLayout : Panel
             int height, textY, actionY;
             if (oneLine)
             {
-                height = Math.Max(TokenHeight(Comp.Snackbar.SingleLineContainerHeight, 48), Math.Max(ah, dh));
+                height = Math.Max(Px(SingleLineContainerHeight), Math.Max(ah, dh));
                 textY = (height - textHeight) / 2;
                 var (actionFirst, _) = Baselines(Action, scale);
                 actionY = actionFirst == int.MinValue ? 0 : unchecked(textY + first - actionFirst);
@@ -92,7 +95,7 @@ internal sealed class SnackbarLayout : Panel
             else
             {
                 textY = Px(30) - first;
-                height = Math.Max(TokenHeight(Comp.Snackbar.TwoLinesContainerHeight, 68), textY + textHeight);
+                height = Math.Max(Px(TwoLinesContainerHeight), textY + textHeight);
                 actionY = (height - ah) / 2;
             }
             _messageBox = new(start, textY + padding, mw, mh);
@@ -102,7 +105,6 @@ internal sealed class SnackbarLayout : Panel
         }
         return new(_layoutSize.Width / scale, _layoutSize.Height / scale);
 
-        int TokenHeight(MaterialTokenKey<double> key, double fallback) => Px(TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double number ? number : fallback);
     }
 
     protected override Size ArrangeOverride(Size finalSize)

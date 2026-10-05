@@ -7,10 +7,10 @@
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextColor}}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContainerShape}}" />
       <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextFont}}" />
-      <Setter Property="Padding" Value="8,4" />
-      <Setter Property="MinWidth" Value="40" />
-      <Setter Property="MinHeight" Value="24" />
-      <Setter Property="MaxWidth" Value="200" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContentPadding}}" />
+      <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinWidth}}" />
+      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinHeight}}" />
+      <Setter Property="MaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MaxWidth}}" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="VerticalContentAlignment" Value="Top" />
       <Setter Property="Template">
@@ -27,6 +27,10 @@
       </Setter>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:TooltipBox}" TargetType="m3:TooltipBox">
+        <Setter Property="Spacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TooltipBox.Spacing}}" />
+      <Setter Property="ScaleAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TooltipBox.ScaleAnimation}}" />
+      <Setter Property="OpacityAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TooltipBox.OpacityAnimation}}" />
+
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
@@ -42,12 +46,13 @@
       </Setter>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:PlainTooltip}" TargetType="m3:PlainTooltip">
+        <Setter Property="TooltipMaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MaxWidth}}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextColor}}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContainerShape}}" />
       <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextFont}}" />
-      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContentPadding}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -55,6 +60,8 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:PlainTooltipLayout TooltipMaxWidth="{TemplateBinding TooltipMaxWidth}"
+              DefaultMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinWidth}}"
+              DefaultMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinHeight}}"
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
               MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
               MaxWidth="{TemplateBinding MaxWidth}" MaxHeight="{TemplateBinding MaxHeight}">

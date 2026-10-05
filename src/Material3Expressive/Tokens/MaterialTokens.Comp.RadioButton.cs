@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Motion;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Tokens;
 
@@ -10,6 +11,10 @@ public static partial class MaterialTokens
         // RadioButtonDefaults.defaultRadioButtonColors, fixed RadioButtonTokens v0_117.
         public static class RadioButton
         {
+            public static readonly MaterialTokenKey<Avalonia.Thickness> ContentPadding = new("md.comp.radiobutton.content-padding");
+            public static readonly MaterialTokenKey<SpringSpec> DotAnimation = new("md.comp.radiobutton.dot-animation");
+            public static readonly MaterialTokenKey<SpringSpec> ColorAnimation = new("md.comp.radiobutton.color-animation");
+
             public static readonly MaterialTokenKey<Color> SelectedColor = new("md.comp.radio-button.selected-color");
             public static readonly MaterialTokenKey<Color> UnselectedColor = new("md.comp.radio-button.unselected-color");
             public static readonly MaterialTokenKey<Color> DisabledSelectedColor = new("md.comp.radio-button.disabled-selected-color");
