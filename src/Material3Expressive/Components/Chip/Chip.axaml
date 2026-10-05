@@ -3,6 +3,38 @@
   <Styles.Resources>
     <ControlTheme x:Key="MaterialChipTheme" TargetType="m3:Chip">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="Background" Value="{Binding Path=(m3:ButtonThemeProperties.Background), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="Foreground" Value="{Binding Path=(m3:ButtonThemeProperties.Foreground), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="BorderBrush" Value="{Binding Path=(m3:ButtonThemeProperties.BorderBrush), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="BorderThickness" Value="{Binding Path=(m3:ButtonThemeProperties.BorderThickness), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="LeadingIconColor" Value="{Binding Path=DefaultLeadingIconColor, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="TrailingIconColor" Value="{Binding Path=DefaultTrailingIconColor, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="Elevation" Value="{Binding Path=DefaultElevation, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContainerColor}}" />
+      <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.LabelColor}}" />
+      <Setter Property="m3:ButtonThemeProperties.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.OutlineColor}}" />
+      <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContentPadding}}" />
+      <Setter Property="DefaultLeadingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.PrimaryIconColor}}" />
+      <Setter Property="DefaultTrailingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.TonalIconColor}}" />
+      <Setter Property="DefaultLeadingSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconLabelSpace}}" />
+      <Setter Property="DefaultTrailingSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconLabelSpace}}" />
+      <Setter Property="ShapeAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ShapeAnimation}}" />
+      <Setter Property="DisabledAvatarOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.AvatarOpacity}}" />
+      <Setter Property="m3:ButtonThemeProperties.BorderThickness"><MultiBinding Converter="{x:Static m3:ChipThemeConverters.OutlineThickness}"><m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.OutlineWidth}" /></MultiBinding></Setter>
+      <Setter Property="Spacing"><MultiBinding Converter="{x:Static m3:ChipThemeConverters.Spacing}">
+        <Binding Path="DefaultLeadingSpacing" RelativeSource="{RelativeSource Self}" />
+        <Binding Path="DefaultTrailingSpacing" RelativeSource="{RelativeSource Self}" />
+      </MultiBinding></Setter>
+      <Setter Property="DefaultElevation"><MultiBinding Converter="{x:Static m3:ChipThemeConverters.Elevation}">
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.DraggedElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+      </MultiBinding></Setter>
+
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContainerShape}}" />
       <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.LabelTextStyle}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -17,6 +49,8 @@
           <m3:ChipLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
               MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
               VerticalAlignment="{TemplateBinding VerticalAlignment}"
+              MaximumSelectableWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.MaximumSelectableWidth}}"
+              MinimumInteractiveSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.MinimumInteractiveSize}}"
               ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContainerHeight}}">
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                 StateLayerBrush="{m3:ContentColorFor AmbientContentColor={Binding Parent.(TextElement.Foreground), RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type m3:Chip}}}}"
@@ -24,14 +58,28 @@
                 TextElement.Foreground="{TemplateBinding Foreground}">
               <Border Padding="{TemplateBinding Padding}">
                 <m3:ChipContentLayout x:Name="PART_Layout">
-                  <m3:ChipIconSlot x:Name="PART_LeadingIcon">
+                  <m3:ChipIconSlot x:Name="PART_LeadingIcon"
+                      IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconSize}}"
+                      AvatarSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.AvatarSize}}"
+                      AvatarCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.AvatarShape}}"
+                      SizeEnterAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconSizeEnterAnimation}}"
+                      SizeExitAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconSizeExitAnimation}}"
+                      AlphaEnterAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconAlphaEnterAnimation}}"
+                      AlphaExitAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconAlphaExitAnimation}}">
                     <Border RenderOptions.RequiresFullOpacityHandling="True"><ContentPresenter /></Border>
                   </m3:ChipIconSlot>
                   <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
                       ContentTemplate="{TemplateBinding ContentTemplate}" TextWrapping="Wrap"
                       HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                       VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" m3:TextStyleHost.IsEnabled="True" />
-                  <m3:ChipIconSlot x:Name="PART_TrailingIcon">
+                  <m3:ChipIconSlot x:Name="PART_TrailingIcon"
+                      IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconSize}}"
+                      AvatarSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.AvatarSize}}"
+                      AvatarCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.AvatarShape}}"
+                      SizeEnterAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconSizeEnterAnimation}}"
+                      SizeExitAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconSizeExitAnimation}}"
+                      AlphaEnterAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconAlphaEnterAnimation}}"
+                      AlphaExitAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconAlphaExitAnimation}}">
                     <Border RenderOptions.RequiresFullOpacityHandling="True"><ContentPresenter /></Border>
                   </m3:ChipIconSlot>
                 </m3:ChipContentLayout>
@@ -40,10 +88,90 @@
           </m3:ChipLayout>
         </ControlTemplate>
       </Setter>
+      <Style Selector="^:assist">
+        <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.AssistLabelColor}}" />
+        <Setter Property="DefaultTrailingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.PrimaryIconColor}}" />
+      </Style>
+      <Style Selector="^:filter">
+      <Setter Property="DefaultElevation"><MultiBinding Converter="{x:Static m3:ChipThemeConverters.Elevation}">
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatFilterHoverElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.DraggedElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.FlatElevation}" />
+      </MultiBinding></Setter>
+      </Style>
+      <Style Selector="^:input">
+        <Setter Property="DefaultLeadingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.TonalIconColor}}" />
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.InputContentPadding}}" />
+      </Style>
+      <Style Selector="^:input:leading-icon">
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.InputLeadingContentPadding}}" />
+      </Style>
+      <Style Selector="^:input:trailing-icon">
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.InputTrailingContentPadding}}" />
+      </Style>
+      <Style Selector="^:input:leading-icon:trailing-icon">
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContentPadding}}" />
+      </Style>
+      <Style Selector="^:input:avatar">
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.InputContentPadding}}" />
+      </Style>
+      <Style Selector="^:input:avatar:trailing-icon">
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.InputTrailingContentPadding}}" />
+      </Style>
+      <Style Selector="^:elevated">
+        <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ElevatedContainerColor}}" />
+      <Setter Property="DefaultElevation"><MultiBinding Converter="{x:Static m3:ChipThemeConverters.Elevation}">
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.ElevatedElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.ElevatedElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.ElevatedElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.ElevatedHoverElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.DraggedElevation}" />
+        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.DisabledElevation}" />
+      </MultiBinding></Setter>
+        <Setter Property="m3:ButtonThemeProperties.BorderThickness" Value="0" />
+      </Style>
+      <Style Selector="^:selected">
+        <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.SelectedContainerColor}}" />
+        <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.SelectedContentColor}}" />
+        <Setter Property="DefaultLeadingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.SelectedContentColor}}" />
+        <Setter Property="DefaultTrailingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.SelectedContentColor}}" />
+        <Setter Property="m3:ButtonThemeProperties.BorderThickness" Value="0" />
+      </Style>
+      <Style Selector="^:input:selected">
+        <Setter Property="DefaultLeadingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.PrimaryIconColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContainerColor}}" />
+        <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.DisabledContentColor}}" />
+        <Setter Property="m3:ButtonThemeProperties.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.DisabledOutlineColor}}" />
+        <Setter Property="DefaultLeadingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.DisabledContentColor}}" />
+        <Setter Property="DefaultTrailingIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.DisabledContentColor}}" />
+      </Style>
+      <Style Selector="^:disabled:elevated">
+        <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.DisabledContainerColor}}" />
+      </Style>
+      <Style Selector="^:disabled:selected">
+        <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.DisabledContainerColor}}" />
+      </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:AssistChip}" TargetType="m3:AssistChip" BasedOn="{StaticResource MaterialChipTheme}" />
     <ControlTheme x:Key="{x:Type m3:SuggestionChip}" TargetType="m3:SuggestionChip" BasedOn="{StaticResource MaterialChipTheme}" />
-    <ControlTheme x:Key="{x:Type m3:FilterChip}" TargetType="m3:FilterChip" BasedOn="{StaticResource MaterialChipTheme}" />
-    <ControlTheme x:Key="{x:Type m3:InputChip}" TargetType="m3:InputChip" BasedOn="{StaticResource MaterialChipTheme}" />
+    <ControlTheme x:Key="{x:Type m3:FilterChip}" TargetType="m3:FilterChip" BasedOn="{StaticResource MaterialChipTheme}">
+      <Setter Property="Shapes"><MultiBinding Converter="{x:Static m3:ChipThemeConverters.Shapes}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.UnselectedShape}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.SelectedShape}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.PressedShape}" />
+      </MultiBinding></Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:InputChip}" TargetType="m3:InputChip" BasedOn="{StaticResource MaterialChipTheme}">
+      <Setter Property="Shapes"><MultiBinding Converter="{x:Static m3:ChipThemeConverters.Shapes}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.UnselectedShape}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.SelectedShape}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Chip.PressedShape}" />
+      </MultiBinding></Setter>
+    </ControlTheme>
   </Styles.Resources>
 </Styles>

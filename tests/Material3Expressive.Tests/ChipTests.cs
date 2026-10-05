@@ -31,6 +31,7 @@ public class ChipTests
     {
         Chip chip = kind switch { "assist" => new AssistChip(), "suggestion" => new SuggestionChip(), "filter" => new FilterChip(), _ => new InputChip() };
         chip.Content = new Border { Width = 32, Height = 16 };
+        if (chip is SelectableChip selectable) selectable.Shapes = null;
         var window = Show(chip);
         try
         {
@@ -95,12 +96,12 @@ public class ChipTests
             var color = Color.Parse("#126E60");
             chip.Resources[MaterialTokens.Sys.Color.SecondaryContainer] = color;
             chip.IsSelected = true;
-            Assert.Equal(color, Assert.IsType<SolidColorBrush>(chip.Background).Color);
+            Assert.Equal(color, Assert.IsAssignableFrom<ISolidColorBrush>(chip.Background).Color);
             Assert.Equal(new Thickness(0), chip.BorderThickness);
             chip.Background = Brushes.Red;
             chip.IsEnabled = false;
             Assert.Same(Brushes.Red, chip.Background);
-            Assert.Equal(97, Assert.IsType<SolidColorBrush>(chip.Foreground).Color.A);
+            Assert.Equal(97, Assert.IsAssignableFrom<ISolidColorBrush>(chip.Foreground).Color.A);
         }
         finally { window.Close(); }
     }
@@ -108,7 +109,7 @@ public class ChipTests
     [AvaloniaFact]
     public void SurfaceInk_FollowsBackgroundTokensAndOuterContentEnvironment()
     {
-        var chip = new FilterChip { Content = "Label", Colors = new ChipColors { LabelColor = Colors.Red } };
+        var chip = new FilterChip { Content = "Label", Foreground = Brushes.Red };
         var window = Show(chip);
         try
         {
@@ -138,7 +139,7 @@ public class ChipTests
         Assert.Equal(4, chip.Elevation!.Hovered);
         fixture.Children.Remove(chip);
         var window = Show(chip);
-        try { Assert.Equal(Color.Parse("#126E60"), Assert.IsType<SolidColorBrush>(chip.Background).Color); }
+        try { Assert.Equal(Color.Parse("#126E60"), Assert.IsAssignableFrom<ISolidColorBrush>(chip.Background).Color); }
         finally { window.Close(); }
     }
 
@@ -146,7 +147,7 @@ public class ChipTests
     public void DetachingDuringShapeAndIconAnimation_CancelsAndReattachesAtCurrentState()
     {
         using var clock = new MotionTestClockScope();
-        var chip = new FilterChip { Content = new Border { Width = 32, Height = 16 }, Shapes = new ChipShapes(), IsElevated = true };
+        var chip = new FilterChip { Content = new Border { Width = 32, Height = 16 }, IsElevated = true };
         var window = Show(chip); var root = (Grid)window.Content!;
         var old = Part<MaterialSurface>(chip, "PART_Container");
         chip.IsSelected = true; chip.LeadingIcon = new Border { Width = 18, Height = 18 };
@@ -156,7 +157,7 @@ public class ChipTests
         clock.AdvanceBy(TimeSpan.FromSeconds(1));
         Assert.Equal(oldCorner, old.CornerRadius); Assert.Equal(0, clock.PendingFrameCount);
         root.Children.Add(chip); window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
-        Assert.Equal(78, chip.Bounds.Width); // compact leading gap in the shapes overload
+        Assert.Equal(82, chip.Bounds.Width); // Shape configuration does not change the independent icon gaps.
         Assert.Equal(16, Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft);
         Assert.Null(MotionTestClockScope.Error(chip)); window.Close();
         Assert.Equal(0, clock.PendingFrameCount);
@@ -190,8 +191,8 @@ public class ChipTests
     public void FlatFilterHover_DefaultHasNoShadowAndRetainsStateLayerAndOverrides(bool morph, bool selected)
     {
         using var clock = new MotionTestClockScope();
-        var chip = new FilterChip { Content = new Border { Width = 32, Height = 16 }, IsSelected = selected,
-            Shapes = morph ? new ChipShapes() : null };
+        var chip = new FilterChip { Content = new Border { Width = 32, Height = 16 }, IsSelected = selected };
+        if (!morph) chip.Shapes = null;
         var window = Show(chip);
         try
         {
@@ -209,7 +210,7 @@ public class ChipTests
             Assert.Equal((double)0.08f, MaterialInteraction.GetOrCreate(chip).StateLayerOpacity);
             chip.Elevation = new ChipElevation(Hovered: 1); Settle();
             Assert.Equal(1, surface.ShadowElevation);
-            chip.Elevation = null; Settle();
+            chip.ClearValue(Chip.ElevationProperty); Settle();
             Assert.Equal(0, surface.ShadowElevation);
             chip.Resources[MaterialTokens.Comp.Chip.FlatFilterHoverElevation] = 1d; Settle();
             Assert.Equal(1, surface.ShadowElevation);
@@ -237,7 +238,7 @@ public class ChipTests
     public void CompletedSelectedShape_RecomputesItsOutlineWhenResized()
     {
         using var clock = new MotionTestClockScope();
-        var chip = new FilterChip { Content = new Border { Width = 32, Height = 16 }, Shapes = new ChipShapes() };
+        var chip = new FilterChip { Content = new Border { Width = 32, Height = 16 } };
         var window = Show(chip);
         chip.IsSelected = true;
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
@@ -255,12 +256,12 @@ public class ChipTests
     public void ReplacingShapesDuringAnimation_CancelsTheOldEffectAndCanDisableMorphing()
     {
         using var clock = new MotionTestClockScope();
-        var chip = new InputChip { Content = new Border { Width = 32, Height = 16 }, Shapes = new ChipShapes() };
+        var chip = new InputChip { Content = new Border { Width = 32, Height = 16 } };
         var window = Show(chip);
         chip.IsSelected = true;
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(64));
-        chip.Shapes = new ChipShapes { Shape = new CornerRadius(6), SelectedShape = new CornerRadius(14) };
+        chip.Shapes = new ChipShapes(new CornerRadius(6), new CornerRadius(14), new CornerRadius(8));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(14, Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft);
         chip.IsSelected = false;
@@ -268,7 +269,7 @@ public class ChipTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         var before = Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft;
         Assert.InRange(before, 6.01, 13.99);
-        chip.Shapes = new ChipShapes { Shape = new CornerRadius(6), SelectedShape = new CornerRadius(14) };
+        chip.Shapes = new ChipShapes(new CornerRadius(6), new CornerRadius(14), new CornerRadius(8));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.InRange(Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft, 6.01, before);
         chip.Shapes = null; clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
@@ -282,7 +283,7 @@ public class ChipTests
     {
         using var clock = new MotionTestClockScope();
         var icon = new Border { Width = 18, Height = 18 };
-        var chip = new FilterChip { Content = "Template", LeadingIcon = icon, Shapes = new ChipShapes() };
+        var chip = new FilterChip { Content = "Template", LeadingIcon = icon };
         var window = Show(chip);
         var old = Part<MaterialSurface>(chip, "PART_Container");
         chip.IsSelected = true;

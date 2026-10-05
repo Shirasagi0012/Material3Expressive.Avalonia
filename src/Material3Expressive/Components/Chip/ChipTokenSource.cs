@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Avalonia;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Material3Expressive.Foundation.Tokens;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -11,6 +12,19 @@ public sealed class ChipTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Chip.ContainerColor] = Colors.Transparent,
+        [Comp.Chip.ContentPadding] = new Thickness(8, 0),
+        [Comp.Chip.InputContentPadding] = new Thickness(4, 0),
+        [Comp.Chip.InputLeadingContentPadding] = new Thickness(8, 0, 4, 0),
+        [Comp.Chip.InputTrailingContentPadding] = new Thickness(4, 0, 8, 0),
+        [Comp.Chip.IconLabelSpace] = 8d,
+        [Comp.Chip.ShapeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.Chip.IconSizeEnterAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.Chip.IconSizeExitAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.Chip.IconAlphaEnterAnimation] = new TokenRef(Sys.Motion.Spring.EffectsSlow),
+        [Comp.Chip.IconAlphaExitAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
+        [Comp.Chip.MaximumSelectableWidth] = 1000d,
+        [Comp.Chip.MinimumInteractiveSize] = 48d,
         [Comp.Chip.ContainerHeight] = 32d,
         [Comp.Chip.ContainerShape] = new TokenRef(Sys.Shape.Small),
         [Comp.Chip.UnselectedShape] = new TokenRef(Sys.Shape.Medium),

@@ -113,9 +113,9 @@
                 <WrapPanel>
                     <m3:FilterChip Content="Filter" Click="OnChipClick" Margin="0,0,12,0" />
                     <m3:FilterChip Content="Selected" IsSelected="True" Click="OnChipClick" Margin="0,0,12,0" />
-                    <m3:FilterChip Content="Shape morph" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
-                    <m3:FilterChip Content="Elevated filter" IsElevated="True" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
-                    <m3:InputChip Content="Contact" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" TrailingIcon="{m3:Symbol Close}">
+                    <m3:FilterChip Content="Shape morph" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:FilterChip Content="Elevated filter" IsElevated="True" Click="OnChipClick" Margin="0,0,12,0" />
+                    <m3:InputChip Content="Contact" Click="OnChipClick" Margin="0,0,12,0" TrailingIcon="{m3:Symbol Close}">
                         <m3:InputChip.Avatar><Border Width="24" Height="24" Background="#E8DEF8" Child="{m3:Symbol Person, Size=18}" /></m3:InputChip.Avatar>
                     </m3:InputChip>
                     <m3:InputChip Content="Disabled contact" IsSelected="True" IsEnabled="False" />

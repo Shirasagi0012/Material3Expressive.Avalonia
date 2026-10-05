@@ -7,13 +7,26 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Rendering;
-using static Material3Expressive.Tokens.MaterialTokens;
+using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
 // SegmentedButtonDefaults.Icon consumes the library's AnimatedVisibility / Crossfade.
 internal sealed class SegmentedButtonIconSlot : Decorator
 {
+    public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<SegmentedButtonIconSlot, double>(nameof(IconSize));
+    public double IconSize { get => GetValue(IconSizeProperty); set => SetValue(IconSizeProperty, value); }
+    public static readonly StyledProperty<MaterialSpring?> EffectsAnimationProperty = AvaloniaProperty.Register<SegmentedButtonIconSlot, MaterialSpring?>(nameof(EffectsAnimation));
+    public MaterialSpring? EffectsAnimation { get => GetValue(EffectsAnimationProperty); set => SetValue(EffectsAnimationProperty, value); }
+    public static readonly StyledProperty<MaterialSpring?> SpatialAnimationProperty = AvaloniaProperty.Register<SegmentedButtonIconSlot, MaterialSpring?>(nameof(SpatialAnimation));
+    public MaterialSpring? SpatialAnimation { get => GetValue(SpatialAnimationProperty); set => SetValue(SpatialAnimationProperty, value); }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (_owner is { } owner && (change.Property == IconSizeProperty || change.Property == EffectsAnimationProperty || change.Property == SpatialAnimationProperty))
+            Update(owner);
+    }
+
     // Stable state objects prevent AnimatedContent from rebuilding an equal bool slot
     // and trying to reparent a caller-owned icon during an interrupted crossfade.
     private static readonly object ActiveState = true, InactiveState = false;
@@ -45,8 +58,12 @@ internal sealed class SegmentedButtonIconSlot : Decorator
     internal void Update(SegmentedButton owner)
     {
         if (!owner.ShowSelectionIcon) { Stop(); return; }
+        // Retain the requested owner before waiting for theme input. A resource-scope move
+        // can withdraw old bindings; the property update then retries this same target.
+        _owner = owner;
+        if (EffectsAnimation is not { } effects || SpatialAnimation is not { } spatial) return;
         var crossfade = owner.InactiveIcon is not null || owner.InactiveIconTemplate is not null;
-        var rebuild = _owner is null || _crossfade != crossfade || !Equals(_active, owner.ActiveIcon) || !Equals(_inactive, owner.InactiveIcon)
+        var rebuild = _selection is null || _crossfade != crossfade || !Equals(_active, owner.ActiveIcon) || !Equals(_inactive, owner.InactiveIcon)
             || _activeTemplate != owner.ActiveIconTemplate || _inactiveTemplate != owner.InactiveIconTemplate;
         _owner = owner;
         if (rebuild)
@@ -56,8 +73,8 @@ internal sealed class SegmentedButtonIconSlot : Decorator
             _activeTemplate = owner.ActiveIconTemplate; _inactiveTemplate = owner.InactiveIconTemplate;
             _motion = VisualAnimationScope.Create(owner);
             _selection = _motion.CreateTransition(owner.IsSelected, "Segmented selection icon");
-            _effects = owner.Resolve(Sys.Motion.Spring.EffectsDefault);
-            _spatial = owner.Resolve(Sys.Motion.Spring.SpatialFast);
+            _effects = effects;
+            _spatial = spatial;
             if (crossfade)
                 Child = new Crossfade
                 {
@@ -83,8 +100,6 @@ internal sealed class SegmentedButtonIconSlot : Decorator
         }
         else
         {
-            var effects = owner.Resolve(Sys.Motion.Spring.EffectsDefault);
-            var spatial = owner.Resolve(Sys.Motion.Spring.SpatialFast);
             if (_effects != effects || _spatial != spatial)
             {
                 _effects = effects; _spatial = spatial;
@@ -92,11 +107,11 @@ internal sealed class SegmentedButtonIconSlot : Decorator
                 if (Child is AnimatedVisibility visibility) visibility.Enter = new FadeIn { Spec = effects.ToAnimationSpec() }
                     + new ScaleIn { InitialScale = 0, TransformOrigin = new RelativePoint(0, 1, RelativeUnit.Relative), Spec = spatial.ToAnimationSpec() };
             }
-            if (_icons[1] is Checkmark checkmark) checkmark.Size = owner.Resolve(Comp.SegmentedButton.IconSize);
+            if (_icons[1] is Checkmark checkmark) checkmark.Size = IconSize;
             foreach (var presenter in _icons.OfType<ContentPresenter>())
             {
                 presenter.FlowDirection = owner.FlowDirection;
-                MaterialIcon.SetDefaultSize(presenter, owner.Resolve(Comp.SegmentedButton.IconSize));
+                MaterialIcon.SetDefaultSize(presenter, IconSize);
             }
             if (_selection!.TargetState != owner.IsSelected)
             {
@@ -132,11 +147,11 @@ internal sealed class SegmentedButtonIconSlot : Decorator
         if (active && owner.ActiveIcon is null && owner.ActiveIconTemplate is null)
         {
             // Icons.Filled.Check: 24x24 viewport, same path as the fixed upstream vector.
-            return _icons[index] = new Checkmark(owner.Resolve(Comp.SegmentedButton.IconSize));
+            return _icons[index] = new Checkmark(IconSize);
         }
         var presenter = new ContentPresenter { FlowDirection = owner.FlowDirection, Content = active ? owner.ActiveIcon : owner.InactiveIcon,
             ContentTemplate = active ? owner.ActiveIconTemplate : owner.InactiveIconTemplate };
-        MaterialIcon.SetDefaultSize(presenter, owner.Resolve(Comp.SegmentedButton.IconSize));
+        MaterialIcon.SetDefaultSize(presenter, IconSize);
         return _icons[index] = presenter;
     }
     private sealed class Checkmark(double size) : Control

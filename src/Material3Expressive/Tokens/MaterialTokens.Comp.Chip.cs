@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Foundation.Typography;
 
@@ -11,6 +12,21 @@ public static partial class MaterialTokens
     {
         public static class Chip
         {
+            public static readonly MaterialTokenKey<double> MaximumSelectableWidth = new("md.comp.chip.maximum-selectable-width");
+            public static readonly MaterialTokenKey<double> MinimumInteractiveSize = new("md.comp.chip.minimum-interactive-size");
+            public static readonly MaterialTokenKey<SpringSpec> IconSizeEnterAnimation = new("md.comp.chip.icon-size-enter-animation");
+            public static readonly MaterialTokenKey<SpringSpec> IconSizeExitAnimation = new("md.comp.chip.icon-size-exit-animation");
+            public static readonly MaterialTokenKey<SpringSpec> IconAlphaEnterAnimation = new("md.comp.chip.icon-alpha-enter-animation");
+            public static readonly MaterialTokenKey<SpringSpec> IconAlphaExitAnimation = new("md.comp.chip.icon-alpha-exit-animation");
+
+            public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.chip.container-color");
+            public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.chip.content-padding");
+            public static readonly MaterialTokenKey<Thickness> InputContentPadding = new("md.comp.chip.input-content-padding");
+            public static readonly MaterialTokenKey<Thickness> InputLeadingContentPadding = new("md.comp.chip.input-leading-content-padding");
+            public static readonly MaterialTokenKey<Thickness> InputTrailingContentPadding = new("md.comp.chip.input-trailing-content-padding");
+            public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.chip.icon-label-space");
+            public static readonly MaterialTokenKey<SpringSpec> ShapeAnimation = new("md.comp.chip.shape-animation");
+
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.chip.container.height");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShape = new("md.comp.chip.container.shape");
             public static readonly MaterialTokenKey<CornerRadius> UnselectedShape = new("md.comp.chip.unselected.shape");

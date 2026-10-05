@@ -27,7 +27,10 @@ Avalonia 合并后，Chip/模板只消费有效配置。`ChipColors` 的 nullabl
 LeadingIconColor/TrailingIconColor（IBrush?）。条件样式只更新内部默认候选，再通过主题级绑定接入
 公开属性；普通用户 Style、绑定和局部值不会被选中/禁用触发器压过。
 
-`ChipElevation` 的六个 double 与 `ChipSpacing` 的两个 double 是完整 record struct 值，
+布局部件的 `MaximumSelectableWidth` / `MinimumInteractiveSize` 由同名组件 Token 提供默认值，
+仍保留显式 Width / MinWidth 优先与原像素取整，不向 owner 写入额外约束。
+
+`ChipElevation` 的六个 double 与 `ChipSpacing` 的两个 double 是完整不可变 record 值，
 公开属性不再可空。主题 MultiBinding 按平面/Elevated 等条件动态组装；运行时不再逐字段或按 null
 读取默认 Token。零值是完整配置本身，Material 的 Dragged=8、前后间距=8 等基线只来自 TokenSource。
 显式对象整组覆盖，ClearValue 后恢复当前主题默认。不可把一个局部对象中未写的字段重新补成 Material 默认。

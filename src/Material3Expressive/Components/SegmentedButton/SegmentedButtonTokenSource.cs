@@ -1,4 +1,6 @@
 using System.Collections.Frozen;
+using Avalonia;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Material3Expressive.Foundation.Tokens;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -10,6 +12,20 @@ public sealed class SegmentedButtonTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.SegmentedButton.ContentPadding] = new Thickness(12, 8),
+        [Comp.SegmentedButton.IconSpacing] = 8d,
+        [Comp.SegmentedButton.IconEffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.SegmentedButton.IconSpatialAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.SegmentedButton.LabelOffsetAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.SegmentedButton.InactiveContainerColor] = Colors.Transparent,
+        [Comp.SegmentedButton.DisabledActiveContainerColor] = new TokenRef(Comp.SegmentedButton.ActiveContainerColor),
+        [Comp.SegmentedButton.DisabledInactiveContainerColor] = new TokenRef(Comp.SegmentedButton.InactiveContainerColor),
+        [Comp.SegmentedButton.DisabledActiveContentColor] = new TokenRef(Comp.SegmentedButton.DisabledContentColor),
+        [Comp.SegmentedButton.DisabledInactiveContentColor] = new TokenRef(Comp.SegmentedButton.DisabledContentColor),
+        [Comp.SegmentedButton.ActiveBorderColor] = new TokenRef(Comp.SegmentedButton.OutlineColor),
+        [Comp.SegmentedButton.InactiveBorderColor] = new TokenRef(Comp.SegmentedButton.OutlineColor),
+        [Comp.SegmentedButton.DisabledActiveBorderColor] = new TokenRef(Comp.SegmentedButton.DisabledOutlineColor),
+        [Comp.SegmentedButton.DisabledInactiveBorderColor] = new TokenRef(Comp.SegmentedButton.DisabledOutlineColor),
         [Comp.SegmentedButton.ContainerHeight] = 40d,
         [Comp.SegmentedButton.Shape] = new TokenRef(Sys.Shape.Full),
         [Comp.SegmentedButton.OutlineWidth] = 1d,

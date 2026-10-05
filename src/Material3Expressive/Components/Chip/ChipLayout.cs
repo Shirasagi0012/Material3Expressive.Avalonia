@@ -11,22 +11,26 @@ internal sealed class ChipLayout : Decorator
 {
     public static readonly StyledProperty<double> ContainerMinHeightProperty = AvaloniaProperty.Register<ChipLayout, double>(nameof(ContainerMinHeight));
     public double ContainerMinHeight { get => GetValue(ContainerMinHeightProperty); set => SetValue(ContainerMinHeightProperty, value); }
+    public static readonly StyledProperty<double> MaximumSelectableWidthProperty = AvaloniaProperty.Register<ChipLayout, double>(nameof(MaximumSelectableWidth));
+    public double MaximumSelectableWidth { get => GetValue(MaximumSelectableWidthProperty); set => SetValue(MaximumSelectableWidthProperty, value); }
+    public static readonly StyledProperty<double> MinimumInteractiveSizeProperty = AvaloniaProperty.Register<ChipLayout, double>(nameof(MinimumInteractiveSize));
+    public double MinimumInteractiveSize { get => GetValue(MinimumInteractiveSizeProperty); set => SetValue(MinimumInteractiveSizeProperty, value); }
     private Size _container;
     private double _interactive;
-    static ChipLayout() => AffectsMeasure<ChipLayout>(ContainerMinHeightProperty);
+    static ChipLayout() => AffectsMeasure<ChipLayout>(ContainerMinHeightProperty, MaximumSelectableWidthProperty, MinimumInteractiveSizeProperty);
     protected override Size MeasureOverride(Size availableSize)
     {
         // Chip.kt limits selectable content to 1000dp. An explicit width/minimum is an
         // incoming tight constraint and takes precedence over widthIn's maximum.
         var constraint = TemplatedParent is SelectableChip && double.IsNaN(Width)
-            ? availableSize.WithWidth(Math.Min(availableSize.Width, Math.Max(1000, MinWidth))) : availableSize;
+            ? availableSize.WithWidth(Math.Min(availableSize.Width, Math.Max(MaximumSelectableWidth, MinWidth))) : availableSize;
         Child?.Measure(constraint);
         var desired = Child?.DesiredSize ?? default;
         var scale = LayoutHelper.GetLayoutScale(this);
         var minimumHeight = MinHeight > 0 ? MinHeight : Math.Min(MathUtils.PxToDip(MathUtils.DipToPx(ContainerMinHeight, scale), scale), availableSize.Height);
         _container = new Size(double.IsNaN(Width) ? Math.Max(desired.Width, MinWidth) : availableSize.Width,
             double.IsNaN(Height) ? Math.Max(desired.Height, minimumHeight) : availableSize.Height);
-        _interactive = this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(48, scale), scale) : 0;
+        _interactive = this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(MinimumInteractiveSize, scale), scale) : 0;
         return new Size(Math.Max(_container.Width, _interactive), Math.Max(_container.Height, _interactive));
     }
     protected override Size ArrangeOverride(Size finalSize)

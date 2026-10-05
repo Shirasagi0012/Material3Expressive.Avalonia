@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Styling;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless;
@@ -7,6 +8,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Tokens;
+using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
 
@@ -178,13 +181,22 @@ public sealed class ChipCases
                 "suggestion" => new SuggestionChip(), "elevated-suggestion" => new SuggestionChip { IsElevated = true },
                 "filter" => new FilterChip(), "elevated-filter" => new FilterChip { IsElevated = true }, _ => new InputChip()
             };
-            if (Chip is SelectableChip selectable) { selectable.IsSelected = config.Selected; selectable.Shapes = config.Morph ? new ChipShapes() : null; }
+            if (Chip is SelectableChip selectable) { selectable.IsSelected = config.Selected; if (!config.Morph) selectable.Shapes = null; }
+            if (config.Morph)
+            {
+                // Compose's shapes overload also chooses tonal colors, compact arrangement and
+                // different icon motion. Configure those independent inputs explicitly here.
+                if (Chip is FilterChip) Chip.Resources[Comp.Chip.PrimaryIconColor] = new TokenRef(Comp.Chip.TonalIconColor);
+                Chip.Resources[Comp.Chip.IconSizeExitAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast);
+                Chip.Resources[Comp.Chip.IconAlphaEnterAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault);
+                Chip.Resources[Comp.Chip.IconAlphaExitAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault);
+            }
             Chip.IsEnabled = config.Enabled;
             Chip.Content = label = new Marker(new Size(config.ContentWidth, config.ContentHeight));
             if (config.Width is { } width) Chip.Width = width;
             if (config.Height is { } height) Chip.Height = height;
             SetIcons(config.Icons);
-            if (config.Custom == "colors") Chip.Colors = CustomColors;
+            if (config.Custom == "colors") ApplyCustomColors(Chip);
             if (config.Custom == "spacing") { Chip.Spacing = new ChipSpacing(6, 6); Chip.Padding = new Thickness(5, 2, 11, 4); }
             if (config.Custom == "border") { Chip.BorderBrush = Brushes.Red; Chip.BorderThickness = new Thickness(2); }
             if (config.Custom == "elevation") Chip.Elevation = new ChipElevation(6, 6, 6, 6, 6, 6);
@@ -195,6 +207,10 @@ public sealed class ChipCases
             Chip.LeadingIcon = icons is "start" or "both" or "avatar-both" ? new Marker(new Size(18, 18)) : null;
             Chip.TrailingIcon = icons is "end" or "both" or "avatar-both" ? new Marker(new Size(18, 18)) : null;
             if (Chip is InputChip input) input.Avatar = icons.StartsWith("avatar") ? new Marker(new Size(24, 24)) : null;
+            if (config.Morph && config.Custom != "spacing")
+                Chip.Spacing = new ChipSpacing(
+                    Chip.LeadingIcon is not null || Chip is InputChip { Avatar: not null } ? 4 : 8,
+                    Chip.TrailingIcon is not null ? 4 : 8);
         }
         public ProbePoint[] Measure() =>
         [
@@ -207,12 +223,24 @@ public sealed class ChipCases
             new("label", "content", "chip", AvaloniaMeasurements.Geometry(label, host.Window).Where(m => m.Name is "box" or "size").ToArray())
         ];
     }
-    public static ChipColors CustomColors => new()
+    private static void ApplyCustomColors(Chip chip)
     {
-        ContainerColor = Color.Parse("#B0336699"), LabelColor = Color.Parse("#126E60"), LeadingIconColor = Color.Parse("#925210"), TrailingIconColor = Color.Parse("#643399"),
-        DisabledContainerColor = Color.Parse("#50336699"), DisabledLabelColor = Color.Parse("#70556677"), DisabledLeadingIconColor = Color.Parse("#70925210"), DisabledTrailingIconColor = Color.Parse("#70643399"),
-        SelectedContainerColor = Color.Parse("#B0882255"), DisabledSelectedContainerColor = Color.Parse("#50882255"), SelectedLabelColor = Color.Parse("#336622"), SelectedLeadingIconColor = Color.Parse("#992255"), SelectedTrailingIconColor = Color.Parse("#225599")
-    };
+        void Add(Selector? selector, string background, string foreground, string leading, string trailing) => chip.Styles.Add(new Style
+        {
+            Selector = selector,
+            Setters =
+            {
+                new Setter(Chip.BackgroundProperty, new SolidColorBrush(Color.Parse(background))),
+                new Setter(Chip.ForegroundProperty, new SolidColorBrush(Color.Parse(foreground))),
+                new Setter(Chip.LeadingIconColorProperty, new SolidColorBrush(Color.Parse(leading))),
+                new Setter(Chip.TrailingIconColorProperty, new SolidColorBrush(Color.Parse(trailing))),
+            },
+        });
+        Add(null, "#B0336699", "#126E60", "#925210", "#643399");
+        Add(new Style(s => s.Class(":selected")).Selector, "#B0882255", "#336622", "#992255", "#225599");
+        Add(new Style(s => s.Class(":disabled")).Selector, "#50336699", "#70556677", "#70925210", "#70643399");
+        Add(new Style(s => s.Class(":disabled").Class(":selected")).Selector, "#50882255", "#70556677", "#70925210", "#70643399");
+    }
     sealed class Marker(Size size) : Control
     {
         protected override bool BypassFlowDirectionPolicies => true;
