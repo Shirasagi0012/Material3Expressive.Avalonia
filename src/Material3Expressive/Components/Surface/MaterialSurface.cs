@@ -53,8 +53,8 @@ public sealed class MaterialSurface : Control
     internal Color? TonalSurfaceColor { get => GetValue(TonalSurfaceColorProperty); set => SetValue(TonalSurfaceColorProperty, value); }
     internal static readonly StyledProperty<Color?> TonalSurfaceTintColorProperty = AvaloniaProperty.Register<MaterialSurface, Color?>(nameof(TonalSurfaceTintColor));
     internal Color? TonalSurfaceTintColor { get => GetValue(TonalSurfaceTintColorProperty); set => SetValue(TonalSurfaceTintColorProperty, value); }
-    internal static readonly StyledProperty<SpringSpec> ShapeAnimationProperty = AvaloniaProperty.Register<MaterialSurface, SpringSpec>(nameof(ShapeAnimation));
-    internal SpringSpec ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
+    internal static readonly StyledProperty<SpringSpec?> ShapeAnimationProperty = AvaloniaProperty.Register<MaterialSurface, SpringSpec?>(nameof(ShapeAnimation));
+    internal SpringSpec? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
     internal static readonly StyledProperty<double> HoverStateLayerOpacityProperty = AvaloniaProperty.Register<MaterialSurface, double>(nameof(HoverStateLayerOpacity));
     internal double HoverStateLayerOpacity { get => GetValue(HoverStateLayerOpacityProperty); set => SetValue(HoverStateLayerOpacityProperty, value); }
     internal static readonly StyledProperty<double> FocusStateLayerOpacityProperty = AvaloniaProperty.Register<MaterialSurface, double>(nameof(FocusStateLayerOpacity));
@@ -407,6 +407,8 @@ public sealed class MaterialSurface : Control
         }
     }
 
+    internal void OnBorderAnimationConfigurationChanged() => UpdateButtonBorder();
+
     private void UpdateButtonBorder()
     {
         if (ButtonSurfaceState.GetAnimateBorder(this) && _interactionController?.Motion is { IsEnding: false } motion)
@@ -493,8 +495,12 @@ public sealed class MaterialSurface : Control
         // rememberAnimatedShape creates its initial state during composition. Subsequent
         // interaction/configuration changes are committed by recomposition before its effect.
         UpdateButtonBorder();
+        // Required theme input can temporarily disappear during binding or reparenting.
+        // Do not create a zero-stiffness spring or replace an effect's captured valid spec.
+        if (!TryGetShapeMorphSpec(out var initialSpec))
+            return;
         if (_shapeMorph is null && (PressedCornerRadius is not null || ButtonSurfaceState.GetCheckedCornerRadius(this) is not null))
-            RecreateShapeMorph(motion, ResolveShapeMorphSpec());
+            RecreateShapeMorph(motion, initialSpec);
         if (_shapeCommitPending)
             return;
 
@@ -509,7 +515,10 @@ public sealed class MaterialSurface : Control
             if (_shapeInteractionDeferred)
                 return;
 
-            var spec = ResolveShapeMorphSpec();
+            // Recheck after the composition frame: a resource may have been withdrawn while
+            // this commit waited. The next valid property update queues the current target again.
+            if (!TryGetShapeMorphSpec(out var spec))
+                return;
             var target = SelectedCornerRadius;
             var configurationChanged = _shapeRest != CornerRadius || _shapePressed != PressedCornerRadius
                 || _shapeChecked != ButtonSurfaceState.GetCheckedCornerRadius(this) || !_shapeSpec.Equals(spec);
@@ -571,7 +580,20 @@ public sealed class MaterialSurface : Control
         UpdateInteractionVisuals();
     }
 
-    private SpringSpec ResolveShapeMorphSpec() => ButtonSurfaceState.GetShapeSpec(this) ?? ShapeAnimation;
+    private bool TryGetShapeMorphSpec(out SpringSpec spec)
+    {
+        var candidate = ButtonSurfaceState.GetShapeSpec(this) ?? ShapeAnimation;
+        if (candidate is { } value && double.IsFinite(value.DampingRatio) && value.DampingRatio >= 0
+            && double.IsFinite(value.Stiffness) && value.Stiffness > 0
+            && float.IsFinite((float)value.VisibilityThreshold) && value.VisibilityThreshold >= 0)
+        {
+            // A zero threshold retains the runtime's documented unspecified-threshold semantics.
+            spec = value;
+            return true;
+        }
+        spec = default;
+        return false;
+    }
 
     private Color ResolveShadowColor() => ShadowColor ?? DefaultShadowColor;
 
