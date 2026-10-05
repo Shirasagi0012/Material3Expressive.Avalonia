@@ -61,6 +61,7 @@ public class WideNavigationRail : ItemsControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == StateAnimationProperty) _boundState?.Configure(this, StateAnimation);
         if (change.Property == StateProperty)
         {
             ReleaseState();

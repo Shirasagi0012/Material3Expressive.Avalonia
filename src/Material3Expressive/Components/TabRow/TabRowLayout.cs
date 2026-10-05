@@ -207,6 +207,15 @@ internal sealed class TabRowContent : Panel
     {
         base.OnAttachedToVisualTree(e); _motion = VisualAnimationScope.Create(this);
     }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IndicatorAnimationProperty || change.Property == ScrollAnimationProperty)
+        {
+            InvalidateMeasure();
+            InvalidateArrange();
+        }
+    }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _motion?.Dispose(); _motion = null; _offset = _width = _scroll = null; _selectedForScroll = null; _requested.Clear();
@@ -252,8 +261,9 @@ internal sealed class TabRowContent : Panel
     private void Animate(Animatable<float> track, float target, string label, bool intrinsicChange)
     {
         if (_motion is not { IsEnding: false } motion || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
-        _requested[track] = target;
         var spec = IndicatorAnimation;
+        if (spec.Stiffness <= 0) return;
+        _requested[track] = target;
         // TabIndicatorOffsetNode launches animateTo directly; interruption retains velocity.
         _ = motion.Launch(async ct =>
         {
@@ -308,6 +318,8 @@ internal sealed class TabRowContent : Panel
         if (positions.Length == 0 || chrome.SelectedIndex < 0 || chrome.SelectedIndex >= positions.Length) return;
         var scale = LayoutHelper.GetLayoutScale(this);
         var position = positions[chrome.SelectedIndex];
+        var spec = ScrollAnimation;
+        if (spec.Stiffness <= 0) return;
         if (chrome.Scrollable && _selectedForScroll != chrome.SelectedIndex && _motion is { IsEnding: false } motion && chrome.Scroller.Viewport.Width > 0)
         {
             var firstLayout = _selectedForScroll is null;
@@ -350,7 +362,6 @@ internal sealed class TabRowContent : Panel
                 _scrollPrevious = 0;
                 ct.ThrowIfCancellationRequested();
                 _scrollRun?.Dispose(); _scrollRun = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var spec = ScrollAnimation;
                 await _scroll.AnimateToAsync(target - MathUtils.DipToPx(scroller.Offset.X, scale),
                     new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f), cancellationToken: _scrollRun.Token);
             }, "Tab scroll target");

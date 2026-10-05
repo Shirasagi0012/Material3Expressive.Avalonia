@@ -183,6 +183,8 @@ public sealed class DrawerState : AvaloniaObject
     {
         var owner = (NavigationDrawer)_owner!;
         var spec = value == DrawerValue.Open ? owner.OpenAnimation : owner.CloseAnimation;
+        if (spec.Stiffness <= 0)
+            throw new InvalidOperationException("NavigationDrawer motion configuration is not ready. Provide the requested open/close animation before changing its state.");
         return new SpringSpec<float>((float)spec.DampingRatio, (float)spec.Stiffness, .01f);
     }
     private void DragTo(float offset, float velocity = 0)

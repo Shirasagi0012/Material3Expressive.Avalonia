@@ -22,17 +22,17 @@ internal sealed class FloatingToolbarVisibility : AnimatedVisibility
     {
         var owner = this.FindAncestorOfType<FloatingToolbar>()!;
         _owner = owner;
-        ConfigureTransitions();
-        Visible = owner.EffectiveExpanded;
+        Visible = ConfigureTransitions() && owner.EffectiveExpanded;
         base.OnAttachedToVisualTree(e);
         _targetScope = VisualAnimationScope.Create(this);
         owner.PropertyChanged += Changed;
     }
-    private void ConfigureTransitions()
+    private bool ConfigureTransitions()
     {
         var spring = SizeAnimation;
+        if (spring.Stiffness <= 0) return false;
         var scale = LayoutHelper.GetLayoutScale(this);
-        if (_configuredAnimation == spring && _configuredScale == scale) return;
+        if (_configuredAnimation == spring && _configuredScale == scale) return true;
         _configuredAnimation = spring;
         _configuredScale = scale;
         var spec = new FloatingToolbarSizeSpec((float)spring.DampingRatio, (float)spring.Stiffness, scale,
@@ -47,12 +47,23 @@ internal sealed class FloatingToolbarVisibility : AnimatedVisibility
             Enter = new ExpandVertically { ExpandFrom = Leading ? VerticalAlignment.Bottom : VerticalAlignment.Top, Spec = spec };
             Exit = new ShrinkVertically { ShrinkTowards = Leading ? VerticalAlignment.Bottom : VerticalAlignment.Top, Spec = spec };
         }
+        return true;
+    }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == SizeAnimationProperty) UpdateTarget();
     }
     private void Changed(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property != FloatingToolbar.EffectiveExpandedProperty || _pending || _targetScope is not { IsEnding: false } scope) return;
+        if (e.Property == FloatingToolbar.EffectiveExpandedProperty) UpdateTarget();
+    }
+    private void UpdateTarget()
+    {
+        if (_pending || _targetScope is not { IsEnding: false } scope) return;
         _pending = true;
-        _ = scope.Launch(async ct => { await scope.Clock.NextFrameAsync(ct); _pending = false; ConfigureTransitions(); Visible = _owner!.EffectiveExpanded; }, "Floating toolbar visibility target");
+        _ = scope.Launch(async ct => { await scope.Clock.NextFrameAsync(ct); _pending = false;
+            if (ConfigureTransitions()) Visible = _owner!.EffectiveExpanded; }, "Floating toolbar visibility target");
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {

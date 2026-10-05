@@ -89,7 +89,8 @@ internal sealed class WideNavigationRailLayout : Panel
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ExpandedProperty || change.Property == IsModalProperty
+        if (change.Property == LayoutAnimationProperty || change.Property == ModalWidthAnimationProperty
+            || change.Property == ExpandedProperty || change.Property == IsModalProperty
             || change.Property == CollapsedContainerWidthProperty || change.Property == ExpandedContainerMinWidthProperty || change.Property == ExpandedContainerMaxWidthProperty || change.Property == CollapsedItemVerticalSpaceProperty || change.Property == CollapsedItemMinHeightProperty || change.Property == HeaderSpaceProperty || change.Property == ItemHorizontalPaddingProperty) UpdateTargets();
     }
     private void UpdateTargets()
@@ -105,6 +106,7 @@ internal sealed class WideNavigationRailLayout : Panel
             _pending = false;
             var spatial = LayoutAnimation;
             var widthSpec = IsModal ? ModalWidthAnimation : spatial;
+            if (spatial.Stiffness <= 0 || widthSpec.Stiffness <= 0) return;
             Restart(_minWidth!, (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth), widthSpec);
             Restart(_widthFullRange!, (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth), widthSpec);
             Restart(_itemSpacing!, (float)(Expanded ? 0 : CollapsedItemVerticalSpace), spatial);

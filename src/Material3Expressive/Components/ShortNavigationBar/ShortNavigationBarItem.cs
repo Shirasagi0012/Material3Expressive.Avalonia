@@ -91,11 +91,19 @@ public class ShortNavigationBarItem : Button
     private Color TextTarget => !IsEffectivelyEnabled ? DisabledTextColor : !IsSelected ? UnselectedTextColor
         : IconPosition == NavigationItemIconPosition.Top ? SelectedTextColorTopIconPosition : SelectedTextColorStartIconPosition;
 
+    private void MotionConfigurationChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == ShortNavigationBarItemLayout.IndicatorAnimationProperty)
+            UpdateTarget();
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         _scope?.Dispose(); _scope = null; _pending = false;
         base.OnApplyTemplate(e);
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<ShortNavigationBarItemLayout>("PART_Layout");
+        if (_layout is not null) _layout.PropertyChanged += MotionConfigurationChanged;
         _icon = e.NameScope.Find<ContentPresenter>("PART_Icon");
         _label = e.NameScope.Find<ContentPresenter>("PART_Label");
         _indicator = e.NameScope.Find<Border>("PART_Indicator");
@@ -105,11 +113,13 @@ public class ShortNavigationBarItem : Button
     }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        base.OnAttachedToVisualTree(e); InitializeMotion();
+        base.OnAttachedToVisualTree(e);
+        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; } InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _scope?.Dispose(); _scope = null; _selection = null; _pending = false; _activationKey = null;
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -168,6 +178,7 @@ public class ShortNavigationBarItem : Button
             var target = IsSelected ? 1f : 0f;
             if (_selection!.TargetValue == target) return;
             var spatial = _layout!.IndicatorAnimation;
+            if (spatial.Stiffness <= 0) return;
             _ = scope.Launch(async lifetime =>
             {
                 await _selection.StopAsync(); lifetime.ThrowIfCancellationRequested();

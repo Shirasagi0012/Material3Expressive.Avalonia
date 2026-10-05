@@ -17,7 +17,7 @@
           <m3:MaterialSurface Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}">
             <Border>
               <Border.Padding>
-                <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
+                <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                   <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                   <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                 </MultiBinding>

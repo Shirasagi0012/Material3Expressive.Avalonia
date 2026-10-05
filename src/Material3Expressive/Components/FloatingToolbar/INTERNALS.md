@@ -2,6 +2,8 @@
 
 ## Token 配置路径
 
+内部必需 spring 的 stiffness 必须大于零。模板首次挂载、重挂或资源暂时撤回时，未就绪配置不构造或提交运行时 spring；有效配置恢复后重新提交当前视觉目标。正在运行的通道继续使用已验证并捕获的规格，不回退 Expressive、Snap 或另一套默认值。
+
 主题将尺寸、运动和 elevation 默认配置送入有效属性；ExpandedShadowElevation 现在是非 nullable double，普通/FAB 默认值在内部条件候选中选择后以主题优先级提供。AnimationSpec 为主题提供的有效有限规格，调用方仍可整值替换。移除重复的公开尺寸/elevation/padding Defaults 常量，行为与展开订阅工厂继续保留。
 
 .vibrant 背景和 FAB 模板/高度只切换内部候选，应用普通 Style、Binding、LocalValue 具有正常优先级。两侧显隐运动在每个新目标读取当前有效规格，运行结果不写回配置。滚动 behavior 的 null spec 参数仍表示使用已挂载 owner 的主题配置，density 相关 decay 工厂不 Token 化。

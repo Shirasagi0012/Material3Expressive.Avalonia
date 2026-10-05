@@ -115,11 +115,19 @@ public class WideNavigationRailItem : Button
     private Color TextTarget => !IsEffectivelyEnabled ? DisabledTextColor : !IsSelected ? UnselectedTextColor
         : EffectiveIconPosition == NavigationItemIconPosition.Top ? SelectedTextColorTopIconPosition : SelectedTextColorStartIconPosition;
 
+    private void MotionConfigurationChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == WideNavigationRailItemLayout.SpatialAnimationProperty || change.Property == WideNavigationRailItemLayout.EffectsAnimationProperty)
+            UpdateTargets();
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         _scope?.Dispose(); _scope = null; _pending = false;
         base.OnApplyTemplate(e);
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<WideNavigationRailItemLayout>("PART_Layout");
+        if (_layout is not null) _layout.PropertyChanged += MotionConfigurationChanged;
         _icon = e.NameScope.Find<ContentPresenter>("PART_Icon");
         _label = e.NameScope.Find<ContentPresenter>("PART_Label");
         _indicator = e.NameScope.Find<Border>("PART_Indicator");
@@ -131,6 +139,7 @@ public class WideNavigationRailItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
         InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -142,6 +151,7 @@ public class WideNavigationRailItem : Button
         }
         _scope?.Dispose(); _scope = null;
         _selection = _position = null; _textColor = null; _pending = false; _activationKey = null;
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -221,6 +231,7 @@ public class WideNavigationRailItem : Button
             if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget); // Upstream iconColor does not animate.
             var spatial = _layout!.SpatialAnimation;
             var effects = _layout!.EffectsAnimation;
+            if (spatial.Stiffness <= 0 || effects.Stiffness <= 0) return;
             Restart(_selection!, IsSelected ? 1f : 0f, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f));
             Restart(_position!, EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f));
             Restart(_textColor!, TextTarget, new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness));

@@ -33,21 +33,35 @@ internal sealed class FloatingToolbarLayout : Panel
     private readonly TranslateTransform _zeroWidthPlacement = new();
     private readonly VelocityTracker _velocity = new();
     private bool _pending, _dragging;
+    private bool _initialExpanded;
     private Point? _pressed;
     private float _dragPosition;
     private Size _naturalToolbar;
     private Size _toolbarSize;
     private double _fabSize;
-    internal float ExpandedProgress => _progress?.Value ?? (_owner?.EffectiveExpanded != false ? 1 : 0);
+    internal float ExpandedProgress => _progress?.Value ?? (_initialExpanded ? 1 : 0);
     private MaterialSurface Surface => (MaterialSurface)Children[0];
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
         _owner = this.FindAncestorOfType<FloatingToolbar>()!;
         _scope = VisualAnimationScope.Create(this);
-        _transition = new Transition<bool>(_owner.EffectiveExpanded, _scope.Clock, "Floating toolbar expanded");
+        _initialExpanded = _owner.EffectiveExpanded;
+        InitializeMotion();
+        _owner.PropertyChanged += OwnerChanged;
+        AddHandler(PointerPressedEvent, Pressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerMovedEvent, Moved, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerReleasedEvent, Released, RoutingStrategies.Tunnel, handledEventsToo: true);
+        PointerCaptureLost += CaptureLost;
+        AttachScroll(); InvalidateMeasure();
+    }
+    private void InitializeMotion()
+    {
+        if (_scope is not { IsEnding: false } || _transition is not null || _owner?.AnimationSpec is not { } animationSpec
+            || ElevationAnimation.Stiffness <= 0) return;
+        _transition = new Transition<bool>(_initialExpanded, _scope.Clock, "Floating toolbar expanded");
         _progress = _transition.AnimateValue(new FloatConverter(), expanded => expanded ? 1f : 0f,
-            _ => _owner.AnimationSpec);
+            _ => animationSpec);
         _progress.PropertyChanged += ProgressChanged;
         // Capture Avalonia's Normal dispatcher context, independent of the context
         // which mounted the template. Transition waits asynchronously while idle.
@@ -60,12 +74,12 @@ internal sealed class FloatingToolbarLayout : Panel
         _elevation = _scope.CreateAnimatable((float)ElevationTarget);
         _scope.SubscribeValue(_elevation, value => Surface.ShadowElevation = value);
         Surface.ShadowElevation = _elevation.Value;
-        _owner.PropertyChanged += OwnerChanged;
-        AddHandler(PointerPressedEvent, Pressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-        AddHandler(PointerMovedEvent, Moved, RoutingStrategies.Tunnel, handledEventsToo: true);
-        AddHandler(PointerReleasedEvent, Released, RoutingStrategies.Tunnel, handledEventsToo: true);
-        PointerCaptureLost += CaptureLost;
-        AttachScroll(); InvalidateMeasure();
+        UpdateTarget();
+    }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == ElevationAnimationProperty) { InitializeMotion(); UpdateTarget(); }
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -86,19 +100,26 @@ internal sealed class FloatingToolbarLayout : Panel
         { DetachScroll(); AttachScroll(); }
         if (e.Property == FloatingToolbar.EffectiveExpandedProperty || e.Property == FloatingToolbar.ExpandedShadowElevationProperty || e.Property == FloatingToolbar.CollapsedShadowElevationProperty || e.Property == FloatingToolbar.AnimationSpecProperty)
         {
-            if (!_pending && _scope is { IsEnding: false } scope)
-            {
-                _pending = true;
-                _ = scope.Launch(async ct =>
-                {
-                    await scope.Clock.NextFrameAsync(ct); _pending = false;
-                    _transition!.UpdateTarget(_owner!.EffectiveExpanded);
-                    if (_owner.FloatingActionButton is null)
-                        await _elevation!.AnimateToAsync((float)ElevationTarget, new SpringSpec<float>((float)ElevationAnimation.DampingRatio, (float)ElevationAnimation.Stiffness, .01f), cancellationToken: ct);
-                }, "Floating toolbar target");
-            }
+            InitializeMotion();
+            UpdateTarget();
         }
         InvalidateMeasure();
+    }
+    private void UpdateTarget()
+    {
+        if (_pending || _transition is null || _scope is not { IsEnding: false } scope) return;
+        _pending = true;
+        _ = scope.Launch(async ct =>
+        {
+            await scope.Clock.NextFrameAsync(ct); _pending = false;
+            if (_owner?.AnimationSpec is not { } animationSpec || ElevationAnimation.Stiffness <= 0) return;
+            var elevation = ElevationAnimation;
+            _progress!.Update(expanded => expanded ? 1f : 0f, _ => animationSpec);
+            _transition.UpdateTarget(_owner.EffectiveExpanded);
+            if (_owner.FloatingActionButton is null)
+                await _elevation!.AnimateToAsync((float)ElevationTarget,
+                    new SpringSpec<float>((float)elevation.DampingRatio, (float)elevation.Stiffness, .01f), cancellationToken: ct);
+        }, "Floating toolbar target");
     }
     private void AttachScroll()
     {
@@ -322,11 +343,21 @@ internal sealed class FloatingToolbarBalancedPadding : Decorator
     }
     private void Changed(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property != FloatingToolbar.EffectiveExpandedProperty && e.Property != FloatingToolbar.LeadingContentProperty && e.Property != FloatingToolbar.TrailingContentProperty) return;
+        if (e.Property == FloatingToolbar.EffectiveExpandedProperty || e.Property == FloatingToolbar.LeadingContentProperty || e.Property == FloatingToolbar.TrailingContentProperty) UpdateTarget();
+    }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == PaddingAnimationProperty) UpdateTarget();
+    }
+    private void UpdateTarget()
+    {
         if (_pending || _scope is not { IsEnding: false } scope) return;
         _pending = true;
         _ = scope.Launch(async ct => { await scope.Clock.NextFrameAsync(ct); _pending = false;
-            await _padding!.AnimateToAsync(HasSide ? 0 : 1, new SpringSpec<float>((float)PaddingAnimation.DampingRatio, (float)PaddingAnimation.Stiffness, .01f), cancellationToken: ct); }, "Floating toolbar balanced padding");
+            var animation = PaddingAnimation;
+            if (animation.Stiffness <= 0) return;
+            await _padding!.AnimateToAsync(HasSide ? 0 : 1, new SpringSpec<float>((float)animation.DampingRatio, (float)animation.Stiffness, .01f), cancellationToken: ct); }, "Floating toolbar balanced padding");
         InvalidateMeasure();
     }
     protected override Size MeasureOverride(Size available)

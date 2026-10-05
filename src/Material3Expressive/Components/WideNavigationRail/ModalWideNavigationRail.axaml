@@ -16,7 +16,7 @@
             <m3:MaterialSurface x:Name="PART_Inline" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CollapsedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}">
               <Border>
                 <Border.Padding>
-                  <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
+                  <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                     <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                     <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                   </MultiBinding>
@@ -45,7 +45,7 @@
                 <m3:MaterialSurface Background="{TemplateBinding ModalBackground}" CornerRadius="{TemplateBinding ExpandedCornerRadius}" TextElement.Foreground="{TemplateBinding ModalForeground}">
                   <Border>
                     <Border.Padding>
-                      <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
+                      <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                         <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                         <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                       </MultiBinding>

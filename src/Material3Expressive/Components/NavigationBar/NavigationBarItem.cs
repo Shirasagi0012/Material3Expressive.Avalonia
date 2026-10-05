@@ -101,13 +101,21 @@ public class NavigationBarItem : Button
 
     protected override Type StyleKeyOverride => typeof(NavigationBarItem);
 
+    private void MotionConfigurationChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == NavigationBarItemLayout.EffectsAnimationProperty || change.Property == NavigationBarItemLayout.IndicatorSizeAnimationProperty)
+            UpdateTargets();
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         _motion?.Dispose();
         _motion = null;
         base.OnApplyTemplate(e);
         _targetsPending = false;
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<NavigationBarItemLayout>("PART_Layout");
+        if (_layout is not null) _layout.PropertyChanged += MotionConfigurationChanged;
         _icon = e.NameScope.Find<ContentPresenter>("PART_Icon");
         _label = e.NameScope.Find<ContentPresenter>("PART_Label");
         _indicator = e.NameScope.Find<Border>("PART_Indicator");
@@ -118,6 +126,7 @@ public class NavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
         InitializeMotion();
     }
 
@@ -129,6 +138,7 @@ public class NavigationBarItem : Button
         _targetsPending = false;
         _activationKey = null;
         _iconColor = _textColor = null;
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -214,6 +224,7 @@ public class NavigationBarItem : Button
         // Spec changes apply at the next target change.
         var effects = _layout!.EffectsAnimation;
         var spatial = _layout!.IndicatorSizeAnimation;
+        if (effects.Stiffness <= 0 || spatial.Stiffness <= 0) return;
         var selected = IsSelected ? 1f : 0f;
         Restart(_alpha, selected, new SpringSpec<float>(effects.DampingRatio, effects.Stiffness, 0.01f), "Navigation bar indicator alpha");
         Restart(_size, selected, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), "Navigation bar indicator size");

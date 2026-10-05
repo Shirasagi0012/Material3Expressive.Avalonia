@@ -51,7 +51,7 @@ internal sealed class FloatingToolbarAnimationConverter : IMultiValueConverter
 {
     public static FloatingToolbarAnimationConverter Instance { get; } = new();
     public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) =>
-        values is [Foundation.Motion.SpringSpec spring]
+        values is [Foundation.Motion.SpringSpec { Stiffness: > 0 } spring]
             ? new ComposeAnimation.Runtime.SpringSpec<float>((float)spring.DampingRatio, (float)spring.Stiffness, .01f)
             : AvaloniaProperty.UnsetValue;
 }
