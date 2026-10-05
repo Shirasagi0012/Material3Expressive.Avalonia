@@ -45,7 +45,10 @@ public class BottomAppBar : ItemsControl
     public static readonly StyledProperty<bool> TouchExplorationEnabledProperty =
         AvaloniaProperty.Register<BottomAppBar, bool>(nameof(TouchExplorationEnabled));
     public static readonly StyledProperty<BottomAppBarScrollBehavior?> ScrollBehaviorProperty =
-        AvaloniaProperty.Register<BottomAppBar, BottomAppBarScrollBehavior?>(nameof(ScrollBehavior));
+        AvaloniaProperty.Register<BottomAppBar, BottomAppBarScrollBehavior?>(nameof(ScrollBehavior),
+            coerce: (owner, behavior) => behavior?.Parent is { } parent && parent != owner
+                ? throw new InvalidOperationException("A scroll behavior can belong to only one AppBar.")
+                : behavior);
     public object? FloatingActionButton
     {
         get => GetValue(FloatingActionButtonProperty);
@@ -154,9 +157,29 @@ public class BottomAppBar : ItemsControl
                 LogicalChildren.Add(current);
         }
 
+        if (change.Property == ScrollBehaviorProperty)
+        {
+            if (change.OldValue is BottomAppBarScrollBehavior oldBehavior)
+            {
+                oldBehavior.PropertyChanged -= BehaviorChanged;
+                LogicalChildren.Remove(oldBehavior);
+            }
+            if (change.NewValue is BottomAppBarScrollBehavior behavior)
+            {
+                LogicalChildren.Add(behavior);
+                behavior.PropertyChanged += BehaviorChanged;
+            }
+        }
+
         if (change.Property.OwnerType == typeof(BottomAppBar) || change.Property == BackgroundProperty ||
             change.Property == ForegroundProperty || change.Property == FlowDirectionProperty ||
             change.Property == MaterialWindowInsets.ConsumedPaddingProperty)
+            _chrome?.OwnerChanged(change);
+    }
+
+    private void BehaviorChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property.OwnerType == typeof(BottomAppBarScrollBehavior))
             _chrome?.OwnerChanged(change);
     }
 

@@ -12,11 +12,6 @@ internal static class AppBarScrollScopeExtensions
 {
     private static Vector Pre(AppBarScrollScope scope, Vector available, AppBarScrollSource source)
     {
-        if (scope.TopScrollBehavior is DefaultTopAppBarScrollBehavior topDefaults)
-            topDefaults.AttachDefaults(scope);
-        if (scope.BottomScrollBehavior is DefaultBottomAppBarScrollBehavior bottomDefaults)
-            bottomDefaults.AttachDefaults(scope);
-
         var top = scope.TopScrollBehavior?.GetNestedScrollConnection().OnPreScroll(available, source) ?? default;
         var bottom = scope.BottomScrollBehavior?.GetNestedScrollConnection().OnPreScroll(available - top, source) ?? default;
         return top + bottom;
@@ -31,11 +26,6 @@ internal static class AppBarScrollScopeExtensions
 
     private static async ValueTask<Vector> PreFling(AppBarScrollScope scope, Vector available, IAnimationFrameClock clock, CancellationToken token)
     {
-        if (scope.TopScrollBehavior is DefaultTopAppBarScrollBehavior topDefaults)
-            topDefaults.AttachDefaults(scope);
-        if (scope.BottomScrollBehavior is DefaultBottomAppBarScrollBehavior bottomDefaults)
-            bottomDefaults.AttachDefaults(scope);
-
         var top = scope.TopScrollBehavior is { } topBehavior
             ? await topBehavior.GetNestedScrollConnection().OnPreFlingAsync(available, clock, token)
             : default;

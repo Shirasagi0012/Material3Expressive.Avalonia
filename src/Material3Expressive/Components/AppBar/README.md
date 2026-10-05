@@ -96,52 +96,74 @@ ClearValue 恢复当前主题配置，例如 `bar.ClearValue(TopAppBar.ExpandedH
 
 ## 滚动联动
 
-将标准 Scaffold 包在 AppBarScrollScope 中，Scope 和栏引用同一个 behavior 实例。
-以下片段假设 DataContext 提供 TopBehavior、BottomBehavior，且视图使用运行时绑定或声明了对应 x:DataType：
+标准 Scaffold 的模板内置 AppBarScrollScope，自动读取实际呈现的 TopBar / BottomBar 的 ScrollBehavior。
+直接声明 behavior 即可，不需要在 ViewModel 或后台代码中创建实例：
 
 ```xml
-<m3:AppBarScrollScope TopScrollBehavior="{Binding TopBehavior}"
-                      BottomScrollBehavior="{Binding BottomBehavior}">
-  <m3:Scaffold x:Name="Screen">
-    <m3:Scaffold.TopBar>
-      <m3:MediumFlexibleTopAppBar Title="收件箱" ScrollBehavior="{Binding TopBehavior}" />
-    </m3:Scaffold.TopBar>
-    <m3:Scaffold.BottomBar>
-      <m3:BottomAppBar ScrollBehavior="{Binding BottomBehavior}">
-        <m3:IconButton Symbol="Favorite" />
-      </m3:BottomAppBar>
-    </m3:Scaffold.BottomBar>
-    <Border Width="{Binding Bounds.Width, ElementName=Screen}"
-            Height="{Binding Bounds.Height, ElementName=Screen}"
-            Padding="{Binding ContentPadding, ElementName=Screen}"
-            m3:MaterialWindowInsets.ConsumePadding="{Binding ContentPadding, ElementName=Screen}">
-      <ScrollViewer>
-        <StackPanel Height="1600"><TextBlock Text="可滚动正文" /></StackPanel>
-      </ScrollViewer>
-    </Border>
-  </m3:Scaffold>
-</m3:AppBarScrollScope>
+<m3:Scaffold x:Name="Screen">
+  <m3:Scaffold.TopBar>
+    <m3:MediumFlexibleTopAppBar Title="收件箱"
+        ScrollBehavior="{m3:TopAppBarScrollBehavior ExitUntilCollapsed}" />
+  </m3:Scaffold.TopBar>
+  <m3:Scaffold.BottomBar>
+    <m3:BottomAppBar ScrollBehavior="{m3:BottomAppBarScrollBehavior}">
+      <m3:IconButton Symbol="Favorite" />
+    </m3:BottomAppBar>
+  </m3:Scaffold.BottomBar>
+  <Border Width="{Binding Bounds.Width, ElementName=Screen}"
+          Height="{Binding Bounds.Height, ElementName=Screen}"
+          Padding="{Binding ContentPadding, ElementName=Screen}"
+          m3:MaterialWindowInsets.ConsumePadding="{Binding ContentPadding, ElementName=Screen}">
+    <ScrollViewer>
+      <StackPanel Height="1600"><TextBlock Text="可滚动正文" /></StackPanel>
+    </ScrollViewer>
+  </Border>
+</m3:Scaffold>
 ```
 
-ViewModel 中的属性可这样创建（只展示相关成员）：
+顶部 Mode 为 Pinned（默认）、EnterAlways 或 ExitUntilCollapsed；底部固定为 ExitAlways。
+两种 behavior 都支持对象元素和 markup extension，属性可使用字面量或 Binding。
+以下片段假设 DataContext 提供 Mode、CanScroll 和 TopState；编译绑定同时声明对应 x:DataType：
 
-```csharp
-using Material3Expressive.Components;
-
-public TopAppBarScrollBehavior TopBehavior { get; } =
-    TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(new TopAppBarState());
-public BottomAppBarScrollBehavior BottomBehavior { get; } =
-    BottomAppBarDefaults.ExitAlwaysScrollBehavior(new BottomAppBarState());
+```xml
+<m3:TopAppBar ScrollBehavior="{m3:TopAppBarScrollBehavior {Binding Mode}, CanScroll={Binding CanScroll}}" />
+<m3:TopAppBar ScrollBehavior="{m3:TopAppBarScrollBehavior Mode={Binding Mode}, State={Binding TopState}}" />
+<m3:MediumTopAppBar>
+  <m3:MediumTopAppBar.ScrollBehavior>
+    <m3:TopAppBarScrollBehavior Mode="ExitUntilCollapsed" CanScroll="{Binding CanScroll}">
+      <m3:TopAppBarScrollBehavior.State>
+        <m3:TopAppBarState />
+      </m3:TopAppBarScrollBehavior.State>
+    </m3:TopAppBarScrollBehavior>
+  </m3:MediumTopAppBar.ScrollBehavior>
+</m3:MediumTopAppBar>
 ```
 
-顶部还可选择 PinnedScrollBehavior / EnterAlwaysScrollBehavior。Width/Height 绑定让正文根填满 Scaffold；
-Scaffold 不会自动应用 Padding。Material 的 ScrollViewer 主题提供 SmoothScroll presenter，详见
-[ScrollViewer](../ScrollViewer/README.md)。
+behavior 是栏的逻辑子对象，继承 DataContext 和资源；每个实例有自己的默认 State，State 绑定为空时
+回到该默认实例。一个 behavior 只能挂在一个栏上；模板应在各自实例内创建 behavior，避免多个栏共用资源实例。
+更新 Mode / CanScroll 等配置保留 behavior 和 State；替换 State 会释放旧状态订阅并重建正文连接。
+CanScroll 控制正文滚动参与，不改变栏的直接拖动条件。
 
-自动联动只连接唯一的物理主 ScrollViewer，使用内置 behavior、标准栏模板和上述正文结构；
-支持默认/显式 spring snap 或 null。内层滚动器独立滚动，不直接驱动外层栏，到边界后的后续输入才按原生链路冒泡。
-逻辑主正文、嵌套 AppBarScrollScope、不同正文布局、自定义 behavior、非 spring snap、主正文原生 snap points
-暂不自动联动。Scope 不替换调用方的 ScrollViewer 主题或模板。
+顶部 IsScrollingContentAtStart 的 null（默认）自动跟随正文位置；显式布尔值或 Binding 覆盖自动判断。
+未连接正文时按在起点处理。SnapAnimationSpec / FlingAnimationSpec 独立配置：未设置或 ClearValue
+使用当前栏主题 spring / 实际密度 spline decay，显式 null 禁用对应动画。例如：
+
+```xml
+<m3:TopAppBar ScrollBehavior="{m3:TopAppBarScrollBehavior EnterAlways, SnapAnimationSpec={x:Null}}" />
+```
+
+C# 使用相同实例类型：`new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed)` 或
+`new BottomAppBarScrollBehavior()`；旧 TopAppBarDefaults / BottomAppBarDefaults 工厂已删除。
+
+Width/Height 绑定让正文根填满 Scaffold；Scaffold 不会自动应用 Padding。
+Material 的 ScrollViewer 主题提供 SmoothScroll presenter，详见 [ScrollViewer](../ScrollViewer/README.md)。
+自动联动只连接唯一的物理主 ScrollViewer，使用标准栏模板和上述正文结构；支持默认/显式 spring snap 或 null。
+TopBarTemplate / BottomBarTemplate 的根节点直接为 AppBar 时同样自动接入。
+内层滚动器独立滚动，不直接驱动外层栏，到边界后的后续输入才按原生链路冒泡。
+外层显式 Scope 不会重复接管标准 Scaffold 的正文；它暂时保留用于显式组合。
+逻辑主正文、不同正文布局、非 spring snap、主正文原生 snap points 暂不自动联动。
+Scaffold 外的栏支持显示和直接拖动，任意外部布局的正文联动尚未实现。
+Scope 不替换调用方的 ScrollViewer 主题或模板；替换 Scaffold 模板时需保留 PART_ScrollScope 与五槽合约以保持自动连接。
 
 ## 验证边界
 

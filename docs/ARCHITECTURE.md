@@ -207,7 +207,8 @@ SmoothScroll 内部以常规 tracker 增量入口执行指针、直接滚轮和�
 提交逻辑，保留目标定位语义，不进入位移消费协议。参与者协议位于 SmoothScroll.Avalonia.Interaction，
 数值输出与合成适配工具位于 SmoothScroll.Avalonia.Composition，仍属于同一个程序集。
 
-AppBarScrollScope 管理主正文与栏的滚动连接。标准 Scaffold、物理主 ScrollViewer、
+标准 Scaffold 模板内置 AppBarScrollScope，自动引用实际呈现栏的 behavior，管理主正文与栏的滚动连接。
+标准 Scaffold、物理主 ScrollViewer、
 内置 AppBar behavior 和 ContentPadding 布局可以连接同一 compositor：每帧先分配栏/正文位移，再同步
 标题、栏高、正文位置与裁剪视口。UI 线程回读数值状态并完成真实布局；回读不是下一帧运动的前提。
 Material 的规则、状态和布局桥接在 AppBar 目录，SmoothScroll 只提供通用参与者、动态边界和合成输出。
@@ -216,7 +217,7 @@ Material 的规则、状态和布局桥接在 AppBar 目录，SmoothScroll 只�
 自然冒泡，主正文接收输入时才驱动栏。不增加跨 tracker 位移/惯性分配。
 Scope 只持有一个主正文连接，以实际 SmoothScroll presenter 的物理滚动能力识别接入，不改写 Template/Theme。
 显式 SmoothScroll 模板也可在满足相同布局条件时接入；Scaffold 的栏/覆盖槽及正文内部滚动器不登记为主正文。
-逻辑主正文、嵌套 AppBarScrollScope、主正文原生 snap points、自定义 behavior 或不支持的布局暂不自动联动 AppBar。
+外层 Scope 不重复接管内部 Scope 的正文；逻辑主正文、主正文原生 snap points 或不支持的布局暂不自动联动 AppBar。
 切换、迁移与 detach 释放连接，旧状态回读通过 generation/sequence 过滤。具体边界及使用示例见
 [AppBar](../src/Material3Expressive/Components/AppBar/README.md) 和 [ScrollViewer](../src/Material3Expressive/Components/ScrollViewer/README.md)。
 Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪器，供 Rail、NavigationDrawer、AppBar 与 FloatingToolbar 使用，

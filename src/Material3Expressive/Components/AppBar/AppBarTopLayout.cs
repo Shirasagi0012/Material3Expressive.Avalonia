@@ -170,8 +170,15 @@ internal sealed class AppBarTopChrome : Panel
 
     internal void OwnerChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == TopAppBar.ScrollBehaviorProperty)
+        if (change.Property == TopAppBar.ScrollBehaviorProperty ||
+            change.Property == TopAppBarScrollBehavior.StateProperty)
             ObserveState();
+        if (change.Property == TopAppBar.ScrollBehaviorProperty ||
+            change.Property == TopAppBarScrollBehavior.StateProperty ||
+            change.Property == TopAppBarScrollBehavior.ModeProperty ||
+            change.Property == TopAppBarScrollBehavior.SnapAnimationSpecProperty ||
+            change.Property == TopAppBarScrollBehavior.FlingAnimationSpecProperty)
+            _drag?.Cancel();
         ConfigureRows();
         UpdateAppearance();
         Small.InvalidateMeasure();
@@ -309,8 +316,6 @@ internal sealed class AppBarTopChrome : Panel
         if (owner.Background is { } and not ISolidColorBrush)
             throw new ArgumentException(
                 "TopAppBar.Background must be a solid color brush or null for container color interpolation.");
-        if (owner.ScrollBehavior is DefaultTopAppBarScrollBehavior defaults)
-            defaults.AttachDefaults(owner);
         if (!double.IsFinite(owner.EffectiveExpandedHeight) ||
             owner.HasTwoRows && (!double.IsFinite(owner.CollapsedHeight) ||
                                 owner.EffectiveExpandedHeight < owner.CollapsedHeight))

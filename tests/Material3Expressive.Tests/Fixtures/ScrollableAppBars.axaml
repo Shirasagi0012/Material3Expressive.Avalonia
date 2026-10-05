@@ -1,0 +1,23 @@
+<m3:Scaffold xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+             x:Name="Screen" TopBar="header">
+  <m3:Scaffold.TopBarTemplate>
+    <DataTemplate>
+      <m3:MediumTopAppBar Title="{Binding}"
+          ScrollBehavior="{m3:TopAppBarScrollBehavior EnterAlways, SnapAnimationSpec={x:Null}, FlingAnimationSpec={x:Null}}" />
+    </DataTemplate>
+  </m3:Scaffold.TopBarTemplate>
+  <m3:Scaffold.BottomBar>
+    <m3:BottomAppBar ScrollBehavior="{m3:BottomAppBarScrollBehavior SnapAnimationSpec={x:Null}, FlingAnimationSpec={x:Null}}" />
+  </m3:Scaffold.BottomBar>
+  <Border Width="{Binding Bounds.Width, ElementName=Screen}"
+          Height="{Binding Bounds.Height, ElementName=Screen}"
+          Padding="{Binding ContentPadding, ElementName=Screen}"
+          m3:MaterialWindowInsets.ConsumePadding="{Binding ContentPadding, ElementName=Screen}">
+    <ScrollViewer x:Name="Body" HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Hidden" IsScrollInertiaEnabled="False">
+      <Border Height="1200" />
+    </ScrollViewer>
+  </Border>
+</m3:Scaffold>

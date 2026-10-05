@@ -38,21 +38,17 @@ internal abstract class AppBarNestedScrollConnection
 internal static class AppBarNestedScrollConnectionExtensions
 {
     internal static AppBarNestedScrollConnection GetNestedScrollConnection(this TopAppBarScrollBehavior behavior) =>
-        behavior is DefaultTopAppBarScrollBehavior defaults
-            ? new TopConnection(defaults)
-            : throw new NotSupportedException("The test scroll protocol requires a built-in top app bar behavior.");
+        new TopConnection(behavior);
 
     internal static AppBarNestedScrollConnection GetNestedScrollConnection(this BottomAppBarScrollBehavior behavior) =>
-        behavior is DefaultBottomAppBarScrollBehavior defaults
-            ? new BottomConnection(defaults)
-            : throw new NotSupportedException("The test scroll protocol requires a built-in bottom app bar behavior.");
+        new BottomConnection(behavior);
 
-    private sealed class TopConnection(DefaultTopAppBarScrollBehavior owner) : AppBarNestedScrollConnection
+    private sealed class TopConnection(TopAppBarScrollBehavior owner) : AppBarNestedScrollConnection
     {
         public override Vector OnPreScroll(Vector available, AppBarScrollSource source)
         {
-            if (!owner.CanScrollForComposition() || owner.IsPinned ||
-                owner.Kind == TopScrollKind.ExitUntilCollapsed && available.Y > 0)
+            if (!owner.CanScroll || owner.IsPinned ||
+                owner.Mode == TopAppBarScrollMode.ExitUntilCollapsed && available.Y > 0)
                 return default;
 
             var state = owner.State;
@@ -65,12 +61,12 @@ internal static class AppBarNestedScrollConnectionExtensions
 
         public override Vector OnPostScroll(Vector consumed, Vector available, AppBarScrollSource source)
         {
-            if (!owner.CanScrollForComposition())
+            if (!owner.CanScroll)
                 return default;
 
             var state = owner.State;
             state.ContentOffset += (float)consumed.Y;
-            if (owner.Kind != TopScrollKind.ExitUntilCollapsed)
+            if (owner.Mode != TopAppBarScrollMode.ExitUntilCollapsed)
                 return default;
 
             var old = state.HeightOffset;
@@ -95,11 +91,11 @@ internal static class AppBarNestedScrollConnectionExtensions
         }
     }
 
-    private sealed class BottomConnection(DefaultBottomAppBarScrollBehavior owner) : AppBarNestedScrollConnection
+    private sealed class BottomConnection(BottomAppBarScrollBehavior owner) : AppBarNestedScrollConnection
     {
         public override Vector OnPostScroll(Vector consumed, Vector available, AppBarScrollSource source)
         {
-            if (!owner.CanScrollForComposition())
+            if (!owner.CanScroll)
                 return default;
 
             owner.State.ContentOffset += (float)consumed.Y;

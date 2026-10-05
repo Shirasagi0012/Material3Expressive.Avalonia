@@ -67,7 +67,7 @@ TopBar / BottomBar 自己处理 Insets；Snackbar/FAB 使用剩余水平和底�
 继承的 `Padding` 不是 ContentPadding 的替代入口。
 
 普通滚动页面可把应用和消费 Padding 的容器放在 ScrollViewer 的内容中。
-若使用 AppBarScrollScope 的自动联动，则必须采用 [AppBar 的主正文结构](../AppBar/README.md#滚动联动)：
+标准模板内置 AppBarScrollScope；栏声明 ScrollBehavior 后自动联动，正文必须采用 [AppBar 的主正文结构](../AppBar/README.md#滚动联动)：
 填满 Scaffold 的正文根应用 Padding，内部才是物理主 ScrollViewer。两种结构的滚动目标不同，不宜混用。
 
 `Background` 默认主题 Background 色；未显式设置 Foreground 时，内容色按主题角色匹配或回退到环境色。
@@ -76,7 +76,8 @@ TopBar / BottomBar 自己处理 Insets；Snackbar/FAB 使用剩余水平和底�
 ## 使用边界
 
 Scaffold 不支持 intrinsic / wrap-content 测量，不自动接管系统栏或 IME，也不提供自己的动画。
-实际背景、裁剪由 MaterialSurface 承担；替换整个 Template 时需要自行保留五槽布局合约。
+实际背景、裁剪由 MaterialSurface 承担；替换整个 Template 时需保留五槽布局合约，
+自动 AppBar 滚动连接还需 PART_ScrollScope，栏模板根需直接为 AppBar。
 真实系统 Insets、屏幕阅读器与硬件触摸仍需专项验证。
 
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示 FAB 位置、Bars、Snackbar 和 RTL。

@@ -21,8 +21,8 @@ public class AppBarScrollTests
         var bottom = new BottomAppBarState(-80);
         var scope = new AppBarScrollScope
         {
-            TopScrollBehavior = TopAppBarDefaults.EnterAlwaysScrollBehavior(top),
-            BottomScrollBehavior = BottomAppBarDefaults.ExitAlwaysScrollBehavior(bottom),
+            TopScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.EnterAlways) { State = top },
+            BottomScrollBehavior = new BottomAppBarScrollBehavior() { State = bottom },
         };
         Vector bodyInput = default;
         Vector Body(Vector delta) => bodyInput = delta;
@@ -49,12 +49,12 @@ public class AppBarScrollTests
         var inner = new AppBarScrollScope
         {
             Child = new Border(),
-            BottomScrollBehavior = BottomAppBarDefaults.ExitAlwaysScrollBehavior(bottom),
+            BottomScrollBehavior = new BottomAppBarScrollBehavior() { State = bottom },
         };
         var outer = new AppBarScrollScope
         {
             Child = inner,
-            TopScrollBehavior = TopAppBarDefaults.EnterAlwaysScrollBehavior(top),
+            TopScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.EnterAlways) { State = top },
         };
         using var clock = new MotionTestClockScope();
         var window = Show(outer);
@@ -88,7 +88,7 @@ public class AppBarScrollTests
     public async Task RawTouch_BarDrag_Snaps_AndNewPressCancelsSnap()
     {
         var state = new TopAppBarState();
-        var behavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state);
+        var behavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state };
         var bar = new MediumTopAppBar { ScrollBehavior = behavior };
         var scope = new AppBarScrollScope { TopScrollBehavior = behavior, Child = new Scaffold { TopBar = bar } };
         using var clock = new MotionTestClockScope(); var window = Show(scope);

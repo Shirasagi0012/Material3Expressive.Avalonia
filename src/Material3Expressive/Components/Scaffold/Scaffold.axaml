@@ -9,23 +9,25 @@
       <Setter Property="VerticalContentAlignment" Value="Stretch" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}"
-                              TextElement.Foreground="{TemplateBinding Foreground}">
-            <!-- Tree order preserves top bar -> body -> snackbar -> FAB -> bottom bar traversal;
-                 ZIndex independently follows Scaffold.kt's painting order. -->
-            <m3:ScaffoldLayout x:Name="PART_Layout">
-              <ContentPresenter x:Name="PART_TopBar" ZIndex="1" Content="{TemplateBinding TopBar}" ContentTemplate="{TemplateBinding TopBarTemplate}"
-                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-              <ContentPresenter x:Name="PART_ContentPresenter" ZIndex="0" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-              <ContentPresenter x:Name="PART_SnackbarHost" ZIndex="2" Content="{TemplateBinding SnackbarHost}" ContentTemplate="{TemplateBinding SnackbarHostTemplate}"
-                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-              <ContentPresenter x:Name="PART_FloatingActionButton" ZIndex="4" Content="{TemplateBinding FloatingActionButton}" ContentTemplate="{TemplateBinding FloatingActionButtonTemplate}"
-                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-              <ContentPresenter x:Name="PART_BottomBar" ZIndex="3" Content="{TemplateBinding BottomBar}" ContentTemplate="{TemplateBinding BottomBarTemplate}"
-                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-            </m3:ScaffoldLayout>
-          </m3:MaterialSurface>
+          <m3:AppBarScrollScope x:Name="PART_ScrollScope">
+            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}"
+                                TextElement.Foreground="{TemplateBinding Foreground}">
+              <!-- Tree order preserves top bar -> body -> snackbar -> FAB -> bottom bar traversal;
+                   ZIndex independently follows Scaffold.kt's painting order. -->
+              <m3:ScaffoldLayout x:Name="PART_Layout">
+                <ContentPresenter x:Name="PART_TopBar" ZIndex="1" Content="{TemplateBinding TopBar}" ContentTemplate="{TemplateBinding TopBarTemplate}"
+                                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentPresenter x:Name="PART_ContentPresenter" ZIndex="0" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                <ContentPresenter x:Name="PART_SnackbarHost" ZIndex="2" Content="{TemplateBinding SnackbarHost}" ContentTemplate="{TemplateBinding SnackbarHostTemplate}"
+                                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentPresenter x:Name="PART_FloatingActionButton" ZIndex="4" Content="{TemplateBinding FloatingActionButton}" ContentTemplate="{TemplateBinding FloatingActionButtonTemplate}"
+                                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentPresenter x:Name="PART_BottomBar" ZIndex="3" Content="{TemplateBinding BottomBar}" ContentTemplate="{TemplateBinding BottomBarTemplate}"
+                                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+              </m3:ScaffoldLayout>
+            </m3:MaterialSurface>
+          </m3:AppBarScrollScope>
         </ControlTemplate>
       </Setter>
     </ControlTheme>

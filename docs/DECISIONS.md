@@ -173,7 +173,7 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 
 ## AppBar 与原生滚动接入
 
-决定：公开 AppBarScrollScope 包围屏幕，栏与 Scope 使用同一个 ScrollBehavior。
+决定：标准 Scaffold 模板内置 AppBarScrollScope，自动引用实际呈现栏的 ScrollBehavior；公开 Scope 暂时保留用于显式组合。
 公开 AppBar 状态以物理像素表达，真实正文滚动使用下述 SmoothScroll 合成接入。
 Scope 只连接其 Scaffold 正文槽内唯一的主 ScrollViewer；内层独立，不建立多个正文连接。
 移出、detach、行为或模板替换及新输入取消旧惯性/吸附并释放连接。接入按实际 SmoothScroll presenter
@@ -184,6 +184,10 @@ Scope 只连接其 Scaffold 正文槽内唯一的主 ScrollViewer；内层独立
 没有新增通用输入框架或完整系统 insets 框架；标题和 Bottom 自定义内容的槽规则留在组件 README。
 确认：2026-10-04，维护者采用修订后的 AppBarScrollScope 及槽规则，要求保留自定义模板、嵌套和生命周期，
 并分别验证组件 parity 与真实桌面输入集成。
+
+2026-10-06 维护者确认 XAML behavior 与 Scaffold 内部 Scope：两个 sealed StyledElement 类型支持对象元素和 markup extension，
+栏负责逻辑父关系，Scope 只持引用；按最近 Scope 判断正文所有权。Scaffold 读取实际 ContentPresenter 的根 AppBar，
+支持直接栏及数据模板栏。布局合约和 SmoothScroll 消费算法保持原有范围，任意外部布局连接仍未实现。
 
 ## 普通物理滚动与 AppBar 的合成接入
 
@@ -197,9 +201,9 @@ Material 消费规则及布局知识保留在本库，依赖中只增加通用�
 公开 AppBar 状态仍以物理像素表示，内部滚动事务用 DIP；spring 规格在物理像素中求值。
 
 范围：连接物理主视口、内置 behavior、标准栏模板及 Scaffold.ContentPadding 布局。
-逻辑主正文、嵌套 AppBarScrollScope、主正文原生 snap points、自定义 behavior 和其他布局暂不自动联动 AppBar。
+外层 Scope 不重复接管标准 Scaffold 的正文；逻辑主正文、主正文原生 snap points 和其他布局暂不自动联动 AppBar。
 不回退旧正文引擎；使用 SmoothScroll presenter 的自定义模板可在满足相同布局条件时接入。
-自定义回调只在 UI 线程求值，compositor 消费快照。公开 Offset 与状态是 UI 回读值，不是跨线程实时接口。
+绑定配置在 UI 线程捕获，compositor 消费快照。公开 Offset 与状态是 UI 回读值，不是跨线程实时接口。
 确认：维护者明确选择基于 SmoothScroll、接受小型通用扩展，并授权实现普通物理滚动与真实 AppBar、验证布局衔接。
 本阶段未承诺完整通用嵌套滚动引擎、逻辑虚拟化抗阻塞、统一手势框架或新的公开滚动控制器 API。
 

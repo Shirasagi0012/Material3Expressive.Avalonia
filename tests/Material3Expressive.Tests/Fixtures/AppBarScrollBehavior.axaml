@@ -1,0 +1,32 @@
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+            xmlns:tests="using:Material3Expressive.Tests"
+            x:DataType="tests:AppBarBindingData" x:CompileBindings="True">
+  <m3:TopAppBar x:Name="Literal" ScrollBehavior="{m3:TopAppBarScrollBehavior EnterAlways}" />
+  <m3:TopAppBar x:Name="NamedLiteral" ScrollBehavior="{m3:TopAppBarScrollBehavior Mode=ExitUntilCollapsed}" />
+  <m3:TopAppBar x:Name="PositionalBinding" x:CompileBindings="False"
+               ScrollBehavior="{m3:TopAppBarScrollBehavior {Binding Mode}, CanScroll={Binding CanScroll}, State={Binding TopState}, IsScrollingContentAtStart={Binding AtStart}}" />
+  <m3:TopAppBar x:Name="CompiledBinding"
+               ScrollBehavior="{m3:TopAppBarScrollBehavior Mode={Binding Mode}, CanScroll={Binding CanScroll}, State={Binding TopState}, IsScrollingContentAtStart={Binding AtStart}, SnapAnimationSpec={Binding Snap}, FlingAnimationSpec={x:Null}}" />
+  <m3:TopAppBar x:Name="Object">
+    <m3:TopAppBar.ScrollBehavior>
+      <m3:TopAppBarScrollBehavior Mode="{Binding Mode}" CanScroll="{Binding CanScroll}">
+        <m3:TopAppBarScrollBehavior.State>
+          <m3:TopAppBarState ContentOffset="-10" />
+        </m3:TopAppBarScrollBehavior.State>
+      </m3:TopAppBarScrollBehavior>
+    </m3:TopAppBar.ScrollBehavior>
+  </m3:TopAppBar>
+  <m3:BottomAppBar x:Name="BottomMarkup"
+                  ScrollBehavior="{m3:BottomAppBarScrollBehavior CanScroll={Binding CanScroll}, State={Binding BottomState}}" />
+  <m3:BottomAppBar x:Name="BottomObject">
+    <m3:BottomAppBar.ScrollBehavior>
+      <m3:BottomAppBarScrollBehavior CanScroll="{Binding CanScroll}">
+        <m3:BottomAppBarScrollBehavior.State>
+          <m3:BottomAppBarState />
+        </m3:BottomAppBarScrollBehavior.State>
+      </m3:BottomAppBarScrollBehavior>
+    </m3:BottomAppBar.ScrollBehavior>
+  </m3:BottomAppBar>
+</StackPanel>

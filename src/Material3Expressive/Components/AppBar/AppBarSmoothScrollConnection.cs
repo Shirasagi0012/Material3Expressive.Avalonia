@@ -24,8 +24,10 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
     private readonly Scaffold _scaffold;
     private readonly TopAppBar? _top;
     private readonly BottomAppBar? _bottom;
-    private readonly DefaultTopAppBarScrollBehavior? _topBehavior;
-    private readonly DefaultBottomAppBarScrollBehavior? _bottomBehavior;
+    private readonly TopAppBarScrollBehavior? _topBehavior;
+    private readonly BottomAppBarScrollBehavior? _bottomBehavior;
+    private readonly TopAppBarState? _topState;
+    private readonly BottomAppBarState? _bottomState;
     private readonly IDisposable _registration;
     private InteractionTracker? _tracker;
     private CompositionVector3Output? _offsets, _appearance;
@@ -43,8 +45,10 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         ReferenceEquals(_presenter, presenter) &&
         _scope.TopScrollBehavior == _topBehavior &&
         _scope.BottomScrollBehavior == _bottomBehavior &&
-        ReferenceEquals(_top, _scaffold.TopBar) &&
-        ReferenceEquals(_bottom, _scaffold.BottomBar) &&
+        ReferenceEquals(_topState, _topBehavior?.State) &&
+        ReferenceEquals(_bottomState, _bottomBehavior?.State) &&
+        ReferenceEquals(_top, _scaffold.PresentedTopBar) &&
+        ReferenceEquals(_bottom, _scaffold.PresentedBottomBar) &&
         (_tracker is null || ReferenceEquals(
             _topChrome,
             _top?.GetVisualDescendants().OfType<AppBarTopChrome>().FirstOrDefault()));
@@ -56,32 +60,24 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         if (viewer.VerticalSnapPointsType != Avalonia.Controls.Primitives.SnapPointsType.None ||
             viewer.HorizontalSnapPointsType != Avalonia.Controls.Primitives.SnapPointsType.None)
             return false;
-        if (scope.GetVisualAncestors().OfType<AppBarScrollScope>().Any())
-            return false;
-        if (scope.TopScrollBehavior is { } and not DefaultTopAppBarScrollBehavior ||
-            scope.BottomScrollBehavior is { } and not DefaultBottomAppBarScrollBehavior)
-            return false;
-
-        var scaffold = viewer.GetVisualAncestors()
-            .OfType<Scaffold>()
-            .FirstOrDefault();
-        if (scaffold is null || scaffold.GetVisualAncestors().OfType<AppBarScrollScope>().FirstOrDefault() != scope)
+        var scaffold = scope.Host ?? viewer.GetVisualAncestors().OfType<Scaffold>().FirstOrDefault();
+        if (scaffold is null || viewer.GetVisualAncestors().OfType<AppBarScrollScope>().FirstOrDefault() != scope)
             return false;
         if (viewer.RenderTransform is { })
             return false;
         if (viewer.GetVisualAncestors().OfType<ScrollViewer>().Any())
             return false;
-        if (scope.TopScrollBehavior is { } && scaffold.TopBar is not TopAppBar)
+        if (scope.TopScrollBehavior is { } && scaffold.PresentedTopBar is not TopAppBar)
             return false;
-        if (scope.BottomScrollBehavior is { } && scaffold.BottomBar is not BottomAppBar)
+        if (scope.BottomScrollBehavior is { } && scaffold.PresentedBottomBar is not BottomAppBar)
             return false;
-        if (scaffold.TopBar is TopAppBar top && top.ScrollBehavior != scope.TopScrollBehavior)
+        if (scaffold.PresentedTopBar is TopAppBar top && top.ScrollBehavior != scope.TopScrollBehavior)
             return false;
-        if (scaffold.BottomBar is BottomAppBar bottom && bottom.ScrollBehavior != scope.BottomScrollBehavior)
+        if (scaffold.PresentedBottomBar is BottomAppBar bottom && bottom.ScrollBehavior != scope.BottomScrollBehavior)
             return false;
         if (scope.TopScrollBehavior is null && scope.BottomScrollBehavior is null)
             return false;
-        if (scaffold.TopBar is TopAppBar actualTop && actualTop.IsArrangeValid &&
+        if (scaffold.PresentedTopBar is TopAppBar actualTop && actualTop.IsArrangeValid &&
             !actualTop.GetVisualDescendants().OfType<AppBarTopChrome>().Any())
             return false;
 
@@ -112,8 +108,8 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
                 return false;
         }
 
-        return AppBarSpring.TryRead(scope.TopScrollBehavior?.SnapAnimationSpec, out _) &&
-               AppBarSpring.TryRead(scope.BottomScrollBehavior?.SnapAnimationSpec, out _);
+        return AppBarSpring.TryRead(scope.TopScrollBehavior?.GetSnapAnimationSpec(), out _) &&
+               AppBarSpring.TryRead(scope.BottomScrollBehavior?.GetSnapAnimationSpec(), out _);
     }
 
     internal AppBarSmoothScrollConnection(AppBarScrollScope scope, ScrollViewer viewer,
@@ -122,15 +118,18 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _scope = scope;
         _viewer = viewer;
         _presenter = presenter;
-        _scaffold = viewer.GetVisualAncestors().OfType<Scaffold>().First();
-        _top = _scaffold.TopBar as TopAppBar;
-        _bottom = _scaffold.BottomBar as BottomAppBar;
-        _topBehavior = scope.TopScrollBehavior as DefaultTopAppBarScrollBehavior;
-        _bottomBehavior = scope.BottomScrollBehavior as DefaultBottomAppBarScrollBehavior;
-        if (_topBehavior is { })
-            _topBehavior.State.PropertyChanged += StateChanged;
-        if (_bottomBehavior is { })
-            _bottomBehavior.State.PropertyChanged += StateChanged;
+        _scaffold = scope.Host ?? viewer.GetVisualAncestors().OfType<Scaffold>().First();
+        _top = _scaffold.PresentedTopBar;
+        _bottom = _scaffold.PresentedBottomBar;
+        _topBehavior = scope.TopScrollBehavior;
+        _bottomBehavior = scope.BottomScrollBehavior;
+        _topState = _topBehavior?.State;
+        _bottomState = _bottomBehavior?.State;
+        if (_topState is { })
+            _topState.PropertyChanged += StateChanged;
+        if (_bottomState is { })
+            _bottomState.PropertyChanged += StateChanged;
+        _viewer.PropertyChanged += ViewerChanged;
         _viewer.AddHandler(InputElement.PointerPressedEvent, BeforeInput, RoutingStrategies.Tunnel, true);
         _viewer.AddHandler(InputElement.PointerWheelChangedEvent, BeforeInput, RoutingStrategies.Tunnel, true);
         _registration = presenter.AttachVerticalScroll(Attach);
@@ -185,7 +184,16 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             _scope.Interrupt();
         else if (e is PointerWheelEventArgs)
             _scope.InterruptUiAnimations();
-        UpdateConfiguration(); // Evaluate application callbacks on UI before enqueuing input.
+        UpdateConfiguration(); // Capture current bindable configuration before enqueuing input.
+    }
+
+    private void ViewerChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == ScrollViewer.OffsetProperty)
+        {
+            _topBehavior?.UpdateContentAtStart(_viewer.Offset.Y == 0);
+            UpdateConfiguration();
+        }
     }
 
     private bool CanConsumeAtBoundary(double delta)
@@ -193,9 +201,9 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         // Bottom ExitAlways observes body movement; it never consumes leftover input.
         // ExitUntilCollapsed can expand in post even though its reverse pre consumes zero.
         if (_configuration is not { TopEnabled: true } config ||
-            config.TopKind is null or TopScrollKind.Pinned || _topBehavior is null)
+            config.TopKind is null or TopAppBarScrollMode.Pinned || _topBehavior is null)
             return false;
-        var collapsed = -_topBehavior.State.HeightOffset / config.Density;
+        var collapsed = -_topState!.HeightOffset / config.Density;
         return delta > 0 ? collapsed < config.TopRange : delta < 0 && collapsed > 0;
     }
 
@@ -225,38 +233,39 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         return new(
             _generation,
             0,
-            -(_topBehavior?.State.HeightOffset ?? 0) / density,
-            -(_bottomBehavior?.State.HeightOffset ?? 0) / density,
-            (_topBehavior?.State.ContentOffset ?? 0) / density,
-            (_bottomBehavior?.State.ContentOffset ?? 0) / density,
+            -(_topState?.HeightOffset ?? 0) / density,
+            -(_bottomState?.HeightOffset ?? 0) / density,
+            (_topState?.ContentOffset ?? 0) / density,
+            (_bottomState?.ContentOffset ?? 0) / density,
             _viewer.Offset.Y,
             _viewer.Viewport.Height);
     }
 
     private AppBarScrollConfiguration ReadConfiguration(bool refreshGeometry = false)
     {
+        _topBehavior?.UpdateContentAtStart(_viewer.Offset.Y == 0);
         var density = LayoutHelper.GetLayoutScale(_viewer);
         double Range(float? value) => value is > -1_000_000 and <= 0 ? -value.Value / density : 0;
         double Hidden(float? value) => -MathUtils.RoundToInt(value ?? 0) / density;
         var colors = _topChrome?.GetCompositionColors() ?? (Colors.Transparent, Colors.Transparent, false);
-        AppBarSpring.TryRead(_topBehavior?.SnapAnimationSpec, out var topSnap);
-        AppBarSpring.TryRead(_bottomBehavior?.SnapAnimationSpec, out var bottomSnap);
+        AppBarSpring.TryRead(_topBehavior?.GetSnapAnimationSpec(), out var topSnap);
+        AppBarSpring.TryRead(_bottomBehavior?.GetSnapAnimationSpec(), out var bottomSnap);
         var colorSpring = _topChrome is { } chrome
             ? new AppBarSpring(
                 chrome.ContainerColorAnimation.DampingRatio,
                 chrome.ContainerColorAnimation.Stiffness,
                 .01f)
             : default;
-        var bottomHidden = _bottom?.TouchExplorationEnabled == true ? 0 : Hidden(_bottomBehavior?.State.HeightOffset);
+        var bottomHidden = _bottom?.TouchExplorationEnabled == true ? 0 : Hidden(_bottomState?.HeightOffset);
         return new(
-            _topBehavior?.Kind,
-            Range(_topBehavior?.State.HeightOffsetLimit),
-            Range(_bottomBehavior?.State.HeightOffsetLimit),
+            _topBehavior?.Mode,
+            Range(_topState?.HeightOffsetLimit),
+            Range(_bottomState?.HeightOffsetLimit),
             density,
-            _topBehavior?.CanScrollForComposition() ?? false,
-            _bottomBehavior?.CanScrollForComposition() ?? false,
+            _topBehavior?.CanScroll ?? false,
+            _bottomBehavior?.CanScroll ?? false,
             _bottom?.TouchExplorationEnabled ?? false,
-            _topBehavior?.State.IsScrollingContentAtStart() ?? true,
+            _topState?.IsScrollingContentAtStart ?? true,
             colors.Item3,
             colors.Item1,
             colors.Item2,
@@ -264,7 +273,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             bottomSnap,
             colorSpring,
             refreshGeometry || _configuration is null
-                ? _presenter.Viewport.Height - Hidden(_topBehavior?.State.HeightOffset) - bottomHidden
+                ? _presenter.Viewport.Height - Hidden(_topState?.HeightOffset) - bottomHidden
                 : _configuration.Value.ExpandedViewport,
             refreshGeometry || _configuration is null
                 ? _presenter.Extent.Height
@@ -289,10 +298,10 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             return;
         UpdateConfiguration(refreshGeometry: true);
         var density = LayoutHelper.GetLayoutScale(_viewer);
-        var top = -MathUtils.RoundToInt(_topBehavior?.State.HeightOffset ?? 0) / density;
+        var top = -MathUtils.RoundToInt(_topState?.HeightOffset ?? 0) / density;
         var bottom = _bottom?.TouchExplorationEnabled == true
             ? 0
-            : -MathUtils.RoundToInt(_bottomBehavior?.State.HeightOffset ?? 0) / density;
+            : -MathUtils.RoundToInt(_bottomState?.HeightOffset ?? 0) / density;
         string N(double n) => AppBarCompositionVisuals.Number(n);
         var heightDelta = $"offsets.Value.X + offsets.Value.Y - {N(top + bottom)}";
         _visuals.Bind(_viewer, "Translation", $"Vector3(0, {N(top)} - offsets.Value.X, 0)");
@@ -342,16 +351,16 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _mirroring = true;
         try
         {
-            if (_topBehavior is { } top)
+            if (_topState is { } top)
             {
-                top.State.HeightOffset = (float)(-snapshot.TopCollapsed * density);
-                top.State.ContentOffset = (float)(snapshot.TopContentOffset * density);
+                top.HeightOffset = (float)(-snapshot.TopCollapsed * density);
+                top.ContentOffset = (float)(snapshot.TopContentOffset * density);
             }
 
-            if (_bottomBehavior is { } bottom)
+            if (_bottomState is { } bottom)
             {
-                bottom.State.HeightOffset = (float)(-snapshot.BottomHidden * density);
-                bottom.State.ContentOffset = (float)(snapshot.BottomContentOffset * density);
+                bottom.HeightOffset = (float)(-snapshot.BottomHidden * density);
+                bottom.ContentOffset = (float)(snapshot.BottomContentOffset * density);
             }
         }
         finally
@@ -380,6 +389,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _color = null;
         _configuration = null;
         _lastSequence = 0;
+        _topBehavior?.UpdateContentAtStart(true);
         _viewer.InvalidateArrange();
     }
 
@@ -390,10 +400,11 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _disposed = true;
         _viewer.RemoveHandler(InputElement.PointerPressedEvent, BeforeInput);
         _viewer.RemoveHandler(InputElement.PointerWheelChangedEvent, BeforeInput);
-        if (_topBehavior is { })
-            _topBehavior.State.PropertyChanged -= StateChanged;
-        if (_bottomBehavior is { })
-            _bottomBehavior.State.PropertyChanged -= StateChanged;
+        _viewer.PropertyChanged -= ViewerChanged;
+        if (_topState is { })
+            _topState.PropertyChanged -= StateChanged;
+        if (_bottomState is { })
+            _bottomState.PropertyChanged -= StateChanged;
         _registration.Dispose();
     }
 }

@@ -39,7 +39,7 @@ public class AppBarSmoothScrollTests
     public void NestedWheel_KeepsInnerIndependent_AndOnlyBubbledInputMovesAppBars(string behavior, bool chaining)
     {
         using var clock = new MotionTestClockScope();
-        var kind = Enum.Parse<TopScrollKind>(behavior);
+        var kind = Enum.Parse<TopAppBarScrollMode>(behavior);
         var scene = Show(1200, kind);
         var inner = new ScrollViewer
         {
@@ -75,7 +75,7 @@ public class AppBarSmoothScrollTests
             Assert.Equal(0, scene.Top.ContentOffset);
             Wheel(scene, -1);
             Assert.Equal(chaining, scene.Viewer.Offset.Y > 0);
-            Assert.Equal(chaining && kind != TopScrollKind.Pinned ? scene.Top.HeightOffsetLimit : 0, scene.Top.HeightOffset);
+            Assert.Equal(chaining && kind != TopAppBarScrollMode.Pinned ? scene.Top.HeightOffsetLimit : 0, scene.Top.HeightOffset);
             Assert.Equal(chaining, scene.Bottom.HeightOffset < 0);
             Assert.Equal(100, inner.Viewport.Height);
             Assert.Equal(scene.TopBar.Bounds.Height, scene.Screen.ContentPadding.Top);
@@ -175,7 +175,7 @@ public class AppBarSmoothScrollTests
     public void PinnedBar_ReverseIdleRetainsContentOverlap_UntilBodyReturnsToStart()
     {
         using var clock = new MotionTestClockScope();
-        var scene = Show(1200, TopScrollKind.Pinned);
+        var scene = Show(1200, TopAppBarScrollMode.Pinned);
         try
         {
             var connection = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
@@ -204,13 +204,13 @@ public class AppBarSmoothScrollTests
     public void NativeWheel_AllSupportedBehaviors_ReachBodyBoundaryAndReverse(string behavior)
     {
         using var clock = new MotionTestClockScope();
-        var kind = Enum.Parse<TopScrollKind>(behavior);
+        var kind = Enum.Parse<TopAppBarScrollMode>(behavior);
         var scene = Show(1200, kind);
         try
         {
             var connection = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
             Wheel(scene, -1);
-            Assert.Equal(kind == TopScrollKind.Pinned ? 0 : scene.Top.HeightOffsetLimit, scene.Top.HeightOffset);
+            Assert.Equal(kind == TopAppBarScrollMode.Pinned ? 0 : scene.Top.HeightOffsetLimit, scene.Top.HeightOffset);
             Assert.True(scene.Viewer.Offset.Y > 0);
             Assert.True(scene.Bottom.HeightOffset < 0);
             Wheel(scene, -100);
@@ -219,7 +219,7 @@ public class AppBarSmoothScrollTests
             Assert.Same(connection, GetSmoothConnection(scene.Scope, scene.Viewer));
             var endOffset = scene.Viewer.Offset.Y;
             Wheel(scene, 1);
-            Assert.Equal(kind == TopScrollKind.ExitUntilCollapsed ? scene.Top.HeightOffsetLimit : 0, scene.Top.HeightOffset);
+            Assert.Equal(kind == TopAppBarScrollMode.ExitUntilCollapsed ? scene.Top.HeightOffsetLimit : 0, scene.Top.HeightOffset);
             Assert.Equal(0, scene.Bottom.HeightOffset);
             Assert.True(scene.Viewer.Offset.Y < endOffset);
             Wheel(scene, 100);
@@ -261,7 +261,7 @@ public class AppBarSmoothScrollTests
     }
 
     [AvaloniaFact]
-    public void NestedAppBarScope_KeepsSmoothScrollingWithoutAutomaticBarConnection()
+    public void OuterAppBarScope_DoesNotTakeOwnershipOfScaffoldViewport()
     {
         using var clock = new MotionTestClockScope();
         var scene = Show(1200);
@@ -270,20 +270,20 @@ public class AppBarSmoothScrollTests
             var first = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
             var template = scene.Viewer.Template;
             scene.Window.Content = null;
-            var outer = new AppBarScrollScope { Child = scene.Scope };
+            var outer = new AppBarScrollScope { Child = scene.Screen };
             scene.Window.Content = outer;
             Render(scene.Window);
             Assert.False(first.IsConnected);
-            Assert.Null(GetSmoothConnection(scene.Scope, scene.Viewer));
+            Assert.True(Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer)).IsConnected);
             Assert.Null(GetSmoothConnection(outer, scene.Viewer));
             Assert.Same(template, scene.Viewer.Template);
             Assert.IsType<ScrollViewerPresenter>(scene.Viewer.Presenter);
             Wheel(scene, -1);
             Assert.True(scene.Viewer.Offset.Y > 0);
-            Assert.Equal(0, scene.Top.HeightOffset);
+            Assert.Equal(scene.Top.HeightOffsetLimit, scene.Top.HeightOffset);
             scene.Window.Content = null;
             outer.Child = null;
-            scene.Window.Content = scene.Scope;
+            scene.Window.Content = scene.Screen;
             Render(scene.Window);
             Assert.True(Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer)).IsConnected);
         }
@@ -418,7 +418,7 @@ public class AppBarSmoothScrollTests
             Assert.Null(GetSmoothConnection(scene.Scope, scene.Viewer));
             Assert.False(chrome.CompositionEnabled);
             Assert.Equal(2, chrome.Children.Count);
-            scene.Window.Content = scene.Scope;
+            scene.Window.Content = scene.Screen;
             Render(scene.Window);
             var second = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
             Assert.NotSame(first, second);
@@ -442,9 +442,8 @@ public class AppBarSmoothScrollTests
             var first = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
             var previousOffset = scene.Top.HeightOffset;
             var newState = new TopAppBarState();
-            var behavior = TopAppBarDefaults.EnterAlwaysScrollBehavior(newState, snapAnimationSpec: null, flingAnimationSpec: null);
+            var behavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.EnterAlways) { State = newState, SnapAnimationSpec = null, FlingAnimationSpec = null };
             scene.TopBar.ScrollBehavior = behavior;
-            scene.Scope.TopScrollBehavior = behavior;
             Render(scene.Window);
             var second = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
             Assert.NotSame(first, second);
@@ -645,9 +644,9 @@ public class AppBarSmoothScrollTests
         {
             var first = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
             var template = scene.Viewer.Template;
-            scene.Scope.Child = null;
+            scene.Window.Content = null;
             var newState = new TopAppBarState();
-            var behavior = TopAppBarDefaults.EnterAlwaysScrollBehavior(newState, snapAnimationSpec: null, flingAnimationSpec: null);
+            var behavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.EnterAlways) { State = newState, SnapAnimationSpec = null, FlingAnimationSpec = null };
             scene.TopBar.ScrollBehavior = behavior;
             var next = new AppBarScrollScope
             {
@@ -655,9 +654,9 @@ public class AppBarSmoothScrollTests
             };
             scene.Window.Content = next; Render(scene.Window);
             Assert.False(first.IsConnected);
-            Assert.Null(GetSmoothConnection(scene.Scope, scene.Viewer));
+            Assert.Null(GetSmoothConnection(next, scene.Viewer));
             Assert.Same(template, scene.Viewer.Template);
-            Assert.True(Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(next, scene.Viewer)).IsConnected);
+            Assert.True(Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer)).IsConnected);
             Wheel(scene, -1);
             Assert.Equal(newState.HeightOffsetLimit, newState.HeightOffset);
             Assert.Equal(0, scene.Top.HeightOffset);
@@ -795,6 +794,12 @@ public class AppBarSmoothScrollTests
             Send(164, RawPointerEventType.TouchEnd, start - 100);
             Render(scene.Window);
             Assert.True(scene.Viewer.Offset.Y > released);
+            var beforeConfigurationChange = scene.Viewer.Offset.Y;
+            scene.TopBar.ScrollBehavior!.IsScrollingContentAtStart = false;
+            scene.TopBar.ScrollBehavior.CanScroll = false;
+            scene.BottomBar.ScrollBehavior!.CanScroll = false;
+            Render(scene.Window);
+            Assert.True(scene.Viewer.Offset.Y > beforeConfigurationChange);
             var press = scene.Viewer.TranslatePoint(new Point(60, 50), scene.Window)!.Value.Y;
             Send(180, RawPointerEventType.TouchBegin, press); Render(scene.Window);
             var stopped = scene.Viewer.Offset.Y;
@@ -807,37 +812,187 @@ public class AppBarSmoothScrollTests
     }
 
     [AvaloniaFact]
-    public void CustomBehavior_KeepsSmoothScrollingWithoutAutomaticUiFallback()
+    public void CompiledXamlScaffold_ConnectsTemplateAndDirectBarsWithoutExplicitScope()
+    {
+        using var clock = new MotionTestClockScope();
+        var screen = (Scaffold)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(new Uri(
+            "avares://Material3Expressive.Tests/Fixtures/ScrollableAppBars.axaml"));
+        var window = new MotionTestWindow { Width = 300, Height = 400, WindowDecorations = WindowDecorations.None };
+        window.Styles.Add(new MaterialTheme());
+        window.Content = screen;
+        window.Show();
+        try
+        {
+            Render(window);
+            var scope = screen.GetVisualDescendants().OfType<AppBarScrollScope>().Single(s => s.Host == screen);
+            var viewer = screen.FindControl<ScrollViewer>("Body")!;
+            var top = Assert.IsType<MediumTopAppBar>(screen.PresentedTopBar).ScrollBehavior!;
+            var bottom = Assert.IsType<BottomAppBar>(screen.PresentedBottomBar).ScrollBehavior!;
+            Assert.Same(top, scope.TopScrollBehavior);
+            Assert.Same(bottom, scope.BottomScrollBehavior);
+            Assert.True(Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scope, viewer)).IsConnected);
+            window.MouseWheel(viewer.TranslatePoint(new Point(40, 40), window)!.Value, new Vector(0, -2));
+            Render(window);
+            Assert.Equal(top.State.HeightOffsetLimit, top.State.HeightOffset);
+            Assert.True(bottom.State.HeightOffset < 0);
+            Assert.True(viewer.Offset.Y > 0);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ScaffoldTemplateReplacement_ReleasesOldScopeAndReconnectsNewScope()
     {
         using var clock = new MotionTestClockScope();
         var scene = Show(1200);
         try
         {
             var first = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
-            var template = scene.Viewer.Template;
-            var presenter = scene.Viewer.Presenter;
-            var custom = new CustomTopBehavior(scene.TopBar.ScrollBehavior!);
-            scene.TopBar.ScrollBehavior = custom;
-            scene.Scope.TopScrollBehavior = custom;
+            var template = scene.Screen.Template;
+            scene.Screen.Template = null;
             Render(scene.Window);
             Assert.False(first.IsConnected);
+            scene.Screen.Template = template;
+            Render(scene.Window);
+            var scope = scene.Screen.GetVisualDescendants().OfType<AppBarScrollScope>().Single(s => s.Host == scene.Screen);
+            Assert.NotSame(scene.Scope, scope);
+            Assert.Null(scene.Scope.Host);
+            Assert.Null(scene.Scope.TopScrollBehavior);
+            Assert.Null(scene.Scope.BottomScrollBehavior);
             Assert.Null(GetSmoothConnection(scene.Scope, scene.Viewer));
-            Assert.Same(template, scene.Viewer.Template);
-            Assert.Same(presenter, scene.Viewer.Presenter);
+            Assert.True(Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scope, scene.Viewer)).IsConnected);
             Wheel(scene, -1);
-            Assert.True(scene.Viewer.Offset.Y > 0);
-            Assert.Equal(0, scene.Top.HeightOffset);
-            Assert.Equal(0, scene.Top.ContentOffset);
+            Assert.Equal(scene.Top.HeightOffsetLimit, scene.Top.HeightOffset);
         }
         finally { scene.Window.Close(); }
     }
 
-    private sealed class CustomTopBehavior(TopAppBarScrollBehavior inner) : TopAppBarScrollBehavior
+    [AvaloniaFact]
+    public void StateReplacement_ReleasesOldSubscription_WithoutReplacingBehavior()
     {
-        public override TopAppBarState State => inner.State;
-        public override bool IsPinned => inner.IsPinned;
-        public override ComposeAnimation.Runtime.IAnimationSpec<float>? SnapAnimationSpec => inner.SnapAnimationSpec;
-        public override ComposeAnimation.Runtime.IDecayAnimationSpec<float>? FlingAnimationSpec => inner.FlingAnimationSpec;
+        using var clock = new MotionTestClockScope();
+        var scene = Show(1200);
+        try
+        {
+            Wheel(scene, -1);
+            var first = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
+            var behavior = scene.TopBar.ScrollBehavior!;
+            var replacement = new TopAppBarState();
+            behavior.State = replacement;
+            Render(scene.Window);
+            var second = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
+            Assert.Same(behavior, scene.Scope.TopScrollBehavior);
+            Assert.NotSame(first, second);
+            Assert.False(first.IsConnected);
+            Assert.Equal(0, replacement.HeightOffset);
+            scene.Top.HeightOffset = -1;
+            scene.Top.ContentOffset = -999;
+            Render(scene.Window);
+            Assert.Equal(0, replacement.HeightOffset);
+            Assert.Equal(0, replacement.ContentOffset);
+            Wheel(scene, -1);
+            Assert.Equal(replacement.HeightOffsetLimit, replacement.HeightOffset);
+            Assert.Equal(-1, scene.Top.HeightOffset);
+            Assert.Equal(-999, scene.Top.ContentOffset);
+            Assert.Null(scene.Window.MotionRoot.LastError);
+        }
+        finally { scene.Window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ModeAndCanScrollChanges_ReconfigureTheExistingConnection()
+    {
+        using var clock = new MotionTestClockScope();
+        var scene = Show(1200, TopAppBarScrollMode.Pinned);
+        try
+        {
+            var behavior = scene.TopBar.ScrollBehavior!;
+            var connection = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
+            behavior.Mode = TopAppBarScrollMode.EnterAlways;
+            behavior.CanScroll = false;
+            Render(scene.Window);
+            Wheel(scene, -1);
+            Assert.Equal(0, scene.Top.HeightOffset);
+            Assert.Equal(0, scene.Top.ContentOffset);
+            Assert.True(scene.Viewer.Offset.Y > 0);
+            behavior.CanScroll = true;
+            Render(scene.Window);
+            Wheel(scene, -1);
+            Assert.Equal(scene.Top.HeightOffsetLimit, scene.Top.HeightOffset);
+            var offset = scene.Top.HeightOffset;
+            behavior.Mode = TopAppBarScrollMode.Pinned;
+            Render(scene.Window);
+            Wheel(scene, 1);
+            Assert.Equal(offset, scene.Top.HeightOffset);
+            Assert.Same(scene.Top, behavior.State);
+            Assert.Same(connection, GetSmoothConnection(scene.Scope, scene.Viewer));
+        }
+        finally { scene.Window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ContentAtStart_FollowsTheBodyUnlessExplicitlyOverridden()
+    {
+        using var clock = new MotionTestClockScope();
+        var scene = Show(1200, TopAppBarScrollMode.Pinned);
+        try
+        {
+            var behavior = scene.TopBar.ScrollBehavior!;
+            Assert.True(scene.Top.IsScrollingContentAtStart);
+            scene.Viewer.Offset = new Vector(0, 50);
+            Render(scene.Window);
+            Assert.False(scene.Top.IsScrollingContentAtStart);
+            Assert.Equal(1, scene.Top.OverlappedFraction);
+            behavior.IsScrollingContentAtStart = true;
+            Render(scene.Window);
+            Assert.True(scene.Top.IsScrollingContentAtStart);
+            Assert.Equal(0, scene.Top.OverlappedFraction);
+            behavior.IsScrollingContentAtStart = null;
+            Render(scene.Window);
+            Assert.False(scene.Top.IsScrollingContentAtStart);
+            scene.Viewer.Offset = default;
+            Render(scene.Window);
+            Assert.True(scene.Top.IsScrollingContentAtStart);
+        }
+        finally { scene.Window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void TemplateGeneratedBars_AutomaticallySupplyTheirBehaviors()
+    {
+        using var clock = new MotionTestClockScope();
+        var scene = Show(1200);
+        try
+        {
+            var first = Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer));
+            scene.Screen.TopBarTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((_, _) =>
+                new MediumTopAppBar
+                {
+                    ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.EnterAlways)
+                    { SnapAnimationSpec = null, FlingAnimationSpec = null },
+                });
+            scene.Screen.BottomBarTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((_, _) =>
+                new BottomAppBar
+                {
+                    ScrollBehavior = new BottomAppBarScrollBehavior
+                    { SnapAnimationSpec = null, FlingAnimationSpec = null },
+                });
+            scene.Screen.TopBar = "top";
+            scene.Screen.BottomBar = "bottom";
+            Render(scene.Window);
+            var top = Assert.IsType<MediumTopAppBar>(scene.Screen.PresentedTopBar).ScrollBehavior!;
+            var bottom = Assert.IsType<BottomAppBar>(scene.Screen.PresentedBottomBar).ScrollBehavior!;
+            Assert.Same(top, scene.Scope.TopScrollBehavior);
+            Assert.Same(bottom, scene.Scope.BottomScrollBehavior);
+            Assert.False(first.IsConnected);
+            Assert.True(Assert.IsType<AppBarSmoothScrollConnection>(GetSmoothConnection(scene.Scope, scene.Viewer)).IsConnected);
+            Wheel(scene, -1);
+            Assert.Equal(top.State.HeightOffsetLimit, top.State.HeightOffset);
+            Assert.True(bottom.State.HeightOffset < 0);
+            Assert.Equal(0, scene.Top.HeightOffset);
+        }
+        finally { scene.Window.Close(); }
     }
 
     private sealed class LogicalBody : Control, ILogicalScrollable
@@ -866,16 +1021,16 @@ public class AppBarSmoothScrollTests
         Border Body, ScrollViewer Viewer, MediumTopAppBar TopBar, BottomAppBar BottomBar,
         TopAppBarState Top, BottomAppBarState Bottom);
 
-    private static Scene Show(double contentHeight, TopScrollKind kind = TopScrollKind.ExitUntilCollapsed)
+    private static Scene Show(double contentHeight, TopAppBarScrollMode kind = TopAppBarScrollMode.ExitUntilCollapsed)
     {
         var top = new TopAppBarState(); var bottom = new BottomAppBarState();
         var t = kind switch
         {
-            TopScrollKind.Pinned => TopAppBarDefaults.PinnedScrollBehavior(top),
-            TopScrollKind.EnterAlways => TopAppBarDefaults.EnterAlwaysScrollBehavior(top, snapAnimationSpec: null, flingAnimationSpec: null),
-            _ => TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(top, snapAnimationSpec: null, flingAnimationSpec: null),
+            TopAppBarScrollMode.Pinned => new TopAppBarScrollBehavior(TopAppBarScrollMode.Pinned) { State = top },
+            TopAppBarScrollMode.EnterAlways => new TopAppBarScrollBehavior(TopAppBarScrollMode.EnterAlways) { State = top, SnapAnimationSpec = null, FlingAnimationSpec = null },
+            _ => new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = top, SnapAnimationSpec = null, FlingAnimationSpec = null },
         };
-        var b = BottomAppBarDefaults.ExitAlwaysScrollBehavior(bottom, snapAnimationSpec: null, flingAnimationSpec: null);
+        var b = new BottomAppBarScrollBehavior() { State = bottom, SnapAnimationSpec = null, FlingAnimationSpec = null };
         var viewer = new ScrollViewer { Background = Brushes.White, Content = new Border { Height = contentHeight, Background = Brushes.LightGray },
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
             IsScrollInertiaEnabled = false };
@@ -888,9 +1043,9 @@ public class AppBarSmoothScrollTests
         body.Bind(Border.PaddingProperty, screen.GetObservable(Scaffold.ContentPaddingProperty));
         body.Bind(MaterialWindowInsets.ConsumePaddingProperty, screen.GetObservable(Scaffold.ContentPaddingProperty));
         screen.Content = body;
-        var scope = new AppBarScrollScope { TopScrollBehavior = t, BottomScrollBehavior = b, Child = screen };
         var window = new MotionTestWindow { Width = 300, Height = 400, WindowDecorations = WindowDecorations.None };
-        window.Styles.Add(new MaterialTheme()); window.Content = scope; window.Show(); Render(window);
+        window.Styles.Add(new MaterialTheme()); window.Content = screen; window.Show(); Render(window);
+        var scope = screen.GetVisualDescendants().OfType<AppBarScrollScope>().Single(s => s.Host == screen);
         return new(window, scope, screen, body, viewer, topBar, bottomBar, top, bottom);
     }
 

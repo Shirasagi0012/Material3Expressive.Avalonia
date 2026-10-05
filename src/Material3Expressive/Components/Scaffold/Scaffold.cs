@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Material3Expressive.Foundation.Rendering;
 
@@ -50,6 +51,11 @@ public class Scaffold : ContentControl
 
     private Thickness _contentPadding;
     private ScaffoldLayout? _layout;
+    private AppBarScrollScope? _scrollScope;
+    private ContentPresenter? _topPresenter, _bottomPresenter;
+
+    internal TopAppBar? PresentedTopBar => _topPresenter?.Child as TopAppBar;
+    internal BottomAppBar? PresentedBottomBar => _bottomPresenter?.Child as BottomAppBar;
 
     // Clear ContentControl's single-presenter fallback; Scaffold requires its five-slot template.
     static Scaffold() => TemplateProperty.OverrideDefaultValue<Scaffold>(null);
@@ -58,8 +64,13 @@ public class Scaffold : ContentControl
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
+        _scrollScope?.SetHost(null);
         base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<ScaffoldLayout>("PART_Layout");
+        _topPresenter = e.NameScope.Find<ContentPresenter>("PART_TopBar");
+        _bottomPresenter = e.NameScope.Find<ContentPresenter>("PART_BottomBar");
+        _scrollScope = e.NameScope.Find<AppBarScrollScope>("PART_ScrollScope");
+        _scrollScope?.SetHost(this);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

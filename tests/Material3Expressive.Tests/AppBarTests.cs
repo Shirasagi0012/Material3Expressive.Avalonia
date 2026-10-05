@@ -91,7 +91,7 @@ public class AppBarTests
     {
         var state = new TopAppBarState();
         var bar = new MediumTopAppBar { Title = new object(), TitleTemplate = new FuncDataTemplate<object>((_, _) => new Border { Width = 80, Height = 20 }),
-            NavigationIcon = new Border { Width = 48, Height = 48 }, ScrollBehavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state) };
+            NavigationIcon = new Border { Width = 48, Height = 48 }, ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state } };
         using var clock = new MotionTestClockScope();
         var window = Show(bar);
         try
@@ -133,7 +133,7 @@ public class AppBarTests
     public void LimitWrite_DoesNotRefreshTitleLayers_UntilObservedOffsetChanges()
     {
         var state = new TopAppBarState();
-        var bar = new MediumTopAppBar { Title = "title", ScrollBehavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state) };
+        var bar = new MediumTopAppBar { Title = "title", ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state } };
         using var clock = new MotionTestClockScope(); var window = Show(bar);
         try
         {
@@ -176,7 +176,7 @@ public class AppBarTests
     public void StateAndScrollConsumption_FollowFixedBaseline()
     {
         var state = new TopAppBarState(-48, -24);
-        var connection = TopAppBarDefaults.EnterAlwaysScrollBehavior(state, snapAnimationSpec: null, flingAnimationSpec: null).GetNestedScrollConnection();
+        var connection = new TopAppBarScrollBehavior(TopAppBarScrollMode.EnterAlways) { State = state, SnapAnimationSpec = null, FlingAnimationSpec = null }.GetNestedScrollConnection();
         Assert.Equal(new Vector(0, -50), connection.OnPreScroll(new Vector(3, -50), AppBarScrollSource.UserInput)); Assert.Equal(-48, state.HeightOffset);
         Assert.Equal(default, connection.OnPreScroll(new Vector(0, -50), AppBarScrollSource.UserInput));
         connection.OnPostScroll(new Vector(0, -15), default, AppBarScrollSource.UserInput); Assert.Equal(-15, state.ContentOffset);

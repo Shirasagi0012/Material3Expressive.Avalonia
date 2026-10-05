@@ -73,9 +73,15 @@ internal sealed class AppBarDirectDrag : IDisposable
         owner.GestureRecognizers.Add(_gesture);
     }
 
-    public void Dispose()
+    internal void Cancel()
     {
         _gesture.Cancel();
+        _run?.Cancel();
+    }
+
+    public void Dispose()
+    {
+        Cancel();
         _owner.GestureRecognizers.Remove(_gesture);
         _run?.Cancel();
         _run?.Dispose();

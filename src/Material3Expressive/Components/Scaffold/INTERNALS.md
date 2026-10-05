@@ -47,12 +47,16 @@ FAB 有任一维度为零时不参与 Snackbar 避让。有限约束、零最小
 以下确认与历史观测依据来自[拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Scaffold/README.md)；不以当前代码反推维护者授权。
 2026-10-03 维护者确认“采用推荐 API 和共享 ConsumePadding”：lambda 映射为五个内容槽及 DataTemplate，
 ContentPadding 在测量正文前发布，正文由调用方应用 padding；原因是保留 Compose 的内容组合与消费顺序，
-同时使用 Avalonia 原生内容、绑定和布局属性。Scaffold 不实现 Snackbar 队列、FAB 控件或 AppBar 行为。
+同时使用 Avalonia 原生内容、绑定和布局属性。Scaffold 不实现 Snackbar 队列、FAB 控件或 AppBar 的滚动算法。
 
 Insets 的原因、逐层累加与适用范围统一见
 [Padding 消费决定](../../../../docs/DECISIONS.md#padding-消费向嵌套-scaffold-传播)。
 共享入口只传播已应用 Padding，不自动处理系统栏、IME 或全部 WindowInsets 操作，也不改变旧 Rail/Bar。
 Surface 绘制与 ContentColorFor 复用现有 Foundation，不能据此扩展新的容器色匹配规则。
+
+2026-10-06 维护者确认：标准模板内置 PART_ScrollScope。Scaffold 提供宿主及顶/底 ContentPresenter，
+Scope 从实际 presenter.Child 取得根 AppBar 和 behavior，包含数据模板生成的栏；用户无需重复声明 Scope。
+重应用模板释放旧 Scope 的宿主与 behavior 引用。五槽测量、遍历和 Padding 发布顺序不变。
 
 AppBar 的合成连接读取本组件真实栏位置、ContentPadding 及 FAB/Snackbar 位置；
 它属于 [AppBar 接入](../AppBar/INTERNALS.md)，不是 Scaffold 自己的动画。

@@ -111,7 +111,10 @@ public class TopAppBar : ItemsControl
     }
 
     public static readonly StyledProperty<TopAppBarScrollBehavior?> ScrollBehaviorProperty =
-        AvaloniaProperty.Register<TopAppBar, TopAppBarScrollBehavior?>(nameof(ScrollBehavior));
+        AvaloniaProperty.Register<TopAppBar, TopAppBarScrollBehavior?>(nameof(ScrollBehavior),
+            coerce: (owner, behavior) => behavior?.Parent is { } parent && parent != owner
+                ? throw new InvalidOperationException("A scroll behavior can belong to only one AppBar.")
+                : behavior);
     public object? Title
     {
         get => GetValue(TitleProperty);
@@ -287,9 +290,29 @@ public class TopAppBar : ItemsControl
                 LogicalChildren.Add(current);
         }
 
+        if (change.Property == ScrollBehaviorProperty)
+        {
+            if (change.OldValue is TopAppBarScrollBehavior oldBehavior)
+            {
+                oldBehavior.PropertyChanged -= BehaviorChanged;
+                LogicalChildren.Remove(oldBehavior);
+            }
+            if (change.NewValue is TopAppBarScrollBehavior behavior)
+            {
+                LogicalChildren.Add(behavior);
+                behavior.PropertyChanged += BehaviorChanged;
+            }
+        }
+
         if (change.Property.OwnerType == typeof(TopAppBar) || change.Property == BackgroundProperty ||
             change.Property == ForegroundProperty || change.Property == FlowDirectionProperty ||
             change.Property == MaterialWindowInsets.ConsumedPaddingProperty)
+            _chrome?.OwnerChanged(change);
+    }
+
+    private void BehaviorChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property.OwnerType == typeof(TopAppBarScrollBehavior))
             _chrome?.OwnerChanged(change);
     }
 

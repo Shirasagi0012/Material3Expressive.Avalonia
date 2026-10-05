@@ -54,8 +54,14 @@ internal sealed class AppBarBottomChrome : Decorator
 
     internal void OwnerChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        if (change.Property == BottomAppBar.ScrollBehaviorProperty)
+        if (change.Property == BottomAppBar.ScrollBehaviorProperty ||
+            change.Property == BottomAppBarScrollBehavior.StateProperty)
             ObserveState();
+        if (change.Property == BottomAppBar.ScrollBehaviorProperty ||
+            change.Property == BottomAppBarScrollBehavior.StateProperty ||
+            change.Property == BottomAppBarScrollBehavior.SnapAnimationSpecProperty ||
+            change.Property == BottomAppBarScrollBehavior.FlingAnimationSpecProperty)
+            _drag?.Cancel();
         if (Child is MaterialSurface { Child: AppBarBottomRow row })
             row.InvalidateMeasure();
         InvalidateMeasure();
@@ -65,8 +71,6 @@ internal sealed class AppBarBottomChrome : Decorator
     {
         var owner = Owner;
         var scale = LayoutHelper.GetLayoutScale(this);
-        if (owner.ScrollBehavior is DefaultBottomAppBarScrollBehavior defaults)
-            defaults.AttachDefaults(owner);
         Child!.Measure(availableSize);
         _fullHeight = Child.DesiredSize.Height;
         var height = MathUtils.DipToPx((float)_fullHeight, (float)scale);

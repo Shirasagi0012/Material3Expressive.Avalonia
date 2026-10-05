@@ -28,6 +28,30 @@ public class AppBarScrollScope : Decorator
         set => SetValue(BottomScrollBehaviorProperty, value);
     }
 
+    internal Scaffold? Host { get; private set; }
+
+    internal void SetHost(Scaffold? host)
+    {
+        Interrupt();
+        Disconnect();
+        Host = host;
+        if (host is null)
+        {
+            SetCurrentValue(TopScrollBehaviorProperty, null);
+            SetCurrentValue(BottomScrollBehaviorProperty, null);
+        }
+        else
+            RefreshBehaviors();
+    }
+
+    private void RefreshBehaviors()
+    {
+        if (Host is not { } scaffold)
+            return;
+        SetCurrentValue(TopScrollBehaviorProperty, scaffold.PresentedTopBar?.ScrollBehavior);
+        SetCurrentValue(BottomScrollBehaviorProperty, scaffold.PresentedBottomBar?.ScrollBehavior);
+    }
+
     private ScrollViewer? _mainViewer;
     private AppBarSmoothScrollConnection? _connection;
     private readonly HashSet<CancellationTokenSource> _runs = [];
@@ -38,10 +62,30 @@ public class AppBarScrollScope : Decorator
         base.OnPropertyChanged(change);
         if (change.Property == TopScrollBehaviorProperty || change.Property == BottomScrollBehaviorProperty)
         {
+            if (change.OldValue is StyledElement oldBehavior)
+                oldBehavior.PropertyChanged -= BehaviorChanged;
+            if (change.NewValue is StyledElement behavior)
+                behavior.PropertyChanged += BehaviorChanged;
             Interrupt();
             Disconnect();
             InvalidateMeasure();
         }
+    }
+
+    private void BehaviorChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property.OwnerType != typeof(TopAppBarScrollBehavior) &&
+            change.Property.OwnerType != typeof(BottomAppBarScrollBehavior))
+            return;
+        if (change.Property != TopAppBarScrollBehavior.CanScrollProperty &&
+            change.Property != BottomAppBarScrollBehavior.CanScrollProperty &&
+            change.Property != TopAppBarScrollBehavior.IsScrollingContentAtStartProperty &&
+            change.Property != TopAppBarScrollBehavior.IsPinnedProperty)
+            Interrupt();
+        if (change.Property == TopAppBarScrollBehavior.StateProperty ||
+            change.Property == BottomAppBarScrollBehavior.StateProperty)
+            Disconnect();
+        InvalidateMeasure();
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -71,6 +115,7 @@ public class AppBarScrollScope : Decorator
         _scanning = true;
         try
         {
+            RefreshBehaviors();
             var candidates = this.GetVisualDescendants()
                 .OfType<ScrollViewer>()
                 .Where(viewer =>
@@ -82,7 +127,7 @@ public class AppBarScrollScope : Decorator
                            {
                                Name: "PART_ContentPresenter",
                                TemplatedParent: Scaffold,
-                           });
+                           } presenter && (Host is null || presenter.TemplatedParent == Host));
                 })
                 .Take(2)
                 .ToArray();
@@ -103,7 +148,7 @@ public class AppBarScrollScope : Decorator
             if (viewer is not { IsArrangeValid: true })
                 return;
 
-            var scaffold = viewer.GetVisualAncestors()
+            var scaffold = Host ?? viewer.GetVisualAncestors()
                 .OfType<Scaffold>()
                 .FirstOrDefault();
             if (scaffold is not { IsArrangeValid: true })

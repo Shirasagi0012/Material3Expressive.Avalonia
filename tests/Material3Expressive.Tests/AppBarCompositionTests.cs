@@ -32,7 +32,7 @@ public class AppBarCompositionTests
         using var clock = new MotionTestClockScope();
         var state = new TopAppBarState();
         TopAppBar bar = twoRows ? new MediumFlexibleTopAppBar() : new TopAppBar();
-        bar.ScrollBehavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state, snapAnimationSpec: null, flingAnimationSpec: null);
+        bar.ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state, SnapAnimationSpec = null, FlingAnimationSpec = null };
         bar.Title = "expanded";
         bar.TitleTemplate = new FuncDataTemplate<object>((_, _) => new Border { Width = 80, Height = 20, Background = Brushes.Red });
         bar.CollapsedTitle = "collapsed";
@@ -58,7 +58,7 @@ public class AppBarCompositionTests
             using var stock = window.CaptureRenderedFrame()!;
             var expected = Pixels(stock);
             var colors = chrome.GetCompositionColors();
-            var config = new AppBarScrollConfiguration(TopScrollKind.ExitUntilCollapsed, range / density, 0, density,
+            var config = new AppBarScrollConfiguration(TopAppBarScrollMode.ExitUntilCollapsed, range / density, 0, density,
                 true, false, false, true, colors.TwoRows, colors.Base, colors.Scrolled,
                 null, null, new AppBarSpring(1, 1600, .01f), 1000, 1000);
             var initial = new AppBarScrollSnapshot(0, 0, range * fraction / density, 0, 0, 0, 0, 1000);
@@ -126,7 +126,7 @@ public class AppBarCompositionTests
     {
         using var clock = new MotionTestClockScope();
         var state = new TopAppBarState();
-        var behavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state);
+        var behavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state };
         TopAppBar bar = twoRows ? new MediumTopAppBar() : new TopAppBar();
         bar.ScrollBehavior = behavior;
         var window = new MotionTestWindow { Width = 300, Height = 240 };
@@ -173,7 +173,7 @@ public class AppBarCompositionTests
         bar.Title = "title";
         bar.TitleTemplate = new FuncDataTemplate<object>((_, _) => new Border { Width = 80, Height = 20 });
         bar.NavigationIcon = new Border { Width = 48, Height = 48 };
-        bar.ScrollBehavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state, snapAnimationSpec: null, flingAnimationSpec: null);
+        bar.ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state, SnapAnimationSpec = null, FlingAnimationSpec = null };
         using var clock = new MotionTestClockScope();
         var window = new MotionTestWindow { Width = 300, Height = 240 };
         window.Styles.Add((Avalonia.Styling.Styles)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(
@@ -228,7 +228,7 @@ public class AppBarCompositionTests
     {
         using var clock = new MotionTestClockScope();
         var state = new TopAppBarState();
-        var bar = new MediumTopAppBar { Title = "title", ScrollBehavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state) };
+        var bar = new MediumTopAppBar { Title = "title", ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state } };
         var window = new MotionTestWindow { Width = 300, Height = 240 };
         window.Styles.Add((Avalonia.Styling.Styles)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
         window.Content = bar; window.Show(); window.UpdateLayout();

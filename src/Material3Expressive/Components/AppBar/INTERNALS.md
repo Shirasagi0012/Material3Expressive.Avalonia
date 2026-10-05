@@ -18,7 +18,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 | --- | --- |
 | TopAppBar、CenterAlignedTopAppBar、Medium/Large、Flexible、TwoRows 入口 | [TopAppBar.cs](TopAppBar.cs)、[AppBarTopLayout.cs](AppBarTopLayout.cs)、[AppBar.axaml](AppBar.axaml)：槽、标题树、测量/摆放和视觉桥接 |
 | BottomAppBar、FlexibleBottomAppBar | [BottomAppBar.cs](BottomAppBar.cs)、[AppBarBottomLayout.cs](AppBarBottomLayout.cs)：动作/FAB/自定义内容、排列与隐藏布局 |
-| TopAppBarState / BottomAppBarState、行为工厂 / 配置基线 | [AppBarState.cs](AppBarState.cs)、[AppBarDefaults.cs](AppBarDefaults.cs)、[AppBarTokenSource.cs](AppBarTokenSource.cs)、[组件 Token](../../Tokens/MaterialTokens.Comp.AppBar.cs) |
+| TopAppBarState / BottomAppBarState、行为配置基线 | [AppBarState.cs](AppBarState.cs)、[AppBarTokenSource.cs](AppBarTokenSource.cs)、[组件 Token](../../Tokens/MaterialTokens.Comp.AppBar.cs) |
 | ScrollBehavior、settleAppBar | [AppBarScrollBehavior.cs](AppBarScrollBehavior.cs)、[AppBarDirectDrag.cs](AppBarDirectDrag.cs)、[AppBarVerticalGesture.cs](AppBarVerticalGesture.cs) |
 | nestedScrollConnection、显式嵌套分发 | [测试协议](../../../../tests/Shared/AppBar/AppBarNestedScrollConnection.cs)、[测试分发](../../../../tests/Shared/AppBar/AppBarScrollScopeExtensions.cs)：仅驱动测试正文 |
 | 本地原生滚动接入 | [AppBarScrollScope.cs](AppBarScrollScope.cs)、[AppBarSmoothScrollConnection.cs](AppBarSmoothScrollConnection.cs)：主视口筛选、接入/释放与布局衔接 |
@@ -135,14 +135,14 @@ Avalonia 12.1.2 的桥接包括首次 expression 主动求值、停止后恢复�
 内层滚动器自己滚动不驱动外层栏，到边界后的下一笔滚轮按 IsScrollChainingEnabled 冒泡；
 触摸保持 SmoothScroll 捕获接力。单笔跨边界剩余量与已启动惯性余速不额外分给父层，
 内层列表/编辑区保留逻辑单位、虚拟化与编辑输入。
-`canScroll` / `isScrollingContentAtStart` 在 UI 输入前和布局时求值，UI 忙碌时沿用最后快照。
+CanScroll / IsScrollingContentAtStart 属性在 UI 输入前和布局时捕获，UI 忙碌时沿用最后快照。
 Offset、键盘、BringIntoView、滚动条与程序化定位动画不进入 pre/post。
 
 ## 直接拖动与测试协议
 
-AppBarScrollScope 包围屏幕，栏和 Scope 引用同一个 behavior。顶部提供 Pinned/EnterAlways/ExitUntilCollapsed，
+标准 Scaffold 的 PART_ScrollScope 自动引用呈现栏的 behavior。顶部提供 Pinned/EnterAlways/ExitUntilCollapsed，
 底部 ExitAlways。状态为物理 px、速度 px/s；尺寸和 Avalonia Offset 为 DIP/原生逻辑单位。
-默认 fling 从挂载的栏或 Scope 读取 density，snap 从 Material motion token 解析；显式 spec 重载允许
+默认 fling 从挂载的栏读取 density，snap 从 Material motion token 解析；独立 spec 属性允许
 分别传 null 禁用 decay/snap。求解使用 ComposeAnimation NuGet，spring 参数保留上游 Float 精度。
 
 直接拖动栏使用 Core Desktop 的 18 DIP touch slop / .125 DIP mouse slop，并调用 behavior 的 settle。
@@ -157,14 +157,31 @@ Scope 的 DispatchScroll / DispatchFlingAsync；不保留自定义宿主 API 或
 [tests/Shared/AppBar](../../../../tests/Shared/AppBar) 保存显式协议与扩展分发方法，
 由 Material3Expressive.Tests 和 Material3Expressive.Parity 链接同一份源文件，不随控件库编译。
 分发仍为 pre 从外到内、每层 top→bottom；post 从内到外、每层 bottom→top，消费物理 px 或 px/s。
-它只支持内置 behavior，用真实 State、canScroll 回调和 SettleAsync 驱动测试正文，保留原有边界消费规则。
-两测试程序集通过 InternalsVisibleTo 访问 Kind、CanScrollForComposition、AttachDefaults 和
-Register/Unregister；测试 fling 接入 Scope 原有取消集合，保持新输入和 Interrupt 的取消语义。
+它只支持内置 behavior，用真实 State、CanScroll 属性和内部 SettleAsync 驱动测试正文，保留原有边界消费规则。
+两测试程序集通过 InternalsVisibleTo 访问 SettleAsync 和 Register/Unregister；测试 fling 接入 Scope 原有取消集合，保持新输入和 Interrupt 的取消语义。
 SmoothScroll 生命周期断言仍在测试侧反射 Scope._connection 和连接的 _viewer，不新增生产查询入口。
 
 显式分发断言验证测试辅助代码；双端用例验证真实栏的状态、布局和收尾动画。
 生产正文的滚动分配及连接行为由 AppBarSmoothScrollTests / AppBarCompositionTests 验证，
 不能用测试协议的结果代替真实 SmoothScroll 路径的证据。
+
+## XAML behavior 与自动连接（2026-10-06）
+
+维护者确认合并抽象基类与 Default 实现为两个 sealed StyledElement 类型；ProvideValue 返回自身，
+Mode 字面量 / Binding 使用构造器重载与 ConstructorArgument，其他属性走 Avalonia 原生绑定。
+State 使用 DirectProperty 和每实例默认值，不把可变 State 放进静态属性默认值；null / 未就绪绑定保留默认实例。
+栏唯一持有 behavior 的逻辑父关系；Scope 只引用它，避免破坏 DataContext / 资源继承。
+
+动画属性使用真实默认规格实例区分默认配置与显式 null，内部按引用识别默认配置并在使用时解析当前栏主题 / density。
+这使 null、Binding 和 ClearValue 都产生正常属性通知，避免用 IsSet 加 null 默认值时无法观察默认→禁用的变化。
+Snap / Fling 各自判断；Mode 切换不丢弃显式规格。SettleAsync 转为内部入口，算法不变。
+
+Scope 按最近所有权边界筛选正文，仅连接自身 Scaffold 的正文槽。标准 Scaffold 在模板中创建 Scope，
+OnApplyTemplate 提供宿主和实际 ContentPresenter；连接读取 presenter.Child 的 AppBar，兼容数据模板根栏。
+外部 Scope 不抢占内部 Scope 的正文；任意非 Scaffold 布局的正文连接仍未实现。
+替换 State 时 chrome 与连接释放各自捕获的旧 State 订阅；Mode / spec 变更取消旧动画并刷新配置；CanScroll 变更只结束受影响的合成栏吸附，
+CanScroll 和起点覆盖不打断正文惯性或直接拖动。
+更换 Scaffold 模板释放旧 Scope 的宿主与 behavior 引用。原物理状态、测量和滚动消费算法保持不变。
 
 ## 已确认选择与未决范围
 

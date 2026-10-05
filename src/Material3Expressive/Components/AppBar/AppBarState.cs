@@ -24,6 +24,8 @@ public sealed class TopAppBarState : AvaloniaObject, IHidingAppBarState
     public static readonly StyledProperty<float> ContentOffsetProperty =
         AvaloniaProperty.Register<TopAppBarState, float>(nameof(ContentOffset));
 
+    public TopAppBarState() : this(-float.MaxValue, 0, 0) { }
+
     public TopAppBarState(
         float initialHeightOffsetLimit = -float.MaxValue,
         float initialHeightOffset = 0,
@@ -64,9 +66,15 @@ public sealed class TopAppBarState : AvaloniaObject, IHidingAppBarState
 
     public float CollapsedFraction => HeightOffsetLimit != 0 ? HeightOffset / HeightOffsetLimit : 0;
 
-    internal Func<bool> IsScrollingContentAtStart { get; set; } = () => true;
+    internal static readonly StyledProperty<bool> IsScrollingContentAtStartProperty =
+        AvaloniaProperty.Register<TopAppBarState, bool>(nameof(IsScrollingContentAtStart), true);
+    internal bool IsScrollingContentAtStart
+    {
+        get => GetValue(IsScrollingContentAtStartProperty);
+        set => SetValue(IsScrollingContentAtStartProperty, value);
+    }
     public float OverlappedFraction =>
-        !IsScrollingContentAtStart() && ContentOffset == 0
+        !IsScrollingContentAtStart && ContentOffset == 0
             ? 1
             : HeightOffsetLimit != 0
                 ? 1 - Math.Clamp(
@@ -86,6 +94,8 @@ public sealed class BottomAppBarState : AvaloniaObject, IHidingAppBarState
             CoerceOffset(owner, value));
     public static readonly StyledProperty<float> ContentOffsetProperty =
         AvaloniaProperty.Register<BottomAppBarState, float>(nameof(ContentOffset));
+
+    public BottomAppBarState() : this(-float.MaxValue, 0, 0) { }
 
     public BottomAppBarState(
         float initialHeightOffsetLimit = -float.MaxValue,

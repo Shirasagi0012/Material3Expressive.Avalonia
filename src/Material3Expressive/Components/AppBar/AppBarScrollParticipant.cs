@@ -25,7 +25,7 @@ internal readonly record struct AppBarSpring(double Damping, double Stiffness, f
 }
 
 internal readonly record struct AppBarScrollConfiguration(
-    TopScrollKind? TopKind,
+    TopAppBarScrollMode? TopKind,
     double TopRange,
     double BottomRange,
     double Density,
@@ -88,10 +88,13 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
 
     internal void Configure(AppBarScrollConfiguration config)
     {
-        var rangeChanged = _config.TopRange != config.TopRange || _config.BottomRange != config.BottomRange;
+        if (_config.TopRange != config.TopRange || _config.TopKind != config.TopKind ||
+            _config.TopEnabled != config.TopEnabled || _config.TopSnap != config.TopSnap)
+            _topSnap = null;
+        if (_config.BottomRange != config.BottomRange || _config.BottomEnabled != config.BottomEnabled ||
+            _config.BottomSnap != config.BottomSnap)
+            _bottomSnap = null;
         _config = config;
-        if (rangeChanged)
-            _topSnap = _bottomSnap = null;
         _top = Math.Clamp(_top, 0, config.TopRange);
         _bottom = Math.Clamp(_bottom, 0, config.BottomRange);
         Output();
@@ -113,8 +116,8 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
     {
         _topSnap = _bottomSnap = null;
         _lastDirection = context.Delta;
-        if (!_config.TopEnabled || _config.TopKind is null or TopScrollKind.Pinned ||
-            _config.TopKind == TopScrollKind.ExitUntilCollapsed && context.Delta < 0)
+        if (!_config.TopEnabled || _config.TopKind is null or TopAppBarScrollMode.Pinned ||
+            _config.TopKind == TopAppBarScrollMode.ExitUntilCollapsed && context.Delta < 0)
             return 0;
         var old = _top;
         _top = Math.Clamp(_top + context.Delta, 0, _config.TopRange);
@@ -134,7 +137,7 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
         if (!_config.TopEnabled)
             return 0;
         _topContent -= selfConsumed;
-        if (_config.TopKind != TopScrollKind.ExitUntilCollapsed || context.Delta >= 0)
+        if (_config.TopKind != TopAppBarScrollMode.ExitUntilCollapsed || context.Delta >= 0)
             return 0;
         var old = _top;
         _top = Math.Clamp(_top + context.Delta, 0, _config.TopRange);
@@ -174,7 +177,7 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
         _topSnap = StartSnap(
             _top,
             _config.TopRange,
-            _config.TopEnabled && _config.TopKind != TopScrollKind.Pinned ? _config.TopSnap : null,
+            _config.TopEnabled && _config.TopKind != TopAppBarScrollMode.Pinned ? _config.TopSnap : null,
             _config.Density);
         _bottomSnap = StartSnap(
             _bottom,

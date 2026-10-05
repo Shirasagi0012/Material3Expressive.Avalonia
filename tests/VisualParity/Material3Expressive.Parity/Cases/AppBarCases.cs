@@ -167,7 +167,20 @@ public sealed class AppBarCases
         internal Grid Root { get; }
         internal Control Bar { get; }
         internal AppBarScrollScope Scope { get; }
-        internal bool CanScroll = true, AtStart;
+        internal bool CanScroll
+        {
+            get => Bar is TopAppBar top ? top.ScrollBehavior!.CanScroll : ((BottomAppBar)Bar).ScrollBehavior!.CanScroll;
+            set
+            {
+                if (Bar is TopAppBar top) top.ScrollBehavior!.CanScroll = value;
+                else ((BottomAppBar)Bar).ScrollBehavior!.CanScroll = value;
+            }
+        }
+        internal bool AtStart
+        {
+            get => (Bar as TopAppBar)?.ScrollBehavior?.IsScrollingContentAtStart ?? false;
+            set { if (Bar is TopAppBar top) top.ScrollBehavior!.IsScrollingContentAtStart = value; }
+        }
         private Vector _consumed, _available, _flingResult;
         private Task<Vector>? _flingTask;
         private static Thickness Thickness(double[]? values) => values is null ? default : new(values[0], values[1], values[2], values[3]);
@@ -182,7 +195,12 @@ public sealed class AppBarCases
             if (bottom)
             {
                 BottomAppBar bar = config.Variant == "bottom" ? new BottomAppBar() : new FlexibleBottomAppBar(); Bar = bar;
-                bar.ScrollBehavior = config.NoSpecs ? BottomAppBarDefaults.ExitAlwaysScrollBehavior(_bottom, snapAnimationSpec: null, flingAnimationSpec: null, canScroll: () => CanScroll) : BottomAppBarDefaults.ExitAlwaysScrollBehavior(_bottom, canScroll: () => CanScroll);
+                bar.ScrollBehavior = new BottomAppBarScrollBehavior { State = _bottom };
+                if (config.NoSpecs)
+                {
+                    bar.ScrollBehavior.SnapAnimationSpec = null;
+                    bar.ScrollBehavior.FlingAnimationSpec = null;
+                }
                 bar.WindowInsets = Thickness(config.Insets); bar.TonalElevation = config.Elevation;
                 if (config.Padding is not null) bar.ContentPadding = Thickness(config.Padding);
                 if (config.ExpandedHeight is { } height) bar.ExpandedHeight = height;
@@ -199,9 +217,19 @@ public sealed class AppBarCases
                 TopAppBar bar = config.Variant switch { "center" => new CenterAlignedTopAppBar(), "medium" => new MediumTopAppBar(),
                     "large" => new LargeTopAppBar(), "mediumFlexible" => new MediumFlexibleTopAppBar(), "largeFlexible" => new LargeFlexibleTopAppBar(),
                     "twoRows" => new TwoRowsTopAppBar(), _ => new TopAppBar() }; Bar = bar;
-                bar.ScrollBehavior = config.Behavior switch { "pinned" => TopAppBarDefaults.PinnedScrollBehavior(_top, () => CanScroll, () => AtStart),
-                    "enter" => config.NoSpecs ? TopAppBarDefaults.EnterAlwaysScrollBehavior(_top, null, null, () => CanScroll, () => AtStart) : TopAppBarDefaults.EnterAlwaysScrollBehavior(_top, () => CanScroll, () => AtStart),
-                    _ => config.NoSpecs ? TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(_top, null, null, () => CanScroll) : TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(_top, () => CanScroll) };
+                bar.ScrollBehavior = new TopAppBarScrollBehavior(config.Behavior switch
+                {
+                    "pinned" => TopAppBarScrollMode.Pinned,
+                    "enter" => TopAppBarScrollMode.EnterAlways,
+                    _ => TopAppBarScrollMode.ExitUntilCollapsed,
+                }) { State = _top };
+                if (config.Behavior is "pinned" or "enter")
+                    bar.ScrollBehavior.IsScrollingContentAtStart = false;
+                if (config.NoSpecs)
+                {
+                    bar.ScrollBehavior.SnapAnimationSpec = null;
+                    bar.ScrollBehavior.FlingAnimationSpec = null;
+                }
                 bar.TitleHorizontalAlignment = config.Alignment switch { "center" => HorizontalAlignment.Center, "end" => HorizontalAlignment.Right, _ => HorizontalAlignment.Left };
                 bar.WindowInsets = Thickness(config.Insets); bar.ContentPadding = Thickness(config.Padding);
                 if (config.ExpandedHeight is { } height) bar.ExpandedHeight = height;

@@ -102,7 +102,7 @@ public class AppBarConfigurationTests
     public void UnspecifiedHeight_UsesCurrentThemeSelection_WithoutReplacingInput(double input)
     {
         var state = new TopAppBarState();
-        var bar = new MediumFlexibleTopAppBar { ExpandedHeight = input, ScrollBehavior = TopAppBarDefaults.ExitUntilCollapsedScrollBehavior(state) };
+        var bar = new MediumFlexibleTopAppBar { ExpandedHeight = input, ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state } };
         using var clock = new MotionTestClockScope(); var window = Show(bar);
         try
         {
@@ -121,7 +121,7 @@ public class AppBarConfigurationTests
     {
         var state = new BottomAppBarState();
         BottomAppBar bar = flexible ? new FlexibleBottomAppBar() : new BottomAppBar();
-        bar.ScrollBehavior = BottomAppBarDefaults.ExitAlwaysScrollBehavior(state);
+        bar.ScrollBehavior = new BottomAppBarScrollBehavior() { State = state };
         var heightKey = flexible ? Comp.AppBar.FlexibleBottomExpandedHeight : Comp.AppBar.BottomExpandedHeight;
         var paddingKey = flexible ? Comp.AppBar.FlexibleBottomContentPadding : Comp.AppBar.BottomContentPadding;
         var elevationKey = flexible ? Comp.AppBar.FlexibleBottomTonalElevation : Comp.AppBar.BottomTonalElevation;
@@ -203,7 +203,7 @@ public class AppBarConfigurationTests
     public void Colors_LocalBindingClearAndAnimation_KeepConfigurationSeparateFromPaint()
     {
         var state = new TopAppBarState();
-        var bar = new TopAppBar { ScrollBehavior = TopAppBarDefaults.PinnedScrollBehavior(state) };
+        var bar = new TopAppBar { ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.Pinned) { State = state } };
         bar.Resources[Comp.AppBar.ContainerColor] = Colors.Red; bar.Resources[Comp.AppBar.ScrolledContainerColor] = Colors.Blue;
         using var clock = new MotionTestClockScope(); var window = Show(bar);
         try
