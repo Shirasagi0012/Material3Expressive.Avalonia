@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:MaterialShapes.Gallery.ViewModels"
+             xmlns:controls="using:MaterialShapes.Gallery.Controls"
+             xmlns:conv="using:MaterialShapes.Gallery.Converters"
+             xmlns:lib="clr-namespace:MaterialShapes.Controls;assembly=MaterialShapes"
+             mc:Ignorable="d"
+             x:Class="MaterialShapes.Gallery.Views.MorphsView"
+             x:DataType="vm:MorphsViewModel">
+    <UserControl.Resources>
+        <conv:BorderOpacityConverter x:Key="BorderOpacityConverter" />
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*"
+          Background="Black"
+          Margin="16">
+        <ItemsControl Grid.Row="0"
+                      ItemsSource="{Binding ShapeThumbnails}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="5" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ShapeThumbnailViewModel">
+                    <Border BorderThickness="3"
+                            Width="80"
+                            Height="80"
+                            Margin="5">
+                        <Border.BorderBrush>
+                            <MultiBinding Converter="{StaticResource BorderOpacityConverter}">
+                                <Binding Path="Index" />
+                                <Binding Path="DataContext.SelectedShapeIndex"
+                                         RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                <Binding Path="DataContext.CurrentShapeIndex"
+                                         RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                <Binding Path="DataContext.Progress"
+                                         RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                            </MultiBinding>
+                        </Border.BorderBrush>
+                        <Button Command="{Binding DataContext.SelectShapeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding Index}"
+                                VerticalAlignment="Stretch"
+                                HorizontalAlignment="Stretch"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0">
+                            <lib:MaterialShapeView Shape="{Binding Shape}"
+                                                   VerticalAlignment="Stretch"
+                                                   HorizontalAlignment="Stretch"
+                                                   Background="White" />
+                        </Button>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    Margin="0,10,0,8">
+            <ToggleButton IsChecked="{Binding Debug}" Content="Debug" />
+            <Button Command="{Binding EditCommand}" Content="Edit" />
+            <Button Command="{Binding ReplayCommand}" Content="Replay" />
+        </StackPanel>
+
+        <Slider Grid.Row="2"
+                Minimum="0"
+                Maximum="1"
+                Value="{Binding Progress, Mode=TwoWay}" />
+
+        <Grid Grid.Row="3"
+              Margin="0,12,0,0">
+            <lib:MorphShapeView x:Name="MorphView" Center="True"
+                                Stretch="Uniform"
+                                From="{Binding From}"
+                                To="{Binding To}"
+                                Progress="{Binding Progress}"
+                                Fill="White"/>
+            <controls:MorphDebugOverlay Morph="{Binding #MorphView.Morph}"
+                                        Progress="{Binding Progress}"
+                                        IsVisible="{Binding Debug}" />
+        </Grid>
+    </Grid>
+</UserControl>

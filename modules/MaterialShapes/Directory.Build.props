@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Keep the standalone MaterialShapes repository consistent with the parent build. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>

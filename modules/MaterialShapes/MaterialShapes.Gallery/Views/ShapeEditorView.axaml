@@ -1,0 +1,153 @@
+<UserControl
+    x:Class="MaterialShapes.Gallery.Views.ShapeEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:MaterialShapes.Gallery.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:MaterialShapes.Gallery.ViewModels"
+    x:DataType="vm:ShapeEditorViewModel"
+    mc:Ignorable="d">
+    <Grid
+        Margin="16"
+        Background="Black"
+        RowDefinitions="Auto,Auto,*,Auto,Auto">
+        <StackPanel
+            Grid.Row="0"
+            Orientation="Horizontal"
+            Spacing="8">
+            <TextBlock
+                VerticalAlignment="Center"
+                Foreground="White"
+                Text="Base Shape:" />
+            <Button Command="{Binding NextBaseShapeCommand}" Content="{Binding Parameters.SelectedShape.Name}" />
+            <Button Click="OnResetViewClicked" Content="Reset View" />
+        </StackPanel>
+
+        <StackPanel
+            Grid.Row="1"
+            Margin="0,10,0,0"
+            Spacing="6">
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                <TextBlock
+                    Grid.Column="0"
+                    Foreground="White"
+                    Text="Sides" />
+                <Slider
+                    Grid.Column="1"
+                    IsEnabled="{Binding Parameters.SelectedShape.UsesSides}"
+                    IsSnapToTickEnabled="True"
+                    Maximum="20"
+                    Minimum="3"
+                    TickFrequency="1"
+                    Value="{Binding Parameters.Sides, Mode=TwoWay}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                <TextBlock
+                    Grid.Column="0"
+                    Foreground="White"
+                    Text="InnerRadius" />
+                <Slider
+                    Grid.Column="1"
+                    IsEnabled="{Binding Parameters.SelectedShape.UsesInnerRatio}"
+                    Maximum="0.999"
+                    Minimum="0.1"
+                    Value="{Binding Parameters.InnerRadius, Mode=TwoWay}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                <TextBlock
+                    Grid.Column="0"
+                    Foreground="White"
+                    Text="RoundRadius" />
+                <Slider
+                    Grid.Column="1"
+                    IsEnabled="{Binding Parameters.SelectedShape.UsesRoundness}"
+                    Maximum="1"
+                    Minimum="0"
+                    Value="{Binding Parameters.Roundness, Mode=TwoWay}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                <TextBlock
+                    Grid.Column="0"
+                    Foreground="White"
+                    Text="Smoothing" />
+                <Slider
+                    Grid.Column="1"
+                    Maximum="1"
+                    Minimum="0"
+                    Value="{Binding Parameters.Smooth, Mode=TwoWay}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                <TextBlock
+                    Grid.Column="0"
+                    Foreground="White"
+                    Text="InnerRoundRadius" />
+                <Slider
+                    Grid.Column="1"
+                    IsEnabled="{Binding Parameters.SelectedShape.UsesInnerParameters}"
+                    Maximum="1"
+                    Minimum="0"
+                    Value="{Binding Parameters.InnerRoundness, Mode=TwoWay}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                <TextBlock
+                    Grid.Column="0"
+                    Foreground="White"
+                    Text="InnerSmoothing" />
+                <Slider
+                    Grid.Column="1"
+                    IsEnabled="{Binding Parameters.SelectedShape.UsesInnerParameters}"
+                    Maximum="1"
+                    Minimum="0"
+                    Value="{Binding Parameters.InnerSmooth, Mode=TwoWay}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="8">
+                <TextBlock
+                    Grid.Column="0"
+                    Foreground="White"
+                    Text="Rotation" />
+                <Slider
+                    Grid.Column="1"
+                    IsSnapToTickEnabled="False"
+                    Maximum="360"
+                    Minimum="0"
+                    TickFrequency="45"
+                    Value="{Binding Parameters.Rotation, Mode=TwoWay}" />
+            </Grid>
+        </StackPanel>
+
+        <Border
+            Grid.Row="2"
+            Margin="0,10,0,0"
+            Padding="2"
+            BorderBrush="White"
+            BorderThickness="1">
+            <controls:PanZoomRotatePresenter x:Name="PanZoomPresenter">
+                <Grid>
+                    <controls:PolygonShapeView Fill="White" Shape="{Binding PreviewShape}" />
+                    <controls:RoundedPolygonDebugOverlay IsVisible="{Binding Debug}" Shape="{Binding PreviewShape}" />
+                </Grid>
+            </controls:PanZoomRotatePresenter>
+        </Border>
+
+        <StackPanel
+            Grid.Row="3"
+            Margin="0,10,0,0"
+            Orientation="Horizontal"
+            Spacing="8">
+            <Button Command="{Binding AcceptCommand}" Content="Accept" />
+            <ToggleButton Content="Debug" IsChecked="{Binding Debug}" />
+            <ToggleButton Content="AutoSize" IsChecked="{Binding AutoSize}" />
+            <Button Command="{Binding OutputDetailsCommand}" Content="Output Details" />
+        </StackPanel>
+
+        <TextBox
+            Grid.Row="4"
+            Margin="0,10,0,0"
+            Background="#111111"
+            Foreground="White"
+            IsReadOnly="True"
+            Text="{Binding OutputText}"
+            TextWrapping="Wrap" />
+    </Grid>
+</UserControl>
