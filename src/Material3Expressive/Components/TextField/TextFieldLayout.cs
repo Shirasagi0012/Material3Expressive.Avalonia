@@ -13,10 +13,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Foundation.Typography;
-using Material3Expressive.Tokens;
 using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 using TextStyle = Material3Expressive.Foundation.Typography.TextStyle;
 
@@ -148,7 +145,9 @@ internal sealed partial class TextFieldLayout : Panel
         base.OnPropertyChanged(e);
         if (_owner == null || (e.Property != ContainerBrushProperty && e.Property != IndicatorBrushProperty &&
             e.Property != LabelBrushProperty && e.Property != LargeTextStyleProperty && e.Property != SmallTextStyleProperty &&
-            e.Property != FlowDirectionProperty)) return;
+            e.Property != DefaultMinimumWidthProperty && e.Property != DefaultMinimumHeightProperty &&
+            e.Property != SpatialAnimationProperty && e.Property != FastEffectsAnimationProperty &&
+            e.Property != SlowEffectsAnimationProperty && e.Property != FlowDirectionProperty)) return;
         UpdateSlots(); Retarget(); InvalidateMeasure(); InvalidateDecoration();
     }
 
@@ -197,8 +196,6 @@ internal sealed partial class TextFieldLayout : Panel
 
     private void InvalidateDecoration() => _decoration?.InvalidateVisual();
     private static Color ColorOf(IBrush? brush) => (brush as ISolidColorBrush)?.Color ?? Colors.Transparent;
-    private MotionSpring Resolve(MaterialTokenKey<MotionSpring> key, MotionSpring fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is MotionSpring spec ? spec : fallback;
 
     private void Retarget()
     {
@@ -209,9 +206,9 @@ internal sealed partial class TextFieldLayout : Panel
             await motion.Clock.NextFrameAsync(ct); _pending = false;
             var previous = _phase; _phase = Phase;
             var idleColorChange = previous == _phase && !_labelProgress!.IsRunning && !_labelColor!.IsRunning;
-            var spatial = Resolve(MaterialTokens.Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial);
-            var fast = Resolve(MaterialTokens.Sys.Motion.Spring.EffectsFast, MotionScheme.Expressive.FastEffects);
-            var slow = Resolve(MaterialTokens.Sys.Motion.Spring.EffectsSlow, MotionScheme.Expressive.SlowEffects);
+            var spatial = SpatialAnimation;
+            var fast = FastEffectsAnimation;
+            var slow = SlowEffectsAnimation;
             Animate(_labelProgress!, LabelTarget, spatial);
             Animate(_placeholderAlpha!, Phase == 1 || Phase == 0 && !Expanded ? 1 : 0,
                 previous == 0 && Phase == 1 || previous == 2 && Phase == 0 ? slow : fast);
@@ -257,7 +254,7 @@ internal sealed partial class TextFieldLayout : Panel
         var p = Math.Clamp(LabelProgress, 0f, 1f);
         _cutoutTop = Cutout ? Round((SmallTextStyle?.LineHeight ?? 16) / 2) : 0;
         var maxHeight = Math.Max(0, available.Height - _cutoutTop);
-        _padding = _owner.IsSet(TextBox.PaddingProperty) ? _owner.Padding : new Thickness(16, HasLabel && Position == TextFieldLabelPosition.Inside ? 8 : 16);
+        _padding = _owner.Padding;
         var top = Round(_padding.Top); var bottom = Round(_padding.Bottom);
         var start = Round(_padding.Left); var end = Round(_padding.Right);
         // Logical start/end padding; icons include their 48-DIP minimum interactive slot.
@@ -280,7 +277,7 @@ internal sealed partial class TextFieldLayout : Panel
             Measure(child, available.Width - occupied, maxHeight);
             occupied += child.DesiredSize.Width; occupiedY = Math.Max(occupiedY, child.DesiredSize.Height);
         }
-        var minWidth = double.IsNaN(_owner.Width) ? Math.Min(_owner.MinWidth > 0 ? _owner.MinWidth : 280, available.Width) : available.Width;
+        var minWidth = double.IsNaN(_owner.Width) ? Math.Min(_owner.MinWidth > 0 ? _owner.MinWidth : DefaultMinimumWidth, available.Width) : available.Width;
         Measure(_label, Above ? minWidth : available.Width - (Cutout ? Lerp(occupied + start + end, start + end, p) : occupied), maxHeight - bottom);
         var labelIntrinsic = Above ? _label.DesiredSize.Height : 0;
         Measure(_supporting, minWidth, maxHeight);
@@ -307,7 +304,7 @@ internal sealed partial class TextFieldLayout : Panel
             ? Math.Max(Round(SmallTextStyle?.LineHeight ?? 16), Lerp(0, labelHeight, new CubicBezierEasing(0.3, 0, 0.8, 0.15).Ease(p))) : 0;
         var actualTop = Cutout ? Lerp(top, Math.Max(top, labelHeight / 2), p) : top + labelContribution;
         _containerHeight = Math.Max(Math.Max(_leading.DesiredSize.Height, _trailing.DesiredSize.Height), Round(actualTop + inputHeight + bottom));
-        var minHeight = _owner.MinHeight > 0 ? _owner.MinHeight : 56;
+        var minHeight = _owner.MinHeight > 0 ? _owner.MinHeight : DefaultMinimumHeight;
         var total = Math.Max(minHeight, _aboveHeight + _containerHeight + _supportingHeight);
         total = Math.Min(maxHeight, total);
         return new Size(width, Math.Max(0, total + _cutoutTop));

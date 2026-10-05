@@ -32,6 +32,8 @@ RevealLastTyped”。这项决定允许 Hidden / Visible 与原生编辑限制�
 策略不因 detach / reattach 失效，不能把视觉生命周期当安全限制生命周期；普通主题变化也不关闭策略。
 Visible 只影响呈现，不放开导出。应用显式 PasswordChar 为零仍能取消原生遮蔽，IsSecure 不代替显示配置。
 TextField 的原生编辑边界、禁用连续回落和标签尺寸插值限制按其已确认范围执行。
+外观默认值通过 BasedOn 继承 TextField 的主题/配置属性数据流；普通样式、绑定、局部值与
+ClearValue 的规则也一致。此次默认配置迁移不改变本节的安全限制及其优先级。
 
 ## 尚未实现与未解决缺口
 

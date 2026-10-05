@@ -40,6 +40,27 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`；Core
 - 无障碍名称/帮助文字以 Style 优先级投影到原生 Automation 属性，应用的显式值优先；owner 保留原生 Edit / IValueProvider peer，不声称构建了 Compose 的完整 semantics 树
 - 共用排版通过 BodyLarge / BodySmall 聚合 Token；运动使用 FastSpatial / FastEffects / SlowEffects。共享能力的原因和限制引用相应文档，不在此复制决定
 
+## 默认配置的数据流
+
+TextFieldTokenSource 保存 Filled / Outlined 的颜色与形状基线，以及共享 TextField 的软最小尺寸、
+两种 Padding 和运动引用。主题将它们绑定到原生 TextBox 或内部 TextFieldLayout 的配置属性；
+布局与动画只消费这些有效属性，不重新查询 motion Token 或使用 Expressive 备用规格。
+运行中的动画值仍由模板局部 Animatable 持有，不写回公开颜色、Padding 或运动配置。
+
+聚焦、错误与禁用样式只选择内部 TextFieldThemeDefaults 的颜色默认值，基础主题再以普通主题
+优先级绑定 Background、Foreground、BorderBrush、PlaceholderForeground 和 CaretBrush。
+这样普通应用 Style、Binding 与 LocalValue 均可覆盖，清除后恢复当前状态的默认值。
+内部标签和其余槽位的颜色仍由主题直接提供给模板部件。
+
+Padding 的主题 MultiBinding 按 Label 非 null 且位置为 Inside 选择 WithLabelContentPadding，
+其他情况使用 ContentPadding；布局不再用 IsSet 自建默认值。软最小宽高仍是模板部件配置，
+不是原生 MinWidth / MinHeight 的强约束；显式原生约束与受限父空间的原有处理不变。
+48 DIP 图标交互槽、12 DIP 图标 Padding 补偿、2 DIP affix 留白等保留在对应布局算法中。
+
+TextStyle 的字段 null 表示未指定，符合共享排版协议；本次没有改变稀疏样式参与标签插值时
+现有的字号、行高、字距和字重补值语义。该插值补值仍在组件内，不能据此声称已消除所有排版默认值。
+SecureTextField 通过 BasedOn 继承同一数据流，其编辑安全策略不参与外观配置迁移。
+
 ## 已确认的原生编辑边界
 
 以下依据来自[拆分前组件移植记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/df8656750b2ac03d29ecfd3d81949bfadedcffdf/src/Material3Expressive/Components/TextField/README.md)，确认范围限于该方案；并非仅因当前代码如此实现而追认为决定。

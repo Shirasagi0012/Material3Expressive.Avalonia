@@ -1,11 +1,24 @@
 using Avalonia;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Tokens;
+using Material3Expressive.Foundation.Motion;
 namespace Material3Expressive.Tokens;
 public static partial class MaterialTokens
 {
     public static partial class Comp
     {
+        // Shared decoration defaults for Filled, Outlined and their secure themes.
+        public static class TextField
+        {
+            public static readonly MaterialTokenKey<double> MinimumWidth = new("md.comp.text-field.minimum-width");
+            public static readonly MaterialTokenKey<double> MinimumHeight = new("md.comp.text-field.minimum-height");
+            public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.text-field.content-padding");
+            public static readonly MaterialTokenKey<Thickness> WithLabelContentPadding = new("md.comp.text-field.with-label-content-padding");
+            public static readonly MaterialTokenKey<SpringSpec> SpatialAnimation = new("md.comp.text-field.spatial-animation");
+            public static readonly MaterialTokenKey<SpringSpec> FastEffectsAnimation = new("md.comp.text-field.fast-effects-animation");
+            public static readonly MaterialTokenKey<SpringSpec> SlowEffectsAnimation = new("md.comp.text-field.slow-effects-animation");
+        }
+
         public static class FilledTextField
         {
             public static readonly MaterialTokenKey<Color> UnfocusedInputColor = new("md.comp.filled-text-field.unfocused-input-color");

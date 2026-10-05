@@ -121,7 +121,8 @@ leading / trailing，会跟随 RTL。图标默认尺寸为 24 DIP，两个槽仍
 
 - 默认最小尺寸计算以宽 280、高 56 DIP 为起点，并遵守父级约束；Above 标签、辅助文字、多行及 Cutout 顶部留白会影响总高度，不应把 56 当作固定高度
 - 原生 `Width` / `Height` / `MinWidth` / `MinHeight` 可约束布局；默认 Padding 为 16 DIP，Inside 且有标签时上下为 8 DIP，显式 `Padding` 优先
-- `CornerRadius`、`Background`、`Foreground`、`BorderBrush`、`CaretBrush` 与 `SelectionBrush` 可局部覆盖；此处 `BorderBrush` 是指示线/描边颜色，线宽由组件的焦点状态控制
+- `CornerRadius`、`Background`、`Foreground`、`BorderBrush`、`CaretBrush` 与 `SelectionBrush` 可通过普通样式、绑定或局部值覆盖；此处 `BorderBrush` 是指示线/描边颜色，线宽由组件的焦点状态控制
+- 共享软最小尺寸、Padding 与运动默认值位于 `MaterialTokens.Comp.TextField`；清除覆盖后恢复当前内容/状态下的主题默认值
 - 系统颜色和排版定制从 [Token 与排版入口](../../../../docs/GETTING_STARTED.md#主题与定制)开始；组件颜色槽为 `MaterialTokens.Comp.FilledTextField` / `OutlinedTextField`
 - 内容默认继承槽位前景色，内容自身的显式局部值仍优先；显式设置固定颜色时，也需考虑禁用、错误与明暗外观
 
