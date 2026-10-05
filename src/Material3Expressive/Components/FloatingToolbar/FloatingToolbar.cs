@@ -18,6 +18,14 @@ public enum FloatingToolbarExitDirection { Start, End, Top, Bottom }
 /// <summary>Shared parameters of the fixed Compose floating toolbar overloads.</summary>
 public abstract class FloatingToolbar : ContentControl
 {
+    internal static readonly StyledProperty<Avalonia.Media.IBrush?> DefaultBackgroundProperty = AvaloniaProperty.Register<FloatingToolbar, Avalonia.Media.IBrush?>(nameof(DefaultBackground));
+    internal Avalonia.Media.IBrush? DefaultBackground { get => GetValue(DefaultBackgroundProperty); set => SetValue(DefaultBackgroundProperty, value); }
+    internal static readonly StyledProperty<double> DefaultExpandedShadowElevationProperty = AvaloniaProperty.Register<FloatingToolbar, double>(nameof(DefaultExpandedShadowElevation));
+    internal double DefaultExpandedShadowElevation { get => GetValue(DefaultExpandedShadowElevationProperty); set => SetValue(DefaultExpandedShadowElevationProperty, value); }
+    internal static readonly StyledProperty<IControlTemplate?> DefaultTemplateProperty = AvaloniaProperty.Register<FloatingToolbar, IControlTemplate?>(nameof(DefaultTemplate));
+    internal IControlTemplate? DefaultTemplate { get => GetValue(DefaultTemplateProperty); set => SetValue(DefaultTemplateProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> ScrollSnapAnimationProperty = AvaloniaProperty.Register<FloatingToolbar, Foundation.Motion.SpringSpec>(nameof(ScrollSnapAnimation));
+    internal Foundation.Motion.SpringSpec ScrollSnapAnimation { get => GetValue(ScrollSnapAnimationProperty); set => SetValue(ScrollSnapAnimationProperty, value); }
     public static readonly StyledProperty<bool> ExpandedProperty = AvaloniaProperty.Register<FloatingToolbar, bool>(nameof(Expanded), true);
     public static readonly StyledProperty<object?> LeadingContentProperty = AvaloniaProperty.Register<FloatingToolbar, object?>(nameof(LeadingContent));
     public static readonly StyledProperty<IDataTemplate?> LeadingContentTemplateProperty = AvaloniaProperty.Register<FloatingToolbar, IDataTemplate?>(nameof(LeadingContentTemplate));
@@ -25,9 +33,9 @@ public abstract class FloatingToolbar : ContentControl
     public static readonly StyledProperty<IDataTemplate?> TrailingContentTemplateProperty = AvaloniaProperty.Register<FloatingToolbar, IDataTemplate?>(nameof(TrailingContentTemplate));
     public static readonly StyledProperty<object?> FloatingActionButtonProperty = AvaloniaProperty.Register<FloatingToolbar, object?>(nameof(FloatingActionButton));
     public static readonly StyledProperty<IDataTemplate?> FloatingActionButtonTemplateProperty = AvaloniaProperty.Register<FloatingToolbar, IDataTemplate?>(nameof(FloatingActionButtonTemplate));
-    public static readonly StyledProperty<double?> ExpandedShadowElevationProperty = AvaloniaProperty.Register<FloatingToolbar, double?>(nameof(ExpandedShadowElevation));
+    public static readonly StyledProperty<double> ExpandedShadowElevationProperty = AvaloniaProperty.Register<FloatingToolbar, double>(nameof(ExpandedShadowElevation));
     public static readonly StyledProperty<double> CollapsedShadowElevationProperty = AvaloniaProperty.Register<FloatingToolbar, double>(nameof(CollapsedShadowElevation));
-    public static readonly StyledProperty<IFiniteAnimationSpec<float>?> AnimationSpecProperty = AvaloniaProperty.Register<FloatingToolbar, IFiniteAnimationSpec<float>?>(nameof(AnimationSpec));
+    public static readonly StyledProperty<IFiniteAnimationSpec<float>> AnimationSpecProperty = AvaloniaProperty.Register<FloatingToolbar, IFiniteAnimationSpec<float>>(nameof(AnimationSpec));
     public static readonly StyledProperty<FloatingToolbarScrollBehavior?> ScrollBehaviorProperty = AvaloniaProperty.Register<FloatingToolbar, FloatingToolbarScrollBehavior?>(nameof(ScrollBehavior));
     public static readonly StyledProperty<ScrollViewer?> ScrollSourceProperty = AvaloniaProperty.Register<FloatingToolbar, ScrollViewer?>(nameof(ScrollSource));
     public static readonly StyledProperty<bool> TouchExplorationEnabledProperty = AvaloniaProperty.Register<FloatingToolbar, bool>(nameof(TouchExplorationEnabled));
@@ -42,10 +50,10 @@ public abstract class FloatingToolbar : ContentControl
     /// <summary>Presence selects the FAB overload. Leading/trailing slots belong to the ordinary overload.</summary>
     public object? FloatingActionButton { get => GetValue(FloatingActionButtonProperty); set => SetValue(FloatingActionButtonProperty, value); }
     public IDataTemplate? FloatingActionButtonTemplate { get => GetValue(FloatingActionButtonTemplateProperty); set => SetValue(FloatingActionButtonTemplateProperty, value); }
-    /// <summary>Null selects 0 DIP without FAB, 1 DIP with FAB.</summary>
-    public double? ExpandedShadowElevation { get => GetValue(ExpandedShadowElevationProperty); set => SetValue(ExpandedShadowElevationProperty, value); }
+    /// <summary>Theme default is 0 DIP without FAB and 1 DIP with FAB.</summary>
+    public double ExpandedShadowElevation { get => GetValue(ExpandedShadowElevationProperty); set => SetValue(ExpandedShadowElevationProperty, value); }
     public double CollapsedShadowElevation { get => GetValue(CollapsedShadowElevationProperty); set => SetValue(CollapsedShadowElevationProperty, value); }
-    public IFiniteAnimationSpec<float>? AnimationSpec { get => GetValue(AnimationSpecProperty); set => SetValue(AnimationSpecProperty, value); }
+    public IFiniteAnimationSpec<float> AnimationSpec { get => GetValue(AnimationSpecProperty); set => SetValue(AnimationSpecProperty, value); }
     public FloatingToolbarScrollBehavior? ScrollBehavior { get => GetValue(ScrollBehaviorProperty); set => SetValue(ScrollBehaviorProperty, value); }
     /// <summary>Observes actual vertical consumed scroll; custom hosts can call the behavior directly.</summary>
     public ScrollViewer? ScrollSource { get => GetValue(ScrollSourceProperty); set => SetValue(ScrollSourceProperty, value); }
@@ -100,14 +108,7 @@ public sealed class VerticalFloatingToolbar : FloatingToolbar
 
 public static class FloatingToolbarDefaults
 {
-    public const double ContainerSize = 64;
-    public const double ScreenOffset = 16;
-    public const double ContainerExpandedElevation = 0;
-    public const double ContainerCollapsedElevation = 0;
-    public const double ContainerExpandedElevationWithFab = 1;
-    public const double ContainerCollapsedElevationWithFab = 0;
     public const double ScrollDistanceThreshold = 40;
-    public static Thickness ContentPadding => new(8);
     public static FloatingToolbarScrollBehavior ExitAlwaysScrollBehavior(FloatingToolbarExitDirection exitDirection,
         FloatingToolbarState? state = null, IAnimationSpec<float>? snapAnimationSpec = null, IDecayAnimationSpec<float>? flingAnimationSpec = null) =>
         new(exitDirection, state ?? new(), snapAnimationSpec, flingAnimationSpec);

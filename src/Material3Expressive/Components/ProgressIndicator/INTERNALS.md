@@ -3,6 +3,12 @@
 使用入口见 [README](README.md)。四种控件共享属性、绘制与生命周期，分别连接固定上游的
 确定/不确定重载；软默认尺寸与绘制几何不可混成另一套硬尺寸模型。
 
+主题专用 DefaultWavelength 用 null 表示未就绪。波浪绘制/offset 只有显式 Wavelength 或主题波长到达后才启动；临时资源失效不把 0 作为波长送入绘制缓存。恢复继续由属性通知驱动，显式非法波长仍是原来的 domain 错误，不用数字 fallback 掩盖。
+
+## 默认配置数据流
+
+默认尺寸、线宽、间隙和端帽只在 TokenSource 提供基线，经主题进入配置属性；普通线形宽度同样支持动态 Token。圆形不确定轨道颜色、线形波浪模式波长使用普通 Style 优先级的条件绑定，用户普通 Style 不被模式触发器盖过。Stroke/TrackStroke/Wavelength 的 null 默认选择、WaveSpeed 的 null 跟随实际波长以及振幅算法保持既有明确语义；不把动画工厂或绘制常量变成 Token。
+
 ## 固定上游与本地入口
 
 固定版本以 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：AndroidX

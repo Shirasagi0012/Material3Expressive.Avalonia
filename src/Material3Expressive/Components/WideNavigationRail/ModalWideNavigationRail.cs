@@ -15,16 +15,17 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Input;
-using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Overlays;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
 /// <summary>A wide rail which expands over the current TopLevel, with a dismissible scrim.</summary>
 public class ModalWideNavigationRail : WideNavigationRail
 {
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> EffectsAnimationProperty = AvaloniaProperty.Register<ModalWideNavigationRail, Foundation.Motion.SpringSpec>(nameof(EffectsAnimation));
+    internal Foundation.Motion.SpringSpec EffectsAnimation { get => GetValue(EffectsAnimationProperty); set => SetValue(EffectsAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> OffsetAnimationProperty = AvaloniaProperty.Register<ModalWideNavigationRail, Foundation.Motion.SpringSpec>(nameof(OffsetAnimation));
+    internal Foundation.Motion.SpringSpec OffsetAnimation { get => GetValue(OffsetAnimationProperty); set => SetValue(OffsetAnimationProperty, value); }
     public static readonly StyledProperty<bool> HideOnCollapseProperty = AvaloniaProperty.Register<ModalWideNavigationRail, bool>(nameof(HideOnCollapse));
     public static readonly StyledProperty<object?> ExpandedHeaderProperty = AvaloniaProperty.Register<ModalWideNavigationRail, object?>(nameof(ExpandedHeader));
     public static readonly StyledProperty<IDataTemplate?> ExpandedHeaderTemplateProperty = AvaloniaProperty.Register<ModalWideNavigationRail, IDataTemplate?>(nameof(ExpandedHeaderTemplate));
@@ -33,7 +34,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     public static readonly StyledProperty<IBrush?> ModalForegroundProperty = AvaloniaProperty.Register<ModalWideNavigationRail, IBrush?>(nameof(ModalForeground));
     public static readonly StyledProperty<IBrush?> ScrimBrushProperty = AvaloniaProperty.Register<ModalWideNavigationRail, IBrush?>(nameof(ScrimBrush));
     public static readonly StyledProperty<CornerRadius> CollapsedCornerRadiusProperty = AvaloniaProperty.Register<ModalWideNavigationRail, CornerRadius>(nameof(CollapsedCornerRadius));
-    public static readonly StyledProperty<CornerRadius> ExpandedCornerRadiusProperty = AvaloniaProperty.Register<ModalWideNavigationRail, CornerRadius>(nameof(ExpandedCornerRadius), new CornerRadius(16));
+    public static readonly StyledProperty<CornerRadius> ExpandedCornerRadiusProperty = AvaloniaProperty.Register<ModalWideNavigationRail, CornerRadius>(nameof(ExpandedCornerRadius));
     public static readonly StyledProperty<bool> ShouldDismissOnBackPressProperty = AvaloniaProperty.Register<ModalWideNavigationRail, bool>(nameof(ShouldDismissOnBackPress), true);
     public bool HideOnCollapse { get => GetValue(HideOnCollapseProperty); set => SetValue(HideOnCollapseProperty, value); }
     public object? ExpandedHeader { get => GetValue(ExpandedHeaderProperty); set => SetValue(ExpandedHeaderProperty, value); }
@@ -131,6 +132,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         CloseOverlay(false);
+        _pendingDragSettle = null;
+        _pendingDismiss = false;
         _scope?.Dispose(); _scope = null;
         _position = _alpha = _offset = null; _pending = false; _width = 0;
         _offsetSubscription = null;
@@ -143,8 +146,24 @@ public class ModalWideNavigationRail : WideNavigationRail
             || change.Property == ExpandedHeaderTemplateProperty || change.Property == ExpandedHeaderTopPaddingProperty)
             UpdateHeader();
         if (change.Property == HideOnCollapseProperty) RefreshPresentation();
+        if (change.Property == EffectsAnimationProperty && EffectsAnimation.Stiffness > 0)
+        {
+            if (_position is { } position && position.TargetValue != (State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f)) UpdateExpansion();
+            UpdateScrim();
+        }
+        if (change.Property == OffsetAnimationProperty && OffsetAnimation.Stiffness > 0)
+        {
+            if (_pendingDismiss) { _pendingDismiss = false; DismissFromScrim(); }
+            else if (_pendingDragSettle is { } pending && pending.StateTarget == State.TargetValue && !_dragging)
+                SettleDrag(pending.Target, pending.Velocity);
+            else if (!_dragging && HideOnCollapse && _offset is { } offset
+                && offset.TargetValue != (State.TargetValue == WideNavigationRailValue.Collapsed ? -_width : 0))
+            { _pendingDragSettle = null; _ = AnimateOffset(State.TargetValue); }
+        }
         if (change.Property == StateProperty)
         {
+            _pendingDismiss = false;
+            _pendingDragSettle = null;
             // Upstream remember(state) recreates the anchored state for a new hoisted state.
             _flingCancellation?.Cancel();
             if (_offset is not null) _ = _offset.StopAsync();
@@ -167,21 +186,22 @@ public class ModalWideNavigationRail : WideNavigationRail
             if (!frameDriven) await scope.Clock.NextFrameAsync(ct);
             _pending = false;
             var target = State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f;
+            var effects = EffectsAnimation;
+            if (effects.Stiffness <= 0) return;
             if (_position.TargetValue != target)
             {
                 _ = scope.Launch(async lifetime =>
                 {
                     await _position.StopAsync();
                     lifetime.ThrowIfCancellationRequested();
-                    await _position.AnimateToAsync(target, Spring(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects), cancellationToken: lifetime);
+                    await _position.AnimateToAsync(target, Spring(effects), cancellationToken: lifetime);
                 }, "Modal rail position");
                 if (IsModalVisible && HideOnCollapse && !_dragging) _ = AnimateOffset(State.TargetValue);
             }
         }, "Modal rail target");
     }
-    private SpringSpec<float> Spring(MaterialTokenKey<Foundation.Motion.SpringSpec> key, Foundation.Motion.SpringSpec fallback)
+    private static SpringSpec<float> Spring(Foundation.Motion.SpringSpec spec)
     {
-        var spec = TokenResolver.TryResolve(this, key, ActualThemeVariant, out var resolved) && resolved is Foundation.Motion.SpringSpec value ? value : fallback;
         return new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f);
     }
     private void InitializeMotion()
@@ -290,7 +310,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void UpdateScrim()
     {
-        if (_scope is not { IsEnding: false } scope || _alpha is null) return;
+        if (_scope is not { IsEnding: false } scope || _alpha is null || EffectsAnimation.Stiffness <= 0) return;
+        var effects = EffectsAnimation;
         var visible = HideOnCollapse ? _anchorTarget == WideNavigationRailValue.Expanded : PositionProgress >= .3f;
         if (visible == _scrimTarget) return;
         _scrimTarget = visible;
@@ -303,7 +324,7 @@ public class ModalWideNavigationRail : WideNavigationRail
             if (HideOnCollapse && !frameDriven) await scope.Clock.NextFrameAsync(ct);
             if (!ReferenceEquals(track, _alpha)) return;
             await track.StopAsync();
-            await track.AnimateToAsync(_scrimTarget ? 1f : 0f, Spring(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects), cancellationToken: ct);
+            await track.AnimateToAsync(_scrimTarget ? 1f : 0f, Spring(effects), cancellationToken: ct);
         }, "Modal rail scrim");
     }
     internal void UpdateAnchors(double measuredWidth)
@@ -330,11 +351,13 @@ public class ModalWideNavigationRail : WideNavigationRail
         _flingCancellation?.Cancel();
         _anchorTarget = target;
         UpdateScrim();
+        var offsetAnimation = OffsetAnimation;
+        if (offsetAnimation.Stiffness <= 0) return Task.CompletedTask;
         var track = _offset;
         // Programmatic AnchoredDraggable.animateTo deliberately retains overshoot.
         track.UpdateBounds(default);
         return scope.Launch(async ct => await track.AnimateToAsync(HideOnCollapse && target == WideNavigationRailValue.Collapsed ? -_width : 0,
-            Spring(MaterialTokens.Sys.Motion.Spring.SpatialDefault, MotionScheme.Expressive.DefaultSpatial), initialVelocity: track.Velocity, cancellationToken: ct), "Modal rail offset");
+            Spring(offsetAnimation), initialVelocity: track.Velocity, cancellationToken: ct), "Modal rail offset");
     }
     private void OnScrimReleased(object? sender, PointerReleasedEventArgs e)
     {
@@ -342,9 +365,12 @@ public class ModalWideNavigationRail : WideNavigationRail
         e.Handled = true;
         DismissFromScrim();
     }
+    private bool _pendingDismiss;
     internal void DismissFromScrim()
     {
         if (_scope is not { IsEnding: false } scope) return;
+        if (HideOnCollapse && OffsetAnimation.Stiffness <= 0) { _pendingDismiss = true; return; }
+        _pendingDismiss = false;
         _ = scope.Launch(async ct =>
         {
             if (HideOnCollapse)
@@ -384,6 +410,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void StartDrag(PointerEventArgs e)
     {
+        _pendingDragSettle = null;
         _flingCancellation?.Cancel();
         _dragging = true;
         if (_offset is not null) _ = _offset.StopAsync();
@@ -420,9 +447,13 @@ public class ModalWideNavigationRail : WideNavigationRail
             : (Math.Abs(ModalOffset + _width) >= _width * .5f ? WideNavigationRailValue.Expanded : WideNavigationRailValue.Collapsed);
         SettleDrag(target, velocity);
     }
+    private (WideNavigationRailValue Target, float Velocity, WideNavigationRailValue StateTarget)? _pendingDragSettle;
     private void SettleDrag(WideNavigationRailValue target, float velocity)
     {
         if (_scope is not { IsEnding: false } scope || _offset is not { } track) return;
+        var offsetAnimation = OffsetAnimation;
+        if (offsetAnimation.Stiffness <= 0) { _pendingDragSettle = (target, velocity, State.TargetValue); return; }
+        _pendingDragSettle = null;
         _flingCancellation?.Cancel();
         var cancellation = CancellationTokenSource.CreateLinkedTokenSource(scope.Lifetime);
         _flingCancellation = cancellation;
@@ -438,7 +469,7 @@ public class ModalWideNavigationRail : WideNavigationRail
                 try
                 {
                     await animation.AnimateToAsync(distance, scope.Clock,
-                        Spring(MaterialTokens.Sys.Motion.Spring.SpatialDefault, MotionScheme.Expressive.DefaultSpatial),
+                        Spring(offsetAnimation),
                         sequentialAnimation: velocity != 0, block: frame =>
                         {
                             var realValue = distance == 0 ? 0 : distance > 0 ? Math.Min(frame.Value, distance) : Math.Max(frame.Value, distance);

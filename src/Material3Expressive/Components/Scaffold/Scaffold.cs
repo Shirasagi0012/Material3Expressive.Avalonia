@@ -29,7 +29,7 @@ public class Scaffold : ContentControl
     public static readonly StyledProperty<object?> FloatingActionButtonProperty = AvaloniaProperty.Register<Scaffold, object?>(nameof(FloatingActionButton));
     public static readonly StyledProperty<IDataTemplate?> FloatingActionButtonTemplateProperty = AvaloniaProperty.Register<Scaffold, IDataTemplate?>(nameof(FloatingActionButtonTemplate));
     public static readonly StyledProperty<FabPosition> FloatingActionButtonPositionProperty =
-        AvaloniaProperty.Register<Scaffold, FabPosition>(nameof(FloatingActionButtonPosition), FabPosition.End);
+        AvaloniaProperty.Register<Scaffold, FabPosition>(nameof(FloatingActionButtonPosition));
     public static readonly StyledProperty<Thickness> ContentWindowInsetsProperty =
         AvaloniaProperty.Register<Scaffold, Thickness>(nameof(ContentWindowInsets));
     public static readonly DirectProperty<Scaffold, Thickness> ContentPaddingProperty =

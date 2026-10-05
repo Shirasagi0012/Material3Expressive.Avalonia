@@ -17,7 +17,7 @@ public static class SliderAppearance
     public static void SetIsCentered(Slider owner, bool value) => owner.SetValue(IsCenteredProperty, value);
 
     public static readonly AttachedProperty<double> TrackHeightProperty =
-        AvaloniaProperty.RegisterAttached<Slider, double>("TrackHeight", typeof(SliderAppearance), 16);
+        AvaloniaProperty.RegisterAttached<Slider, double>("TrackHeight", typeof(SliderAppearance));
     public static double GetTrackHeight(Slider owner) => owner.GetValue(TrackHeightProperty);
     public static void SetTrackHeight(Slider owner, double value) => owner.SetValue(TrackHeightProperty, value);
 
@@ -27,12 +27,12 @@ public static class SliderAppearance
     public static void SetTrackCornerSize(Slider owner, double value) => owner.SetValue(TrackCornerSizeProperty, value);
 
     public static readonly AttachedProperty<double> TrackInsideCornerSizeProperty =
-        AvaloniaProperty.RegisterAttached<Slider, double>("TrackInsideCornerSize", typeof(SliderAppearance), 2);
+        AvaloniaProperty.RegisterAttached<Slider, double>("TrackInsideCornerSize", typeof(SliderAppearance));
     public static double GetTrackInsideCornerSize(Slider owner) => owner.GetValue(TrackInsideCornerSizeProperty);
     public static void SetTrackInsideCornerSize(Slider owner, double value) => owner.SetValue(TrackInsideCornerSizeProperty, value);
 
     public static readonly AttachedProperty<double> ThumbTrackGapSizeProperty =
-        AvaloniaProperty.RegisterAttached<Slider, double>("ThumbTrackGapSize", typeof(SliderAppearance), 6);
+        AvaloniaProperty.RegisterAttached<Slider, double>("ThumbTrackGapSize", typeof(SliderAppearance));
     public static double GetThumbTrackGapSize(Slider owner) => owner.GetValue(ThumbTrackGapSizeProperty);
     public static void SetThumbTrackGapSize(Slider owner, double value) => owner.SetValue(ThumbTrackGapSizeProperty, value);
 
@@ -42,12 +42,12 @@ public static class SliderAppearance
     public static void SetEnableCornerShrinking(Slider owner, bool value) => owner.SetValue(EnableCornerShrinkingProperty, value);
 
     public static readonly AttachedProperty<double> TickSizeProperty =
-        AvaloniaProperty.RegisterAttached<Slider, double>("TickSize", typeof(SliderAppearance), 4);
+        AvaloniaProperty.RegisterAttached<Slider, double>("TickSize", typeof(SliderAppearance));
     public static double GetTickSize(Slider owner) => owner.GetValue(TickSizeProperty);
     public static void SetTickSize(Slider owner, double value) => owner.SetValue(TickSizeProperty, value);
 
     public static readonly AttachedProperty<double> StopIndicatorSizeProperty =
-        AvaloniaProperty.RegisterAttached<Slider, double>("StopIndicatorSize", typeof(SliderAppearance), 4);
+        AvaloniaProperty.RegisterAttached<Slider, double>("StopIndicatorSize", typeof(SliderAppearance));
     public static double GetStopIndicatorSize(Slider owner) => owner.GetValue(StopIndicatorSizeProperty);
     public static void SetStopIndicatorSize(Slider owner, double value) => owner.SetValue(StopIndicatorSizeProperty, value);
 

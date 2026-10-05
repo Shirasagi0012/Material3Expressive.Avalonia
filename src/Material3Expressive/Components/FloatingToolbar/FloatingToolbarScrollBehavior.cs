@@ -2,8 +2,6 @@ using System.ComponentModel;
 using Avalonia.Controls;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -88,9 +86,11 @@ public sealed class FloatingToolbarScrollBehavior
             if (State.Offset < 0 && State.Offset > State.OffsetLimit)
             {
                 var units = SnapAnimationSpec is null ? density : 1;
+                if (SnapAnimationSpec is null && _owner.ScrollSnapAnimation.Stiffness <= 0)
+                    throw new InvalidOperationException("FloatingToolbar scroll-snap configuration is not ready. Provide a valid animation before settling.");
                 var state = new AnimationState<float>(new FloatConverter(), State.Offset * units);
                 await state.AnimateToAsync(State.CollapsedFraction < .5f ? 0 : State.OffsetLimit * units, scope.Clock,
-                    SnapAnimationSpec ?? FabMotion.Spring(_owner, MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects),
+                    SnapAnimationSpec ?? new SpringSpec<float>((float)_owner.ScrollSnapAnimation.DampingRatio, (float)_owner.ScrollSnapAnimation.Stiffness, .01f),
                     block: animation => State.Offset = animation.Value / units, cancellationToken: settling.Token);
             }
             return remainingVelocity;

@@ -22,7 +22,8 @@ Chip 适合紧凑的操作、建议、筛选和已输入项目。库提供 `Assi
 ```
 
 后续片段使用相同命名空间。Assist/Suggestion/Filter 以 `IsElevated` 选择 Elevated 外观，
-Input 没有此入口。默认容器高 32、交互布局最小高 48 DIP，圆角 8 DIP，标签使用 LabelLarge。
+Input 没有此入口。默认容器高 32、交互布局最小高 48 DIP，标签使用 LabelLarge。
+Assist/Suggestion 使用固定 8 DIP 圆角；Filter/Input 默认具有未选中、选中、按压三种形状，见下文。
 
 ## 选择、命令与事件
 
@@ -66,39 +67,85 @@ Leading/trailing 先测量，标签使用剩余宽度；RTL 自动镜像布局�
 
 ## 形状与局部定制
 
-Filter/Input 的 `Shapes` 为 null 时使用固定形状；显式启用后，未选中/选中/按压采用
-Medium/Full/Small 圆角并带形状与槽动画：
+Filter/Input 的主题默认将 `UnselectedShape` / `SelectedShape` / `PressedShape` Token 组装成完整
+`ChipShapes`，分别使用 Medium/Full/Small 圆角，按压优先于选中。不需要额外 class。
+只想用固定圆角时设置 `Shapes="{x:Null}"`，此时使用原生 `CornerRadius`：
 
 ```xml
-<m3:FilterChip Content="收藏" IsSelected="True" Shapes="{m3:ChipShapes}">
+<m3:FilterChip Content="固定圆角" Shapes="{x:Null}" CornerRadius="8" />
+```
+
+自定义三种形状时整体给定配置；省略字段为零圆角，不会逐项补入主题默认值：
+
+```xml
+<m3:FilterChip Content="收藏" IsSelected="True">
+  <m3:FilterChip.Shapes>
+    <m3:ChipShapes Shape="12" SelectedShape="20" PressedShape="8" />
+  </m3:FilterChip.Shapes>
   <m3:FilterChip.LeadingIcon>
-    <m3:MaterialSymbol Symbol="Check" Width="18" Height="18" />
+    <m3:MaterialSymbol Symbol="Check" />
   </m3:FilterChip.LeadingIcon>
-  <m3:FilterChip.Colors>
-    <m3:ChipColors SelectedContainerColor="#E8DEF8" SelectedLabelColor="#211A2E" />
-  </m3:FilterChip.Colors>
 </m3:FilterChip>
 ```
 
-`ChipShapes.Shape` / `SelectedShape` / `PressedShape` 可分别覆盖圆角。
-`Colors` 的未指定槽继续跟随 Token；`Background`、`Foreground`、`BorderBrush`、`BorderThickness`、`Padding`
-的原生局部值/绑定优先于默认样式。不同图标与标签拥有各自颜色，不能把所有槽都视为单一 `Foreground`。
-`Spacing` 可用 `ChipSpacing` 定义逻辑前/后间距；null 使用固定入口的 8 DIP，或形状入口按槽存在选择 4/8 DIP。
-Input `Padding` 还随头像/图标组合调整。
+`Shapes` 只配置容器形变。设置、更换或清除它不会同时切换间距、颜色或图标进出动效；
+Filter/Input 的图标槽在 `Shapes=null` 时也保留进入/退出动画。
+图标动效可独立覆盖 `Comp.Chip.IconSizeEnterAnimation` / `IconSizeExitAnimation` 和
+`IconAlphaEnterAnimation` / `IconAlphaExitAnimation` Token；形状变化本身使用 `Comp.Chip.ShapeAnimation`。
+`Spacing` 是完整的 `ChipSpacing` 值，逻辑前/后间距默认均为 8 DIP，独立定制例如：
 
-`Elevation=null` 使用当前变体默认高度；显式 `ChipElevation` 覆盖交互高度。需要完全无阴影时将
-`Default`/`Pressed`/`Focused`/`Hovered`/`Dragged`/`Disabled` 全设 0（`Dragged` 的构造默认值为 8）。
-平面 Filter 默认 hover elevation 为 0，Elevated Filter 为 3；需要恢复上游平面悬停高度可写：
+```xml
+<m3:InputChip Content="联系人">
+  <m3:InputChip.Spacing>
+    <m3:ChipSpacing Leading="4" Trailing="8" />
+  </m3:InputChip.Spacing>
+</m3:InputChip>
+```
+
+Input 的 `Padding` 仍随头像/图标组合选择默认值。普通用户 Style、局部值和绑定可覆盖 `Padding`、
+`Spacing` 及其他公开配置；清除局部值后恢复剩余样式或当前资源、内容条件下的主题默认值。
+例如 `chip.ClearValue(Chip.SpacingProperty)`（`chip` 为实例，`Chip` 位于 `Material3Expressive.Components`）
+恢复实时默认间距；`filterChip.ClearValue(SelectableChip.ShapesProperty)` 恢复主题三形状配置。
+
+## 颜色与高度
+
+当前颜色通过原生 `Background` / `Foreground` / `BorderBrush` 定制，两个图标分别使用
+`LeadingIconColor` / `TrailingIconColor`（类型均为 `IBrush?`）。图标与标签不是同一个前景槽。
+普通 Style、局部值或绑定优先于选中/禁用等主题默认；设置固定颜色后，如需状态差异应自行写状态样式。
+例如把下面的 Style 放入视图的 `UserControl.Styles`，沿用前述命名空间：
+
+```xml
+<Style Selector="m3|FilterChip:selected">
+  <Setter Property="Background" Value="#E8DEF8" />
+  <Setter Property="Foreground" Value="#211A2E" />
+  <Setter Property="LeadingIconColor" Value="#211A2E" />
+</Style>
+```
+
+这个样式也匹配禁用且选中的 Chip；如需另一个禁用外观，再添加对应的 `:disabled:selected` 样式。
+只想改变共享的状态默认值，可覆盖 `Comp.Chip.SelectedContainerColor` / `SelectedContentColor` 等 Token，
+写法见[主题与定制](../../../../docs/GETTING_STARTED.md#主题与定制)。移除覆盖后，默认值继续跟随当前 Token。
+
+`Elevation` 是六个交互高度组成的完整 `ChipElevation` 值，由主题根据平面/Elevated 变体动态组装。
+显式对象会整组替换，未写字段为 0；`Dragged=8` 是主题默认，而非构造器隐藏补值。
+`Spacing` 和 `Elevation` 不接受 null。全零 elevation 关闭全部交互阴影；要恢复主题默认，清除局部值。
+平面 Filter 默认 hover elevation 为 0，Elevated Filter 为 3。下面完整配置恢复平面 Filter 的上游悬停高度：
 
 ```xml
 <m3:FilterChip Content="上游悬停高度">
   <m3:FilterChip.Elevation>
-    <m3:ChipElevation Hovered="1" />
+    <m3:ChipElevation Default="0" Pressed="0" Focused="0"
+                      Hovered="1" Dragged="8" Disabled="0" />
   </m3:FilterChip.Elevation>
 </m3:FilterChip>
 ```
 
+只改默认悬停高度时也可覆盖 `Comp.Chip.FlatFilterHoverElevation`，其余高度仍跟随主题。
 透明背景下恢复 1 DIP 阴影可能重新出现已观察到的 GPU 内部灰环，详见维护说明。
+
+迁移旧配置时，`ChipColors` / `Colors` 已删除，改用上述原生属性、图标颜色属性及状态 Styles/Token。
+`ChipShapes` 不再是逐字段可空的默认值包装；旧的 `{m3:ChipShapes}` 写法改为主题默认或完整对象。
+旧 `Elevation=null` / `Spacing=null` 的默认值回退改为清除对应局部值。
 
 ## 使用边界
 

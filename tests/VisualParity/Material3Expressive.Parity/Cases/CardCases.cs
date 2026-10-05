@@ -105,8 +105,8 @@ public sealed class CardCases
             case "theme":
                 Mutate(1000, "dark", () => SetColors(host, true)); Times(16000, 80000, 400000); break;
             case "colors":
-                Mutate(1000, "custom", () => card.Colors = CustomColors); Times(16000, 64000);
-                Mutate(65000, "restore", () => card.Colors = null); Times(80000, 240000); break;
+                Mutate(1000, "custom", () => ApplyCustomColors(card)); Times(16000, 64000);
+                Mutate(65000, "restore", () => ClearCustomColors(card)); Times(80000, 240000); break;
             case "elevation":
                 Event(1000, "move", center); Times(16000, 64000);
                 Mutate(65000, "configuration", () => card.Elevation = new CardElevation { Default = 1, Pressed = 2, Focused = 3, Hovered = 7, Dragged = 9, Disabled = 0 });
@@ -175,10 +175,10 @@ public sealed class CardCases
             Card.Click += (_, e) => { if (ReferenceEquals(e.Source, Card)) clicks++; };
             switch (config.Custom)
             {
-                case "colors": Card.Colors = CustomColors; break;
-                case "role": Card.Colors = new CardColors { ContainerColor = Color.Parse("#6750A4") }; break;
-                case "ambient": Card.Colors = new CardColors { ContainerColor = Color.Parse("#126E60") }; break;
-                case "surface": Card.Colors = new CardColors { ContainerColor = Color.Parse(config.Dark ? "#141218" : "#FEF7FF") }; Card.Elevation = CustomElevation; break;
+                case "colors": ApplyCustomColors(Card); break;
+                case "role": Card.ContainerColor = Color.Parse("#6750A4"); break;
+                case "ambient": Card.ContainerColor = Color.Parse("#126E60"); break;
+                case "surface": Card.ContainerColor = Color.Parse(config.Dark ? "#141218" : "#FEF7FF"); Card.Elevation = CustomElevation; break;
                 case "elevation": Card.Elevation = CustomElevation; break;
                 case "border": Card.BorderBrush = Brushes.Red; Card.BorderThickness = new Thickness(2.25); break;
                 case "square": Card.CornerRadius = new CornerRadius(0); break;
@@ -207,8 +207,20 @@ public sealed class CardCases
         host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.Outline] = Color.Parse(dark ? "#938F99" : "#79747E");
         host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.Shadow] = Colors.Black;
     }
-    public static CardColors CustomColors => new() { ContainerColor = Color.Parse("#B0336699"), ContentColor = Color.Parse("#126E60"),
-        DisabledContainerColor = Color.Parse("#50336699"), DisabledContentColor = Color.Parse("#70556677") };
+    static void ApplyCustomColors(Card card)
+    {
+        card.ContainerColor = Color.Parse("#B0336699");
+        card.ContentColor = new SolidColorBrush(Color.Parse("#126E60"));
+        card.DisabledContainerColor = Color.Parse("#50336699");
+        card.DisabledContentColor = new SolidColorBrush(Color.Parse("#70556677"));
+    }
+    static void ClearCustomColors(Card card)
+    {
+        card.ClearValue(Card.ContainerColorProperty);
+        card.ClearValue(Card.ContentColorProperty);
+        card.ClearValue(Card.DisabledContainerColorProperty);
+        card.ClearValue(Card.DisabledContentColorProperty);
+    }
     public static CardElevation CustomElevation => new() { Default = 2, Pressed = 3, Focused = 4, Hovered = 5, Dragged = 9, Disabled = 1 };
     sealed class Marker(Size size) : Control
     {

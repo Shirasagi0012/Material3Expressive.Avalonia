@@ -182,7 +182,7 @@ public sealed class FloatingActionButtonCases
                 Fab.Size = size; Fab.AnimatedVisible = config.Visible;
                 Fab.Click += (_, _) => clicks++;
                 if (config.Elevation != "default") Fab.Elevation = config.Elevation switch
-                { "lowered" => FloatingActionButtonDefaults.LoweredElevation(), "flat" => FloatingActionButtonDefaults.BottomAppBarFabElevation(), _ => new(2, 4, 6, 9) };
+                { "lowered" => new(1, 1, 1, 3), "flat" => new(0, 0, 0, 0), _ => new(2, 4, 6, 9) };
                 if (config.Color != "default") Fab.Background = new SolidColorBrush(config.Color switch
                 { "primary" => Color.Parse("#6750A4"), "surface" => Color.Parse("#FEF7FF"), "transparent" => Colors.Transparent, _ => Color.Parse("#126E60") });
                 Control = Fab;

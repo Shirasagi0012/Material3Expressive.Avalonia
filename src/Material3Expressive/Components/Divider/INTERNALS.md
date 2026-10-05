@@ -25,6 +25,7 @@
 ## 布局与绘制不变量
 
 XAML 只负责主题与 TemplateBinding，内部 DividerPresenter 负责 Canvas 度量和绘制。
+1 DIP 基线只保留在 DividerTokenSource；附加属性与 presenter 不重复定义数值默认值。
 Orientation/Thickness 改变同时触发布局与绘制失效，Color 只影响绘制。
 
 布局厚度按 Float density 和 roundToPx 取整，再服从父约束；绘制宽度用原始 Float thickness.toPx。

@@ -1,0 +1,29 @@
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+            xmlns:tests="using:Material3Expressive.Tests">
+  <StackPanel.Resources>
+    <ControlTheme x:Key="ConfigurationTheme" TargetType="ContentControl">
+      <Setter Property="Padding">
+        <MultiBinding Converter="{x:Static tests:TokenConfigurationLifecycleTests.PaddingConverter}">
+          <m3:Token Key="{x:Static tests:TokenConfigurationLifecycleTests.Horizontal}" />
+          <m3:Token Key="{x:Static tests:TokenConfigurationLifecycleTests.Vertical}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border x:Name="PART_Configuration">
+            <Border.Padding>
+              <MultiBinding Priority="Template"
+                            Converter="{x:Static tests:TokenConfigurationLifecycleTests.PaddingConverter}">
+                <m3:Token Key="{x:Static tests:TokenConfigurationLifecycleTests.Horizontal}" />
+                <m3:Token Key="{x:Static tests:TokenConfigurationLifecycleTests.Vertical}" />
+              </MultiBinding>
+            </Border.Padding>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </StackPanel.Resources>
+  <ContentControl x:Name="Configured" Theme="{StaticResource ConfigurationTheme}" />
+</StackPanel>

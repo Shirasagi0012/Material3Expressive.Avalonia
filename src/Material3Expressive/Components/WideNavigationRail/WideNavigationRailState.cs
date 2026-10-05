@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Threading;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation.Motion;
 
 namespace Material3Expressive.Components;
 
@@ -26,6 +25,7 @@ public sealed class WideNavigationRailState : AvaloniaObject
     private VisualAnimationScope? _scope;
     private Animatable<float>? _animation;
     private SpringSpec<float>? _spec;
+    private WideNavigationRail? _configurationOwner;
 
     public WideNavigationRailState() : this(WideNavigationRailValue.Collapsed) { }
     public WideNavigationRailState(WideNavigationRailValue initialValue) => _targetValue = _currentValue = initialValue;
@@ -60,7 +60,9 @@ public sealed class WideNavigationRailState : AvaloniaObject
         Dispatcher.UIThread.VerifyAccess();
         cancellationToken.ThrowIfCancellationRequested();
         var scope = _scope is { IsEnding: false } active ? active
-            : throw new InvalidOperationException("Mount a WideNavigationRail before animating its state. Use the constructor or SnapToAsync for an initial value.");
+            : throw new InvalidOperationException(_owners.Count == 0
+                ? "Mount a WideNavigationRail before animating its state. Use the constructor or SnapToAsync for an initial value."
+                : "WideNavigationRail motion configuration is not ready. Provide a valid StateAnimation before requesting an animated state change.");
         return scope.Launch(async lifetime =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellationToken);
@@ -68,21 +70,42 @@ public sealed class WideNavigationRailState : AvaloniaObject
         }, "Wide rail state");
     }
 
-    internal void Attach(Control owner, Foundation.Motion.SpringSpec spec)
+    internal void Attach(WideNavigationRail owner, Foundation.Motion.SpringSpec spec)
     {
         if (!_owners.Add(owner) || _scope is { IsEnding: false }) return;
+        _configurationOwner ??= owner;
+        Configure(owner, spec);
+    }
+
+    internal void Configure(WideNavigationRail owner, Foundation.Motion.SpringSpec spec)
+    {
+        if (!ReferenceEquals(owner, _configurationOwner) || _scope is { IsEnding: false } || spec.Stiffness <= 0) return;
+        if (TopLevel.GetTopLevel(owner) is not { } topLevel) return;
         // A hoisted state can drive multiple rails. Its animation survives an individual
         // consumer detaching, and ends when the final consumer releases it.
-        _scope = VisualAnimationScope.Create(TopLevel.GetTopLevel(owner)!);
+        _scope = VisualAnimationScope.Create(topLevel);
         _animation = _scope.CreateAnimatable(TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f);
         _spec = new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f);
+        _configurationOwner = null;
         _animation.PropertyChanged += OnAnimationChanged;
         Refresh();
     }
 
     internal void Detach(Control owner)
     {
-        if (!_owners.Remove(owner) || _owners.Count != 0) return;
+        if (!_owners.Remove(owner)) return;
+        if (_owners.Count != 0)
+        {
+            // No specification was captured yet. An unavailable consumer cannot
+            // prevent a remaining mounted consumer from finishing initialization.
+            if (_scope is null && ReferenceEquals(owner, _configurationOwner))
+            {
+                _configurationOwner = (WideNavigationRail)_owners.First();
+                Configure(_configurationOwner, _configurationOwner.StateAnimation);
+            }
+            return;
+        }
+        _configurationOwner = null;
         if (_animation is not null) _animation.PropertyChanged -= OnAnimationChanged;
         _scope?.Dispose();
         _scope = null;

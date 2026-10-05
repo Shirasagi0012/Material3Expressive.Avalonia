@@ -34,22 +34,22 @@ public abstract class ProgressIndicator : Control
         AvaloniaProperty.Register<ProgressIndicator, Color>(nameof(TrackColor));
     public Color TrackColor { get => GetValue(TrackColorProperty); set => SetValue(TrackColorProperty, value); }
     public static readonly StyledProperty<double> GapSizeProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>(nameof(GapSize), 4);
+        AvaloniaProperty.Register<ProgressIndicator, double>(nameof(GapSize));
     public double GapSize { get => GetValue(GapSizeProperty); set => SetValue(GapSizeProperty, value); }
 
     // Theme-only token inputs: preferred size, not Width/Height constraints.
     public static readonly StyledProperty<double> ContainerWidthProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerWidth", 240);
+        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerWidth");
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ContainerWidth { get => GetValue(ContainerWidthProperty); set => SetValue(ContainerWidthProperty, value); }
     public static readonly StyledProperty<double> ContainerHeightProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerHeight", 4);
+        AvaloniaProperty.Register<ProgressIndicator, double>("ContainerHeight");
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ContainerHeight { get => GetValue(ContainerHeightProperty); set => SetValue(ContainerHeightProperty, value); }
-    public static readonly StyledProperty<double> DefaultWavelengthProperty =
-        AvaloniaProperty.Register<ProgressIndicator, double>("DefaultWavelength", 40);
+    public static readonly StyledProperty<double?> DefaultWavelengthProperty =
+        AvaloniaProperty.Register<ProgressIndicator, double?>("DefaultWavelength");
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public double DefaultWavelength { get => GetValue(DefaultWavelengthProperty); set => SetValue(DefaultWavelengthProperty, value); }
+    public double? DefaultWavelength { get => GetValue(DefaultWavelengthProperty); set => SetValue(DefaultWavelengthProperty, value); }
 
     VisualAnimationScope? motion, indeterminateMotion, offsetMotion, amplitudeMotion;
     InfiniteTransition? infinite;
@@ -73,7 +73,8 @@ public abstract class ProgressIndicator : Control
     internal float GlobalRotation => globalRotation;
     internal float AdditionalRotation => additionalRotation;
     internal VisualAnimationScope? AnimationScope => motion;
-    float Wavelength => (float)(((WavyProgressIndicator)this).Wavelength ?? GetValue(DefaultWavelengthProperty));
+    bool HasWavelength => ((WavyProgressIndicator)this).Wavelength is not null || DefaultWavelength is not null;
+    float Wavelength => (float)(((WavyProgressIndicator)this).Wavelength ?? DefaultWavelength)!.Value;
     float WaveSpeed => (float)(((WavyProgressIndicator)this).WaveSpeed ?? Wavelength);
 
     static ProgressIndicator()
@@ -192,7 +193,7 @@ public abstract class ProgressIndicator : Control
     void StartOffset()
     {
         offsetMotion?.Dispose(); offsetMotion = null;
-        if (motion is not { IsEnding: false } || !Wavy) return;
+        if (motion is not { IsEnding: false } || !Wavy || !HasWavelength) return;
         if (Circular && animatedAmplitude <= 0) return;
         if (WaveSpeed <= 0 || Wavelength <= 0) { waveOffset = 0; return; }
         var vertexCount = Circular ? shapes?.VertexCount ?? -1 : 1;
@@ -273,6 +274,9 @@ public abstract class ProgressIndicator : Control
         var width = (float)Bounds.Width * scale; var height = (float)Bounds.Height * scale;
         if (Wavy)
         {
+            // A resource can become Unset briefly during reparenting or theme replacement.
+            // Wait for the required configuration instead of substituting a wavelength.
+            if (!HasWavelength) return;
             // SubscribeValue publishes the initial value synchronously. It is already consumed
             // by this draw; Avalonia forbids invalidating the visual during the render pass.
             preparingWave = true;

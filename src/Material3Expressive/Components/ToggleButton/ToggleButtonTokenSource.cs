@@ -36,8 +36,11 @@ public sealed class ToggleButtonTokenSource : ITokenSource
         [Comp.OutlinedToggleButton.CheckedContentColor] = new TokenRef(Sys.Color.InverseOnSurface),
         [Comp.OutlinedToggleButton.DisabledContainerColor] = new WithAlpha(Sys.Color.OutlineVariant, 0.10),
         [Comp.OutlinedToggleButton.DisabledContentColor] = new WithAlpha(Sys.Color.OnSurfaceVariant, Sys.State.DisabledContentOpacity),
+        [Comp.ToggleButton.ShapeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.ToggleButton.BorderWidthAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.ToggleButton.BorderColorAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.ToggleButton.SmallPressedShape] = new CornerRadius(6),
-        [Comp.ToggleButton.ExtraSmallIconSpacing] = 4d,
+        [Comp.ToggleButton.ExtraSmallIconSpacing] = new TokenRef(Comp.Button.ExtraSmallIconSpacing),
     }.ToFrozenDictionary();
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) => Values.TryGetValue(key, out value!);
     public event EventHandler? Changed { add { } remove { } }

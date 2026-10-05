@@ -11,6 +11,8 @@ public static partial class MaterialTokens
         // ShortNavigationBar.kt consumes NavigationBarTokens, NavigationBarVerticalItemTokens and NavigationBarHorizontalItemTokens.
         public static class ShortNavigationBar
         {
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> IndicatorAnimation = new("md.comp.short-navigation-bar.indicator-animation");
+            public static readonly MaterialTokenKey<Thickness> WindowInsets = new("md.comp.short-navigation-bar.window-insets");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.short-navigation-bar.container.color");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.short-navigation-bar.tall-container.height");
             public static readonly MaterialTokenKey<Foundation.Typography.TextStyle> LabelTextStyle = new("md.comp.short-navigation-bar.label.text-style");

@@ -39,6 +39,7 @@ internal static class IconButtonThemeFixture
                 new TypographyTokenSource(),
                 new ElevationTokenSource(),
                 new MotionTokenSource(),
+                new ButtonSizesTokenSource(),
                 new IconButtonSizesTokenSource(),
                 new StandardIconButtonTokenSource(),
                 new FilledIconButtonTokenSource(),
@@ -56,6 +57,8 @@ internal static class IconButtonThemeFixture
             RequestedThemeVariant = ThemeVariant.Light,
         };
         var styles = LoadIconButtonStyles();
+        window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/Components/Surface/Surface.axaml")));
+        window.Styles.Add(ButtonThemeFixture.LoadButtonStyles()); // Shared ButtonLayout theme.
         window.Styles.Add(styles);
 
         button = new IconButton { Symbol = MaterialSymbolCodepoint.Home };

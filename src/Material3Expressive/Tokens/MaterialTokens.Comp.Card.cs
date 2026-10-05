@@ -8,6 +8,11 @@ public static partial class MaterialTokens
 {
     public static partial class Comp
     {
+        public static class Card
+        {
+            public static readonly MaterialTokenKey<double> DisabledContentOpacity = new("md.comp.card.disabled.content.opacity");
+        }
+
         public static class FilledCard
         {
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.filled-card.container.color");

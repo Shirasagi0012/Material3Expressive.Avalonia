@@ -10,8 +10,6 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
@@ -24,7 +22,6 @@ public sealed class SegmentedButton : Button
     public static readonly StyledProperty<object?> InactiveIconProperty = AvaloniaProperty.Register<SegmentedButton, object?>(nameof(InactiveIcon));
     public static readonly StyledProperty<IDataTemplate?> ActiveIconTemplateProperty = AvaloniaProperty.Register<SegmentedButton, IDataTemplate?>(nameof(ActiveIconTemplate));
     public static readonly StyledProperty<IDataTemplate?> InactiveIconTemplateProperty = AvaloniaProperty.Register<SegmentedButton, IDataTemplate?>(nameof(InactiveIconTemplate));
-    public static readonly StyledProperty<SegmentedButtonColors?> ColorsProperty = AvaloniaProperty.Register<SegmentedButton, SegmentedButtonColors?>(nameof(Colors));
     public bool IsSelected { get => GetValue(IsSelectedProperty); set => SetValue(IsSelectedProperty, value); }
     public bool ShowSelectionIcon { get => GetValue(ShowSelectionIconProperty); set => SetValue(ShowSelectionIconProperty, value); }
     /// <summary>Null uses the default vector checkmark.</summary>
@@ -32,7 +29,8 @@ public sealed class SegmentedButton : Button
     public object? InactiveIcon { get => GetValue(InactiveIconProperty); set => SetValue(InactiveIconProperty, value); }
     public IDataTemplate? ActiveIconTemplate { get => GetValue(ActiveIconTemplateProperty); set => SetValue(ActiveIconTemplateProperty, value); }
     public IDataTemplate? InactiveIconTemplate { get => GetValue(InactiveIconTemplateProperty); set => SetValue(InactiveIconTemplateProperty, value); }
-    public SegmentedButtonColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
+    internal static readonly StyledProperty<CornerRadius> RowCornerRadiusProperty = AvaloniaProperty.Register<SegmentedButton, CornerRadius>(nameof(RowCornerRadius));
+    internal CornerRadius RowCornerRadius { get => GetValue(RowCornerRadiusProperty); set => SetValue(RowCornerRadiusProperty, value); }
     private SegmentedButtonContentLayout? _layout;
     private SegmentedButtonIconSlot? _icon;
     private MaterialSurface? _surface;
@@ -43,8 +41,6 @@ public sealed class SegmentedButton : Button
     {
         MaterialInteraction.GetOrCreate(this).Changed += RefreshZIndex;
         LostFocus += (_, _) => _activationKey = null;
-        ResourcesChanged += (_, _) => Refresh();
-        ActualThemeVariantChanged += (_, _) => Refresh();
     }
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -52,7 +48,6 @@ public sealed class SegmentedButton : Button
         if (_surface is not null) _surface.PropertyChanged -= SurfaceChanged;
         base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<SegmentedButtonContentLayout>("PART_Layout");
-        if (_layout is not null) _layout.Owner = this;
         _icon = e.NameScope.Find<SegmentedButtonIconSlot>("PART_Icon");
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
         if (_surface is not null) _surface.PropertyChanged += SurfaceChanged;
@@ -70,6 +65,7 @@ public sealed class SegmentedButton : Button
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == IsSelectedProperty) PseudoClasses.Set(":selected", IsSelected);
         if (change.Property == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) _activationKey = null;
         if (change.Property == TemplateProperty)
         {
@@ -78,7 +74,7 @@ public sealed class SegmentedButton : Button
             _surface = null;
         }
         if (change.Property == CornerRadiusProperty) UpdateSurfaceCorners();
-        if (change.Property == IsSelectedProperty || change.Property == ColorsProperty || change.Property == IsEffectivelyEnabledProperty
+        if (change.Property == IsSelectedProperty || change.Property == IsEffectivelyEnabledProperty
             || change.Property == ActiveIconProperty || change.Property == InactiveIconProperty || change.Property == ShowSelectionIconProperty
             || change.Property == ActiveIconTemplateProperty || change.Property == InactiveIconTemplateProperty || change.Property == FlowDirectionProperty) Refresh();
         if (change.Property == IsSelectedProperty || change.Property == ContentProperty || change.Property == ContentTemplateProperty
@@ -130,22 +126,8 @@ public sealed class SegmentedButton : Button
     protected override void OnClick() { if (!_suppressKeyboardClick) base.OnClick(); }
     private void Refresh()
     {
-        if (_icon is null
-            || !TokenResolver.TryResolve(this, Comp.SegmentedButton.ContainerHeight, ActualThemeVariant, out _)) return;
-        var c = Colors; var enabled = IsEffectivelyEnabled; var active = IsSelected;
-        var container = enabled ? active ? c?.ActiveContainerColor : c?.InactiveContainerColor
-            : active ? c?.DisabledActiveContainerColor : c?.DisabledInactiveContainerColor;
-        var content = enabled ? active ? c?.ActiveContentColor : c?.InactiveContentColor
-            : active ? c?.DisabledActiveContentColor : c?.DisabledInactiveContentColor;
-        var outline = enabled ? active ? c?.ActiveBorderColor : c?.InactiveBorderColor
-            : active ? c?.DisabledActiveBorderColor : c?.DisabledInactiveBorderColor;
-        SetValue(BackgroundProperty, new SolidColorBrush(container ?? (active ? Resolve(Comp.SegmentedButton.ActiveContainerColor) : Avalonia.Media.Colors.Transparent)), BindingPriority.Style);
-        SetValue(ForegroundProperty, new SolidColorBrush(content ?? Resolve(!enabled ? Comp.SegmentedButton.DisabledContentColor
-            : active ? Comp.SegmentedButton.ActiveContentColor : Comp.SegmentedButton.InactiveContentColor)), BindingPriority.Style);
-        SetValue(BorderBrushProperty, new SolidColorBrush(outline ?? Resolve(enabled ? Comp.SegmentedButton.OutlineColor : Comp.SegmentedButton.DisabledOutlineColor)), BindingPriority.Style);
-        SetValue(BorderThicknessProperty, new Thickness(Resolve(Comp.SegmentedButton.OutlineWidth)), BindingPriority.Style);
-        if (this.IsAttachedToVisualTree()) _icon.Update(this);
-        PseudoClasses.Set(":selected", active); RefreshZIndex();
+        RefreshZIndex();
+        if (_icon is not null && this.IsAttachedToVisualTree()) _icon.Update(this);
     }
     private void RefreshZIndex()
     {
@@ -155,8 +137,6 @@ public sealed class SegmentedButton : Button
         if (this.GetVisualParent() is Avalonia.Controls.Presenters.ContentPresenter presenter) presenter.ZIndex = z;
         else ZIndex = z;
     }
-    internal T Resolve<T>(MaterialTokenKey<T> key) => TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is T result
-        ? result : throw new InvalidOperationException($"SegmentedButton requires token {key}.");
     internal Size IntrinsicSize(double height)
     {
         ApplyTemplate();

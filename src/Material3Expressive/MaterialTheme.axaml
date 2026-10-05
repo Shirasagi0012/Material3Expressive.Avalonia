@@ -50,6 +50,7 @@
                     <m3:SegmentedButtonTokenSource />
                     <m3:ProgressIndicatorTokenSource />
                     <m3:AppBarTokenSource />
+                    <m3:ScaffoldTokenSource />
                     <m3:LoadingIndicatorTokenSource />
                     <m3:PlainTooltipTokenSource />
                     <m3:SnackbarTokenSource />

@@ -9,6 +9,12 @@ public sealed class NavigationDrawerTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.NavigationDrawer.OpenAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.NavigationDrawer.CloseAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
+        [Comp.NavigationDrawer.MinimumContainerWidth] = 240d,
+        [Comp.NavigationDrawer.WindowInsets] = default(Avalonia.Thickness),
+        [Comp.NavigationDrawer.TonalElevation] = new TokenRef(Sys.Elevation.Level0),
+        [Comp.NavigationDrawer.StandardContainerShape] = new TokenRef(Sys.Shape.None),
         [Comp.NavigationDrawer.ModalContainerColor] = new TokenRef(Sys.Color.SurfaceContainerLow),
         [Comp.NavigationDrawer.StandardContainerColor] = new TokenRef(Sys.Color.Surface),
         [Comp.NavigationDrawer.ContainerWidth] = 360d,

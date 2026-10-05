@@ -60,7 +60,7 @@
 默认容器高 40、交互留白至少 48、按钮背景最小宽 58 DIP。
 行以最大 intrinsic 项宽等权分配，默认 `Space=1` 表示相邻描边的重叠量，不是正向间隔。
 首尾保留 `BaseShape` 外侧圆角，中间为矩形，单项使用完整形状；RTL 镜像首尾。
-按钮本地 `CornerRadius` 优先于行生成值。
+按钮的普通用户 Style、局部值或绑定设置的 `CornerRadius` 均优先于行生成值。
 
 ```xml
 <m3:SingleChoiceSegmentedButtonRow Space="2" BaseShape="8">
@@ -83,9 +83,10 @@
   <m3:SegmentedButton.InactiveIcon>
     <m3:MaterialSymbol Symbol="List" />
   </m3:SegmentedButton.InactiveIcon>
-  <m3:SegmentedButton.Colors>
-    <m3:SegmentedButtonColors ActiveContainerColor="#126E60" ActiveContentColor="#FFFFFF" />
-  </m3:SegmentedButton.Colors>
+  <m3:SegmentedButton.Resources>
+    <Color x:Key="{x:Static m3:MaterialTokens+Comp+SegmentedButton.ActiveContainerColor}">#126E60</Color>
+    <Color x:Key="{x:Static m3:MaterialTokens+Comp+SegmentedButton.ActiveContentColor}">#FFFFFF</Color>
+  </m3:SegmentedButton.Resources>
 </m3:SegmentedButton>
 ```
 
@@ -94,10 +95,28 @@
 
 ## 定制与边界
 
-`SegmentedButtonColors` 按 active/inactive、enabled/disabled 提供 container/content/border 十二个可空槽，
-未指定槽跟随 Token。默认禁用 active 背景保留 SecondaryContainer，内容为 OnSurface×0.38，描边 Outline×0.12。
-原生 `Background`、`Foreground`、`BorderBrush`、`BorderThickness`、`Padding`、`CornerRadius` 局部值/绑定仍有效，
-Surface 反馈墨色跟随实际内容色。
+`Colors` / `SegmentedButtonColors` 已删除。当前颜色用原生 `Background`、`Foreground`、`BorderBrush`，
+每个状态的默认值用 `Comp.SegmentedButton` Token 或自己的状态 Style 定制。
+十二种默认槽仍分别可覆盖，例如 `ActiveContainerColor` / `InactiveContainerColor`、
+`DisabledActiveContainerColor` / `DisabledInactiveContainerColor`，相应 ContentColor 和 BorderColor 同理。
+禁用 active 背景默认引用 ActiveContainerColor，所以修改上面的选中背景也会更新禁用选中背景；
+如需分开配置，另覆盖 DisabledActiveContainerColor。默认禁用内容为 OnSurface×0.38，描边为 Outline×0.12。
+
+原生颜色、`BorderThickness`、`Padding`、`CornerRadius` 都接受普通用户 Style、局部值和绑定；
+主题的选中/禁用条件不会强制覆盖它们。下面的 Style 可放入视图的 `UserControl.Styles`：
+
+```xml
+<Style Selector="m3|SegmentedButton:selected">
+  <Setter Property="Background" Value="#126E60" />
+  <Setter Property="Foreground" Value="White" />
+</Style>
+```
+
+该选择器也匹配禁用且选中的按钮；需要另一种禁用外观时再添加 `:disabled:selected` 样式。
+Surface 反馈墨色跟随最终 Foreground。清除局部值后恢复剩余用户样式或当前状态、资源的主题默认值；
+清除局部 CornerRadius 也会重新采用当前行位置/RTL 生成的圆角，除非仍有用户 Style 覆盖。
+默认图标间距和动效可分别通过 `IconSpacing`、`IconEffectsAnimation`、`IconSpatialAnimation`、
+`LabelOffsetAnimation` Token 配置；无需替换整个模板。
 
 `BaseShape`/`CornerRadius` 只表达圆角矩形，不提供任意路径/切角 `Shape` 或外部 InteractionSource。
 文字和图标高度会参与测量，自定义内容可能改变默认尺寸；真实文字 raster、系统屏幕阅读器和桌面体验

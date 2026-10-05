@@ -19,8 +19,8 @@ public static class TabRowAppearance
 {
     public static readonly AttachedProperty<TabRowVariant> VariantProperty = AvaloniaProperty.RegisterAttached<Control, TabRowVariant>("Variant", typeof(TabRowAppearance));
     public static readonly AttachedProperty<bool> IsScrollableProperty = AvaloniaProperty.RegisterAttached<Control, bool>("IsScrollable", typeof(TabRowAppearance));
-    public static readonly AttachedProperty<double> EdgePaddingProperty = AvaloniaProperty.RegisterAttached<Control, double>("EdgePadding", typeof(TabRowAppearance), 52);
-    public static readonly AttachedProperty<double> MinTabWidthProperty = AvaloniaProperty.RegisterAttached<Control, double>("MinTabWidth", typeof(TabRowAppearance), 90);
+    public static readonly AttachedProperty<double> EdgePaddingProperty = AvaloniaProperty.RegisterAttached<Control, double>("EdgePadding", typeof(TabRowAppearance));
+    public static readonly AttachedProperty<double> MinTabWidthProperty = AvaloniaProperty.RegisterAttached<Control, double>("MinTabWidth", typeof(TabRowAppearance));
     public static readonly AttachedProperty<IBrush?> ContentColorProperty = AvaloniaProperty.RegisterAttached<Control, IBrush?>("ContentColor", typeof(TabRowAppearance));
     public static readonly AttachedProperty<IControlTemplate?> IndicatorProperty = AvaloniaProperty.RegisterAttached<Control, IControlTemplate?>("Indicator", typeof(TabRowAppearance));
     public static readonly AttachedProperty<IControlTemplate?> DividerProperty = AvaloniaProperty.RegisterAttached<Control, IControlTemplate?>("Divider", typeof(TabRowAppearance));
@@ -55,4 +55,15 @@ public static class TabAppearance
     public static void SetSelectedContentColor(Control owner, Color? value) => owner.SetValue(SelectedContentColorProperty, value);
     public static Color? GetUnselectedContentColor(Control owner) => owner.GetValue(UnselectedContentColorProperty);
     public static void SetUnselectedContentColor(Control owner, Color? value) => owner.SetValue(UnselectedContentColorProperty, value);
+}
+
+// Conditional candidates stay internal; public values receive them at theme priority.
+internal static class TabRowThemeDefaults
+{
+    public static readonly AttachedProperty<IBrush?> ContentColorProperty = AvaloniaProperty.RegisterAttached<Control, IBrush?>("ContentColor", typeof(TabRowThemeDefaults));
+    public static IBrush? GetContentColor(Control owner) => owner.GetValue(ContentColorProperty);
+    public static void SetContentColor(Control owner, IBrush? value) => owner.SetValue(ContentColorProperty, value);
+    public static readonly AttachedProperty<IControlTemplate?> IndicatorProperty = AvaloniaProperty.RegisterAttached<Control, IControlTemplate?>("Indicator", typeof(TabRowThemeDefaults));
+    public static IControlTemplate? GetIndicator(Control owner) => owner.GetValue(IndicatorProperty);
+    public static void SetIndicator(Control owner, IControlTemplate? value) => owner.SetValue(IndicatorProperty, value);
 }

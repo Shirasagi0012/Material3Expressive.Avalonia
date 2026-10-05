@@ -7,14 +7,15 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
 // Row.width(IntrinsicSize.Min), weight(1f), spacedBy(-space), CenterVertically.
 internal sealed class SegmentedButtonItemsPanel : Panel
 {
+    public static readonly StyledProperty<double> ContainerMinHeightProperty = AvaloniaProperty.Register<SegmentedButtonItemsPanel, double>(nameof(ContainerMinHeight));
+    public double ContainerMinHeight { get => GetValue(ContainerMinHeightProperty); set => SetValue(ContainerMinHeightProperty, value); }
+    static SegmentedButtonItemsPanel() => AffectsMeasure<SegmentedButtonItemsPanel>(ContainerMinHeightProperty);
     private int[] _widths = [];
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -33,7 +34,7 @@ internal sealed class SegmentedButtonItemsPanel : Panel
                     : i == Children.Count - 1 ? new CornerRadius(0, shape.TopRight, shape.BottomRight, 0) : default;
                 if (row.FlowDirection == FlowDirection.RightToLeft)
                     shape = new CornerRadius(shape.TopRight, shape.TopLeft, shape.BottomLeft, shape.BottomRight);
-                item.SetValue(TemplatedControl.CornerRadiusProperty, shape, BindingPriority.Style);
+                item.RowCornerRadius = shape;
                 maxIntrinsic = Math.Max(maxIntrinsic, MathUtils.DipToPx(item.IntrinsicSize(availableSize.Height).Width, scale));
             }
             else
@@ -50,10 +51,7 @@ internal sealed class SegmentedButtonItemsPanel : Panel
         var total = Math.Max(0, width + overlap * Math.Max(0, Children.Count - 1));
         var unit = Children.Count == 0 ? 0 : total / (float)Children.Count;
         var remainder = total - MathUtils.RoundToInt(unit) * Children.Count;
-        if (!TokenResolver.TryResolve(row, Comp.SegmentedButton.ContainerHeight, row.ActualThemeVariant, out var resolvedHeight)
-            || resolvedHeight is not double containerHeight)
-            throw new InvalidOperationException("SegmentedButtonRow requires ContainerHeight.");
-        var height = Math.Min(containerHeight, availableSize.Height);
+        var height = Math.Min(ContainerMinHeight, availableSize.Height);
         for (var i = 0; i < Children.Count; i++)
         {
             var correction = Math.Sign(remainder); remainder -= correction;

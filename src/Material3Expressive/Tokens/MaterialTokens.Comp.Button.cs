@@ -10,6 +10,14 @@ public static partial class MaterialTokens
     /// <summary>Component layer — the per-component slots ControlThemes actually consume (§7.1).</summary>
     public static partial class Comp
     {
+        /// <summary>Defaults shared by the Button family's template layout.</summary>
+        public static class Button
+        {
+            public static readonly MaterialTokenKey<double> MinWidth = new("md.comp.button.min-width");
+            public static readonly MaterialTokenKey<double> MinimumInteractiveSize = new("md.comp.button.minimum-interactive-size");
+            public static readonly MaterialTokenKey<double> ExtraSmallIconSpacing = new("md.comp.button.extra-small-icon-spacing");
+        }
+
         // Button family (design doc §7.5), split along upstream's two orthogonal axes:
         // style tables (colors/elevation/outline, per style) and size tables (metrics/shape/
         // typography, shared by every style). All style tables follow the §7.4 state-layer model:

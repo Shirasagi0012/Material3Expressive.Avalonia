@@ -13,8 +13,8 @@ public sealed class LoadingIndicatorTokenSource : ITokenSource
         if (ReferenceEquals(key, Comp.LoadingIndicator.ContainedContainerColor)) { value = new TokenRef(Sys.Color.PrimaryContainer); return true; }
         if (ReferenceEquals(key, Comp.LoadingIndicator.ContainerShape)) { value = new TokenRef(Sys.Shape.Full); return true; }
         if (ReferenceEquals(key, Comp.LoadingIndicator.ContainerWidth) || ReferenceEquals(key, Comp.LoadingIndicator.ContainerHeight))
-        { value = LoadingIndicatorDefaults.ContainerWidth; return true; }
-        if (ReferenceEquals(key, Comp.LoadingIndicator.ActiveSize)) { value = LoadingIndicatorDefaults.IndicatorSize; return true; }
+        { value = 48d; return true; }
+        if (ReferenceEquals(key, Comp.LoadingIndicator.ActiveSize)) { value = 38d; return true; }
         value = null!; return false;
     }
     public event EventHandler? Changed { add { } remove { } }

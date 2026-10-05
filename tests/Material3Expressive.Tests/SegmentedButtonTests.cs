@@ -175,7 +175,8 @@ public class SegmentedButtonTests
             Assert.Equal(Color.FromArgb(31, outline.R, outline.G, outline.B), Assert.IsAssignableFrom<ISolidColorBrush>(item.BorderBrush).Color);
             Assert.Equal(97, Assert.IsAssignableFrom<ISolidColorBrush>(item.Foreground).Color.A);
             Assert.Equal((Color)window.FindResource(MaterialTokens.Sys.Color.SecondaryContainer)!, Assert.IsAssignableFrom<ISolidColorBrush>(item.Background).Color);
-            item.Colors = new SegmentedButtonColors { DisabledActiveContentColor = Colors.Blue, DisabledActiveContainerColor = Colors.Red };
+            item.Resources[MaterialTokens.Comp.SegmentedButton.DisabledActiveContentColor] = Colors.Blue;
+            item.Resources[MaterialTokens.Comp.SegmentedButton.DisabledActiveContainerColor] = Colors.Red;
             Assert.Equal(Colors.Blue, Assert.IsAssignableFrom<ISolidColorBrush>(item.Foreground).Color);
             item.Foreground = Brushes.Green; item.IsEnabled = true; Assert.Same(Brushes.Green, item.Foreground);
             Assert.Same(Brushes.Green, Part<MaterialSurface>(item, "PART_Container").StateLayerBrush);

@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Motion;
 using Avalonia;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Tokens;
@@ -11,6 +12,10 @@ public static partial class MaterialTokens
     {
         public static class Snackbar
         {
+            public static readonly MaterialTokenKey<Thickness> ActionContentPadding = new("md.comp.snackbar.action-content-padding");
+            public static readonly MaterialTokenKey<SpringSpec> ScaleAnimation = new("md.comp.snackbar.scale-animation");
+            public static readonly MaterialTokenKey<SpringSpec> OpacityAnimation = new("md.comp.snackbar.opacity-animation");
+
             public static readonly MaterialTokenKey<Color> ActionFocusLabelTextColor = new("md.comp.snackbar.action-focus-label-text-color");
             public static readonly MaterialTokenKey<Color> ActionHoverLabelTextColor = new("md.comp.snackbar.action-hover-label-text-color");
             public static readonly MaterialTokenKey<Color> ActionLabelTextColor = new("md.comp.snackbar.action-label-text-color");

@@ -15,7 +15,7 @@ Material 层负责 Surface、颜色、交互反馈与高度，不应把普通卡
 | 上游文件 / 关键符号 | 本地职责 |
 | --- | --- |
 | `Card.kt`：`Card`、`ElevatedCard`、`OutlinedCard` 普通/onClick 重载 | [Card.cs](Card.cs)、[Card.axaml](Card.axaml)：IsClickable、原生输入、Surface 和 automation |
-| `Card.kt`：`CardDefaults`、`CardColors` | [CardAppearance.cs](CardAppearance.cs)、[CardTokenSource.cs](CardTokenSource.cs)、Card.Refresh：nullable 颜色配置与主题派生 |
+| `Card.kt`：`CardDefaults`、`CardColors` | [Card.axaml](Card.axaml)、[CardThemeConverters.cs](CardThemeConverters.cs)、[CardTokenSource.cs](CardTokenSource.cs)：独立颜色属性与主题派生 |
 | `Card.kt`：`CardElevation.shadowElevation`，`internal/Elevation.kt` | Card 的高度选择、effect 替换与生命周期；共享交互源读数来自 Foundation |
 | `Card.kt` 内容 `Column` | [CardColumn.cs](CardColumn.cs)：按剩余高度顺序测量，不是完整 ColumnScope |
 | `tokens/FilledCardTokens.kt`、`ElevatedCardTokens.kt`、`OutlinedCardTokens.kt` | [MaterialTokens.Comp.Card](../../Tokens/MaterialTokens.Comp.Card.cs) 与 CardTokenSource |
@@ -38,11 +38,14 @@ CardColumn 从上到下、Start 对齐、零间距。每个子项使用剩余高
 
 ## 默认值与高度不变量
 
-Colors/Elevation 为 null 或其 nullable 槽为 null 时跟随当前默认值。
+颜色 Token 经主题绑定提供四个独立有效属性；主题派生颜色后再以普通 Setter 选择当前状态画刷。
+Elevation 是六个非 nullable double 的完整不可变值，主题通过动态 MultiBinding 组装默认组；
+用户 Style、Binding 或局部值整体替换，不在控件内逐字段解析 Token 或补默认值。
 普通内容色按启用容器的 contentColorFor 推导，不匹配时继承外层前景；禁用内容色默认替换
 alpha 为 0.38。Filled 禁用背景与默认 Filled 容器合成，Elevated 与 Surface 合成，
 Outlined 禁用 outline 与 Elevated 容器合成，不能改成一律跟自定义容器混合。
-原生 Background/Foreground/BorderBrush/BorderThickness/CornerRadius 的显式值和绑定优先。
+原生 Background/Foreground/BorderBrush/BorderThickness/CornerRadius 的用户 Style、显式值和绑定优先。
+IsClickable 只选择内部模板/Cursor 候选，最终 Template、Cursor、Focusable 保持普通主题优先级。
 Outlined 默认 press/focus/hover 跟 Default，不消费 raw hover elevation Token。
 
 高度是 shadowElevation，不冒充 tonalElevation。可点击模式选择最后一个活动交互；

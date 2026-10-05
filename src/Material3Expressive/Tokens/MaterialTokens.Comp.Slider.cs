@@ -12,6 +12,9 @@ public static partial class MaterialTokens
         // from the opposite track colors in SliderDefaults.colors().
         public static class Slider
         {
+            public static readonly MaterialTokenKey<bool> VerticalEnableCornerShrinking = new("md.comp.slider.verticalenablecornershrinking");
+            public static readonly MaterialTokenKey<bool> EnableCornerShrinking = new("md.comp.slider.enablecornershrinking");
+            public static readonly MaterialTokenKey<double> TrackInsideCornerSize = new("md.comp.slider.trackinsidecornersize");
             public static readonly MaterialTokenKey<Color> HandleColor = new("md.comp.slider.handle.color");
             public static readonly MaterialTokenKey<Color> ActiveTrackColor = new("md.comp.slider.active-track.color");
             public static readonly MaterialTokenKey<Color> InactiveTrackColor = new("md.comp.slider.inactive-track.color");

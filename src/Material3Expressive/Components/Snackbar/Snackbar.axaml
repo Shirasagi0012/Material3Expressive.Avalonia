@@ -20,7 +20,8 @@
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                   CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
                   ShadowElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerElevation}}">
-                <m3:SnackbarLayout x:Name="PART_Layout" ActionOnNewLine="{TemplateBinding ActionOnNewLine}"
+                <m3:SnackbarLayout SingleLineContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SingleLineContainerHeight}}"
+                    TwoLinesContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.TwoLinesContainerHeight}}" x:Name="PART_Layout" ActionOnNewLine="{TemplateBinding ActionOnNewLine}"
                     m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}">
                   <!-- Reuse the paragraph-width/overflow handling already used by default labels. -->
                   <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
@@ -33,7 +34,7 @@
                         m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
                     <Button x:Name="PART_DataAction" IsVisible="False" VerticalAlignment="Top"
                         Content="{Binding Data.Visuals.ActionLabel, RelativeSource={RelativeSource TemplatedParent}}"
-                        Foreground="{TemplateBinding DataActionForeground}" Theme="{StaticResource MaterialSnackbarActionButtonTheme}" />
+                        m3:ButtonThemeProperties.Foreground="{TemplateBinding DataActionForeground}" Theme="{StaticResource MaterialSnackbarActionButtonTheme}" />
                   </Grid>
                   <Grid x:Name="PART_Dismiss" IsVisible="False">
                     <ContentPresenter x:Name="PART_CustomDismiss" IsVisible="False" Content="{TemplateBinding DismissAction}"
@@ -41,7 +42,7 @@
                         HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
                     <m3:TooltipBox x:Name="PART_DismissTooltip" IsVisible="False" AnchorPosition="Above">
                       <m3:TooltipBox.Tooltip><m3:PlainTooltip /></m3:TooltipBox.Tooltip>
-                      <m3:IconButton x:Name="PART_DataDismiss" Foreground="{TemplateBinding DismissActionForeground}"
+                      <m3:IconButton x:Name="PART_DataDismiss" m3:ButtonThemeProperties.Foreground="{TemplateBinding DismissActionForeground}"
                           AutomationProperties.Name="{TemplateBinding DismissActionText}"
                           Theme="{StaticResource MaterialSnackbarDismissButtonTheme}" />
                     </m3:TooltipBox>
@@ -69,8 +70,8 @@
     <!-- The data overload uses the simple TextButton overload's 12/8 padding. -->
     <ControlTheme x:Key="MaterialSnackbarActionButtonTheme" TargetType="Button"
                   BasedOn="{StaticResource MaterialTextButtonTheme}">
-      <Setter Property="Padding" Value="12,8" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
+      <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionContentPadding}}" />
+      <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="StateLayerBrush" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
       </Style>
@@ -117,6 +118,9 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:SnackbarHost}" TargetType="m3:SnackbarHost">
+      <Setter Property="ScaleAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ScaleAnimation}}" />
+      <Setter Property="OpacityAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.OpacityAnimation}}" />
+
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="HorizontalAlignment" Value="Center" />
       <Setter Property="VerticalAlignment" Value="Top" />

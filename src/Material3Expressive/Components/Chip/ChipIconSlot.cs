@@ -9,13 +9,39 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Rendering;
-using static Material3Expressive.Tokens.MaterialTokens;
+using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
 // AnimatingChipContent's AnimatedVisibility, with rememberRetainedState while exiting.
 internal sealed class ChipIconSlot : Decorator
 {
+    public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<ChipIconSlot, double>(nameof(IconSize));
+    public double IconSize { get => GetValue(IconSizeProperty); set => SetValue(IconSizeProperty, value); }
+    public static readonly StyledProperty<double> AvatarSizeProperty = AvaloniaProperty.Register<ChipIconSlot, double>(nameof(AvatarSize));
+    public double AvatarSize { get => GetValue(AvatarSizeProperty); set => SetValue(AvatarSizeProperty, value); }
+    public static readonly StyledProperty<CornerRadius> AvatarCornerRadiusProperty = AvaloniaProperty.Register<ChipIconSlot, CornerRadius>(nameof(AvatarCornerRadius));
+    public CornerRadius AvatarCornerRadius { get => GetValue(AvatarCornerRadiusProperty); set => SetValue(AvatarCornerRadiusProperty, value); }
+    public static readonly StyledProperty<MaterialSpring?> SizeEnterAnimationProperty = AvaloniaProperty.Register<ChipIconSlot, MaterialSpring?>(nameof(SizeEnterAnimation));
+    public MaterialSpring? SizeEnterAnimation { get => GetValue(SizeEnterAnimationProperty); set => SetValue(SizeEnterAnimationProperty, value); }
+    public static readonly StyledProperty<MaterialSpring?> SizeExitAnimationProperty = AvaloniaProperty.Register<ChipIconSlot, MaterialSpring?>(nameof(SizeExitAnimation));
+    public MaterialSpring? SizeExitAnimation { get => GetValue(SizeExitAnimationProperty); set => SetValue(SizeExitAnimationProperty, value); }
+    public static readonly StyledProperty<MaterialSpring?> AlphaEnterAnimationProperty = AvaloniaProperty.Register<ChipIconSlot, MaterialSpring?>(nameof(AlphaEnterAnimation));
+    public MaterialSpring? AlphaEnterAnimation { get => GetValue(AlphaEnterAnimationProperty); set => SetValue(AlphaEnterAnimationProperty, value); }
+    public static readonly StyledProperty<MaterialSpring?> AlphaExitAnimationProperty = AvaloniaProperty.Register<ChipIconSlot, MaterialSpring?>(nameof(AlphaExitAnimation));
+    public MaterialSpring? AlphaExitAnimation { get => GetValue(AlphaExitAnimationProperty); set => SetValue(AlphaExitAnimationProperty, value); }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IconSizeProperty || change.Property == AvatarSizeProperty || change.Property == AvatarCornerRadiusProperty
+            || (MotionConfigurationReady && (change.Property == SizeEnterAnimationProperty || change.Property == SizeExitAnimationProperty
+                || change.Property == AlphaEnterAnimationProperty || change.Property == AlphaExitAnimationProperty)))
+            _owner?.Refresh();
+    }
+
+    private bool MotionConfigurationReady => SizeEnterAnimation is not null && SizeExitAnimation is not null
+        && AlphaEnterAnimation is not null && AlphaExitAnimation is not null;
+    private bool _pendingWidthUpdate;
     private VisualAnimationScope? _motion;
     private VisualAnimationScope? _visibilityMotion;
     private Transition<EnterExitState>? _transition;
@@ -37,7 +63,7 @@ internal sealed class ChipIconSlot : Decorator
     internal void Stop()
     {
         _motion?.Dispose(); _motion = null; _visibilityMotion = null; _transition = null;
-        _width = null; _pending = false; _initialized = false;
+        _width = null; _pending = false; _initialized = false; _pendingWidthUpdate = false;
         // The icon is a caller-owned Control. Release it from the retired presenter before a
         // replacement template hosts that same object (logical and visual parents included).
         if (Presenter is { } presenter)
@@ -46,20 +72,21 @@ internal sealed class ChipIconSlot : Decorator
 
     private SpringSpec<float> SizeSpec(TransitionSegment<EnterExitState> segment)
     {
-        var spec = _owner!.Spring(segment.TargetState == EnterExitState.Visible || _owner.MorphShapes is not null
-            ? Sys.Motion.Spring.SpatialFast : Sys.Motion.Spring.EffectsDefault);
+        var spec = (segment.TargetState == EnterExitState.Visible ? SizeEnterAnimation : SizeExitAnimation)
+            ?? throw new InvalidOperationException("Chip icon width motion configuration is not ready.");
         return new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 1f);
     }
     private SpringSpec<float> AlphaSpec(TransitionSegment<EnterExitState> segment)
     {
-        var spec = _owner!.Spring(_owner.MorphShapes is not null ? Sys.Motion.Spring.EffectsDefault
-            : segment.TargetState == EnterExitState.Visible ? Sys.Motion.Spring.EffectsSlow : Sys.Motion.Spring.EffectsFast);
+        var spec = (segment.TargetState == EnterExitState.Visible ? AlphaEnterAnimation : AlphaExitAnimation)
+            ?? throw new InvalidOperationException("Chip icon alpha motion configuration is not ready.");
         return new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f);
     }
     private float WidthTarget(EnterExitState state) => state == EnterExitState.Visible ? (float)_fullWidth : 0;
 
     private void CreateTransition(EnterExitState initial)
     {
+        if (!MotionConfigurationReady) return;
         _visibilityMotion?.Dispose();
         _loopStarted = false;
         if (_motion is not { IsEnding: false } motion) return;
@@ -106,16 +133,23 @@ internal sealed class ChipIconSlot : Decorator
             presenter.Content = content; presenter.ContentTemplate = template;
             presenter.UpdateChild();
             presenter.InvalidateMeasure(); border.InvalidateMeasure();
-            MaterialIcon.SetDefaultSize(presenter, avatar ? 24 : owner.Resolve(Comp.Chip.IconSize));
+            MaterialIcon.SetDefaultSize(presenter, avatar ? AvatarSize : IconSize);
             border.Measure(Size.Infinity);
             _fullWidth = MathUtils.DipToPx(border.DesiredSize.Width, LayoutHelper.GetLayoutScale(this));
             // Retain the provider and avatar wrapper as well as the content on exit.
             presenter.Foreground = color;
-            border.CornerRadius = avatar ? owner.Resolve(Comp.Chip.AvatarShape) : default;
+            border.CornerRadius = avatar ? AvatarCornerRadius : default;
             border.ClipToBounds = avatar;
             border.Opacity = avatar ? avatarOpacity : 1;
         }
-        if (!_initialized || !animate || _motion is null)
+        if (!MotionConfigurationReady && animate && _motion is not null)
+        {
+            _pendingWidthUpdate |= previousWidth != _fullWidth;
+            return;
+        }
+        var updateWidth = previousWidth != _fullWidth || _pendingWidthUpdate;
+        _pendingWidthUpdate = false;
+        if (!_initialized || !animate || _motion is null || _transition is null)
         {
             _initialized = true;
             _transitionPresent = _visibilityTarget = requestedPresent;
@@ -123,8 +157,8 @@ internal sealed class ChipIconSlot : Decorator
             CreateTransition(requestedPresent ? EnterExitState.Visible : EnterExitState.PreEnter);
             InvalidateMeasure();
         }
-        else if (changed) QueueVisibility();
-        else if (wasVisible && previousWidth != _fullWidth)
+        else if (changed || requestedPresent != _visibilityTarget) QueueVisibility();
+        else if (wasVisible && updateWidth)
         {
             if (_transition is { IsRunning: true }) _width?.Update(WidthTarget, SizeSpec);
             else CreateTransition(EnterExitState.Visible);
@@ -133,17 +167,19 @@ internal sealed class ChipIconSlot : Decorator
 
     private void QueueVisibility()
     {
-        if (_motion is not { IsEnding: false } motion || _pending) return;
+        if (_motion is not { IsEnding: false } motion || _pending || !MotionConfigurationReady) return;
         _pending = true;
         // Coalesce setters in one request: avatar takes precedence over leadingIcon.
         Dispatcher.UIThread.Post(() =>
         {
             if (motion.IsEnding) return;
+            if (!MotionConfigurationReady) { _pending = false; return; }
             _ = motion.Launch(async ct =>
             {
                 if (!_transitionPresent || _transition is { IsRunning: true })
                 {
                     await motion.Clock.NextFrameAsync(ct);
+                    if (!MotionConfigurationReady) { _pending = false; return; }
                     if (!_transitionPresent) CreateTransition(EnterExitState.PreEnter);
                 }
                 _transitionPresent = true; _pending = false;

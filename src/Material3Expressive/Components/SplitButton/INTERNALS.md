@@ -19,6 +19,22 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | checked/pressed shape 与 border 动画 | 共享 Surface、[ButtonSurfaceState](../ToggleButton/ButtonSurfaceState.cs)、[AnimatedButtonBorder](../ToggleButton/AnimatedButtonBorder.cs) |
 | Button 颜色/elevation 默认值 | [Button.cs](../Button/Button.cs) 及四组子主题 |
 
+## 配置流与默认值归属
+
+SplitButtonTokenSource 保存两槽间距和五档形状/尺寸/Padding；颜色与完整 ButtonElevation 配置继续
+复用 Button 族 Token。父级 Spacing 从 `Comp.SplitButton.Spacing` 经主题 Setter 成为有效属性，
+模板传给 SplitButtonLayout；两个类型的属性元数据不再重复保存 2 DIP Material 默认值。
+
+子按钮的尺寸相关 Padding/形状、禁用色与描边条件先写入内部 [ButtonThemeProperties](../Button/ButtonThemeProperties.cs)，
+再通过主题级绑定形成原生属性和 `MaterialButton.PressedCornerRadius` 的有效配置。
+普通用户 Style、绑定、局部值均可覆盖这些默认；移除后恢复当前尺寸、状态和资源环境的值。
+容器高度、图标尺寸等模板专用配置直接进入内部部件；父级 48 DIP 留白使用共享
+`Comp.Button.MinimumInteractiveSize`，子区仍显式关闭各自的留白，保留 48 DIP 最小宽语义。
+XS 图标间距经 `Comp.ToggleButton.ExtraSmallIconSpacing` 引用共享 4 DIP Token。
+
+维护者 2026-10-05 确认本轮仅调整配置归属和覆盖机制；光学校正、当前圆角/描边动画与输入状态仍属于
+运行时呈现。不得因统一配置路径把 Split 的保留动画策略改成 Toggle 的配置更换重置策略。
+
 ## 测量顺序与光学位置
 
 按固定布局顺序先取得 Trailing 首选宽度，再查询剩余宽度下 Leading 的高度，确定共同高度，
@@ -79,7 +95,7 @@ Leading 外侧全圆、内侧小角，Trailing 镜像；按压改变内侧角，
 
 ## 验证入口
 
-- [控件测试](../../../../tests/Material3Expressive.Tests/ToggleSplitButtonTests.cs)：双区独立输入、尾部原生切换、共同布局、窄宽溢出、光学偏移和选中动画中修改非活动形状；同时覆盖 Toggle 生命周期。
+- [控件测试](../../../../tests/Material3Expressive.Tests/ToggleSplitButtonTests.cs)：双区独立输入、尾部原生切换、共同布局、窄宽溢出、光学偏移和选中动画中修改非活动形状；同时覆盖 Toggle 生命周期；[ButtonConfigurationTests](../../../../tests/Material3Expressive.Tests/ButtonConfigurationTests.cs) 检查条件默认与用户 Style 优先级。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/SplitButtonCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/SplitButtonCases.kt)
 - [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml) 提供真实内容组合；其事件处理见

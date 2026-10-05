@@ -10,6 +10,10 @@ public sealed class CheckBoxTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.CheckBox.ContentPadding] = new Avalonia.Thickness(8, 0, 0, 0),
+        [Comp.CheckBox.ShapeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.CheckBox.ColorAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.CheckBox.UncheckColorAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
         [Comp.CheckBox.CheckedCheckmarkColor] = new TokenRef(Sys.Color.OnPrimary),
         [Comp.CheckBox.UncheckedCheckmarkColor] = Color.FromArgb(0, 0, 0, 0),
         [Comp.CheckBox.CheckedBoxColor] = new TokenRef(Sys.Color.Primary),

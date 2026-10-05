@@ -10,7 +10,7 @@ namespace Material3Expressive.Components;
 // ShortNavigationBar.kt: EqualWeightContentMeasurePolicy / CenteredContentMeasurePolicy.
 internal sealed class ShortNavigationBarItemsPanel : Panel
 {
-    public static readonly StyledProperty<double> ContainerMinHeightProperty = AvaloniaProperty.Register<ShortNavigationBarItemsPanel, double>(nameof(ContainerMinHeight), 64);
+    public static readonly StyledProperty<double> ContainerMinHeightProperty = AvaloniaProperty.Register<ShortNavigationBarItemsPanel, double>(nameof(ContainerMinHeight));
     public static readonly StyledProperty<ShortNavigationBarArrangement> ArrangementProperty = AvaloniaProperty.Register<ShortNavigationBarItemsPanel, ShortNavigationBarArrangement>(nameof(Arrangement));
     public double ContainerMinHeight { get => GetValue(ContainerMinHeightProperty); set => SetValue(ContainerMinHeightProperty, value); }
     public ShortNavigationBarArrangement Arrangement { get => GetValue(ArrangementProperty); set => SetValue(ArrangementProperty, value); }

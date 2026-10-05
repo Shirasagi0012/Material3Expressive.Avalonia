@@ -3,6 +3,10 @@
 使用方法见 [README](README.md)。两个控件共享形状与时间逻辑；普通协程延时和动画帧必须保持
 独立，不能为了简化测试把 650ms delay 换成动画 Tween。
 
+## 默认配置数据流
+
+尺寸与圆角的基线只由 TokenSource 提供，主题绑定到已有配置属性，不在属性元数据或 Defaults 重复数字。LoadingIndicatorDefaults 仅保留真实形状序列；Polygons=null 的模式选择、形状工厂与协程/旋转算法不改。
+
 ## 固定上游与本地入口
 
 固定版本以 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：AndroidX

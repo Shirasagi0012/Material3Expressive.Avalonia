@@ -134,15 +134,26 @@ public sealed class SegmentedButtonCases
                 if (c.Icon is "active" or "swap") item.ActiveIcon = new Marker { PreferredSize = new Size(c.IconWidth, 18) };
                 if (c.Icon == "swap") item.InactiveIcon = new Marker { PreferredSize = new Size(c.IconWidth, 18) };
                 item.BorderThickness = new Thickness(c.Border); if (c.Padding is { } pad) item.Padding = new Thickness(pad);
-                if (c.CustomColors) item.Colors = new SegmentedButtonColors
+                if (c.CustomColors)
                 {
-                    ActiveContainerColor = Color.Parse("#126E60"), ActiveContentColor = Color.Parse("#F0E080"), ActiveBorderColor = Colors.Red,
-                    InactiveContainerColor = Color.Parse("#223366"), InactiveContentColor = Colors.Yellow, InactiveBorderColor = Colors.Blue,
-                    DisabledActiveContainerColor = Color.Parse("#70336699"), DisabledActiveContentColor = Color.Parse("#00FF00"), DisabledActiveBorderColor = Colors.Magenta,
-                    DisabledInactiveContainerColor = Color.Parse("#50556677"), DisabledInactiveContentColor = Colors.Cyan, DisabledInactiveBorderColor = Colors.Black,
-                };
-                if (c.Action == "press-content") item.Colors = new SegmentedButtonColors
-                    { ActiveContentColor = Color.Parse("#00FF00"), InactiveContentColor = Colors.Yellow };
+                    item.Resources[Comp.SegmentedButton.ActiveContainerColor] = Color.Parse("#126E60");
+                    item.Resources[Comp.SegmentedButton.ActiveContentColor] = Color.Parse("#F0E080");
+                    item.Resources[Comp.SegmentedButton.ActiveBorderColor] = Colors.Red;
+                    item.Resources[Comp.SegmentedButton.InactiveContainerColor] = Color.Parse("#223366");
+                    item.Resources[Comp.SegmentedButton.InactiveContentColor] = Colors.Yellow;
+                    item.Resources[Comp.SegmentedButton.InactiveBorderColor] = Colors.Blue;
+                    item.Resources[Comp.SegmentedButton.DisabledActiveContainerColor] = Color.Parse("#70336699");
+                    item.Resources[Comp.SegmentedButton.DisabledActiveContentColor] = Color.Parse("#00FF00");
+                    item.Resources[Comp.SegmentedButton.DisabledActiveBorderColor] = Colors.Magenta;
+                    item.Resources[Comp.SegmentedButton.DisabledInactiveContainerColor] = Color.Parse("#50556677");
+                    item.Resources[Comp.SegmentedButton.DisabledInactiveContentColor] = Colors.Cyan;
+                    item.Resources[Comp.SegmentedButton.DisabledInactiveBorderColor] = Colors.Black;
+                }
+                if (c.Action == "press-content")
+                {
+                    item.Resources[Comp.SegmentedButton.ActiveContentColor] = Color.Parse("#00FF00");
+                    item.Resources[Comp.SegmentedButton.InactiveContentColor] = Colors.Yellow;
+                }
                 item.Click += (_, _) => { clicks[index]++; if (c.Action == "click") { if (!c.Multi) foreach (var other in Items) other.IsSelected = false; item.IsSelected = c.Multi ? !item.IsSelected : true; } };
                 Row.Items.Add(item);
             }

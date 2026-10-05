@@ -86,6 +86,11 @@ Trailing 为 22/22/26/38/50 DIP（XS/S/M/L/XL）；XS 标签间距为 4 DIP，�
 静止圆角用 `CornerRadius`，按压目标用 `MaterialButton.PressedCornerRadius`；默认主区外侧全圆、内侧小角，
 副区镜像。可切换副区选中后变为圆形，并显示 contentColor×0.10 覆盖层，禁用时该选中层仍存在。
 
+普通用户 Style、局部值或绑定设置的子按钮颜色、描边、Padding 和圆角优先于主题的禁用与尺寸默认值；
+父级 `Spacing` 也使用同样的 Avalonia 覆盖规则。移除局部值后恢复剩余样式或当前主题/尺寸下的实时默认值，
+例如 `splitButton.ClearValue(SplitButton.SpacingProperty)`（`splitButton` 为父级实例）恢复默认间距。
+颜色与高度可继续使用 Button 族 Token 和完整 `MaterialButton.Elevation` 配置；更改局部颜色时需自行表达禁用差异。
+
 ## 使用边界
 
 Trailing 优先获得宽度，两区使用共同高度，主区消费剩余空间；极窄宽度下 Trailing 可能溢出，容器不裁剪。

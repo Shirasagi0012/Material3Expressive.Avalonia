@@ -5,8 +5,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using static Material3Expressive.Tokens.MaterialTokens;
+using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
@@ -14,26 +13,43 @@ namespace Material3Expressive.Components;
 // The icon and label presenters remain ordinary XAML content slots.
 internal sealed class ExtendedFabLayout : Panel
 {
-    public static readonly StyledProperty<double> MinimumSizeProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(MinimumSize), 56);
-    public static readonly StyledProperty<double> LeadingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(LeadingSpace), 20);
-    public static readonly StyledProperty<double> TrailingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(TrailingSpace), 20);
-    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(IconLabelSpace), 12);
+    public static readonly StyledProperty<double> MinimumSizeProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(MinimumSize));
+    public static readonly StyledProperty<double> LeadingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(LeadingSpace));
+    public static readonly StyledProperty<double> TrailingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(TrailingSpace));
+    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(IconLabelSpace));
     public double MinimumSize { get => GetValue(MinimumSizeProperty); set => SetValue(MinimumSizeProperty, value); }
     public double LeadingSpace { get => GetValue(LeadingSpaceProperty); set => SetValue(LeadingSpaceProperty, value); }
     public double TrailingSpace { get => GetValue(TrailingSpaceProperty); set => SetValue(TrailingSpaceProperty, value); }
     public double IconLabelSpace { get => GetValue(IconLabelSpaceProperty); set => SetValue(IconLabelSpaceProperty, value); }
+    public static readonly StyledProperty<double> MinimumWidthProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(MinimumWidth));
+    public double MinimumWidth { get => GetValue(MinimumWidthProperty); set => SetValue(MinimumWidthProperty, value); }
+    public static readonly StyledProperty<double> CollapsedMinimumWidthProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(CollapsedMinimumWidth));
+    public double CollapsedMinimumWidth { get => GetValue(CollapsedMinimumWidthProperty); set => SetValue(CollapsedMinimumWidthProperty, value); }
+    public static readonly StyledProperty<double> IconLeadingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(IconLeadingSpace));
+    public double IconLeadingSpace { get => GetValue(IconLeadingSpaceProperty); set => SetValue(IconLeadingSpaceProperty, value); }
+    public static readonly StyledProperty<MotionSpring?> ExpandWidthMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring?>(nameof(ExpandWidthMotion));
+    public MotionSpring? ExpandWidthMotion { get => GetValue(ExpandWidthMotionProperty); set => SetValue(ExpandWidthMotionProperty, value); }
+    public static readonly StyledProperty<MotionSpring?> CollapseWidthMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring?>(nameof(CollapseWidthMotion));
+    public MotionSpring? CollapseWidthMotion { get => GetValue(CollapseWidthMotionProperty); set => SetValue(CollapseWidthMotionProperty, value); }
+    public static readonly StyledProperty<MotionSpring?> ExpandAlphaMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring?>(nameof(ExpandAlphaMotion));
+    public MotionSpring? ExpandAlphaMotion { get => GetValue(ExpandAlphaMotionProperty); set => SetValue(ExpandAlphaMotionProperty, value); }
+    public static readonly StyledProperty<MotionSpring?> CollapseAlphaMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring?>(nameof(CollapseAlphaMotion));
+    public MotionSpring? CollapseAlphaMotion { get => GetValue(CollapseAlphaMotionProperty); set => SetValue(CollapseAlphaMotionProperty, value); }
     private ExtendedFloatingActionButton? _owner;
     private VisualAnimationScope? _scope;
     private Animatable<float>? _width, _alpha;
     private Animatable<float>? _classicWidth;
+    private Task? _classicWidthTask, _classicAlphaTask;
+    private int _classicTransitionId;
+    private bool _classicTransitionActive, _classicSegmentExpanded, _classicReturningToVisible, _classicWidthChanging;
     private int _labelExtentPx;
     private bool _fullyCollapsed;
     private bool _classicCurrentExpanded;
-    private bool _pending;
+    private bool _pending, _needsTransition;
     private double _iconWidth, _labelWidth, _rowWidth, _rowHeight;
     internal float WidthProgress => _width?.Value ?? (_owner?.Expanded != false ? 1 : 0);
     internal float LabelAlpha => _alpha?.Value ?? (_owner?.Expanded != false ? 1 : 0);
-    static ExtendedFabLayout() => AffectsMeasure<ExtendedFabLayout>(MinimumSizeProperty, LeadingSpaceProperty, TrailingSpaceProperty, IconLabelSpaceProperty);
+    static ExtendedFabLayout() => AffectsMeasure<ExtendedFabLayout>(MinimumSizeProperty, LeadingSpaceProperty, TrailingSpaceProperty, IconLabelSpaceProperty, MinimumWidthProperty, CollapsedMinimumWidthProperty, IconLeadingSpaceProperty);
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -51,44 +67,102 @@ internal sealed class ExtendedFabLayout : Panel
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
-        _scope?.Dispose(); _scope = null; _width = _alpha = _classicWidth = null; _pending = false;
+        ++_classicTransitionId;
+        _classicTransitionActive = false;
+        _scope?.Dispose(); _scope = null; _width = _alpha = _classicWidth = null; _pending = _needsTransition = false;
+        _classicWidthTask = _classicAlphaTask = null;
         base.OnDetachedFromVisualTree(e);
     }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == ExtendedFloatingActionButton.ExpandedProperty && _scope is { IsEnding: false } scope)
+        if (e.Property == ExtendedFloatingActionButton.ExpandedProperty)
         {
             _fullyCollapsed = false;
+            _needsTransition = true;
             InvalidateMeasure();
-            if (_pending) return;
-            _pending = true;
-            _ = scope.Launch(async ct =>
+            QueueTransition();
+        }
+        else if (e.Property == FloatingActionButton.IconProperty || e.Property == FloatingActionButton.IconTemplateProperty || e.Property == FloatingActionButton.SizeProperty)
+            InvalidateMeasure();
+    }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == ExpandWidthMotionProperty || change.Property == CollapseWidthMotionProperty ||
+            change.Property == ExpandAlphaMotionProperty || change.Property == CollapseAlphaMotionProperty)
+        {
+            QueueTransition();
+            if (_classicTransitionActive && _owner?.Expanded == true) InvalidateMeasure();
+        }
+    }
+    private void QueueTransition()
+    {
+        if (!_needsTransition || _pending || _scope is not { IsEnding: false } scope || _owner is null ||
+            !FabMotion.IsReady(_owner.Expanded ? ExpandWidthMotion : CollapseWidthMotion) ||
+            !FabMotion.IsReady(_owner.Expanded ? ExpandAlphaMotion : CollapseAlphaMotion)) return;
+        _pending = true;
+        _ = scope.Launch(async ct =>
+        {
+            await scope.Clock.NextFrameAsync(ct);
+            _pending = false;
+            var expanded = _owner!.Expanded;
+            var classic = _owner.Size == FloatingActionButtonSize.Default;
+            if (!FabMotion.TrySpring(expanded ? ExpandWidthMotion : CollapseWidthMotion, out var widthSpec,
+                    classic && _classicWidth is not null ? 1 : 0.01f) ||
+                !FabMotion.TrySpring(expanded ? ExpandAlphaMotion : CollapseAlphaMotion, out var alphaSpec)) return;
+            // AnimatedVisibility's Visible -> Visible interrupted segment falls back
+            // to DefaultSizeAnimationSpec/DefaultAlphaSpring, not its enter spec.
+            var returningToVisible = classic && expanded && _classicCurrentExpanded && _classicWidth?.IsRunning == true;
+            _needsTransition = false;
+            if (classic && _classicWidth is not null)
             {
-                await scope.Clock.NextFrameAsync(ct);
-                _pending = false;
-                var expanded = _owner!.Expanded;
-                var classic = _owner.Size == FloatingActionButtonSize.Default;
-                // AnimatedVisibility's Visible -> Visible interrupted segment falls back
-                // to DefaultSizeAnimationSpec/DefaultAlphaSpring, not its enter spec.
-                var returningToVisible = classic && expanded && _classicCurrentExpanded && _classicWidth?.IsRunning == true;
-                var widthSpec = FabMotion.Spring(this, classic && !expanded ? Sys.Motion.Spring.SpatialDefault : Sys.Motion.Spring.SpatialFast,
-                    classic && !expanded ? MotionScheme.Expressive.DefaultSpatial : MotionScheme.Expressive.FastSpatial);
-                var alphaSpec = FabMotion.Spring(this, classic && expanded ? Sys.Motion.Spring.EffectsDefault : Sys.Motion.Spring.EffectsFast,
-                    classic && expanded ? MotionScheme.Expressive.DefaultEffects : MotionScheme.Expressive.FastEffects);
-                var widthAnimation = classic && _classicWidth is not null
-                    ? _classicWidth.AnimateToAsync(expanded ? _labelExtentPx : 0,
-                        returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1)
-                            : FabMotion.Spring(this, expanded ? Sys.Motion.Spring.SpatialFast : Sys.Motion.Spring.SpatialDefault,
-                                expanded ? MotionScheme.Expressive.FastSpatial : MotionScheme.Expressive.DefaultSpatial, 1), cancellationToken: ct)
-                    : _width!.AnimateToAsync(expanded ? 1 : 0, widthSpec, cancellationToken: ct);
-                await Task.WhenAll(widthAnimation,
-                    _alpha!.AnimateToAsync(expanded ? 1 : 0, returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 0.01f) : alphaSpec, cancellationToken: ct));
+                var transitionId = ++_classicTransitionId;
+                _classicTransitionActive = true;
+                _classicSegmentExpanded = expanded;
+                _classicReturningToVisible = returningToVisible;
+                var widthAnimation = StartClassicWidth(expanded ? _labelExtentPx : 0,
+                    returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1) : widthSpec, ct);
+                var alphaAnimation = _classicAlphaTask = _alpha!.AnimateToAsync(expanded ? 1 : 0,
+                    returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 0.01f) : alphaSpec, cancellationToken: ct);
+                try { await Task.WhenAll(widthAnimation, alphaAnimation); }
+                finally { CompleteClassicTransition(transitionId); }
+            }
+            else
+            {
+                // This segment no longer belongs to the classic width channel. Retire
+                // its completion bookkeeping before the shared alpha task is replaced.
+                ++_classicTransitionId;
+                _classicTransitionActive = false;
+                _classicWidthTask = _classicAlphaTask = null;
+                await Task.WhenAll(_width!.AnimateToAsync(expanded ? 1 : 0, widthSpec, cancellationToken: ct),
+                    _alpha!.AnimateToAsync(expanded ? 1 : 0, alphaSpec, cancellationToken: ct));
                 _classicCurrentExpanded = expanded;
                 _fullyCollapsed = !_owner.Expanded && (classic ? _classicWidth?.Value == 0 : _width!.Value == 0);
                 InvalidateMeasure();
-            }, "Extended FAB transition");
-        }
-        else if (e.Property == FloatingActionButton.IconProperty || e.Property == FloatingActionButton.IconTemplateProperty || e.Property == FloatingActionButton.SizeProperty) InvalidateMeasure();
+            }
+        }, "Extended FAB transition");
+    }
+    private Task StartClassicWidth(float target, SpringSpec<float> spec, CancellationToken cancellationToken)
+    {
+        // MutatorMutex may complete the interrupted task inline. Do not let its
+        // completion settle this segment before the replacement task is installed.
+        _classicWidthChanging = true;
+        try { return _classicWidthTask = _classicWidth!.AnimateToAsync(target, spec, cancellationToken: cancellationToken); }
+        finally { _classicWidthChanging = false; }
+    }
+    private void CompleteClassicTransition(int transitionId)
+    {
+        if (!_classicTransitionActive || transitionId != _classicTransitionId || _classicWidthChanging ||
+            _scope is not { IsEnding: false } || _classicWidthTask?.IsCompletedSuccessfully != true ||
+            _classicAlphaTask?.IsCompletedSuccessfully != true) return;
+        // A changed full size can still be waiting for a valid width specification.
+        if (_classicSegmentExpanded && _owner is { Expanded: true, Size: FloatingActionButtonSize.Default, HasIcon: true } &&
+            _classicWidth!.TargetValue != _labelExtentPx) return;
+        _classicTransitionActive = false;
+        _classicCurrentExpanded = _classicSegmentExpanded;
+        _fullyCollapsed = _owner?.Expanded == false && _classicWidth!.Value == 0;
+        _classicWidthTask = _classicAlphaTask = null;
+        InvalidateMeasure();
     }
     protected override Size MeasureOverride(Size available)
     {
@@ -99,9 +173,9 @@ internal sealed class ExtendedFabLayout : Panel
         label.IsVisible = !hasIcon || !_fullyCollapsed;
         var classic = _owner?.Size == FloatingActionButtonSize.Default;
         var expanded = _owner?.Expanded != false;
-        var start = classic && hasIcon ? (expanded ? 16 : 0) : LeadingSpace;
-        var end = classic && hasIcon ? (expanded ? 20 : 0) : TrailingSpace;
-        var gap = _owner?.Size switch { FloatingActionButtonSize.Medium => 12, FloatingActionButtonSize.Large => 16, _ => IconLabelSpace };
+        var start = classic && hasIcon ? (expanded ? IconLeadingSpace : 0) : LeadingSpace;
+        var end = classic && hasIcon ? (expanded ? TrailingSpace : 0) : TrailingSpace;
+        var gap = IconLabelSpace;
         if (label is FabLabelClip clip) clip.Gap = hasIcon ? gap : 0;
         icon.Measure(new Size(Math.Max(0, available.Width - start - end), available.Height));
         _iconWidth = hasIcon ? icon.DesiredSize.Width : 0;
@@ -111,15 +185,42 @@ internal sealed class ExtendedFabLayout : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var labelExtent = _labelWidth;
         _labelExtentPx = MathUtils.DipToPx(labelExtent, scale);
-        if (classic && hasIcon && _classicWidth is null && _scope is { } scope)
+        if (classic && hasIcon && _scope is { IsEnding: false } scope)
         {
-            _classicWidth = scope.CreateAnimatable(expanded ? (float)_labelExtentPx : 0, new ClassicWidthConverter(), 1);
-            scope.SubscribeValue(_classicWidth, _ => InvalidateMeasure());
+            if (_classicWidth is null)
+            {
+                _classicWidth = scope.CreateAnimatable(expanded ? (float)_labelExtentPx : 0, new ClassicWidthConverter(), 1);
+                scope.SubscribeValue(_classicWidth, _ => InvalidateMeasure());
+            }
+            else if (_classicTransitionActive && _classicSegmentExpanded && expanded && !_needsTransition && !_pending &&
+                     _classicWidth.TargetValue != _labelExtentPx && FabMotion.TrySpring(ExpandWidthMotion, out var widthSpec, 1))
+            {
+                // DeferredAnimation's full-size target is recomputed in measure. Retarget
+                // only width, preserving its rounded current value and vector velocity;
+                // alpha continues the existing segment without a restart.
+                var transitionId = _classicTransitionId;
+                var widthAnimation = StartClassicWidth(_labelExtentPx,
+                    _classicReturningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1) : widthSpec,
+                    scope.Lifetime);
+                _ = scope.Launch(async _ =>
+                {
+                    try { await widthAnimation; }
+                    finally { CompleteClassicTransition(transitionId); }
+                }, "Extended FAB measured width");
+            }
+            else if (!_classicTransitionActive && expanded && _classicCurrentExpanded && !_needsTransition && !_pending &&
+                     !_classicWidth.IsRunning && _alpha?.IsRunning != true && _classicWidth.Value != _labelExtentPx)
+            {
+                // EnterExitTransition drops its size animation once Visible is settled:
+                // normal measurement uses the current full size. Synchronize the stored
+                // integer extent too, so the next collapse starts at the displayed width.
+                _ = _classicWidth.SnapToAsync(_labelExtentPx);
+            }
         }
         if (!hasIcon)
-            _rowWidth = Math.Max(classic ? 80 : MinimumSize, start + end + _labelWidth);
+            _rowWidth = Math.Max(MinimumWidth, start + end + _labelWidth);
         else if (classic)
-            _rowWidth = Math.Max(expanded ? 80 : 56, start + end + _iconWidth + MathUtils.PxToDip(MathUtils.RoundToInt(Math.Max(0, _classicWidth?.Value ?? 0)), scale));
+            _rowWidth = Math.Max(expanded ? MinimumWidth : CollapsedMinimumWidth, start + end + _iconWidth + MathUtils.PxToDip(MathUtils.RoundToInt(Math.Max(0, _classicWidth?.Value ?? 0)), scale));
         else
         {
             var expandedWidth = Math.Max(MinimumSize, start + end + _iconWidth + labelExtent);
@@ -133,9 +234,8 @@ internal sealed class ExtendedFabLayout : Panel
         var hasIcon = _owner?.HasIcon == true;
         var classic = _owner?.Size == FloatingActionButtonSize.Default;
         var expanded = _owner?.Expanded != false;
-        var gap = _owner?.Size switch { FloatingActionButtonSize.Medium => 12, FloatingActionButtonSize.Large => 16, _ => IconLabelSpace };
         var labelWidth = classic && hasIcon ? MathUtils.PxToDip(MathUtils.RoundToInt(Math.Max(0, _classicWidth?.Value ?? 0)), LayoutHelper.GetLayoutScale(this)) : _labelWidth;
-        var x = classic && hasIcon ? (expanded ? 16 : (final.Width - _iconWidth - labelWidth) / 2) : LeadingSpace;
+        var x = classic && hasIcon ? (expanded ? IconLeadingSpace : (final.Width - _iconWidth - labelWidth) / 2) : LeadingSpace;
         if (!hasIcon) x = (final.Width - _labelWidth) / 2;
         var density = LayoutHelper.GetLayoutScale(this);
         x = MathUtils.RoundToInt(x * density) / density;
@@ -160,7 +260,17 @@ internal sealed class ExtendedFabLayout : Panel
 // AnimatedVisibility clips its complete spacer + label row to the animated width.
 internal sealed class FabLabelClip : Decorator
 {
-    internal double Gap { get; set; }
+    private double _gap;
+    internal double Gap
+    {
+        get => _gap;
+        set
+        {
+            if (_gap.Equals(value)) return;
+            _gap = value;
+            InvalidateMeasure();
+        }
+    }
     private double _contentWidth;
     public FabLabelClip() => ClipToBounds = true;
     protected override Size MeasureOverride(Size available)

@@ -10,8 +10,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using static Material3Expressive.Tokens.MaterialTokens;
+using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
@@ -24,7 +23,7 @@ public class FloatingActionButtonMenu : ItemsControl
     public static readonly StyledProperty<bool> ExpandedProperty = AvaloniaProperty.Register<FloatingActionButtonMenu, bool>(nameof(Expanded));
     public static readonly StyledProperty<object?> ButtonProperty = AvaloniaProperty.Register<FloatingActionButtonMenu, object?>(nameof(Button));
     public static readonly StyledProperty<IDataTemplate?> ButtonTemplateProperty = AvaloniaProperty.Register<FloatingActionButtonMenu, IDataTemplate?>(nameof(ButtonTemplate));
-    public static readonly StyledProperty<FloatingActionButtonMenuAlignment> MenuAlignmentProperty = AvaloniaProperty.Register<FloatingActionButtonMenu, FloatingActionButtonMenuAlignment>(nameof(MenuAlignment), FloatingActionButtonMenuAlignment.End);
+    public static readonly StyledProperty<FloatingActionButtonMenuAlignment> MenuAlignmentProperty = AvaloniaProperty.Register<FloatingActionButtonMenu, FloatingActionButtonMenuAlignment>(nameof(MenuAlignment));
     public bool Expanded { get => GetValue(ExpandedProperty); set => SetValue(ExpandedProperty, value); }
     public object? Button { get => GetValue(ButtonProperty); set => SetValue(ButtonProperty, value); }
     public IDataTemplate? ButtonTemplate { get => GetValue(ButtonTemplateProperty); set => SetValue(ButtonTemplateProperty, value); }
@@ -55,18 +54,33 @@ public class FloatingActionButtonMenuItem : Button
     public static readonly StyledProperty<IDataTemplate?> IconTemplateProperty = AvaloniaProperty.Register<FloatingActionButtonMenuItem, IDataTemplate?>(nameof(IconTemplate));
     public object? Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
     public IDataTemplate? IconTemplate { get => GetValue(IconTemplateProperty); set => SetValue(IconTemplateProperty, value); }
+    internal static readonly StyledProperty<MotionSpring?> RevealWidthMotionProperty = AvaloniaProperty.Register<FloatingActionButtonMenuItem, MotionSpring?>(nameof(RevealWidthMotion));
+    internal MotionSpring? RevealWidthMotion { get => GetValue(RevealWidthMotionProperty); set => SetValue(RevealWidthMotionProperty, value); }
+    internal static readonly StyledProperty<MotionSpring?> RevealAlphaMotionProperty = AvaloniaProperty.Register<FloatingActionButtonMenuItem, MotionSpring?>(nameof(RevealAlphaMotion));
+    internal MotionSpring? RevealAlphaMotion { get => GetValue(RevealAlphaMotionProperty); set => SetValue(RevealAlphaMotionProperty, value); }
     internal float RevealWidth => _width?.Value ?? (_visible ? 1 : 0);
     internal float RevealAlpha => _alpha?.Value ?? (_visible ? 1 : 0);
     internal FloatingActionButtonMenuAlignment MenuAlignment { get; private set; }
-    private bool _visible;
+    private bool _visible, _revealDeferred;
     private VisualAnimationScope? _scope;
     private Animatable<float>? _width, _alpha;
     private FabMenuItemLayout? _layout;
     protected override void OnApplyTemplate(Avalonia.Controls.Primitives.TemplateAppliedEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _width = _alpha = null;
+        _scope?.Dispose(); _scope = null; _width = _alpha = null; _revealDeferred = false;
         base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<FabMenuItemLayout>("PART_ContentLayout");
+    }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (_revealDeferred && (change.Property == RevealWidthMotionProperty || change.Property == RevealAlphaMotionProperty))
+        {
+            InvalidateReveal();
+            // A zero-width item can remeasure to the same size, so its parent need
+            // not remeasure automatically. Revisit the current ruler in its owner.
+            this.FindAncestorOfType<FabMenuLayout>()?.InvalidateMeasure();
+        }
     }
     private void InvalidateReveal()
     {
@@ -103,27 +117,39 @@ public class FloatingActionButtonMenuItem : Button
                 _ = initialScope.Launch(async ct => { await initialScope.Clock.NextFrameAsync(ct); InvalidateReveal(); }, "FAB menu initial placement");
             }
         }
-        if (_visible == visible || _scope is not { IsEnding: false } scope) return;
+        if (_visible == visible)
+        {
+            _revealDeferred = false;
+            return;
+        }
+        if (_scope is not { IsEnding: false } scope) return;
+        if (!FabMotion.TrySpring(RevealWidthMotion, out var widthSpec) ||
+            !FabMotion.TrySpring(RevealAlphaMotion, out var alphaSpec))
+        {
+            _revealDeferred = true;
+            return;
+        }
+        _revealDeferred = false;
         _visible = visible;
         _ = scope.Launch(async ct =>
         {
             await Task.WhenAll(
-                _width!.AnimateToAsync(_visible ? 1 : 0, FabMotion.Spring(this, Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial), cancellationToken: ct),
-                _alpha!.AnimateToAsync(_visible ? 1 : 0, FabMotion.Spring(this, Sys.Motion.Spring.EffectsFast, MotionScheme.Expressive.FastEffects), cancellationToken: ct));
+                _width!.AnimateToAsync(_visible ? 1 : 0, widthSpec, cancellationToken: ct),
+                _alpha!.AnimateToAsync(_visible ? 1 : 0, alphaSpec, cancellationToken: ct));
         }, "FAB menu item reveal");
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _width = _alpha = null;
+        _scope?.Dispose(); _scope = null; _width = _alpha = null; _revealDeferred = false;
         base.OnDetachedFromVisualTree(e);
     }
 }
 
 internal sealed class FabMenuItemLayout : Panel
 {
-    public static readonly StyledProperty<double> MinimumSizeProperty = AvaloniaProperty.Register<FabMenuItemLayout, double>(nameof(MinimumSize), 56);
-    public static readonly StyledProperty<Thickness> ContentPaddingProperty = AvaloniaProperty.Register<FabMenuItemLayout, Thickness>(nameof(ContentPadding), new Thickness(24, 0));
-    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<FabMenuItemLayout, double>(nameof(IconLabelSpace), 8);
+    public static readonly StyledProperty<double> MinimumSizeProperty = AvaloniaProperty.Register<FabMenuItemLayout, double>(nameof(MinimumSize));
+    public static readonly StyledProperty<Thickness> ContentPaddingProperty = AvaloniaProperty.Register<FabMenuItemLayout, Thickness>(nameof(ContentPadding));
+    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<FabMenuItemLayout, double>(nameof(IconLabelSpace));
     public double MinimumSize { get => GetValue(MinimumSizeProperty); set => SetValue(MinimumSizeProperty, value); }
     public Thickness ContentPadding { get => GetValue(ContentPaddingProperty); set => SetValue(ContentPaddingProperty, value); }
     public double IconLabelSpace { get => GetValue(IconLabelSpaceProperty); set => SetValue(IconLabelSpaceProperty, value); }
@@ -158,13 +184,15 @@ internal sealed class FabMenuItemLayout : Panel
 
 internal sealed class FabMenuLayout : Panel
 {
-    public static readonly StyledProperty<double> HorizontalPaddingProperty = AvaloniaProperty.Register<FabMenuLayout, double>(nameof(HorizontalPadding), 16);
-    public static readonly StyledProperty<double> ButtonBottomPaddingProperty = AvaloniaProperty.Register<FabMenuLayout, double>(nameof(ButtonBottomPadding), 16);
-    public static readonly StyledProperty<double> ButtonBetweenSpaceProperty = AvaloniaProperty.Register<FabMenuLayout, double>(nameof(ButtonBetweenSpace), 8);
+    public static readonly StyledProperty<double> HorizontalPaddingProperty = AvaloniaProperty.Register<FabMenuLayout, double>(nameof(HorizontalPadding));
+    public static readonly StyledProperty<double> ButtonBottomPaddingProperty = AvaloniaProperty.Register<FabMenuLayout, double>(nameof(ButtonBottomPadding));
+    public static readonly StyledProperty<double> ButtonBetweenSpaceProperty = AvaloniaProperty.Register<FabMenuLayout, double>(nameof(ButtonBetweenSpace));
     public double HorizontalPadding { get => GetValue(HorizontalPaddingProperty); set => SetValue(HorizontalPaddingProperty, value); }
     public double ButtonBottomPadding { get => GetValue(ButtonBottomPaddingProperty); set => SetValue(ButtonBottomPaddingProperty, value); }
     public double ButtonBetweenSpace { get => GetValue(ButtonBetweenSpaceProperty); set => SetValue(ButtonBetweenSpaceProperty, value); }
-    static FabMenuLayout() => AffectsMeasure<FabMenuLayout>(HorizontalPaddingProperty, ButtonBottomPaddingProperty, ButtonBetweenSpaceProperty);
+    static FabMenuLayout() => AffectsMeasure<FabMenuLayout>(HorizontalPaddingProperty, ButtonBottomPaddingProperty, ButtonBetweenSpaceProperty, StaggerMotionProperty);
+    public static readonly StyledProperty<MotionSpring?> StaggerMotionProperty = AvaloniaProperty.Register<FabMenuLayout, MotionSpring?>(nameof(StaggerMotion));
+    public MotionSpring? StaggerMotion { get => GetValue(StaggerMotionProperty); set => SetValue(StaggerMotionProperty, value); }
     private FloatingActionButtonMenu? _owner;
     private VisualAnimationScope? _scope;
     private Animatable<int>? _stagger;
@@ -207,13 +235,14 @@ internal sealed class FabMenuLayout : Panel
             scope.SubscribeValue(_stagger, _ => InvalidateMeasure());
         }
         var targetCount = _owner?.Expanded == true ? items.Length : 0;
-        if (_stagger is not null && _stagger.TargetValue != targetCount && !_pending && _scope is { IsEnding: false } active)
+        if (_stagger is not null && _stagger.TargetValue != targetCount && !_pending &&
+            FabMotion.IsReady(StaggerMotion) && _scope is { IsEnding: false } active)
         {
             _pending = true;
             _ = active.Launch(async ct =>
             {
                 await active.Clock.NextFrameAsync(ct); _pending = false;
-                var spec = FabMotion.Spring(this, Sys.Motion.Spring.EffectsSlow, MotionScheme.Expressive.SlowEffects, 1);
+                if (!FabMotion.TrySpring(StaggerMotion, out var spec, 1)) return;
                 await _stagger.AnimateToAsync(_owner?.Expanded == true ? Items.Length : 0,
                     new SpringSpec<int>(spec.DampingRatio, spec.Stiffness, 1), cancellationToken: ct);
             }, "FAB menu stagger count");

@@ -34,10 +34,14 @@
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:TabRow}" TargetType="m3:TabRow">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ContainerColor}}" />
-      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryContentColor}}" />
+      <Setter Property="m3:TabRowThemeDefaults.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryContentColor}}" />
+      <Setter Property="Foreground" Value="{Binding (m3:TabRowThemeDefaults.ContentColor), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="EdgePadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.EdgePadding}}" />
+      <Setter Property="MinTabWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.MinTabWidth}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Top" />
-      <Setter Property="Indicator" Value="{StaticResource MaterialPrimaryTabIndicator}" />
+      <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialPrimaryTabIndicator}" />
+      <Setter Property="Indicator" Value="{Binding (m3:TabRowThemeDefaults.Indicator), RelativeSource={RelativeSource Self}}" />
       <Setter Property="Divider" Value="{StaticResource MaterialTabDivider}" />
       <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:TabRowItemsPanel /></ItemsPanelTemplate></Setter>
       <Setter Property="ItemContainerTheme">
@@ -52,7 +56,7 @@
             <m3:TabRowChrome Owner="{Binding RelativeSource={RelativeSource TemplatedParent}}" ContentColor="{TemplateBinding Foreground}">
               <TemplatedControl x:Name="PART_Divider" Template="{TemplateBinding Divider}" IsHitTestVisible="False" />
               <ScrollViewer x:Name="PART_Scroller" Theme="{StaticResource MaterialTabScroller}">
-                <m3:TabRowContent>
+                <m3:TabRowContent IndicatorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorAnimation}}" ScrollAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ScrollAnimation}}">
                   <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
                 </m3:TabRowContent>
               </ScrollViewer>
@@ -63,8 +67,8 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^[Variant=Secondary]">
-        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
-        <Setter Property="Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
+        <Setter Property="m3:TabRowThemeDefaults.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
+        <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:Tab}" TargetType="m3:Tab">
@@ -77,7 +81,8 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent">
-            <m3:TabHeader x:Name="PART_Header" Background="Transparent" IsSelected="{TemplateBinding IsSelected}"
+            <m3:TabHeader LargeContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LargeContainerHeight}}" ContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ContainerHeight}}" SelectedContentAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SelectedContentAnimation}}" UnselectedContentAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.UnselectedContentAnimation}}"
+                x:Name="PART_Header" Background="Transparent" IsSelected="{TemplateBinding IsSelected}"
                 LabelTextStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LabelTextStyle}}"
                 ContentLayout="{TemplateBinding ContentLayout}" AmbientBrush="{TemplateBinding Foreground}"
                 SelectedContentColor="{TemplateBinding SelectedContentColor}" UnselectedContentColor="{TemplateBinding UnselectedContentColor}">
@@ -101,7 +106,8 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent">
-            <m3:TabHeader x:Name="PART_Header" Background="Transparent" IsSelected="{TemplateBinding IsSelected}"
+            <m3:TabHeader LargeContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LargeContainerHeight}}" ContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ContainerHeight}}" SelectedContentAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SelectedContentAnimation}}" UnselectedContentAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.UnselectedContentAnimation}}"
+                x:Name="PART_Header" Background="Transparent" IsSelected="{TemplateBinding IsSelected}"
                 LabelTextStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LabelTextStyle}}"
                 ContentLayout="{TemplateBinding m3:TabAppearance.ContentLayout}" AmbientBrush="{TemplateBinding Foreground}"
                 SelectedContentColor="{TemplateBinding m3:TabAppearance.SelectedContentColor}" UnselectedContentColor="{TemplateBinding m3:TabAppearance.UnselectedContentColor}">
@@ -117,8 +123,12 @@
     <ControlTheme x:Key="MaterialTabControlTheme" TargetType="TabControl">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
-      <Setter Property="m3:TabRowAppearance.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryContentColor}}" />
-      <Setter Property="m3:TabRowAppearance.Indicator" Value="{StaticResource MaterialPrimaryTabIndicator}" />
+      <Setter Property="m3:TabRowThemeDefaults.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryContentColor}}" />
+      <Setter Property="m3:TabRowAppearance.ContentColor" Value="{Binding (m3:TabRowThemeDefaults.ContentColor), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:TabRowAppearance.EdgePadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.EdgePadding}}" />
+      <Setter Property="m3:TabRowAppearance.MinTabWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.MinTabWidth}}" />
+      <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialPrimaryTabIndicator}" />
+      <Setter Property="m3:TabRowAppearance.Indicator" Value="{Binding (m3:TabRowThemeDefaults.Indicator), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:TabRowAppearance.Divider" Value="{StaticResource MaterialTabDivider}" />
       <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:TabRowItemsPanel /></ItemsPanelTemplate></Setter>
       <Setter Property="ItemContainerTheme" Value="{StaticResource MaterialTabItemTheme}" />
@@ -130,7 +140,7 @@
               <m3:TabRowChrome Owner="{Binding RelativeSource={RelativeSource TemplatedParent}}" ContentColor="{TemplateBinding m3:TabRowAppearance.ContentColor}">
                 <TemplatedControl x:Name="PART_Divider" Template="{TemplateBinding m3:TabRowAppearance.Divider}" IsHitTestVisible="False" />
                 <ScrollViewer x:Name="PART_Scroller" Theme="{StaticResource MaterialTabScroller}">
-                  <m3:TabRowContent>
+                  <m3:TabRowContent IndicatorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorAnimation}}" ScrollAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ScrollAnimation}}">
                     <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
                   </m3:TabRowContent>
                 </ScrollViewer>
@@ -148,8 +158,8 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^[(m3|TabRowAppearance.Variant)=Secondary]">
-        <Setter Property="m3:TabRowAppearance.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
-        <Setter Property="m3:TabRowAppearance.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
+        <Setter Property="m3:TabRowThemeDefaults.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
+        <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type TabControl}" TargetType="TabControl" BasedOn="{StaticResource MaterialTabControlTheme}" />

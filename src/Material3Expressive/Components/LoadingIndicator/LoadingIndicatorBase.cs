@@ -35,13 +35,13 @@ public abstract class LoadingIndicatorBase : Control
     /// <summary>An optional DIP outline factory for the container fill and clip; overrides CornerRadius.</summary>
     public Func<Size, FlowDirection, Geometry>? ContainerShape { get => GetValue(ContainerShapeProperty); set => SetValue(ContainerShapeProperty, value); }
 
-    public static readonly StyledProperty<double> ContainerWidthProperty = AvaloniaProperty.Register<LoadingIndicatorBase, double>(nameof(ContainerWidth), 48);
+    public static readonly StyledProperty<double> ContainerWidthProperty = AvaloniaProperty.Register<LoadingIndicatorBase, double>(nameof(ContainerWidth));
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ContainerWidth { get => GetValue(ContainerWidthProperty); set => SetValue(ContainerWidthProperty, value); }
-    public static readonly StyledProperty<double> ContainerHeightProperty = AvaloniaProperty.Register<LoadingIndicatorBase, double>(nameof(ContainerHeight), 48);
+    public static readonly StyledProperty<double> ContainerHeightProperty = AvaloniaProperty.Register<LoadingIndicatorBase, double>(nameof(ContainerHeight));
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ContainerHeight { get => GetValue(ContainerHeightProperty); set => SetValue(ContainerHeightProperty, value); }
-    public static readonly StyledProperty<double> IndicatorSizeProperty = AvaloniaProperty.Register<LoadingIndicatorBase, double>(nameof(IndicatorSize), 38);
+    public static readonly StyledProperty<double> IndicatorSizeProperty = AvaloniaProperty.Register<LoadingIndicatorBase, double>(nameof(IndicatorSize));
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double IndicatorSize { get => GetValue(IndicatorSizeProperty); set => SetValue(IndicatorSizeProperty, value); }
 
@@ -64,7 +64,6 @@ public abstract class LoadingIndicatorBase : Control
     {
         HorizontalAlignmentProperty.OverrideDefaultValue<LoadingIndicatorBase>(HorizontalAlignment.Left);
         VerticalAlignmentProperty.OverrideDefaultValue<LoadingIndicatorBase>(VerticalAlignment.Top);
-        CornerRadiusProperty.OverrideDefaultValue<LoadingIndicatorBase>(new CornerRadius(1000));
         AffectsMeasure<LoadingIndicatorBase>(ContainerWidthProperty, ContainerHeightProperty);
     }
 

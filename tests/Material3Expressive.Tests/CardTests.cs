@@ -215,7 +215,7 @@ public class CardTests
             Assert.Equal(97, ((ISolidColorBrush)card.Foreground!).Color.A);
             card.Background = Brushes.Red; card.Foreground = Brushes.Blue; card.BorderBrush = Brushes.Green; card.BorderThickness = new Thickness(3);
             card.Resources[MaterialTokens.Sys.Color.Surface] = Colors.Black;
-            card.IsEnabled = true; card.Colors = new CardColors { ContainerColor = Colors.Yellow };
+            card.IsEnabled = true; card.ContainerColor = Colors.Yellow;
             Assert.Same(Brushes.Red, card.Background); Assert.Same(Brushes.Blue, card.Foreground);
             Assert.Same(Brushes.Green, card.BorderBrush); Assert.Equal(new Thickness(3), card.BorderThickness);
         }
@@ -225,13 +225,13 @@ public class CardTests
     [AvaloniaFact]
     public void Colors_DeriveContentFromEnabledContainer_AndTrackAmbientAndTokens()
     {
-        var card = new Card { Colors = new CardColors { ContainerColor = Colors.Red }, Content = new Border { Width = 80, Height = 64 } };
+        var card = new Card { ContainerColor = Colors.Red, Content = new Border { Width = 80, Height = 64 } };
         var window = Show(card); var parent = (Grid)window.Content!;
         try
         {
             Avalonia.Controls.Documents.TextElement.SetForeground(parent, Brushes.Blue);
             Assert.Equal(Colors.Blue, ((ISolidColorBrush)card.Foreground!).Color);
-            card.Colors = new CardColors { ContainerColor = (Color)window.FindResource(MaterialTokens.Sys.Color.Primary)! };
+            card.ContainerColor = (Color)window.FindResource(MaterialTokens.Sys.Color.Primary)!;
             Assert.Equal((Color)window.FindResource(MaterialTokens.Sys.Color.OnPrimary)!, ((ISolidColorBrush)card.Foreground!).Color);
             card.Resources[MaterialTokens.Sys.Color.OnPrimary] = Colors.Green;
             Assert.Equal(Colors.Green, ((ISolidColorBrush)card.Foreground!).Color);

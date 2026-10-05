@@ -4,6 +4,8 @@
 通用移植要求见 [PORTING.md](../../../../docs/PORTING.md)，共享能力见
 [ARCHITECTURE.md](../../../../docs/ARCHITECTURE.md)及[共享决定](../../../../docs/DECISIONS.md)。
 
+内部 motion 输入以 null 表示尚未绑定；挂载、重挂或资源临时失效时不构造无效弹簧，恢复后提交当前目标。已有动画保留其已捕获规格，不以 Expressive 常量补齐配置。
+
 ## 上游与源码入口
 
 固定版本以 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：
@@ -39,6 +41,73 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`；Core
 - 缺口通过真实几何裁剪形成，额外水平留白为 4 DIP，透明容器也适用；`TextFieldDecoration` 只是内部绘制部件，不是公开替代控件
 - 无障碍名称/帮助文字以 Style 优先级投影到原生 Automation 属性，应用的显式值优先；owner 保留原生 Edit / IValueProvider peer，不声称构建了 Compose 的完整 semantics 树
 - 共用排版通过 BodyLarge / BodySmall 聚合 Token；运动使用 FastSpatial / FastEffects / SlowEffects。共享能力的原因和限制引用相应文档，不在此复制决定
+
+## 默认配置的数据流
+
+TextFieldTokenSource 保存 Filled / Outlined 的颜色与形状基线，以及共享 TextField 的软最小尺寸、
+两种 Padding 和运动引用。主题将它们绑定到原生 TextBox 或内部 TextFieldLayout 的配置属性；
+布局与动画只消费这些有效属性，不重新查询 motion Token 或使用 Expressive 备用规格。
+运行中的动画值仍由模板局部 Animatable 持有，不写回公开颜色、Padding 或运动配置。
+
+聚焦、错误与禁用样式只选择内部 TextFieldThemeDefaults 的颜色默认值，基础主题再以普通主题
+优先级绑定 Background、Foreground、BorderBrush、PlaceholderForeground 和 CaretBrush。
+这样普通应用 Style、Binding 与 LocalValue 均可覆盖，清除后恢复当前状态的默认值。
+内部标签和其余槽位的颜色仍由主题直接提供给模板部件。
+
+Padding 的主题 MultiBinding 按 Label 非 null 且位置为 Inside 选择 WithLabelContentPadding，
+其他情况使用 ContentPadding；布局不再用 IsSet 自建默认值。软最小宽高仍是模板部件配置，
+不是原生 MinWidth / MinHeight 的强约束；显式原生约束与受限父空间的原有处理不变。
+48 DIP 图标交互槽、12 DIP 图标 Padding 补偿、2 DIP affix 留白等保留在对应布局算法中。
+
+SecureTextField 通过 BasedOn 继承同一数据流，其编辑安全策略不参与外观配置迁移。
+
+## 已确认的稀疏标签排版端点适配
+
+2026-10-05 维护者确认：标签动画的稀疏 TextStyle 不再在插值处补固定字号、行高、字距和
+Normal 字重，而是先独立得到展开、浮起两个状态的有效排版，再插值。共享 TextStyle 的 null、
+Style 选择及 DefaultStyle 逐字段合并协议不变，见 [Typography](../../Foundation/Typography/README.md)。
+这改变了缺字段的取值来源，是 Avalonia 稀疏输入适配，并非声称与 Compose 的稀疏 TextStyle lerp 完全等价。
+
+模板为每个 TextBox 保留两个无内容的 ContentPresenter，与可见 Label 同级，分别通过
+MaterialText.DefaultStyle 消费 LargeTextStyle / SmallTextStyle。它们复用同一资源、主题、
+字体缩放和父级内容环境；缺字段经共享投影与 Avalonia 原生属性优先级得到最终值。
+每个部件只创建一次，挂载时订阅有效文字属性变化，分离时解除订阅；不逐帧创建端点。
+两者固定 IsVisible=false，不测量、排列、命中或加入辅助技术遍历，不复制标签内容。
+
+动画只读取这些独立端点，绝不从正在变化的 Label 属性反读缺字段，避免把上一帧当作下一帧起点。
+插值结果仍作为可见 Label 的 DefaultStyle；其原生局部值、绑定和控件自身后续普通 Style
+保持共享投影优先级，清除覆盖后立即恢复当前进度对应值。完整 BodyLarge/BodySmall 的默认
+16→12 字号、24→16 行高等插值不变，坐标过冲与尺寸进度限制也不变。
+
+FontFamily、FontStyle（包括 Italic）和 TextAlignment 按固定上游的离散插值规则，
+在进度小于 0.5 时使用展开端，否则使用浮起端，确保动画到达两个完整的有效端点；依据分别为
+[SpanStyle.lerp](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/ui/ui-text/src/commonMain/kotlin/androidx/compose/ui/text/SpanStyle.kt#L732-L757)和
+[ParagraphStyle.lerp](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/ui/ui-text/src/commonMain/kotlin/androidx/compose/ui/text/ParagraphStyle.kt#L435-L439)。
+本地 TextStyle 的 FontStretch 是 Avalonia 扩展，固定 Compose 没有同名字段；按已确认的
+完整端点适配采用同一离散边界，不将它映射为 Compose 的其他字体或变换字段。
+原生属性覆盖及清除恢复对这些离散字段同样有效。
+
+例如仅把 BodySmall.Style 设为 FontWeight=Bold 时，未指定字号来自该模板位置的有效环境，
+浮起状态未必缩小。stock 主题中 TextBox 的有效原生字体会经其 DefaultStyle 内容环境传递，
+因此其 FontSize=20 可填补这一稀疏端点；完整 BodyLarge 显式提供字号时仍保留自身 16。
+这不是所有稀疏 Style 都直接继承任意祖先 FontSize 的保证；显式 Style、局部资源与原生覆盖
+仍按共享协议和 Avalonia 的实际属性路径决定。
+
+LineHeight=NaN 保留 Avalonia 的显式自动行高，不能参与数值线性插值。一端或两端为自动时，
+按固定上游 ParagraphStyle.lerp → SpanStyle.lerpTextUnitInheritable 的离散边界，在进度小于
+0.5 时选择展开端，否则选择浮起端；两端有限时仍线性插值。无穷行高属于无效配置，
+不视为自动：保留最近一次合法的字体与行高度量，输入恢复后按当前进度重新投影。
+前景色仍更新到 DefaultStyle 内容环境，使字符串及显式 TextBlock 继续跟随焦点、错误等状态颜色；
+仅更新 presenter 的原生 Foreground 无法替代这一步，内容自身的排版投影可能覆盖原生颜色继承。
+
+几何保留上游 TextFieldImpl.minimizedLabelHalfHeight 的独立职责：Inside 高度预留、
+多行标签起点和 Cutout 顶部留白消费同一浮起端点的有效有限行高，避免稀疏端点与几何各用一套缺省值。
+自动行高没有可直接用于该几何的数值，因此由模板单独绑定 BodySmall.LineHeight 标量，
+对应上游 TypeScaleTokens.BodySmallLineHeight 回退；此值跟随资源/字体缩放，不写回动画端点。
+该标量未就绪、非有限或为负数时，几何暂不预留这项额外空间（0），恢复后自动更新；
+无穷端点本身也不套用自动行高的回退。不估算平台字体度量。
+固定 24→16 的标签 MinHeight 则对应上游 MinTextLineHeight / MinFocusedLabelLineHeight，
+是独立的最小布局空间，继续保留；不能据此推断文字的实际行高。
 
 ## 已确认的原生编辑边界
 
@@ -106,6 +175,7 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ```
 
 - [原生编辑与生命周期测试](../../../../tests/Material3Expressive.Tests/TextFieldTests.cs)：主题、错误/禁用优先级、内容槽、IME 客户端、选区/撤销、主题替换、自动高度、反向与 detach
+- [稀疏排版属性与模板测试](../../../../tests/Material3Expressive.Tests/TextFieldTypographyTests.cs)：未测量的真实模板覆盖完整/稀疏端点、资源/主题/字体缩放、原生覆盖及移除、重挂与动画输出隔离；不验证字形或文字像素
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/TextFieldCases.cs)与 [Compose 用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/TextFieldCases.kt)：Filled / Outlined、三种标签位置、最小化、RTL、错误/禁用/明暗/约束和动态中断
 - 自动尺寸用例保留真实空编辑行；几何内容通过正式槽位传入，窄宽度采用与 Compose `Modifier.size` 同义的受约束首选尺寸
 - 聚焦动态主采样读取槽位几何与标签进度，不对未虚拟化的原生 caret blink 做常规截图；其他适用场景保留原图

@@ -4,8 +4,8 @@
   <!--
     Implicit theme for a standalone MaterialSurface: the M3 baseline surface and content
     colors, resolved through {m3:Token} from the sys.color slots so the surface tracks the
-    active ColorScheme and theme variant. Component themes (Button & co.) drive their own
-    comp slots and never go through this theme.
+    active ColorScheme and theme variant. Component template bindings override background
+    and content defaults; shared paint/motion configuration still comes through this theme.
 
     MaterialSurface is a lookless part — it builds its chrome and overlay visuals itself — so
     this theme carries property setters only, no Template. TextElement.Foreground is the
@@ -13,6 +13,14 @@
   -->
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:MaterialSurface}" TargetType="m3:MaterialSurface">
+      <Setter Property="DefaultShadowColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Shadow}}" />
+      <Setter Property="TonalSurfaceColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}" />
+      <Setter Property="TonalSurfaceTintColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceTint}}" />
+      <Setter Property="ShapeAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.EffectsDefault}}" />
+      <Setter Property="HoverStateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.HoverStateLayerOpacity}}" />
+      <Setter Property="FocusStateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.FocusStateLayerOpacity}}" />
+      <Setter Property="PressedStateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.PressedStateLayerOpacity}}" />
+      <Setter Property="DraggedStateLayerOpacity" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+State.DraggedStateLayerOpacity}}" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}" />
       <Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
     </ControlTheme>

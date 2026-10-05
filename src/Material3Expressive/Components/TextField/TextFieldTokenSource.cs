@@ -11,6 +11,13 @@ public sealed class TextFieldTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.TextField.MinimumWidth] = 280d,
+        [Comp.TextField.MinimumHeight] = 56d,
+        [Comp.TextField.ContentPadding] = new Thickness(16),
+        [Comp.TextField.WithLabelContentPadding] = new Thickness(16, 8),
+        [Comp.TextField.SpatialAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.TextField.FastEffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
+        [Comp.TextField.SlowEffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsSlow),
         [Comp.FilledTextField.UnfocusedInputColor] = new TokenRef(Sys.Color.OnSurface),
         [Comp.FilledTextField.UnfocusedContainerColor] = new TokenRef(Sys.Color.SurfaceContainerHighest),
         [Comp.FilledTextField.UnfocusedIndicatorColor] = new TokenRef(Sys.Color.OnSurfaceVariant),

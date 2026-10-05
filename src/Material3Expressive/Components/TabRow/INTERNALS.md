@@ -1,5 +1,13 @@
 # TabRow 实现说明
 
+## Token 配置路径
+
+内部必需 spring 的 stiffness 必须大于零。模板首次挂载、重挂或资源暂时撤回时，未就绪配置不构造或提交运行时 spring；有效配置恢复后重新提交当前视觉目标。正在运行的通道继续使用已验证并捕获的规格，不回退 Expressive、Snap 或另一套默认值。
+
+主题把尺寸、指示器/滚动/内容运动绑定到内部配置属性；EdgePadding、MinTabWidth 及标准/图标加标签两种容器高度的基线也放入 TokenSource。Primary/Secondary 只切换内部颜色及指示器候选，公开 Foreground、ContentColor 与 Indicator 在普通主题优先级接入，应用 Style、Binding、LocalValue 可覆盖。
+
+SelectedContentColor=null 的环境色继承、UnselectedContentColor=null 跟随选中色是明确语义，继续保留；不是逐字段 nullable Options 合并。指示器/颜色/滚动位置仍是运行时结果，选择及页面所有权不变。
+
 本文面向维护者；使用入口见 [README.md](README.md)。固定基线以
 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 1.5.0-alpha27），

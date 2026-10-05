@@ -1,5 +1,11 @@
 # NavigationRail 实现说明
 
+## Token 配置路径
+
+内部必需 spring 的 stiffness 必须大于零。模板首次挂载、重挂或资源暂时撤回时，未就绪配置不构造或提交运行时 spring；有效配置恢复后重新提交当前视觉目标。正在运行的通道继续使用已验证并捕获的规格，不回退 Expressive、Snap 或另一套默认值。
+
+尺寸与运动规格由主题 Token 绑定到内部布局属性；按压映射读取同一有效宽度，不再重新查询 Token。颜色仍由公开颜色属性输入，动画只写内部呈现结果。固定按压偏移、布局舍入、时序及选择状态所有权不变。
+
 本文面向维护者；使用入口见 [README.md](README.md)。固定基线以
 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 1.5.0-alpha27），

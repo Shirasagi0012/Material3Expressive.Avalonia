@@ -3,6 +3,10 @@
 使用方法见 [README](README.md)。Badge 本身负责可选内容的表面，BadgedBox 负责不扩大锚点尺寸
 的相对放置；导航布局提供的徽标边界不应变成一个额外裁剪层。
 
+## 默认配置数据流
+
+内容条件只选择内部 Padding、Shape、文字默认输入，再由主题普通 Setter 绑定公开属性。用户普通 Style、Binding 与局部值不被 :has-content 默认值压过；清除覆盖后恢复当前内容分支。MinimumSize 继续由主题直接绑定内部布局，BadgedBox 的定位算法不变。
+
 ## 固定上游与本地入口
 
 基线见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX
@@ -27,7 +31,7 @@
 内容居中。存在但为空的内容仍进入大徽标分支。Width / Height / MinWidth / MinHeight
 覆盖默认最小尺寸，有限最大约束可缩小徽标。组合内容可在 Content 中使用水平 StackPanel。
 
-八项 Token 在 [BadgeTokenSource.cs](BadgeTokenSource.cs) 和
+组件 Token 在 [BadgeTokenSource.cs](BadgeTokenSource.cs) 和
 [MaterialTokens.Comp.Badge.cs](../../Tokens/MaterialTokens.Comp.Badge.cs) 定义，由 MaterialTheme 装配。
 保留引用关系：两种内容分支均消费 `Comp.Badge.Color`，默认 Error；前景经共享 `contentColorFor`
 按容器颜色匹配 On 色，未匹配时继承外层内容色。`LargeColor` 和 `LargeLabelTextColor`

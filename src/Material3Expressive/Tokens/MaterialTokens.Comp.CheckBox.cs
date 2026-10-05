@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Motion;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Tokens;
 
@@ -10,6 +11,11 @@ public static partial class MaterialTokens
         // CheckboxDefaults.defaultCheckboxColors, fixed CheckboxTokens 14_1_0.
         public static class CheckBox
         {
+            public static readonly MaterialTokenKey<Avalonia.Thickness> ContentPadding = new("md.comp.checkbox.content-padding");
+            public static readonly MaterialTokenKey<SpringSpec> ShapeAnimation = new("md.comp.checkbox.shape-animation");
+            public static readonly MaterialTokenKey<SpringSpec> ColorAnimation = new("md.comp.checkbox.color-animation");
+            public static readonly MaterialTokenKey<SpringSpec> UncheckColorAnimation = new("md.comp.checkbox.uncheck-color-animation");
+
             public static readonly MaterialTokenKey<Color> CheckedCheckmarkColor = new("md.comp.checkbox.checked-checkmark-color");
             public static readonly MaterialTokenKey<Color> UncheckedCheckmarkColor = new("md.comp.checkbox.unchecked-checkmark-color");
             public static readonly MaterialTokenKey<Color> CheckedBoxColor = new("md.comp.checkbox.checked-box-color");

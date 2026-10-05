@@ -8,6 +8,9 @@ public sealed class ProgressIndicatorTokenSource : ITokenSource
 {
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value)
     {
+        if (ReferenceEquals(key, Comp.LinearProgressIndicator.Width)) { value = 240d; return true; }
+        if (ReferenceEquals(key, Comp.CircularProgressIndicator.IndeterminateTrackColor)) { value = Avalonia.Media.Colors.Transparent; return true; }
+        if (ReferenceEquals(key, Comp.ProgressIndicator.StrokeCap)) { value = Avalonia.Media.PenLineCap.Round; return true; }
         if (ReferenceEquals(key, Comp.ProgressIndicator.ActiveIndicatorColor)) { value = new TokenRef(Sys.Color.Primary); return true; }
         if (ReferenceEquals(key, Comp.ProgressIndicator.TrackColor)) { value = new TokenRef(Sys.Color.SecondaryContainer); return true; }
         if (ReferenceEquals(key, Comp.LinearProgressIndicator.Height) || ReferenceEquals(key, Comp.LinearProgressIndicator.ActiveThickness) ||

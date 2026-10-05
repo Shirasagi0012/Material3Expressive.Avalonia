@@ -35,8 +35,14 @@
 - `{m3:Token}` 在消费元素处解析值。每次跟随 `TokenRef` 都从同一消费位置重新查找，
   因而局部覆盖中间的 System Token 也能影响 Component Token。
 - 当前派生形式包括 `WithAlpha`、`SpringSpecRef`、`TextStyleRef` 和 `TextUnit`。解析有跳数限制；缺失、循环或超过限制时失败，
-  绑定通过 `UnsetValue` 回退，不改用外层同名定义掩盖无效的最近条目。
+  绑定通过 `UnsetValue` 交给 Avalonia 处理，不改用外层同名定义掩盖无效的最近条目。
+  当前 Avalonia 12.1.2 的活动 `MultiBinding` 仍占原优先级，并提供目标属性的元数据默认值，
+  不会自动让出到低优先级 Style；显式解除绑定后才恢复低优先级值。资源修复后，原绑定继续更新。
+  这是[固定版本绑定实现](https://github.com/AvaloniaUI/Avalonia/blob/d3c867a9e2de379249b03dbeb3495bd7f076a81a/src/Avalonia.Base/Data/Core/UntypedBindingExpressionBase.cs)的行为，Token 层未建立另一个回退优先级系统。
 - 资源和主题变化触发消费值更新。保留引用关系，不要在组件初始化时把动态 Token 提前展开为永久常量。
+- 模板中直接使用 `{m3:Token}` 时，由扩展设置 Template 优先级。若将 Token 嵌入手写 `MultiBinding`，
+  应在模板的最外层 `MultiBinding` 显式设置 `Priority="Template"`；子绑定的优先级不能替代外层配置。
+  Setter 中的绑定优先级仍由样式实例决定。
 
 组件主题可以参考现有 [Button 主题](../src/Material3Expressive/Components/Button/Button.axaml) 的消费方式：
 

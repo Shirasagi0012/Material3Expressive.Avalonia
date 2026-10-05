@@ -3,6 +3,7 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:NavigationBar}" TargetType="m3:NavigationBar">
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.WindowInsets}}" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.DefaultTonalElevation}}" />
@@ -23,7 +24,7 @@
               TextElement.Foreground="{TemplateBinding Foreground}" TonalElevation="{TemplateBinding TonalElevation}">
             <Border>
               <Border.Padding>
-                <MultiBinding Converter="{x:Static m3:WindowInsetsConverter.Instance}">
+                <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
                   <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
                   <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                 </MultiBinding>
@@ -53,7 +54,9 @@
       <Setter Property="Template">
         <ControlTemplate>
           <!-- Compose selectable covers the whole item, including unpainted gaps. -->
-          <m3:NavigationBarItemLayout x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
+          <m3:NavigationBarItemLayout EffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.EffectsAnimation}}"
+              IndicatorSizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.IndicatorSizeAnimation}}"
+              x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
               HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
               AlwaysShowLabel="{TemplateBinding AlwaysShowLabel}"

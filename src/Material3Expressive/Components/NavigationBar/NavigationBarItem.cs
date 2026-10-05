@@ -12,9 +12,6 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -94,7 +91,8 @@ public class NavigationBarItem : Button
         MaterialInteraction.GetOrCreate(this).PressPositionMapper = origin =>
         {
             var scale = Avalonia.Layout.LayoutHelper.GetLayoutScale(this);
-            var indicatorWidth = Foundation.MathUtils.DipToPx((float)Metric(MaterialTokens.Comp.NavigationBar.ActiveIndicatorWidth, 56), (float)scale);
+            if (_layout is null) return origin;
+            var indicatorWidth = Foundation.MathUtils.DipToPx((float)_layout.IndicatorWidth, (float)scale);
             var itemWidth = Foundation.MathUtils.DipToPx((float)Bounds.Width, (float)scale);
             return new Point(origin.X - (itemWidth - indicatorWidth) / (2 * scale), origin.Y - 12);
         };
@@ -103,13 +101,21 @@ public class NavigationBarItem : Button
 
     protected override Type StyleKeyOverride => typeof(NavigationBarItem);
 
+    private void MotionConfigurationChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == NavigationBarItemLayout.EffectsAnimationProperty || change.Property == NavigationBarItemLayout.IndicatorSizeAnimationProperty)
+            UpdateTargets();
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         _motion?.Dispose();
         _motion = null;
         base.OnApplyTemplate(e);
         _targetsPending = false;
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<NavigationBarItemLayout>("PART_Layout");
+        if (_layout is not null) _layout.PropertyChanged += MotionConfigurationChanged;
         _icon = e.NameScope.Find<ContentPresenter>("PART_Icon");
         _label = e.NameScope.Find<ContentPresenter>("PART_Label");
         _indicator = e.NameScope.Find<Border>("PART_Indicator");
@@ -120,6 +126,7 @@ public class NavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
         InitializeMotion();
     }
 
@@ -131,6 +138,7 @@ public class NavigationBarItem : Button
         _targetsPending = false;
         _activationKey = null;
         _iconColor = _textColor = null;
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -214,8 +222,9 @@ public class NavigationBarItem : Button
         // animateTo: cancellation resets velocity and the frame anchor. Calling
         // AnimateTo directly would instead carry the old velocity into the new target.
         // Spec changes apply at the next target change.
-        var effects = Spec(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects);
-        var spatial = Spec(MaterialTokens.Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial);
+        var effects = _layout!.EffectsAnimation;
+        var spatial = _layout!.IndicatorSizeAnimation;
+        if (effects.Stiffness <= 0 || spatial.Stiffness <= 0) return;
         var selected = IsSelected ? 1f : 0f;
         Restart(_alpha, selected, new SpringSpec<float>(effects.DampingRatio, effects.Stiffness, 0.01f), "Navigation bar indicator alpha");
         Restart(_size, selected, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), "Navigation bar indicator size");
@@ -234,10 +243,6 @@ public class NavigationBarItem : Button
         }
     }
 
-    private Foundation.Motion.SpringSpec Spec(MaterialTokenKey<Foundation.Motion.SpringSpec> key, Foundation.Motion.SpringSpec fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec spec ? spec : fallback;
-    private double Metric(MaterialTokenKey<double> key, double fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double number ? number : fallback;
 
     protected override AutomationPeer OnCreateAutomationPeer() => _peer = new NavigationBarItemAutomationPeer(this);
 

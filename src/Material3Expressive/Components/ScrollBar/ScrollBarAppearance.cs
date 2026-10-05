@@ -8,13 +8,13 @@ namespace Material3Expressive.Components;
 public static class ScrollBarAppearance
 {
     public static readonly AttachedProperty<double> ThicknessProperty =
-        AvaloniaProperty.RegisterAttached<ScrollBar, double>("Thickness", typeof(ScrollBarAppearance), 8,
+        AvaloniaProperty.RegisterAttached<ScrollBar, double>("Thickness", typeof(ScrollBarAppearance),
             validate: value => double.IsFinite(value) && value >= 0);
     public static double GetThickness(ScrollBar owner) => owner.GetValue(ThicknessProperty);
     public static void SetThickness(ScrollBar owner, double value) => owner.SetValue(ThicknessProperty, value);
 
     public static readonly AttachedProperty<double> ThumbMinLengthProperty =
-        AvaloniaProperty.RegisterAttached<ScrollBar, double>("ThumbMinLength", typeof(ScrollBarAppearance), 16,
+        AvaloniaProperty.RegisterAttached<ScrollBar, double>("ThumbMinLength", typeof(ScrollBarAppearance),
             validate: value => double.IsFinite(value) && value >= 0);
     public static double GetThumbMinLength(ScrollBar owner) => owner.GetValue(ThumbMinLengthProperty);
     public static void SetThumbMinLength(ScrollBar owner, double value) => owner.SetValue(ThumbMinLengthProperty, value);
@@ -31,7 +31,7 @@ public static class ScrollBarAppearance
 
     public static readonly AttachedProperty<TimeSpan> HoverDurationProperty =
         AvaloniaProperty.RegisterAttached<ScrollBar, TimeSpan>("HoverDuration", typeof(ScrollBarAppearance),
-            TimeSpan.FromMilliseconds(300), validate: value => value >= TimeSpan.Zero);
+            validate: value => value >= TimeSpan.Zero);
     public static TimeSpan GetHoverDuration(ScrollBar owner) => owner.GetValue(HoverDurationProperty);
     public static void SetHoverDuration(ScrollBar owner, TimeSpan value) => owner.SetValue(HoverDurationProperty, value);
 }

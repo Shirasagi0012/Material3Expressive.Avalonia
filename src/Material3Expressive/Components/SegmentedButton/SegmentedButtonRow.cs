@@ -10,7 +10,7 @@ namespace Material3Expressive.Components;
 /// <summary>Equal-weight, overlapping segments. The application owns selection.</summary>
 public abstract class SegmentedButtonRow : ItemsControl
 {
-    public static readonly StyledProperty<double> SpaceProperty = AvaloniaProperty.Register<SegmentedButtonRow, double>(nameof(Space), 1);
+    public static readonly StyledProperty<double> SpaceProperty = AvaloniaProperty.Register<SegmentedButtonRow, double>(nameof(Space));
     public static readonly StyledProperty<CornerRadius> BaseShapeProperty = AvaloniaProperty.Register<SegmentedButtonRow, CornerRadius>(nameof(BaseShape));
     /// <summary>Overlap; use the same value as the items' border width.</summary>
     public double Space { get => GetValue(SpaceProperty); set => SetValue(SpaceProperty, value); }

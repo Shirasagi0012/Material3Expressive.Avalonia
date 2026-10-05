@@ -116,7 +116,7 @@ public class NavigationDrawerItem : Button
 internal sealed class NavigationDrawerItemLayout : Panel
 {
     private double _iconGap, _badgeGap;
-    public static readonly StyledProperty<double> ContainerMinHeightProperty = AvaloniaProperty.Register<NavigationDrawerItemLayout, double>(nameof(ContainerMinHeight), 56);
+    public static readonly StyledProperty<double> ContainerMinHeightProperty = AvaloniaProperty.Register<NavigationDrawerItemLayout, double>(nameof(ContainerMinHeight));
     public double ContainerMinHeight { get => GetValue(ContainerMinHeightProperty); set => SetValue(ContainerMinHeightProperty, value); }
     static NavigationDrawerItemLayout() => AffectsMeasure<NavigationDrawerItemLayout>(ContainerMinHeightProperty);
     protected override Size MeasureOverride(Size availableSize)

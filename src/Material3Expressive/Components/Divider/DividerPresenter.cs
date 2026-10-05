@@ -22,7 +22,7 @@ internal sealed class DividerPresenter : Control
         AvaloniaProperty.Register<DividerPresenter, Orientation>(nameof(Orientation));
     public Orientation Orientation { get => GetValue(OrientationProperty); set => SetValue(OrientationProperty, value); }
     public static readonly StyledProperty<double> ThicknessProperty =
-        AvaloniaProperty.Register<DividerPresenter, double>(nameof(Thickness), 1);
+        AvaloniaProperty.Register<DividerPresenter, double>(nameof(Thickness));
     public double Thickness { get => GetValue(ThicknessProperty); set => SetValue(ThicknessProperty, value); }
     public static readonly StyledProperty<Color> ColorProperty =
         AvaloniaProperty.Register<DividerPresenter, Color>(nameof(Color));

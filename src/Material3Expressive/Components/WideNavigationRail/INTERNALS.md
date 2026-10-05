@@ -1,5 +1,15 @@
 # WideNavigationRail 实现说明
 
+## Token 配置路径
+
+内部必需 spring 的 stiffness 必须大于零。模板首次挂载、重挂或资源暂时撤回时，未就绪配置不构造或提交运行时 spring；有效配置恢复后重新提交当前视觉目标。正在运行的通道继续使用已验证并捕获的规格，不回退 Expressive、Snap 或另一套默认值。
+
+主题将宽度、间距、排版与运动规格绑定到控件/内部部件的有效属性；布局、按压和动画不再另查 Token。Modal 最大宽度使用同一 ExpandedContainerMaxWidth 默认来源。IconPosition=null 仍表示跟随展开目标，IndicatorPadding=null 仍在两个有效 padding 之间插值。
+
+State 保留共享身份和首次规格捕获。固定 [AndroidX WideNavigationRailState.kt](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRailState.kt#L83-L145) 与 [Core 同文件](https://github.com/JetBrains/compose-multiplatform-core/blob/a9e47e8aa04c95cfe572ab4297c770f3cbfb234e/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRailState.kt#L83-L145) 的 rememberSaveable 未以规格为 key，构造器持有只读 animationSpec，expand/collapse/toggle 使用同一捕获值，没有后续更新入口。本地第一个消费者提供规格，是共享 hoisted state 的 Avalonia 挂载适配；后续主题变化不重建 State 或改变已捕获规格。
+
+Attach 会登记消费者，但有效规格尚未到达时不创建动画通道；第一份有效规格到达后按当前 State 初始化。尚未完成该初始化的显式 Expand/Collapse 会以带上下文的 InvalidOperationException 失败，不等待、不排队，也不替换 State；恢复后后续请求正常执行。若首个消费者在首次就绪前卸载，剩余消费者可完成初始化；已有动画作用域的多消费者取消/释放规则不变。
+
 本文面向维护者；使用入口见 [README.md](README.md)。固定基线以
 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 1.5.0-alpha27），

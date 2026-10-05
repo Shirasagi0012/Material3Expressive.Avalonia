@@ -3,6 +3,13 @@
 使用入口见 [README](README.md)。维护时必须区分原生 ToolTip 的主题与服务适配、PlainTooltip
 的内容表面，以及 TooltipBox 的状态/Popup 路径，不能以原生静态测试证明 Box 的行为一致。
 
+Box 内部 motion 输入未就绪时，通过已有 Transition preparation reservation 保留 TooltipState 的未完成状态；撤下子通道并保留当前姿态与速度。规格恢复后重建通道、续接当前目标并释放 reservation，不完成或替换外部 State，也不提供替代曲线。
+
+## 默认配置数据流
+
+TooltipBox 的缩放/透明度规格由 Box Token 引用系统 motion，经主题绑定内部配置属性；Transition 捕获当前属性，不再自行解析 Token 或补 Expressive 默认。PlainTooltip 仍只负责静态表面。
+原生/Plain Tooltip 的 Padding、最小/最大尺寸及 Box Spacing 基线统一在 TokenSource；Plain 的软最小值绑定内部布局，不转成会抬高显式 Width/Height 的硬约束。位置工厂、互斥状态与超时职责保留。
+
 ## 固定上游与本地入口
 
 固定版本以 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：AndroidX
@@ -50,7 +57,7 @@ Automation Invoke 表达锚点的长按显示，提示提供 ToolTip / Assertive
 `IsVisible = CurrentState || TargetState`，退出期间保留 Popup，Transition 真正完成后移除。
 更换状态或卸载取消旧等待、输入、帧与动画作用域，不影响其他 Box。
 缩放目标在 0.8/1 之间，使用 SpatialFast；透明度目标在 0/1 之间，使用 EffectsFast。
-规格从动态 Motion Token 解析，缺省回退 Expressive.FastSpatial/FastEffects，Float 可见阈值为 .01。
+规格通过主题绑定保持动态系统 Motion 引用，Float 可见阈值为 .01。
 缩放和透明度作用于同一容器，父级开启整层透明度合成；局部解除 Popup 宿主裁剪以保留
 Core clippingEnabled=false 的阴影，不应为了匹配截图裁掉显式 shadow elevation。
 

@@ -9,7 +9,7 @@ namespace Material3Expressive.Components;
 // Surface's minimumInteractiveComponentSize outside the FAB's sizeIn/defaultMinSize.
 internal sealed class FabLayout : Decorator, IMinimumInteractiveLayout
 {
-    public static readonly StyledProperty<double> ContainerMinSizeProperty = AvaloniaProperty.Register<FabLayout, double>(nameof(ContainerMinSize), 56);
+    public static readonly StyledProperty<double> ContainerMinSizeProperty = AvaloniaProperty.Register<FabLayout, double>(nameof(ContainerMinSize));
     public double ContainerMinSize { get => GetValue(ContainerMinSizeProperty); set => SetValue(ContainerMinSizeProperty, value); }
     private Size _container;
     public Point MinimumInteractivePadding

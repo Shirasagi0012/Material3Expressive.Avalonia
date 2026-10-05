@@ -13,8 +13,6 @@ using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Rendering;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 using MaterialSkiaShadow;
 
 namespace Material3Expressive.Components;
@@ -47,6 +45,24 @@ public sealed class MaterialSurface : Control
     /// <summary>Tonal elevation in DIPs. Nested surfaces accumulate this value.</summary>
     public static readonly StyledProperty<double> TonalElevationProperty =
         AvaloniaProperty.Register<MaterialSurface, double>(nameof(TonalElevation));
+
+    // Theme configuration; runtime paint and animation never resolve tokens themselves.
+    internal static readonly StyledProperty<Color> DefaultShadowColorProperty = AvaloniaProperty.Register<MaterialSurface, Color>(nameof(DefaultShadowColor));
+    internal Color DefaultShadowColor { get => GetValue(DefaultShadowColorProperty); set => SetValue(DefaultShadowColorProperty, value); }
+    internal static readonly StyledProperty<Color?> TonalSurfaceColorProperty = AvaloniaProperty.Register<MaterialSurface, Color?>(nameof(TonalSurfaceColor));
+    internal Color? TonalSurfaceColor { get => GetValue(TonalSurfaceColorProperty); set => SetValue(TonalSurfaceColorProperty, value); }
+    internal static readonly StyledProperty<Color?> TonalSurfaceTintColorProperty = AvaloniaProperty.Register<MaterialSurface, Color?>(nameof(TonalSurfaceTintColor));
+    internal Color? TonalSurfaceTintColor { get => GetValue(TonalSurfaceTintColorProperty); set => SetValue(TonalSurfaceTintColorProperty, value); }
+    internal static readonly StyledProperty<SpringSpec?> ShapeAnimationProperty = AvaloniaProperty.Register<MaterialSurface, SpringSpec?>(nameof(ShapeAnimation));
+    internal SpringSpec? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
+    internal static readonly StyledProperty<double> HoverStateLayerOpacityProperty = AvaloniaProperty.Register<MaterialSurface, double>(nameof(HoverStateLayerOpacity));
+    internal double HoverStateLayerOpacity { get => GetValue(HoverStateLayerOpacityProperty); set => SetValue(HoverStateLayerOpacityProperty, value); }
+    internal static readonly StyledProperty<double> FocusStateLayerOpacityProperty = AvaloniaProperty.Register<MaterialSurface, double>(nameof(FocusStateLayerOpacity));
+    internal double FocusStateLayerOpacity { get => GetValue(FocusStateLayerOpacityProperty); set => SetValue(FocusStateLayerOpacityProperty, value); }
+    internal static readonly StyledProperty<double> PressedStateLayerOpacityProperty = AvaloniaProperty.Register<MaterialSurface, double>(nameof(PressedStateLayerOpacity));
+    internal double PressedStateLayerOpacity { get => GetValue(PressedStateLayerOpacityProperty); set => SetValue(PressedStateLayerOpacityProperty, value); }
+    internal static readonly StyledProperty<double> DraggedStateLayerOpacityProperty = AvaloniaProperty.Register<MaterialSurface, double>(nameof(DraggedStateLayerOpacity));
+    internal double DraggedStateLayerOpacity { get => GetValue(DraggedStateLayerOpacityProperty); set => SetValue(DraggedStateLayerOpacityProperty, value); }
 
     // The surface reads its inherited value; the chrome provides the new total to its content.
     private static readonly AttachedProperty<double> AmbientTonalElevationProperty =
@@ -84,7 +100,7 @@ public sealed class MaterialSurface : Control
 
     static MaterialSurface()
     {
-        AffectsRender<MaterialSurface>(ShadowElevationProperty, ShadowColorProperty);
+        AffectsRender<MaterialSurface>(ShadowElevationProperty, ShadowColorProperty, DefaultShadowColorProperty);
     }
 
     private readonly Border _chrome;
@@ -133,8 +149,6 @@ public sealed class MaterialSurface : Control
         ((ISetLogicalParent)_chrome).SetParent(this);
         LogicalChildren.Add(_chrome);
 
-        ResourcesChanged += (_, _) => RefreshTokenDrivenPaint();
-        ActualThemeVariantChanged += (_, _) => RefreshTokenDrivenPaint();
     }
 
     /// <summary>Gets or sets the content hosted on the surface.</summary>
@@ -277,7 +291,8 @@ public sealed class MaterialSurface : Control
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == BackgroundProperty)
+        if (change.Property == BackgroundProperty || change.Property == TonalSurfaceColorProperty
+            || change.Property == TonalSurfaceTintColorProperty)
         {
             UpdateEffectiveBackground();
         }
@@ -299,6 +314,15 @@ public sealed class MaterialSurface : Control
                 UpdateInteractionVisuals();
             }
         }
+        else if (change.Property == ShapeAnimationProperty)
+        {
+            QueueShapeMorph();
+        }
+        else if (change.Property == HoverStateLayerOpacityProperty || change.Property == FocusStateLayerOpacityProperty
+            || change.Property == PressedStateLayerOpacityProperty || change.Property == DraggedStateLayerOpacityProperty)
+        {
+            _interactionController?.UpdateStateLayerConfiguration();
+        }
         else if (change.Property == StateLayerBrushProperty)
         {
             _interactionOverlay.InvalidateVisual();
@@ -314,7 +338,7 @@ public sealed class MaterialSurface : Control
     {
         base.OnAttachedToVisualTree(e);
 
-        // Token resolution needs the resource ancestry, which only exists once attached.
+        // The theme supplies the current tonal palette through effective properties.
         UpdateEffectiveBackground();
 
         if (TemplatedParent is Control host && MaterialInteraction.GetIsInteractive(host))
@@ -382,6 +406,8 @@ public sealed class MaterialSurface : Control
             overlay.CornerRadius = EffectiveCornerRadius;
         }
     }
+
+    internal void OnBorderAnimationConfigurationChanged() => UpdateButtonBorder();
 
     private void UpdateButtonBorder()
     {
@@ -469,8 +495,12 @@ public sealed class MaterialSurface : Control
         // rememberAnimatedShape creates its initial state during composition. Subsequent
         // interaction/configuration changes are committed by recomposition before its effect.
         UpdateButtonBorder();
+        // Required theme input can temporarily disappear during binding or reparenting.
+        // Do not create a zero-stiffness spring or replace an effect's captured valid spec.
+        if (!TryGetShapeMorphSpec(out var initialSpec))
+            return;
         if (_shapeMorph is null && (PressedCornerRadius is not null || ButtonSurfaceState.GetCheckedCornerRadius(this) is not null))
-            RecreateShapeMorph(motion, ResolveShapeMorphSpec());
+            RecreateShapeMorph(motion, initialSpec);
         if (_shapeCommitPending)
             return;
 
@@ -485,7 +515,10 @@ public sealed class MaterialSurface : Control
             if (_shapeInteractionDeferred)
                 return;
 
-            var spec = ResolveShapeMorphSpec();
+            // Recheck after the composition frame: a resource may have been withdrawn while
+            // this commit waited. The next valid property update queues the current target again.
+            if (!TryGetShapeMorphSpec(out var spec))
+                return;
             var target = SelectedCornerRadius;
             var configurationChanged = _shapeRest != CornerRadius || _shapePressed != PressedCornerRadius
                 || _shapeChecked != ButtonSurfaceState.GetCheckedCornerRadius(this) || !_shapeSpec.Equals(spec);
@@ -547,24 +580,22 @@ public sealed class MaterialSurface : Control
         UpdateInteractionVisuals();
     }
 
-    private SpringSpec ResolveShapeMorphSpec() =>
-        ButtonSurfaceState.GetShapeSpec(this) ?? (TryResolveToken(
-            TemplatedParent as IResourceHost ?? this,
-            MaterialTokens.Sys.Motion.Spring.EffectsDefault,
-            out SpringSpec spec)
-            ? spec
-            : MotionScheme.Expressive.DefaultEffects);
-
-    private Color ResolveShadowColor() =>
-        ShadowColor ??
-        (TryResolveToken(this, MaterialTokens.Sys.Color.Shadow, out Color color) ? color : Colors.Black);
-
-    private void RefreshTokenDrivenPaint()
+    private bool TryGetShapeMorphSpec(out SpringSpec spec)
     {
-        QueueShapeMorph();
-        InvalidateShadow();
-        UpdateEffectiveBackground();
+        var candidate = ButtonSurfaceState.GetShapeSpec(this) ?? ShapeAnimation;
+        if (candidate is { } value && double.IsFinite(value.DampingRatio) && value.DampingRatio >= 0
+            && double.IsFinite(value.Stiffness) && value.Stiffness > 0
+            && float.IsFinite((float)value.VisibilityThreshold) && value.VisibilityThreshold >= 0)
+        {
+            // A zero threshold retains the runtime's documented unspecified-threshold semantics.
+            spec = value;
+            return true;
+        }
+        spec = default;
+        return false;
     }
+
+    private Color ResolveShadowColor() => ShadowColor ?? DefaultShadowColor;
 
     private void UpdateAbsoluteTonalElevation()
     {
@@ -588,9 +619,8 @@ public sealed class MaterialSurface : Control
         if (Background is not ISolidColorBrush solid || _absoluteTonalElevation <= 0)
             return Background;
 
-        if (!TryResolveToken(this, MaterialTokens.Sys.Color.Surface, out Color surface) ||
-            solid.Color != surface ||
-            !TryResolveToken(this, MaterialTokens.Sys.Color.SurfaceTint, out Color surfaceTint))
+        if (TonalSurfaceColor is not { } surface || solid.Color != surface ||
+            TonalSurfaceTintColor is not { } surfaceTint)
             return Background;
 
         var color = ColorComposite.Over(surfaceTint, TonalOverlayAlpha(_absoluteTonalElevation), surface);
@@ -599,18 +629,6 @@ public sealed class MaterialSurface : Control
 
     private static double TonalOverlayAlpha(double elevation) =>
         ((4.5 * Math.Log(elevation + 1)) + 2) / 100;
-
-    private bool TryResolveToken<T>(IResourceHost host, MaterialTokenKey<T> token, out T value)
-    {
-        if (TokenResolver.TryResolve(host, token, ActualThemeVariant, out var candidate) && candidate is T resolved)
-        {
-            value = resolved;
-            return true;
-        }
-
-        value = default!;
-        return false;
-    }
 
     /// <summary>Visual-only layer that paints interaction feedback above the content.</summary>
     private sealed class InteractionOverlay : Control

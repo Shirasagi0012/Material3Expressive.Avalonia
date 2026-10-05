@@ -7,7 +7,8 @@
           <Grid x:Name="PART_Root">
             <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
               <m3:DialogScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
-              <m3:BasicAlertDialogLayout x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+              <m3:BasicAlertDialogLayout DefaultMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.MinWidth}}"
+                  DefaultMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.MaxWidth}}" x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
                   UsePlatformDefaultWidth="{TemplateBinding UsePlatformDefaultWidth}"
                   Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
                   MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"
@@ -31,7 +32,8 @@
           <Grid x:Name="PART_Root">
             <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
               <m3:DialogScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
-              <m3:BasicAlertDialogLayout x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+              <m3:BasicAlertDialogLayout DefaultMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.MinWidth}}"
+                  DefaultMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.MaxWidth}}" x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
                   UsePlatformDefaultWidth="{TemplateBinding UsePlatformDefaultWidth}"
                   Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
                   MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"

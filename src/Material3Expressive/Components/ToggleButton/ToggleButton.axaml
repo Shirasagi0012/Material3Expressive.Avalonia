@@ -6,10 +6,14 @@
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Full}}" />
-      <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeSquare}}" />
-      <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.SmallPressedShape}}" />
-      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
+      <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{Binding Path=(m3:ButtonThemeProperties.CheckedCornerRadius), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeSquare}}" />
+      <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{Binding Path=(m3:ButtonThemeProperties.PressedCornerRadius), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:ButtonThemeProperties.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.SmallPressedShape}}" />
+      <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{Binding Path=(m3:ButtonThemeProperties.TextStyle), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -48,7 +52,7 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}" ContainerMinWidth="0" ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}">
-            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" m3:ButtonSurfaceState.IsChecked="{TemplateBinding IsChecked}" m3:ButtonSurfaceState.CheckedCornerRadius="{TemplateBinding m3:ToggleButtonAppearance.CheckedCornerRadius}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialFast}}" m3:ButtonSurfaceState.AnimateBorder="True">
+            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" m3:ButtonSurfaceState.IsChecked="{TemplateBinding IsChecked}" m3:ButtonSurfaceState.CheckedCornerRadius="{TemplateBinding m3:ToggleButtonAppearance.CheckedCornerRadius}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ShapeAnimation}}" m3:ButtonSurfaceState.BorderWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.BorderWidthAnimation}}" m3:ButtonSurfaceState.BorderColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.BorderColorAnimation}}" m3:ButtonSurfaceState.AnimateBorder="True">
               <m3:ButtonContentRow IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
                 <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
                 <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
@@ -58,10 +62,10 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^.xsmall">
-        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContentPadding}}" />
-        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerShapeSquare}}" />
-        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.PressedContainerShape}}" />
-        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextStyle}}" />
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContentPadding}}" />
+        <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerShapeSquare}}" />
+        <Setter Property="m3:ButtonThemeProperties.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.PressedContainerShape}}" />
+        <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.xsmall /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerHeight}}" />
@@ -72,10 +76,10 @@
       </Style>
       <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
       <Style Selector="^.medium">
-        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContentPadding}}" />
-        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeSquare}}" />
-        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.PressedContainerShape}}" />
-        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextStyle}}" />
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContentPadding}}" />
+        <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeSquare}}" />
+        <Setter Property="m3:ButtonThemeProperties.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.PressedContainerShape}}" />
+        <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.medium /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerHeight}}" />
@@ -86,10 +90,10 @@
       </Style>
       <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
       <Style Selector="^.large">
-        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContentPadding}}" />
-        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeSquare}}" />
-        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.PressedContainerShape}}" />
-        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextStyle}}" />
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContentPadding}}" />
+        <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeSquare}}" />
+        <Setter Property="m3:ButtonThemeProperties.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.PressedContainerShape}}" />
+        <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.large /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerHeight}}" />
@@ -100,10 +104,10 @@
       </Style>
       <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
       <Style Selector="^.xlarge">
-        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContentPadding}}" />
-        <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeSquare}}" />
-        <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.PressedContainerShape}}" />
-        <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextStyle}}" />
+        <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContentPadding}}" />
+        <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeSquare}}" />
+        <Setter Property="m3:ButtonThemeProperties.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.PressedContainerShape}}" />
+        <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextStyle}}" />
       </Style>
       <Style Selector="^.xlarge /template/ m3|ButtonLayout">
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerHeight}}" />
@@ -198,14 +202,16 @@
         </MultiBinding>
       </Setter>
       <Setter Property="m3:MaterialButton.Elevation" Value="{x:Null}" />
-      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.OutlineColor}}" />
-      <Setter Property="BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.OutlinedOutlineWidth}}" />
+      <Setter Property="BorderBrush" Value="{Binding Path=(m3:ButtonThemeProperties.BorderBrush), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:ButtonThemeProperties.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.OutlineColor}}" />
+      <Setter Property="BorderThickness" Value="{Binding Path=(m3:ButtonThemeProperties.BorderThickness), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:ButtonThemeProperties.BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.OutlinedOutlineWidth}}" />
       <Style Selector="^:checked">
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="BorderBrush" Value="#00000000" />
+        <Setter Property="m3:ButtonThemeProperties.BorderThickness" Value="0" />
+        <Setter Property="m3:ButtonThemeProperties.BorderBrush" Value="#00000000" />
       </Style>
       <Style Selector="^:disabled">
-        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.DisabledOutlineColor}}" />
+        <Setter Property="m3:ButtonThemeProperties.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedButton.DisabledOutlineColor}}" />
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type ToggleButton}" TargetType="ToggleButton" BasedOn="{StaticResource MaterialFilledToggleButtonTheme}" />

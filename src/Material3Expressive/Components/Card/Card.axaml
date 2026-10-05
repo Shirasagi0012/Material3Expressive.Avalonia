@@ -2,16 +2,59 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="MaterialCardTheme" TargetType="m3:Card">
+      <Setter Property="ContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledCard.ContainerColor}}" />
+      <Setter Property="DisabledContainerColor">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.DisabledContainer}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.DisabledContainerOpacity}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.ContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Elevation">
+        <MultiBinding Converter="{x:Static m3:CardElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.PressedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.FocusContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.HoverContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.DraggedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledCard.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="ContentColor" Value="{m3:ContentColorFor BackgroundProperty=ContainerColor}" />
+      <Setter Property="DisabledContentColor">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.DisabledContent}">
+          <Binding Path="ContentColor" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Card.DisabledContentOpacity}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Background">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.State}">
+          <Binding Path="IsClickable" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="ContainerColor" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="DisabledContainerColor" RelativeSource="{RelativeSource Self}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.State}">
+          <Binding Path="IsClickable" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="ContentColor" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="DisabledContentColor" RelativeSource="{RelativeSource Self}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledCard.ContainerShape}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="VerticalContentAlignment" Value="Stretch" />
-      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Focusable" Value="{Binding IsClickable, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="Cursor" Value="{Binding DefaultCursor, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="Template" Value="{Binding DefaultTemplate, RelativeSource={RelativeSource Self}}" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="Padding" Value="0" />
       <Setter Property="ClipToBounds" Value="False" />
-      <Setter Property="Template">
+      <Setter Property="DefaultTemplate">
         <ControlTemplate>
           <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                 CornerRadius="{TemplateBinding CornerRadius}" BorderBrush="{TemplateBinding BorderBrush}"
@@ -25,14 +68,13 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^:clickable">
-        <Setter Property="Focusable" Value="True" />
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Template">
+        <Setter Property="DefaultCursor" Value="Hand" />
+        <Setter Property="DefaultTemplate">
           <ControlTemplate>
             <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
                 MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
                 HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}"
-                ContainerMinWidth="0" ContainerMinHeight="0" MinimumInteractiveSize="48">
+                ContainerMinWidth="0" ContainerMinHeight="0" MinimumInteractiveSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Button.MinimumInteractiveSize}}">
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                 CornerRadius="{TemplateBinding CornerRadius}" BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}" StateLayerBrush="{TemplateBinding Foreground}"
@@ -49,9 +91,54 @@
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:Card}" TargetType="m3:Card" BasedOn="{StaticResource MaterialCardTheme}" />
     <ControlTheme x:Key="{x:Type m3:ElevatedCard}" TargetType="m3:ElevatedCard" BasedOn="{StaticResource MaterialCardTheme}">
+      <Setter Property="ContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedCard.ContainerColor}}" />
+      <Setter Property="DisabledContainerColor">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.DisabledContainer}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.DisabledContainerOpacity}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.DisabledContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Elevation">
+        <MultiBinding Converter="{x:Static m3:CardElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.PressedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.FocusContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.HoverContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.DraggedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ElevatedCard.ContainerShape}}" />
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:OutlinedCard}" TargetType="m3:OutlinedCard" BasedOn="{StaticResource MaterialCardTheme}">
+      <Setter Property="ContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerColor}}" />
+      <Setter Property="DisabledContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerColor}}" />
+      <Setter Property="Elevation">
+        <MultiBinding Converter="{x:Static m3:CardElevation.FromValues}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.DraggedContainerElevation}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.DisabledContainerElevation}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="BorderBrush">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.Outline}">
+          <Binding Path="IsClickable" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.OutlineColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.DisabledOutlineColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.DisabledOutlineOpacity}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ElevatedCard.ContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="BorderThickness">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.Thickness}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.OutlineWidth}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerShape}}" />
     </ControlTheme>
   </Styles.Resources>

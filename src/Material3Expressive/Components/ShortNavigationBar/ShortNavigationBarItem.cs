@@ -15,9 +15,6 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -82,7 +79,8 @@ public class ShortNavigationBarItem : Button
         {
             if (IconPosition != NavigationItemIconPosition.Top) return origin;
             var scale = LayoutHelper.GetLayoutScale(this);
-            var indicatorWidth = MathUtils.DipToPx((float)Metric(MaterialTokens.Comp.ShortNavigationBar.ActiveIndicatorWidth, 56), (float)scale);
+            if (_layout is null) return origin;
+            var indicatorWidth = MathUtils.DipToPx((float)_layout.IndicatorWidth, (float)scale);
             var itemWidth = MathUtils.DipToPx((float)Bounds.Width, (float)scale);
             return new Point(origin.X - (itemWidth - indicatorWidth) / (2 * scale), origin.Y - 12);
         };
@@ -93,11 +91,19 @@ public class ShortNavigationBarItem : Button
     private Color TextTarget => !IsEffectivelyEnabled ? DisabledTextColor : !IsSelected ? UnselectedTextColor
         : IconPosition == NavigationItemIconPosition.Top ? SelectedTextColorTopIconPosition : SelectedTextColorStartIconPosition;
 
+    private void MotionConfigurationChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == ShortNavigationBarItemLayout.IndicatorAnimationProperty)
+            UpdateTarget();
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         _scope?.Dispose(); _scope = null; _pending = false;
         base.OnApplyTemplate(e);
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<ShortNavigationBarItemLayout>("PART_Layout");
+        if (_layout is not null) _layout.PropertyChanged += MotionConfigurationChanged;
         _icon = e.NameScope.Find<ContentPresenter>("PART_Icon");
         _label = e.NameScope.Find<ContentPresenter>("PART_Label");
         _indicator = e.NameScope.Find<Border>("PART_Indicator");
@@ -107,11 +113,13 @@ public class ShortNavigationBarItem : Button
     }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        base.OnAttachedToVisualTree(e); InitializeMotion();
+        base.OnAttachedToVisualTree(e);
+        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; } InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _scope?.Dispose(); _scope = null; _selection = null; _pending = false; _activationKey = null;
+        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -169,8 +177,8 @@ public class ShortNavigationBarItem : Button
             await scope.Clock.NextFrameAsync(ct); _pending = false;
             var target = IsSelected ? 1f : 0f;
             if (_selection!.TargetValue == target) return;
-            var spatial = TokenResolver.TryResolve(this, MaterialTokens.Sys.Motion.Spring.SpatialDefault, ActualThemeVariant, out var value)
-                && value is Foundation.Motion.SpringSpec spec ? spec : MotionScheme.Expressive.DefaultSpatial;
+            var spatial = _layout!.IndicatorAnimation;
+            if (spatial.Stiffness <= 0) return;
             _ = scope.Launch(async lifetime =>
             {
                 await _selection.StopAsync(); lifetime.ThrowIfCancellationRequested();
@@ -178,8 +186,6 @@ public class ShortNavigationBarItem : Button
             }, "Short navigation item indicator");
         }, "Short navigation item target");
     }
-    private double Metric(MaterialTokenKey<double> key, double fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double number ? number : fallback;
 
     // Compose's intrinsic queries have no Avalonia equivalent. Only this component's
     // content slots are measured here; final allocation still uses ordinary Measure.

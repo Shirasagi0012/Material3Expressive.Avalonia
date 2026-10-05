@@ -4,9 +4,6 @@ using Avalonia.Layout;
 using Avalonia.Threading;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -184,9 +181,10 @@ public sealed class DrawerState : AvaloniaObject
     }
     private IAnimationSpec<float> Spring(DrawerValue value)
     {
-        var key = value == DrawerValue.Open ? MaterialTokens.Sys.Motion.Spring.SpatialDefault : MaterialTokens.Sys.Motion.Spring.EffectsFast;
-        var fallback = value == DrawerValue.Open ? MotionScheme.Expressive.DefaultSpatial : MotionScheme.Expressive.FastEffects;
-        var spec = TokenResolver.TryResolve(_owner!, key, _owner!.ActualThemeVariant, out var resolved) && resolved is Foundation.Motion.SpringSpec s ? s : fallback;
+        var owner = (NavigationDrawer)_owner!;
+        var spec = value == DrawerValue.Open ? owner.OpenAnimation : owner.CloseAnimation;
+        if (spec.Stiffness <= 0)
+            throw new InvalidOperationException("NavigationDrawer motion configuration is not ready. Provide the requested open/close animation before changing its state.");
         return new SpringSpec<float>((float)spec.DampingRatio, (float)spec.Stiffness, .01f);
     }
     private void DragTo(float offset, float velocity = 0)

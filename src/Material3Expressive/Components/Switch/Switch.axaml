@@ -8,7 +8,7 @@
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.ContentPadding}}" />
       <Setter Property="OnContent" Value="{x:Null}" />
       <Setter Property="OffContent" Value="{x:Null}" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
@@ -36,7 +36,8 @@
                   DisabledUncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedBorderColor}}"
                   DisabledUncheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedIconColor}}"
                   SurfaceColor="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}">
-              <m3:SwitchThumbLayout x:Name="PART_SwitchKnob">
+              <m3:SwitchThumbLayout x:Name="PART_SwitchKnob"
+                  ThumbAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.ThumbAnimation}}">
                 <Panel x:Name="PART_MovingKnobs" Background="Transparent">
                   <Ellipse x:Name="PART_ThumbBackground" IsHitTestVisible="False" />
                   <ContentPresenter x:Name="PART_ThumbContentPresenter"

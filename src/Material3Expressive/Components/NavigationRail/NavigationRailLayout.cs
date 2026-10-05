@@ -9,7 +9,7 @@ namespace Material3Expressive.Components;
 internal sealed class NavigationRailLayout : Panel
 {
     public static readonly StyledProperty<double> ContainerMinWidthProperty =
-        AvaloniaProperty.Register<NavigationRailLayout, double>(nameof(ContainerMinWidth), 80);
+        AvaloniaProperty.Register<NavigationRailLayout, double>(nameof(ContainerMinWidth));
     public double ContainerMinWidth { get => GetValue(ContainerMinWidthProperty); set => SetValue(ContainerMinWidthProperty, value); }
     static NavigationRailLayout() => AffectsMeasure<NavigationRailLayout>(ContainerMinWidthProperty);
 

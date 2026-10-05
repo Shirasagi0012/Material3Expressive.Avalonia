@@ -1,11 +1,7 @@
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Media;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
@@ -35,9 +31,9 @@ internal sealed class AnimatedButtonBorder : IDisposable
         {
             await _motion.Clock.NextFrameAsync(ct);
             _pending = false;
-            var host = _surface.TemplatedParent as IResourceHost ?? _surface;
-            var widthSpec = TokenResolver.TryResolve(host, Sys.Motion.Spring.SpatialFast, _surface.ActualThemeVariant, out var spatial) && spatial is SpringSpec spatialSpec ? spatialSpec : MotionScheme.Expressive.FastSpatial;
-            var colorSpec = TokenResolver.TryResolve(host, Sys.Motion.Spring.EffectsDefault, _surface.ActualThemeVariant, out var effects) && effects is SpringSpec effectsSpec ? effectsSpec : MotionScheme.Expressive.DefaultEffects;
+            if (ButtonSurfaceState.GetBorderWidthAnimation(_surface) is not { } widthSpec
+                || ButtonSurfaceState.GetBorderColorAnimation(_surface) is not { } colorSpec
+                || !(widthSpec.Stiffness > 0) || !(colorSpec.Stiffness > 0)) return;
             var width = (float)_surface.BorderThickness.Left;
             var color = _surface.BorderBrush is ISolidColorBrush brush ? brush.Color : default;
             if (_width.TargetValue != width)

@@ -21,6 +21,20 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | fixed shape / pressed shapes 与 `AnimatedShape` | MaterialButton.PressedCornerRadius → MaterialSurface → 共享 AnimatedCornerRadius |
 | clickable/indication | 原生 Button 负责激活，共享 MaterialInteractionController 负责反馈 |
 
+## 配置流与覆盖优先级
+
+尺寸与四外观 TokenSource 保存基线/系统 Token 引用；IconButton.axaml 把它们接成主题默认配置。
+共享 [ButtonThemeProperties](../Button/ButtonThemeProperties.cs) 承接尺寸和禁用条件的候选，
+公开 Background/Foreground、描边、CornerRadius 及 XS Width/Height 通过主题级绑定消费。
+条件选择器不直接把普通用户 Style 覆盖掉；Style、绑定与局部值仍由 Avalonia 形成有效配置。
+ButtonLayout 和 MaterialSymbol 只消费模板传入的尺寸，不再读取另一份组件默认值。
+
+XS 的 32 DIP 是主题选出的 Width/Height 默认值；普通 Style 可以改成 44，清除局部值后再按当前
+class 和资源恢复。ButtonLayout 的共享 48 DIP 留白来自 `Comp.Button.MinimumInteractiveSize`，
+容器宽高仍由 IconButton 自己的尺寸 Token 提供，不能误用普通 Button 的 58 DIP 容器最小宽。
+资源、主题或挂载作用域改变时保留实时 Token 绑定；形状动画的当前呈现不写回配置属性。
+此组织按维护者 2026-10-05 的配置迁移确认实施，不解决或追认下文的 ambient 颜色、描边和受限图标差异。
+
 ## 模板与布局不变量
 
 Standard 主题持有完整模板，Filled/Tonal/Outlined 以 BasedOn 修改颜色/描边；隐式主题为 Standard。
@@ -30,7 +44,7 @@ Surface 通过 TextElement.Foreground 重新接入 owner 内容色，防止自�
 状态选择器顺序 hover < focus-visible < pressed，只选墨色，透明度/ripple 时序仍归共享控制器。
 
 尺寸采用 32/40/56/96/136 DIP 容器、20/24/24/32/40 DIP 图标。
-Small 默认容器 40、外层 48；XS 通过 owner Width/Height 显式 32 约束，对应上游 size(32dp)。
+Small 默认容器 40、外层 48；XS 通过 owner Width/Height 的主题默认 32 约束，对应上游 size(32dp)。
 ButtonLayout 持有默认容器尺寸而非写 owner MinWidth/MinHeight，不能用公开最小值重建布局。
 受限布局要保留正常容器与外层的分别取整；说明与确认范围见
 [最小交互布局](../../../../docs/DECISIONS.md#最小交互布局与工具栏对齐读数)。
@@ -78,7 +92,7 @@ ButtonLayout 持有默认容器尺寸而非写 owner MinWidth/MinHeight，不能
 
 ## 验证入口
 
-- [控件测试](../../../../tests/Material3Expressive.Tests/IconButtonThemeTests.cs)：实际主题、四外观、禁用/主题切换、尺寸 class 和交互接入；Token 默认值另见下方测试。
+- [控件测试](../../../../tests/Material3Expressive.Tests/IconButtonThemeTests.cs)：实际主题、四外观、禁用/主题切换、尺寸 class 和交互接入；[ButtonConfigurationTests](../../../../tests/Material3Expressive.Tests/ButtonConfigurationTests.cs) 检查普通 Style 优先、XS 尺寸覆盖和清除恢复；Token 默认值另见下方测试。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/IconButtonCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/IconButtonCases.kt)
 - [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml) 提供真实内容组合；其事件处理见

@@ -11,9 +11,6 @@ using Avalonia.Styling;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
@@ -21,6 +18,14 @@ namespace Material3Expressive.Components;
 // Both Tab and native TabItem templates use this content/transition part. Selection stays with the owner.
 internal sealed class TabHeader : Panel
 {
+    public static readonly StyledProperty<double> LargeContainerHeightProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(LargeContainerHeight));
+    public double LargeContainerHeight { get => GetValue(LargeContainerHeightProperty); set => SetValue(LargeContainerHeightProperty, value); }
+    public static readonly StyledProperty<double> ContainerHeightProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(ContainerHeight));
+    public double ContainerHeight { get => GetValue(ContainerHeightProperty); set => SetValue(ContainerHeightProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> SelectedContentAnimationProperty = AvaloniaProperty.Register<TabHeader, Foundation.Motion.SpringSpec>(nameof(SelectedContentAnimation));
+    public Foundation.Motion.SpringSpec SelectedContentAnimation { get => GetValue(SelectedContentAnimationProperty); set => SetValue(SelectedContentAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> UnselectedContentAnimationProperty = AvaloniaProperty.Register<TabHeader, Foundation.Motion.SpringSpec>(nameof(UnselectedContentAnimation));
+    public Foundation.Motion.SpringSpec UnselectedContentAnimation { get => GetValue(UnselectedContentAnimationProperty); set => SetValue(UnselectedContentAnimationProperty, value); }
     public static readonly StyledProperty<bool> IsSelectedProperty = AvaloniaProperty.Register<TabHeader, bool>(nameof(IsSelected));
     public static readonly StyledProperty<TabContentLayout> ContentLayoutProperty = AvaloniaProperty.Register<TabHeader, TabContentLayout>(nameof(ContentLayout));
     public static readonly StyledProperty<IBrush?> AmbientBrushProperty = AvaloniaProperty.Register<TabHeader, IBrush?>(nameof(AmbientBrush));
@@ -42,6 +47,7 @@ internal sealed class TabHeader : Panel
     private CancellationTokenSource? _run;
     private Task? _runTask;
     private bool _pending;
+    private bool _initialSelected;
     private Rect _labelBox, _iconBox;
     private Size _inner;
     private Control? _styledLabel;
@@ -51,9 +57,8 @@ internal sealed class TabHeader : Panel
     private ContentPresenter Icon => (ContentPresenter)Children[1];
     private bool HasLabel => Label.Content is not null;
     private bool HasIcon => ContentLayout != TabContentLayout.Custom && (Icon.Content is not null || Icon.ContentTemplate is not null);
-    private double SmallHeight => TokenResolver.TryResolve(this, MaterialTokens.Comp.TabRow.ContainerHeight, ActualThemeVariant, out var value) && value is double number ? number : 48;
 
-    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty);
+    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty, ContainerHeightProperty, LargeContainerHeightProperty);
     protected override void OnMeasureInvalidated()
     {
         base.OnMeasureInvalidated();
@@ -62,15 +67,18 @@ internal sealed class TabHeader : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        Label.PropertyChanged += SlotChanged;
+        Icon.PropertyChanged += SlotChanged;
         _motion = VisualAnimationScope.Create(this);
+        _initialSelected = IsSelected;
         ApplyContentPolicy();
-        _transition = _motion.CreateTransition(IsSelected, "Tab content color");
-        _color = _transition.AnimateColor(state => state ? Active : Inactive, segment => ColorSpec(!segment.InitialState && segment.TargetState));
-        _motion.SubscribeValue(_color, PaintColor);
-        _transition.PropertyChanged += TransitionChanged;
+        PaintColor(IsSelected ? Active : Inactive);
+        InitializeColorMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        Label.PropertyChanged -= SlotChanged;
+        Icon.PropertyChanged -= SlotChanged;
         if (_transition is not null) _transition.PropertyChanged -= TransitionChanged;
         _run?.Cancel(); _run?.Dispose(); _run = null; _runTask = null;
         _transition?.Dispose(); _transition = null; _color = null;
@@ -79,37 +87,67 @@ internal sealed class TabHeader : Panel
         _styledLabel = null; _labelDefaults = null; _providedLabelStyle = null;
         base.OnDetachedFromVisualTree(e);
     }
+    private void SlotChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property != ContentPresenter.ContentProperty && change.Property != ContentPresenter.ContentTemplateProperty) return;
+        // A hidden presenter need not propagate content-measure invalidation. The
+        // header owns the presence fact, including reappearance after an empty slot.
+        Icon.IsVisible = HasIcon;
+        Label.IsVisible = HasLabel;
+        InvalidateMeasure();
+    }
+    private void InitializeColorMotion()
+    {
+        if (_motion is not { IsEnding: false } motion || _transition is not null
+            || SelectedContentAnimation.Stiffness <= 0 || UnselectedContentAnimation.Stiffness <= 0) return;
+        var selected = SelectedContentAnimation;
+        var unselected = UnselectedContentAnimation;
+        _transition = motion.CreateTransition(_initialSelected, "Tab content color");
+        _color = _transition.AnimateColor(state => state ? Active : Inactive,
+            segment => ColorSpec(!segment.InitialState && segment.TargetState, selected, unselected));
+        motion.SubscribeValue(_color, PaintColor);
+        _transition.PropertyChanged += TransitionChanged;
+        UpdateColorTarget();
+    }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if ((change.Property == LabelTextStyleProperty || change.Property == ContentLayoutProperty) && Children.Count == 2)
             ApplyContentPolicy();
-        if (change.Property == IsSelectedProperty || change.Property == AmbientBrushProperty || change.Property == SelectedContentColorProperty || change.Property == UnselectedContentColorProperty)
+        if (change.Property == SelectedContentAnimationProperty || change.Property == UnselectedContentAnimationProperty)
+            InitializeColorMotion();
+        if (change.Property == IsSelectedProperty || change.Property == AmbientBrushProperty || change.Property == SelectedContentColorProperty
+            || change.Property == UnselectedContentColorProperty || change.Property == SelectedContentAnimationProperty || change.Property == UnselectedContentAnimationProperty)
+            UpdateColorTarget();
+    }
+    private void UpdateColorTarget()
+    {
+        if (this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault() is { } surface)
+            surface.StateLayerBrush = new SolidColorBrush(Active);
+        if (_motion is not { IsEnding: false } motion || _transition is null || _pending) return;
+        _pending = true;
+        _ = motion.Launch(async ct =>
         {
-            if (this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault() is { } surface)
-                surface.StateLayerBrush = new SolidColorBrush(Active);
-            if (_motion is not { IsEnding: false } motion || _pending) return;
-            _pending = true;
-            _ = motion.Launch(async ct =>
+            await motion.Clock.NextFrameAsync(ct);
+            _pending = false;
+            if (_transition is null || _color is null || SelectedContentAnimation.Stiffness <= 0 || UnselectedContentAnimation.Stiffness <= 0) return;
+            var selected = SelectedContentAnimation;
+            var unselected = UnselectedContentAnimation;
+            var changedState = _transition.TargetState != IsSelected;
+            // Target mutation evaluates the factory synchronously. Publish the valid
+            // configuration first; Update preserves an animation whose target is unchanged.
+            _color.Update(state => state ? Active : Inactive,
+                segment => ColorSpec(!segment.InitialState && segment.TargetState, selected, unselected));
+            _transition.UpdateTarget(IsSelected);
+            if ((!_color.IsFinished || _transition.CurrentState != _transition.TargetState) && (_runTask is null || _runTask.IsCompleted))
             {
-                await motion.Clock.NextFrameAsync(ct);
-                _pending = false;
-                if (_transition is null || _color is null) return;
-                var changedState = _transition.TargetState != IsSelected;
-                _transition.UpdateTarget(IsSelected);
-                _color.Update(state => state ? Active : Inactive, segment => ColorSpec(!segment.InitialState && segment.TargetState));
-                if ((!_color.IsFinished || _transition.CurrentState != _transition.TargetState) && (_runTask is null || _runTask.IsCompleted))
-                {
-                    // A mapping-only change is observed by animateValue's isolated
-                    // composition scope. It invalidates updateTransition's parent scope,
-                    // which launches its frame loop on the following composition frame.
-                    if (!changedState) await motion.Clock.NextFrameAsync(ct);
-                    if (_runTask is { IsCompleted: false }) return;
-                    _run?.Dispose(); _run = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                    _runTask = motion.Launch(_ => _transition.RunAsync(_run.Token), "Tab transition");
-                }
-            }, "Tab color targets");
-        }
+                // Mapping-only changes launch on the following composition frame.
+                if (!changedState) await motion.Clock.NextFrameAsync(ct);
+                if (_runTask is { IsCompleted: false }) return;
+                _run?.Dispose(); _run = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                _runTask = motion.Launch(_ => _transition.RunAsync(_run.Token), "Tab transition");
+            }
+        }, "Tab color targets");
     }
     private void PaintColor(Color color)
     {
@@ -150,11 +188,9 @@ internal sealed class TabHeader : Panel
     {
         if (e.PropertyName == nameof(Transition.IsRunning) && _transition?.IsRunning == false) _run?.Cancel();
     }
-    private SpringSpec<Color> ColorSpec(bool entering)
+    private static SpringSpec<Color> ColorSpec(bool entering, Foundation.Motion.SpringSpec selected, Foundation.Motion.SpringSpec unselected)
     {
-        var key = entering ? MaterialTokens.Sys.Motion.Spring.EffectsDefault : MaterialTokens.Sys.Motion.Spring.EffectsFast;
-        var fallback = entering ? MotionScheme.Expressive.DefaultEffects : MotionScheme.Expressive.FastEffects;
-        var spec = TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec resolved ? resolved : fallback;
+        var spec = entering ? selected : unselected;
         return new SpringSpec<Color>(spec.DampingRatio, spec.Stiffness);
     }
 
@@ -182,8 +218,8 @@ internal sealed class TabHeader : Panel
         var label = HasLabel ? MathUtils.DipToPx(Label.DesiredSize.Height, scale) : 0;
         var icon = HasIcon ? MathUtils.DipToPx(Icon.DesiredSize.Height, scale) : 0;
         if (ContentLayout == TabContentLayout.Custom) return label;
-        if (ContentLayout == TabContentLayout.Leading) return MathUtils.DipToPx(SmallHeight, scale);
-        return Math.Max(MathUtils.DipToPx(HasLabel && HasIcon ? 72 : SmallHeight, scale), label + icon + MathUtils.DipToPx(20, scale));
+        if (ContentLayout == TabContentLayout.Leading) return MathUtils.DipToPx(ContainerHeight, scale);
+        return Math.Max(MathUtils.DipToPx(HasLabel && HasIcon ? LargeContainerHeight : ContainerHeight, scale), label + icon + MathUtils.DipToPx(20, scale));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -206,10 +242,10 @@ internal sealed class TabHeader : Panel
         // is constrained to the Row's remaining width and determines sibling placement.
         var gap = leading ? Math.Min(Px(8), Math.Max(0, maxWidth - pad - iw)) : 0;
         Label.Measure(new Size(Math.Max(0, maxWidth - pad - (leading ? iw + gap : 0)) / scale,
-            (leading ? Math.Min(maxHeight, Px(SmallHeight)) : maxHeight) / scale));
+            (leading ? Math.Min(maxHeight, Px(ContainerHeight)) : maxHeight) / scale));
         var lw = HasLabel ? Px(Label.DesiredSize.Width) : 0; var lh = HasLabel ? Px(Label.DesiredSize.Height) : 0;
         var width = maxWidth == int.MaxValue ? custom ? lw : leading ? iw + gap + lw + pad : Math.Max(HasLabel ? lw + pad : 0, iw) : maxWidth;
-        var intrinsicHeight = custom ? lh : leading ? Px(SmallHeight) : Math.Max(Px(HasIcon && HasLabel ? 72 : SmallHeight), ih + lh + Px(20));
+        var intrinsicHeight = custom ? lh : leading ? Px(ContainerHeight) : Math.Max(Px(HasIcon && HasLabel ? LargeContainerHeight : ContainerHeight), ih + lh + Px(20));
         var height = Math.Min(maxHeight, intrinsicHeight);
         _inner = new Size(width, height);
         if (!custom && !leading && HasIcon && HasLabel)

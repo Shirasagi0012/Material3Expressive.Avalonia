@@ -121,8 +121,10 @@ leading / trailing，会跟随 RTL。图标默认尺寸为 24 DIP，两个槽仍
 
 - 默认最小尺寸计算以宽 280、高 56 DIP 为起点，并遵守父级约束；Above 标签、辅助文字、多行及 Cutout 顶部留白会影响总高度，不应把 56 当作固定高度
 - 原生 `Width` / `Height` / `MinWidth` / `MinHeight` 可约束布局；默认 Padding 为 16 DIP，Inside 且有标签时上下为 8 DIP，显式 `Padding` 优先
-- `CornerRadius`、`Background`、`Foreground`、`BorderBrush`、`CaretBrush` 与 `SelectionBrush` 可局部覆盖；此处 `BorderBrush` 是指示线/描边颜色，线宽由组件的焦点状态控制
+- `CornerRadius`、`Background`、`Foreground`、`BorderBrush`、`CaretBrush` 与 `SelectionBrush` 可通过普通样式、绑定或局部值覆盖；此处 `BorderBrush` 是指示线/描边颜色，线宽由组件的焦点状态控制
+- 共享软最小尺寸、Padding 与运动默认值位于 `MaterialTokens.Comp.TextField`；清除覆盖后恢复当前内容/状态下的主题默认值
 - 系统颜色和排版定制从 [Token 与排版入口](../../../../docs/GETTING_STARTED.md#主题与定制)开始；组件颜色槽为 `MaterialTokens.Comp.FilledTextField` / `OutlinedTextField`
+- 标签动画分别求 BodyLarge / BodySmall 的有效文字属性后插值；稀疏样式的空字段遵循现有排版环境和原生属性优先级，不再补固定标签字号。例如 BodySmall 仅设 FontWeight 时，浮起标签未必缩小；需要固定尺寸时显式提供 FontSize / LineHeight
 - 内容默认继承槽位前景色，内容自身的显式局部值仍优先；显式设置固定颜色时，也需考虑禁用、错误与明暗外观
 
 ## 使用边界
@@ -131,6 +133,7 @@ leading / trailing，会跟随 RTL。图标默认尺寸为 24 DIP，两个槽仍
 - 辅助文字属于 `TextBox` 模板，点击它可能聚焦编辑器并移动光标
 - 标签位置保留弹簧过冲，字号、测量和缺口尺寸的插值限制在端点范围内；内容变化仍可改变高度，并不保证任意自定义内容动画时恒高
 - 原生编辑行度量、换行与光标定位遵循 Avalonia/平台语义，自动高度可能与 Compose 不同
+- 标签 LineHeight 为 NaN 时使用原生自动行高，与固定行高的切换在动画中点离散发生；布局预留单独采用 BodySmall.LineHeight 标量，不将它当作自动文字的实际度量
 - 密码输入请阅读 [SecureTextField](../SecureTextField/README.md) 的安全边界；仅设置 `PasswordChar` / `RevealPassword` 不会启用其安全策略
 - 没有 Compose `TextFieldState`、输入/输出转换或完整 semantics 树；真实 Windows IME、系统剪贴板、触控及屏幕阅读器的验收范围见 [维护说明](INTERNALS.md#尚未实现与未经验证)
 

@@ -10,6 +10,13 @@ public sealed class PlainTooltipTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.TooltipBox.Spacing] = 4d,
+        [Comp.PlainTooltip.ContentPadding] = new Avalonia.Thickness(8, 4),
+        [Comp.PlainTooltip.MaxWidth] = 200d,
+        [Comp.PlainTooltip.MinHeight] = 24d,
+        [Comp.PlainTooltip.MinWidth] = 40d,
+        [Comp.TooltipBox.ScaleAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.TooltipBox.OpacityAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
         [Comp.PlainTooltip.ContainerColor] = new TokenRef(Sys.Color.InverseSurface),
         [Comp.PlainTooltip.ContainerShape] = new TokenRef(Sys.Shape.ExtraSmall),
         [Comp.PlainTooltip.SupportingTextColor] = new TokenRef(Sys.Color.InverseOnSurface),

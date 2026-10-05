@@ -10,6 +10,9 @@ public sealed class NavigationRailTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.NavigationRail.EffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.NavigationRail.IndicatorSizeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.NavigationRail.WindowInsets] = default(Avalonia.Thickness),
         [Comp.NavigationRail.ContainerColor] = new TokenRef(Sys.Color.Surface),
         [Comp.NavigationRail.NarrowContainerWidth] = 80d,
         [Comp.NavigationRail.ActiveIndicatorWidth] = 56d,

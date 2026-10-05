@@ -9,6 +9,14 @@ public sealed class WideNavigationRailTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.WideNavigationRail.LayoutAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.WideNavigationRail.ModalWidthAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.WideNavigationRail.StateAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.WideNavigationRail.ItemSpatialAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.WideNavigationRail.ItemEffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.WideNavigationRail.ModalEffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.WideNavigationRail.ModalOffsetAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.WideNavigationRail.WindowInsets] = default(Avalonia.Thickness),
         [Comp.WideNavigationRail.ContainerColor] = new TokenRef(Sys.Color.Surface),
         [Comp.WideNavigationRail.ModalContainerColor] = new TokenRef(Sys.Color.SurfaceContainer),
         [Comp.WideNavigationRail.ModalScrimColor] = new WithAlpha(Sys.Color.Scrim, 0.32),

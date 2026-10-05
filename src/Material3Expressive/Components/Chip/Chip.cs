@@ -13,8 +13,6 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
 using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
 
@@ -31,14 +29,30 @@ public abstract class Chip : Button
     public object? TrailingIcon { get => GetValue(TrailingIconProperty); set => SetValue(TrailingIconProperty, value); }
     public static readonly StyledProperty<IDataTemplate?> TrailingIconTemplateProperty = AvaloniaProperty.Register<Chip, IDataTemplate?>(nameof(TrailingIconTemplate));
     public IDataTemplate? TrailingIconTemplate { get => GetValue(TrailingIconTemplateProperty); set => SetValue(TrailingIconTemplateProperty, value); }
-    public static readonly StyledProperty<ChipColors?> ColorsProperty = AvaloniaProperty.Register<Chip, ChipColors?>(nameof(Colors));
-    public ChipColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
-    public static readonly StyledProperty<ChipElevation?> ElevationProperty = AvaloniaProperty.Register<Chip, ChipElevation?>(nameof(Elevation));
-    /// <summary>Null uses the overload defaults; an all-zero configuration removes the shadow.</summary>
-    public ChipElevation? Elevation { get => GetValue(ElevationProperty); set => SetValue(ElevationProperty, value); }
-    public static readonly StyledProperty<ChipSpacing?> SpacingProperty = AvaloniaProperty.Register<Chip, ChipSpacing?>(nameof(Spacing));
-    public ChipSpacing? Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
+    public static readonly StyledProperty<ChipElevation> ElevationProperty = AvaloniaProperty.Register<Chip, ChipElevation>(nameof(Elevation), new ChipElevation(), validate: value => value is not null);
+    /// <summary>Complete interaction shadow configuration supplied by the theme; all-zero values remove the shadow.</summary>
+    public ChipElevation Elevation { get => GetValue(ElevationProperty); set => SetValue(ElevationProperty, value); }
+    public static readonly StyledProperty<ChipSpacing> SpacingProperty = AvaloniaProperty.Register<Chip, ChipSpacing>(nameof(Spacing), new ChipSpacing(), validate: value => value is not null);
+    public ChipSpacing Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
 
+    public static readonly StyledProperty<IBrush?> LeadingIconColorProperty = AvaloniaProperty.Register<Chip, IBrush?>(nameof(LeadingIconColor));
+    public IBrush? LeadingIconColor { get => GetValue(LeadingIconColorProperty); set => SetValue(LeadingIconColorProperty, value); }
+    public static readonly StyledProperty<IBrush?> TrailingIconColorProperty = AvaloniaProperty.Register<Chip, IBrush?>(nameof(TrailingIconColor));
+    public IBrush? TrailingIconColor { get => GetValue(TrailingIconColorProperty); set => SetValue(TrailingIconColorProperty, value); }
+    internal static readonly StyledProperty<IBrush?> DefaultLeadingIconColorProperty = AvaloniaProperty.Register<Chip, IBrush?>(nameof(DefaultLeadingIconColor));
+    internal IBrush? DefaultLeadingIconColor { get => GetValue(DefaultLeadingIconColorProperty); set => SetValue(DefaultLeadingIconColorProperty, value); }
+    internal static readonly StyledProperty<IBrush?> DefaultTrailingIconColorProperty = AvaloniaProperty.Register<Chip, IBrush?>(nameof(DefaultTrailingIconColor));
+    internal IBrush? DefaultTrailingIconColor { get => GetValue(DefaultTrailingIconColorProperty); set => SetValue(DefaultTrailingIconColorProperty, value); }
+    internal static readonly StyledProperty<double> DefaultLeadingSpacingProperty = AvaloniaProperty.Register<Chip, double>(nameof(DefaultLeadingSpacing));
+    internal double DefaultLeadingSpacing { get => GetValue(DefaultLeadingSpacingProperty); set => SetValue(DefaultLeadingSpacingProperty, value); }
+    internal static readonly StyledProperty<double> DefaultTrailingSpacingProperty = AvaloniaProperty.Register<Chip, double>(nameof(DefaultTrailingSpacing));
+    internal double DefaultTrailingSpacing { get => GetValue(DefaultTrailingSpacingProperty); set => SetValue(DefaultTrailingSpacingProperty, value); }
+    internal static readonly StyledProperty<ChipElevation> DefaultElevationProperty = AvaloniaProperty.Register<Chip, ChipElevation>(nameof(DefaultElevation), new ChipElevation());
+    internal ChipElevation DefaultElevation { get => GetValue(DefaultElevationProperty); set => SetValue(DefaultElevationProperty, value); }
+    internal static readonly StyledProperty<MaterialSpring?> ShapeAnimationProperty = AvaloniaProperty.Register<Chip, MaterialSpring?>(nameof(ShapeAnimation));
+    internal MaterialSpring? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
+    internal static readonly StyledProperty<double> DisabledAvatarOpacityProperty = AvaloniaProperty.Register<Chip, double>(nameof(DisabledAvatarOpacity));
+    internal double DisabledAvatarOpacity { get => GetValue(DisabledAvatarOpacityProperty); set => SetValue(DisabledAvatarOpacityProperty, value); }
     internal bool Selected => this is SelectableChip { IsSelected: true };
     internal bool Elevated => this switch { AssistChip c => c.IsElevated, SuggestionChip c => c.IsElevated, FilterChip c => c.IsElevated, _ => false };
     internal ChipShapes? MorphShapes => (this as SelectableChip)?.Shapes;
@@ -58,8 +72,7 @@ public abstract class Chip : Button
     protected Chip()
     {
         MaterialInteraction.GetOrCreate(this).Changed += QueueTargets;
-        ResourcesChanged += (_, _) => Refresh();
-        ActualThemeVariantChanged += (_, _) => Refresh();
+        UpdateContentFacts();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -120,81 +133,56 @@ public abstract class Chip : Button
         base.OnPropertyChanged(change);
         if (change.Property == LeadingIconProperty || change.Property == TrailingIconProperty
             || change.Property == LeadingIconTemplateProperty || change.Property == TrailingIconTemplateProperty
-            || change.Property == ColorsProperty || change.Property == ElevationProperty || change.Property == SpacingProperty
+            || change.Property == LeadingIconColorProperty || change.Property == TrailingIconColorProperty
+            || change.Property == ForegroundProperty || change.Property == DisabledAvatarOpacityProperty
+            || change.Property == ShapeAnimationProperty || change.Property == ElevationProperty || change.Property == SpacingProperty
             || change.Property == IsEffectivelyEnabledProperty || change.Property == CornerRadiusProperty
             || change.Property == SelectableChip.IsSelectedProperty || change.Property == SelectableChip.ShapesProperty
             || change.Property == AssistChip.IsElevatedProperty || change.Property == FilterChip.IsElevatedProperty
             || change.Property == SuggestionChip.IsElevatedProperty || change.Property == InputChip.AvatarProperty
             || change.Property == InputChip.AvatarTemplateProperty)
+        {
+            UpdateContentFacts();
             Refresh();
+        }
     }
 
-    private void Refresh()
+    private void UpdateContentFacts()
     {
-        if (_surface is null || _content is null || !((ILogical)this).IsAttachedToLogicalTree
-            || !TokenResolver.TryResolve(this, Comp.Chip.ContainerHeight, ActualThemeVariant, out _)) return;
-        var colors = Colors;
+        var input = this as InputChip;
+        var avatar = input is not null && (input.Avatar is not null || input.AvatarTemplate is not null);
+        PseudoClasses.Set(":assist", this is AssistChip);
+        PseudoClasses.Set(":input", input is not null);
+        PseudoClasses.Set(":filter", this is FilterChip);
+        PseudoClasses.Set(":selected", Selected);
+        PseudoClasses.Set(":elevated", Elevated);
+        PseudoClasses.Set(":avatar", avatar);
+        PseudoClasses.Set(":leading-icon", avatar || LeadingIcon is not null || LeadingIconTemplate is not null);
+        PseudoClasses.Set(":trailing-icon", this is not SuggestionChip && (TrailingIcon is not null || TrailingIconTemplate is not null));
+    }
+
+    internal void Refresh()
+    {
+        if (_surface is null || _content is null || !((ILogical)this).IsAttachedToLogicalTree) return;
         var enabled = IsEffectivelyEnabled;
-        var selected = Selected;
-        var normalContainer = Elevated ? Resolve(Comp.Chip.ElevatedContainerColor) : Avalonia.Media.Colors.Transparent;
-        var container = enabled ? selected ? colors?.SelectedContainerColor ?? Resolve(Comp.Chip.SelectedContainerColor)
-                : colors?.ContainerColor ?? normalContainer
-            : selected ? colors?.DisabledSelectedContainerColor ?? Resolve(Comp.Chip.DisabledContainerColor)
-                : colors?.DisabledContainerColor ?? (Elevated ? Resolve(Comp.Chip.DisabledContainerColor) : Avalonia.Media.Colors.Transparent);
-        var label = !enabled ? colors?.DisabledLabelColor ?? Resolve(Comp.Chip.DisabledContentColor)
-            : selected ? colors?.SelectedLabelColor ?? Resolve(Comp.Chip.SelectedContentColor)
-            : colors?.LabelColor ?? Resolve(this is AssistChip ? Comp.Chip.AssistLabelColor : Comp.Chip.LabelColor);
-        var leading = !enabled ? colors?.DisabledLeadingIconColor ?? Resolve(Comp.Chip.DisabledContentColor)
-            : selected ? colors?.SelectedLeadingIconColor ?? Resolve(this is InputChip ? Comp.Chip.PrimaryIconColor : Comp.Chip.SelectedContentColor)
-            : colors?.LeadingIconColor ?? Resolve(this is InputChip || (this is FilterChip && MorphShapes is not null)
-                ? Comp.Chip.TonalIconColor : Comp.Chip.PrimaryIconColor);
-        var trailing = !enabled ? colors?.DisabledTrailingIconColor ?? Resolve(Comp.Chip.DisabledContentColor)
-            : selected ? colors?.SelectedTrailingIconColor ?? Resolve(Comp.Chip.SelectedContentColor)
-            : colors?.TrailingIconColor ?? Resolve(this is AssistChip ? Comp.Chip.PrimaryIconColor : Comp.Chip.TonalIconColor);
-        // Style priority preserves explicit native paint and bindings on the public control.
-        SetValue(BackgroundProperty, new SolidColorBrush(container), BindingPriority.Style);
-        SetValue(ForegroundProperty, new SolidColorBrush(label), BindingPriority.Style);
-        SetValue(BorderBrushProperty, new SolidColorBrush(Resolve(enabled ? Comp.Chip.OutlineColor : Comp.Chip.DisabledOutlineColor)), BindingPriority.Style);
-        SetValue(BorderThicknessProperty, new Thickness(Elevated || selected ? 0 : Resolve(Comp.Chip.OutlineWidth)), BindingPriority.Style);
         var input = this as InputChip;
         var hasAvatar = input is not null && (input.Avatar is not null || input.AvatarTemplate is not null);
         var leadingContent = hasAvatar ? input!.Avatar : LeadingIcon;
         var leadingTemplate = hasAvatar ? input!.AvatarTemplate : LeadingIconTemplate;
-        var hasLeadingIcon = hasAvatar || leadingContent is not null || leadingTemplate is not null;
-        var hasTrailingIcon = this is not SuggestionChip && (TrailingIcon is not null || TrailingIconTemplate is not null);
         _leading?.Update(leadingContent, leadingTemplate,
-            this is SelectableChip, hasAvatar, enabled ? 1 : Resolve(Comp.Chip.AvatarOpacity),
-            hasAvatar ? Foreground : new SolidColorBrush(leading), this);
+            this is SelectableChip, hasAvatar, enabled ? 1 : DisabledAvatarOpacity,
+            hasAvatar ? Foreground : LeadingIconColor, this);
         _trailing?.Update(this is SuggestionChip ? null : TrailingIcon,
             this is SuggestionChip ? null : TrailingIconTemplate,
-            this is SelectableChip, false, 1, new SolidColorBrush(trailing), this);
-        _content.Spacing = Spacing ?? (MorphShapes is not null ? new ChipSpacing(
-            hasLeadingIcon ? 4 : 8, hasTrailingIcon ? 4 : 8) : new ChipSpacing());
-        var start = input is null ? 8 : hasAvatar || !hasLeadingIcon ? 4 : 8;
-        var end = input is null ? 8 : hasTrailingIcon ? 8 : 4;
-        SetValue(PaddingProperty, new Thickness(start, 0, end, 0), BindingPriority.Style);
+            this is SelectableChip, false, 1, TrailingIconColor, this);
+        _content.Spacing = Spacing;
         if (MorphShapes is null) _surface.CornerRadius = CornerRadius;
-        PseudoClasses.Set(":selected", selected);
         QueueTargets();
     }
 
-    internal T Resolve<T>(MaterialTokenKey<T> key) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is T result
-            ? result : throw new InvalidOperationException($"Chip requires token {key}.");
-
-    internal MaterialSpring Spring(MaterialTokenKey<MaterialSpring> key) => Resolve(key);
-
-    private ChipElevation ElevationValues() => Elevation ?? (Elevated
-        ? new ChipElevation(Resolve(Comp.Chip.ElevatedElevation), Resolve(Comp.Chip.ElevatedElevation),
-            Resolve(Comp.Chip.ElevatedElevation), Resolve(Comp.Chip.ElevatedHoverElevation),
-            Resolve(Comp.Chip.DraggedElevation), Resolve(Comp.Chip.DisabledElevation))
-        : new ChipElevation(Resolve(Comp.Chip.FlatElevation), Resolve(Comp.Chip.FlatElevation),
-            Resolve(Comp.Chip.FlatElevation), Resolve(this is FilterChip ? Comp.Chip.FlatFilterHoverElevation : Comp.Chip.FlatElevation),
-            Resolve(Comp.Chip.DraggedElevation), Resolve(Comp.Chip.FlatElevation)));
-
     private double ElevationTarget()
     {
-        var values = ElevationValues();
+        var values = Elevation;
         return !IsEffectivelyEnabled ? values.Disabled : MaterialInteraction.GetOrCreate(this).LastInteraction switch
         {
             InteractionState.Pressed => values.Pressed, InteractionState.Hovered => values.Hovered,
@@ -240,11 +228,9 @@ public abstract class Chip : Button
         }
         var pressed = MaterialInteraction.GetOrCreate(this).Interaction.HasFlag(InteractionState.Pressed);
         // key(shapes) uses ChipShapes' structural equality, including resolved theme defaults.
-        var configuration = (Shape: shapes.Shape ?? Resolve(Comp.Chip.UnselectedShape),
-            Selected: shapes.SelectedShape ?? Resolve(Comp.Chip.SelectedShape),
-            Pressed: shapes.PressedShape ?? Resolve(Comp.Chip.PressedShape));
+        var configuration = (Shape: shapes.Shape, Selected: shapes.SelectedShape, Pressed: shapes.PressedShape);
         var target = pressed ? configuration.Pressed : Selected ? configuration.Selected : configuration.Shape;
-        var spec = Spring(Sys.Motion.Spring.SpatialFast);
+        if (ShapeAnimation is not { } spec) return; // A resource-scope move may temporarily withdraw the theme input.
         if (initial || _shapeConfiguration != configuration || _shape is null)
         {
             _shapeEffect?.Cancel(); _shapeEffect = null;

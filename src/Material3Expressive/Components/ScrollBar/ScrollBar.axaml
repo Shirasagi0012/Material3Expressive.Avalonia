@@ -25,11 +25,15 @@
             <Setter Property="m3:ScrollBarAppearance.UnhoverColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.UnhoverColor}}" />
             <Setter Property="m3:ScrollBarAppearance.HoverColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.HoverColor}}" />
             <Setter Property="m3:ScrollBarAppearance.HoverDuration" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollBar.HoverDuration}}" />
+            <Setter Property="Width" Value="{Binding (m3:ScrollBarThemeDefaults.Width), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Height" Value="{Binding (m3:ScrollBarThemeDefaults.Height), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="ContextFlyout" Value="{Binding (m3:ScrollBarThemeDefaults.ContextFlyout), RelativeSource={RelativeSource Self}}" />
+            <Setter Property="Template" Value="{Binding (m3:ScrollBarThemeDefaults.Template), RelativeSource={RelativeSource Self}}" />
             <Style Selector="^:vertical">
                 <!-- Reuse the stock menu resource and commands without altering its definition. -->
-                <Setter Property="ContextFlyout" Value="{DynamicResource VerticalScrollBarContextFlyout}" />
-                <Setter Property="Width" Value="{Binding (m3:ScrollBarAppearance.Thickness), RelativeSource={RelativeSource Self}}" />
-                <Setter Property="Template">
+                <Setter Property="m3:ScrollBarThemeDefaults.ContextFlyout" Value="{DynamicResource VerticalScrollBarContextFlyout}" />
+                <Setter Property="m3:ScrollBarThemeDefaults.Width" Value="{Binding (m3:ScrollBarAppearance.Thickness), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="m3:ScrollBarThemeDefaults.Template">
                     <ControlTemplate>
                         <Border Background="{TemplateBinding Background}">
                             <Track Name="PART_Track" Orientation="Vertical" IsDirectionReversed="True"
@@ -47,9 +51,9 @@
                 </Setter>
             </Style>
             <Style Selector="^:horizontal">
-                <Setter Property="ContextFlyout" Value="{DynamicResource HorizontalScrollBarContextFlyout}" />
-                <Setter Property="Height" Value="{Binding (m3:ScrollBarAppearance.Thickness), RelativeSource={RelativeSource Self}}" />
-                <Setter Property="Template">
+                <Setter Property="m3:ScrollBarThemeDefaults.ContextFlyout" Value="{DynamicResource HorizontalScrollBarContextFlyout}" />
+                <Setter Property="m3:ScrollBarThemeDefaults.Height" Value="{Binding (m3:ScrollBarAppearance.Thickness), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="m3:ScrollBarThemeDefaults.Template">
                     <ControlTemplate>
                         <Border Background="{TemplateBinding Background}">
                             <Track Name="PART_Track" Orientation="Horizontal"

@@ -8,14 +8,14 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Surface and content environment corresponding to DrawerSheet in NavigationDrawer.kt.</summary>
 public abstract class DrawerSheet : ContentControl
 {
+    internal static readonly StyledProperty<double> ContainerWidthProperty = AvaloniaProperty.Register<DrawerSheet, double>(nameof(ContainerWidth));
+    internal double ContainerWidth { get => GetValue(ContainerWidthProperty); set => SetValue(ContainerWidthProperty, value); }
     public static readonly StyledProperty<Thickness> WindowInsetsProperty = AvaloniaProperty.Register<DrawerSheet, Thickness>(nameof(WindowInsets));
     public static readonly StyledProperty<double> TonalElevationProperty = MaterialSurface.TonalElevationProperty.AddOwner<DrawerSheet>();
     public Thickness WindowInsets { get => GetValue(WindowInsetsProperty); set => SetValue(WindowInsetsProperty, value); }
@@ -50,7 +50,7 @@ public abstract class DrawerSheet : ContentControl
     {
         base.OnPropertyChanged(change);
         if (change.Property == DismissibleDrawerSheet.StateProperty) ObserveState();
-        if (change.Property == FlowDirectionProperty) UpdateScale();
+        if (change.Property == FlowDirectionProperty || change.Property == ContainerWidthProperty) UpdateScale();
     }
     private void ObserveState()
     {
@@ -65,7 +65,7 @@ public abstract class DrawerSheet : ContentControl
     {
         if (_surface is null || _content is null) return;
         var offset = AnimationState?.CurrentOffset ?? 0;
-        var width = TokenResolver.TryResolve(this, MaterialTokens.Comp.NavigationDrawer.ContainerWidth, ActualThemeVariant, out var token) && token is double w ? w : 360;
+        var width = ContainerWidth;
         var scale = offset > 0 ? 1f + (float)offset / (float)width : 1f;
         _surface.RenderTransformOrigin = new RelativePoint(1, .5, RelativeUnit.Relative);
         _surface.RenderTransform = new ScaleTransform(scale, 1);
@@ -96,9 +96,11 @@ public class ModalDrawerSheet : DismissibleDrawerSheet { }
 
 internal sealed class DrawerSheetLayout : Decorator
 {
-    public static readonly StyledProperty<double> MaximumWidthProperty = AvaloniaProperty.Register<DrawerSheetLayout, double>(nameof(MaximumWidth), 360);
+    public static readonly StyledProperty<double> MinimumWidthProperty = AvaloniaProperty.Register<DrawerSheetLayout, double>(nameof(MinimumWidth));
+    public double MinimumWidth { get => GetValue(MinimumWidthProperty); set => SetValue(MinimumWidthProperty, value); }
+    public static readonly StyledProperty<double> MaximumWidthProperty = AvaloniaProperty.Register<DrawerSheetLayout, double>(nameof(MaximumWidth));
     public double MaximumWidth { get => GetValue(MaximumWidthProperty); set => SetValue(MaximumWidthProperty, value); }
-    static DrawerSheetLayout() => AffectsMeasure<DrawerSheetLayout>(MaximumWidthProperty);
+    static DrawerSheetLayout() => AffectsMeasure<DrawerSheetLayout>(MaximumWidthProperty, MinimumWidthProperty);
     protected override Size MeasureOverride(Size availableSize)
     {
         // A preceding Modifier.width supplies fixed incoming constraints, which sizeIn respects.
@@ -107,6 +109,6 @@ internal sealed class DrawerSheetLayout : Decorator
             ? availableSize.Width : Math.Min(MaximumWidth, availableSize.Width);
         Child?.Measure(new Size(width, availableSize.Height));
         var desired = Child?.DesiredSize ?? default;
-        return new Size(Math.Clamp(desired.Width, Math.Min(240, width), width), double.IsFinite(availableSize.Height) ? availableSize.Height : desired.Height);
+        return new Size(Math.Clamp(desired.Width, Math.Min(MinimumWidth, width), width), double.IsFinite(availableSize.Height) ? availableSize.Height : desired.Height);
     }
 }

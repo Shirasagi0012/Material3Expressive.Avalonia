@@ -13,6 +13,14 @@ public static partial class MaterialTokens
         // VerticalItem,BaselineItem,Color}Tokens. Default derivations keep live system references.
         public static class WideNavigationRail
         {
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> LayoutAnimation = new("md.comp.wide-navigation-rail.layout-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ModalWidthAnimation = new("md.comp.wide-navigation-rail.modal-width-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> StateAnimation = new("md.comp.wide-navigation-rail.state-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ItemSpatialAnimation = new("md.comp.wide-navigation-rail.item-spatial-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ItemEffectsAnimation = new("md.comp.wide-navigation-rail.item-effects-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ModalEffectsAnimation = new("md.comp.wide-navigation-rail.modal-effects-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ModalOffsetAnimation = new("md.comp.wide-navigation-rail.modal-offset-animation");
+            public static readonly MaterialTokenKey<Avalonia.Thickness> WindowInsets = new("md.comp.wide-navigation-rail.window-insets");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.wide-navigation-rail.container.color");
             public static readonly MaterialTokenKey<Color> ModalContainerColor = new("md.comp.wide-navigation-rail.modal-container.color");
             public static readonly MaterialTokenKey<Color> ModalScrimColor = new("md.comp.wide-navigation-rail.modal-scrim.color");

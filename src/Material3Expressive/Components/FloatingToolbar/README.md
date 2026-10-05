@@ -59,13 +59,14 @@ Expanded 可以绑定应用状态，启用编译绑定时声明 DataContext 类�
 CornerRadius、ExpandedShadowElevation 和 CollapsedShadowElevation。
 
 默认 Padding 为 8 DIP，交叉轴最小尺寸为 64 DIP；屏幕边缘 16 DIP 偏移由调用者 Margin/布局表达，
-不会自动添加。ExpandedShadowElevation 为 null 时普通入口取 0、FAB 入口取 1 DIP，收起默认 0。
+不会自动添加。ExpandedShadowElevation 的主题默认值为普通入口 0、FAB 入口 1 DIP，收起默认 0。
+该属性是有效 double 配置；清除局部值会恢复当前入口的主题默认值。
 工具栏不强制内容 StackPanel 的 Spacing。
 
 `MaterialStandardFloatingToolbarFabTheme` / `MaterialVibrantFloatingToolbarFabTheme` 分别提供
 PrimaryContainer / TertiaryContainer FAB 背景；静止、按压、焦点高度 3 DIP，悬停 6 DIP。
-FAB 入口的 AnimationSpec 接受 `IFiniteAnimationSpec<float>`，默认 FastSpatial；普通槽动画规格固定使用
-相应 Material 默认值。嵌入的 IconButton 自身边界见 [IconButton](../IconButton/README.md)。
+FAB 入口的 AnimationSpec 接受 `IFiniteAnimationSpec<float>`，主题提供动态 FastSpatial 默认值；普通槽动画规格由
+组件 motion Token 提供。嵌入的 IconButton 自身边界见 [IconButton](../IconButton/README.md)。
 
 ## 随滚动退出与展开
 
