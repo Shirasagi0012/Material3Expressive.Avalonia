@@ -9,15 +9,15 @@
         <TextBlock Text="Filled" /><TextBlock Grid.Column="1" Text="Outlined" />
         <TextBox Grid.Row="1" Name="FilledPassword" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="Password" PlaceholderText="Enter your password"
-                 m3:MaterialTextField.SupportingText="Paste and select all are available">
-          <TextBox.InnerLeftContent><m3:MaterialSymbol Symbol="Lock" Width="24" Height="24" /></TextBox.InnerLeftContent>
-          <TextBox.InnerRightContent><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealFilled" /></TextBox.InnerRightContent>
+                 m3:MaterialTextField.SupportingText="Paste and select all are available"
+                 m3:MaterialTextField.LeadingIcon="{m3:Symbol Lock}">
+          <m3:MaterialTextField.TrailingIcon><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealFilled" /></m3:MaterialTextField.TrailingIcon>
         </TextBox>
         <TextBox Grid.Row="1" Grid.Column="1" Name="OutlinedPassword" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="Password" PlaceholderText="Enter your password"
-                 m3:MaterialTextField.SupportingText="Copy and cut stay blocked while revealed">
-          <TextBox.InnerLeftContent><m3:MaterialSymbol Symbol="Lock" Width="24" Height="24" /></TextBox.InnerLeftContent>
-          <TextBox.InnerRightContent><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealOutlined" /></TextBox.InnerRightContent>
+                 m3:MaterialTextField.SupportingText="Copy and cut stay blocked while revealed"
+                 m3:MaterialTextField.LeadingIcon="{m3:Symbol Lock}">
+          <m3:MaterialTextField.TrailingIcon><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealOutlined" /></m3:MaterialTextField.TrailingIcon>
         </TextBox>
         <TextBox Grid.Row="2" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="PIN" PasswordChar="*" Text="1234" />

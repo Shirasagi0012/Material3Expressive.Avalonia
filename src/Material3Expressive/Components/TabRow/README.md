@@ -72,6 +72,8 @@ Primary 指示器随标签内容宽度，Secondary 覆盖整个 Tab。滚动栏�
 - Custom：使用整个自定义内容，不施加默认标签字体或最小高度
 
 独立 Tab 的标签使用 Content / ContentTemplate，图标使用 Icon / IconTemplate。
+只设置 `IconTemplate` 也会显示图标槽，即使 `Icon` 为 null；模板可针对 null 数据创建内容。
+无显式尺寸的 MaterialSymbol 默认使用通用 24 DIP；显式 `Width` / `Height` 优先，自定义图标尺寸参与 Tab 测量。
 标准标签默认 TitleSmall、居中文字；显式文字设置优先。自定义复合标签需要跨包装层提供基线时，
 在标签根控件设置 TextBlock.BaselineOffset。只有标准 Stacked 布局提供 Badge bounds。
 

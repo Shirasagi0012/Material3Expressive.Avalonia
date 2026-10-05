@@ -95,7 +95,9 @@ AlertDialog 自带 24 DIP 容器留白。图标居中；有图标时标题居中
 
 用 `Background` / `CornerRadius` 定制容器，`IconForeground` / `TitleForeground` /
 `TextForeground` 定制对应槽。默认提供 HeadlineSmall / BodyMedium / LabelLarge 文字环境，
-自定义子控件的局部字体与颜色仍可覆盖。图标尺寸由内容设置，默认 IconSize Token 为 24 DIP。
+自定义子控件的局部字体与颜色仍可覆盖。只设置 `IconTemplate` 也会显示图标槽，即使 `Icon` 为 null；
+模板可针对 null 数据创建内容。无显式尺寸的 MaterialSymbol 默认使用 Dialog IconSize Token 24 DIP；
+显式 `Width` / `Height` 优先，自定义图标不会被内容槽强制缩放。
 `TonalElevation` 默认 0；标准 AlertDialog 不自动添加阴影。
 统一外观优先使用[主题与 Token 接入](../../../../docs/GETTING_STARTED.md#主题与定制)。
 

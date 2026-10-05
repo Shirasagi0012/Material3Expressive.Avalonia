@@ -58,8 +58,10 @@ Top / EqualWeight 适合较窄布局，Start / Centered 适合较宽布局；控
 
 ## 内容与外观
 
-`Icon` / `IconTemplate` 与 `Label` / `LabelTemplate` 接受内容或数据；文字默认 LabelMedium，
-显式子控件可覆盖排版。图标中可放 [BadgedBox](../Badge/README.md)，内置布局为其提供徽标边界。
+`Icon` / `IconTemplate` 与 `Label` / `LabelTemplate` 接受内容或数据；只设置 `IconTemplate` 也会显示图标槽，
+即使 `Icon` 为 null，模板仍可针对 null 数据创建内容。无显式尺寸的 MaterialSymbol 默认使用
+ShortNavigationBar IconSize Token 24 DIP；显式 `Width` / `Height` 优先，自定义图标不会被布局强制限制。
+文字默认 LabelMedium，显式子控件可覆盖排版。图标中可放 [BadgedBox](../Badge/README.md)，内置布局为其提供徽标边界。
 图标与标签都保留可访问子内容；纯图标目的地应设置 `AutomationProperties.Name`。
 
 ```xml

@@ -20,35 +20,21 @@
                 <m3:IconButton Symbol="Menu" 
                                Click="OnToggleModalRail" />
             </m3:ModalWideNavigationRail.Header>
-            <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick">
-                <m3:WideNavigationRailItem.Icon>
-                    <m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" />
-                </m3:WideNavigationRailItem.Icon>
-            </m3:WideNavigationRailItem>
-            <m3:WideNavigationRailItem Label="Search" Click="OnModalDestinationClick">
-                <m3:WideNavigationRailItem.Icon>
-                    <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
-                </m3:WideNavigationRailItem.Icon>
-            </m3:WideNavigationRailItem>
-            <m3:WideNavigationRailItem Label="Settings" Click="OnModalDestinationClick">
-                <m3:WideNavigationRailItem.Icon>
-                    <m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" />
-                </m3:WideNavigationRailItem.Icon>
-            </m3:WideNavigationRailItem>
+            <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+            <m3:WideNavigationRailItem Label="Search" Click="OnModalDestinationClick" Icon="{m3:Symbol Search}" />
+            <m3:WideNavigationRailItem Label="Settings" Click="OnModalDestinationClick" Icon="{m3:Symbol Settings}" />
         </m3:ModalWideNavigationRail>
         <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="32" Background="White">
                 <TextBlock Text="FloatingActionButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
-                    <m3:FloatingActionButton Size="Small"><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButton>
-                    <m3:FloatingActionButton><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButton>
-                    <m3:FloatingActionButton Size="Medium"><m3:MaterialSymbol Symbol="Add" Width="28" Height="28" /></m3:FloatingActionButton>
-                    <m3:FloatingActionButton Size="Large"><m3:MaterialSymbol Symbol="Add" Width="36" Height="36" /></m3:FloatingActionButton>
+                    <m3:FloatingActionButton Size="Small" Icon="{m3:Symbol Add}" />
+                    <m3:FloatingActionButton Icon="{m3:Symbol Add}" />
+                    <m3:FloatingActionButton Size="Medium" Icon="{m3:Symbol Add}" />
+                    <m3:FloatingActionButton Size="Large" Icon="{m3:Symbol Add}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="16">
-                    <m3:ExtendedFloatingActionButton x:Name="DemoExtendedFab" Content="Create">
-                        <m3:ExtendedFloatingActionButton.Icon><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:ExtendedFloatingActionButton.Icon>
-                    </m3:ExtendedFloatingActionButton>
+                    <m3:ExtendedFloatingActionButton x:Name="DemoExtendedFab" Content="Create" Icon="{m3:Symbol Add}" />
                     <Button Content="Expand / collapse" Click="OnToggleExtendedFab" />
                     <Button Content="Show / hide" Click="OnToggleFabVisibility" />
                 </StackPanel>
@@ -59,12 +45,8 @@
                                                 Foreground="{Binding IconColor, ElementName=DemoToggleFab, Converter={StaticResource FabIconBrushConverter}}" />
                         </m3:ToggleFloatingActionButton>
                     </m3:FloatingActionButtonMenu.Button>
-                    <m3:FloatingActionButtonMenuItem Content="Create" Click="OnFabMenuItem">
-                        <m3:FloatingActionButtonMenuItem.Icon><m3:MaterialSymbol Symbol="Add" Width="24" Height="24" /></m3:FloatingActionButtonMenuItem.Icon>
-                    </m3:FloatingActionButtonMenuItem>
-                    <m3:FloatingActionButtonMenuItem Content="Edit" Click="OnFabMenuItem">
-                        <m3:FloatingActionButtonMenuItem.Icon><m3:MaterialSymbol Symbol="Edit" Width="24" Height="24" /></m3:FloatingActionButtonMenuItem.Icon>
-                    </m3:FloatingActionButtonMenuItem>
+                    <m3:FloatingActionButtonMenuItem Content="Create" Click="OnFabMenuItem" Icon="{m3:Symbol Add}" />
+                    <m3:FloatingActionButtonMenuItem Content="Edit" Click="OnFabMenuItem" Icon="{m3:Symbol Edit}" />
                 </m3:FloatingActionButtonMenu>
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />
@@ -115,21 +97,15 @@
                     <m3:SegmentedButton Content="Archived" IsEnabled="False" />
                 </m3:MultiChoiceSegmentedButtonRow>
                 <m3:SingleChoiceSegmentedButtonRow BaseShape="8">
-                    <m3:SegmentedButton Content="List" Click="OnSingleSegmentClick">
-                        <m3:SegmentedButton.InactiveIcon><m3:MaterialSymbol Symbol="List" Width="18" Height="18" /></m3:SegmentedButton.InactiveIcon>
-                    </m3:SegmentedButton>
-                    <m3:SegmentedButton Content="Grid" IsSelected="True" Click="OnSingleSegmentClick">
-                        <m3:SegmentedButton.InactiveIcon><m3:MaterialSymbol Symbol="GridView" Width="18" Height="18" /></m3:SegmentedButton.InactiveIcon>
-                    </m3:SegmentedButton>
+                    <m3:SegmentedButton Content="List" Click="OnSingleSegmentClick" InactiveIcon="{m3:Symbol List}" />
+                    <m3:SegmentedButton Content="Grid" IsSelected="True" Click="OnSingleSegmentClick" InactiveIcon="{m3:Symbol GridView}" />
                 </m3:SingleChoiceSegmentedButtonRow>
                 <Button Content="AppBar demo" Click="OnAppBarDemo" HorizontalAlignment="Left" />
                 <Button Content="Tooltip demo" Click="OnTooltipDemo" HorizontalAlignment="Left" />
                 <Button Content="Snackbar demo" Click="OnSnackbarDemo" HorizontalAlignment="Left" />
                 <TextBlock Text="Chip" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>
-                    <m3:AssistChip Content="Add to calendar" Margin="0,0,12,0">
-                        <m3:AssistChip.LeadingIcon><m3:MaterialSymbol Symbol="CalendarMonth" Width="18" Height="18" /></m3:AssistChip.LeadingIcon>
-                    </m3:AssistChip>
+                    <m3:AssistChip Content="Add to calendar" Margin="0,0,12,0" LeadingIcon="{m3:Symbol CalendarMonth}" />
                     <m3:AssistChip Content="Elevated assist" IsElevated="True" Margin="0,0,12,0" />
                     <m3:SuggestionChip Content="Suggestion" Margin="0,0,12,0" />
                     <m3:SuggestionChip Content="Elevated suggestion" IsElevated="True" />
@@ -139,9 +115,8 @@
                     <m3:FilterChip Content="Selected" IsSelected="True" Click="OnChipClick" Margin="0,0,12,0" />
                     <m3:FilterChip Content="Shape morph" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
                     <m3:FilterChip Content="Elevated filter" IsElevated="True" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" />
-                    <m3:InputChip Content="Contact" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0">
-                        <m3:InputChip.Avatar><Border Width="24" Height="24" Background="#E8DEF8"><m3:MaterialSymbol Symbol="Person" Width="18" Height="18" /></Border></m3:InputChip.Avatar>
-                        <m3:InputChip.TrailingIcon><m3:MaterialSymbol Symbol="Close" Width="18" Height="18" /></m3:InputChip.TrailingIcon>
+                    <m3:InputChip Content="Contact" Shapes="{m3:ChipShapes}" Click="OnChipClick" Margin="0,0,12,0" TrailingIcon="{m3:Symbol Close}">
+                        <m3:InputChip.Avatar><Border Width="24" Height="24" Background="#E8DEF8" Child="{m3:Symbol Person, Size=18}" /></m3:InputChip.Avatar>
                     </m3:InputChip>
                     <m3:InputChip Content="Disabled contact" IsSelected="True" IsEnabled="False" />
                 </WrapPanel>
@@ -160,17 +135,14 @@
                     <ToggleButton Content="Large" Classes="large" />
                     <ToggleButton Content="XL" Classes="xlarge" />
                 </StackPanel>
-                <ToggleButton Content="Favorite" HorizontalAlignment="Left">
-                    <m3:ToggleButtonAppearance.Icon><m3:MaterialSymbol Symbol="Favorite" /></m3:ToggleButtonAppearance.Icon>
-                </ToggleButton>
+                <Button Content="Send" HorizontalAlignment="Left" m3:MaterialButton.Icon="{m3:Symbol Send}" />
+                <ToggleButton Content="Favorite" HorizontalAlignment="Left" m3:MaterialButton.Icon="{m3:Symbol Favorite}" />
                 <TextBlock Text="SplitButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <m3:SplitButton>
                         <m3:SplitButton.LeadingButton><Button Content="Save" Theme="{StaticResource MaterialFilledSplitButtonLeadingTheme}" /></m3:SplitButton.LeadingButton>
                         <m3:SplitButton.TrailingButton>
-                            <ToggleButton Theme="{StaticResource MaterialFilledSplitButtonTrailingTheme}">
-                                <m3:MaterialSymbol Symbol="KeyboardArrowDown" Width="22" Height="22" />
-                            </ToggleButton>
+                            <ToggleButton Theme="{StaticResource MaterialFilledSplitButtonTrailingTheme}" m3:MaterialButton.Icon="{m3:Symbol KeyboardArrowDown}" />
                         </m3:SplitButton.TrailingButton>
                     </m3:SplitButton>
                     <m3:SplitButton>
@@ -239,21 +211,13 @@
                     </m3:Scaffold.TopBar>
                     <m3:Scaffold.BottomBar>
                         <m3:NavigationBar>
-                            <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">
-                                <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                            </m3:NavigationBarItem>
-                            <m3:NavigationBarItem Label="Search" Click="OnBarDestinationClick">
-                                <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                            </m3:NavigationBarItem>
-                            <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick">
-                                <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                            </m3:NavigationBarItem>
+                            <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+                            <m3:NavigationBarItem Label="Search" Click="OnBarDestinationClick" Icon="{m3:Symbol Search}" />
+                            <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick" Icon="{m3:Symbol Settings}" />
                         </m3:NavigationBar>
                     </m3:Scaffold.BottomBar>
                     <m3:Scaffold.FloatingActionButton>
-                        <m3:FloatingActionButton Click="OnScaffoldSnackbarClick" AutomationProperties.Name="Create item">
-                            <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
-                        </m3:FloatingActionButton>
+                        <m3:FloatingActionButton Click="OnScaffoldSnackbarClick" AutomationProperties.Name="Create item" Icon="{m3:Symbol Add}" />
                     </m3:Scaffold.FloatingActionButton>
                     <m3:Scaffold.SnackbarHost>
                         <m3:SnackbarHost x:Name="DemoScaffoldSnackbar" />
@@ -283,87 +247,53 @@
                 </Grid>
                 <TextBlock Text="Badges" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="24" VerticalAlignment="Center">
-                    <m3:BadgedBox>
+                    <m3:BadgedBox Content="{m3:Symbol Favorite}">
                         <m3:BadgedBox.Badge><m3:Badge /></m3:BadgedBox.Badge>
-                        <m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" />
                     </m3:BadgedBox>
-                    <m3:BadgedBox>
+                    <m3:BadgedBox Content="{m3:Symbol Search}">
                         <m3:BadgedBox.Badge><m3:Badge x:Name="DemoBadge" Content="8" AutomationProperties.Name="8 notifications" /></m3:BadgedBox.Badge>
-                        <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
                     </m3:BadgedBox>
-                    <m3:BadgedBox>
+                    <m3:BadgedBox Content="{m3:Symbol Settings}">
                         <m3:BadgedBox.Badge><m3:Badge Content="999+" /></m3:BadgedBox.Badge>
-                        <m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" />
                     </m3:BadgedBox>
                     <Button Content="Change badge" Click="OnChangeBadge" />
                 </StackPanel>
                 <TextBlock Text="NavigationBar" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:NavigationBar x:Name="DemoNavigationBar">
-                    <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Home" IsSelected="True" Click="OnBarDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
                     <m3:NavigationBarItem Label="Search" Click="OnBarDestinationClick">
                         <m3:NavigationBarItem.Icon>
-                            <m3:BadgedBox>
+                            <m3:BadgedBox Content="{m3:Symbol Search}">
                                 <m3:BadgedBox.Badge><m3:Badge Content="99+" /></m3:BadgedBox.Badge>
-                                <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
                             </m3:BadgedBox>
                         </m3:NavigationBarItem.Icon>
                     </m3:NavigationBarItem>
-                    <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Settings" Click="OnBarDestinationClick" Icon="{m3:Symbol Settings}" />
                 </m3:NavigationBar>
                 <TextBlock Text="Selected labels" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
                 <m3:NavigationBar>
-                    <m3:NavigationBarItem Label="Home" AlwaysShowLabel="False" IsSelected="True" Click="OnBarDestinationClick">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                    </m3:NavigationBarItem>
-                    <m3:NavigationBarItem Label="Search" AlwaysShowLabel="False" Click="OnBarDestinationClick">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                    </m3:NavigationBarItem>
-                    <m3:NavigationBarItem Label="Settings" AlwaysShowLabel="False" Click="OnBarDestinationClick">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                    </m3:NavigationBarItem>
-                    <m3:NavigationBarItem Label="Disabled" AlwaysShowLabel="False" IsEnabled="False">
-                        <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
-                    </m3:NavigationBarItem>
+                    <m3:NavigationBarItem Label="Home" AlwaysShowLabel="False" IsSelected="True" Click="OnBarDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+                    <m3:NavigationBarItem Label="Search" AlwaysShowLabel="False" Click="OnBarDestinationClick" Icon="{m3:Symbol Search}" />
+                    <m3:NavigationBarItem Label="Settings" AlwaysShowLabel="False" Click="OnBarDestinationClick" Icon="{m3:Symbol Settings}" />
+                    <m3:NavigationBarItem Label="Disabled" AlwaysShowLabel="False" IsEnabled="False" Icon="{m3:Symbol Favorite}" />
                 </m3:NavigationBar>
                 <TextBlock Text="ShortNavigationBar — Top / EqualWeight" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:ShortNavigationBar x:Name="DemoShortNavigationBar">
-                    <m3:ShortNavigationBarItem Label="Home" IsSelected="True" Click="OnShortBarDestinationClick">
-                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
-                    </m3:ShortNavigationBarItem>
-                    <m3:ShortNavigationBarItem Label="Search" IsSelected="False" Click="OnShortBarDestinationClick">
-                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
-                    </m3:ShortNavigationBarItem>
-                    <m3:ShortNavigationBarItem Label="Settings" IsSelected="False" Click="OnShortBarDestinationClick">
-                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
-                    </m3:ShortNavigationBarItem>
+                    <m3:ShortNavigationBarItem Label="Home" IsSelected="True" Click="OnShortBarDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+                    <m3:ShortNavigationBarItem Label="Search" IsSelected="False" Click="OnShortBarDestinationClick" Icon="{m3:Symbol Search}" />
+                    <m3:ShortNavigationBarItem Label="Settings" IsSelected="False" Click="OnShortBarDestinationClick" Icon="{m3:Symbol Settings}" />
                 </m3:ShortNavigationBar>
                 <TextBlock Text="ShortNavigationBar — Start / Centered" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:ShortNavigationBar Arrangement="Centered">
-                    <m3:ShortNavigationBarItem Label="Home" IconPosition="Start" IsSelected="True" IsEnabled="True" Click="OnShortBarDestinationClick">
-                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
-                    </m3:ShortNavigationBarItem>
-                    <m3:ShortNavigationBarItem Label="Search" IconPosition="Start" IsSelected="False" IsEnabled="True" Click="OnShortBarDestinationClick">
-                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
-                    </m3:ShortNavigationBarItem>
-                    <m3:ShortNavigationBarItem Label="Settings" IconPosition="Start" IsSelected="False" IsEnabled="True" Click="OnShortBarDestinationClick">
-                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
-                    </m3:ShortNavigationBarItem>
-                    <m3:ShortNavigationBarItem Label="Disabled" IconPosition="Start" IsSelected="False" IsEnabled="False" Click="OnShortBarDestinationClick">
-                        <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
-                    </m3:ShortNavigationBarItem>
+                    <m3:ShortNavigationBarItem Label="Home" IconPosition="Start" IsSelected="True" IsEnabled="True" Click="OnShortBarDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+                    <m3:ShortNavigationBarItem Label="Search" IconPosition="Start" IsSelected="False" IsEnabled="True" Click="OnShortBarDestinationClick" Icon="{m3:Symbol Search}" />
+                    <m3:ShortNavigationBarItem Label="Settings" IconPosition="Start" IsSelected="False" IsEnabled="True" Click="OnShortBarDestinationClick" Icon="{m3:Symbol Settings}" />
+                    <m3:ShortNavigationBarItem Label="Disabled" IconPosition="Start" IsSelected="False" IsEnabled="False" Click="OnShortBarDestinationClick" Icon="{m3:Symbol Favorite}" />
                 </m3:ShortNavigationBar>
                 <TextBlock Text="Switches" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="24">
                     <ToggleSwitch Content="Notifications" />
-                    <ToggleSwitch Content="Thumb icon" IsChecked="True">
-                        <m3:SwitchAppearance.ThumbContent>
-                            <m3:MaterialSymbol Symbol="Check" Width="16" Height="16" />
-                        </m3:SwitchAppearance.ThumbContent>
-                    </ToggleSwitch>
+                    <ToggleSwitch Content="Thumb icon" IsChecked="True" m3:SwitchAppearance.ThumbIcon="{m3:Symbol Check}" />
                     <ToggleSwitch Content="Disabled" IsChecked="True" IsEnabled="False" />
                     <ToggleSwitch Content="State label" OnContent="On" OffContent="Off" />
                 </StackPanel>
@@ -388,21 +318,9 @@
                         <m3:WideNavigationRail.Header>
                             <m3:IconButton Symbol="Menu" Click="OnToggleWideRail" />
                         </m3:WideNavigationRail.Header>
-                        <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnWideDestinationClick">
-                            <m3:WideNavigationRailItem.Icon>
-                                <m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" />
-                            </m3:WideNavigationRailItem.Icon>
-                        </m3:WideNavigationRailItem>
-                        <m3:WideNavigationRailItem Label="Search" Click="OnWideDestinationClick">
-                            <m3:WideNavigationRailItem.Icon>
-                                <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
-                            </m3:WideNavigationRailItem.Icon>
-                        </m3:WideNavigationRailItem>
-                        <m3:WideNavigationRailItem Label="Settings" Click="OnWideDestinationClick">
-                            <m3:WideNavigationRailItem.Icon>
-                                <m3:MaterialSymbol Symbol="Settings" Width="24" Height="24" />
-                            </m3:WideNavigationRailItem.Icon>
-                        </m3:WideNavigationRailItem>
+                        <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnWideDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+                        <m3:WideNavigationRailItem Label="Search" Click="OnWideDestinationClick" Icon="{m3:Symbol Search}" />
+                        <m3:WideNavigationRailItem Label="Settings" Click="OnWideDestinationClick" Icon="{m3:Symbol Settings}" />
                     </m3:WideNavigationRail>
                     <Border Grid.Column="1"
                             Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLow}}"
@@ -422,16 +340,8 @@
                         <m3:ModalWideNavigationRail.ExpandedHeader>
                             <m3:IconButton Symbol="MenuOpen" Tag="hidden" Click="OnToggleModalRail" />
                         </m3:ModalWideNavigationRail.ExpandedHeader>
-                        <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick">
-                            <m3:WideNavigationRailItem.Icon>
-                                <m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" />
-                            </m3:WideNavigationRailItem.Icon>
-                        </m3:WideNavigationRailItem>
-                        <m3:WideNavigationRailItem Label="Search" Click="OnModalDestinationClick">
-                            <m3:WideNavigationRailItem.Icon>
-                                <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
-                            </m3:WideNavigationRailItem.Icon>
-                        </m3:WideNavigationRailItem>
+                        <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+                        <m3:WideNavigationRailItem Label="Search" Click="OnModalDestinationClick" Icon="{m3:Symbol Search}" />
                     </m3:ModalWideNavigationRail>
                 </Grid>
                 <Button Content="Open Dialog" Click="OnOpenDialog" Theme="{StaticResource MaterialTonalButtonTheme}" />

@@ -29,6 +29,10 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`；Core
 - 公开入口是原生 `TextBox`、主题和 `MaterialTextField` 附加属性；没有公开的基础编辑控件、TextBox 子类、编辑状态副本或输入事务层
 - `TextField.axaml` 保留 `PART_TextPresenter` / `PART_ScrollViewer`，原生控件继续管理选区、IME、撤销重做、剪贴板和滚动；修改模板时必须保留这一合约
 - `TextFieldLayout` 在 attach 时连接 owner、presenter 与内容槽，并创建动画作用域；detach 时释放作用域、订阅和无障碍绑定
+- `LeadingIcon` / `TrailingIcon` 及模板接入 Compose 的前后图标槽；任一新值非 null 时使用新槽，
+  两者均 null 时回退到原生 `InnerLeftContent` / `InnerRightContent`，SecureTextField 共享同一规则
+- 图标 presenter 外部保留 48 DIP 槽，内部按子控件测得的 DesiredSize 居中排列，避免 ContentPresenter
+  将默认 24 DIP MaterialSymbol 拉伸到整槽；按钮等本身首选尺寸为 48 DIP 的内容继续占满交互空间
 - `Phase` 区分聚焦、未聚焦空值、未聚焦非空值。label / placeholder / affix 独立动画，目标在下一共享帧合并；不要用一个 opacity 或仅一张静态截图替代状态转换
 - 隐藏槽位不参与布局及辅助技术遍历。placeholder 同时检查原生 Text 与 PreeditText，不能遮住 IME 预编辑文本
 - Inside / Cutout / Above 的测量与排列保留在内部布局；leading/trailing 的 48 DIP 槽、12 DIP Padding 补偿、affix 的 2 DIP 内距与支持区由这里消费

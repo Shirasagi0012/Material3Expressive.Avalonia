@@ -51,6 +51,7 @@ Sheet 的表面放大与内容逆缩放必须一起保留，不能通过缩放�
 DrawerItem 的标签为 Content，图标/徽标单独测量，标签获得剩余宽度。
 Icon / badge spacer 是无权重内容，受窄约束限制；不能让标签先拿宽度而挤掉整个 badge。
 Select / Click / Command 只请求激活，不更改 IsSelected 或关闭 Drawer；Page 导航属于调用方。
+Item 的图标可由内容或模板提供；只设置 IconTemplate 也使图标 presenter 可见。无显式尺寸的 MaterialSymbol 继承通用 24 DIP 默认值，自定义图标仍按实际尺寸参与布局。
 
 共享交互、键盘反馈与焦点规则见
 [激活职责](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)和

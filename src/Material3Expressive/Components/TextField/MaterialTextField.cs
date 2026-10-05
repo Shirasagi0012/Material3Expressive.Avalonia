@@ -36,6 +36,26 @@ public static class MaterialTextField
     public static IDataTemplate? GetSupportingTextTemplate(TextBox owner) => owner.GetValue(SupportingTextTemplateProperty);
     public static void SetSupportingTextTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(SupportingTextTemplateProperty, value);
 
+    public static readonly AttachedProperty<object?> LeadingIconProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, object?>("LeadingIcon", typeof(MaterialTextField));
+    public static object? GetLeadingIcon(TextBox owner) => owner.GetValue(LeadingIconProperty);
+    public static void SetLeadingIcon(TextBox owner, object? value) => owner.SetValue(LeadingIconProperty, value);
+
+    public static readonly AttachedProperty<IDataTemplate?> LeadingIconTemplateProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, IDataTemplate?>("LeadingIconTemplate", typeof(MaterialTextField));
+    public static IDataTemplate? GetLeadingIconTemplate(TextBox owner) => owner.GetValue(LeadingIconTemplateProperty);
+    public static void SetLeadingIconTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(LeadingIconTemplateProperty, value);
+
+    public static readonly AttachedProperty<object?> TrailingIconProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, object?>("TrailingIcon", typeof(MaterialTextField));
+    public static object? GetTrailingIcon(TextBox owner) => owner.GetValue(TrailingIconProperty);
+    public static void SetTrailingIcon(TextBox owner, object? value) => owner.SetValue(TrailingIconProperty, value);
+
+    public static readonly AttachedProperty<IDataTemplate?> TrailingIconTemplateProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, IDataTemplate?>("TrailingIconTemplate", typeof(MaterialTextField));
+    public static IDataTemplate? GetTrailingIconTemplate(TextBox owner) => owner.GetValue(TrailingIconTemplateProperty);
+    public static void SetTrailingIconTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(TrailingIconTemplateProperty, value);
+
     public static readonly AttachedProperty<object?> PrefixProperty =
         AvaloniaProperty.RegisterAttached<TextBox, object?>("Prefix", typeof(MaterialTextField), null);
     public static object? GetPrefix(TextBox owner) => owner.GetValue(PrefixProperty);

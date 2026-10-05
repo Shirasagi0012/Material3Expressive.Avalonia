@@ -12,12 +12,8 @@
       </m3:TabRow>
       <TextBlock Text="Secondary tabs · leading icons" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow Variant="Secondary" SelectedIndex="0">
-        <m3:Tab Content="Music" ContentLayout="Leading" IsSelected="True" Click="OnTabClick">
-          <m3:Tab.Icon><m3:MaterialSymbol Symbol="MusicNote" Width="24" Height="24" /></m3:Tab.Icon>
-        </m3:Tab>
-        <m3:Tab Content="Photos" ContentLayout="Leading" Click="OnTabClick">
-          <m3:Tab.Icon><m3:MaterialSymbol Symbol="Photo" Width="24" Height="24" /></m3:Tab.Icon>
-        </m3:Tab>
+        <m3:Tab Content="Music" Icon="{m3:Symbol MusicNote}" ContentLayout="Leading" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Photos" Icon="{m3:Symbol Photo}" ContentLayout="Leading" Click="OnTabClick" />
       </m3:TabRow>
       <TextBlock Text="Scrollable tabs" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow IsScrollable="True" SelectedIndex="0">

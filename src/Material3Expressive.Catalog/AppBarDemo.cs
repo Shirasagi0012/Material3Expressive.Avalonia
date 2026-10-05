@@ -97,7 +97,7 @@ public sealed class AppBarDemo : Window
         _bottom.HeightOffset = 0; _bottom.ContentOffset = 0;
         BottomAppBar bar = _flexible.IsChecked == true ? new FlexibleBottomAppBar() : new BottomAppBar();
         bar.Items.Add(Action(MaterialSymbolCodepoint.Favorite, "Favorite")); bar.Items.Add(Action(MaterialSymbolCodepoint.Search, "Search"));
-        if (bar is not FlexibleBottomAppBar) bar.FloatingActionButton = new FloatingActionButton { Content = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Add, Width = 24, Height = 24 } };
+        if (bar is not FlexibleBottomAppBar) bar.FloatingActionButton = new FloatingActionButton { Icon = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Add } };
         if (_custom.IsChecked == true) bar.CustomContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, VerticalAlignment = VerticalAlignment.Center,
             Children = { new TextBlock { Text = "Custom content replaces actions and FAB" }, new Button { Content = "Action" } } };
         bar.ScrollBehavior = new BottomAppBarScrollBehavior { State = _bottom };

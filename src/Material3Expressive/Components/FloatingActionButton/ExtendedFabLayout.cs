@@ -88,13 +88,13 @@ internal sealed class ExtendedFabLayout : Panel
                 InvalidateMeasure();
             }, "Extended FAB transition");
         }
-        else if (e.Property == ExtendedFloatingActionButton.IconProperty || e.Property == FloatingActionButton.SizeProperty) InvalidateMeasure();
+        else if (e.Property == FloatingActionButton.IconProperty || e.Property == FloatingActionButton.IconTemplateProperty || e.Property == FloatingActionButton.SizeProperty) InvalidateMeasure();
     }
     protected override Size MeasureOverride(Size available)
     {
         if (Children.Count < 2) return default;
         var icon = Children[0]; var label = Children[1];
-        var hasIcon = _owner?.Icon is not null;
+        var hasIcon = _owner?.HasIcon == true;
         icon.IsVisible = hasIcon;
         label.IsVisible = !hasIcon || !_fullyCollapsed;
         var classic = _owner?.Size == FloatingActionButtonSize.Default;
@@ -130,7 +130,7 @@ internal sealed class ExtendedFabLayout : Panel
     protected override Size ArrangeOverride(Size final)
     {
         if (Children.Count < 2) return final;
-        var hasIcon = _owner?.Icon is not null;
+        var hasIcon = _owner?.HasIcon == true;
         var classic = _owner?.Size == FloatingActionButtonSize.Default;
         var expanded = _owner?.Expanded != false;
         var gap = _owner?.Size switch { FloatingActionButtonSize.Medium => 12, FloatingActionButtonSize.Large => 16, _ => IconLabelSpace };

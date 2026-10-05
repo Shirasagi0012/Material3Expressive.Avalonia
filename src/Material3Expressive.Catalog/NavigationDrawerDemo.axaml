@@ -14,11 +14,10 @@
             <m3:ModalDrawerSheet State="{Binding State, ElementName=Modal}">
               <StackPanel Spacing="4" Margin="12,24">
                 <TextBlock Text="Mail" Margin="16,0,0,24" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
-                <m3:NavigationDrawerItem Content="Inbox" IsSelected="True" Click="Navigate">
-                  <m3:NavigationDrawerItem.Icon><m3:MaterialSymbol Symbol="Inbox" Width="24" Height="24" /></m3:NavigationDrawerItem.Icon>
+                <m3:NavigationDrawerItem Content="Inbox" Icon="{m3:Symbol Inbox}" IsSelected="True" Click="Navigate">
                   <m3:NavigationDrawerItem.Badge><TextBlock Text="24" /></m3:NavigationDrawerItem.Badge>
                 </m3:NavigationDrawerItem>
-                <m3:NavigationDrawerItem Content="Sent" Click="Navigate"><m3:NavigationDrawerItem.Icon><m3:MaterialSymbol Symbol="Send" Width="24" Height="24" /></m3:NavigationDrawerItem.Icon></m3:NavigationDrawerItem>
+                <m3:NavigationDrawerItem Content="Sent" Icon="{m3:Symbol Send}" Click="Navigate" />
                 <Separator Margin="16,12" />
                 <Button Content="Close drawer" Tag="modal" Click="ToggleDrawer" HorizontalAlignment="Left" />
               </StackPanel>

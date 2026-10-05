@@ -33,6 +33,8 @@ DefaultIntrinsicMeasurable 下空 ripple 槽宽度为零；Start 带标签则有
 
 Top 使用上方 6 DIP 留白，24 DIP 图标的胶囊为 56×32，图标与标签间为 8 DIP。
 Start 带标签时胶囊包住图标和标签，两侧 16 DIP、图标到标签 4 DIP、上下 8 DIP。
+Icon presenter 将 ShortNavigationBar.IconSize Token 24 DIP 作为 MaterialIcon.DefaultSize 传给无显式尺寸的
+MaterialSymbol；自定义图标继续按实际尺寸布局。
 无标签仍使用 TopIconOrIconOnlyMeasurePolicy，但采用目标位置的 padding，Top/Start 胶囊高度为 32/40 DIP。
 没有改成 Wide Item 的无标签圆形分支。
 

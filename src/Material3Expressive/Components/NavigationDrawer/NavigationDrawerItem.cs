@@ -59,7 +59,8 @@ public class NavigationDrawerItem : Button
     {
         base.OnPropertyChanged(change);
         if (change.Property == IsSelectedProperty) PseudoClasses.Set(":selected", IsSelected);
-        if (change.Property == IsSelectedProperty || change.Property.PropertyType == typeof(Color)) Refresh();
+        if (change.Property == IsSelectedProperty || change.Property == IconProperty || change.Property == IconTemplateProperty
+            || change.Property.PropertyType == typeof(Color)) Refresh();
     }
     private void Refresh()
     {
@@ -67,7 +68,11 @@ public class NavigationDrawerItem : Button
         {
             _surface.Background = new SolidColorBrush(IsSelected ? SelectedContainerColor : UnselectedContainerColor);
         }
-        if (_icon is not null) _icon.Foreground = new SolidColorBrush(IsSelected ? SelectedIconColor : UnselectedIconColor);
+        if (_icon is not null)
+        {
+            _icon.IsVisible = Icon is not null || IconTemplate is not null;
+            _icon.Foreground = new SolidColorBrush(IsSelected ? SelectedIconColor : UnselectedIconColor);
+        }
         if (_label is not null) _label.Foreground = new SolidColorBrush(IsSelected ? SelectedTextColor : UnselectedTextColor);
         if (_badge is not null) _badge.Foreground = new SolidColorBrush(IsSelected ? SelectedBadgeColor : UnselectedBadgeColor);
     }

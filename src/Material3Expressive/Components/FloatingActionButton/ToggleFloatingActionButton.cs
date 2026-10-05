@@ -3,7 +3,9 @@ using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -12,6 +14,7 @@ using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Tokens;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -25,6 +28,8 @@ public sealed class FabCheckedChangeRequestedEventArgs(bool isChecked) : EventAr
 /// <summary>A controlled Toggle FAB; activation requests the inverse state without changing IsChecked.</summary>
 public class ToggleFloatingActionButton : Button
 {
+    public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, object?>(nameof(Icon));
+    public static readonly StyledProperty<IDataTemplate?> IconTemplateProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, IDataTemplate?>(nameof(IconTemplate));
     public static readonly StyledProperty<bool> IsCheckedProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, bool>(nameof(IsChecked));
     public static readonly StyledProperty<FloatingActionButtonSize> SizeProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, FloatingActionButtonSize>(nameof(Size));
     public static readonly StyledProperty<Func<float, Color>?> ContainerColorProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, Color>?>(nameof(ContainerColor));
@@ -33,6 +38,10 @@ public class ToggleFloatingActionButton : Button
     public static readonly DirectProperty<ToggleFloatingActionButton, float> CheckedProgressProperty = AvaloniaProperty.RegisterDirect<ToggleFloatingActionButton, float>(nameof(CheckedProgress), owner => owner.CheckedProgress);
     public static readonly DirectProperty<ToggleFloatingActionButton, double> IconSizeProperty = AvaloniaProperty.RegisterDirect<ToggleFloatingActionButton, double>(nameof(IconSize), owner => owner.IconSize);
     public static readonly DirectProperty<ToggleFloatingActionButton, Color> IconColorProperty = AvaloniaProperty.RegisterDirect<ToggleFloatingActionButton, Color>(nameof(IconColor), owner => owner.IconColor);
+    /// <summary>The icon content shown instead of Content when set.</summary>
+    public object? Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
+    /// <summary>The data template used to create Icon content.</summary>
+    public IDataTemplate? IconTemplate { get => GetValue(IconTemplateProperty); set => SetValue(IconTemplateProperty, value); }
     public bool IsChecked { get => GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }
     public FloatingActionButtonSize Size { get => GetValue(SizeProperty); set => SetValue(SizeProperty, value); }
     public Func<float, Color>? ContainerColor { get => GetValue(ContainerColorProperty); set => SetValue(ContainerColorProperty, value); }
@@ -45,10 +54,12 @@ public class ToggleFloatingActionButton : Button
     /// <summary>Default animateIcon size/color, available for content bindings.</summary>
     public double IconSize => _iconSize;
     public Color IconColor => _iconColor;
+    internal bool HasIcon => Icon is not null || IconTemplate is not null;
     public event EventHandler<FabCheckedChangeRequestedEventArgs>? CheckedChangeRequested;
     private VisualAnimationScope? _scope;
     private Animatable<float>? _progress;
     private ToggleFabLayout? _layout;
+    private ContentPresenter? _iconPresenter;
     private MaterialSurface? _surface;
     private bool _pending;
     internal double InitialSize => ContainerSize?.Invoke(0) ?? Size switch
@@ -61,8 +72,8 @@ public class ToggleFloatingActionButton : Button
 
     public ToggleFloatingActionButton()
     {
-        ResourcesChanged += (_, _) => Refresh();
-        ActualThemeVariantChanged += (_, _) => Refresh();
+        ResourcesChanged += (_, _) => { ApplyIconDefaultSize(); Refresh(); };
+        ActualThemeVariantChanged += (_, _) => { ApplyIconDefaultSize(); Refresh(); };
     }
     protected override void OnClick()
     {
@@ -73,7 +84,9 @@ public class ToggleFloatingActionButton : Button
     {
         EndMotion(); base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<ToggleFabLayout>("PART_Layout");
+        _iconPresenter = e.NameScope.Find<ContentPresenter>("PART_IconPresenter");
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
+        ApplyIconDefaultSize();
         if (this.IsAttachedToVisualTree()) StartMotion();
     }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) { base.OnAttachedToVisualTree(e); StartMotion(); }
@@ -91,6 +104,8 @@ public class ToggleFloatingActionButton : Button
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == IconProperty || change.Property == IconTemplateProperty)
+            _layout?.InvalidateMeasure();
         if (change.Property == IsCheckedProperty)
         {
             PseudoClasses.Set(":checked", IsChecked);
@@ -108,10 +123,22 @@ public class ToggleFloatingActionButton : Button
             }
             else if (_scope is null) SetAndRaise(CheckedProgressProperty, ref _checkedProgress, IsChecked ? 1f : 0f);
         }
+        if (change.Property == SizeProperty) ApplyIconDefaultSize();
         if (change.Property == ContainerSizeProperty || change.Property == ContainerColorProperty || change.Property == ContainerCornerRadiusProperty || change.Property == SizeProperty || change.Property == IsCheckedProperty) Refresh();
     }
     private Color ThemeColor(MaterialTokenKey<Color> key) => TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Color color ? color : default;
     private double ThemeSize(MaterialTokenKey<double> key, double fallback) => TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double size ? size : fallback;
+    private void ApplyIconDefaultSize()
+    {
+        if (_iconPresenter is null) return;
+        var size = Size switch
+        {
+            FloatingActionButtonSize.Medium => ThemeSize(Comp.FabMedium.IconSize, 28),
+            FloatingActionButtonSize.Large => FloatingActionButtonDefaults.LargeIconSize,
+            _ => ThemeSize(Comp.FabBaseline.IconSize, 24)
+        };
+        MaterialIcon.SetDefaultSize(_iconPresenter, size);
+    }
     private void Refresh()
     {
         if (_surface is null) return;
@@ -169,19 +196,36 @@ public static class ToggleFloatingActionButtonDefaults
 
 // Toggle's layout modifier centers the naturally measured content using integer
 // division, rather than Box's rounded Alignment.Center or fractional DIP placement.
-internal sealed class ToggleFabContentLayout : Decorator
+internal sealed class ToggleFabContentLayout : Panel
 {
+    private bool _hasIcon;
+    private ToggleFloatingActionButton? Owner => this.FindAncestorOfType<ToggleFloatingActionButton>();
+
+    protected override Size MeasureOverride(Size available)
+    {
+        if (Children.Count != 2) return default;
+        _hasIcon = Owner?.HasIcon == true;
+        var icon = Children[0];
+        var content = Children[1];
+        icon.IsVisible = _hasIcon;
+        content.IsVisible = !_hasIcon;
+        var active = _hasIcon ? icon : content;
+        active.Measure(available);
+        return active.DesiredSize;
+    }
+
     protected override Size ArrangeOverride(Size final)
     {
-        if (Child is null) return final;
+        if (Children.Count != 2) return final;
+        var child = _hasIcon ? Children[0] : Children[1];
         var density = Avalonia.Layout.LayoutHelper.GetLayoutScale(this);
-        var size = Child.DesiredSize;
+        var size = child.DesiredSize;
         var remainingX = MathUtils.DipToPx(final.Width - size.Width, density);
         var remainingY = MathUtils.DipToPx(final.Height - size.Height, density);
         var x = remainingX / 2;
         // place() is absolute upstream. Compensate Avalonia's subtree mirroring.
         if (FlowDirection == FlowDirection.RightToLeft) x = remainingX - x;
-        Child.Arrange(new Rect(x / density, (remainingY / 2) / density, size.Width, size.Height));
+        child.Arrange(new Rect(x / density, (remainingY / 2) / density, size.Width, size.Height));
         return final;
     }
 }

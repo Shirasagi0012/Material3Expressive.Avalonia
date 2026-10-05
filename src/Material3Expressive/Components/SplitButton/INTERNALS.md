@@ -14,7 +14,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | 上游职责 / 关键符号 | 本地职责 |
 | --- | --- |
 | `SplitButtonLayout` | [SplitButton.cs](SplitButton.cs) 与 [SplitButtonLayout.cs](SplitButtonLayout.cs) |
-| `SplitButtonDefaults.LeadingButton` / `TrailingButton`、shapes/contentPadding/iconSize helpers | [SplitButton.axaml](SplitButton.axaml)、[SplitButtonTokenSource.cs](SplitButtonTokenSource.cs) |
+| `SplitButtonDefaults.LeadingButton` / `TrailingButton`、shapes/contentPadding/iconSize helpers | [SplitButton.axaml](SplitButton.axaml)、[SplitButtonTokenSource.cs](SplitButtonTokenSource.cs)、共享 [ButtonContentRow](../Button/ButtonContentRow.cs) |
 | `HorizontalCenterOptically.kt` | [SplitButtonOpticalLayout.cs](SplitButtonOpticalLayout.cs) |
 | checked/pressed shape 与 border 动画 | 共享 Surface、[ButtonSurfaceState](../ToggleButton/ButtonSurfaceState.cs)、[AnimatedButtonBorder](../ToggleButton/AnimatedButtonBorder.cs) |
 | Button 颜色/elevation 默认值 | [Button.cs](../Button/Button.cs) 及四组子主题 |
@@ -30,6 +30,12 @@ Spacing 按物理像素舍入；RTL 由逻辑布局镜像。极窄约束下保�
 尺寸 Token 虽为 32/40/56/96/136，Leading/Trailing helper 的 defaultMinSize 仍保留 Small 的 40 DIP。
 SplitButtonMinimumHeightConverter 保留这层 max 关系，因此默认 XS 背景高 40，子按钮最小宽 48。
 父级整体承担 48 DIP 最小交互布局空间，子按钮不重复加入；所有档标签仍用 LabelLarge。
+
+Leading 与 Trailing 模板均消费原生 Button/ToggleButton 上的 `MaterialButton.Icon` / `IconTemplate`；
+非空 Icon 或 Template 都激活图标槽，未设置时沿用 `Content` 路径。Leading 图标提示尺寸跟随 Button 为
+20/20/24/32/40 DIP，Trailing 为 22/22/26/38/50 DIP；XS 间距使用上游 `iconSpacingFor` 的 4 DIP，
+其他档位复用 Button 间距 Token。图标-only 时不加入标签间距。Leading 保留原外层 Decorator Padding，
+Trailing 保留 SplitButtonOpticalLayout 的 Padding 与光学校正；附加图标不会改变两个默认 Padding 表。
 
 Leading 外侧全圆、内侧小角，Trailing 镜像；按压改变内侧角，选中 Trailing 用 CircleShape。
 形状使用 DefaultEffects；配置改变保留当前上游动画状态，spring 改变才重建，
@@ -49,7 +55,9 @@ Leading 外侧全圆、内侧小角，Trailing 镜像；按压改变内侧角，
 这样父级只承担布局，实际子按钮保留原生命令、事件、焦点、绑定、Flyout 和自动化，不建立转发层。
 尾部 ToggleButton 的即时状态、nullable/三态、Enter 按下等接受范围见
 [ToggleButton 的确认记录](../ToggleButton/INTERNALS.md#已确认的组件选择)。
-颜色/elevation 和反馈复用既有 Button/Surface 能力，不代表独立 ToggleButton 外观附加属性在 Split 主题有效。
+颜色/elevation 和反馈复用既有 Button/Surface 能力。Split 主题新增消费共享图标附加槽；尾部
+`ToggleButtonAppearance.Icon` / `IconTemplate` 是 `MaterialButton` 属性的兼容别名，仍解析到同一属性 identity。
+`ToggleButtonAppearance.Colors` 和 `CheckedCornerRadius` 不属于 Split 子主题的配置入口。
 
 共享描边的像素 ceil、内缩及非对称算法由
 [Surface 圆角描边](../../../../docs/DECISIONS.md#surface-圆角描边)维护；

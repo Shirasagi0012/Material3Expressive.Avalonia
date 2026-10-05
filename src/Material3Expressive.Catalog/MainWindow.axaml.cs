@@ -107,7 +107,7 @@ public partial class MainWindow : Window
         chip.SetCurrentValue(SelectableChip.IsSelectedProperty, !chip.IsSelected);
         // Application-owned selection can add/remove the icon; the chip animates its visibility.
         chip.LeadingIcon = chip.IsSelected ? new Material3Expressive.Foundation.Rendering.MaterialSymbol
-            { Symbol = MaterialSymbols.MaterialSymbolCodepoint.Check, Width = 18, Height = 18 } : null;
+            { Symbol = MaterialSymbols.MaterialSymbolCodepoint.Check } : null;
     }
 
     private void OnCardClick(object? sender, RoutedEventArgs e)

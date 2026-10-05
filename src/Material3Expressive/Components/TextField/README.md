@@ -75,22 +75,45 @@
 `*Template`。附加 `Placeholder` 非 null 时优先于原生 `PlaceholderText`。
 复杂标签内容请显式设置 `AutomationProperties.Name`。
 
-前后图标使用原生 `InnerLeftContent` / `InnerRightContent`，在 Material 布局中分别是逻辑
-leading / trailing，会跟随 RTL。交互内容可使用 `IconButton`，命令与可聚焦性由应用决定：
+前后图标使用 `MaterialTextField.LeadingIcon` / `TrailingIcon`，在 Material 布局中分别是逻辑
+leading / trailing，会跟随 RTL。图标默认尺寸为 24 DIP，两个槽仍保留各自的 48 DIP 交互空间。
+交互内容可使用 `IconButton`，命令与可聚焦性由应用决定：
 
 ```xml
-<TextBox m3:MaterialTextField.Label="搜索" PlaceholderText="输入关键词">
-    <TextBox.InnerLeftContent>
-        <m3:MaterialSymbol Symbol="Search" Width="24" Height="24" />
-    </TextBox.InnerLeftContent>
-    <TextBox.InnerRightContent>
-        <m3:IconButton Symbol="Close" Command="{Binding ClearSearchCommand}"
-                       AutomationProperties.Name="清空搜索" />
-    </TextBox.InnerRightContent>
+<TextBox m3:MaterialTextField.Label="搜索" PlaceholderText="输入关键词"
+         m3:MaterialTextField.LeadingIcon="{m3:Symbol Search}">
+  <m3:MaterialTextField.TrailingIcon>
+    <m3:IconButton Symbol="Close" Command="{Binding ClearSearchCommand}"
+                   AutomationProperties.Name="清空搜索" />
+  </m3:MaterialTextField.TrailingIcon>
 </TextBox>
 ```
 
-此例假设 DataContext 提供 `ClearSearchCommand`，且命令清空相应 `Text` 绑定。
+`LeadingIconTemplate` / `TrailingIconTemplate` 可按图标数据创建内容。显式模板即使图标值为 null
+也会显示模板生成的图形；例如，模板本身可绘制固定的矢量图标：
+
+```xml
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <StackPanel.Resources>
+    <DataTemplate x:Key="CustomGlyphTemplate">
+      <Path Width="24" Height="24" Data="M 3,3 L 21,21"
+            Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}"
+            StrokeThickness="2" />
+    </DataTemplate>
+  </StackPanel.Resources>
+  <TextBox m3:MaterialTextField.LeadingIcon="{x:Null}"
+           m3:MaterialTextField.LeadingIconTemplate="{StaticResource CustomGlyphTemplate}" />
+</StackPanel>
+```
+
+`DataTemplate` 可使用 `Path` 等绘制自定义图形，
+并从内容环境继承前景色。`MaterialSymbol` 图标可省略宽高并使用 `{m3:Symbol Search}`。
+为兼容原生入口，当对应槽的 `Icon` 和 `IconTemplate` 都为 null 时，会继续使用 `TextBox.InnerLeftContent` /
+`InnerRightContent`；任一非 null 时使用 Material 图标槽。此例假设 DataContext 提供 `ClearSearchCommand`，
+且命令清空相应 `Text` 绑定。
+
 完整事件处理示例见 [Catalog](../../../Material3Expressive.Catalog/TextFieldDemo.axaml)。
 单独放入图标不会增加 SearchBar 的展开、建议列表或 IME 搜索动作流程。
 

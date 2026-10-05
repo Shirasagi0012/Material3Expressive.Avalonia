@@ -46,7 +46,16 @@
         <ControlTemplate>
           <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" ContainerMinWidth="48" MinimumInteractiveSize="0" ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.ContainerHeight}}">
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" m3:ButtonSurfaceState.ResetOnShapeChange="False" m3:ButtonSurfaceState.CheckedCornerRadius="{x:Null}" m3:ButtonSurfaceState.CheckedOverlayOpacity="0" m3:ButtonSurfaceState.IsChecked="False">
-              <Decorator Padding="{TemplateBinding Padding}"><m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" /></Decorator>
+              <Decorator Padding="{TemplateBinding Padding}">
+                <m3:ButtonContentRow x:Name="PART_ContentRow" FillContentWhenNoIcon="True"
+                                     IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}"
+                                     IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
+                  <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                  <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                    m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
+                </m3:ButtonContentRow>
+              </Decorator>
             </m3:MaterialSurface>
           </m3:ButtonLayout>
         </ControlTemplate>
@@ -74,6 +83,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.xsmall /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ExtraSmallIconSpacing}}" />
+      </Style>
+      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
       <Style Selector="^.medium">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonMedium.LeadingPadding}}" />
         <Setter Property="CornerRadius">
@@ -97,6 +111,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.medium /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
       <Style Selector="^.large">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonLarge.LeadingPadding}}" />
         <Setter Property="CornerRadius">
@@ -120,6 +139,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.large /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
       <Style Selector="^.xlarge">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonXLarge.LeadingPadding}}" />
         <Setter Property="CornerRadius">
@@ -143,6 +167,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.xlarge /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" /></Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialFilledSplitButtonLeadingTheme" TargetType="Button" BasedOn="{StaticResource MaterialSplitButtonLeadingBaseTheme}">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerColor}}" />
@@ -234,7 +263,16 @@
         <ControlTemplate>
           <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" ContainerMinWidth="48" MinimumInteractiveSize="0" ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.ContainerHeight}}">
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" m3:ButtonSurfaceState.ResetOnShapeChange="False" m3:ButtonSurfaceState.CheckedCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Full}}" m3:ButtonSurfaceState.CheckedOverlayOpacity="{m3:Token {x:Static m3:MaterialTokens+Sys+State.PressedStateLayerOpacity}}" m3:ButtonSurfaceState.IsChecked="False">
-              <m3:SplitButtonOpticalLayout Padding="{TemplateBinding Padding}"><m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" /></m3:SplitButtonOpticalLayout>
+            <m3:SplitButtonOpticalLayout Padding="{TemplateBinding Padding}">
+              <m3:ButtonContentRow x:Name="PART_ContentRow" FillContentWhenNoIcon="True"
+                                   IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.TrailingIconSize}}"
+                                   IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
+                <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}"
+                                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                  m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.TrailingIconSize}}" />
+              </m3:ButtonContentRow>
+            </m3:SplitButtonOpticalLayout>
             </m3:MaterialSurface>
           </m3:ButtonLayout>
         </ControlTemplate>
@@ -265,6 +303,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.xsmall /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonXSmall.TrailingIconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ExtraSmallIconSpacing}}" />
+      </Style>
+      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonXSmall.TrailingIconSize}}" /></Style>
       <Style Selector="^.medium">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonMedium.TrailingPadding}}" />
         <Setter Property="CornerRadius">
@@ -288,6 +331,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.medium /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonMedium.TrailingIconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonMedium.TrailingIconSize}}" /></Style>
       <Style Selector="^.large">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonLarge.TrailingPadding}}" />
         <Setter Property="CornerRadius">
@@ -311,6 +359,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.large /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonLarge.TrailingIconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonLarge.TrailingIconSize}}" /></Style>
       <Style Selector="^.xlarge">
         <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonXLarge.TrailingPadding}}" />
         <Setter Property="CornerRadius">
@@ -334,6 +387,11 @@
           </MultiBinding>
         </Setter>
       </Style>
+      <Style Selector="^.xlarge /template/ m3|ButtonContentRow">
+        <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonXLarge.TrailingIconSize}}" />
+        <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconLabelSpace}}" />
+      </Style>
+      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonXLarge.TrailingIconSize}}" /></Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialFilledSplitButtonTrailingTheme" TargetType="Button" BasedOn="{StaticResource MaterialSplitButtonTrailingBaseTheme}">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerColor}}" />

@@ -14,12 +14,18 @@
              xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <m3:SplitButton>
     <m3:SplitButton.LeadingButton>
-      <Button Content="保存" Theme="{StaticResource MaterialFilledSplitButtonLeadingTheme}" />
+      <Button Content="保存" Theme="{StaticResource MaterialFilledSplitButtonLeadingTheme}">
+        <m3:MaterialButton.Icon>
+          <m3:MaterialSymbol Symbol="Save" />
+        </m3:MaterialButton.Icon>
+      </Button>
     </m3:SplitButton.LeadingButton>
     <m3:SplitButton.TrailingButton>
       <ToggleButton Theme="{StaticResource MaterialFilledSplitButtonTrailingTheme}"
                     AutomationProperties.Name="更多保存选项">
-        <m3:MaterialSymbol Symbol="ArrowDropDown" Width="22" Height="22" />
+        <m3:MaterialButton.Icon>
+          <m3:MaterialSymbol Symbol="ArrowDropDown" />
+        </m3:MaterialButton.Icon>
       </ToggleButton>
     </m3:SplitButton.TrailingButton>
   </m3:SplitButton>
@@ -69,13 +75,16 @@ XS 虽然尺寸 Token 为 32，固定上游 helper 内部仍保留 40 DIP 最小
 子按钮默认最小宽 48 DIP，父级整体预留至少 48 DIP 交互布局空间，不给两个子区分别额外加留白。
 所有尺寸标签默认 LabelLarge。`Spacing` 默认 2 DIP，RTL 会镜像两槽。
 
-主副区都使用原生 `Content`/`ContentTemplate`；副区图标尺寸由调用方设置，XS/S/M/L/XL 参考值为
-22/22/26/38/50 DIP。`ToggleButtonAppearance.Icon`、`Colors`、`CheckedCornerRadius` 属于独立 ToggleButton 主题，
-Split 子主题不消费这些配置；这里通过 `Content`、`Background`/`Foreground` 或 Split 相关 Token 定制。
+主副区都使用原生 `Content`/`ContentTemplate`，并消费共享的 `MaterialButton.Icon` / `IconTemplate`。
+有图标时进入对应图标槽，未设置图标时沿用普通内容路径。Leading 尺寸为 20/20/24/32/40 DIP，
+Trailing 为 22/22/26/38/50 DIP（XS/S/M/L/XL）；XS 标签间距为 4 DIP，其余跟随相应 Button Token。
+模板-only 也会占用图标槽，Icon-only 不会插入标签间距；默认 Padding 不随图标状态变化。
+旧 `ToggleButtonAppearance.Icon` / `IconTemplate` 是同一附加属性 identity 的兼容别名，也能用于尾部 ToggleButton；
+`ToggleButtonAppearance.Colors` 与 `CheckedCornerRadius` 仍属于独立 ToggleButton 主题，Split 子主题不消费这些配置。
+颜色、描边、`Padding` 可使用原生属性或 [Token 覆盖](../../../../docs/GETTING_STARTED.md)。
 
 静止圆角用 `CornerRadius`，按压目标用 `MaterialButton.PressedCornerRadius`；默认主区外侧全圆、内侧小角，
 副区镜像。可切换副区选中后变为圆形，并显示 contentColor×0.10 覆盖层，禁用时该选中层仍存在。
-颜色、描边、`Padding` 可使用原生属性或[Token 覆盖](../../../../docs/GETTING_STARTED.md)。
 
 ## 使用边界
 

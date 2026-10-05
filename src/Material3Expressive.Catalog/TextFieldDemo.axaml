@@ -2,6 +2,13 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         x:Class="Material3Expressive.Catalog.TextFieldDemo"
         Title="Material TextField" Width="780" Height="740" RequestedThemeVariant="Light">
+  <Window.Resources>
+    <DataTemplate x:Key="CustomGlyphTemplate">
+      <Path Width="24" Height="24" Data="M 3,3 L 21,21"
+            Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}"
+            StrokeThickness="2" />
+    </DataTemplate>
+  </Window.Resources>
   <ScrollViewer>
     <StackPanel Margin="32" Spacing="24">
       <TextBlock Text="TextField" FontSize="24" />
@@ -24,10 +31,12 @@
         <TextBox Grid.Row="4" Grid.Column="1" Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Read-only" IsReadOnly="True" Text="Select and copy this text" />
       </Grid>
       <TextBox Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Search" PlaceholderText="Type here, then click clear"
-               Name="SearchInput" MinWidth="0">
-        <TextBox.InnerLeftContent><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></TextBox.InnerLeftContent>
-        <TextBox.InnerRightContent><m3:IconButton Symbol="Close" Focusable="False" Click="ClearSearch" /></TextBox.InnerRightContent>
+               Name="SearchInput" MinWidth="0" m3:MaterialTextField.LeadingIcon="{m3:Symbol Search}">
+        <m3:MaterialTextField.TrailingIcon><m3:IconButton Symbol="Close" Focusable="False" Click="ClearSearch" /></m3:MaterialTextField.TrailingIcon>
       </TextBox>
+      <TextBox Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="Custom graphic"
+               m3:MaterialTextField.LeadingIcon="{x:Null}"
+               m3:MaterialTextField.LeadingIconTemplate="{StaticResource CustomGlyphTemplate}" />
       <StackPanel Orientation="Horizontal" Spacing="12">
         <Button Content="Toggle light / dark" Click="ToggleTheme" />
         <Button Content="Toggle RTL" Click="ToggleDirection" />

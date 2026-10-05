@@ -40,8 +40,9 @@
                 <Panel x:Name="PART_MovingKnobs" Background="Transparent">
                   <Ellipse x:Name="PART_ThumbBackground" IsHitTestVisible="False" />
                   <ContentPresenter x:Name="PART_ThumbContentPresenter"
-                        Content="{TemplateBinding m3:SwitchAppearance.ThumbContent}"
-                        ContentTemplate="{TemplateBinding m3:SwitchAppearance.ThumbContentTemplate}"
+                        Content="{TemplateBinding m3:SwitchAppearance.ThumbIcon}"
+                        ContentTemplate="{TemplateBinding m3:SwitchAppearance.ThumbIconTemplate}"
+                        m3:MaterialIcon.DefaultSize="16"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
                   <m3:MaterialSurface x:Name="PART_ThumbSurface" Background="Transparent" CornerRadius="0"
                                       StateLayerBrush="{TemplateBinding Foreground}" />

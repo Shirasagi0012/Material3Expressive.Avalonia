@@ -10,13 +10,22 @@ namespace Material3Expressive.Foundation.Rendering;
 /// </summary>
 /// <remarks>
 /// The control, the variable-font render stack and the axis-resolution behaviour all live in the
-/// MaterialSymbols.Avalonia module; this subclass only changes the <see cref="Style"/> default to
-/// <see cref="IconStyle.Rounded"/>. The Rounded family still has to be registered — call
+/// MaterialSymbols.Avalonia module; this subclass uses the slot's <see cref="MaterialIcon.DefaultSizeProperty"/>
+/// for measurement and defaults to <see cref="IconStyle.Rounded"/>. The Rounded family still has to be registered — call
 /// <c>UseRoundedSymbols()</c> on the <c>AppBuilder</c> during application setup.
 /// </remarks>
 public class MaterialSymbol : MaterialSymbols.Avalonia.MaterialSymbol
 {
-    static MaterialSymbol() =>
+    static MaterialSymbol()
+    {
         StyleProperty.OverrideMetadata<MaterialSymbol>(
             new StyledPropertyMetadata<IconStyle>(IconStyle.Rounded));
+        AffectsMeasure<MaterialSymbol>(MaterialIcon.DefaultSizeProperty);
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var side = Math.Min(Math.Min(availableSize.Width, availableSize.Height), MaterialIcon.GetDefaultSize(this));
+        return new Size(side, side);
+    }
 }

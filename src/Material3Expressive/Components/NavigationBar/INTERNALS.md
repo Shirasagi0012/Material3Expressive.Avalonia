@@ -33,6 +33,8 @@ RowColumnMeasurePolicy 与 Arrangement.SpacedAligned。
   胶囊尺寸由实际 icon 尺寸加 Token padding 推导；纯图标项也使用 32 DIP 指示器高度。
   指示器选择动画从中心扩展。选中态标签与 icon 的组合居中，最少保留 4 DIP 垂直 padding；
   selected-only 标签随 icon 移动并淡入，尺寸进度为零时不绘制。
+- Icon presenter 将 NavigationBar.IconSize Token 24 DIP 作为 MaterialIcon.DefaultSize 传给无显式尺寸的
+  MaterialSymbol；显式尺寸和自定义图标布局不受槽约束。
 - icon/text 颜色与指示器 alpha 使用 DefaultEffects，尺寸使用 FastSpatial；保留 spring 过冲。
   使用 ComposeAnimation、下一帧目标提交、取消旧 AnimateAsState 任务后清零速度的重启动作。
   detach 和模板替换释放作用域，重挂载按当前选中/禁用状态初始化。

@@ -19,9 +19,9 @@
           <m3:TextFieldLayout Name="PART_Decoration" Background="Transparent" ContainerBrush="{TemplateBinding Background}" IndicatorBrush="{TemplateBinding BorderBrush}"
                              LargeTextStyle="{m3:Typography BodyLarge}" SmallTextStyle="{m3:Typography BodySmall}">
             <m3:TextFieldDecoration Name="Decoration" IsHitTestVisible="False" />
-            <ContentPresenter Name="Leading" Content="{TemplateBinding InnerLeftContent}" MinWidth="48" MinHeight="48"
+            <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
-            <ContentPresenter Name="Trailing" Content="{TemplateBinding InnerRightContent}" MinWidth="48" MinHeight="48"
+            <m3:TextFieldIconPresenter Name="Trailing" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
             <ContentPresenter Name="Prefix" Content="{TemplateBinding m3:MaterialTextField.Prefix}" ContentTemplate="{TemplateBinding m3:MaterialTextField.PrefixTemplate}"
                               MinHeight="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />

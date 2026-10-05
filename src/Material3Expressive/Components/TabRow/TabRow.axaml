@@ -83,7 +83,8 @@
                 SelectedContentColor="{TemplateBinding SelectedContentColor}" UnselectedContentColor="{TemplateBinding UnselectedContentColor}">
               <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                   />
-              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" />
+              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
+                                m3:MaterialIcon.DefaultSize="24" />
             </m3:TabHeader>
           </m3:MaterialSurface>
         </ControlTemplate>
@@ -106,7 +107,8 @@
                 SelectedContentColor="{TemplateBinding m3:TabAppearance.SelectedContentColor}" UnselectedContentColor="{TemplateBinding m3:TabAppearance.UnselectedContentColor}">
               <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"
                   />
-              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" />
+              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
+                                m3:MaterialIcon.DefaultSize="24" />
             </m3:TabHeader>
           </m3:MaterialSurface>
         </ControlTemplate>

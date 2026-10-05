@@ -42,7 +42,8 @@
                       CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{TemplateBinding TonalElevation}">
                     <m3:AlertDialogColumn Margin="24">
                       <ContentPresenter x:Name="PART_Icon" IsVisible="False" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
-                          Foreground="{TemplateBinding IconForeground}" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                          Foreground="{TemplateBinding IconForeground}" HorizontalAlignment="Center" Margin="0,0,0,16"
+                          m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.IconSize}}" />
                       <ContentPresenter x:Name="PART_Title" IsVisible="False" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}"
                           Foreground="{TemplateBinding TitleForeground}" HorizontalAlignment="Left" Margin="0,0,0,16"
                           m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.HeadlineFont}}" TextWrapping="Wrap" />

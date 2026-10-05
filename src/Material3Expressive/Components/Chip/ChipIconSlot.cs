@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
@@ -29,6 +30,8 @@ internal sealed class ChipIconSlot : Decorator
     private bool _visibilityTarget;
     private bool _loopStarted;
     private ContentPresenter? Presenter => (Child as Border)?.Child as ContentPresenter;
+    private bool RequestedPresent => _requested is not null || _requestedTemplate is not null;
+    private IDataTemplate? _requestedTemplate;
     public ChipIconSlot() { ClipToBounds = true; }
     internal void Initialize(VisualAnimationScope parent) => _motion = parent.CreateChild("Chip icon visibility");
     internal void Stop()
@@ -37,7 +40,8 @@ internal sealed class ChipIconSlot : Decorator
         _width = null; _pending = false; _initialized = false;
         // The icon is a caller-owned Control. Release it from the retired presenter before a
         // replacement template hosts that same object (logical and visual parents included).
-        if (Presenter is { } presenter) { presenter.Content = null; presenter.UpdateChild(); }
+        if (Presenter is { } presenter)
+        { presenter.Content = null; presenter.ContentTemplate = null; presenter.UpdateChild(); }
     }
 
     private SpringSpec<float> SizeSpec(TransitionSegment<EnterExitState> segment)
@@ -68,9 +72,10 @@ internal sealed class ChipIconSlot : Decorator
         void Finished(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
         {
             if (args.PropertyName == nameof(Transition.IsRunning) && !transition.IsRunning
-                && transition.TargetState == EnterExitState.PostExit && _requested is null)
+                && transition.TargetState == EnterExitState.PostExit && !RequestedPresent)
             {
-                if (Presenter is { } presenter) presenter.Content = null;
+                if (Presenter is { } presenter)
+                { presenter.Content = null; presenter.ContentTemplate = null; presenter.UpdateChild(); }
                 _transitionPresent = false; InvalidateMeasure();
             }
         }
@@ -90,15 +95,18 @@ internal sealed class ChipIconSlot : Decorator
     {
         _owner = owner; _animate = animate;
         if (Presenter is not { } presenter || Child is not Border border) return;
-        var wasVisible = _requested is not null;
+        var wasVisible = RequestedPresent;
         var previousWidth = _fullWidth;
-        var changed = wasVisible != (content is not null);
+        var requestedPresent = content is not null || template is not null;
+        var changed = wasVisible != requestedPresent;
         _requested = content;
-        if (content is not null || !animate || !_initialized)
+        _requestedTemplate = template;
+        if (requestedPresent || !animate || !_initialized)
         {
             presenter.Content = content; presenter.ContentTemplate = template;
             presenter.UpdateChild();
             presenter.InvalidateMeasure(); border.InvalidateMeasure();
+            MaterialIcon.SetDefaultSize(presenter, avatar ? 24 : owner.Resolve(Comp.Chip.IconSize));
             border.Measure(Size.Infinity);
             _fullWidth = MathUtils.DipToPx(border.DesiredSize.Width, LayoutHelper.GetLayoutScale(this));
             // Retain the provider and avatar wrapper as well as the content on exit.
@@ -110,9 +118,9 @@ internal sealed class ChipIconSlot : Decorator
         if (!_initialized || !animate || _motion is null)
         {
             _initialized = true;
-            _transitionPresent = _visibilityTarget = content is not null;
-            Opacity = content is null ? 0 : 1;
-            CreateTransition(content is null ? EnterExitState.PreEnter : EnterExitState.Visible);
+            _transitionPresent = _visibilityTarget = requestedPresent;
+            Opacity = requestedPresent ? 1 : 0;
+            CreateTransition(requestedPresent ? EnterExitState.Visible : EnterExitState.PreEnter);
             InvalidateMeasure();
         }
         else if (changed) QueueVisibility();
@@ -139,7 +147,7 @@ internal sealed class ChipIconSlot : Decorator
                     if (!_transitionPresent) CreateTransition(EnterExitState.PreEnter);
                 }
                 _transitionPresent = true; _pending = false;
-                var visible = _requested is not null;
+                var visible = RequestedPresent;
                 if (visible == _visibilityTarget)
                     CreateTransition(visible ? EnterExitState.Visible : EnterExitState.PostExit);
                 else
@@ -166,7 +174,7 @@ internal sealed class ChipIconSlot : Decorator
         var size = Child?.DesiredSize ?? default;
         var scale = LayoutHelper.GetLayoutScale(this);
         var width = _animate && _width is not null ? Math.Max(0, _width.Value) / scale
-            : _requested is null ? 0 : size.Width;
+            : !RequestedPresent ? 0 : size.Width;
         return new Size(width, size.Height);
     }
     protected override Size ArrangeOverride(Size finalSize)

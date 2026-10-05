@@ -119,7 +119,7 @@ internal sealed partial class TextFieldLayout : Panel
 
     private void SlotChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == ContentPresenter.ContentProperty) UpdateSlots();
+        if (e.Property == ContentPresenter.ContentProperty || e.Property == ContentPresenter.ContentTemplateProperty) UpdateSlots();
     }
 
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -156,6 +156,16 @@ internal sealed partial class TextFieldLayout : Panel
     {
         if (_owner == null || _label == null) return;
         _label.IsVisible = HasLabel;
+        var leadingIcon = MaterialTextField.GetLeadingIcon(_owner);
+        var leadingIconTemplate = MaterialTextField.GetLeadingIconTemplate(_owner);
+        var useLeadingIcon = leadingIcon is not null || leadingIconTemplate is not null;
+        _leading.Content = useLeadingIcon ? leadingIcon : _owner.InnerLeftContent;
+        _leading.ContentTemplate = useLeadingIcon ? leadingIconTemplate : null;
+        var trailingIcon = MaterialTextField.GetTrailingIcon(_owner);
+        var trailingIconTemplate = MaterialTextField.GetTrailingIconTemplate(_owner);
+        var useTrailingIcon = trailingIcon is not null || trailingIconTemplate is not null;
+        _trailing.Content = useTrailingIcon ? trailingIcon : _owner.InnerRightContent;
+        _trailing.ContentTemplate = useTrailingIcon ? trailingIconTemplate : null;
         _placeholder.SetCurrentValue(ContentPresenter.ContentProperty, MaterialTextField.GetPlaceholder(_owner) ?? _owner.PlaceholderText);
         // Keep spatial overshoot for placement, but never extrapolate typography or measured size.
         var p = Math.Clamp(LabelProgress, 0f, 1f);
@@ -172,8 +182,8 @@ internal sealed partial class TextFieldLayout : Panel
         };
         MaterialText.SetDefaultStyle(_label, labelStyle);
         _label.Foreground = labelStyle.Foreground;
-        _leading.IsVisible = _leading.Content != null;
-        _trailing.IsVisible = _trailing.Content != null;
+        _leading.IsVisible = _leading.Content != null || _leading.ContentTemplate != null;
+        _trailing.IsVisible = _trailing.Content != null || _trailing.ContentTemplate != null;
         _supporting.IsVisible = _supporting.Content != null;
         var affix = Math.Clamp(_affixAlpha?.Value ?? (Expanded && Phase == 0 ? 0 : 1), 0, 1);
         _prefix.IsVisible = _prefix.Content != null && affix > 0;

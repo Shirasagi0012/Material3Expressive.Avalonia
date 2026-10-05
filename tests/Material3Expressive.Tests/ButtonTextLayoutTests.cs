@@ -62,7 +62,8 @@ public class ButtonTextLayoutTests
         var window = ButtonThemeFixture.ShowWindow(out var button);
         try
         {
-            var presenter = button.GetVisualDescendants().OfType<ContentPresenter>().Single();
+            var presenter = button.GetVisualDescendants().OfType<ContentPresenter>()
+                .Single(part => part.Name == "PART_ContentPresenter");
             var originalLabel = Assert.IsAssignableFrom<TextBlock>(presenter.Child);
             button.Content = "Updated";
             window.UpdateLayout();

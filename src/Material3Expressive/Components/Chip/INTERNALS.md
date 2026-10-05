@@ -26,7 +26,9 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 组合规则。布局按物理像素舍入，leading/trailing 先测量，标签消费剩余约束。
 Selectable 的默认 1000 DIP 最大宽度不吞掉显式 Width/MinWidth；RTL 使用 Avalonia 子树反射。
 
-头像优先于 leading 图标，默认圆形裁剪，禁用只降低头像包装层 opacity，不降低整条内容。
+槽存在性由内容或模板决定，Input 的 AvatarTemplate 单独设置时也优先于 leading 图标；ChipIconSlot 在退出动画完成前保留内容、模板和头像包装，完成后同时清理内容与模板。
+普通图标的 MaterialIcon.DefaultSize 使用 Chip.IconSize Token 18 DIP，头像使用独立的 24 DIP 默认值；这些默认值不限制自定义内容，显式图标尺寸仍优先。
+头像默认圆形裁剪，禁用只降低头像包装层 opacity，不降低整条内容。
 Suggestion 不显示 trailing；其他 trailing 与 Chip 共享动作区域。
 Filter/Input 的 Click、Command、automation Toggle 只发请求，不写 IsSelected。
 自动化身份为 CheckBox，外部 selection 变化发出 ToggleState 通知。

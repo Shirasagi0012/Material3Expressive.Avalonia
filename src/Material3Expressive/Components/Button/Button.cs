@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -277,6 +278,20 @@ public class TonalButtonTokenSource : ITokenSource
 /// <summary>Material options for Avalonia buttons using an interactive MaterialSurface template.</summary>
 public static class MaterialButton
 {
+    /// <summary>The leading icon content for a native Button, ToggleButton, or SplitButton part.</summary>
+    public static readonly AttachedProperty<object?> IconProperty =
+        AvaloniaProperty.RegisterAttached<Button, object?>("Icon", typeof(MaterialButton));
+
+    public static object? GetIcon(Button button) => button.GetValue(IconProperty);
+    public static void SetIcon(Button button, object? value) => button.SetValue(IconProperty, value);
+
+    /// <summary>The data template used to create the leading icon content.</summary>
+    public static readonly AttachedProperty<IDataTemplate?> IconTemplateProperty =
+        AvaloniaProperty.RegisterAttached<Button, IDataTemplate?>("IconTemplate", typeof(MaterialButton));
+
+    public static IDataTemplate? GetIconTemplate(Button button) => button.GetValue(IconTemplateProperty);
+    public static void SetIconTemplate(Button button, IDataTemplate? value) => button.SetValue(IconTemplateProperty, value);
+
     /// <summary>The corners while pressed, or null to retain the button's CornerRadius.</summary>
     public static readonly AttachedProperty<CornerRadius?> PressedCornerRadiusProperty =
         AvaloniaProperty.RegisterAttached<Button, CornerRadius?>("PressedCornerRadius", typeof(MaterialButton));

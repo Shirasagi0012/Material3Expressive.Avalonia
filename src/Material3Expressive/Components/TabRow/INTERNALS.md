@@ -54,6 +54,8 @@ Tab 内容颜色使用 `Transition<bool>`，进入选择使用 DefaultEffects，
 
 标准标签默认 TitleSmall / 居中。TabHeader 读取实际 TextBlock.TextLayout 的首/末基线；
 非文字内容可通过根控件的 TextBlock.BaselineOffset 提供基线。只有标准 Stacked 分支提供 Badge bounds。
+Stacked / Leading 分支把 IconTemplate 也视为图标槽存在，即使内容为 null；Custom 布局仍完全交给调用方。
+TabRow 的 MaterialSymbol 默认尺寸使用通用 24 DIP，显式尺寸和其他自定义内容不受限制。
 Leading 和 Custom 不应意外继承 Stacked 的基线、字体或 BadgeBounds 规则。
 
 Avalonia 没有 Compose intrinsic API，TabHeader 查询真实内容后必须按实际约束重新测量，

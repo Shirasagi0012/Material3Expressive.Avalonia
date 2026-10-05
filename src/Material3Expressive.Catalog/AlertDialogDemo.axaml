@@ -8,8 +8,7 @@
       <Button Content="Open custom basic dialog" Click="OnOpenBasic" Theme="{StaticResource MaterialTonalButtonTheme}" />
       <TextBlock x:Name="Result" Text="Choose an action" />
     </StackPanel>
-    <m3:AlertDialog x:Name="Alert" Title="Delete this record?" DismissRequested="OnDismissRequested">
-      <m3:AlertDialog.Icon><m3:MaterialSymbol Symbol="Delete" Width="24" Height="24" /></m3:AlertDialog.Icon>
+    <m3:AlertDialog x:Name="Alert" Title="Delete this record?" Icon="{m3:Symbol Delete}" DismissRequested="OnDismissRequested">
       <TextBlock Text="The selected record will be removed. You can cancel to keep it." TextWrapping="Wrap" />
       <m3:AlertDialog.ConfirmButton><Button Content="Delete" Click="OnConfirm" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.ConfirmButton>
       <m3:AlertDialog.DismissButton><Button Content="Cancel" Click="OnCancel" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.DismissButton>

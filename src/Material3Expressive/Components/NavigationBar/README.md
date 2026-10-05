@@ -53,8 +53,10 @@
 ## 内容槽与外观
 
 `Icon` / `IconTemplate`、`Label` / `LabelTemplate` 接受控件或数据。
-字符串标签使用 LabelMedium，支持换行；显式内容控件可以覆盖自己的排版。
-图标尺寸由调用方设置，示例使用 24 DIP。整个导航项矩形可交互，反馈只绘制在胶囊内。
+只设置 `IconTemplate` 也会显示图标槽，即使 `Icon` 为 null；模板可针对 null 数据创建内容。
+无显式尺寸的 MaterialSymbol 默认使用 NavigationBar IconSize Token 24 DIP；显式 `Width` / `Height` 优先，
+自定义图标的实际尺寸参与布局，不会被 Bar 限制。字符串标签使用 LabelMedium，支持换行；显式内容控件可以覆盖自己的排版。
+整个导航项矩形可交互，反馈只绘制在胶囊内。
 
 ```xml
 <m3:NavigationBarItem Label="收藏" IsSelected="True"

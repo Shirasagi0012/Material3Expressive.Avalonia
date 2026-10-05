@@ -134,7 +134,7 @@ internal sealed class SwitchThumbLayout : Panel
             if (_owner?.IsEffectivelyEnabled == false) EndDrag();
             InvalidateMeasure();
         }
-        if (e.Property == SwitchAppearance.ThumbContentProperty || e.Property == SwitchAppearance.ThumbContentTemplateProperty)
+        if (e.Property == SwitchAppearance.ThumbIconProperty || e.Property == SwitchAppearance.ThumbIconTemplateProperty)
             InvalidateMeasure();
         if (e.Property != Avalonia.Controls.Primitives.ToggleButton.IsCheckedProperty) return;
         ScheduleThumbUpdate();

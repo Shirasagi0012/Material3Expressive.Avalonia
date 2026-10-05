@@ -44,6 +44,7 @@ ItemsSource 的 ContentPresenter 只 ApplyTemplate，不在每次测量强制重
 Space/Enter 释放激活，失焦/禁用清理待激活键；共享控制器仍只处理反馈。
 有 inactive icon 或相应模板时使用 Crossfade，任意反向段继续用其自身 Spec；两者都没有时使用 AnimatedVisibility
 的 fade+scale（origin 0,1）和 Exit.None。不要把两条动画路径的 fallback 混用。
+仅设置图标模板仍算有槽位；用户图标 presenter 继承 IconSize Token 18 DIP 作为 MaterialSymbol 默认值，显式尺寸和自定义图标布局保持原样。默认 Checkmark 仍由组件原矢量绘制和 Token 定尺寸。
 模板替换/detach 释放动画作用域、帧请求与调用方图标父级；Surface 墨色跟随最终 content 色，包括只覆盖颜色配置一槽。
 
 ## 已确认的组件选择

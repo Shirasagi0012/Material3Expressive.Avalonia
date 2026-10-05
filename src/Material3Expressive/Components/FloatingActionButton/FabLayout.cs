@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Components;
@@ -40,5 +41,33 @@ internal sealed class FabLayout : Decorator, IMinimumInteractiveLayout
         double Center(double outer, double inner) => (MathUtils.RoundToInt((Math.Max(outer, 48) - inner) * scale / 2) + Math.Truncate((outer - Math.Max(outer, 48)) * scale / 2)) / scale;
         Child?.Arrange(new Rect(Center(final.Width, width), Center(final.Height, height), width, height));
         return final;
+    }
+}
+
+// Standard FAB prefers its explicit icon slot and otherwise retains the Button content path.
+internal sealed class FabIconContentLayout : Panel
+{
+    private bool _hasIcon;
+    private FloatingActionButton? Owner => this.FindAncestorOfType<FloatingActionButton>();
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        if (Children.Count != 2) return default;
+        _hasIcon = Owner?.HasIcon == true;
+        var icon = Children[0];
+        var content = Children[1];
+        icon.IsVisible = _hasIcon;
+        content.IsVisible = !_hasIcon;
+        var active = _hasIcon ? icon : content;
+        active.Measure(availableSize);
+        return active.DesiredSize;
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        if (Children.Count != 2) return finalSize;
+        var active = _hasIcon ? Children[0] : Children[1];
+        active.Arrange(new Rect(0, 0, finalSize.Width, finalSize.Height));
+        return finalSize;
     }
 }

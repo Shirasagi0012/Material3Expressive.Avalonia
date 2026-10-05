@@ -1,0 +1,13 @@
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Button Content="Save" m3:MaterialButton.Icon="{m3:Symbol Save}" />
+  <ToggleButton Content="Toggle" m3:MaterialButton.Icon="{m3:Symbol Favorite}" />
+  <ToggleButton Content="Legacy" m3:ToggleButtonAppearance.Icon="{m3:Symbol Home}" />
+  <m3:FloatingActionButton Icon="{m3:Symbol Add}" />
+  <m3:ExtendedFloatingActionButton Content="Create" Icon="{m3:Symbol Edit}" />
+  <m3:ToggleFloatingActionButton Icon="{m3:Symbol Menu}" />
+  <TextBox m3:MaterialTextField.LeadingIcon="{m3:Symbol Search}" m3:MaterialTextField.TrailingIcon="{m3:Symbol Clear}" />
+  <ToggleSwitch m3:SwitchAppearance.ThumbIcon="{m3:Symbol Check}" />
+  <ToggleSwitch m3:SwitchAppearance.ThumbContent="{m3:Symbol Check}" />
+</StackPanel>

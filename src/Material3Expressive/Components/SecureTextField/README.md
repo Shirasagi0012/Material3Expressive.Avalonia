@@ -56,7 +56,8 @@
 释放临时属性值并恢复调用者原来的属性/绑定。
 
 自定义主题也可设置 `m3:MaterialSecureTextField.IsSecure="True"`，但该属性只启用输入与导出限制，
-不会自行选择遮蔽符、显示模式或装饰 Theme。前后图标、Label、Placeholder、Prefix/Suffix、
+不会自行选择遮蔽符、显示模式或装饰 Theme。安全主题使用同一组 `MaterialTextField.LeadingIcon` /
+`TrailingIcon` 及对应模板；两者均为 null 时仍回退到原生内容槽。前后图标、Label、Placeholder、Prefix/Suffix、
 SupportingText、错误与标签位置的用法见 [TextField](../TextField/README.md)。
 
 ## 使用边界

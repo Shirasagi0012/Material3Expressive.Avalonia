@@ -74,11 +74,14 @@
 `ActiveIcon` 与 `ActiveIconTemplate` 均为空时使用默认 Check 向量；
 `InactiveIcon` 与 `InactiveIconTemplate` 均为空时不显示未选中图标。
 `ShowSelectionIcon=false` 关闭图标槽，但标签仍按上游的图标预留与居中规则布局。
+只设置图标模板也会占用对应槽位，即使图标内容为 null；模板可以针对 null 数据生成内容。
+无显式尺寸的 MaterialSymbol 默认使用 SegmentedButton IconSize Token 18 DIP；显式 `Width` / `Height` 优先，
+自定义图标仍由自身内容和布局决定尺寸。
 
 ```xml
 <m3:SegmentedButton Content="列表" IsSelected="True">
   <m3:SegmentedButton.InactiveIcon>
-    <m3:MaterialSymbol Symbol="List" Width="18" Height="18" />
+    <m3:MaterialSymbol Symbol="List" />
   </m3:SegmentedButton.InactiveIcon>
   <m3:SegmentedButton.Colors>
     <m3:SegmentedButtonColors ActiveContainerColor="#126E60" ActiveContentColor="#FFFFFF" />

@@ -17,15 +17,18 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | --- | --- |
 | `ToggleButton`、`FilledTonalToggleButton`、`ElevatedToggleButton`、`OutlinedToggleButton` | [ToggleButton.axaml](ToggleButton.axaml) 四种原生主题 |
 | `ToggleButtonColors`、checked/pressed shapes | [ToggleButtonAppearance.cs](ToggleButtonAppearance.cs)、[ToggleButtonTokenSource.cs](ToggleButtonTokenSource.cs) |
-| `ButtonDefaults.iconSizeFor` / `iconSpacingFor` | [ButtonContentRow.cs](ButtonContentRow.cs)，标签复用 ButtonContentPresenter |
+| `ButtonDefaults.iconSizeFor` / `iconSpacingFor` | [共享 ButtonContentRow](../Button/ButtonContentRow.cs)，标签复用 ButtonContentPresenter |
 | `shapeByInteraction` / `rememberAnimatedShape` | [ButtonSurfaceState.cs](ButtonSurfaceState.cs) 将三形状状态输入共享 MaterialSurface / AnimatedCornerRadius |
 | `animateBorderStrokeAsState` | [AnimatedButtonBorder.cs](AnimatedButtonBorder.cs) 连接共享 SurfaceOutline |
 
 ## 模板与动画不变量
 
 ButtonLayout 的 ContainerMinWidth 为 0，没有普通 Button 的 58 DIP 默认值；五档高度与外层 48 DIP 留白分开。
-Icon 槽使用固定盒，XS 间距按 iconSpacingFor 为 4 DIP，不能使用原始 ButtonXSmall 的 8 DIP。
-标签使用 ButtonContentPresenter，任意图标需自己消费前景色或用 MaterialSymbol。
+`MaterialButton.Icon` / `IconTemplate` 是 ToggleButton 的规范图标入口；旧的
+`ToggleButtonAppearance.Icon` / `IconTemplate` 是同一属性 identity 的兼容别名，注册旧 owner 名称以保留
+旧 XAML/reflection 路径，不维护第二份状态。共享 ButtonContentRow 用固定图标盒，XS 间距按
+iconSpacingFor 为 4 DIP，不能使用原始 ButtonXSmall 的 8 DIP。无图标时 Toggle 保留自然尺寸标签居中；
+这与普通 Button / SplitButton 的完整分配行为不同。标签使用 ButtonContentPresenter，任意图标需自己消费前景色或用 MaterialSymbol。
 颜色转换把实时 Token、可选六槽配置、原生 IsChecked/IsEffectivelyEnabled 组合为背景/内容色；
 null 按未选中，禁用忽略选中状态。原生局部值/绑定仍优先。
 

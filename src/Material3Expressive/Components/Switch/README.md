@@ -46,27 +46,31 @@ Enter 按下激活，`Space` 默认松开激活。
 `OnContent` / `OffContent` 默认 null，显式设置后显示当前状态标签，也有对应 `Template`。
 默认内容间距 8 DIP，`Padding` 控制外部内容留白，支持 RTL 和 access key。
 
-`SwitchAppearance.ThumbContent` / `ThumbContentTemplate` 是拇指内部槽，模板数据来自 `ThumbContent`：
+`SwitchAppearance.ThumbIcon` / `ThumbIconTemplate` 是拇指内部槽，模板数据来自 `ThumbIcon`：
 
 ```xml
-<ToggleSwitch Content="已连接" IsChecked="True">
-  <m3:SwitchAppearance.ThumbContent>
-    <m3:MaterialSymbol Symbol="Check" Width="16" Height="16" />
-  </m3:SwitchAppearance.ThumbContent>
-</ToggleSwitch>
+<ToggleSwitch Content="已连接" IsChecked="True"
+              m3:SwitchAppearance.ThumbIcon="{m3:Symbol Check}" />
 ```
 
-`MaterialSymbol` 和文字继承当前 iconColor。自定义 Path 可绑定同一内容环境：
+`MaterialSymbol` 和文字继承当前 iconColor。拇指槽的 `MaterialIcon.DefaultSize` 提示值为 16 DIP；
+它只决定支持该上下文的图标默认尺寸，不固定拇指背景尺寸。测量仍按内容的实际 `DesiredSize`
+判断是否有内容：有非零宽高时拇指目标为 24 DIP；空模板保持零尺寸时仍按无内容处理。
+自定义 Path 可绑定同一内容环境：
 
 ```xml
 <ToggleSwitch>
-  <m3:SwitchAppearance.ThumbContent>
+  <m3:SwitchAppearance.ThumbIcon>
     <Path Width="16" Height="16" Data="M 3,8 L 7,12 L 13,4"
           Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}"
           StrokeThickness="2" />
-  </m3:SwitchAppearance.ThumbContent>
+  </m3:SwitchAppearance.ThumbIcon>
 </ToggleSwitch>
 ```
+
+旧 `ThumbContent` / `ThumbContentTemplate` 字段及其 C# getter/setter 保留为同一 Avalonia 属性的别名，
+普通 XAML 赋值仍可走原 setter。注册属性的规范名称现在是 `ThumbIcon` / `ThumbIconTemplate`；
+按属性名解析的反射绑定旧路径（如 `(m3:SwitchAppearance.ThumbContent)`）需要迁移到新名称。
 
 默认轨道为 52×32 DIP，外部布局槽 52×48 DIP；拇指未选中且无有效 intrinsic 内容时为 16 DIP，
 选中或有内容时为 24 DIP，按压为 28 DIP。自动尺寸的内容接受布局约束，显式 `Width`/`Height` 可溢出；

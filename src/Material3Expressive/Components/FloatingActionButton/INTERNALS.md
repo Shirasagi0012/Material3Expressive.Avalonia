@@ -11,6 +11,7 @@ Material3 前缀为 `compose/material3/material3/src/commonMain/kotlin/androidx/
 | 上游文件 / 符号 | 本地入口与职责 |
 | --- | --- |
 | [FloatingActionButton.kt](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt)：四尺寸 FAB / Extended FAB、`FloatingActionButtonDefaults` | [FloatingActionButton.cs](FloatingActionButton.cs)、[主题](FloatingActionButton.axaml)、[FabLayout](FabLayout.cs)与[ExtendedFabLayout](ExtendedFabLayout.cs) |
+| FAB icon/content overloads | 基类 `FloatingActionButton.Icon` / `IconTemplate`；标准 FAB 在两者存在时用图标槽，否则保留原 Content 路径。Extended FAB 继承同一属性和状态 |
 | `FloatingActionButtonMenu.kt`：`FloatingActionButtonMenu` / `FloatingActionButtonMenuItem` / `ToggleFloatingActionButton` | [菜单及条目布局](FloatingActionButtonMenu.cs)、[ToggleFloatingActionButton](ToggleFloatingActionButton.cs) |
 | FAB / ExtendedFab / FabMenuBaseline 相关 tokens | [FloatingActionButtonTokenSource](FloatingActionButtonTokenSource.cs)及 defaults；Composable 修正不覆盖原始 Token |
 | `FloatingActionButtonElevationAnimatable`、`animateFloatingActionButton` | [FloatingActionButtonElevation](FloatingActionButtonElevation.cs)、[FabVisibilityLayout](FabVisibilityLayout.cs)、[FabMotion](FabMotion.cs) |
@@ -26,6 +27,10 @@ IsChecked/CheckedProgress/CheckedChangeRequested 与 AnimatedVisible。
 原因是用 Avalonia 类型/属性表达 Compose 多入口，不是合并不同动画语义。
 
 - 图标 FAB 的容器为 56/40/80/96 DIP，Small 外层分配 48；Extended 为 56/56/80/96 DIP 高
+- 基类 `Icon` / `IconTemplate` 使用同一 presence 条件（Icon 或模板非空），模板-only 也进入图标路径；Extended FAB
+  通过继承复用属性。标准 FAB 无图标时保持 Content/ContentTemplate 的原自定义内容路径，不把普通 Button 的附加属性搬入 FAB
+- 图标 Default/Small、Medium、Large 提示尺寸为 24/28/36 DIP；Large 的 36 是 `FloatingActionButton.kt` 的修正，
+  不回退到 FabLarge 原始 Token 32。显式 Width/Height 优先，`MaterialIcon.DefaultSize` 不强制缩放任意 Control
 - Large 图标 36 DIP、Medium/Large Extended 的 12/16 DIP 间距保留 Composable 修正；不把原 Token 32 与 16/20 改掉
 - Default Extended 使用整数宽度、分开的展开/收起 spring 与 alpha，返回 Visible 的中断默认 spring；Expressive 分支保留浮点宽度进度、FastSpatial/FastEffects，完全收起才移除文字槽
 - 最小交互空间及内部对齐读数遵循[共享决定](../../../../docs/DECISIONS.md#最小交互布局与工具栏对齐读数)，只预留布局空间
@@ -51,8 +56,10 @@ Button 命令、焦点与 activation 复用框架；[Enter 的共享适配](../.
 
 ## 已接受暂缺与历史依赖问题
 
-维护者于 2026-10-04 确认 IconSize / IconColor 绑定入口。任意位图或复合内容的整层 SrcIn tint
-留作独立基础能力任务；任意内容仍继承环境 Foreground，不把显式图标绑定当作完整 animateIcon。
+维护者于 2026-10-04 确认 IconSize / IconColor 绑定入口。Toggle FAB 单独提供 Icon / IconTemplate，
+无图标时仍显示 Content；其默认图标尺寸提示固定为 Default/Medium/Large 24/28/36 DIP，不绑定动画中的 IconSize。
+`IconSize` / `IconColor` 仍是显式 opt-in：调用方可绑定图标尺寸和颜色以复现 animateIcon，不能自动动画任意 Content。
+任意位图或复合内容的整层 SrcIn tint 留作独立基础能力任务；任意内容仍继承环境 Foreground，不把显式图标绑定当作完整 animateIcon。
 
 原移植修正过 ComposeAnimation spring 预计时长的整数毫秒截断，否则 threshold=1 的菜单 stagger
 会在帧边界多延后一帧。该原因须保留，但旧本地包版本不是当前安装要求，也不能根据依赖升级省略反向/中断回归。

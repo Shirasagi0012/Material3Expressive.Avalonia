@@ -15,7 +15,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | --- | --- |
 | `Switch`、`SwitchImpl`、`SwitchDefaults`、`SwitchColors` | [Switch.axaml](Switch.axaml)、[SwitchAppearance.cs](SwitchAppearance.cs) |
 | `SwitchTokens` v0_210 与禁用色 Surface 合成 | [SwitchTokenSource.cs](SwitchTokenSource.cs)、[SwitchTrack.cs](SwitchTrack.cs)、[Token 入口](../../Tokens/MaterialTokens.Comp.Switch.cs) |
-| `ThumbNode` 的测量、尺寸/偏移动画与 thumbContent | [SwitchThumbLayout.cs](SwitchThumbLayout.cs) |
+| `ThumbNode` 的测量、尺寸/偏移动画与 thumbContent | [SwitchThumbLayout.cs](SwitchThumbLayout.cs)、[SwitchAppearance.cs](SwitchAppearance.cs) 的 `ThumbIcon` / `ThumbIconTemplate` |
 | 最小交互布局与本地外部标签组合 | [SwitchLayout.cs](SwitchLayout.cs) |
 | Core `material3-ripple/{CommonRipple,RippleAnimation}.kt` | 共享交互控制器与 RippleAnimation；组件只连接几何与 presenter |
 
@@ -26,6 +26,12 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 拇指尺寸/偏移遵循 ThumbNode：首次测量惰性建立 Animatable，物理像素截断，FastSpatial spring，
 按压 SnapSpec，普通中断延续速度。原生 KnobTransitions 不控制这两条动画。
 颜色按状态即时选取；默认禁用色预合成 Surface，显式 SwitchColors 已是最终色。
+
+`ThumbIcon` / `ThumbIconTemplate` 保留 Compose 的内容数据模板语义；模板可在 `ThumbIcon` 为 null 时创建固定图形。
+`MaterialIcon.DefaultSize=16` 仅为 MaterialSymbol 提供继承尺寸提示。布局仍使用真实内容的 `DesiredSize`
+判定 `hasContent`，因此空模板没有非零首选尺寸时不会把拇指扩展到 24 DIP。
+旧 `ThumbContent` 字段 / C# 访问器别名指向相同 Avalonia 属性，但注册名称是规范的 `ThumbIcon`；
+反射绑定按名称解析时应使用新名称，不能据属性身份相同推断旧反射路径继续有效。
 
 原生拖动开始后，位置直接跟随 Canvas.Left，停止旧偏移动画。释放时原生依次清除 Canvas.Left、
 移除 `:dragging`、写回 IsChecked；不能在第一步就以旧状态启动回程。

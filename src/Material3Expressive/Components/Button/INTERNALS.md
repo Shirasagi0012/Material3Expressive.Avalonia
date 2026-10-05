@@ -18,6 +18,7 @@
 | --- | --- |
 | [Button.kt（AndroidX 固定提交）](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt)：`Button`、`ElevatedButton`、`FilledTonalButton`、`OutlinedButton`、`TextButton` | [Button.axaml](Button.axaml) 的五种 `ControlTheme`；实际控件仍为 Avalonia Button |
 | `Button.kt`：`ButtonDefaults.contentPaddingFor`、`textStyleFor`、各颜色/elevation 默认值、`outlinedButtonBorder` | [Button.cs](Button.cs) 的 `ButtonSizesTokenSource` 及五种外观 TokenSource；[Token 入口](../../Tokens/MaterialTokens.Comp.Button.cs) |
+| `Button.kt`：可选 Icon/label 排列及 `ButtonDefaults.iconSizeFor` / `iconSpacingFor` | [MaterialButton.Icon / IconTemplate](Button.cs)、[ButtonContentRow](ButtonContentRow.cs)；IconButton 的专用 Symbol 入口不由此 API 替代 |
 | `tokens/ButtonXSmallTokens.kt`、`ButtonSmallTokens.kt`、`ButtonMediumTokens.kt`、`ButtonLargeTokens.kt`、`ButtonXLargeTokens.kt`；`tokens/FilledButtonTokens.kt`、`ElevatedButtonTokens.kt`、`FilledTonalButtonTokens.kt`、`OutlinedButtonTokens.kt`、`TextButtonTokens.kt` | 原始尺寸/外观关系保存在上述 TokenSource；Composable 的默认值修正另行保留，不用原始 Token 覆盖 |
 | `Button.kt` 的 `defaultMinSize`，`Surface.kt` / `InteractiveComponentSize.kt` 的 `minimumInteractiveComponentSize` | [ButtonLayout](ButtonLayout.cs)：容器默认尺寸、外层交互留白及像素取整；[MinimumInteractiveAlignment](../../Foundation/MinimumInteractiveAlignment.cs) 暴露内部对齐读数 |
 | `Button.kt` 的 `ButtonElevation`，`internal/Elevation.kt` 的 `animateElevation` | [ButtonElevation / ButtonElevationController](Button.cs)，经 [MaterialInteractionController](../../Foundation/Interaction/MaterialInteractionController.cs) 连接每个 Surface |
@@ -43,7 +44,8 @@
 
 - `ContentPadding` 是本地复合槽，来自 `contentPaddingFor` 的默认参数（无首尾图标，
   `shouldUsePrecisionPointerComponentSizing=false`）。XS/S/M/L/XL 的水平/垂直值为
-  12/6、16/10、24/16、48/32、64/48 DIP；XS 的水平 12 含上游函数修正
+  12/6、16/10、24/16、48/32、64/48 DIP；XS 的水平 12 含上游函数修正。新增 Icon 槽不按
+  presence 改写这组 Padding，避免改变原有无图标文本布局或引入未经批准的默认值分支
 - `textStyleFor` 使 XS/S 使用 LabelLarge、M 使用 TitleMedium、L 使用 HeadlineSmall、XL 使用 HeadlineLarge
 - Outlined 的默认描边宽度按 `outlinedButtonBorder()` 使用 1 DIP，所有尺寸一致；L/XL 的原始
   2/3 DIP Token 仍保留，主题不自动消费它们
@@ -70,10 +72,12 @@ ButtonLayout 分开处理可见容器的默认最小值与外层 48 DIP 留白�
 普通裁剪保持完整文本布局，在有限标签边界裁剪；省略号仍使用有限高度格式化。
 直接提供的控件、显式 ContentTemplate 和匹配的 DataTemplate 不由此路径改写。
 
-图标排列由调用方组合，组件不会从任意 Content 中推断首尾图标。原始 IconSize / IconLabelSpace
-Token 保留，但没有自动内容槽。固定上游 `iconSpacingFor` 的 XS 默认值为 4 DIP，
-原始 XS IconLabelSpace 为 8 DIP；双端[Button 用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ButtonCases.cs)
-显式处理这一差异，不能把用例组合能力当成组件已有 API。
+`MaterialButton.Icon` 与 `IconTemplate` 附加到原生 Button，`ButtonContentRow` 在图标存在时以固定尺寸盒
+排列图标和标签，标签仍使用原 `PART_ContentPresenter` 与 ButtonContentPresenter。presence 包含非空 Icon
+或非空 IconTemplate；Icon-only 不占标签间距。图标提示尺寸为 XS/S/M/L/XL 20/20/24/32/40 DIP，
+标签间距沿用 `iconSpacingFor`：XS 为 4 DIP，其余取各档 Button Token。图标按逻辑 leading 排列，
+其与标签间距从标签 Padding 的内容边缘计算；无图标时沿用原 presenter 测量、分配、约束与 access key 流程。
+显式图标尺寸优先于 `MaterialIcon.DefaultSize`，任意 Control 不会因此被缩放。
 
 ## 交互与动画职责
 

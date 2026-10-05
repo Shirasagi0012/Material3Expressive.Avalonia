@@ -5,8 +5,10 @@ using Avalonia.Controls.Documents;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
 using MaterialSymbols;
@@ -73,6 +75,89 @@ public class MaterialSymbolTests
         var symbol = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Home, Width = 48, Height = 32 };
         symbol.Measure(Size.Infinity);
         Assert.Equal(new Size(48, 32), symbol.DesiredSize);
+    }
+
+    [AvaloniaFact]
+    public void SlotDefaultSize_ChangesAndReparentsWithoutWritingDimensions()
+    {
+        var symbol = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Home,
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var host = new Border { Child = symbol };
+        MaterialIcon.SetDefaultSize(host, 32);
+        var window = Show(host);
+        Assert.Equal(new Size(32, 32), symbol.Bounds.Size);
+        Assert.Equal(32, symbol.ResolvedVariation.OpticalSize);
+        Assert.True(double.IsNaN(symbol.Width));
+        Assert.True(double.IsNaN(symbol.Height));
+
+        MaterialIcon.SetDefaultSize(host, 18);
+        window.UpdateLayout();
+        Assert.Equal(new Size(18, 18), symbol.Bounds.Size);
+        host.Child = null;
+        var other = new Border { Child = symbol };
+        MaterialIcon.SetDefaultSize(other, 40);
+        window.Content = other;
+        window.UpdateLayout();
+        Assert.Equal(new Size(40, 40), symbol.Bounds.Size);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void SlotDefaultSize_RespectsConstraintsAndExplicitDimensions()
+    {
+        var symbol = new MaterialSymbol();
+        MaterialIcon.SetDefaultSize(symbol, 40);
+        symbol.Measure(new Size(16, 30));
+        Assert.Equal(new Size(16, 16), symbol.DesiredSize);
+        symbol.Width = 50;
+        symbol.Measure(Size.Infinity);
+        Assert.Equal(new Size(50, 40), symbol.DesiredSize);
+        symbol.Height = 30;
+        symbol.Measure(Size.Infinity);
+        Assert.Equal(new Size(50, 30), symbol.DesiredSize);
+    }
+
+    [AvaloniaFact]
+    public void StretchLayout_FillsAllocationAndAutoOpticalSizeUsesActualBounds()
+    {
+        var symbol = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Home };
+        MaterialIcon.SetDefaultSize(symbol, 18);
+        symbol.Measure(new Size(32, 40));
+        Assert.Equal(new Size(18, 18), symbol.DesiredSize);
+        symbol.Arrange(new Rect(0, 0, 32, 40));
+        Assert.Equal(new Size(32, 40), symbol.Bounds.Size);
+        Assert.Equal(32, symbol.ResolvedVariation.OpticalSize);
+    }
+
+    [AvaloniaFact]
+    public void CompiledExtension_PreservesDefaultsAndBuildsIndependentTemplateControls()
+    {
+        var panel = (StackPanel)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive.Tests/Fixtures/SymbolExtension.axaml"));
+        var window = Show(panel, 160);
+        var ordinary = Assert.IsType<MaterialSymbol>(((ContentControl)panel.Children[0]).Content);
+        Assert.Equal(MaterialSymbolCodepoint.Home, ordinary.Symbol);
+        Assert.False(ordinary.IsSet(MaterialSymbol.ForegroundProperty));
+        Assert.True(double.IsNaN(ordinary.Grade));
+        Assert.True(double.IsNaN(ordinary.OpticalSize));
+        ordinary.Measure(Size.Infinity);
+        Assert.Equal(new Size(32, 32), ordinary.DesiredSize);
+
+        var explicitSymbol = Assert.IsType<MaterialSymbol>(((ContentControl)panel.Children[1]).Content);
+        Assert.Equal(40, explicitSymbol.Width);
+        Assert.Equal(40, explicitSymbol.Height);
+        Assert.Equal(1, explicitSymbol.Fill);
+        Assert.Equal(500, explicitSymbol.Weight);
+        Assert.Equal(100, explicitSymbol.Grade);
+        Assert.Equal(36, explicitSymbol.OpticalSize);
+        Assert.Equal(Colors.Red, Assert.IsAssignableFrom<ISolidColorBrush>(explicitSymbol.Foreground).Color);
+
+        var template = ((ContentControl)panel.Children[2]).ContentTemplate!;
+        var templateSymbol = panel.Children[2].GetVisualDescendants().OfType<MaterialSymbol>().Single();
+        Assert.Equal(32, MaterialIcon.GetDefaultSize(templateSymbol));
+        var first = Assert.IsType<ContentControl>(template.Build(null));
+        var second = Assert.IsType<ContentControl>(template.Build(null));
+        Assert.NotSame(first.Content, second.Content);
+        window.Close();
     }
 
     [AvaloniaFact]

@@ -12,9 +12,8 @@
     </m3:HorizontalFloatingToolbar>
     <m3:HorizontalFloatingToolbar Classes="vibrant" Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
       <m3:HorizontalFloatingToolbar.FloatingActionButton>
-        <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}">
-          <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
-        </m3:FloatingActionButton>
+        <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}"
+                                 Icon="{m3:Symbol Add}" />
       </m3:HorizontalFloatingToolbar.FloatingActionButton>
       <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /><m3:IconButton Symbol="Delete" /></StackPanel>
     </m3:HorizontalFloatingToolbar>
@@ -25,9 +24,8 @@
       </m3:VerticalFloatingToolbar>
       <m3:VerticalFloatingToolbar Grid.Column="1" Classes="vibrant" FloatingActionButtonPosition="Top" Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
         <m3:VerticalFloatingToolbar.FloatingActionButton>
-          <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}">
-            <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
-          </m3:FloatingActionButton>
+          <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}"
+                                   Icon="{m3:Symbol Add}" />
         </m3:VerticalFloatingToolbar.FloatingActionButton>
         <StackPanel><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
       </m3:VerticalFloatingToolbar>

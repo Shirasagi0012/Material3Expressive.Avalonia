@@ -50,7 +50,7 @@ internal sealed class TabHeader : Panel
     private ContentPresenter Label => (ContentPresenter)Children[0];
     private ContentPresenter Icon => (ContentPresenter)Children[1];
     private bool HasLabel => Label.Content is not null;
-    private bool HasIcon => ContentLayout != TabContentLayout.Custom && Icon.Content is not null;
+    private bool HasIcon => ContentLayout != TabContentLayout.Custom && (Icon.Content is not null || Icon.ContentTemplate is not null);
     private double SmallHeight => TokenResolver.TryResolve(this, MaterialTokens.Comp.TabRow.ContainerHeight, ActualThemeVariant, out var value) && value is double number ? number : 48;
 
     static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty);

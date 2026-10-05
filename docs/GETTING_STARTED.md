@@ -186,6 +186,31 @@ dotnet run --project examples/HelloMaterial/HelloMaterial.csproj
 
 ## 主题与定制
 
+普通图标可用 markup extension 构建，组件会提供合适的默认尺寸：
+
+```xml
+<Button Content="保存" m3:MaterialButton.Icon="{m3:Symbol Save}" />
+<TextBox m3:MaterialTextField.LeadingIcon="{m3:Symbol Search}" />
+<m3:NavigationRailItem Icon="{m3:Symbol Home, Fill=1}" Label="首页" />
+```
+
+需要显式大小时用 `{m3:Symbol Home, Size=32}`，或给 MaterialSymbol 设置 Width / Height。
+自定义图标仍可直接传 Control；数据图标使用对应的 IconTemplate：
+
+```xml
+<m3:NavigationRailItem Icon="{Binding Destination}" Label="{Binding Title}" x:CompileBindings="False">
+    <m3:NavigationRailItem.IconTemplate>
+        <DataTemplate>
+            <m3:MaterialSymbol Symbol="{Binding Symbol}" />
+        </DataTemplate>
+    </m3:NavigationRailItem.IconTemplate>
+</m3:NavigationRailItem>
+```
+
+模板内的 DataContext 是 Icon 数据；Icon 为 null 时显式模板仍会创建内容。
+模板可以共享，创建出来的图标控件实例不能同时用于多个槽。
+IconButton 保留 `Symbol="Save"` 的专用入口。默认尺寸的继承与布局边界见[架构说明](ARCHITECTURE.md#颜色图标与阴影)。
+
 - `RequestedThemeVariant="Default"` 跟随系统；`Light` / `Dark` 可固定外观，明暗资源变化无需替换组件 Theme
 - 单个控件优先使用其原生属性、附加属性或命名主题；需要统一应用外观时，再使用系统/组件 Token 覆盖
 - 排版及普通 TextBlock 的用法见 [Typography](../src/Material3Expressive/Foundation/Typography/README.md)

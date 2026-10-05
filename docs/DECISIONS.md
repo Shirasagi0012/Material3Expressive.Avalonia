@@ -3,6 +3,20 @@
 本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件维护文档保存（已拆分时为 INTERNALS.md，否则为 README）；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
+## 图标槽与默认尺寸
+
+决定：一般图标槽统一采用 object 与 IDataTemplate 成对入口，保留槽的语义前缀；IconButton 保留专门的 Symbol API。
+`SymbolExtension` 创建 MaterialSymbol，`MaterialIcon.DefaultSize` 作为可继承的默认尺寸提示，由组件在图标呈现位置提供。
+原因：原有枚举、手动构建控件和缺少模板的入口难以一致使用；单一尺寸提示避免额外 IconSource 或呈现框架。
+影响：默认尺寸只被 MaterialSymbol 的测量消费，显式 Width / Height 优先；保留各组件的布局约束、交互区域及动画。
+IconTemplate 为 null 内容也能创建图标，控件模板可复用而控件实例不可共享。完整按钮等交互槽继续组合实际控件。
+旧 ToggleButtonAppearance.Icon 与 SwitchAppearance.ThumbContent 字段、访问器保留为同一属性的兼容入口。
+Switch 注册名称改为 ThumbIcon，旧反射绑定路径需要迁移；普通 XAML 属性赋值和 C# 访问器仍可使用旧名。
+TextField 的 Icon / IconTemplate 任一个有值则使用新槽，两者均为 null 则回退到原生 InnerLeftContent / InnerRightContent。
+不以 IsSet 区分显式 null，避免 Avalonia 对相同有效值不发送通知造成回退状态过期。
+确认：2026-10-06，维护者认可统一槽、markup extension 和可继承默认尺寸设计，批准实施规划并要求落地。
+具体默认尺寸和迁移入口见组件 README，共享规则见 [架构说明](ARCHITECTURE.md#颜色图标与阴影)。
+
 ## Padding 消费向嵌套 Scaffold 传播
 
 决定：`MaterialWindowInsets.ConsumePadding` 为 Control 提供逻辑 start/top/end/bottom 的已应用 Padding 输入，

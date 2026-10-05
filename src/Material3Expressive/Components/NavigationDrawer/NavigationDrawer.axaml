@@ -77,7 +77,7 @@
               StateLayerBrush="{m3:ContentColorFor AmbientContentColor={Binding Parent.(TextElement.Foreground), RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type m3:NavigationDrawerItem}}}}">
             <m3:NavigationDrawerItemLayout ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ActiveIndicatorHeight}}">
               <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
-                  IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  m3:MaterialIcon.DefaultSize="24" />
               <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
                   ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"
                   m3:TextStyleHost.IsEnabled="True" />

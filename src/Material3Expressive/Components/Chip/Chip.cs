@@ -157,17 +157,21 @@ public abstract class Chip : Button
         SetValue(BorderBrushProperty, new SolidColorBrush(Resolve(enabled ? Comp.Chip.OutlineColor : Comp.Chip.DisabledOutlineColor)), BindingPriority.Style);
         SetValue(BorderThicknessProperty, new Thickness(Elevated || selected ? 0 : Resolve(Comp.Chip.OutlineWidth)), BindingPriority.Style);
         var input = this as InputChip;
-        var avatar = input?.Avatar;
-        var leadingContent = avatar ?? LeadingIcon;
-        _leading?.Update(leadingContent, avatar is not null ? input?.AvatarTemplate : LeadingIconTemplate,
-            this is SelectableChip, avatar is not null, enabled ? 1 : Resolve(Comp.Chip.AvatarOpacity),
-            avatar is not null ? Foreground : new SolidColorBrush(leading), this);
-        _trailing?.Update(this is SuggestionChip ? null : TrailingIcon, TrailingIconTemplate,
+        var hasAvatar = input is not null && (input.Avatar is not null || input.AvatarTemplate is not null);
+        var leadingContent = hasAvatar ? input!.Avatar : LeadingIcon;
+        var leadingTemplate = hasAvatar ? input!.AvatarTemplate : LeadingIconTemplate;
+        var hasLeadingIcon = hasAvatar || leadingContent is not null || leadingTemplate is not null;
+        var hasTrailingIcon = this is not SuggestionChip && (TrailingIcon is not null || TrailingIconTemplate is not null);
+        _leading?.Update(leadingContent, leadingTemplate,
+            this is SelectableChip, hasAvatar, enabled ? 1 : Resolve(Comp.Chip.AvatarOpacity),
+            hasAvatar ? Foreground : new SolidColorBrush(leading), this);
+        _trailing?.Update(this is SuggestionChip ? null : TrailingIcon,
+            this is SuggestionChip ? null : TrailingIconTemplate,
             this is SelectableChip, false, 1, new SolidColorBrush(trailing), this);
         _content.Spacing = Spacing ?? (MorphShapes is not null ? new ChipSpacing(
-            leadingContent is not null ? 4 : 8, TrailingIcon is not null ? 4 : 8) : new ChipSpacing());
-        var start = input is null ? 8 : avatar is not null || LeadingIcon is null ? 4 : 8;
-        var end = input is null ? 8 : TrailingIcon is not null ? 8 : 4;
+            hasLeadingIcon ? 4 : 8, hasTrailingIcon ? 4 : 8) : new ChipSpacing());
+        var start = input is null ? 8 : hasAvatar || !hasLeadingIcon ? 4 : 8;
+        var end = input is null ? 8 : hasTrailingIcon ? 8 : 4;
         SetValue(PaddingProperty, new Thickness(start, 0, end, 0), BindingPriority.Style);
         if (MorphShapes is null) _surface.CornerRadius = CornerRadius;
         PseudoClasses.Set(":selected", selected);

@@ -43,8 +43,9 @@ Enter 按下激活，`Space` 沿用原生 ClickMode；`IsEnabled="False"` 禁止
 ## 标签、图标与头像
 
 `Content` / `ContentTemplate` 为标签，`LeadingIcon` / `TrailingIcon` 及对应 `Template` 为图标槽。
-Suggestion 不显示 trailing 槽。Input 另有 `Avatar` / `AvatarTemplate`，头像优先于 leading 图标，
-默认圆形裁剪，禁用时仅头像包装层应用 0.38 透明度。
+只设置图标模板也会占用槽位，即使对应内容为 null；模板可据此创建内容。Suggestion 不显示 trailing 槽。
+Input 另有 `Avatar` / `AvatarTemplate`；Avatar 或 AvatarTemplate 存在时优先于 leading 图标，默认圆形裁剪，
+禁用时仅头像包装层应用 0.38 透明度。
 
 ```xml
 <m3:InputChip Content="联系人">
@@ -57,7 +58,9 @@ Suggestion 不显示 trailing 槽。Input 另有 `Avatar` / `AvatarTemplate`，�
 </m3:InputChip>
 ```
 
-图标/头像尺寸由内容决定，常用默认参考为 18/24 DIP；不要将同一 Control 实例放进多个槽。
+无显式尺寸的 MaterialSymbol 在普通图标槽默认使用 Chip IconSize Token 18 DIP，在头像槽默认使用独立的 24 DIP。
+显式 `Width` / `Height` 优先；自定义图标和头像仍按自身布局，不会被槽强制设为该尺寸。
+不要将同一 Control 实例放进多个槽。
 Trailing 仍属于整个 Chip 的点击区域，没有独立移除命令或事件；删除与选择动作由应用决定。
 Leading/trailing 先测量，标签使用剩余宽度；RTL 自动镜像布局。
 

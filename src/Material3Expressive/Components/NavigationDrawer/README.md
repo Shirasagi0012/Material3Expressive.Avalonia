@@ -74,6 +74,8 @@ await Drawer.State.SnapToAsync(Material3Expressive.Components.DrawerValue.Open);
 
 Drawer 提供 `ContentTemplate` / `DrawerContentTemplate`，Sheet 使用普通 `Content` / `ContentTemplate`。
 Item 的标签是 `Content` / `ContentTemplate`，图标和徽标分别是 `Icon` / `IconTemplate`、`Badge` / `BadgeTemplate`。
+只设置 `IconTemplate` 也会显示图标槽，即使 `Icon` 为 null；模板可针对 null 数据创建内容。
+无显式尺寸的 MaterialSymbol 默认使用通用 24 DIP；显式 `Width` / `Height` 优先，自定义图标尺寸参与布局。
 字符串标签默认 LabelLarge。
 
 ```xml

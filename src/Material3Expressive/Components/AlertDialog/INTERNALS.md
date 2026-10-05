@@ -36,8 +36,9 @@ ConfirmButton 由调用方提供，组件不会创建按钮或接管其点击。
 聚合文字的共享规则见[排版决定](../../../../docs/DECISIONS.md#聚合-textstyle-与-token-层文字单位换算)。
 
 Surface 默认 SurfaceContainerHigh、ExtraLarge 圆角；图标、标题、正文独立取内容色。
-标题/正文/按钮提供 HeadlineSmall、BodyMedium、LabelLarge。IconSize=24 只作为 Token 暴露，
-不能强制缩放任意图标内容。DialogTokens.ContainerElevation 保留 Level3，但固定 AlertDialogContent
+标题/正文/按钮提供 HeadlineSmall、BodyMedium、LabelLarge。Dialog IconSize Token 24 DIP 传给图标槽的
+MaterialIcon.DefaultSize，作为无显式尺寸 MaterialSymbol 的默认值；显式图标尺寸和自定义内容不被槽强制缩放。
+DialogTokens.ContainerElevation 保留 Level3，但固定 AlertDialogContent
 没有给 Surface 传 shadowElevation；默认 tonalElevation=0，不应从 raw Token 推出额外阴影。
 
 ## 布局不变量

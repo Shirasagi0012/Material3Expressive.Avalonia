@@ -11,12 +11,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <m3:FloatingActionButton AutomationProperties.Name="新建">
-    <m3:MaterialSymbol Symbol="Add" Width="24" Height="24" />
+    <m3:FloatingActionButton.Icon>
+      <m3:MaterialSymbol Symbol="Add" />
+    </m3:FloatingActionButton.Icon>
   </m3:FloatingActionButton>
 </UserControl>
 ```
 
-后续片段使用相同命名空间。图标内容自行提供尺寸及有意义的无障碍名称；容器不会缩放任意 Content。
+后续片段使用相同命名空间。`Icon` / `IconTemplate` 是 FAB 的独立图标槽；未设置二者时继续显示普通
+`Content` / `ContentTemplate`，设置任一图标属性后显示图标槽。图标默认尺寸为 Default/Small 24、Medium 28、
+Large 36 DIP，`MaterialIcon.DefaultSize` 提示由图标实现消费，显式 `Width` / `Height` 优先。
 
 ## 尺寸与 Extended 内容
 
@@ -33,13 +37,14 @@
 ```xml
 <m3:ExtendedFloatingActionButton Content="新建" Size="Medium" Expanded="True">
   <m3:ExtendedFloatingActionButton.Icon>
-    <m3:MaterialSymbol Symbol="Add" Width="28" Height="28" />
+    <m3:MaterialSymbol Symbol="Add" />
   </m3:ExtendedFloatingActionButton.Icon>
 </m3:ExtendedFloatingActionButton>
 ```
 
-不设置 Icon 时采用纯内容入口；提供 Icon 后，`Expanded` 控制图标+文字入口的展开/收起。
-Content / ContentTemplate、Icon / IconTemplate 均支持普通数据和模板。字符串采用相应尺寸排版。
+Extended FAB 继承基类的 `Icon` / `IconTemplate` 属性，不另建一份图标状态。不设置图标时采用纯内容入口；
+提供 Icon 或 IconTemplate 后，`Expanded` 控制图标+文字入口的展开/收起。Content / ContentTemplate、
+Icon / IconTemplate 均支持普通数据和模板。字符串采用相应尺寸排版。
 `Background`、`Foreground`、`CornerRadius`、`Command` / `CommandParameter`、Click 和 IsEnabled
 使用按钮入口。绑定 Command 时 DataContext 需提供相应 ICommand；事件需在视图中实现处理器。
 
@@ -71,12 +76,14 @@ fab.AnimatedVisible = false;
     <m3:ToggleFloatingActionButton x:Name="ActionToggle" Size="Medium"
                                   CheckedChangeRequested="OnActionToggleRequested"
                                   AutomationProperties.Name="更多操作">
-      <m3:MaterialSymbol Symbol="Add" Width="28" Height="28" />
+      <m3:ToggleFloatingActionButton.Icon>
+        <m3:MaterialSymbol Symbol="Add" />
+      </m3:ToggleFloatingActionButton.Icon>
     </m3:ToggleFloatingActionButton>
   </m3:FloatingActionButtonMenu.Button>
   <m3:FloatingActionButtonMenuItem Content="编辑">
     <m3:FloatingActionButtonMenuItem.Icon>
-      <m3:MaterialSymbol Symbol="Edit" Width="24" Height="24" />
+      <m3:MaterialSymbol Symbol="Edit" />
     </m3:FloatingActionButtonMenuItem.Icon>
   </m3:FloatingActionButtonMenuItem>
 </m3:FloatingActionButtonMenu>
@@ -92,11 +99,14 @@ private void OnActionToggleRequested(object? sender,
 ```
 
 菜单是内联布局，不是 Popup。Items 保持源顺序、从底部开始显示；Button / ButtonTemplate 是独立槽。
+菜单项 Icon / IconTemplate 的图标默认尺寸为 24 DIP。
 受限高度下只滚动条目，按钮固定，收起期间关闭列表滚动输入；展开时从按钮 Tab / Down 可移入首个可见条目。
 
-Toggle 的动画读数为 `CheckedProgress`、`IconSize` 和 `IconColor`。上例刻意保持固定图标；
-若要图标随进度变化，绑定 IconSize 到宽高，IconColor（Color）经 Avalonia `ColorToBrushConverter`
-转为画刷。完整绑定见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+Toggle 的动画读数为 `CheckedProgress`、`IconSize` 和 `IconColor`。Icon / IconTemplate 存在时使用图标槽，
+否则仍显示 Content。图标槽默认尺寸按 Default/Medium/Large 固定为 24/28/36 DIP，不跟随动画尺寸；
+如需图标随进度变化，可显式绑定 `IconSize` 到图标宽高，并将 `IconColor`（Color）经 Avalonia
+`ColorToBrushConverter` 转为画刷。任意 Content 不会自动获得该动画绑定。完整绑定见
+[Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
 ContainerColor / ContainerSize / ContainerCornerRadius 接受进度函数，可用
 `ToggleFloatingActionButtonDefaults` 的映射函数定制。Toggle 使用 Default / Medium / Large 三档默认造型，
 不将普通 FAB 的 Small 40 DIP 规则套给它。

@@ -73,6 +73,23 @@ MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一�
 配套模块有各自的上游版本与限制；模块级的移植或渲染验证不自动证明本项目的组件集成正确。
 遇到能力缺口时说明缺少的语义，不在组件中悄悄替换为近似算法。
 
+图标槽统一使用 `object? Icon` / `IDataTemplate? IconTemplate`（保留 Leading、Trailing、Active、Thumb 等语义前缀）。
+直接传入 Control 时，没有模板则继承外层 DataContext；传入数据时，模板的 DataContext 是 Icon。
+显式模板也支持 Icon 为 null，可用于固定图标；是否占用槽空间应同时检查内容与模板。
+`IconTemplate` 是创建控件的蓝图，可以复用；一个图标 Control 不能同时挂到多个槽。
+
+`MaterialIcon.DefaultSize` 是可继承的尺寸提示，默认 24 DIP；组件只在实际图标呈现位置提供自身默认值。
+`MaterialSymbol` 测量时读取它并受可用布局尺寸约束，显式 Width / Height 优先于提示，仍遵守槽的布局约束。
+它不写入 Width / Height，不缩放任意控件，也不把整个组件的交互区域变成图标尺寸。
+例如 TextField 的 48 DIP 装饰区域提供 24 DIP 图标默认值，Switch 的 thumb 图标默认 16 DIP。
+导航项继续按图标实际 DesiredSize 测量，允许大于默认值的自定义图标。
+OpticalSize 仍由外部渲染器根据实际 Bounds 推导，不使用默认尺寸代替绘制尺寸。
+
+`{m3:Symbol Home}` 每次求值创建一个 MaterialSymbol；Size 显式设置两轴尺寸，其余可选参数只在提供时赋值，
+因此颜色继承、自动 grade 和 optical size 保留。复杂绑定继续使用 MaterialSymbol 对象元素。
+不要把返回的 Control 放进多个控件共用的 Setter 或 StaticResource；需共享时使用 DataTemplate。
+IconButton 继续使用专门的 Symbol 枚举入口和自身尺寸模板；完整交互控件槽仍直接组合原有控件。
+
 ## Surface 与交互组合
 
 [MaterialSurface](../src/Material3Expressive/Components/Surface/MaterialSurface.cs) 是可被其他组件组合的容器组件，

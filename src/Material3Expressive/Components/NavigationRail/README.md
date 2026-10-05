@@ -57,7 +57,9 @@ Space / Enter 松开和自动化 Select 都请求激活；`IsEnabled` / `Command
 ## 内容与定制
 
 `Header` / `HeaderTemplate`、`Icon` / `IconTemplate`、`Label` / `LabelTemplate` 接受内容和数据模板。
-字符串标签使用 LabelMedium 并可换行；显式文字控件可覆盖字体和画刷，图标尺寸由调用方设置。
+只设置 `IconTemplate` 也会显示图标槽，即使 `Icon` 为 null；模板可针对 null 数据创建内容。
+无显式尺寸的 MaterialSymbol 默认使用 NavigationRail IconSize Token 24 DIP；显式 `Width` / `Height` 优先，
+自定义图标的实际尺寸参与布局，不会被 Rail 限制。字符串标签使用 LabelMedium 并可换行；显式文字控件可覆盖字体和画刷。
 
 ```xml
 <m3:NavigationRailItem Label="收藏" IsSelected="True"

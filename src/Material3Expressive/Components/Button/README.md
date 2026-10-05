@@ -88,21 +88,21 @@
 
 `Content` 可以是字符串或任意控件，也支持原生 `ContentTemplate` 和匹配的 `DataTemplate`。
 普通字符串自动应用当前尺寸的标签排版、换行和有限边界内裁剪；自定义内容控件与模板优先。
-要自行控制文本省略号、图标和排列，可直接组合内容：
+通过 `MaterialButton.Icon` / `IconTemplate` 设置可选的前导图标槽，模板-only 也会占用图标槽：
 
 ```xml
-<Button>
-  <StackPanel Orientation="Horizontal" Spacing="8">
-    <m3:MaterialSymbol Symbol="Add" Width="20" Height="20"
-                       VerticalAlignment="Center" />
-    <TextBlock Text="新建" VerticalAlignment="Center" />
-  </StackPanel>
+<Button Content="新建">
+  <m3:MaterialButton.Icon>
+    <m3:MaterialSymbol Symbol="Add" />
+  </m3:MaterialButton.Icon>
 </Button>
 ```
 
-上例为 Small 的内容组合。普通 Button 没有 `LeadingIcon` / `TrailingIcon` 槽，
-也不会自动识别图标、设置其大小或调整间距；切换尺寸时由内容布局同步调整。
-文字默认值通过 `MaterialText.DefaultStyle` 传给内容，显式文字设置仍可覆盖；
+图标默认尺寸随按钮档位为 20/20/24/32/40 DIP，XS 与 Small 的标签间距为 4 DIP，其余档位沿用对应 Button Token。
+`MaterialIcon.DefaultSize` 是可由图标实现消费的尺寸提示；显式 `Width` / `Height` 优先，任意控件内容不会被强制缩放。
+只设置图标时不会额外加入标签间距。图标槽不改变默认 `Padding`，也不从任意 `Content` 推断图标。
+需要完全自定义省略号或排列时，仍可把图标和文字组合为普通 `Content`。文字默认值通过
+`MaterialText.DefaultStyle` 传给内容，显式文字设置仍可覆盖；
 更多排版用法见 [Typography](../../Foundation/Typography/README.md)。
 
 ## 默认值与接入

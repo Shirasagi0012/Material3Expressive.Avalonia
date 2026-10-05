@@ -1,0 +1,12 @@
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+            m3:MaterialIcon.DefaultSize="32">
+  <ContentControl Name="Default" Content="{m3:Symbol Home}" />
+  <ContentControl Name="Explicit" Content="{m3:Symbol Search, Size=40, Fill=1, Weight=500, Grade=100, OpticalSize=36, Style=Rounded, Foreground=Red}" />
+  <ContentControl Name="TemplateOnly">
+    <ContentControl.ContentTemplate>
+      <DataTemplate><ContentControl Content="{m3:Symbol Check}" /></DataTemplate>
+    </ContentControl.ContentTemplate>
+  </ContentControl>
+</StackPanel>

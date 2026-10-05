@@ -11,6 +11,14 @@ namespace Material3Expressive.Components;
 /// <summary>Material appearance of a native ToggleButton; state, commands and input remain native.</summary>
 public static class ToggleButtonAppearance
 {
+    static ToggleButtonAppearance()
+    {
+        // Preserve legacy attached-property lookup by owner/name while sharing MaterialButton's
+        // property identities and storage.
+        AvaloniaPropertyRegistry.Instance.Register(typeof(ToggleButtonAppearance), IconProperty);
+        AvaloniaPropertyRegistry.Instance.Register(typeof(ToggleButtonAppearance), IconTemplateProperty);
+    }
+
     public static readonly AttachedProperty<ToggleButtonColors?> ColorsProperty =
         AvaloniaProperty.RegisterAttached<ToggleButton, ToggleButtonColors?>("Colors", typeof(ToggleButtonAppearance));
     public static ToggleButtonColors? GetColors(ToggleButton owner) => owner.GetValue(ColorsProperty);
@@ -21,12 +29,11 @@ public static class ToggleButtonAppearance
     public static CornerRadius GetCheckedCornerRadius(ToggleButton owner) => owner.GetValue(CheckedCornerRadiusProperty);
     public static void SetCheckedCornerRadius(ToggleButton owner, CornerRadius value) => owner.SetValue(CheckedCornerRadiusProperty, value);
 
-    public static readonly AttachedProperty<object?> IconProperty =
-        AvaloniaProperty.RegisterAttached<ToggleButton, object?>("Icon", typeof(ToggleButtonAppearance));
+    // Compatibility aliases: both names address the same attached-property identity and value.
+    public static readonly AttachedProperty<object?> IconProperty = MaterialButton.IconProperty;
     public static object? GetIcon(ToggleButton owner) => owner.GetValue(IconProperty);
     public static void SetIcon(ToggleButton owner, object? value) => owner.SetValue(IconProperty, value);
-    public static readonly AttachedProperty<IDataTemplate?> IconTemplateProperty =
-        AvaloniaProperty.RegisterAttached<ToggleButton, IDataTemplate?>("IconTemplate", typeof(ToggleButtonAppearance));
+    public static readonly AttachedProperty<IDataTemplate?> IconTemplateProperty = MaterialButton.IconTemplateProperty;
     public static IDataTemplate? GetIconTemplate(ToggleButton owner) => owner.GetValue(IconTemplateProperty);
     public static void SetIconTemplate(ToggleButton owner, IDataTemplate? value) => owner.SetValue(IconTemplateProperty, value);
 }

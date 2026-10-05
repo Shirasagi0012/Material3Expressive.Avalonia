@@ -89,7 +89,9 @@
               IndicatorShape="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ActiveIndicatorShape}}">
             <Border RenderOptions.RequiresFullOpacityHandling="True"><Border x:Name="PART_Indicator" /></Border>
             <Border>
-              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" UseLayoutRounding="True" />
+              <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
+                                m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.IconSize}}"
+                                UseLayoutRounding="True" />
             </Border>
             <Border RenderOptions.RequiresFullOpacityHandling="True">
               <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Label}" ContentTemplate="{TemplateBinding LabelTemplate}"

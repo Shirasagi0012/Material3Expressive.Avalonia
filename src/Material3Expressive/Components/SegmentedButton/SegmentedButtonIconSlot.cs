@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
@@ -35,7 +36,7 @@ internal sealed class SegmentedButtonIconSlot : Decorator
         // A retired Crossfade slot can be absent from the visual tree while its nested
         // presenter still owns caller content. Release our own presenters explicitly.
         foreach (var presenter in _icons.OfType<ContentPresenter>())
-        { presenter.Content = null; presenter.UpdateChild(); }
+        { presenter.Content = null; presenter.ContentTemplate = null; presenter.UpdateChild(); }
         Child = null; _owner = null;
         _motion?.Dispose(); _motion = null; _selection = null;
         _loopCancellation?.Dispose(); _loopCancellation = null; _loop = null;
@@ -92,7 +93,11 @@ internal sealed class SegmentedButtonIconSlot : Decorator
                     + new ScaleIn { InitialScale = 0, TransformOrigin = new RelativePoint(0, 1, RelativeUnit.Relative), Spec = spatial.ToAnimationSpec() };
             }
             if (_icons[1] is Checkmark checkmark) checkmark.Size = owner.Resolve(Comp.SegmentedButton.IconSize);
-            foreach (var presenter in _icons.OfType<ContentPresenter>()) presenter.FlowDirection = owner.FlowDirection;
+            foreach (var presenter in _icons.OfType<ContentPresenter>())
+            {
+                presenter.FlowDirection = owner.FlowDirection;
+                MaterialIcon.SetDefaultSize(presenter, owner.Resolve(Comp.SegmentedButton.IconSize));
+            }
             if (_selection!.TargetState != owner.IsSelected)
             {
                 var defer = _crossfade || owner.IsSelected;
@@ -129,8 +134,10 @@ internal sealed class SegmentedButtonIconSlot : Decorator
             // Icons.Filled.Check: 24x24 viewport, same path as the fixed upstream vector.
             return _icons[index] = new Checkmark(owner.Resolve(Comp.SegmentedButton.IconSize));
         }
-        return _icons[index] = new ContentPresenter { FlowDirection = owner.FlowDirection, Content = active ? owner.ActiveIcon : owner.InactiveIcon,
+        var presenter = new ContentPresenter { FlowDirection = owner.FlowDirection, Content = active ? owner.ActiveIcon : owner.InactiveIcon,
             ContentTemplate = active ? owner.ActiveIconTemplate : owner.InactiveIconTemplate };
+        MaterialIcon.SetDefaultSize(presenter, owner.Resolve(Comp.SegmentedButton.IconSize));
+        return _icons[index] = presenter;
     }
     private sealed class Checkmark(double size) : Control
     {

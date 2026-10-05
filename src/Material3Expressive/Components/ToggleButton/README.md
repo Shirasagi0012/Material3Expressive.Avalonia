@@ -46,18 +46,20 @@
 
 ## 标签、图标与圆角
 
-`Content`/`ContentTemplate` 是标签槽，自动字符串复用 Button 的排版；图标使用附加槽，
-其尺寸盒与间距自动跟随当前尺寸：
+`Content`/`ContentTemplate` 是标签槽，自动字符串复用 Button 的排版。图标使用共享的
+`MaterialButton.Icon` / `IconTemplate` 附加槽，尺寸盒与间距跟随当前尺寸；模板-only 也算图标内容：
 
 ```xml
 <ToggleButton Content="收藏">
-  <m3:ToggleButtonAppearance.Icon>
+  <m3:MaterialButton.Icon>
     <m3:MaterialSymbol Symbol="Favorite" />
-  </m3:ToggleButtonAppearance.Icon>
+  </m3:MaterialButton.Icon>
 </ToggleButton>
 ```
 
-`ToggleButtonAppearance.IconTemplate` 支持数据模板；`MaterialSymbol` 继承内容色，自定义图形需自行绑定前景色。
+旧的 `ToggleButtonAppearance.Icon` / `IconTemplate` 仍作为兼容别名，和 `MaterialButton` 属性是同一份
+Avalonia 属性身份；新代码建议使用共享名称。两种写法不要同时设置。Icon-only 不会额外占标签间距；
+`MaterialSymbol` 继承内容色，自定义图形需自行绑定前景色。
 本族默认就有形变：按压目标优先于选中目标，选中优先于静止圆角。
 
 ```xml
