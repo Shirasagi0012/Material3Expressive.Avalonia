@@ -53,6 +53,16 @@ Toggle 初始圆角是上游的 16/20/28 常量，对应独立默认 Token，不
 Visibility 规格、Toggle checked spring、Extended 各方向 spring 及菜单 reveal/stagger spring
 由主题送入有效属性。`FabMotion` 仅把捕获的规格参数转换为 Float，阈值仍由动画量的单位决定。
 当前运行的一段动画继续持有所捕获的规格，下次目标改变才消费新配置。默认值不重复写入属性元数据。
+Nullable spring 表示主题配置尚未就绪；无效或缺失引用、零/非有限 spring 不得构造运行规格。
+Visibility / Extended / Toggle 保留尚未提交的当前目标，配置恢复后经原共享下一帧调度重试；
+菜单通过原 ruler/TargetValue 差异在布局中重试，不提前把目标标记为已提交。
+Visibility 的公共 null 规格同样表示等待，两条通道同时就绪后才提交，不把 null 交给
+Animatable 触发其内部默认 spring。detach 清理待提交状态，重新附着仍从当前公开目标初始化。
+
+模板中手写的最外层 MultiBinding 明确使用 Template priority，内部属性的局部配置和 ClearValue
+不会被绑定默认的 LocalValue 优先级遮住；ControlTheme Setter 内绑定仍由 Setter 确定优先级。
+FabLabelClip.Gap 变化会失效自身测量缓存；Expressive 分支仅修改间距 Token 也会更新实际 label 位置和容器宽度。
+Classic 整数宽度的记忆、目标取样和中断策略保持原逻辑，不随此缓存修正重新定义。
 固定 elevation 进入/退出算法、Interrupted Visible→Visible 的默认 spring、整数居中及最小交互
 48 DIP 保留为上游/已确认布局算法，不因出现常数而引入额外公共配置。
 

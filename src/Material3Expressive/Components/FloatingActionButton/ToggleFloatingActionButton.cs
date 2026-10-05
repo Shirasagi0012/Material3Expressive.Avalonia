@@ -51,8 +51,8 @@ public class ToggleFloatingActionButton : Button
     internal double DefaultIconSize { get => GetValue(DefaultIconSizeProperty); set => SetValue(DefaultIconSizeProperty, value); }
     internal static readonly StyledProperty<double> ShadowElevationProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, double>(nameof(ShadowElevation));
     internal double ShadowElevation { get => GetValue(ShadowElevationProperty); set => SetValue(ShadowElevationProperty, value); }
-    internal static readonly StyledProperty<MotionSpring> CheckedMotionProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, MotionSpring>(nameof(CheckedMotion));
-    internal MotionSpring CheckedMotion { get => GetValue(CheckedMotionProperty); set => SetValue(CheckedMotionProperty, value); }
+    internal static readonly StyledProperty<MotionSpring?> CheckedMotionProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, MotionSpring?>(nameof(CheckedMotion));
+    internal MotionSpring? CheckedMotion { get => GetValue(CheckedMotionProperty); set => SetValue(CheckedMotionProperty, value); }
     private float _checkedProgress;
     private double _iconSize;
     private Color _iconColor;
@@ -66,7 +66,7 @@ public class ToggleFloatingActionButton : Button
     private Animatable<float>? _progress;
     private ToggleFabLayout? _layout;
     private MaterialSurface? _surface;
-    private bool _pending;
+    private bool _pending, _needsTransition;
     internal double InitialSize => ContainerSize(0);
     internal double CurrentSize => ContainerSize(CheckedProgress);
 
@@ -93,7 +93,7 @@ public class ToggleFloatingActionButton : Button
         SetAndRaise(CheckedProgressProperty, ref _checkedProgress, _progress.Value);
         Refresh();
     }
-    private void EndMotion() { _scope?.Dispose(); _scope = null; _progress = null; _pending = false; }
+    private void EndMotion() { _scope?.Dispose(); _scope = null; _progress = null; _pending = _needsTransition = false; }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -102,21 +102,31 @@ public class ToggleFloatingActionButton : Button
         if (change.Property == IsCheckedProperty)
         {
             PseudoClasses.Set(":checked", IsChecked);
-            if (_scope is { IsEnding: false } scope && !_pending)
+            if (_scope is not null)
             {
-                _pending = true;
-                _ = scope.Launch(async ct =>
-                {
-                    await scope.Clock.NextFrameAsync(ct); _pending = false;
-                    // AnimateAsState cancels its previous job before launching a new one.
-                    // Unlike an Animatable retarget, this clears velocity and frame time.
-                    await _progress!.StopAsync();
-                    await _progress!.AnimateToAsync(IsChecked ? 1 : 0, FabMotion.Spring(CheckedMotion), cancellationToken: ct);
-                }, "Toggle FAB checked progress");
+                _needsTransition = true;
+                QueueTransition();
             }
-            else if (_scope is null) SetAndRaise(CheckedProgressProperty, ref _checkedProgress, IsChecked ? 1f : 0f);
+            else SetAndRaise(CheckedProgressProperty, ref _checkedProgress, IsChecked ? 1f : 0f);
         }
+        else if (change.Property == CheckedMotionProperty) QueueTransition();
         if (change.Property == ContainerSizeProperty || change.Property == ContainerColorProperty || change.Property == ContainerCornerRadiusProperty || change.Property == IconSizeFunctionProperty || change.Property == IconColorFunctionProperty || change.Property == ShadowElevationProperty || change.Property == ForegroundProperty || change.Property == IsCheckedProperty) Refresh();
+    }
+    private void QueueTransition()
+    {
+        if (!_needsTransition || _pending || _scope is not { IsEnding: false } scope ||
+            !FabMotion.IsReady(CheckedMotion)) return;
+        _pending = true;
+        _ = scope.Launch(async ct =>
+        {
+            await scope.Clock.NextFrameAsync(ct); _pending = false;
+            if (!FabMotion.TrySpring(CheckedMotion, out var spec)) return;
+            _needsTransition = false;
+            // AnimateAsState cancels its previous job before launching a new one.
+            // Unlike an Animatable retarget, this clears velocity and frame time.
+            await _progress!.StopAsync();
+            await _progress!.AnimateToAsync(IsChecked ? 1 : 0, spec, cancellationToken: ct);
+        }, "Toggle FAB checked progress");
     }
     private void Refresh()
     {

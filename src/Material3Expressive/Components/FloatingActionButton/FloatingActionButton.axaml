@@ -179,7 +179,7 @@
           <m3:FabVisibilityLayout>
             <m3:FabLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
               <m3:FabLayout.ContainerMinSize>
-                <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                   <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                   <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabBaseline.ContainerHeight}"/>
                   <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabSmall.ContainerHeight}"/>
@@ -191,7 +191,7 @@
                 <m3:FabIconContentLayout x:Name="PART_IconContentLayout">
                   <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
                     <m3:MaterialIcon.DefaultSize>
-                      <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                      <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                         <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                         <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabBaseline.IconSize}"/>
                         <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabSmall.IconSize}"/>
@@ -234,7 +234,7 @@
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" StateLayerBrush="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" TonalElevation="{Binding Elevation.Default, RelativeSource={RelativeSource TemplatedParent}}">
                 <m3:ExtendedFabLayout x:Name="PART_ContentLayout">
                   <m3:ExtendedFabLayout.MinimumSize>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.ContainerHeight}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabSmall.ContainerHeight}"/>
@@ -243,7 +243,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.MinimumSize>
                   <m3:ExtendedFabLayout.MinimumWidth>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.MinimumWidth}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabSmall.ContainerHeight}"/>
@@ -252,7 +252,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.MinimumWidth>
                   <m3:ExtendedFabLayout.CollapsedMinimumWidth>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabBaseline.ContainerWidth}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabSmall.ContainerHeight}"/>
@@ -261,7 +261,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.CollapsedMinimumWidth>
                   <m3:ExtendedFabLayout.LeadingSpace>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.LeadingSpace}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabSmall.LeadingSpace}"/>
@@ -270,7 +270,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.LeadingSpace>
                   <m3:ExtendedFabLayout.TrailingSpace>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.TrailingSpace}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabSmall.TrailingSpace}"/>
@@ -279,7 +279,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.TrailingSpace>
                   <m3:ExtendedFabLayout.IconLeadingSpace>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.IconLeadingSpace}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabSmall.LeadingSpace}"/>
@@ -288,7 +288,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.IconLeadingSpace>
                   <m3:ExtendedFabLayout.IconLabelSpace>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.IconLabelSpace}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabSmall.IconLabelSpace}"/>
@@ -297,7 +297,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.IconLabelSpace>
                   <m3:ExtendedFabLayout.ExpandWidthMotion>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.ExpandWidthMotion}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFab.WidthMotion}"/>
@@ -306,7 +306,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.ExpandWidthMotion>
                   <m3:ExtendedFabLayout.CollapseWidthMotion>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.CollapseWidthMotion}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFab.WidthMotion}"/>
@@ -315,7 +315,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.CollapseWidthMotion>
                   <m3:ExtendedFabLayout.ExpandAlphaMotion>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.ExpandAlphaMotion}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFab.AlphaMotion}"/>
@@ -324,7 +324,7 @@
                     </MultiBinding>
                   </m3:ExtendedFabLayout.ExpandAlphaMotion>
                   <m3:ExtendedFabLayout.CollapseAlphaMotion>
-                    <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                    <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                       <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.CollapseAlphaMotion}"/>
                       <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFab.AlphaMotion}"/>
@@ -334,7 +334,7 @@
                   </m3:ExtendedFabLayout.CollapseAlphaMotion>
                   <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}">
                     <m3:MaterialIcon.DefaultSize>
-                      <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
+                      <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
                         <ReflectionBinding Path="Size" RelativeSource="{RelativeSource TemplatedParent}"/>
                         <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabBaseline.IconSize}"/>
                         <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabSmall.IconSize}"/>

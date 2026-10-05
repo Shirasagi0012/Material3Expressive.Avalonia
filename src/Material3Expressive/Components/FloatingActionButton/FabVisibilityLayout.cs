@@ -14,7 +14,7 @@ internal sealed class FabVisibilityLayout : Decorator
     private FloatingActionButton? _owner;
     private VisualAnimationScope? _scope;
     private Animatable<float>? _scale, _alpha;
-    private bool _pending;
+    private bool _pending, _needsTransition;
     private readonly ScaleTransform _transform = new();
     // RenderOptions are pushed after a visual's opacity. Put the layer policy on
     // the parent of the animated visual so its fill and shadow fade as one group.
@@ -35,24 +35,36 @@ internal sealed class FabVisibilityLayout : Decorator
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
-        _scope?.Dispose(); _scope = null; _scale = _alpha = null; _pending = false;
+        _scope?.Dispose(); _scope = null; _scale = _alpha = null; _pending = _needsTransition = false;
         base.OnDetachedFromVisualTree(e);
     }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == FloatingActionButton.AnimatedVisibleProperty && _scope is { IsEnding: false } scope)
-        {
-            if (_pending) return;
-            _pending = true;
-            _ = scope.Launch(async ct =>
-            {
-                await scope.Clock.NextFrameAsync(ct); _pending = false;
-                var target = _owner!.AnimatedVisible ? 1f : 0f;
-                await Task.WhenAll(_scale!.AnimateToAsync(target, _owner.VisibilityScaleSpec, cancellationToken: ct),
-                    _alpha!.AnimateToAsync(target, _owner.VisibilityAlphaSpec, cancellationToken: ct));
-            }, "FAB visibility");
-        }
+        if (e.Property == FloatingActionButton.AnimatedVisibleProperty)
+            _needsTransition = true;
+        if (e.Property == FloatingActionButton.AnimatedVisibleProperty ||
+            e.Property == FloatingActionButton.VisibilityScaleSpecProperty ||
+            e.Property == FloatingActionButton.VisibilityAlphaSpecProperty)
+            QueueTransition();
         InvalidateArrange();
+    }
+    private void QueueTransition()
+    {
+        if (!_needsTransition || _pending || _scope is not { IsEnding: false } scope ||
+            _owner?.VisibilityScaleSpec is null || _owner.VisibilityAlphaSpec is null) return;
+        _pending = true;
+        _ = scope.Launch(async ct =>
+        {
+            await scope.Clock.NextFrameAsync(ct); _pending = false;
+            // A binding can become unavailable between the request and this frame.
+            // Keep the request pending; never pass null to Animatable's default spring.
+            if (_owner?.VisibilityScaleSpec is not { } scaleSpec ||
+                _owner.VisibilityAlphaSpec is not { } alphaSpec) return;
+            var target = _owner.AnimatedVisible ? 1f : 0f;
+            _needsTransition = false;
+            await Task.WhenAll(_scale!.AnimateToAsync(target, scaleSpec, cancellationToken: ct),
+                _alpha!.AnimateToAsync(target, alphaSpec, cancellationToken: ct));
+        }, "FAB visibility");
     }
     protected override Size MeasureOverride(Size available)
     {

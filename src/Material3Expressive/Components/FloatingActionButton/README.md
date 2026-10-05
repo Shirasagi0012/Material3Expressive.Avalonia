@@ -123,7 +123,8 @@ ContainerColor / ContainerSize / ContainerCornerRadius 接受完整进度函数�
 `ClearValue` 遵循 Avalonia 优先级。局部 System / Component Token、主题变化和重新挂载会更新默认值。
 
 `VisibilityScaleSpec` / `VisibilityAlphaSpec` 可以替换整个动画规格；默认 spring 经组件 Token
-引用 System motion。Extended 的间距和尺寸、菜单的布局与 motion 通过主题直接进入内部部件属性，
+引用 System motion。任一 Visibility 规格为 null（包括绑定尚未提供值）时，新的显隐目标会等待，
+两项规格恢复后再执行当前目标；null 不表示切换到另一套默认动画。Extended 的间距和尺寸、菜单的布局与 motion 通过主题直接进入内部部件属性，
 不要求为每个内部参数新增公开控件属性。Medium / Large Extended 的实际图文间距覆盖入口为
 `ExtendedFabMedium.ContentIconLabelSpace` / `ExtendedFabLarge.ContentIconLabelSpace`，原始
 `IconLabelSpace` Token 保持 16/20 DIP，默认实际间距保持 12/16 DIP。

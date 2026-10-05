@@ -18,8 +18,8 @@ public class FloatingActionButton : Button
     public static readonly StyledProperty<bool> AnimatedVisibleProperty = AvaloniaProperty.Register<FloatingActionButton, bool>(nameof(AnimatedVisible), true);
     public static readonly StyledProperty<float> HiddenScaleProperty = AvaloniaProperty.Register<FloatingActionButton, float>(nameof(HiddenScale));
     public static readonly StyledProperty<RelativePoint> VisibilityAlignmentProperty = AvaloniaProperty.Register<FloatingActionButton, RelativePoint>(nameof(VisibilityAlignment));
-    public static readonly StyledProperty<IFiniteAnimationSpec<float>> VisibilityScaleSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>>(nameof(VisibilityScaleSpec), null!);
-    public static readonly StyledProperty<IFiniteAnimationSpec<float>> VisibilityAlphaSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>>(nameof(VisibilityAlphaSpec), null!);
+    public static readonly StyledProperty<IFiniteAnimationSpec<float>?> VisibilityScaleSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>?>(nameof(VisibilityScaleSpec));
+    public static readonly StyledProperty<IFiniteAnimationSpec<float>?> VisibilityAlphaSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>?>(nameof(VisibilityAlphaSpec));
 
     private FabIconContentLayout? _iconContentLayout;
 
@@ -33,8 +33,10 @@ public class FloatingActionButton : Button
     public float HiddenScale { get => GetValue(HiddenScaleProperty); set => SetValue(HiddenScaleProperty, value); }
     /// <summary>Logical alignment of the scale pivot; the horizontal coordinate follows RTL.</summary>
     public RelativePoint VisibilityAlignment { get => GetValue(VisibilityAlignmentProperty); set => SetValue(VisibilityAlignmentProperty, value); }
-    public IFiniteAnimationSpec<float> VisibilityScaleSpec { get => GetValue(VisibilityScaleSpecProperty); set => SetValue(VisibilityScaleSpecProperty, value); }
-    public IFiniteAnimationSpec<float> VisibilityAlphaSpec { get => GetValue(VisibilityAlphaSpecProperty); set => SetValue(VisibilityAlphaSpecProperty, value); }
+    /// <summary>Null postpones a requested visibility transition until both specifications are available.</summary>
+    public IFiniteAnimationSpec<float>? VisibilityScaleSpec { get => GetValue(VisibilityScaleSpecProperty); set => SetValue(VisibilityScaleSpecProperty, value); }
+    /// <summary>Null postpones a requested visibility transition until both specifications are available.</summary>
+    public IFiniteAnimationSpec<float>? VisibilityAlphaSpec { get => GetValue(VisibilityAlphaSpecProperty); set => SetValue(VisibilityAlphaSpecProperty, value); }
     internal bool HasIcon => Icon is not null || IconTemplate is not null;
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)

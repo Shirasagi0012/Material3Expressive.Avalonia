@@ -370,6 +370,295 @@ public class FloatingActionButtonTokenConfigurationTests
         finally { window.Close(); }
     }
 
+    [AvaloniaTheory]
+    [InlineData(FloatingActionButtonSize.Medium, 12d)]
+    [InlineData(FloatingActionButtonSize.Large, 16d)]
+    public void ExtendedGapTokenChanges_RecomputeTheActualLabelPositionAndContainerWidth(FloatingActionButtonSize size, double initialGap)
+    {
+        var icon = Icon(); var label = Label();
+        var fab = new ExtendedFloatingActionButton { Size = size, Icon = icon, Content = label };
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            var clip = Part<FabLabelClip>(fab);
+            var initialWidth = fab.Bounds.Width;
+            var initialLabelX = label.TranslatePoint(default, fab)!.Value.X;
+            var key = size == FloatingActionButtonSize.Medium
+                ? Comp.ExtendedFabMedium.ContentIconLabelSpace : Comp.ExtendedFabLarge.ContentIconLabelSpace;
+            Assert.Equal(initialGap + label.Width, clip.DesiredSize.Width);
+            fab.Resources[key] = initialGap + 7;
+            Flush(window);
+            Assert.Equal(initialGap + 7 + label.Width, clip.DesiredSize.Width);
+            Assert.Equal(initialLabelX + 7, label.TranslatePoint(default, fab)!.Value.X);
+            Assert.Equal(initialWidth + 7, fab.Bounds.Width);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void VisibilityUnavailableSpec_DefersBothChannelsAndReplaysTheCurrentTarget(int missingKind)
+    {
+        var fab = new FloatingActionButton { Icon = Icon() };
+        var source = new ContentControl();
+        IDisposable? binding = null;
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            var layout = Part<FabVisibilityLayout>(fab);
+            // Schedule first, then withdraw the specification before the shared frame.
+            fab.AnimatedVisible = false;
+            switch (missingKind)
+            {
+                case 0: fab.VisibilityScaleSpec = null; break;
+                case 1:
+                    binding = fab.Bind(FloatingActionButton.VisibilityScaleSpecProperty,
+                        new Binding(nameof(ContentControl.Content)) { Source = source });
+                    break;
+                default: fab.Resources[Comp.Fab.VisibilityScaleMotion] = new TokenRef(MissingMotion); break;
+            }
+            Flush(window);
+            Assert.Null(fab.VisibilityScaleSpec);
+            Frames(clock, window, 20);
+            Assert.Equal(1, layout.ScaleProgress);
+            Assert.Equal(1, layout.Alpha);
+            Assert.Null(window.MotionRoot.LastError);
+            // An unavailable target is not submitted or forgotten when it changes again.
+            fab.AnimatedVisible = true;
+            fab.AnimatedVisible = false;
+            Frames(clock, window, 4);
+            switch (missingKind)
+            {
+                case 0: fab.ClearValue(FloatingActionButton.VisibilityScaleSpecProperty); break;
+                case 1: source.Content = new SpringSpec<float>(1, 800); break;
+                default: fab.Resources.Remove(Comp.Fab.VisibilityScaleMotion); break;
+            }
+            Frames(clock, window, 70);
+            Assert.Equal(0, layout.ScaleProgress);
+            Assert.Equal(0, layout.Alpha);
+
+            fab.Resources[Comp.Fab.VisibilityAlphaMotion] = default(MotionSpring);
+            fab.AnimatedVisible = true;
+            Frames(clock, window, 10);
+            Assert.Null(fab.VisibilityAlphaSpec);
+            Assert.Equal(0, layout.Alpha);
+            Assert.Equal(0, layout.ScaleProgress);
+            fab.Resources.Remove(Comp.Fab.VisibilityAlphaMotion);
+            Frames(clock, window, 70);
+            Assert.Equal(1, layout.Alpha);
+            Assert.Equal(1, layout.ScaleProgress);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { binding?.Dispose(); window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ToggleUnavailableMotion_DoesNotConstructAZeroSpring_AndRestorationReplaysCheckedTarget()
+    {
+        var toggle = new ToggleFloatingActionButton { Icon = Icon() };
+        using var clock = new MotionTestClockScope(); var window = Show(toggle);
+        try
+        {
+            toggle.IsChecked = true;
+            toggle.Resources[Comp.ToggleFab.CheckedMotion] = new TokenRef(MissingMotion);
+            Frames(clock, window, 10);
+            Assert.Null(toggle.CheckedMotion);
+            Assert.Equal(0, toggle.CheckedProgress);
+            toggle.Resources[Comp.ToggleFab.CheckedMotion] = default(MotionSpring);
+            Frames(clock, window, 10);
+            Assert.Equal(0, toggle.CheckedProgress);
+            Assert.Null(window.MotionRoot.LastError);
+            toggle.Resources.Remove(Comp.ToggleFab.CheckedMotion);
+            Frames(clock, window, 70);
+            Assert.Equal(1, toggle.CheckedProgress);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(FloatingActionButtonSize.Default, false)]
+    [InlineData(FloatingActionButtonSize.Default, true)]
+    [InlineData(FloatingActionButtonSize.Medium, false)]
+    [InlineData(FloatingActionButtonSize.Medium, true)]
+    [InlineData(FloatingActionButtonSize.Large, false)]
+    [InlineData(FloatingActionButtonSize.Large, true)]
+    public void ExtendedUnavailableMotion_HoldsBothChannelsAndRecoversTheRequestedDirection(FloatingActionButtonSize size, bool initialExpanded)
+    {
+        var fab = new ExtendedFloatingActionButton { Size = size, Expanded = initialExpanded, Icon = Icon(), Content = Label() };
+        var widthKey = size == FloatingActionButtonSize.Default
+            ? initialExpanded ? Comp.ExtendedFabPrimary.CollapseWidthMotion : Comp.ExtendedFabPrimary.ExpandWidthMotion
+            : Comp.ExtendedFab.WidthMotion;
+        var alphaKey = size == FloatingActionButtonSize.Default
+            ? initialExpanded ? Comp.ExtendedFabPrimary.CollapseAlphaMotion : Comp.ExtendedFabPrimary.ExpandAlphaMotion
+            : Comp.ExtendedFab.AlphaMotion;
+        using var clock = new MotionTestClockScope(); var window = Show(fab);
+        try
+        {
+            var layout = Part<ExtendedFabLayout>(fab);
+            fab.Resources[widthKey] = new TokenRef(MissingMotion);
+            fab.Resources[alphaKey] = new TokenRef(MissingMotion);
+            fab.Expanded = !initialExpanded;
+            Frames(clock, window, 10);
+            Assert.Equal(initialExpanded ? 1 : 0, layout.LabelAlpha);
+            if (size != FloatingActionButtonSize.Default)
+                Assert.Equal(initialExpanded ? 1 : 0, layout.WidthProgress);
+            fab.Resources.Remove(widthKey);
+            Frames(clock, window, 10);
+            Assert.Equal(initialExpanded ? 1 : 0, layout.LabelAlpha);
+            if (size != FloatingActionButtonSize.Default)
+                Assert.Equal(initialExpanded ? 1 : 0, layout.WidthProgress);
+            fab.Resources[alphaKey] = default(MotionSpring);
+            Frames(clock, window, 10);
+            Assert.Null(window.MotionRoot.LastError);
+            Assert.Equal(initialExpanded ? 1 : 0, layout.LabelAlpha);
+            fab.Resources.Remove(alphaKey);
+            Frames(clock, window, 70);
+            Assert.Equal(initialExpanded ? 0 : 1, layout.LabelAlpha);
+            Assert.Equal(!initialExpanded, Part<FabLabelClip>(fab).IsVisible);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void MenuUnavailableMotion_PreservesStaggerAndItemTargetsUntilEachConfigurationRecovers()
+    {
+        var item = new FloatingActionButtonMenuItem { Icon = Icon(), Content = Label() };
+        var menu = new FloatingActionButtonMenu { Button = new FloatingActionButton(), Items = { item } };
+        using var clock = new MotionTestClockScope(); var window = Show(menu);
+        try
+        {
+            var layout = Part<FabMenuLayout>(menu);
+            menu.Resources[Comp.FabMenu.StaggerMotion] = new TokenRef(MissingMotion);
+            item.Resources[Comp.FabMenu.ItemWidthMotion] = new TokenRef(MissingMotion);
+            item.Resources[Comp.FabMenu.ItemAlphaMotion] = new TokenRef(MissingMotion);
+            menu.Expanded = true;
+            Frames(clock, window, 10);
+            Assert.Null(layout.StaggerMotion);
+            Assert.Equal(0, layout.VisibleCount);
+            menu.Resources[Comp.FabMenu.StaggerMotion] = default(MotionSpring);
+            Frames(clock, window, 10);
+            Assert.Equal(0, layout.VisibleCount);
+            Assert.Null(window.MotionRoot.LastError);
+            menu.Resources.Remove(Comp.FabMenu.StaggerMotion);
+            Frames(clock, window, 70);
+            Assert.Equal(1, layout.VisibleCount);
+            Assert.Equal(0, item.RevealWidth);
+            Assert.Equal(0, item.RevealAlpha);
+            item.Resources.Remove(Comp.FabMenu.ItemWidthMotion);
+            Frames(clock, window, 10);
+            Assert.Equal(0, item.RevealWidth);
+            item.Resources[Comp.FabMenu.ItemAlphaMotion] = default(MotionSpring);
+            Frames(clock, window, 10);
+            Assert.Equal(0, item.RevealAlpha);
+            Assert.Null(window.MotionRoot.LastError);
+            item.Resources.Remove(Comp.FabMenu.ItemAlphaMotion);
+            Frames(clock, window, 70);
+            Assert.Equal(1, item.RevealWidth);
+            Assert.Equal(1, item.RevealAlpha);
+            Assert.True(item.IsHitTestVisible);
+            Assert.Null(window.MotionRoot.LastError);
+
+            // A deferred collapse can be superseded before configuration returns.
+            item.Resources[Comp.FabMenu.ItemAlphaMotion] = new TokenRef(MissingMotion);
+            menu.Expanded = false;
+            Frames(clock, window, 70);
+            Assert.Equal(0, layout.VisibleCount);
+            Assert.Equal(1, item.RevealAlpha);
+            menu.Expanded = true;
+            Frames(clock, window, 70);
+            item.Resources.Remove(Comp.FabMenu.ItemAlphaMotion);
+            Frames(clock, window, 10);
+            Assert.Equal(1, item.RevealAlpha);
+            Assert.Equal(1, item.RevealWidth);
+            menu.Expanded = false;
+            Frames(clock, window, 70);
+            Assert.Equal(0, item.RevealAlpha);
+            Assert.Equal(0, item.RevealWidth);
+            Assert.False(item.IsHitTestVisible);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void DeferredMotionRequests_DoNotLeakAcrossDetachAndReparent()
+    {
+        var fab = new FloatingActionButton { Icon = Icon() };
+        var toggle = new ToggleFloatingActionButton { Icon = Icon() };
+        var controls = new StackPanel { Children = { fab, toggle } };
+        var first = new Panel { Children = { controls } };
+        var second = new Panel();
+        first.Resources[Comp.Fab.VisibilityScaleMotion] = new TokenRef(MissingMotion);
+        first.Resources[Comp.ToggleFab.CheckedMotion] = new TokenRef(MissingMotion);
+        using var clock = new MotionTestClockScope(); var window = Show(new Panel { Children = { first, second } });
+        try
+        {
+            fab.AnimatedVisible = false;
+            toggle.IsChecked = true;
+            Frames(clock, window, 5);
+            Assert.Equal(1, Part<FabVisibilityLayout>(fab).Alpha);
+            Assert.Equal(0, toggle.CheckedProgress);
+            first.Children.Remove(controls);
+            Frames(clock, window, 2);
+            Assert.Equal(0, clock.PendingFrameCount);
+            second.Children.Add(controls);
+            Flush(window);
+            Assert.Equal(0, Part<FabVisibilityLayout>(fab).Alpha);
+            Assert.Equal(1, toggle.CheckedProgress);
+            fab.AnimatedVisible = true;
+            toggle.IsChecked = false;
+            Frames(clock, window, 70);
+            Assert.Equal(1, Part<FabVisibilityLayout>(fab).Alpha);
+            Assert.Equal(0, toggle.CheckedProgress);
+            Assert.Null(window.MotionRoot.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void TemplateMultiBindings_AreBelowLocalPartConfiguration_AndClearValueRestoresTokens()
+    {
+        var fab = new FloatingActionButton { Icon = Icon() };
+        var extended = new ExtendedFloatingActionButton { Size = FloatingActionButtonSize.Medium, Icon = Icon(), Content = Label() };
+        using var clock = new MotionTestClockScope(); var window = Show(new StackPanel { Children = { fab, extended } });
+        try
+        {
+            var ordinaryLayout = Part<FabLayout>(fab);
+            var layout = Part<ExtendedFabLayout>(extended);
+            var iconPresenter = extended.GetVisualDescendants().OfType<Control>().Single(x => x.Name == "PART_Icon");
+            ordinaryLayout.ContainerMinSize = 73;
+            layout.LeadingSpace = 39;
+            var localMotion = new MotionSpring(.8, 654);
+            layout.ExpandWidthMotion = localMotion;
+            MaterialIcon.SetDefaultSize(iconPresenter, 41);
+            extended.Resources[Comp.ExtendedFabMedium.LeadingSpace] = 31d;
+            extended.Resources[Comp.ExtendedFab.WidthMotion] = new MotionSpring(1, 444);
+            extended.Resources[Comp.FabMedium.IconSize] = 35d;
+            fab.Resources[Comp.FabBaseline.ContainerHeight] = 61d;
+            Flush(window);
+            Assert.Equal(73, ordinaryLayout.ContainerMinSize);
+            Assert.Equal(39, layout.LeadingSpace);
+            Assert.Equal(localMotion, layout.ExpandWidthMotion);
+            Assert.Equal(41, MaterialIcon.GetDefaultSize(iconPresenter));
+            ordinaryLayout.ClearValue(FabLayout.ContainerMinSizeProperty);
+            layout.ClearValue(ExtendedFabLayout.LeadingSpaceProperty);
+            layout.ClearValue(ExtendedFabLayout.ExpandWidthMotionProperty);
+            iconPresenter.ClearValue(MaterialIcon.DefaultSizeProperty);
+            Flush(window);
+            Assert.Equal(61, ordinaryLayout.ContainerMinSize);
+            Assert.Equal(31, layout.LeadingSpace);
+            Assert.Equal(new MotionSpring(1, 444), layout.ExpandWidthMotion);
+            Assert.Equal(35, MaterialIcon.GetDefaultSize(iconPresenter));
+        }
+        finally { window.Close(); }
+    }
+
+    private static readonly MaterialTokenKey<MotionSpring> MissingMotion = new("test.fab.missing-motion");
+
     private static Border Icon() => new() { Width = 11, Height = 13 };
     private static Border Label() => new() { Width = 32, Height = 16 };
     private static T Part<T>(Control control) where T : Control => control.GetVisualDescendants().OfType<T>().Single();
