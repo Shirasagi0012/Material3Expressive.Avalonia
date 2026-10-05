@@ -1,0 +1,23 @@
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+            TextElement.Foreground="Purple">
+  <StackPanel.Resources>
+    <ControlTheme x:Key="ContentColorTheme" TargetType="ContentControl">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border x:Name="PART_ContentColor" Background="Red"
+                  BorderBrush="{m3:ContentColorFor}" />
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </StackPanel.Resources>
+  <StackPanel.Styles>
+    <Style Selector="Border">
+      <Setter Property="BorderBrush" Value="{m3:ContentColorFor}" />
+    </Style>
+  </StackPanel.Styles>
+  <ContentControl x:Name="Templated" Theme="{StaticResource ContentColorTheme}" />
+  <Border x:Name="Styled" Background="Red" />
+  <Border x:Name="Direct" Background="Red" BorderBrush="{m3:ContentColorFor}" />
+</StackPanel>
