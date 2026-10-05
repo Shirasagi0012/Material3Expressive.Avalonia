@@ -5,8 +5,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using static Material3Expressive.Tokens.MaterialTokens;
+using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
@@ -14,14 +13,28 @@ namespace Material3Expressive.Components;
 // The icon and label presenters remain ordinary XAML content slots.
 internal sealed class ExtendedFabLayout : Panel
 {
-    public static readonly StyledProperty<double> MinimumSizeProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(MinimumSize), 56);
-    public static readonly StyledProperty<double> LeadingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(LeadingSpace), 20);
-    public static readonly StyledProperty<double> TrailingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(TrailingSpace), 20);
-    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(IconLabelSpace), 12);
+    public static readonly StyledProperty<double> MinimumSizeProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(MinimumSize));
+    public static readonly StyledProperty<double> LeadingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(LeadingSpace));
+    public static readonly StyledProperty<double> TrailingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(TrailingSpace));
+    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(IconLabelSpace));
     public double MinimumSize { get => GetValue(MinimumSizeProperty); set => SetValue(MinimumSizeProperty, value); }
     public double LeadingSpace { get => GetValue(LeadingSpaceProperty); set => SetValue(LeadingSpaceProperty, value); }
     public double TrailingSpace { get => GetValue(TrailingSpaceProperty); set => SetValue(TrailingSpaceProperty, value); }
     public double IconLabelSpace { get => GetValue(IconLabelSpaceProperty); set => SetValue(IconLabelSpaceProperty, value); }
+    public static readonly StyledProperty<double> MinimumWidthProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(MinimumWidth));
+    public double MinimumWidth { get => GetValue(MinimumWidthProperty); set => SetValue(MinimumWidthProperty, value); }
+    public static readonly StyledProperty<double> CollapsedMinimumWidthProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(CollapsedMinimumWidth));
+    public double CollapsedMinimumWidth { get => GetValue(CollapsedMinimumWidthProperty); set => SetValue(CollapsedMinimumWidthProperty, value); }
+    public static readonly StyledProperty<double> IconLeadingSpaceProperty = AvaloniaProperty.Register<ExtendedFabLayout, double>(nameof(IconLeadingSpace));
+    public double IconLeadingSpace { get => GetValue(IconLeadingSpaceProperty); set => SetValue(IconLeadingSpaceProperty, value); }
+    public static readonly StyledProperty<MotionSpring> ExpandWidthMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring>(nameof(ExpandWidthMotion));
+    public MotionSpring ExpandWidthMotion { get => GetValue(ExpandWidthMotionProperty); set => SetValue(ExpandWidthMotionProperty, value); }
+    public static readonly StyledProperty<MotionSpring> CollapseWidthMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring>(nameof(CollapseWidthMotion));
+    public MotionSpring CollapseWidthMotion { get => GetValue(CollapseWidthMotionProperty); set => SetValue(CollapseWidthMotionProperty, value); }
+    public static readonly StyledProperty<MotionSpring> ExpandAlphaMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring>(nameof(ExpandAlphaMotion));
+    public MotionSpring ExpandAlphaMotion { get => GetValue(ExpandAlphaMotionProperty); set => SetValue(ExpandAlphaMotionProperty, value); }
+    public static readonly StyledProperty<MotionSpring> CollapseAlphaMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring>(nameof(CollapseAlphaMotion));
+    public MotionSpring CollapseAlphaMotion { get => GetValue(CollapseAlphaMotionProperty); set => SetValue(CollapseAlphaMotionProperty, value); }
     private ExtendedFloatingActionButton? _owner;
     private VisualAnimationScope? _scope;
     private Animatable<float>? _width, _alpha;
@@ -33,7 +46,7 @@ internal sealed class ExtendedFabLayout : Panel
     private double _iconWidth, _labelWidth, _rowWidth, _rowHeight;
     internal float WidthProgress => _width?.Value ?? (_owner?.Expanded != false ? 1 : 0);
     internal float LabelAlpha => _alpha?.Value ?? (_owner?.Expanded != false ? 1 : 0);
-    static ExtendedFabLayout() => AffectsMeasure<ExtendedFabLayout>(MinimumSizeProperty, LeadingSpaceProperty, TrailingSpaceProperty, IconLabelSpaceProperty);
+    static ExtendedFabLayout() => AffectsMeasure<ExtendedFabLayout>(MinimumSizeProperty, LeadingSpaceProperty, TrailingSpaceProperty, IconLabelSpaceProperty, MinimumWidthProperty, CollapsedMinimumWidthProperty, IconLeadingSpaceProperty);
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -71,16 +84,13 @@ internal sealed class ExtendedFabLayout : Panel
                 // AnimatedVisibility's Visible -> Visible interrupted segment falls back
                 // to DefaultSizeAnimationSpec/DefaultAlphaSpring, not its enter spec.
                 var returningToVisible = classic && expanded && _classicCurrentExpanded && _classicWidth?.IsRunning == true;
-                var widthSpec = FabMotion.Spring(this, classic && !expanded ? Sys.Motion.Spring.SpatialDefault : Sys.Motion.Spring.SpatialFast,
-                    classic && !expanded ? MotionScheme.Expressive.DefaultSpatial : MotionScheme.Expressive.FastSpatial);
-                var alphaSpec = FabMotion.Spring(this, classic && expanded ? Sys.Motion.Spring.EffectsDefault : Sys.Motion.Spring.EffectsFast,
-                    classic && expanded ? MotionScheme.Expressive.DefaultEffects : MotionScheme.Expressive.FastEffects);
+                var widthSpec = expanded ? ExpandWidthMotion : CollapseWidthMotion;
+                var alphaSpec = FabMotion.Spring(expanded ? ExpandAlphaMotion : CollapseAlphaMotion);
                 var widthAnimation = classic && _classicWidth is not null
                     ? _classicWidth.AnimateToAsync(expanded ? _labelExtentPx : 0,
                         returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 1)
-                            : FabMotion.Spring(this, expanded ? Sys.Motion.Spring.SpatialFast : Sys.Motion.Spring.SpatialDefault,
-                                expanded ? MotionScheme.Expressive.FastSpatial : MotionScheme.Expressive.DefaultSpatial, 1), cancellationToken: ct)
-                    : _width!.AnimateToAsync(expanded ? 1 : 0, widthSpec, cancellationToken: ct);
+                            : FabMotion.Spring(widthSpec, 1), cancellationToken: ct)
+                    : _width!.AnimateToAsync(expanded ? 1 : 0, FabMotion.Spring(widthSpec), cancellationToken: ct);
                 await Task.WhenAll(widthAnimation,
                     _alpha!.AnimateToAsync(expanded ? 1 : 0, returningToVisible ? new SpringSpec<float>(stiffness: 400, visibilityThreshold: 0.01f) : alphaSpec, cancellationToken: ct));
                 _classicCurrentExpanded = expanded;
@@ -99,9 +109,9 @@ internal sealed class ExtendedFabLayout : Panel
         label.IsVisible = !hasIcon || !_fullyCollapsed;
         var classic = _owner?.Size == FloatingActionButtonSize.Default;
         var expanded = _owner?.Expanded != false;
-        var start = classic && hasIcon ? (expanded ? 16 : 0) : LeadingSpace;
-        var end = classic && hasIcon ? (expanded ? 20 : 0) : TrailingSpace;
-        var gap = _owner?.Size switch { FloatingActionButtonSize.Medium => 12, FloatingActionButtonSize.Large => 16, _ => IconLabelSpace };
+        var start = classic && hasIcon ? (expanded ? IconLeadingSpace : 0) : LeadingSpace;
+        var end = classic && hasIcon ? (expanded ? TrailingSpace : 0) : TrailingSpace;
+        var gap = IconLabelSpace;
         if (label is FabLabelClip clip) clip.Gap = hasIcon ? gap : 0;
         icon.Measure(new Size(Math.Max(0, available.Width - start - end), available.Height));
         _iconWidth = hasIcon ? icon.DesiredSize.Width : 0;
@@ -117,9 +127,9 @@ internal sealed class ExtendedFabLayout : Panel
             scope.SubscribeValue(_classicWidth, _ => InvalidateMeasure());
         }
         if (!hasIcon)
-            _rowWidth = Math.Max(classic ? 80 : MinimumSize, start + end + _labelWidth);
+            _rowWidth = Math.Max(MinimumWidth, start + end + _labelWidth);
         else if (classic)
-            _rowWidth = Math.Max(expanded ? 80 : 56, start + end + _iconWidth + MathUtils.PxToDip(MathUtils.RoundToInt(Math.Max(0, _classicWidth?.Value ?? 0)), scale));
+            _rowWidth = Math.Max(expanded ? MinimumWidth : CollapsedMinimumWidth, start + end + _iconWidth + MathUtils.PxToDip(MathUtils.RoundToInt(Math.Max(0, _classicWidth?.Value ?? 0)), scale));
         else
         {
             var expandedWidth = Math.Max(MinimumSize, start + end + _iconWidth + labelExtent);
@@ -133,9 +143,8 @@ internal sealed class ExtendedFabLayout : Panel
         var hasIcon = _owner?.HasIcon == true;
         var classic = _owner?.Size == FloatingActionButtonSize.Default;
         var expanded = _owner?.Expanded != false;
-        var gap = _owner?.Size switch { FloatingActionButtonSize.Medium => 12, FloatingActionButtonSize.Large => 16, _ => IconLabelSpace };
         var labelWidth = classic && hasIcon ? MathUtils.PxToDip(MathUtils.RoundToInt(Math.Max(0, _classicWidth?.Value ?? 0)), LayoutHelper.GetLayoutScale(this)) : _labelWidth;
-        var x = classic && hasIcon ? (expanded ? 16 : (final.Width - _iconWidth - labelWidth) / 2) : LeadingSpace;
+        var x = classic && hasIcon ? (expanded ? IconLeadingSpace : (final.Width - _iconWidth - labelWidth) / 2) : LeadingSpace;
         if (!hasIcon) x = (final.Width - _labelWidth) / 2;
         var density = LayoutHelper.GetLayoutScale(this);
         x = MathUtils.RoundToInt(x * density) / density;

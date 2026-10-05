@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Media;
+using Material3Expressive.Components;
+using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Foundation.Typography;
 
@@ -9,6 +11,29 @@ public static partial class MaterialTokens
 {
     public static partial class Comp
     {
+        public static class ToggleFab
+        {
+            public static readonly MaterialTokenKey<double> InitialCornerRadius = new("md.comp.ToggleFab.InitialCornerRadius");
+            public static readonly MaterialTokenKey<double> MediumInitialCornerRadius = new("md.comp.ToggleFab.MediumInitialCornerRadius");
+            public static readonly MaterialTokenKey<double> LargeInitialCornerRadius = new("md.comp.ToggleFab.LargeInitialCornerRadius");
+            public static readonly MaterialTokenKey<Color> InitialContainerColor = new("md.comp.ToggleFab.InitialContainerColor");
+            public static readonly MaterialTokenKey<Color> FinalContainerColor = new("md.comp.ToggleFab.FinalContainerColor");
+            public static readonly MaterialTokenKey<Color> InitialIconColor = new("md.comp.ToggleFab.InitialIconColor");
+            public static readonly MaterialTokenKey<Color> FinalIconColor = new("md.comp.ToggleFab.FinalIconColor");
+            public static readonly MaterialTokenKey<SpringSpec> CheckedMotion = new("md.comp.ToggleFab.CheckedMotion");
+        }
+        public static class ExtendedFab
+        {
+            public static readonly MaterialTokenKey<SpringSpec> WidthMotion = new("md.comp.ExtendedFab.WidthMotion");
+            public static readonly MaterialTokenKey<SpringSpec> AlphaMotion = new("md.comp.ExtendedFab.AlphaMotion");
+        }
+        public static class Fab
+        {
+            public static readonly MaterialTokenKey<float> HiddenScale = new("md.comp.Fab.HiddenScale");
+            public static readonly MaterialTokenKey<RelativePoint> VisibilityAlignment = new("md.comp.Fab.VisibilityAlignment");
+            public static readonly MaterialTokenKey<SpringSpec> VisibilityScaleMotion = new("md.comp.Fab.VisibilityScaleMotion");
+            public static readonly MaterialTokenKey<SpringSpec> VisibilityAlphaMotion = new("md.comp.Fab.VisibilityAlphaMotion");
+        }
         public static class FabBaseline
         {
             public static readonly MaterialTokenKey<double> ContainerWidth = new("md.comp.FabBaseline.ContainerWidth");
@@ -32,6 +57,7 @@ public static partial class MaterialTokens
         }
         public static class FabLarge
         {
+            public static readonly MaterialTokenKey<double> ContentIconSize = new("md.comp.FabLarge.ContentIconSize");
             public static readonly MaterialTokenKey<double> ContainerWidth = new("md.comp.FabLarge.ContainerWidth");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.FabLarge.ContainerHeight");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShape = new("md.comp.FabLarge.ContainerShape");
@@ -47,6 +73,12 @@ public static partial class MaterialTokens
         }
         public static class ExtendedFabPrimary
         {
+            public static readonly MaterialTokenKey<double> MinimumWidth = new("md.comp.ExtendedFabPrimary.MinimumWidth");
+            public static readonly MaterialTokenKey<double> IconLeadingSpace = new("md.comp.ExtendedFabPrimary.IconLeadingSpace");
+            public static readonly MaterialTokenKey<SpringSpec> ExpandWidthMotion = new("md.comp.ExtendedFabPrimary.ExpandWidthMotion");
+            public static readonly MaterialTokenKey<SpringSpec> CollapseWidthMotion = new("md.comp.ExtendedFabPrimary.CollapseWidthMotion");
+            public static readonly MaterialTokenKey<SpringSpec> ExpandAlphaMotion = new("md.comp.ExtendedFabPrimary.ExpandAlphaMotion");
+            public static readonly MaterialTokenKey<SpringSpec> CollapseAlphaMotion = new("md.comp.ExtendedFabPrimary.CollapseAlphaMotion");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.ExtendedFabPrimary.ContainerHeight");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShape = new("md.comp.ExtendedFabPrimary.ContainerShape");
             public static readonly MaterialTokenKey<double> LeadingSpace = new("md.comp.ExtendedFabPrimary.LeadingSpace");
@@ -65,6 +97,7 @@ public static partial class MaterialTokens
         }
         public static class ExtendedFabMedium
         {
+            public static readonly MaterialTokenKey<double> ContentIconLabelSpace = new("md.comp.ExtendedFabMedium.ContentIconLabelSpace");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.ExtendedFabMedium.ContainerHeight");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShape = new("md.comp.ExtendedFabMedium.ContainerShape");
             public static readonly MaterialTokenKey<double> LeadingSpace = new("md.comp.ExtendedFabMedium.LeadingSpace");
@@ -74,6 +107,7 @@ public static partial class MaterialTokens
         }
         public static class ExtendedFabLarge
         {
+            public static readonly MaterialTokenKey<double> ContentIconLabelSpace = new("md.comp.ExtendedFabLarge.ContentIconLabelSpace");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.ExtendedFabLarge.ContainerHeight");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShape = new("md.comp.ExtendedFabLarge.ContainerShape");
             public static readonly MaterialTokenKey<double> LeadingSpace = new("md.comp.ExtendedFabLarge.LeadingSpace");
@@ -83,6 +117,13 @@ public static partial class MaterialTokens
         }
         public static class FabMenu
         {
+            public static readonly MaterialTokenKey<double> ItemIconSize = new("md.comp.FabMenu.ItemIconSize");
+            public static readonly MaterialTokenKey<TextStyle> LabelTextStyle = new("md.comp.FabMenu.LabelTextStyle");
+            public static readonly MaterialTokenKey<Color> ItemContainerColor = new("md.comp.FabMenu.ItemContainerColor");
+            public static readonly MaterialTokenKey<FloatingActionButtonMenuAlignment> MenuAlignment = new("md.comp.FabMenu.MenuAlignment");
+            public static readonly MaterialTokenKey<SpringSpec> ItemWidthMotion = new("md.comp.FabMenu.ItemWidthMotion");
+            public static readonly MaterialTokenKey<SpringSpec> ItemAlphaMotion = new("md.comp.FabMenu.ItemAlphaMotion");
+            public static readonly MaterialTokenKey<SpringSpec> StaggerMotion = new("md.comp.FabMenu.StaggerMotion");
             public static readonly MaterialTokenKey<double> ItemHeight = new("md.comp.FabMenu.ItemHeight");
             public static readonly MaterialTokenKey<CornerRadius> ItemShape = new("md.comp.FabMenu.ItemShape");
             public static readonly MaterialTokenKey<double> ItemSpacing = new("md.comp.FabMenu.ItemSpacing");

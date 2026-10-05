@@ -16,10 +16,10 @@ public class FloatingActionButton : Button
     public static readonly StyledProperty<FloatingActionButtonSize> SizeProperty = AvaloniaProperty.Register<FloatingActionButton, FloatingActionButtonSize>(nameof(Size));
     public static readonly StyledProperty<FloatingActionButtonElevation?> ElevationProperty = AvaloniaProperty.Register<FloatingActionButton, FloatingActionButtonElevation?>(nameof(Elevation));
     public static readonly StyledProperty<bool> AnimatedVisibleProperty = AvaloniaProperty.Register<FloatingActionButton, bool>(nameof(AnimatedVisible), true);
-    public static readonly StyledProperty<float> HiddenScaleProperty = AvaloniaProperty.Register<FloatingActionButton, float>(nameof(HiddenScale), 0.2f);
-    public static readonly StyledProperty<RelativePoint> VisibilityAlignmentProperty = AvaloniaProperty.Register<FloatingActionButton, RelativePoint>(nameof(VisibilityAlignment), RelativePoint.BottomRight);
-    public static readonly StyledProperty<IFiniteAnimationSpec<float>?> VisibilityScaleSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>?>(nameof(VisibilityScaleSpec));
-    public static readonly StyledProperty<IFiniteAnimationSpec<float>?> VisibilityAlphaSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>?>(nameof(VisibilityAlphaSpec));
+    public static readonly StyledProperty<float> HiddenScaleProperty = AvaloniaProperty.Register<FloatingActionButton, float>(nameof(HiddenScale));
+    public static readonly StyledProperty<RelativePoint> VisibilityAlignmentProperty = AvaloniaProperty.Register<FloatingActionButton, RelativePoint>(nameof(VisibilityAlignment));
+    public static readonly StyledProperty<IFiniteAnimationSpec<float>> VisibilityScaleSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>>(nameof(VisibilityScaleSpec), null!);
+    public static readonly StyledProperty<IFiniteAnimationSpec<float>> VisibilityAlphaSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>>(nameof(VisibilityAlphaSpec), null!);
 
     private FabIconContentLayout? _iconContentLayout;
 
@@ -33,8 +33,8 @@ public class FloatingActionButton : Button
     public float HiddenScale { get => GetValue(HiddenScaleProperty); set => SetValue(HiddenScaleProperty, value); }
     /// <summary>Logical alignment of the scale pivot; the horizontal coordinate follows RTL.</summary>
     public RelativePoint VisibilityAlignment { get => GetValue(VisibilityAlignmentProperty); set => SetValue(VisibilityAlignmentProperty, value); }
-    public IFiniteAnimationSpec<float>? VisibilityScaleSpec { get => GetValue(VisibilityScaleSpecProperty); set => SetValue(VisibilityScaleSpecProperty, value); }
-    public IFiniteAnimationSpec<float>? VisibilityAlphaSpec { get => GetValue(VisibilityAlphaSpecProperty); set => SetValue(VisibilityAlphaSpecProperty, value); }
+    public IFiniteAnimationSpec<float> VisibilityScaleSpec { get => GetValue(VisibilityScaleSpecProperty); set => SetValue(VisibilityScaleSpecProperty, value); }
+    public IFiniteAnimationSpec<float> VisibilityAlphaSpec { get => GetValue(VisibilityAlphaSpecProperty); set => SetValue(VisibilityAlphaSpecProperty, value); }
     internal bool HasIcon => Icon is not null || IconTemplate is not null;
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -63,14 +63,4 @@ public class ExtendedFloatingActionButton : FloatingActionButton
 {
     public static readonly StyledProperty<bool> ExpandedProperty = AvaloniaProperty.Register<ExtendedFloatingActionButton, bool>(nameof(Expanded), true);
     public bool Expanded { get => GetValue(ExpandedProperty); set => SetValue(ExpandedProperty, value); }
-}
-
-public static class FloatingActionButtonDefaults
-{
-    public const double MediumIconSize = 28;
-    // Explicit correction in FloatingActionButton.kt, rather than FabLargeTokens.IconSize (32).
-    public const double LargeIconSize = 36;
-    public static FloatingActionButtonElevation Elevation(double @default = 6, double pressed = 6, double focused = 6, double hovered = 8) => new(@default, pressed, focused, hovered);
-    public static FloatingActionButtonElevation LoweredElevation(double @default = 1, double pressed = 1, double focused = 1, double hovered = 3) => new(@default, pressed, focused, hovered);
-    public static FloatingActionButtonElevation BottomAppBarFabElevation(double @default = 0, double pressed = 0, double focused = 0, double hovered = 0) => new(@default, pressed, focused, hovered);
 }

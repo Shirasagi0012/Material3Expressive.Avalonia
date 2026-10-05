@@ -6,8 +6,6 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
@@ -50,8 +48,8 @@ internal sealed class FabVisibilityLayout : Decorator
             {
                 await scope.Clock.NextFrameAsync(ct); _pending = false;
                 var target = _owner!.AnimatedVisible ? 1f : 0f;
-                await Task.WhenAll(_scale!.AnimateToAsync(target, _owner.VisibilityScaleSpec ?? FabMotion.Spring(this, Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial), cancellationToken: ct),
-                    _alpha!.AnimateToAsync(target, _owner.VisibilityAlphaSpec ?? FabMotion.Spring(this, Sys.Motion.Spring.EffectsFast, MotionScheme.Expressive.FastEffects), cancellationToken: ct));
+                await Task.WhenAll(_scale!.AnimateToAsync(target, _owner.VisibilityScaleSpec, cancellationToken: ct),
+                    _alpha!.AnimateToAsync(target, _owner.VisibilityAlphaSpec, cancellationToken: ct));
             }, "FAB visibility");
         }
         InvalidateArrange();

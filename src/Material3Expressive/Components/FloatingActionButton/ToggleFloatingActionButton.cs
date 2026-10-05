@@ -3,7 +3,6 @@ using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
-using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
@@ -13,10 +12,7 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Rendering;
-using Material3Expressive.Foundation.Tokens;
-using static Material3Expressive.Tokens.MaterialTokens;
+using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
@@ -32,9 +28,9 @@ public class ToggleFloatingActionButton : Button
     public static readonly StyledProperty<IDataTemplate?> IconTemplateProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, IDataTemplate?>(nameof(IconTemplate));
     public static readonly StyledProperty<bool> IsCheckedProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, bool>(nameof(IsChecked));
     public static readonly StyledProperty<FloatingActionButtonSize> SizeProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, FloatingActionButtonSize>(nameof(Size));
-    public static readonly StyledProperty<Func<float, Color>?> ContainerColorProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, Color>?>(nameof(ContainerColor));
-    public static readonly StyledProperty<Func<float, double>?> ContainerSizeProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, double>?>(nameof(ContainerSize));
-    public static readonly StyledProperty<Func<float, double>?> ContainerCornerRadiusProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, double>?>(nameof(ContainerCornerRadius));
+    public static readonly StyledProperty<Func<float, Color>> ContainerColorProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, Color>>(nameof(ContainerColor), null!);
+    public static readonly StyledProperty<Func<float, double>> ContainerSizeProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, double>>(nameof(ContainerSize), null!);
+    public static readonly StyledProperty<Func<float, double>> ContainerCornerRadiusProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, double>>(nameof(ContainerCornerRadius), null!);
     public static readonly DirectProperty<ToggleFloatingActionButton, float> CheckedProgressProperty = AvaloniaProperty.RegisterDirect<ToggleFloatingActionButton, float>(nameof(CheckedProgress), owner => owner.CheckedProgress);
     public static readonly DirectProperty<ToggleFloatingActionButton, double> IconSizeProperty = AvaloniaProperty.RegisterDirect<ToggleFloatingActionButton, double>(nameof(IconSize), owner => owner.IconSize);
     public static readonly DirectProperty<ToggleFloatingActionButton, Color> IconColorProperty = AvaloniaProperty.RegisterDirect<ToggleFloatingActionButton, Color>(nameof(IconColor), owner => owner.IconColor);
@@ -44,9 +40,19 @@ public class ToggleFloatingActionButton : Button
     public IDataTemplate? IconTemplate { get => GetValue(IconTemplateProperty); set => SetValue(IconTemplateProperty, value); }
     public bool IsChecked { get => GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }
     public FloatingActionButtonSize Size { get => GetValue(SizeProperty); set => SetValue(SizeProperty, value); }
-    public Func<float, Color>? ContainerColor { get => GetValue(ContainerColorProperty); set => SetValue(ContainerColorProperty, value); }
-    public Func<float, double>? ContainerSize { get => GetValue(ContainerSizeProperty); set => SetValue(ContainerSizeProperty, value); }
-    public Func<float, double>? ContainerCornerRadius { get => GetValue(ContainerCornerRadiusProperty); set => SetValue(ContainerCornerRadiusProperty, value); }
+    public Func<float, Color> ContainerColor { get => GetValue(ContainerColorProperty); set => SetValue(ContainerColorProperty, value); }
+    public Func<float, double> ContainerSize { get => GetValue(ContainerSizeProperty); set => SetValue(ContainerSizeProperty, value); }
+    public Func<float, double> ContainerCornerRadius { get => GetValue(ContainerCornerRadiusProperty); set => SetValue(ContainerCornerRadiusProperty, value); }
+    internal static readonly StyledProperty<Func<float, double>> IconSizeFunctionProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, double>>(nameof(IconSizeFunction), null!);
+    internal Func<float, double> IconSizeFunction { get => GetValue(IconSizeFunctionProperty); set => SetValue(IconSizeFunctionProperty, value); }
+    internal static readonly StyledProperty<Func<float, Color>> IconColorFunctionProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, Func<float, Color>>(nameof(IconColorFunction), null!);
+    internal Func<float, Color> IconColorFunction { get => GetValue(IconColorFunctionProperty); set => SetValue(IconColorFunctionProperty, value); }
+    internal static readonly StyledProperty<double> DefaultIconSizeProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, double>(nameof(DefaultIconSize));
+    internal double DefaultIconSize { get => GetValue(DefaultIconSizeProperty); set => SetValue(DefaultIconSizeProperty, value); }
+    internal static readonly StyledProperty<double> ShadowElevationProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, double>(nameof(ShadowElevation));
+    internal double ShadowElevation { get => GetValue(ShadowElevationProperty); set => SetValue(ShadowElevationProperty, value); }
+    internal static readonly StyledProperty<MotionSpring> CheckedMotionProperty = AvaloniaProperty.Register<ToggleFloatingActionButton, MotionSpring>(nameof(CheckedMotion));
+    internal MotionSpring CheckedMotion { get => GetValue(CheckedMotionProperty); set => SetValue(CheckedMotionProperty, value); }
     private float _checkedProgress;
     private double _iconSize;
     private Color _iconColor;
@@ -59,22 +65,11 @@ public class ToggleFloatingActionButton : Button
     private VisualAnimationScope? _scope;
     private Animatable<float>? _progress;
     private ToggleFabLayout? _layout;
-    private ContentPresenter? _iconPresenter;
     private MaterialSurface? _surface;
     private bool _pending;
-    internal double InitialSize => ContainerSize?.Invoke(0) ?? Size switch
-    {
-        FloatingActionButtonSize.Medium => ThemeSize(Comp.FabMedium.ContainerHeight, 80),
-        FloatingActionButtonSize.Large => ThemeSize(Comp.FabLarge.ContainerHeight, 96),
-        _ => ThemeSize(Comp.FabBaseline.ContainerHeight, 56)
-    };
-    internal double CurrentSize => ContainerSize?.Invoke(CheckedProgress) ?? MathUtils.Lerp((float)InitialSize, (float)ThemeSize(Comp.FabMenu.CloseButtonSize, 56), CheckedProgress);
+    internal double InitialSize => ContainerSize(0);
+    internal double CurrentSize => ContainerSize(CheckedProgress);
 
-    public ToggleFloatingActionButton()
-    {
-        ResourcesChanged += (_, _) => { ApplyIconDefaultSize(); Refresh(); };
-        ActualThemeVariantChanged += (_, _) => { ApplyIconDefaultSize(); Refresh(); };
-    }
     protected override void OnClick()
     {
         CheckedChangeRequested?.Invoke(this, new(!IsChecked));
@@ -84,9 +79,7 @@ public class ToggleFloatingActionButton : Button
     {
         EndMotion(); base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<ToggleFabLayout>("PART_Layout");
-        _iconPresenter = e.NameScope.Find<ContentPresenter>("PART_IconPresenter");
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
-        ApplyIconDefaultSize();
         if (this.IsAttachedToVisualTree()) StartMotion();
     }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) { base.OnAttachedToVisualTree(e); StartMotion(); }
@@ -118,44 +111,27 @@ public class ToggleFloatingActionButton : Button
                     // AnimateAsState cancels its previous job before launching a new one.
                     // Unlike an Animatable retarget, this clears velocity and frame time.
                     await _progress!.StopAsync();
-                    await _progress!.AnimateToAsync(IsChecked ? 1 : 0, FabMotion.Spring(this, Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial), cancellationToken: ct);
+                    await _progress!.AnimateToAsync(IsChecked ? 1 : 0, FabMotion.Spring(CheckedMotion), cancellationToken: ct);
                 }, "Toggle FAB checked progress");
             }
             else if (_scope is null) SetAndRaise(CheckedProgressProperty, ref _checkedProgress, IsChecked ? 1f : 0f);
         }
-        if (change.Property == SizeProperty) ApplyIconDefaultSize();
-        if (change.Property == ContainerSizeProperty || change.Property == ContainerColorProperty || change.Property == ContainerCornerRadiusProperty || change.Property == SizeProperty || change.Property == IsCheckedProperty) Refresh();
-    }
-    private Color ThemeColor(MaterialTokenKey<Color> key) => TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Color color ? color : default;
-    private double ThemeSize(MaterialTokenKey<double> key, double fallback) => TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double size ? size : fallback;
-    private void ApplyIconDefaultSize()
-    {
-        if (_iconPresenter is null) return;
-        var size = Size switch
-        {
-            FloatingActionButtonSize.Medium => ThemeSize(Comp.FabMedium.IconSize, 28),
-            FloatingActionButtonSize.Large => FloatingActionButtonDefaults.LargeIconSize,
-            _ => ThemeSize(Comp.FabBaseline.IconSize, 24)
-        };
-        MaterialIcon.SetDefaultSize(_iconPresenter, size);
+        if (change.Property == ContainerSizeProperty || change.Property == ContainerColorProperty || change.Property == ContainerCornerRadiusProperty || change.Property == IconSizeFunctionProperty || change.Property == IconColorFunctionProperty || change.Property == ShadowElevationProperty || change.Property == ForegroundProperty || change.Property == IsCheckedProperty) Refresh();
     }
     private void Refresh()
     {
-        if (_surface is null) return;
+        // Theme setters may still be arriving during template application. Missing
+        // configuration does not create a second set of runtime defaults.
+        if (_surface is null || ContainerColor is null || ContainerSize is null || ContainerCornerRadius is null ||
+            IconSizeFunction is null || IconColorFunction is null) return;
         var p = CheckedProgress;
-        _surface.Background = new SolidColorBrush(ContainerColor?.Invoke(p) ?? ToggleFloatingActionButtonDefaults.LerpColor(ThemeColor(Sys.Color.PrimaryContainer), ThemeColor(Sys.Color.Primary), p));
-        var radius = ContainerCornerRadius?.Invoke(p) ?? MathUtils.Lerp(Size switch { FloatingActionButtonSize.Medium => 20f, FloatingActionButtonSize.Large => 28f, _ => 16f }, (float)ThemeSize(Comp.FabMenu.CloseButtonSize, 56) / 2, p);
-        _surface.CornerRadius = new CornerRadius(radius);
-        _surface.ShadowElevation = TokenResolver.TryResolve(this, Comp.FabPrimaryContainer.ContainerElevation, ActualThemeVariant, out var elevation) && elevation is double height ? height : 6;
-        var iconSize = MathUtils.Lerp(Size switch
-        {
-            FloatingActionButtonSize.Medium => (float)ThemeSize(Comp.FabMedium.IconSize, 28),
-            FloatingActionButtonSize.Large => 36f, // Explicit upstream correction to the raw 32dp token.
-            _ => (float)ThemeSize(Comp.FabBaseline.IconSize, 24)
-        }, (float)ThemeSize(Comp.FabMenu.CloseIconSize, 20), p);
+        _surface.Background = new SolidColorBrush(ContainerColor(p));
+        _surface.CornerRadius = new CornerRadius(ContainerCornerRadius(p));
+        _surface.ShadowElevation = ShadowElevation;
+        var iconSize = IconSizeFunction(p);
         var density = Avalonia.Layout.LayoutHelper.GetLayoutScale(this);
         SetAndRaise(IconSizeProperty, ref _iconSize, MathUtils.PxToDip(MathUtils.DipToPx(iconSize, density), density));
-        SetAndRaise(IconColorProperty, ref _iconColor, ToggleFloatingActionButtonDefaults.LerpColor(ThemeColor(Sys.Color.OnPrimaryContainer), ThemeColor(Sys.Color.OnPrimary), p));
+        SetAndRaise(IconColorProperty, ref _iconColor, IconColorFunction(p));
         // Toggle's Box does not provide a new LocalContentColor. animateIcon is opt-in;
         // arbitrary content and the indication retain the ambient/explicit Foreground.
         _surface.StateLayerBrush = Foreground;
@@ -168,29 +144,6 @@ public class ToggleFloatingActionButton : Button
         public ToggleState ToggleState => owner.IsChecked ? ToggleState.On : ToggleState.Off;
         public void Toggle() { if (!owner.IsEffectivelyEnabled) throw new ElementNotEnabledException(); owner.OnClick(); }
         protected override string GetClassNameCore() => nameof(ToggleFloatingActionButton);
-    }
-}
-
-public static class ToggleFloatingActionButtonDefaults
-{
-    private static readonly ColorConverter Converter = new();
-    public static Func<float, double> ContainerSize(double initial = 56, double final = 56) => p => MathUtils.Lerp((float)initial, (float)final, p);
-    public static Func<float, double> ContainerSizeMedium() => ContainerSize(80);
-    public static Func<float, double> ContainerSizeLarge() => ContainerSize(96);
-    public static Func<float, double> ContainerCornerRadius(double initial = 16, double final = 28) => p => MathUtils.Lerp((float)initial, (float)final, p);
-    public static Func<float, double> ContainerCornerRadiusMedium() => ContainerCornerRadius(20);
-    public static Func<float, double> ContainerCornerRadiusLarge() => ContainerCornerRadius(28);
-    public static Func<float, double> IconSize(double initial = 24, double final = 20) => p => MathUtils.Lerp((float)initial, (float)final, p);
-    public static Func<float, double> IconSizeMedium() => IconSize(28);
-    public static Func<float, double> IconSizeLarge() => IconSize(36);
-    public static Func<float, Color> ContainerColor(Color initial, Color final) => p => LerpColor(initial, final, p);
-    public static Func<float, Color> IconColor(Color initial, Color final) => p => LerpColor(initial, final, p);
-    internal static Color LerpColor(Color initial, Color final, float progress)
-    {
-        Span<double> a = stackalloc double[4]; Span<double> b = stackalloc double[4];
-        Converter.To(initial, a); Converter.To(final, b);
-        for (var i = 0; i < 4; i++) a[i] = MathUtils.Lerp((float)a[i], (float)b[i], Math.Clamp(progress, 0, 1));
-        return Converter.From(a);
     }
 }
 
@@ -236,7 +189,8 @@ internal sealed class ToggleFabLayout : Decorator
     private Size _contentConstraints;
     protected override Size MeasureOverride(Size available)
     {
-        var initial = Owner?.InitialSize ?? 56;
+        if (Owner is not { ContainerSize: not null } owner) return default;
+        var initial = owner.InitialSize;
         _contentConstraints = new Size(Math.Min(initial, available.Width), Math.Min(initial, available.Height));
         Child?.Measure(_contentConstraints);
         return _contentConstraints;
@@ -244,7 +198,8 @@ internal sealed class ToggleFabLayout : Decorator
     protected override Size ArrangeOverride(Size final)
     {
         var density = Avalonia.Layout.LayoutHelper.GetLayoutScale(this);
-        var size = MathUtils.DipToPx(Owner?.CurrentSize ?? 56, density);
+        if (Owner is not { ContainerSize: not null } owner) return final;
+        var size = MathUtils.DipToPx(owner.CurrentSize, density);
         var width = MathUtils.DipToPx(final.Width, density);
         var height = MathUtils.DipToPx(final.Height, density);
         var apparentWidth = Math.Min(size, MathUtils.DipToPx(_contentConstraints.Width, density));

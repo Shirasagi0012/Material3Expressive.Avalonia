@@ -1,17 +1,22 @@
-using Avalonia.Controls;
+using System.Globalization;
+using Avalonia;
+using Avalonia.Data.Converters;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
+using MotionSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
+// Conversion only: configuration is supplied by the theme, never resolved at runtime.
 internal static class FabMotion
 {
-    internal static SpringSpec<float> Spring(Control owner, MaterialTokenKey<Foundation.Motion.SpringSpec> key,
-        Foundation.Motion.SpringSpec fallback, float threshold = 0.01f)
+    internal static SpringSpec<float> Spring(MotionSpring spec, float threshold = 0.01f) =>
+        // Compose stores both parameters as Float before simulation.
+        new((float)spec.DampingRatio, (float)spec.Stiffness, threshold);
+
+    public static IMultiValueConverter FromToken { get; } = new SpringConverter();
+    private sealed class SpringConverter : IMultiValueConverter
     {
-        var spec = TokenResolver.TryResolve(owner, key, owner.ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec resolved ? resolved : fallback;
-        // Compose's SpringSpec stores both parameters as Float before simulation.
-        return new SpringSpec<float>((float)spec.DampingRatio, (float)spec.Stiffness, threshold);
+        public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) =>
+            values is [MotionSpring spec] ? Spring(spec) : AvaloniaProperty.UnsetValue;
     }
 }

@@ -8,11 +8,41 @@ namespace Material3Expressive.Components;
 
 // Fixed FloatingActionButton.kt and Fab*/ExtendedFab*/FabMenuBaselineTokens.
 // Medium shape follows the composable fallback. Raw icon spacing/size tokens stay raw;
-// the composable's explicit 12/16dp and 36dp corrections are applied by its layout/defaults.
+// the composable's explicit 12/16dp and 36dp corrections have distinct consumption tokens.
 public sealed class FloatingActionButtonTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Fab.HiddenScale] = 0.2f,
+        [Comp.Fab.VisibilityAlignment] = RelativePoint.BottomRight,
+        [Comp.Fab.VisibilityScaleMotion] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.Fab.VisibilityAlphaMotion] = new TokenRef(Sys.Motion.Spring.EffectsFast),
+        [Comp.FabLarge.ContentIconSize] = 36d,
+        [Comp.ExtendedFab.WidthMotion] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.ExtendedFab.AlphaMotion] = new TokenRef(Sys.Motion.Spring.EffectsFast),
+        [Comp.ExtendedFabPrimary.MinimumWidth] = 80d,
+        [Comp.ExtendedFabPrimary.IconLeadingSpace] = 16d,
+        [Comp.ExtendedFabPrimary.ExpandWidthMotion] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.ExtendedFabPrimary.CollapseWidthMotion] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.ExtendedFabPrimary.ExpandAlphaMotion] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.ExtendedFabPrimary.CollapseAlphaMotion] = new TokenRef(Sys.Motion.Spring.EffectsFast),
+        [Comp.ExtendedFabMedium.ContentIconLabelSpace] = 12d,
+        [Comp.ExtendedFabLarge.ContentIconLabelSpace] = 16d,
+        [Comp.ToggleFab.InitialCornerRadius] = 16d,
+        [Comp.ToggleFab.MediumInitialCornerRadius] = 20d,
+        [Comp.ToggleFab.LargeInitialCornerRadius] = 28d,
+        [Comp.ToggleFab.InitialContainerColor] = new TokenRef(Sys.Color.PrimaryContainer),
+        [Comp.ToggleFab.FinalContainerColor] = new TokenRef(Sys.Color.Primary),
+        [Comp.ToggleFab.InitialIconColor] = new TokenRef(Sys.Color.OnPrimaryContainer),
+        [Comp.ToggleFab.FinalIconColor] = new TokenRef(Sys.Color.OnPrimary),
+        [Comp.ToggleFab.CheckedMotion] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.FabMenu.ItemIconSize] = 24d,
+        [Comp.FabMenu.LabelTextStyle] = new TokenRef(Sys.TypeScale.TitleMedium.Style),
+        [Comp.FabMenu.ItemContainerColor] = new TokenRef(Sys.Color.PrimaryContainer),
+        [Comp.FabMenu.MenuAlignment] = FloatingActionButtonMenuAlignment.End,
+        [Comp.FabMenu.ItemWidthMotion] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.FabMenu.ItemAlphaMotion] = new TokenRef(Sys.Motion.Spring.EffectsFast),
+        [Comp.FabMenu.StaggerMotion] = new TokenRef(Sys.Motion.Spring.EffectsSlow),
         [Comp.FabBaseline.ContainerWidth] = 56d,
         [Comp.FabBaseline.ContainerHeight] = 56d,
         [Comp.FabBaseline.ContainerShape] = new TokenRef(Sys.Shape.Large),
