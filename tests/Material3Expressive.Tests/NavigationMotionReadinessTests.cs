@@ -1,3 +1,7 @@
+using System.Reflection;
+using Avalonia.Media;
+using ComposeAnimation.Runtime;
+using MaterialSpringSpec = Material3Expressive.Foundation.Motion.SpringSpec;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -138,6 +142,54 @@ public class NavigationMotionReadinessTests
             Assert.Equal(Avalonia.Media.Colors.Blue, Part<TabHeader>(tab).PaintedContentColor);
             row.Resources.Remove(Comp.TabRow.SelectedContentAnimation); Advance(clock, window);
             Assert.Equal(Avalonia.Media.Colors.Red, Part<TabHeader>(tab).PaintedContentColor);
+            Assert.Null(MotionTestClockScope.Error(tab));
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)] [InlineData(true)]
+    public void TabMotionConfiguration_PrecedesNewTarget_AndDoesNotRestartSameTarget(bool recoverFromMissing)
+    {
+        var tab = new Tab { Content = Box(24), SelectedContentColor = Colors.Blue, UnselectedContentColor = Colors.Red };
+        var row = new TabRow(); row.Items.Add(tab);
+        row.Resources[Comp.TabRow.SelectedContentAnimation] = new MaterialSpringSpec(1, 75);
+        row.Resources[Comp.TabRow.UnselectedContentAnimation] = new MaterialSpringSpec(1, 90);
+        using var clock = new MotionTestClockScope(); var window = Show(row);
+        try
+        {
+            Advance(clock, window, 3);
+            var header = Part<TabHeader>(tab);
+            var channel = Assert.IsType<Transition<bool>.TransitionAnimationState<Color>>(
+                typeof(TabHeader).GetField("_color", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(header));
+            if (recoverFromMissing)
+            {
+                row.Resources[Comp.TabRow.SelectedContentAnimation] = MissingAnimation;
+                tab.IsSelected = true;
+                Advance(clock, window, 2);
+                Assert.Equal(Colors.Red, channel.TargetValue);
+            }
+            // Both changes are applied before the same next-frame target commit.
+            row.Resources[Comp.TabRow.SelectedContentAnimation] = new MaterialSpringSpec(.65, 800);
+            tab.IsSelected = true;
+            Advance(clock, window, 1);
+            var entering = Assert.IsType<SpringSpec<Color>>(channel.AnimationSpec);
+            Assert.Equal(.65, entering.DampingRatio);
+            Assert.Equal(800, entering.Stiffness);
+            Assert.Equal(Colors.Blue, channel.TargetValue);
+            Assert.False(channel.IsFinished);
+
+            var running = channel.Animation;
+            row.Resources[Comp.TabRow.SelectedContentAnimation] = new MaterialSpringSpec(1, 50);
+            Advance(clock, window, 1);
+            Assert.Same(running, channel.Animation);
+            Assert.Equal(800, Assert.IsType<SpringSpec<Color>>(channel.AnimationSpec).Stiffness);
+
+            row.Resources[Comp.TabRow.UnselectedContentAnimation] = new MaterialSpringSpec(1, 420);
+            tab.IsSelected = false;
+            Advance(clock, window, 1);
+            Assert.Equal(420, Assert.IsType<SpringSpec<Color>>(channel.AnimationSpec).Stiffness);
+            Assert.Equal(Colors.Red, channel.TargetValue);
             Assert.Null(MotionTestClockScope.Error(tab));
         }
         finally { window.Close(); }

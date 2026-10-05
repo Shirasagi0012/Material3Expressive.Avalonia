@@ -134,9 +134,11 @@ internal sealed class TabHeader : Panel
             var selected = SelectedContentAnimation;
             var unselected = UnselectedContentAnimation;
             var changedState = _transition.TargetState != IsSelected;
-            _transition.UpdateTarget(IsSelected);
+            // Target mutation evaluates the factory synchronously. Publish the valid
+            // configuration first; Update preserves an animation whose target is unchanged.
             _color.Update(state => state ? Active : Inactive,
                 segment => ColorSpec(!segment.InitialState && segment.TargetState, selected, unselected));
+            _transition.UpdateTarget(IsSelected);
             if ((!_color.IsFinished || _transition.CurrentState != _transition.TargetState) && (_runTask is null || _runTask.IsCompleted))
             {
                 // Mapping-only changes launch on the following composition frame.
