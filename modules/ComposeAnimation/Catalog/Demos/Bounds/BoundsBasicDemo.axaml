@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" x:Class="Catalog.Demos.Bounds.BoundsBasicDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Padding="0" Height="260" HorizontalAlignment="Stretch">
+            <ca:LookaheadBox x:Name="Scene">
+                <ca:AnimatedBounds x:Name="Card" TargetSize="120,80" Padding="10" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <ca:LookaheadTextBlock FontSize="13" TextWrapping="Wrap" Background="{DynamicResource CatalogActorTintBrush}" Text="文字随卡片的宽度变化，连续调整换行位置。"/>
+                </ca:AnimatedBounds>
+            </ca:LookaheadBox>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="ToggleButton" Click="ToggleButton_OnClick">切换布局</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

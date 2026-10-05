@@ -12,7 +12,7 @@
     <ItemGroup>
         <PackageReference Include="Avalonia.Headless.XUnit"/>
         <PackageReference Include="Avalonia.Themes.Fluent"/>
-        <PackageReference Include="Shirasagi0012.ComposeAnimation.TestSupport"/>
+        <ProjectReference Include="../../modules/ComposeAnimation/ComposeAnimation.TestSupport/ComposeAnimation.TestSupport.csproj" />
         <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="xunit.v3"/>

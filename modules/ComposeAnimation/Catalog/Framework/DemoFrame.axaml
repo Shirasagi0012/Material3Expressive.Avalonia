@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Catalog.Framework" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation"
+             x:Class="Catalog.Framework.DemoFrame">
+    <Border Classes="demo-frame" Padding="0" ClipToBounds="True">
+        <StackPanel>
+            <Grid ColumnDefinitions="*,Auto" Margin="24,20,24,16">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock x:Name="TitleText" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <Border x:Name="ExperimentalBadge" Classes="demo-badge" IsVisible="False"><TextBlock Text="实验性" /></Border>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                    <ComboBox x:Name="SpeedPicker" SelectedIndex="2" MinWidth="88" ToolTip.Tip="播放速度" AutomationProperties.Name="播放速度">
+                        <ComboBoxItem Content="0.25×" /><ComboBoxItem Content="0.5×" /><ComboBoxItem Content="1×" />
+                    </ComboBox>
+                    <Button x:Name="RestartButton" Content="重置" />
+                </StackPanel>
+            </Grid>
+            <ContentControl x:Name="ContentHost" Margin="24,0,24,24" HorizontalContentAlignment="Stretch" />
+            <Border Background="{DynamicResource CatalogDetailsBrush}" BorderBrush="{DynamicResource CatalogCardBorderBrush}" BorderThickness="0,1,0,0">
+                <StackPanel>
+                    <ToggleButton x:Name="DetailsToggle" Classes="details-toggle" Height="56"
+                                  RenderTransform="{x:Null}" Transitions="{x:Null}"
+                                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="调试数据">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="调试数据" VerticalAlignment="Center" />
+                            <PathIcon x:Name="DetailsChevron" Grid.Column="1" Width="12" Height="8" Data="M 0,0 L 5,5 L 10,0 L 11,1 L 5,7 L -1,1 Z" />
+                        </Grid>
+                    </ToggleButton>
+                    <ca:AnimatedVisibility x:Name="DetailsReveal" Visible="False" VerticalAlignment="Top">
+                        <ca:AnimatedVisibility.Enter>
+                            <ca:ExpandVertically ExpandFrom="Top">
+                                <ca:ExpandVertically.Spec>
+                                    <ca:SizeTweenSpec Duration="0:0:0.22" Easing="CubicEaseOut" />
+                                </ca:ExpandVertically.Spec>
+                            </ca:ExpandVertically>
+                        </ca:AnimatedVisibility.Enter>
+                        <ca:AnimatedVisibility.Exit>
+                            <ca:ShrinkVertically ShrinkTowards="Top">
+                                <ca:ShrinkVertically.Spec>
+                                    <ca:SizeTweenSpec Duration="0:0:0.18" Easing="CubicEaseOut" />
+                                </ca:ShrinkVertically.Spec>
+                            </ca:ShrinkVertically>
+                        </ca:AnimatedVisibility.Exit>
+                        <!-- 纵向动画保留完整内容宽度，避免星号列按自然宽度挤到中间。 -->
+                        <Border Width="{Binding #DetailsToggle.Bounds.Width}" Padding="24,0,24,20">
+                            <StackPanel x:Name="DetailsPanel" Spacing="8">
+                                <Grid ColumnDefinitions="*,*,*,48" Classes="diagnostic-heading">
+                                    <TextBlock Text="项目" /><TextBlock Grid.Column="1" Text="当前" /><TextBlock Grid.Column="2" Text="目标" />
+                                </Grid>
+                                <ItemsControl x:Name="DiagnosticsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:DemoDiagnostic">
+                                            <Grid ColumnDefinitions="*,*,*,48" Margin="0,6">
+                                                <TextBlock Text="{Binding Name}" />
+                                                <TextBlock Grid.Column="1" Classes="diagnostic-value" Text="{Binding Current}" />
+                                                <TextBlock Grid.Column="2" Classes="diagnostic-value" Text="{Binding Target}" />
+                                                <TextBlock Grid.Column="3" Classes="demo-caption" Text="{Binding Unit}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </ca:AnimatedVisibility>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

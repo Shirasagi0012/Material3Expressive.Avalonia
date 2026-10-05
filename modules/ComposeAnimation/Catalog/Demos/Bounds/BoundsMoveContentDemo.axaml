@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" x:Class="Catalog.Demos.Bounds.BoundsMoveContentDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Padding="0" MinWidth="640" Height="280" HorizontalAlignment="Stretch">
+            <ca:LookaheadBox x:Name="Scene">
+                <ca:LookaheadBox>
+                    <ca:LookaheadBox x:Name="Left" Width="300" Height="260" Classes="demo-zone-a" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <ca:AnimatedBounds x:Name="Card" TargetSize="180,180" Padding="8" Margin="15,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <ca:LookaheadTextBlock FontSize="14" TextWrapping="Wrap" Background="{DynamicResource CatalogActorTintBrush}" Text="移动中的卡片，保持连续的速度与布局。"/>
+                        </ca:AnimatedBounds>
+                    </ca:LookaheadBox>
+                    <ca:LookaheadBox x:Name="Right" Width="300" Height="260" Classes="demo-zone-b" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                </ca:LookaheadBox>
+            </ca:LookaheadBox>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="MoveButton" Click="MoveButton_OnClick">移动卡片到另一侧</Button>
+            <Button x:Name="ResizeButton" Click="ResizeButton_OnClick">飞行中改尺寸</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

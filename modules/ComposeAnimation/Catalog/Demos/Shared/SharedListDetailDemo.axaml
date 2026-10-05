@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" xmlns:shared="clr-namespace:Catalog.Demos.Shared" x:Class="Catalog.Demos.Shared.SharedListDetailDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Padding="0" Height="430" HorizontalAlignment="Stretch">
+            <ca:SharedTransitionHost x:Name="Host" UseLayoutRounding="False" VerticalAlignment="Center" Width="540" HorizontalAlignment="Center">
+                <Grid>
+                    <ca:AnimatedVisibility x:Name="ListPage" Enter="{x:Static shared:SharedListDetailDemo.PageEnter}" Exit="{x:Static shared:SharedListDetailDemo.PageExit}">
+                        <!-- 静态声明卡片，不用 ItemsControl：条目容器一旦重建，被丢弃的旧实例会把
+                                     同名 Key 的陈旧注册留在宿主里，所有 key 都按二义回退（SharedTransitionContent
+                                     刻意在脱离可视树时保留注册，供共享会话交接，不会自行反注册）。 -->
+                        <WrapPanel>
+                            <ca:SharedBounds Key="lake" ResizeMode="ScaleToBounds" CornerRadius="14" Background="{DynamicResource CatalogCardBrush}" Width="160" Height="150" Margin="6" Cursor="Hand" BoundsTransform="{x:Static shared:SharedListDetailDemo.CardMotion}" FadeSpec="{x:Static shared:SharedListDetailDemo.ContentCrossfade}">
+                                <Grid RowDefinitions="96,*">
+                                    <Border CornerRadius="14,14,0,0" Background="#4682B4"/>
+                                    <TextBlock Grid.Row="1" Text="Lake" Margin="14,0" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </Grid>
+                            </ca:SharedBounds>
+                            <ca:SharedBounds Key="grove" ResizeMode="ScaleToBounds" CornerRadius="14" Background="{DynamicResource CatalogCardBrush}" Width="160" Height="150" Margin="6" Cursor="Hand" BoundsTransform="{x:Static shared:SharedListDetailDemo.CardMotion}" FadeSpec="{x:Static shared:SharedListDetailDemo.ContentCrossfade}">
+                                <Grid RowDefinitions="96,*">
+                                    <Border CornerRadius="14,14,0,0" Background="#2E8B57"/>
+                                    <TextBlock Grid.Row="1" Text="Grove" Margin="14,0" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </Grid>
+                            </ca:SharedBounds>
+                            <ca:SharedBounds Key="dusk" ResizeMode="ScaleToBounds" CornerRadius="14" Background="{DynamicResource CatalogCardBrush}" Width="160" Height="150" Margin="6" Cursor="Hand" BoundsTransform="{x:Static shared:SharedListDetailDemo.CardMotion}" FadeSpec="{x:Static shared:SharedListDetailDemo.ContentCrossfade}">
+                                <Grid RowDefinitions="96,*">
+                                    <Border CornerRadius="14,14,0,0" Background="#B25750"/>
+                                    <TextBlock Grid.Row="1" Text="Dusk" Margin="14,0" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </Grid>
+                            </ca:SharedBounds>
+                            <ca:SharedBounds Key="coral" ResizeMode="ScaleToBounds" CornerRadius="14" Background="{DynamicResource CatalogCardBrush}" Width="160" Height="150" Margin="6" Cursor="Hand" BoundsTransform="{x:Static shared:SharedListDetailDemo.CardMotion}" FadeSpec="{x:Static shared:SharedListDetailDemo.ContentCrossfade}">
+                                <Grid RowDefinitions="96,*">
+                                    <Border CornerRadius="14,14,0,0" Background="#CD5C5C"/>
+                                    <TextBlock Grid.Row="1" Text="Coral" Margin="14,0" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </Grid>
+                            </ca:SharedBounds>
+                            <ca:SharedBounds Key="sand" ResizeMode="ScaleToBounds" CornerRadius="14" Background="{DynamicResource CatalogCardBrush}" Width="160" Height="150" Margin="6" Cursor="Hand" BoundsTransform="{x:Static shared:SharedListDetailDemo.CardMotion}" FadeSpec="{x:Static shared:SharedListDetailDemo.ContentCrossfade}">
+                                <Grid RowDefinitions="96,*">
+                                    <Border CornerRadius="14,14,0,0" Background="#C2A36B"/>
+                                    <TextBlock Grid.Row="1" Text="Sand" Margin="14,0" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </Grid>
+                            </ca:SharedBounds>
+                            <ca:SharedBounds Key="mist" ResizeMode="ScaleToBounds" CornerRadius="14" Background="{DynamicResource CatalogCardBrush}" Width="160" Height="150" Margin="6" Cursor="Hand" BoundsTransform="{x:Static shared:SharedListDetailDemo.CardMotion}" FadeSpec="{x:Static shared:SharedListDetailDemo.ContentCrossfade}">
+                                <Grid RowDefinitions="96,*">
+                                    <Border CornerRadius="14,14,0,0" Background="#7A9E9F"/>
+                                    <TextBlock Grid.Row="1" Text="Mist" Margin="14,0" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </Grid>
+                            </ca:SharedBounds>
+                        </WrapPanel>
+                    </ca:AnimatedVisibility>
+                    <ca:AnimatedVisibility x:Name="DetailsPage" Enter="{x:Static shared:SharedListDetailDemo.PageEnter}" Exit="{x:Static shared:SharedListDetailDemo.PageExit}">
+                        <Grid Width="440" Height="380" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ca:SharedBounds x:Name="DetailsCard" ResizeMode="ScaleToBounds" CornerRadius="16" Background="{DynamicResource CatalogCardBrush}" BoundsTransform="{x:Static shared:SharedListDetailDemo.CardMotion}" FadeSpec="{x:Static shared:SharedListDetailDemo.ContentCrossfade}">
+                                <Grid RowDefinitions="190,*">
+                                    <Border x:Name="DetailHero" CornerRadius="16,16,0,0" Background="#444448"/>
+                                    <StackPanel Grid.Row="1" Margin="20,16">
+                                        <TextBlock x:Name="DetailTitle" FontSize="20" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="DetailDescription" Margin="0,10,0,0" FontSize="14" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </ca:SharedBounds>
+                        </Grid>
+                    </ca:AnimatedVisibility>
+                </Grid>
+            </ca:SharedTransitionHost>
+        </Border>
+        <Grid ColumnDefinitions="*,Auto" Height="36">
+            <Button x:Name="BackButton" Grid.Column="0" Content="返回" Click="BackButton_OnClick" VerticalAlignment="Top" Padding="16,8" IsEnabled="False" HorizontalAlignment="Left"/>
+        </Grid>
+    </StackPanel>
+</UserControl>

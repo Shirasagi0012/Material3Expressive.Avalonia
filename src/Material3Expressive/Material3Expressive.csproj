@@ -8,7 +8,7 @@
 
     <PropertyGroup>
         <PackageId>Shirasagi0012.Material3Expressive.Avalonia</PackageId>
-        <Version>0.0.1</Version>
+        <Version>0.0.2</Version>
         <Authors>Shirasagi0012</Authors>
         <Description>Material 3 Expressive theme and controls for Avalonia, ported from Compose Material3.</Description>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -23,35 +23,28 @@
     <ItemGroup>
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="PropertyGenerator.Avalonia"/>
-        <PackageReference Include="Shirasagi0012.ComposeAnimation.Avalonia"/>
+        <PackageReference Include="Shirasagi0012.MaterialColorUtilities" />
+        <!-- Material Symbols Rounded is the first-party icon family for Material 3 Expressive.
+             It also moves the resolved render stack onto the repository's pinned SkiaSharp 4
+             baseline so variable fill, weight, grade and optical size remain available. -->
+        <PackageReference Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" />
         <PackageReference Include="Shirasagi0012.SmoothScroll.Avalonia" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\MaterialColorUtilities\MaterialColorUtilities\MaterialColorUtilities.csproj"/>
-        <!-- Material Symbols Rounded is the first-party icon family for Material 3 Expressive.
-             It also moves the resolved render stack onto the repository's pinned SkiaSharp 4
-             baseline so variable fill, weight, grade and optical size remain available. -->
-        <ProjectReference Include="..\..\modules\MaterialSymbols\MaterialSymbols.Avalonia.Rounded\MaterialSymbols.Avalonia.Rounded.csproj"/>
+        <ProjectReference Include="../../modules/ComposeAnimation/ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj" />
 
-        <ProjectReference Include="..\..\modules\MaterialShapes\MaterialShapes\MaterialShapes.csproj" />
-        <ProjectReference Include="..\..\modules\MaterialSkiaShadow\MaterialSkiaShadow.csproj"/>
+        <ProjectReference Include="../../modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj" />
+        <ProjectReference Include="../../modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
-        <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
+        <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+        <None Include="../../LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
     </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="Material3Expressive.Tests" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Update="MaterialTheme.axaml.cs">
-        <DependentUpon>MaterialTheme.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
     </ItemGroup>
 
 </Project>

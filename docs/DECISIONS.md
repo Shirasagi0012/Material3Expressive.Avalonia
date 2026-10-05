@@ -171,21 +171,6 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 子控件冒泡的焦点事件不视为父控件获得焦点；对外 API 不变，没有增加 FocusRing 或 InteractionSource API。
 核验 Core 桌面过滤分支后，维护者进一步选择“按 Core 桌面过滤 indication，保留真实焦点/elevation（推荐）”。
 
-## AnimatedVisibility 中断规格与缩放中心
-
-决定：消费 ComposeAnimation `0.2.4-alpha`，按固定 Core 的 EnterExitTransition 修正
-fade / scale 在缺少 effect 或反向段中的默认 spring，以及 TransformOrigin 的比例坐标 spring。
-状态改变时仍保留 Transition 的 ResetNoSnap 重建规则，不增加公共 API 或组件内动画替代机制。
-原因：SegmentedButton 的 fade + scale 进入途中反向到 Exit.None 时，原 Snap fallback
-改变了中断后的曲线与内容清理时机；像素 Point / Snap origin 不等价于上游默认 spring。
-规格及使用范围见 [SegmentedButton](../src/Material3Expressive/Components/SegmentedButton/README.md)。
-范围：ComposeAnimation AnimatedVisibility 的现有调用方；消费项目继续使用本地 NuGet，
-不引入跨仓库 ProjectReference。依赖版本包含 0.2.3-alpha 已有改动。
-确认：2026-10-04，维护者批准在独立依赖 worktree 修正共享中断行为并提交，明确指定
-`0.2.4-alpha`。最初对通道重置的诊断经 ResetNoSnap 源码复核后纠正，最终保留原规则。
-2026-10-04 合入主线时，维护者指定升级为已打包的 `0.2.6-alpha`；该版本保留上述修正，
-并包含 spring 时长按整数毫秒截断和 Transition 在所属线程唤醒的修正，继续通过本地 NuGet 接入。
-
 ## AppBar 与原生滚动接入
 
 决定：公开 AppBarScrollScope 包围屏幕，栏与 Scope 使用同一个 ScrollBehavior。
@@ -209,8 +194,7 @@ Scope 只连接其 Scaffold 正文槽内唯一的主 ScrollViewer；内层独立
 决定：普通 ScrollViewer 使用 Material 自有主题与 SmoothScroll presenter，保留 Avalonia 的公开控件和
 Offset。标准 Scaffold 的真实 AppBar 与物理正文共享 compositor 上的滚动事务、动态范围和视觉输出；
 Material 消费规则及布局知识保留在本库，依赖中只增加通用参与者、数值回读与合成属性支持。
-主项目通过 ProjectReference 直接消费 SmoothScroll 子模块；参与者协议位于 Interaction 命名空间，
-数值输出及合成适配工具位于 Composition 命名空间，仍属于同一个程序集。
+参与者协议位于 Interaction 命名空间，数值输出及合成适配工具位于 Composition 命名空间，仍属于同一个程序集。
 
 此路径使用 SmoothScroll 的惯性，不要求与 Compose 物理曲线一致。顶栏只返回实际消费的位移，边界剩余量
 在同一帧交给正文；底栏观察正文消费，正文结束后独立 spring 吸附。直接拖动栏保留已有 UI 输入/settle。
@@ -240,10 +224,7 @@ CompleteVerticalScroll 和 CancelScroll。挂载生命周期移入 ScrollPresent
 额外正文位移入口及其表达式分支；原型公开惯性启动入口已删除，固定初速度检查由子模块测试调用内部
 StartInertia。验证阶段的桌面探针通过路由输入启动惯性，并通过 ProjectReference 消费当前源码；
 临时探针及其专用采样钩子现已移除，保留正式回归测试、VisualParity 与 Catalog 使用示例。
-子模块默认 Avalonia 版本的对齐目标为主库的 12.1.2；当前固定提交仍声明 12.0.0，尚未完成默认版本对齐。
-主库最终解析 12.1.2；子模块回归可用 `-p:AvaloniaVersion=12.1.2` 显式验证该版本。
-删除已无消费者的 SmoothScroll 本地 NuGet 版本配置；
-ComposeAnimation 的本地 NuGet 接入保持不变。
+
 本次替代此前暂留实验命名和原型入口的规则；消费顺序、单位、边界冒泡、取消语义及现有 zoom/snap 限制不变。
 
 ## 本次保留 Tween / Bezier 精度差异

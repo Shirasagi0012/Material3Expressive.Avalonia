@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" x:Class="Catalog.Demos.Engine.TransitionScrubDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+        <Border Classes="demo-stage" HorizontalAlignment="Stretch" Height="300">
+            <Border x:Name="Card" Classes="demo-actor" Width="260" Height="80" CornerRadius="4" Opacity="0.4" VerticalAlignment="Center">
+                <TextBlock Text="进度" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Slider x:Name="ScrubSlider" Minimum="0" Maximum="1" Value="0" Width="320" VerticalAlignment="Center" ValueChanged="ScrubSlider_OnValueChanged"/>
+            <Button x:Name="PlayButton" Click="PlayButton_OnClick">播放</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

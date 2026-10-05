@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" x:Class="Catalog.Demos.Engine.SpecGalleryDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="10" VerticalAlignment="Center">
+                <Grid ColumnDefinitions="120,*" Height="30">
+                    <TextBlock Text="无回弹" FontSize="12" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Classes="demo-well">
+                        <Canvas>
+                            <Line StartPoint="16,15" EndPoint="336,15" Classes="demo-guide" StrokeThickness="2" StrokeDashArray="4,3"/>
+                            <Line StartPoint="336,6" EndPoint="336,24" Classes="demo-marker" StrokeThickness="2"/>
+                            <Border x:Name="BallSpringNoBounce" Classes="demo-actor" Width="20" Height="20" CornerRadius="10" Canvas.Left="6" Canvas.Top="5"/>
+                        </Canvas>
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="120,*" Height="30">
+                    <TextBlock Text="轻微回弹" FontSize="12" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Classes="demo-well">
+                        <Canvas>
+                            <Line StartPoint="16,15" EndPoint="336,15" Classes="demo-guide" StrokeThickness="2" StrokeDashArray="4,3"/>
+                            <Line StartPoint="336,6" EndPoint="336,24" Classes="demo-marker" StrokeThickness="2"/>
+                            <Border x:Name="BallSpringLow" Classes="demo-actor" Width="20" Height="20" CornerRadius="10" Canvas.Left="6" Canvas.Top="5"/>
+                        </Canvas>
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="120,*" Height="30">
+                    <TextBlock Text="明显回弹" FontSize="12" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Classes="demo-well">
+                        <Canvas>
+                            <Line StartPoint="16,15" EndPoint="336,15" Classes="demo-guide" StrokeThickness="2" StrokeDashArray="4,3"/>
+                            <Line StartPoint="336,6" EndPoint="336,24" Classes="demo-marker" StrokeThickness="2"/>
+                            <Border x:Name="BallSpringHigh" Classes="demo-actor" Width="20" Height="20" CornerRadius="10" Canvas.Left="6" Canvas.Top="5"/>
+                        </Canvas>
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="120,*" Height="30">
+                    <TextBlock Text="线性" FontSize="12" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Classes="demo-well">
+                        <Canvas>
+                            <Line StartPoint="16,15" EndPoint="336,15" Classes="demo-guide" StrokeThickness="2" StrokeDashArray="4,3"/>
+                            <Line StartPoint="336,6" EndPoint="336,24" Classes="demo-marker" StrokeThickness="2"/>
+                            <Border x:Name="BallTweenLinear" Classes="demo-actor" Width="20" Height="20" CornerRadius="10" Canvas.Left="6" Canvas.Top="5"/>
+                        </Canvas>
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="120,*" Height="30">
+                    <TextBlock Text="缓入缓出" FontSize="12" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Classes="demo-well">
+                        <Canvas>
+                            <Line StartPoint="16,15" EndPoint="336,15" Classes="demo-guide" StrokeThickness="2" StrokeDashArray="4,3"/>
+                            <Line StartPoint="336,6" EndPoint="336,24" Classes="demo-marker" StrokeThickness="2"/>
+                            <Border x:Name="BallTweenFosi" Classes="demo-actor" Width="20" Height="20" CornerRadius="10" Canvas.Left="6" Canvas.Top="5"/>
+                        </Canvas>
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="120,*" Height="30">
+                    <TextBlock Text="关键帧" FontSize="12" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Classes="demo-well">
+                        <Canvas>
+                            <Line StartPoint="16,15" EndPoint="336,15" Classes="demo-guide" StrokeThickness="2" StrokeDashArray="4,3"/>
+                            <Line StartPoint="336,6" EndPoint="336,24" Classes="demo-marker" StrokeThickness="2"/>
+                            <Border x:Name="BallKeyframes" Classes="demo-actor" Width="20" Height="20" CornerRadius="10" Canvas.Left="6" Canvas.Top="5"/>
+                        </Canvas>
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="120,*" Height="100">
+                    <TextBlock Text="弧线" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    <Border Grid.Column="1" Classes="demo-well">
+                        <Canvas>
+                            <Line StartPoint="16,16" EndPoint="336,76" Classes="demo-guide" StrokeThickness="2" StrokeDashArray="4,3"/>
+                            <Line StartPoint="327,76" EndPoint="345,76" Classes="demo-marker" StrokeThickness="2"/>
+                            <Line StartPoint="336,67" EndPoint="336,85" Classes="demo-marker" StrokeThickness="2"/>
+                            <Border x:Name="BallArc" Classes="demo-actor" Width="20" Height="20" CornerRadius="10" Canvas.Left="6" Canvas.Top="6"/>
+                        </Canvas>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="PlayAllButton" Click="PlayAllButton_OnClick">全部播放</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

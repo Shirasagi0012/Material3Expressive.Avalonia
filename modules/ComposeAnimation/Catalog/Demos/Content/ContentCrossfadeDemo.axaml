@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="280" x:Class="Catalog.Demos.Content.ContentCrossfadeDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Height="300" HorizontalAlignment="Stretch">
+            <StackPanel Orientation="Horizontal" Spacing="48" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                    <ca:Crossfade x:Name="Fader" HorizontalAlignment="Center">
+                        <TextBlock FontSize="24" Text="Alpha"/>
+                    </ca:Crossfade>
+                    <TextBlock Classes="demo-caption" Text="300 ms" HorizontalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                    <ca:Crossfade x:Name="SlowFader" HorizontalAlignment="Center">
+                        <TextBlock FontSize="24" Text="Alpha"/>
+                    </ca:Crossfade>
+                    <TextBlock Classes="demo-caption" Text="500 ms" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <Button x:Name="AlphaButton" Click="AlphaButton_OnClick">Alpha</Button>
+            <Button x:Name="BetaButton" Click="BetaButton_OnClick">Beta</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

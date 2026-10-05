@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>ComposeAnimation</RootNamespace>
+        <PackageId>Shirasagi0012.ComposeAnimation.Avalonia</PackageId>
+        <Version>0.2.9-alpha</Version>
+        <Description>Compose animations, transitions and cooperative lookahead layouts for Avalonia.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.1.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ComposeAnimation.Runtime\ComposeAnimation.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="ComposeAnimation.Test" />
+        <InternalsVisibleTo Include="SharedTransitionProbe" />
+    </ItemGroup>
+
+</Project>

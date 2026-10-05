@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="320" x:Class="Catalog.Demos.Visibility.VisibilityScopeCustomDemo">
+    <StackPanel Classes="demo-root" VerticalAlignment="Top">
+        <Border Classes="demo-stage" Height="300" HorizontalAlignment="Stretch">
+            <ca:AnimatedVisibility x:Name="Visibility" Visible="{Binding #VisibilityToggle.IsChecked}" HorizontalAlignment="Center" Label="ScopeCustom" VerticalAlignment="Center">
+                <ca:AnimatedVisibility.Exit>
+                    <ca:FadeOut>
+                        <ca:FadeOut.Spec>
+                            <ca:DoubleTweenSpec Duration="0:0:3" Easing="CubicEaseIn"/>
+                        </ca:FadeOut.Spec>
+                    </ca:FadeOut>
+                </ca:AnimatedVisibility.Exit>
+                <!-- CornerRadius 本地值 4 是自定义动画的起点与呈现结束后的恢复值，不能交给样式类 -->
+                <Border x:Name="Card" Width="320" Padding="24" Classes="demo-actor" CornerRadius="4">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="圆角变化" FontSize="18"/>
+                        <TextBlock Text="4 → 24" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </ca:AnimatedVisibility>
+        </Border>
+        <StackPanel Classes="demo-controls" HorizontalAlignment="Left">
+            <ToggleSwitch x:Name="VisibilityToggle" IsChecked="True" Content="显示卡片"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

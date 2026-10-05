@@ -8,7 +8,7 @@
 - `src/Material3Expressive.Catalog/`：组件展示应用。
 - `tests/Material3Expressive.Tests/`：控件库测试。
 - `tests/VisualParity/`：Compose 参考端、Avalonia 捕获端、比较器及系统自身测试。
-- `modules/`：颜色、图标、阴影、字体等配套模块，部分为 Git 子模块。
+- `modules/`：ComposeAnimation、MaterialShapes、阴影、字体等仓内源码模块；颜色、图标和 SmoothScroll 通过 NuGet 接入。
 
 ## 开始工作
 
@@ -20,31 +20,11 @@
 - 已确认的组件设计就近记录在对应 README；跨组件的共享能力决定记录于 [docs/DECISIONS.md](docs/DECISIONS.md)。
 - 提交使用惯例式提交风格的提交信息。
 
-ComposeAnimation 通过 NuGet 包接入；当前本地包源为相邻仓库的 `../ComposeAnimation/packages`。
-准备与中央版本一致的 `ComposeAnimation.Runtime`、`ComposeAnimation.Avalonia`、
-`ComposeAnimation.TestSupport` 三个包。如果尚未生成，在相邻 ComposeAnimation 仓库可用的前提下执行：
-
-```powershell
-[xml]$packageVersions = Get-Content ./Directory.Packages.props
-$composeVersion = ($packageVersions.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'ComposeAnimation.Avalonia').Version
-& ../ComposeAnimation/pack.ps1 -Version $composeVersion
-```
-
 ## 本地开发
 
-需要 .NET 10 SDK 和 PowerShell。框架与包版本由
-[Directory.Packages.props](Directory.Packages.props) 管理，包来源由 [nuget.config](nuget.config) 管理。
+需要 .NET 10 SDK 和 PowerShell。
 
-先在仓库根目录初始化子模块：
-
-```powershell
-git submodule update --init --recursive
-```
-
-打包脚本拒绝覆盖同版本产物；已有匹配包时直接复用。需要改变依赖内容时使用新的包版本并同步中央版本，
-不要改成跨仓库的 ComposeAnimation `ProjectReference`。更换本地包源位置时同步调整 NuGet 配置。
-
-准备好依赖后执行：
+准备好后执行：
 
 ```powershell
 dotnet restore Material3Expressive.slnx
