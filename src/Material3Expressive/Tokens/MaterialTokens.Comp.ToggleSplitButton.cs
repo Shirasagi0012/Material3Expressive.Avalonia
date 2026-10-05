@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Tokens;
 
 namespace Material3Expressive.Tokens;
@@ -46,6 +47,9 @@ public static partial class MaterialTokens
         }
         public static class ToggleButton
         {
+            public static readonly MaterialTokenKey<SpringSpec> ShapeAnimation = new("md.comp.toggle-button.shape.animation");
+            public static readonly MaterialTokenKey<SpringSpec> BorderWidthAnimation = new("md.comp.toggle-button.border-width.animation");
+            public static readonly MaterialTokenKey<SpringSpec> BorderColorAnimation = new("md.comp.toggle-button.border-color.animation");
             public static readonly MaterialTokenKey<CornerRadius> SmallPressedShape = new("md.comp.toggle-button.small.pressed.shape");
             public static readonly MaterialTokenKey<double> ExtraSmallIconSpacing = new("md.comp.toggle-button.extra-small.icon.spacing");
         }

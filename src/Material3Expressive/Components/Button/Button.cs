@@ -30,6 +30,9 @@ public class ButtonSizesTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Button.MinWidth] = 58d,
+        [Comp.Button.MinimumInteractiveSize] = 48d,
+        [Comp.Button.ExtraSmallIconSpacing] = 4d,
         [Comp.ButtonXSmall.ContainerHeight] = 32d,
         [Comp.ButtonXSmall.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.ButtonXSmall.ContainerShapeSquare] = new TokenRef(Sys.Shape.Medium),

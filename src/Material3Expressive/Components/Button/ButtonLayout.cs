@@ -14,9 +14,9 @@ internal sealed class ButtonLayout : Decorator, IMinimumInteractiveLayout
     public static readonly StyledProperty<double> ContainerMinHeightProperty =
         AvaloniaProperty.Register<ButtonLayout, double>(nameof(ContainerMinHeight));
     public static readonly StyledProperty<double> ContainerMinWidthProperty =
-        AvaloniaProperty.Register<ButtonLayout, double>(nameof(ContainerMinWidth), 58);
+        AvaloniaProperty.Register<ButtonLayout, double>(nameof(ContainerMinWidth));
     public static readonly StyledProperty<double> MinimumInteractiveSizeProperty =
-        AvaloniaProperty.Register<ButtonLayout, double>(nameof(MinimumInteractiveSize), 48);
+        AvaloniaProperty.Register<ButtonLayout, double>(nameof(MinimumInteractiveSize));
     public double ContainerMinWidth { get => GetValue(ContainerMinWidthProperty); set => SetValue(ContainerMinWidthProperty, value); }
     public double MinimumInteractiveSize { get => GetValue(MinimumInteractiveSizeProperty); set => SetValue(MinimumInteractiveSizeProperty, value); }
 

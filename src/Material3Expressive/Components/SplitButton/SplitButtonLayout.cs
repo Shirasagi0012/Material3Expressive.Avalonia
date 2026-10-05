@@ -8,7 +8,7 @@ namespace Material3Expressive.Components;
 // SplitButton.kt measurePolicy: intrinsic queries, shared height, trailing first, remaining leading width.
 internal sealed class SplitButtonLayout : Panel
 {
-    public static readonly StyledProperty<double> SpacingProperty = AvaloniaProperty.Register<SplitButtonLayout, double>(nameof(Spacing), 2);
+    public static readonly StyledProperty<double> SpacingProperty = AvaloniaProperty.Register<SplitButtonLayout, double>(nameof(Spacing));
     public double Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
     private Size _leading, _trailing;
     private double _spacing;

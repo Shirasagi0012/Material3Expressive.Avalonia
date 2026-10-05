@@ -9,7 +9,7 @@ public sealed class SplitButton : TemplatedControl
 {
     public static readonly StyledProperty<Control?> LeadingButtonProperty = AvaloniaProperty.Register<SplitButton, Control?>(nameof(LeadingButton));
     public static readonly StyledProperty<Control?> TrailingButtonProperty = AvaloniaProperty.Register<SplitButton, Control?>(nameof(TrailingButton));
-    public static readonly StyledProperty<double> SpacingProperty = AvaloniaProperty.Register<SplitButton, double>(nameof(Spacing), 2);
+    public static readonly StyledProperty<double> SpacingProperty = AvaloniaProperty.Register<SplitButton, double>(nameof(Spacing));
     public Control? LeadingButton { get => GetValue(LeadingButtonProperty); set => SetValue(LeadingButtonProperty, value); }
     public Control? TrailingButton { get => GetValue(TrailingButtonProperty); set => SetValue(TrailingButtonProperty, value); }
     public double Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }

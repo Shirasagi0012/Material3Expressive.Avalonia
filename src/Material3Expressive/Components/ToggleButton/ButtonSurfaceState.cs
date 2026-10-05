@@ -16,6 +16,12 @@ internal static class ButtonSurfaceState
     public static readonly AttachedProperty<SpringSpec?> ShapeSpecProperty = AvaloniaProperty.RegisterAttached<MaterialSurface, SpringSpec?>("ShapeSpec", typeof(ButtonSurfaceState));
     public static SpringSpec? GetShapeSpec(MaterialSurface owner) => owner.GetValue(ShapeSpecProperty);
     public static void SetShapeSpec(MaterialSurface owner, SpringSpec? value) => owner.SetValue(ShapeSpecProperty, value);
+    public static readonly AttachedProperty<SpringSpec?> BorderWidthAnimationProperty = AvaloniaProperty.RegisterAttached<MaterialSurface, SpringSpec?>("BorderWidthAnimation", typeof(ButtonSurfaceState));
+    public static SpringSpec? GetBorderWidthAnimation(MaterialSurface owner) => owner.GetValue(BorderWidthAnimationProperty);
+    public static void SetBorderWidthAnimation(MaterialSurface owner, SpringSpec? value) => owner.SetValue(BorderWidthAnimationProperty, value);
+    public static readonly AttachedProperty<SpringSpec?> BorderColorAnimationProperty = AvaloniaProperty.RegisterAttached<MaterialSurface, SpringSpec?>("BorderColorAnimation", typeof(ButtonSurfaceState));
+    public static SpringSpec? GetBorderColorAnimation(MaterialSurface owner) => owner.GetValue(BorderColorAnimationProperty);
+    public static void SetBorderColorAnimation(MaterialSurface owner, SpringSpec? value) => owner.SetValue(BorderColorAnimationProperty, value);
     public static readonly AttachedProperty<bool> ResetOnShapeChangeProperty = AvaloniaProperty.RegisterAttached<MaterialSurface, bool>("ResetOnShapeChange", typeof(ButtonSurfaceState), true);
     public static bool GetResetOnShapeChange(MaterialSurface owner) => owner.GetValue(ResetOnShapeChangeProperty);
     public static void SetResetOnShapeChange(MaterialSurface owner, bool value) => owner.SetValue(ResetOnShapeChangeProperty, value);
@@ -31,6 +37,8 @@ internal static class ButtonSurfaceState
         IsCheckedProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
         CheckedCornerRadiusProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
         ShapeSpecProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
+        BorderWidthAnimationProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnBorderAnimationConfigurationChanged());
+        BorderColorAnimationProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnBorderAnimationConfigurationChanged());
         ResetOnShapeChangeProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
         CheckedOverlayOpacityProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
     }
