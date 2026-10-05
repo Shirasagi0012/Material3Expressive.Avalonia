@@ -19,6 +19,10 @@ namespace Material3Expressive.Components;
 /// <summary>Two content slots shared by the three NavigationDrawer.kt containers.</summary>
 public abstract class NavigationDrawer : ContentControl
 {
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> OpenAnimationProperty = AvaloniaProperty.Register<NavigationDrawer, Foundation.Motion.SpringSpec>(nameof(OpenAnimation));
+    internal Foundation.Motion.SpringSpec OpenAnimation { get => GetValue(OpenAnimationProperty); set => SetValue(OpenAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> CloseAnimationProperty = AvaloniaProperty.Register<NavigationDrawer, Foundation.Motion.SpringSpec>(nameof(CloseAnimation));
+    internal Foundation.Motion.SpringSpec CloseAnimation { get => GetValue(CloseAnimationProperty); set => SetValue(CloseAnimationProperty, value); }
     public static readonly StyledProperty<object?> DrawerContentProperty = AvaloniaProperty.Register<NavigationDrawer, object?>(nameof(DrawerContent));
     public static readonly StyledProperty<IDataTemplate?> DrawerContentTemplateProperty = AvaloniaProperty.Register<NavigationDrawer, IDataTemplate?>(nameof(DrawerContentTemplate));
     public object? DrawerContent { get => GetValue(DrawerContentProperty); set => SetValue(DrawerContentProperty, value); }

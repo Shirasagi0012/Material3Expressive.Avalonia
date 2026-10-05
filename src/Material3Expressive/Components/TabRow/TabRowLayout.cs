@@ -12,9 +12,6 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -38,8 +35,8 @@ internal sealed class TabRowChrome : Panel
     private Control? _observedOwner;
     internal bool OwnerAttached => _observedOwner is not null;
     internal bool Scrollable => Owner is { } owner && TabRowAppearance.GetIsScrollable(owner);
-    internal double EdgePadding => Owner is { } owner ? TabRowAppearance.GetEdgePadding(owner) : 52;
-    internal double MinTabWidth => Owner is { } owner ? TabRowAppearance.GetMinTabWidth(owner) : 90;
+    internal double EdgePadding => Owner is { } owner ? TabRowAppearance.GetEdgePadding(owner) : 0;
+    internal double MinTabWidth => Owner is { } owner ? TabRowAppearance.GetMinTabWidth(owner) : 0;
     internal bool Primary => Owner is not { } owner || TabRowAppearance.GetVariant(owner) == TabRowVariant.Primary;
     internal int SelectedIndex => Owner switch { TabRow row => row.SelectedIndex, TabControl native => native.SelectedIndex, _ => 0 };
     internal ScrollViewer Scroller => (ScrollViewer)Children[1];
@@ -189,6 +186,11 @@ internal sealed class TabRowItemsPanel : StackPanel
 // centering tracks remain here, with DefaultSpatial and upstream pixel rounding.
 internal sealed class TabRowContent : Panel
 {
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> IndicatorAnimationProperty = AvaloniaProperty.Register<TabRowContent, Foundation.Motion.SpringSpec>(nameof(IndicatorAnimation));
+    public Foundation.Motion.SpringSpec IndicatorAnimation { get => GetValue(IndicatorAnimationProperty); set => SetValue(IndicatorAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ScrollAnimationProperty = AvaloniaProperty.Register<TabRowContent, Foundation.Motion.SpringSpec>(nameof(ScrollAnimation));
+    public Foundation.Motion.SpringSpec ScrollAnimation { get => GetValue(ScrollAnimationProperty); set => SetValue(ScrollAnimationProperty, value); }
+
     private VisualAnimationScope? _motion;
     private Animatable<float>? _offset, _width, _scroll;
     private int? _selectedForScroll;
@@ -251,8 +253,7 @@ internal sealed class TabRowContent : Panel
     {
         if (_motion is not { IsEnding: false } motion || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
         _requested[track] = target;
-        var spec = TokenResolver.TryResolve(this, MaterialTokens.Sys.Motion.Spring.SpatialDefault, ActualThemeVariant, out var value)
-            && value is Foundation.Motion.SpringSpec resolved ? resolved : MotionScheme.Expressive.DefaultSpatial;
+        var spec = IndicatorAnimation;
         // TabIndicatorOffsetNode launches animateTo directly; interruption retains velocity.
         _ = motion.Launch(async ct =>
         {
@@ -349,8 +350,7 @@ internal sealed class TabRowContent : Panel
                 _scrollPrevious = 0;
                 ct.ThrowIfCancellationRequested();
                 _scrollRun?.Dispose(); _scrollRun = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var spec = TokenResolver.TryResolve(this, MaterialTokens.Sys.Motion.Spring.SpatialDefault, ActualThemeVariant, out var value)
-                    && value is Foundation.Motion.SpringSpec resolved ? resolved : MotionScheme.Expressive.DefaultSpatial;
+                var spec = ScrollAnimation;
                 await _scroll.AnimateToAsync(target - MathUtils.DipToPx(scroller.Offset.X, scale),
                     new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f), cancellationToken: _scrollRun.Token);
             }, "Tab scroll target");

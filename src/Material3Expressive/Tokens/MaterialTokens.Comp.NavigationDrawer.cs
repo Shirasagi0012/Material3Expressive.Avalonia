@@ -11,6 +11,12 @@ public static partial class MaterialTokens
     {
         public static class NavigationDrawer
         {
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> OpenAnimation = new("md.comp.navigation-drawer.open-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> CloseAnimation = new("md.comp.navigation-drawer.close-animation");
+            public static readonly MaterialTokenKey<double> MinimumContainerWidth = new("md.comp.navigation-drawer.minimum-container-width");
+            public static readonly MaterialTokenKey<Thickness> WindowInsets = new("md.comp.navigation-drawer.window-insets");
+            public static readonly MaterialTokenKey<double> TonalElevation = new("md.comp.navigation-drawer.tonal-elevation");
+            public static readonly MaterialTokenKey<CornerRadius> StandardContainerShape = new("md.comp.navigation-drawer.standard-container-shape");
             public static readonly MaterialTokenKey<Color> ModalContainerColor = new("md.comp.navigation-drawer.modal.container.color");
             public static readonly MaterialTokenKey<Color> StandardContainerColor = new("md.comp.navigation-drawer.standard.container.color");
             public static readonly MaterialTokenKey<double> ContainerWidth = new("md.comp.navigation-drawer.container.width");

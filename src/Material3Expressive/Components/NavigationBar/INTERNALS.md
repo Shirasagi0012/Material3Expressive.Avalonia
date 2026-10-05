@@ -1,5 +1,9 @@
 # NavigationBar 实现说明
 
+## Token 配置路径
+
+尺寸与运动规格由主题 Token 绑定到内部布局属性；按压映射读取同一有效指示器宽度。默认 Insets 也来自组件 Token。颜色配置与内部颜色/尺寸动画结果分开，保留固定 12 DIP 偏移与原始动画目标提交时机。
+
 本文面向维护者；使用入口见 [README.md](README.md)。固定基线以
 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 1.5.0-alpha27），

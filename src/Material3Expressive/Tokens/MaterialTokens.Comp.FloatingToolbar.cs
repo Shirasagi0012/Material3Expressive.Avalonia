@@ -10,6 +10,14 @@ public static partial class MaterialTokens
     {
         public static class FloatingToolbar
         {
+            public static readonly MaterialTokenKey<double> ExpandedShadowElevation = new("md.comp.floating-toolbar.expanded-shadow-elevation");
+            public static readonly MaterialTokenKey<double> ExpandedShadowElevationWithFab = new("md.comp.floating-toolbar.expanded-shadow-elevation-with-fab");
+            public static readonly MaterialTokenKey<double> CollapsedShadowElevation = new("md.comp.floating-toolbar.collapsed-shadow-elevation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ExpansionAnimation = new("md.comp.floating-toolbar.expansion-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ElevationAnimation = new("md.comp.floating-toolbar.elevation-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> SideContentAnimation = new("md.comp.floating-toolbar.side-content-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> BalancedPaddingAnimation = new("md.comp.floating-toolbar.balanced-padding-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ScrollSnapAnimation = new("md.comp.floating-toolbar.scroll-snap-animation");
             public static readonly MaterialTokenKey<double> ContainerBetweenSpace = new("md.comp.floating-toolbar.container-between-space");
             public static readonly MaterialTokenKey<double> ContainerExternalPadding = new("md.comp.floating-toolbar.container-external-padding");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.floating-toolbar.container-height");

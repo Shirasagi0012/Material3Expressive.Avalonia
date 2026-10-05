@@ -5,19 +5,18 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.VisualTree;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
 /// <summary>A rail whose destinations and container animate between collapsed and expanded forms.</summary>
 public class WideNavigationRail : ItemsControl
 {
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> StateAnimationProperty = AvaloniaProperty.Register<WideNavigationRail, Foundation.Motion.SpringSpec>(nameof(StateAnimation));
+    internal Foundation.Motion.SpringSpec StateAnimation { get => GetValue(StateAnimationProperty); set => SetValue(StateAnimationProperty, value); }
     public static readonly StyledProperty<object?> HeaderProperty = AvaloniaProperty.Register<WideNavigationRail, object?>(nameof(Header));
     public static readonly StyledProperty<IDataTemplate?> HeaderTemplateProperty = AvaloniaProperty.Register<WideNavigationRail, IDataTemplate?>(nameof(HeaderTemplate));
     public static readonly StyledProperty<Thickness> WindowInsetsProperty = AvaloniaProperty.Register<WideNavigationRail, Thickness>(nameof(WindowInsets));
-    public static readonly StyledProperty<Thickness> ContentPaddingProperty = AvaloniaProperty.Register<WideNavigationRail, Thickness>(nameof(ContentPadding), new Thickness(0, 44, 0, 0));
+    public static readonly StyledProperty<Thickness> ContentPaddingProperty = AvaloniaProperty.Register<WideNavigationRail, Thickness>(nameof(ContentPadding));
     public static readonly StyledProperty<NavigationRailArrangement> ArrangementProperty = AvaloniaProperty.Register<WideNavigationRail, NavigationRailArrangement>(nameof(Arrangement), NavigationRailArrangement.Top);
     public static readonly StyledProperty<WideNavigationRailState> StateProperty = AvaloniaProperty.Register<WideNavigationRail, WideNavigationRailState>(nameof(State), null!);
     internal static readonly StyledProperty<bool> LayoutExpandedProperty = AvaloniaProperty.Register<WideNavigationRail, bool>(nameof(LayoutExpanded));
@@ -73,9 +72,7 @@ public class WideNavigationRail : ItemsControl
     {
         if (_boundState is not null) return;
         _boundState = State;
-        var spec = TokenResolver.TryResolve(this, MaterialTokens.Sys.Motion.Spring.SpatialDefault, ActualThemeVariant, out var value)
-            && value is Foundation.Motion.SpringSpec resolved ? resolved : MotionScheme.Expressive.DefaultSpatial;
-        _boundState.Attach(this, spec);
+        _boundState.Attach(this, StateAnimation);
         _boundState.PropertyChanged += OnStateChanged;
         UpdateExpansion();
     }

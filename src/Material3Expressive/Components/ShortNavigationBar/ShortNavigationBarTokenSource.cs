@@ -10,6 +10,8 @@ public sealed class ShortNavigationBarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.ShortNavigationBar.IndicatorAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.ShortNavigationBar.WindowInsets] = default(Avalonia.Thickness),
         [Comp.ShortNavigationBar.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainer),
         [Comp.ShortNavigationBar.ContainerHeight] = 64d,
         [Comp.ShortNavigationBar.ContentColor] = new TokenRef(Sys.Color.OnSurface),

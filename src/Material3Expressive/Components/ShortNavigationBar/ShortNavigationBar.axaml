@@ -3,6 +3,7 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:ShortNavigationBar}" TargetType="m3:ShortNavigationBar">
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ShortNavigationBar.WindowInsets}}" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ShortNavigationBar.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ShortNavigationBar.ContentColor}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -52,7 +53,8 @@
       <Setter Property="Template">
         <ControlTemplate>
           <!-- Compose selectable covers the whole item, including unpainted gaps. -->
-          <m3:ShortNavigationBarItemLayout x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
+          <m3:ShortNavigationBarItemLayout IndicatorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+ShortNavigationBar.IndicatorAnimation}}"
+              x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
               HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
               IconPosition="{TemplateBinding IconPosition}"

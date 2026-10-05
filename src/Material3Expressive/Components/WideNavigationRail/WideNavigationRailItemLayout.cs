@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Material3Expressive.Foundation;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -10,16 +9,30 @@ namespace Material3Expressive.Components;
 // icon-only branch of TopIconOrIconOnlyMeasurePolicy. Coordinates stay in px.
 internal sealed class WideNavigationRailItemLayout : Panel
 {
+    public static readonly StyledProperty<double> ItemHorizontalPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(ItemHorizontalPadding));
+    public double ItemHorizontalPadding { get => GetValue(ItemHorizontalPaddingProperty); set => SetValue(ItemHorizontalPaddingProperty, value); }
+    public static readonly StyledProperty<double> ActiveIndicatorWidthProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(ActiveIndicatorWidth));
+    public double ActiveIndicatorWidth { get => GetValue(ActiveIndicatorWidthProperty); set => SetValue(ActiveIndicatorWidthProperty, value); }
+    public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(IconSize));
+    public double IconSize { get => GetValue(IconSizeProperty); set => SetValue(IconSizeProperty, value); }
+    public static readonly StyledProperty<double> StartIconLabelSpaceProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(StartIconLabelSpace));
+    public double StartIconLabelSpace { get => GetValue(StartIconLabelSpaceProperty); set => SetValue(StartIconLabelSpaceProperty, value); }
+    public static readonly StyledProperty<double> TopIconLabelSpaceProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(TopIconLabelSpace));
+    public double TopIconLabelSpace { get => GetValue(TopIconLabelSpaceProperty); set => SetValue(TopIconLabelSpaceProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> SpatialAnimationProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, Foundation.Motion.SpringSpec>(nameof(SpatialAnimation));
+    public Foundation.Motion.SpringSpec SpatialAnimation { get => GetValue(SpatialAnimationProperty); set => SetValue(SpatialAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> EffectsAnimationProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, Foundation.Motion.SpringSpec>(nameof(EffectsAnimation));
+    public Foundation.Motion.SpringSpec EffectsAnimation { get => GetValue(EffectsAnimationProperty); set => SetValue(EffectsAnimationProperty, value); }
     public static readonly StyledProperty<bool> HasLabelProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, bool>(nameof(HasLabel));
     public static readonly StyledProperty<NavigationItemIconPosition> IconPositionProperty =
         AvaloniaProperty.Register<WideNavigationRailItemLayout, NavigationItemIconPosition>(nameof(IconPosition));
     public static readonly StyledProperty<float> SelectionProgressProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, float>(nameof(SelectionProgress));
     public static readonly StyledProperty<float> IconPositionProgressProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, float>(nameof(IconPositionProgress));
     public static readonly StyledProperty<Thickness?> IndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, Thickness?>(nameof(IndicatorPadding));
-    public static readonly StyledProperty<Thickness> CollapsedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, Thickness>(nameof(CollapsedIndicatorPadding), new Thickness(16, 4));
-    public static readonly StyledProperty<Thickness> ExpandedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, Thickness>(nameof(ExpandedIndicatorPadding), new Thickness(16, 16));
+    public static readonly StyledProperty<Thickness> CollapsedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, Thickness>(nameof(CollapsedIndicatorPadding));
+    public static readonly StyledProperty<Thickness> ExpandedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, Thickness>(nameof(ExpandedIndicatorPadding));
     public static readonly StyledProperty<CornerRadius> IndicatorShapeProperty =
-        AvaloniaProperty.Register<WideNavigationRailItemLayout, CornerRadius>(nameof(IndicatorShape), new CornerRadius(double.PositiveInfinity));
+        AvaloniaProperty.Register<WideNavigationRailItemLayout, CornerRadius>(nameof(IndicatorShape));
     public bool HasLabel { get => GetValue(HasLabelProperty); set => SetValue(HasLabelProperty, value); }
     public NavigationItemIconPosition IconPosition { get => GetValue(IconPositionProperty); set => SetValue(IconPositionProperty, value); }
     public float SelectionProgress { get => GetValue(SelectionProgressProperty); set => SetValue(SelectionProgressProperty, value); }
@@ -43,17 +56,13 @@ internal sealed class WideNavigationRailItemLayout : Panel
     {
         AffectsMeasure<WideNavigationRailItemLayout>(HasLabelProperty, IconPositionProperty, SelectionProgressProperty, IconPositionProgressProperty,
             IndicatorPaddingProperty, CollapsedIndicatorPaddingProperty, ExpandedIndicatorPaddingProperty,
-            WideNavigationRailLayout.MinimumItemHeightProperty, WideNavigationRailLayout.ItemHeightMotionProperty);
+            WideNavigationRailLayout.MinimumItemHeightProperty, WideNavigationRailLayout.ItemHeightMotionProperty, ItemHorizontalPaddingProperty, ActiveIndicatorWidthProperty, IconSizeProperty, StartIconLabelSpaceProperty, TopIconLabelSpaceProperty);
         AffectsArrange<WideNavigationRailItemLayout>(IndicatorShapeProperty);
     }
     public WideNavigationRailItemLayout()
     {
         UseLayoutRounding = false;
-        ResourcesChanged += (_, _) => InvalidateMeasure();
-        ActualThemeVariantChanged += (_, _) => InvalidateMeasure();
     }
-    private double Metric(Material3Expressive.Foundation.Tokens.MaterialTokenKey<double> key, double fallback) =>
-        Material3Expressive.Foundation.Tokens.TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double number ? number : fallback;
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -64,7 +73,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
         var maxHeight = Px(availableSize.Height);
         var position = Math.Max(0, IconPositionProgress);
         var selection = Math.Max(0, SelectionProgress);
-        var horizontalPadding = Px(Metric(MaterialTokens.Comp.WideNavigationRail.ItemHorizontalPadding, 20));
+        var horizontalPadding = Px(ItemHorizontalPadding);
         var icon = Children[1];
         var label = Children[2];
         label.IsVisible = HasLabel;
@@ -82,7 +91,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
             ?? WideNavigationRailVerticalValue.FromDp(minimumHeight, minimumHeight, minimumHeight, layoutScale);
         if (!HasLabel)
         {
-            var padding = (Metric(MaterialTokens.Comp.WideNavigationRail.ActiveIndicatorWidth, 56) - Metric(MaterialTokens.Comp.WideNavigationRail.IconSize, 24)) / 2;
+            var padding = (ActiveIndicatorWidth - IconSize) / 2;
             var loose = new Size(Math.Max(0, availableSize.Width - padding * 2), Math.Max(0, availableSize.Height - padding * 2));
             icon.Measure(loose);
             iconWidth = Px(icon.DesiredSize.Width);
@@ -120,8 +129,8 @@ internal sealed class WideNavigationRailItemLayout : Panel
             // Rounded static endpoints, continuous intermediate padding. Total and
             // individual padding retain their separate upstream rounding definitions.
             var padVertical = VerticalPadding(collapsedPadding.Top + collapsedPadding.Bottom, expandedPadding.Top + expandedPadding.Bottom);
-            var startSpace = Px(Metric(MaterialTokens.Comp.WideNavigationRail.StartIconLabelSpace, 8));
-            var topSpace = Px(Metric(MaterialTokens.Comp.WideNavigationRail.TopIconLabelSpace, 4));
+            var startSpace = Px(StartIconLabelSpace);
+            var topSpace = Px(TopIconLabelSpace);
             var indicatorWidthProgress = MathUtils.LerpRoundToInt(iconWidth, iconWidth + labelWidth + startSpace, position) + padHorizontal;
             var indicatorHeightProgress = MathUtils.Lerp(iconHeight, Math.Max(iconHeight, labelHeight), (double)position) + padVertical;
             var rippleWidth = Math.Min(indicatorWidthProgress, maxWidth);
@@ -152,7 +161,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
             var iconY = rawIconY + paddingProgress * (Math.Truncate(expandedIconCenter) - expandedIconCenter);
             _traceIconYRaw = iconYStart * (double)position + iconYTop;
             var labelXTop = (iconWidth + padHorizontal + horizontalPadding * 2 - labelWidth) / 2;
-            var topGap = Metric(MaterialTokens.Comp.WideNavigationRail.TopIconLabelSpace, 4);
+            var topGap = TopIconLabelSpace;
             var labelYTop = iconY + iconHeight + VerticalPadding(collapsedPadding.Bottom + topGap, expandedPadding.Bottom + topGap);
             var labelStartOffset = IconPosition == NavigationItemIconPosition.Top && position > 0 ? 0 : horizontalPadding * (1 - position);
             var labelXStart = iconX + iconWidth + startSpace - labelStartOffset;

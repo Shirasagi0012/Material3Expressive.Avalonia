@@ -10,16 +10,16 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Input;
-using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
 // FloatingToolbar.kt: both ordinary layouts and both WithFab Layout measurement blocks.
 internal sealed class FloatingToolbarLayout : Panel
 {
-    public static readonly StyledProperty<double> ContainerSizeProperty = AvaloniaProperty.Register<FloatingToolbarLayout, double>(nameof(ContainerSize), 64);
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ElevationAnimationProperty = AvaloniaProperty.Register<FloatingToolbarLayout, Foundation.Motion.SpringSpec>(nameof(ElevationAnimation));
+    public Foundation.Motion.SpringSpec ElevationAnimation { get => GetValue(ElevationAnimationProperty); set => SetValue(ElevationAnimationProperty, value); }
+    public static readonly StyledProperty<double> ContainerSizeProperty = AvaloniaProperty.Register<FloatingToolbarLayout, double>(nameof(ContainerSize));
     static FloatingToolbarLayout() => AffectsMeasure<FloatingToolbarLayout>(ContainerSizeProperty);
     public double ContainerSize { get => GetValue(ContainerSizeProperty); set => SetValue(ContainerSizeProperty, value); }
     private FloatingToolbar? _owner;
@@ -47,7 +47,7 @@ internal sealed class FloatingToolbarLayout : Panel
         _scope = VisualAnimationScope.Create(this);
         _transition = new Transition<bool>(_owner.EffectiveExpanded, _scope.Clock, "Floating toolbar expanded");
         _progress = _transition.AnimateValue(new FloatConverter(), expanded => expanded ? 1f : 0f,
-            _ => _owner.AnimationSpec ?? FabMotion.Spring(this, Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial));
+            _ => _owner.AnimationSpec);
         _progress.PropertyChanged += ProgressChanged;
         // Capture Avalonia's Normal dispatcher context, independent of the context
         // which mounted the template. Transition waits asynchronously while idle.
@@ -78,7 +78,7 @@ internal sealed class FloatingToolbarLayout : Panel
         PointerCaptureLost -= CaptureLost; _pressed = null; _dragging = false;
         base.OnDetachedFromVisualTree(e);
     }
-    private double ElevationTarget => _owner!.EffectiveExpanded ? _owner.ExpandedShadowElevation ?? (_owner.FloatingActionButton is null ? 0 : 1) : _owner.CollapsedShadowElevation;
+    private double ElevationTarget => _owner!.EffectiveExpanded ? _owner.ExpandedShadowElevation : _owner.CollapsedShadowElevation;
     private void ProgressChanged(object? sender, PropertyChangedEventArgs e) { if (e.PropertyName == "Value") InvalidateMeasure(); }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -94,7 +94,7 @@ internal sealed class FloatingToolbarLayout : Panel
                     await scope.Clock.NextFrameAsync(ct); _pending = false;
                     _transition!.UpdateTarget(_owner!.EffectiveExpanded);
                     if (_owner.FloatingActionButton is null)
-                        await _elevation!.AnimateToAsync((float)ElevationTarget, FabMotion.Spring(this, Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial), cancellationToken: ct);
+                        await _elevation!.AnimateToAsync((float)ElevationTarget, new SpringSpec<float>((float)ElevationAnimation.DampingRatio, (float)ElevationAnimation.Stiffness, .01f), cancellationToken: ct);
                 }, "Floating toolbar target");
             }
         }
@@ -202,7 +202,7 @@ internal sealed class FloatingToolbarLayout : Panel
             Children[1].Arrange(horizontal ? new Rect(fabPosition, Center(final.Height, _fabSize), _fabSize, _fabSize)
                 : new Rect(Center(final.Width, _fabSize), fabPosition, _fabSize, _fabSize));
             var progress = Math.Min(ExpandedProgress, 1);
-            Surface.ShadowElevation = MathUtils.Lerp((float)_owner.CollapsedShadowElevation, (float)(_owner.ExpandedShadowElevation ?? 1), progress);
+            Surface.ShadowElevation = MathUtils.Lerp((float)_owner.CollapsedShadowElevation, (float)_owner.ExpandedShadowElevation, progress);
             Surface.IsHitTestVisible = toolbar != 0;
             if (horizontal && Surface.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault() is { } scroller)
             {
@@ -299,6 +299,9 @@ internal sealed class FloatingToolbarContentLayout : Panel
 
 internal sealed class FloatingToolbarBalancedPadding : Decorator
 {
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> PaddingAnimationProperty = AvaloniaProperty.Register<FloatingToolbarBalancedPadding, Foundation.Motion.SpringSpec>(nameof(PaddingAnimation));
+    public Foundation.Motion.SpringSpec PaddingAnimation { get => GetValue(PaddingAnimationProperty); set => SetValue(PaddingAnimationProperty, value); }
+
     private FloatingToolbar? _owner;
     private VisualAnimationScope? _scope;
     private Animatable<float>? _padding;
@@ -323,7 +326,7 @@ internal sealed class FloatingToolbarBalancedPadding : Decorator
         if (_pending || _scope is not { IsEnding: false } scope) return;
         _pending = true;
         _ = scope.Launch(async ct => { await scope.Clock.NextFrameAsync(ct); _pending = false;
-            await _padding!.AnimateToAsync(HasSide ? 0 : 1, FabMotion.Spring(this, Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects), cancellationToken: ct); }, "Floating toolbar balanced padding");
+            await _padding!.AnimateToAsync(HasSide ? 0 : 1, new SpringSpec<float>((float)PaddingAnimation.DampingRatio, (float)PaddingAnimation.Stiffness, .01f), cancellationToken: ct); }, "Floating toolbar balanced padding");
         InvalidateMeasure();
     }
     protected override Size MeasureOverride(Size available)

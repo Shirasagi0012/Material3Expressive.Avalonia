@@ -11,7 +11,7 @@ namespace Material3Expressive.Components;
 internal sealed class NavigationBarItemsPanel : Panel
 {
     public static readonly StyledProperty<double> ContainerMinHeightProperty =
-        AvaloniaProperty.Register<NavigationBarItemsPanel, double>(nameof(ContainerMinHeight), 80);
+        AvaloniaProperty.Register<NavigationBarItemsPanel, double>(nameof(ContainerMinHeight));
     public double ContainerMinHeight { get => GetValue(ContainerMinHeightProperty); set => SetValue(ContainerMinHeightProperty, value); }
     private int[] _widths = [];
     private int _height;

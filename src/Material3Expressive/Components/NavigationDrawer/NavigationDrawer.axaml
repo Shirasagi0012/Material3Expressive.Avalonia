@@ -2,6 +2,8 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="NavigationDrawerTheme" TargetType="m3:NavigationDrawer">
+      <Setter Property="OpenAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.OpenAnimation}}" />
+      <Setter Property="CloseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.CloseAnimation}}" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -25,6 +27,10 @@
     </ControlTheme>
 
     <ControlTheme x:Key="DrawerSheetTheme" TargetType="m3:DrawerSheet">
+      <Setter Property="ContainerWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ContainerWidth}}" />
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.WindowInsets}}" />
+      <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.TonalElevation}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.StandardContainerShape}}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.StandardContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
@@ -32,7 +38,7 @@
       <Setter Property="VerticalContentAlignment" Value="Top" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:DrawerSheetLayout MaximumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ContainerWidth}}">
+          <m3:DrawerSheetLayout MaximumWidth="{TemplateBinding ContainerWidth}" MinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.MinimumContainerWidth}}">
             <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
                 TonalElevation="{TemplateBinding TonalElevation}" TextElement.Foreground="{TemplateBinding Foreground}">
               <Border>

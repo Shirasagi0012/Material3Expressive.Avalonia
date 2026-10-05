@@ -15,16 +15,17 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Input;
-using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Overlays;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
 /// <summary>A wide rail which expands over the current TopLevel, with a dismissible scrim.</summary>
 public class ModalWideNavigationRail : WideNavigationRail
 {
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> EffectsAnimationProperty = AvaloniaProperty.Register<ModalWideNavigationRail, Foundation.Motion.SpringSpec>(nameof(EffectsAnimation));
+    internal Foundation.Motion.SpringSpec EffectsAnimation { get => GetValue(EffectsAnimationProperty); set => SetValue(EffectsAnimationProperty, value); }
+    internal static readonly StyledProperty<Foundation.Motion.SpringSpec> OffsetAnimationProperty = AvaloniaProperty.Register<ModalWideNavigationRail, Foundation.Motion.SpringSpec>(nameof(OffsetAnimation));
+    internal Foundation.Motion.SpringSpec OffsetAnimation { get => GetValue(OffsetAnimationProperty); set => SetValue(OffsetAnimationProperty, value); }
     public static readonly StyledProperty<bool> HideOnCollapseProperty = AvaloniaProperty.Register<ModalWideNavigationRail, bool>(nameof(HideOnCollapse));
     public static readonly StyledProperty<object?> ExpandedHeaderProperty = AvaloniaProperty.Register<ModalWideNavigationRail, object?>(nameof(ExpandedHeader));
     public static readonly StyledProperty<IDataTemplate?> ExpandedHeaderTemplateProperty = AvaloniaProperty.Register<ModalWideNavigationRail, IDataTemplate?>(nameof(ExpandedHeaderTemplate));
@@ -33,7 +34,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     public static readonly StyledProperty<IBrush?> ModalForegroundProperty = AvaloniaProperty.Register<ModalWideNavigationRail, IBrush?>(nameof(ModalForeground));
     public static readonly StyledProperty<IBrush?> ScrimBrushProperty = AvaloniaProperty.Register<ModalWideNavigationRail, IBrush?>(nameof(ScrimBrush));
     public static readonly StyledProperty<CornerRadius> CollapsedCornerRadiusProperty = AvaloniaProperty.Register<ModalWideNavigationRail, CornerRadius>(nameof(CollapsedCornerRadius));
-    public static readonly StyledProperty<CornerRadius> ExpandedCornerRadiusProperty = AvaloniaProperty.Register<ModalWideNavigationRail, CornerRadius>(nameof(ExpandedCornerRadius), new CornerRadius(16));
+    public static readonly StyledProperty<CornerRadius> ExpandedCornerRadiusProperty = AvaloniaProperty.Register<ModalWideNavigationRail, CornerRadius>(nameof(ExpandedCornerRadius));
     public static readonly StyledProperty<bool> ShouldDismissOnBackPressProperty = AvaloniaProperty.Register<ModalWideNavigationRail, bool>(nameof(ShouldDismissOnBackPress), true);
     public bool HideOnCollapse { get => GetValue(HideOnCollapseProperty); set => SetValue(HideOnCollapseProperty, value); }
     public object? ExpandedHeader { get => GetValue(ExpandedHeaderProperty); set => SetValue(ExpandedHeaderProperty, value); }
@@ -173,15 +174,14 @@ public class ModalWideNavigationRail : WideNavigationRail
                 {
                     await _position.StopAsync();
                     lifetime.ThrowIfCancellationRequested();
-                    await _position.AnimateToAsync(target, Spring(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects), cancellationToken: lifetime);
+                    await _position.AnimateToAsync(target, Spring(EffectsAnimation), cancellationToken: lifetime);
                 }, "Modal rail position");
                 if (IsModalVisible && HideOnCollapse && !_dragging) _ = AnimateOffset(State.TargetValue);
             }
         }, "Modal rail target");
     }
-    private SpringSpec<float> Spring(MaterialTokenKey<Foundation.Motion.SpringSpec> key, Foundation.Motion.SpringSpec fallback)
+    private static SpringSpec<float> Spring(Foundation.Motion.SpringSpec spec)
     {
-        var spec = TokenResolver.TryResolve(this, key, ActualThemeVariant, out var resolved) && resolved is Foundation.Motion.SpringSpec value ? value : fallback;
         return new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f);
     }
     private void InitializeMotion()
@@ -303,7 +303,7 @@ public class ModalWideNavigationRail : WideNavigationRail
             if (HideOnCollapse && !frameDriven) await scope.Clock.NextFrameAsync(ct);
             if (!ReferenceEquals(track, _alpha)) return;
             await track.StopAsync();
-            await track.AnimateToAsync(_scrimTarget ? 1f : 0f, Spring(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects), cancellationToken: ct);
+            await track.AnimateToAsync(_scrimTarget ? 1f : 0f, Spring(EffectsAnimation), cancellationToken: ct);
         }, "Modal rail scrim");
     }
     internal void UpdateAnchors(double measuredWidth)
@@ -334,7 +334,7 @@ public class ModalWideNavigationRail : WideNavigationRail
         // Programmatic AnchoredDraggable.animateTo deliberately retains overshoot.
         track.UpdateBounds(default);
         return scope.Launch(async ct => await track.AnimateToAsync(HideOnCollapse && target == WideNavigationRailValue.Collapsed ? -_width : 0,
-            Spring(MaterialTokens.Sys.Motion.Spring.SpatialDefault, MotionScheme.Expressive.DefaultSpatial), initialVelocity: track.Velocity, cancellationToken: ct), "Modal rail offset");
+            Spring(OffsetAnimation), initialVelocity: track.Velocity, cancellationToken: ct), "Modal rail offset");
     }
     private void OnScrimReleased(object? sender, PointerReleasedEventArgs e)
     {
@@ -438,7 +438,7 @@ public class ModalWideNavigationRail : WideNavigationRail
                 try
                 {
                     await animation.AnimateToAsync(distance, scope.Clock,
-                        Spring(MaterialTokens.Sys.Motion.Spring.SpatialDefault, MotionScheme.Expressive.DefaultSpatial),
+                        Spring(OffsetAnimation),
                         sequentialAnimation: velocity != 0, block: frame =>
                         {
                             var realValue = distance == 0 ? 0 : distance > 0 ? Math.Min(frame.Value, distance) : Math.Max(frame.Value, distance);

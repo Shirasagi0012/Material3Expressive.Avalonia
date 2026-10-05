@@ -10,17 +10,19 @@ namespace Material3Expressive.Components;
 // placeIcon / placeLabelAndTopIcon / placeLabelAndStartIcon (not AnimatedMeasurePolicy).
 internal sealed class ShortNavigationBarItemLayout : Panel
 {
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> IndicatorAnimationProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, Foundation.Motion.SpringSpec>(nameof(IndicatorAnimation));
+    public Foundation.Motion.SpringSpec IndicatorAnimation { get => GetValue(IndicatorAnimationProperty); set => SetValue(IndicatorAnimationProperty, value); }
     public static readonly StyledProperty<bool> HasLabelProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, bool>(nameof(HasLabel));
     public static readonly StyledProperty<NavigationItemIconPosition> IconPositionProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, NavigationItemIconPosition>(nameof(IconPosition));
     public static readonly StyledProperty<float> SelectionProgressProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, float>(nameof(SelectionProgress));
-    public static readonly StyledProperty<double> IndicatorWidthProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IndicatorWidth), 56);
-    public static readonly StyledProperty<double> IndicatorHeightProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IndicatorHeight), 32);
-    public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IconSize), 24);
-    public static readonly StyledProperty<double> StartIndicatorHeightProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(StartIndicatorHeight), 40);
-    public static readonly StyledProperty<double> StartIndicatorHorizontalPaddingProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(StartIndicatorHorizontalPadding), 16);
-    public static readonly StyledProperty<double> TopItemVerticalPaddingProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(TopItemVerticalPadding), 6);
-    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IconLabelSpace), 4);
-    public static readonly StyledProperty<CornerRadius> IndicatorShapeProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, CornerRadius>(nameof(IndicatorShape), new CornerRadius(double.PositiveInfinity));
+    public static readonly StyledProperty<double> IndicatorWidthProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IndicatorWidth));
+    public static readonly StyledProperty<double> IndicatorHeightProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IndicatorHeight));
+    public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IconSize));
+    public static readonly StyledProperty<double> StartIndicatorHeightProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(StartIndicatorHeight));
+    public static readonly StyledProperty<double> StartIndicatorHorizontalPaddingProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(StartIndicatorHorizontalPadding));
+    public static readonly StyledProperty<double> TopItemVerticalPaddingProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(TopItemVerticalPadding));
+    public static readonly StyledProperty<double> IconLabelSpaceProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(IconLabelSpace));
+    public static readonly StyledProperty<CornerRadius> IndicatorShapeProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, CornerRadius>(nameof(IndicatorShape));
     public bool HasLabel { get => GetValue(HasLabelProperty); set => SetValue(HasLabelProperty, value); }
     public NavigationItemIconPosition IconPosition { get => GetValue(IconPositionProperty); set => SetValue(IconPositionProperty, value); }
     public float SelectionProgress { get => GetValue(SelectionProgressProperty); set => SetValue(SelectionProgressProperty, value); }

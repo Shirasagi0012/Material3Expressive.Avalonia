@@ -11,9 +11,6 @@ using Avalonia.Styling;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
@@ -21,6 +18,14 @@ namespace Material3Expressive.Components;
 // Both Tab and native TabItem templates use this content/transition part. Selection stays with the owner.
 internal sealed class TabHeader : Panel
 {
+    public static readonly StyledProperty<double> LargeContainerHeightProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(LargeContainerHeight));
+    public double LargeContainerHeight { get => GetValue(LargeContainerHeightProperty); set => SetValue(LargeContainerHeightProperty, value); }
+    public static readonly StyledProperty<double> ContainerHeightProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(ContainerHeight));
+    public double ContainerHeight { get => GetValue(ContainerHeightProperty); set => SetValue(ContainerHeightProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> SelectedContentAnimationProperty = AvaloniaProperty.Register<TabHeader, Foundation.Motion.SpringSpec>(nameof(SelectedContentAnimation));
+    public Foundation.Motion.SpringSpec SelectedContentAnimation { get => GetValue(SelectedContentAnimationProperty); set => SetValue(SelectedContentAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> UnselectedContentAnimationProperty = AvaloniaProperty.Register<TabHeader, Foundation.Motion.SpringSpec>(nameof(UnselectedContentAnimation));
+    public Foundation.Motion.SpringSpec UnselectedContentAnimation { get => GetValue(UnselectedContentAnimationProperty); set => SetValue(UnselectedContentAnimationProperty, value); }
     public static readonly StyledProperty<bool> IsSelectedProperty = AvaloniaProperty.Register<TabHeader, bool>(nameof(IsSelected));
     public static readonly StyledProperty<TabContentLayout> ContentLayoutProperty = AvaloniaProperty.Register<TabHeader, TabContentLayout>(nameof(ContentLayout));
     public static readonly StyledProperty<IBrush?> AmbientBrushProperty = AvaloniaProperty.Register<TabHeader, IBrush?>(nameof(AmbientBrush));
@@ -51,9 +56,8 @@ internal sealed class TabHeader : Panel
     private ContentPresenter Icon => (ContentPresenter)Children[1];
     private bool HasLabel => Label.Content is not null;
     private bool HasIcon => ContentLayout != TabContentLayout.Custom && (Icon.Content is not null || Icon.ContentTemplate is not null);
-    private double SmallHeight => TokenResolver.TryResolve(this, MaterialTokens.Comp.TabRow.ContainerHeight, ActualThemeVariant, out var value) && value is double number ? number : 48;
 
-    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty);
+    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty, ContainerHeightProperty, LargeContainerHeightProperty);
     protected override void OnMeasureInvalidated()
     {
         base.OnMeasureInvalidated();
@@ -152,9 +156,7 @@ internal sealed class TabHeader : Panel
     }
     private SpringSpec<Color> ColorSpec(bool entering)
     {
-        var key = entering ? MaterialTokens.Sys.Motion.Spring.EffectsDefault : MaterialTokens.Sys.Motion.Spring.EffectsFast;
-        var fallback = entering ? MotionScheme.Expressive.DefaultEffects : MotionScheme.Expressive.FastEffects;
-        var spec = TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec resolved ? resolved : fallback;
+        var spec = entering ? SelectedContentAnimation : UnselectedContentAnimation;
         return new SpringSpec<Color>(spec.DampingRatio, spec.Stiffness);
     }
 
@@ -182,8 +184,8 @@ internal sealed class TabHeader : Panel
         var label = HasLabel ? MathUtils.DipToPx(Label.DesiredSize.Height, scale) : 0;
         var icon = HasIcon ? MathUtils.DipToPx(Icon.DesiredSize.Height, scale) : 0;
         if (ContentLayout == TabContentLayout.Custom) return label;
-        if (ContentLayout == TabContentLayout.Leading) return MathUtils.DipToPx(SmallHeight, scale);
-        return Math.Max(MathUtils.DipToPx(HasLabel && HasIcon ? 72 : SmallHeight, scale), label + icon + MathUtils.DipToPx(20, scale));
+        if (ContentLayout == TabContentLayout.Leading) return MathUtils.DipToPx(ContainerHeight, scale);
+        return Math.Max(MathUtils.DipToPx(HasLabel && HasIcon ? LargeContainerHeight : ContainerHeight, scale), label + icon + MathUtils.DipToPx(20, scale));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -206,10 +208,10 @@ internal sealed class TabHeader : Panel
         // is constrained to the Row's remaining width and determines sibling placement.
         var gap = leading ? Math.Min(Px(8), Math.Max(0, maxWidth - pad - iw)) : 0;
         Label.Measure(new Size(Math.Max(0, maxWidth - pad - (leading ? iw + gap : 0)) / scale,
-            (leading ? Math.Min(maxHeight, Px(SmallHeight)) : maxHeight) / scale));
+            (leading ? Math.Min(maxHeight, Px(ContainerHeight)) : maxHeight) / scale));
         var lw = HasLabel ? Px(Label.DesiredSize.Width) : 0; var lh = HasLabel ? Px(Label.DesiredSize.Height) : 0;
         var width = maxWidth == int.MaxValue ? custom ? lw : leading ? iw + gap + lw + pad : Math.Max(HasLabel ? lw + pad : 0, iw) : maxWidth;
-        var intrinsicHeight = custom ? lh : leading ? Px(SmallHeight) : Math.Max(Px(HasIcon && HasLabel ? 72 : SmallHeight), ih + lh + Px(20));
+        var intrinsicHeight = custom ? lh : leading ? Px(ContainerHeight) : Math.Max(Px(HasIcon && HasLabel ? LargeContainerHeight : ContainerHeight), ih + lh + Px(20));
         var height = Math.Min(maxHeight, intrinsicHeight);
         _inner = new Size(width, height);
         if (!custom && !leading && HasIcon && HasLabel)

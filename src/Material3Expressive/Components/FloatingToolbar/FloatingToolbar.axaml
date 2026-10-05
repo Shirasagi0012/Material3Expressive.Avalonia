@@ -22,7 +22,17 @@
       <Setter Property="HorizontalAlignment" Value="Center" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="ClipToBounds" Value="False" />
-      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.StandardContainerColor}}" />
+      <Setter Property="DefaultBackground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.StandardContainerColor}}" />
+      <Setter Property="Background" Value="{Binding DefaultBackground, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="DefaultExpandedShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ExpandedShadowElevation}}" />
+      <Setter Property="ExpandedShadowElevation" Value="{Binding DefaultExpandedShadowElevation, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="CollapsedShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.CollapsedShadowElevation}}" />
+      <Setter Property="ScrollSnapAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ScrollSnapAnimation}}" />
+      <Setter Property="AnimationSpec">
+        <MultiBinding Converter="{x:Static m3:FloatingToolbarAnimationConverter.Instance}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FloatingToolbar.ExpansionAnimation}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerShape}}" />
       <Setter Property="Padding">
@@ -33,19 +43,20 @@
           <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerTrailingSpace}" />
         </MultiBinding>
       </Setter>
-      <Setter Property="Template">
+      <Setter Property="Template" Value="{Binding DefaultTemplate, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="DefaultTemplate">
         <ControlTemplate>
-          <m3:FloatingToolbarLayout x:Name="PART_Layout" ContainerSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerHeight}}">
+          <m3:FloatingToolbarLayout ElevationAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ElevationAnimation}}" x:Name="PART_Layout" ContainerSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerHeight}}">
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
                                 TextElement.Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}">
               <m3:FloatingToolbarContentLayout>
-                <m3:FloatingToolbarVisibility Leading="True" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <m3:FloatingToolbarVisibility SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.SideContentAnimation}}" Leading="True" HorizontalAlignment="Left" VerticalAlignment="Top">
                   <ContentPresenter x:Name="PART_LeadingPresenter" Content="{TemplateBinding LeadingContent}" ContentTemplate="{TemplateBinding LeadingContentTemplate}" />
                 </m3:FloatingToolbarVisibility>
-                <m3:FloatingToolbarBalancedPadding>
+                <m3:FloatingToolbarBalancedPadding PaddingAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.BalancedPaddingAnimation}}">
                   <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
                 </m3:FloatingToolbarBalancedPadding>
-                <m3:FloatingToolbarVisibility HorizontalAlignment="Left" VerticalAlignment="Top">
+                <m3:FloatingToolbarVisibility SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.SideContentAnimation}}" HorizontalAlignment="Left" VerticalAlignment="Top">
                   <ContentPresenter x:Name="PART_TrailingPresenter" Content="{TemplateBinding TrailingContent}" ContentTemplate="{TemplateBinding TrailingContentTemplate}" />
                 </m3:FloatingToolbarVisibility>
               </m3:FloatingToolbarContentLayout>
@@ -54,9 +65,10 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^:with-fab">
-        <Setter Property="Template">
+        <Setter Property="DefaultExpandedShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ExpandedShadowElevationWithFab}}" />
+        <Setter Property="DefaultTemplate">
           <ControlTemplate>
-            <m3:FloatingToolbarLayout x:Name="PART_Layout" ContainerSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerHeight}}">
+            <m3:FloatingToolbarLayout ElevationAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ElevationAnimation}}" x:Name="PART_Layout" ContainerSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerHeight}}">
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
                                   TextElement.Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}">
                 <ScrollViewer x:Name="PART_ScrollViewer" Theme="{StaticResource MaterialFloatingToolbarScroller}" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
@@ -71,7 +83,7 @@
         </Setter>
       </Style>
       <Style Selector="^.vibrant">
-        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.VibrantContainerColor}}" />
+        <Setter Property="DefaultBackground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.VibrantContainerColor}}" />
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:HorizontalFloatingToolbar}" TargetType="m3:HorizontalFloatingToolbar" BasedOn="{StaticResource MaterialFloatingToolbarTheme}" />

@@ -3,6 +3,8 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:ModalWideNavigationRail}" TargetType="m3:ModalWideNavigationRail" BasedOn="{StaticResource {x:Type m3:WideNavigationRail}}">
+      <Setter Property="EffectsAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalEffectsAnimation}}" />
+      <Setter Property="OffsetAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalOffsetAnimation}}" />
       <Setter Property="ModalBackground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalContainerColor}}" />
       <Setter Property="ModalForeground" Value="{m3:ContentColorFor BackgroundProperty=ModalBackground}" />
       <Setter Property="ScrimBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalScrimColor}}" />
@@ -20,7 +22,16 @@
                   </MultiBinding>
                 </Border.Padding>
                 <Border Padding="{TemplateBinding ContentPadding}">
-                  <m3:WideNavigationRailLayout x:Name="PART_Layout" Expanded="False" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
+                  <m3:WideNavigationRailLayout CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
+                      ExpandedContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMinWidth}}"
+                      ExpandedContainerMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
+                      CollapsedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemVerticalSpace}}"
+                      CollapsedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemMinHeight}}"
+                      HeaderSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.HeaderSpace}}"
+                      ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
+                      LayoutAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.LayoutAnimation}}"
+                      ModalWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalWidthAnimation}}"
+                      x:Name="PART_Layout" Expanded="False" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
                     <ContentPresenter x:Name="PART_Header" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" HorizontalAlignment="Left" VerticalAlignment="Top" />
                     <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" UseLayoutRounding="False" />
                   </m3:WideNavigationRailLayout>
@@ -29,7 +40,7 @@
             </m3:MaterialSurface>
             <m3:ModalWideNavigationRailOverlay x:Name="PART_Overlay" IsVisible="False" Background="Transparent" ClipToBounds="True">
               <m3:ModalWideNavigationRailScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" RenderOptions.RequiresFullOpacityHandling="True" />
-              <m3:MaterialSurface x:Name="PART_ModalSurface" Width="{TemplateBinding Width}" MinWidth="{TemplateBinding MinWidth}" MaxWidth="360"
+              <m3:MaterialSurface x:Name="PART_ModalSurface" Width="{TemplateBinding Width}" MinWidth="{TemplateBinding MinWidth}" MaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
                                   Background="{TemplateBinding ModalBackground}" CornerRadius="{TemplateBinding ExpandedCornerRadius}" TextElement.Foreground="{TemplateBinding ModalForeground}">
                 <m3:MaterialSurface Background="{TemplateBinding ModalBackground}" CornerRadius="{TemplateBinding ExpandedCornerRadius}" TextElement.Foreground="{TemplateBinding ModalForeground}">
                   <Border>
@@ -40,7 +51,16 @@
                       </MultiBinding>
                     </Border.Padding>
                     <Border Padding="{TemplateBinding ContentPadding}">
-                      <m3:WideNavigationRailLayout x:Name="PART_ModalLayout" IsModal="True" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
+                      <m3:WideNavigationRailLayout CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
+                      ExpandedContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMinWidth}}"
+                      ExpandedContainerMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
+                      CollapsedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemVerticalSpace}}"
+                      CollapsedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemMinHeight}}"
+                      HeaderSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.HeaderSpace}}"
+                      ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
+                      LayoutAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.LayoutAnimation}}"
+                      ModalWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalWidthAnimation}}"
+                      x:Name="PART_ModalLayout" IsModal="True" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
                         <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Top">
                           <Border x:Name="PART_ExpandedHeaderPadding">
                             <ContentPresenter x:Name="PART_ExpandedHeader" HorizontalAlignment="Left" VerticalAlignment="Top" />

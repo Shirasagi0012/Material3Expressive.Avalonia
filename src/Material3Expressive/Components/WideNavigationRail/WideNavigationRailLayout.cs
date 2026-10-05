@@ -6,9 +6,6 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -17,6 +14,24 @@ namespace Material3Expressive.Components;
 // with the original integer geometry retained at its endpoints.
 internal sealed class WideNavigationRailLayout : Panel
 {
+    public static readonly StyledProperty<double> CollapsedContainerWidthProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(CollapsedContainerWidth));
+    public double CollapsedContainerWidth { get => GetValue(CollapsedContainerWidthProperty); set => SetValue(CollapsedContainerWidthProperty, value); }
+    public static readonly StyledProperty<double> ExpandedContainerMinWidthProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(ExpandedContainerMinWidth));
+    public double ExpandedContainerMinWidth { get => GetValue(ExpandedContainerMinWidthProperty); set => SetValue(ExpandedContainerMinWidthProperty, value); }
+    public static readonly StyledProperty<double> ExpandedContainerMaxWidthProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(ExpandedContainerMaxWidth));
+    public double ExpandedContainerMaxWidth { get => GetValue(ExpandedContainerMaxWidthProperty); set => SetValue(ExpandedContainerMaxWidthProperty, value); }
+    public static readonly StyledProperty<double> CollapsedItemVerticalSpaceProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(CollapsedItemVerticalSpace));
+    public double CollapsedItemVerticalSpace { get => GetValue(CollapsedItemVerticalSpaceProperty); set => SetValue(CollapsedItemVerticalSpaceProperty, value); }
+    public static readonly StyledProperty<double> CollapsedItemMinHeightProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(CollapsedItemMinHeight));
+    public double CollapsedItemMinHeight { get => GetValue(CollapsedItemMinHeightProperty); set => SetValue(CollapsedItemMinHeightProperty, value); }
+    public static readonly StyledProperty<double> HeaderSpaceProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(HeaderSpace));
+    public double HeaderSpace { get => GetValue(HeaderSpaceProperty); set => SetValue(HeaderSpaceProperty, value); }
+    public static readonly StyledProperty<double> ItemHorizontalPaddingProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(ItemHorizontalPadding));
+    public double ItemHorizontalPadding { get => GetValue(ItemHorizontalPaddingProperty); set => SetValue(ItemHorizontalPaddingProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> LayoutAnimationProperty = AvaloniaProperty.Register<WideNavigationRailLayout, Foundation.Motion.SpringSpec>(nameof(LayoutAnimation));
+    public Foundation.Motion.SpringSpec LayoutAnimation { get => GetValue(LayoutAnimationProperty); set => SetValue(LayoutAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> ModalWidthAnimationProperty = AvaloniaProperty.Register<WideNavigationRailLayout, Foundation.Motion.SpringSpec>(nameof(ModalWidthAnimation));
+    public Foundation.Motion.SpringSpec ModalWidthAnimation { get => GetValue(ModalWidthAnimationProperty); set => SetValue(ModalWidthAnimationProperty, value); }
     internal static readonly AttachedProperty<double> MinimumItemHeightProperty =
         AvaloniaProperty.RegisterAttached<WideNavigationRailLayout, Control, double>("MinimumItemHeight", 48, inherits: true);
     internal static readonly AttachedProperty<WideNavigationRailVerticalValue?> ItemHeightMotionProperty =
@@ -35,30 +50,24 @@ internal sealed class WideNavigationRailLayout : Panel
     private VisualAnimationScope? _scope;
     private Animatable<float>? _minWidth, _widthFullRange, _itemSpacing, _itemHeight;
     private bool _pending;
-    private float _minimumWidth = 96, _fullWidth = 96, _spacing = 4, _minimumHeight = 64;
+    private float _minimumWidth, _fullWidth, _spacing, _minimumHeight;
     private int _currentWidth, _actualMaxExpandedWidth;
     private WideNavigationRailItemsPanel? _items;
 
-    static WideNavigationRailLayout() => AffectsMeasure<WideNavigationRailLayout>(ExpandedProperty, IsModalProperty, ArrangementProperty, ContentPaddingProperty);
+    static WideNavigationRailLayout() => AffectsMeasure<WideNavigationRailLayout>(ExpandedProperty, IsModalProperty, ArrangementProperty, ContentPaddingProperty, CollapsedContainerWidthProperty, ExpandedContainerMinWidthProperty, ExpandedContainerMaxWidthProperty, CollapsedItemVerticalSpaceProperty, CollapsedItemMinHeightProperty, HeaderSpaceProperty, ItemHorizontalPaddingProperty);
     public WideNavigationRailLayout()
     {
         UseLayoutRounding = false;
-        ResourcesChanged += (_, _) => { InvalidateMeasure(); UpdateTargets(); };
-        ActualThemeVariantChanged += (_, _) => { InvalidateMeasure(); UpdateTargets(); };
     }
-    internal double Metric(MaterialTokenKey<double> key, double fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double number ? number : fallback;
-    private Foundation.Motion.SpringSpec Spec(MaterialTokenKey<Foundation.Motion.SpringSpec> key, Foundation.Motion.SpringSpec fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec spec ? spec : fallback;
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
         if (_scope is not null) return;
         _scope = VisualAnimationScope.Create(this);
-        _minimumWidth = (float)(Expanded ? Metric(MaterialTokens.Comp.WideNavigationRail.ExpandedContainerMinWidth, 220) : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedContainerWidth, 96));
-        _fullWidth = (float)(Expanded ? Metric(MaterialTokens.Comp.WideNavigationRail.ExpandedContainerMaxWidth, 360) : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedContainerWidth, 96));
-        _spacing = (float)(Expanded ? 0 : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedItemVerticalSpace, 4));
-        _minimumHeight = (float)(Expanded ? 48 : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedItemMinHeight, 64));
+        _minimumWidth = (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth);
+        _fullWidth = (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth);
+        _spacing = (float)(Expanded ? 0 : CollapsedItemVerticalSpace);
+        _minimumHeight = (float)(Expanded ? 48 : CollapsedItemMinHeight);
         _minWidth = _scope.CreateAnimatable(_minimumWidth);
         _widthFullRange = _scope.CreateAnimatable(_fullWidth);
         _itemSpacing = _scope.CreateAnimatable(_spacing);
@@ -80,7 +89,8 @@ internal sealed class WideNavigationRailLayout : Panel
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ExpandedProperty || change.Property == IsModalProperty) UpdateTargets();
+        if (change.Property == ExpandedProperty || change.Property == IsModalProperty
+            || change.Property == CollapsedContainerWidthProperty || change.Property == ExpandedContainerMinWidthProperty || change.Property == ExpandedContainerMaxWidthProperty || change.Property == CollapsedItemVerticalSpaceProperty || change.Property == CollapsedItemMinHeightProperty || change.Property == HeaderSpaceProperty || change.Property == ItemHorizontalPaddingProperty) UpdateTargets();
     }
     private void UpdateTargets()
     {
@@ -93,12 +103,12 @@ internal sealed class WideNavigationRailLayout : Panel
             // so a second frame gate here would delay all four tracks.
             if (!IsModal) await scope.Clock.NextFrameAsync(ct);
             _pending = false;
-            var spatial = Spec(MaterialTokens.Sys.Motion.Spring.SpatialDefault, MotionScheme.Expressive.DefaultSpatial);
-            var widthSpec = IsModal ? Spec(MaterialTokens.Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial) : spatial;
-            Restart(_minWidth!, (float)(Expanded ? Metric(MaterialTokens.Comp.WideNavigationRail.ExpandedContainerMinWidth, 220) : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedContainerWidth, 96)), widthSpec);
-            Restart(_widthFullRange!, (float)(Expanded ? Metric(MaterialTokens.Comp.WideNavigationRail.ExpandedContainerMaxWidth, 360) : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedContainerWidth, 96)), widthSpec);
-            Restart(_itemSpacing!, (float)(Expanded ? 0 : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedItemVerticalSpace, 4)), spatial);
-            Restart(_itemHeight!, (float)(Expanded ? 48 : Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedItemMinHeight, 64)), spatial);
+            var spatial = LayoutAnimation;
+            var widthSpec = IsModal ? ModalWidthAnimation : spatial;
+            Restart(_minWidth!, (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth), widthSpec);
+            Restart(_widthFullRange!, (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth), widthSpec);
+            Restart(_itemSpacing!, (float)(Expanded ? 0 : CollapsedItemVerticalSpace), spatial);
+            Restart(_itemHeight!, (float)(Expanded ? 48 : CollapsedItemMinHeight), spatial);
 
             void Restart(Animatable<float> track, float target, Foundation.Motion.SpringSpec spec)
             {
@@ -118,12 +128,12 @@ internal sealed class WideNavigationRailLayout : Panel
         var layoutScale = LayoutHelper.GetLayoutScale(this);
         var density = (float)layoutScale;
         int Px(double value) => double.IsFinite(value) ? MathUtils.DipToPx(value, density) : int.MaxValue / 4;
-        var maxWidth = Math.Min(Px(availableSize.Width), Px(Metric(MaterialTokens.Comp.WideNavigationRail.ExpandedContainerMaxWidth, 360) - ContentPadding.Left - ContentPadding.Right));
+        var maxWidth = Math.Min(Px(availableSize.Width), Px(ExpandedContainerMaxWidth - ContentPadding.Left - ContentPadding.Right));
         var owner = TemplatedParent as WideNavigationRail ?? this.FindAncestorOfType<WideNavigationRail>();
         // ItemsControl owns the item logical parents; inheritance from ItemsPanel
         // would skip these controls even though they are its visual children.
         var itemHeight = WideNavigationRailVerticalValue.FromDp(_minimumHeight,
-            Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedItemMinHeight, 64), 48, layoutScale);
+            CollapsedItemMinHeight, 48, layoutScale);
         if (Children[1] is ItemsPresenter && owner is not null)
         {
             owner.SetValue(MinimumItemHeightProperty, itemHeight.Value / layoutScale);
@@ -132,7 +142,7 @@ internal sealed class WideNavigationRailLayout : Panel
         var externalMinWidth = owner is null ? 0 : double.IsNaN(owner.Width) ? owner.MinWidth : owner.Width;
         var actualMin = externalMinWidth <= 0 ? Math.Min(Px(_minimumWidth), maxWidth)
             : Math.Min(Px(Math.Max(0, externalMinWidth - owner!.WindowInsets.Left - owner.WindowInsets.Right - ContentPadding.Left - ContentPadding.Right)), maxWidth);
-        var expandedMin = externalMinWidth <= 0 ? Math.Min(Px(Metric(MaterialTokens.Comp.WideNavigationRail.ExpandedContainerMinWidth, 220)), maxWidth) : actualMin;
+        var expandedMin = externalMinWidth <= 0 ? Math.Min(Px(ExpandedContainerMinWidth), maxWidth) : actualMin;
         var header = (ContentPresenter)Children[0];
         header.Measure(new Size(maxWidth / layoutScale, availableSize.Height));
         var hasHeader = header.Content is not null || header.ContentTemplate is not null;
@@ -141,11 +151,11 @@ internal sealed class WideNavigationRailLayout : Panel
         if (_items is null) return new Size(actualMin / layoutScale, double.IsFinite(availableSize.Height) ? availableSize.Height : header.DesiredSize.Height);
         _items.Expanded = Expanded;
         _items.HeaderHeight = hasHeader ? Px(header.DesiredSize.Height) : 0;
-        _items.HeaderOffset = hasHeader && header.DesiredSize.Height > 0 ? _items.HeaderHeight + Px(Metric(MaterialTokens.Comp.WideNavigationRail.HeaderSpace, 40)) : 0;
+        _items.HeaderOffset = hasHeader && header.DesiredSize.Height > 0 ? _items.HeaderHeight + Px(HeaderSpace) : 0;
         _items.GapMotion = WideNavigationRailVerticalValue.FromDp(_spacing,
-            Metric(MaterialTokens.Comp.WideNavigationRail.CollapsedItemVerticalSpace, 4), 0, layoutScale);
+            CollapsedItemVerticalSpace, 0, layoutScale);
         _items.HeightMotion = itemHeight;
-        _items.ItemMaxWidth = Math.Max(Px(48), Expanded ? maxWidth - Px(Metric(MaterialTokens.Comp.WideNavigationRail.ItemHorizontalPadding, 20)) : actualMin);
+        _items.ItemMaxWidth = Math.Max(Px(48), Expanded ? maxWidth - Px(ItemHorizontalPadding) : actualMin);
         _items.Arrangement = Arrangement;
         _items.TopPadding = Px(ContentPadding.Top);
         _items.BottomPadding = Px(ContentPadding.Bottom);
@@ -210,7 +220,7 @@ internal sealed class WideNavigationRailItemsPanel : Panel
         SetValue(WideNavigationRailLayout.ItemHeightMotionProperty, HeightMotion);
         ExpandedItemMaxWidth = 0;
         ItemsHeight = 0;
-        var horizontalPadding = this.FindAncestorOfType<WideNavigationRailLayout>()?.Metric(MaterialTokens.Comp.WideNavigationRail.ItemHorizontalPadding, 20) ?? 20;
+        var horizontalPadding = this.FindAncestorOfType<WideNavigationRailLayout>()!.ItemHorizontalPadding;
         double offset = HeaderHeight;
         foreach (var child in Children)
         {

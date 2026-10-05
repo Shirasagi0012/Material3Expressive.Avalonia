@@ -1,5 +1,9 @@
 # NavigationDrawer 实现说明
 
+## Token 配置路径
+
+主题为抽屉开/关运动、Sheet 宽度/Insets/elevation 与样式提供有效配置。过冲补偿与布局共用有效 ContainerWidth；State 在原来的动作时机读取原来选中 owner 的有效 motion 属性，不再直接查询 Token。共享 owner 选择、锚点、取消语义、256ms 手势 tween 与 decay 保持不变。
+
 本文面向维护者；使用入口见 [README.md](README.md)。固定基线以
 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 1.5.0-alpha27），

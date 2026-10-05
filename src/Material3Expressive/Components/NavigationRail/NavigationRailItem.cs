@@ -12,9 +12,6 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -92,8 +89,7 @@ public class NavigationRailItem : Button
         // MappedInteractionSource uses the token widths, not actual item/ripple positions.
         // Its vertical delta is zero even when the pill has moved with the icon.
         MaterialInteraction.GetOrCreate(this).PressPositionMapper = origin =>
-            new Point(origin.X - (Metric(MaterialTokens.Comp.NavigationRail.NarrowContainerWidth, 80)
-                - Metric(MaterialTokens.Comp.NavigationRail.ActiveIndicatorWidth, 56)) / 2, origin.Y);
+            _layout is { } layout ? new Point(origin.X - (layout.ItemMinWidth - layout.IndicatorWidth) / 2, origin.Y) : origin;
         LostFocus += (_, _) => _activationKey = null;
     }
 
@@ -210,8 +206,8 @@ public class NavigationRailItem : Button
         // animateTo: cancellation resets velocity and the frame anchor. Calling
         // AnimateTo directly would instead carry the old velocity into the new target.
         // Spec changes apply at the next target change.
-        var effects = Spec(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects);
-        var spatial = Spec(MaterialTokens.Sys.Motion.Spring.SpatialFast, MotionScheme.Expressive.FastSpatial);
+        var effects = _layout!.EffectsAnimation;
+        var spatial = _layout!.IndicatorSizeAnimation;
         var selected = IsSelected ? 1f : 0f;
         Restart(_alpha, selected, new SpringSpec<float>(effects.DampingRatio, effects.Stiffness, 0.01f), "Rail indicator alpha");
         Restart(_size, selected, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), "Rail indicator size");
@@ -230,10 +226,6 @@ public class NavigationRailItem : Button
         }
     }
 
-    private Foundation.Motion.SpringSpec Spec(MaterialTokenKey<Foundation.Motion.SpringSpec> key, Foundation.Motion.SpringSpec fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec spec ? spec : fallback;
-    private double Metric(MaterialTokenKey<double> key, double fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double number ? number : fallback;
 
     protected override AutomationPeer OnCreateAutomationPeer() => _peer = new NavigationRailItemAutomationPeer(this);
 

@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Threading;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
-using Material3Expressive.Foundation.Motion;
 
 namespace Material3Expressive.Components;
 

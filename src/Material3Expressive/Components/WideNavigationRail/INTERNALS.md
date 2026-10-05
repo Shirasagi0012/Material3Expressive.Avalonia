@@ -1,5 +1,11 @@
 # WideNavigationRail 实现说明
 
+## Token 配置路径
+
+主题将宽度、间距、排版与运动规格绑定到控件/内部部件的有效属性；布局、按压和动画不再另查 Token。Modal 最大宽度使用同一 ExpandedContainerMaxWidth 默认来源。IconPosition=null 仍表示跟随展开目标，IndicatorPadding=null 仍在两个有效 padding 之间插值。
+
+State 保留既有共享所有权和 Attach 时机：第一个消费者仍在首次 Attach 捕获其有效 StateAnimation；之后主题变化只更新控件输入，不重建共享 State 或悄悄更换已捕获规格。改变这项捕获策略属于单独的状态设计问题。
+
 本文面向维护者；使用入口见 [README.md](README.md)。固定基线以
 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 1.5.0-alpha27），

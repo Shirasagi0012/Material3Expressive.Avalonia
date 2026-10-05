@@ -8,15 +8,19 @@ namespace Material3Expressive.Components;
 // NavigationBar.kt: NavigationBarItemLayout, placeIcon and placeLabelAndIcon.
 internal sealed class NavigationBarItemLayout : Panel
 {
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> EffectsAnimationProperty = AvaloniaProperty.Register<NavigationBarItemLayout, Foundation.Motion.SpringSpec>(nameof(EffectsAnimation));
+    public Foundation.Motion.SpringSpec EffectsAnimation { get => GetValue(EffectsAnimationProperty); set => SetValue(EffectsAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Motion.SpringSpec> IndicatorSizeAnimationProperty = AvaloniaProperty.Register<NavigationBarItemLayout, Foundation.Motion.SpringSpec>(nameof(IndicatorSizeAnimation));
+    public Foundation.Motion.SpringSpec IndicatorSizeAnimation { get => GetValue(IndicatorSizeAnimationProperty); set => SetValue(IndicatorSizeAnimationProperty, value); }
     public static readonly StyledProperty<bool> HasLabelProperty = AvaloniaProperty.Register<NavigationBarItemLayout, bool>(nameof(HasLabel));
     public static readonly StyledProperty<bool> AlwaysShowLabelProperty = AvaloniaProperty.Register<NavigationBarItemLayout, bool>(nameof(AlwaysShowLabel), true);
     public static readonly StyledProperty<float> AlphaProgressProperty = AvaloniaProperty.Register<NavigationBarItemLayout, float>(nameof(AlphaProgress));
     public static readonly StyledProperty<float> SizeProgressProperty = AvaloniaProperty.Register<NavigationBarItemLayout, float>(nameof(SizeProgress));
-    public static readonly StyledProperty<double> ItemMinHeightProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(ItemMinHeight), 80);
-    public static readonly StyledProperty<double> IndicatorWidthProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IndicatorWidth), 56);
-    public static readonly StyledProperty<double> IndicatorHeightProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IndicatorHeight), 32);
-    public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IconSize), 24);
-    public static readonly StyledProperty<CornerRadius> IndicatorShapeProperty = AvaloniaProperty.Register<NavigationBarItemLayout, CornerRadius>(nameof(IndicatorShape), new CornerRadius(double.PositiveInfinity));
+    public static readonly StyledProperty<double> ItemMinHeightProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(ItemMinHeight));
+    public static readonly StyledProperty<double> IndicatorWidthProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IndicatorWidth));
+    public static readonly StyledProperty<double> IndicatorHeightProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IndicatorHeight));
+    public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IconSize));
+    public static readonly StyledProperty<CornerRadius> IndicatorShapeProperty = AvaloniaProperty.Register<NavigationBarItemLayout, CornerRadius>(nameof(IndicatorShape));
     private int _layoutHeight;
 
     public bool HasLabel { get => GetValue(HasLabelProperty); set => SetValue(HasLabelProperty, value); }

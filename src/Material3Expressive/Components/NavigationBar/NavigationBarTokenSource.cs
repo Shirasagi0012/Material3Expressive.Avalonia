@@ -10,6 +10,9 @@ public sealed class NavigationBarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.NavigationBar.EffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.NavigationBar.IndicatorSizeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.NavigationBar.WindowInsets] = default(Avalonia.Thickness),
         [Comp.NavigationBar.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainer),
         [Comp.NavigationBar.TallContainerHeight] = 80d,
         [Comp.NavigationBar.DefaultTonalElevation] = new TokenRef(Sys.Elevation.Level0),

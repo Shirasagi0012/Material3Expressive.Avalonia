@@ -15,10 +15,7 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Interaction;
-using Material3Expressive.Foundation.Motion;
-using Material3Expressive.Foundation.Tokens;
 using Material3Expressive.Foundation.Typography;
-using Material3Expressive.Tokens;
 
 namespace Material3Expressive.Components;
 
@@ -27,6 +24,10 @@ public enum NavigationItemIconPosition { Top, Start }
 /// <summary>A wide rail destination. Selection belongs to the application; expansion controls the animated icon position.</summary>
 public class WideNavigationRailItem : Button
 {
+    internal static readonly StyledProperty<TextStyle?> TopIconLabelTextStyleProperty = AvaloniaProperty.Register<WideNavigationRailItem, TextStyle?>(nameof(TopIconLabelTextStyle));
+    internal TextStyle? TopIconLabelTextStyle { get => GetValue(TopIconLabelTextStyleProperty); set => SetValue(TopIconLabelTextStyleProperty, value); }
+    internal static readonly StyledProperty<TextStyle?> StartIconLabelTextStyleProperty = AvaloniaProperty.Register<WideNavigationRailItem, TextStyle?>(nameof(StartIconLabelTextStyle));
+    internal TextStyle? StartIconLabelTextStyle { get => GetValue(StartIconLabelTextStyleProperty); set => SetValue(StartIconLabelTextStyleProperty, value); }
     public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<WideNavigationRailItem, object?>(nameof(Icon), null);
     public object? Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
 
@@ -48,10 +49,10 @@ public class WideNavigationRailItem : Button
     public static readonly StyledProperty<Thickness?> IndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItem, Thickness?>(nameof(IndicatorPadding), null);
     public Thickness? IndicatorPadding { get => GetValue(IndicatorPaddingProperty); set => SetValue(IndicatorPaddingProperty, value); }
 
-    public static readonly StyledProperty<Thickness> CollapsedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItem, Thickness>(nameof(CollapsedIndicatorPadding), new Thickness(16, 4));
+    public static readonly StyledProperty<Thickness> CollapsedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItem, Thickness>(nameof(CollapsedIndicatorPadding));
     public Thickness CollapsedIndicatorPadding { get => GetValue(CollapsedIndicatorPaddingProperty); set => SetValue(CollapsedIndicatorPaddingProperty, value); }
 
-    public static readonly StyledProperty<Thickness> ExpandedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItem, Thickness>(nameof(ExpandedIndicatorPadding), new Thickness(16, 16));
+    public static readonly StyledProperty<Thickness> ExpandedIndicatorPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItem, Thickness>(nameof(ExpandedIndicatorPadding));
     public Thickness ExpandedIndicatorPadding { get => GetValue(ExpandedIndicatorPaddingProperty); set => SetValue(ExpandedIndicatorPaddingProperty, value); }
 
     public static readonly StyledProperty<Color> SelectedIconColorProperty = AvaloniaProperty.Register<WideNavigationRailItem, Color>(nameof(SelectedIconColor), default);
@@ -103,12 +104,11 @@ public class WideNavigationRailItem : Button
         {
             if (EffectiveIconPosition != NavigationItemIconPosition.Top) return origin;
             var density = (float)LayoutHelper.GetLayoutScale(this);
-            var indicatorWidth = MathUtils.DipToPx((float)Metric(MaterialTokens.Comp.WideNavigationRail.ActiveIndicatorWidth, 56), density) / density;
+            if (_layout is null) return origin;
+            var indicatorWidth = MathUtils.DipToPx((float)_layout.ActiveIndicatorWidth, density) / density;
             return new Point(origin.X - (Bounds.Width - indicatorWidth) / 2, origin.Y - 12);
         };
         LostFocus += (_, _) => _activationKey = null;
-        ResourcesChanged += (_, _) => UpdateLabelStyle();
-        ActualThemeVariantChanged += (_, _) => UpdateLabelStyle();
     }
     protected override Type StyleKeyOverride => typeof(WideNavigationRailItem);
     private Color IconTarget => !IsEffectivelyEnabled ? DisabledIconColor : IsSelected ? SelectedIconColor : UnselectedIconColor;
@@ -147,6 +147,7 @@ public class WideNavigationRailItem : Button
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == TopIconLabelTextStyleProperty || change.Property == StartIconLabelTextStyleProperty) UpdateLabelStyle();
         if (change.Property == IsSelectedProperty)
         {
             PseudoClasses.Set(":selected", IsSelected);
@@ -218,8 +219,8 @@ public class WideNavigationRailItem : Button
             if (!frameDriven) await scope.Clock.NextFrameAsync(ct);
             _pending = false;
             if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget); // Upstream iconColor does not animate.
-            var spatial = Spec(MaterialTokens.Sys.Motion.Spring.SpatialDefault, MotionScheme.Expressive.DefaultSpatial);
-            var effects = Spec(MaterialTokens.Sys.Motion.Spring.EffectsDefault, MotionScheme.Expressive.DefaultEffects);
+            var spatial = _layout!.SpatialAnimation;
+            var effects = _layout!.EffectsAnimation;
             Restart(_selection!, IsSelected ? 1f : 0f, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f));
             Restart(_position!, EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f));
             Restart(_textColor!, TextTarget, new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness));
@@ -240,15 +241,10 @@ public class WideNavigationRailItem : Button
     private void UpdateLabelStyle()
     {
         if (_label is null) return;
-        var key = EffectiveIconPosition == NavigationItemIconPosition.Top && (_position?.Value ?? 0) < 0.5f
-            ? MaterialTokens.Comp.WideNavigationRail.TopIconLabelTextStyle : MaterialTokens.Comp.WideNavigationRail.StartIconLabelTextStyle;
-        if (TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is TextStyle style)
-            _label.SetCurrentValue(MaterialText.DefaultStyleProperty, style);
+        var style = EffectiveIconPosition == NavigationItemIconPosition.Top && (_position?.Value ?? 0) < 0.5f
+            ? TopIconLabelTextStyle : StartIconLabelTextStyle;
+        _label.SetCurrentValue(MaterialText.DefaultStyleProperty, style);
     }
-    private Foundation.Motion.SpringSpec Spec(MaterialTokenKey<Foundation.Motion.SpringSpec> key, Foundation.Motion.SpringSpec fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is Foundation.Motion.SpringSpec spec ? spec : fallback;
-    private double Metric(MaterialTokenKey<double> key, double fallback) =>
-        TokenResolver.TryResolve(this, key, ActualThemeVariant, out var value) && value is double number ? number : fallback;
 
     protected override void OnKeyDown(KeyEventArgs e)
     {

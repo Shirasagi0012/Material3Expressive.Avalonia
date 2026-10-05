@@ -3,6 +3,7 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type m3:NavigationRail}" TargetType="m3:NavigationRail">
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.WindowInsets}}" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -49,7 +50,9 @@
       <Setter Property="Template">
         <ControlTemplate>
           <!-- Compose selectable covers the whole item, including unpainted gaps. -->
-          <m3:NavigationRailItemLayout x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
+          <m3:NavigationRailItemLayout EffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.EffectsAnimation}}"
+              IndicatorSizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.IndicatorSizeAnimation}}"
+              x:Name="PART_Layout" Background="Transparent" m3:BadgeBounds.IsEnabled="True"
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
               HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
               AlwaysShowLabel="{TemplateBinding AlwaysShowLabel}"

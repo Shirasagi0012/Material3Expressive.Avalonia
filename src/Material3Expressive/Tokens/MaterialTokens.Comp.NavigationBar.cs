@@ -11,6 +11,9 @@ public static partial class MaterialTokens
         // NavigationBar.kt consumes NavigationBarTokens and NavigationBarVerticalItemTokens.
         public static class NavigationBar
         {
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> EffectsAnimation = new("md.comp.navigation-bar.effects-animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> IndicatorSizeAnimation = new("md.comp.navigation-bar.indicator-size-animation");
+            public static readonly MaterialTokenKey<Thickness> WindowInsets = new("md.comp.navigation-bar.window-insets");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.navigation-bar.container.color");
             public static readonly MaterialTokenKey<double> TallContainerHeight = new("md.comp.navigation-bar.tall-container.height");
             // NavigationBarDefaults.Elevation is Level0, unlike the unused generated ContainerElevation.
