@@ -45,6 +45,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Material3Expressive.Tests" />
+        <InternalsVisibleTo Include="Material3Expressive.Parity" />
     </ItemGroup>
 
 </Project>

@@ -8,6 +8,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.TestSupport;
 using Xunit;
 
 namespace Material3Expressive.Tests;
@@ -175,7 +176,7 @@ public class AppBarTests
     public void StateAndScrollConsumption_FollowFixedBaseline()
     {
         var state = new TopAppBarState(-48, -24);
-        var connection = TopAppBarDefaults.EnterAlwaysScrollBehavior(state, snapAnimationSpec: null, flingAnimationSpec: null).NestedScrollConnection;
+        var connection = TopAppBarDefaults.EnterAlwaysScrollBehavior(state, snapAnimationSpec: null, flingAnimationSpec: null).GetNestedScrollConnection();
         Assert.Equal(new Vector(0, -50), connection.OnPreScroll(new Vector(3, -50), AppBarScrollSource.UserInput)); Assert.Equal(-48, state.HeightOffset);
         Assert.Equal(default, connection.OnPreScroll(new Vector(0, -50), AppBarScrollSource.UserInput));
         connection.OnPostScroll(new Vector(0, -15), default, AppBarScrollSource.UserInput); Assert.Equal(-15, state.ContentOffset);

@@ -8,6 +8,7 @@ using Avalonia.VisualTree;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
 using Material3Expressive.Components;
+using Material3Expressive.TestSupport;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Tokens;
 using ComposeAnimation;

@@ -143,9 +143,6 @@ Scaffold 不会自动应用 Padding。Material 的 ScrollViewer 主题提供 Smo
 逻辑主正文、嵌套 AppBarScrollScope、不同正文布局、自定义 behavior、非 spring snap、主正文原生 snap points
 暂不自动联动。Scope 不替换调用方的 ScrollViewer 主题或模板。
 
-自定义宿主可在 UI 线程使用 DispatchScroll / DispatchFlingAsync；它们消费物理像素和 px/s，
-不是 Avalonia Offset 的 DIP/逻辑单位。显式协议与直接拖动的约束见 [INTERNALS](INTERNALS.md#显式协议与直接拖动)。
-
 ## 验证边界
 
 正文惯性来自 SmoothScroll，栏在正文结束后独立 spring 吸附，不承诺与 Compose decay 曲线相同。
@@ -153,7 +150,7 @@ Scaffold 不会自动应用 Padding。Material 的 ScrollViewer 主题提供 Smo
 UI 忙碌时只能合成移动已呈现内容；公开状态、命中测试、辅助功能与虚拟化新内容仍依赖 UI 更新。
 AppBar 参与者路径不支持缩放及 overscroll。
 
-TouchExplorationEnabled 需由宿主连接辅助服务；它仅关闭底栏直接拖动和隐藏布局，仍保留 nested connection。
+TouchExplorationEnabled 需由宿主连接辅助服务；它仅关闭底栏直接拖动和隐藏布局，仍保留正文滚动联动。
 合成标题在极小非零透明度下仍有原生剔除差异。硬件触摸、真实文字与屏幕阅读器需要另行验收。
 
 Catalog 的 [AppBarDemo](../../../Material3Expressive.Catalog/AppBarDemo.cs) 可通过 `--app-bars` 打开，

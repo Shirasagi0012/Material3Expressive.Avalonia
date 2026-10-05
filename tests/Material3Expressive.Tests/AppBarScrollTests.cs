@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Input.Raw;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.TestSupport;
 using Material3Expressive.Styles;
 using Xunit;
 

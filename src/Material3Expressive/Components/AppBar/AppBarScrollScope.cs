@@ -8,7 +8,7 @@ using SmoothScroll.Avalonia.Controls;
 namespace Material3Expressive.Components;
 
 /// <summary>Connects a screen's main SmoothScroll viewport to its AppBars. Embedded viewports scroll independently.</summary>
-public partial class AppBarScrollScope : Decorator
+public class AppBarScrollScope : Decorator
 {
     public static readonly StyledProperty<TopAppBarScrollBehavior?> TopScrollBehaviorProperty =
         AvaloniaProperty.Register<AppBarScrollScope, TopAppBarScrollBehavior?>(nameof(TopScrollBehavior));

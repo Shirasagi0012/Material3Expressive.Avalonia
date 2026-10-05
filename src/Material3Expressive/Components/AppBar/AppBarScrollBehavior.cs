@@ -1,4 +1,4 @@
-/* Translated from AndroidX AppBar.kt and NestedScrollNode.kt, Copyright The Android Open Source Project.
+/* Translated from AndroidX AppBar.kt, Copyright The Android Open Source Project.
  * Apache License 2.0. Fixed source: docs/upstream-baseline.json. */
 using Avalonia;
 using Avalonia.Layout;
@@ -11,40 +11,12 @@ using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
-public enum AppBarScrollSource
-{
-    UserInput,
-    SideEffect
-}
-
-/// <summary>A nested scroll connection; return values are consumed physical pixels or px/s.</summary>
-public abstract class AppBarNestedScrollConnection
-{
-    public virtual Vector OnPreScroll(Vector available, AppBarScrollSource source) => default;
-
-    public virtual Vector OnPostScroll(Vector consumed, Vector available, AppBarScrollSource source) => default;
-
-    public virtual ValueTask<Vector> OnPreFlingAsync(
-        Vector available,
-        IAnimationFrameClock clock,
-        CancellationToken cancellationToken = default) =>
-        ValueTask.FromResult(default(Vector));
-
-    public virtual ValueTask<Vector> OnPostFlingAsync(
-        Vector consumed,
-        Vector available,
-        IAnimationFrameClock clock,
-        CancellationToken cancellationToken = default) =>
-        ValueTask.FromResult(default(Vector));
-}
-
 public abstract class TopAppBarScrollBehavior
 {
     public abstract TopAppBarState State { get; }
     public abstract bool IsPinned { get; }
     public abstract IAnimationSpec<float>? SnapAnimationSpec { get; }
     public abstract IDecayAnimationSpec<float>? FlingAnimationSpec { get; }
-    public abstract AppBarNestedScrollConnection NestedScrollConnection { get; }
 
     public Task<Vector> SettleAsync(float velocity, IAnimationFrameClock clock,
         CancellationToken cancellationToken = default) =>
@@ -57,7 +29,6 @@ public abstract class BottomAppBarScrollBehavior
     public abstract bool IsPinned { get; }
     public abstract IAnimationSpec<float>? SnapAnimationSpec { get; }
     public abstract IDecayAnimationSpec<float>? FlingAnimationSpec { get; }
-    public abstract AppBarNestedScrollConnection NestedScrollConnection { get; }
 
     public Task<Vector> SettleAsync(float velocity, IAnimationFrameClock clock,
         CancellationToken cancellationToken = default) =>
@@ -93,7 +64,6 @@ internal sealed class DefaultTopAppBarScrollBehavior : TopAppBarScrollBehavior
         FlingAnimationSpec = fling;
         _defaultSpecs = defaultSpecs;
         _density = density;
-        NestedScrollConnection = new Connection(this);
     }
 
     internal TopScrollKind Kind { get; }
@@ -125,56 +95,6 @@ internal sealed class DefaultTopAppBarScrollBehavior : TopAppBarScrollBehavior
                 ? DecayAnimationSpec.SplineBasedDecay<float>(
                     _density ?? (float)(Host is { } host ? LayoutHelper.GetLayoutScale(host) : 1))
                 : field;
-
-    public override AppBarNestedScrollConnection NestedScrollConnection { get; }
-
-    private sealed class Connection(DefaultTopAppBarScrollBehavior owner) : AppBarNestedScrollConnection
-    {
-        public override Vector OnPreScroll(Vector available, AppBarScrollSource source)
-        {
-            if (!owner.CanScroll() || owner.IsPinned ||
-                owner.Kind == TopScrollKind.ExitUntilCollapsed && available.Y > 0)
-                return default;
-
-            var state = owner.State;
-            var previous = state.HeightOffset;
-            state.HeightOffset += (float)available.Y;
-
-            // Upstream consumes the complete Y input when the offset changes, including at a boundary.
-            return previous != state.HeightOffset ? new Vector(0, available.Y) : default;
-        }
-
-        public override Vector OnPostScroll(Vector consumed, Vector available, AppBarScrollSource source)
-        {
-            if (!owner.CanScroll())
-                return default;
-
-            var state = owner.State;
-            state.ContentOffset += (float)consumed.Y;
-            if (owner.Kind != TopScrollKind.ExitUntilCollapsed)
-                return default;
-
-            var old = state.HeightOffset;
-            if (available.Y < 0 || consumed.Y < 0)
-                state.HeightOffset += (float)consumed.Y;
-            else if (available.Y > 0)
-                state.HeightOffset += (float)available.Y;
-
-            return new Vector(0, state.HeightOffset - old);
-        }
-
-        public override async ValueTask<Vector> OnPostFlingAsync(
-            Vector consumed,
-            Vector available,
-            IAnimationFrameClock clock,
-            CancellationToken cancellationToken = default)
-        {
-            if (available.Y > 0)
-                owner.State.ContentOffset = 0;
-
-            return owner.IsPinned ? default : await owner.SettleAsync((float)available.Y, clock, cancellationToken);
-        }
-    }
 }
 
 internal sealed class DefaultBottomAppBarScrollBehavior : BottomAppBarScrollBehavior
@@ -193,7 +113,6 @@ internal sealed class DefaultBottomAppBarScrollBehavior : BottomAppBarScrollBeha
         FlingAnimationSpec = fling;
         _defaultSpecs = defaultSpecs;
         _density = density;
-        NestedScrollConnection = new Connection(this);
     }
 
     private Func<bool> CanScroll { get; }
@@ -222,34 +141,6 @@ internal sealed class DefaultBottomAppBarScrollBehavior : BottomAppBarScrollBeha
             ? DecayAnimationSpec.SplineBasedDecay<float>(
                 _density ?? (float)(Host is { } host ? LayoutHelper.GetLayoutScale(host) : 1))
             : field;
-
-    public override AppBarNestedScrollConnection NestedScrollConnection { get; }
-
-    private sealed class Connection(DefaultBottomAppBarScrollBehavior owner) : AppBarNestedScrollConnection
-    {
-        public override Vector OnPostScroll(Vector consumed, Vector available, AppBarScrollSource source)
-        {
-            if (!owner.CanScroll())
-                return default;
-
-            owner.State.ContentOffset += (float)consumed.Y;
-            owner.State.HeightOffset += (float)consumed.Y;
-            return default;
-        }
-
-        public override async ValueTask<Vector> OnPostFlingAsync(
-            Vector consumed,
-            Vector available,
-            IAnimationFrameClock clock,
-            CancellationToken cancellationToken = default)
-        {
-            var state = owner.State;
-            if (available.Y > 0 && (state.HeightOffset == 0 || state.HeightOffset == state.HeightOffsetLimit))
-                state.ContentOffset = 0;
-
-            return await owner.SettleAsync((float)available.Y, clock, cancellationToken);
-        }
-    }
 }
 
 internal static class AppBarSettle

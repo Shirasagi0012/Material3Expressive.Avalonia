@@ -19,7 +19,8 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 | TopAppBar、CenterAlignedTopAppBar、Medium/Large、Flexible、TwoRows 入口 | [TopAppBar.cs](TopAppBar.cs)、[AppBarTopLayout.cs](AppBarTopLayout.cs)、[AppBar.axaml](AppBar.axaml)：槽、标题树、测量/摆放和视觉桥接 |
 | BottomAppBar、FlexibleBottomAppBar | [BottomAppBar.cs](BottomAppBar.cs)、[AppBarBottomLayout.cs](AppBarBottomLayout.cs)：动作/FAB/自定义内容、排列与隐藏布局 |
 | TopAppBarState / BottomAppBarState、行为工厂 / 配置基线 | [AppBarState.cs](AppBarState.cs)、[AppBarDefaults.cs](AppBarDefaults.cs)、[AppBarTokenSource.cs](AppBarTokenSource.cs)、[组件 Token](../../Tokens/MaterialTokens.Comp.AppBar.cs) |
-| ScrollBehavior、nestedScrollConnection、settleAppBar | [AppBarScrollBehavior.cs](AppBarScrollBehavior.cs)、[AppBarDirectDrag.cs](AppBarDirectDrag.cs)、[AppBarVerticalGesture.cs](AppBarVerticalGesture.cs) |
+| ScrollBehavior、settleAppBar | [AppBarScrollBehavior.cs](AppBarScrollBehavior.cs)、[AppBarDirectDrag.cs](AppBarDirectDrag.cs)、[AppBarVerticalGesture.cs](AppBarVerticalGesture.cs) |
+| nestedScrollConnection、显式嵌套分发 | [测试协议](../../../../tests/Shared/AppBar/AppBarNestedScrollConnection.cs)、[测试分发](../../../../tests/Shared/AppBar/AppBarScrollScopeExtensions.cs)：仅驱动测试正文 |
 | 本地原生滚动接入 | [AppBarScrollScope.cs](AppBarScrollScope.cs)、[AppBarSmoothScrollConnection.cs](AppBarSmoothScrollConnection.cs)：主视口筛选、接入/释放与布局衔接 |
 | 本地合成参与者 | [AppBarScrollParticipant.cs](AppBarScrollParticipant.cs)、[AppBarCompositionVisuals.cs](AppBarCompositionVisuals.cs)：DIP 事务与物理状态桥接、合成输出 |
 
@@ -137,34 +138,33 @@ Avalonia 12.1.2 的桥接包括首次 expression 主动求值、停止后恢复�
 `canScroll` / `isScrollingContentAtStart` 在 UI 输入前和布局时求值，UI 忙碌时沿用最后快照。
 Offset、键盘、BringIntoView、滚动条与程序化定位动画不进入 pre/post。
 
-## 显式协议与直接拖动
+## 直接拖动与测试协议
 
 AppBarScrollScope 包围屏幕，栏和 Scope 引用同一个 behavior。顶部提供 Pinned/EnterAlways/ExitUntilCollapsed，
-底部 ExitAlways。状态/协议为物理 px、速度 px/s；尺寸和 Avalonia Offset 为 DIP/原生逻辑单位。
+底部 ExitAlways。状态为物理 px、速度 px/s；尺寸和 Avalonia Offset 为 DIP/原生逻辑单位。
 默认 fling 从挂载的栏或 Scope 读取 density，snap 从 Material motion token 解析；显式 spec 重载允许
 分别传 null 禁用 decay/snap。求解使用 ComposeAnimation NuGet，spring 参数保留上游 Float 精度。
 
-显式分发的 pre 从外到内、每层 top→bottom；post 从内到外、每层 bottom→top，connection 返回消费量。
-这条协议用于自定义宿主和行为验证，不自动接管原生 viewer 的滚轮、触摸或惯性。
-`AppBarScrollScope.Test.cs` 保存这套显式分发及其 pre/post 辅助方法，仍随控件库编译并保留公共 API。
-`AppBarScrollScope.cs` 保存 SmoothScroll 连接生命周期，以及显式 fling 和真实栏直接拖动共用的
-取消任务登记；分发部分通过 Register/Unregister 接入同一取消生命周期，不建立第二份任务集合。
-任意滚动宿主可在 UI 线程调用：
-
-```csharp
-Vector consumed = scope.DispatchScroll(deltaPx, remaining => ConsumeContentPixels(remaining));
-Vector consumedVelocity = await scope.DispatchFlingAsync(velocityPxPerSecond,
-    (remaining, token) => FlingContentAndReturnConsumedVelocity(remaining, token), clock, token);
-// 内容 inertia 每帧也经 DispatchScroll(..., AppBarScrollSource.SideEffect)。
-```
-
 直接拖动栏使用 Core Desktop 的 18 DIP touch slop / .125 DIP mouse slop，并调用 behavior 的 settle。
 Lsq2 速度追踪从 Rail 原样提取共用。TouchExplorationEnabled 由宿主接入辅助服务，只禁用底栏直接拖动和
-隐藏布局，nested connection 保留，对应上游 activeScrollBehavior 范围。
+隐藏布局，正文滚动联动保留，对应上游 activeScrollBehavior 范围。
 
-上方 C# 是协议片段：scope 为已挂载 AppBarScrollScope，回调由自定义宿主实现，
-clock 为所用动画帧时钟，token 为调用方 CancellationToken；Vector 来自 Avalonia。
-必须返回实际消费量/速度，不能把目标量直接作为已消费。此接口不自动接管 viewer 的输入或惯性。
+维护者于 2026-10-06 确认：显式嵌套协议的现有用途限于测试，将整套实现移出控件库。
+删除公开 AppBarScrollSource / AppBarNestedScrollConnection、behavior 的 NestedScrollConnection 属性、
+Scope 的 DispatchScroll / DispatchFlingAsync；不保留自定义宿主 API 或兼容包装。
+真实 SmoothScroll 连接、直接拖动、SettleAsync 和取消任务管理继续留在控件库。
+
+[tests/Shared/AppBar](../../../../tests/Shared/AppBar) 保存显式协议与扩展分发方法，
+由 Material3Expressive.Tests 和 Material3Expressive.Parity 链接同一份源文件，不随控件库编译。
+分发仍为 pre 从外到内、每层 top→bottom；post 从内到外、每层 bottom→top，消费物理 px 或 px/s。
+它只支持内置 behavior，用真实 State、canScroll 回调和 SettleAsync 驱动测试正文，保留原有边界消费规则。
+两测试程序集通过 InternalsVisibleTo 访问 Kind、CanScrollForComposition、AttachDefaults 和
+Register/Unregister；测试 fling 接入 Scope 原有取消集合，保持新输入和 Interrupt 的取消语义。
+SmoothScroll 生命周期断言仍在测试侧反射 Scope._connection 和连接的 _viewer，不新增生产查询入口。
+
+显式分发断言验证测试辅助代码；双端用例验证真实栏的状态、布局和收尾动画。
+生产正文的滚动分配及连接行为由 AppBarSmoothScrollTests / AppBarCompositionTests 验证，
+不能用测试协议的结果代替真实 SmoothScroll 路径的证据。
 
 ## 已确认选择与未决范围
 

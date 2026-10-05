@@ -13,6 +13,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.TestSupport;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Styles;
 using SmoothScroll.Avalonia.Controls;
@@ -837,7 +838,6 @@ public class AppBarSmoothScrollTests
         public override bool IsPinned => inner.IsPinned;
         public override ComposeAnimation.Runtime.IAnimationSpec<float>? SnapAnimationSpec => inner.SnapAnimationSpec;
         public override ComposeAnimation.Runtime.IDecayAnimationSpec<float>? FlingAnimationSpec => inner.FlingAnimationSpec;
-        public override AppBarNestedScrollConnection NestedScrollConnection => inner.NestedScrollConnection;
     }
 
     private sealed class LogicalBody : Control, ILogicalScrollable

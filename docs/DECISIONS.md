@@ -174,20 +174,16 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 ## AppBar 与原生滚动接入
 
 决定：公开 AppBarScrollScope 包围屏幕，栏与 Scope 使用同一个 ScrollBehavior。
-协议以物理像素和 px/s 表达消费量；pre 外到内、每层 top→bottom，post 内到外、每层 bottom→top。
+公开 AppBar 状态以物理像素表达，真实正文滚动使用下述 SmoothScroll 合成接入。
 Scope 只连接其 Scaffold 正文槽内唯一的主 ScrollViewer；内层独立，不建立多个正文连接。
 移出、detach、行为或模板替换及新输入取消旧惯性/吸附并释放连接。接入按实际 SmoothScroll presenter
 及物理滚动/布局能力判断；Scope 不改写 Template/ControlTheme/Style，不订阅内层 viewer 的模板变化。
-自定义宿主可显式使用 DispatchScroll / DispatchFlingAsync；该协议不自动创建或替换正文滚动引擎。
 
 正文 touch/pen、捕获接力和惯性由 SmoothScroll 接入；直接拖动栏及其 settle 保留 ComposeAnimation。
 原 Rail 的 Lsq2 VelocityTracker 原样移入内部 Foundation/Input，由 Rail 与 AppBar 共用。
 没有新增通用输入框架或完整系统 insets 框架；标题和 Bottom 自定义内容的槽规则留在组件 README。
 确认：2026-10-04，维护者采用修订后的 AppBarScrollScope 及槽规则，要求保留自定义模板、嵌套和生命周期，
 并分别验证组件 parity 与真实桌面输入集成。
-同日维护者审核后明确移除 Fluent ScrollViewer 接入、自动模板替换及旧 AppBarScrollContentPresenter，
-批准只保留 SmoothScroll 正文路径、单主正文连接及已有显式分发/直接拖动 API。
-本决定取代此前 Fluent 标准模板身份核验、SetCurrentValue 替换及旧正文 spline/snap 适配规则。
 
 ## 普通物理滚动与 AppBar 的合成接入
 
