@@ -81,7 +81,7 @@ public class TextFieldConfigurationTests
         try
         {
             Assert.Equal(new Thickness(16), box.Padding);
-            MaterialTextField.SetLabel(box, "Label"); Flush(window);
+            MaterialTextField.SetLabel(box, new Border { Width = 24, Height = 12 }); Flush(window);
             Assert.Equal(outlined ? new Thickness(16) : new Thickness(16, 8), box.Padding);
             box.Resources[Comp.TextField.ContentPadding] = new Thickness(20, 12);
             box.Resources[Comp.TextField.WithLabelContentPadding] = new Thickness(24, 10);
@@ -104,7 +104,7 @@ public class TextFieldConfigurationTests
             using (box.Bind(TextBox.PaddingProperty, new Binding(nameof(Control.Tag)) { Source = source }))
             {
                 MaterialTextField.SetLabelPosition(box, TextFieldLabelPosition.Inside);
-                MaterialTextField.SetLabel(box, "Label"); Flush(window);
+                MaterialTextField.SetLabel(box, new Border { Width = 24, Height = 12 }); Flush(window);
                 Assert.Equal(new Thickness(9), box.Padding);
                 source.Tag = new Thickness(11); Flush(window);
                 Assert.Equal(new Thickness(11), box.Padding);
@@ -169,7 +169,7 @@ public class TextFieldConfigurationTests
             window.RequestedThemeVariant = ThemeVariant.Dark; Flush(window);
             Assert.Equal(new SpringSpec(1, 600), layout.FastEffectsAnimation);
             Assert.Equal(310, box.Bounds.Width);
-            MaterialTextField.SetLabel(box, "Label"); box.Focus(); Flush(window);
+            MaterialTextField.SetLabel(box, new Border { Width = 24, Height = 12 }); box.Focus(); Flush(window);
             for (var i = 0; i < 100; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); }
             Assert.Equal(1, layout.LabelProgress);
             Assert.Equal(new SpringSpec(0.9, 350), layout.SpatialAnimation);
@@ -186,8 +186,11 @@ public class TextFieldConfigurationTests
         var window = new MotionTestWindow { Width = 420, Height = 320, RequestedThemeVariant = ThemeVariant.Light };
         window.Styles.Add(new MaterialTheme());
         var key = "Material" + (outlined ? "Outlined" : "Filled") + (secure ? "Secure" : "") + "TextFieldTheme";
-        box = new TextBox { Theme = (ControlTheme)window.FindResource(key)!, HorizontalAlignment = HorizontalAlignment.Left };
-        window.Content = new StackPanel { Children = { new Button { Content = "Focus target" }, box } };
+        // These tests exercise configuration precedence and layout, not font selection or glyphs.
+        // Even an empty native editor measures a text line, so use its platform font locally.
+        box = new TextBox { Theme = (ControlTheme)window.FindResource(key)!, HorizontalAlignment = HorizontalAlignment.Left,
+            FontFamily = FontManager.Current.DefaultFontFamily };
+        window.Content = new StackPanel { Children = { new Button { Width = 24, Height = 24 }, box } };
         window.Show(); Flush(window); return window;
     }
 }

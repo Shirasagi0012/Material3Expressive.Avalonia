@@ -4,6 +4,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Presenters;
 using Avalonia.Data;
 using Avalonia.Input;
@@ -25,6 +26,7 @@ internal sealed partial class TextFieldLayout : Panel
 {
     private TextBox? _owner;
     private ContentPresenter _label = null!, _leading = null!, _trailing = null!, _prefix = null!, _suffix = null!, _supporting = null!, _placeholder = null!;
+    private ContentPresenter _expandedLabelStyle = null!, _floatingLabelStyle = null!;
     private TextFieldDecoration? _decoration;
     private Border _editor = null!;
     private TextPresenter _text = null!;
@@ -63,6 +65,8 @@ internal sealed partial class TextFieldLayout : Panel
         _owner = (TextBox)TemplatedParent!;
         _decoration = (TextFieldDecoration)Children.Single(c => c.Name == "Decoration");
         _label = (ContentPresenter)Children.Single(c => c.Name == "Label");
+        _expandedLabelStyle = (ContentPresenter)Children.Single(c => c.Name == "ExpandedLabelStyle");
+        _floatingLabelStyle = (ContentPresenter)Children.Single(c => c.Name == "FloatingLabelStyle");
         _leading = (ContentPresenter)Children.Single(c => c.Name == "Leading");
         _trailing = (ContentPresenter)Children.Single(c => c.Name == "Trailing");
         _prefix = (ContentPresenter)Children.Single(c => c.Name == "Prefix");
@@ -75,6 +79,8 @@ internal sealed partial class TextFieldLayout : Panel
         _text.PropertyChanged += PresenterChanged;
         foreach (var slot in new[] { _leading, _trailing, _prefix, _suffix, _supporting, _placeholder })
             slot.PropertyChanged += SlotChanged;
+        _expandedLabelStyle.PropertyChanged += LabelEndpointChanged;
+        _floatingLabelStyle.PropertyChanged += LabelEndpointChanged;
         // Style priority preserves application-provided accessibility metadata.
 
         UpdateAccessibility();
@@ -104,8 +110,11 @@ internal sealed partial class TextFieldLayout : Panel
         if (_text != null) _text.PropertyChanged -= PresenterChanged;
         foreach (var slot in new[] { _leading, _trailing, _prefix, _suffix, _supporting, _placeholder })
             slot.PropertyChanged -= SlotChanged;
+        _expandedLabelStyle.PropertyChanged -= LabelEndpointChanged;
+        _floatingLabelStyle.PropertyChanged -= LabelEndpointChanged;
         _nameBinding?.Dispose(); _helpBinding?.Dispose();
         _nameBinding = _helpBinding = null;
+        _owner = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -146,6 +155,7 @@ internal sealed partial class TextFieldLayout : Panel
         if (_owner == null || (e.Property != ContainerBrushProperty && e.Property != IndicatorBrushProperty &&
             e.Property != LabelBrushProperty && e.Property != LargeTextStyleProperty && e.Property != SmallTextStyleProperty &&
             e.Property != DefaultMinimumWidthProperty && e.Property != DefaultMinimumHeightProperty &&
+            e.Property != DefaultMinimizedLabelLineHeightProperty &&
             e.Property != SpatialAnimationProperty && e.Property != FastEffectsAnimationProperty &&
             e.Property != SlowEffectsAnimationProperty && e.Property != FlowDirectionProperty)) return;
         UpdateSlots(); Retarget(); InvalidateMeasure(); InvalidateDecoration();
@@ -166,21 +176,10 @@ internal sealed partial class TextFieldLayout : Panel
         _trailing.Content = useTrailingIcon ? trailingIcon : _owner.InnerRightContent;
         _trailing.ContentTemplate = useTrailingIcon ? trailingIconTemplate : null;
         _placeholder.SetCurrentValue(ContentPresenter.ContentProperty, MaterialTextField.GetPlaceholder(_owner) ?? _owner.PlaceholderText);
-        // Keep spatial overshoot for placement, but never extrapolate typography or measured size.
-        var p = Math.Clamp(LabelProgress, 0f, 1f);
-        var large = LargeTextStyle ?? TextStyle.Empty;
-        var small = SmallTextStyle ?? TextStyle.Empty;
-        var labelStyle = large with
-        {
-            FontSize = MathUtils.Lerp(large.FontSize ?? 16, small.FontSize ?? 12, p),
-            LineHeight = MathUtils.Lerp(large.LineHeight ?? 24, small.LineHeight ?? 16, p),
-            LetterSpacing = MathUtils.Lerp(large.LetterSpacing ?? 0.5, small.LetterSpacing ?? 0.4, p),
-            FontWeight = (FontWeight)MathUtils.RoundToInt(MathUtils.Lerp((int)(large.FontWeight ?? FontWeight.Normal), (int)(small.FontWeight ?? FontWeight.Normal), p)),
-            FontFamily = p < 0.5 ? large.FontFamily : small.FontFamily,
-            Foreground = new SolidColorBrush(PaintedLabelColor),
-        };
-        MaterialText.SetDefaultStyle(_label, labelStyle);
-        _label.Foreground = labelStyle.Foreground;
+        var labelColor = new SolidColorBrush(PaintedLabelColor);
+        if (InterpolateLabelStyle(_expandedLabelStyle, _floatingLabelStyle, LabelProgress) is { } labelStyle)
+            MaterialText.SetDefaultStyle(_label, labelStyle with { Foreground = labelColor });
+        _label.Foreground = labelColor;
         _leading.IsVisible = _leading.Content != null || _leading.ContentTemplate != null;
         _trailing.IsVisible = _trailing.Content != null || _trailing.ContentTemplate != null;
         _supporting.IsVisible = _supporting.Content != null;
@@ -194,6 +193,63 @@ internal sealed partial class TextFieldLayout : Panel
         InvalidateMeasure(); InvalidateDecoration();
     }
 
+    private void LabelEndpointChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == TextElement.FontFamilyProperty || e.Property == TextElement.FontSizeProperty ||
+            e.Property == TextElement.FontWeightProperty || e.Property == TextElement.FontStyleProperty ||
+            e.Property == TextElement.FontStretchProperty || e.Property == TextElement.LetterSpacingProperty ||
+            e.Property == TextBlock.LineHeightProperty || e.Property == TextBlock.TextAlignmentProperty)
+            UpdateSlots();
+    }
+
+    // Each endpoint is projected independently by MaterialText, with native Avalonia inheritance
+    // and precedence. Read only these unanimated inputs; native overrides on Label remain above
+    // its interpolated DefaultStyle and clearing them exposes the current progress immediately.
+    internal static TextStyle? InterpolateLabelStyle(ContentPresenter expanded, ContentPresenter floating, float progress)
+    {
+        var p = Math.Clamp(progress, 0f, 1f);
+        var expandedLineHeight = expanded.GetValue(TextBlock.LineHeightProperty);
+        var floatingLineHeight = floating.GetValue(TextBlock.LineHeightProperty);
+        // NaN is Avalonia's explicit automatic line height; it cannot be numerically interpolated.
+        // Preserve endpoints with the same discrete boundary as Compose lerpTextUnitInheritable.
+        // Infinity is invalid configuration, not automatic line height: keep the previous output
+        // until the inputs recover rather than projecting a non-finite length into text layout.
+        if (double.IsInfinity(expandedLineHeight) || double.IsInfinity(floatingLineHeight))
+            return null;
+        var lineHeight = double.IsNaN(expandedLineHeight) || double.IsNaN(floatingLineHeight)
+            ? p < .5f ? expandedLineHeight : floatingLineHeight
+            : MathUtils.Lerp(expandedLineHeight, floatingLineHeight, p);
+        return new TextStyle
+        {
+            FontSize = MathUtils.Lerp(expanded.FontSize, floating.FontSize, p),
+            LineHeight = lineHeight,
+            LetterSpacing = MathUtils.Lerp(expanded.GetValue(TextElement.LetterSpacingProperty), floating.GetValue(TextElement.LetterSpacingProperty), p),
+            FontWeight = (FontWeight)MathUtils.RoundToInt(MathUtils.Lerp((int)expanded.FontWeight, (int)floating.FontWeight, p)),
+            FontFamily = p < 0.5 ? expanded.FontFamily : floating.FontFamily,
+            FontStyle = expanded.FontStyle,
+            FontStretch = expanded.FontStretch,
+            TextAlignment = expanded.GetValue(TextBlock.TextAlignmentProperty),
+        };
+    }
+
+    // TextFieldImpl.minimizedLabelHalfHeight uses the small role's line height, with its
+    // dedicated type-scale fallback for an unspecified/automatic height. This geometry value
+    // must not flow back into the typography endpoints. Missing/invalid fallback reserves no
+    // extra space until configuration recovers; it is not a substitute font metric.
+    internal double MinimizedLabelLineHeight
+    {
+        get
+        {
+            var height = _floatingLabelStyle.GetValue(TextBlock.LineHeightProperty);
+            if (double.IsFinite(height) && height >= 0)
+                return height;
+            if (double.IsNaN(height) && DefaultMinimizedLabelLineHeight is { } fallback &&
+                double.IsFinite(fallback) && fallback >= 0)
+                return fallback;
+            return 0;
+        }
+    }
+
     private void InvalidateDecoration() => _decoration?.InvalidateVisual();
     private static Color ColorOf(IBrush? brush) => (brush as ISolidColorBrush)?.Color ?? Colors.Transparent;
 
@@ -204,11 +260,9 @@ internal sealed partial class TextFieldLayout : Panel
         _ = motion.Launch(async ct =>
         {
             await motion.Clock.NextFrameAsync(ct); _pending = false;
+            if (SpatialAnimation is not { } spatial || FastEffectsAnimation is not { } fast || SlowEffectsAnimation is not { } slow) return;
             var previous = _phase; _phase = Phase;
             var idleColorChange = previous == _phase && !_labelProgress!.IsRunning && !_labelColor!.IsRunning;
-            var spatial = SpatialAnimation;
-            var fast = FastEffectsAnimation;
-            var slow = SlowEffectsAnimation;
             Animate(_labelProgress!, LabelTarget, spatial);
             Animate(_placeholderAlpha!, Phase == 1 || Phase == 0 && !Expanded ? 1 : 0,
                 previous == 0 && Phase == 1 || previous == 2 && Phase == 0 ? slow : fast);
@@ -252,7 +306,7 @@ internal sealed partial class TextFieldLayout : Panel
         if (_owner == null) return base.MeasureOverride(available);
         // Keep spatial overshoot for placement, but never extrapolate typography or measured size.
         var p = Math.Clamp(LabelProgress, 0f, 1f);
-        _cutoutTop = Cutout ? Round((SmallTextStyle?.LineHeight ?? 16) / 2) : 0;
+        _cutoutTop = Cutout ? Round(MinimizedLabelLineHeight / 2) : 0;
         var maxHeight = Math.Max(0, available.Height - _cutoutTop);
         _padding = _owner.Padding;
         var top = Round(_padding.Top); var bottom = Round(_padding.Bottom);
@@ -266,6 +320,8 @@ internal sealed partial class TextFieldLayout : Panel
         _editor.Padding = _placeholder.Padding = Insets(_prefix.IsVisible ? 0 : startPad, 0, _suffix.IsVisible ? 0 : endPad, 0);
         _label.Padding = Above ? new Thickness(4, 0, 4, 4) : Cutout ? default : Insets(startPad, 0, endPad, 0);
         _supporting.Padding = new Thickness(16, 4, 16, 0);
+        // TextFieldImpl.textFieldLabelMinHeight: fixed MinTextLineHeight / MinFocusedLabelLineHeight,
+        // distinct from the effective text line height and minimized-label geometry reservation.
         _label.MinHeight = Lerp(24, 16, p);
         var occupied = 0d; var occupiedY = 0d;
         void Measure(Control child, double width, double height)
@@ -301,7 +357,7 @@ internal sealed partial class TextFieldLayout : Panel
             Above ? 0 : Lerp(labelHeight, 0, p) }.Max();
         // Inside's non-overlapped label contribution uses EmphasizedAccelerate, not label progress directly.
         var labelContribution = HasLabel && !Above && !Cutout
-            ? Math.Max(Round(SmallTextStyle?.LineHeight ?? 16), Lerp(0, labelHeight, new CubicBezierEasing(0.3, 0, 0.8, 0.15).Ease(p))) : 0;
+            ? Math.Max(Round(MinimizedLabelLineHeight), Lerp(0, labelHeight, new CubicBezierEasing(0.3, 0, 0.8, 0.15).Ease(p))) : 0;
         var actualTop = Cutout ? Lerp(top, Math.Max(top, labelHeight / 2), p) : top + labelContribution;
         _containerHeight = Math.Max(Math.Max(_leading.DesiredSize.Height, _trailing.DesiredSize.Height), Round(actualTop + inputHeight + bottom));
         var minHeight = _owner.MinHeight > 0 ? _owner.MinHeight : DefaultMinimumHeight;
@@ -347,7 +403,7 @@ internal sealed partial class TextFieldLayout : Panel
             startX = Align(MaterialTextField.GetExpandedLabelAlignment(_owner), labelWidth, width - lp - tp) + lp;
             endX = Align(MaterialTextField.GetMinimizedLabelAlignment(_owner), labelWidth, width - startPad - endPad) + startPad;
         }
-        var startY = Above ? 0 : SingleLine ? Center(labelHeight) : top + (Cutout ? 0 : Round((SmallTextStyle?.LineHeight ?? 16) / 2));
+        var startY = Above ? 0 : SingleLine ? Center(labelHeight) : top + (Cutout ? 0 : Round(MinimizedLabelLineHeight / 2));
         var endY = Above ? 0 : Cutout ? -Math.Truncate(labelHeight * Scale / 2) / Scale : top;
         Place(_label, Lerp(startX, endX, p), _cutoutTop + Lerp(startY, endY, p));
         double TextY(Control child) => yOffset + (HasLabel && !Cutout ? top + (Above ? 0 : labelHeight) :

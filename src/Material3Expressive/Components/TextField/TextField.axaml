@@ -33,10 +33,17 @@
                              LargeTextStyle="{m3:Typography BodyLarge}" SmallTextStyle="{m3:Typography BodySmall}"
                              DefaultMinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.MinimumWidth}}"
                              DefaultMinimumHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.MinimumHeight}}"
+                             DefaultMinimizedLabelLineHeight="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+BodySmall.LineHeight}}"
                              SpatialAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.SpatialAnimation}}"
                              FastEffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.FastEffectsAnimation}}"
                              SlowEffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.SlowEffectsAnimation}}">
             <m3:TextFieldDecoration Name="Decoration" IsHitTestVisible="False" />
+            <!-- Independent, unmeasured typography endpoints share the label's environment.
+                 Never derive a missing endpoint from the label's animated output. -->
+            <ContentPresenter Name="ExpandedLabelStyle" IsVisible="False" IsHitTestVisible="False" m3:TextStyleHost.IsEnabled="True"
+                              m3:MaterialText.DefaultStyle="{Binding LargeTextStyle, ElementName=PART_Decoration}" />
+            <ContentPresenter Name="FloatingLabelStyle" IsVisible="False" IsHitTestVisible="False" m3:TextStyleHost.IsEnabled="True"
+                              m3:MaterialText.DefaultStyle="{Binding SmallTextStyle, ElementName=PART_Decoration}" />
             <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
             <m3:TextFieldIconPresenter Name="Trailing" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
