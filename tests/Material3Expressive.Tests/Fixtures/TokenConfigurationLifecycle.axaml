@@ -14,7 +14,8 @@
         <ControlTemplate>
           <Border x:Name="PART_Configuration">
             <Border.Padding>
-              <MultiBinding Converter="{x:Static tests:TokenConfigurationLifecycleTests.PaddingConverter}">
+              <MultiBinding Priority="Template"
+                            Converter="{x:Static tests:TokenConfigurationLifecycleTests.PaddingConverter}">
                 <m3:Token Key="{x:Static tests:TokenConfigurationLifecycleTests.Horizontal}" />
                 <m3:Token Key="{x:Static tests:TokenConfigurationLifecycleTests.Vertical}" />
               </MultiBinding>

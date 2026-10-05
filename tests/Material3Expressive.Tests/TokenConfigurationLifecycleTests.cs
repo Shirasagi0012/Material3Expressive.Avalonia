@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
+using Avalonia.Diagnostics;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
@@ -26,12 +27,12 @@ public class TokenConfigurationLifecycleTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public void NearestInvalidAlias_UsesPropertyFallback_AndRecovers(bool intermediate, bool cycle)
+    public void NearestInvalidAlias_UsesNativeMetadataDefault_AndRecovers(bool intermediate, bool cycle)
     {
         var root = new MaterialTokenKey<double>("test.configuration.root");
         var scalar = new MaterialTokenKey<double>("test.configuration.scalar");
         var absent = new MaterialTokenKey<double>("test.configuration.absent");
-        var border = BoundBorder(root);
+        var border = BoundBorder(root, out var binding);
         var host = new Panel { Children = { border } };
         host.Resources[root] = new TokenRef(scalar);
         host.Resources[scalar] = 20d;
@@ -45,10 +46,13 @@ public class TokenConfigurationLifecycleTests
 
             // The nearest definition is invalid. Do not resume the resource search at
             // the valid outer definition, or keep the binding's previous resolved value.
-            Assert.Equal(7, border.Width);
+            // Avalonia 12.1.2 keeps an unresolved MultiBinding at its original priority
+            // and supplies property metadata; UnsetValue does not withdraw that binding.
+            Assert.Equal(BindingPriority.LocalValue, border.GetDiagnostic(Border.WidthProperty).Priority);
+            Assert.Equal(Border.WidthProperty.GetDefaultValue(border), border.Width);
             host.Resources[scalar] = 24d;
             Flush(window);
-            Assert.Equal(7, border.Width);
+            Assert.Equal(Border.WidthProperty.GetDefaultValue(border), border.Width);
 
             border.Resources[overridden] = 36d;
             Flush(window);
@@ -56,6 +60,17 @@ public class TokenConfigurationLifecycleTests
             border.Resources.Remove(overridden);
             Flush(window);
             Assert.Equal(24, border.Width);
+
+            border.Resources[overridden] = new TokenRef(absent);
+            Flush(window);
+            Assert.Equal(Border.WidthProperty.GetDefaultValue(border), border.Width);
+            binding.Dispose();
+            Flush(window);
+            Assert.Equal(7, border.Width);
+            Assert.Equal(BindingPriority.Style, border.GetDiagnostic(Border.WidthProperty).Priority);
+            host.Resources[scalar] = 48d;
+            Flush(window);
+            Assert.Equal(7, border.Width);
         }
         finally { window.Close(); }
     }
@@ -67,7 +82,7 @@ public class TokenConfigurationLifecycleTests
         var scalar = new MaterialTokenKey<double>("test.configuration.scalar");
         var first = new TrackedTokenSource(scalar, 20d);
         var second = new TrackedTokenSource(scalar, 40d);
-        var border = BoundBorder(root);
+        var border = BoundBorder(root, out _);
         var host = new Panel { Children = { border }, Resources = ResourcesFor(first) };
         var window = Show(host, root, new TokenRef(scalar));
         try
@@ -97,7 +112,7 @@ public class TokenConfigurationLifecycleTests
         var first = new TrackedTokenSource(scalar, 20d);
         var second = new TrackedTokenSource(scalar, 40d);
         var material = new MaterialResource { Children = { first } };
-        var border = BoundBorder(root);
+        var border = BoundBorder(root, out var binding);
         var host = new Panel { Children = { border } };
         host.Resources.MergedDictionaries.Add(material);
         var window = Show(host, root, new TokenRef(scalar));
@@ -123,13 +138,25 @@ public class TokenConfigurationLifecycleTests
             material.Children.Clear();
             Flush(window);
             Assert.Equal(0, second.SubscriberCount);
-            Assert.Equal(7, border.Width);
+            Assert.Equal(BindingPriority.LocalValue, border.GetDiagnostic(Border.WidthProperty).Priority);
+            Assert.Equal(Border.WidthProperty.GetDefaultValue(border), border.Width);
             second.Set(94d);
             Flush(window);
-            Assert.Equal(7, border.Width);
+            Assert.Equal(Border.WidthProperty.GetDefaultValue(border), border.Width);
             material.Children.Add(first);
             Flush(window);
             Assert.Equal(90, border.Width);
+
+            material.Children.Clear();
+            Flush(window);
+            Assert.Equal(Border.WidthProperty.GetDefaultValue(border), border.Width);
+            binding.Dispose();
+            Flush(window);
+            Assert.Equal(7, border.Width);
+            Assert.Equal(BindingPriority.Style, border.GetDiagnostic(Border.WidthProperty).Priority);
+            material.Children.Add(second);
+            Flush(window);
+            Assert.Equal(7, border.Width);
         }
         finally { window.Close(); }
     }
@@ -141,7 +168,7 @@ public class TokenConfigurationLifecycleTests
         var scalar = new MaterialTokenKey<double>("test.configuration.scalar");
         var first = new TrackedTokenSource(scalar, 20d);
         var second = new TrackedTokenSource(scalar, 40d);
-        var border = BoundBorder(root);
+        var border = BoundBorder(root, out _);
         var left = new Panel { Children = { border }, Resources = ResourcesFor(first) };
         var right = new Panel { Resources = ResourcesFor(second) };
         var window = Show(new Panel { Children = { left, right } }, root, new TokenRef(scalar));
@@ -227,22 +254,33 @@ public class TokenConfigurationLifecycleTests
         var window = Show(host);
         var owner = host.FindControl<ContentControl>("Configured")!;
         var part = owner.GetVisualDescendants().OfType<Border>().Single();
-        var ordinary = new Style(s => s.OfType<Border>())
+        var ordinary = new Style(s => s.OfType<ContentControl>().Template().OfType<Border>())
         {
-            Setters = { new Setter(Border.PaddingProperty, new Thickness(20)) },
+            Setters =
+            {
+                new Setter(Border.PaddingProperty, new Thickness(20)),
+                new Setter(Control.TagProperty, "ordinary"),
+            },
         };
-        var conditional = new Style(s => s.OfType<Border>().Class("override"))
+        var conditional = new Style(s => s.OfType<ContentControl>().Template().OfType<Border>().Class("override"))
         {
-            Setters = { new Setter(Border.PaddingProperty, new Thickness(30)) },
+            Setters =
+            {
+                new Setter(Border.PaddingProperty, new Thickness(30)),
+                new Setter(Control.TagProperty, "conditional"),
+            },
         };
         try
         {
             window.Styles.Add(ordinary);
             window.Styles.Add(conditional);
             Flush(window);
+            Assert.Equal("ordinary", part.Tag);
+            Assert.Equal(BindingPriority.Template, part.GetDiagnostic(Border.PaddingProperty).Priority);
             Assert.Equal(new Thickness(6, 8), part.Padding);
             part.Classes.Add("override");
             Flush(window);
+            Assert.Equal("conditional", part.Tag);
             Assert.Equal(new Thickness(30), part.Padding);
 
             part.Padding = new Thickness(50);
@@ -254,6 +292,7 @@ public class TokenConfigurationLifecycleTests
             Assert.Equal(new Thickness(30), part.Padding);
             part.Classes.Remove("override");
             Flush(window);
+            Assert.Equal("ordinary", part.Tag);
             Assert.Equal(new Thickness(10, 8), part.Padding);
 
             var input = new Border { Padding = new Thickness(60) };
@@ -312,11 +351,15 @@ public class TokenConfigurationLifecycleTests
         finally { window.Close(); }
     }
 
-    private static Border BoundBorder(MaterialTokenKey<double> key)
+    private static Border BoundBorder(MaterialTokenKey<double> key, out IDisposable binding)
     {
         var border = new Border { Height = 10 };
-        border.Styles.Add(new Style { Setters = { new Setter(Border.WidthProperty, 7d) } });
-        border.Bind(Border.WidthProperty, new TokenExtension(key).ProvideValue(new StubServiceProvider()));
+        // Install and verify the lower-priority value independently of style attachment.
+        // Disposing the binding must restore this; an unresolved binding remains active.
+        border.SetValue(Border.WidthProperty, 7d, BindingPriority.Style);
+        Assert.Equal(7, border.Width);
+        Assert.Equal(BindingPriority.Style, border.GetDiagnostic(Border.WidthProperty).Priority);
+        binding = border.Bind(Border.WidthProperty, new TokenExtension(key).ProvideValue(new StubServiceProvider()));
         return border;
     }
 
