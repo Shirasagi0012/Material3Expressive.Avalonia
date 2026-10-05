@@ -17,14 +17,13 @@ env:
     SHADOW_PROJECT_PATH: modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj
     ROBOTO_PROJECT_PATH: modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj
     PACKAGE_OUTPUT_DIR: artifacts/nuget
-    CI_NUGET_CONFIG: .github/nuget.config
     NUGET_SOURCE: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+    NuGetPackageSourceCredentials_shirasagi0012: >-
+        Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
 
 jobs:
     publish:
         runs-on: ubuntu-latest
-        env:
-            NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }};ValidAuthenticationTypes=Basic
 
         steps:
             - name: Checkout repository
@@ -75,15 +74,15 @@ jobs:
                   dotnet-version: |
                       8.0.x
                       10.0.x
-
+                      
             - name: Restore library
-              run: dotnet restore ${{ env.LIBRARY_PROJECT_PATH }} --configfile ${{ env.CI_NUGET_CONFIG }}
+              run: dotnet restore ${{ env.LIBRARY_PROJECT_PATH }}
 
             - name: Restore shadow
-              run: dotnet restore ${{ env.SHADOW_PROJECT_PATH }} --configfile ${{ env.CI_NUGET_CONFIG }}
+              run: dotnet restore ${{ env.SHADOW_PROJECT_PATH }}
 
             - name: Restore Roboto
-              run: dotnet restore ${{ env.ROBOTO_PROJECT_PATH }} --configfile ${{ env.CI_NUGET_CONFIG }}
+              run: dotnet restore ${{ env.ROBOTO_PROJECT_PATH }}
 
             - name: Pack library
               run: >
@@ -119,7 +118,6 @@ jobs:
             - name: Push to NuGet
               run: >
                   dotnet nuget push "${{ env.PACKAGE_OUTPUT_DIR }}/*.nupkg"
-                  --configfile ${{ env.CI_NUGET_CONFIG }}
                   --source ${{ env.NUGET_SOURCE }}
                   --api-key ${{ secrets.GITHUB_TOKEN }}
                   --skip-duplicate
