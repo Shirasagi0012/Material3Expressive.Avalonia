@@ -177,8 +177,11 @@ internal sealed partial class TextFieldLayout : Panel
         _trailing.ContentTemplate = useTrailingIcon ? trailingIconTemplate : null;
         _placeholder.SetCurrentValue(ContentPresenter.ContentProperty, MaterialTextField.GetPlaceholder(_owner) ?? _owner.PlaceholderText);
         var labelColor = new SolidColorBrush(PaintedLabelColor);
-        if (InterpolateLabelStyle(_expandedLabelStyle, _floatingLabelStyle, LabelProgress) is { } labelStyle)
-            MaterialText.SetDefaultStyle(_label, labelStyle with { Foreground = labelColor });
+        var labelStyle = InterpolateLabelStyle(_expandedLabelStyle, _floatingLabelStyle, LabelProgress)
+            ?? MaterialText.GetDefaultStyle(_label) ?? TextStyle.Empty;
+        // Even while invalid metrics hold the previous typography, update the content scope's
+        // color: child TextBlocks consume its Foreground projection above native inheritance.
+        MaterialText.SetDefaultStyle(_label, labelStyle with { Foreground = labelColor });
         _label.Foreground = labelColor;
         _leading.IsVisible = _leading.Content != null || _leading.ContentTemplate != null;
         _trailing.IsVisible = _trailing.Content != null || _trailing.ContentTemplate != null;
@@ -226,9 +229,10 @@ internal sealed partial class TextFieldLayout : Panel
             LetterSpacing = MathUtils.Lerp(expanded.GetValue(TextElement.LetterSpacingProperty), floating.GetValue(TextElement.LetterSpacingProperty), p),
             FontWeight = (FontWeight)MathUtils.RoundToInt(MathUtils.Lerp((int)expanded.FontWeight, (int)floating.FontWeight, p)),
             FontFamily = p < 0.5 ? expanded.FontFamily : floating.FontFamily,
-            FontStyle = expanded.FontStyle,
-            FontStretch = expanded.FontStretch,
-            TextAlignment = expanded.GetValue(TextBlock.TextAlignmentProperty),
+            FontStyle = p < 0.5 ? expanded.FontStyle : floating.FontStyle,
+            // Avalonia's additional font-stretch field uses the same discrete endpoint boundary.
+            FontStretch = p < 0.5 ? expanded.FontStretch : floating.FontStretch,
+            TextAlignment = (p < 0.5 ? expanded : floating).GetValue(TextBlock.TextAlignmentProperty),
         };
     }
 

@@ -79,6 +79,14 @@ MaterialText.DefaultStyle 消费 LargeTextStyle / SmallTextStyle。它们复用�
 保持共享投影优先级，清除覆盖后立即恢复当前进度对应值。完整 BodyLarge/BodySmall 的默认
 16→12 字号、24→16 行高等插值不变，坐标过冲与尺寸进度限制也不变。
 
+FontFamily、FontStyle（包括 Italic）和 TextAlignment 按固定上游的离散插值规则，
+在进度小于 0.5 时使用展开端，否则使用浮起端，确保动画到达两个完整的有效端点；依据分别为
+[SpanStyle.lerp](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/ui/ui-text/src/commonMain/kotlin/androidx/compose/ui/text/SpanStyle.kt#L732-L757)和
+[ParagraphStyle.lerp](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/ui/ui-text/src/commonMain/kotlin/androidx/compose/ui/text/ParagraphStyle.kt#L435-L439)。
+本地 TextStyle 的 FontStretch 是 Avalonia 扩展，固定 Compose 没有同名字段；按已确认的
+完整端点适配采用同一离散边界，不将它映射为 Compose 的其他字体或变换字段。
+原生属性覆盖及清除恢复对这些离散字段同样有效。
+
 例如仅把 BodySmall.Style 设为 FontWeight=Bold 时，未指定字号来自该模板位置的有效环境，
 浮起状态未必缩小。stock 主题中 TextBox 的有效原生字体会经其 DefaultStyle 内容环境传递，
 因此其 FontSize=20 可填补这一稀疏端点；完整 BodyLarge 显式提供字号时仍保留自身 16。
@@ -88,7 +96,9 @@ MaterialText.DefaultStyle 消费 LargeTextStyle / SmallTextStyle。它们复用�
 LineHeight=NaN 保留 Avalonia 的显式自动行高，不能参与数值线性插值。一端或两端为自动时，
 按固定上游 ParagraphStyle.lerp → SpanStyle.lerpTextUnitInheritable 的离散边界，在进度小于
 0.5 时选择展开端，否则选择浮起端；两端有限时仍线性插值。无穷行高属于无效配置，
-不视为自动：暂停写入标签排版输出，输入恢复后按当前进度重新投影，颜色和状态动画继续。
+不视为自动：保留最近一次合法的字体与行高度量，输入恢复后按当前进度重新投影。
+前景色仍更新到 DefaultStyle 内容环境，使字符串及显式 TextBlock 继续跟随焦点、错误等状态颜色；
+仅更新 presenter 的原生 Foreground 无法替代这一步，内容自身的排版投影可能覆盖原生颜色继承。
 
 几何保留上游 TextFieldImpl.minimizedLabelHalfHeight 的独立职责：Inside 高度预留、
 多行标签起点和 Cutout 顶部留白消费同一浮起端点的有效有限行高，避免稀疏端点与几何各用一套缺省值。

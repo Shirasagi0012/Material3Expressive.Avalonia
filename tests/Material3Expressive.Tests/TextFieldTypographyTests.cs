@@ -42,6 +42,54 @@ public class TextFieldTypographyTests
         Assert.NotNull(TopLevel.GetTopLevel(fixture.Layout));
     }
 
+    [AvaloniaTheory]
+    [InlineData(0f)] [InlineData(.49f)] [InlineData(.5f)] [InlineData(1f)]
+    public void DiscreteTypography_ReachesBothEffectiveEndpoints_AndNativeOverridesClearToCurrentProgress(float progress)
+    {
+        using var fixture = new Fixture();
+        fixture.Box.Resources[Sys.TypeScale.BodyLarge.Style] = new TextStyle
+        {
+            FontSize = 16, LineHeight = 24, FontStyle = FontStyle.Normal,
+            FontStretch = FontStretch.Condensed, TextAlignment = TextAlignment.Left,
+        };
+        fixture.Box.Resources[Sys.TypeScale.BodySmall.Style] = new TextStyle
+        {
+            FontSize = 12, LineHeight = 16, FontStyle = FontStyle.Italic,
+            FontStretch = FontStretch.Expanded, TextAlignment = TextAlignment.Right,
+        };
+        var expanded = fixture.Endpoint("ExpandedLabelStyle");
+        var floating = fixture.Endpoint("FloatingLabelStyle");
+        var label = fixture.Endpoint("Label");
+        var expectedStyle = progress < .5f ? FontStyle.Normal : FontStyle.Italic;
+        var expectedStretch = progress < .5f ? FontStretch.Condensed : FontStretch.Expanded;
+        var expectedAlignment = progress < .5f ? TextAlignment.Left : TextAlignment.Right;
+        var output = TextFieldLayout.InterpolateLabelStyle(expanded, floating, progress)!;
+        Assert.Equal(expectedStyle, output.FontStyle);
+        Assert.Equal(expectedStretch, output.FontStretch);
+        Assert.Equal(expectedAlignment, output.TextAlignment);
+        MaterialText.SetDefaultStyle(label, output);
+        Assert.Equal(expectedStyle, label.FontStyle);
+        Assert.Equal(expectedStretch, label.FontStretch);
+        Assert.Equal(expectedAlignment, label.GetValue(TextBlock.TextAlignmentProperty));
+        label.FontStyle = FontStyle.Oblique;
+        label.FontStretch = FontStretch.UltraCondensed;
+        label.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center);
+        MaterialText.SetDefaultStyle(label, TextFieldLayout.InterpolateLabelStyle(expanded, floating, progress));
+        Assert.Equal(FontStyle.Oblique, label.FontStyle);
+        Assert.Equal(FontStretch.UltraCondensed, label.FontStretch);
+        Assert.Equal(TextAlignment.Center, label.GetValue(TextBlock.TextAlignmentProperty));
+        Assert.Equal(FontStyle.Normal, expanded.FontStyle);
+        Assert.Equal(FontStyle.Italic, floating.FontStyle);
+        Assert.Equal(FontStretch.Condensed, expanded.FontStretch);
+        Assert.Equal(FontStretch.Expanded, floating.FontStretch);
+        label.ClearValue(ContentPresenter.FontStyleProperty);
+        label.ClearValue(ContentPresenter.FontStretchProperty);
+        label.ClearValue(TextBlock.TextAlignmentProperty);
+        Assert.Equal(expectedStyle, label.FontStyle);
+        Assert.Equal(expectedStretch, label.FontStretch);
+        Assert.Equal(expectedAlignment, label.GetValue(TextBlock.TextAlignmentProperty));
+    }
+
     [AvaloniaFact]
     public void SparseRole_UsesOwnerEffectiveContext_WithoutInventingSmallMetrics()
     {
@@ -238,10 +286,46 @@ public class TextFieldTypographyTests
         Assert.Null(TextFieldLayout.InterpolateLabelStyle(expanded, floating, 0));
         Assert.Null(TextFieldLayout.InterpolateLabelStyle(expanded, floating, .5f));
         Assert.Equal(0, fixture.Layout.MinimizedLabelLineHeight);
-        Assert.Same(validOutput, MaterialText.GetDefaultStyle(label));
+        Assert.Equal(validOutput! with { Foreground = null },
+            MaterialText.GetDefaultStyle(label)! with { Foreground = null });
         floating.ClearValue(TextBlock.LineHeightProperty);
         Assert.Equal(16, fixture.Layout.MinimizedLabelLineHeight);
         Assert.Equal(24, MaterialText.GetDefaultStyle(label)!.LineHeight);
+    }
+
+    [AvaloniaFact]
+    public void InvalidMetrics_HoldTypographyButKeepChildTextColorLiveAcrossFocusErrorAndRecovery()
+    {
+        using var fixture = new Fixture();
+        var text = new TextBlock { Text = "Label" };
+        MaterialTextField.SetLabel(fixture.Box, text);
+        var label = fixture.Endpoint("Label");
+        label.UpdateChild(); text.ApplyStyling();
+        var floating = fixture.Endpoint("FloatingLabelStyle");
+        var originalColor = Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color;
+        var originalStyle = MaterialText.GetDefaultStyle(label)! with { Foreground = null };
+        floating.SetValue(TextBlock.LineHeightProperty, double.PositiveInfinity);
+        // Exercise the real theme's focus selector without focusing/measuring the native editor.
+        ((IPseudoClasses)fixture.Box.Classes).Add(":focus");
+        fixture.Advance(100);
+        var focusedColor = Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color;
+        Assert.NotEqual(originalColor, focusedColor);
+        Assert.Equal(fixture.Layout.PaintedLabelColor, focusedColor);
+        Assert.Equal(originalStyle, MaterialText.GetDefaultStyle(label)! with { Foreground = null });
+        MaterialTextField.SetIsError(fixture.Box, true);
+        fixture.Advance(100);
+        var errorColor = Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color;
+        Assert.NotEqual(focusedColor, errorColor);
+        Assert.Equal(fixture.Layout.PaintedLabelColor, errorColor);
+        Assert.Equal(originalStyle, MaterialText.GetDefaultStyle(label)! with { Foreground = null });
+        floating.ClearValue(TextBlock.LineHeightProperty);
+        Assert.Equal(errorColor, Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color);
+        MaterialTextField.SetIsError(fixture.Box, false);
+        ((IPseudoClasses)fixture.Box.Classes).Remove(":focus");
+        fixture.Advance(100);
+        Assert.Equal(originalColor, Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color);
+        Assert.Equal(24, text.LineHeight);
+        Assert.Null(fixture.Window.MotionRoot.LastError);
     }
 
     [AvaloniaTheory]
