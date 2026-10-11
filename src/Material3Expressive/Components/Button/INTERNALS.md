@@ -117,8 +117,8 @@ Button 主题本身也无需知道这个子类。自定义模板若没有该部�
 `[左 Padding | 图标 | 间距 | 标签 | 间距 | 箭头 | 右 Padding]`。
 
 尾部盒的有无只由其 Content/ContentTemplate 决定，不切换 `IsVisible`；空盒按零尺寸测量与排列。
-由于零尺寸的空盒被填入后自身期望尺寸不会变化，`ButtonContentRow` 监听图标 presenter 的
-Content/ContentTemplate 变化并重新测量自身，不依赖测量期间重放样式。
+由于零尺寸的空盒被填入后自身期望尺寸不会变化，`ButtonContentRow` 用 Panel 的
+`AffectsParentMeasure` 声明子 presenter 的 Content/ContentTemplate 影响自身测量，不依赖测量期间重放样式。
 
 旋转用内部附加属性 `DropDownButtonChevron.Angle`（0 / `:flyout-open` 时 180）映射到 RenderTransform，
 由 ComposeAnimation 的 `AnimatedDouble` 声明以默认弹簧动画。默认弹簧即 Compose 的 `spring()`，

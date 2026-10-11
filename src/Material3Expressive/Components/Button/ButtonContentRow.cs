@@ -26,14 +26,7 @@ internal sealed class ButtonContentRow : Panel
         AffectsArrange<ButtonContentRow>(FillContentWhenNoIconProperty);
         // Icon presence is the row's own decision: an empty icon box is measured at zero, so
         // filling it later would not change its desired size and would never reach the row.
-        // Re-measure the row whenever an icon presenter's content or template changes.
-        ContentPresenter.ContentProperty.Changed.AddClassHandler<ContentPresenter>(IconPresenterChanged);
-        ContentPresenter.ContentTemplateProperty.Changed.AddClassHandler<ContentPresenter>(IconPresenterChanged);
-    }
-
-    private static void IconPresenterChanged(ContentPresenter presenter, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (presenter.Parent is ButtonContentRow row && presenter is not ButtonContentPresenter) row.InvalidateMeasure();
+        AffectsParentMeasure<ButtonContentRow>(ContentPresenter.ContentProperty, ContentPresenter.ContentTemplateProperty);
     }
 
     protected override Size MeasureOverride(Size availableSize)
