@@ -320,5 +320,13 @@
     <ControlTheme x:Key="{x:Type Button}" TargetType="Button"
                   BasedOn="{StaticResource MaterialFilledButtonTheme}" />
 
+    <!-- RepeatButton is a Button: the same filled default, and every keyed Button theme and size
+         class applies to it unchanged. Delay / Interval repetition stays native; it stops when
+         IsPressed clears, which the shared interaction does on release, capture loss, and on
+         leaving the bounds while held. Template parts that name a RepeatButton theme explicitly
+         (ScrollBar, ButtonSpinner, Fluent pickers) are unaffected. -->
+    <ControlTheme x:Key="{x:Type RepeatButton}" TargetType="RepeatButton"
+                  BasedOn="{StaticResource MaterialFilledButtonTheme}" />
+
   </Styles.Resources>
 </Styles>
