@@ -94,6 +94,8 @@
     <StyleInclude Source="/Components/FloatingToolbar/FloatingToolbar.axaml" />
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
     <StyleInclude Source="/Components/SecureTextField/SecureTextField.axaml" />
+    <StyleInclude Source="/Components/NumericUpDown/NumericUpDown.axaml" />
+    <StyleInclude Source="/Components/NumericUpDown/ButtonSpinner.axaml" />
     <StyleInclude Source="/Components/Chip/Chip.axaml" />
     <StyleInclude Source="/Components/TabRow/TabRow.axaml" />
     <StyleInclude Source="/Components/Card/Card.axaml" />

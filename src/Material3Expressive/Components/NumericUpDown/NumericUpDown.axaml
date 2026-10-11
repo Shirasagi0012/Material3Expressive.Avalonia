@@ -1,0 +1,141 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <!--
+    M3 has no NumericUpDown: the native control is the Material TextField (PART_TextBox) with the
+    native ButtonSpinner (PART_Spinner) hosted in its trailing icon slot, or the leading slot for
+    ButtonSpinnerLocation=Left. The steppers are standard (Small) icon buttons side by side:
+    remove / add, 40 DIP containers inside 48 DIP layout slots, so the field keeps its 56 DIP height.
+    NumericUpDown itself draws no container; the TextField draws the only one.
+  -->
+  <Styles.Resources>
+    <!-- Standard icon button look for RepeatButton (m3:IconButton is not a RepeatButton). The icon
+         inherits the slot / owner content color; disabled uses the icon button disabled color. -->
+    <ControlTheme x:Key="MaterialSpinnerRepeatButtonTheme" TargetType="RepeatButton">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.ContainerColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerShapeRound}}" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate TargetType="RepeatButton">
+          <m3:ButtonLayout MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+                           ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}"
+                           ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}"
+                           HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
+            <m3:MaterialSurface x:Name="PART_Container"
+                                Background="{TemplateBinding Background}"
+                                TextElement.Foreground="{TemplateBinding Foreground}"
+                                CornerRadius="{TemplateBinding CornerRadius}">
+              <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </m3:MaterialSurface>
+          </m3:ButtonLayout>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.StateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.HoverStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.FocusedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.PressedStateLayerColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.DisabledContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.DisabledContentColor}}" />
+      </Style>
+    </ControlTheme>
+
+    <!-- The spinner inside the TextField slot: steppers only, no content, no container. The
+         steppers are not focusable, so clicking them keeps keyboard focus (and the focused
+         TextField look) in the editor; Up/Down and the wheel spin from the editor. -->
+    <ControlTheme x:Key="MaterialTextFieldButtonSpinnerTheme" TargetType="ButtonSpinner">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="IsTabStop" Value="False" />
+      <Setter Property="Background" Value="{x:Null}" />
+      <Setter Property="Template">
+        <ControlTemplate TargetType="ButtonSpinner">
+          <StackPanel Name="PART_SpinnerPanel" Orientation="Horizontal" IsVisible="{TemplateBinding ShowButtonSpinner}">
+            <RepeatButton Name="PART_DecreaseButton" Theme="{StaticResource MaterialSpinnerRepeatButtonTheme}"
+                          Focusable="False" IsTabStop="False" Content="{m3:Symbol Remove}"
+                          AutomationProperties.Name="Decrease" />
+            <RepeatButton Name="PART_IncreaseButton" Theme="{StaticResource MaterialSpinnerRepeatButtonTheme}"
+                          Focusable="False" IsTabStop="False" Content="{m3:Symbol Add}"
+                          AutomationProperties.Name="Increase" />
+          </StackPanel>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="MaterialNumericUpDownBaseTheme" TargetType="NumericUpDown">
+      <Setter Property="Background" Value="{x:Null}" />
+      <Setter Property="BorderBrush" Value="{x:Null}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate TargetType="NumericUpDown">
+          <TextBox Name="PART_TextBox"
+                   Text="{TemplateBinding Text}"
+                   PlaceholderText="{TemplateBinding PlaceholderText}"
+                   IsReadOnly="{TemplateBinding IsReadOnly}"
+                   TextAlignment="{TemplateBinding TextAlignment}"
+                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                   AcceptsReturn="False"
+                   TextWrapping="NoWrap"
+                   InnerLeftContent="{Binding InnerLeftContent, RelativeSource={RelativeSource TemplatedParent}}"
+                   InnerRightContent="{Binding InnerRightContent, RelativeSource={RelativeSource TemplatedParent}}"
+                   m3:MaterialTextField.Label="{TemplateBinding m3:MaterialTextField.Label}"
+                   m3:MaterialTextField.LabelTemplate="{TemplateBinding m3:MaterialTextField.LabelTemplate}"
+                   m3:MaterialTextField.SupportingText="{TemplateBinding m3:MaterialTextField.SupportingText}"
+                   m3:MaterialTextField.SupportingTextTemplate="{TemplateBinding m3:MaterialTextField.SupportingTextTemplate}"
+                   m3:MaterialTextField.Prefix="{TemplateBinding m3:MaterialTextField.Prefix}"
+                   m3:MaterialTextField.PrefixTemplate="{TemplateBinding m3:MaterialTextField.PrefixTemplate}"
+                   m3:MaterialTextField.Suffix="{TemplateBinding m3:MaterialTextField.Suffix}"
+                   m3:MaterialTextField.SuffixTemplate="{TemplateBinding m3:MaterialTextField.SuffixTemplate}"
+                   m3:NumericUpDownTextField.LeadingIcon="{TemplateBinding m3:MaterialTextField.LeadingIcon}"
+                   m3:NumericUpDownTextField.LeadingIconTemplate="{TemplateBinding m3:MaterialTextField.LeadingIconTemplate}"
+                   m3:NumericUpDownTextField.SpinnerLocation="{TemplateBinding ButtonSpinnerLocation}"
+                   m3:NumericUpDownTextField.ShowSpinner="{TemplateBinding ShowButtonSpinner}">
+            <!-- Error colors only: IsError or the owner's data validation errors. No error text. -->
+            <m3:MaterialTextField.IsError>
+              <MultiBinding Converter="{x:Static BoolConverters.Or}" Priority="Template">
+                <Binding Path="(m3:MaterialTextField.IsError)" RelativeSource="{RelativeSource TemplatedParent}" />
+                <Binding Path="(DataValidationErrors.HasErrors)" RelativeSource="{RelativeSource TemplatedParent}" />
+              </MultiBinding>
+            </m3:MaterialTextField.IsError>
+            <m3:NumericUpDownTextField.Spinner>
+              <!-- Not part of the template's visual tree when built, so it gets no TemplatedParent:
+                   bind to the owning NumericUpDown through the visual ancestry of the slot instead. -->
+              <ButtonSpinner Name="PART_Spinner"
+                             Theme="{StaticResource MaterialTextFieldButtonSpinnerTheme}"
+                             AllowSpin="{Binding AllowSpin, RelativeSource={RelativeSource AncestorType=NumericUpDown}, Priority=Template}"
+                             ShowButtonSpinner="{Binding ShowButtonSpinner, RelativeSource={RelativeSource AncestorType=NumericUpDown}, Priority=Template}"
+                             ButtonSpinnerLocation="{Binding ButtonSpinnerLocation, RelativeSource={RelativeSource AncestorType=NumericUpDown}, Priority=Template}" />
+            </m3:NumericUpDownTextField.Spinner>
+          </TextBox>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="MaterialFilledNumericUpDownTheme" TargetType="NumericUpDown" BasedOn="{StaticResource MaterialNumericUpDownBaseTheme}">
+      <Style Selector="^ /template/ TextBox#PART_TextBox">
+        <Setter Property="Theme" Value="{StaticResource MaterialFilledTextFieldTheme}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialOutlinedNumericUpDownTheme" TargetType="NumericUpDown" BasedOn="{StaticResource MaterialNumericUpDownBaseTheme}">
+      <Style Selector="^ /template/ TextBox#PART_TextBox">
+        <Setter Property="Theme" Value="{StaticResource MaterialOutlinedTextFieldTheme}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type NumericUpDown}" TargetType="NumericUpDown" BasedOn="{StaticResource MaterialFilledNumericUpDownTheme}" />
+  </Styles.Resources>
+</Styles>

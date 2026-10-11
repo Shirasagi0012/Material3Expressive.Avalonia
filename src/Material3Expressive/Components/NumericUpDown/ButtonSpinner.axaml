@@ -1,0 +1,76 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <!-- Standalone ButtonSpinner: content plus the NumericUpDown icon-button steppers on an outlined
+       Material surface that shares the Outlined TextField shape, outline and content colors.
+       Unlike inside NumericUpDown, the steppers stay focusable as in Fluent (IsTabStop follows the owner). -->
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialButtonSpinnerTheme" TargetType="ButtonSpinner">
+      <Setter Property="Focusable" Value="True" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedContainerColor}}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedIndicatorColor}}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ContainerShape}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedInputColor}}" />
+      <Setter Property="Padding" Value="16,0,4,0" />
+      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.MinimumHeight}}" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography BodyLarge}" />
+      <Setter Property="Template">
+        <ControlTemplate TargetType="ButtonSpinner">
+          <m3:MaterialSurface Name="PART_Container"
+                              Background="{TemplateBinding Background}"
+                              BorderBrush="{TemplateBinding BorderBrush}"
+                              BorderThickness="{TemplateBinding BorderThickness}"
+                              CornerRadius="{TemplateBinding CornerRadius}"
+                              TextElement.Foreground="{TemplateBinding Foreground}"
+                              MinHeight="{TemplateBinding MinHeight}">
+            <DockPanel Margin="{TemplateBinding Padding}">
+              <StackPanel Name="PART_SpinnerPanel" DockPanel.Dock="Right" Orientation="Horizontal"
+                          VerticalAlignment="Center" IsVisible="{TemplateBinding ShowButtonSpinner}">
+                <RepeatButton Name="PART_DecreaseButton" Theme="{StaticResource MaterialSpinnerRepeatButtonTheme}"
+                              IsTabStop="{TemplateBinding IsTabStop}" Content="{m3:Symbol Remove}"
+                              Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedTrailingIconColor}}"
+                              AutomationProperties.Name="Decrease" />
+                <RepeatButton Name="PART_IncreaseButton" Theme="{StaticResource MaterialSpinnerRepeatButtonTheme}"
+                              IsTabStop="{TemplateBinding IsTabStop}" Content="{m3:Symbol Add}"
+                              Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedTrailingIconColor}}"
+                              AutomationProperties.Name="Increase" />
+              </StackPanel>
+              <ContentPresenter Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                m3:TextStyleHost.IsEnabled="True" />
+            </DockPanel>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:left">
+        <Setter Property="Padding" Value="4,0,16,0" />
+        <Style Selector="^ /template/ StackPanel#PART_SpinnerPanel">
+          <Setter Property="DockPanel.Dock" Value="Left" />
+        </Style>
+      </Style>
+      <Style Selector="^:focus-within">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedIndicatorColor}}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedInputColor}}" />
+      </Style>
+      <Style Selector="^:error">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorIndicatorColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorInputColor}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledContainerColor}}" />
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledIndicatorColor}}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledInputColor}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type ButtonSpinner}" TargetType="ButtonSpinner" BasedOn="{StaticResource MaterialButtonSpinnerTheme}" />
+  </Styles.Resources>
+</Styles>
