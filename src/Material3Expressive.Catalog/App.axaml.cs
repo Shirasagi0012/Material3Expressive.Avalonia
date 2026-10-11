@@ -19,6 +19,8 @@ public partial class App : Application
                 ? new AppBarDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--secure-text-fields") >= 0
                 ? new SecureTextFieldDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--menu-bar") >= 0
+                ? new MenuBarDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--expanders") >= 0
                 ? new ExpanderDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--group-boxes") >= 0
