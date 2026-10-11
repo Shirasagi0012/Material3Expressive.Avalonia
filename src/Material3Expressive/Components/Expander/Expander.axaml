@@ -120,19 +120,21 @@
                             ContentTemplate="{TemplateBinding HeaderTemplate}"
                             IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
                             m3:ExpanderHeader.Direction="{TemplateBinding ExpandDirection}" />
-              <ca:AnimatedVisibility x:Name="PART_ContentHost"
-                                     Visible="{TemplateBinding IsExpanded}"
-                                     HorizontalContentAlignment="Stretch"
-                                     VerticalContentAlignment="Stretch">
-                <m3:ExpanderContentFill x:Name="PART_ContentFill">
-                  <ContentPresenter x:Name="PART_ContentPresenter"
-                                    Content="{TemplateBinding Content}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                                    Padding="{TemplateBinding Padding}"
-                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-                </m3:ExpanderContentFill>
-              </ca:AnimatedVisibility>
+              <m3:ExpanderContentHost x:Name="PART_ContentStretch">
+                <ca:AnimatedVisibility x:Name="PART_ContentHost"
+                                       Visible="{TemplateBinding IsExpanded}"
+                                       HorizontalContentAlignment="Stretch"
+                                       VerticalContentAlignment="Stretch">
+                  <m3:ExpanderContentFill x:Name="PART_ContentFill">
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                  </m3:ExpanderContentFill>
+                </ca:AnimatedVisibility>
+              </m3:ExpanderContentHost>
             </DockPanel>
           </Border>
         </ControlTemplate>
@@ -151,7 +153,7 @@
         <Setter Property="Enter"><ca:EnterTransitionGroup><ca:FadeIn /><ca:ExpandVertically ExpandFrom="Bottom" /></ca:EnterTransitionGroup></Setter>
         <Setter Property="Exit"><ca:ExitTransitionGroup><ca:FadeOut /><ca:ShrinkVertically ShrinkTowards="Bottom" /></ca:ExitTransitionGroup></Setter>
       </Style>
-      <Style Selector="^:left /template/ m3|ExpanderContentFill, ^:right /template/ m3|ExpanderContentFill">
+      <Style Selector="^:left /template/ m3|ExpanderContentHost, ^:right /template/ m3|ExpanderContentHost">
         <Setter Property="Orientation" Value="Horizontal" />
       </Style>
       <Style Selector="^:left /template/ ToggleButton#ExpanderHeader">

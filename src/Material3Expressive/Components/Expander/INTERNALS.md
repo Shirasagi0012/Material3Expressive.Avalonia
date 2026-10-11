@@ -24,9 +24,18 @@ Expander 把 `ExpandDirection` 经内部附加属性 `ExpanderHeader.Direction` 
 锚定在标题一侧：Down 为 Top，Up 为 Bottom，Left 为 End，Right 为 Start（水平锚点随 FlowDirection）。
 没有使用 Fluent 的 `IsVisible` 绑定，因为原生 IsVisible 会立即隐藏，无法播放退出动画。
 
-AnimatedVisibility 在尺寸变化期间按内容自身的测量尺寸布局（与 Compose 相同），比 Expander 窄的内容会停在锚点处。
-内部 `ExpanderContentFill` 在交叉轴有界时把期望尺寸扩到可用尺寸，相当于 Compose 内容上的 `fillMaxWidth()` /
-`fillMaxHeight()`；代价见 README 的已知限制。
+AnimatedVisibility 带尺寸效果时按子元素自身的期望尺寸排列它（与 Compose 相同），Expander 的实际宽度传不进去，
+比 Expander 窄的内容会停在锚点处。为了只在排列阶段拉伸、不抬高期望尺寸，模板用两层内部元素：
+
+- `ExpanderContentHost`（`PART_ContentStretch`）包住 AnimatedVisibility。排列时把自身在交叉轴上的最终尺寸交给内层；
+  测量时报告的期望尺寸扣除内层因拉伸多出的部分，所以 Expander 仍测量为 max(标题, 内容)，展开/折叠不跳变
+- `ExpanderContentFill`（`PART_ContentFill`）是 AnimatedVisibility 的内容，期望尺寸取 max(内容, 宿主给出的交叉轴尺寸)，
+  AnimatedVisibility 据此把内容排列为拉伸后的尺寸
+
+交叉轴尺寸变化时内层失效测量，布局多走一轮即收敛（宿主的期望尺寸不依赖该值）。
+没有改 ComposeAnimation：让 AnimatedVisibility 在非动画轴上按子元素的 Stretch 排列虽然是更通用的做法，
+但实测会改变现有使用者的排列（FloatingToolbar 的侧边内容在像素取整后稳定态也会被拉宽 1–2 DIP），
+而 Avalonia 默认 Stretch 与 Compose 默认包裹内容的语义不同，会影响已对齐 Compose 的组件。
 
 `PART_ContentPresenter` 仍由 Expander 注册为内容宿主，Avalonia 的 `ContentTransition` 会照常作用于它；
 主题不做协调，README 中说明不建议与主题动画同时使用。

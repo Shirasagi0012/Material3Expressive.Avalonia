@@ -114,7 +114,7 @@ public sealed class ExpanderThemeTests
         Assert.Equal(180, ChevronRotation.GetAngle(Chevron(expander)), 3);
         Assert.Equal(180, Assert.IsType<RotateTransform>(Chevron(expander).RenderTransform).Angle, 3);
         Assert.Equal(56 + 80, expander.Bounds.Height);
-        Assert.Equal(new Rect(0, 56, expander.Bounds.Width, 80), Host(expander).Bounds);
+        Assert.Equal(new Rect(0, 56, expander.Bounds.Width, 80), Region(expander).Bounds);
         Assert.Equal(16, content.TranslatePoint(default, expander)!.Value.X);
         Assert.Equal(expander.Bounds.Width - 32, content.Bounds.Width);
         Assert.True(Host(expander).IsIdle);
@@ -145,6 +145,83 @@ public sealed class ExpanderThemeTests
         Assert.Equal(56, expander.Bounds.Height);
         expander.IsExpanded = true; Draw(window); Settle(window, clock);
         Assert.Equal(56 + 80, expander.Bounds.Height);
+        window.Close();
+    }
+
+    [AvaloniaTheory]
+    [InlineData(HorizontalAlignment.Left)]
+    [InlineData(HorizontalAlignment.Center)]
+    public void NonStretchExpander_SizesToMaxOfHeaderAndContent_WithoutJumping(HorizontalAlignment alignment)
+    {
+        // Narrow content: the Expander keeps the header's width in every state and frame, and the
+        // content is stretched to that arranged width.
+        var narrow = new Border { Height = 40 };
+        var expander = new Expander { Header = "Wi-Fi settings", Content = narrow, HorizontalAlignment = alignment };
+        // Wide content: the expanded Expander is as wide as the content, and the header follows.
+        var wideContent = new Border { Width = 400, Height = 40 };
+        var wide = new Expander { Header = "Wi-Fi", Content = wideContent, HorizontalAlignment = alignment };
+        var panel = new WrapPanel { Width = 600, Children = { new StackPanel { Width = 600, Children = { expander, wide } } } };
+        var (window, clock) = Show(panel);
+        var collapsed = expander.Bounds.Width;
+        Assert.InRange(collapsed, 100, 300);
+        Assert.Equal(collapsed, expander.DesiredSize.Width - expander.Margin.Left - expander.Margin.Right, 3);
+        expander.IsExpanded = true; wide.IsExpanded = true; Draw(window);
+        for (var i = 0; i < 4; i++)
+        {
+            Advance(window, clock, 2);
+            Assert.Equal(collapsed, expander.Bounds.Width, 3);
+        }
+        Settle(window, clock);
+        Assert.Equal(collapsed, expander.Bounds.Width, 3);
+        Assert.Equal(collapsed - 32, narrow.Bounds.Width, 3);
+        Assert.Equal(400 + 32, wide.Bounds.Width, 3);
+        Assert.Equal(400 + 32, Header(wide).Bounds.Width, 3);
+        expander.IsExpanded = false; Draw(window);
+        Advance(window, clock, 3);
+        Assert.Equal(collapsed, expander.Bounds.Width, 3);
+        Settle(window, clock);
+        Assert.Equal(collapsed, expander.Bounds.Width, 3);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void StretchExpander_FillsItsSlot_WithNarrowContentStretched()
+    {
+        var narrow = new Border { Height = 40 };
+        var expander = new Expander { Header = "Wi-Fi", Content = narrow, IsExpanded = true };
+        var (window, clock) = Show(new StackPanel { Width = 500, Children = { expander } });
+        Settle(window, clock);
+        Assert.Equal(500, expander.Bounds.Width);
+        Assert.Equal(500 - 32, narrow.Bounds.Width, 3);
+        window.Close();
+    }
+
+    [AvaloniaTheory]
+    [InlineData(ExpandDirection.Left)]
+    [InlineData(ExpandDirection.Right)]
+    public void SideDirections_StretchOnTheHeightAxisOnly(ExpandDirection direction)
+    {
+        // Top-aligned in a tall slot: max(header, content) tall, content stretched to that height.
+        var shortContent = new Border { Width = 100 };
+        var top = new Expander { Header = "Side", Content = shortContent, ExpandDirection = direction, VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left };
+        var tallContent = new Border { Width = 100, Height = 120 };
+        var tall = new Expander { Header = "Side", Content = tallContent, ExpandDirection = direction, VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left };
+        // Stretch in a 300 DIP slot: fills it.
+        var fillContent = new Border { Width = 100 };
+        var fill = new Expander { Header = "Side", Content = fillContent, ExpandDirection = direction, HorizontalAlignment = HorizontalAlignment.Left };
+        var (window, clock) = Show(new Grid { Height = 300, Children = { top } }, new Grid { Height = 300, Children = { tall } }, new Grid { Height = 300, Children = { fill } });
+        Assert.Equal(56, top.Bounds.Height);
+        top.IsExpanded = tall.IsExpanded = fill.IsExpanded = true; Draw(window);
+        Advance(window, clock, 3);
+        Assert.Equal(56, top.Bounds.Height);
+        Settle(window, clock);
+        Assert.Equal(56, top.Bounds.Height);
+        Assert.Equal(56, shortContent.Bounds.Height, 3);
+        Assert.Equal(120, tall.Bounds.Height);
+        Assert.Equal(120, Header(tall).Bounds.Height);
+        Assert.Equal(300, fill.Bounds.Height);
+        Assert.Equal(300, fillContent.Bounds.Height, 3);
+        Assert.Equal(100, shortContent.Bounds.Width);
         window.Close();
     }
 
@@ -217,7 +294,7 @@ public sealed class ExpanderThemeTests
         expander.IsExpanded = true; Draw(window); Settle(window, clock);
         Assert.Equal(expanded, ChevronRotation.GetAngle(Chevron(expander)), 3);
         var header = Header(expander).Bounds;
-        var host = Host(expander).Bounds;
+        var host = Region(expander).Bounds;
         switch (direction)
         {
             case ExpandDirection.Down: Assert.Equal(0, header.Y); Assert.Equal(header.Bottom, host.Y); break;
@@ -313,6 +390,9 @@ public sealed class ExpanderThemeTests
 
     static AnimatedVisibility Host(Expander expander) =>
         expander.GetTemplateDescendants().OfType<AnimatedVisibility>().Single(t => t.Name == "PART_ContentHost");
+
+    static Control Region(Expander expander) =>
+        expander.GetTemplateDescendants().OfType<Control>().Single(t => t.Name == "PART_ContentStretch");
 
     static MaterialSymbol Chevron(Expander expander) =>
         Header(expander).GetTemplateDescendants().OfType<MaterialSymbol>().Single(s => s.Name == "PART_Chevron");

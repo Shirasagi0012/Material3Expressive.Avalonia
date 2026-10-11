@@ -34,7 +34,8 @@ M3 没有展开面板。原生 `Expander` 加载本主题后由单行列表项�
 
 ## 内容与动画
 
-- `Padding` 默认 `16,0`（起止各 16 DIP），作用于内容；内容在展开方向的交叉轴上填满（Down/Up 填满宽度）
+- `Padding` 默认 `16,0`（起止各 16 DIP），作用于内容。Expander 的期望尺寸同 Fluent，为标题与内容的较大者；
+  内容在交叉轴上拉伸到 Expander 的实际排列尺寸（Down/Up 为宽度，Left/Right 为高度）
 - 展开/折叠的动画同 Compose 的 `AnimatedVisibility`：`expandVertically + fadeIn` / `shrinkVertically + fadeOut`，
   沿展开轴并锚定在标题一侧，使用 ComposeAnimation 声明的默认弹簧（即 Compose 这些过渡的默认 spec）
 - 折叠后内容不在可视树中：不占布局空间，Tab 跳过；初始折叠的内容在首次展开前不会被测量。退出动画期间内容仍在
@@ -54,8 +55,6 @@ M3 没有展开面板。原生 `Expander` 加载本主题后由单行列表项�
 
 ## 已知限制
 
-- 内容为了填满宽度会占满可用宽度：非 Stretch 对齐的 Down/Up Expander 展开后也会变宽到可用宽度
-  （Compose 中对应 `fillMaxWidth()`）
 - 动画 spec 是 ComposeAnimation 声明的默认值，而非 MotionScheme Token；如需接入 MotionScheme 可另行提议
 
 ## 提议（未实现，待维护者批准）
