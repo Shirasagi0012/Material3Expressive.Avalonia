@@ -41,11 +41,11 @@
                                 Margin="0,0,0,8"
                                 Content="{TemplateBinding Header}"
                                 ContentTemplate="{TemplateBinding HeaderTemplate}"
-                                IsVisible="{TemplateBinding Header, Converter={x:Static m3:GroupBoxHeader.IsPresent}}"
+                                IsVisible="{TemplateBinding Header, Converter={x:Static m3:GroupBoxConverters.HasHeader}}"
                                 HorizontalContentAlignment="Stretch"
                                 RecognizesAccessKey="True"
                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}"
-                                m3:GroupBoxHeader.TextStyle="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleSmall.Style}}" />
+                                m3:PresenterTextStyle.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleSmall.Style}}" />
               <ContentPresenter x:Name="PART_ContentPresenter"
                                 Content="{TemplateBinding Content}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"

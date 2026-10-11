@@ -270,3 +270,15 @@ CubicBezierEasing 的 double 运算。固定 Compose 的 Float 运算和不同�
 原生 tessellator 对路径坐标的敏感性使这两种坐标接入不等价。
 范围：本次观察到的阴影 raster，不接受其他布局、颜色或时序偏离；保留原始 PNG 和比较失败。
 确认：2026-10-04，维护者在坐标适配方案与保留差异中选择“本次保留并记录阴影差异”。
+
+## Presenter 子元素的默认文字样式
+
+状态：提议，待维护者确认（尚非已确认决定）。
+决定：Foundation/Typography 提供内部附加属性 `PresenterTextStyle.DefaultStyle`（ContentPresenter 上），
+把 TextStyle 以 Template 优先级设为该 presenter 当前子元素自己的 `MaterialText.DefaultStyle`，子元素更换时撤销旧值。
+原因：文字样式沿逻辑父级传递；HeaderedContentControl 的标题等由所有者持有的控件，逻辑父级是所有者而非 presenter，
+presenter 上的 DefaultStyle 到不了它，放在所有者上又会作用于内容。GroupBox 与 Expander 的标题都遇到此问题。
+影响：字符串生成的 TextBlock、模板根元素或控件都成为样式提供者；应用局部 Style / DefaultStyle 仍然优先。
+TabHeader 与 AppBarTopLayout 以在子元素 Styles 首位插入 Style 的方式各自解决同一问题，本次不改动，
+可在确认后评估迁移（二者在测量与内容更新时机上有额外约束）。
+范围：内部能力，不新增公共 API；首批使用者为 GroupBox 与 Expander。
