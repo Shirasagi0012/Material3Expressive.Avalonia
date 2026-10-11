@@ -328,5 +328,16 @@
     <ControlTheme x:Key="{x:Type RepeatButton}" TargetType="RepeatButton"
                   BasedOn="{StaticResource MaterialFilledButtonTheme}" />
 
+    <!-- HyperlinkButton: M3 has no link button, so it is the Text button with an underlined label.
+         The underline is inherited from the label presenter only, so string labels and custom
+         label content get it while the icon slot does not. M3 has no visited color: :visited
+         toggles natively and keeps the same look. NavigateUri launching stays native. -->
+    <ControlTheme x:Key="{x:Type HyperlinkButton}" TargetType="HyperlinkButton"
+                  BasedOn="{StaticResource MaterialTextButtonTheme}">
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="TextBlock.TextDecorations" Value="Underline" />
+      </Style>
+    </ControlTheme>
+
   </Styles.Resources>
 </Styles>
