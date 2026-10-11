@@ -84,8 +84,8 @@ MaterialTheme 为 Avalonia 原生 `ProgressBar` 提供默认主题（`MaterialPr
 <ProgressBar Orientation="Vertical" Height="160" Value="60" />
 ```
 
-- 进度按 `(Value - Minimum) / (Maximum - Minimum)` 映射并限制在 0～1；`Maximum == Minimum` 或出现 NaN 时绘制为 0
-  （Avalonia 自身的 `Percentage` 在空区间时为 100，文字仍沿用原生值）。`IsIndeterminate` 直接传给指示器。
+- 进度按 `(Value - Minimum) / (Maximum - Minimum)` 映射并限制在 0～1；`Maximum == Minimum` 时与 Avalonia/Fluent
+  一致绘制为满（`Percentage` 为 100），出现 NaN 时绘制为 0。`IsIndeterminate` 直接传给指示器。
 - 颜色与尺寸由 Material 的 ProgressIndicator Token 决定，与独立 `LinearProgressIndicator` 相同；
   `Foreground` / `Background` 等 Fluent 画刷不参与绘制，需要定制时覆盖相应 Token。禁用和深色模式与独立控件一致。
 - `Orientation="Vertical"`：`LinearProgressIndicator` 只绘制水平方向，模板用 `LayoutTransformControl` 旋转 -90°，

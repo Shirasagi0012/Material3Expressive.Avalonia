@@ -32,8 +32,8 @@ public sealed class ProgressBarThemeTests
     [InlineData(-120, -100, -20, 0)]
     [InlineData(0, -100, -20, 1)]
     [InlineData(5, -10, 10, .75)]
-    [InlineData(10, 10, 10, 0)]
-    [InlineData(-3, -3, -3, 0)]
+    [InlineData(10, 10, 10, 1)]
+    [InlineData(-3, -3, -3, 1)]
     [InlineData(double.NaN, 0, 100, 0)]
     [InlineData(50, double.NaN, 100, 0)]
     [InlineData(50, 0, double.NaN, 0)]
@@ -69,10 +69,11 @@ public sealed class ProgressBarThemeTests
         Assert.Equal(1, indicator.Progress, 12);
         bar.Value = -500; Draw(window);
         Assert.Equal(0, indicator.Progress, 12);
-        // An empty range draws empty (Avalonia's own Percentage reports 100 here).
+        // An empty range draws full, matching Avalonia's Percentage (100) and Fluent's indicator.
         bar.Minimum = 10; bar.Maximum = 10; Draw(window);
         Assert.Equal(10, bar.Value);
-        Assert.Equal(0, indicator.Progress, 12);
+        Assert.Equal(1, indicator.Progress, 12);
+        Assert.Equal(100, bar.Percentage, 12);
         bar.Maximum = 30; bar.Value = 25; Draw(window);
         Assert.Equal(.75, indicator.Progress, 12);
         window.Close();
