@@ -14,6 +14,18 @@ public class IconToggleButton : IconButton
     public static readonly StyledProperty<bool> IsCheckedProperty =
         AvaloniaProperty.Register<IconToggleButton, bool>(nameof(IsChecked));
 
+    // IconButtonDefaults.iconToggleButtonColors: ambient, Primary when checked, ambient with
+    // replaced alpha when disabled. Standard icon toggle colors use rememberUpdatedState.
+    public static readonly FuncMultiValueConverter<object, object> AmbientColorConverter = new((IReadOnlyList<object?> values) =>
+    {
+        if (values.Count < 4 || values[0] is not bool enabled || values[1] is not ISolidColorBrush ambient ||
+            values[2] is not Color selectedColor || values[3] is not double disabledOpacity)
+            return AvaloniaProperty.UnsetValue;
+        var selected = values.Count > 4 && values[4] is true;
+        return new SolidColorBrush(!enabled ? Color.FromArgb((byte)Math.Round(Math.Clamp(disabledOpacity, 0, 1) * 255), ambient.Color.R, ambient.Color.G, ambient.Color.B)
+            : selected ? selectedColor : ambient.Color);
+    });
+
     public bool IsChecked { get => GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }
     public event EventHandler<IconCheckedChangeEventArgs>? CheckedChangeRequested;
 
@@ -54,19 +66,4 @@ public class IconToggleButton : IconButton
 public sealed class IconCheckedChangeEventArgs(bool value) : EventArgs
 {
     public bool Value { get; } = value;
-}
-
-// IconButtonDefaults.iconToggleButtonColors: ambient, Primary when checked, ambient with
-// replaced alpha when disabled. Standard icon toggle colors use rememberUpdatedState.
-internal static class IconButtonThemeConverters
-{
-    public static readonly FuncMultiValueConverter<object, object> AmbientContentColor = new((IReadOnlyList<object?> values) =>
-    {
-        if (values.Count < 4 || values[0] is not bool enabled || values[1] is not ISolidColorBrush ambient ||
-            values[2] is not Color selectedColor || values[3] is not double disabledOpacity)
-            return AvaloniaProperty.UnsetValue;
-        var selected = values.Count > 4 && values[4] is true;
-        return new SolidColorBrush(!enabled ? Color.FromArgb((byte)Math.Round(Math.Clamp(disabledOpacity, 0, 1) * 255), ambient.Color.R, ambient.Color.G, ambient.Color.B)
-            : selected ? selectedColor : ambient.Color);
-    });
 }
