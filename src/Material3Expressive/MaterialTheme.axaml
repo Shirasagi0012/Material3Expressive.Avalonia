@@ -100,6 +100,7 @@
     <StyleInclude Source="/Components/TabRow/TabRow.axaml" />
     <StyleInclude Source="/Components/Card/Card.axaml" />
     <StyleInclude Source="/Components/GroupBox/GroupBox.axaml" />
+    <StyleInclude Source="/Components/Expander/Expander.axaml" />
     <StyleInclude Source="/Components/SegmentedButton/SegmentedButton.axaml" />
     <StyleInclude Source="/Components/ProgressIndicator/ProgressIndicator.axaml" />
     <StyleInclude Source="/Components/ProgressIndicator/ProgressBar.axaml" />
