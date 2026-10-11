@@ -134,7 +134,8 @@ M3 没有下拉按钮。原生 `DropDownButton` 未指定 `Theme` 时是 Filled 
 
 - 箭头尺寸、颜色与标签间距同当前尺寸档的前导图标（XS/S/M/L/XL 20/20/24/32/40 DIP），外侧 Padding 不变；RTL 下位于左侧
 - Flyout 打开期间（`:flyout-open`）箭头以弹簧旋转 180°，关闭后转回；按压、悬停与焦点反馈与普通 Button 相同
-- 箭头由主题提供，不能通过属性替换或隐藏；也没有公开的尾部图标属性
+- 箭头由库的全局 `DropDownButton` 样式提供，任何 Button 主题下都会出现；不能通过属性替换或隐藏，也没有公开的尾部图标属性。
+  自定义模板若不含 `PART_TrailingIconPresenter` 则没有箭头
 - `MenuFlyout` 使用 Material 菜单外观；普通 `Flyout` 的 `FlyoutPresenter` 仍是 Fluent 外观，本库未为其提供主题
 - 自动化 peer、`Flyout` 的打开与关闭均沿用原生
 - Avalonia 自带的 ColorPicker（`Avalonia.Controls.ColorPicker` 包，Fluent 与 Simple 模板）内部使用未指定主题的 DropDownButton，

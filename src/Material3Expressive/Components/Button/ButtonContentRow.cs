@@ -24,6 +24,16 @@ internal sealed class ButtonContentRow : Panel
     {
         AffectsMeasure<ButtonContentRow>(IconSizeProperty, IconSpacingProperty);
         AffectsArrange<ButtonContentRow>(FillContentWhenNoIconProperty);
+        // Icon presence is the row's own decision: an empty icon box is measured at zero, so
+        // filling it later would not change its desired size and would never reach the row.
+        // Re-measure the row whenever an icon presenter's content or template changes.
+        ContentPresenter.ContentProperty.Changed.AddClassHandler<ContentPresenter>(IconPresenterChanged);
+        ContentPresenter.ContentTemplateProperty.Changed.AddClassHandler<ContentPresenter>(IconPresenterChanged);
+    }
+
+    private static void IconPresenterChanged(ContentPresenter presenter, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (presenter.Parent is ButtonContentRow row && presenter is not ButtonContentPresenter) row.InvalidateMeasure();
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -31,14 +41,16 @@ internal sealed class ButtonContentRow : Panel
         if (!TryGetParts(out var icon, out var content, out var trailing)) return default;
 
         _hasIcon = HasContent(icon);
-        // The trailing box's content comes from owner-type styles, not a TemplateBinding. After a
-        // runtime Theme switch its re-styling waits for its own Measure, which an invisible
-        // control skips, so re-style it before reading whether it has content.
-        trailing?.ApplyStyling();
         _hasTrailing = HasContent(trailing);
         _hasLabel = content.Content is not null || content.ContentTemplate is not null;
-        _icon = MeasureIcon(icon, _hasIcon, availableSize);
-        _trailing = MeasureIcon(trailing, _hasTrailing, availableSize);
+        _icon = IconBox(_hasIcon, availableSize);
+        _trailing = IconBox(_hasTrailing, availableSize);
+        icon.IsVisible = _hasIcon;
+        icon.Measure(_icon);
+        // The trailing box is never hidden: presence is read from its content alone, and an empty
+        // box is simply measured (and later arranged) at zero size, so no derived visibility can
+        // keep it from being measured and styled like any other part.
+        trailing?.Measure(_trailing);
 
         var spacing = _hasIcon && _hasLabel ? IconSpacing : 0;
         var trailingSpacing = _hasTrailing && (_hasLabel || _hasIcon) ? IconSpacing : 0;
@@ -61,6 +73,7 @@ internal sealed class ButtonContentRow : Panel
 
         if (!_hasIcon && !_hasTrailing)
         {
+            trailing?.Arrange(default);
             if (FillContentWhenNoIcon)
             {
                 // Button and SplitButton previously arranged their presenter to the full area.
@@ -96,19 +109,16 @@ internal sealed class ButtonContentRow : Panel
             var trailingX = x + _content.Width - content.Padding.Right + trailingSpacing;
             trailing!.Arrange(new Rect(trailingX, IconY(_trailing), _trailing.Width, _trailing.Height));
         }
+        else
+        {
+            trailing?.Arrange(default);
+        }
         return finalSize;
     }
 
-    private Size MeasureIcon(ContentPresenter? presenter, bool hasContent, Size availableSize)
-    {
-        if (presenter is null) return default;
-        var size = hasContent
-            ? new Size(Math.Min(IconSize, availableSize.Width), Math.Min(IconSize, availableSize.Height))
-            : default;
-        presenter.IsVisible = hasContent;
-        presenter.Measure(size);
-        return size;
-    }
+    private Size IconBox(bool hasContent, Size availableSize) => hasContent
+        ? new Size(Math.Min(IconSize, availableSize.Width), Math.Min(IconSize, availableSize.Height))
+        : default;
 
     private static bool HasContent(ContentPresenter? presenter) =>
         presenter is not null && (presenter.Content is not null || presenter.ContentTemplate is not null);

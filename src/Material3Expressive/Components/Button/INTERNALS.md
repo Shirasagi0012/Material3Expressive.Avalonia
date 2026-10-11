@@ -104,19 +104,25 @@ ButtonLayout 分开处理可见容器的默认最小值与外层 48 DIP 留白�
 
 ### DropDownButton 尾部箭头
 
-模板的 `ButtonContentRow` 有第三个子项 `PART_TrailingIconPresenter`，默认无内容、不可见、零尺寸，
-其他 Button 的布局不变（两子项模板如 ToggleButton / SplitButton 也照旧）。它只在 owner 为
-DropDownButton 时由 Filled 主题内的 `^:is(DropDownButton)` 样式填入箭头模板；放在 Filled 而非
-DropDownButton 主题里，是为了让 BasedOn Filled 的四个键控主题在 DropDownButton 上同样带箭头。
-尾部盒复用 `IconSize`/`IconSpacing` 与同档 `MaterialIcon.DefaultSize`，位于标签右 Padding 内侧，
-与前导图标对称：`[左 Padding | 图标 | 间距 | 标签 | 间距 | 箭头 | 右 Padding]`。
+模板的 `ButtonContentRow` 有第三个子项 `PART_TrailingIconPresenter`。它在模板中是裸的 ContentPresenter：
+没有绑定、Token 值或尺寸 class setter，其他 Button 只多一个零尺寸的空 presenter
+（同一计数器测得 Filled/Tonal/尺寸 class 按钮整棵树的 `{m3:Token}` 绑定数与引入前相同）。
+两子项模板如 ToggleButton / SplitButton 的布局不变。
 
-键控主题共享同一模板，运行时切换 Theme 不会重建模板，只移除再重放模板子项的主题帧；
-不可见控件的 Measure 会跳过样式重放，所以 `ButtonContentRow` 在读取尾部盒内容前先调用其 `ApplyStyling()`。
+箭头、`DefaultSize`（各尺寸档同前导图标的 Token）、对齐与旋转全部来自 Button.axaml 末尾的全局类型选择器
+样式 `DropDownButton /template/ ContentPresenter#PART_TrailingIconPresenter`（及 `:flyout-open`、尺寸 class 变体），
+而不是任何 ControlTheme：它们不论 owner 当前用哪个 Button 主题（隐式、键控或运行时切换）都会生效，
+Button 主题本身也无需知道这个子类。自定义模板若没有该部件就没有箭头。
+尾部盒复用 `IconSize`/`IconSpacing`，位于标签右 Padding 内侧，与前导图标对称：
+`[左 Padding | 图标 | 间距 | 标签 | 间距 | 箭头 | 右 Padding]`。
+
+尾部盒的有无只由其 Content/ContentTemplate 决定，不切换 `IsVisible`；空盒按零尺寸测量与排列。
+由于零尺寸的空盒被填入后自身期望尺寸不会变化，`ButtonContentRow` 监听图标 presenter 的
+Content/ContentTemplate 变化并重新测量自身，不依赖测量期间重放样式。
 
 旋转用内部附加属性 `DropDownButtonChevron.Angle`（0 / `:flyout-open` 时 180）映射到 RenderTransform，
 由 ComposeAnimation 的 `AnimatedDouble` 声明以默认弹簧动画。默认弹簧即 Compose 的 `spring()`，
-对应上游 SplitButton 示例中尾部箭头的 `animateFloatAsState`；本库 SplitButton 本身不绘制箭头、
+对应上游 SplitButtonSamples 中尾部箭头的 `animateFloatAsState`；本库 SplitButton 本身不绘制箭头、
 也不旋转（箭头由使用者作为 Icon 提供），因此没有可直接复用的箭头机制。
 
 ## 交互与动画职责

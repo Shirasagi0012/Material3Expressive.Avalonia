@@ -4,6 +4,8 @@ using Avalonia.Controls.Documents;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
+using Avalonia.Diagnostics;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -11,6 +13,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using ComposeAnimation;
 using ComposeAnimation.TestSupport;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
@@ -94,19 +97,30 @@ public sealed class DropDownButtonThemeTests
     }
 
     [AvaloniaFact]
-    public void OtherButtons_LeaveTheTrailingBoxEmpty()
+    public void OtherButtons_PayNothingForTheTrailingBox()
     {
         var button = new Button { Content = "Plain" };
         var repeat = new RepeatButton { Content = "Repeat" };
         var link = new HyperlinkButton { Content = "Link" };
-        var (window, _) = Show(button, repeat, link);
-        foreach (var b in new Button[] { button, repeat, link })
+        var tonal = new Button { Content = "Tonal", Tag = "MaterialTonalButtonTheme" };
+        var xlarge = new Button { Content = "XL", Classes = { "xlarge" } };
+        var (window, _) = Show(button, repeat, link, tonal, xlarge);
+        foreach (var b in new Button[] { button, repeat, link, tonal, xlarge })
         {
             var trailing = Trailing(b);
-            Assert.False(trailing.IsVisible);
             Assert.Null(trailing.Child);
             Assert.Equal(default, trailing.Bounds.Size);
+            Assert.Equal(0, TokenBindingCounter.Count(trailing));
+            Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(ContentPresenter.ContentTemplateProperty).Priority);
+            Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(MaterialIcon.DefaultSizeProperty).Priority);
+            Assert.Null(Animated.GetProperties(trailing));
         }
+        // Whole-tree {m3:Token} binding counts measured with the same counter at 887036c, the
+        // commit before DropDownButton: Filled 60, Tonal 64, any size class 60.
+        Assert.Equal(60, TokenBindingCounter.CountTree(button));
+        Assert.Equal(60, TokenBindingCounter.CountTree(repeat));
+        Assert.Equal(64, TokenBindingCounter.CountTree(tonal));
+        Assert.Equal(60, TokenBindingCounter.CountTree(xlarge));
         window.Close();
     }
 
@@ -195,8 +209,8 @@ public sealed class DropDownButtonThemeTests
     [AvaloniaFact]
     public void RuntimeThemeSwitch_KeepsTheChevron()
     {
-        // Keyed themes share the Filled template, so a switch keeps the template children and only
-        // re-styles them; the (then hidden) trailing box must still pick its chevron up again.
+        // Keyed themes share the Filled template, so a switch keeps the template children; the
+        // chevron comes from global styles, so it survives and keeps its full trailing box.
         var dropDown = new DropDownButton { Content = "Switch" };
         var (window, _) = Show(dropDown);
         var presenter = Trailing(dropDown);
@@ -205,7 +219,7 @@ public sealed class DropDownButtonThemeTests
             dropDown.Theme = (ControlTheme)window.FindResource(theme)!; Draw(window);
             Assert.Same(presenter, Trailing(dropDown));
             Assert.Equal(MaterialSymbolCodepoint.KeyboardArrowDown, Chevron(dropDown).Symbol);
-            Assert.True(presenter.IsVisible);
+            Assert.Equal(Row(dropDown).IconSize, presenter.Bounds.Width);
         }
         window.Close();
     }
