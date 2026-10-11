@@ -1,0 +1,44 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:DatePickerDialog}" TargetType="m3:DatePickerDialog" BasedOn="{StaticResource {x:Type m3:BasicAlertDialog}}">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerShape}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Elevation.Level0}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid x:Name="PART_Root">
+            <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
+              <m3:DialogScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
+              <m3:BasicAlertDialogLayout DefaultMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.MinWidth}}" DefaultMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.MaxWidth}}" x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  UsePlatformDefaultWidth="{TemplateBinding UsePlatformDefaultWidth}"
+                  Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                  MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"
+                  MinHeight="{TemplateBinding MinHeight}" MaxHeight="{TemplateBinding MaxHeight}"
+                  Background="Transparent" RenderTransformOrigin="50%,50%">
+                <m3:DatePickerDialogContent x:Name="PART_DialogContent"
+                    ContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerWidth}}"
+                    ContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerHeight}}">
+                  <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                      TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{TemplateBinding TonalElevation}">
+                    <m3:DatePickerDialogColumn>
+                      <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
+                        <m3:AlertDialogButtons x:Name="PART_Buttons" CrossAxisSpacing="12"
+                            m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}"
+                            TextElement.Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextColor}}">
+                        <ContentPresenter x:Name="PART_Confirm" Content="{TemplateBinding ConfirmButton}" ContentTemplate="{TemplateBinding ConfirmButtonTemplate}" />
+                        <ContentPresenter x:Name="PART_Dismiss" IsVisible="False" Content="{TemplateBinding DismissButton}" ContentTemplate="{TemplateBinding DismissButtonTemplate}" />
+                        </m3:AlertDialogButtons>
+                    </m3:DatePickerDialogColumn>
+                  </m3:MaterialSurface>
+                </m3:DatePickerDialogContent>
+              </m3:BasicAlertDialogLayout>
+            </m3:DialogPresenter>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:has-dismiss /template/ ContentPresenter#PART_Dismiss"><Setter Property="IsVisible" Value="True" /></Style>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>
