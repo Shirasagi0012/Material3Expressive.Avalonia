@@ -1,0 +1,61 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <!--
+    GroupBox: M3 has no titled group, so it is composed from the Outlined Card container: the
+    OutlinedCard container color, outline color/width and shape tokens on a MaterialSurface, and
+    the matching content color. It is a plain container like a non-clickable Card: no
+    MaterialInteraction, state layer or ripple, not focusable itself, and no disabled colors
+    (IsEnabled=False disables the content natively, as for a non-clickable Card).
+
+    Header: TitleSmall in OnSurfaceVariant, inside the surface above the content. This is a local
+    choice, not an M3 spec value: a quiet label names the group without competing with the
+    content, and Primary would read like a link or text button. Spacing is local too, since no
+    spacing token fits: 16 DIP Padding (the inset Card examples use) around header and content,
+    and an 8 DIP header-to-content gap, both collapsed with a null or empty Header.
+  -->
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type GroupBox}" TargetType="GroupBox">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedCard.OutlineColor}}" />
+      <Setter Property="BorderThickness">
+        <MultiBinding Converter="{x:Static m3:CardThemeConverters.Thickness}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedCard.OutlineWidth}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerShape}}" />
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Container"
+                              Background="{TemplateBinding Background}"
+                              BorderBrush="{TemplateBinding BorderBrush}"
+                              BorderThickness="{TemplateBinding BorderThickness}"
+                              CornerRadius="{TemplateBinding CornerRadius}"
+                              TextElement.Foreground="{TemplateBinding Foreground}">
+            <DockPanel Margin="{TemplateBinding Padding}">
+              <ContentPresenter x:Name="PART_HeaderPresenter"
+                                DockPanel.Dock="Top"
+                                Margin="0,0,0,8"
+                                Content="{TemplateBinding Header}"
+                                ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                IsVisible="{TemplateBinding Header, Converter={x:Static m3:GroupBoxHeader.IsPresent}}"
+                                HorizontalContentAlignment="Stretch"
+                                RecognizesAccessKey="True"
+                                Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}"
+                                m3:GroupBoxHeader.TextStyle="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleSmall.Style}}" />
+              <ContentPresenter x:Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                RecognizesAccessKey="True" />
+            </DockPanel>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>
