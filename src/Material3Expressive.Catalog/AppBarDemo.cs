@@ -58,6 +58,13 @@ public sealed class AppBarDemo : Window
             Text = "Scroll the content or drag a bar. Actions and FAB remain ordinary controls.",
             TextWrapping = TextWrapping.Wrap,
         });
+        var overflowStatus = new TextBlock { Text = "Use the actions or their overflow menu." };
+        var overflowRow = CreateOverflowActions(overflowStatus);
+        var overflowColumn = CreateOverflowActions(overflowStatus, vertical: true);
+        content.Children.Add(new TextBlock { Text = "Adaptive AppBarRow / AppBarColumn" });
+        content.Children.Add(overflowRow);
+        content.Children.Add(overflowColumn);
+        content.Children.Add(overflowStatus);
         // The default scene has one physical viewport, allowing the bars and body to share
         // compositor scrolling. Keep the existing nested-input demo available explicitly.
         if (_nested.IsChecked == true)
@@ -80,6 +87,26 @@ public sealed class AppBarDemo : Window
         var button = new IconButton { Symbol = symbol };
         Avalonia.Automation.AutomationProperties.SetName(button, name); return button;
     }
+
+    private static AppBarRow CreateOverflowActions(TextBlock? status = null, bool vertical = false)
+    {
+        AppBarRow actions = vertical ? new AppBarColumn { MaxHeight = 144 } : new AppBarRow { MaxWidth = 240, MaxItemCount = 3 };
+        foreach (var (symbol, label) in new[] { (MaterialSymbolCodepoint.Search, "Search"), (MaterialSymbolCodepoint.Save, "Save"),
+                     (MaterialSymbolCodepoint.Share, "Share") })
+        {
+            var action = new AppBarAction { Label = label, Icon = new MaterialSymbol { Symbol = symbol } };
+            if (status is not null) action.Click += (_, _) => status.Text = $"{label} invoked";
+            actions.Items.Add(action);
+        }
+        var favorite = new AppBarToggleAction { Label = "Favorite", Icon = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Favorite } };
+        favorite.CheckedChangeRequested += (_, e) =>
+        {
+            favorite.IsChecked = e.Value;
+            if (status is not null) status.Text = $"Favorite: {e.Value}";
+        };
+        actions.Items.Add(favorite);
+        return actions;
+    }
     private void UpdateBars()
     {
         _top.HeightOffset = 0; _top.ContentOffset = 0;
@@ -88,7 +115,7 @@ public sealed class AppBarDemo : Window
         bar.Title = "Material 3 Expressive";
         if (_variant.SelectedIndex >= 4) bar.Subtitle = "Independent expanded and collapsed titles";
         bar.NavigationIcon = Action(MaterialSymbolCodepoint.Menu, "Menu");
-        bar.Items.Add(Action(MaterialSymbolCodepoint.Search, "Search")); bar.Items.Add(Action(MaterialSymbolCodepoint.MoreVert, "More actions"));
+        bar.Items.Add(CreateOverflowActions());
         bar.ScrollBehavior = new TopAppBarScrollBehavior((TopAppBarScrollMode)_behavior.SelectedIndex) { State = _top };
         _screen.TopBar = bar; UpdateBottom();
     }

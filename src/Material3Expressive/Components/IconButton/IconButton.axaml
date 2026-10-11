@@ -142,6 +142,25 @@
       </Style>
     </ControlTheme>
 
+    <ControlTheme x:Key="{x:Type m3:IconToggleButton}" TargetType="m3:IconToggleButton"
+                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{x:Static m3:IconToggleButton.AmbientColorConverter}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="$parent[Control].(TextElement.Foreground)" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.DisabledContentOpacity}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+        </MultiBinding>
+      </Setter>
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container, ^:focus-visible /template/ m3|MaterialSurface#PART_Container, ^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
+      </Style>
+    </ControlTheme>
+
     <!-- Filled: primary container with on-primary content. The disabled container is OnSurface at
          0.10 — the icon button table's own opacity, not the sys 0.12. -->
     <ControlTheme x:Key="MaterialFilledIconButtonTheme" TargetType="m3:IconButton"

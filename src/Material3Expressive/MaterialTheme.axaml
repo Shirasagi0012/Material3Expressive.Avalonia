@@ -73,6 +73,7 @@
     <StyleInclude Source="/Components/ToggleButton/ToggleButton.axaml" />
     <StyleInclude Source="/Components/SplitButton/SplitButton.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
+    <StyleInclude Source="/Components/AppBar/AppBarRow.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
     <StyleInclude Source="/Components/NavigationDrawer/NavigationDrawer.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />
