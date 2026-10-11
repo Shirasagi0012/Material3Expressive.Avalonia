@@ -273,7 +273,7 @@ Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪�
   原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。
 - [TabRow / Tab](../src/Material3Expressive/Components/TabRow/README.md) 提供受控的独立标签栏及原生 TabControl 顶部水平主题，
   共用 intrinsic / 基线布局、内容颜色 Transition 和指示器 Animatable。原生页面呈现和选择仍由 TabControl 负责。
-- [Progress Indicator](../src/Material3Expressive/Components/ProgressIndicator/README.md) 提供四个独立控件的确定与不确定模式。
+- [Progress Indicator](../src/Material3Expressive/Components/ProgressIndicator/README.md) 提供四个独立控件的确定与不确定模式；原生 ProgressBar 的默认主题在模板中承载 LinearProgressIndicator。
   ComposeAnimation 管理动画，Skia 保留 Canvas/PathMeasure 绘制；圆形波浪的 Polygon/Morph 消费仓内 `modules/MaterialShapes` 源码模块。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
