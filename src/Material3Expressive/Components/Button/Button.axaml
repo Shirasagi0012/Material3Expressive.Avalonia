@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation">
   <!--
     The Button family (design doc §7.5) on its two orthogonal upstream axes:
 
@@ -96,11 +97,41 @@
                                   HorizontalContentAlignment="Center"
                                   VerticalContentAlignment="Center"
                                   m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
+                <!-- Internal trailing icon box: empty (and zero-size) unless the owner is a
+                     DropDownButton, whose chevron the :is(DropDownButton) styles below supply. -->
+                <ContentPresenter x:Name="PART_TrailingIconPresenter"
+                                  HorizontalContentAlignment="Center"
+                                  VerticalContentAlignment="Center"
+                                  m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
               </m3:ButtonContentRow>
             </m3:MaterialSurface>
           </m3:ButtonLayout>
         </ControlTemplate>
       </Setter>
+
+      <!-- DropDownButton: a trailing keyboard_arrow_down chevron in the trailing icon box, sized and
+           spaced like the leading icon (same IconSize/IconSpacing/DefaultSize per size class) and
+           colored by the inherited content color. Declared here, not in the DropDownButton theme,
+           so every keyed variant (BasedOn this theme) keeps the chevron on a DropDownButton.
+           While the flyout is open the angle targets 180; the declaration's default spring is
+           Compose's spring(), the animateFloatAsState spec upstream's SplitButton samples use for
+           the same trailing-chevron rotation. -->
+      <Style Selector="^:is(DropDownButton) /template/ ContentPresenter#PART_TrailingIconPresenter">
+        <Setter Property="ContentTemplate">
+          <DataTemplate>
+            <m3:MaterialSymbol Symbol="KeyboardArrowDown" />
+          </DataTemplate>
+        </Setter>
+        <Setter Property="m3:DropDownButtonChevron.Angle" Value="0" />
+        <Setter Property="ca:Animated.Properties">
+          <ca:AnimatedPropertyCollection>
+            <ca:AnimatedDouble Property="{x:Static m3:DropDownButtonChevron.AngleProperty}" />
+          </ca:AnimatedPropertyCollection>
+        </Setter>
+      </Style>
+      <Style Selector="^:is(DropDownButton):flyout-open /template/ ContentPresenter#PART_TrailingIconPresenter">
+        <Setter Property="m3:DropDownButtonChevron.Angle" Value="180" />
+      </Style>
 
       <!-- §7.4 with the motion slice: the controller owns state-layer opacity and the press ripple,
            so pseudo-class styles only pick the layer's color. Later selectors win on ties, so the
@@ -137,7 +168,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ExtraSmallIconSpacing}}" />
       </Style>
-      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
+      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter, ^.xsmall /template/ ContentPresenter#PART_TrailingIconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
 
       <Style Selector="^.medium">
         <Setter Property="m3:ButtonThemeProperties.CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeRound}}" />
@@ -151,7 +182,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
+      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter, ^.medium /template/ ContentPresenter#PART_TrailingIconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
 
       <Style Selector="^.large">
         <Setter Property="m3:ButtonThemeProperties.CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeRound}}" />
@@ -165,7 +196,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
+      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter, ^.large /template/ ContentPresenter#PART_TrailingIconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
 
       <Style Selector="^.xlarge">
         <Setter Property="m3:ButtonThemeProperties.CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeRound}}" />
@@ -179,7 +210,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" /></Style>
+      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter, ^.xlarge /template/ ContentPresenter#PART_TrailingIconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" /></Style>
     </ControlTheme>
 
     <!-- Resolve the five heights at the button. Its controller animates the Surface's value. -->
@@ -332,6 +363,11 @@
          The underline is inherited from the label presenter only, so string labels and custom
          label content get it while the icon slot does not. M3 has no visited color: :visited
          toggles natively and keeps the same look. NavigateUri launching stays native. -->
+    <!-- DropDownButton is the Filled button; the chevron and its open rotation live in the
+         Filled theme behind :is(DropDownButton), so keyed variants keep them too. -->
+    <ControlTheme x:Key="{x:Type DropDownButton}" TargetType="DropDownButton"
+                  BasedOn="{StaticResource MaterialFilledButtonTheme}" />
+
     <ControlTheme x:Key="{x:Type HyperlinkButton}" TargetType="HyperlinkButton"
                   BasedOn="{StaticResource MaterialTextButtonTheme}">
       <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">

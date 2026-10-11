@@ -116,6 +116,30 @@ M3 没有链接按钮。原生 `HyperlinkButton` 未指定 `Theme` 时是 Text �
 - `:visited` 伪类照常切换，但外观不变：M3 没有“已访问”颜色 Token，主题不自造颜色；需要区分时用自己的 `:visited` 样式
 - 禁用使用 Text 按钮的禁用颜色，下划线保留并随标签变为禁用色；RTL 与明暗主题同 Text 按钮
 
+## DropDownButton
+
+M3 没有下拉按钮。原生 `DropDownButton` 未指定 `Theme` 时是 Filled 按钮加尾部 `keyboard_arrow_down` 箭头，
+点击、Enter 或 Space 打开其 `Flyout`（原生行为）。五个 `Theme` 资源、尺寸 class 与 `MaterialButton.Icon` 都可直接使用：
+
+```xml
+<DropDownButton Content="排序" Theme="{StaticResource MaterialTonalButtonTheme}">
+  <DropDownButton.Flyout>
+    <MenuFlyout>
+      <MenuItem Header="名称" />
+      <MenuItem Header="修改日期" />
+    </MenuFlyout>
+  </DropDownButton.Flyout>
+</DropDownButton>
+```
+
+- 箭头尺寸、颜色与标签间距同当前尺寸档的前导图标（XS/S/M/L/XL 20/20/24/32/40 DIP），外侧 Padding 不变；RTL 下位于左侧
+- Flyout 打开期间（`:flyout-open`）箭头以弹簧旋转 180°，关闭后转回；按压、悬停与焦点反馈与普通 Button 相同
+- 箭头由主题提供，不能通过属性替换或隐藏；也没有公开的尾部图标属性
+- `MenuFlyout` 使用 Material 菜单外观；普通 `Flyout` 的 `FlyoutPresenter` 仍是 Fluent 外观，本库未为其提供主题
+- 自动化 peer、`Flyout` 的打开与关闭均沿用原生
+- Avalonia 自带的 ColorPicker（`Avalonia.Controls.ColorPicker` 包，Fluent 与 Simple 模板）内部使用未指定主题的 DropDownButton，
+  加载本主题后它也会变成 Filled 按钮加箭头；本库未引用该包，不做局部恢复
+
 ## 内容与排版
 
 `Content` 可以是字符串或任意控件，也支持原生 `ContentTemplate` 和匹配的 `DataTemplate`。
