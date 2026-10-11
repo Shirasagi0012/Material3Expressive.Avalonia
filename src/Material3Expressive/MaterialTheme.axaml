@@ -106,5 +106,6 @@
     <StyleInclude Source="/Components/ProgressIndicator/ProgressBar.axaml" />
     <StyleInclude Source="/Components/LoadingIndicator/LoadingIndicator.axaml" />
     <StyleInclude Source="/Components/Menu/Menu.axaml" />
+    <StyleInclude Source="/Components/Menu/MenuBar.axaml" />
     <StyleInclude Source="/Components/Menu/DropdownMenu.axaml" />
 </Styles>

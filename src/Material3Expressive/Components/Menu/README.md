@@ -179,3 +179,49 @@ flyout.ShowAt(button);
 
 [MenuDemo](../../../Material3Expressive.Catalog/MenuDemo.axaml) 展示三种外观、嵌套子菜单、
 单选/复选、暗色及 RTL。源码依据、适配和验证入口见 [INTERNALS.md](INTERNALS.md)。
+
+## 菜单栏（Menu）
+
+M3 没有菜单栏。`Menu` 的默认主题（[MenuBar.axaml](MenuBar.axaml)）由现有菜单部件组合而成：
+
+```xml
+<Menu>
+  <MenuItem Header="_File">
+    <MenuItem Header="_Open…" InputGesture="Ctrl+O" />
+    <MenuItem Header="Open _recent">
+      <MenuItem Header="Report.docx" />
+    </MenuItem>
+    <Separator />
+    <MenuItem Header="E_xit" />
+  </MenuItem>
+  <MenuItem Header="_View">
+    <MenuItem Header="_Word wrap" ToggleType="CheckBox" IsChecked="True" />
+  </MenuItem>
+</Menu>
+```
+
+- 栏本身是透明的水平行，没有容器色和阴影；需要底色时设置 `Menu.Background`（见下方提议）。
+- 顶层项：`LabelLarge`、`OnSurface`，水平内边距 12（Baseline 菜单项内边距），40 DIP
+  容器（Small 按钮高度）位于 48 DIP 最小触控区内，状态层圆角为菜单项的 `ItemShape`；
+  悬停、按下和焦点经 `MaterialInteraction`。顶层不显示快捷键文字和子菜单箭头，`Icon` 可选。
+- `:open` 及没有自身状态层时的 `:selected`（键盘导航、子菜单已打开且焦点在子菜单内）
+  显示持久高亮：内容色叠加焦点状态层不透明度。没有复用 Vertical 的“选中”色
+  （TertiaryContainer），因为它在 M3 菜单里表示已勾选/选中的项，用于打开状态会与子菜单内的
+  勾选项混淆。Vertical 菜单项新增同样的 `:selected` 高亮（叠加在容器色上），MenuFlyout 同样生效。
+- 子菜单：弹层与 Vertical 菜单项的子菜单相同（`MaterialMenuBarItemTheme` 基于
+  `MaterialVerticalMenuItemTheme`），任意层级的子项使用 Vertical 项主题，包括勾选/单选、
+  分隔线、快捷键文字和禁用。显式设置 `ItemContainerTheme` 的父项仍以其为准。
+- 键盘和访问键沿用 Avalonia：Alt 激活菜单栏、Alt+字母打开对应菜单、左右箭头在顶层间移动、
+  下箭头/Enter 打开、Esc 关闭；`_File` 由 `AccessText` 渲染下划线。Avalonia 12.1.2 并未处理
+  F10（`IMainMenu` 的注释提到但没有实现），主题不额外补充。
+- RTL 下项目从右向左排列，子菜单弹层随 Avalonia 的弹层定位镜像（向左展开）。
+- 不影响 `ContextMenu`、`MenuFlyout` 路径和 `FlyoutPresenter`。
+
+待维护者确认：
+
+- `MaterialMenuBarItemTheme` 是新的公开 keyed 主题名。
+- 提议（未实现）：可选的容器式菜单栏，例如 `SurfaceContainer` 底色或滚动时的
+  `on-scroll` 容器色，与 TopAppBar 一致。
+
+[MenuBarDemo](../../../Material3Expressive.Catalog/MenuBarDemo.axaml) 展示 File/Edit/View
+菜单栏、嵌套子菜单、勾选/单选、禁用、暗色及 RTL。
