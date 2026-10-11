@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.NumericUpDownDemo"
+        Title="NumericUpDown / ButtonSpinner" Width="720" Height="780">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20">
+      <TextBlock Text="NumericUpDown (Material TextField + icon-button steppers)" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="16" LineSpacing="16">
+        <NumericUpDown Value="3" Minimum="0" Maximum="10" Width="280"
+                       m3:MaterialTextField.Label="Quantity"
+                       m3:MaterialTextField.SupportingText="0 to 10" />
+        <NumericUpDown Theme="{StaticResource MaterialOutlinedNumericUpDownTheme}" Value="1.5" Increment="0.5" FormatString="0.0" Width="280"
+                       m3:MaterialTextField.Label="Weight"
+                       m3:MaterialTextField.Suffix="kg" />
+        <NumericUpDown Value="20" ButtonSpinnerLocation="Left" Width="280" TextAlignment="Right"
+                       m3:MaterialTextField.Label="Spinner on the left"
+                       m3:MaterialTextField.Prefix="$" />
+        <NumericUpDown Value="42" ShowButtonSpinner="False" Width="280"
+                       m3:MaterialTextField.Label="No spinner (Up/Down, wheel)"
+                       m3:MaterialTextField.LeadingIcon="{m3:Symbol Tag}" />
+        <NumericUpDown x:Name="ErrorNumber" Value="11" Maximum="100" Width="280"
+                       m3:MaterialTextField.Label="IsError"
+                       m3:MaterialTextField.IsError="{Binding #ErrorToggle.IsChecked}" />
+        <NumericUpDown Value="5" Width="280" m3:MaterialTextField.Label="Validation error">
+          <DataValidationErrors.Error>
+            <sys:Exception>
+              <x:Arguments>
+                <x:String>Error</x:String>
+              </x:Arguments>
+            </sys:Exception>
+          </DataValidationErrors.Error>
+        </NumericUpDown>
+        <NumericUpDown Value="7" IsEnabled="False" Width="280" m3:MaterialTextField.Label="Disabled" />
+        <NumericUpDown Value="8" IsReadOnly="True" Width="280" m3:MaterialTextField.Label="Read-only" />
+        <NumericUpDown Value="9" FlowDirection="RightToLeft" Width="280" m3:MaterialTextField.Label="RTL" />
+        <NumericUpDown Theme="{StaticResource MaterialOutlinedNumericUpDownTheme}" Width="280"
+                       PlaceholderText="Empty" m3:MaterialTextField.Label="Placeholder" />
+      </WrapPanel>
+      <CheckBox x:Name="ErrorToggle" Content="IsError on the IsError field" IsChecked="True" />
+
+      <TextBlock Text="Standalone ButtonSpinner" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="16" LineSpacing="16">
+        <ButtonSpinner x:Name="WeekdaySpinner" Width="280" Spin="OnWeekdaySpin" Content="Monday" />
+        <ButtonSpinner x:Name="LeftSpinner" Width="280" ButtonSpinnerLocation="Left" Spin="OnWeekdaySpin" Content="Monday" />
+        <ButtonSpinner Width="280" AllowSpin="False" Content="AllowSpin=False" />
+        <ButtonSpinner Width="280" IsEnabled="False" Content="Disabled" />
+      </WrapPanel>
+
+      <TextBlock Text="Fluent controls (unchanged)" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <DatePicker />
+        <TimePicker />
+        <RepeatButton Content="Fluent RepeatButton" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
