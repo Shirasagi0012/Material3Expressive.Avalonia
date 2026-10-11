@@ -1,4 +1,3 @@
-using System.Globalization;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
@@ -59,9 +58,9 @@ public sealed class IconCheckedChangeEventArgs(bool value) : EventArgs
 
 // IconButtonDefaults.iconToggleButtonColors: ambient, Primary when checked, ambient with
 // replaced alpha when disabled. Standard icon toggle colors use rememberUpdatedState.
-internal sealed class IconButtonAmbientColorConverter : IMultiValueConverter
+internal static class IconButtonThemeConverters
 {
-    public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+    public static readonly FuncMultiValueConverter<object, object> AmbientContentColor = new((IReadOnlyList<object?> values) =>
     {
         if (values.Count < 4 || values[0] is not bool enabled || values[1] is not ISolidColorBrush ambient ||
             values[2] is not Color selectedColor || values[3] is not double disabledOpacity)
@@ -69,5 +68,5 @@ internal sealed class IconButtonAmbientColorConverter : IMultiValueConverter
         var selected = values.Count > 4 && values[4] is true;
         return new SolidColorBrush(!enabled ? Color.FromArgb((byte)Math.Round(Math.Clamp(disabledOpacity, 0, 1) * 255), ambient.Color.R, ambient.Color.G, ambient.Color.B)
             : selected ? selectedColor : ambient.Color);
-    }
+    });
 }

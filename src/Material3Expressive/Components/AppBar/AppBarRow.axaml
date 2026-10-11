@@ -1,7 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
-    <m3:IconButtonAmbientColorConverter x:Key="AppBarIconColor" />
     <!-- Reuse IconButton's interaction and sizing; only the icon slot differs. -->
     <ControlTemplate x:Key="AppBarIconTemplate" TargetType="m3:IconButton">
       <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
@@ -22,7 +21,7 @@
 
     <ControlTheme x:Key="AppBarIconTheme" TargetType="m3:IconButton" BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
       <Setter Property="Foreground">
-        <MultiBinding Converter="{StaticResource AppBarIconColor}">
+        <MultiBinding Converter="{x:Static m3:IconButtonThemeConverters.AmbientContentColor}">
           <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
           <Binding Path="$parent[Control].(TextElement.Foreground)" />
           <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
@@ -71,7 +70,7 @@
                            Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
                            AutomationProperties.Name="{TemplateBinding Label}">
               <m3:IconButton.Foreground>
-                <MultiBinding Converter="{StaticResource AppBarIconColor}" Priority="Template">
+                <MultiBinding Converter="{x:Static m3:IconButtonThemeConverters.AmbientContentColor}" Priority="Template">
                   <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
                   <Binding Path="Foreground" RelativeSource="{RelativeSource TemplatedParent}" />
                   <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
@@ -93,7 +92,7 @@
                                  Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
                                  IsChecked="{TemplateBinding IsChecked}" AutomationProperties.Name="{TemplateBinding Label}">
               <m3:IconToggleButton.Foreground>
-                <MultiBinding Converter="{StaticResource AppBarIconColor}" Priority="Template">
+                <MultiBinding Converter="{x:Static m3:IconButtonThemeConverters.AmbientContentColor}" Priority="Template">
                   <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
                   <Binding Path="Foreground" RelativeSource="{RelativeSource TemplatedParent}" />
                   <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
