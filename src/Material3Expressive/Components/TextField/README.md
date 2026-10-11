@@ -114,6 +114,9 @@ leading / trailing，会跟随 RTL。图标默认尺寸为 24 DIP，两个槽仍
 `InnerRightContent`；任一非 null 时使用 Material 图标槽。此例假设 DataContext 提供 `ClearSearchCommand`，
 且命令清空相应 `Text` 绑定。
 
+`Label`、`SupportingText`、`LeadingIcon`、`Prefix`、`Suffix`（及各自 `*Template`）与 `IsError` 的附加属性宿主为
+`TemplatedControl`，便于 [NumericUpDown](../NumericUpDown/README.md) 等组合控件转发给内部 TextBox；只有 TextBox 模板直接使用它们。
+
 完整事件处理示例见 [Catalog](../../../Material3Expressive.Catalog/TextFieldDemo.axaml)。
 单独放入图标不会增加 SearchBar 的展开、建议列表或 IME 搜索动作流程。
 
