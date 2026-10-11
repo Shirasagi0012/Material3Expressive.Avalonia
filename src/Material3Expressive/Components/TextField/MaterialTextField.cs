@@ -1,20 +1,26 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 namespace Material3Expressive.Components;
 
 /// <summary>Material decoration for a native TextBox. Editing, selection and IME remain native.</summary>
+/// <remarks>
+/// Label, SupportingText, LeadingIcon, Prefix, Suffix (with their templates) and IsError accept any
+/// <see cref="TemplatedControl"/> so composite native controls such as NumericUpDown can carry them and
+/// forward them to their inner TextBox. Only a TextBox template consumes them directly.
+/// </remarks>
 public static class MaterialTextField
 {
     public static readonly AttachedProperty<object?> LabelProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, object?>("Label", typeof(MaterialTextField), null);
-    public static object? GetLabel(TextBox owner) => owner.GetValue(LabelProperty);
-    public static void SetLabel(TextBox owner, object? value) => owner.SetValue(LabelProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, object?>("Label", typeof(MaterialTextField), null);
+    public static object? GetLabel(TemplatedControl owner) => owner.GetValue(LabelProperty);
+    public static void SetLabel(TemplatedControl owner, object? value) => owner.SetValue(LabelProperty, value);
 
     public static readonly AttachedProperty<IDataTemplate?> LabelTemplateProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, IDataTemplate?>("LabelTemplate", typeof(MaterialTextField), null);
-    public static IDataTemplate? GetLabelTemplate(TextBox owner) => owner.GetValue(LabelTemplateProperty);
-    public static void SetLabelTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(LabelTemplateProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, IDataTemplate?>("LabelTemplate", typeof(MaterialTextField), null);
+    public static IDataTemplate? GetLabelTemplate(TemplatedControl owner) => owner.GetValue(LabelTemplateProperty);
+    public static void SetLabelTemplate(TemplatedControl owner, IDataTemplate? value) => owner.SetValue(LabelTemplateProperty, value);
 
     public static readonly AttachedProperty<object?> PlaceholderProperty =
         AvaloniaProperty.RegisterAttached<TextBox, object?>("Placeholder", typeof(MaterialTextField), null);
@@ -27,24 +33,24 @@ public static class MaterialTextField
     public static void SetPlaceholderTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(PlaceholderTemplateProperty, value);
 
     public static readonly AttachedProperty<object?> SupportingTextProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, object?>("SupportingText", typeof(MaterialTextField), null);
-    public static object? GetSupportingText(TextBox owner) => owner.GetValue(SupportingTextProperty);
-    public static void SetSupportingText(TextBox owner, object? value) => owner.SetValue(SupportingTextProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, object?>("SupportingText", typeof(MaterialTextField), null);
+    public static object? GetSupportingText(TemplatedControl owner) => owner.GetValue(SupportingTextProperty);
+    public static void SetSupportingText(TemplatedControl owner, object? value) => owner.SetValue(SupportingTextProperty, value);
 
     public static readonly AttachedProperty<IDataTemplate?> SupportingTextTemplateProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, IDataTemplate?>("SupportingTextTemplate", typeof(MaterialTextField), null);
-    public static IDataTemplate? GetSupportingTextTemplate(TextBox owner) => owner.GetValue(SupportingTextTemplateProperty);
-    public static void SetSupportingTextTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(SupportingTextTemplateProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, IDataTemplate?>("SupportingTextTemplate", typeof(MaterialTextField), null);
+    public static IDataTemplate? GetSupportingTextTemplate(TemplatedControl owner) => owner.GetValue(SupportingTextTemplateProperty);
+    public static void SetSupportingTextTemplate(TemplatedControl owner, IDataTemplate? value) => owner.SetValue(SupportingTextTemplateProperty, value);
 
     public static readonly AttachedProperty<object?> LeadingIconProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, object?>("LeadingIcon", typeof(MaterialTextField));
-    public static object? GetLeadingIcon(TextBox owner) => owner.GetValue(LeadingIconProperty);
-    public static void SetLeadingIcon(TextBox owner, object? value) => owner.SetValue(LeadingIconProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, object?>("LeadingIcon", typeof(MaterialTextField));
+    public static object? GetLeadingIcon(TemplatedControl owner) => owner.GetValue(LeadingIconProperty);
+    public static void SetLeadingIcon(TemplatedControl owner, object? value) => owner.SetValue(LeadingIconProperty, value);
 
     public static readonly AttachedProperty<IDataTemplate?> LeadingIconTemplateProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, IDataTemplate?>("LeadingIconTemplate", typeof(MaterialTextField));
-    public static IDataTemplate? GetLeadingIconTemplate(TextBox owner) => owner.GetValue(LeadingIconTemplateProperty);
-    public static void SetLeadingIconTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(LeadingIconTemplateProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, IDataTemplate?>("LeadingIconTemplate", typeof(MaterialTextField));
+    public static IDataTemplate? GetLeadingIconTemplate(TemplatedControl owner) => owner.GetValue(LeadingIconTemplateProperty);
+    public static void SetLeadingIconTemplate(TemplatedControl owner, IDataTemplate? value) => owner.SetValue(LeadingIconTemplateProperty, value);
 
     public static readonly AttachedProperty<object?> TrailingIconProperty =
         AvaloniaProperty.RegisterAttached<TextBox, object?>("TrailingIcon", typeof(MaterialTextField));
@@ -57,29 +63,29 @@ public static class MaterialTextField
     public static void SetTrailingIconTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(TrailingIconTemplateProperty, value);
 
     public static readonly AttachedProperty<object?> PrefixProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, object?>("Prefix", typeof(MaterialTextField), null);
-    public static object? GetPrefix(TextBox owner) => owner.GetValue(PrefixProperty);
-    public static void SetPrefix(TextBox owner, object? value) => owner.SetValue(PrefixProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, object?>("Prefix", typeof(MaterialTextField), null);
+    public static object? GetPrefix(TemplatedControl owner) => owner.GetValue(PrefixProperty);
+    public static void SetPrefix(TemplatedControl owner, object? value) => owner.SetValue(PrefixProperty, value);
 
     public static readonly AttachedProperty<IDataTemplate?> PrefixTemplateProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, IDataTemplate?>("PrefixTemplate", typeof(MaterialTextField), null);
-    public static IDataTemplate? GetPrefixTemplate(TextBox owner) => owner.GetValue(PrefixTemplateProperty);
-    public static void SetPrefixTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(PrefixTemplateProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, IDataTemplate?>("PrefixTemplate", typeof(MaterialTextField), null);
+    public static IDataTemplate? GetPrefixTemplate(TemplatedControl owner) => owner.GetValue(PrefixTemplateProperty);
+    public static void SetPrefixTemplate(TemplatedControl owner, IDataTemplate? value) => owner.SetValue(PrefixTemplateProperty, value);
 
     public static readonly AttachedProperty<object?> SuffixProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, object?>("Suffix", typeof(MaterialTextField), null);
-    public static object? GetSuffix(TextBox owner) => owner.GetValue(SuffixProperty);
-    public static void SetSuffix(TextBox owner, object? value) => owner.SetValue(SuffixProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, object?>("Suffix", typeof(MaterialTextField), null);
+    public static object? GetSuffix(TemplatedControl owner) => owner.GetValue(SuffixProperty);
+    public static void SetSuffix(TemplatedControl owner, object? value) => owner.SetValue(SuffixProperty, value);
 
     public static readonly AttachedProperty<IDataTemplate?> SuffixTemplateProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, IDataTemplate?>("SuffixTemplate", typeof(MaterialTextField), null);
-    public static IDataTemplate? GetSuffixTemplate(TextBox owner) => owner.GetValue(SuffixTemplateProperty);
-    public static void SetSuffixTemplate(TextBox owner, IDataTemplate? value) => owner.SetValue(SuffixTemplateProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, IDataTemplate?>("SuffixTemplate", typeof(MaterialTextField), null);
+    public static IDataTemplate? GetSuffixTemplate(TemplatedControl owner) => owner.GetValue(SuffixTemplateProperty);
+    public static void SetSuffixTemplate(TemplatedControl owner, IDataTemplate? value) => owner.SetValue(SuffixTemplateProperty, value);
 
     public static readonly AttachedProperty<bool> IsErrorProperty =
-        AvaloniaProperty.RegisterAttached<TextBox, bool>("IsError", typeof(MaterialTextField), false);
-    public static bool GetIsError(TextBox owner) => owner.GetValue(IsErrorProperty);
-    public static void SetIsError(TextBox owner, bool value) => owner.SetValue(IsErrorProperty, value);
+        AvaloniaProperty.RegisterAttached<TemplatedControl, bool>("IsError", typeof(MaterialTextField), false);
+    public static bool GetIsError(TemplatedControl owner) => owner.GetValue(IsErrorProperty);
+    public static void SetIsError(TemplatedControl owner, bool value) => owner.SetValue(IsErrorProperty, value);
 
     public static readonly AttachedProperty<string> ErrorMessageProperty =
         AvaloniaProperty.RegisterAttached<TextBox, string>("ErrorMessage", typeof(MaterialTextField), "Invalid input");

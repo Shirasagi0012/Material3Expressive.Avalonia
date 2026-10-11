@@ -105,6 +105,10 @@ internal sealed partial class TextFieldLayout : Panel
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // Release icon controls so a replacement template (e.g. a Theme change) can host them;
+        // UpdateSlots assigns them again on attach.
+        if (_leading != null) { _leading.Content = null; _leading.ContentTemplate = null; }
+        if (_trailing != null) { _trailing.Content = null; _trailing.ContentTemplate = null; }
         _motion?.Dispose(); _motion = null; _pending = false;
         if (_owner != null) _owner.PropertyChanged -= OwnerChanged;
         if (_text != null) _text.PropertyChanged -= PresenterChanged;
