@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private void OnFloatingToolbarDemo(object? sender, RoutedEventArgs e) => new FloatingToolbarDemo().Show(this);
     private void OnScrollBarDemo(object? sender, RoutedEventArgs e) => new ScrollBarDemo().Show(this);
     private void OnAlertDialogDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new AlertDialogDemo().Show(this);
+    private void OnPickerDialogDemo(object? sender, RoutedEventArgs e) => new PickerDialogDemo().Show(this);
     private void OnAppBarDemo(object? sender, RoutedEventArgs e) => new AppBarDemo().Show(this);
     private static readonly bool TraceWideRailLayout = false;
     private readonly RailLayoutTrace? _railLayoutTrace;

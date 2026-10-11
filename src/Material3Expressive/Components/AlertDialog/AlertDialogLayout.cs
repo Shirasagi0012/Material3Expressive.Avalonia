@@ -68,6 +68,9 @@ internal sealed class AlertDialogColumn : Panel
 // separate lines and last horizontally in LTR. Child content keeps the original RTL.
 internal sealed class AlertDialogButtons : Panel
 {
+    public static readonly StyledProperty<double> CrossAxisSpacingProperty = AvaloniaProperty.Register<AlertDialogButtons, double>(nameof(CrossAxisSpacing));
+    public double CrossAxisSpacing { get => GetValue(CrossAxisSpacingProperty); set => SetValue(CrossAxisSpacingProperty, value); }
+    static AlertDialogButtons() => AffectsMeasure<AlertDialogButtons>(CrossAxisSpacingProperty);
     protected override bool BypassFlowDirectionPolicies => true;
     private bool _stacked;
     protected override Size MeasureOverride(Size availableSize)
@@ -79,7 +82,7 @@ internal sealed class AlertDialogButtons : Panel
         // Default LocalMinimumInteractiveComponentSize (48) - ButtonDefaults.MinHeight
         // (40) consumes the full 8 DIP cross-axis spacing, leaving zero.
         return _stacked
-            ? new Size(children.Max(c => c.DesiredSize.Width), children.Sum(c => c.DesiredSize.Height))
+            ? new Size(children.Max(c => c.DesiredSize.Width), children.Sum(c => c.DesiredSize.Height) + Math.Max(0, children.Length - 1) * CrossAxisSpacing)
             : new Size(width, children.Max(c => c.DesiredSize.Height));
     }
 
@@ -92,7 +95,7 @@ internal sealed class AlertDialogButtons : Panel
             var size = child.DesiredSize;
             var left = _stacked ? (rtl ? 0 : finalSize.Width - size.Width) : (rtl ? x : x - size.Width);
             child.Arrange(new Rect(left, y, size.Width, size.Height));
-            if (_stacked) y += size.Height;
+            if (_stacked) y += size.Height + CrossAxisSpacing;
             else x += (rtl ? 1 : -1) * (size.Width + 8);
         }
         return finalSize;

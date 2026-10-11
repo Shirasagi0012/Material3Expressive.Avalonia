@@ -1,0 +1,46 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:TimePickerDialog}" TargetType="m3:TimePickerDialog" BasedOn="{StaticResource {x:Type m3:Dialog}}">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ContainerColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ContainerShape}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid x:Name="PART_Root">
+            <m3:DialogPresenter x:Name="PART_Modal" IsVisible="False" ClipToBounds="True">
+              <m3:DialogScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" />
+              <m3:DialogLayout  x:Name="PART_Surface" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  UsePlatformDefaultWidth="{TemplateBinding UsePlatformDefaultWidth}"
+                  Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                  MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}"
+                  MinHeight="{TemplateBinding MinHeight}" MaxHeight="{TemplateBinding MaxHeight}"
+                  Background="Transparent" RenderTransformOrigin="50%,50%">
+                <Border x:Name="PART_DialogContent">
+                  <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                      TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ContainerElevation}}">
+                    <m3:TimePickerDialogLayout>
+                      <ContentPresenter x:Name="PART_Title" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}" HorizontalContentAlignment="Left" />
+                      <Grid>
+                        <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="Left" VerticalAlignment="Top" />
+                      </Grid>
+                      <m3:TimePickerDialogActions x:Name="PART_Buttons">
+                        <ContentPresenter x:Name="PART_ModeToggle" IsVisible="False" Content="{TemplateBinding ModeToggleButton}" ContentTemplate="{TemplateBinding ModeToggleButtonTemplate}" />
+                        <Control x:Name="PART_Spacer" />
+                        <ContentPresenter x:Name="PART_Dismiss" IsVisible="False" Content="{TemplateBinding DismissButton}" ContentTemplate="{TemplateBinding DismissButtonTemplate}" />
+                        <ContentPresenter x:Name="PART_Confirm" Content="{TemplateBinding ConfirmButton}" ContentTemplate="{TemplateBinding ConfirmButtonTemplate}" />
+                      </m3:TimePickerDialogActions>
+                    </m3:TimePickerDialogLayout>
+                  </m3:MaterialSurface>
+                </Border>
+              </m3:DialogLayout>
+            </m3:DialogPresenter>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:has-dismiss /template/ ContentPresenter#PART_Dismiss"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:has-mode-toggle /template/ ContentPresenter#PART_ModeToggle"><Setter Property="IsVisible" Value="True" /></Style>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

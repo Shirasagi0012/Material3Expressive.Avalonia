@@ -46,6 +46,7 @@
                     <m3:ChipTokenSource />
                     <m3:TabRowTokenSource />
                     <m3:DialogTokenSource />
+                    <m3:DatePickerDialogTokenSource />
                     <m3:CardTokenSource />
                     <m3:SegmentedButtonTokenSource />
                     <m3:ProgressIndicatorTokenSource />
@@ -66,6 +67,8 @@
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
     <StyleInclude Source="/Foundation/Overlays/Dialog.axaml" />
     <StyleInclude Source="/Components/AlertDialog/AlertDialog.axaml" />
+    <StyleInclude Source="/Components/DatePickerDialog/DatePickerDialog.axaml" />
+    <StyleInclude Source="/Components/TimePickerDialog/TimePickerDialog.axaml" />
     <StyleInclude Source="/Components/Button/Button.axaml" />
     <StyleInclude Source="/Components/ToggleButton/ToggleButton.axaml" />
     <StyleInclude Source="/Components/SplitButton/SplitButton.axaml" />
