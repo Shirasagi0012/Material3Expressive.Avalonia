@@ -327,6 +327,23 @@
       <Style Selector="^:empty /template/ Viewbox#PART_Chevron">
         <Setter Property="IsVisible" Value="False" />
       </Style>
+      <Style Selector="^:selected:not(:focus):not(:pointerover)">
+        <Setter Property="Background">
+          <MultiBinding Converter="{x:Static m3:MenuSelectionHighlight.Converter}">
+            <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+            <Binding Path="Foreground" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.FocusStateLayerOpacity}" />
+          </MultiBinding>
+        </Setter>
+      </Style>
       <Style Selector="^:separator">
         <Setter Property="Margin" Value="0" />
         <Setter Property="Template">
