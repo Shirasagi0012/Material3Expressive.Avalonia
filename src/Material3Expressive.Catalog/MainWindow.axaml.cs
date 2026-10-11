@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private void OnTextFieldDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new TextFieldDemo().Show(this);
     private void OnSecureTextFieldDemo(object? sender, RoutedEventArgs e) => new SecureTextFieldDemo().Show(this);
     private void OnNumericUpDownDemo(object? sender, RoutedEventArgs e) => new NumericUpDownDemo().Show(this);
+    private void OnRepeatButtonDemo(object? sender, RoutedEventArgs e) => new RepeatButtonDemo().Show(this);
     private void OnTabRowDemo(object? sender, RoutedEventArgs e) => new TabRowDemo().Show(this);
     private void OnProgressIndicatorDemo(object? sender, RoutedEventArgs e) => new ProgressIndicatorDemo().Show(this);
     private void OnLoadingIndicatorDemo(object? sender, RoutedEventArgs e) => new LoadingIndicatorDemo().Show(this);

@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.RepeatButtonDemo"
+        Title="RepeatButton" Width="760" Height="720">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20">
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <TextBlock Text="Count:" m3:MaterialText.Style="{m3:Typography TitleMedium}" VerticalAlignment="Center" />
+        <TextBlock x:Name="CountText" Text="0" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" VerticalAlignment="Center" />
+        <Button Content="Reset" Theme="{StaticResource MaterialTextButtonTheme}" Click="OnReset" />
+      </StackPanel>
+
+      <TextBlock Text="Default (Filled) — hold to repeat, or focus and hold Space" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <RepeatButton Content="Hold to add" Click="OnIncrease" />
+        <RepeatButton Content="Hold to subtract" Click="OnDecrease" m3:MaterialButton.Icon="{m3:Symbol Remove}" />
+        <RepeatButton Content="Slow (Delay 800, Interval 300)" Delay="800" Interval="300" Click="OnIncrease" />
+        <RepeatButton Content="Disabled" IsEnabled="False" />
+      </WrapPanel>
+
+      <TextBlock Text="Keyed Button themes" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <RepeatButton Content="Elevated" Theme="{StaticResource MaterialElevatedButtonTheme}" Click="OnIncrease" />
+        <RepeatButton Content="Tonal" Theme="{StaticResource MaterialTonalButtonTheme}" Click="OnIncrease" />
+        <RepeatButton Content="Outlined" Theme="{StaticResource MaterialOutlinedButtonTheme}" Click="OnIncrease" />
+        <RepeatButton Content="Text" Theme="{StaticResource MaterialTextButtonTheme}" Click="OnIncrease" />
+        <RepeatButton Content="Outlined disabled" Theme="{StaticResource MaterialOutlinedButtonTheme}" IsEnabled="False" />
+      </WrapPanel>
+
+      <TextBlock Text="Size classes" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <RepeatButton Content="XS" Classes="xsmall" Click="OnIncrease" />
+        <RepeatButton Content="Small" Click="OnIncrease" />
+        <RepeatButton Content="Medium" Classes="medium" Theme="{StaticResource MaterialTonalButtonTheme}" Click="OnIncrease" />
+        <RepeatButton Content="Large" Classes="large" Click="OnIncrease" />
+      </WrapPanel>
+
+      <TextBlock Text="RTL" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel FlowDirection="RightToLeft" ItemSpacing="12">
+        <RepeatButton Content="Add" m3:MaterialButton.Icon="{m3:Symbol Add}" Click="OnIncrease" />
+        <RepeatButton Content="Outlined" Theme="{StaticResource MaterialOutlinedButtonTheme}" m3:MaterialButton.Icon="{m3:Symbol Add}" Click="OnIncrease" />
+      </WrapPanel>
+
+      <TextBlock Text="Internal keyed RepeatButtons (unchanged)" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <StackPanel Orientation="Horizontal" Spacing="24">
+        <ScrollBar Orientation="Vertical" Height="120" Maximum="100" ViewportSize="20" Value="40" AllowAutoHide="False" />
+        <NumericUpDown Value="5" Width="280" VerticalAlignment="Top" m3:MaterialTextField.Label="NumericUpDown" />
+        <ButtonSpinner Content="ButtonSpinner" Width="220" VerticalAlignment="Top" />
+        <TimePicker VerticalAlignment="Top" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
