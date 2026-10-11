@@ -115,13 +115,24 @@ public sealed class DropDownButtonThemeTests
             Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(MaterialIcon.DefaultSizeProperty).Priority);
             Assert.Null(Animated.GetProperties(trailing));
         }
-        // Whole-tree {m3:Token} binding counts measured with the same counter at 887036c, the
-        // commit before DropDownButton: Filled 60, Tonal 64, any size class 60.
-        Assert.Equal(60, TokenBindingCounter.CountTree(button));
-        Assert.Equal(60, TokenBindingCounter.CountTree(repeat));
-        Assert.Equal(64, TokenBindingCounter.CountTree(tonal));
-        Assert.Equal(60, TokenBindingCounter.CountTree(xlarge));
+        // A plain Button and a RepeatButton carry the same {m3:Token} bindings.
+        Assert.Equal(TokenBindingCounter.CountTree(button), TokenBindingCounter.CountTree(repeat));
         window.Close();
+
+        // A DropDownButton costs exactly its chevron's own bindings on top of the same-theme Button,
+        // so everything else in the shared template is identical.
+        foreach (var (theme, size) in new (string?, string?)[] { (null, null), ("MaterialTonalButtonTheme", null), (null, "xlarge") })
+        {
+            var dropDown = new DropDownButton { Content = "Same", Tag = theme };
+            var reference = new Button { Content = "Same", Tag = theme };
+            if (size is not null) { dropDown.Classes.Add(size); reference.Classes.Add(size); }
+            (window, _) = Show(dropDown, reference);
+            var chevronBindings = TokenBindingCounter.CountTree(Trailing(dropDown));
+            Assert.True(chevronBindings > 0);
+            Assert.Equal(chevronBindings, TokenBindingCounter.CountTree(dropDown) - TokenBindingCounter.CountTree(reference));
+            Assert.Equal(0, TokenBindingCounter.CountTree(Trailing(reference)));
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
