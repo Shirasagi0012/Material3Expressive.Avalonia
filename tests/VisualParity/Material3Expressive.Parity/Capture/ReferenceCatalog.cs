@@ -20,7 +20,8 @@ public static class ReferenceCatalog
         if (!System.IO.Directory.Exists(library)) throw new DirectoryNotFoundException("Prepare the Compose reference first: parity prepare-reference");
         var files = System.IO.Directory.EnumerateFiles(Path.Combine(reference, "src"), "*", SearchOption.AllDirectories)
             .Concat(System.IO.Directory.EnumerateFiles(library, "*.jar"))
-            .Concat(new[] { "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "gradle.lockfile",
+            .Concat(new[] { "build.gradle.kts", "settings.gradle.kts", "gradle.properties",
+                OperatingSystem.IsLinux() ? "gradle-linux-x64.lockfile" : "gradle.lockfile",
                 "gradle/verification-metadata.xml", "gradle/wrapper/gradle-wrapper.properties" }.Select(p => Path.Combine(reference, p)))
             .Concat(new[] { "docs/upstream-baseline.json", "modules/MaterialTypography.Roboto/Assets/Roboto-Regular.ttf",
                 "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf", "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf" }.Select(p => Path.Combine(root, p)))

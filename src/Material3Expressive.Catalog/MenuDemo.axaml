@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.MenuDemo"
+        Title="M3 menus" Width="760" Height="620">
+    <StackPanel Margin="24" Spacing="20">
+        <TextBlock Text="MenuFlyout" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <TextBlock Text="Vertical Standard / Vertical Vibrant / Baseline" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <Button Content="Standard">
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C" Click="OnAction" />
+                        <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
+                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True" Click="OnToggle" />
+                        <Separator />
+                        <MenuItem Header="Sort by">
+                            <MenuItem Header="Name" ToggleType="Radio" GroupName="StandardSort" IsChecked="True"
+                                      StaysOpenOnClick="True" Click="OnToggle" />
+                            <MenuItem Header="Date" ToggleType="Radio" GroupName="StandardSort" StaysOpenOnClick="True"
+                                      Click="OnToggle" />
+                            <MenuItem Header="More">
+                                <MenuItem Header="Ascending" Icon="{m3:Symbol ArrowUpward}" Click="OnAction" />
+                                <MenuItem Header="Descending" Icon="{m3:Symbol ArrowDownward}" Click="OnAction" />
+                            </MenuItem>
+                        </MenuItem>
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+            <Button Content="Vibrant">
+                <Button.Flyout>
+                    <MenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
+                        <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C" Click="OnAction" />
+                        <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
+                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True" Click="OnToggle" />
+                        <Separator />
+                        <MenuItem Header="Sort by">
+                            <MenuItem Header="Name" ToggleType="Radio" GroupName="VibrantSort" IsChecked="True"
+                                      StaysOpenOnClick="True" Click="OnToggle" />
+                            <MenuItem Header="Date" ToggleType="Radio" GroupName="VibrantSort" StaysOpenOnClick="True"
+                                      Click="OnToggle" />
+                            <MenuItem Header="More">
+                                <MenuItem Header="Ascending" Icon="{m3:Symbol ArrowUpward}" Click="OnAction" />
+                                <MenuItem Header="Descending" Icon="{m3:Symbol ArrowDownward}" Click="OnAction" />
+                            </MenuItem>
+                        </MenuItem>
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+            <Button Content="Baseline">
+                <Button.Flyout>
+                    <MenuFlyout FlyoutPresenterTheme="{StaticResource MaterialBaselineMenuTheme}">
+                        <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C" Click="OnAction" />
+                        <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
+                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True" Click="OnToggle" />
+                        <Separator />
+                        <MenuItem Header="Sort by">
+                            <MenuItem Header="Name" ToggleType="Radio" GroupName="BaselineSort" IsChecked="True"
+                                      StaysOpenOnClick="True" Click="OnToggle" />
+                            <MenuItem Header="Date" ToggleType="Radio" GroupName="BaselineSort" StaysOpenOnClick="True"
+                                      Click="OnToggle" />
+                            <MenuItem Header="More">
+                                <MenuItem Header="Ascending" Icon="{m3:Symbol ArrowUpward}" Click="OnAction" />
+                                <MenuItem Header="Descending" Icon="{m3:Symbol ArrowDownward}" Click="OnAction" />
+                            </MenuItem>
+                        </MenuItem>
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+        </StackPanel>
+        <TextBlock Text="Independent DropdownMenu" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <Button x:Name="DropdownAnchor" Content="Dropdown" Click="OnDropdown" />
+            <Button x:Name="GroupedAnchor" Content="Grouped / selectable" Click="OnGrouped" />
+        </StackPanel>
+        <m3:DropdownMenu x:Name="Dropdown" PlacementTarget="{Binding #DropdownAnchor}"
+                         DismissRequested="OnDropdownDismiss">
+            <m3:DropdownMenuItem Content="Copy" LeadingIcon="{m3:Symbol ContentCopy}" TrailingContent="Ctrl+C"
+                                 Click="OnDropdownAction" />
+            <m3:DropdownMenuItem Content="Paste" LeadingIcon="{m3:Symbol ContentPaste}" Click="OnDropdownAction" />
+            <Separator />
+            <m3:DropdownMenuItem Content="Unavailable" IsEnabled="False" />
+        </m3:DropdownMenu>
+        <m3:DropdownMenuPopup x:Name="Grouped" PlacementTarget="{Binding #GroupedAnchor}"
+                              DismissRequested="OnDropdownDismiss" m3:MenuAppearance.ColorStyle="Standard">
+            <m3:DropdownMenuPopup.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="2" />
+                </ItemsPanelTemplate>
+            </m3:DropdownMenuPopup.ItemsPanel>
+            <m3:DropdownMenuGroup x:Name="FirstGroup">
+                <m3:CheckableDropdownMenuItem x:Name="ReadOnlyItem" Content="Read only"
+                                              SupportingText="Keep the document unchanged"
+                                              SelectedLeadingIcon="{m3:Symbol Check}"
+                                              CheckedChangeRequested="OnCheckedChange" />
+                <m3:DropdownMenuItem x:Name="DetailsItem"
+                                     Theme="{StaticResource MaterialExpressiveDropdownMenuItemTheme}" Content="Details"
+                                     LeadingIcon="{m3:Symbol Info}" TrailingContent="Ctrl+I" Click="OnDropdownAction" />
+            </m3:DropdownMenuGroup>
+            <m3:DropdownMenuGroup x:Name="LastGroup">
+                <m3:SelectableDropdownMenuItem x:Name="NameItem" Content="Sort by name" IsSelected="True"
+                                               SelectedLeadingIcon="{m3:Symbol Check}" Click="OnSelectName" />
+                <m3:SelectableDropdownMenuItem x:Name="DateItem" Content="Sort by date"
+                                               SelectedLeadingIcon="{m3:Symbol Check}" Click="OnSelectDate" />
+            </m3:DropdownMenuGroup>
+        </m3:DropdownMenuPopup>
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <Button Content="Light / dark" Click="OnTheme" />
+            <Button Content="LTR / RTL" Click="OnDirection" />
+        </StackPanel>
+        <TextBlock x:Name="Status" Text="Choose an item. Checkboxes and radio items stay open." TextWrapping="Wrap" />
+    </StackPanel>
+</Window>

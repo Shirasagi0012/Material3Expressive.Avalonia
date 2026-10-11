@@ -17,7 +17,8 @@ public class ReferenceCatalogTests
             "tests/VisualParity/reference/src/main/kotlin/Main.kt",
             "tests/VisualParity/reference/build/install/Material3ParityReference/lib/producer.jar",
             "tests/VisualParity/reference/build.gradle.kts", "tests/VisualParity/reference/settings.gradle.kts",
-            "tests/VisualParity/reference/gradle.properties", "tests/VisualParity/reference/gradle.lockfile",
+            "tests/VisualParity/reference/gradle.properties",
+            "tests/VisualParity/reference/" + (OperatingSystem.IsLinux() ? "gradle-linux-x64.lockfile" : "gradle.lockfile"),
             "tests/VisualParity/reference/gradle/verification-metadata.xml",
             "tests/VisualParity/reference/gradle/wrapper/gradle-wrapper.properties",
             "docs/upstream-baseline.json", "modules/MaterialTypography.Roboto/Assets/Roboto-Regular.ttf",
@@ -37,7 +38,7 @@ public class ReferenceCatalogTests
         File.AppendAllText(Path.Combine(root, paths[1]), "producer change");
         Assert.NotEqual(first, ReferenceCatalog.ProducerFingerprint(root));
         File.WriteAllText(Path.Combine(root, paths[1]), "original");
-        foreach (var path in paths.Where(p => p.EndsWith(".ttf") && p.Contains("MaterialTypography.Roboto")))
+        foreach (var path in paths.Where(p => p.EndsWith(".lockfile") || p.EndsWith(".ttf") && p.Contains("MaterialTypography.Roboto")))
         {
             File.AppendAllText(Path.Combine(root, path), "font change");
             Assert.NotEqual(first, ReferenceCatalog.ProducerFingerprint(root));

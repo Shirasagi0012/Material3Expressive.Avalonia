@@ -43,6 +43,8 @@
 
 ## 提示与状态
 
+- [Menu / DropdownMenu](../src/Material3Expressive/Components/Menu/README.md)：独立下拉菜单、分组与原生 MenuFlyout 主题
+
 - [AlertDialog](../src/Material3Expressive/Components/AlertDialog/README.md)：标准与自定义内容对话框
 - [Tooltip](../src/Material3Expressive/Components/Tooltip/README.md)：静态提示外观与 TooltipBox 行为
 - [Snackbar](../src/Material3Expressive/Components/Snackbar/README.md)：短消息及队列宿主

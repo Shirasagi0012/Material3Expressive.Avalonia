@@ -1,0 +1,382 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia" xmlns:conv="using:Avalonia.Controls.Converters">
+  <Styles.Resources>
+    <m3:MenuColorConverter x:Key="MenuColorConverter" />
+    <conv:PlatformKeyGestureConverter x:Key="MenuGestureConverter" />
+    <m3:MenuItemThemeConverter x:Key="MenuItemThemeConverter" />
+    <ControlTheme x:Key="MaterialBaselineMenuItemTheme" TargetType="MenuItem">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemPadding}}" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Background" Value="#00000000" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.Text}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Panel>
+            <m3:MenuItemChrome MinimumContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}" MaximumIntrinsicWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MaxItemWidth}}" MinimumContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemHeight}}" TargetBrush="{TemplateBinding Background}" ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
+              <m3:MaterialSurface x:Name="PART_ItemSurface" Background="{Binding PaintedBrush, RelativeSource={RelativeSource AncestorType=m3:MenuItemChrome}}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}" StateLayerBrush="{TemplateBinding Foreground}" ShadowElevation="0" TonalElevation="0">
+                <Grid ColumnDefinitions="Auto,*,Auto" Background="Transparent">
+                  <Grid Name="PART_LeadingIcon" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Margin="0,0,12,0" VerticalAlignment="Center" IsVisible="False" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}">
+                    <ContentPresenter Name="PART_IconPresenter" Content="{TemplateBinding Icon}">
+                      <ContentPresenter.Foreground>
+                        <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                          <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                        </MultiBinding>
+                      </ContentPresenter.Foreground>
+                    </ContentPresenter>
+                    <Viewbox Name="PART_Check" IsVisible="False" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Stretch="Uniform">
+                      <Canvas Width="24" Height="24">
+                        <Path Data="M 9,16.17 L 4.83,12 3.41,13.41 9,19 21,7 19.59,5.59 Z">
+                          <Path.Fill>
+                            <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                              <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                            </MultiBinding>
+                          </Path.Fill>
+                        </Path>
+                      </Canvas>
+                    </Viewbox>
+                  </Grid>
+                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" m3:TextStyleHost.IsEnabled="True" />
+                  <StackPanel Name="PART_Trailing" Grid.Column="2" Orientation="Horizontal" Spacing="12" Margin="12,0,0,0" VerticalAlignment="Center" IsVisible="{TemplateBinding InputGesture, Converter={x:Static ObjectConverters.IsNotNull}}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}">
+                    <TextBlock Text="{TemplateBinding InputGesture, Converter={StaticResource MenuGestureConverter}}" VerticalAlignment="Center">
+                      <TextBlock.Foreground>
+                        <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                          <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                        </MultiBinding>
+                      </TextBlock.Foreground>
+                    </TextBlock>
+                    <Viewbox Name="PART_Chevron" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Stretch="Uniform">
+                      <Canvas Width="24" Height="24">
+                        <Path Data="M 9,6 L 15,12 9,18 7.6,16.6 12.2,12 7.6,7.4 Z">
+                          <Path.Fill>
+                            <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                              <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                            </MultiBinding>
+                          </Path.Fill>
+                        </Path>
+                      </Canvas>
+                    </Viewbox>
+                  </StackPanel>
+                </Grid>
+              </m3:MaterialSurface>
+            </m3:MenuItemChrome>
+            <Popup Name="PART_Popup" WindowManagerAddShadowHint="False" Placement="RightEdgeAlignedTop" IsLightDismissEnabled="False" IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}">
+              <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineContainer}}" BorderBrush="{x:Null}" BorderThickness="0" CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineShape}}" ShadowElevation="0" TonalElevation="0" Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselinePadding}}">
+                <m3:MenuIntrinsicWidth>
+                  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
+                    <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                  </ScrollViewer>
+                </m3:MenuIntrinsicWidth>
+              </m3:MaterialSurface>
+            </Popup>
+          </Panel>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:icon /template/ Grid#PART_LeadingIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:toggle /template/ Grid#PART_LeadingIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:radio /template/ Grid#PART_LeadingIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:toggle /template/ Viewbox#PART_Check">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:radio /template/ Viewbox#PART_Check">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:toggle /template/ ContentPresenter#PART_IconPresenter">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^:checked:radio /template/ ContentPresenter#PART_IconPresenter">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^:not(:empty) /template/ StackPanel#PART_Trailing">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:empty /template/ Viewbox#PART_Chevron">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^:separator">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Separator />
+          </ControlTemplate>
+        </Setter>
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.DisabledText}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialBaselineMenuTheme" TargetType="MenuFlyoutPresenter">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="m3:MenuThemeProperties.ItemTheme" Value="{StaticResource MaterialBaselineMenuItemTheme}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselinePadding}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineShape}}" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineContainer}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_MenuSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" ShadowElevation="0" TonalElevation="0" Padding="{TemplateBinding Padding}">
+            <m3:MenuIntrinsicWidth>
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </ScrollViewer>
+            </m3:MenuIntrinsicWidth>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialVerticalMenuItemTheme" TargetType="MenuItem">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemShape}}" />
+      <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" />
+      <Setter Property="Background">
+        <Setter.Value>
+          <MultiBinding Converter="{StaticResource MenuColorConverter}">
+            <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+          </MultiBinding>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Foreground">
+        <Setter.Value>
+          <MultiBinding Converter="{StaticResource MenuColorConverter}">
+            <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.Text}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContent}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledText}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantText}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContent}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantDisabledContent}" />
+          </MultiBinding>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Panel>
+            <m3:MenuItemChrome MinimumContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}" MaximumIntrinsicWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MaxItemWidth}}" MinimumContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemHeight}}" MinimumInteractiveHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}" TargetBrush="{TemplateBinding Background}" ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
+              <m3:MaterialSurface x:Name="PART_ItemSurface" Background="{Binding PaintedBrush, RelativeSource={RelativeSource AncestorType=m3:MenuItemChrome}}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}" StateLayerBrush="{TemplateBinding Foreground}" ShadowElevation="0" TonalElevation="0" m3:ButtonSurfaceState.IsChecked="{TemplateBinding IsChecked}" m3:ButtonSurfaceState.CheckedCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.SelectedItemShape}}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}">
+                <Grid ColumnDefinitions="Auto,*,Auto" Background="Transparent">
+                  <Grid Name="PART_LeadingIcon" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Margin="0,0,8,0" VerticalAlignment="Center" IsVisible="False" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}">
+                    <ContentPresenter Name="PART_IconPresenter" Content="{TemplateBinding Icon}">
+                      <ContentPresenter.Foreground>
+                        <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                          <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantText}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantDisabledContent}" />
+                        </MultiBinding>
+                      </ContentPresenter.Foreground>
+                    </ContentPresenter>
+                    <Viewbox Name="PART_Check" IsVisible="False" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Stretch="Uniform">
+                      <Canvas Width="24" Height="24">
+                        <Path Data="M 9,16.17 L 4.83,12 3.41,13.41 9,19 21,7 19.59,5.59 Z">
+                          <Path.Fill>
+                            <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                              <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantText}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantDisabledContent}" />
+                            </MultiBinding>
+                          </Path.Fill>
+                        </Path>
+                      </Canvas>
+                    </Viewbox>
+                  </Grid>
+                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" m3:TextStyleHost.IsEnabled="True" />
+                  <StackPanel Name="PART_Trailing" Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0" VerticalAlignment="Center" IsVisible="{TemplateBinding InputGesture, Converter={x:Static ObjectConverters.IsNotNull}}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}">
+                    <TextBlock Text="{TemplateBinding InputGesture, Converter={StaticResource MenuGestureConverter}}" VerticalAlignment="Center">
+                      <TextBlock.Foreground>
+                        <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                          <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantText}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContent}" />
+                          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantDisabledContent}" />
+                        </MultiBinding>
+                      </TextBlock.Foreground>
+                    </TextBlock>
+                    <Viewbox Name="PART_Chevron" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}" Stretch="Uniform">
+                      <Canvas Width="24" Height="24">
+                        <Path Data="M 9,6 L 15,12 9,18 7.6,16.6 12.2,12 7.6,7.4 Z">
+                          <Path.Fill>
+                            <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                              <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantText}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContent}" />
+                              <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantDisabledContent}" />
+                            </MultiBinding>
+                          </Path.Fill>
+                        </Path>
+                      </Canvas>
+                    </Viewbox>
+                  </StackPanel>
+                </Grid>
+              </m3:MaterialSurface>
+            </m3:MenuItemChrome>
+            <Popup Name="PART_Popup" WindowManagerAddShadowHint="False" Placement="RightEdgeAlignedTop" IsLightDismissEnabled="False" IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}">
+              <m3:MaterialSurface BorderBrush="{x:Null}" BorderThickness="0" CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalShape}}" ShadowElevation="0" TonalElevation="0" Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalPadding}}">
+                <m3:MaterialSurface.Background>
+                  <MultiBinding Converter="{StaticResource MenuColorConverter}" Priority="Template">
+                    <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+                  </MultiBinding>
+                </m3:MaterialSurface.Background>
+                <m3:MenuIntrinsicWidth>
+                  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
+                    <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                  </ScrollViewer>
+                </m3:MenuIntrinsicWidth>
+              </m3:MaterialSurface>
+            </Popup>
+          </Panel>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:icon /template/ Grid#PART_LeadingIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:toggle /template/ Grid#PART_LeadingIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:radio /template/ Grid#PART_LeadingIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:toggle /template/ Viewbox#PART_Check">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:radio /template/ Viewbox#PART_Check">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:checked:toggle /template/ ContentPresenter#PART_IconPresenter">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^:checked:radio /template/ ContentPresenter#PART_IconPresenter">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^:not(:empty) /template/ StackPanel#PART_Trailing">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:empty /template/ Viewbox#PART_Chevron">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^:separator">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Separator />
+          </ControlTemplate>
+        </Setter>
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialVerticalMenuTheme" TargetType="MenuFlyoutPresenter">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="m3:MenuThemeProperties.ItemTheme" Value="{StaticResource MaterialVerticalMenuItemTheme}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalPadding}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalShape}}" />
+      <Setter Property="Background">
+        <Setter.Value>
+          <MultiBinding Converter="{StaticResource MenuColorConverter}">
+            <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+          </MultiBinding>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_MenuSurface" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" ShadowElevation="0" TonalElevation="0" Padding="{TemplateBinding Padding}">
+            <m3:MaterialSurface.Background>
+              <TemplateBinding Property="Background" />
+            </m3:MaterialSurface.Background>
+            <m3:MenuIntrinsicWidth>
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </ScrollViewer>
+            </m3:MenuIntrinsicWidth>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type MenuFlyoutPresenter}" TargetType="MenuFlyoutPresenter" BasedOn="{StaticResource MaterialVerticalMenuTheme}" />
+  </Styles.Resources>
+  <Style Selector="MenuFlyoutPresenter MenuItem">
+    <Setter Property="Theme">
+      <MultiBinding Converter="{StaticResource MenuItemThemeConverter}">
+        <Binding Path="(m3:MenuThemeProperties.ItemTheme)" RelativeSource="{RelativeSource Self}" />
+        <ReflectionBinding Path="ItemContainerTheme" RelativeSource="{RelativeSource FindAncestor, AncestorType=ItemsControl, Tree=Logical}" />
+      </MultiBinding>
+    </Setter>
+  </Style>
+  <Style Selector="MenuFlyoutPresenter Separator">
+    <Setter Property="Margin" Value="12,2" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+</Styles>

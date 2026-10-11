@@ -12,6 +12,7 @@ namespace Material3Expressive.Catalog;
 
 public partial class MainWindow : Window
 {
+    private void OnMenuDemo(object? sender, RoutedEventArgs e) => new MenuDemo().Show(this);
     private void OnTooltipDemo(object? sender, RoutedEventArgs e) => new TooltipDemo().Show(this);
     private void OnSnackbarDemo(object? sender, RoutedEventArgs e) => new SnackbarDemo().Show(this);
     private void OnNavigationDrawerDemo(object? sender, RoutedEventArgs e) => new NavigationDrawerDemo().Show(this);

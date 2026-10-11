@@ -91,8 +91,19 @@ rg -n -C 8 'cornerRadii:|status: different' "$caseDirectory/samples"
 
 ## 运行
 
-当前执行参考为 Windows x64，固定 density=4、fontScale=1。需要 .NET 10、JDK（本机 JDK 25）、
+当前执行参考支持 Windows x64 与 Linux x64，固定 density=4、fontScale=1。需要 .NET 10、PowerShell、JDK 17+（本机 JDK 25）、
 锁定 Gradle 依赖及项目 README 中的 NuGet 包源凭据。
+Linux 使用 PowerShell 7（`pwsh -File tests/VisualParity/parity.ps1 ...`）；脚本通过 `sh` 启动 Unix Gradle wrapper，
+不依赖 wrapper 的可执行位。Linux 即使使用 CPU/offscreen、没有 DISPLAY，Skiko 仍需要系统提供
+libGL、libX11、fontconfig、FreeType（Debian/Ubuntu 对应 `libgl1 libx11-6 libfontconfig1 libfreetype6`）。
+Windows 沿用 `gradle.lockfile`；Linux x64 使用 `gradle-linux-x64.lockfile`，两者均启用严格锁定和 SHA256 校验。
+平台及所选锁文件参与参考身份；切换系统后重新执行 prepare-reference，不能把 Windows 参考当作 Linux 基线。
+ARM64/macOS 不在此入口支持范围内。Linux 可运行并不表示与 Windows 像素相同，也不表示组件已匹配 Compose。
+
+需要显式指定 NuGet 配置时，可以设置 `M3E_NUGET_CONFIG` 环境变量，或给脚本传入 `-NuGetConfig <path>`；
+该路径仅传给 restore，不写入仓库或测试产物。未指定时仍遵循 dotnet 的默认配置发现。
+已显式完成 restore 的环境可以传 `-NoRestore`，跳过脚本的 NuGet restore；它不会跳过构建或 Gradle 的严格校验。
+
 Avalonia 捕获端通过 ProjectReference 使用仓内 ComposeAnimation.TestSupport，修改动画源码后直接重新构建。
 `Material3Expressive.Parity/packages.lock.json` 记录外部包与仓内项目依赖；变更依赖后用
 `dotnet restore Material3Expressive.slnx --force-evaluate` 更新，不再准备本地 ComposeAnimation 包。

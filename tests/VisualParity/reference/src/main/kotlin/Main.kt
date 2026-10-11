@@ -19,6 +19,7 @@ fun main(args: Array<String>) {
         baseline.getValue("composeMultiplatformCore").jsonObject.getValue("commit").jsonPrimitive.content == "a9e47e8aa04c95cfe572ab4297c770f3cbfb234e" &&
         baseline.getValue("androidx").jsonObject.getValue("commit").jsonPrimitive.content == "f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea") { "Producer source/version baseline differs." }
     val runner = ScenarioDiscovery.artifact
+    val dependencyLock = if (System.getProperty("os.name") == "Linux") "gradle-linux-x64.lockfile" else "gradle.lockfile"
     val environment = mapOf("platform" to System.getProperty("os.name").lowercase().let { if (it.contains("windows")) "windows" else it },
         "architecture" to System.getProperty("os.arch").let { if (it == "amd64") "x64" else it },
         "density" to ComposeHost.RenderScale.toString(), "fontScale" to "1", "colorSpace" to "sRGB",
@@ -26,7 +27,7 @@ fun main(args: Array<String>) {
         "fontMediumSha256" to hash(File(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf")),
         "fontBoldSha256" to hash(File(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf")),
         "compose" to "1.13.0-alpha01", "jdk" to System.getProperty("java.version"), "coroutineTimeResolution" to "1ms",
-        "dependencyLockSha256" to hash(File(root, "tests/VisualParity/reference/gradle.lockfile")),
+        "dependencyLockSha256" to hash(File(root, "tests/VisualParity/reference/$dependencyLock")),
         "verificationMetadataSha256" to hash(File(root, "tests/VisualParity/reference/gradle/verification-metadata.xml")),
         "runnerJarSha256" to hash(runner), "classpath" to runner.parentFile.listFiles()!!.filter { it.extension == "jar" }
             .sortedBy { it.name }.joinToString("\n") { "${it.name}:${hash(it)}" })

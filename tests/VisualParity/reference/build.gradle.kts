@@ -5,6 +5,12 @@ plugins {
     kotlin("plugin.serialization") version "2.3.20"
     application
 }
+// Keep the existing Windows lock intact; native artifacts and locks are platform-specific.
+val referencePlatform = when {
+    System.getProperty("os.name").startsWith("Windows") && System.getProperty("os.arch") == "amd64" -> "windows-x64"
+    System.getProperty("os.name") == "Linux" && System.getProperty("os.arch") == "amd64" -> "linux-x64"
+    else -> error("VisualParity reference supports Windows x64 and Linux x64 only.")
+}
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.material3:material3:1.13.0-alpha01")
@@ -13,12 +19,15 @@ dependencies {
     // Already pinned on the producer runtime path. Dialog keyboard scenarios use the
     // real desktop BackNavigationEventInput, whose supertype must be visible at compile time.
     compileOnly("androidx.navigationevent:navigationevent-desktop:1.1.1") { isTransitive = false }
-    // The first paired environment is Windows x64. Keep the same Skiko version, but avoid
-    // fetching unused Linux/macOS native binaries from Desktop's new all-platform bundle.
-    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.152.0-alpha02")
+    // Fetch only the matching native runtime at the pinned version.
+    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-$referencePlatform:0.152.0-alpha02")
 }
 configurations.configureEach { exclude(group = "org.jetbrains.skiko", module = "skiko-awt-runtime-all") }
-dependencyLocking { lockAllConfigurations(); lockMode.set(LockMode.STRICT) }
+dependencyLocking {
+    lockAllConfigurations()
+    lockMode.set(LockMode.STRICT)
+    if (referencePlatform == "linux-x64") lockFile.set(file("gradle-linux-x64.lockfile"))
+}
 application { mainClass = "parity.MainKt" }
 java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
 kotlin { compilerOptions {

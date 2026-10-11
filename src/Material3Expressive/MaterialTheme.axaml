@@ -54,6 +54,7 @@
                     <m3:LoadingIndicatorTokenSource />
                     <m3:PlainTooltipTokenSource />
                     <m3:SnackbarTokenSource />
+                    <m3:MenuTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -95,4 +96,6 @@
     <StyleInclude Source="/Components/SegmentedButton/SegmentedButton.axaml" />
     <StyleInclude Source="/Components/ProgressIndicator/ProgressIndicator.axaml" />
     <StyleInclude Source="/Components/LoadingIndicator/LoadingIndicator.axaml" />
+    <StyleInclude Source="/Components/Menu/Menu.axaml" />
+    <StyleInclude Source="/Components/Menu/DropdownMenu.axaml" />
 </Styles>
