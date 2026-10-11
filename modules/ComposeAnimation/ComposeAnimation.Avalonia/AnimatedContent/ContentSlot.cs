@@ -49,7 +49,7 @@ internal sealed class ContentSlot : Control, IEnterExitScopeHost
     internal void AttachScope(AnimatedVisibilityScope scope)
     {
         Scope = scope;
-        scope.Transition.PropertyChanged += Host.OnSlotTransitionChanged;
+        scope.Transition.PhaseChanged += Host.OnPhaseChanged;
     }
 
     internal void ApplyZIndex(float z)
@@ -101,7 +101,7 @@ internal sealed class ContentSlot : Control, IEnterExitScopeHost
     {
         if (Scope is { } scope)
         {
-            scope.Transition.PropertyChanged -= Host.OnSlotTransitionChanged;
+            scope.Transition.PhaseChanged -= Host.OnPhaseChanged;
             Layer.ResetMotion();
             scope.Dispose();
             Scope = null;

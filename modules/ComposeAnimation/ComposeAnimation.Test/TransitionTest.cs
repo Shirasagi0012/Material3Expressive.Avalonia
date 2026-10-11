@@ -425,4 +425,35 @@ public class TransitionTest
         Assert.False(transition.IsRunning);
         Assert.False(transition.CurrentState);
     }
+
+    [Fact]
+    public void PhaseChanged_FiresWhenThePhaseChangesAndNotOnPlayTimeSamples()
+    {
+        using var transition = new Transition<bool>(false, new ManualAnimationFrameClock());
+        transition.AnimateDouble(s => s ? 100 : 0, _ => Tween(100));
+        var phases = 0;
+        var playTimes = 0;
+        transition.PhaseChanged += () => phases++;
+        transition.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Transition.PlayTime)) playTimes++;
+        };
+
+        transition.UpdateTarget(true);
+        Assert.Equal(1, phases);
+        Assert.Equal(0, playTimes);
+
+        transition.OnFrame(Ms(0));
+        Assert.Equal(2, phases);
+        transition.OnFrame(Ms(40));
+        Assert.Equal(2, phases);
+        Assert.True(playTimes > 0);
+
+        var sampled = playTimes;
+        transition.OnFrame(Ms(100));
+        Assert.Equal(3, phases);
+        Assert.True(playTimes > sampled);
+        Assert.True(transition.CurrentState);
+        Assert.False(transition.IsRunning);
+    }
 }

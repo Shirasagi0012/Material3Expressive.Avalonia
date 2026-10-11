@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -137,7 +136,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         }
     }
 
-    private void Changed(object? sender, PropertyChangedEventArgs e) => Synchronize();
+    private void OnPhaseChanged() => Synchronize();
 
     private void Synchronize(bool reset = false)
     {
@@ -167,7 +166,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
                     var clock = motion.Clock;
                     _connection = Source?.Connect(clock, Label)
                         ?? new VisibilityConnection(new Transition<bool>(Visible, clock, Label), true);
-                    _connection.Transition.PropertyChanged += Changed;
+                    _connection.Transition.PhaseChanged += OnPhaseChanged;
                     _motionConnection = motion.RegisterResource(() =>
                     {
                         if (!motion.IsEnding) return;
@@ -236,7 +235,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         var mapper = new EnterExitStateMapper<bool>(parent, static v => v, HasBeenVisibleMode.Argument);
         var scope = new AnimatedVisibilityScope(parent.CreateChildTransition(mapper.Map, "EnterExit"));
         SetAndRaise(ScopeProperty, ref _scope, scope);
-        scope.Transition.PropertyChanged += Changed;
+        scope.Transition.PhaseChanged += OnPhaseChanged;
         SetAndRaise(IsContentPresentProperty, ref _isContentPresent, true);
         SetAndRaise(PresentedContentProperty, ref _presentedContent, Content);
         ApplyTemplate();
@@ -253,7 +252,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
     {
         var scope = _scope;
         if (scope is null) return;
-        scope.Transition.PropertyChanged -= Changed;
+        scope.Transition.PhaseChanged -= OnPhaseChanged;
         SetAndRaise(ScopeProperty, ref _scope, null);
         try
         {
@@ -276,7 +275,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         _motionConnection = null;
         var connection = _connection;
         _connection = null;
-        if (connection is not null) connection.Transition.PropertyChanged -= Changed;
+        if (connection is not null) connection.Transition.PhaseChanged -= OnPhaseChanged;
         try { EndScope(); }
         finally { connection?.Dispose(); }
     }

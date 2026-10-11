@@ -34,6 +34,7 @@ public abstract class Transition : ObservableObject, IDisposable
     private bool _loopActive;
     private bool _disposed;
     private bool _running;
+    private bool _phaseQueued;
     private bool _updateChildrenNeeded;
     private TimeSpan _playTime;
     private TimeSpan _lastFrameTime = AnimationConstants.UnspecifiedTime;
@@ -83,6 +84,9 @@ public abstract class Transition : ObservableObject, IDisposable
     internal IAnimationFrameClock Clock { get; }
     internal bool IsDisposed => _disposed;
     internal Action? SynchronizeWithParent { get; set; }
+    // One delivery per mutation batch, after that batch. Play time, segment, duration, and
+    // sampled values stay on PropertyChanged.
+    internal event Action? PhaseChanged;
     private protected Transition Root => ParentTransition?.Root ?? this;
     private protected abstract bool HasStateChange { get; }
     private protected abstract void SetStateRunning(bool value);
@@ -140,7 +144,7 @@ public abstract class Transition : ObservableObject, IDisposable
     {
         for (Transition? current = this; current is not null; current = current.ParentTransition)
         {
-            current.Notify(nameof(IsPreparing));
+            current.NotifyPhase(nameof(IsPreparing));
             // Mark the branch busy immediately, including when current == target. Releasing
             // does not complete it synchronously: a frame must evaluate any newly added work.
             if (current.IsPreparing && !current.IsSeeking) current.SetRunning(true);
@@ -253,7 +257,7 @@ public abstract class Transition : ObservableObject, IDisposable
         if (_running == value) return;
         _running = value;
         SetStateRunning(value);
-        Notify(nameof(IsRunning));
+        NotifyPhase(nameof(IsRunning));
     }
 
     private protected void SetRunningRecursively(bool value)
@@ -290,7 +294,7 @@ public abstract class Transition : ObservableObject, IDisposable
         if (IsSeeking != value)
         {
             IsSeeking = value;
-            Notify(nameof(IsSeeking));
+            NotifyPhase(nameof(IsSeeking));
         }
 
         if (value) SetRunning(false);
@@ -419,6 +423,13 @@ public abstract class Transition : ObservableObject, IDisposable
                 while (_notifications.TryDequeue(out var notification)) notification();
             }
         }
+        catch
+        {
+            // A queued phase callback may be discarded below. Clear the coalesce flag or the
+            // next phase change never delivers.
+            ResetPhaseQueue();
+            throw;
+        }
         finally
         {
             _mutations.Clear();
@@ -429,6 +440,25 @@ public abstract class Transition : ObservableObject, IDisposable
 
     internal void Publish(Action notification) => Root._notifications.Enqueue(notification);
     private protected void Notify(string name) => Publish(() => OnPropertyChanged(name));
+
+    // PropertyChanged still carries the name. PhaseChanged is the coalesced structural signal.
+    private protected void NotifyPhase(string name)
+    {
+        Notify(name);
+        if (_phaseQueued) return;
+        _phaseQueued = true;
+        Publish(() =>
+        {
+            _phaseQueued = false;
+            PhaseChanged?.Invoke();
+        });
+    }
+
+    private void ResetPhaseQueue()
+    {
+        _phaseQueued = false;
+        foreach (var child in _transitions) child.ResetPhaseQueue();
+    }
 
     public void Dispose()
     {
@@ -444,7 +474,7 @@ public abstract class Transition : ObservableObject, IDisposable
         _lifetime.Cancel();
         foreach (var lease in _preparations) lease.Revoke();
         _preparations.Clear();
-        Notify(nameof(IsPreparing));
+        NotifyPhase(nameof(IsPreparing));
         foreach (var child in _transitions.ToArray()) child.DisposeCore();
         foreach (var animation in _animations) animation.Detach();
         _animations.Clear();

@@ -77,8 +77,8 @@ public partial class Transition<TState> : Transition
         ReconfigureAnimations(true);
         TargetChanged?.Invoke();
         ChangingTarget = default!;
-        Notify(nameof(CurrentState));
-        Notify(nameof(TargetState));
+        NotifyPhase(nameof(CurrentState));
+        NotifyPhase(nameof(TargetState));
         Notify(nameof(Segment));
     }
 
@@ -96,15 +96,15 @@ public partial class Transition<TState> : Transition
             Segment = new(previousPending!, TargetState);
             WriteState(() => _transitionState.CurrentState = previousPending!);
             ReconfigureAnimations(true);
-            Notify(nameof(CurrentState));
+            NotifyPhase(nameof(CurrentState));
             Notify(nameof(Segment));
         }
         else
         {
             foreach (var child in Transitions) child.SynchronizeWithParent?.Invoke();
         }
-        Notify(nameof(PendingTargetState));
-        Notify(nameof(HasPendingTargetState));
+        NotifyPhase(nameof(PendingTargetState));
+        NotifyPhase(nameof(HasPendingTargetState));
     }
 
     private void WriteState(Action action, bool writesTarget = false, TState writtenTarget = default!)
@@ -134,7 +134,7 @@ public partial class Transition<TState> : Transition
     private protected override void CompleteState()
     {
         WriteState(() => _transitionState.CurrentState = TargetState);
-        Notify(nameof(CurrentState));
+        NotifyPhase(nameof(CurrentState));
     }
 
     private protected override void RemoveState()
@@ -224,7 +224,7 @@ public partial class Transition<TState> : Transition
         if (!wasSeeking)
         {
             IsSeeking = true;
-            Notify(nameof(IsSeeking));
+            NotifyPhase(nameof(IsSeeking));
         }
         SetRunningRecursively(isRunning);
         SetSeekTime(playTime);
@@ -243,8 +243,8 @@ public partial class Transition<TState> : Transition
         ReconfigureAnimations(true, preserveCurrentValues && wasSeeking && segmentChanged);
         SeekAnimations(playTime);
         ChangingTarget = default!;
-        Notify(nameof(CurrentState));
-        Notify(nameof(TargetState));
+        NotifyPhase(nameof(CurrentState));
+        NotifyPhase(nameof(TargetState));
         Notify(nameof(Segment));
     }
 

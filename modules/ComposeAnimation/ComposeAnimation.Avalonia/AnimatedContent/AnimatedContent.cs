@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -198,8 +197,7 @@ public class AnimatedContent : ContentControl
         Synchronize();
     }
 
-    private void Changed(object? sender, PropertyChangedEventArgs e) => Synchronize();
-    internal void OnSlotTransitionChanged(object? sender, PropertyChangedEventArgs e) => Synchronize();
+    internal void OnPhaseChanged() => Synchronize();
 
     private void OnParentTargetChanging()
     {
@@ -263,7 +261,7 @@ public class AnimatedContent : ContentControl
                     var label = Label ?? "AnimatedContent";
                     _connection = Source?.Connect(clock, label)
                         ?? new ContentConnection(new Transition<object?>(Content, clock, label), true);
-                    _connection.Transition.PropertyChanged += Changed;
+                    _connection.Transition.PhaseChanged += OnPhaseChanged;
                     _connection.Transition.TargetChanging += OnParentTargetChanging;
                     _motionConnection = motion.RegisterResource(() =>
                     {
@@ -490,7 +488,7 @@ public class AnimatedContent : ContentControl
         _connection = null;
         if (connection is not null)
         {
-            connection.Transition.PropertyChanged -= Changed;
+            connection.Transition.PhaseChanged -= OnPhaseChanged;
             connection.Transition.TargetChanging -= OnParentTargetChanging;
         }
         try
