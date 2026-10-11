@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         x:Class="Material3Expressive.Catalog.ProgressIndicatorDemo"
-        Title="Progress indicators" Width="560" Height="600">
+        Title="Progress indicators" Width="560" Height="760">
   <ScrollViewer>
     <StackPanel Margin="24" Spacing="24">
       <TextBlock Text="Progress" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
@@ -25,6 +25,22 @@
         <m3:LinearWavyProgressIndicator.Stroke><m3:ProgressIndicatorStroke Width="6" /></m3:LinearWavyProgressIndicator.Stroke>
         <m3:LinearWavyProgressIndicator.TrackStroke><m3:ProgressIndicatorStroke Width="2" /></m3:LinearWavyProgressIndicator.TrackStroke>
       </m3:LinearWavyProgressIndicator>
+      <TextBlock Text="Native ProgressBar (Material theme)" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <Slider x:Name="ProgressBarSlider" Minimum="-50" Maximum="150" Value="40" />
+      <ProgressBar Minimum="-50" Maximum="150" Value="{Binding #ProgressBarSlider.Value}" />
+      <ProgressBar Minimum="-50" Maximum="150" Value="{Binding #ProgressBarSlider.Value}" ShowProgressText="True" />
+      <ProgressBar Minimum="-50" Maximum="150" Value="{Binding #ProgressBarSlider.Value}" ShowProgressText="True"
+                   ProgressTextFormat="{}{0:0} / {3:0}" />
+      <ProgressBar IsIndeterminate="True" ShowProgressText="True" />
+      <StackPanel Orientation="Horizontal" Spacing="32" Height="160">
+        <ProgressBar Orientation="Vertical" Minimum="-50" Maximum="150" Value="{Binding #ProgressBarSlider.Value}" />
+        <ProgressBar Orientation="Vertical" Minimum="-50" Maximum="150" Value="{Binding #ProgressBarSlider.Value}" ShowProgressText="True" />
+        <ProgressBar Orientation="Vertical" IsIndeterminate="True" />
+        <ProgressBar Orientation="Vertical" Minimum="-50" Maximum="150" Value="{Binding #ProgressBarSlider.Value}"
+                     FlowDirection="RightToLeft" />
+        <ProgressBar Minimum="-50" Maximum="150" Value="{Binding #ProgressBarSlider.Value}" IsEnabled="False"
+                     VerticalAlignment="Center" Width="120" />
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </Window>
