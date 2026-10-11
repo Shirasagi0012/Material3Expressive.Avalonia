@@ -22,6 +22,7 @@
     are their own slice.
   -->
   <Styles.Resources>
+    <m3:IconButtonAmbientColorConverter x:Key="IconToggleContentColor" />
 
     <ControlTheme x:Key="MaterialStandardIconButtonTheme" TargetType="m3:IconButton">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
@@ -139,6 +140,25 @@
       <Style Selector="^.xlarge /template/ m3|MaterialSymbol">
         <Setter Property="Width" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.IconSize}}" />
         <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.IconSize}}" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:IconToggleButton}" TargetType="m3:IconToggleButton"
+                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{StaticResource IconToggleContentColor}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="$parent[Control].(TextElement.Foreground)" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.DisabledContentOpacity}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+        </MultiBinding>
+      </Setter>
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container, ^:focus-visible /template/ m3|MaterialSurface#PART_Container, ^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
       </Style>
     </ControlTheme>
 

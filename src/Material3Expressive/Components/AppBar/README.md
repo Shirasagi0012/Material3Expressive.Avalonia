@@ -1,5 +1,62 @@
 # AppBar
 
+## 自适应动作行与列
+
+`AppBarRow` / `AppBarColumn` 按可用宽度 / 高度排列动作，放不下的连续后缀进入独立
+`DropdownMenu`。可以放在 TopAppBar 的 Items 中，也可独立使用。`MaxItemCount` 包含
+溢出按钮：限制为 3 且项目超过 3 个时，最多显示两个动作和一个溢出按钮；恰好 3 个且
+尺寸足够时显示全部动作。默认不限数量，仍受布局空间约束。
+保留上游边界：0 或负数不触发数量截断；多个项目时设为 1 可只显示溢出按钮。
+
+```xml
+<m3:AppBarRow x:Name="Actions" MaxItemCount="3" MaxWidth="192">
+  <m3:AppBarAction Label="保存" Icon="{m3:Symbol Save}" Command="{Binding SaveCommand}" />
+  <m3:AppBarToggleAction Label="收藏" Icon="{m3:Symbol Favorite}"
+                       IsChecked="{Binding IsFavorite}" CheckedChangeRequested="ChangeFavorite" />
+  <m3:AppBarCustomItem>
+    <m3:AppBarCustomItem.Content><Button Content="更多操作" /></m3:AppBarCustomItem.Content>
+    <m3:AppBarCustomItem.MenuContent>
+      <m3:DropdownMenuItem Content="自定义操作" Click="CustomClick" />
+    </m3:AppBarCustomItem.MenuContent>
+  </m3:AppBarCustomItem>
+  <m3:AppBarAction Label="分享" Icon="{m3:Symbol Share}" Command="{Binding ShareCommand}" />
+</m3:AppBarRow>
+```
+
+假设 ViewModel 提供上述命令和 `IsFavorite`，宿主处理事件：
+
+```csharp
+private void ChangeFavorite(object? sender, IconCheckedChangeEventArgs e) =>
+    ViewModel.IsFavorite = e.Value;
+
+private void CustomClick(object? sender, RoutedEventArgs e)
+{
+    ViewModel.PerformCustomAction();
+    Actions.MenuState.Dismiss();
+}
+```
+
+普通动作支持 Click、Command / CommandParameter / CanExecute。切换动作只请求新状态，
+不会自动修改 IsChecked。两种便捷动作在菜单中均为纯文字项目；执行回调和命令后自动关闭。
+自定义菜单内容自行决定何时关闭。栏内便捷动作带 Above TooltipBox，Label 同时是可访问名称。
+
+Icon / IconTemplate 遵循统一图标槽：`Icon="{m3:Symbol Save}"`、直接 Control、数据模板均可；
+模板非 null 时即使 Icon 为 null 也创建内容。直接 Control 继承外部 DataContext，数据模板
+使用 Icon 数据。默认图标尺寸通过 MaterialIcon.DefaultSize 提供 24 DIP 提示，不缩放自定义控件。
+
+ItemsSource / ItemTemplate 支持数据集合，模板根须是 AppBarAction、AppBarToggleAction 或
+AppBarCustomItem。自定义项的 Content / ContentTemplate 与 MenuContent / MenuContentTemplate
+分别构建两套树，不可把同一个 Control 同时放入两槽。集合、尺寸和 MaxItemCount 可动态变化。
+AppBarColumn 使用完全相同的项目 API，例如 `new AppBarColumn { MaxHeight = 144 }`。
+
+每个栏拥有独立的只读 MenuState（IsShowing、Show、Dismiss）。OverflowIndicatorTemplate 可替换
+默认 MoreVert 按钮和提示，其 DataContext 是该 MenuState。自定义按钮的事件中可直接调用
+`((AppBarMenuState)((Control)sender!).DataContext!).Show()`。默认英文提示可通过此模板本地化。
+Row 支持 RTL 的逻辑起点，Column 从上到下、横向对齐逻辑起点。
+
+菜单复用独立 DropdownMenu 的窗口内宿主、焦点、Escape、外部点击和退出保留；窗口初始化见
+[公共接入](../../../../docs/GETTING_STARTED.md)。实现及验证边界见 [INTERNALS](INTERNALS.md#appbarrow--appbarcolumn)。
+
 本目录提供库控件 `TopAppBar` 及六种顶部变体、`BottomAppBar` / `FlexibleBottomAppBar`，
 以及可选的滚动状态和 `AppBarScrollScope`。栏内按钮仍使用普通事件和命令。
 首次使用请完成[公共接入](../../../../docs/GETTING_STARTED.md)，包括主题及 TopLevel 动画初始化。

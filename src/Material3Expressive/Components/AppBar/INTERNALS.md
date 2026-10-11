@@ -6,7 +6,58 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 1.5.0-alpha27）
 Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-alpha01）。
 默认逻辑对照 AndroidX，桌面输入与平台实现对照 Core，不用浮动 HEAD 替代。
 
-## 上游与本地职责
+## AppBarRow / AppBarColumn
+
+固定基线的 AppBarRow.kt、AppBarColumn.kt、AppBarDsl.kt 在 AndroidX 与 Core 的 Git blob
+逐一相同。`AppBarOverflowLayout` / `AppBarItemsPanel` 对应 `OverflowMeasurePolicy`：
+先预留指示器主轴尺寸，内容按完整 loose constraints 逐个测量，在第一个不合适的项目处停止；
+最后一个项目可取回预留空间。MaxItemCount 保留源码的 `i == maxItemCount - 1` 分支，
+不额外限制成正数；0 / 负数因该分支不命中而只受尺寸限制。像素舍入消费现有 MathUtils。
+行和列仅交换主 / 交叉轴，使用 Avalonia 的 RTL 子树镜像对应 placeRelative。
+当栏的约束小于指示器时，上游仍以预留尺寸测量指示器，栏自身尺寸服从约束，指示器可画到栏外。
+主题明确关闭 TemplatedControl 默认裁剪以保留这条边界行为。
+
+2026-10-11 维护者确认 ItemsControl + 三种项目、受控菜单状态、可替换指示器模板及公开
+IconToggleButton，并随后要求遵循统一图标 API。因此 AppBarAction / AppBarToggleAction 的
+图标采用 Icon / IconTemplate；独立 IconToggleButton 作为 IconButton 家族保留 Symbol。
+上游 DSL 映射到 Items / ItemsSource / ItemTemplate，数据模板根为 AppBarItem；没有第二套
+项目模型或命令系统。两端呈现必须分别生成，避免一个 Avalonia Control 拥有两个视觉父节点。
+
+`AppBarSlot` 包装原生生成容器：不放置的项目隐藏包装层，内容仍可测量并保持原始 IsVisible。
+这样隐藏项目不参与输入、Tab 或 automation，扩大尺寸时仍能重新测量原树。
+Avalonia 无 Compose intrinsic API；指示器按交叉轴原约束、主轴无界测量其 DesiredSize 作为预留，
+最终再按剩余约束测量。自定义内容的显式 Width / Height 仍遵循 Avalonia 的强制尺寸语义；
+需要 Compose `size` 的受约束首选尺寸时，应通过原生 MeasureOverride 表达。测试用同义首选尺寸
+内容，不用显式 Width / Height 的溢出画面冒充 Compose size()。
+
+菜单复用独立 DropdownMenu 的定位、退出保留、真实输入与动画。不复制弹层或动画引擎。
+溢出后缀在布局变化时更新，即使栏最终 DesiredSize 相同也更新菜单。释放菜单内容前先解除
+Content / ContentTemplate，避免旧的 detached presenter 保留直接 Control 的视觉父节点。
+模板替换解除旧 MenuState 订阅及菜单内容，状态对象属于栏实例，重挂后可恢复显示目标。
+
+便捷动作的菜单内容为 baseline 纯文字 DropdownMenuItem，上游 toggleableItem 在菜单中也
+不绘制勾选或图标。事件与 Command 执行后再 Dismiss；回调抛异常时不抢先关闭。
+底层 Button 保留原生 CanExecute 订阅，但通过内部只转发 CanExecute 的 ICommand 避免原生
+Click 之后再次执行命令。自定义菜单不隐式关闭。状态变更通知由调用方写回，模板不自动切换。
+
+便捷动作和默认指示器的 Standard 颜色使用实际 ambient 前景；toggle 选中使用 Primary，
+禁用使用 ambient RGB 与 disabled opacity。颜色是固定 IconToggleButtonColors 的
+rememberUpdatedState 路径，不添加颜色动画。ripple 的调用在图标内容色 provider 外，因此
+选中时 ink 仍读取父级 ambient，不随图标变为 Primary。状态层和 ripple 复用已有 MaterialSurface /
+MaterialInteractionController；独立 IconToggleButton 的 Checkbox automation 请求同一受控回调。
+原有 IconButton 四主题没有因此整体迁移 ambient 颜色策略。
+
+验证入口：AppBarOverflowTests、Fixtures/AppBarOverflow.axaml；VisualParity 的
+AppBarOverflowCases（appbar-overflow）和 IconToggleButtonCases（icon-toggle-button）。
+用例独立调用真实 Compose AppBarRow / AppBarColumn / IconToggleButton，覆盖两轴、RTL、
+尺寸/数量边界、运行中缩放、开闭、反向、外部关闭及受控回调。非文字图形参与正常布局，
+菜单动画沿用真实 DropdownMenu；字体图标的矢量替代仅用于测试绘制，不修改产品模板尺寸。
+
+未经验证：OS 桌面实际输入、屏幕阅读器播报、Label / Tooltip 文字栅格、任意用户模板的
+intrinsic 等价性。继承的 Material 焦点环、任意 Compose Shape 和外部 InteractionSource
+能力仍以 IconButton / Tooltip / Menu 文档的缺口为准，不能由本组件测试认定已补齐。
+
+## 顶栏和底栏职责
 
 主要入口是固定提交的 [AndroidX AppBar.kt](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt)
 及 [Core AppBar.kt](https://github.com/JetBrains/compose-multiplatform-core/blob/a9e47e8aa04c95cfe572ab4297c770f3cbfb234e/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt)。

@@ -1,0 +1,116 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <m3:IconButtonAmbientColorConverter x:Key="AppBarIconColor" />
+    <!-- Reuse IconButton's interaction and sizing; only the icon slot differs. -->
+    <ControlTemplate x:Key="AppBarIconTemplate" TargetType="m3:IconButton">
+      <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                       MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+                       ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}"
+                       ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.ContainerHeight}}"
+                       HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
+        <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
+                            PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}" />
+        </m3:MaterialSurface>
+      </m3:ButtonLayout>
+    </ControlTemplate>
+
+    <ControlTheme x:Key="AppBarIconTheme" TargetType="m3:IconButton" BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{StaticResource AppBarIconColor}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="$parent[Control].(TextElement.Foreground)" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.DisabledContentOpacity}" />
+        </MultiBinding>
+      </Setter>
+      <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container, ^:focus-visible /template/ m3|MaterialSurface#PART_Container, ^:pressed /template/ m3|MaterialSurface#PART_Container">
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:AppBarRow}" TargetType="m3:AppBarRow">
+      <!-- Compose permits the reserved indicator to extend past a smaller bar constraint. -->
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:AppBarItemsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="OverflowIndicatorTemplate">
+        <DataTemplate>
+          <m3:TooltipBox AnchorPosition="Above">
+            <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="More options" /></m3:TooltipBox.Tooltip>
+            <m3:AppBarOverflowButton Symbol="MoreVert" Theme="{StaticResource AppBarIconTheme}" AutomationProperties.Name="More options" />
+          </m3:TooltipBox>
+        </DataTemplate>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:AppBarOverflowLayout x:Name="PART_Layout">
+            <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+            <m3:AppBarSlot ContentTemplate="{TemplateBinding OverflowIndicatorTemplate}" />
+            <m3:DropdownMenu />
+          </m3:AppBarOverflowLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:AppBarAction}" TargetType="m3:AppBarAction">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:TooltipBox AnchorPosition="Above">
+            <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="{TemplateBinding Label}" /></m3:TooltipBox.Tooltip>
+            <m3:IconButton x:Name="PART_Action" Template="{StaticResource AppBarIconTemplate}" Theme="{StaticResource AppBarIconTheme}"
+                           Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
+                           AutomationProperties.Name="{TemplateBinding Label}">
+              <m3:IconButton.Foreground>
+                <MultiBinding Converter="{StaticResource AppBarIconColor}" Priority="Template">
+                  <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+                  <Binding Path="Foreground" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
+                  <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.DisabledContentOpacity}" />
+                </MultiBinding>
+              </m3:IconButton.Foreground>
+            </m3:IconButton>
+          </m3:TooltipBox>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:AppBarToggleAction}" TargetType="m3:AppBarToggleAction">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:TooltipBox AnchorPosition="Above">
+            <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="{TemplateBinding Label}" /></m3:TooltipBox.Tooltip>
+            <m3:IconToggleButton x:Name="PART_Action" Template="{StaticResource AppBarIconTemplate}" Theme="{StaticResource AppBarIconTheme}"
+                                 Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
+                                 IsChecked="{TemplateBinding IsChecked}" AutomationProperties.Name="{TemplateBinding Label}">
+              <m3:IconToggleButton.Foreground>
+                <MultiBinding Converter="{StaticResource AppBarIconColor}" Priority="Template">
+                  <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+                  <Binding Path="Foreground" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.Primary}" />
+                  <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.DisabledContentOpacity}" />
+                  <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+                </MultiBinding>
+              </m3:IconToggleButton.Foreground>
+            </m3:IconToggleButton>
+          </m3:TooltipBox>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:AppBarCustomItem}" TargetType="m3:AppBarCustomItem">
+      <Setter Property="Template"><ControlTemplate>
+        <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+      </ControlTemplate></Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

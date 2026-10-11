@@ -39,7 +39,22 @@
 假设 `DataContext` 提供 `ICommand` `AddCommand`；编译绑定需 `x:DataType`，参数用原生 `CommandParameter`。
 事件方式可写 `Click="OnAddClick"` 并在视图 code-behind 实现处理器。
 禁用使用 `IsEnabled=false`；Enter 沿用原生按下激活，`Space` 遵循原生 ClickMode。
-本组件没有 `IsChecked` 或选中切换入口。
+普通 IconButton 没有 IsChecked；受控切换使用下面的 IconToggleButton。
+
+## IconToggleButton
+
+`IconToggleButton` 提供固定上游 Standard 的受控切换入口，沿用 Symbol 和尺寸模板。
+
+```xml
+<m3:IconToggleButton Symbol="Favorite" IsChecked="{Binding IsFavorite}"
+                     CheckedChangeRequested="ChangeFavorite" AutomationProperties.Name="收藏" />
+```
+
+事件接收 `IconCheckedChangeEventArgs.Value`，由应用写回 IsChecked；忽略请求时状态不变。
+支持继承的 Click / Command，但它们也不隐式写回状态。无障碍采用 Checkbox / Toggle 模式。
+默认未选中颜色来自父级内容色，选中使用 Primary，禁用替换 ambient 色的 alpha；
+Foreground、CornerRadius 等仍可由用户 Style / Binding / LocalValue 覆盖。
+本次提供 Standard 固定形状入口；不包含 Filled/Tonal/Outlined toggle 专用配色与上游 shapes 重载。
 
 默认 Small 不设置 class；一次只选择一档尺寸：
 
@@ -87,7 +102,7 @@ XS 的 32 DIP 也不是强制尺寸。形状变化不改变内容/尺寸布局�
 
 ## 使用边界
 
-- 当前只提供 uniform 宽度；narrow/wide 和 toggle 入口尚未实现
+- 当前只提供 uniform 宽度；narrow/wide 和非 Standard toggle 入口尚未实现
 - Standard/Outlined 当前默认图标色为 OnSurfaceVariant，不自动采用上游 ambient 内容色；Outlined 描边用 OutlineVariant，大尺寸仍为 2/3 DIP。这些是未解决差异，不是已接受适配
 - 强制 `Width`/`Height` 小于默认图标尺寸时，`MaterialSymbol` 可能溢出；替换模板需自行维护尺寸、形状和反馈接入
 - Material 焦点环尚未实现，当前使用状态层；Material Symbols 字形、镜像策略和真实桌面显示不由向量 parity 用例证明

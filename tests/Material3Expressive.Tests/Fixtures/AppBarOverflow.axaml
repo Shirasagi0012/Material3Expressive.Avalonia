@@ -1,0 +1,17 @@
+<StackPanel xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:AppBarRow MaxItemCount="2">
+    <m3:AppBarAction Label="Save" Icon="{m3:Symbol Save}" />
+    <m3:AppBarToggleAction Label="Favorite" Icon="{m3:Symbol Favorite}" IsChecked="True" />
+    <m3:AppBarCustomItem>
+      <m3:AppBarCustomItem.Content><Button Content="Custom" /></m3:AppBarCustomItem.Content>
+      <m3:AppBarCustomItem.MenuContent><m3:DropdownMenuItem Content="Custom menu" /></m3:AppBarCustomItem.MenuContent>
+    </m3:AppBarCustomItem>
+  </m3:AppBarRow>
+  <m3:AppBarColumn MaxHeight="96">
+    <m3:AppBarAction Label="Template icon">
+      <m3:AppBarAction.IconTemplate><DataTemplate><m3:MaterialSymbol Symbol="Add" /></DataTemplate></m3:AppBarAction.IconTemplate>
+    </m3:AppBarAction>
+  </m3:AppBarColumn>
+  <m3:IconToggleButton Symbol="Favorite" IsChecked="True" AutomationProperties.Name="Favorite" />
+</StackPanel>
