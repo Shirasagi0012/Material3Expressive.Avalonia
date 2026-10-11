@@ -239,14 +239,10 @@ trailingContent 专用槽、选中 leading icon 的 AnimatedVisibility。这些�
 以及 Baseline 整个 popup 容器与上游 popup 的双端截图一致性。当前文字以确定尺寸色块验证内容
 环境和布局，原生复选/单选标记通过集成测试验证行为；不把这些结果当作图标动画或文字视觉证明。
 
-## 原生主题此前接受的视觉差异
+## 原生主题的圆角边缘记录
 
-2026-10-11 维护者选择“保留绘制现状，记录这两个视觉差异”，没有授权修改共享 Surface 绘制职责。
-`menu-container.static.standard.dark.ltr` 和 `.rtl` 的外层圆角边缘仍未达到既定 raster 容差：
-完整图在 1x box 平均后的最大通道差为 22，门限为 20，内容区域与布局读数相等。
-现有 Surface 由带圆角且 ClipToBounds=true 的 Border 绘制背景，再裁剪该视觉；边缘覆盖与
-Compose 的图层裁剪不同。原始 4x 图的代表边缘像素为 Avalonia 195 / Compose 88（红通道）。
-不能以“其他项目在容差内”为依据忽略这两个失败，也不改变比较门限。
-
-本次接受范围仅为上述两个菜单容器用例；不是对任意 Surface 栅格差异的通用豁免。
-菜单项 50 个用例通过既定容差，容器其余 9 个用例通过既定容差；具体产物由交付报告指向。
+此前 `menu-container.static.standard.dark.ltr` / `.rtl` 的边缘最大 1x 通道差为 22，门限 20，
+当时维护者接受保留。后续共享 Surface 修复已获授权：背景移出内容 clip，消除背景覆盖再次裁剪；
+独立无阴影 Surface 的明暗背景、贴边内容和描边用例均逐像素一致。
+绘制机制见 Surface/INTERNALS.md；原生 Menu 已接受的无阴影外观仍与上游参考不同，历史整图结果
+不能作为当前裁剪机制的隔离证据，也不构成任意 Surface 栅格差异的豁免。比较门限保持原值。

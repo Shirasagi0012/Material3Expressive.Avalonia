@@ -110,7 +110,7 @@ public abstract class Chip : Button
         void OnSurfaceBoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
         {
             if (change.Property == BoundsProperty && _shape is { } shape)
-            { shape.Size = surface.Bounds.Size; surface.CornerRadius = shape.Current; }
+            { shape.Size = surface.Bounds.Size; surface.SetAnimatedCorners(shape.Current); }
         }
         surface.PropertyChanged += OnSurfaceBoundsChanged;
         _motion.Lifetime.Register(() => surface.PropertyChanged -= OnSurfaceBoundsChanged);
@@ -124,6 +124,7 @@ public abstract class Chip : Button
         _leading?.Stop(); _trailing?.Stop();
         _shapeEffect?.Cancel(); _shapeEffect = null; _shapeTask = null;
         _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
+        _surface?.SetAnimatedCorners(null);
         _motion?.Dispose(); _motion = null; _elevation = null; _pending = false;
         _lastElevationInteraction = InteractionState.None;
     }
@@ -223,6 +224,7 @@ public abstract class Chip : Button
         {
             _shapeEffect?.Cancel(); _shapeEffect = null;
             _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
+            _surface.SetAnimatedCorners(null);
             _surface.CornerRadius = CornerRadius;
             return;
         }
@@ -238,9 +240,9 @@ public abstract class Chip : Button
             _shape = new AnimatedCornerRadius(target, spec, motion, () =>
             {
                 if (_shape is { } shape && _surface is { } surface)
-                { shape.Size = surface.Bounds.Size; surface.CornerRadius = shape.Current; }
+                { shape.Size = surface.Bounds.Size; surface.SetAnimatedCorners(shape.Current); }
             }) { Size = _surface.Bounds.Size };
-            _surface.CornerRadius = _shape.Current;
+            _surface.SetAnimatedCorners(_shape.Current);
         }
         if (_shape.Target == target) return;
         _shapeEffect?.Cancel();

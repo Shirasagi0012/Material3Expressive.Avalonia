@@ -10,8 +10,8 @@ public static partial class MaterialTokens
         /// <summary>
         /// <c>md.sys.shape.*</c> — the Expressive corner scale as <see cref="CornerRadius"/> values
         /// (§4.2). Direction variants (Top/End) are the spec-defined closed named set, not free
-        /// four-corner combinations (§4.3). <see cref="Full"/> is a stadium: a radius far larger
-        /// than any control extent, which rendering clamps to a half-pill.
+        /// four-corner combinations (§4.3). <see cref="Full"/> retains the legacy 1000 sentinel;
+        /// MaterialSurface resolves it to 50% of its smaller extent before shape interpolation.
         /// </summary>
         public static class Shape
         {

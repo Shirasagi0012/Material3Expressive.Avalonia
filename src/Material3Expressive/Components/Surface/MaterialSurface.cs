@@ -19,11 +19,10 @@ namespace Material3Expressive.Components;
 
 /// <summary>Hosts one child and paints a Material container around it.</summary>
 /// <remarks>
-/// The internal <see cref="Border"/> paints the background and clips the content; sibling visuals
-/// paint interaction feedback and the border above it. Keeping the border separate preserves
-/// Compose's drawing order without consuming content space. <see cref="Border.Render"/> is sealed
-/// and a control's own render pass precedes its visual children, so the surface itself draws only
-/// the shadow below these visuals.
+/// The surface paints its shadow and background before the internal <see cref="Border"/>
+/// clips the content. Sibling visuals paint interaction feedback and the border above it.
+/// The background is outside the content clip, matching Surface.kt's background().clip().
+/// The separate border preserves drawing order without consuming content space.
 /// <para>
 /// Tonal elevation accumulates through nested surfaces and tints only the theme surface color.
 /// Shadow elevation stays local. When used as an interactive control's template root, the surface
@@ -100,7 +99,7 @@ public sealed class MaterialSurface : Control
 
     static MaterialSurface()
     {
-        AffectsRender<MaterialSurface>(ShadowElevationProperty, ShadowColorProperty, DefaultShadowColorProperty);
+        AffectsRender<MaterialSurface>(BackgroundProperty, ShadowElevationProperty, ShadowColorProperty, DefaultShadowColorProperty);
     }
 
     private readonly Border _chrome;
@@ -121,6 +120,9 @@ public sealed class MaterialSurface : Control
     private CancellationTokenSource? _shapeEffect;
     private Task? _shapeEffectTask;
     private double _absoluteTonalElevation;
+    private Size _shapeSize;
+    private CornerRadius? _animatedCorners;
+    private IBrush? _effectiveBackground;
 
     public MaterialSurface()
     {
@@ -209,8 +211,8 @@ public sealed class MaterialSurface : Control
 
     internal double AbsoluteTonalElevation => _absoluteTonalElevation;
 
-    /// <summary>The brush the chrome actually paints: <see cref="Background"/> after the tonal tint.</summary>
-    internal IBrush? EffectiveBackground => _chrome.Background;
+    /// <summary>The painted background: <see cref="Background"/> after the tonal tint.</summary>
+    internal IBrush? EffectiveBackground => _effectiveBackground;
 
     public IBrush? StateLayerBrush
     {
@@ -227,18 +229,43 @@ public sealed class MaterialSurface : Control
     /// <summary>The corners currently used by the chrome, shadow, and interaction overlay.</summary>
     internal CornerRadius EffectiveCornerRadius => _chrome.CornerRadius;
 
-    internal CornerRadius SplitOpticalCornerRadius => _shapeMorph?.SplitOpticalCorners()
-        ?? EffectiveCornerRadius;
+    internal CornerRadius SplitOpticalCornerRadius
+    {
+        get
+        {
+            // AnimatedShape.offset uses unnormalized corners, also when no morph is running.
+            var corners = CurrentCornerRadius;
+            var maximum = _shapeSize.Height / 2;
+            return new(Math.Clamp(corners.TopLeft, 0, maximum), Math.Clamp(corners.TopRight, 0, maximum),
+                Math.Clamp(corners.BottomRight, 0, maximum), Math.Clamp(corners.BottomLeft, 0, maximum));
+        }
+    }
 
-    private CornerRadius SelectedCornerRadius =>
-        _interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true && PressedCornerRadius is { } pressed
-            ? pressed : ButtonSurfaceState.GetIsChecked(this) == true && ButtonSurfaceState.GetCheckedCornerRadius(this) is { } selected
-                ? selected : CornerRadius;
-    private CornerRadius CurrentCornerRadius => _shapeMorph?.Current ?? SelectedCornerRadius;
+    private CornerShape.Defined SelectedShape
+    {
+        get
+        {
+            var fullFraction = ButtonSurfaceState.GetSplitOuterCorners(this) ? 1f : .5f;
+            if (_interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true && PressedCornerRadius is { } pressed)
+                return new(pressed, fullFraction);
+            if (ButtonSurfaceState.GetIsChecked(this) == true && ButtonSurfaceState.GetCheckedCornerRadius(this) is { } selected)
+                return new(selected);
+            return new(CornerRadius, fullFraction);
+        }
+    }
+    private CornerRadius CurrentCornerRadius => _animatedCorners ?? _shapeMorph?.Current ?? SelectedShape.Resolve(_shapeSize);
+
+    // Chip/Menu own their animation. These are evaluated DIP values, never legacy Full inputs.
+    internal void SetAnimatedCorners(CornerRadius? corners)
+    {
+        _animatedCorners = corners;
+        UpdateInteractionVisuals();
+    }
 
     public override void Render(DrawingContext context)
     {
         DrawShadow(context);
+        context.DrawRectangle(EffectiveBackground, null, new RoundedRect(new Rect(Bounds.Size), EffectiveCornerRadius));
         base.Render(context);
     }
 
@@ -255,12 +282,6 @@ public sealed class MaterialSurface : Control
             ComposeShadowParameters.Material(ShadowElevation, ResolveShadowColor()));
     }
 
-    private void InvalidateShadow()
-    {
-        if (ShadowElevation > 0)
-            InvalidateVisual();
-    }
-
     protected override Size MeasureOverride(Size availableSize)
     {
         _chrome.Measure(availableSize);
@@ -272,12 +293,11 @@ public sealed class MaterialSurface : Control
 
     protected override Size ArrangeOverride(Size finalSize)
     {
+        _shapeSize = finalSize;
         if (_shapeMorph is not null)
-        {
             _shapeMorph.Size = finalSize;
-            if (UpdateCornerRadius())
-                _interactionOverlay.InvalidateVisual();
-        }
+        if (UpdateCornerRadius())
+            _interactionOverlay.InvalidateVisual();
         var rect = new Rect(finalSize);
         _chrome.Arrange(rect);
         _interactionOverlay.Arrange(rect);
@@ -444,7 +464,7 @@ public sealed class MaterialSurface : Control
         _shapeMorph = null;
         _animatedBorder?.Dispose();
         _animatedBorder = null;
-        _chrome.CornerRadius = _outline.CornerRadius = SelectedCornerRadius;
+        UpdateCornerRadius();
         // ResetAnimations disposes the parent scope immediately after this callback.
         // Paint the target without creating another child in that ending lifetime.
         _outline.UseHairline = ButtonSurfaceState.GetAnimateBorder(this);
@@ -463,27 +483,17 @@ public sealed class MaterialSurface : Control
 
     private bool UpdateCornerRadius()
     {
-        var cornerRadius = CurrentCornerRadius;
-        if (_shapeMorph is { Size.Height: > 0 } morph)
-        {
-            // CornerBasedShape.createOutline normalizes after interpolation (including
-            // spatial-spring overshoot). Keep chrome, ripple clip and shadow on that outline.
-            var extent = (float)Math.Min(morph.Size.Width, morph.Size.Height);
-            var left = (float)(cornerRadius.TopLeft + cornerRadius.BottomLeft);
-            var right = (float)(cornerRadius.TopRight + cornerRadius.BottomRight);
-            var leftScale = left > extent ? extent / left : 1f;
-            var rightScale = right > extent ? extent / right : 1f;
-            cornerRadius = new((float)cornerRadius.TopLeft * leftScale, (float)cornerRadius.TopRight * rightScale,
-                (float)cornerRadius.BottomRight * rightScale, (float)cornerRadius.BottomLeft * leftScale);
-        }
+        var cornerRadius = CornerShape.Normalize(CurrentCornerRadius, _shapeSize);
+        // Optical centering consumes unnormalized corners: they can change even while the
+        // painted outline remains at its size limit.
+        if (Child is SplitButtonOpticalLayout optical) optical.InvalidateArrange();
         if (_chrome.CornerRadius == cornerRadius)
             return false;
 
         _chrome.CornerRadius = cornerRadius;
         UpdateOutlineCornerRadius();
         if (_checkedOverlay is { } overlay) overlay.CornerRadius = cornerRadius;
-        if (Child is SplitButtonOpticalLayout optical) optical.InvalidateArrange();
-        InvalidateShadow();
+        InvalidateVisual();
         return true;
     }
 
@@ -519,7 +529,7 @@ public sealed class MaterialSurface : Control
             // this commit waited. The next valid property update queues the current target again.
             if (!TryGetShapeMorphSpec(out var spec))
                 return;
-            var target = SelectedCornerRadius;
+            var target = SelectedShape;
             var configurationChanged = _shapeRest != CornerRadius || _shapePressed != PressedCornerRadius
                 || _shapeChecked != ButtonSurfaceState.GetCheckedCornerRadius(this) || !_shapeSpec.Equals(spec);
             var recreate = configurationChanged && (ButtonSurfaceState.GetResetOnShapeChange(this) || !_shapeSpec.Equals(spec));
@@ -531,7 +541,7 @@ public sealed class MaterialSurface : Control
             }
             // SplitButton remembers by spec and keys its effect by the selected shape.
             // Changing an inactive shape must not cancel an animation to the same target.
-            if (!recreate && (_shapeMorph is null || _shapeMorph.Target == target))
+            if (!recreate && (_shapeMorph is null || _shapeMorph.TargetShape == target))
                 return;
 
             // LaunchedEffect cancels and joins the previous effect before running its replacement.
@@ -576,7 +586,7 @@ public sealed class MaterialSurface : Control
         _shapeChecked = ButtonSurfaceState.GetCheckedCornerRadius(this);
         _shapeSpec = spec;
         _shapeMorph = PressedCornerRadius is null && _shapeChecked is null ? null
-            : new AnimatedCornerRadius(SelectedCornerRadius, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size };
+            : new AnimatedCornerRadius(SelectedShape, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size };
         UpdateInteractionVisuals();
     }
 
@@ -608,7 +618,11 @@ public sealed class MaterialSurface : Control
         UpdateEffectiveBackground();
     }
 
-    private void UpdateEffectiveBackground() => _chrome.Background = ResolveEffectiveBackground();
+    private void UpdateEffectiveBackground()
+    {
+        _effectiveBackground = ResolveEffectiveBackground();
+        InvalidateVisual();
+    }
 
     // Upstream gate (applyTonalElevation): the tint applies only while the background is exactly
     // the scheme surface color — a surfaceContainer* or custom background is painted verbatim at

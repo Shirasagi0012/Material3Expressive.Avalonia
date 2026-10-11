@@ -168,6 +168,18 @@ RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实�
 2026-10-04 合并 Toggle/Split 时，维护者批准保留共享 SurfaceOutline、接入新描边动画并补齐
 非对称圆角算法，避免分支的原生 Border 半线宽处理与共享绘制内缩叠加。
 
+## Surface 圆角求值与背景裁剪
+
+决定：保留公开 CornerRadius/Token 类型，内部以 CornerShape 表达 DIP、Full 百分比及中断插值。
+Full=1000 的兼容解释仅在定义入口执行；Split 外侧 100% 与选中 Circle 50% 显式区分。
+普通 DIP 不提前截断，静态与动态轮廓都在求值/插值后按固定 CornerBasedShape 归一化。
+第三目标保留百分比随尺寸重新求值的能力，光学偏移消费归一化前的角值。
+Surface 绘制阴影和背景，内部 Border 只裁剪内容；独立描边、交互层及 tonal 继承职责保持原顺序。
+原因：提前截断使大 DIP 圆角动画偏离上游；背景置于自身圆角 clip 内使边缘覆盖重复相乘。
+范围：Surface 及其动画调用方 Button/Toggle/Split、Chip、Menu；不扩大为任意 Shape API，
+不调整 Compose Desktop 光源位置或此前保留的透明阴影差异。
+确认：2026-10-11 维护者在审阅上述修复方案后要求实施。
+
 ## Core Desktop 原生焦点反馈
 
 决定：共享控制器 Focused 跟随所有原生焦点，包括鼠标和程序化焦点；控件继续负责激活。

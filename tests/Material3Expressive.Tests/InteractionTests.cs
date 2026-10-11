@@ -536,14 +536,14 @@ public class MaterialInteractionControllerTests
         var window = IconButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var container = button.GetVisualDescendants().OfType<MaterialSurface>().First(b => b.Name == "PART_Container");
 
-        // AnimatedShape clamps its initial stadium to the measured half extent.
+        // AnimatedShape resolves its initial CircleShape to 50% of the measured short side.
         Assert.Equal(new CornerRadius(20), container.EffectiveCornerRadius);
 
         var origin = button.TranslatePoint(default, window)!.Value;
         var point = origin + new Point(button.Bounds.Width / 2, button.Bounds.Height / 2);
         window.MouseDown(point, MouseButton.Left);
 
-        // The morph starts at the clamped half-pill (20 on a 40dp button), not the raw 1000.
+        // The morph starts at the resolved half-pill (20 on a 40dp button), not the raw 1000.
         Assert.Equal(20, container.EffectiveCornerRadius.TopLeft, 6);
 
         clock.SendFrame(clock.Now);
@@ -564,7 +564,7 @@ public class MaterialInteractionControllerTests
     }
 
     [AvaloniaFact]
-    public void CompletedShapeMorph_ReclampsWhenContainerIsResized()
+    public void CompletedShapeMorph_ResolvesFullWhenContainerIsResized()
     {
         using var clock = new MotionTestClockScope();
         var window = IconButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
@@ -592,11 +592,53 @@ public class MaterialInteractionControllerTests
 
 /// <summary>
 /// The press shape-morph, ported from the old AnimatedShape suite with CornerRadius operands.
-/// The extra pin versus the old tests: the stadium endpoint clamps to the half-pill BEFORE the
-/// interpolation runs, or CornerRadius(1000) would stay visually round until the last instant.
+/// Full percentage endpoints resolve before interpolation; ordinary DIP values remain unclamped
+/// until outline creation. Interruption retains the size dependency of percentage corners.
 /// </summary>
 public class AnimatedCornerRadiusTests
 {
+    [AvaloniaFact]
+    public void DipCorners_AreInterpolatedBeforeOutlineNormalization()
+    {
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(new CornerRadius(50), Spec, clock.Scope) { Size = new(100, 50) };
+        Assert.Equal(new CornerRadius(50), morph.Current);
+        clock.Track(morph.AnimateToAsync(new CornerRadius(8)));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        var p = (float)morph.Progress;
+        Assert.Equal((1f - p) * 50f + p * 8f, morph.Current.TopLeft);
+        var halfway = new CornerShape.Blend(new CornerShape.Defined(new(50)), new CornerShape.Defined(new(8)), .5f);
+        Assert.Equal(new CornerRadius(25), CornerShape.Normalize(halfway.Resolve(new(100, 50)), new(100, 50)));
+    }
+
+    [AvaloniaFact]
+    public void ThirdTarget_RetainsPercentageCornersWhenSizeChanges()
+    {
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new(100, 40) };
+        clock.Track(morph.AnimateToAsync(Small));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        var captured = (float)morph.Progress;
+        clock.Track(morph.AnimateToAsync(Boxy));
+        morph.Size = new(100, 80);
+        Assert.Equal((1f - captured) * 40f + captured * 8f, morph.Current.TopLeft);
+    }
+
+    [AvaloniaFact]
+    public void SplitFullAndCircle_AreDifferentEndpointsWithTheSameLegacyValue()
+    {
+        Assert.Equal(new CornerShape.Defined(Small, 1f), new CornerShape.Defined(Small, .5f));
+        using var clock = new MotionTestClockScope();
+        using var morph = new AnimatedCornerRadius(new CornerShape.Defined(Stadium, 1f), Spec, clock.Scope) { Size = new(100, 40) };
+        Assert.Equal(new CornerRadius(40), morph.Current);
+        clock.Track(morph.AnimateToAsync(new CornerShape.Defined(Stadium, .5f)));
+        clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.InRange(morph.Current.TopLeft, 20.001, 39.999);
+    }
+
     private static readonly CornerRadius Stadium = new(1000);
     private static readonly CornerRadius Small = new(8);
     private static readonly CornerRadius Boxy = new(4);
@@ -613,7 +655,7 @@ public class AnimatedCornerRadiusTests
     }
 
     [AvaloniaFact]
-    public void TheStadiumShape_ClampsToTheHalfPillBeforeInterpolating()
+    public void TheStadiumShape_ResolvesToTheHalfPillBeforeInterpolating()
     {
         using var clock = new MotionTestClockScope();
         using var morph = new AnimatedCornerRadius(Stadium, Spec, clock.Scope) { Size = new Size(40, 40) };
@@ -702,7 +744,7 @@ public class AnimatedCornerRadiusTests
         }
 
         // Freezing the visible corners mid-flight must not accumulate error: the value stays
-        // inside the clamped endpoint range no matter how often the target changes.
+        // inside the resolved endpoint range no matter how often the target changes.
         var current = morph.Current;
         Assert.True(double.IsFinite(current.TopLeft));
         Assert.InRange(current.TopLeft, 4 - 1e-9, 20 + 1e-9);

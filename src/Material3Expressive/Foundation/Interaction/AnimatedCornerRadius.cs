@@ -13,17 +13,15 @@ namespace Material3Expressive.Foundation.Interaction;
 /// Ported from androidx <c>material3/internal/AnimatedShape.kt</c>, narrowed to what a Material
 /// button's press actually does: a corner-radius interpolation, not a polygon morph.
 /// <para>
-/// The endpoints are clamped to the half-extent of the current <see cref="Size" /> BEFORE the
-/// interpolation runs. The stadium shape arrives as <c>CornerRadius(1000)</c> — deliberately far
-/// larger than any control extent — and lerping 1000→8 would look round until the last instant;
-/// clamped to the half-pill first, the morph is the honest 20→8 the spec shows.
+/// Full (the legacy <c>CornerRadius(1000)</c>) resolves as 50% of the smaller extent.
+/// Ordinary DIP corners are interpolated without clamping. The consumer normalizes the
+/// resulting outline, after interpolation, using CornerBasedShape's rules.
 /// </para>
 /// <para>
 /// Interruption splits into two cases, exactly like upstream. Returning to the shape being
 /// animated away from is a reversal: progress flips and velocity negates, so the corners keep
-/// their momentum instead of restarting. Heading somewhere new freezes whatever is on screen as
-/// the new start — evaluated at the progress boundary, so a rapid toggle cannot stack rounding
-/// error into the frozen value.
+/// their momentum instead of restarting. Heading somewhere new captures the interpolated shape,
+/// retaining its percentage corners so a later resize can re-evaluate the new start.
 /// </para>
 /// </remarks>
 public sealed class AnimatedCornerRadius : IDisposable
@@ -32,14 +30,18 @@ public sealed class AnimatedCornerRadius : IDisposable
     private readonly Animatable<float> _progress;
     private readonly Action? _onFrame;
     private SpringSpec _spec;
-    private CornerRadius _start;
-    private CornerRadius _target;
-    private CornerRadius _requestedTarget;
+    private CornerShape _start;
+    private CornerShape.Defined _target;
+    private CornerShape.Defined _requestedTarget;
     private int _generation;
     private bool _disposed;
 
     /// <summary>Creates a morph in its own child scope; disposing it leaves the parent active.</summary>
     public AnimatedCornerRadius(CornerRadius initial, SpringSpec spec, VisualAnimationScope parentScope,
+        Action? onFrame = null)
+        : this(new CornerShape.Defined(initial), spec, parentScope, onFrame) { }
+
+    internal AnimatedCornerRadius(CornerShape.Defined initial, SpringSpec spec, VisualAnimationScope parentScope,
         Action? onFrame = null)
     {
         ArgumentNullException.ThrowIfNull(parentScope);
@@ -55,45 +57,30 @@ public sealed class AnimatedCornerRadius : IDisposable
     /// <summary>The current interpolation fraction.</summary>
     public double Progress => _progress.Value;
 
-    /// <summary>The corners being animated towards, before clamping.</summary>
-    public CornerRadius Target => _requestedTarget;
+    /// <summary>The original corners being animated towards.</summary>
+    public CornerRadius Target => _requestedTarget.Corners;
+    internal CornerShape.Defined TargetShape => _requestedTarget;
 
     public bool IsRunning => _progress.IsRunning;
 
     /// <summary>
-    /// The layout size the endpoints clamp against. A non-positive size disables clamping — the
-    /// endpoints are then taken as given.
+    /// The layout size used to resolve percentage corners. With a non-positive size the
+    /// legacy Full value is left unresolved.
     /// </summary>
     public Size Size { get; set; }
 
-    /// <summary>The corner radii as they look right now: endpoints clamped, then interpolated.</summary>
+    /// <summary>Resolved, interpolated corners before outline normalization.</summary>
     public CornerRadius Current =>
-        Lerp(ClampToSize(_start), ClampToSize(_target), _progress.Value);
-
-    // SplitButton's OuterCornerSize is 100%, whereas the selected CircleShape is 50%.
-    // AnimatedShape.offset evaluates those corner sizes before outline normalization and
-    // clamps against height/2. The painted outline cannot supply this optical measurement.
-    internal CornerRadius SplitOpticalCorners()
-    {
-        CornerRadius Resolve(CornerRadius corners, bool circle)
-        {
-            var extent = Math.Min(Size.Width, Size.Height);
-            double Corner(double value) => value >= 1000 ? extent * (circle ? .5 : 1) : value;
-            return new(Corner(corners.TopLeft), Corner(corners.TopRight), Corner(corners.BottomRight), Corner(corners.BottomLeft));
-        }
-        // A full four-corner endpoint denotes CircleShape; asymmetric full corners are 100%.
-        static bool Circle(CornerRadius corners) => corners.TopLeft >= 1000 && corners.TopRight >= 1000
-            && corners.BottomRight >= 1000 && corners.BottomLeft >= 1000;
-        var current = Lerp(Resolve(_start, Circle(_start)), Resolve(_target, Circle(_target)), _progress.Value);
-        var maximum = Size.Height / 2;
-        return new(Math.Clamp(current.TopLeft, 0, maximum), Math.Clamp(current.TopRight, 0, maximum),
-            Math.Clamp(current.BottomRight, 0, maximum), Math.Clamp(current.BottomLeft, 0, maximum));
-    }
+        Lerp(_start.Resolve(Size), _target.Resolve(Size), _progress.Value);
 
     /// <summary>Starts morphing towards corners, or reverses if it is the one being left.</summary>
     /// <param name="corners">The corners to head for.</param>
     /// <param name="spec">A spring to switch to; the current one is kept when omitted.</param>
-    public async Task AnimateToAsync(CornerRadius corners, SpringSpec? spec = null,
+    public Task AnimateToAsync(CornerRadius corners, SpringSpec? spec = null,
+        CancellationToken cancellationToken = default) =>
+        AnimateToAsync(new CornerShape.Defined(corners), spec, cancellationToken);
+
+    internal async Task AnimateToAsync(CornerShape.Defined corners, SpringSpec? spec = null,
         CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -105,7 +92,7 @@ public sealed class AnimatedCornerRadius : IDisposable
         _spec = spec ?? _spec;
         var progress = _progress.Value;
         var velocity = _progress.Velocity;
-        CornerRadius start;
+        CornerShape start;
         float initialProgress;
         float initialVelocity;
         if (corners.Equals(_start))
@@ -122,7 +109,7 @@ public sealed class AnimatedCornerRadius : IDisposable
             {
                 1f => _target,
                 0f => _start,
-                _ => Lerp(ClampToSize(_start), ClampToSize(_target), progress)
+                _ => new CornerShape.Blend(_start, _target, progress)
             };
             initialProgress = 0;
             initialVelocity = 0;
@@ -163,19 +150,5 @@ public sealed class AnimatedCornerRadius : IDisposable
             Interpolate(from.TopRight, to.TopRight),
             Interpolate(from.BottomRight, to.BottomRight),
             Interpolate(from.BottomLeft, to.BottomLeft));
-    }
-
-    private CornerRadius ClampToSize(CornerRadius corners)
-    {
-        if (Size.Width <= 0 || Size.Height <= 0)
-            return corners;
-
-        // CornerFull's 1000 is a sentinel for "half the smaller extent" (Compose's 50%).
-        var max = Math.Min(Size.Width, Size.Height) / 2;
-        return new CornerRadius(
-            Math.Min(corners.TopLeft, max),
-            Math.Min(corners.TopRight, max),
-            Math.Min(corners.BottomRight, max),
-            Math.Min(corners.BottomLeft, max));
     }
 }

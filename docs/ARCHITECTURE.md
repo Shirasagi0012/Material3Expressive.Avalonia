@@ -99,8 +99,10 @@ IconButton 继续使用专门的 Symbol 枚举入口和自身尺寸模板；完�
 ## Surface 与交互组合
 
 [MaterialSurface](../src/Material3Expressive/Components/Surface/MaterialSurface.cs) 是可被其他组件组合的容器组件，
-承担背景、边框、裁剪、阴影和累积 tonal elevation。内部 Border 承载内容和裁剪，独立覆盖层绘制交互反馈。
-几何使用 Avalonia DIP，Full 圆角按当前边界解析。
+承担背景、边框、裁剪、阴影和累积 tonal elevation。Surface 先绘制阴影和背景，内部 Border 只承载内容和裁剪，
+独立覆盖层绘制交互反馈。背景不重复经过内容的圆角裁剪。
+几何使用 Avalonia DIP；内部 CornerShape 区分普通 DIP 与 Full 百分比，保留中断动画的尺寸依赖。
+静态与动画结果都在插值后按 Compose CornerBasedShape 归一化，各绘制层共用该外轮廓。
 描边由末层 SurfaceOutline 绘制，不参与内容尺寸计算；均匀线宽保留 Compose 的物理像素 ceil，
 均匀圆角使用内缩 stroke，非对称圆角使用外轮廓减内缩轮廓。非均匀 Thickness 沿用原生 Border。
 描边动画提供连续线宽与原始外圆角，取整和内缩只由 SurfaceOutline 执行；普通零宽无描边，

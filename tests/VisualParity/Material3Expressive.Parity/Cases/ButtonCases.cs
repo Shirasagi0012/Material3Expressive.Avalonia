@@ -30,6 +30,9 @@ public sealed class ButtonCases
 
     public static IEnumerable<CaseData<ButtonConfig>> StaticConfigurations()
     {
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"static.layout.large-corners.{(rtl ? "rtl" : "ltr")}",
+                new(Shape: "large-asymmetric", Width: 100, Height: 50, Rtl: rtl, Morph: false));
         // Button.kt: five wrappers share size defaults; round and rounded-square are valid shapes.
         // Local square is expressed through its public shape token, not an invented square class.
         foreach (var style in Styles)
@@ -84,6 +87,7 @@ public sealed class ButtonCases
 
     public static IEnumerable<CaseData<ButtonConfig>> DynamicConfigurations()
     {
+        yield return Data("dynamic.press-large-corners", new(Shape: "large", Width: 100, Height: 50, Action: "press"));
         // Press shape differs at every size. Wrappers share the shape algorithm, colors do not.
         // Existing press regressions explicitly opt into the shapes overload.
         foreach (var style in Styles)
@@ -325,6 +329,8 @@ public sealed class ButtonCases
                 // Avalonia mirrors the Button's local x-axis in RTL. The same local corners
                 // therefore supply Compose's start/end shape in both layout directions.
                 ? new CornerRadius(4, 16, 10, 2)
+                : config.Shape == "large-asymmetric" ? new CornerRadius(80, 40, 0, 0)
+                : config.Shape == "large" ? new CornerRadius(50)
                 : new CornerRadius(config.Size switch { "xsmall" or "small" => 12, "medium" => 16, _ => 28 });
             // The fixed Button.kt shape overload uses ContentPadding, not contentPaddingFor:
             // BaselineButtonTokens.Leading/TrailingSpace = 24, vertical = 8; TextButton = 12,8.

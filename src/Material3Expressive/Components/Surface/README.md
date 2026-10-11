@@ -53,6 +53,9 @@
 `StateLayerBrush` / `PressedCornerRadius` 自动成为交互控件。这两个属性服务于组件模板中的
 共享反馈接入；应用无需为普通面板设置它们。
 
-当前形状入口为圆角矩形，没有任意 Shape API。真实阴影依赖项目固定的 Skia 后端，
+当前形状入口为圆角矩形，没有任意 Shape API。普通圆角数值按 DIP 表达，超过可绘尺寸时按
+Compose 规则归一化。现有 Full Token 的 1000 值是
+兼容约定，按当前短边的 50% 解析；它不能同时用于表达真正的 1000 DIP 圆角。
+真实阴影依赖项目固定的 Skia 后端，
 更换渲染后端不等于保留效果；共享适配和验证范围见 [INTERNALS](INTERNALS.md#边界与验证)。
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 包含嵌套 tonal elevation 示例。

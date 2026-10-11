@@ -228,6 +228,8 @@ class ButtonCases {
             val shape=when(config.shape) {
                 "square" -> when(size) { "xsmall", "small" -> MaterialTheme.shapes.medium; "medium" -> MaterialTheme.shapes.large; else -> MaterialTheme.shapes.extraLarge }
                 "asymmetric" -> RoundedCornerShape(topStart=4.dp,topEnd=16.dp,bottomEnd=10.dp,bottomStart=2.dp)
+                "large-asymmetric" -> RoundedCornerShape(topStart=80.dp,topEnd=40.dp,bottomEnd=0.dp,bottomStart=0.dp)
+                "large" -> RoundedCornerShape(50.dp)
                 else -> baseShapes.shape
             }
             val shapes=ButtonDefaults.shapes(shape=shape,pressedShape=pressedRadius?.let { RoundedCornerShape(it.dp) } ?: baseShapes.pressedShape)

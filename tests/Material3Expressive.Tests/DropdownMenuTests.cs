@@ -251,12 +251,12 @@ public class DropdownMenuTests
         var menu = new DropdownMenuPopup { Items = { group } };
         var (window, _) = Show(menu); menu.IsOpen = true; Flush(window); Advance(clock, window, 1); Advance(clock, window, 100);
         var surface = group.GetVisualDescendants().OfType<MaterialSurface>().First();
-        Assert.Equal(new CornerRadius(16), surface.CornerRadius);
+        Assert.Equal(new CornerRadius(16), surface.EffectiveCornerRadius);
         window.MouseMove(group.TranslatePoint(new Point(30, 20), window)!.Value); Advance(clock, window, 100);
         window.MouseMove(new(450, 250)); Advance(clock, window, 100);
-        Assert.Equal(new CornerRadius(8), surface.CornerRadius);
+        Assert.Equal(new CornerRadius(8), surface.EffectiveCornerRadius);
         window.MouseMove(group.TranslatePoint(new Point(30, 20), window)!.Value); Advance(clock, window, 100);
-        Assert.Equal(new CornerRadius(16), surface.CornerRadius);
+        Assert.Equal(new CornerRadius(16), surface.EffectiveCornerRadius);
         window.Close(); Assert.Null(window.MotionRoot.LastError);
     }
 

@@ -29,6 +29,25 @@ namespace Material3Expressive.Tests;
 public class MaterialSurfaceRenderTests
 {
     [AvaloniaFact]
+    public void StaticAsymmetricCorners_NormalizeAgainstEachNewSize()
+    {
+        var surface = ProbeSurface();
+        surface.CornerRadius = new CornerRadius(80, 40, 0, 0);
+        var window = Show(surface);
+        try
+        {
+            Assert.Equal(new CornerRadius(50, 40, 0, 0), surface.EffectiveCornerRadius);
+            surface.Height = 30;
+            window.UpdateLayout();
+            Assert.Equal(new CornerRadius(30, 30, 0, 0), surface.EffectiveCornerRadius);
+            surface.Height = 90;
+            window.UpdateLayout();
+            Assert.Equal(new CornerRadius(80, 40, 0, 0), surface.EffectiveCornerRadius);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public void UniformOutline_RoundsUpPhysicalStrokeWithoutMovingContent()
     {
         var child = new Border();

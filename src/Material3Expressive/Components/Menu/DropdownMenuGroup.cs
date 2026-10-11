@@ -86,10 +86,10 @@ public class DropdownMenuGroup : ItemsControl
     {
         if (_surface is null || _shape is null) return;
         _shape.Size = _surface.Bounds.Size;
-        _surface.CornerRadius = _shape.Current;
+        _surface.SetAnimatedCorners(_shape.Current);
     }
     private void Stop()
-    { _shape?.Dispose(); _shape = null; _scope?.Dispose(); _scope = null; _pending = false; _configuration = null; }
+    { _shape?.Dispose(); _shape = null; _surface?.SetAnimatedCorners(null); _scope?.Dispose(); _scope = null; _pending = false; _configuration = null; }
 }
 
 internal sealed class MenuShapeConverter : IMultiValueConverter
