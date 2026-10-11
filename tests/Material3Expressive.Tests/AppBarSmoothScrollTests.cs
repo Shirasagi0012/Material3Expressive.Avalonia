@@ -792,13 +792,13 @@ public class AppBarSmoothScrollTests
             Assert.True(scene.Bottom.HeightOffset < 0);
             var released = scene.Viewer.Offset.Y;
             Send(164, RawPointerEventType.TouchEnd, start - 100);
-            Render(scene.Window);
+            RenderFrame(scene.Window);
             Assert.True(scene.Viewer.Offset.Y > released);
             var beforeConfigurationChange = scene.Viewer.Offset.Y;
             scene.TopBar.ScrollBehavior!.IsScrollingContentAtStart = false;
             scene.TopBar.ScrollBehavior.CanScroll = false;
             scene.BottomBar.ScrollBehavior!.CanScroll = false;
-            Render(scene.Window);
+            RenderFrame(scene.Window);
             Assert.True(scene.Viewer.Offset.Y > beforeConfigurationChange);
             var press = scene.Viewer.TranslatePoint(new Point(60, 50), scene.Window)!.Value.Y;
             Send(180, RawPointerEventType.TouchBegin, press); Render(scene.Window);
@@ -1068,10 +1068,15 @@ public class AppBarSmoothScrollTests
 
     private static void Render(Window window)
     {
-        for (var i = 0; i < 6; i++)
-        {
-            window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
-            using (window.CaptureRenderedFrame()) { }
-        }
+        for (var i = 0; i < 6; i++) RenderFrame(window);
+    }
+
+    // SmoothScroll inertia integrates on the compositor's wall clock (each tick clamped to 1/15 s),
+    // so a fixed number of frames bounds its progress regardless of machine speed; a 6-frame
+    // Render can exhaust the fling on slow software rendering.
+    private static void RenderFrame(Window window)
+    {
+        window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
+        using (window.CaptureRenderedFrame()) { }
     }
 }
