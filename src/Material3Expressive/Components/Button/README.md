@@ -86,6 +86,21 @@
 - Enter 按下时激活，重复 KeyDown 沿用原生处理；Space 遵循原生 `ClickMode`。已执行的命令不会因随后失焦或禁用而撤回，按压反馈则会清理
 - 程序化 `Focus()` 的视觉焦点反馈取决于当前输入模式；需要表达键盘导航焦点时，可在 C# 中调用 `button.Focus(NavigationMethod.Tab)`（`Avalonia.Input`）
 
+## RepeatButton
+
+原生 `RepeatButton` 派生自 `Button`，未指定 `Theme` 时同样是 Filled 按钮；上面的五个 `Theme` 资源、
+尺寸 class、`MaterialButton.Icon` 与交互反馈都可直接用于它：
+
+```xml
+<RepeatButton Content="增加" Click="OnIncrease" Delay="400" Interval="80"
+              Theme="{StaticResource MaterialTonalButtonTheme}" Classes="medium" />
+```
+
+- 重复行为沿用原生：按住鼠标左键或 Space 时先等待 `Delay`，再每隔 `Interval` 触发一次 `Click`；Enter 每次 KeyDown 点击一次（系统按键自动重复时随之重复）
+- 按住期间状态层与 ripple 保持按压，释放、失去捕获、失焦或禁用时清理
+- 与普通 Button 相同，按住时把指针移出交互范围会取消这次手势：按压反馈结束，重复也随 `IsPressed` 清除而停止，移回不会恢复；原生 Fluent 下指针移出后仍会继续重复，这是共享交互带来的行为差异
+- ScrollBar、NumericUpDown / ButtonSpinner 以及 Fluent 日期/时间选择器中显式指定主题的 RepeatButton 不受影响
+
 ## 内容与排版
 
 `Content` 可以是字符串或任意控件，也支持原生 `ContentTemplate` 和匹配的 `DataTemplate`。
