@@ -141,7 +141,7 @@ public sealed class DropDownButtonThemeTests
         var flyout = new MenuFlyout { Items = { new MenuItem { Header = "First" }, new MenuItem { Header = "Second" } } };
         var dropDown = new DropDownButton { Content = "Options", Flyout = flyout };
         var (window, clock) = Show(dropDown);
-        Assert.Equal(0, DropDownButtonChevron.GetAngle(Trailing(dropDown)));
+        Assert.Equal(0, ChevronRotation.GetAngle(Trailing(dropDown)));
         var center = dropDown.TranslatePoint(new Point(dropDown.Bounds.Width / 2, dropDown.Bounds.Height / 2), window)!.Value;
         window.MouseDown(center, MouseButton.Left); window.MouseUp(center, MouseButton.Left);
         Draw(window);
@@ -150,16 +150,16 @@ public sealed class DropDownButtonThemeTests
         Assert.IsType<MenuFlyoutPresenter>(flyout.Popup.Child);
         // Mid-flight, the spring is between the two destinations.
         Advance(window, clock, 2);
-        var midway = DropDownButtonChevron.GetAngle(Trailing(dropDown));
+        var midway = ChevronRotation.GetAngle(Trailing(dropDown));
         Assert.InRange(midway, 1, 179);
         Settle(window, clock);
-        Assert.Equal(180, DropDownButtonChevron.GetAngle(Trailing(dropDown)), 3);
+        Assert.Equal(180, ChevronRotation.GetAngle(Trailing(dropDown)), 3);
         Assert.Equal(180, Assert.IsType<RotateTransform>(Trailing(dropDown).RenderTransform).Angle, 3);
 
         flyout.Hide(); Draw(window);
         Assert.DoesNotContain(":flyout-open", dropDown.Classes);
         Settle(window, clock);
-        Assert.Equal(0, DropDownButtonChevron.GetAngle(Trailing(dropDown)), 3);
+        Assert.Equal(0, ChevronRotation.GetAngle(Trailing(dropDown)), 3);
         window.Close();
     }
 
@@ -176,9 +176,9 @@ public sealed class DropDownButtonThemeTests
         Draw(window);
         Assert.True(flyout.IsOpen);
         Settle(window, clock);
-        Assert.Equal(180, DropDownButtonChevron.GetAngle(Trailing(dropDown)), 3);
+        Assert.Equal(180, ChevronRotation.GetAngle(Trailing(dropDown)), 3);
         flyout.Hide(); Settle(window, clock);
-        Assert.Equal(0, DropDownButtonChevron.GetAngle(Trailing(dropDown)), 3);
+        Assert.Equal(0, ChevronRotation.GetAngle(Trailing(dropDown)), 3);
 
         dropDown.Focus(NavigationMethod.Tab); Draw(window);
         window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");

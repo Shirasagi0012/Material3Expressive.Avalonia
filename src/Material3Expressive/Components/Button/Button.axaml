@@ -371,15 +371,15 @@
         <m3:MaterialSymbol Symbol="KeyboardArrowDown" />
       </DataTemplate>
     </Setter>
-    <Setter Property="m3:DropDownButtonChevron.Angle" Value="0" />
+    <Setter Property="m3:ChevronRotation.Angle" Value="0" />
     <Setter Property="ca:Animated.Properties">
       <ca:AnimatedPropertyCollection>
-        <ca:AnimatedDouble Property="{x:Static m3:DropDownButtonChevron.AngleProperty}" />
+        <ca:AnimatedDouble Property="{x:Static m3:ChevronRotation.AngleProperty}" />
       </ca:AnimatedPropertyCollection>
     </Setter>
   </Style>
   <Style Selector="DropDownButton:flyout-open /template/ ContentPresenter#PART_TrailingIconPresenter">
-    <Setter Property="m3:DropDownButtonChevron.Angle" Value="180" />
+    <Setter Property="m3:ChevronRotation.Angle" Value="180" />
   </Style>
   <Style Selector="DropDownButton.xsmall /template/ ContentPresenter#PART_TrailingIconPresenter">
     <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />

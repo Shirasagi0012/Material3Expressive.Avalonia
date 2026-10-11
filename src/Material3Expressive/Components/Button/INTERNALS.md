@@ -120,7 +120,7 @@ Button 主题本身也无需知道这个子类。自定义模板若没有该部�
 由于零尺寸的空盒被填入后自身期望尺寸不会变化，`ButtonContentRow` 用 Panel 的
 `AffectsParentMeasure` 声明子 presenter 的 Content/ContentTemplate 影响自身测量，不依赖测量期间重放样式。
 
-旋转用内部附加属性 `DropDownButtonChevron.Angle`（0 / `:flyout-open` 时 180）映射到 RenderTransform，
+旋转用 Foundation 的内部附加属性 [`ChevronRotation.Angle`](../../Foundation/Rendering/ChevronRotation.cs)（与 Expander 共用）（0 / `:flyout-open` 时 180）映射到 RenderTransform，
 由 ComposeAnimation 的 `AnimatedDouble` 声明以默认弹簧动画。默认弹簧即 Compose 的 `spring()`，
 对应上游 SplitButtonSamples 中尾部箭头的 `animateFloatAsState`；本库 SplitButton 本身不绘制箭头、
 也不旋转（箭头由使用者作为 Icon 提供），因此没有可直接复用的箭头机制。
