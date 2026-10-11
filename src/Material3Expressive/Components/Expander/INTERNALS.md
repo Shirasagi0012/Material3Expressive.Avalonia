@@ -32,7 +32,14 @@ AnimatedVisibility 带尺寸效果时按子元素自身的期望尺寸排列它�
 - `ExpanderContentFill`（`PART_ContentFill`）是 AnimatedVisibility 的内容，期望尺寸取 max(内容, 宿主给出的交叉轴尺寸)，
   AnimatedVisibility 据此把内容排列为拉伸后的尺寸
 
-交叉轴尺寸变化时内层失效测量，布局多走一轮即收敛（宿主的期望尺寸不依赖该值）。
+宿主在 `ArrangeOverride` 中把交叉轴尺寸交给内层；只有该值变化时内层才调用 `InvalidateMeasure`，
+Avalonia 的 LayoutManager 随后再执行一轮测量与排列。这一轮不会循环：
+
+- 宿主报告的期望尺寸已扣除内层的拉伸部分，不依赖交给内层的值，所以宿主及其祖先的期望尺寸不变，
+  父级给宿主的最终尺寸也不变
+- 第二轮排列交给内层的是同一个值，`Stretch` 发现未变化即返回，不再失效测量
+
+实际效果是展开状态下交叉轴尺寸变化时（窗口缩放、首次展开）多一轮布局，其余帧没有额外开销。
 没有改 ComposeAnimation：让 AnimatedVisibility 在非动画轴上按子元素的 Stretch 排列虽然是更通用的做法，
 但实测会改变现有使用者的排列（FloatingToolbar 的侧边内容在像素取整后稳定态也会被拉宽 1–2 DIP），
 而 Avalonia 默认 Stretch 与 Compose 默认包裹内容的语义不同，会影响已对齐 Compose 的组件。
