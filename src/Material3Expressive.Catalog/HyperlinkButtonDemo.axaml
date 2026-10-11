@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.HyperlinkButtonDemo"
+        Title="HyperlinkButton" Width="720" Height="620">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <TextBlock Text="Clicks:" m3:MaterialText.Style="{m3:Typography TitleMedium}" VerticalAlignment="Center" />
+        <TextBlock x:Name="ClickText" Text="0" m3:MaterialText.Style="{m3:Typography TitleMedium}" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <TextBlock Text="Default (Text button + underlined label)" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <HyperlinkButton Content="Learn more" Click="OnClick" />
+        <HyperlinkButton Content="Open the repository" NavigateUri="https://github.com/shirasagi0012/Material3Expressive.Avalonia" />
+        <HyperlinkButton Content="Open in new window" m3:MaterialButton.Icon="{m3:Symbol OpenInNew}" Click="OnClick" />
+        <HyperlinkButton Click="OnClick">
+          <TextBlock Text="Custom TextBlock content" FontStyle="Italic" />
+        </HyperlinkButton>
+        <HyperlinkButton Content="Disabled" IsEnabled="False" />
+        <HyperlinkButton Content="Disabled with icon" IsEnabled="False" m3:MaterialButton.Icon="{m3:Symbol OpenInNew}" />
+      </WrapPanel>
+
+      <TextBlock Text=":visited toggles; the look intentionally stays the same (no M3 visited token)" m3:MaterialText.Style="{m3:Typography TitleMedium}" TextWrapping="Wrap" />
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <HyperlinkButton x:Name="VisitedLink" Content="Visited link" IsVisited="{Binding #VisitedToggle.IsChecked}" Click="OnClick" />
+        <CheckBox x:Name="VisitedToggle" Content="IsVisited" IsChecked="True" />
+        <TextBlock x:Name="VisitedState" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <TextBlock Text="Size classes" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <HyperlinkButton Content="XS" Classes="xsmall" Click="OnClick" />
+        <HyperlinkButton Content="Small" Click="OnClick" />
+        <HyperlinkButton Content="Medium" Classes="medium" Click="OnClick" />
+      </WrapPanel>
+
+      <TextBlock Text="RTL" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel FlowDirection="RightToLeft" ItemSpacing="12">
+        <HyperlinkButton Content="رابط" Click="OnClick" />
+        <HyperlinkButton Content="Open in new window" m3:MaterialButton.Icon="{m3:Symbol OpenInNew}" Click="OnClick" />
+      </WrapPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

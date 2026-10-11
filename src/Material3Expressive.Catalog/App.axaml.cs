@@ -19,6 +19,8 @@ public partial class App : Application
                 ? new AppBarDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--secure-text-fields") >= 0
                 ? new SecureTextFieldDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--hyperlink-buttons") >= 0
+                ? new HyperlinkButtonDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--repeat-buttons") >= 0
                 ? new RepeatButtonDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--numeric-up-down") >= 0
