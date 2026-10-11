@@ -19,6 +19,8 @@ public partial class App : Application
                 ? new AppBarDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--secure-text-fields") >= 0
                 ? new SecureTextFieldDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--group-boxes") >= 0
+                ? new GroupBoxDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--drop-down-buttons") >= 0
                 ? new DropDownButtonDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--hyperlink-buttons") >= 0
