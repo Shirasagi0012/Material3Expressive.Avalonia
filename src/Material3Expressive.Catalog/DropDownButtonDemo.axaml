@@ -1,0 +1,89 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.DropDownButtonDemo"
+        Title="DropDownButton" Width="760" Height="680">
+  <Window.Resources>
+    <MenuFlyout x:Key="SortMenu">
+      <MenuItem Header="Name" Click="OnPick" Icon="{m3:Symbol SortByAlpha}" />
+      <MenuItem Header="Date modified" Click="OnPick" Icon="{m3:Symbol Schedule}" />
+      <MenuItem Header="Size" Click="OnPick" Icon="{m3:Symbol Straighten}" />
+      <Separator />
+      <MenuItem Header="Disabled option" IsEnabled="False" />
+    </MenuFlyout>
+  </Window.Resources>
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <TextBlock Text="Picked:" m3:MaterialText.Style="{m3:Typography TitleMedium}" VerticalAlignment="Center" />
+        <TextBlock x:Name="PickedText" Text="(none)" m3:MaterialText.Style="{m3:Typography TitleMedium}" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <TextBlock Text="Default (Filled) with a MenuFlyout; the chevron flips while open" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <DropDownButton x:Name="Primary" Content="Sort by" Flyout="{StaticResource SortMenu}" />
+        <DropDownButton Content="Sort by" m3:MaterialButton.Icon="{m3:Symbol Sort}">
+          <DropDownButton.Flyout>
+            <MenuFlyout>
+              <MenuItem Header="Ascending" Click="OnPick" />
+              <MenuItem Header="Descending" Click="OnPick" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Disabled" IsEnabled="False" />
+      </WrapPanel>
+
+      <TextBlock Text="Keyed variants" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <DropDownButton Content="Elevated" Theme="{StaticResource MaterialElevatedButtonTheme}">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /><MenuItem Header="Two" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Tonal" Theme="{StaticResource MaterialTonalButtonTheme}">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /><MenuItem Header="Two" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Outlined" Theme="{StaticResource MaterialOutlinedButtonTheme}">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /><MenuItem Header="Two" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Text" Theme="{StaticResource MaterialTextButtonTheme}">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /><MenuItem Header="Two" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Outlined disabled" IsEnabled="False" Theme="{StaticResource MaterialOutlinedButtonTheme}" />
+      </WrapPanel>
+
+      <TextBlock Text="Size classes" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="12" LineSpacing="12">
+        <DropDownButton Content="XS" Classes="xsmall">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Small">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Medium" Classes="medium">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Large" Classes="large">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+      </WrapPanel>
+
+      <TextBlock Text="Plain Flyout (FlyoutPresenter is still Fluent)" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <DropDownButton Content="Details" Theme="{StaticResource MaterialTonalButtonTheme}">
+        <DropDownButton.Flyout>
+          <Flyout>
+            <TextBlock Text="Arbitrary flyout content" Margin="8" />
+          </Flyout>
+        </DropDownButton.Flyout>
+      </DropDownButton>
+
+      <TextBlock Text="RTL" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel FlowDirection="RightToLeft" ItemSpacing="12">
+        <DropDownButton Content="ترتيب" m3:MaterialButton.Icon="{m3:Symbol Sort}">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="الاسم" Click="OnPick" /><MenuItem Header="التاريخ" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Content="Outlined" Theme="{StaticResource MaterialOutlinedButtonTheme}">
+          <DropDownButton.Flyout><MenuFlyout><MenuItem Header="One" Click="OnPick" /></MenuFlyout></DropDownButton.Flyout>
+        </DropDownButton>
+      </WrapPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
