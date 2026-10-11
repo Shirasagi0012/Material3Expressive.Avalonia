@@ -101,6 +101,21 @@
 - 与普通 Button 相同，按住时把指针移出交互范围会取消这次手势：按压反馈结束，重复也随 `IsPressed` 清除而停止，移回不会恢复；原生 Fluent 下指针移出后仍会继续重复，这是共享交互带来的行为差异
 - ScrollBar、NumericUpDown / ButtonSpinner 以及 Fluent 日期/时间选择器中显式指定主题的 RepeatButton 不受影响
 
+## HyperlinkButton
+
+M3 没有链接按钮。原生 `HyperlinkButton` 未指定 `Theme` 时是 Text 按钮加下划线标签：主色标签、Text 按钮的
+状态层、形状、高度与 Padding，因此保留 48 DIP 布局空间和焦点反馈；尺寸 class 与 `MaterialButton.Icon` 同样可用。
+
+```xml
+<HyperlinkButton Content="查看文档" NavigateUri="https://github.com/Shirasagi0012/Material3Expressive.Avalonia" />
+<HyperlinkButton Content="在新窗口打开" m3:MaterialButton.Icon="{m3:Symbol OpenInNew}" Click="OnOpen" />
+```
+
+- 下划线通过标签槽继承的 `TextBlock.TextDecorations` 施加：字符串标签和放入标签槽的自定义文字都会带下划线，图标槽不会。需要去掉时在自己的样式中把标签槽的 `TextBlock.TextDecorations` 设为 `{x:Null}`
+- `NavigateUri` 的启动、成功后设置 `IsVisited`、Click / Command 与自动化 peer 均沿用原生
+- `:visited` 伪类照常切换，但外观不变：M3 没有“已访问”颜色 Token，主题不自造颜色；需要区分时用自己的 `:visited` 样式
+- 禁用使用 Text 按钮的禁用颜色，下划线保留并随标签变为禁用色；RTL 与明暗主题同 Text 按钮
+
 ## 内容与排版
 
 `Content` 可以是字符串或任意控件，也支持原生 `ContentTemplate` 和匹配的 `DataTemplate`。
