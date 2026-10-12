@@ -9,7 +9,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadAutomaticDomainTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static AnimatedBounds Card(Control child, Size? size) => new()
     {
         Child = child, TargetSize = size, UseLayoutRounding = false,

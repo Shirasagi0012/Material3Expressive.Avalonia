@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 /// <summary>Stage 3 (D19-D22): state-only runtime types and the runs bound to a FrameScope.</summary>
 public class RuntimeScopeBindingTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
     private static TimeSpan Ms(double value) => TimeSpan.FromMilliseconds(value);
     private static TweenSpec<T> Linear<T>(double ms) => new(Ms(ms), easing: new LinearEasing());
 
@@ -212,7 +211,6 @@ public class RuntimeScopeBindingTest
 
 public class RuntimeScopeInlineResumptionTest
 {
-    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static TweenSpec<double> Linear(double ms) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
 
     public static TheoryData<string, int> Cases()

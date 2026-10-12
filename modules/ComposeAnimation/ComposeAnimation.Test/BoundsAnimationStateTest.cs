@@ -6,7 +6,6 @@ namespace ComposeAnimation.Test;
 
 public class BoundsAnimationStateTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class CallbackTransform(Func<Rect, Rect, IFiniteAnimationSpec<Rect>> create) : BoundsTransform
     {

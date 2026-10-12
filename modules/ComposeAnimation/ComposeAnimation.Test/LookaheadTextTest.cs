@@ -13,7 +13,6 @@ namespace ComposeAnimation.Test;
 public class LookaheadTextTest
 {
     private const string Paragraph = "The quick brown fox jumps over the lazy dog. The same text wraps differently while the width changes, and the target remains independent.";
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static T Text<T>() where T : TextBlock, new() => new()
     {
         Text = Paragraph, FontSize = 16, TextWrapping = TextWrapping.Wrap, UseLayoutRounding = false

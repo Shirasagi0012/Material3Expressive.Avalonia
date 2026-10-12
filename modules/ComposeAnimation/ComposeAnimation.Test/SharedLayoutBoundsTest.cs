@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public class SharedLayoutBoundsTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static TweenSpec<T> Tween<T>(int ms = 200) => new(TimeSpan.FromMilliseconds(ms));
 
     private sealed class Fixture : IDisposable

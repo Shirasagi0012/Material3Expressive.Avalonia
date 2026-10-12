@@ -17,7 +17,6 @@ public class AnimatedContentTest
 {
     private static TweenSpec<T> Tween<T>(int milliseconds = 100, int delay = 0)
         => new(TimeSpan.FromMilliseconds(milliseconds), TimeSpan.FromMilliseconds(delay), new LinearEasing());
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private static ContentTransform LinearFade(int enterMs = 220, int enterDelay = 90, int exitMs = 90,
         SizeTransform? size = null)

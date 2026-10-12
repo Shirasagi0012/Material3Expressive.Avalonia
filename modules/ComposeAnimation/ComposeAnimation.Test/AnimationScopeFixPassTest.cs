@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public sealed class AnimationScopeFixPassTest
 {
-    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
 
     private static AnimationTestWindow Show(Control content, ManualFrameSource? clock = null)
     {

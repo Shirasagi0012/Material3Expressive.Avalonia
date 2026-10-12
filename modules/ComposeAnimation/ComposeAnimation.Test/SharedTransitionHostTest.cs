@@ -12,7 +12,6 @@ namespace ComposeAnimation.Test;
 public class SharedTransitionHostTest
 {
     private static TimeSpan Ms(int value) => TimeSpan.FromMilliseconds(value);
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static readonly Rect Start = new(10, 20, 100, 80);
     private static readonly Rect End = new(250, 100, 200, 160);
 

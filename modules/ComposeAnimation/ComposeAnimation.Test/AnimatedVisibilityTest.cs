@@ -16,7 +16,6 @@ public class AnimatedVisibilityTest
 {
     private static TweenSpec<T> Tween<T>(int milliseconds = 100)
         => new(TimeSpan.FromMilliseconds(milliseconds), easing: new LinearEasing());
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class Fixture : IDisposable
     {

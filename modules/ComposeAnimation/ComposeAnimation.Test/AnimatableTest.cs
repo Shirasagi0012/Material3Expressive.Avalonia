@@ -5,8 +5,6 @@ namespace ComposeAnimation.Test;
 
 public class AnimatableTest
 {
-    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
 
     [Fact]
     public Task CompletedAnimation_AfterIdle_StartsOnFreshFrame() => OnUi(async () =>

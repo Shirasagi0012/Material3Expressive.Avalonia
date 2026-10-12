@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadPositionTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static LookaheadPosition Moving(Control? child = null, int duration = 100) => new()
     {
         Child = child ?? new Border { Width = 40, Height = 40 },

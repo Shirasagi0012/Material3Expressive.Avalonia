@@ -11,7 +11,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadLocalEntryTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private static BoundsTransform Tween(int milliseconds = 100) => new()
     {

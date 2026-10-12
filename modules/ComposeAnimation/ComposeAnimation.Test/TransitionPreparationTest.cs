@@ -5,7 +5,6 @@ namespace ComposeAnimation.Test;
 
 public class TransitionPreparationTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
     private static TimeSpan Ms(int value) => TimeSpan.FromMilliseconds(value);
     private static TweenSpec<double> Tween() => new(Ms(100), easing: new LinearEasing());
 

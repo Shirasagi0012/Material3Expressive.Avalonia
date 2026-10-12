@@ -19,8 +19,6 @@ public class AnimatedPropertyTest
     private static TweenSpec<double> LinearTween(TimeSpan? duration = null)
         => new(duration ?? TweenDuration, easing: new LinearEasing());
 
-    private static Task OnUi(Action body)
-        => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class WindowCloser(Window window) : IDisposable
     {

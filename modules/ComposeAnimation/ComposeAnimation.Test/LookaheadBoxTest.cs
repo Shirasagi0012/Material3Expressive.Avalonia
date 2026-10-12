@@ -9,7 +9,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadBoxTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static TweenSpec<T> Tween<T>(int ms) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
 
     private static LookaheadBox Box(params Control[] children)

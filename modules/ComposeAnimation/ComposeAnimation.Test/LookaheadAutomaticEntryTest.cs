@@ -9,7 +9,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadAutomaticEntryTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class Probe : Control, ILookaheadConstrainedLayoutNode
     {

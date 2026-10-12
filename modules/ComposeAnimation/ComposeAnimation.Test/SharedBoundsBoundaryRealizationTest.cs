@@ -12,7 +12,6 @@ namespace ComposeAnimation.Test;
 // fail when template realization flips inherited inputs (UseLayoutRounding) mid-pass.
 public class SharedBoundsBoundaryRealizationTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     [Fact]
     public Task FirstShow_WithBoundaryContent_RealizesWithoutLosingTarget() => OnUi(() =>

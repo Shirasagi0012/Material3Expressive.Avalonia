@@ -14,7 +14,6 @@ namespace ComposeAnimation.Test;
 
 public class AnimatedContentSizeBehaviorTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static TweenSpec<Size> Tween(int ms = 100) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
     private sealed class Fixture : IDisposable
     {

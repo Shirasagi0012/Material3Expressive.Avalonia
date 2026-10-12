@@ -10,8 +10,6 @@ namespace ComposeAnimation.Test;
 
 public class AnimationScopeTest
 {
-    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
     private static TweenSpec<double> Tween() => new(TimeSpan.FromMilliseconds(100), easing: new LinearEasing());
     private static void Send(ManualFrameSource clock, int ms)
     {

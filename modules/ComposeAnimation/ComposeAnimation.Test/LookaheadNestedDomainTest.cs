@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadNestedDomainTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private static LookaheadPosition Moving(Control child, int duration = 100) => new()
     {

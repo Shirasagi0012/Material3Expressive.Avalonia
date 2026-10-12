@@ -8,7 +8,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadConstraintProtocolTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private class Probe : Control, ILookaheadConstrainedLayoutNode
     {

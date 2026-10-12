@@ -9,7 +9,6 @@ namespace ComposeAnimation.Test;
 
 public class SharedBoundsLookaheadTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static TimeSpan Ms(int time) => TimeSpan.FromMilliseconds(time);
     private sealed class TextProbe : LookaheadTextBlock
     {

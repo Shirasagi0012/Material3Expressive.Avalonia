@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static AnimatedContentSize Animate(Control content) => new()
     {
         Content = content,

@@ -9,7 +9,6 @@ namespace ComposeAnimation.Test;
 
 public class SharedBoundsLocalEntryTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static TimeSpan Ms(int value) => TimeSpan.FromMilliseconds(value);
 
     private sealed class ConstraintProbe : Control, ILookaheadConstrainedLayoutNode

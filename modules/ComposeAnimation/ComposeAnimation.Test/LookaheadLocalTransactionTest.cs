@@ -6,7 +6,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadLocalTransactionTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private static AnimatedBounds Entry() => new()
     {

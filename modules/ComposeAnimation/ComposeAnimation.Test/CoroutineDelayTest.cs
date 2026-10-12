@@ -6,7 +6,6 @@ namespace ComposeAnimation.Test;
 
 public sealed class CoroutineDelayTest
 {
-    static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
 
     [Theory]
     [InlineData(0)]

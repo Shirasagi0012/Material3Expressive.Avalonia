@@ -6,7 +6,6 @@ using Avalonia = global::Avalonia;
 
 public class TransitionStateTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
     private static TimeSpan Ms(double value) => TimeSpan.FromMilliseconds(value);
 
     [Fact]

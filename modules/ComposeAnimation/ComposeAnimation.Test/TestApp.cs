@@ -18,3 +18,14 @@ internal static class HeadlessApp
 
     internal static HeadlessUnitTestSession Session => SessionLazy.Value;
 }
+
+/// <summary>
+/// The one way tests run on the headless UI thread. The <see cref="Func{Task}"/> overload unwraps
+/// the dispatched task so an async body is awaited (binding an async lambda to the
+/// <see cref="Action"/> overload would make it async void; <c>AsyncVoidGuardTest</c> rejects that).
+/// </summary>
+internal static class Ui
+{
+    internal static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+    internal static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
+}

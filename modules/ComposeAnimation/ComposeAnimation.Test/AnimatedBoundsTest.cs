@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public partial class AnimatedBoundsTest
 {
-    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static BoundsTransform Tween(int ms = 200) => new()
     {
         Spec = new TweenSpec<Rect>(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing())

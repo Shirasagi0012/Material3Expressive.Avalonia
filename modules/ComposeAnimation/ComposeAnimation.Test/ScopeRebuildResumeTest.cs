@@ -13,7 +13,6 @@ namespace ComposeAnimation.Test;
 /// <summary>D17: components re-run their kept state in the rebuilt scope instead of restarting.</summary>
 public sealed class ScopeRebuildResumeTest
 {
-    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static TweenSpec<double> Linear(int ms) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
 
     private sealed class Stage : IDisposable

@@ -5,7 +5,6 @@ namespace ComposeAnimation.Test;
 
 public class SuspendAnimationTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
 
     private static readonly TimeSpan Frame = TimeSpan.FromMilliseconds(16);
 

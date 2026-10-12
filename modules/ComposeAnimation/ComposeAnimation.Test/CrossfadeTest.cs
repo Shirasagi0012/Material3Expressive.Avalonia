@@ -13,7 +13,6 @@ public class CrossfadeTest
 {
     private static TweenSpec<double> Linear(int milliseconds)
         => new(TimeSpan.FromMilliseconds(milliseconds), easing: new LinearEasing());
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class Fixture : IDisposable
     {

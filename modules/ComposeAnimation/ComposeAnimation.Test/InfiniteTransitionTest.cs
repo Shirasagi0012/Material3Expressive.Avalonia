@@ -7,7 +7,6 @@ namespace ComposeAnimation.Test;
 
 public class InfiniteTransitionTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
     private static TimeSpan Ms(double value) => TimeSpan.FromMilliseconds(value);
 
     private static TweenSpec<T> Tween<T>(double duration = 1000)
