@@ -297,20 +297,23 @@ public class AnimationScope : FrameScope
     /// </summary>
     public Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken = default)
     {
+        // Argument errors throw synchronously, like Task.Delay, instead of faulting the scope.
+        if (delay != Timeout.InfiniteTimeSpan) ArgumentOutOfRangeException.ThrowIfLessThan(delay, TimeSpan.Zero);
         return Launch(async lifetime =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellationToken);
             var token = linked.Token;
-            if (delay != Timeout.InfiniteTimeSpan) ArgumentOutOfRangeException.ThrowIfLessThan(delay, TimeSpan.Zero);
             token.ThrowIfCancellationRequested();
             if (delay > TimeSpan.Zero || delay == Timeout.InfiniteTimeSpan)
             {
                 // The timer may fire on any thread: completion is posted to the UI thread, so the
                 // continuation never runs off-thread, and a cancellation that lands while that post
                 // is queued wins (cancellable suspension), whatever context the caller awaited from.
-                var done = new TaskCompletionSource();
+                // Asynchronous continuations: TrySetResult never runs the awaiting coroutine inline
+                // inside the posted callback. The trailing token check keeps cancellation winning.
+                var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 using var timer = TimeProvider.CreateTimer(
-                    static state => Dispatcher.UIThread.Post(() => ((TaskCompletionSource)state!).TrySetResult(), FrameClock.ResumePriority),
+                    static state => Dispatcher.UIThread.Post(CompleteDelay, state, FrameClock.ResumePriority),
                     done, delay, Timeout.InfiniteTimeSpan);
                 using var registration = token.Register(static state =>
                 {
@@ -323,6 +326,8 @@ public class AnimationScope : FrameScope
             token.ThrowIfCancellationRequested();
         }, "Coroutine delay");
     }
+
+    private static void CompleteDelay(object? state) => ((TaskCompletionSource)state!).TrySetResult();
 
     // ---- Internal surface -----------------------------------------------------------------------
 

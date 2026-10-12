@@ -6,6 +6,17 @@ namespace ComposeAnimation.Test;
 
 public sealed class CoroutineDelayTest
 {
+    [Fact]
+    public Task Delay_NegativeDelayThrowsSynchronouslyWithoutFaultingScope() => OnUi(async () =>
+    {
+        var time = new ManualTimeProvider();
+        var window = new AnimationTestWindow(new ManualFrameSource(), time);
+        var child = window.AnimationRoot.CreateChild();
+        Assert.Throws<ArgumentOutOfRangeException>(() => { _ = child.DelayAsync(TimeSpan.FromMilliseconds(-2)); });
+        Assert.Equal(0, child.Diagnostics.ActiveTaskCount);
+        await child.Diagnostics.EndAsync(); window.Close();
+        Assert.Null(child.Diagnostics.LastError);
+    });
 
     [Theory]
     [InlineData(0)]
