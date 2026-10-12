@@ -32,14 +32,13 @@ catch (OperationCanceledException) { }
 
 **原因**：未初始化根环境、规格失败或帧源失败。
 
-**解决**：在加载 XAML 或设置 Content 前调用 `VisualAnimationScope.Initialize`，保存根 Scope 并监听诊断：
+**解决**：在加载 XAML 或设置 Content 前调用 `AnimationScope.Initialize`，保存根 Scope 并监听 `AnimationFailed`：
 
 ```csharp
 root.AnimationFailed += (_, failure) => Log(failure.Host, failure.OperationLabel, failure.Exception);
-var error = root.LastError;
 ```
 
-规格失败只结束失败运行，其他消费者继续。帧源失败后，同一个环境不会持续重试；修复源后需创建新的 TopLevel 根环境。卸载后重新挂载创建新控件 Scope，但不会替换根帧源。
+规格失败只结束失败运行，其他消费者继续。帧源失败后，同一个环境不会持续重试；修复源后需创建新的 TopLevel 根环境。控件在树内移动时 Scope 会在下一帧等待者恢复前自动重建；卸载后重新挂载由 `AnimationScope.Get` 返回新 Scope，捕获了旧 Scope 的长运行应在 `ScopeChanged` 处理程序中重启，根帧源不会被替换。
 
 ## 自定义泵帧时 `AnimatedVisibility` / `AnimatedContent` 不启动
 

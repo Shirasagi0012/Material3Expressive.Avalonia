@@ -46,7 +46,7 @@ dotnet run --project Catalog/Catalog.csproj -- --verify-ui artifacts/catalog-ui
 - 演示显隐尺寸过渡时，将 `AnimatedVisibility` 在变化轴上设为 `Center` 或 `Top` / `Left`，避免固定舞台的 `Stretch` 抵消尺寸变化。滑动示例显式使用 -1 倍宽／高并裁剪视口；库保留 Compose 的 -0.5 默认比例。
 - 使用主题令牌和 `demo-actor`、`demo-well`、`demo-caption` 等样式。按钮只写动作名称，不添加实现说明或常驻状态行。
 - 通过 `AddDiagnostic("宽度", () => current, () => target, "DIP")` 提供调试数据。目标可省略；矩形用 `AddBoundsDiagnostics`。不要自行订阅逐帧事件来更新调试文字。
-- 自建引擎对象使用基类 `Motion` 的工厂、订阅和 `Launch`，在附着后初始化，脱离时 Scope 统一结束。外壳通过继承的 `Animated.DurationScale` 调速；自动化在加载内容之前固定手动根帧源。
+- 自建引擎对象使用基类 `Motion`（`AnimationScope.Get(this)`，重复调用返回同一 Scope、不需要释放；控件移动时自动重建、脱离时结束）的工厂、订阅和 `Launch`。外壳通过继承的 `AnimationScope.DurationScale` 调速；自动化在加载内容之前固定手动根帧源。
 - 用 `[DemoAction]` 标记公开、无参数、返回 `void` 或 `Task` 的验证方法。通过 `AdvanceAsync`、`CaptureAsync`、`Assert`、`Click` 复用宿主设施。等待动画收敛应有轮询上限。
 
 `DemoFrame` 负责实例生命周期与展开栏，`CatalogWindow` 负责导航与主题，`CatalogTheme.axaml` 维护统一的视觉样式。已有 demo ID 与动作名称保持稳定，可继续使用原来的调用方式。

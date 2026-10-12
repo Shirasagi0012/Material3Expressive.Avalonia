@@ -61,7 +61,8 @@ private void Button_OnClick(object? sender, RoutedEventArgs e)
 | 成员 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `Animated.Properties` | `AttachedProperty<AnimatedPropertyCollection?>` | `null` | 该可视元素的动画声明集合，XAML 中以 `<ca:Animated.Properties>` 设置 |
-| `Animated.DurationScale` | `AttachedProperty<double>`（继承） | `1` | 播放时长乘数；0 下一帧吸附，2 半速；不改变根帧时间戳 |
+
+`Animated.DurationScale` 已迁移为 `AnimationScope.DurationScale` 附加属性，用 `AnimationScope.GetDurationScale` / `SetDurationScale` 读写，XAML 写作 `AnimationScope.DurationScale="0.5"`；语义不变：播放时长乘数，0 下一帧吸附，2 半速，不改变根帧时间戳。
 
 常用方法：`GetProperties` / `SetProperties`、`SnapToTargetAsync<T>(Visual, StyledProperty<T>)`、`GetOrCreateProperties`，以及流式扩展 `TDeclaration Animate<TDeclaration>(this Visual, TDeclaration)`（把声明追加到集合，按需创建集合并返回声明本身）。
 
@@ -136,9 +137,9 @@ border.Animate(new AnimatedDouble
 
 ### 根环境、调速与吸附
 
-在窗口加载 XAML 或设置 Content 之前调用 `VisualAnimationScope.Initialize(window, myClock)`；省略 myClock 使用默认 UI 帧源。同根所有消费者自动共享按需请求，不支持运行中换钟。
+在窗口加载 XAML 或设置 Content 之前调用 `AnimationScope.Initialize(window, myClock)`；省略 myClock 使用默认 UI 帧源。同根所有消费者自动共享按需请求，不支持运行中换钟。
 
-`Animated.SetDurationScale(demo, 4)` 让该子树以 0.25× 播放，根时间戳保持原值。`await Animated.SnapToTargetAsync(border, Visual.OpacityProperty)` 立即结束当前属性动画并释放其贡献，直接显示当前基础目标；不修改声明、Spec、底层绑定或样式。同目标也会立即结束，之后的目标变化仍按声明播放。
+`AnimationScope.SetDurationScale(demo, 4)` 让该子树以 0.25× 播放，根时间戳保持原值。`await Animated.SnapToTargetAsync(border, Visual.OpacityProperty)` 立即结束当前属性动画并释放其贡献，直接显示当前基础目标；不修改声明、Spec、底层绑定或样式。同目标也会立即结束，之后的目标变化仍按声明播放。
 
 ## 注意事项
 
@@ -146,7 +147,7 @@ border.Animate(new AnimatedDouble
 - **绑定方向**：目标值请使用 `OneWay` 表示层绑定；`TwoWay` 绑定可能把动画采样值写回数据源。可编辑的值请走独立路径。
 - **同一属性只配置一个动画来源**：不要把本组件的声明与 Avalonia 自带 `Transition`/`Animation` 叠加在同一属性上。
 - **非有限端点**：`Width="Auto"`（`NaN`）这类非有限数值没有插值轨迹，直接落到基础值；之后的有限值变化照常动画。
-- **诊断**：根 Scope 的 `AnimationFailed` 报告失败来源、标签与异常，`LastError` 保留最近失败。规格失败释放该运行的贡献；帧源失败停止整个固定环境的后续源请求。
+- **诊断**：根 Scope 的 `AnimationFailed` 报告失败来源、标签与异常（`LastError` 等成员不再公开）。规格失败释放该运行的贡献；帧源失败停止整个固定环境的后续源请求。
 - **规格改动**：修改已在使用中的 `Spec` 只影响下一次目标变化，不重新计时当前运行。
 
 ## 延伸阅读

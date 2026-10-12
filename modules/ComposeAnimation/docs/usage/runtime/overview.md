@@ -9,25 +9,25 @@
 
 因此，理解了 Runtime 就理解了整个库的行为：控件层负责"什么时候播"，引擎负责"怎么播"。
 
-## 帧时钟与 VisualAnimationScope
+## 帧时钟与 AnimationScope
 
 `IAnimationFrameClock` 保留显式时钟的底层入口：`VerifyAccess()` 检查所属线程；`NextFrameAsync(CancellationToken)` 返回下一帧的绝对时间戳并支持取消。独立 Runtime 调用者自行提供时钟。
 
-Avalonia 应用在加载 XAML 或设置 Content 之前调用 `VisualAnimationScope.Initialize(topLevel, clock?)`。默认帧源与共享调度器由内部实现提供，不再公开构造。一个根环境固定一个帧源，同根控件、直接动画与派生 Popup 自动共享按需请求；整个根最多有一个挂起的源请求。UI 动画 API 必须在 UI 线程调用。
+Avalonia 应用在加载 XAML 或设置 Content 之前调用 `AnimationScope.Initialize(topLevel, clock?)`。默认帧源与每窗口唯一的内部 FrameClock 由内部实现提供，不再公开构造；`SharedAnimationFrameClock` 已删除。一个根环境固定一个帧源，同根控件、直接动画与派生 Popup 自动共享按需请求；整个根最多有一个挂起的源请求。UI 动画 API 必须在 UI 线程调用。
 
 ```csharp
 // Window 构造函数内，InitializeComponent 之前
-var root = VisualAnimationScope.Initialize(this);
+var root = AnimationScope.Initialize(this);
 InitializeComponent();
 
-// 控件附着之后；由控件保存，并在模板替换时结束旧 Scope
-var motion = VisualAnimationScope.Create(control);
+// 控件附着之后；重复调用返回同一个 Scope，不需要也不应释放
+var motion = AnimationScope.Get(control);
 var alpha = motion.CreateAnimatable(0d);
 motion.BindAnimatedValue(control, Visual.OpacityProperty, alpha);
 _ = motion.Launch(ct => alpha.AnimateToAsync(1, cancellationToken: ct), "Fade in");
 ```
 
-Scope 工厂的对象终身受该 Scope 约束：结束后可以读最终值、调用清理操作，不能启动或变更新动画。`Dispose` 同步撤销订阅和动画属性贡献并发出取消；`DisposeAsync` 等待已登记任务和动画实际退出。详见 [Scope 使用与迁移](../visual-animation-scope.md)。
+控件在树内移动时，旧 Scope 会在下一帧等待者恢复前合并重建一次，随后控件的 `ScopeChanged` 事件触发，持有旧 Scope 的运行应在 `AnimationScope.AddScopeChangedHandler` 注册的处理程序中重启。控件脱离树时 Scope 结束，窗口关闭结束根环境（根没有公开的 `Dispose`）。`scope.NextFrameAsync(ct)` 等待窗口的下一帧，并在帧批次中内联恢复。工厂对象终身受其 Scope 约束：结束后可以读最终值、调用清理操作，不能启动或变更新动画。详见 [Scope 使用与迁移](../animation-scope.md)。
 
 测试项目引用 `ComposeAnimation.TestSupport`，使用 `AnimationTestWindow(clock)` 在 Content 初始化前建立环境。`ManualAnimationFrameClock.SendFrame(absoluteTime)` 发送一个绝对时间戳；`AdvanceBy(delta)` 只发送一帧，不隐式补起点帧。送帧后仍需推进 Dispatcher；`AnimationTestDispatcher.WaitUntilAsync` 提供有上限的条件等待。
 
@@ -97,7 +97,7 @@ public static class MotionDurationScale
 
 `ScaleFactor` 是墙钟时间到播放时间的乘数：`2` 表示半速播放；**`0` 让有限动画在下一帧直接跳到终值**（无限规格保持播放时间为 0）。因为基于 `AsyncLocal`，设置只影响当前异步上下文，`Reset()` 恢复默认。
 
-`Transition` 树保留自己的 `DurationScale`。Scope 环境在初始化时读取 `MotionDurationScale.ScaleFactor`，之后使用根或子 Scope 的 `DurationScale` 与继承的 `Animated.DurationScale` 播放策略统一调速；时钟时间戳保持原值。
+`Transition` 树保留自己的 `DurationScale`。Scope 环境在初始化时读取 `MotionDurationScale.ScaleFactor` 作为根的初始倍率，之后使用 Scope 链的 `DurationScale` 与继承的附加属性 `AnimationScope.DurationScale` 统一调速（有效倍率为两者相乘）；时钟时间戳保持原值。
 
 ## 概念关系与选择指南
 
@@ -124,7 +124,7 @@ public static class MotionDurationScale
 
 ```csharp
 // UI 控件附着后
-using var motion = VisualAnimationScope.Create(control);
+var motion = AnimationScope.Get(control);
 var animatable = motion.CreateAnimatable(0d);
 
 var task = animatable.AnimateToAsync(100,

@@ -1,3 +1,5 @@
+> **历史设计稿**：本文早于 2026-10 的动画基础重构，名称已过时。现行名称见 `/workspace/m3e-anim-refactor/ROADMAP.md`：`SharedAnimationFrameClock` → 内部 `FrameClock`，`VisualAnimationScope` → `AnimationScope`（`AnimationScope.Get`），`AnimationScope<T>` → `AnimationRun<T>`。
+
 # 项目现状 · Current Status
 
 本仓库把 Jetpack Compose 的动画系统移植到 Avalonia。目标 API 尽量贴近上游（`androidx.compose.animation:animation-core` / `animation`），仅做必要的小改动以适应 .NET 与 Avalonia 的属性系统。

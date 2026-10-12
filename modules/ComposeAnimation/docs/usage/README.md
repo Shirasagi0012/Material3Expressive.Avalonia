@@ -53,7 +53,7 @@ xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation"
 // Window 构造函数：必须在 InitializeComponent 之前建立根环境
 public MainWindow()
 {
-    VisualAnimationScope.Initialize(this);
+    AnimationScope.Initialize(this);
     InitializeComponent();
 }
 
@@ -73,7 +73,7 @@ private void OnChange(object? sender, RoutedEventArgs e)
 
 | 组件 | 用途 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| `VisualAnimationScope` | 根动画环境、生命周期、任务与值消费 | [visual-animation-scope.md](visual-animation-scope.md) | 已实现 |
+| `AnimationScope` | 根动画环境、控件 Scope 生命周期、任务与值消费 | [animation-scope.md](animation-scope.md) | 已实现 |
 | `Animated.Properties` | 附加属性集合：任意 styled 属性的值变化按声明的规格播放动画 | [components/animated-properties.md](components/animated-properties.md) | 稳定 |
 | `AnimatedVisibility` | 内容出现/消失的进出场过渡（`Visible` 驱动，支持子元素级联） | [components/animated-visibility.md](components/animated-visibility.md) | 稳定 |
 | `AnimatedContent` / `Crossfade` | `Content` 切换时的进出场过渡与容器尺寸动画 | [components/animated-content.md](components/animated-content.md) | 稳定 |

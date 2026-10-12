@@ -13,7 +13,7 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 
 // 根环境已在窗口加载内容前初始化；control 已附着
-using var motion = VisualAnimationScope.Create(control);
+var motion = AnimationScope.Get(control);
 var animatable = motion.CreateAnimatable(0d);
 
 // animationSpec 缺省为弹簧；这里显式给一个 64ms 的补间

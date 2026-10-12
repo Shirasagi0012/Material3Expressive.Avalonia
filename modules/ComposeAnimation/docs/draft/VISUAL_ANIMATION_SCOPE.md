@@ -1,3 +1,5 @@
+> **历史设计稿**：本文早于 2026-10 的动画基础重构，名称已过时。现行名称见 `/workspace/m3e-anim-refactor/ROADMAP.md`：`SharedAnimationFrameClock` → 内部 `FrameClock`，`VisualAnimationScope` → `AnimationScope`（`AnimationScope.Get`），`AnimationScope<T>` → `AnimationRun<T>`。
+
 # VisualAnimationScope 与动画宿主集成设计草案
 
 状态：已实现；使用与迁移见 [VisualAnimationScope](../usage/visual-animation-scope.md)，验证范围见 [实施记录](../VISUAL_ANIMATION_SCOPE_IMPLEMENTATION.md)。

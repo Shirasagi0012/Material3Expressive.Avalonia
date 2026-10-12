@@ -24,7 +24,7 @@ using ComposeAnimation.Runtime;
 
 // this 为 Window（TopLevel）。构造函数必须在时钟所属线程（UI 线程）调用
 var state = new MutableTransitionState<bool>(false);
-using var motion = VisualAnimationScope.Create(this); // 根环境已在加载内容前初始化
+var motion = AnimationScope.Get(this); // 根环境已在加载内容前初始化
 var transition = motion.CreateTransition(state, label: "Demo");
 
 var alpha = transition.AnimateDouble(

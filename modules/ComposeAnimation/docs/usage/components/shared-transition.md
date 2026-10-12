@@ -68,7 +68,7 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        var motion = VisualAnimationScope.Initialize(this);
+        var motion = AnimationScope.Initialize(this);
         InitializeComponent();
         // true 表示"当前在列表页"；根环境负责帧源与生命周期。
         _page = motion.CreateTransition(true);

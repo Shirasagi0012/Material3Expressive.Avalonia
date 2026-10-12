@@ -43,17 +43,17 @@ border.Animate(new AnimatedDouble
 
 ## Playback and lifetime
 
-Call `VisualAnimationScope.Initialize(window, clock?)` before loading XAML or assigning Content. The root owns one fixed, on-demand frame environment shared by properties, direct animation and derived popup hosts. Default and shared clocks are internal.
+Call `AnimationScope.Initialize(window, clock?)` before loading XAML or assigning Content. The root owns one fixed, on-demand frame environment shared by properties, direct animation and derived popup hosts. Default clocks and the single per-window internal FrameClock are internal; `SharedAnimationFrameClock` no longer exists.
 
 For ordinary coroutine waits, use `await scope.DelayAsync(duration, cancellationToken)`. This managed operation links caller/scope cancellation, resumes on the captured context, and checks cancellation again before continuing. It does not request frames or use DurationScale. `Initialize(window, clock, timeProvider)` injects a .NET TimeProvider inherited by children and popup roots; the original overload defaults to TimeProvider.System. TestSupport's ManualTimeProvider advances delay time independently of ManualAnimationFrameClock and does not pump the UI dispatcher. This adapts kotlinx.coroutines scheduling; it does not replace animation-core's per-frame timing.
 
-Create an attached control's scope with `VisualAnimationScope.Create(control)`, then use `CreateAnimatable`, `CreateTransition` or `CreateInfiniteTransition`. `Launch` starts inline, observes failures, and preserves the returned task's completion/cancellation/fault. `SubscribeValue` and `BindAnimatedValue` manage animation value consumption, including animation-priority contributions.
+Call `AnimationScope.Get(control)` on an attached control; it returns the same scope on every call and must not be disposed. Its parent is the nearest ancestor's `Get` scope (popups and flyouts included), or the window root. When the control moves in the tree, the scope is marked stale and rebuilt (or ended when the control detaches) once, coalesced, before the next frame's waiters resume; `AnimationScope.ScopeChangedEvent` then fires on the control, and runs bound to the old scope restart there via `AnimationScope.AddScopeChangedHandler`/`RemoveScopeChangedHandler`. A move made while a frame's waiters are resuming takes effect for the next frame. Use `CreateAnimatable`, `CreateTransition` or `CreateInfiniteTransition`; `scope.Clock` is a transitional entry point and will be removed. `Launch` starts inline, observes failures, and preserves the returned task's completion/cancellation/fault. `SubscribeValue` and `BindAnimatedValue` manage animation value consumption, including animation-priority contributions. `CreateChild` returns an `AnimationChildScope : AnimationScope, IDisposable`; disposing it ends only that child, and it also ends when its parent ends or is rebuilt. `scope.NextFrameAsync(ct)` waits for the window's next frame and resumes inline in the frame batch.
 
-Ending a scope first invalidates its entire subtree, revokes subscriptions and bindings, then cancels work. `DisposeAsync` waits for actual exits and rejects self/ancestor waits from owned operations. Factory objects cannot start or mutate animation after ending; final values remain readable. Detachment ends the control scope, and reattachment creates a fresh scope.
+Ending a scope first invalidates its entire subtree, revokes subscriptions and bindings, then cancels work. Scopes have no public `Dispose`/`DisposeAsync`; a child scope ends by disposing its `AnimationChildScope`, and control scopes end or rebuild automatically as described above. Factory objects cannot start or mutate animation after ending; final values remain readable. Detachment ends the control scope, and reattachment creates a fresh one through `Get`.
 
 Property sessions retain Animatable interruption semantics and current velocity. Destination changes beneath the contribution are checked before each frame, with existing local publication ordering. `Animated.SnapToTargetAsync(visual, property)` immediately removes that property's contribution and displays its current base destination, preserving declarations and ordinary bindings.
 
-Change root/child `DurationScale` or the inherited `Animated.DurationScale` playback policy for speed controls. Raw frame timestamps remain unchanged. A declaration's Spec changes affect the next target change.
+Change the scope chain's `DurationScale` or the inherited attached `AnimationScope.DurationScale` playback policy for speed controls. The effective scale is the scope chain value (the root starts at `MotionDurationScale.ScaleFactor`) multiplied by the host's attached value. Raw frame timestamps remain unchanged. A declaration's Spec changes affect the next target change.
 
 ## Supported values
 
@@ -73,9 +73,9 @@ or other animations on the same property is not supported.
 
 ## Errors
 
-The root scope's `AnimationFailed` exposes `FailureId`, `SourceScope`, `Host`, `OperationLabel` and `Exception`. Source and root scopes retain `LastError`. Cancellation is not a failure. Diagnostic handler errors are isolated and retained as root `LastDiagnosticError`.
+The root scope's `AnimationFailed` exposes `FailureId`, `SourceScope`, `Host`, `OperationLabel` and `Exception`. Cancellation is not a failure. Diagnostic handler errors are isolated and do not recurse; `LastError`/`LastDiagnosticError` are no longer public, so subscribe to `AnimationFailed` instead.
 
-A failing operation does not cancel siblings. A frame-source failure is reported once and stops source retries for that fixed environment. See [Scope usage and migration](../docs/usage/visual-animation-scope.md).
+A failing operation does not cancel siblings. A frame-source failure is reported once and stops source retries for that fixed environment. See [Scope usage and migration](../docs/usage/animation-scope.md).
 
 
 Invalid declarations, including incompatible, duplicate, direct, or inherited
