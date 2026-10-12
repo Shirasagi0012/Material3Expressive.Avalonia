@@ -273,7 +273,7 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
 
         var totalDuration = transition.TotalDuration;
         var startFraction = Math.Clamp(Fraction, 0, 1);
-        if (startFraction >= 1 || totalDuration <= TimeSpan.Zero || transition.DurationScale <= 0)
+        if (startFraction >= 1 || totalDuration <= TimeSpan.Zero || transition.DurationScale * scope.EffectiveDurationScale <= 0)
         {
             Fraction = 1;
             transition.SeekToPlayTime(totalDuration);
@@ -306,7 +306,8 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
                     throw new ArgumentOutOfRangeException(nameof(frame),
                         "Animation frame time moved backwards.");
                 
-                var durationScale = transition.DurationScale;
+                // The transition's own scale times the scope's, read per frame (D21).
+                var durationScale = transition.DurationScale * scope.EffectiveDurationScale;
                 var delta = frame - previousFrame;
                 var playTime = durationScale <= 0
                     ? animation?.Duration ?? transition.TotalDuration
