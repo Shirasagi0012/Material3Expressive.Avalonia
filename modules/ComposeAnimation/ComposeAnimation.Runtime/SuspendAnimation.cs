@@ -27,8 +27,8 @@ public static class SuspendAnimation
     /// interruption time creates a smoother animation.
     /// </param>
     /// <param name="block">
-    /// Invoked on every frame with the <see cref="AnimationScope{T}"/>; call
-    /// <see cref="AnimationScope{T}.CancelAnimation"/> from it to end the animation early.
+    /// Invoked on every frame with the <see cref="AnimationRun{T}"/>; call
+    /// <see cref="AnimationRun{T}.CancelAnimation"/> from it to end the animation early.
     /// </param>
     public static Task AnimateToAsync<T>(
         this AnimationState<T> state,
@@ -36,7 +36,7 @@ public static class SuspendAnimation
         IAnimationFrameClock clock,
         IAnimationSpec<T>? animationSpec = null,
         bool sequentialAnimation = false,
-        Action<AnimationScope<T>>? block = null,
+        Action<AnimationRun<T>>? block = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -72,15 +72,15 @@ public static class SuspendAnimation
     /// (true), or start on the next frame (false, the default).
     /// </param>
     /// <param name="block">
-    /// Invoked on every frame with the <see cref="AnimationScope{T}"/>; call
-    /// <see cref="AnimationScope{T}.CancelAnimation"/> from it to end the animation early.
+    /// Invoked on every frame with the <see cref="AnimationRun{T}"/>; call
+    /// <see cref="AnimationRun{T}.CancelAnimation"/> from it to end the animation early.
     /// </param>
     public static Task AnimateDecayAsync<T>(
         this AnimationState<T> state,
         IDecayAnimationSpec<T> animationSpec,
         IAnimationFrameClock clock,
         bool sequentialAnimation = false,
-        Action<AnimationScope<T>>? block = null,
+        Action<AnimationRun<T>>? block = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -105,7 +105,7 @@ public static class SuspendAnimation
     /// value and velocity to <paramref name="block"/> on every frame. When no
     /// <paramref name="animationSpec"/> is specified, a spring is used. If there's a need to
     /// access the animation state (start time, target, etc.), use
-    /// <see cref="AnimateToAsync{T}(AnimationState{T}, T, IAnimationFrameClock, IAnimationSpec{T}?, bool, Action{AnimationScope{T}}?, CancellationToken)"/>
+    /// <see cref="AnimateToAsync{T}(AnimationState{T}, T, IAnimationFrameClock, IAnimationSpec{T}?, bool, Action{AnimationRun{T}}?, CancellationToken)"/>
     /// instead.
     /// </summary>
     /// <param name="clock">The frame clock driving the animation.</param>
@@ -213,7 +213,7 @@ public static class SuspendAnimation
         Animation<T> animation,
         IAnimationFrameClock clock,
         TimeSpan startTime,
-        Action<AnimationScope<T>>? onFrame,
+        Action<AnimationRun<T>>? onFrame,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -221,7 +221,7 @@ public static class SuspendAnimation
         ArgumentNullException.ThrowIfNull(clock);
         clock.VerifyAccess();
 
-        AnimationScope<T>? scope = null;
+        AnimationRun<T>? scope = null;
         var controlled = (clock as IAnimationLifetimeClock)?.AnimationLifetime is not null;
         TimeSpan? previousFrame = null;
         var accumulated = TimeSpan.Zero;
@@ -279,14 +279,14 @@ public static class SuspendAnimation
         }
     }
 
-    private static AnimationScope<T> CreateScope<T>(
+    private static AnimationRun<T> CreateScope<T>(
         AnimationState<T> state,
         Animation<T> animation,
         TimeSpan startTime)
     {
         var initialVelocity = new AnimationVector(state.TypeConverter.Dimension);
         animation.GetVelocityVector(TimeSpan.Zero, initialVelocity.AsSpan());
-        return new AnimationScope<T>(
+        return new AnimationRun<T>(
             state.TypeConverter,
             animation.GetValue(TimeSpan.Zero),
             initialVelocity.AsReadOnlySpan(),
@@ -298,10 +298,10 @@ public static class SuspendAnimation
     private static void DoAnimationFrameWithScale<T>(
         AnimationState<T> state,
         Animation<T> animation,
-        AnimationScope<T> scope,
+        AnimationRun<T> scope,
         TimeSpan frameTime,
         double durationScale,
-        Action<AnimationScope<T>>? onFrame)
+        Action<AnimationRun<T>>? onFrame)
     {
         TimeSpan playTime;
         if (durationScale == 0)
@@ -324,10 +324,10 @@ public static class SuspendAnimation
     private static void DoAnimationFrame<T>(
         AnimationState<T> state,
         Animation<T> animation,
-        AnimationScope<T> scope,
+        AnimationRun<T> scope,
         TimeSpan frameTime,
         TimeSpan playTime,
-        Action<AnimationScope<T>>? onFrame)
+        Action<AnimationRun<T>>? onFrame)
     {
         scope.LastFrameTime = frameTime;
         scope.Value = animation.GetValue(playTime);

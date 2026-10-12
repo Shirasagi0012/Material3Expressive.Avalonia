@@ -194,7 +194,7 @@ await state.AnimateToAsync(100, clock,
 await state.AnimateToAsync(200, clock, spec, sequentialAnimation: true);
 ```
 
-**注意**：`SuspendAnimation` 系列（`AnimationState<T>.AnimateToAsync` / `AnimateDecayAsync`、`clock.AnimateAsync`）**没有任何互斥保护**——对同一个 `AnimationState<T>` 并发启动两个动画会交错写入帧值。需要打断安全时请用 `Animatable<T>`。每帧回调拿到的是 `AnimationScope<T>`（`Value`/`Velocity`/`TargetValue`/`CancelAnimation()` 等）。（取自 `SuspendAnimationTest.cs`。）
+**注意**：`SuspendAnimation` 系列（`AnimationState<T>.AnimateToAsync` / `AnimateDecayAsync`、`clock.AnimateAsync`）**没有任何互斥保护**——对同一个 `AnimationState<T>` 并发启动两个动画会交错写入帧值。需要打断安全时请用 `Animatable<T>`。每帧回调拿到的是 `AnimationRun<T>`（`Value`/`Velocity`/`TargetValue`/`CancelAnimation()` 等）。（取自 `SuspendAnimationTest.cs`。）
 
 ## 注意事项
 

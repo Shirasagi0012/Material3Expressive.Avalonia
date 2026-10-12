@@ -56,8 +56,8 @@ public sealed class AnimationState<T>
 
     internal Span<double> MutableVelocityVector => _velocityVector.AsSpan();
 
-    /// <summary>Populates all fields from an <see cref="AnimationScope{T}"/>; mirrors updateState upstream.</summary>
-    internal void UpdateFrom(AnimationScope<T> scope)
+    /// <summary>Populates all fields from an <see cref="AnimationRun{T}"/>; mirrors updateState upstream.</summary>
+    internal void UpdateFrom(AnimationRun<T> scope)
     {
         Value = scope.Value;
         _velocityVector.CopyFrom(scope.VelocityVector);
