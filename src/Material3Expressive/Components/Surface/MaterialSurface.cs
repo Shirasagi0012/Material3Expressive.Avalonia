@@ -1,3 +1,4 @@
+using Avalonia.LogicalTree;
 using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
 using ComposeAnimation;
 using System;
@@ -361,11 +362,23 @@ public sealed class MaterialSurface : Control
         // The theme supplies the current tonal palette through effective properties.
         UpdateEffectiveBackground();
 
-        if (TemplatedParent is Control host && MaterialInteraction.GetIsInteractive(host))
+        if (TemplatedParent is Control host && MaterialInteraction.GetIsInteractive(host)
+            && !IsInTemplatePopup(host))
         {
             _interactionController = MaterialInteraction.GetOrCreate(host);
             _interactionAttachment = _interactionController.Attach(this);
         }
+    }
+
+    // A surface inside a popup of its templated parent (a MenuItem's submenu container) is not that
+    // parent's interaction front-end. Attaching it replaced the item's own surface as the
+    // controller's presenter, so the item stopped drawing its hover layer once the submenu opened.
+    private bool IsInTemplatePopup(Control host)
+    {
+        for (var node = ((ILogical)this).LogicalParent; node is not null && !ReferenceEquals(node, host); node = node.LogicalParent)
+            if (node is Avalonia.Controls.Primitives.Popup)
+                return true;
+        return false;
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)

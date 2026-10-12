@@ -135,6 +135,7 @@ internal sealed class MaterialInteractionController
     internal bool IsEnabled => _owner.IsEffectivelyEnabled && MaterialInteraction.GetIsInteractive(_owner);
 
     /// <summary>The state layer's current opacity, mid-fade included.</summary>
+    internal MaterialSurface? Presenter => _presenter;
     internal double StateLayerOpacity => _stateLayerAlpha?.Value ?? 0;
 
     /// <summary>How many ripples are currently alive (test observation point).</summary>

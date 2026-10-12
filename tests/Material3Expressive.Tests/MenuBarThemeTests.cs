@@ -91,6 +91,7 @@ public sealed class MenuBarThemeTests
         Assert.Equal(0.08, MaterialInteraction.GetOrCreate(recent).StateLayerOpacity, 3);
         recent.IsSubMenuOpen = true; recent.Focus(); Settle(clock, window); // what the open delay does
         Assert.True(recent.IsSubMenuOpen);
+        AssertHovered(recent);
         Assert.Equal(0.08, MaterialInteraction.GetOrCreate(recent).StateLayerOpacity, 3);
         window.Close();
     }
@@ -205,6 +206,8 @@ public sealed class MenuBarThemeTests
         var controller = MaterialInteraction.GetOrCreate(item);
         Assert.True(controller.Interaction.HasFlag(InteractionState.Hovered), $"{item.Header} not hovered: {controller.Interaction}");
         Assert.True(controller.StateLayerOpacity > 0, $"{item.Header}: no state layer drawn");
+        // The item's own surface must be the one drawing it (not, e.g., its submenu's container).
+        Assert.Same(Surface(item), controller.Presenter);
     }
 
     static void AssertChevronDrawn(MenuItem item)
