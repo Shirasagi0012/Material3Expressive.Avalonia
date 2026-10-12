@@ -225,14 +225,11 @@ public static class SuspendAnimation
         scope.VerifyAccess();
 
         AnimationRun<T>? run = null;
-        TimeSpan? previousFrame = null;
-        var accumulated = TimeSpan.Zero;
+        var clock = new PlayTimeAccumulator();
         void Sample(TimeSpan frame)
         {
             var durationScale = scope.EffectiveDurationScale;
-            if (durationScale > 0 && previousFrame is { } previous)
-                accumulated += TimeSpan.FromTicks(checked((long)Math.Round(Math.Max(0, (frame - previous).Ticks) / durationScale)));
-            previousFrame = frame;
+            var accumulated = clock.Advance(frame, durationScale);
             var playTime = durationScale == 0 ? (animation.IsInfinite ? TimeSpan.Zero : animation.Duration) : accumulated;
             DoAnimationFrame(state, animation, run!, frame, playTime, onFrame);
         }

@@ -293,27 +293,23 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
         var running = false;
         try
         {
-            var firstFrame = await scope.WaitFrameAsync(cancellationToken, null);
-            var previousFrame = firstFrame;
-            var animationPlayTime = TimeSpan.Zero;
+            var clock = new PlayTimeAccumulator();
+            clock.Advance(await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true), 1);
             while (true)
             {
+                // The wait observes the run token; one check per frame after it resumes.
+                var frame = await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true);
                 cancellationToken.ThrowIfCancellationRequested();
-                
-                var frame = await scope.WaitFrameAsync(cancellationToken, null);
-                
-                if (frame < previousFrame)
+                if (clock.IsBeforeLast(frame))
                     throw new ArgumentOutOfRangeException(nameof(frame),
                         "Animation frame time moved backwards.");
-                
+
                 // The transition's own scale times the scope's, read per frame (D21).
                 var durationScale = transition.DurationScale * scope.EffectiveDurationScale;
-                var delta = frame - previousFrame;
+                var animationPlayTime = clock.Advance(frame, durationScale);
                 var playTime = durationScale <= 0
                     ? animation?.Duration ?? transition.TotalDuration
-                    : animationPlayTime += TimeSpan.FromTicks(Math.Max(0,
-                        (long)Math.Round(delta.Ticks / durationScale)));
-                previousFrame = frame;
+                    : animationPlayTime;
                 var currentDuration = transition.TotalDuration;
                 var progress = animation is null
                     ? currentDuration <= TimeSpan.Zero
