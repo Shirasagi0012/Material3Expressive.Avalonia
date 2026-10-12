@@ -25,7 +25,7 @@
                     <m3:DatePickerDialogColumn>
                       <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
                         <m3:AlertDialogButtons x:Name="PART_Buttons" CrossAxisSpacing="12"
-                            m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}"
+                            m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}"
                             TextElement.Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextColor}}">
                         <ContentPresenter x:Name="PART_Confirm" Content="{TemplateBinding ConfirmButton}" ContentTemplate="{TemplateBinding ConfirmButtonTemplate}" />
                         <ContentPresenter x:Name="PART_Dismiss" IsVisible="False" Content="{TemplateBinding DismissButton}" ContentTemplate="{TemplateBinding DismissButtonTemplate}" />

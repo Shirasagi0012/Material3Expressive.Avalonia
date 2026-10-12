@@ -1,0 +1,79 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <!--
+    Menu bar (Avalonia Menu): M3 has no menu bar. The bar is a transparent horizontal row; its
+    top-level items are the vertical menu item theme with a bar-specific layout, so their submenu
+    popup is the same Material vertical menu container, and nested items use the vertical item
+    theme through the same converter as MenuFlyoutPresenter. Nothing here touches the flyout path,
+    ContextMenu or FlyoutPresenter.
+  -->
+  <Styles.Resources>
+    <!-- Top-level item. BasedOn the vertical item so the popup container, icon slot, access keys,
+         colors, disabled state and MaterialInteraction feedback are shared; only the layout and
+         the popup behavior of a bar item differ:
+         - 40 DIP container (Small button height) inside a 48 DIP minimum touch target on both axes,
+           12 DIP horizontal padding (baseline menu item padding), item shape from the Menu tokens
+         - transparent container; no gesture text or chevron
+         - popup below the item, light-dismiss, with the bar passing input through so moving to a
+           neighbouring item switches menus (as Fluent)
+         The base template sets these parts at Template priority, which outranks a plain Style, so
+         the overrides carry a pseudo-class (:not(:separator), true for every bar item) to apply at
+         StyleTrigger priority. -->
+    <ControlTheme x:Key="MaterialMenuBarItemTheme" TargetType="MenuItem" BasedOn="{StaticResource MaterialVerticalMenuItemTheme}">
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemPadding}}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Style Selector="^:not(:separator) /template/ m3|MenuItemChrome">
+        <Setter Property="MinimumContainerWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}" />
+        <Setter Property="MinimumContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}" />
+        <Setter Property="MinimumInteractiveHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}" />
+      </Style>
+      <Style Selector="^:not(:separator) /template/ StackPanel#PART_Trailing">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^:not(:separator) /template/ Popup#PART_Popup">
+        <Setter Property="Placement" Value="BottomEdgeAlignedLeft" />
+        <Setter Property="IsLightDismissEnabled" Value="True" />
+        <Setter Property="OverlayInputPassThroughElement" Value="{Binding $parent[Menu]}" />
+      </Style>
+      <!-- Persistent state while the submenu is open or the item is the keyboard selection without
+           showing its own state layer: the content color at the focus state-layer opacity. -->
+      <Style Selector="^:open, ^:selected:not(:focus):not(:pointerover)">
+        <Setter Property="Background">
+          <MultiBinding Converter="{x:Static m3:MenuSelectionHighlight.Converter}">
+            <Binding Path="Foreground" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.FocusStateLayerOpacity}" />
+          </MultiBinding>
+        </Setter>
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type Menu}" TargetType="Menu">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="ItemContainerTheme" Value="{StaticResource MaterialMenuBarItemTheme}" />
+      <Setter Property="m3:MenuThemeProperties.ItemTheme" Value="{StaticResource MaterialVerticalMenuItemTheme}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}"
+                  Padding="{TemplateBinding Padding}">
+            <ItemsPresenter Name="PART_ItemsPresenter"
+                            ItemsPanel="{TemplateBinding ItemsPanel}"
+                            KeyboardNavigation.TabNavigation="Continue" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+
+  <!-- Submenu items at any depth get the vertical item theme from the inherited
+       MenuThemeProperties.ItemTheme set on the Menu (same mechanism as MenuFlyoutPresenter); an
+       ItemContainerTheme on the owning item still wins. -->
+  <Style Selector="Menu MenuItem Separator">
+    <Setter Property="Margin" Value="12,2" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+</Styles>

@@ -28,7 +28,7 @@
       <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelLarge.Style}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelLarge.Style}}" />
       <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.LeadingPadding}}" />
       <Setter Property="CornerRadius" Value="{Binding Path=(m3:ButtonThemeProperties.CornerRadius), RelativeSource={RelativeSource Self}}" />
@@ -53,7 +53,7 @@
                 <m3:ButtonContentRow x:Name="PART_ContentRow" FillContentWhenNoIcon="True"
                                      IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}"
                                      IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
-                  <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                  <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" />
                   <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}"
                                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                     m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
@@ -257,7 +257,7 @@
       <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelLarge.Style}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+LabelLarge.Style}}" />
       <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.TrailingPadding}}" />
       <Setter Property="CornerRadius" Value="{Binding Path=(m3:ButtonThemeProperties.CornerRadius), RelativeSource={RelativeSource Self}}" />
@@ -282,7 +282,7 @@
               <m3:ButtonContentRow x:Name="PART_ContentRow" FillContentWhenNoIcon="True"
                                    IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.TrailingIconSize}}"
                                    IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
-                <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" />
                 <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}"
                                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                   m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+SplitButtonSmall.TrailingIconSize}}" />

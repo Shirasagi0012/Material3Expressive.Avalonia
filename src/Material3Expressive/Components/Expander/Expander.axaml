@@ -1,0 +1,175 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation">
+  <!--
+    Expander: M3 has no expansion panel, so it is composed from a one-line list item header and an
+    AnimatedVisibility content region, in list style (no container, transparent background).
+
+    MaterialTokens has no List tokens, so the header uses local values taken from upstream
+    ListTokens (md.comp.list.list-item.*), not new token keys:
+      one-line container height 56, leading/trailing space 16, top/bottom space 10,
+      label-to-trailing gap 12, trailing icon 24 in OnSurfaceVariant, label BodyLarge in OnSurface,
+      disabled label and trailing icon OnSurface at the disabled content opacity.
+  -->
+  <Styles.Resources>
+    <!-- The header stays a ToggleButton (as in Fluent) so Space/Enter, :focus-visible and
+         ExpanderAutomationPeer keep their native behavior. Hover, press and focus are
+         MaterialInteraction state layers in the label color. -->
+    <ControlTheme x:Key="MaterialExpanderHeaderTheme" TargetType="ToggleButton">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="MinHeight" Value="56" />
+      <Setter Property="Padding" Value="16,10" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Container"
+                              Background="{TemplateBinding Background}"
+                              CornerRadius="{TemplateBinding CornerRadius}"
+                              StateLayerBrush="{TemplateBinding Foreground}"
+                              TextElement.Foreground="{TemplateBinding Foreground}">
+            <DockPanel Margin="{TemplateBinding Padding}">
+              <m3:MaterialSymbol x:Name="PART_Chevron"
+                                 DockPanel.Dock="Right"
+                                 Margin="12,0,0,0"
+                                 VerticalAlignment="Center"
+                                 Symbol="KeyboardArrowDown"
+                                 m3:MaterialIcon.DefaultSize="24"
+                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
+              <ContentPresenter x:Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                RecognizesAccessKey="True"
+                                m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+BodyLarge.Style}}" />
+            </DockPanel>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+
+      <!-- Chevron angle: keyboard_arrow_down points toward where the content appears and turns
+           180 degrees while expanded, animated by the same ChevronRotation + AnimatedDouble
+           declaration as DropDownButton (Compose's default spring). -->
+      <Style Selector="^ /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="0" />
+        <Setter Property="ca:Animated.Properties">
+          <ca:AnimatedPropertyCollection>
+            <ca:AnimatedDouble Property="{x:Static m3:ChevronRotation.AngleProperty}" />
+          </ca:AnimatedPropertyCollection>
+        </Setter>
+      </Style>
+      <Style Selector="^:checked /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="180" />
+      </Style>
+      <Style Selector="^[(m3|ExpanderHeader.Direction)=Up] /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="180" />
+      </Style>
+      <Style Selector="^[(m3|ExpanderHeader.Direction)=Up]:checked /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="0" />
+      </Style>
+      <Style Selector="^[(m3|ExpanderHeader.Direction)=Left] /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="90" />
+      </Style>
+      <Style Selector="^[(m3|ExpanderHeader.Direction)=Left]:checked /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="-90" />
+      </Style>
+      <Style Selector="^[(m3|ExpanderHeader.Direction)=Right] /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="-90" />
+      </Style>
+      <Style Selector="^[(m3|ExpanderHeader.Direction)=Right]:checked /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="m3:ChevronRotation.Angle" Value="90" />
+      </Style>
+
+      <Style Selector="^:disabled">
+        <Setter Property="Foreground">
+          <MultiBinding Converter="{x:Static m3:ExpanderHeader.Alpha}">
+            <m3:Token Key="{x:Static m3:MaterialTokens+Sys+Color.OnSurface}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.DisabledContentOpacity}" />
+          </MultiBinding>
+        </Setter>
+      </Style>
+      <Style Selector="^:disabled /template/ m3|MaterialSymbol#PART_Chevron">
+        <Setter Property="Foreground" Value="{Binding $parent[ToggleButton].Foreground}" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type Expander}" TargetType="Expander">
+      <Setter Property="IsTabStop" Value="False" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="16,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}">
+            <DockPanel>
+              <ToggleButton x:Name="ExpanderHeader"
+                            Theme="{StaticResource MaterialExpanderHeaderTheme}"
+                            DockPanel.Dock="Top"
+                            Content="{TemplateBinding Header}"
+                            ContentTemplate="{TemplateBinding HeaderTemplate}"
+                            IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
+                            m3:ExpanderHeader.Direction="{TemplateBinding ExpandDirection}" />
+              <m3:ExpanderContentHost x:Name="PART_ContentStretch">
+                <ca:AnimatedVisibility x:Name="PART_ContentHost"
+                                       Visible="{TemplateBinding IsExpanded}"
+                                       HorizontalContentAlignment="Stretch"
+                                       VerticalContentAlignment="Stretch">
+                  <m3:ExpanderContentFill x:Name="PART_ContentFill">
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                  </m3:ExpanderContentFill>
+                </ca:AnimatedVisibility>
+              </m3:ExpanderContentHost>
+            </DockPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <!-- Compose AnimatedVisibility in a Column/Row: expand + fade in, shrink + fade out along the
+           expand axis, anchored at the header. Specs are the declarations' defaults, i.e. the
+           springs Compose's fadeIn/expandVertically/... use. -->
+      <Style Selector="^ /template/ ca|AnimatedVisibility#PART_ContentHost">
+        <Setter Property="Enter"><ca:EnterTransitionGroup><ca:FadeIn /><ca:ExpandVertically ExpandFrom="Top" /></ca:EnterTransitionGroup></Setter>
+        <Setter Property="Exit"><ca:ExitTransitionGroup><ca:FadeOut /><ca:ShrinkVertically ShrinkTowards="Top" /></ca:ExitTransitionGroup></Setter>
+      </Style>
+      <Style Selector="^:up /template/ ToggleButton#ExpanderHeader">
+        <Setter Property="DockPanel.Dock" Value="Bottom" />
+      </Style>
+      <Style Selector="^:up /template/ ca|AnimatedVisibility#PART_ContentHost">
+        <Setter Property="Enter"><ca:EnterTransitionGroup><ca:FadeIn /><ca:ExpandVertically ExpandFrom="Bottom" /></ca:EnterTransitionGroup></Setter>
+        <Setter Property="Exit"><ca:ExitTransitionGroup><ca:FadeOut /><ca:ShrinkVertically ShrinkTowards="Bottom" /></ca:ExitTransitionGroup></Setter>
+      </Style>
+      <Style Selector="^:left /template/ m3|ExpanderContentHost, ^:right /template/ m3|ExpanderContentHost">
+        <Setter Property="Orientation" Value="Horizontal" />
+      </Style>
+      <Style Selector="^:left /template/ ToggleButton#ExpanderHeader">
+        <Setter Property="DockPanel.Dock" Value="Right" />
+      </Style>
+      <Style Selector="^:left /template/ ca|AnimatedVisibility#PART_ContentHost">
+        <Setter Property="Enter"><ca:EnterTransitionGroup><ca:FadeIn /><ca:ExpandHorizontally ExpandFrom="End" /></ca:EnterTransitionGroup></Setter>
+        <Setter Property="Exit"><ca:ExitTransitionGroup><ca:FadeOut /><ca:ShrinkHorizontally ShrinkTowards="End" /></ca:ExitTransitionGroup></Setter>
+      </Style>
+      <Style Selector="^:right /template/ ToggleButton#ExpanderHeader">
+        <Setter Property="DockPanel.Dock" Value="Left" />
+      </Style>
+      <Style Selector="^:right /template/ ca|AnimatedVisibility#PART_ContentHost">
+        <Setter Property="Enter"><ca:EnterTransitionGroup><ca:FadeIn /><ca:ExpandHorizontally ExpandFrom="Start" /></ca:EnterTransitionGroup></Setter>
+        <Setter Property="Exit"><ca:ExitTransitionGroup><ca:FadeOut /><ca:ShrinkHorizontally ShrinkTowards="Start" /></ca:ExitTransitionGroup></Setter>
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

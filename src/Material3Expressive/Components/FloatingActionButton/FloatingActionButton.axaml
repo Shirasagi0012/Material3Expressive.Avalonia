@@ -34,7 +34,7 @@
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.ItemContainerColor}}"/>
       <Setter Property="Foreground" Value="{m3:ContentColorFor}"/>
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.ItemShape}}"/>
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.LabelTextStyle}}"/>
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.LabelTextStyle}}"/>
       <Setter Property="RevealWidthMotion" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.ItemWidthMotion}}"/>
       <Setter Property="RevealAlphaMotion" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.ItemAlphaMotion}}"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
@@ -45,7 +45,7 @@
           <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}">
             <m3:FabMenuItemLayout x:Name="PART_ContentLayout" MinimumSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.ItemHeight}}" ContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.ContentPadding}}" IconLabelSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.IconLabelSpace}}">
               <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.ItemIconSize}}"/>
-              <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" m3:TextStyleHost.IsEnabled="True"/>
+              <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"/>
             </m3:FabMenuItemLayout>
           </m3:MaterialSurface>
         </ControlTemplate>
@@ -146,7 +146,7 @@
           <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabLarge.ContainerShape}"/>
         </MultiBinding>
       </Setter>
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.LabelTextStyle}}"/>
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.LabelTextStyle}}"/>
       <Setter Property="HiddenScale" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Fab.HiddenScale}}"/>
       <Setter Property="VisibilityAlignment" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Fab.VisibilityAlignment}}"/>
       <Setter Property="VisibilityScaleSpec">
@@ -200,7 +200,7 @@
                       </MultiBinding>
                     </m3:MaterialIcon.DefaultSize>
                   </ContentPresenter>
-                  <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" m3:TextStyleHost.IsEnabled="True"/>
+                  <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                 </m3:FabIconContentLayout>
               </m3:MaterialSurface>
             </m3:FabLayout>
@@ -218,7 +218,7 @@
           <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabLarge.ContainerShape}"/>
         </MultiBinding>
       </Setter>
-      <Setter Property="m3:MaterialText.DefaultStyle">
+      <Setter Property="m3:MaterialText.Style">
         <MultiBinding Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">
           <ReflectionBinding Path="Size" RelativeSource="{RelativeSource Self}"/>
           <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ExtendedFabPrimary.LabelTextStyle}"/>
@@ -344,7 +344,7 @@
                     </m3:MaterialIcon.DefaultSize>
                   </ContentPresenter>
                   <m3:FabLabelClip>
-                    <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" m3:TextStyleHost.IsEnabled="True"/>
+                    <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                   </m3:FabLabelClip>
                 </m3:ExtendedFabLayout>
               </m3:MaterialSurface>

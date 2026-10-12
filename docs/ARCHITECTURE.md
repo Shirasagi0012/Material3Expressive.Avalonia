@@ -273,7 +273,14 @@ Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪�
   原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。
 - [TabRow / Tab](../src/Material3Expressive/Components/TabRow/README.md) 提供受控的独立标签栏及原生 TabControl 顶部水平主题，
   共用 intrinsic / 基线布局、内容颜色 Transition 和指示器 Animatable。原生页面呈现和选择仍由 TabControl 负责。
-- [Progress Indicator](../src/Material3Expressive/Components/ProgressIndicator/README.md) 提供四个独立控件的确定与不确定模式。
+- 原生 [RepeatButton / HyperlinkButton / DropDownButton](../src/Material3Expressive/Components/Button/README.md) 的默认主题基于 Button 主题；
+  DropDownButton 的尾部箭头由全局 DropDownButton 样式填入共享模板的空尾部图标盒，打开 Flyout 时以弹簧旋转。
+- [GroupBox](../src/Material3Expressive/Components/GroupBox/README.md) 的默认主题以 OutlinedCard 的容器 Token 组合描边表面，
+  标题位于表面内部顶部（TitleSmall、OnSurfaceVariant），非交互。
+- [Expander](../src/Material3Expressive/Components/Expander/README.md) 的默认主题是列表风格：单行列表项标题（ToggleButton，BodyLarge、56 DIP、尾部箭头随展开旋转）加 AnimatedVisibility 内容区，无容器。
+- [NumericUpDown / ButtonSpinner](../src/Material3Expressive/Components/NumericUpDown/README.md) 的默认主题以 Material TextField 作为 PART_TextBox，
+  PART_Spinner 位于其图标槽，步进器为标准图标按钮样式的 RepeatButton；独立 ButtonSpinner 使用 Outlined 表面。
+- [Progress Indicator](../src/Material3Expressive/Components/ProgressIndicator/README.md) 提供四个独立控件的确定与不确定模式；原生 ProgressBar 的默认主题在模板中承载 LinearProgressIndicator。
   ComposeAnimation 管理动画，Skia 保留 Canvas/PathMeasure 绘制；圆形波浪的 Polygon/Morph 消费仓内 `modules/MaterialShapes` 源码模块。
 - 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
   [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。

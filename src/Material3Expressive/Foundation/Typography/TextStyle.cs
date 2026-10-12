@@ -15,6 +15,7 @@ public sealed record TextStyle
     public double? LineHeight { get; init; }
     public TextAlignment? TextAlignment { get; init; }
     public IBrush? Foreground { get; init; }
+    public FontFeatureCollection? FontFeatures { get; init; }
 
     public static TextStyle Empty { get; } = new();
 
@@ -30,5 +31,6 @@ public sealed record TextStyle
         LineHeight = overrides.LineHeight ?? LineHeight,
         TextAlignment = overrides.TextAlignment ?? TextAlignment,
         Foreground = overrides.Foreground ?? Foreground,
+        FontFeatures = overrides.FontFeatures ?? FontFeatures,
     };
 }

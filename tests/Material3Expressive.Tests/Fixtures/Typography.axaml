@@ -20,9 +20,8 @@
   <TextBlock x:Name="Resource" Text="Resource" m3:MaterialText.Style="{StaticResource Custom}" />
   <TextBlock x:Name="Colored" Text="Dynamic resource and token"
              m3:MaterialText.Style="{m3:TextStyle BasedOn={DynamicResource Custom}, Foreground={m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}}" />
-  <StackPanel m3:MaterialText.DefaultStyle="{m3:Typography BodyLarge}">
-    <StackPanel>
-      <m3:MaterialText.DefaultStyle><m3:TextStyle FontWeight="Bold" /></m3:MaterialText.DefaultStyle>
+  <StackPanel m3:MaterialText.Style="{m3:Typography BodyLarge}">
+    <StackPanel m3:MaterialText.Style="{m3:TextStyle FontWeight=Bold}">
       <TextBlock x:Name="Inherited" Text="Inherited" />
     </StackPanel>
   </StackPanel>

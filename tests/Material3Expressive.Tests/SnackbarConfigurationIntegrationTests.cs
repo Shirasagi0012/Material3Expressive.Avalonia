@@ -65,14 +65,14 @@ public class SnackbarConfigurationIntegrationTests
             button.Theme = (ControlTheme)window.FindResource("MaterialSnackbarActionButtonTheme")!; Flush(window);
             Assert.Equal(new Thickness(12, 8), button.Padding);
             button.Classes.Add("medium"); Flush(window);
-            Assert.Equal(new Thickness(21, 11), button.Padding); Assert.Equal(mediumText, MaterialText.GetDefaultStyle(button));
+            Assert.Equal(new Thickness(21, 11), button.Padding); Assert.Equal(mediumText, MaterialText.GetStyle(button));
             var userText = new TextStyle { FontSize = 17 };
             var style = new Style { Setters = { new Setter(Button.PaddingProperty, new Thickness(5)),
-                new Setter(MaterialText.DefaultStyleProperty, userText) } };
+                new Setter(MaterialText.StyleProperty, userText) } };
             button.Styles.Add(style); button.ApplyStyling(); Flush(window);
-            Assert.Equal(new Thickness(5), button.Padding); Assert.Equal(userText, MaterialText.GetDefaultStyle(button));
+            Assert.Equal(new Thickness(5), button.Padding); Assert.Equal(userText, MaterialText.GetStyle(button));
             button.Classes.Remove("medium"); Flush(window);
-            Assert.Equal(new Thickness(5), button.Padding); Assert.Equal(userText, MaterialText.GetDefaultStyle(button));
+            Assert.Equal(new Thickness(5), button.Padding); Assert.Equal(userText, MaterialText.GetStyle(button));
             button.Styles.Remove(style); Flush(window); Assert.Equal(new Thickness(12, 8), button.Padding);
             button.Resources[Comp.Snackbar.ActionContentPadding] = new Thickness(14, 9); Flush(window);
             Assert.Equal(new Thickness(14, 9), button.Padding);

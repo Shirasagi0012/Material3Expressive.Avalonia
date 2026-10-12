@@ -135,6 +135,7 @@ internal sealed class MaterialInteractionController
     internal bool IsEnabled => _owner.IsEffectivelyEnabled && MaterialInteraction.GetIsInteractive(_owner);
 
     /// <summary>The state layer's current opacity, mid-fade included.</summary>
+    internal MaterialSurface? Presenter => _presenter;
     internal double StateLayerOpacity => _stateLayerAlpha?.Value ?? 0;
 
     /// <summary>How many ripples are currently alive (test observation point).</summary>
@@ -336,6 +337,7 @@ internal sealed class MaterialInteractionController
         // A descendant button can consume the press. Observe the owner's native class
         // handler above, rather than giving its clickable ancestor a second ripple.
         if (_owner is Button { IsPressed: false }) return;
+        if (IsFromHostedPopup(e.Source)) return;
         if (IsEnabled && e.GetCurrentPoint(_owner).Properties.IsLeftButtonPressed)
         {
             _pressedPointer = e.Pointer;
@@ -343,10 +345,16 @@ internal sealed class MaterialInteractionController
         }
     }
 
+    // Input from a popup the owner hosts (a MenuItem's submenu) is routed through the owner, but the
+    // popup is not inside the owner's visual bounds and its controls handle that input themselves.
+    // Treating it as the owner's own press rippled every submenu parent from the clicked point.
+    private bool IsFromHostedPopup(object? source) =>
+        source is Visual visual && !ReferenceEquals(visual, _owner) && !_owner.IsVisualAncestorOf(visual);
+
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
         _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
-        if (_hoverNeedsMove && IsEnabled)
+        if (_hoverNeedsMove && IsEnabled && !IsFromHostedPopup(e.Source))
         {
             _hoverNeedsMove = false;
             Set(InteractionState.Hovered, new Rect(_owner.Bounds.Size).Contains(e.GetPosition(_owner)));

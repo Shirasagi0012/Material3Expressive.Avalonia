@@ -270,3 +270,16 @@ CubicBezierEasing 的 double 运算。固定 Compose 的 Float 运算和不同�
 原生 tessellator 对路径坐标的敏感性使这两种坐标接入不等价。
 范围：本次观察到的阴影 raster，不接受其他布局、颜色或时序偏离；保留原始 PNG 和比较失败。
 确认：2026-10-04，维护者在坐标适配方案与保留差异中选择“本次保留并记录阴影差异”。
+
+## 文字样式基于原生继承
+
+状态：已获维护者批准方案（text-style-redesign），公共 API 变化待维护者最终确认。
+决定：`MaterialText.Style` 把已指定字段以 Style 优先级写成元素自身的 Avalonia 原生继承属性（含 FontFeatures），
+由原生继承传给子孙；删除 `TextStyleHost`、`PresenterTextStyle`、Typography.axaml 的作用域样式、TabHeader/AppBar 标题
+的 `Styles[0]` 插入以及 Button 的原生属性转发。`DefaultStyle` 保留为过时别名。MaterialTheme 在 TopLevel 上设置 BodyLarge 基线。
+部分 Style：采用合并语义（未指定字段继续继承）；需要替换时传完整角色样式。`TextStyle.Empty` 不再退出继承。
+原因：ContentPresenter 是子元素的继承父级，原生继承天然覆盖 presenter 标题问题（取代原“Presenter 子元素的默认文字样式”提议）；
+旧实现在每个 TextBlock 上投影样式，阻断了原生继承，并需要多处变通。
+影响：本地值、模板值与触发样式按 Avalonia 优先级覆盖；已附着元素上字段由未指定变为指定时，新绑定排在已有同级样式之后。
+范围：Foundation/Typography 与所有排版使用者。
+

@@ -22,6 +22,7 @@ public sealed class TextStyleExtension : MarkupExtension
     public object? LineHeight { get; set; }
     public object? TextAlignment { get; set; }
     public object? Foreground { get; set; }
+    public object? FontFeatures { get; set; }
 
     public override BindingBase ProvideValue(IServiceProvider serviceProvider)
     {
@@ -32,7 +33,7 @@ public sealed class TextStyleExtension : MarkupExtension
             (nameof(FontWeight), FontWeight), (nameof(FontStyle), FontStyle),
             (nameof(FontStretch), FontStretch), (nameof(LetterSpacing), LetterSpacing),
             (nameof(LineHeight), LineHeight), (nameof(TextAlignment), TextAlignment),
-            (nameof(Foreground), Foreground),
+            (nameof(Foreground), Foreground), (nameof(FontFeatures), FontFeatures),
         }.Where(field => field.Value is not null).ToArray();
 
         var binding = new MultiBinding
@@ -79,10 +80,27 @@ public sealed class TextStyleExtension : MarkupExtension
                             _ => throw new InvalidOperationException($"Cannot convert {value} to a foreground brush."),
                         },
                     },
+                    nameof(FontFeatures) => result with
+                    {
+                        FontFeatures = value switch
+                        {
+                            FontFeatureCollection features => features,
+                            string text => ParseFeatures(text),
+                            _ => throw new InvalidOperationException($"Cannot convert {value} to font features."),
+                        },
+                    },
                     _ => throw new ArgumentOutOfRangeException(),
                 };
             }
             return result;
+        }
+
+        private static FontFeatureCollection ParseFeatures(string text)
+        {
+            var features = new FontFeatureCollection();
+            foreach (var part in text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                features.Add(FontFeature.Parse(part));
+            return features;
         }
 
         private static T Read<T>(object value) => value is T typed ? typed

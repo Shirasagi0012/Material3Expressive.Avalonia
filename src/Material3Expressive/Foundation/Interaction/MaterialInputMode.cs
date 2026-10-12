@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia;
+using Avalonia.Controls.Primitives;
 
 namespace Material3Expressive.Foundation.Interaction;
 
@@ -12,7 +14,9 @@ internal sealed class MaterialInputMode
     private static readonly ConditionalWeakTable<TopLevel, MaterialInputMode> Windows = new();
     internal bool IsKeyboard { get; private set; } = true;
 
-    private MaterialInputMode(TopLevel window)
+    private MaterialInputMode(TopLevel window) => Observe(window);
+
+    private void Observe(TopLevel window)
     {
         window.AddHandler(InputElement.PointerPressedEvent, (_, _) => IsKeyboard = false,
             RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -26,8 +30,27 @@ internal sealed class MaterialInputMode
         }, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
-    internal static MaterialInputMode? For(Control owner) => TopLevel.GetTopLevel(owner) is { } window
-        ? Windows.GetValue(window, static w => new MaterialInputMode(w)) : null;
+    // Compose keeps one input mode per window, and its popups share it. A native popup is its own
+    // TopLevel: with a separate default-keyboard mode, a submenu parent that Avalonia focuses
+    // programmatically when its submenu opens showed the focus layer instead of pointer hover.
+    internal static MaterialInputMode? For(Control owner)
+    {
+        if (TopLevel.GetTopLevel(owner) is not { } window)
+            return null;
+        var root = window;
+        while (root is PopupRoot { Parent: Visual host }
+               && TopLevel.GetTopLevel(host) is { } parent && !ReferenceEquals(parent, root))
+            root = parent;
+        if (Windows.TryGetValue(window, out var known))
+            return known;
+        var mode = Windows.GetValue(root, static w => new MaterialInputMode(w));
+        if (!ReferenceEquals(root, window))
+        {
+            mode.Observe(window);
+            Windows.AddOrUpdate(window, mode);
+        }
+        return mode;
+    }
 
     internal void ObserveFocusNavigation(NavigationMethod method)
     {

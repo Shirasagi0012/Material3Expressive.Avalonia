@@ -51,6 +51,13 @@
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
+                <Button Content="NumericUpDown demo" Click="OnNumericUpDownDemo" HorizontalAlignment="Left" />
+                <Button Content="RepeatButton demo" Click="OnRepeatButtonDemo" HorizontalAlignment="Left" />
+                <Button Content="HyperlinkButton demo" Click="OnHyperlinkButtonDemo" HorizontalAlignment="Left" />
+                <Button Content="DropDownButton demo" Click="OnDropDownButtonDemo" HorizontalAlignment="Left" />
+                <Button Content="GroupBox demo" Click="OnGroupBoxDemo" HorizontalAlignment="Left" />
+                <Button Content="Expander demo" Click="OnExpanderDemo" HorizontalAlignment="Left" />
+                <Button Content="Menu bar demo" Click="OnMenuBarDemo" HorizontalAlignment="Left" />
                 <Button Content="TabRow demo" Click="OnTabRowDemo" HorizontalAlignment="Left" />
                 <Button Content="Progress Indicator demo" Click="OnProgressIndicatorDemo" HorizontalAlignment="Left" />
                 <Button Content="Loading Indicator demo" Click="OnLoadingIndicatorDemo" HorizontalAlignment="Left" />

@@ -73,7 +73,7 @@
     <ControlTheme x:Key="{x:Type m3:DropdownMenuItem}" TargetType="m3:DropdownMenuItem">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="IsExpressive" Value="False" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemPadding}}" />
@@ -126,10 +126,10 @@
               </m3:DropdownMenuLeadingIcon>
               <StackPanel>
                 <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                    Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" m3:TextStyleHost.IsEnabled="True" />
+                    Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" />
               </StackPanel>
               <m3:DropdownMenuSlotPresenter x:Name="PART_Trailing" HorizontalContentAlignment="Left" Content="{TemplateBinding TrailingContent}" ContentTemplate="{TemplateBinding TrailingContentTemplate}"
-                  MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Foreground="{TemplateBinding TrailingContentColor}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" m3:TextStyleHost.IsEnabled="True" />
+                  MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Foreground="{TemplateBinding TrailingContentColor}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" />
             </m3:DropdownMenuItemLayout>
           </m3:MaterialSurface>
         </m3:MenuItemChrome>
@@ -138,7 +138,7 @@
     <ControlTheme x:Key="MaterialExpressiveDropdownMenuItemTheme" TargetType="m3:DropdownMenuItem">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="IsExpressive" Value="True" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}" />
@@ -206,12 +206,12 @@
               </m3:DropdownMenuLeadingIcon>
               <StackPanel>
                 <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                    Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" m3:TextStyleHost.IsEnabled="True" />
+                    Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" />
                 <ContentPresenter x:Name="PART_Supporting" HorizontalContentAlignment="Left" Content="{TemplateBinding SupportingText}" ContentTemplate="{TemplateBinding SupportingTextTemplate}"
-                    Foreground="{TemplateBinding Foreground}" IsVisible="False" m3:MaterialText.DefaultStyle="{m3:Typography BodyMedium}" m3:TextStyleHost.IsEnabled="True" />
+                    Foreground="{TemplateBinding Foreground}" IsVisible="False" m3:MaterialText.Style="{m3:Typography BodyMedium}" />
               </StackPanel>
               <m3:DropdownMenuSlotPresenter x:Name="PART_Trailing" HorizontalContentAlignment="Center" Content="{TemplateBinding TrailingContent}" ContentTemplate="{TemplateBinding TrailingContentTemplate}"
-                  MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding TrailingContentColor}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" m3:TextStyleHost.IsEnabled="True" />
+                  MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding TrailingContentColor}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
             </m3:DropdownMenuItemLayout>
           </m3:MaterialSurface>
         </m3:MenuItemChrome>

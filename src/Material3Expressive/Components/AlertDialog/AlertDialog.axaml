@@ -48,12 +48,12 @@
                           m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.IconSize}}" />
                       <ContentPresenter x:Name="PART_Title" IsVisible="False" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}"
                           Foreground="{TemplateBinding TitleForeground}" HorizontalAlignment="Left" Margin="0,0,0,16"
-                          m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.HeadlineFont}}" TextWrapping="Wrap" />
+                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.HeadlineFont}}" TextWrapping="Wrap" />
                       <ContentPresenter x:Name="PART_Text" IsVisible="False" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                           Foreground="{TemplateBinding TextForeground}" HorizontalAlignment="Left" Margin="0,0,0,24"
-                          m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.SupportingTextFont}}" TextWrapping="Wrap" />
+                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.SupportingTextFont}}" TextWrapping="Wrap" />
                       <m3:AlertDialogButtons x:Name="PART_Buttons" HorizontalAlignment="Right"
-                          m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}">
+                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}">
                         <ContentPresenter x:Name="PART_Confirm" Content="{TemplateBinding ConfirmButton}" ContentTemplate="{TemplateBinding ConfirmButtonTemplate}"
                             Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextColor}}" />
                         <ContentPresenter x:Name="PART_Dismiss" IsVisible="False" Content="{TemplateBinding DismissButton}" ContentTemplate="{TemplateBinding DismissButtonTemplate}"

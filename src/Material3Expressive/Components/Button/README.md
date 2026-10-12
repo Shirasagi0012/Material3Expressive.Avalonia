@@ -86,6 +86,61 @@
 - Enter 按下时激活，重复 KeyDown 沿用原生处理；Space 遵循原生 `ClickMode`。已执行的命令不会因随后失焦或禁用而撤回，按压反馈则会清理
 - 程序化 `Focus()` 的视觉焦点反馈取决于当前输入模式；需要表达键盘导航焦点时，可在 C# 中调用 `button.Focus(NavigationMethod.Tab)`（`Avalonia.Input`）
 
+## RepeatButton
+
+原生 `RepeatButton` 派生自 `Button`，未指定 `Theme` 时同样是 Filled 按钮；上面的五个 `Theme` 资源、
+尺寸 class、`MaterialButton.Icon` 与交互反馈都可直接用于它：
+
+```xml
+<RepeatButton Content="增加" Click="OnIncrease" Delay="400" Interval="80"
+              Theme="{StaticResource MaterialTonalButtonTheme}" Classes="medium" />
+```
+
+- 重复行为沿用原生：按住鼠标左键或 Space 时先等待 `Delay`，再每隔 `Interval` 触发一次 `Click`；Enter 每次 KeyDown 点击一次（系统按键自动重复时随之重复）
+- 按住期间状态层与 ripple 保持按压，释放、失去捕获、失焦或禁用时清理
+- 与普通 Button 相同，按住时把指针移出交互范围会取消这次手势：按压反馈结束，重复也随 `IsPressed` 清除而停止，移回不会恢复；原生 Fluent 下指针移出后仍会继续重复，这是共享交互带来的行为差异
+- ScrollBar、NumericUpDown / ButtonSpinner 以及 Fluent 日期/时间选择器中显式指定主题的 RepeatButton 不受影响
+
+## HyperlinkButton
+
+M3 没有链接按钮。原生 `HyperlinkButton` 未指定 `Theme` 时是 Text 按钮加下划线标签：主色标签、Text 按钮的
+状态层、形状、高度与 Padding，因此保留 48 DIP 布局空间和焦点反馈；尺寸 class 与 `MaterialButton.Icon` 同样可用。
+
+```xml
+<HyperlinkButton Content="查看文档" NavigateUri="https://github.com/Shirasagi0012/Material3Expressive.Avalonia" />
+<HyperlinkButton Content="在新窗口打开" m3:MaterialButton.Icon="{m3:Symbol OpenInNew}" Click="OnOpen" />
+```
+
+- 下划线通过标签槽继承的 `TextBlock.TextDecorations` 施加：字符串标签和放入标签槽的自定义文字都会带下划线，图标槽不会。需要去掉时在自己的样式中把标签槽的 `TextBlock.TextDecorations` 设为 `{x:Null}`
+- `NavigateUri` 的启动、成功后设置 `IsVisited`、Click / Command 与自动化 peer 均沿用原生
+- `:visited` 伪类照常切换，但外观不变：M3 没有“已访问”颜色 Token，主题不自造颜色；需要区分时用自己的 `:visited` 样式
+- 禁用使用 Text 按钮的禁用颜色，下划线保留并随标签变为禁用色；RTL 与明暗主题同 Text 按钮
+
+## DropDownButton
+
+M3 没有下拉按钮。原生 `DropDownButton` 未指定 `Theme` 时是 Filled 按钮加尾部 `keyboard_arrow_down` 箭头，
+点击、Enter 或 Space 打开其 `Flyout`（原生行为）。五个 `Theme` 资源、尺寸 class 与 `MaterialButton.Icon` 都可直接使用：
+
+```xml
+<DropDownButton Content="排序" Theme="{StaticResource MaterialTonalButtonTheme}">
+  <DropDownButton.Flyout>
+    <MenuFlyout>
+      <MenuItem Header="名称" />
+      <MenuItem Header="修改日期" />
+    </MenuFlyout>
+  </DropDownButton.Flyout>
+</DropDownButton>
+```
+
+- 箭头尺寸、颜色与标签间距同当前尺寸档的前导图标（XS/S/M/L/XL 20/20/24/32/40 DIP），外侧 Padding 不变；RTL 下位于左侧
+- Flyout 打开期间（`:flyout-open`）箭头以弹簧旋转 180°，关闭后转回；按压、悬停与焦点反馈与普通 Button 相同
+- 箭头由库的全局 `DropDownButton` 样式提供，任何 Button 主题下都会出现；不能通过属性替换或隐藏，也没有公开的尾部图标属性。
+  自定义模板若不含 `PART_TrailingIconPresenter` 则没有箭头
+- `MenuFlyout` 使用 Material 菜单外观；普通 `Flyout` 的 `FlyoutPresenter` 仍是 Fluent 外观，本库未为其提供主题
+- 自动化 peer、`Flyout` 的打开与关闭均沿用原生
+- Avalonia 自带的 ColorPicker（`Avalonia.Controls.ColorPicker` 包，Fluent 与 Simple 模板）内部使用未指定主题的 DropDownButton，
+  加载本主题后它也会变成 Filled 按钮加箭头；本库未引用该包，不做局部恢复
+
 ## 内容与排版
 
 `Content` 可以是字符串或任意控件，也支持原生 `ContentTemplate` 和匹配的 `DataTemplate`。

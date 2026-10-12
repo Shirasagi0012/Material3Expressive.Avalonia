@@ -2,11 +2,10 @@
   <Styles.Resources>
     <m3:MenuColorConverter x:Key="MenuColorConverter" />
     <conv:PlatformKeyGestureConverter x:Key="MenuGestureConverter" />
-    <m3:MenuItemThemeConverter x:Key="MenuItemThemeConverter" />
     <ControlTheme x:Key="MaterialBaselineMenuItemTheme" TargetType="MenuItem">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemPadding}}" />
       <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Background" Value="#00000000" />
@@ -53,7 +52,7 @@
                       </Canvas>
                     </Viewbox>
                   </Grid>
-                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" m3:TextStyleHost.IsEnabled="True" />
+                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" />
                   <StackPanel Name="PART_Trailing" Grid.Column="2" Orientation="Horizontal" Spacing="12" Margin="12,0,0,0" VerticalAlignment="Center" IsVisible="{TemplateBinding InputGesture, Converter={x:Static ObjectConverters.IsNotNull}}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}">
                     <TextBlock Text="{TemplateBinding InputGesture, Converter={StaticResource MenuGestureConverter}}" VerticalAlignment="Center">
                       <TextBlock.Foreground>
@@ -165,7 +164,7 @@
     <ControlTheme x:Key="MaterialVerticalMenuItemTheme" TargetType="MenuItem">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemShape}}" />
       <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" />
@@ -241,7 +240,7 @@
                       </Canvas>
                     </Viewbox>
                   </Grid>
-                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" m3:TextStyleHost.IsEnabled="True" />
+                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" />
                   <StackPanel Name="PART_Trailing" Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0" VerticalAlignment="Center" IsVisible="{TemplateBinding InputGesture, Converter={x:Static ObjectConverters.IsNotNull}}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}">
                     <TextBlock Text="{TemplateBinding InputGesture, Converter={StaticResource MenuGestureConverter}}" VerticalAlignment="Center">
                       <TextBlock.Foreground>
@@ -327,6 +326,23 @@
       <Style Selector="^:empty /template/ Viewbox#PART_Chevron">
         <Setter Property="IsVisible" Value="False" />
       </Style>
+      <Style Selector="^:selected:not(:focus):not(:pointerover)">
+        <Setter Property="Background">
+          <MultiBinding Converter="{x:Static m3:MenuSelectionHighlight.Converter}">
+            <Binding Path="(m3:MenuAppearance.ColorStyle)" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+            <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContainer}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
+            <Binding Path="Foreground" RelativeSource="{RelativeSource Self}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.HoverStateLayerOpacity}" />
+          </MultiBinding>
+        </Setter>
+      </Style>
       <Style Selector="^:separator">
         <Setter Property="Margin" Value="0" />
         <Setter Property="Template">
@@ -367,14 +383,6 @@
     </ControlTheme>
     <ControlTheme x:Key="{x:Type MenuFlyoutPresenter}" TargetType="MenuFlyoutPresenter" BasedOn="{StaticResource MaterialVerticalMenuTheme}" />
   </Styles.Resources>
-  <Style Selector="MenuFlyoutPresenter MenuItem">
-    <Setter Property="Theme">
-      <MultiBinding Converter="{StaticResource MenuItemThemeConverter}">
-        <Binding Path="(m3:MenuThemeProperties.ItemTheme)" RelativeSource="{RelativeSource Self}" />
-        <ReflectionBinding Path="ItemContainerTheme" RelativeSource="{RelativeSource FindAncestor, AncestorType=ItemsControl, Tree=Logical}" />
-      </MultiBinding>
-    </Setter>
-  </Style>
   <Style Selector="MenuFlyoutPresenter Separator">
     <Setter Property="Margin" Value="12,2" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />

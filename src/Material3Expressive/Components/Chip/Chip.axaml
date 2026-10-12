@@ -36,7 +36,7 @@
       </MultiBinding></Setter>
 
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContainerShape}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.LabelTextStyle}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.LabelTextStyle}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -71,7 +71,7 @@
                   <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
                       ContentTemplate="{TemplateBinding ContentTemplate}" TextWrapping="Wrap"
                       HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" m3:TextStyleHost.IsEnabled="True" />
+                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
                   <m3:ChipIconSlot x:Name="PART_TrailingIcon"
                       IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.IconSize}}"
                       AvatarSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.AvatarSize}}"

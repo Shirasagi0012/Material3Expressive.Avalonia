@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.GroupBoxDemo"
+        Title="GroupBox" Width="760" Height="720">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20">
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <ToggleSwitch x:Name="DarkToggle" Content="Dark" />
+        <ToggleSwitch x:Name="EnabledToggle" Content="Enabled" IsChecked="True" />
+      </StackPanel>
+
+      <WrapPanel ItemSpacing="16" LineSpacing="16">
+        <GroupBox Header="Network" Width="300" IsEnabled="{Binding #EnabledToggle.IsChecked}">
+          <StackPanel Spacing="8">
+            <CheckBox Content="Use a proxy" IsChecked="True" />
+            <TextBox Watermark="Proxy address" />
+            <Button Content="Test connection" Theme="{StaticResource MaterialTonalButtonTheme}" />
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Width="300" IsEnabled="{Binding #EnabledToggle.IsChecked}">
+          <StackPanel Spacing="8">
+            <TextBlock Text="No header: no title row is reserved." TextWrapping="Wrap" />
+            <CheckBox Content="Option" />
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Templated header" Width="300">
+          <GroupBox.HeaderTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <m3:MaterialSymbol Symbol="Tune" />
+                <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </GroupBox.HeaderTemplate>
+          <StackPanel Spacing="8">
+            <RadioButton Content="Low" GroupName="q" />
+            <RadioButton Content="High" GroupName="q" IsChecked="True" />
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Custom padding, corner and alignment" Width="300" Padding="24" CornerRadius="4" HorizontalContentAlignment="Right">
+          <Button Content="Apply" />
+        </GroupBox>
+      </WrapPanel>
+
+      <TextBlock Text="RTL" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <GroupBox Header="الإعدادات" Width="300" HorizontalAlignment="Left" FlowDirection="RightToLeft">
+        <StackPanel Spacing="8">
+          <CheckBox Content="خيار" IsChecked="True" />
+          <TextBox Watermark="عنوان" />
+        </StackPanel>
+      </GroupBox>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

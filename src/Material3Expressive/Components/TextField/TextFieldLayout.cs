@@ -105,6 +105,10 @@ internal sealed partial class TextFieldLayout : Panel
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // Release icon controls so a replacement template (e.g. a Theme change) can host them;
+        // UpdateSlots assigns them again on attach.
+        if (_leading != null) { _leading.Content = null; _leading.ContentTemplate = null; }
+        if (_trailing != null) { _trailing.Content = null; _trailing.ContentTemplate = null; }
         _motion?.Dispose(); _motion = null; _pending = false;
         if (_owner != null) _owner.PropertyChanged -= OwnerChanged;
         if (_text != null) _text.PropertyChanged -= PresenterChanged;
@@ -178,10 +182,10 @@ internal sealed partial class TextFieldLayout : Panel
         _placeholder.SetCurrentValue(ContentPresenter.ContentProperty, MaterialTextField.GetPlaceholder(_owner) ?? _owner.PlaceholderText);
         var labelColor = new SolidColorBrush(PaintedLabelColor);
         var labelStyle = InterpolateLabelStyle(_expandedLabelStyle, _floatingLabelStyle, LabelProgress)
-            ?? MaterialText.GetDefaultStyle(_label) ?? TextStyle.Empty;
+            ?? MaterialText.GetStyle(_label) ?? TextStyle.Empty;
         // Even while invalid metrics hold the previous typography, update the content scope's
         // color: child TextBlocks consume its Foreground projection above native inheritance.
-        MaterialText.SetDefaultStyle(_label, labelStyle with { Foreground = labelColor });
+        MaterialText.SetStyle(_label, labelStyle with { Foreground = labelColor });
         _label.Foreground = labelColor;
         _leading.IsVisible = _leading.Content != null || _leading.ContentTemplate != null;
         _trailing.IsVisible = _trailing.Content != null || _trailing.ContentTemplate != null;
@@ -207,7 +211,7 @@ internal sealed partial class TextFieldLayout : Panel
 
     // Each endpoint is projected independently by MaterialText, with native Avalonia inheritance
     // and precedence. Read only these unanimated inputs; native overrides on Label remain above
-    // its interpolated DefaultStyle and clearing them exposes the current progress immediately.
+    // its interpolated MaterialText.Style and clearing them exposes the current progress immediately.
     internal static TextStyle? InterpolateLabelStyle(ContentPresenter expanded, ContentPresenter floating, float progress)
     {
         var p = Math.Clamp(progress, 0f, 1f);

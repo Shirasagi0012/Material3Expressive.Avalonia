@@ -141,7 +141,7 @@ public class TabRowTests
             Assert.Equal(tab.Bounds.Height - last - 9, presenter.Bounds.Y);
             Assert.Equal(presenter.Bounds.Y - (24 + 20 - first), Part<ContentPresenter>(tab, "PART_Icon").Bounds.Y);
             tab.ContentLayout = TabContentLayout.Custom; window.UpdateLayout();
-            Assert.Null(MaterialText.GetDefaultStyle(presenter)); Assert.Equal(16, text.FontSize); Assert.Equal(48, tab.Bounds.Height);
+            Assert.Null(MaterialText.GetStyle(presenter)); Assert.Equal(16, text.FontSize); Assert.Equal(48, tab.Bounds.Height);
         }
         finally { window.Close(); }
     }

@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.ExpanderDemo"
+        Title="Expander" Width="900" Height="820">
+  <ScrollViewer>
+    <StackPanel x:Name="Root" Margin="24" Spacing="24">
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <ToggleSwitch x:Name="DarkToggle" Content="Dark" />
+        <ToggleSwitch x:Name="EnabledToggle" Content="Enabled" IsChecked="True" />
+        <ToggleSwitch x:Name="RtlToggle" Content="RTL" />
+      </StackPanel>
+
+      <Grid ColumnDefinitions="*,24,*">
+        <!-- A settings-style list: list-item headers, dividers between rows, no container. -->
+        <StackPanel Grid.Column="0" IsEnabled="{Binding #EnabledToggle.IsChecked}">
+          <TextBlock Text="Settings list" Margin="16,0,16,8" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+          <Expander Header="Wi-Fi" IsExpanded="True">
+            <StackPanel Spacing="4" Margin="0,0,0,16">
+              <CheckBox Content="Connect automatically" IsChecked="True" />
+              <CheckBox Content="Notify about open networks" />
+              <TextBox Watermark="Network name" />
+            </StackPanel>
+          </Expander>
+          <Separator />
+          <Expander Header="Bluetooth">
+            <StackPanel Spacing="4" Margin="0,0,0,16">
+              <ToggleSwitch Content="Visible to nearby devices" />
+              <Button Content="Pair new device" Theme="{StaticResource MaterialTextButtonTheme}" />
+            </StackPanel>
+          </Expander>
+          <Separator />
+          <Expander>
+            <Expander.Header>
+              <StackPanel>
+                <TextBlock Text="Display" />
+                <TextBlock Text="Brightness, dark theme" m3:MaterialText.Style="{m3:Typography BodyMedium}"
+                           Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
+              </StackPanel>
+            </Expander.Header>
+            <StackPanel Spacing="4" Margin="0,0,0,16">
+              <Slider Value="60" />
+              <CheckBox Content="Adaptive brightness" IsChecked="True" />
+            </StackPanel>
+          </Expander>
+          <Separator />
+          <Expander Header="Disabled section" IsEnabled="False">
+            <TextBlock Text="Never shown" />
+          </Expander>
+        </StackPanel>
+
+        <StackPanel Grid.Column="2" Spacing="24" IsEnabled="{Binding #EnabledToggle.IsChecked}">
+          <StackPanel>
+            <TextBlock Text="ExpandDirection=Up" Margin="16,0,16,8" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+            <Expander Header="Show details above" ExpandDirection="Up">
+              <TextBlock Text="Up mirrors Down: the header stays below and the content grows upward from it."
+                         TextWrapping="Wrap" Margin="0,8" />
+            </Expander>
+          </StackPanel>
+          <StackPanel>
+            <TextBlock Text="ExpandDirection=Left / Right" Margin="16,0,16,8" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+            <StackPanel Spacing="8">
+              <Expander Header="Left" ExpandDirection="Left" HorizontalAlignment="Right">
+                <Border Width="160" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHighest}}">
+                  <TextBlock Text="Opens to the start" VerticalAlignment="Center" Margin="8" />
+                </Border>
+              </Expander>
+              <Expander Header="Right" ExpandDirection="Right" HorizontalAlignment="Left">
+                <Border Width="160" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHighest}}">
+                  <TextBlock Text="Opens to the end" VerticalAlignment="Center" Margin="8" />
+                </Border>
+              </Expander>
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

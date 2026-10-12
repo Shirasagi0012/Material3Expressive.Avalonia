@@ -75,7 +75,7 @@ public class FloatingActionButtonTokenConfigurationTests
         var fab = new ExtendedFloatingActionButton { Icon = Icon(), Content = Label() };
         var style = new Style(s => s.OfType<ExtendedFloatingActionButton>())
         {
-            Setters = { new Setter(MaterialText.DefaultStyleProperty, textStyle) }
+            Setters = { new Setter(MaterialText.StyleProperty, textStyle) }
         };
         using var clock = new MotionTestClockScope(); var window = Show(fab);
         try
@@ -83,12 +83,12 @@ public class FloatingActionButtonTokenConfigurationTests
             window.Styles.Add(style);
             fab.Size = FloatingActionButtonSize.Large;
             Flush(window);
-            Assert.Equal(textStyle, MaterialText.GetDefaultStyle(fab));
+            Assert.Equal(textStyle, MaterialText.GetStyle(fab));
             window.Styles.Remove(style);
             var tokenStyle = new TextStyle { FontSize = 29 };
             fab.Resources[Comp.ExtendedFabLarge.LabelTextStyle] = tokenStyle;
             Flush(window);
-            Assert.Equal(tokenStyle, MaterialText.GetDefaultStyle(fab));
+            Assert.Equal(tokenStyle, MaterialText.GetStyle(fab));
         }
         finally { window.Close(); }
     }

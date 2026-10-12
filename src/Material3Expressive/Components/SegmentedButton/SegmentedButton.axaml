@@ -30,7 +30,7 @@
       <!-- SegmentedButton uses the legacy ButtonDefaults.ContentPadding (8dp vertical),
            not expressive contentPaddingFor(SmallContainerHeight). -->
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.ContentPadding}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.LabelTextStyle}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.LabelTextStyle}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
@@ -55,7 +55,7 @@
                     EffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconEffectsAnimation}}"
                     SpatialAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconSpatialAnimation}}" />
                 <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          TextWrapping="Wrap" FlowDirection="{TemplateBinding FlowDirection}" m3:TextStyleHost.IsEnabled="True" />
+                                          TextWrapping="Wrap" FlowDirection="{TemplateBinding FlowDirection}" />
               </m3:SegmentedButtonContentLayout>
             </Border>
           </m3:MaterialSurface>

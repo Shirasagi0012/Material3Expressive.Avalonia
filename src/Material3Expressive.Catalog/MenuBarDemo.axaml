@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.MenuBarDemo"
+        Title="Menu bar" Width="900" Height="620">
+  <DockPanel x:Name="Root">
+    <!-- A typical application menu bar. Alt activates it; underscores mark access keys. -->
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Header="_New" InputGesture="Ctrl+N" />
+        <MenuItem Header="_Open…" InputGesture="Ctrl+O" />
+        <MenuItem Header="Open _recent">
+          <MenuItem Header="Report.docx" />
+          <MenuItem Header="Budget.xlsx" />
+          <MenuItem Header="More">
+            <MenuItem Header="Archive.zip" />
+            <MenuItem Header="Notes.txt" />
+          </MenuItem>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="_Save" InputGesture="Ctrl+S" />
+        <MenuItem Header="Save _as…" InputGesture="Ctrl+Shift+S" IsEnabled="False" />
+        <Separator />
+        <MenuItem Header="E_xit" />
+      </MenuItem>
+      <MenuItem Header="_Edit">
+        <MenuItem Header="_Undo" InputGesture="Ctrl+Z" />
+        <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" />
+        <Separator />
+        <MenuItem Header="Cu_t" InputGesture="Ctrl+X" />
+        <MenuItem Header="_Copy" InputGesture="Ctrl+C" />
+        <MenuItem Header="_Paste" InputGesture="Ctrl+V" />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="_Word wrap" ToggleType="CheckBox" IsChecked="True" />
+        <MenuItem Header="_Status bar" ToggleType="CheckBox" />
+        <Separator />
+        <MenuItem Header="_Compact" ToggleType="Radio" GroupName="density" />
+        <MenuItem Header="C_omfortable" ToggleType="Radio" GroupName="density" IsChecked="True" />
+        <Separator />
+        <MenuItem Header="_Zoom">
+          <MenuItem Header="Zoom _in" InputGesture="Ctrl+OemPlus" />
+          <MenuItem Header="Zoom _out" InputGesture="Ctrl+OemMinus" />
+        </MenuItem>
+      </MenuItem>
+      <MenuItem Header="_Help" IsEnabled="False" />
+    </Menu>
+
+    <StackPanel Margin="24" Spacing="16">
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <ToggleSwitch x:Name="DarkToggle" Content="Dark" />
+        <ToggleSwitch x:Name="RtlToggle" Content="RTL" />
+      </StackPanel>
+      <TextBlock TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodyMedium}"
+                 Text="The bar is transparent; top-level items are LabelLarge in OnSurface with a 40 DIP state layer in a 48 DIP touch target. Submenus use the Material vertical menu. Press Alt, then use the arrow keys, Enter and Esc, or Alt+F/E/V." />
+      <!-- The same bar on a container color, as an app would set it (a proposal, not a default). -->
+      <TextBlock Text="On a container (app-set Background)" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+      <Menu Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainer}}" CornerRadius="12" Padding="4,0">
+        <MenuItem Header="Document">
+          <MenuItem Header="Rename" />
+          <MenuItem Header="Share" />
+        </MenuItem>
+        <MenuItem Header="Insert">
+          <MenuItem Header="Image" />
+          <MenuItem Header="Table" />
+        </MenuItem>
+      </Menu>
+    </StackPanel>
+  </DockPanel>
+</Window>

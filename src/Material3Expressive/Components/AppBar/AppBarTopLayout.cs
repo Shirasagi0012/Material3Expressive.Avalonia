@@ -655,8 +655,6 @@ internal sealed class AppBarTitle : Panel
     private HorizontalAlignment _alignment;
     private bool _dirty = true, _hidden;
     private readonly bool[] _contentDirty = [true, true];
-    private readonly Control?[] _styled = new Control?[2];
-    private readonly Style?[] _defaults = new Style?[2];
     private AppBarTitlePeer? _peer;
     internal bool HiddenSemantics
     {
@@ -725,31 +723,14 @@ internal sealed class AppBarTitle : Panel
             for (var i = 0; i < 2; i++)
             {
                 var presenter = (ContentPresenter)Children[i];
-                MaterialText.SetDefaultStyle(presenter, styles[i]);
-                if (_styled[i] is { } && _defaults[i] is { })
-                    _styled[i]!.Styles.Remove(_defaults[i]!);
+                // The presenter is its content's inheritance parent: a string's TextBlock, a template
+                // root and an explicit control all inherit the style and the presenter's Foreground.
+                MaterialText.SetStyle(presenter, styles[i]);
                 // UpdateChild only after a slot update: non-recycling templates must not be rebuilt each measure.
                 if (_contentDirty[i])
                 {
                     presenter.UpdateChild();
                     _contentDirty[i] = false;
-                }
-
-                _styled[i] = presenter.Child;
-                _defaults[i] = null;
-                if (presenter.Child is { } child)
-                {
-                    var defaults = new Style
-                    {
-                        Setters =
-                        {
-                            new Setter(MaterialText.DefaultStyleProperty, styles[i]),
-                            new Setter(TextElement.ForegroundProperty, presenter.Foreground)
-                        }
-                    };
-                    _defaults[i] = defaults;
-                    child.Styles.Insert(0, defaults);
-                    child.ApplyStyling();
                 }
             }
         }
@@ -811,11 +792,6 @@ internal sealed class AppBarTitle : Panel
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        for (var i = 0; i < 2; i++)
-            if (_styled[i] is { } && _defaults[i] is { })
-                _styled[i]!.Styles.Remove(_defaults[i]!);
-        Array.Clear(_styled);
-        Array.Clear(_defaults);
         _dirty = true;
         base.OnDetachedFromVisualTree(e);
     }

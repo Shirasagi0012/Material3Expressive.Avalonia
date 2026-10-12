@@ -102,6 +102,29 @@ ButtonLayout 分开处理可见容器的默认最小值与外层 48 DIP 留白�
 其与标签间距从标签 Padding 的内容边缘计算；无图标时沿用原 presenter 测量、分配、约束与 access key 流程。
 显式图标尺寸优先于 `MaterialIcon.DefaultSize`，任意 Control 不会因此被缩放。
 
+### DropDownButton 尾部箭头
+
+模板的 `ButtonContentRow` 有第三个子项 `PART_TrailingIconPresenter`。它在模板中是裸的 ContentPresenter：
+没有绑定、Token 值或尺寸 class setter，其他 Button 只多一个零尺寸的空 presenter
+（同一计数器测得 Filled/Tonal/尺寸 class 按钮整棵树的 `{m3:Token}` 绑定数与引入前相同）。
+两子项模板如 ToggleButton / SplitButton 的布局不变。
+
+箭头、`DefaultSize`（各尺寸档同前导图标的 Token）、对齐与旋转全部来自 Button.axaml 末尾的全局类型选择器
+样式 `DropDownButton /template/ ContentPresenter#PART_TrailingIconPresenter`（及 `:flyout-open`、尺寸 class 变体），
+而不是任何 ControlTheme：它们不论 owner 当前用哪个 Button 主题（隐式、键控或运行时切换）都会生效，
+Button 主题本身也无需知道这个子类。自定义模板若没有该部件就没有箭头。
+尾部盒复用 `IconSize`/`IconSpacing`，位于标签右 Padding 内侧，与前导图标对称：
+`[左 Padding | 图标 | 间距 | 标签 | 间距 | 箭头 | 右 Padding]`。
+
+尾部盒的有无只由其 Content/ContentTemplate 决定，不切换 `IsVisible`；空盒按零尺寸测量与排列。
+由于零尺寸的空盒被填入后自身期望尺寸不会变化，`ButtonContentRow` 用 Panel 的
+`AffectsParentMeasure` 声明子 presenter 的 Content/ContentTemplate 影响自身测量，不依赖测量期间重放样式。
+
+旋转用 Foundation 的内部附加属性 [`ChevronRotation.Angle`](../../Foundation/Rendering/ChevronRotation.cs)（与 Expander 共用）（0 / `:flyout-open` 时 180）映射到 RenderTransform，
+由 ComposeAnimation 的 `AnimatedDouble` 声明以默认弹簧动画。默认弹簧即 Compose 的 `spring()`，
+对应上游 SplitButtonSamples 中尾部箭头的 `animateFloatAsState`；本库 SplitButton 本身不绘制箭头、
+也不旋转（箭头由使用者作为 Icon 提供），因此没有可直接复用的箭头机制。
+
 ## 交互与动画职责
 
 [MaterialInteractionController](../../Foundation/Interaction/MaterialInteractionController.cs) 持有交互记录，

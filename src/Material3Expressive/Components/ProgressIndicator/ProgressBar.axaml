@@ -1,0 +1,82 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:converters="using:Avalonia.Controls.Converters">
+  <Styles.Resources>
+    <converters:StringFormatConverter x:Key="MaterialProgressBarTextConverter" />
+    <!-- Native ProgressBar rendered by LinearProgressIndicator; colors and sizes come from its tokens. -->
+    <ControlTheme x:Key="MaterialProgressBarTheme" TargetType="ProgressBar">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate TargetType="ProgressBar">
+          <DockPanel x:Name="PART_Root" LastChildFill="True">
+            <TextBlock x:Name="PART_ProgressText"
+                       DockPanel.Dock="Right"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Margin="8,0,0,0"
+                       m3:MaterialText.Style="{m3:Typography LabelMedium}"
+                       Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}">
+              <TextBlock.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}" Priority="Template">
+                  <Binding Path="ShowProgressText" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="!IsIndeterminate" RelativeSource="{RelativeSource TemplatedParent}" />
+                </MultiBinding>
+              </TextBlock.IsVisible>
+              <TextBlock.Text>
+                <!-- Same inputs and formatter as Avalonia's Fluent ProgressBar theme. -->
+                <MultiBinding Converter="{StaticResource MaterialProgressBarTextConverter}" Priority="Template">
+                  <Binding Path="ProgressTextFormat" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="Percentage" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="Minimum" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="Maximum" RelativeSource="{RelativeSource TemplatedParent}" />
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Panel x:Name="PART_Track">
+              <!-- ProgressBar.OnApplyTemplate requires a Border named PART_Indicator and computes
+                   Percentage only while it exists. It stays hidden; LinearProgressIndicator draws. -->
+              <Border x:Name="PART_Indicator" IsVisible="False" />
+              <LayoutTransformControl x:Name="PART_LayoutTransformControl">
+                <m3:LinearProgressIndicator x:Name="PART_LinearProgressIndicator"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Center"
+                                            AutomationProperties.AccessibilityView="Raw"
+                                            IsIndeterminate="{TemplateBinding IsIndeterminate}">
+                  <m3:LinearProgressIndicator.Progress>
+                    <MultiBinding Converter="{x:Static m3:ProgressBarProgressConverter.Instance}" Priority="Template">
+                      <Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}" />
+                      <Binding Path="Minimum" RelativeSource="{RelativeSource TemplatedParent}" />
+                      <Binding Path="Maximum" RelativeSource="{RelativeSource TemplatedParent}" />
+                    </MultiBinding>
+                  </m3:LinearProgressIndicator.Progress>
+                </m3:LinearProgressIndicator>
+              </LayoutTransformControl>
+            </Panel>
+          </DockPanel>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:horizontal /template/ LayoutTransformControl#PART_LayoutTransformControl">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+      </Style>
+      <!-- LinearProgressIndicator only draws horizontally. Rotating by -90 puts its start edge at the
+           bottom. Under RTL the indicator undoes the inherited mirror and starts from its right edge,
+           which the rotation also maps to the bottom, so the fill grows bottom-to-top like Fluent. -->
+      <Style Selector="^:vertical /template/ LayoutTransformControl#PART_LayoutTransformControl">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="LayoutTransform">
+          <RotateTransform Angle="-90" />
+        </Setter>
+      </Style>
+      <Style Selector="^:vertical /template/ TextBlock#PART_ProgressText">
+        <Setter Property="DockPanel.Dock" Value="Top" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type ProgressBar}" TargetType="ProgressBar" BasedOn="{StaticResource MaterialProgressBarTheme}" />
+  </Styles.Resources>
+</Styles>

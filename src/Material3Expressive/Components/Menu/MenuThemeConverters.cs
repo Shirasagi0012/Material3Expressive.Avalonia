@@ -4,12 +4,6 @@ using Avalonia.Media;
 
 namespace Material3Expressive.Components;
 
-internal sealed class MenuItemThemeConverter : IMultiValueConverter
-{
-    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture) =>
-        values.Count == 2 ? values[1] as Avalonia.Styling.ControlTheme ?? values[0] : Avalonia.AvaloniaProperty.UnsetValue;
-}
-
 
 // All values are live Token bindings. Native IsSelected is navigation/hover, not selection.
 internal sealed class MenuColorConverter : IMultiValueConverter

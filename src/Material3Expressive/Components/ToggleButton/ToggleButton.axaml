@@ -12,7 +12,7 @@
       <Setter Property="m3:ButtonThemeProperties.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.SmallPressedShape}}" />
       <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{Binding Path=(m3:ButtonThemeProperties.TextStyle), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{Binding Path=(m3:ButtonThemeProperties.TextStyle), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -55,7 +55,7 @@
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" m3:ButtonSurfaceState.IsChecked="{TemplateBinding IsChecked}" m3:ButtonSurfaceState.CheckedCornerRadius="{TemplateBinding m3:ToggleButtonAppearance.CheckedCornerRadius}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ShapeAnimation}}" m3:ButtonSurfaceState.BorderWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.BorderWidthAnimation}}" m3:ButtonSurfaceState.BorderColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.BorderColorAnimation}}" m3:ButtonSurfaceState.AnimateBorder="True">
               <m3:ButtonContentRow IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
                 <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
-                <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="Wrap" />
               </m3:ButtonContentRow>
             </m3:MaterialSurface>
           </m3:ButtonLayout>

@@ -111,7 +111,7 @@
                                   BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                 <m3:FloatingToolbarFabContentLayout>
                   <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                      Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" m3:TextStyleHost.IsEnabled="True" />
+                      Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
                 </m3:FloatingToolbarFabContentLayout>
               </m3:MaterialSurface>
             </m3:FabLayout>

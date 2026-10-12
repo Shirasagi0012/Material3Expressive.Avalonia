@@ -94,12 +94,18 @@
     <StyleInclude Source="/Components/FloatingToolbar/FloatingToolbar.axaml" />
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
     <StyleInclude Source="/Components/SecureTextField/SecureTextField.axaml" />
+    <StyleInclude Source="/Components/NumericUpDown/NumericUpDown.axaml" />
+    <StyleInclude Source="/Components/NumericUpDown/ButtonSpinner.axaml" />
     <StyleInclude Source="/Components/Chip/Chip.axaml" />
     <StyleInclude Source="/Components/TabRow/TabRow.axaml" />
     <StyleInclude Source="/Components/Card/Card.axaml" />
+    <StyleInclude Source="/Components/GroupBox/GroupBox.axaml" />
+    <StyleInclude Source="/Components/Expander/Expander.axaml" />
     <StyleInclude Source="/Components/SegmentedButton/SegmentedButton.axaml" />
     <StyleInclude Source="/Components/ProgressIndicator/ProgressIndicator.axaml" />
+    <StyleInclude Source="/Components/ProgressIndicator/ProgressBar.axaml" />
     <StyleInclude Source="/Components/LoadingIndicator/LoadingIndicator.axaml" />
     <StyleInclude Source="/Components/Menu/Menu.axaml" />
+    <StyleInclude Source="/Components/Menu/MenuBar.axaml" />
     <StyleInclude Source="/Components/Menu/DropdownMenu.axaml" />
 </Styles>

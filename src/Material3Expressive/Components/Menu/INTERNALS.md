@@ -246,3 +246,25 @@ trailingContent 专用槽、选中 leading icon 的 AnimatedVisibility。这些�
 独立无阴影 Surface 的明暗背景、贴边内容和描边用例均逐像素一致。
 绘制机制见 Surface/INTERNALS.md；原生 Menu 已接受的无阴影外观仍与上游参考不同，历史整图结果
 不能作为当前裁剪机制的隔离证据，也不构成任意 Surface 栅格差异的豁免。比较门限保持原值。
+
+## 菜单栏（MenuBar.axaml）
+
+- 顶层项主题 `BasedOn` Vertical 项主题，只覆盖布局与弹层行为，弹层容器、图标槽、访问键、颜色、
+  禁用和交互反馈都来自同一模板，没有第二份模板。
+- 被覆盖的模板部件（`MenuItemChrome` 尺寸、`PART_Trailing`、`PART_Popup`）在模板中以
+  Template 优先级赋值，高于普通 Style；因此覆盖样式带一个对所有顶层项都成立的伪类
+  （`^:not(:separator)`），以 StyleTrigger 优先级生效。
+- `Menu.ItemContainerTheme` 指向顶层主题；Avalonia 的 `Menu.PrepareContainerForItemOverride`
+  不会把它传给顶层项的子项。子项由作用域样式 `Menu MenuItem MenuItem` 选择主题，规则与
+  `MenuFlyoutPresenter MenuItem` 相同（`MenuItemThemeConverter`：父 ItemsControl 的
+  `ItemContainerTheme` 优先，否则取 `Menu` 上继承的 `MenuThemeProperties.ItemTheme`）。
+  这样 flyout 路径不需要任何改动。
+- 顶层弹层使用 `BottomEdgeAlignedLeft`、light dismiss，并把 `Menu` 设为
+  `OverlayInputPassThroughElement`，与 Fluent 一致，打开时移到相邻顶层项会切换菜单。
+- RTL：Avalonia 的弹层定位在 RTL 下交换左右锚点和方向，Vertical 子菜单的
+  `RightEdgeAlignedTop` 因此向左展开，无需主题改动。
+- `:selected` 高亮（`MenuSelectionHighlight`）：Avalonia 用 `IsSelected` 表示导航位置，悬停和
+  方向键都会选中并聚焦项目，此时已有悬停/焦点状态层；只有选中但未聚焦、未悬停（子菜单已打开且
+  焦点在子菜单内，或菜单栏未打开时的键盘选中）才需要背景高亮，否则会与状态层叠加。
+  Vertical 项的高亮是不透明色，由 `MenuItemChrome` 按 `ColorAnimation` 过渡；顶层项底色透明，
+  高亮是半透明色，`MenuItemChrome` 只对不透明色做动画，因此直接切换。

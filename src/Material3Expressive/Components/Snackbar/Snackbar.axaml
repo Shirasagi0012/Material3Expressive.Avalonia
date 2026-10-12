@@ -9,7 +9,7 @@
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextColor}}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerShape}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}" />
       <Setter Property="ActionForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextColor}}" />
       <Setter Property="DataActionForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextColor}}" />
       <Setter Property="DismissActionForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.IconColor}}" />
@@ -22,7 +22,7 @@
                   ShadowElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerElevation}}">
                 <m3:SnackbarLayout SingleLineContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SingleLineContainerHeight}}"
                     TwoLinesContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.TwoLinesContainerHeight}}" x:Name="PART_Layout" ActionOnNewLine="{TemplateBinding ActionOnNewLine}"
-                    m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}">
+                    m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}">
                   <!-- Reuse the paragraph-width/overflow handling already used by default labels. -->
                   <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
                       ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
@@ -31,7 +31,7 @@
                     <ContentPresenter x:Name="PART_CustomAction" IsVisible="False" Content="{TemplateBinding Action}"
                         ContentTemplate="{TemplateBinding ActionTemplate}" Foreground="{TemplateBinding ActionForeground}"
                         HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
-                        m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
+                        m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ActionLabelTextFont}}" />
                     <Button x:Name="PART_DataAction" IsVisible="False" VerticalAlignment="Top"
                         Content="{Binding Data.Visuals.ActionLabel, RelativeSource={RelativeSource TemplatedParent}}"
                         m3:ButtonThemeProperties.Foreground="{TemplateBinding DataActionForeground}" Theme="{StaticResource MaterialSnackbarActionButtonTheme}" />
