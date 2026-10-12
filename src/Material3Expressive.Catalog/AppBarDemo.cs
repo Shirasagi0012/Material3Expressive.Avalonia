@@ -133,6 +133,13 @@ public sealed class AppBarDemo : Window
             var primary = Action(MaterialSymbolCodepoint.Add, "Add");
             primary.Width = 56;
             primary.Theme = (Avalonia.Styling.ControlTheme?)Application.Current?.FindResource("MaterialFilledIconButtonTheme");
+            // Square shape from the token, bound like {m3:Token} so it follows token and theme changes.
+            // The template draws TemplateBinding CornerRadius; the theme only feeds it at Style
+            // priority from its internal ButtonThemeProperties.CornerRadius, so a local binding on the
+            // public CornerRadius wins. No press morph applies unless MaterialButton.PressedCornerRadius is set.
+            primary.Bind(TemplatedControl.CornerRadiusProperty,
+                new Material3Expressive.Foundation.Tokens.TokenExtension(Material3Expressive.Tokens.MaterialTokens.Comp.IconButtonSmall.ContainerShapeSquare)
+                    .ProvideValue(NoServices.Instance));
             bar.Items.Add(Action(MaterialSymbolCodepoint.ArrowBack, "Back"));
             bar.Items.Add(Action(MaterialSymbolCodepoint.ArrowForward, "Forward"));
             bar.Items.Add(primary);
@@ -148,5 +155,10 @@ public sealed class AppBarDemo : Window
             Children = { new TextBlock { Text = "Custom content replaces actions and FAB" }, new Button { Content = "Action" } } };
         bar.ScrollBehavior = new BottomAppBarScrollBehavior { State = _bottom };
         _screen.BottomBar = bar;
+    }
+    private sealed class NoServices : System.IServiceProvider
+    {
+        public static readonly NoServices Instance = new();
+        public object? GetService(System.Type serviceType) => null;
     }
 }
