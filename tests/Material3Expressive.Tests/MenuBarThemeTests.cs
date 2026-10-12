@@ -116,6 +116,54 @@ public sealed class MenuBarThemeTests
         flyout.Hide(); window.Close();
     }
 
+    // A press in a submenu item bubbles through its template popup to the submenu parent. The
+    // parents used to treat it as their own press and ripple from the clicked point.
+    [AvaloniaFact]
+    public void PressInANestedFlyoutSubmenu_RipplesOnlyTheClickedItem()
+    {
+        using var clock = new MotionTestClockScope();
+        var leaf = new MenuItem { Header = "Leaf", StaysOpenOnClick = true };
+        var more = new MenuItem { Header = "More", Items = { leaf } };
+        var sortBy = new MenuItem { Header = "Sort by", Items = { new MenuItem { Header = "Name" }, more } };
+        var flyout = new MenuFlyout { Items = { new MenuItem { Header = "Copy" }, sortBy } };
+        var target = new Border { Width = 40, Height = 20 };
+        var window = Show(target);
+        flyout.Popup.ShouldUseOverlayLayer = true;
+        flyout.ShowAt(target); Settle(clock, window);
+        sortBy.IsSubMenuOpen = true; Settle(clock, window);
+        more.IsSubMenuOpen = true; Settle(clock, window);
+        AssertPressRipplesOnly(window, clock, leaf, sortBy, more);
+        flyout.Hide(); window.Close();
+    }
+
+    [AvaloniaFact]
+    public void PressInANestedMenuBarSubmenu_RipplesOnlyTheClickedItem()
+    {
+        using var clock = new MotionTestClockScope();
+        var (menu, file, _, recent, recentChild, _) = Bar();
+        recentChild.StaysOpenOnClick = true;
+        var window = Show(menu);
+        file.IsSubMenuOpen = true; Settle(clock, window);
+        recent.IsSubMenuOpen = true; Settle(clock, window);
+        AssertPressRipplesOnly(window, clock, recentChild, file, recent);
+        window.Close();
+    }
+
+    static void AssertPressRipplesOnly(Window window, MotionTestClockScope clock, MenuItem clicked, params MenuItem[] ancestors)
+    {
+        var point = Center(clicked, window);
+        window.MouseMove(point); window.MouseDown(point, MouseButton.Left); Flush(window);
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window);
+        Assert.True(MaterialInteraction.GetOrCreate(clicked).RippleCount > 0, "the clicked item should ripple");
+        foreach (var ancestor in ancestors)
+        {
+            var controller = MaterialInteraction.GetOrCreate(ancestor);
+            Assert.Equal(0, controller.RippleCount);
+            Assert.False(controller.Interaction.HasFlag(InteractionState.Pressed), $"{ancestor.Header} pressed");
+        }
+        window.MouseUp(point, MouseButton.Left); Flush(window);
+    }
+
     [AvaloniaFact]
     public void OpenSubmenuParent_ShowsOneHoverOpacityHighlight_WhileThePointerIsInTheSubmenu()
     {
