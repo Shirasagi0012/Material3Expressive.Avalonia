@@ -129,6 +129,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
     // S3: a scope rebuild would release the runs a move retained. Defer it while the move is in
     // progress, and after the move until the retained runs settle; then the stale scope rebuilds.
+    // The parked flight keeps running in the pre-move scope (see IAnimationScopeHost.DefersScopeRebuild).
     bool IAnimationScopeHost.DefersScopeRebuild => _pendingMove is not null || _retainedMove;
 
     private void EndRetainedMove()
