@@ -18,14 +18,14 @@ public class AnimatedContentSizeBehaviorTest
     private static TweenSpec<Size> Tween(int ms = 100) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public Border Leaf { get; } = new() { Width = 100, Height = 40 };
         public AnimatedContentSize Host { get; }
         public Grid Surface { get; } = new() { Width = 400, Height = 350 };
         public Window Window { get; }
         public List<AnimatedContentSizeChangedEventArgs> Completions { get; } = [];
         public Control TemplateRoot => Host.GetVisualChildren().OfType<Control>().Single();
-        public Fixture(Action<AnimatedContentSize>? configure = null, IAnimationFrameClock? clock = null)
+        public Fixture(Action<AnimatedContentSize>? configure = null, IFrameSource? clock = null)
         {
             Host = new AnimatedContentSize
             {
@@ -365,14 +365,14 @@ public class AnimatedContentSizeBehaviorTest
         Assert.Equal(0, f.Completions[0].TargetSize.Height);
     });
 
-    private sealed class FailingClock(bool cancellation) : IAnimationFrameClock
+    private sealed class FailingClock(bool cancellation) : IFrameSource
     {
         public Exception Error { get; } = cancellation ? new OperationCanceledException("clock") : new InvalidOperationException("clock");
         public int Calls { get; private set; }
         public void VerifyAccess() { }
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken token) { Calls++; return ValueTask.FromException<TimeSpan>(Error); }
     }
-    private sealed class ImmediateClock : IAnimationFrameClock
+    private sealed class ImmediateClock : IFrameSource
     {
         public void VerifyAccess() { }
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken token) => ValueTask.FromResult(TimeSpan.Zero);

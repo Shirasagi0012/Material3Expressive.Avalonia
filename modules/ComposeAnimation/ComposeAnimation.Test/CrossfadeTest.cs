@@ -17,7 +17,7 @@ public class CrossfadeTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public Crossfade Host { get; }
         public Window Window { get; }
         public Fixture(Crossfade host)

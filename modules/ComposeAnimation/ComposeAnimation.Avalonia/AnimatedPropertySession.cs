@@ -11,7 +11,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     private readonly StyledProperty<T> _property;
     private readonly ITwoWayConverter<T> _converter;
     private readonly AnimationVector _scratch;
-    private IAnimationFrameClock? _clock;
+    private IFrameSource? _clock;
     private AnimationScope? _scope;
     private Animatable<T>? _animatable;
     private AnimationSampleObservable<T>? _observable;
@@ -42,7 +42,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
 
     public AvaloniaProperty Property => _property;
 
-    public void SetClock(IAnimationFrameClock? clock, AnimationScope? scope = null)
+    public void SetClock(IFrameSource? clock, AnimationScope? scope = null)
     {
         _invalidation?.Dispose();
         _invalidation = null;

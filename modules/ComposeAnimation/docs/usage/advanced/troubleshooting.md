@@ -20,7 +20,7 @@ catch (OperationCanceledException) { }
 
 ## 在非 UI 线程调用动画 API 报错
 
-**症状**：调用动画方法时抛出线程访问异常（`AvaloniaAnimationFrameClock.VerifyAccess()` 内部即 `Dispatcher.UIThread.VerifyAccess()`）。
+**症状**：调用动画方法时抛出线程访问异常（`AvaloniaFrameSource.VerifyAccess()` 内部即 `Dispatcher.UIThread.VerifyAccess()`）。
 
 **原因**：所有动画 API——`Animatable<T>` 的全部方法、`Transition`、`InfiniteTransition`、帧时钟本身——都必须在时钟所属线程调用；生产时钟的所属线程是 UI 线程。这包括 `PropertyChanged` 回调里的同步操作：通知是在时钟线程上发出的。
 

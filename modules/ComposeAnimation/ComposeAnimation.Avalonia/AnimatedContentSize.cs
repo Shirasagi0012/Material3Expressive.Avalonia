@@ -272,7 +272,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
 
     // Distinguish provider failures (including unexpected cancellation) from spec failures.
     // The root environment does not retry a failed provider.
-    private sealed class ObservedClock(IAnimationFrameClock provider) : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
+    private sealed class ObservedClock(IFrameSource provider) : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
         public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? 1;

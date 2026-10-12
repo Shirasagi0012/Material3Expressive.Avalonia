@@ -47,7 +47,7 @@ public class TransitionBoundaryTest
     [Fact]
     public void NestedSeek_AndDeferredRefreshUseCurrentManualTime()
     {
-        using var root = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(false, new ManualFrameSource());
         var child = root.CreateChildTransition(s => s);
         var grandchild = child.CreateChildTransition(s => s);
         var distance = 100.0;
@@ -70,7 +70,7 @@ public class TransitionBoundaryTest
     public void ReturningFromDeferredPhase_UsesManualValueInsteadOfMappedInitialState()
     {
         var state = new DeferredTransitionState<bool>(false);
-        using var transition = new DeferredTransition<bool>(state, new ManualAnimationFrameClock());
+        using var transition = new DeferredTransition<bool>(state, new ManualFrameSource());
         using var deferred = transition.CreateDeferredAnimation(new DoubleConverter());
         var value = deferred.Animate(_ => new SpringSpec<double>(), s => s ? 100 : 0);
         state.Defer(true);
@@ -90,7 +90,7 @@ public class TransitionBoundaryTest
     [Fact]
     public void EmptyTransitionAndRemovalOfLastChild_CanComplete()
     {
-        using var root = new Transition<int>(0, new ManualAnimationFrameClock());
+        using var root = new Transition<int>(0, new ManualFrameSource());
         root.UpdateTarget(1);
         root.OnFrame(Ms(0));
         Assert.Equal(1, root.CurrentState);
@@ -111,7 +111,7 @@ public class TransitionBoundaryTest
     [Fact]
     public void ScaleChange_RecalculatesPlayTimeFromStartAsUpstreamDoes()
     {
-        using var root = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(false, new ManualFrameSource());
         var value = root.AnimateDouble(s => s ? 100 : 0, _ => Tween(1000));
         root.DurationScale = 2;
         root.UpdateTarget(true);
@@ -126,7 +126,7 @@ public class TransitionBoundaryTest
     [Fact]
     public async Task CancelledLoop_CanResumeWithoutCountingInactiveTime()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var root = new Transition<bool>(false, clock);
         var value = root.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         root.UpdateTarget(true);
@@ -152,7 +152,7 @@ public class TransitionBoundaryTest
     public void Disposal_CompletesLogicalStateWithoutSnappingAnimatedValue()
     {
         var state = new MutableTransitionState<bool>(false);
-        var root = new Transition<bool>(state, new ManualAnimationFrameClock());
+        var root = new Transition<bool>(state, new ManualFrameSource());
         var value = root.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         root.UpdateTarget(true);
         root.OnFrame(Ms(0));
@@ -168,7 +168,7 @@ public class TransitionBoundaryTest
     public void StateNotification_CanChainNextTargetAtCompletion()
     {
         var state = new MutableTransitionState<int>(0);
-        using var root = new Transition<int>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<int>(state, new ManualFrameSource());
         var value = root.AnimateDouble(s => s * 100, _ => Tween());
         state.PropertyChanged += (_, e) =>
         {
@@ -193,7 +193,7 @@ public class TransitionBoundaryTest
     public void RunningNotification_CanRetargetThroughMutableState()
     {
         var state = new MutableTransitionState<int>(0);
-        using var root = new Transition<int>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<int>(state, new ManualFrameSource());
         var value = root.AnimateDouble(s => s * 100, _ => Tween());
         state.PropertyChanged += (_, e) =>
         {

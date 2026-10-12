@@ -7,15 +7,15 @@ namespace ComposeAnimation.TestSupport;
 /// <summary>Initializes the animation environment before any Content setter or XAML loading.</summary>
 public class AnimationTestWindow : Window
 {
-    public AnimationTestWindow(IAnimationFrameClock? clock = null)
+    public AnimationTestWindow(IFrameSource? clock = null)
         : this(clock, TimeProvider.System) { }
 
-    public AnimationTestWindow(IAnimationFrameClock? clock, TimeProvider timeProvider)
+    public AnimationTestWindow(IFrameSource? clock, TimeProvider timeProvider)
     {
-        TestClock = clock;
+        FrameSource = clock;
         AnimationRoot = AnimationScope.Initialize(this, clock, timeProvider);
     }
-    public IAnimationFrameClock? TestClock { get; }
+    public IFrameSource? FrameSource { get; }
     public AnimationScope AnimationRoot { get; }
 }
 

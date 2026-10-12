@@ -13,7 +13,7 @@ using ComposeAnimation;
 namespace Catalog.Framework;
 
 /// <summary>
-/// 自动化宿主窗口。Opened 后依次对每个 demo 的每个匹配动作：全新实例 + ProbeClock +
+/// 自动化宿主窗口。Opened 后依次对每个 demo 的每个匹配动作：全新实例 + ProbeFrameSource +
 /// <see cref="AutomationEnvironment"/>，注入时钟（含首次布局后遍历可视树兜底），反射执行动作并记录
 /// 截图/断言/耗时/状态。全部完成后写 manifest、打印摘要、经退出回调带码关闭。
 /// </summary>
@@ -29,7 +29,7 @@ public sealed class DemoRunnerWindow : Window
     private readonly string? _actionFilter;
     private readonly string _outputDirectory;
     private readonly Action<int> _exit;
-    private readonly ProbeClock _probe = new();
+    private readonly ProbeFrameSource _probe = new();
     private bool _started;
 
     public DemoRunnerWindow(

@@ -22,12 +22,12 @@ public abstract class ContentSource
     public static ContentSource From<T>(Transition<T> transition)
         => From(transition, s => s!);
 
-    internal abstract ContentConnection Connect(IAnimationFrameClock clock, string? label);
+    internal abstract ContentConnection Connect(IFrameSource clock, string? label);
 
     private sealed class ObjectStateSource(MutableTransitionState<object?> state) : ContentSource
     {
         private static readonly ConditionalWeakTable<MutableTransitionState<object?>, object> Owners = new();
-        internal override ContentConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override ContentConnection Connect(IFrameSource clock, string? label)
         {
             if (!Owners.TryAdd(state, new object()))
                 throw new InvalidOperationException("A content state cannot drive multiple active hosts. Share a parent Transition instead.");
@@ -39,7 +39,7 @@ public abstract class ContentSource
     private sealed class TypedStateSource<T>(MutableTransitionState<T> state, Func<T, object?> content) : ContentSource
     {
         private static readonly ConditionalWeakTable<object, object> Owners = new();
-        internal override ContentConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override ContentConnection Connect(IFrameSource clock, string? label)
         {
             if (!Owners.TryAdd(state, new object()))
                 throw new InvalidOperationException("A content state cannot drive multiple active hosts. Share a parent Transition instead.");
@@ -55,7 +55,7 @@ public abstract class ContentSource
 
     private sealed class ParentSource<T>(Transition<T> transition, Func<T, object?> content) : ContentSource
     {
-        internal override ContentConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override ContentConnection Connect(IFrameSource clock, string? label)
         {
             transition.VerifyAccess();
             return new(transition.CreateChildTransition(content, label ?? "AnimatedContent"), false);

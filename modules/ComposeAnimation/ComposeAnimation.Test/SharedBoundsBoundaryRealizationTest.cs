@@ -17,7 +17,7 @@ public class SharedBoundsBoundaryRealizationTest
     [Fact]
     public Task FirstShow_WithBoundaryContent_RealizesWithoutLosingTarget() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var parent = new Transition<bool>(true, clock);
 
         var swatch = new SharedBounds

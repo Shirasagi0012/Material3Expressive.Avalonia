@@ -25,7 +25,7 @@ public class SharedBoundsLookaheadTest
     }
     private sealed class Scene : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public Transition<bool> Parent { get; }
         public TextProbe FromText { get; } = Text();
         public TextProbe ToText { get; } = Text();

@@ -33,7 +33,7 @@ public static class SuspendAnimation
     public static Task AnimateToAsync<T>(
         this AnimationState<T> state,
         T targetValue,
-        IAnimationFrameClock clock,
+        IFrameSource clock,
         IAnimationSpec<T>? animationSpec = null,
         bool sequentialAnimation = false,
         Action<AnimationRun<T>>? block = null,
@@ -78,7 +78,7 @@ public static class SuspendAnimation
     public static Task AnimateDecayAsync<T>(
         this AnimationState<T> state,
         IDecayAnimationSpec<T> animationSpec,
-        IAnimationFrameClock clock,
+        IFrameSource clock,
         bool sequentialAnimation = false,
         Action<AnimationRun<T>>? block = null,
         CancellationToken cancellationToken = default)
@@ -105,7 +105,7 @@ public static class SuspendAnimation
     /// value and velocity to <paramref name="block"/> on every frame. When no
     /// <paramref name="animationSpec"/> is specified, a spring is used. If there's a need to
     /// access the animation state (start time, target, etc.), use
-    /// <see cref="AnimateToAsync{T}(AnimationState{T}, T, IAnimationFrameClock, IAnimationSpec{T}?, bool, Action{AnimationRun{T}}?, CancellationToken)"/>
+    /// <see cref="AnimateToAsync{T}(AnimationState{T}, T, IFrameSource, IAnimationSpec{T}?, bool, Action{AnimationRun{T}}?, CancellationToken)"/>
     /// instead.
     /// </summary>
     /// <param name="clock">The frame clock driving the animation.</param>
@@ -116,7 +116,7 @@ public static class SuspendAnimation
     /// <param name="animationSpec">The spec that defines the animation curve. A spring by default.</param>
     /// <param name="block">Invoked on every frame with the current value and velocity.</param>
     public static Task AnimateAsync<T>(
-        this IAnimationFrameClock clock,
+        this IFrameSource clock,
         ITwoWayConverter<T> typeConverter,
         T initialValue,
         T targetValue,
@@ -157,7 +157,7 @@ public static class SuspendAnimation
     /// <param name="animationSpec">The spec that defines the animation curve. A spring by default.</param>
     /// <param name="block">Invoked on every frame with the current value and velocity.</param>
     public static Task AnimateAsync(
-        this IAnimationFrameClock clock,
+        this IFrameSource clock,
         double initialValue,
         double targetValue,
         double initialVelocity = 0,
@@ -180,7 +180,7 @@ public static class SuspendAnimation
     /// </param>
     /// <param name="block">Invoked on every frame with the current value and velocity.</param>
     public static Task AnimateDecayAsync(
-        this IAnimationFrameClock clock,
+        this IFrameSource clock,
         double initialValue,
         double initialVelocity,
         IDecayAnimationSpec<double> animationSpec,
@@ -211,7 +211,7 @@ public static class SuspendAnimation
     internal static async Task AnimateAsync<T>(
         this AnimationState<T> state,
         Animation<T> animation,
-        IAnimationFrameClock clock,
+        IFrameSource clock,
         TimeSpan startTime,
         Action<AnimationRun<T>>? onFrame,
         CancellationToken cancellationToken)

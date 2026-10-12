@@ -41,7 +41,7 @@ public class LookaheadLocalEntryTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public Window Window { get; }
 
         public Fixture(Control content, params AnimatedBounds[] animations)

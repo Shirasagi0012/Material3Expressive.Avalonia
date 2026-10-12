@@ -4,12 +4,12 @@ using Avalonia.Threading;
 namespace ComposeAnimation.Runtime;
 
 /// <summary>
-/// Time source for animation frame loops. Pull model: the consumer awaits one frame at a time
-/// via <see cref="NextFrameAsync"/>, so cancellation of the supplied token unwinds the waiting
-/// loop with an <see cref="OperationCanceledException"/>. All members must be called on the
-/// clock's owning thread.
+/// A window's frame source; the window's internal FrameClock is its only consumer. Pull model:
+/// the consumer awaits one frame at a time via <see cref="NextFrameAsync"/>, so cancellation of
+/// the supplied token unwinds the wait with an <see cref="OperationCanceledException"/>. All
+/// members must be called on the source's owning thread.
 /// </summary>
-public interface IAnimationFrameClock
+public interface IFrameSource
 {
     /// <summary>Throws if called from a thread other than the clock's owning thread.</summary>
     void VerifyAccess();
@@ -23,7 +23,7 @@ public interface IAnimationFrameClock
 }
 
 /// <summary>Drives animations using Avalonia's UI-thread animation frames.</summary>
-internal sealed class AvaloniaAnimationFrameClock(TopLevel topLevel) : IAnimationFrameClock
+internal sealed class AvaloniaFrameSource(TopLevel topLevel) : IFrameSource
 {
     private readonly TopLevel _topLevel = topLevel ?? throw new ArgumentNullException(nameof(topLevel));
 

@@ -11,7 +11,7 @@ namespace ComposeAnimation;
 internal interface IPropertySession : IDisposable
 {
     AvaloniaProperty Property { get; }
-    void SetClock(IAnimationFrameClock? clock, AnimationScope? scope = null);
+    void SetClock(IFrameSource? clock, AnimationScope? scope = null);
     void ReconcileTarget();
     void Abort();
     void SnapToTarget();
@@ -117,7 +117,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         session?.SetClock(SessionClock, _motion);
     }
 
-    private IAnimationFrameClock? SessionClock => _clockFailed ? null : _sessionClock;
+    private IFrameSource? SessionClock => _clockFailed ? null : _sessionClock;
 
     private IPropertySession? CreateSession(AnimatedProperty declaration)
     {
@@ -299,8 +299,8 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     /// replacing the failure callback of the removed per-host shared clock. It does not
     /// multiplex: every session still waits on the window's FrameClock.
     /// </summary>
-    private sealed class FailureObservedClock(IAnimationFrameClock provider, Action<Exception> onFailure)
-        : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
+    private sealed class FailureObservedClock(IFrameSource provider, Action<Exception> onFailure)
+        : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
         public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? MotionDurationScale.ScaleFactor;

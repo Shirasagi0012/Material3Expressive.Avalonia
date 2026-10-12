@@ -13,7 +13,7 @@ public class AnimationScopeTest
     private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static TweenSpec<double> Tween() => new(TimeSpan.FromMilliseconds(100), easing: new LinearEasing());
-    private static void Send(ManualAnimationFrameClock clock, int ms)
+    private static void Send(ManualFrameSource clock, int ms)
     {
         clock.AdvanceBy(TimeSpan.FromMilliseconds(ms));
         Dispatcher.UIThread.RunJobs();
@@ -24,7 +24,7 @@ public class AnimationScopeTest
     {
         var window = new Window();
         Assert.Throws<InvalidOperationException>(() => AnimationScope.Get(window));
-        var root = AnimationScope.Initialize(window, new ManualAnimationFrameClock());
+        var root = AnimationScope.Initialize(window, new ManualFrameSource());
         Assert.Throws<InvalidOperationException>(() => AnimationScope.Initialize(window));
         // Get-owned: one scope per control, returned again on every call, parented to the root.
         var a = AnimationScope.Get(window);
@@ -37,7 +37,7 @@ public class AnimationScopeTest
     [Fact]
     public Task ScopeObjects_ArePermanentlyInvalid_ButFinalValueIsReadable() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var scope = window.AnimationRoot.CreateChild();
         var value = scope.CreateAnimatable(0d);
@@ -66,7 +66,7 @@ public class AnimationScopeTest
     [Fact]
     public Task QueuedSnap_CannotCommitAfterEndingFromACancellationNotification() => OnUi(async () =>
     {
-        var window = new AnimationTestWindow(new ManualAnimationFrameClock());
+        var window = new AnimationTestWindow(new ManualFrameSource());
         var scope = window.AnimationRoot.CreateChild();
         var value = scope.CreateAnimatable(0d);
         var playing = value.AnimateToAsync(1, Tween());
@@ -234,7 +234,7 @@ public class AnimationScopeTest
     [Fact]
     public Task ManyTemporaryEffects_ReturnAllRegistrationsToBaseline() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var root = window.AnimationRoot;
         for (var i = 0; i < 1500; i++)
@@ -255,7 +255,7 @@ public class AnimationScopeTest
     [Fact]
     public Task DirectAndPropertyAnimations_ShareOneRootRequest_AndDetachIndependently() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var panel = new StackPanel();
         var a = new Border { Opacity = 1 };
         var b = new Border { Opacity = 1 };
@@ -292,7 +292,7 @@ public class AnimationScopeTest
     [Fact]
     public Task SnapToTarget_EndsSameTargetImmediately_AndPreservesDeclarationAndBaseBinding() => OnUi(() =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var visual = new Border { Opacity = 1 };
         var declaration = visual.Animate(new AnimatedDouble { Property = Visual.OpacityProperty, Spec = Tween() });
         var window = new AnimationTestWindow(clock) { Content = visual };
@@ -320,7 +320,7 @@ public class AnimationScopeTest
     [InlineData(true)]
     public Task Popup_ResolvesWindowEnvironmentBeforeFirstControlScope(bool overlay) => OnUi(() =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var panel = new StackPanel();
         var anchor = new Border { Width = 100, Height = 40 };
         panel.Children.Add(anchor);
@@ -343,7 +343,7 @@ public class AnimationScopeTest
     [Fact]
     public async Task ManualClock_IsMonotonicAndSendsExactlyOneFixedBatch()
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var first = clock.NextFrameAsync(default).AsTask();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
         Assert.Equal(TimeSpan.FromMilliseconds(60), await first);
@@ -357,7 +357,7 @@ public class AnimationScopeTest
     [Fact]
     public Task RootEnding_RemovesPropertyContributionsAndCancelsAllWaitersWithoutFailure() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var visual = new Border { Opacity = 1 };
         visual.Animate(new AnimatedDouble { Property = Visual.OpacityProperty, Spec = Tween() });
         var window = new AnimationTestWindow(clock) { Content = visual };
@@ -403,7 +403,7 @@ public class AnimationScopeTest
     [Fact]
     public Task PlaybackPolicy_KeepsFiniteProgressAndResumesInfiniteFromZero() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var root = window.AnimationRoot;
         var value = root.CreateAnimatable(0d);
@@ -450,7 +450,7 @@ public class AnimationScopeTest
     [Fact]
     public Task BuiltInLoops_EndWithRootEvenWhileControlsRemainAttached() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var visible = new AnimatedVisibility { Content = new Border { Width = 40, Height = 40 } };
         var content = new AnimatedContent { Content = "first" };
         var sizeChild = new Border { Width = 40, Height = 40 };
@@ -483,7 +483,7 @@ public class AnimationScopeTest
     [Fact]
     public Task TransitionAndInfiniteValues_BindCheckBoxProgressAndRotation() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var scope = window.AnimationRoot.CreateChild("Value consumers");
         var checkbox = new CheckBox { IsChecked = true, Opacity = .3 };
@@ -514,7 +514,7 @@ public class AnimationScopeTest
     [Fact]
     public Task NestedPopups_ReopenWithFreshScopesAndShareWindowFrames() => OnUi(async () =>
     {
-        using var clock = new ManualAnimationFrameClock();
+        using var clock = new ManualFrameSource();
         var panel = new StackPanel();
         var anchor = new Border { Width = 40, Height = 40 };
         panel.Children.Add(anchor);
@@ -569,7 +569,7 @@ public class AnimationScopeTest
         window.Close();
     });
 
-    private sealed class FailingClock : IAnimationFrameClock
+    private sealed class FailingClock : IFrameSource
     {
         internal TaskCompletionSource<TimeSpan> Pending { get; } = new();
         internal int Requests;

@@ -11,7 +11,7 @@
 
 ## 帧时钟与 AnimationScope
 
-`IAnimationFrameClock` 保留显式时钟的底层入口：`VerifyAccess()` 检查所属线程；`NextFrameAsync(CancellationToken)` 返回下一帧的绝对时间戳并支持取消。独立 Runtime 调用者自行提供时钟。
+`IFrameSource` 保留显式时钟的底层入口：`VerifyAccess()` 检查所属线程；`NextFrameAsync(CancellationToken)` 返回下一帧的绝对时间戳并支持取消。独立 Runtime 调用者自行提供时钟。
 
 Avalonia 应用在加载 XAML 或设置 Content 之前调用 `AnimationScope.Initialize(topLevel, clock?)`。默认帧源与每窗口唯一的内部 FrameClock 由内部实现提供，不再公开构造；`SharedAnimationFrameClock` 已删除。一个根环境固定一个帧源，同根控件、直接动画与派生 Popup 自动共享按需请求；整个根最多有一个挂起的源请求。UI 动画 API 必须在 UI 线程调用。
 
@@ -29,7 +29,7 @@ _ = motion.Launch(ct => alpha.AnimateToAsync(1, cancellationToken: ct), "Fade in
 
 控件在树内移动时，旧 Scope 会在下一帧等待者恢复前合并重建一次，随后控件的 `ScopeChanged` 事件触发，持有旧 Scope 的运行应在 `AnimationScope.AddScopeChangedHandler` 注册的处理程序中重启。控件脱离树时 Scope 结束，窗口关闭结束根环境（根没有公开的 `Dispose`）。`scope.NextFrameAsync(ct)` 等待窗口的下一帧，并在帧批次中内联恢复。工厂对象终身受其 Scope 约束：结束后可以读最终值、调用清理操作，不能启动或变更新动画。详见 [Scope 使用与迁移](../animation-scope.md)。
 
-测试项目引用 `ComposeAnimation.TestSupport`，使用 `AnimationTestWindow(clock)` 在 Content 初始化前建立环境。`ManualAnimationFrameClock.SendFrame(absoluteTime)` 发送一个绝对时间戳；`AdvanceBy(delta)` 只发送一帧，不隐式补起点帧。送帧后仍需推进 Dispatcher；`AnimationTestDispatcher.WaitUntilAsync` 提供有上限的条件等待。
+测试项目引用 `ComposeAnimation.TestSupport`，使用 `AnimationTestWindow(clock)` 在 Content 初始化前建立环境。`ManualFrameSource.SendFrame(absoluteTime)` 发送一个绝对时间戳；`AdvanceBy(delta)` 只发送一帧，不隐式补起点帧。送帧后仍需推进 Dispatcher；`AnimationTestDispatcher.WaitUntilAsync` 提供有上限的条件等待。
 
 ## 异步模型与中断
 

@@ -32,7 +32,7 @@ public partial class AnimatedBoundsTest
             => create(initialBounds, targetBounds);
     }
 
-    private sealed class BrokenClock : IAnimationFrameClock
+    private sealed class BrokenClock : IFrameSource
     {
         public int Requests { get; private set; }
         public void VerifyAccess() { }
@@ -70,7 +70,7 @@ public partial class AnimatedBoundsTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control content, BoundsParentLayoutMode mode = BoundsParentLayoutMode.AnimatedSize)

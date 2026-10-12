@@ -8,13 +8,13 @@ public partial class Transition<TState> : Transition
     private TState? _pendingTargetState;
     private bool _hasPendingTargetState;
 
-    public Transition(TState initialState, IAnimationFrameClock clock, string? label = null)
+    public Transition(TState initialState, IFrameSource clock, string? label = null)
         : this(new MutableTransitionState<TState>(initialState), clock, null, label) { }
 
-    public Transition(TransitionState<TState> transitionState, IAnimationFrameClock clock, string? label = null)
+    public Transition(TransitionState<TState> transitionState, IFrameSource clock, string? label = null)
         : this(transitionState, clock, null, label) { }
 
-    internal Transition(TransitionState<TState> transitionState, IAnimationFrameClock clock,
+    internal Transition(TransitionState<TState> transitionState, IFrameSource clock,
         Transition? parent, string? label) : base(clock, parent, label)
     {
         ArgumentNullException.ThrowIfNull(transitionState);
@@ -259,4 +259,4 @@ public partial class Transition<TState> : Transition
 }
 
 public sealed class DeferredTransition<TState>(DeferredTransitionState<TState> transitionState,
-    IAnimationFrameClock clock, string? label = null) : Transition<TState>(transitionState, clock, label);
+    IFrameSource clock, string? label = null) : Transition<TState>(transitionState, clock, label);

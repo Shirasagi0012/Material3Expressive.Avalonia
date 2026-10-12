@@ -41,7 +41,7 @@ public abstract class Transition : ObservableObject, IDisposable
     private TimeSpan _startTime = AnimationConstants.UnspecifiedTime;
     private double _durationScale = 1;
 
-    private protected Transition(IAnimationFrameClock clock, Transition? parent, string? label)
+    private protected Transition(IFrameSource clock, Transition? parent, string? label)
     {
         ArgumentNullException.ThrowIfNull(clock);
         clock.VerifyAccess();
@@ -81,7 +81,7 @@ public abstract class Transition : ObservableObject, IDisposable
         }
     }
 
-    internal IAnimationFrameClock Clock { get; }
+    internal IFrameSource Clock { get; }
     internal bool IsDisposed => _disposed;
     internal Action? SynchronizeWithParent { get; set; }
     // One delivery per mutation batch, after that batch. Play time, segment, duration, and

@@ -155,7 +155,7 @@ public class TransitionStateTest
     [Fact]
     public async Task SeekableSeek_SamplesTheWholeTransitionTree()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
         using var transition = new Transition<bool>(state, clock);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>
@@ -172,7 +172,7 @@ public class TransitionStateTest
     [Fact]
     public async Task SeekableSeek_UpdatesChildTransitionTimeline()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
         using var transition = new Transition<bool>(state, clock);
         var child = transition.CreateChildTransition(s => s);
@@ -189,7 +189,7 @@ public class TransitionStateTest
     [Fact]
     public async Task SeekableAnimate_UsesClockAndReturnsToIdle()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
         using var transition = new Transition<bool>(state, clock);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>
@@ -222,7 +222,7 @@ public class TransitionStateTest
     [InlineData(true)]
     public async Task SeekablePlayback_PreservesRunningUntilManualSeekOrCancellation(bool cancel)
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
         using var transition = new Transition<bool>(state, clock);
         var child = transition.CreateChildTransition(s => s);
@@ -258,7 +258,7 @@ public class TransitionStateTest
     [Fact]
     public async Task SeekableSnap_StopsAndSnapsAnimations()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
         using var transition = new Transition<bool>(state, clock);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>
@@ -277,7 +277,7 @@ public class TransitionStateTest
     [Fact]
     public async Task SeekableOperations_CancelThePreviousOperation()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
         using var transition = new Transition<bool>(state, clock);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>

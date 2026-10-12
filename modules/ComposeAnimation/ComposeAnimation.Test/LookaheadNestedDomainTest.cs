@@ -79,7 +79,7 @@ public class LookaheadNestedDomainTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public LookaheadRoot OuterRoot { get; }
         public Window Window { get; }
 

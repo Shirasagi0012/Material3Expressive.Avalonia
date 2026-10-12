@@ -13,9 +13,9 @@ public sealed class AnimationScopeRebuildTest
     private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static TweenSpec<double> Tween() => new(TimeSpan.FromMilliseconds(100), easing: new LinearEasing());
 
-    private static AnimationTestWindow Show(Control content, ManualAnimationFrameClock? clock = null)
+    private static AnimationTestWindow Show(Control content, ManualFrameSource? clock = null)
     {
-        var window = new AnimationTestWindow(clock ?? new ManualAnimationFrameClock()) { Content = content, Width = 300, Height = 300 };
+        var window = new AnimationTestWindow(clock ?? new ManualFrameSource()) { Content = content, Width = 300, Height = 300 };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         return window;
@@ -61,7 +61,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task ReparentBetweenScopes_EndsOldScope_ReleasesBeforeCancel_AndRaisesOnce() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var control = new Border();
         var left = new Decorator { Child = control };
         var right = new Decorator();
@@ -220,7 +220,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task RestartInScopeChangedHandler_DuringFrameDrain_SamplesAtThatFramesTimestamp() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var control = new Border();
         var left = new Decorator { Child = control };
         var right = new Decorator();
@@ -248,7 +248,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task ReparentFromWaiterContinuation_TakesEffectAfterTheBatch() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var control = new Border();
         var left = new Decorator { Child = control };
         var right = new Decorator();
@@ -272,7 +272,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task HandlerThatMakesItsHostStaleAgain_IsRebuiltNextFrameNotInALoop() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var control = new Border();
         var left = new Decorator { Child = control };
         var right = new Decorator();
@@ -300,7 +300,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task IdleDrain_ReturnsImmediately_WithoutAllocating() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var window = Show(new Border(), clock);
         var root = window.AnimationRoot;
         var waits = new List<Task>();
@@ -323,7 +323,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task FallbackPost_DrainsWithoutFrames_AndNoOpsWhenTheHookWon() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var control = new Border();
         var panel = new StackPanel { Children = { control } };
         var window = Show(panel, clock);
@@ -365,7 +365,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task StandalonePopup_FallsBackToItsTopLevelRoot_AndSharesTheWindowFrames() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var anchor = new Border { Width = 40, Height = 40 };
         var panel = new StackPanel { Children = { anchor } };
         var window = Show(panel, clock);
@@ -405,7 +405,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task CreateChild_DisposesOnlyItself_EndsWithParent_AndIsIdempotent() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var control = new Border();
         var left = new Decorator { Child = control };
         var right = new Decorator();
@@ -438,7 +438,7 @@ public sealed class AnimationScopeRebuildTest
     public Task NextFrameAsync_ResumesInlineInTheBatch_AndCancelsWithTheScope(int start) => OnUi(() =>
     {
         var priority = start switch { 0 => DispatcherPriority.Normal, 1 => DispatcherPriority.Background, _ => DispatcherPriority.Loaded };
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var window = Show(new Border(), clock);
         var root = window.AnimationRoot;
         var log = new List<string>();
@@ -470,7 +470,7 @@ public sealed class AnimationScopeRebuildTest
     [Fact]
     public Task DurationScale_AttachedInherits_InstanceSettersMultiply_AndBothRaisePlaybackChanged() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var control = new Border();
         var host = new Decorator { Child = control };
         var window = Show(host, clock);

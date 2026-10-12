@@ -17,7 +17,7 @@ public class AnimatedContentSizeTest
     public Task RepeatedChanges_AfterIdle_AnimateAndMoveSibling(bool replaceContent)
         => HeadlessApp.Session.Dispatch(() =>
         {
-            var clock = new ManualAnimationFrameClock();
+            var clock = new ManualFrameSource();
             var content = new Border { Width = 100, Height = 40 };
             var host = new AnimatedContentSize
             {

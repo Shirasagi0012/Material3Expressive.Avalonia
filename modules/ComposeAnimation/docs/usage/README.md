@@ -85,7 +85,7 @@ private void OnChange(object? sender, RoutedEventArgs e)
 ## 核心概念
 
 - **规格（Spec）**：`IAnimationSpec<T>` 描述动画曲线（弹簧 `SpringSpec`、补间 `TweenSpec`、关键帧 `KeyframesSpec` 等），与值分离、可复用；未指定规格时默认使用弹簧。
-- **帧时钟**：动画由 `IAnimationFrameClock` 逐帧驱动（拉模型），所有动画 API 必须在时钟所属线程（通常是 UI 线程）调用。
+- **帧时钟**：动画由 `IFrameSource` 逐帧驱动（拉模型），所有动画 API 必须在时钟所属线程（通常是 UI 线程）调用。
 - **Task 异步与中断**：动画方法返回 `Task`（方法名带 `Async` 后缀）；动画被新动画、`Stop()` 或 `SnapToAsync` 打断时，旧 Task 以 `OperationCanceledException` 结束，调用方必须捕获。
 - **Transition 状态驱动**：`Transition<TState>` 把一组属性动画绑定到状态机，改 `TargetState` 即整树切换。
 

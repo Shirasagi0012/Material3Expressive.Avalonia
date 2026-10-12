@@ -14,7 +14,7 @@ public sealed class CoroutineDelayTest
     public Task Delay_UsesElapsedTimeWithoutFramesOrDurationScaling(double scale) => OnUi(async () =>
     {
         var time = new ManualTimeProvider(Dispatcher.UIThread.VerifyAccess);
-        using var frames = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        using var frames = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = new AnimationTestWindow(frames, time);
         window.AnimationRoot.DurationScale = scale;
         var child = window.AnimationRoot.CreateChild();
@@ -37,7 +37,7 @@ public sealed class CoroutineDelayTest
     public Task Delay_CallerCancellationAndScopeDisposalReleaseTimers() => OnUi(async () =>
     {
         var time = new ManualTimeProvider();
-        var window = new AnimationTestWindow(new ManualAnimationFrameClock(), time);
+        var window = new AnimationTestWindow(new ManualFrameSource(), time);
         var child = window.AnimationRoot.CreateChild();
         using var cancel = new CancellationTokenSource();
         var a = child.DelayAsync(TimeSpan.FromSeconds(1), cancel.Token);

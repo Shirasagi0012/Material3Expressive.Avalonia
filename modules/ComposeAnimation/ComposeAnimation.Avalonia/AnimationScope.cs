@@ -53,7 +53,7 @@ public sealed class AnimationScopeChangedEventArgs : RoutedEventArgs
 
 /// <summary>
 /// Owns animation work, samples and children within a fixed TopLevel environment. Obtain a
-/// control's scope with <see cref="Get"/>; the window root comes from <see cref="Initialize(TopLevel, IAnimationFrameClock?)"/>.
+/// control's scope with <see cref="Get"/>; the window root comes from <see cref="Initialize(TopLevel, IFrameSource?)"/>.
 /// </summary>
 public class AnimationScope
 {
@@ -119,7 +119,7 @@ public class AnimationScope
     private protected AnimationScope(Visual host, AnimationScope parent, string? label)
         : this(Kind.Child, host, parent, null, label) { }
 
-    private AnimationScope(Kind kind, Visual host, AnimationScope? parent, IAnimationFrameClock? clock, string? label,
+    private AnimationScope(Kind kind, Visual host, AnimationScope? parent, IFrameSource? clock, string? label,
         TimeProvider? timeProvider = null)
     {
         _kind = kind;
@@ -170,7 +170,7 @@ public class AnimationScope
     /// when runs take a scope instead.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public IAnimationFrameClock Clock { get; }
+    public IFrameSource Clock { get; }
 
     /// <summary>Coroutine delay time source, inherited by children; independent of frame timestamps and DurationScale.</summary>
     public TimeProvider TimeProvider { get; }
@@ -200,17 +200,17 @@ public class AnimationScope
     public static double GetDurationScale(Visual visual) => visual.GetValue(DurationScaleProperty);
     public static void SetDurationScale(Visual visual, double value) => visual.SetValue(DurationScaleProperty, value);
 
-    public static AnimationScope Initialize(TopLevel host, IAnimationFrameClock? source = null)
+    public static AnimationScope Initialize(TopLevel host, IFrameSource? source = null)
         => Initialize(host, source, System.TimeProvider.System);
 
     /// <summary>Initializes an environment with an explicit ordinary-delay scheduler.</summary>
-    public static AnimationScope Initialize(TopLevel host, IAnimationFrameClock? source, TimeProvider timeProvider)
+    public static AnimationScope Initialize(TopLevel host, IFrameSource? source, TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(timeProvider);
         Dispatcher.UIThread.VerifyAccess();
         if (Roots.TryGetValue(host, out _)) throw new InvalidOperationException("This TopLevel already has an animation environment.");
-        source ??= new AvaloniaAnimationFrameClock(host);
+        source ??= new AvaloniaFrameSource(host);
         source.VerifyAccess();
         var root = new AnimationScope(Kind.Root, host, null, source, "Root", timeProvider);
         Roots.Add(host, root);
@@ -783,7 +783,7 @@ public class AnimationScope
 
     // Not async: it hands out the FrameClock wait itself, so callers resume inline in the batch
     // regardless of the context they awaited from (an async layer here would reintroduce that).
-    private sealed class ScopeClock(AnimationScope owner) : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
+    private sealed class ScopeClock(AnimationScope owner) : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime AnimationLifetime => owner._lifecycle;
         public double DurationScale => owner.DurationScale * owner.Host.GetValue(DurationScaleProperty);

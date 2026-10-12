@@ -15,12 +15,12 @@ public abstract class VisibilitySource
         => new ParentSource<T>(transition ?? throw new ArgumentNullException(nameof(transition)),
             visible ?? throw new ArgumentNullException(nameof(visible)));
 
-    internal abstract VisibilityConnection Connect(IAnimationFrameClock clock, string? label);
+    internal abstract VisibilityConnection Connect(IFrameSource clock, string? label);
 
     private sealed class StateSource(MutableTransitionState<bool> state) : VisibilitySource
     {
         private static readonly ConditionalWeakTable<MutableTransitionState<bool>, object> Owners = new();
-        internal override VisibilityConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override VisibilityConnection Connect(IFrameSource clock, string? label)
         {
             if (!Owners.TryAdd(state, new object()))
                 throw new InvalidOperationException("A visibility state cannot drive multiple active hosts. Share a parent Transition instead.");
@@ -31,7 +31,7 @@ public abstract class VisibilitySource
 
     private sealed class ParentSource<T>(Transition<T> transition, Func<T, bool> visible) : VisibilitySource
     {
-        internal override VisibilityConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override VisibilityConnection Connect(IFrameSource clock, string? label)
         {
             transition.VerifyAccess();
             return new(transition.CreateChildTransition(visible, label ?? "AnimatedVisibility"), false);

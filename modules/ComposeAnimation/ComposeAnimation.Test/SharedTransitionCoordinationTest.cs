@@ -17,7 +17,7 @@ public class SharedTransitionCoordinationTest
     [InlineData("dispose")]
     public void DetachedParticipant_IsReleasedWhenItsOwnerFinishes(string ending)
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var target = Visibility(root, false);
         using var scope = SharedTransitionScope.Create(root);
@@ -51,7 +51,7 @@ public class SharedTransitionCoordinationTest
     public void AutomaticTargetChange_ReservesBeforeDescendantReconfiguration(bool directStateWrite)
     {
         var state = new MutableTransitionState<bool>(true);
-        using var root = new Transition<bool>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(state, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -76,7 +76,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void NestedUpdate_CoalescesTargetsAndSnapshotsBeforeFirstMutation()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -103,7 +103,7 @@ public class SharedTransitionCoordinationTest
     [InlineData(true)]
     public void UpdateInsideParentNotification_OrdersPreparationTargetsAndCommit(bool cancel)
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -143,7 +143,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void CancelNestedUpdate_DoesNotRollbackTarget_AndRevokesAllUpdateHandles()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -166,7 +166,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void ReverseDuringPreparation_InvalidatesLateCommitWithoutDroppingNewReservation()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -189,7 +189,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void Commit_InstallsRealWorkBeforeReleasingReservations()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -218,7 +218,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void LateRegistration_RepublishesSameIntent_WithDistinctIdentity()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var first = scope.RegisterParticipant("photo", source);
@@ -244,7 +244,7 @@ public class SharedTransitionCoordinationTest
     [InlineData(true)]
     public void SeekOrParentDisposal_CancelsPendingRequestAndOpenTransaction(bool dispose)
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -261,7 +261,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void ParticipantTransitionDisposal_CancelsPreparation()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -275,7 +275,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void FailedInstall_ReleasesOnlyItsRequest_AndParentRemainsUsable()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -293,7 +293,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void ThrowingPreparationOrCancellationCallback_CannotStrandParentLeases()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         using var source = Visibility(root);
         using var scope = SharedTransitionScope.Create(root);
         using var participant = scope.RegisterParticipant("photo", source);
@@ -314,7 +314,7 @@ public class SharedTransitionCoordinationTest
     [Fact]
     public void SharedScope_DoesNotOwnParentLoop_AndRejectsUnrelatedParticipants()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var root = new Transition<bool>(true, clock);
         using var unrelated = new Transition<bool>(true, clock);
         using var wrong = Visibility(unrelated);

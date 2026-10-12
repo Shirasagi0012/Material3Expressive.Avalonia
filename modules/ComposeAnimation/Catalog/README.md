@@ -31,7 +31,7 @@ dotnet run --project Catalog/Catalog.csproj -- --run properties/basic --action T
 dotnet run --project Catalog/Catalog.csproj -- --verify-ui artifacts/catalog-ui
 ```
 
-`--run` 使用 `ProbeClock`，以 1/60 秒推进动画；固定浅色主题。输出路径为 `<out>/<demo-id>/<action>/`，包含 PNG 和 `manifest.json`，每个 demo 另有聚合 manifest。`--verify-ui` 在真实桌面窗口中使用根级手动帧环境，输出浅／深色及最小窗口截图和 `ui-verification.json`；失败时输出 `failure.txt`。两种模式会短暂开窗并自动退出。
+`--run` 使用 `ProbeFrameSource`，以 1/60 秒推进动画；固定浅色主题。输出路径为 `<out>/<demo-id>/<action>/`，包含 PNG 和 `manifest.json`，每个 demo 另有聚合 manifest。`--verify-ui` 在真实桌面窗口中使用根级手动帧环境，输出浅／深色及最小窗口截图和 `ui-verification.json`；失败时输出 `failure.txt`。两种模式会短暂开窗并自动退出。
 
 退出码：`0` 成功；`1` 验证失败；`2` 参数错误。不同运行建议使用不同输出目录，避免旧截图混入。
 

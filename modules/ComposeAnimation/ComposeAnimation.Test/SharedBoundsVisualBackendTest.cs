@@ -13,7 +13,7 @@ public class SharedBoundsVisualBackendTest
     [Fact]
     public Task BoundaryScaleChild_AndRemeasureTarget_StayReadyThroughReverse() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var transition = new Transition<bool>(true, clock);
         var fromChild = new SharedBounds
         {

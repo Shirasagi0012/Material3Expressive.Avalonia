@@ -21,7 +21,7 @@ public class LookaheadPositionTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control content, params LookaheadPosition[] nodes)

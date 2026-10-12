@@ -12,9 +12,9 @@ public sealed class AnimationScopeFixPassTest
 {
     private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
 
-    private static AnimationTestWindow Show(Control content, ManualAnimationFrameClock? clock = null)
+    private static AnimationTestWindow Show(Control content, ManualFrameSource? clock = null)
     {
-        var window = new AnimationTestWindow(clock ?? new ManualAnimationFrameClock()) { Content = content, Width = 300, Height = 300 };
+        var window = new AnimationTestWindow(clock ?? new ManualFrameSource()) { Content = content, Width = 300, Height = 300 };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         return window;
@@ -181,7 +181,7 @@ public sealed class AnimationScopeFixPassTest
     [Fact]
     public Task DeferringHost_IsParkedWithoutPolling_AndRebuildsWhenItsPolicyClears() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var host = new DeferringHost();
         var left = new Decorator { Child = host };
         var right = new Decorator();

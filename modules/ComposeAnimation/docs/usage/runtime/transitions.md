@@ -152,8 +152,8 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 
 | 成员 | 类型/签名 | 说明 |
 | --- | --- | --- |
-| 构造函数 | `Transition(TState initialState, IAnimationFrameClock clock, string? label = null)` | 内部创建 `MutableTransitionState<TState>` |
-| 构造函数 | `Transition(TransitionState<TState> transitionState, IAnimationFrameClock clock, string? label = null)` | 使用外部持有的状态对象 |
+| 构造函数 | `Transition(TState initialState, IFrameSource clock, string? label = null)` | 内部创建 `MutableTransitionState<TState>` |
+| 构造函数 | `Transition(TransitionState<TState> transitionState, IFrameSource clock, string? label = null)` | 使用外部持有的状态对象 |
 | `CurrentState` / `TargetState` | `TState` | 当前状态 / 目标状态 |
 | `Segment` | `TransitionSegment<TState>` | 当前段；`readonly record struct`，含 `InitialState`、`TargetState` 与 `IsTransitioningTo(TState, TState)` |
 | `PendingTargetState` / `HasPendingTargetState` | `TState?` / `bool` | 延迟状态对象的挂起目标（见 `DeferredTransitionState<T>`） |
@@ -214,11 +214,11 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 | `DeferredTransitionState<T>` | `(T initialState)` | `Defer(target)` 暂存目标（不动画），`AnimateTo(target)` 提交 | 无 | 需等待测量/资源就绪再提交的过渡；配合 `DeferredTransition<TState>` 与 `CreateDeferredAnimation` |
 | `SeekableTransitionState<T>` | `(T initialState)` | `SeekToAsync` / `SnapToAsync` / `AnimateToAsync` | `Fraction`（0..1） | 手势驱动的进度（抽屉拖动）、设计器/预览 |
 
-`DeferredTransition<TState>` 是 `sealed class DeferredTransition<TState>(DeferredTransitionState<TState> transitionState, IAnimationFrameClock clock, string? label = null) : Transition<TState>`，与后两者中的 `DeferredTransitionState` 搭配使用。
+`DeferredTransition<TState>` 是 `sealed class DeferredTransition<TState>(DeferredTransitionState<TState> transitionState, IFrameSource clock, string? label = null) : Transition<TState>`，与后两者中的 `DeferredTransitionState` 搭配使用。
 
 ### `InfiniteTransition`
 
-`sealed class InfiniteTransition : ObservableObject, IDisposable`。构造函数：`InfiniteTransition(IAnimationFrameClock clock, string? label = "InfiniteTransition")`。
+`sealed class InfiniteTransition : ObservableObject, IDisposable`。构造函数：`InfiniteTransition(IFrameSource clock, string? label = "InfiniteTransition")`。
 
 | 成员 | 类型/签名 | 说明 |
 | --- | --- | --- |

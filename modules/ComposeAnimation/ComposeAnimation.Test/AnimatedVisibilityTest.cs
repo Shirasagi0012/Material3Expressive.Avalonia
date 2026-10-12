@@ -20,7 +20,7 @@ public class AnimatedVisibilityTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public AnimatedVisibility Host { get; }
         public Window Window { get; }
         public Fixture(AnimatedVisibility host)
@@ -124,7 +124,7 @@ public class AnimatedVisibilityTest
     [InlineData(true)]
     public Task SharedParent_AutomaticPreparationRetainsExitNoneWithoutManualLease(bool zeroDuration) => OnUi(() =>
     {
-        using var parent = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var parent = new Transition<bool>(true, new ManualFrameSource());
         using var shared = SharedTransitionScope.Create(parent);
         var host = Host();
         host.Enter = EnterTransition.None;
@@ -152,7 +152,7 @@ public class AnimatedVisibilityTest
     [InlineData(false, true)]
     public Task SharedSession_TwoHostsRetainContentThroughHandoffAndReversal(bool reverse, bool zeroDuration) => OnUi(() =>
     {
-        using var parent = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var parent = new Transition<bool>(true, new ManualFrameSource());
         using var shared = SharedTransitionScope.Create(parent);
         var source = Host();
         var target = Host(false);
@@ -543,7 +543,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task ParentTransition_WaitsForVisibility_AndSurvivesHostDetach() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var parent = new Transition<int>(1, clock);
         var loop = parent.RunAsync();
         var host = Host();
@@ -793,7 +793,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task ParentCanBeDisposedWhileHostIsAttached() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var parent = new Transition<bool>(true, clock);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s);
@@ -808,7 +808,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task SharedParentWaitsForLongestHostWithoutDrivingOwnClocks() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var parent = new Transition<bool>(true, clock);
         _ = parent.RunAsync();
         var a = Host();
@@ -921,7 +921,7 @@ public class AnimatedVisibilityTest
     });
 
 
-    private sealed class FailedClock : IAnimationFrameClock
+    private sealed class FailedClock : IFrameSource
     {
         public void VerifyAccess() { }
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
@@ -941,7 +941,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task ParentSeekingSamplesTheWholePresentationAndKeepsHiddenEndpoint() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var parent = new Transition<bool>(true, clock);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s);

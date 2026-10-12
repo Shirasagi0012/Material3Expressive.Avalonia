@@ -68,7 +68,7 @@ public partial class BoundsBoundaryDemo : DemoControlBase
     }
 
     // InputHitTest 走窗口合成器的 readback：要等真实渲染帧把当前布局提交、应用成可命中的几何。
-    // ProbeClock 不随真实帧推进，动画状态在轮询期间冻结，因此有上限地泵帧直到命中收敛是确定性的。
+    // ProbeFrameSource 不随真实帧推进，动画状态在轮询期间冻结，因此有上限地泵帧直到命中收敛是确定性的。
     private async Task<bool> HitLiveButtonAtPresentationAsync()
     {
         var position = LiveButton.TranslatePoint(default, this);

@@ -51,7 +51,7 @@ public partial class App : Application
                 }
                 case CatalogMode.VerifyUi:
                 {
-                    var window = new CatalogWindow(new ProbeClock());
+                    var window = new CatalogWindow(new ProbeFrameSource());
                     window.Opened += async (_, _) => desktop.Shutdown(
                         await CatalogUiVerification.RunAsync(window, options.OutputDirectory!));
                     desktop.MainWindow = window;

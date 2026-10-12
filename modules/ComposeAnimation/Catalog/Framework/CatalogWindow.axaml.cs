@@ -13,9 +13,9 @@ public partial class CatalogWindow : Window
     private DemoDescriptor? _selected;
     private bool _selecting;
 
-    internal IAnimationFrameClock? AnimationClock { get; }
+    internal IFrameSource? AnimationClock { get; }
     public CatalogWindow() : this(null) { }
-    internal CatalogWindow(IAnimationFrameClock? clock)
+    internal CatalogWindow(IFrameSource? clock)
     {
         AnimationClock = clock;
         AnimationScope.Initialize(this, clock);

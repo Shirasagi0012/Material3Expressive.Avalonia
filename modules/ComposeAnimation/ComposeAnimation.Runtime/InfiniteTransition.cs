@@ -41,7 +41,7 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
     private double _durationScale = 1;
     private double _appliedDurationScale = 1;
 
-    public InfiniteTransition(IAnimationFrameClock clock, string? label = "InfiniteTransition")
+    public InfiniteTransition(IFrameSource clock, string? label = "InfiniteTransition")
     {
         ArgumentNullException.ThrowIfNull(clock);
         clock.VerifyAccess();
@@ -57,7 +57,7 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
     public bool IsRunning => _running;
     public TimeSpan PlayTime => _playTime;
     public IReadOnlyList<IInfiniteTransitionAnimation> Animations { get; }
-    internal IAnimationFrameClock Clock { get; }
+    internal IFrameSource Clock { get; }
 
     /// <summary>
     /// Multiplier applied to wall-clock deltas when computing play time. Default is 1.

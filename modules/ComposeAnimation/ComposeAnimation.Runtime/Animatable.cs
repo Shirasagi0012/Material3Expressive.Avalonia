@@ -22,7 +22,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
 {
     private readonly AnimationLifetime? _lifetime;
     private readonly ITwoWayConverter<T> _converter;
-    private readonly IAnimationFrameClock _clock;
+    private readonly IFrameSource _clock;
     private readonly AnimationState<T> _internalState;
     private readonly MutatorMutex _mutatorMutex = new();
     private readonly SpringSpec<T> _defaultSpringSpec;
@@ -37,7 +37,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     public Animatable(
         ITwoWayConverter<T> typeConverter,
         T initialValue,
-        IAnimationFrameClock clock,
+        IFrameSource clock,
         T? visibilityThreshold = default,
         string? label = null
     )

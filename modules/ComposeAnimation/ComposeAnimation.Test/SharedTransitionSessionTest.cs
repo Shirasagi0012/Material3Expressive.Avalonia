@@ -9,7 +9,7 @@ public class SharedTransitionSessionTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public Transition<bool> Parent { get; }
         public Transition<EnterExitState> Source { get; }
         public Transition<EnterExitState> Target { get; }
@@ -328,7 +328,7 @@ public class SharedTransitionSessionTest
     [Fact]
     public void DisposingAncestorOfSharedParent_DoesNotMutateDisposingEndpointTree()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true, new ManualFrameSource());
         var parent = root.CreateChildTransition(s => s);
         var source = parent.CreateChildTransition(s => s ? EnterExitState.Visible : EnterExitState.PostExit);
         var target = parent.CreateChildTransition(s => s ? EnterExitState.PostExit : EnterExitState.Visible);

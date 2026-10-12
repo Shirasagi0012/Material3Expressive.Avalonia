@@ -8,7 +8,7 @@ public class AnimatableTest
     [Fact]
     public async Task CompletedAnimation_AfterIdle_StartsOnFreshFrame()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
         await DriveToEnd(clock, animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100))));
         clock.AdvanceBy(TimeSpan.FromSeconds(10));
@@ -24,14 +24,14 @@ public class AnimatableTest
 
     private static readonly TimeSpan Frame = TimeSpan.FromMilliseconds(16);
 
-    private static Animatable<double> CreateDouble(ManualAnimationFrameClock clock, double initial = 0)
+    private static Animatable<double> CreateDouble(ManualFrameSource clock, double initial = 0)
         => new(new DoubleConverter(), initial, clock);
 
     private static TweenSpec<double> Tween(TimeSpan duration)
         => new(duration: duration, easing: new LinearEasing());
 
     private static async Task<AnimationResult<double>> DriveToEnd(
-        ManualAnimationFrameClock clock,
+        ManualFrameSource clock,
         Task<AnimationResult<double>> task,
         int maxFrames = 1000)
     {
@@ -43,7 +43,7 @@ public class AnimatableTest
     [Fact]
     public async Task AnimateTo_CompletesWithFinishedAndReachesTarget()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
         var values = new List<double>();
 
@@ -67,7 +67,7 @@ public class AnimatableTest
     [Fact]
     public async Task AnimateTo_Interrupted_RestartsFromCurrentValueOnOldTimebase()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
 
         var first = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)));
@@ -95,7 +95,7 @@ public class AnimatableTest
     [Fact]
     public async Task AnimateTo_WithLowerPriority_IsRejected()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
 
         var running = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)),
@@ -113,7 +113,7 @@ public class AnimatableTest
     [Fact]
     public async Task AnimateDecay_RunsUntilItSettles()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
 
         var task = animatable.AnimateDecayAsync(500, DecayAnimationSpec.ExponentialDecay<double>());
@@ -127,7 +127,7 @@ public class AnimatableTest
     [Fact]
     public async Task UpdateBounds_WhileRunning_AppliesFromNextFrame()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
 
         var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(160)));
@@ -147,7 +147,7 @@ public class AnimatableTest
     [Fact]
     public void UpdateBounds_WhenIdle_ClampsImmediately()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock, initial: 80);
 
         animatable.UpdateBounds(new()
@@ -161,7 +161,7 @@ public class AnimatableTest
     [Fact]
     public void UpdateBounds_LowerAboveUpper_Throws()
     {
-        var animatable = CreateDouble(new ManualAnimationFrameClock());
+        var animatable = CreateDouble(new ManualFrameSource());
 
         Assert.Throws<ArgumentException>(() => animatable.UpdateBounds(new(60,50)));
     }
@@ -169,7 +169,7 @@ public class AnimatableTest
     [Fact]
     public async Task SnapTo_CancelsAnimationAndSetsValue()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
 
         var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(160)));
@@ -187,7 +187,7 @@ public class AnimatableTest
     [Fact]
     public async Task SnapTo_ClampsToBounds()
     {
-        var animatable = CreateDouble(new ManualAnimationFrameClock());
+        var animatable = CreateDouble(new ManualFrameSource());
         animatable.UpdateBounds(new(0.0, 50.0));
 
         await animatable.SnapToAsync(80);
@@ -198,7 +198,7 @@ public class AnimatableTest
     [Fact]
     public async Task Stop_CancelsAnimationInPlace()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
 
         var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)));
@@ -215,7 +215,7 @@ public class AnimatableTest
     [Fact]
     public async Task StopAsync_WaitsForUnwind()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
 
         var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)));
@@ -230,7 +230,7 @@ public class AnimatableTest
     [Fact]
     public async Task AnimateTo_RaisesPropertyChanged()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
         var raised = new List<string?>();
         animatable.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
@@ -249,7 +249,7 @@ public class AnimatableTest
     [Fact]
     public async Task SnapTo_SameValueStillNotifies()
     {
-        var animatable = CreateDouble(new ManualAnimationFrameClock());
+        var animatable = CreateDouble(new ManualFrameSource());
         var valueNotifications = 0;
         animatable.PropertyChanged += (_, e) =>
         {
@@ -265,7 +265,7 @@ public class AnimatableTest
     [Fact]
     public async Task AnimateTo_NotifiesValueOnHoldFrames()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = CreateDouble(clock);
         var valueNotifications = 0;
         animatable.PropertyChanged += (_, e) =>
@@ -288,7 +288,7 @@ public class AnimatableTest
     [Fact]
     public async Task AnimateTo_NotifiesVelocityWhenConvertedValueHolds()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animatable = new Animatable<int>(new Int32Converter(), 0, clock);
         var velocityNotifications = 0;
         animatable.PropertyChanged += (_, e) =>

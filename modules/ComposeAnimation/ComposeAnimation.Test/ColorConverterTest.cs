@@ -70,7 +70,7 @@ public class ColorConverterTest
         converter.To(target, vector);
         // The actual fixed Compose color round trip loses this blue byte.
         Assert.Equal(Color.FromUInt32(0xFF00FE00), converter.From(vector));
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var animation = new Animatable<Color>(converter, Colors.Black, clock);
         var task = animation.AnimateToAsync(target, new SpringSpec<Color>(1, 1600));
         clock.AdvanceBy(Frame);
@@ -190,7 +190,7 @@ public class ColorConverterTest
     [Fact]
     public void AnimateColor_UsesColorConverterAndOklabSampling()
     {
-        using var transition = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var transition = new Transition<bool>(false, new ManualFrameSource());
         var color = transition.AnimateColor(
             state => state ? Colors.White : Colors.Black,
             _ => new TweenSpec<Color>(TimeSpan.FromMilliseconds(100), easing: new LinearEasing()));
@@ -208,7 +208,7 @@ public class ColorConverterTest
     public void TransitionInterruption_PreservesUnprojectedOklabVelocity()
     {
         var converter = new ColorConverter();
-        using var transition = new Transition<int>(0, new ManualAnimationFrameClock());
+        using var transition = new Transition<int>(0, new ManualFrameSource());
         var color = transition.AnimateColor(
             state => state switch { 0 => Colors.Red, 1 => Colors.Blue, _ => Colors.Lime },
             _ => new TweenSpec<Color>(TimeSpan.FromMilliseconds(1000), easing: new LinearEasing()));
@@ -234,7 +234,7 @@ public class ColorConverterTest
     [Fact]
     public async Task AnimatableInterruption_PreservesUnprojectedOklabVelocity()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var converter = new ColorConverter();
         var animatable = new Animatable<Color>(converter, Colors.Red, clock);
         var first = animatable.AnimateToAsync(

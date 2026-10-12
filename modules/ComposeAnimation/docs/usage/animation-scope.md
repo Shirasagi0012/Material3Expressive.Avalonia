@@ -103,7 +103,7 @@ await Animated.SnapToTargetAsync(border, Visual.OpacityProperty);
 测试项目通过 NuGet 引用同版本的 `ComposeAnimation.TestSupport` 包：
 
 ```csharp
-using var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+using var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
 var window = new AnimationTestWindow(clock) { Content = control };
 window.Show();
 Dispatcher.UIThread.RunJobs();

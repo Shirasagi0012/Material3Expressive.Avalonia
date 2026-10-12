@@ -30,7 +30,7 @@ public class AnimatedContentTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public AnimatedContent Host { get; }
         public Window Window { get; }
         public Fixture(AnimatedContent host)
@@ -572,7 +572,7 @@ public class AnimatedContentTest
     [Fact]
     public Task Source_ParentTransition_WaitsForSlots() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var parent = new Transition<string>("A", clock, "Page");
         _ = parent.RunAsync();
         var host = new AnimatedContent

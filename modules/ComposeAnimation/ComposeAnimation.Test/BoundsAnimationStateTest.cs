@@ -16,7 +16,7 @@ public class BoundsAnimationStateTest
     [Fact]
     public Task SpringRetarget_PreservesSampleAndAllFourEdgeVelocities() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var errors = new List<Exception>();
         var state = new BoundsAnimationState(() => { }, errors.Add);
         var policy = new BoundsTransform
@@ -56,7 +56,7 @@ public class BoundsAnimationStateTest
     [InlineData(true)]
     public Task FailedPolicy_BlocksRepeatedTarget_AndAcceptsAnotherTarget(bool cancellation) => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var errors = new List<Exception>();
         var state = new BoundsAnimationState(() => { }, errors.Add);
         var calls = 0;
@@ -83,7 +83,7 @@ public class BoundsAnimationStateTest
     [Fact]
     public Task PolicyCanResetStateSynchronously_WithoutStartingStaleAnimation() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var errors = new List<Exception>();
         var state = new BoundsAnimationState(() => { }, errors.Add);
         var policy = new CallbackTransform((_, _) =>

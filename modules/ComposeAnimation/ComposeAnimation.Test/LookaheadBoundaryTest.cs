@@ -63,7 +63,7 @@ public class LookaheadBoundaryTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control child, double width = 400, double height = 300, params Control?[] clocks)
@@ -377,7 +377,7 @@ public class LookaheadBoundaryTest
     [Fact]
     public Task SharedBoundsEndpoints_KeepIndependentDestinationContent_AndFlightCaptureSize() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var parent = new Transition<bool>(true, clock);
         var fromProbe = new Probe { Natural = new Size(80, 40) };
         var toProbe = new Probe { Natural = new Size(160, 80) };

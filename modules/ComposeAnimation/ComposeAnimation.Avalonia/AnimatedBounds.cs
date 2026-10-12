@@ -742,7 +742,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         else base.ArrangeCore(finalRect);
     }
 
-    private sealed class ObservedClock(IAnimationFrameClock provider) : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
+    private sealed class ObservedClock(IFrameSource provider) : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
         public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? 1;

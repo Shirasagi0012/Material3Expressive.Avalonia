@@ -15,12 +15,12 @@ public class SharedLayoutBoundsTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; }
+        public ManualFrameSource Clock { get; }
         public Window Window { get; }
         public Control Stage { get; }
-        public Fixture(Control stage, ManualAnimationFrameClock? clock = null, double width = 800, double height = 600)
+        public Fixture(Control stage, ManualFrameSource? clock = null, double width = 800, double height = 600)
         {
-            Clock = clock ?? new ManualAnimationFrameClock();
+            Clock = clock ?? new ManualFrameSource();
             StampClock(stage);
             Stage = stage;
             Window = new AnimationTestWindow(Clock) { Width = width, Height = height, Content = stage };

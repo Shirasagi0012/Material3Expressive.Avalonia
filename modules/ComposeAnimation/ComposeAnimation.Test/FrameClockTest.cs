@@ -11,7 +11,7 @@ public sealed class FrameClockTest
     private static Task Run(Action test) => HeadlessApp.Session.Dispatch(test, CancellationToken.None);
 
     // Deliver one source frame and run the clock's fixed dispatcher hop.
-    private static void Advance(ManualAnimationFrameClock source, TimeSpan? delta = null)
+    private static void Advance(ManualFrameSource source, TimeSpan? delta = null)
     {
         source.AdvanceBy(delta ?? Frame);
         Dispatcher.UIThread.RunJobs(FrameClock.ResumePriority);
@@ -26,7 +26,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task Waiters_ShareOneSourceWait_AndResumeInRegistrationOrderAtOneTimestamp() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var log = new List<string>();
         var first = Record(clock, log, "a");
@@ -44,7 +44,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task WaiterRegisteredDuringBatch_GoesToNextFrame() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var log = new List<string>();
         Task? late = null;
@@ -69,7 +69,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task Idle_NoSourceWaitWithoutWaiters_AndLastCancelReleasesSourceWait() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         using var hook = clock.RegisterBeforeFrame(() => { });
         Assert.Equal(0, source.PendingFrameCount);
@@ -97,7 +97,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task CanceledWaiter_IsNotGivenTheFrame() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         using var cancellation = new CancellationTokenSource();
         var canceled = clock.WaitAsync(cancellation.Token).AsValueTask().AsTask();
@@ -147,7 +147,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task Dispose_CancelsPendingWaitersAndSourceWait() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         var clock = new FrameClock(source);
         var pending = clock.WaitAsync(default).AsValueTask().AsTask();
 
@@ -162,7 +162,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task BeforeFrameWork_JoinsTheArrivingFrame() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var log = new List<string>();
         Task? joined = null;
@@ -179,7 +179,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task Hooks_RunInRegistrationOrder_AroundEachWaiter() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var log = new List<string>();
         using var b1 = clock.RegisterBeforeFrame(() => log.Add("before1"));
@@ -197,7 +197,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task HookRegistrationChangesDuringFrame_TakeEffectNextFrame() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var log = new List<string>();
         IDisposable? second = null;
@@ -223,7 +223,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task ThrowingBeforeFrameHook_FailsTheBatch_ClockStaysUsable() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var boom = new InvalidOperationException("hook");
         var hook = clock.RegisterBeforeFrame(() => throw boom);
@@ -243,7 +243,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task ThrowingAfterWaiterHook_FailsTheRestOfTheBatch() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var boom = new InvalidOperationException("hook");
         using var hook = clock.RegisterAfterWaiter(() => throw boom);
@@ -264,7 +264,7 @@ public sealed class FrameClockTest
     public Task Resumption_IsInlineInTheBatch_WhateverContextTheWaiterStartedFrom(int start, bool adapter) => Run(() =>
     {
         var priority = start == 0 ? DispatcherPriority.Background : DispatcherPriority.Loaded;
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var log = new List<string>();
         SynchronizationContext? batchContext = null;
@@ -306,7 +306,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task Resumption_NeedsNoPost_WaitersCompleteDuringTheBatchJob() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var resumed = new List<int>();
         var completedAtHook = new List<bool>();
@@ -333,7 +333,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task CancelFromOffTheUiThread_IsPostedAndReleasesTheSourceWait() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         using var cancellation = new CancellationTokenSource();
         var uiThread = Environment.CurrentManagedThreadId;
@@ -361,7 +361,7 @@ public sealed class FrameClockTest
     [Fact]
     public Task AnimatableInterrupt_CancelsFirstRunOnFrameClock() => Run(() =>
     {
-        var source = new ManualAnimationFrameClock();
+        var source = new ManualFrameSource();
         using var clock = new FrameClock(source);
         var animatable = new Animatable<double>(new DoubleConverter(), 0, new Adapter(clock));
         var tween = new TweenSpec<double>(TimeSpan.FromMilliseconds(100), easing: new LinearEasing());
@@ -381,13 +381,13 @@ public sealed class FrameClockTest
         Assert.False(second.IsCompleted);
     });
 
-    private sealed class Adapter(FrameClock clock) : IAnimationFrameClock
+    private sealed class Adapter(FrameClock clock) : IFrameSource
     {
         public void VerifyAccess() => clock.VerifyAccess();
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => clock.WaitAsync(cancellationToken).AsValueTask();
     }
 
-    private sealed class PendingFailClock : IAnimationFrameClock
+    private sealed class PendingFailClock : IFrameSource
     {
         private TaskCompletionSource<TimeSpan>? _pending;
         public Exception Failure { get; } = new InvalidOperationException("clock failed");

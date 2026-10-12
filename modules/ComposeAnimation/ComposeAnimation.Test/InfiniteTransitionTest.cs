@@ -18,7 +18,7 @@ public class InfiniteTransitionTest
         StartOffset offset = default)
         => new(animation, mode, offset);
 
-    private static async Task WaitForPendingFrame(ManualAnimationFrameClock clock)
+    private static async Task WaitForPendingFrame(ManualFrameSource clock)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         while (clock.PendingFrameCount == 0 && !timeout.IsCancellationRequested)
@@ -30,7 +30,7 @@ public class InfiniteTransitionTest
         Assert.True(clock.PendingFrameCount > 0);
     }
 
-    private static async Task WaitForNoPendingFrame(ManualAnimationFrameClock clock)
+    private static async Task WaitForNoPendingFrame(ManualFrameSource clock)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         while (clock.PendingFrameCount > 0 && !timeout.IsCancellationRequested)
@@ -47,7 +47,7 @@ public class InfiniteTransitionTest
     {
         var spec = Repeat(Tween<double>(1000));
         var expected = new TargetBasedAnimation<double>(spec, new DoubleConverter(), 0, 100);
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var value = transition.AnimateDouble(0, 100, spec);
 
         Assert.Equal(0, value.Value);
@@ -85,7 +85,7 @@ public class InfiniteTransitionTest
         var expectedFloat = new TargetBasedAnimation<double>(floatSpec, new DoubleConverter(), 0, 0);
         var expectedColor = new TargetBasedAnimation<Color>(colorSpec, new ColorConverter(), Colors.Red, Colors.Green);
 
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var animFloat = transition.AnimateDouble(0, 0, floatSpec);
         var animColor = transition.AnimateColor(Colors.Red, Colors.Green, colorSpec);
 
@@ -104,7 +104,7 @@ public class InfiniteTransitionTest
     {
         var spec = Repeat(Tween<double>(1000));
         var expected = new TargetBasedAnimation<double>(spec, new DoubleConverter(), 0, 100);
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var first = transition.AnimateDouble(0, 100, spec);
         transition.OnFrame(Ms(0));
         transition.OnFrame(Ms(250));
@@ -122,7 +122,7 @@ public class InfiniteTransitionTest
     public void Update_RestartsWithoutContinuityOnNextFrame()
     {
         var spec = Repeat(Tween<double>(1000));
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var value = transition.AnimateDouble(0, 100, spec);
         transition.OnFrame(Ms(0));
         transition.OnFrame(Ms(400));
@@ -148,7 +148,7 @@ public class InfiniteTransitionTest
     public void Update_SameValuesIsNoOpAndSpecChangeRestarts()
     {
         var spec = Repeat(Tween<double>(1000));
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var value = transition.AnimateDouble(0, 100, spec);
         transition.OnFrame(Ms(0));
         transition.OnFrame(Ms(200));
@@ -174,7 +174,7 @@ public class InfiniteTransitionTest
         var expectedDelay = new TargetBasedAnimation<double>(delayed, new DoubleConverter(), 0, 100);
         var expectedFast = new TargetBasedAnimation<double>(fastForwarded, new DoubleConverter(), 0, 100);
 
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var delayedValue = transition.AnimateDouble(0, 100, delayed);
         var fastValue = transition.AnimateDouble(0, 100, fastForwarded);
         transition.OnFrame(Ms(0));
@@ -199,7 +199,7 @@ public class InfiniteTransitionTest
     {
         var spec = Repeat(Tween<double>(1000));
         var expected = new TargetBasedAnimation<double>(spec, new DoubleConverter(), 0, 100);
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var value = transition.AnimateDouble(0, 100, spec);
         transition.DurationScale = 2;
         transition.OnFrame(Ms(0));
@@ -223,7 +223,7 @@ public class InfiniteTransitionTest
     public void DurationScaleZero_SnapsToTargetAndResumeRestarts()
     {
         var spec = Repeat(Tween<double>(1000));
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var value = transition.AnimateDouble(0, 100, spec);
         transition.OnFrame(Ms(0));
         transition.OnFrame(Ms(250));
@@ -246,7 +246,7 @@ public class InfiniteTransitionTest
     [Fact]
     public async Task DurationScaleZero_RunAsyncStopsRequestingFrames()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var transition = new InfiniteTransition(clock);
         var value = transition.AnimateDouble(0, 100, Repeat(Tween<double>(1000)));
         var task = transition.RunAsync();
@@ -279,7 +279,7 @@ public class InfiniteTransitionTest
     public void RemovingLastChild_LeavesTransitionIdle()
     {
         var spec = Repeat(Tween<double>(1000));
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var first = transition.AnimateDouble(0, 100, spec);
         var second = transition.AnimateDouble(0, 200, spec);
         transition.OnFrame(Ms(0));
@@ -302,7 +302,7 @@ public class InfiniteTransitionTest
     [Fact]
     public async Task RunAsync_IdleLoopWakesWhenChildIsAdded()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var transition = new InfiniteTransition(clock);
         var task = transition.RunAsync();
         Assert.Equal(0, clock.PendingFrameCount);
@@ -336,7 +336,7 @@ public class InfiniteTransitionTest
     [Fact]
     public async Task RunAsync_CancellationDoesNotSnapValue()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var transition = new InfiniteTransition(clock);
         var value = transition.AnimateDouble(0, 100, Repeat(Tween<double>(1000)));
         using var cts = new CancellationTokenSource();
@@ -358,7 +358,7 @@ public class InfiniteTransitionTest
     [Fact]
     public async Task RunAsync_ResumeAfterCancelRestartsTimeline()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var transition = new InfiniteTransition(clock);
         var value = transition.AnimateDouble(0, 100, Repeat(Tween<double>(1000)));
         using var firstCancellation = new CancellationTokenSource();
@@ -384,7 +384,7 @@ public class InfiniteTransitionTest
     [Fact]
     public async Task NotificationException_FaultsLoopAndClearsRunning()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var transition = new InfiniteTransition(clock);
         var value = transition.AnimateDouble(0, 100, Repeat(Tween<double>(1000)));
         var error = new InvalidOperationException("observer failed");
@@ -403,7 +403,7 @@ public class InfiniteTransitionTest
     [Fact]
     public async Task Dispose_IsIdempotentAndDoesNotSnapValue()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var transition = new InfiniteTransition(clock);
         var value = transition.AnimateDouble(0, 100, Repeat(Tween<double>(1000)));
         transition.OnFrame(Ms(0));
@@ -422,7 +422,7 @@ public class InfiniteTransitionTest
     [Fact]
     public void BackwardsClock_Throws()
     {
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         transition.AnimateDouble(0, 100, Repeat(Tween<double>(1000)));
         transition.OnFrame(Ms(100));
         Assert.Throws<ArgumentOutOfRangeException>(() => transition.OnFrame(Ms(50)));
@@ -431,7 +431,7 @@ public class InfiniteTransitionTest
     [Fact]
     public void TypedHelpers_AnimateFloatAndInt()
     {
-        using var transition = new InfiniteTransition(new ManualAnimationFrameClock());
+        using var transition = new InfiniteTransition(new ManualFrameSource());
         var f = transition.AnimateFloat(0f, 10f, Repeat(Tween<float>(100)));
         var i = transition.AnimateInt(0, 10, Repeat(Tween<int>(100)));
         transition.OnFrame(Ms(0));

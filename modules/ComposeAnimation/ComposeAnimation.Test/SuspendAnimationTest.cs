@@ -10,7 +10,7 @@ public class SuspendAnimationTest
     private static TweenSpec<double> Tween(TimeSpan duration)
         => new(duration: duration, easing: new LinearEasing());
 
-    private static void Drive(Task task, ManualAnimationFrameClock clock, int maxFrames = 1000)
+    private static void Drive(Task task, ManualFrameSource clock, int maxFrames = 1000)
     {
         for (var i = 0; i < maxFrames && !task.IsCompleted; i++)
             clock.AdvanceBy(Frame);
@@ -19,7 +19,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task OneShotAnimate_ReportsFramesAndCompletes()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var samples = new List<double>();
 
         var task = clock.AnimateAsync(0, 100,
@@ -36,7 +36,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task OneShotAnimate_GenericConverter_Works()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var samples = new List<double>();
 
         var task = clock.AnimateAsync(new DoubleConverter(), 0.0, 10.0, 0.0,
@@ -50,7 +50,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task OneShotAnimate_CancellableByCallerToken()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         using var cts = new CancellationTokenSource();
 
         var task = clock.AnimateAsync(0, 100,
@@ -66,7 +66,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task OneShotAnimateDecay_ReportsDecayingVelocity()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var samples = new List<(double Value, double Velocity)>();
 
         var task = clock.AnimateDecayAsync(0, 500, DecayAnimationSpec.ExponentialDecay<double>(),
@@ -83,7 +83,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task AnimationStateAnimateTo_UpdatesState()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new AnimationState<double>(new DoubleConverter(), 0);
 
         var task = state.AnimateToAsync(100, clock, Tween(TimeSpan.FromMilliseconds(64)));
@@ -104,7 +104,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task AnimationStateSequentialAnimation_StartsImmediatelyOnOldTimebase()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new AnimationState<double>(new DoubleConverter(), 0);
 
         var first = state.AnimateToAsync(100, clock, Tween(TimeSpan.FromMilliseconds(32)));
@@ -127,7 +127,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task AnimationStateNonSequential_WaitsForNextFrame()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new AnimationState<double>(new DoubleConverter(), 0);
 
         var first = state.AnimateToAsync(100, clock, Tween(TimeSpan.FromMilliseconds(32)));
@@ -147,7 +147,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task AnimationStateAnimateDecay_SettlesAndStops()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var state = new AnimationState<double>(new DoubleConverter(), 0,
             AnimationVector.From(new[] { 500.0 }));
 
@@ -165,7 +165,7 @@ public class SuspendAnimationTest
 [Fact]
     public async Task MotionDurationScale_ZeroSnapsToEnd()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         MotionDurationScale.ScaleFactor = 0;
         try
         {
@@ -189,7 +189,7 @@ public class SuspendAnimationTest
     [Fact]
     public async Task MotionDurationScale_TwoSlowsPlayTime()
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         MotionDurationScale.ScaleFactor = 2;
         try
         {

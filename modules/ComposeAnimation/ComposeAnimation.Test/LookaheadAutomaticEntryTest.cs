@@ -41,7 +41,7 @@ public class LookaheadAutomaticEntryTest
     private sealed class Fixture : IDisposable
     {
         public Window Window { get; }
-        public Fixture(Control content, IAnimationFrameClock? clock = null)
+        public Fixture(Control content, IFrameSource? clock = null)
         {
             Window = new AnimationTestWindow(clock) { Width = 360, Height = 240, Content = content };
             Window.Show();
@@ -150,7 +150,7 @@ public class LookaheadAutomaticEntryTest
     [Fact]
     public Task RootlessStack_SizeAndPositionAnimateInsideTheStableAutomaticDomain() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var spacer = new Border { Width = 1, Height = 20 };
         var size = new LookaheadSize
         {

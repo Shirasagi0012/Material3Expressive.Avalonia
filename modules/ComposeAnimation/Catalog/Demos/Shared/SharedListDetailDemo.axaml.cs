@@ -21,7 +21,7 @@ public sealed record SharedCardItem(string Id, string Title, Color Color)
 /// <summary>
 /// 移植自 Scratchpad/SharedTransitionDemo 的列表 → 详情共享元素过渡（ScaleToBounds 简化版）。
 /// 与原 demo 的关键差异：调用方持有的 Transition&lt;bool&gt; 改用基类 <see cref="DemoControlBase.Clock"/>
-/// 接线（自动化模式 = ProbeClock，交互模式 = 懒创建的环境时钟），因此创建推迟到附加可视树之后。
+/// 接线（自动化模式 = ProbeFrameSource，交互模式 = 懒创建的环境时钟），因此创建推迟到附加可视树之后。
 /// </summary>
 [Demo("shared/list-detail", Title = "卡片展开", Page = "共享过渡", PageOrder = 4, Order = 0, Experimental = true)]
 public partial class SharedListDetailDemo : DemoControlBase
@@ -74,7 +74,7 @@ public partial class SharedListDetailDemo : DemoControlBase
     {
         base.OnAttachedToVisualTree(e);
         if (_page is not null) return;
-        // 时钟接线：自动化模式 Clock 为 ProbeClock；交互模式为懒创建的环境时钟，需附加后才能访问。
+        // 时钟接线：自动化模式 Clock 为 ProbeFrameSource；交互模式为懒创建的环境时钟，需附加后才能访问。
         _page = Motion.CreateTransition(true, "shared/list-detail");
         Host.Transition = _page;
         ListPage.Source = VisibilitySource.From(_page, list => list);

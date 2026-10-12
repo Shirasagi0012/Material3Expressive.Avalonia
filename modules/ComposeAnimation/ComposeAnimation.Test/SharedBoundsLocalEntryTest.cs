@@ -42,7 +42,7 @@ public class SharedBoundsLocalEntryTest
 
     private sealed class Scene : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public Transition<bool> Parent { get; }
         public SharedBounds From { get; }
         public SharedBounds To { get; }

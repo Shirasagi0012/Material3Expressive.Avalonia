@@ -4,7 +4,7 @@
 
 `Animatable<T>` 继承 CommunityToolkit.Mvvm 的 `ObservableObject`，`Value`、`Velocity`、`IsRunning` 等属性均实现 `INotifyPropertyChanged`，可直接被 Avalonia 绑定消费。
 
-> 前置概念——帧时钟（`IAnimationFrameClock`）、时钟线程模型、Task 异步与 `OperationCanceledException` 中断、`MotionDurationScale`——在 [运行时概览](./overview.md) 有完整说明，本篇不再展开。
+> 前置概念——帧时钟（`IFrameSource`）、时钟线程模型、Task 异步与 `OperationCanceledException` 中断、`MotionDurationScale`——在 [运行时概览](./overview.md) 有完整说明，本篇不再展开。
 
 ## 快速开始
 
@@ -26,7 +26,7 @@ if (result.EndReason == AnimationEndReason.Finished)
 }
 ```
 
-例子取自 `ComposeAnimation.Test/AnimatableTest.cs` 的 `AnimateTo_CompletesWithFinishedAndReachesTarget`（测试中改用 `ManualAnimationFrameClock` 逐帧步进；应用里时钟由 UI 帧自动驱动，无需手动步进）。生产环境的完整用法——创建、接续动画、捕获取消、监听 `PropertyChanged`——见控件层 `ComposeAnimation.Avalonia/Lookahead/LookaheadPosition.cs`。
+例子取自 `ComposeAnimation.Test/AnimatableTest.cs` 的 `AnimateTo_CompletesWithFinishedAndReachesTarget`（测试中改用 `ManualFrameSource` 逐帧步进；应用里时钟由 UI 帧自动驱动，无需手动步进）。生产环境的完整用法——创建、接续动画、捕获取消、监听 `PropertyChanged`——见控件层 `ComposeAnimation.Avalonia/Lookahead/LookaheadPosition.cs`。
 
 ## API 要点
 
@@ -34,7 +34,7 @@ if (result.EndReason == AnimationEndReason.Finished)
 
 | 成员 | 类型/签名 | 默认值 | 说明 |
 |---|---|---|---|
-| `Animatable` | `Animatable(ITwoWayConverter<T> typeConverter, T initialValue, IAnimationFrameClock clock, T? visibilityThreshold = default, string? label = null)` | — | `typeConverter` 决定值的向量化维度（见 [类型转换器](./converters-and-easing.md)）；`visibilityThreshold` 只作用于缺省弹簧 spec 的结束判定；`label` 用于在工具中区分动画 |
+| `Animatable` | `Animatable(ITwoWayConverter<T> typeConverter, T initialValue, IFrameSource clock, T? visibilityThreshold = default, string? label = null)` | — | `typeConverter` 决定值的向量化维度（见 [类型转换器](./converters-and-easing.md)）；`visibilityThreshold` 只作用于缺省弹簧 spec 的结束判定；`label` 用于在工具中区分动画 |
 
 ### 属性
 

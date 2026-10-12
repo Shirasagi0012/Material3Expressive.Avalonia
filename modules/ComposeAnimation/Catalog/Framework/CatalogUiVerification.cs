@@ -115,7 +115,7 @@ internal static class CatalogUiVerification
         var stageBounds = demo.Bounds;
         var reveal = frame.FindControl<AnimatedVisibility>("DetailsReveal")!;
         var toggle = frame.FindControl<ToggleButton>("DetailsToggle")!;
-        var clock = (ProbeClock)window.AnimationClock!;
+        var clock = (ProbeFrameSource)window.AnimationClock!;
 
         async Task StepAsync(int frames)
         {
@@ -199,7 +199,7 @@ internal static class CatalogUiVerification
 
     private static async Task StepClockAsync(Window window, TimeSpan elapsed)
     {
-        if (window is CatalogWindow { AnimationClock: ProbeClock clock }) clock.Step(elapsed);
+        if (window is CatalogWindow { AnimationClock: ProbeFrameSource clock }) clock.Step(elapsed);
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
         window.UpdateLayout();
     }

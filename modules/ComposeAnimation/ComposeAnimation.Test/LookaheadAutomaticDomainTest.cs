@@ -23,7 +23,7 @@ public class LookaheadAutomaticDomainTest
     private sealed class Fixture : IDisposable
     {
         public Window Window { get; }
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Clock { get; } = new();
         public Fixture(Control content, params AnimatedBounds[] cards)
         {
 

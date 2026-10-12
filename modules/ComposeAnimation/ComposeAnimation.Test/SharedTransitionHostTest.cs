@@ -18,7 +18,7 @@ public class SharedTransitionHostTest
 
     private sealed class Scene : IDisposable
     {
-        internal ManualAnimationFrameClock Clock { get; } = new();
+        internal ManualFrameSource Clock { get; } = new();
         internal Transition<bool> Parent { get; }
         internal SharedTransitionHost Host { get; }
         internal SharedElement From { get; }

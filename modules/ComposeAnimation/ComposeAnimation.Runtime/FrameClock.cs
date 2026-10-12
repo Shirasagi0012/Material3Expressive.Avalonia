@@ -41,7 +41,7 @@ internal sealed class FrameClock : IDisposable
     /// <summary>The single dispatcher priority at which every frame batch runs.</summary>
     internal static readonly DispatcherPriority ResumePriority = DispatcherPriority.Normal;
 
-    private readonly IAnimationFrameClock _source;
+    private readonly IFrameSource _source;
     private readonly Action<Exception>? _onSourceFailure;
     private readonly List<Waiter> _waiters = [];
     private readonly List<Hook> _beforeFrame = [];
@@ -53,7 +53,7 @@ internal sealed class FrameClock : IDisposable
 
     /// <param name="source">The window's frame source. Only this clock may await it.</param>
     /// <param name="onSourceFailure">Invoked once when the source fails, before waiters observe the failure.</param>
-    public FrameClock(IAnimationFrameClock source, Action<Exception>? onSourceFailure = null)
+    public FrameClock(IFrameSource source, Action<Exception>? onSourceFailure = null)
     {
         ArgumentNullException.ThrowIfNull(source);
         _source = source;
@@ -348,7 +348,7 @@ internal static class FrameWait
     /// Forwards a wait to <paramref name="provider"/>; <paramref name="onFault"/> sees any exception
     /// (cancellation included) before the caller does.
     /// </summary>
-    public static ValueTask<TimeSpan> Observe(IAnimationFrameClock provider, CancellationToken cancellationToken,
+    public static ValueTask<TimeSpan> Observe(IFrameSource provider, CancellationToken cancellationToken,
         Action<Exception> onFault)
     {
         if (provider is not IFrameWaitProvider direct) return Slow(provider, cancellationToken, onFault);
@@ -363,7 +363,7 @@ internal static class FrameWait
             return ValueTask.FromException<TimeSpan>(error);
         }
 
-        static async ValueTask<TimeSpan> Slow(IAnimationFrameClock provider, CancellationToken token, Action<Exception> onFault)
+        static async ValueTask<TimeSpan> Slow(IFrameSource provider, CancellationToken token, Action<Exception> onFault)
         {
             try
             {

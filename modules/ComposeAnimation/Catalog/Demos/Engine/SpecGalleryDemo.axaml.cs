@@ -22,7 +22,7 @@ public partial class SpecGalleryDemo : DemoControlBase
     private static readonly TimeSpan TweenDuration = TimeSpan.FromMilliseconds(1200);
 
     private readonly List<SpecRow> _rows = [];
-    private IAnimationFrameClock? _clock;
+    private IFrameSource? _clock;
 
     public SpecGalleryDemo(DemoContext context) : base(context)
     {
