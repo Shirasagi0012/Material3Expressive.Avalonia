@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ComposeAnimation.Runtime;
@@ -31,8 +33,9 @@ public abstract class Transition : ObservableObject, IDisposable
     private readonly List<Transition> _transitions = [];
     private readonly HashSet<TransitionPreparationLease> _preparations = [];
     private readonly HashSet<TransitionPreparationLease> _runtimeRetentions = [];
-    private readonly Queue<Action> _mutations = new();
-    private readonly Queue<Action> _notifications = new();
+    // Static callback plus state, so the per-frame path queues work without allocating closures.
+    private readonly Queue<Deferred> _mutations = new();
+    private readonly Queue<Deferred> _notifications = new();
     private readonly ThreadAffinity _owner;
     // The root's frame loop and the seekable state's seek run share this mutex. Lock order: a
     // caller that takes both takes its state mutex BEFORE this run mutex (never the reverse).
@@ -236,7 +239,17 @@ public abstract class Transition : ObservableObject, IDisposable
     /// </summary>
     private void OnFrame(TimeSpan frameTime, double? scopeScale)
     {
-        Mutate(() =>
+        _frameTime = frameTime;
+        _frameScopeScale = scopeScale;
+        Mutate(this, static t => t.OnFrameCore(t._frameTime, t._frameScopeScale));
+    }
+
+    // Frame arguments ride on fields so the per-frame mutation is a static, allocation-free callback.
+    private TimeSpan _frameTime;
+    private double? _frameScopeScale;
+
+    private void OnFrameCore(TimeSpan frameTime, double? scopeScale)
+    {
         {
             if (IsSeeking) return;
             if (!AnimationConstants.IsUnspecified(_lastFrameTime) && frameTime < _lastFrameTime)
@@ -255,8 +268,24 @@ public abstract class Transition : ObservableObject, IDisposable
             }
             _lastFrameTime = frameTime;
             Pulse(_playTime, scale == 0);
-            Notify(nameof(PlayTime));
-        });
+            Notify(PlayTimeChangedArgs);
+        }
+    }
+
+    private static readonly PropertyChangedEventArgs PlayTimeChangedArgs = new(nameof(PlayTime));
+
+    private bool AllAnimationsFinished()
+    {
+        foreach (var animation in _animations)
+            if (!animation.IsFinished) return false;
+        return true;
+    }
+
+    private bool AnyChildHasWork()
+    {
+        foreach (var transition in _transitions)
+            if (transition.HasWork) return true;
+        return false;
     }
 
     private void Pulse(TimeSpan playTime, bool scaleToEnd)
@@ -268,7 +297,7 @@ public abstract class Transition : ObservableObject, IDisposable
             if (!animation.IsFinished) animation.Pulse(playTime, scaleToEnd);
         foreach (var transition in _transitions) transition.Pulse(playTime, scaleToEnd);
 
-        if (_preparations.Count == 0 && _animations.All(a => a.IsFinished) && _transitions.All(t => !t.HasWork))
+        if (_preparations.Count == 0 && AllAnimationsFinished() && !AnyChildHasWork())
         {
             CompleteState();
             SetRunning(false);
@@ -440,11 +469,32 @@ public abstract class Transition : ObservableObject, IDisposable
     internal void Mutate(Action action)
     {
         VerifyAccess();
-        Root.Execute(() => { if (!_disposed) action(); });
+        Root.Execute(new Deferred(InvokeAction, action, null, this));
+    }
+
+    /// <summary>Allocation-free <see cref="Mutate(Action)"/>: a static callback with explicit state.</summary>
+    internal void Mutate<TArg>(TArg arg, Action<TArg> action) where TArg : class
+    {
+        VerifyAccess();
+        Root.Execute(new Deferred(InvokeArg<TArg>, action, arg, this));
+    }
+
+    private static void InvokeAction(object? action, object? _) => ((Action)action!)();
+    private static void InvokeArg<TArg>(object? action, object? arg) => Unsafe.As<Action<TArg>>(action!)((TArg)arg!);
+
+    private readonly struct Deferred(Action<object?, object?> callback, object? first, object? second, Transition? guard = null)
+    {
+        public void Invoke()
+        {
+            if (guard is { _disposed: true }) return;
+            callback(first, second);
+        }
     }
 
     // PropertyChanged handlers can synchronously mutate the tree; finish the current batch first.
-    private void Execute(Action action)
+    private void Execute(Action action) => Execute(new Deferred(InvokeAction, action, null));
+
+    private void Execute(Deferred action)
     {
         _mutations.Enqueue(action);
         if (_processing) return;
@@ -453,8 +503,8 @@ public abstract class Transition : ObservableObject, IDisposable
         {
             while (_mutations.Count > 0 || _notifications.Count > 0)
             {
-                while (_mutations.TryDequeue(out var mutation)) mutation();
-                while (_notifications.TryDequeue(out var notification)) notification();
+                while (_mutations.TryDequeue(out var mutation)) mutation.Invoke();
+                while (_notifications.TryDequeue(out var notification)) notification.Invoke();
             }
         }
         catch
@@ -472,8 +522,16 @@ public abstract class Transition : ObservableObject, IDisposable
         }
     }
 
-    internal void Publish(Action notification) => Root._notifications.Enqueue(notification);
-    private protected void Notify(string name) => Publish(() => OnPropertyChanged(name));
+    internal void Publish(Action notification)
+        => Root._notifications.Enqueue(new Deferred(InvokeAction, notification, null));
+
+    /// <summary>Allocation-free <see cref="Publish(Action)"/>: a static callback with explicit state.</summary>
+    internal void Publish(object target, object? arg, Action<object?, object?> notification)
+        => Root._notifications.Enqueue(new Deferred(notification, target, arg));
+    private protected void Notify(string name) => Notify(new PropertyChangedEventArgs(name));
+
+    private protected void Notify(PropertyChangedEventArgs args)
+        => Publish(this, args, static (t, a) => ((Transition)t!).OnPropertyChanged((PropertyChangedEventArgs)a!));
 
     // PropertyChanged still carries the name. PhaseChanged is the coalesced structural signal.
     private protected void NotifyPhase(string name)
