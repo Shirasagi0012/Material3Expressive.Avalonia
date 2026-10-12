@@ -5,7 +5,7 @@ namespace ComposeAnimation.Test;
 
 public class SuspendAnimationTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
 
     private static readonly TimeSpan Frame = TimeSpan.FromMilliseconds(16);
 
@@ -15,7 +15,7 @@ public class SuspendAnimationTest
     private static void Drive(Task task, ManualFrameSource clock, int maxFrames = 1000)
     {
         for (var i = 0; i < maxFrames && !task.IsCompleted; i++)
-            clock.AdvanceBy(Frame);
+            clock.Pump(Frame);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class SuspendAnimationTest
         var task = SuspendAnimation.AnimateAsync(scope, 0, 100,
             animationSpec: Tween(TimeSpan.FromMilliseconds(160)),
             cancellationToken: cts.Token);
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
 
         cts.Cancel();
 
@@ -106,7 +106,7 @@ public class SuspendAnimationTest
 
         // The state only starts reporting IsRunning once the first frame is processed (matches
         // upstream, where the scope is created in the first frame callback).
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
         Assert.True(state.IsRunning);
 
         Drive(task, clock);
@@ -177,7 +177,7 @@ public class SuspendAnimationTest
             AnimationVector.From(new[] { 500.0 }));
 
         var task = SuspendAnimation.AnimateDecayAsync(scope, state, DecayAnimationSpec.ExponentialDecay<double>());
-        clock.AdvanceBy(Frame); // IsRunning starts reporting once the first frame is processed
+        clock.Pump(Frame); // IsRunning starts reporting once the first frame is processed
         Assert.True(state.IsRunning);
 
         Drive(task, clock);
@@ -192,10 +192,11 @@ public class SuspendAnimationTest
     [Fact]
     public Task MotionDurationScale_ZeroSnapsToEnd() => OnUi(async () =>
     {
+        // The root scope reads the ambient scale when it is created (D21).
+        MotionDurationScale.ScaleFactor = 0;
         var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var scope = window.AnimationRoot;
-        MotionDurationScale.ScaleFactor = 0;
         try
         {
             var samples = new List<double>();
@@ -219,10 +220,11 @@ public class SuspendAnimationTest
     [Fact]
     public Task MotionDurationScale_TwoSlowsPlayTime() => OnUi(async () =>
     {
+        // The root scope reads the ambient scale when it is created (D21).
+        MotionDurationScale.ScaleFactor = 2;
         var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var scope = window.AnimationRoot;
-        MotionDurationScale.ScaleFactor = 2;
         try
         {
             double? mid = null;
@@ -234,10 +236,10 @@ public class SuspendAnimationTest
                     if (clock.Now == TimeSpan.FromMilliseconds(32))
                         mid = value;
                 });
-            clock.SendFrame(TimeSpan.Zero); // first frame: startTime = 0
-            clock.SendFrame(TimeSpan.FromMilliseconds(32));
+            clock.PumpTo(TimeSpan.Zero); // first frame: startTime = 0
+            clock.PumpTo(TimeSpan.FromMilliseconds(32));
             for (var i = 0; i < 20 && !task.IsCompleted; i++)
-                clock.AdvanceBy(Frame);
+                clock.Pump(Frame);
             await task;
 
             Assert.NotNull(mid);

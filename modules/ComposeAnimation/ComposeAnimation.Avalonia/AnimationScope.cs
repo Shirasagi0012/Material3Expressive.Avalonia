@@ -104,6 +104,7 @@ public class AnimationScope : FrameScope
     private readonly HashSet<Operation> _tasks = [];
     private readonly HashSet<ScopeResource> _subscriptions = [];
     private readonly HashSet<ScopeResource> _bindings = [];
+    private readonly HashSet<PlaybackEntry> _playback = [];
     private readonly ConditionalWeakTable<Exception, Failure> _failures;
     private readonly TaskCompletionSource _ended = new();
     private bool _ending;
@@ -343,7 +344,13 @@ public class AnimationScope : FrameScope
     internal override Task<T> Track<T>(Func<Task<T>> run) => _lifecycle.Track(run);
     internal override Task Track(Func<Task> run) => _lifecycle.Track(run);
     internal override void ReportRunFailure(Exception error) => ReportFailure(error);
-    internal override void RegisterPlaybackChanged<T>(T owner, Action<T> changed) => _lifecycle.RegisterPlayback(owner, changed);
+    internal override IDisposable RegisterPlaybackChanged<T>(T owner, Action<T> changed)
+    {
+        var weak = new WeakReference<T>(owner);
+        var entry = new PlaybackEntry(this, () => { if (weak.TryGetTarget(out var target)) changed(target); });
+        if (!_ending) _playback.Add(entry);
+        return entry;
+    }
     internal ScopeDiagnostics Diagnostics => new(this);
 
     /// <summary>
@@ -667,7 +674,8 @@ public class AnimationScope : FrameScope
 
     private void PlaybackChanged()
     {
-        _lifecycle.PlaybackChanged();
+        if (!_ending)
+            foreach (var entry in _playback.ToArray()) entry.Changed();
         foreach (var child in _children.ToArray()) child.PlaybackChanged();
     }
 
@@ -689,6 +697,7 @@ public class AnimationScope : FrameScope
         if (Host is TopLevel top) top.Closed -= OnClosed;
         foreach (var child in _children.ToArray()) child.StartCleanup();
         TryCleanup(_lifecycle.Cancel);
+        _playback.Clear();
         if (_root == this) TryCleanup(_frameClock.Dispose);
         _ = FinishCleanupAsync();
     }
@@ -821,6 +830,12 @@ public class AnimationScope : FrameScope
             try { Handler(sender ?? host, args); }
             catch (Exception error) { ReportHandlerError(host, args, error); }
         }
+    }
+
+    private sealed class PlaybackEntry(AnimationScope owner, Action changed) : IDisposable
+    {
+        public void Changed() => changed();
+        public void Dispose() => owner._playback.Remove(this);
     }
 
     private sealed class ScopeResource(AnimationScope owner, Action dispose, bool binding) : IDisposable

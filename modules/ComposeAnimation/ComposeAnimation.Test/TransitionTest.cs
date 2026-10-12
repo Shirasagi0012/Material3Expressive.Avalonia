@@ -1,11 +1,13 @@
 using Avalonia;
 using Avalonia.Animation.Easings;
+using Avalonia.Threading;
 using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation.Test;
 
 public class TransitionTest
 {
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
     private static TimeSpan Ms(double value) => TimeSpan.FromMilliseconds(value);
     private static TweenSpec<double> Tween(double duration = 100) => new(Ms(duration), easing: new LinearEasing());
 
@@ -13,7 +15,7 @@ public class TransitionTest
     public void SharedTimeline_WaitsForLongestAnimation()
     {
         var state = new MutableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, new ManualFrameSource());
+        using var transition = new Transition<bool>(state);
         var alpha = transition.AnimateDouble(s => s ? 1 : 0, _ => Tween());
         var position = transition.AnimatePoint(s => s ? new Point(100, 200) : default,
             _ => new TweenSpec<Point>(Ms(200), easing: new LinearEasing()));
@@ -45,7 +47,7 @@ public class TransitionTest
     public void InitialTarget_CanBeSetBeforeConstruction()
     {
         var state = new MutableTransitionState<int>(0) { TargetState = 1 };
-        using var transition = new Transition<int>(state, new ManualFrameSource());
+        using var transition = new Transition<int>(state);
         var value = transition.AnimateDouble(s => s * 100, _ => Tween());
         Assert.Equal(new TransitionSegment<int>(0, 1), transition.Segment);
         transition.OnFrame(Ms(0));
@@ -56,7 +58,7 @@ public class TransitionTest
     [Fact]
     public void InterruptedTween_UsesSpringAndPreservesValueVelocityAndTimebase()
     {
-        using var transition = new Transition<int>(0, new ManualFrameSource());
+        using var transition = new Transition<int>(0);
         var value = transition.AnimateDouble(s => s * 100, _ => Tween(1000));
         transition.UpdateTarget(1);
         transition.OnFrame(Ms(0));
@@ -85,7 +87,7 @@ public class TransitionTest
     public void InterruptedSpring_PreservesRequestedSpringAndIntegerVelocityPrecision()
     {
         var spring = new SpringSpec<int>(dampingRatio: 0.6, stiffness: 120, visibilityThreshold: 1);
-        using var transition = new Transition<int>(0, new ManualFrameSource());
+        using var transition = new Transition<int>(0);
         var value = transition.AnimateInt(s => s * 100, _ => spring);
         transition.UpdateTarget(1);
         transition.OnFrame(Ms(0));
@@ -108,7 +110,7 @@ public class TransitionTest
     [Fact]
     public void FinishedChild_UsesNewTweenWhileOtherChildIsStillRunning()
     {
-        using var transition = new Transition<int>(0, new ManualFrameSource());
+        using var transition = new Transition<int>(0);
         var fast = transition.AnimateDouble(s => s * 10, _ => Tween(20));
         transition.AnimateDouble(s => s * 100, _ => Tween(1000));
         transition.UpdateTarget(1);
@@ -125,7 +127,7 @@ public class TransitionTest
     public void SameTarget_DoesNotRestartAndRefreshReevaluatesExternalInputs()
     {
         var distance = 100.0;
-        using var transition = new Transition<bool>(false, new ManualFrameSource());
+        using var transition = new Transition<bool>(false);
         var value = transition.AnimateDouble(s => s ? distance : 0, _ => Tween());
         transition.UpdateTarget(true);
         var original = value.Animation;
@@ -145,7 +147,7 @@ public class TransitionTest
     [Fact]
     public void NewState_WithUnchangedChannelTarget_ReconfiguresUsingSegmentSpec()
     {
-        using var transition = new Transition<int>(0, new ManualFrameSource());
+        using var transition = new Transition<int>(0);
         var alpha = transition.AnimateDouble(s => s == 0 ? 0 : 1,
             segment => segment.TargetState == 1 ? Tween(200) : new SnapSpec<double>());
         var changing = transition.AnimateDouble(s => s * 10, _ => Tween(200));
@@ -173,7 +175,7 @@ public class TransitionTest
     [Fact]
     public void LateRegistration_StartsAtCurrentParentTime()
     {
-        using var transition = new Transition<bool>(false, new ManualFrameSource());
+        using var transition = new Transition<bool>(false);
         transition.AnimateDouble(s => s ? 1 : 0, _ => Tween(200));
         transition.UpdateTarget(true);
         transition.OnFrame(Ms(0));
@@ -193,7 +195,7 @@ public class TransitionTest
     [Fact]
     public void ChildTransition_MapsStateAndExtendsParentCompletion()
     {
-        using var transition = new Transition<int>(0, new ManualFrameSource(), "Parent");
+        using var transition = new Transition<int>(0, "Parent");
         transition.AnimateDouble(s => s, _ => Tween(50));
         var child = transition.CreateChildTransition(s => s > 0, "Visible");
         var value = child.AnimateDouble(s => s ? 100 : 0, _ => Tween(200));
@@ -221,7 +223,7 @@ public class TransitionTest
     public void DeferredAnimation_RegistersLazilyAndSupportsForcedHandoff()
     {
         var state = new DeferredTransitionState<bool>(false);
-        using var transition = new DeferredTransition<bool>(state, new ManualFrameSource());
+        using var transition = new DeferredTransition<bool>(state);
         using var deferred = transition.CreateDeferredAnimation(new DoubleConverter());
         Assert.Empty(transition.Animations);
         state.Defer(true);
@@ -247,7 +249,7 @@ public class TransitionTest
     public void DeferredTarget_PropagatesToChildAndClearsWithoutTransientRetarget()
     {
         var state = new DeferredTransitionState<int>(0);
-        using var transition = new DeferredTransition<int>(state, new ManualFrameSource());
+        using var transition = new DeferredTransition<int>(state);
         var child = transition.CreateChildTransition(s => s > 0);
         var value = child.AnimateDouble(s => s ? 100 : 0, _ => Tween(100));
         state.Defer(1);
@@ -265,7 +267,7 @@ public class TransitionTest
     [Fact]
     public void ManualSeek_SamplesWholeTreeAndRemainsInManualMode()
     {
-        using var transition = new Transition<int>(0, new ManualFrameSource());
+        using var transition = new Transition<int>(0);
         var value = transition.AnimateDouble(s => s * 100, _ => Tween(1000));
         var child = transition.CreateChildTransition(s => s > 0);
         var childValue = child.AnimateDouble(s => s ? 200 : 0, _ => Tween(1000));
@@ -290,7 +292,7 @@ public class TransitionTest
     [Fact]
     public void Notifications_SeeAllSampledValuesAndAllowRetargetAndRemoval()
     {
-        using var transition = new Transition<int>(0, new ManualFrameSource());
+        using var transition = new Transition<int>(0);
         var first = transition.AnimateDouble(s => s * 100, _ => Tween());
         var second = transition.AnimateDouble(s => s * 200, _ => Tween());
         var observed = false;
@@ -316,7 +318,7 @@ public class TransitionTest
     [Fact]
     public void DurationScale_SlowsTimeAndZeroFinishesAllChildren()
     {
-        using var transition = new Transition<bool>(false, new ManualFrameSource());
+        using var transition = new Transition<bool>(false);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         var child = transition.CreateChildTransition(s => s);
         var childValue = child.AnimateDouble(s => s ? 200 : 0, _ => Tween(200));
@@ -338,7 +340,7 @@ public class TransitionTest
     public void Dispose_DetachesStateAndChildrenAndIsIdempotent()
     {
         var state = new MutableTransitionState<bool>(false);
-        var transition = new Transition<bool>(state, new ManualFrameSource());
+        var transition = new Transition<bool>(state);
         var child = transition.CreateChildTransition(s => s);
         var value = child.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         state.TargetState = true;
@@ -358,22 +360,27 @@ public class TransitionTest
     }
 
     [Fact]
-    public async Task RunAsync_UsesOneClockWaitAndCancellationDoesNotPretendCompletion()
+    public Task RunAsync_UsesOneClockWaitAndCancellationDoesNotPretendCompletion() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
         var state = new MutableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, clock);
+        using var transition = new Transition<bool>(state);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         var child = transition.CreateChildTransition(s => s);
         child.AnimateDouble(s => s ? 200 : 0, _ => Tween());
         state.TargetState = true;
-        using var cts = new CancellationTokenSource();
-        var task = transition.RunAsync(cts.Token);
+        var first = transition.RunAsync(window.AnimationRoot);
         Assert.Equal(1, clock.PendingFrameCount);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => transition.RunAsync());
-        await Assert.ThrowsAsync<InvalidOperationException>(() => child.RunAsync());
-        clock.AdvanceBy(Ms(0));
-        clock.AdvanceBy(Ms(50));
+        // A second run takes over and cancels the first; a child never runs on its own.
+        using var cts = new CancellationTokenSource();
+        var task = transition.RunAsync(window.AnimationRoot, cts.Token);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => child.RunAsync(window.AnimationRoot));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(1, clock.PendingFrameCount);
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(50));
         Assert.Equal(50, value.Value, 8);
         Assert.True(transition.IsRunning);
         cts.Cancel();
@@ -383,34 +390,38 @@ public class TransitionTest
         Assert.False(state.IsIdle);
         Assert.False(transition.CurrentState);
         Assert.Equal(50, value.Value, 8);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task IdleLoop_WakesForTargetsAndDisposalCancelsIt()
+    public Task IdleLoop_WakesForTargetsAndDisposalCancelsIt() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var transition = new Transition<bool>(false, clock);
+        var window = new AnimationTestWindow(clock);
+        var transition = new Transition<bool>(false);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ => Tween());
-        var task = transition.RunAsync();
+        var task = transition.RunAsync(window.AnimationRoot);
         Assert.Equal(0, clock.PendingFrameCount);
         transition.UpdateTarget(true);
         for (var i = 0; i < 1000 && clock.PendingFrameCount == 0; i++) await Task.Yield();
         Assert.Equal(1, clock.PendingFrameCount);
-        clock.AdvanceBy(Ms(0));
-        clock.AdvanceBy(Ms(100));
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(100));
         Assert.Equal(100, value.Value);
         Assert.False(transition.IsRunning);
         Assert.False(task.IsCompleted);
         Assert.Equal(0, clock.PendingFrameCount);
         transition.Dispose();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task NotificationException_FaultsLoopAndClearsRunningFlags()
+    public Task NotificationException_FaultsLoopAndClearsRunningFlags() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        using var transition = new Transition<bool>(false, clock);
+        var window = new AnimationTestWindow(clock);
+        using var transition = new Transition<bool>(false);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         transition.UpdateTarget(true);
         var error = new InvalidOperationException("observer failed");
@@ -418,18 +429,19 @@ public class TransitionTest
         {
             if (e.PropertyName == nameof(value.Value)) throw error;
         };
-        var task = transition.RunAsync();
-        clock.AdvanceBy(Ms(0));
-        clock.AdvanceBy(Ms(50));
+        var task = transition.RunAsync(window.AnimationRoot);
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(50));
         Assert.Same(error, await Assert.ThrowsAsync<InvalidOperationException>(() => task));
         Assert.False(transition.IsRunning);
         Assert.False(transition.CurrentState);
-    }
+        window.Close();
+    });
 
     [Fact]
     public void PhaseChanged_FiresWhenThePhaseChangesAndNotOnPlayTimeSamples()
     {
-        using var transition = new Transition<bool>(false, new ManualFrameSource());
+        using var transition = new Transition<bool>(false);
         transition.AnimateDouble(s => s ? 100 : 0, _ => Tween(100));
         var phases = 0;
         var playTimes = 0;

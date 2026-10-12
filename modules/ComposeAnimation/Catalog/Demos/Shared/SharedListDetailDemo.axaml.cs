@@ -75,11 +75,12 @@ public partial class SharedListDetailDemo : DemoControlBase
         base.OnAttachedToVisualTree(e);
         if (_page is not null) return;
         // 时钟接线：自动化模式 Clock 为 ProbeFrameSource；交互模式为懒创建的环境时钟，需附加后才能访问。
-        _page = Motion.CreateTransition(true, "shared/list-detail");
+        _page = new Transition<bool>(true, "shared/list-detail");
         Host.Transition = _page;
         ListPage.Source = VisibilitySource.From(_page, list => list);
         DetailsPage.Source = VisibilitySource.From(_page, list => !list);
-        _ = Motion.Launch(ct => _page.RunAsync(ct));
+        var motion = Motion;
+        _ = motion.Launch(ct => _page.RunAsync(motion, ct));
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)

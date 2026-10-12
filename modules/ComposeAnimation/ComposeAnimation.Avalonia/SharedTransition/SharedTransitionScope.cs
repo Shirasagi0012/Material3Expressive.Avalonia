@@ -144,7 +144,7 @@ public abstract class SharedTransitionScope : IDisposable
 
     internal void EndUpdate(SharedTransitionUpdate update)
     {
-        ParentTransition.Clock.VerifyAccess();
+        ParentTransition.VerifyThreadAccess();
         if (update.Owner != this) return;
         if (_updates.Count == 0 || !ReferenceEquals(_updates[^1], update))
             throw new InvalidOperationException("Dispose nested updates in reverse acquisition order.");
@@ -165,7 +165,7 @@ public abstract class SharedTransitionScope : IDisposable
 
     internal void CancelUpdate(SharedTransitionUpdate update)
     {
-        ParentTransition.Clock.VerifyAccess();
+        ParentTransition.VerifyThreadAccess();
         if (update.Owner != this) return;
         CancelCurrent();
         // Previously queued target writes still belong to the cancelled batch. Suppress
@@ -208,7 +208,7 @@ public abstract class SharedTransitionScope : IDisposable
 
     internal void Unregister(SharedTransitionParticipant participant)
     {
-        ParentTransition.Clock.VerifyAccess();
+        ParentTransition.VerifyThreadAccess();
         if (!_participants.Remove(participant)) return;
         foreach (var session in _sessions.Where(s => s.Uses(participant)).ToArray())
             session.Cancel(SharedSessionEndReason.ParticipantRemoved);
@@ -333,7 +333,7 @@ public abstract class SharedTransitionScope : IDisposable
 
     internal bool CancelPreparation(long generation)
     {
-        ParentTransition.Clock.VerifyAccess();
+        ParentTransition.VerifyThreadAccess();
         if (_preparation?.Generation != generation) return false;
         CancelCurrent();
         return true;
@@ -369,7 +369,7 @@ public abstract class SharedTransitionScope : IDisposable
 
     public void Dispose()
     {
-        ParentTransition.Clock.VerifyAccess();
+        ParentTransition.VerifyThreadAccess();
         if (_disposed) return;
         _disposed = true;
         ParentTransition.PropertyChanged -= ParentChanged;
@@ -469,7 +469,7 @@ internal sealed class SharedTransitionParticipant : IDisposable
     }
     public void Dispose()
     {
-        Visibility.Clock.VerifyAccess();
+        Visibility.VerifyThreadAccess();
         var owner = _owner;
         if (owner is null) return;
         _owner = null;

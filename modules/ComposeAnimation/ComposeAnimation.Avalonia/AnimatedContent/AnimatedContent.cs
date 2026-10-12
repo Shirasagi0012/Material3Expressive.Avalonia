@@ -266,10 +266,9 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
                 if (_connection is null)
                 {
                     var motion = AnimationScope.Get(this);
-                    var clock = motion.Clock;
                     var label = Label ?? "AnimatedContent";
-                    _connection = Source?.Connect(clock, label)
-                        ?? new ContentConnection(new Transition<object?>(Content, clock, label), true);
+                    _connection = Source?.Connect(label)
+                        ?? new ContentConnection(new Transition<object?>(Content, label), true);
                     _connection.Transition.PhaseChanged += OnPhaseChanged;
                     _connection.Transition.TargetChanging += OnParentTargetChanging;
                     _motionConnection = motion.RegisterResource(() =>
@@ -290,7 +289,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
                             Dispatcher.UIThread.Post(() =>
                             {
                                 if (ReferenceEquals(_connection, connection) && !motion.IsEnding)
-                                    _ = motion.Launch(ct => RunAsync(connection, ct), label);
+                                    _ = motion.Launch(ct => RunAsync(connection, motion, ct), label);
                             }, DispatcherPriority.Normal);
                         }, DispatcherPriority.Loaded);
                     }
@@ -513,9 +512,9 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
         finally { connection?.Dispose(); }
     }
 
-    private async Task RunAsync(ContentConnection connection, CancellationToken cancellationToken)
+    private async Task RunAsync(ContentConnection connection, FrameScope scope, CancellationToken cancellationToken)
     {
-        try { await connection.Loop.RunAsync(cancellationToken); }
+        try { await connection.Loop.RunAsync(scope, cancellationToken); }
         catch (OperationCanceledException) { throw; }
         catch (Exception)
         {

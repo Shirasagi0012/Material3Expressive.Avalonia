@@ -44,8 +44,11 @@ public abstract class FrameScope : IFrameWaitProvider
     /// <summary>Reports a run failure that no awaiting caller observes.</summary>
     internal abstract void ReportRunFailure(Exception error);
 
-    /// <summary>Calls <paramref name="changed"/> when the effective duration scale may have changed. Weakly held.</summary>
-    internal abstract void RegisterPlaybackChanged<T>(T owner, Action<T> changed) where T : class;
+    /// <summary>
+    /// Calls <paramref name="changed"/> when the effective duration scale may have changed, until
+    /// disposed or the scope ends. <paramref name="owner"/> is held weakly.
+    /// </summary>
+    internal abstract IDisposable RegisterPlaybackChanged<T>(T owner, Action<T> changed) where T : class;
 
     ValueTask<TimeSpan> IFrameWaitProvider.NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
         => WaitFrameAsync(cancellationToken, onFault);

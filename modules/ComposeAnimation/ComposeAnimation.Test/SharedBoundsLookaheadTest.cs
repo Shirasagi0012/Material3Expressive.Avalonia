@@ -39,7 +39,7 @@ public class SharedBoundsLookaheadTest
         public Window Window { get; }
         public Scene(int fadeMs = 200)
         {
-            Parent = new Transition<bool>(true, Clock);
+            Parent = new Transition<bool>(true);
             From = Endpoint(FromText); To = Endpoint(ToText);
             FromRoot = new LookaheadRoot { Width = 120, Height = 160, Child = From, UseLayoutRounding = false };
             ToRoot = new LookaheadRoot { Width = 240, Height = 100, Child = To, UseLayoutRounding = false };

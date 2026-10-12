@@ -55,9 +55,10 @@ public class AnimationLoopSchedulingTest
         HeadlessApp.Session.Dispatch(() =>
         {
             using var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
-            using var transition = new Transition<bool>(false, clock);
+            var window = new AnimationTestWindow(clock);
+            using var transition = new Transition<bool>(false);
             var value = transition.AnimateDouble(visible => visible ? 1 : 0, _ => Tween());
-            var loop = transition.RunAsync();
+            var loop = transition.RunAsync(window.AnimationRoot);
             try
             {
                 Assert.Equal(0, clock.PendingFrameCount);
@@ -84,6 +85,7 @@ public class AnimationLoopSchedulingTest
                 Dispatcher.UIThread.RunJobs();
             }
             Assert.True(loop.IsCanceled);
+            window.Close();
         }, CancellationToken.None);
 
     [Theory]

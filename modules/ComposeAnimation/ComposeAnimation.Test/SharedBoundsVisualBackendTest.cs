@@ -14,7 +14,7 @@ public class SharedBoundsVisualBackendTest
     public Task BoundaryScaleChild_AndRemeasureTarget_StayReadyThroughReverse() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
-        var transition = new Transition<bool>(true, clock);
+        var transition = new Transition<bool>(true);
         var fromChild = new SharedBounds
         {
             Key = "color", Content = new Border { Width = 120, Height = 80 },

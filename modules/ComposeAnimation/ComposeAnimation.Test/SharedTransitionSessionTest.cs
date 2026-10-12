@@ -18,7 +18,7 @@ public class SharedTransitionSessionTest
         public SharedTransitionParticipant To { get; }
         public Fixture()
         {
-            Parent = new(true, Clock);
+            Parent = new(true);
             Source = Parent.CreateChildTransition(s => s ? EnterExitState.Visible : EnterExitState.PostExit);
             Target = Parent.CreateChildTransition(s => s ? EnterExitState.PostExit : EnterExitState.Visible);
             Scope = SharedTransitionScope.Create(Parent);
@@ -328,7 +328,7 @@ public class SharedTransitionSessionTest
     [Fact]
     public void DisposingAncestorOfSharedParent_DoesNotMutateDisposingEndpointTree()
     {
-        using var root = new Transition<bool>(true, new ManualFrameSource());
+        using var root = new Transition<bool>(true);
         var parent = root.CreateChildTransition(s => s);
         var source = parent.CreateChildTransition(s => s ? EnterExitState.Visible : EnterExitState.PostExit);
         var target = parent.CreateChildTransition(s => s ? EnterExitState.PostExit : EnterExitState.Visible);

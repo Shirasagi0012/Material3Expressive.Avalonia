@@ -172,9 +172,8 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
                 if (_connection is null)
                 {
                     var motion = AnimationScope.Get(this);
-                    var clock = motion.Clock;
-                    _connection = Source?.Connect(clock, Label)
-                        ?? new VisibilityConnection(new Transition<bool>(Visible, clock, Label), true);
+                    _connection = Source?.Connect(Label)
+                        ?? new VisibilityConnection(new Transition<bool>(Visible, Label), true);
                     _connection.Transition.PhaseChanged += OnPhaseChanged;
                     _motionConnection = motion.RegisterResource(() =>
                     {
@@ -194,7 +193,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
                             Dispatcher.UIThread.Post(() =>
                             {
                                 if (ReferenceEquals(_connection, connection) && !motion.IsEnding)
-                                    _ = motion.Launch(ct => RunAsync(connection, ct), Label ?? "Visibility");
+                                    _ = motion.Launch(ct => RunAsync(connection, motion, ct), Label ?? "Visibility");
                             }, DispatcherPriority.Normal);
                         }, DispatcherPriority.Loaded);
                     }
@@ -289,9 +288,9 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
         finally { connection?.Dispose(); }
     }
 
-    private async Task RunAsync(VisibilityConnection connection, CancellationToken cancellationToken)
+    private async Task RunAsync(VisibilityConnection connection, FrameScope scope, CancellationToken cancellationToken)
     {
-        try { await connection.Transition.RunAsync(cancellationToken); }
+        try { await connection.Transition.RunAsync(scope, cancellationToken); }
         catch (OperationCanceledException) { throw; }
         catch (Exception)
         {

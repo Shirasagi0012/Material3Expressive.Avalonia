@@ -124,7 +124,7 @@ public class AnimatedVisibilityTest
     [InlineData(true)]
     public Task SharedParent_AutomaticPreparationRetainsExitNoneWithoutManualLease(bool zeroDuration) => OnUi(() =>
     {
-        using var parent = new Transition<bool>(true, new ManualFrameSource());
+        using var parent = new Transition<bool>(true);
         using var shared = SharedTransitionScope.Create(parent);
         var host = Host();
         host.Enter = EnterTransition.None;
@@ -152,7 +152,7 @@ public class AnimatedVisibilityTest
     [InlineData(false, true)]
     public Task SharedSession_TwoHostsRetainContentThroughHandoffAndReversal(bool reverse, bool zeroDuration) => OnUi(() =>
     {
-        using var parent = new Transition<bool>(true, new ManualFrameSource());
+        using var parent = new Transition<bool>(true);
         using var shared = SharedTransitionScope.Create(parent);
         var source = Host();
         var target = Host(false);
@@ -544,21 +544,22 @@ public class AnimatedVisibilityTest
     public Task ParentTransition_WaitsForVisibility_AndSurvivesHostDetach() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
-        using var parent = new Transition<int>(1, clock);
-        var loop = parent.RunAsync();
+        var window = new AnimationTestWindow(clock);
+        using var parent = new Transition<int>(1);
+        var loop = parent.RunAsync(window.AnimationRoot);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s == 1);
         using var f = new Fixture(host);
         parent.UpdateTarget(0);
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
         f.Layout();
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(50));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(50)); Dispatcher.UIThread.RunJobs();
         f.Layout();
         Assert.True(host.IsContentPresent);
         Assert.True(parent.IsRunning);
         for (var i = 0; i < 50 && host.IsContentPresent; i++)
         {
-            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
             f.Layout();
         }
         Assert.False(host.IsContentPresent);
@@ -566,9 +567,10 @@ public class AnimatedVisibilityTest
         f.Window.Content = null;
         Assert.Empty(parent.Transitions);
         parent.UpdateTarget(2);
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
         Assert.Equal(2, parent.CurrentState);
         Assert.False(loop.IsFaulted);
+        window.Close();
     });
 
     [Fact]
@@ -793,8 +795,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task ParentCanBeDisposedWhileHostIsAttached() => OnUi(() =>
     {
-        var clock = new ManualFrameSource();
-        var parent = new Transition<bool>(true, clock);
+        var parent = new Transition<bool>(true);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s);
         using var f = new Fixture(host);
@@ -809,8 +810,9 @@ public class AnimatedVisibilityTest
     public Task SharedParentWaitsForLongestHostWithoutDrivingOwnClocks() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
-        using var parent = new Transition<bool>(true, clock);
-        _ = parent.RunAsync();
+        var window = new AnimationTestWindow(clock);
+        using var parent = new Transition<bool>(true);
+        _ = parent.RunAsync(window.AnimationRoot);
         var a = Host();
         var b = Host();
         a.Source = b.Source = VisibilitySource.From(parent, s => s);
@@ -831,6 +833,7 @@ public class AnimatedVisibilityTest
         first.Layout(); second.Layout();
         Assert.False(b.IsContentPresent);
         Assert.False(parent.IsRunning);
+        window.Close();
     });
 
     [Fact]
@@ -941,8 +944,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task ParentSeekingSamplesTheWholePresentationAndKeepsHiddenEndpoint() => OnUi(() =>
     {
-        var clock = new ManualFrameSource();
-        using var parent = new Transition<bool>(true, clock);
+        using var parent = new Transition<bool>(true);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s);
         using var f = new Fixture(host);

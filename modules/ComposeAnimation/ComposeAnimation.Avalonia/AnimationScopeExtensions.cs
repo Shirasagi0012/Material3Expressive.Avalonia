@@ -7,39 +7,6 @@ namespace ComposeAnimation;
 
 public static class AnimationScopeExtensions
 {
-    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
-        TState initialState, string? label = null)
-    {
-        scope.VerifyActive();
-        return new Transition<TState>(initialState, scope.Clock, label);
-    }
-
-    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
-        TransitionState<TState> state, string? label = null)
-    {
-        scope.VerifyActive();
-        return new Transition<TState>(state, scope.Clock, label);
-    }
-
-    public static InfiniteTransition CreateInfiniteTransition(this AnimationScope scope, string? label = null)
-    {
-        scope.VerifyActive();
-        return new InfiniteTransition(scope.Clock, label);
-    }
-
-    // Concrete overloads keep inference from selecting TState = SeekableTransitionState<T>, etc.
-    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
-        MutableTransitionState<TState> state, string? label = null)
-        => scope.CreateTransition<TState>((TransitionState<TState>)state, label);
-
-    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
-        SeekableTransitionState<TState> state, string? label = null)
-        => scope.CreateTransition<TState>((TransitionState<TState>)state, label);
-
-    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
-        DeferredTransitionState<TState> state, string? label = null)
-        => scope.CreateTransition<TState>((TransitionState<TState>)state, label);
-
     public static IDisposable SubscribeValue<T>(this AnimationScope scope,
         IAnimationValue<T> source, Action<T> observer)
     {

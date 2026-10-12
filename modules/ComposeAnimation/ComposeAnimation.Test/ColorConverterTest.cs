@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using Avalonia.Animation.Easings;
 using Avalonia.Media;
 using ComposeAnimation.Runtime;
@@ -7,7 +8,7 @@ namespace ComposeAnimation.Test;
 
 public class ColorConverterTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
 
     private static readonly TimeSpan Frame = TimeSpan.FromMilliseconds(16);
 
@@ -77,8 +78,8 @@ public class ColorConverterTest
         var scope = window.AnimationRoot;
         var animation = new Animatable<Color>(converter, Colors.Black);
         var task = animation.AnimateToAsync(scope, target, new SpringSpec<Color>(1, 1600));
-        clock.AdvanceBy(Frame);
-        clock.AdvanceBy(TimeSpan.FromSeconds(2));
+        clock.Pump(Frame);
+        clock.Pump(TimeSpan.FromSeconds(2));
         await task;
         Assert.Equal(target, animation.Value);
         Assert.Equal(target, animation.TargetValue);
@@ -195,7 +196,7 @@ public class ColorConverterTest
     [Fact]
     public void AnimateColor_UsesColorConverterAndOklabSampling()
     {
-        using var transition = new Transition<bool>(false, new ManualFrameSource());
+        using var transition = new Transition<bool>(false);
         var color = transition.AnimateColor(
             state => state ? Colors.White : Colors.Black,
             _ => new TweenSpec<Color>(TimeSpan.FromMilliseconds(100), easing: new LinearEasing()));
@@ -213,7 +214,7 @@ public class ColorConverterTest
     public void TransitionInterruption_PreservesUnprojectedOklabVelocity()
     {
         var converter = new ColorConverter();
-        using var transition = new Transition<int>(0, new ManualFrameSource());
+        using var transition = new Transition<int>(0);
         var color = transition.AnimateColor(
             state => state switch { 0 => Colors.Red, 1 => Colors.Blue, _ => Colors.Lime },
             _ => new TweenSpec<Color>(TimeSpan.FromMilliseconds(1000), easing: new LinearEasing()));
@@ -248,8 +249,8 @@ public class ColorConverterTest
             scope,
             Colors.Blue,
             new TweenSpec<Color>(TimeSpan.FromMilliseconds(1000), easing: new LinearEasing()));
-        clock.AdvanceBy(Frame);
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(400));
+        clock.Pump(Frame);
+        clock.Pump(TimeSpan.FromMilliseconds(400));
         var initialValue = animatable.Value;
         var initialVelocity = AnimationVector.From(animatable.State.VelocityVector);
 
@@ -259,7 +260,8 @@ public class ColorConverterTest
         var expected = new TargetBasedAnimation<Color>(
             new SpringSpec<Color>(), converter, initialValue, Colors.Lime,
             initialVelocityVector: initialVelocity);
-        clock.AdvanceBy(Frame);
+        Dispatcher.UIThread.RunJobs();
+        clock.Pump(Frame);
         var expectedVelocity = new double[4];
         expected.GetVelocityVector(Frame, expectedVelocity);
 

@@ -17,7 +17,7 @@ public class SharedBoundsRuntimeTest
     [InlineData(true)]
     public void ContentFade_RetainsOutgoingAfterBoundsFinish_AndHonorsZeroDuration(bool zeroDuration)
     {
-        using var root = new Transition<bool>(true, new ManualFrameSource());
+        using var root = new Transition<bool>(true);
         root.DurationScale = zeroDuration ? 0 : 1;
         using var lease = root.BeginPreparation();
         root.UpdateTarget(false);
@@ -49,7 +49,7 @@ public class SharedBoundsRuntimeTest
     [InlineData(true)]
     public void LateBounds_RepeatedLayoutRetarget_PreservesTrajectoryValueAndVelocity(bool startWithTween)
     {
-        using var root = new Transition<bool>(true, new ManualFrameSource());
+        using var root = new Transition<bool>(true);
         var exiting = root.CreateChildTransition(s => s);
         using var lease = exiting.BeginPreparation();
         root.UpdateTarget(false);
@@ -92,7 +92,7 @@ public class SharedBoundsRuntimeTest
     [Fact]
     public void VisibilityReversal_PreservesAllFourComponentsInsteadOfRestartingAtEndpoint()
     {
-        using var root = new Transition<bool>(true, new ManualFrameSource());
+        using var root = new Transition<bool>(true);
         var bounds = root.AnimateRect(s => s ? Source : Target, _ => Spring());
         root.UpdateTarget(false);
         root.OnFrame(Ms(0));
@@ -113,7 +113,7 @@ public class SharedBoundsRuntimeTest
     [Fact]
     public void ZeroDuration_CompletesLateBoundsOnNextFrameAfterPreparationTransfer()
     {
-        using var root = new Transition<bool>(true, new ManualFrameSource()) { DurationScale = 0 };
+        using var root = new Transition<bool>(true) { DurationScale = 0 };
         using var lease = root.BeginPreparation();
         root.UpdateTarget(false);
         root.OnFrame(Ms(0));

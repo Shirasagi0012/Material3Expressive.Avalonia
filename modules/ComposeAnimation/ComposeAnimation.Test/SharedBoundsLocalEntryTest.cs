@@ -55,7 +55,7 @@ public class SharedBoundsLocalEntryTest
 
         public Scene()
         {
-            Parent = new Transition<bool>(true, Clock);
+            Parent = new Transition<bool>(true);
             FromText = Text();
             ToText = Text();
             From = Endpoint(FromText, 120, 160);

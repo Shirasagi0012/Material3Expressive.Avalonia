@@ -573,8 +573,7 @@ public class AnimatedContentTest
     public Task Source_ParentTransition_WaitsForSlots() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
-        using var parent = new Transition<string>("A", clock, "Page");
-        _ = parent.RunAsync();
+        using var parent = new Transition<string>("A", "Page");
         var host = new AnimatedContent
         {
             HorizontalAlignment = HorizontalAlignment.Left,
@@ -585,17 +584,18 @@ public class AnimatedContentTest
         };
 
         var window = new AnimationTestWindow(clock) { Width = 400, Height = 400, Content = host };
+        _ = parent.RunAsync(window.AnimationRoot);
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.UpdateLayout();
         parent.UpdateTarget("B");
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
         window.UpdateLayout();
         Assert.True(host.VisibleSlotCount >= 1);
         Assert.True(parent.IsRunning);
         for (var i = 0; i < 40 && host.VisibleSlotCount > 1; i++)
         {
-            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
             window.UpdateLayout();
         }
         Assert.Equal(1, host.VisibleSlotCount);

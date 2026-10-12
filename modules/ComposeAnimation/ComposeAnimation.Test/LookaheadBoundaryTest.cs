@@ -378,7 +378,7 @@ public class LookaheadBoundaryTest
     public Task SharedBoundsEndpoints_KeepIndependentDestinationContent_AndFlightCaptureSize() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
-        var parent = new Transition<bool>(true, clock);
+        var parent = new Transition<bool>(true);
         var fromProbe = new Probe { Natural = new Size(80, 40) };
         var toProbe = new Probe { Natural = new Size(160, 80) };
         SharedBounds Endpoint(Probe probe, Size size) => new()

@@ -45,5 +45,5 @@ internal sealed class ObservedFrameScope(FrameScope inner, Action<Exception, Can
     internal override Task<T> Track<T>(Func<Task<T>> run) => inner.Track(run);
     internal override Task Track(Func<Task> run) => inner.Track(run);
     internal override void ReportRunFailure(Exception error) => inner.ReportRunFailure(error);
-    internal override void RegisterPlaybackChanged<T>(T owner, Action<T> changed) => inner.RegisterPlaybackChanged(owner, changed);
+    internal override IDisposable RegisterPlaybackChanged<T>(T owner, Action<T> changed) => inner.RegisterPlaybackChanged(owner, changed);
 }

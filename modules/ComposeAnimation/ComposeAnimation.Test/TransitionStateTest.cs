@@ -6,6 +6,7 @@ using Avalonia = global::Avalonia;
 
 public class TransitionStateTest
 {
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
     private static TimeSpan Ms(double value) => TimeSpan.FromMilliseconds(value);
 
     [Fact]
@@ -155,9 +156,8 @@ public class TransitionStateTest
     [Fact]
     public async Task SeekableSeek_SamplesTheWholeTransitionTree()
     {
-        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, clock);
+        using var transition = new Transition<bool>(state);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>
             new TweenSpec<double>(Ms(100), easing: new Avalonia.Animation.Easings.LinearEasing()));
 
@@ -172,9 +172,8 @@ public class TransitionStateTest
     [Fact]
     public async Task SeekableSeek_UpdatesChildTransitionTimeline()
     {
-        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, clock);
+        using var transition = new Transition<bool>(state);
         var child = transition.CreateChildTransition(s => s);
         var value = child.AnimateDouble(s => s ? 200 : 0, _ =>
             new TweenSpec<double>(Ms(200), easing: new Avalonia.Animation.Easings.LinearEasing()));
@@ -187,26 +186,27 @@ public class TransitionStateTest
     }
 
     [Fact]
-    public async Task SeekableAnimate_UsesClockAndReturnsToIdle()
+    public Task SeekableAnimate_UsesClockAndReturnsToIdle() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
         var state = new SeekableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, clock);
+        using var transition = new Transition<bool>(state);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>
             new TweenSpec<double>(Ms(100), easing: new Avalonia.Animation.Easings.LinearEasing()));
 
-        var running = state.AnimateToAsync(true);
+        var running = state.AnimateToAsync(window.AnimationRoot, true);
         Assert.Equal(1, clock.PendingFrameCount);
-        clock.AdvanceBy(Ms(0));
+        clock.Pump(Ms(0));
         Assert.False(transition.IsRunning);
-        clock.AdvanceBy(Ms(50));
+        clock.Pump(Ms(50));
         Assert.Equal(50, value.Value, 8);
         Assert.True(state.Fraction > 0 && state.Fraction < 1);
         Assert.True(transition.IsRunning);
-        clock.AdvanceBy(Ms(25));
+        clock.Pump(Ms(25));
         Assert.Equal(75, value.Value, 8);
         Assert.True(transition.IsRunning);
-        clock.AdvanceBy(Ms(100));
+        clock.Pump(Ms(100));
         await running;
 
         Assert.Equal(100, value.Value, 8);
@@ -215,22 +215,24 @@ public class TransitionStateTest
         Assert.True(state.TargetState);
         Assert.False(transition.IsSeeking);
         Assert.False(transition.IsRunning);
-    }
+        window.Close();
+    });
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task SeekablePlayback_PreservesRunningUntilManualSeekOrCancellation(bool cancel)
+    public Task SeekablePlayback_PreservesRunningUntilManualSeekOrCancellation(bool cancel) => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
         var state = new SeekableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, clock);
+        using var transition = new Transition<bool>(state);
         var child = transition.CreateChildTransition(s => s);
         child.AnimateDouble(s => s ? 100 : 0, _ => new TweenSpec<double>(Ms(100)));
         using var cancellation = new CancellationTokenSource();
-        var playback = state.AnimateToAsync(true, cancellationToken: cancellation.Token);
-        clock.AdvanceBy(Ms(0));
-        clock.AdvanceBy(Ms(25));
+        var playback = state.AnimateToAsync(window.AnimationRoot, true, cancellationToken: cancellation.Token);
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(25));
         var stopped = new List<string>();
         transition.PropertyChanged += (_, e) =>
         {
@@ -240,7 +242,7 @@ public class TransitionStateTest
         {
             if (e.PropertyName == nameof(child.IsRunning) && !child.IsRunning) stopped.Add("child");
         };
-        clock.AdvanceBy(Ms(50));
+        clock.Pump(Ms(50));
         transition.RefreshAnimations();
         Assert.True(transition.IsRunning);
         Assert.True(child.IsRunning);
@@ -253,14 +255,14 @@ public class TransitionStateTest
         Assert.False(child.IsRunning);
         Assert.True(transition.IsSeeking);
         Assert.True(child.IsSeeking);
-    }
+        window.Close();
+    });
 
     [Fact]
     public async Task SeekableSnap_StopsAndSnapsAnimations()
     {
-        var clock = new ManualFrameSource();
         var state = new SeekableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, clock);
+        using var transition = new Transition<bool>(state);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>
             new TweenSpec<double>(Ms(100), easing: new Avalonia.Animation.Easings.LinearEasing()));
 
@@ -275,25 +277,27 @@ public class TransitionStateTest
     }
 
     [Fact]
-    public async Task SeekableOperations_CancelThePreviousOperation()
+    public Task SeekableOperations_CancelThePreviousOperation() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
         var state = new SeekableTransitionState<bool>(false);
-        using var transition = new Transition<bool>(state, clock);
+        using var transition = new Transition<bool>(state);
         var value = transition.AnimateDouble(s => s ? 100 : 0, _ =>
             new TweenSpec<double>(Ms(100), easing: new Avalonia.Animation.Easings.LinearEasing()));
 
-        var first = state.AnimateToAsync(true);
-        clock.AdvanceBy(Ms(0));
-        clock.AdvanceBy(Ms(25));
-        var second = state.AnimateToAsync(false);
-        clock.AdvanceBy(Ms(25));
-        clock.AdvanceBy(Ms(50));
-        clock.AdvanceBy(Ms(150));
+        var first = state.AnimateToAsync(window.AnimationRoot, true);
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(25));
+        var second = state.AnimateToAsync(window.AnimationRoot, false);
+        clock.Pump(Ms(25));
+        clock.Pump(Ms(50));
+        clock.Pump(Ms(150));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
         await second;
         Assert.Equal(0, value.Value, 8);
         Assert.False(transition.IsSeeking);
-    }
+        window.Close();
+    });
 }

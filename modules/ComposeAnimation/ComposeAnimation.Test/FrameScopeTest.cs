@@ -6,7 +6,7 @@ namespace ComposeAnimation.Test;
 
 public class FrameScopeTest
 {
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
 
     [Fact]
     public void FrameScope_ExposesOnlyLifetimeDurationScaleAndNextFrame_AndCannotBeDerivedPublicly()

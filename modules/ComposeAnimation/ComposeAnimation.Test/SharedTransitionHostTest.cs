@@ -32,7 +32,7 @@ public class SharedTransitionHostTest
 
         internal Scene(bool bounds = false, bool nested = false)
         {
-            Parent = new Transition<bool>(true, Clock);
+            Parent = new Transition<bool>(true);
             var boundsSpec = new SharedBoundsTransform
             {
                 Spec = new TweenSpec<Rect>(Ms(100), easing: new LinearEasing())

@@ -6,7 +6,7 @@ namespace ComposeAnimation.Test;
 public class AnimatableTest
 {
     private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
-    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None).Unwrap();
 
     [Fact]
     public Task CompletedAnimation_AfterIdle_StartsOnFreshFrame() => OnUi(async () =>
@@ -16,13 +16,13 @@ public class AnimatableTest
         var scope = window.AnimationRoot;
         var animatable = CreateDouble();
         await DriveToEnd(clock, animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100))));
-        clock.AdvanceBy(TimeSpan.FromSeconds(10));
+        clock.Pump(TimeSpan.FromSeconds(10));
 
         var second = animatable.AnimateToAsync(scope, 200, Tween(TimeSpan.FromMilliseconds(100)));
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
         Assert.Equal(100, animatable.Value);
         Assert.False(second.IsCompleted);
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(50));
+        clock.Pump(TimeSpan.FromMilliseconds(50));
         Assert.Equal(150, animatable.Value, 6);
         await DriveToEnd(clock, second);
         window.Close();
@@ -42,7 +42,7 @@ public class AnimatableTest
         int maxFrames = 1000)
     {
         for (var i = 0; i < maxFrames && !task.IsCompleted; i++)
-            clock.AdvanceBy(Frame);
+            clock.Pump(Frame);
         return await task;
     }
 
@@ -82,8 +82,8 @@ public class AnimatableTest
         var animatable = CreateDouble();
 
         var first = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100)));
-        clock.AdvanceBy(Frame);
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
+        clock.Pump(Frame);
         var valueAtInterruption = animatable.Value;
         Assert.True(valueAtInterruption is > 0 and < 100);
 
@@ -201,7 +201,7 @@ public class AnimatableTest
         var animatable = CreateDouble();
 
         var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(160)));
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
 
         await animatable.SnapToAsync(30);
 
@@ -236,8 +236,8 @@ public class AnimatableTest
         var animatable = CreateDouble();
 
         var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100)));
-        clock.AdvanceBy(Frame);
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
+        clock.Pump(Frame);
 
         animatable.Stop();
 
@@ -256,7 +256,7 @@ public class AnimatableTest
         var animatable = CreateDouble();
 
         var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100)));
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
 
         await animatable.StopAsync();
 
@@ -280,7 +280,7 @@ public class AnimatableTest
         Assert.Contains(nameof(Animatable<double>.IsRunning), raised);
         Assert.Contains(nameof(Animatable<double>.TargetValue), raised);
 
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
         Assert.Contains(nameof(Animatable<double>.Value), raised);
 
         await DriveToEnd(clock, task);
@@ -322,8 +322,8 @@ public class AnimatableTest
         var task = animatable.AnimateToAsync(scope, 100,
             new TweenSpec<double>(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(50),
                 new LinearEasing()));
-        clock.AdvanceBy(Frame);
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
+        clock.Pump(Frame);
         Assert.Equal(0, animatable.Value);
         Assert.Equal(2, valueNotifications);
 
@@ -348,8 +348,8 @@ public class AnimatableTest
         var task = animatable.AnimateToAsync(scope, 10,
             new TweenSpec<int>(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(50),
                 new LinearEasing()));
-        clock.AdvanceBy(Frame);
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
+        clock.Pump(Frame);
         Assert.Equal(0, animatable.Value);
         Assert.Equal(0, animatable.Velocity);
         Assert.Equal(2, velocityNotifications);

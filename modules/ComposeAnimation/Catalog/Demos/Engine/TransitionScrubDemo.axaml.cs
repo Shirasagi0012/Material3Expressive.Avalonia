@@ -54,9 +54,9 @@ public partial class TransitionScrubDemo : DemoControlBase
 
         // 引擎组件必须等基类 Clock 可用（控件附加到可视树后）再创建。
         var state = new SeekableTransitionState<bool>(false);
-        var transition = Motion.CreateTransition(state, label: "Scrub");
+        var transition = new Transition<bool>(state, label: "Scrub");
 
-        // 注意：seekable 过渡自己驱动帧循环，不要对 transition 调 RunAsync；
+        // 注意：seekable 过渡由 state.AnimateToAsync(scope, ...) 驱动帧；它与 RunAsync 共用运行互斥，后者会被取消。
         // 一个 SeekableTransitionState 实例也只能配置给这一个 Transition。
         var height = transition.AnimateDouble(s => s ? 200.0 : 80.0,
             _ => new TweenSpec<double>(Duration, easing: new LinearEasing()), label: "Height");
@@ -129,7 +129,7 @@ public partial class TransitionScrubDemo : DemoControlBase
         UpdateSlider();
         try
         {
-            await _state!.AnimateToAsync(true);
+            await _state!.AnimateToAsync(Motion, true);
         }
         catch (OperationCanceledException)
         {

@@ -151,7 +151,7 @@ public partial class Transition<TState>
 
         public void Dispose()
         {
-            _owner.Clock.VerifyAccess();
+            _owner.VerifyThreadAccess();
             if (_detached) return;
             _owner.Mutate(() =>
             {
@@ -211,7 +211,7 @@ public partial class Transition<TState>
 
         public void Dispose()
         {
-            _owner.Clock.VerifyAccess();
+            _owner.VerifyThreadAccess();
             if (_disposed) return;
             _disposed = true;
             _animation?.Dispose();

@@ -218,31 +218,42 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
             cancellationToken);
     }
 
-    public Task AnimateToAsync(IFiniteAnimationSpec<double>? animationSpec = null,
+    public Task AnimateToAsync(FrameScope scope, IFiniteAnimationSpec<double>? animationSpec = null,
         CancellationToken cancellationToken = default)
-        => AnimateToAsync(TargetState, animationSpec, cancellationToken);
+        => AnimateToAsync(scope, TargetState, animationSpec, cancellationToken);
 
     /// <summary>
     /// Animates the progress to the end of the current segment.  The optional animation spec
     /// controls progress itself; the transition's child animations are sampled at the resulting
-    /// fraction on every frame.
+    /// fraction on every frame. Frames come from <paramref name="scope"/>. Like any run of the
+    /// transition, the seek run takes the transition's run mutex, so it cancels a running
+    /// <see cref="Transition.RunAsync"/> (and vice versa) instead of racing it.
     /// </summary>
-    public Task AnimateToAsync(T targetState, IFiniteAnimationSpec<double>? animationSpec = null,
+    public Task AnimateToAsync(FrameScope scope, T targetState, IFiniteAnimationSpec<double>? animationSpec = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(scope);
         var transition = _transition;
         if (transition is null) return Task.CompletedTask;
         transition.VerifyAccess();
+        scope.VerifyAccess();
 
-        return _mutatorMutex.MutateAsync(
-            token => AnimateCoreAsync(transition, targetState, animationSpec, token),
+        // Lock order: the state mutex first, then the transition's run mutex (everywhere).
+        return scope.Track(() => _mutatorMutex.MutateAsync(
+            stateToken => transition.RunMutex.MutateAsync(
+                runToken => AnimateCoreAsync(scope, transition, targetState, animationSpec, stateToken, runToken),
+                MutatePriority.Default,
+                stateToken),
             MutatePriority.Default,
-            cancellationToken);
+            cancellationToken));
     }
 
-    private async Task<bool> AnimateCoreAsync(Transition<T> transition, T targetState,
-        IFiniteAnimationSpec<double>? animationSpec, CancellationToken cancellationToken)
+    private async Task<bool> AnimateCoreAsync(FrameScope scope, Transition<T> transition, T targetState,
+        IFiniteAnimationSpec<double>? animationSpec, CancellationToken stateToken, CancellationToken runToken)
     {
+        // The run's one token: state mutex (caller token included), run mutex and scope lifetime.
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(stateToken, runToken, scope.Lifetime);
+        var cancellationToken = linked.Token;
         cancellationToken.ThrowIfCancellationRequested();
 
         var oldTarget = TargetState;
@@ -282,14 +293,14 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
         var running = false;
         try
         {
-            var firstFrame = await transition.Clock.NextFrameAsync(cancellationToken);
+            var firstFrame = await scope.WaitFrameAsync(cancellationToken, null);
             var previousFrame = firstFrame;
             var animationPlayTime = TimeSpan.Zero;
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 
-                var frame = await transition.Clock.NextFrameAsync(cancellationToken);
+                var frame = await scope.WaitFrameAsync(cancellationToken, null);
                 
                 if (frame < previousFrame)
                     throw new ArgumentOutOfRangeException(nameof(frame),

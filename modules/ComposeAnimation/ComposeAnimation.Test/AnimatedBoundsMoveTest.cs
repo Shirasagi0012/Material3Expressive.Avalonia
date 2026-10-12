@@ -161,8 +161,8 @@ public partial class AnimatedBoundsTest
         var clock = f.Clock;
         f.Layout();
         Equal(middle, f.Actual(card));
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); f.Layout();
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(200)); f.Layout();
+        clock.Pump(TimeSpan.FromMilliseconds(16)); f.Layout();
+        clock.Pump(TimeSpan.FromMilliseconds(200)); f.Layout();
         Equal(new Rect(220, 10, 120, 160), f.Actual(card));
     });
 
