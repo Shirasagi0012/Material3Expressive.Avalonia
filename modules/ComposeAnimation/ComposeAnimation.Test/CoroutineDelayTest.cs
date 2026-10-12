@@ -71,7 +71,7 @@ public sealed class CoroutineDelayTest
         window.Close(); Assert.Equal(0, time.ActiveTimerCount);
     });
 
-    [Fact(Skip = "Pre-existing failure hidden by the OnUi Task<Task> harness bug (also fails at beced47 once awaited); tracked for the architect in STAGE-3 report.")]
+    [Fact]
     public Task Delay_CancellationWinsWhileCompletedTimerContinuationIsQueued() => OnUi(async () =>
     {
         var time = new ManualTimeProvider();

@@ -300,9 +300,27 @@ public class AnimationScope : FrameScope
         return Launch(async lifetime =>
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellationToken);
-            await Task.Delay(delay, TimeProvider, linked.Token).ConfigureAwait(true);
-            // Match cancellable suspension: cancellation while continuation was queued wins.
-            linked.Token.ThrowIfCancellationRequested();
+            var token = linked.Token;
+            if (delay != Timeout.InfiniteTimeSpan) ArgumentOutOfRangeException.ThrowIfLessThan(delay, TimeSpan.Zero);
+            token.ThrowIfCancellationRequested();
+            if (delay > TimeSpan.Zero || delay == Timeout.InfiniteTimeSpan)
+            {
+                // The timer may fire on any thread: completion is posted to the UI thread, so the
+                // continuation never runs off-thread, and a cancellation that lands while that post
+                // is queued wins (cancellable suspension), whatever context the caller awaited from.
+                var done = new TaskCompletionSource();
+                using var timer = TimeProvider.CreateTimer(
+                    static state => Dispatcher.UIThread.Post(() => ((TaskCompletionSource)state!).TrySetResult(), FrameClock.ResumePriority),
+                    done, delay, Timeout.InfiniteTimeSpan);
+                using var registration = token.Register(static state =>
+                {
+                    var (source, ct) = ((TaskCompletionSource, CancellationToken))state!;
+                    if (Dispatcher.UIThread.CheckAccess()) source.TrySetCanceled(ct);
+                    else Dispatcher.UIThread.Post(() => source.TrySetCanceled(ct), FrameClock.ResumePriority);
+                }, (done, token));
+                await done.Task;
+            }
+            token.ThrowIfCancellationRequested();
         }, "Coroutine delay");
     }
 
