@@ -5,9 +5,9 @@ using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation;
 
-public static class VisualAnimationScopeExtensions
+public static class AnimationScopeExtensions
 {
-    public static Animatable<T> CreateAnimatable<T>(this VisualAnimationScope scope, T initialValue,
+    public static Animatable<T> CreateAnimatable<T>(this AnimationScope scope, T initialValue,
         ITwoWayConverter<T> converter, T? visibilityThreshold = default, string? label = null)
     {
         ArgumentNullException.ThrowIfNull(scope);
@@ -15,70 +15,70 @@ public static class VisualAnimationScopeExtensions
         return new Animatable<T>(converter, initialValue, scope.Clock, visibilityThreshold, label);
     }
 
-    public static Animatable<double> CreateAnimatable(this VisualAnimationScope scope, double initialValue, string? label = null)
+    public static Animatable<double> CreateAnimatable(this AnimationScope scope, double initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new DoubleConverter(), VisibilityThresholds.Double, label);
 
-    public static Animatable<float> CreateAnimatable(this VisualAnimationScope scope, float initialValue, string? label = null)
+    public static Animatable<float> CreateAnimatable(this AnimationScope scope, float initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new FloatConverter(), VisibilityThresholds.Float, label);
 
-    public static Animatable<int> CreateAnimatable(this VisualAnimationScope scope, int initialValue, string? label = null)
+    public static Animatable<int> CreateAnimatable(this AnimationScope scope, int initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new Int32Converter(), VisibilityThresholds.Int32, label);
 
-    public static Animatable<Point> CreateAnimatable(this VisualAnimationScope scope, Point initialValue, string? label = null)
+    public static Animatable<Point> CreateAnimatable(this AnimationScope scope, Point initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new PointConverter(), VisibilityThresholds.Point, label);
 
-    public static Animatable<Vector> CreateAnimatable(this VisualAnimationScope scope, Vector initialValue, string? label = null)
+    public static Animatable<Vector> CreateAnimatable(this AnimationScope scope, Vector initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new VectorConverter(), VisibilityThresholds.Vector, label);
 
-    public static Animatable<Size> CreateAnimatable(this VisualAnimationScope scope, Size initialValue, string? label = null)
+    public static Animatable<Size> CreateAnimatable(this AnimationScope scope, Size initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new SizeConverter(), VisibilityThresholds.Size, label);
 
-    public static Animatable<Rect> CreateAnimatable(this VisualAnimationScope scope, Rect initialValue, string? label = null)
+    public static Animatable<Rect> CreateAnimatable(this AnimationScope scope, Rect initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new RectConverter(), VisibilityThresholds.Rect, label);
 
-    public static Animatable<Thickness> CreateAnimatable(this VisualAnimationScope scope, Thickness initialValue, string? label = null)
+    public static Animatable<Thickness> CreateAnimatable(this AnimationScope scope, Thickness initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new ThicknessConverter(), VisibilityThresholds.Thickness, label);
 
-    public static Animatable<CornerRadius> CreateAnimatable(this VisualAnimationScope scope, CornerRadius initialValue, string? label = null)
+    public static Animatable<CornerRadius> CreateAnimatable(this AnimationScope scope, CornerRadius initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new CornerRadiusConverter(), VisibilityThresholds.CornerRadius, label);
 
-    public static Animatable<Avalonia.Media.Color> CreateAnimatable(this VisualAnimationScope scope, Avalonia.Media.Color initialValue, string? label = null)
+    public static Animatable<Avalonia.Media.Color> CreateAnimatable(this AnimationScope scope, Avalonia.Media.Color initialValue, string? label = null)
         => scope.CreateAnimatable(initialValue, new ColorConverter(), default, label);
 
-    public static Transition<TState> CreateTransition<TState>(this VisualAnimationScope scope,
+    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
         TState initialState, string? label = null)
     {
         scope.VerifyActive();
         return new Transition<TState>(initialState, scope.Clock, label);
     }
 
-    public static Transition<TState> CreateTransition<TState>(this VisualAnimationScope scope,
+    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
         TransitionState<TState> state, string? label = null)
     {
         scope.VerifyActive();
         return new Transition<TState>(state, scope.Clock, label);
     }
 
-    public static InfiniteTransition CreateInfiniteTransition(this VisualAnimationScope scope, string? label = null)
+    public static InfiniteTransition CreateInfiniteTransition(this AnimationScope scope, string? label = null)
     {
         scope.VerifyActive();
         return new InfiniteTransition(scope.Clock, label);
     }
 
     // Concrete overloads keep inference from selecting TState = SeekableTransitionState<T>, etc.
-    public static Transition<TState> CreateTransition<TState>(this VisualAnimationScope scope,
+    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
         MutableTransitionState<TState> state, string? label = null)
         => scope.CreateTransition<TState>((TransitionState<TState>)state, label);
 
-    public static Transition<TState> CreateTransition<TState>(this VisualAnimationScope scope,
+    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
         SeekableTransitionState<TState> state, string? label = null)
         => scope.CreateTransition<TState>((TransitionState<TState>)state, label);
 
-    public static Transition<TState> CreateTransition<TState>(this VisualAnimationScope scope,
+    public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
         DeferredTransitionState<TState> state, string? label = null)
         => scope.CreateTransition<TState>((TransitionState<TState>)state, label);
 
-    public static IDisposable SubscribeValue<T>(this VisualAnimationScope scope,
+    public static IDisposable SubscribeValue<T>(this AnimationScope scope,
         IAnimationValue<T> source, Action<T> observer)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -99,7 +99,7 @@ public static class VisualAnimationScopeExtensions
         return subscription;
     }
 
-    public static IDisposable BindAnimatedValue<T>(this VisualAnimationScope scope, AvaloniaObject target,
+    public static IDisposable BindAnimatedValue<T>(this AnimationScope scope, AvaloniaObject target,
         StyledProperty<T> property, IAnimationValue<T> source)
     {
         ArgumentNullException.ThrowIfNull(target);

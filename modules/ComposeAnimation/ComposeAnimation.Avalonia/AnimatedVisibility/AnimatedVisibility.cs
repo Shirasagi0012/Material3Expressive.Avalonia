@@ -155,14 +155,14 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
                     _resetPending = false;
                     Disconnect();
                 }
-                if (!_attached || !IsVisible || _failed || VisualAnimationScope.IsEnvironmentEnding(this))
+                if (!_attached || !IsVisible || _failed || AnimationScope.IsEnvironmentEnding(this))
                 {
                     SetAndRaise(IsIdleProperty, ref _isIdle, true);
                     continue;
                 }
                 if (_connection is null)
                 {
-                    var motion = VisualAnimationScope.ForHost(this);
+                    var motion = AnimationScope.ForHost(this);
                     var clock = motion.Clock;
                     _connection = Source?.Connect(clock, Label)
                         ?? new VisibilityConnection(new Transition<bool>(Visible, clock, Label), true);
@@ -221,7 +221,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         {
             _failed = true;
             try { Disconnect(); }
-            finally { VisualAnimationScope.ReportError(this, error); }
+            finally { AnimationScope.ReportError(this, error); }
             throw;
         }
         finally { _synchronizing = false; }
@@ -303,7 +303,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         {
             _failed = true;
             Synchronize(reset: true);
-            VisualAnimationScope.ReportError(this, error);
+            AnimationScope.ReportError(this, error);
             throw;
         }
     }

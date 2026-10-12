@@ -24,7 +24,7 @@ public partial class App : Application
                 {
                     var demo = DemoRegistry.Find(options.DemoId!)!;
                     var window = new Window();
-                    VisualAnimationScope.Initialize(window);
+                    AnimationScope.Initialize(window);
                     window.Title = $"{demo.Title} — ComposeAnimation Catalog";
                     window.Width = 960;
                     window.Height = 720;

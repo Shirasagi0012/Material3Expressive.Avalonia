@@ -142,7 +142,7 @@ public partial class SpecGalleryDemo : DemoControlBase
         public Point Target { get; }
 
         public static SpecRow Create(string name, Border ball, Point target, IAnimationSpec<Point> spec,
-            VisualAnimationScope clock)
+            AnimationScope clock)
         {
             var animatable = clock.CreateAnimatable(new Point(), label: name);
 

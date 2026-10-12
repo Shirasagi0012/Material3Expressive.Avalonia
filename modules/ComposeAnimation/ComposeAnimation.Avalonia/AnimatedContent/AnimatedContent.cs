@@ -190,7 +190,7 @@ public class AnimatedContent : ContentControl
             catch (Exception error)
             {
                 _failed = true;
-                VisualAnimationScope.ReportError(this, error);
+                AnimationScope.ReportError(this, error);
                 throw;
             }
         }
@@ -246,7 +246,7 @@ public class AnimatedContent : ContentControl
                     _resetPending = false;
                     Disconnect();
                 }
-                if (!_attached || !IsVisible || _failed || VisualAnimationScope.IsEnvironmentEnding(this))
+                if (!_attached || !IsVisible || _failed || AnimationScope.IsEnvironmentEnding(this))
                 {
                     SetAndRaise(IsIdleProperty, ref _isIdle, true);
                     continue;
@@ -256,7 +256,7 @@ public class AnimatedContent : ContentControl
                     throw new InvalidOperationException("AnimatedContent requires PART_ContentPanel with a ContentSlotPanel child.");
                 if (_connection is null)
                 {
-                    var motion = VisualAnimationScope.ForHost(this);
+                    var motion = AnimationScope.ForHost(this);
                     var clock = motion.Clock;
                     var label = Label ?? "AnimatedContent";
                     _connection = Source?.Connect(clock, label)
@@ -315,7 +315,7 @@ public class AnimatedContent : ContentControl
             try { Disconnect(); }
             finally
             {
-                VisualAnimationScope.ReportError(this, error);
+                AnimationScope.ReportError(this, error);
             }
             throw;
         }

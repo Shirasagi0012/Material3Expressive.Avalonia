@@ -78,15 +78,15 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
         var destination = target.Bounds.Size;
         if (_size is null && _failedTarget != destination)
         {
-            var clock = TopLevel.GetTopLevel(this) is not null && !VisualAnimationScope.IsEnvironmentEnding(this)
-                ? VisualAnimationScope.ForHost(this).Clock : null;
+            var clock = TopLevel.GetTopLevel(this) is not null && !AnimationScope.IsEnvironmentEnding(this)
+                ? AnimationScope.ForHost(this).Clock : null;
             if (clock is not null)
             {
                 _target = destination;
                 _size = new Animatable<Size>(new SizeConverter(), destination, clock,
                     VisibilityThresholds.Size, "Lookahead size");
                 _size.PropertyChanged += OnSizeSampleChanged;
-                var motion = VisualAnimationScope.ForHost(this);
+                var motion = AnimationScope.ForHost(this);
                 _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Reset(); });
             }
         }
@@ -113,7 +113,7 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
             _context = root;
             _failedTarget = target;
             InvalidateMeasure();
-            VisualAnimationScope.ReportError(this, error);
+            AnimationScope.ReportError(this, error);
         }
     }
 

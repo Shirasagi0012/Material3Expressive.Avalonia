@@ -18,7 +18,7 @@ public partial class CatalogWindow : Window
     internal CatalogWindow(IAnimationFrameClock? clock)
     {
         AnimationClock = clock;
-        VisualAnimationScope.Initialize(this, clock);
+        AnimationScope.Initialize(this, clock);
         InitializeComponent();
         foreach (var page in DemoRegistry.Pages)
         {
@@ -77,7 +77,7 @@ public partial class CatalogWindow : Window
                 catch (Exception error)
                 {
                     var dialog = new Window { Title = "动作失败", Width = 520, Height = 220 };
-                    VisualAnimationScope.Initialize(dialog);
+                    AnimationScope.Initialize(dialog);
                     dialog.Content = new TextBox { Text = error.GetBaseException().Message, IsReadOnly = true,
                         TextWrapping = Avalonia.Media.TextWrapping.Wrap, Margin = new Thickness(24) };
                     await dialog.ShowDialog(this);

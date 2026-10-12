@@ -122,8 +122,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
     public AnimatedBounds()
     {
-        _outer = new BoundsAnimationState(SampleChanged, error => VisualAnimationScope.ReportError(this, error));
-        _inner = new BoundsAnimationState(SampleChanged, error => VisualAnimationScope.ReportError(this, error));
+        _outer = new BoundsAnimationState(SampleChanged, error => AnimationScope.ReportError(this, error));
+        _inner = new BoundsAnimationState(SampleChanged, error => AnimationScope.ReportError(this, error));
         _presentation = new LookaheadPresentationHost(this, MeasurePresentation, ArrangeApproach, ContentInvalidated);
         _presentation.UseLayoutRounding = false;
         VisualChildren.Add(_presentation);
@@ -449,9 +449,9 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private void EnsureClock()
     {
         if (_clock is not null) return;
-        if (VisualAnimationScope.IsEnvironmentEnding(this)) return;
+        if (AnimationScope.IsEnvironmentEnding(this)) return;
         if (TopLevel.GetTopLevel(this) is null) return;
-        var motion = VisualAnimationScope.ForHost(this);
+        var motion = AnimationScope.ForHost(this);
         _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Release(); });
         _clock = new ObservedClock(motion.Clock);
     }

@@ -38,7 +38,7 @@ public sealed class DemoRunnerWindow : Window
         string outputDirectory,
         Action<int> exit)
     {
-        VisualAnimationScope.Initialize(this, _probe);
+        AnimationScope.Initialize(this, _probe);
         _demos = demos;
         _actionFilter = actionFilter;
         _outputDirectory = outputDirectory;

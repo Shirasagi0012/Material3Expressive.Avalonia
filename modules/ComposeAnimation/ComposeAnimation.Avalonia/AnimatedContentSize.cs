@@ -162,7 +162,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     private void StartAnimation(Size from, Size to)
     {
         if (!_attached) return;
-        if (VisualAnimationScope.IsEnvironmentEnding(this)) { _value = to; return; }
+        if (AnimationScope.IsEnvironmentEnding(this)) { _value = to; return; }
         EnsureClock();
         if (_clock is null) { _value = to; return; }
         _failedTarget = null;
@@ -173,7 +173,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         var generation = ++_generation;
         _requestedTarget = to;
         _runPending = true;
-        var motion = VisualAnimationScope.ForHost(this);
+        var motion = AnimationScope.ForHost(this);
         _ = motion.Launch(ct => AnimateAsync(_animatable, to, AnimationSpec, generation, ct), "Content size");
     }
 
@@ -196,7 +196,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
             _value = target;
             _failedTarget = target;
             InvalidateMeasure();
-            VisualAnimationScope.ReportError(this, error);
+            AnimationScope.ReportError(this, error);
             throw;
         }
         if (!IsCurrent()) return;
@@ -208,7 +208,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
             // Publish after all run state has settled, allowing handlers to change content,
             // reset the control or detach it synchronously.
             try { AnimationCompleted?.Invoke(this, new AnimatedContentSizeChangedEventArgs(initial, result.EndState.Value)); }
-            catch (Exception error) { VisualAnimationScope.ReportError(this, error); }
+            catch (Exception error) { AnimationScope.ReportError(this, error); }
         }
 
         bool IsCurrent() => _attached && generation == _generation && ReferenceEquals(_animatable, animatable);
@@ -231,7 +231,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     {
         if (_clock is not null) return;
         if (TopLevel.GetTopLevel(this) is null) return;
-        var motion = VisualAnimationScope.ForHost(this);
+        var motion = AnimationScope.ForHost(this);
         _motionRegistration?.Dispose();
         _motionRegistration = motion.RegisterResource(() =>
         {

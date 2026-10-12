@@ -61,7 +61,7 @@ public sealed class CoroutineDelayTest
         var time = new ManualTimeProvider();
         var owner = new Border(); var content = new Grid { Children = { owner } };
         var window = new AnimationTestWindow(null, time) { Content = content }; window.Show();
-        var child = VisualAnimationScope.Create(owner);
+        var child = AnimationScope.Create(owner);
         var waiting = child.DelayAsync(TimeSpan.FromSeconds(1));
         var sibling = window.AnimationRoot.DelayAsync(TimeSpan.FromSeconds(1));
         content.Children.Remove(owner);
@@ -98,7 +98,7 @@ public sealed class CoroutineDelayTest
         var content = new Border { Width = 30, Height = 30 };
         var popup = new Popup { PlacementTarget = anchor, Child = content, ShouldUseOverlayLayer = overlay };
         panel.Children.Add(popup); popup.IsOpen = true; Dispatcher.UIThread.RunJobs();
-        var scope = VisualAnimationScope.Create(content); Assert.Same(time, scope.TimeProvider);
+        var scope = AnimationScope.Create(content); Assert.Same(time, scope.TimeProvider);
         var waiting = scope.DelayAsync(TimeSpan.FromSeconds(1));
         popup.IsOpen = false; Dispatcher.UIThread.RunJobs();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);

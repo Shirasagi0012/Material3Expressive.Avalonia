@@ -13,10 +13,10 @@ public class AnimationTestWindow : Window
     public AnimationTestWindow(IAnimationFrameClock? clock, TimeProvider timeProvider)
     {
         TestClock = clock;
-        AnimationRoot = VisualAnimationScope.Initialize(this, clock, timeProvider);
+        AnimationRoot = AnimationScope.Initialize(this, clock, timeProvider);
     }
     public IAnimationFrameClock? TestClock { get; }
-    public VisualAnimationScope AnimationRoot { get; }
+    public AnimationScope AnimationRoot { get; }
 }
 
 public static class AnimationTestDispatcher

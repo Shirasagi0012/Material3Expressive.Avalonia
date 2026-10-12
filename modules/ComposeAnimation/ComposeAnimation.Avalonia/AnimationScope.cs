@@ -9,26 +9,26 @@ namespace ComposeAnimation;
 
 public sealed class AnimationFailureEventArgs : EventArgs
 {
-    internal AnimationFailureEventArgs(Guid id, VisualAnimationScope source, string? label, Exception error, Visual? host = null)
+    internal AnimationFailureEventArgs(Guid id, AnimationScope source, string? label, Exception error, Visual? host = null)
         => (FailureId, SourceScope, Host, OperationLabel, Exception) = (id, source, host ?? source.Host, label, error);
     public Guid FailureId { get; }
-    public VisualAnimationScope SourceScope { get; }
+    public AnimationScope SourceScope { get; }
     public Visual Host { get; }
     public string? OperationLabel { get; }
     public Exception Exception { get; }
 }
 
 /// <summary>Owns animation work, samples and children within a fixed TopLevel environment.</summary>
-public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
+public sealed class AnimationScope : IDisposable, IAsyncDisposable
 {
-    private static readonly ConditionalWeakTable<TopLevel, VisualAnimationScope> Roots = new();
-    private static readonly ConditionalWeakTable<Visual, VisualAnimationScope> HostScopes = new();
+    private static readonly ConditionalWeakTable<TopLevel, AnimationScope> Roots = new();
+    private static readonly ConditionalWeakTable<Visual, AnimationScope> HostScopes = new();
     private static readonly AsyncLocal<Operation?> CurrentOperation = new();
-    private readonly VisualAnimationScope? _parent;
-    private readonly VisualAnimationScope _root;
+    private readonly AnimationScope? _parent;
+    private readonly AnimationScope _root;
     private readonly FrameClock _frameClock;
     private readonly AnimationLifetime _lifecycle = new();
-    private readonly HashSet<VisualAnimationScope> _children = [];
+    private readonly HashSet<AnimationScope> _children = [];
     private readonly HashSet<Operation> _tasks = [];
     private readonly HashSet<ScopeResource> _subscriptions = [];
     private readonly HashSet<ScopeResource> _bindings = [];
@@ -40,7 +40,7 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
     private bool _cleanupStarted;
     private double? _durationScale;
 
-    private VisualAnimationScope(Visual host, VisualAnimationScope? parent, IAnimationFrameClock? clock, string? label,
+    private AnimationScope(Visual host, AnimationScope? parent, IAnimationFrameClock? clock, string? label,
         TimeProvider? timeProvider = null)
     {
         Host = host;
@@ -96,11 +96,11 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         }
     }
 
-    public static VisualAnimationScope Initialize(TopLevel host, IAnimationFrameClock? clock = null)
+    public static AnimationScope Initialize(TopLevel host, IAnimationFrameClock? clock = null)
         => Initialize(host, clock, System.TimeProvider.System);
 
     /// <summary>Initializes an environment with an explicit ordinary-delay scheduler.</summary>
-    public static VisualAnimationScope Initialize(TopLevel host, IAnimationFrameClock? clock, TimeProvider timeProvider)
+    public static AnimationScope Initialize(TopLevel host, IAnimationFrameClock? clock, TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(timeProvider);
@@ -108,23 +108,23 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         if (Roots.TryGetValue(host, out _)) throw new InvalidOperationException("This TopLevel already has an animation environment.");
         clock ??= new AvaloniaAnimationFrameClock(host);
         clock.VerifyAccess();
-        var root = new VisualAnimationScope(host, null, clock, "Root", timeProvider);
+        var root = new AnimationScope(host, null, clock, "Root", timeProvider);
         Roots.Add(host, root);
         host.Closed += root.OnClosed;
         return root;
     }
 
-    public static VisualAnimationScope Create(Visual owner)
+    public static AnimationScope Create(Visual owner)
     {
         ArgumentNullException.ThrowIfNull(owner);
         Dispatcher.UIThread.VerifyAccess();
         var host = TopLevel.GetTopLevel(owner) ?? throw new InvalidOperationException("Animation scopes require an attached Visual with a TopLevel.");
         var environment = Resolve(host);
         environment.VerifyActive();
-        return new VisualAnimationScope(owner, environment, null, owner.GetType().Name);
+        return new AnimationScope(owner, environment, null, owner.GetType().Name);
     }
 
-    private static VisualAnimationScope Resolve(TopLevel host)
+    private static AnimationScope Resolve(TopLevel host)
     {
         if (Roots.TryGetValue(host, out var root))
         {
@@ -135,21 +135,21 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         {
             var environment = Resolve(parent);
             environment.VerifyActive();
-            root = new VisualAnimationScope(host, environment, null, "Popup");
+            root = new AnimationScope(host, environment, null, "Popup");
             Roots.Add(host, root);
             host.Closed += root.OnClosed;
             return root;
         }
-        throw new InvalidOperationException("Call VisualAnimationScope.Initialize(topLevel, clock) before loading or setting its content.");
+        throw new InvalidOperationException("Call AnimationScope.Initialize(topLevel, clock) before loading or setting its content.");
     }
 
-    public VisualAnimationScope CreateChild(string? label = null)
+    public AnimationScope CreateChild(string? label = null)
     {
         VerifyActive();
-        return new VisualAnimationScope(Host, this, null, label);
+        return new AnimationScope(Host, this, null, label);
     }
 
-    internal static VisualAnimationScope ForHost(Visual owner)
+    internal static AnimationScope ForHost(Visual owner)
     {
         Dispatcher.UIThread.VerifyAccess();
         if (HostScopes.TryGetValue(owner, out var existing) && !existing.IsEnding) return existing;
@@ -366,7 +366,7 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
 
     // Not async: it hands out the FrameClock wait itself, so callers resume inline in the batch
     // regardless of the context they awaited from (an async layer here would reintroduce that).
-    private sealed class ScopeClock(VisualAnimationScope owner) : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
+    private sealed class ScopeClock(AnimationScope owner) : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime AnimationLifetime => owner._lifecycle;
         public double DurationScale => owner.DurationScale * owner.Host.GetValue(Animated.DurationScaleProperty);
@@ -388,7 +388,7 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         }
     }
 
-    private sealed class ScopeResource(VisualAnimationScope owner, Action dispose, bool binding) : IDisposable
+    private sealed class ScopeResource(AnimationScope owner, Action dispose, bool binding) : IDisposable
     {
         private Action? _dispose = dispose;
         public void Dispose()
@@ -401,10 +401,10 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         }
     }
 
-    private sealed class Operation(VisualAnimationScope scope, Operation? parent, string? label)
+    private sealed class Operation(AnimationScope scope, Operation? parent, string? label)
     {
         internal Guid Id { get; } = Guid.NewGuid();
-        internal VisualAnimationScope Scope { get; } = scope;
+        internal AnimationScope Scope { get; } = scope;
         internal Operation? Parent { get; } = parent;
         internal string? Label { get; } = label;
         internal bool Active = true;

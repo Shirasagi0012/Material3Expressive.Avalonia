@@ -14,7 +14,7 @@ namespace Catalog.Framework;
 public abstract class DemoControlBase : UserControl
 {
     private IDemoEnvironment? _environment;
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
 
     protected DemoControlBase(DemoContext context)
         => Context = context ?? throw new ArgumentNullException(nameof(context));
@@ -37,7 +37,7 @@ public abstract class DemoControlBase : UserControl
         foreach (var diagnostic in Diagnostics) diagnostic.Refresh();
     }
 
-    protected VisualAnimationScope Motion => _motion ??= VisualAnimationScope.Create(this);
+    protected AnimationScope Motion => _motion ??= AnimationScope.Create(this);
     protected IAnimationFrameClock Clock => Motion.Clock;
     internal IAnimationFrameClock EnvironmentClock => Clock;
 

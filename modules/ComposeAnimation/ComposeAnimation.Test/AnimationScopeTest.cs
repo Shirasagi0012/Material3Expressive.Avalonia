@@ -8,7 +8,7 @@ using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation.Test;
 
-public class VisualAnimationScopeTest
+public class AnimationScopeTest
 {
     private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
@@ -23,11 +23,11 @@ public class VisualAnimationScopeTest
     public Task Initialization_IsRequiredAndCannotBeReplaced() => OnUi(() =>
     {
         var window = new Window();
-        Assert.Throws<InvalidOperationException>(() => VisualAnimationScope.Create(window));
-        using var root = VisualAnimationScope.Initialize(window, new ManualAnimationFrameClock());
-        Assert.Throws<InvalidOperationException>(() => VisualAnimationScope.Initialize(window));
-        using var a = VisualAnimationScope.Create(window);
-        using var b = VisualAnimationScope.Create(window);
+        Assert.Throws<InvalidOperationException>(() => AnimationScope.Create(window));
+        using var root = AnimationScope.Initialize(window, new ManualAnimationFrameClock());
+        Assert.Throws<InvalidOperationException>(() => AnimationScope.Initialize(window));
+        using var a = AnimationScope.Create(window);
+        using var b = AnimationScope.Create(window);
         Assert.NotSame(a, b);
         window.Close();
     });
@@ -264,8 +264,8 @@ public class VisualAnimationScopeTest
         }
         var window = new AnimationTestWindow(clock) { Content = panel };
         window.Show(); Dispatcher.UIThread.RunJobs();
-        var first = VisualAnimationScope.Create(a);
-        var second = VisualAnimationScope.Create(b);
+        var first = AnimationScope.Create(a);
+        var second = AnimationScope.Create(b);
         var x = first.CreateAnimatable(0d);
         var y = second.CreateAnimatable(0d);
         var firstTask = first.Launch(ct => x.AnimateToAsync(1, Tween(), cancellationToken: ct));
@@ -328,7 +328,7 @@ public class VisualAnimationScopeTest
         var popup = new Popup { PlacementTarget = anchor, Child = content, ShouldUseOverlayLayer = overlay };
         panel.Children.Add(popup);
         popup.IsOpen = true; Dispatcher.UIThread.RunJobs();
-        var scope = VisualAnimationScope.Create(content);
+        var scope = AnimationScope.Create(content);
         var sample = scope.CreateAnimatable(0d);
         _ = scope.Launch(ct => sample.AnimateToAsync(1, Tween(), cancellationToken: ct));
         Assert.Equal(1, clock.PendingFrameCount);
@@ -528,8 +528,8 @@ public class VisualAnimationScopeTest
         var inner = new Popup { PlacementTarget = innerAnchor, Child = innerContent };
         outerContent.Children.Add(inner);
         inner.IsOpen = true; Dispatcher.UIThread.RunJobs();
-        var first = VisualAnimationScope.Create(outerContent);
-        var nested = VisualAnimationScope.Create(innerContent);
+        var first = AnimationScope.Create(outerContent);
+        var nested = AnimationScope.Create(innerContent);
         var a = first.Launch(ct => first.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
         var b = nested.Launch(ct => nested.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
         Assert.Equal(1, clock.PendingFrameCount);
@@ -538,7 +538,7 @@ public class VisualAnimationScopeTest
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => a);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => b);
         outer.IsOpen = true; Dispatcher.UIThread.RunJobs();
-        await using var reopened = VisualAnimationScope.Create(outerContent);
+        await using var reopened = AnimationScope.Create(outerContent);
         Assert.NotSame(first, reopened);
         Assert.False(reopened.IsEnding);
         var task = reopened.Launch(ct => reopened.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));

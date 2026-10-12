@@ -11,7 +11,7 @@ namespace ComposeAnimation;
 internal interface IPropertySession : IDisposable
 {
     AvaloniaProperty Property { get; }
-    void SetClock(IAnimationFrameClock? clock, VisualAnimationScope? scope = null);
+    void SetClock(IAnimationFrameClock? clock, AnimationScope? scope = null);
     void ReconcileTarget();
     void Abort();
     void SnapToTarget();
@@ -28,7 +28,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private readonly Dictionary<AnimatedProperty, IPropertySession?> _sessions = new();
     private readonly Queue<Action> _work = new();
     private AnimatedPropertyCollection? _collection;
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private FailureObservedClock? _sessionClock;
     private IDisposable? _beforeFrame;
     private IDisposable? _afterWaiter;
@@ -183,7 +183,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     {
         if (_attached && _motion is { IsEnding: false }) return;
         var previous = _motion;
-        _motion = _attached ? VisualAnimationScope.Create(_host) : null;
+        _motion = _attached ? AnimationScope.Create(_host) : null;
         _clockFailed = false;
         ReleaseFrameHooks();
         _sessionClock = _motion is null ? null : new FailureObservedClock(_motion.Clock, OnInnerFailure);
