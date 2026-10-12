@@ -736,9 +736,12 @@ public class AnimationScope : FrameScope
 
     private async Task ObserveAsync(Operation entry)
     {
-        try { await entry.Task.ConfigureAwait(true); }
-        catch
+        try
         {
+            // Observe without rethrowing: a rethrow here would append this method's frames to the
+            // exception's stack, so a later await of the same task elsewhere (whose stack extends
+            // the original throw, not ours) would no longer be recognised as the same failure.
+            await entry.Task.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.SuppressThrowing);
             // Task state, rather than exception type, distinguishes canceled work from faults.
             if (entry.Task.IsFaulted)
                 foreach (var error in entry.Task.Exception!.InnerExceptions) Report(error, entry.Label, entry);
@@ -857,9 +860,10 @@ public class AnimationScope : FrameScope
 
         private async Task ObserveAsync(Task task, TaskCompletionSource entry)
         {
-            try { await task.ConfigureAwait(true); }
-            catch
+            try
             {
+                // Observe without rethrowing (see the operation observer): keeps the stack intact.
+                await task.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.SuppressThrowing);
                 if (task.IsFaulted)
                     foreach (var error in task.Exception!.InnerExceptions) UnmanagedFailure?.Invoke(error);
             }

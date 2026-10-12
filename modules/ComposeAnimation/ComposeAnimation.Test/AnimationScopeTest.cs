@@ -570,7 +570,7 @@ public class AnimationScopeTest
         Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveChildCount);
     });
 
-    [Fact(Skip = "Pre-existing failure hidden by the OnUi Task<Task> harness bug (also fails at beced47 once awaited); tracked for the architect in STAGE-3 report.")]
+    [Fact]
     public Task PreviouslyLaunchedChildFailure_IsNotReportedAgainWhenAwaitedByManagedParent() => OnUi(async () =>
     {
         var window = new AnimationTestWindow();
