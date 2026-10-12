@@ -339,7 +339,7 @@
             <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantSelectedContainer}" />
             <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VibrantContainer}" />
             <Binding Path="Foreground" RelativeSource="{RelativeSource Self}" />
-            <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.FocusStateLayerOpacity}" />
+            <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.HoverStateLayerOpacity}" />
           </MultiBinding>
         </Setter>
       </Style>

@@ -76,6 +76,43 @@ public sealed class MenuBarThemeTests
         window.Close();
     }
 
+    // Avalonia focuses a submenu parent when its submenu opens. Natively that focus showed the 0.10
+    // focus layer, because each native popup had its own keyboard-default input mode (headless
+    // popups are overlay-hosted, so that part is only observable on a real windowing platform).
+    [AvaloniaFact]
+    public void SubmenuParent_HoversImmediately_AndKeepsTheHoverLayerWhenItsSubmenuOpens()
+    {
+        using var clock = new MotionTestClockScope();
+        var (menu, file, open, recent, _, _) = Bar();
+        var window = Show(menu);
+        Click(window, file);
+        window.MouseMove(Center(recent, window)); Settle(clock, window);
+        AssertHovered(recent);
+        Assert.Equal(0.08, MaterialInteraction.GetOrCreate(recent).StateLayerOpacity, 3);
+        recent.IsSubMenuOpen = true; recent.Focus(); Settle(clock, window); // what the open delay does
+        Assert.True(recent.IsSubMenuOpen);
+        Assert.Equal(0.08, MaterialInteraction.GetOrCreate(recent).StateLayerOpacity, 3);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void OpenSubmenuParent_ShowsOneHoverOpacityHighlight_WhileThePointerIsInTheSubmenu()
+    {
+        using var clock = new MotionTestClockScope();
+        var (menu, file, open, recent, recentChild, _) = Bar();
+        var window = Show(menu);
+        Click(window, file);
+        window.MouseMove(Center(recent, window)); Settle(clock, window);
+        recent.IsSubMenuOpen = true; recent.Focus(); Settle(clock, window);
+        window.MouseMove(Center(recentChild, window)); Settle(clock, window);
+        Assert.True(recent.IsSubMenuOpen);
+        AssertHovered(recentChild);
+        Assert.Equal(0, MaterialInteraction.GetOrCreate(recent).StateLayerOpacity, 3);
+        var container = Color(window, MaterialTokens.Comp.Menu.StandardContainer);
+        Assert.Equal(Highlight(window, container, Color(window, MaterialTokens.Comp.Menu.Text), hover: true), Brush(Surface(recent).Background));
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void Hover_ShowsTheStateLayer_InsideAMenuFlyout()
     {
@@ -342,7 +379,8 @@ public sealed class MenuBarThemeTests
         Assert.True(recent.IsSelected);
         Assert.False(recent.IsFocused);
         var container = Color(window, MaterialTokens.Comp.Menu.StandardContainer);
-        var highlight = Highlight(window, container, Color(window, MaterialTokens.Comp.Menu.Text));
+        // One highlight at the hover opacity, matching the parent's hover before the pointer left it.
+        var highlight = Highlight(window, container, Color(window, MaterialTokens.Comp.Menu.Text), hover: true);
         Assert.Equal(highlight, Brush(recent.Background));
         Settle(clock, window);
         Assert.Equal(highlight, Brush(Surface(recent).Background)); // animated by the item chrome
@@ -553,8 +591,9 @@ public sealed class MenuBarThemeTests
 
     static Color Color(IResourceHost host, MaterialTokenKey key) => (Color)TokenScan.Resolve(host, key);
     static Color? Brush(IBrush? brush) => (brush as ISolidColorBrush)?.Color;
-    static Color Highlight(IResourceHost host, Color container, Color content) =>
-        Foundation.Rendering.ColorComposite.Over(content, (double)TokenScan.Resolve(host, MaterialTokens.Sys.State.FocusStateLayerOpacity), container);
+    static Color Highlight(IResourceHost host, Color container, Color content, bool hover = false) =>
+        Foundation.Rendering.ColorComposite.Over(content, (double)TokenScan.Resolve(host, hover
+            ? MaterialTokens.Sys.State.HoverStateLayerOpacity : MaterialTokens.Sys.State.FocusStateLayerOpacity), container);
     static MaterialSurface Surface(MenuItem item) => Part<MaterialSurface>(item, "PART_ItemSurface");
     static T Part<T>(Control owner, string name) where T : Control =>
         owner.GetVisualDescendants().OfType<T>().First(c => c.Name == name && c.TemplatedParent == owner);
