@@ -98,7 +98,7 @@ public class AnimationScope : FrameScope
     private readonly AnimationScope _root;
     private readonly StaleSet? _stale;
     private readonly FrameClock _frameClock;
-    private readonly RunTracker _lifecycle = new();
+    private readonly RunTracker _lifecycle;
     private readonly CancellationToken _token;
     private readonly HashSet<AnimationScope> _children = [];
     private readonly HashSet<Operation> _tasks = [];
@@ -134,6 +134,7 @@ public class AnimationScope : FrameScope
         _frameClock = parent?._frameClock ?? new FrameClock(clock!,
             onSourceFailure: error => Report(error, "Frame source", null, frameSource: true));
         _failures = _root == this ? new() : _root._failures;
+        _lifecycle = new RunTracker(this);
         _token = _lifecycle.Token;
         _lifecycle.UnmanagedFailure = error =>
         {
@@ -793,6 +794,9 @@ public class AnimationScope : FrameScope
 
     private static bool IsAwaitPropagation(Exception error, string? origin)
     {
+        // Needed: a task launched earlier (not an ancestor operation) and later awaited by a
+        // managed parent shares no operation chain with it; only the extended stack ties them
+        // (AnimationScopeTest.PreviouslyLaunchedChildFailure_IsNotReportedAgainWhenAwaitedByManagedParent).
         // Await/EDI propagation preserves the previously thrown stack and extends it.
         // A fresh throw of a reused exception replaces that stack and remains independent.
         return !string.IsNullOrEmpty(origin) && error.StackTrace is { } trace &&
@@ -834,26 +838,34 @@ public class AnimationScope : FrameScope
     /// </summary>
     private sealed class RunTracker
     {
+        private readonly AnimationScope _owner;
         private readonly CancellationTokenSource _cancellation = new();
         private readonly HashSet<Task> _operations = [];
         private bool _ending;
-        internal RunTracker() => Token = _cancellation.Token;
+        private bool _drained;
+
+        internal RunTracker(AnimationScope owner)
+        {
+            _owner = owner;
+            Token = _cancellation.Token;
+        }
+
         internal CancellationToken Token { get; }
         internal int PendingCount => _operations.Count;
         internal Action<Exception>? UnmanagedFailure { get; set; }
         internal void MarkEnding() => _ending = true;
-        internal void Cancel() => _cancellation.Cancel();
-
-        internal Task<T> Track<T>(Func<Task<T>> operation)
+        internal void Cancel()
         {
-            Task<T>? task = null;
-            Track((Func<Task>)(() => task = operation()));
-            return task!;
+            if (!_drained) _cancellation.Cancel();
         }
+
+        // Track returns the operation's own task, so the typed overload is a cast.
+        internal Task<T> Track<T>(Func<Task<T>> operation) => (Task<T>)Track((Func<Task>)operation);
 
         internal Task Track(Func<Task> operation)
         {
-            ObjectDisposedException.ThrowIf(_ending, this);
+            // Name the owning scope, not this private helper, in the ObjectDisposedException.
+            ObjectDisposedException.ThrowIf(_ending, _owner);
             var entry = new TaskCompletionSource();
             _operations.Add(entry.Task); // Before synchronous callbacks can dispose the scope.
             Task task;
@@ -879,6 +891,9 @@ public class AnimationScope : FrameScope
         {
             while (_operations.Count > 0)
                 try { await Task.WhenAll(_operations.ToArray()).ConfigureAwait(true); } catch { }
+            // Drained: nothing can observe the token any more; release it exactly once.
+            if (_drained) return;
+            _drained = true;
             _cancellation.Dispose();
         }
     }
