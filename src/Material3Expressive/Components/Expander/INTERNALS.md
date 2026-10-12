@@ -6,10 +6,9 @@
 （与 Fluent 的 `FluentExpanderToggleButtonTheme` 对应）。保留 ToggleButton 是为了原生的 Space/Enter、
 `:focus-visible` 与 `ExpanderAutomationPeer`。该资源键在 MaterialTheme 中可见，但不作为公共 API 记录。
 
-标题排版通过 Foundation 的 [`PresenterTextStyle.DefaultStyle`](../../Foundation/Typography/PresenterTextStyle.cs)
-设置在标题 ContentPresenter 上（与 GroupBox 共用，待维护者确认，见
-[DECISIONS](../../../../docs/DECISIONS.md#presenter-子元素的默认文字样式)）。字符串标题生成的 TextBlock 的逻辑父级是
-ToggleButton，但作为标题的控件已是 Expander 的逻辑子项，ToggleButton 上的 DefaultStyle 到不了它，所以放在 presenter 的子元素上。
+标题内容的逻辑父级是所有者，但 Avalonia 的继承父级是承载它的 ContentPresenter。因此直接在标题 presenter 上设置
+`m3:MaterialText.Style="{m3:Typography TitleSmall}"`，经原生属性继承到达字符串生成的 TextBlock、HeaderTemplate 根元素或作为标题的控件，
+且不影响内容区。标题元素上的局部 Style 或原生属性仍然优先（见 [DECISIONS](../../../../docs/DECISIONS.md#文字样式基于原生继承)）。
 
 ## 箭头
 

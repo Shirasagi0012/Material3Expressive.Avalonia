@@ -17,12 +17,12 @@
 <TextBlock Text="自定义字号" FontSize="26"
            m3:MaterialText.Style="{m3:Typography TitleLarge}" />
 
-<StackPanel m3:MaterialText.DefaultStyle="{m3:Typography BodyMedium}">
+<StackPanel m3:MaterialText.Style="{m3:Typography BodyMedium}">
   <TextBlock Text="继承 BodyMedium" />
   <StackPanel>
-    <m3:MaterialText.DefaultStyle>
+    <m3:MaterialText.Style>
       <m3:TextStyle FontWeight="Bold" />
-    </m3:MaterialText.DefaultStyle>
+    </m3:MaterialText.Style>
     <TextBlock Text="保留 BodyMedium 度量，只改变字重" />
   </StackPanel>
 </StackPanel>
@@ -56,29 +56,31 @@ MaterialText.SetStyle(textBlock, title with { FontWeight = FontWeight.Bold });
 textBlock.Bind(MaterialText.StyleProperty,
     Typography.CreateBinding(TypographyRole.TitleLarge));
 
-MaterialText.SetDefaultStyle(panel, new TextStyle { FontWeight = FontWeight.Bold });
+MaterialText.SetStyle(panel, new TextStyle { FontWeight = FontWeight.Bold });
 ```
 
 `TypographyRole` 包含 15 个标准角色和对应的 15 个 Emphasized 角色。
 
 ## 选择、合并和优先级
 
-- `DefaultStyle` 按字段合并父级默认值，对内容作用域生效，对应 Compose `ProvideTextStyle`。
-  没有父级默认值时，采用消费位置的 BodyLarge。清空局部 DefaultStyle 恢复父级默认值。
-- `Style` 非 null 时直接选择该对象，不自动补入环境默认值；为 null 时使用环境默认值。
-  `TextStyle.Empty` 可以退出聚合默认值，但不取消 Avalonia 自身的属性继承。
-- 字段的 null 表示未指定；`Merge` 仅替换非 null 字段。`FontWeight.Normal`、0 字距、
-  `LineHeight = double.NaN` 都是显式值。`with { Foreground = null }` 可以清空字段；Merge 的 null 不负责清空。
-- 已指定字段投影为控件自身 `Styles` 集合开头的普通样式，未指定字段没有 Setter。
-  本地值/绑定、模板值、类或伪类触发样式遵循 Avalonia 优先级；同一控件后续普通样式可以覆盖。
-  祖先处普通类型样式会输给更近的控件自身样式，不能假定所有原生 Setter 都优先。
-  全局更改角色建议覆盖角色 Token，局部改动可直接设置 FontSize 等属性或使用类选择器。
-- Foreground 未指定时保留原生颜色继承，因此 Button/Surface 的内容颜色仍生效。
-  TextStyle.Foreground 指定颜色时，参与同样的原生属性优先级。画刷对象本身仍可变，应按 Avalonia 的共享资源规则使用。
+`MaterialText.Style` 可设置在任何 `StyledElement` 上（TextBlock、面板、控件、ContentPresenter）。
+它不再有自己的继承机制：已指定字段直接写成该元素的 Avalonia 原生属性
+（FontFamily/Size/Weight/Style/Stretch、LetterSpacing、FontFeatures、Foreground、LineHeight、TextAlignment），
+其后由 Avalonia 原生继承传给子孙，与 Compose `ProvideTextStyle` 对应。
 
-默认值沿现有逻辑/继承关系传递，模板生成内容通过模板父级和视觉父级接入。
-重新挂载会重连当前父级，分离时取消对旧父级的订阅。Popup 等独立树需要显式提供默认样式，
-不额外建立跨树隐式查找规则。
+- **合并语义：** 部分 Style 只设置其非 null 字段，未指定字段继续从父级继承，
+  所以嵌套的 `{FontWeight=Bold}` 保留外层 BodyMedium 的度量。需要替换整个角色时传入完整的角色样式
+  （例如 `{m3:Typography LabelLarge}`）。`TextStyle.Empty` 不再退出继承，它只是不设置任何字段。
+- 应用根（`:is(TopLevel)`，Popup 除外）由 MaterialTheme 设置 BodyLarge 基线。
+- 字段的 null 表示未指定；`Merge` 仅替换非 null 字段。`FontWeight.Normal`、0 字距、
+  `LineHeight = double.NaN` 都是显式值。
+- 已指定字段以 Style 优先级绑定到原生属性，因而本地值/绑定、模板值、类或伪类触发样式按 Avalonia 优先级
+  覆盖它；在该绑定之后应用于同一元素的普通样式也会覆盖它，Style 值更新不改变其位置。
+  已附着时某字段由未指定变为指定，会建立新绑定，此时它排在已有普通样式之后（已知顺序限制）。
+- 文字样式沿 Avalonia 的继承父级传递：ContentPresenter 是其子元素的继承父级，因此 presenter 上的 Style
+  能到达逻辑父级为所有者的标题内容（GroupBox、Expander、TabHeader、AppBar 标题）。
+- 原生属性（如 `Button.FontSize`）天然生效，无需转发。
+- Popup 等独立树沿 Avalonia 自己的继承规则；需要不同样式时在弹出内容上设置。
 
 ## Token 层换算
 
@@ -112,13 +114,13 @@ em 的参考是明确的字号 Token，不是稍后 TextBlock.FontSize 的局部
 ## 组件接入及迁移
 
 Button 的五种尺寸改为消费 `MaterialTokens.Comp.Button<Size>.LabelTextStyle`，分别引用
-LabelLarge、LabelLarge、TitleMedium、HeadlineSmall、HeadlineLarge。Button 作为 DefaultStyle
-提供者，将有效原生字体属性传给其字符串、显式控件与模板内容；因此 `Button.FontSize` 仍然有效。
+LabelLarge、LabelLarge、TitleMedium、HeadlineSmall、HeadlineLarge。Button 在自身上设置 Style，
+标签通过原生继承获得；`Button.FontSize` 等原生属性按 Avalonia 优先级生效。
 NavigationRail 的标签 Presenter 提供 LabelMedium，图标分支不设置标签的排版默认值。
 
-新增 API：TextStyle、MaterialText.Style/DefaultStyle、TypographyRole、Typography.GetStyle/CreateBinding、
+新增 API：TextStyle、MaterialText.Style（`DefaultStyle` 现为过时别名）、TypographyRole、Typography.GetStyle/CreateBinding、
 两个 XAML 扩展、30 个 System Style 键、5 个 Button LabelTextStyle 键、TextStyleRef、TextUnit 和 FontScale。
-没有删除公开成员，也没有新增公开 MaterialTextBlock。
+没有新增公开 MaterialTextBlock。原生继承改造删除了 `TextStyleHost`（需维护者批准，见 DECISIONS）。
 
 **行为迁移：** stock Button 主题不再消费旧 Component `LabelTextFont/Size/Weight/Tracking/LineHeight`
 槽。旧键和来源保留供现有自定义主题直接消费；曾通过这些键定制 stock Button 的调用方需改为
