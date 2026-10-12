@@ -451,7 +451,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (_clock is not null) return;
         if (AnimationScope.IsEnvironmentEnding(this)) return;
         if (TopLevel.GetTopLevel(this) is null) return;
-        var motion = AnimationScope.ForHost(this);
+        var motion = AnimationScope.Get(this);
         _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Release(); });
         _clock = new ObservedClock(motion.Clock);
     }

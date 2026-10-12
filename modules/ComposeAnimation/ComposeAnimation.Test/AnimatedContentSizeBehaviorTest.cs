@@ -298,7 +298,7 @@ public class AnimatedContentSizeBehaviorTest
         using var f = new Fixture(host => host.AnimationSpec = new BrokenSpec(failure));
         f.Leaf.Height = 140; f.Layout();
         Assert.Equal(140, f.Host.Bounds.Height);
-        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.LastError);
+        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
         Assert.Empty(f.Completions);
         f.Host.AnimationSpec = Tween();
         f.Leaf.Height = 60; f.Layout(); f.Step(16);
@@ -306,7 +306,7 @@ public class AnimatedContentSizeBehaviorTest
         EventHandler<AnimatedContentSizeChangedEventArgs> listener = (_, _) => throw listenerFailure;
         f.Host.AnimationCompleted += listener;
         f.Step(100);
-        Assert.Same(listenerFailure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.LastError);
+        Assert.Same(listenerFailure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
         Assert.Equal(60, f.Host.Bounds.Height);
         f.Host.AnimationCompleted -= listener;
         f.Leaf.Height = 120; f.Layout(); f.Step(16); f.Step(100);
@@ -384,7 +384,7 @@ public class AnimatedContentSizeBehaviorTest
             TimeSpan.FromMilliseconds(100), easing: new NonFiniteEasing()));
         f.Leaf.Height = 140; f.Layout(); f.Step(16); f.Step(50);
         Assert.Equal(140, f.Host.Bounds.Height);
-        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.LastError);
+        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
         Assert.Empty(f.Completions);
         Assert.Equal(0, f.Clock.PendingFrameCount);
     });

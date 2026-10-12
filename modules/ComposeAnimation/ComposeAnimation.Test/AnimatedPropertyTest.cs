@@ -596,7 +596,7 @@ public class AnimatedPropertyTest
         using var closer = new WindowCloser(window);
         border.Opacity = 0;
         clock.AdvanceBy(Frame); Dispatcher.UIThread.RunJobs();
-        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.LastError);
+        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.Diagnostics.LastError);
         Assert.False(border.IsAnimating(Visual.OpacityProperty));
         Assert.Equal(0, border.Opacity);
         Assert.Equal(0, clock.PendingFrameCount);
@@ -670,7 +670,7 @@ public class AnimatedPropertyTest
         clock.AdvanceBy(Frame); Dispatcher.UIThread.RunJobs();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(50)); Dispatcher.UIThread.RunJobs();
         Assert.Equal(150, border.Width, 8);
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.Diagnostics.LastError);
     });
 
     private sealed class FailingEasing(Exception failure) : Easing

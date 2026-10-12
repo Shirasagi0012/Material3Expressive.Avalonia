@@ -306,7 +306,7 @@ public partial class AnimatedBoundsTest
             return new KeyframesSpec<Rect>(config);
         });
         bounds.TargetSize = new Size(240, 100); f.Layout(); f.Step(16);
-        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.LastError);
+        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.Diagnostics.LastError);
         Equal(f.Root.Snapshot!.Results[bounds].Bounds, f.Actual(bounds));
         Assert.False(bounds.IsRunning);
         Assert.Equal(0, f.Clock.PendingFrameCount);
@@ -329,7 +329,7 @@ public partial class AnimatedBoundsTest
             return Tween().Spec;
         });
         bounds.TargetSize = new Size(240, 100); f.Layout();
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.Diagnostics.LastError);
         Assert.False(bounds.IsRunning);
         Assert.Equal(0, f.Clock.PendingFrameCount);
         Equal(f.Root.Snapshot!.Results[bounds].Bounds, f.Actual(bounds));
@@ -668,6 +668,6 @@ public partial class AnimatedBoundsTest
         Assert.Equal(0, f.Clock.PendingFrameCount);
         bounds.IntermediateLayout = BoundsLayout.Empty; f.Layout();
         Equal(f.Root.Snapshot!.Results[text].Bounds, f.Actual(text));
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.LastError); // The layout exception is propagated to the caller.
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.Diagnostics.LastError); // The layout exception is propagated to the caller.
     });
 }

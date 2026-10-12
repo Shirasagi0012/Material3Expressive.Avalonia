@@ -48,7 +48,7 @@ public class CrossfadeTest
         {
             for (var i = 0; i < 200 && (!Host.IsIdle || Clock.PendingFrameCount > 0); i++) Step(16);
             Assert.True(Host.IsIdle);
-            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.LastError);
+            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError);
         }
         public void Dispose() => Window.Close();
     }

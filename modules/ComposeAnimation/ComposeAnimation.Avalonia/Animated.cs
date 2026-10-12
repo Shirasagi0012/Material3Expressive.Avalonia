@@ -24,12 +24,6 @@ public static class Animated
         AvaloniaProperty.RegisterAttached<Visual, AnimatedPropertyCollection?>("Properties", typeof(Animated));
 
     /// <summary>Inherited duration multiplier for presentation playback; does not alter raw timestamps.</summary>
-    public static readonly AttachedProperty<double> DurationScaleProperty =
-        AvaloniaProperty.RegisterAttached<Visual, double>("DurationScale", typeof(Animated), 1, inherits: true,
-            validate: value => double.IsFinite(value) && value >= 0);
-    public static double GetDurationScale(Visual visual) => visual.GetValue(DurationScaleProperty);
-    public static void SetDurationScale(Visual visual, double value) => visual.SetValue(DurationScaleProperty, value);
-
     /// <summary>Ends this property's current contribution immediately, exposing its current base value.</summary>
     public static Task SnapToTargetAsync<T>(Visual visual, StyledProperty<T> property)
     {

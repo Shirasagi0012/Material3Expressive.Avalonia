@@ -53,7 +53,7 @@ public class AnimatedVisibilityTest
         {
             for (var i = 0; i < 200 && (!Host.IsIdle || Clock.PendingFrameCount > 0); i++) Step(16);
             Assert.True(Host.IsIdle, $"Target={Host.TargetVisible}, Scope={Host.Scope?.Transition.CurrentState}->{Host.Scope?.Transition.TargetState}, PlayTime={Host.Scope?.Transition.PlayTime}, Nodes={string.Join("; ", Host.Scope?.Transition.Animations.Select(a => $"{a.Label} finished={a.IsFinished} duration={a.Duration}") ?? [])}");
-            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.LastError);
+            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError);
         }
         public void Dispose() => Window.Close();
     }
@@ -220,8 +220,8 @@ public class AnimatedVisibilityTest
         Assert.Equal(0, first.Clock.PendingFrameCount);
         Assert.Equal(0, second.Clock.PendingFrameCount);
         Assert.Null(shared.LastSessionError);
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(source)!).AnimationRoot.LastError);
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(target)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(source)!).AnimationRoot.Diagnostics.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(target)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Theory]
@@ -1017,7 +1017,7 @@ public class AnimatedVisibilityTest
         for (var i = 0; i < 100 && host.IsContentPresent; i++) f.Step(16);
         Assert.False(host.IsContentPresent);
         Assert.False(card.IsAnimating(Border.CornerRadiusProperty));
-        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Fact]

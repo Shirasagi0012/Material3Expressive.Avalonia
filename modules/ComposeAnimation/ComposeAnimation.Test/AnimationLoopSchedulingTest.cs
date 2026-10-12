@@ -116,7 +116,7 @@ public class AnimationLoopSchedulingTest
                     Assert.True(IsIdle(host));
                     Assert.Equal(0, clock.PendingFrameCount);
                     Assert.False(loadedRan);
-                    Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+                    Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
                 }
             }
             finally
@@ -148,7 +148,7 @@ public class AnimationLoopSchedulingTest
                 Initialize(window, host, clock);
                 ChangeTarget(host);
                 PumpUntil(window, () => clock.PendingFrameCount == 1);
-                Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+                Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
             }
             finally
             {

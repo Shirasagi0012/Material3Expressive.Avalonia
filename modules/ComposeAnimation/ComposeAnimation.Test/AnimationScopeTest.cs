@@ -23,12 +23,14 @@ public class AnimationScopeTest
     public Task Initialization_IsRequiredAndCannotBeReplaced() => OnUi(() =>
     {
         var window = new Window();
-        Assert.Throws<InvalidOperationException>(() => AnimationScope.Create(window));
-        using var root = AnimationScope.Initialize(window, new ManualAnimationFrameClock());
+        Assert.Throws<InvalidOperationException>(() => AnimationScope.Get(window));
+        var root = AnimationScope.Initialize(window, new ManualAnimationFrameClock());
         Assert.Throws<InvalidOperationException>(() => AnimationScope.Initialize(window));
-        using var a = AnimationScope.Create(window);
-        using var b = AnimationScope.Create(window);
-        Assert.NotSame(a, b);
+        // Get-owned: one scope per control, returned again on every call, parented to the root.
+        var a = AnimationScope.Get(window);
+        var b = AnimationScope.Get(window);
+        Assert.Same(a, b);
+        Assert.Same(root, a.Diagnostics.Parent);
         window.Close();
     });
 
@@ -54,7 +56,7 @@ public class AnimationScopeTest
         Assert.Throws<ObjectDisposedException>(() => child.Update(_ => 2));
         Assert.Throws<ObjectDisposedException>(() => infinite.DurationScale = 2);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playing);
-        await scope.DisposeAsync();
+        await scope.Diagnostics.EndAsync();
         Assert.Equal(final, value.Value);
         value.Stop(); transition.Dispose(); infinite.Dispose(); scope.Dispose();
         Assert.Equal(0, clock.PendingFrameCount);
@@ -75,7 +77,7 @@ public class AnimationScopeTest
         var snap = value.SnapToAsync(2);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playing);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => snap);
-        await scope.DisposeAsync();
+        await scope.Diagnostics.EndAsync();
         Assert.Equal(0, value.Value);
         window.Close();
     });
@@ -89,15 +91,15 @@ public class AnimationScopeTest
         var task = scope.Launch(_ =>
         {
             called = true;
-            Assert.Equal(1, scope.ActiveTaskCount);
+            Assert.Equal(1, scope.Diagnostics.ActiveTaskCount);
             scope.Dispose();
             return Task.CompletedTask;
         });
         Assert.True(called);
         Assert.True(task.IsCompletedSuccessfully);
-        await scope.DisposeAsync();
-        Assert.Equal(0, scope.ActiveTaskCount);
-        Assert.Equal(0, window.AnimationRoot.ActiveChildCount);
+        await scope.Diagnostics.EndAsync();
+        Assert.Equal(0, scope.Diagnostics.ActiveTaskCount);
+        Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveChildCount);
         window.Close();
     });
 
@@ -157,22 +159,22 @@ public class AnimationScopeTest
             try { await Task.Delay(Timeout.InfiniteTimeSpan, ct); }
             finally { cleanupEntered.SetResult(); await release.Task; }
         });
-        var disposal = scope.DisposeAsync().AsTask();
+        var disposal = scope.Diagnostics.EndAsync();
         await cleanupEntered.Task;
         Assert.False(disposal.IsCompleted);
-        Assert.Equal(1, root.ActiveChildCount);
+        Assert.Equal(1, root.Diagnostics.ActiveChildCount);
         release.SetResult();
         await disposal;
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
-        Assert.Equal(0, root.ActiveChildCount);
+        Assert.Equal(0, root.Diagnostics.ActiveChildCount);
         await root.Launch(async _ =>
         {
-            Assert.Throws<InvalidOperationException>(() => root.DisposeAsync());
-            await using var child = root.CreateChild(); // A parent may wait for a child.
+            Assert.Throws<InvalidOperationException>(() => { var t = root.Diagnostics.EndAsync(); });
+            using var child = root.CreateChild(); // A parent may wait for a child.
             await child.Launch(_ =>
             {
-                Assert.Throws<InvalidOperationException>(() => root.DisposeAsync());
-                Assert.Throws<InvalidOperationException>(() => child.DisposeAsync());
+                Assert.Throws<InvalidOperationException>(() => { var t = root.Diagnostics.EndAsync(); });
+                Assert.Throws<InvalidOperationException>(() => { var t = child.Diagnostics.EndAsync(); });
                 return Task.CompletedTask;
             });
         });
@@ -199,12 +201,12 @@ public class AnimationScopeTest
         {
             if (e.Property == Visual.OpacityProperty && target.Opacity == .2) source.Publish("Value");
         };
-        await scope.DisposeAsync();
+        await scope.Diagnostics.EndAsync();
         source.Publish("Value");
         Assert.Equal(3, observed.Count);
         Assert.Equal(.2, target.Opacity);
-        Assert.Equal(0, scope.SubscriptionCount);
-        Assert.Equal(0, scope.BindingCount);
+        Assert.Equal(0, scope.Diagnostics.SubscriptionCount);
+        Assert.Equal(0, scope.Diagnostics.BindingCount);
         window.Close();
     });
 
@@ -221,11 +223,11 @@ public class AnimationScopeTest
         scope.RegisterResource(() => throw new Exception("resource"));
         var released = false;
         scope.RegisterResource(() => released = true);
-        await scope.DisposeAsync();
+        await scope.Diagnostics.EndAsync();
         Assert.True(released);
         Assert.Equal(1, count);
-        Assert.Same(handlerError, root.LastDiagnosticError);
-        Assert.Equal(0, root.ActiveChildCount);
+        Assert.Same(handlerError, root.Diagnostics.LastDiagnosticError);
+        Assert.Equal(0, root.Diagnostics.ActiveChildCount);
         window.Close();
     });
 
@@ -237,15 +239,15 @@ public class AnimationScopeTest
         var root = window.AnimationRoot;
         for (var i = 0; i < 1500; i++)
         {
-            await using var ripple = root.CreateChild("Ripple");
+            using var ripple = root.CreateChild("Ripple");
             var alpha = ripple.CreateAnimatable(0d);
             ripple.SubscribeValue(alpha, _ => { });
             ripple.BindAnimatedValue(new Border(), Visual.OpacityProperty, alpha);
             await ripple.Launch(ct => alpha.SnapToAsync(1, ct));
         }
-        Assert.Equal(0, root.ActiveTaskCount);
-        Assert.Equal(0, root.ActiveChildCount);
-        Assert.Equal(0, root.PendingAnimationCount);
+        Assert.Equal(0, root.Diagnostics.ActiveTaskCount);
+        Assert.Equal(0, root.Diagnostics.ActiveChildCount);
+        Assert.Equal(0, root.Diagnostics.PendingAnimationCount);
         Assert.Equal(0, clock.PendingFrameCount);
         window.Close();
     });
@@ -264,8 +266,8 @@ public class AnimationScopeTest
         }
         var window = new AnimationTestWindow(clock) { Content = panel };
         window.Show(); Dispatcher.UIThread.RunJobs();
-        var first = AnimationScope.Create(a);
-        var second = AnimationScope.Create(b);
+        var first = AnimationScope.Get(a);
+        var second = AnimationScope.Get(b);
         var x = first.CreateAnimatable(0d);
         var y = second.CreateAnimatable(0d);
         var firstTask = first.Launch(ct => x.AnimateToAsync(1, Tween(), cancellationToken: ct));
@@ -274,7 +276,7 @@ public class AnimationScopeTest
         Assert.Equal(1, clock.PendingFrameCount);
         Send(clock, 0); Send(clock, 25);
         panel.Children.Remove(a);
-        await first.DisposeAsync();
+        await first.Diagnostics.Ended; // Detach marks stale; the drain ends it.
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstTask);
         Assert.Equal(1, clock.PendingFrameCount);
         Send(clock, 75);
@@ -282,9 +284,9 @@ public class AnimationScopeTest
         Assert.Equal(1, y.Value);
         Assert.Equal(0, b.Opacity);
         window.Close();
-        await window.AnimationRoot.DisposeAsync();
+        await window.AnimationRoot.Diagnostics.EndAsync();
         Assert.Equal(0, clock.PendingFrameCount);
-        Assert.Equal(0, window.AnimationRoot.ActiveChildCount);
+        Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveChildCount);
     });
 
     [Fact]
@@ -328,7 +330,7 @@ public class AnimationScopeTest
         var popup = new Popup { PlacementTarget = anchor, Child = content, ShouldUseOverlayLayer = overlay };
         panel.Children.Add(popup);
         popup.IsOpen = true; Dispatcher.UIThread.RunJobs();
-        var scope = AnimationScope.Create(content);
+        var scope = AnimationScope.Get(content);
         var sample = scope.CreateAnimatable(0d);
         _ = scope.Launch(ct => sample.AnimateToAsync(1, Tween(), cancellationToken: ct));
         Assert.Equal(1, clock.PendingFrameCount);
@@ -365,12 +367,12 @@ public class AnimationScopeTest
         visual.Opacity = .2;
         Send(clock, 0); Send(clock, 25);
         Assert.InRange(visual.Opacity, .3, .99);
-        await window.AnimationRoot.DisposeAsync();
+        await window.AnimationRoot.Diagnostics.EndAsync();
         Assert.Equal(.2, visual.Opacity);
         Assert.False(visual.IsAnimating(Visual.OpacityProperty));
         Assert.Empty(errors);
         Assert.Equal(0, clock.PendingFrameCount);
-        Assert.Equal(0, window.AnimationRoot.ActiveChildCount);
+        Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveChildCount);
         window.Close();
     });
 
@@ -393,9 +395,9 @@ public class AnimationScopeTest
         await Assert.ThrowsAsync<InvalidOperationException>(() => a.Launch(ct =>
             a.CreateAnimatable(0d).AnimateToAsync(2, cancellationToken: ct)));
         Assert.Same(root, Assert.Single(failures).SourceScope);
-        Assert.Same(error, root.LastError);
+        Assert.Same(error, root.Diagnostics.LastError);
         Assert.Equal(1, clock.Requests);
-        await root.DisposeAsync(); window.Close();
+        await root.Diagnostics.EndAsync(); window.Close();
     });
 
     [Fact]
@@ -422,7 +424,7 @@ public class AnimationScopeTest
         await AnimationTestDispatcher.WaitUntilAsync(() => clock.PendingFrameCount == 1);
         Send(clock, 0); Send(clock, 25);
         Assert.Equal(.25, repeat.Value, 7);
-        await root.DisposeAsync();
+        await root.Diagnostics.EndAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => loop);
         window.Close();
     });
@@ -438,10 +440,10 @@ public class AnimationScopeTest
             if (e.Property == Visual.OpacityProperty && target.Opacity == .8) scope.Dispose();
         };
         scope.BindAnimatedValue(target, Visual.OpacityProperty, new Sample { Value = .8 });
-        await scope.DisposeAsync();
+        await scope.Diagnostics.EndAsync();
         Assert.Equal(.2, target.Opacity);
-        Assert.Equal(0, scope.BindingCount);
-        Assert.Equal(0, scope.SubscriptionCount);
+        Assert.Equal(0, scope.Diagnostics.BindingCount);
+        Assert.Equal(0, scope.Diagnostics.SubscriptionCount);
         window.Close();
     });
 
@@ -467,12 +469,12 @@ public class AnimationScopeTest
         Assert.True(bounds.IsRunning);
         var failures = new List<Exception>();
         window.AnimationRoot.AnimationFailed += (_, e) => failures.Add(e.Exception);
-        await window.AnimationRoot.DisposeAsync();
+        await window.AnimationRoot.Diagnostics.EndAsync();
         Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
         Assert.Empty(failures);
         Assert.Equal(0, clock.PendingFrameCount);
-        Assert.Equal(0, window.AnimationRoot.ActiveTaskCount);
-        Assert.Equal(0, window.AnimationRoot.ActiveChildCount);
+        Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveTaskCount);
+        Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveChildCount);
         Assert.True(visible.IsIdle); Assert.True(content.IsIdle);
         Assert.False(bounds.IsRunning);
         window.Close();
@@ -501,7 +503,7 @@ public class AnimationScopeTest
         Send(clock, 0); Send(clock, 50);
         Assert.Equal(50, progress.Value, 7); Assert.Equal(.5, checkbox.Opacity, 7);
         Assert.Equal(180, rotation.Angle, 7);
-        await scope.DisposeAsync();
+        await scope.Diagnostics.EndAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => running);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => looping);
         Assert.Equal(10, progress.Value); Assert.Equal(.3, checkbox.Opacity); Assert.Equal(15, rotation.Angle);
@@ -528,25 +530,25 @@ public class AnimationScopeTest
         var inner = new Popup { PlacementTarget = innerAnchor, Child = innerContent };
         outerContent.Children.Add(inner);
         inner.IsOpen = true; Dispatcher.UIThread.RunJobs();
-        var first = AnimationScope.Create(outerContent);
-        var nested = AnimationScope.Create(innerContent);
+        var first = AnimationScope.Get(outerContent);
+        var nested = AnimationScope.Get(innerContent);
         var a = first.Launch(ct => first.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
         var b = nested.Launch(ct => nested.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
         Assert.Equal(1, clock.PendingFrameCount);
         inner.IsOpen = false; outer.IsOpen = false; Dispatcher.UIThread.RunJobs();
-        await first.DisposeAsync(); await nested.DisposeAsync();
+        await first.Diagnostics.Ended; await nested.Diagnostics.Ended;
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => a);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => b);
         outer.IsOpen = true; Dispatcher.UIThread.RunJobs();
-        await using var reopened = AnimationScope.Create(outerContent);
+        var reopened = AnimationScope.Get(outerContent);
         Assert.NotSame(first, reopened);
         Assert.False(reopened.IsEnding);
         var task = reopened.Launch(ct => reopened.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
         Send(clock, 0); Send(clock, 100); await task;
         outer.IsOpen = false; window.Close();
-        await window.AnimationRoot.DisposeAsync();
+        await window.AnimationRoot.Diagnostics.EndAsync();
         Assert.Equal(0, clock.PendingFrameCount);
-        Assert.Equal(0, window.AnimationRoot.ActiveChildCount);
+        Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveChildCount);
     });
 
     [Fact]

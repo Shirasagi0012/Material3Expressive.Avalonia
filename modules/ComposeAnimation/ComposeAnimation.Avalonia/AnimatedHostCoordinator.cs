@@ -183,7 +183,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     {
         if (_attached && _motion is { IsEnding: false }) return;
         var previous = _motion;
-        _motion = _attached ? AnimationScope.Create(_host) : null;
+        _motion = _attached ? AnimationScope.CreateDetached(_host) : null;
         _clockFailed = false;
         ReleaseFrameHooks();
         _sessionClock = _motion is null ? null : new FailureObservedClock(_motion.Clock, OnInnerFailure);
@@ -197,7 +197,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
             _afterWaiter = _motion.FrameClock.RegisterAfterWaiter(AfterEachWaiter);
         }
         foreach (var session in _sessions.Values) session?.SetClock(SessionClock, _motion);
-        previous?.Dispose();
+        previous?.End();
     }
 
     private void ReleaseFrameHooks()
@@ -290,7 +290,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         ClearSessions();
         ReleaseFrameHooks();
         _sessionClock = null;
-        _motion?.Dispose();
+        _motion?.End();
         _motion = null;
     });
 

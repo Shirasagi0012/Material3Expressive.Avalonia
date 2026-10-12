@@ -255,7 +255,7 @@ public class LookaheadCompositionTest
         };
         using var f = new Fixture(size);
         size.TargetSize = new Size(200, 160); f.Layout();
-        Assert.Same(error, ((AnimationTestWindow)TopLevel.GetTopLevel(size)!).AnimationRoot.LastError);
+        Assert.Same(error, ((AnimationTestWindow)TopLevel.GetTopLevel(size)!).AnimationRoot.Diagnostics.LastError);
         Assert.Equal(new Size(200, 160), size.Bounds.Size);
         var calls = spec.Calls;
         var snapshot = f.Root.Snapshot;

@@ -14,7 +14,6 @@ namespace Catalog.Framework;
 public abstract class DemoControlBase : UserControl
 {
     private IDemoEnvironment? _environment;
-    private AnimationScope? _motion;
 
     protected DemoControlBase(DemoContext context)
         => Context = context ?? throw new ArgumentNullException(nameof(context));
@@ -37,17 +36,9 @@ public abstract class DemoControlBase : UserControl
         foreach (var diagnostic in Diagnostics) diagnostic.Refresh();
     }
 
-    protected AnimationScope Motion => _motion ??= AnimationScope.Create(this);
+    protected AnimationScope Motion => AnimationScope.Get(this);
     protected IAnimationFrameClock Clock => Motion.Clock;
     internal IAnimationFrameClock EnvironmentClock => Clock;
-
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        var motion = _motion;
-        _motion = null;
-        motion?.Dispose();
-        base.OnDetachedFromVisualTree(e);
-    }
 
     /// <summary>
     /// 推进动画帧。自动化模式：每帧 ProbeClock.Step(1/60s) + UpdateLayout + Render 优先级 flush；

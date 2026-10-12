@@ -173,7 +173,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         var generation = ++_generation;
         _requestedTarget = to;
         _runPending = true;
-        var motion = AnimationScope.ForHost(this);
+        var motion = AnimationScope.Get(this);
         _ = motion.Launch(ct => AnimateAsync(_animatable, to, AnimationSpec, generation, ct), "Content size");
     }
 
@@ -231,7 +231,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     {
         if (_clock is not null) return;
         if (TopLevel.GetTopLevel(this) is null) return;
-        var motion = AnimationScope.ForHost(this);
+        var motion = AnimationScope.Get(this);
         _motionRegistration?.Dispose();
         _motionRegistration = motion.RegisterResource(() =>
         {

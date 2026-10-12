@@ -61,8 +61,8 @@ public class AnimatedContentTest
         {
             for (var i = 0; i < 200 && (!Host.IsIdle || Clock.PendingFrameCount > 0); i++) Step(16);
             Assert.True(Host.IsIdle,
-                $"Target={Host.TargetContent}, slots={Host.VisibleSlotCount}, idle={Host.IsIdle}, error={((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.LastError}");
-            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.LastError);
+                $"Target={Host.TargetContent}, slots={Host.VisibleSlotCount}, idle={Host.IsIdle}, error={((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError}");
+            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError);
         }
         public void Dispose() => Window.Close();
     }
@@ -737,7 +737,7 @@ public class AnimatedContentTest
         using var f = new Fixture(host);
         host.TransitionSpec = _ => throw new InvalidOperationException("boom");
         Assert.Throws<InvalidOperationException>(() => host.Content = "B");
-        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Fact]

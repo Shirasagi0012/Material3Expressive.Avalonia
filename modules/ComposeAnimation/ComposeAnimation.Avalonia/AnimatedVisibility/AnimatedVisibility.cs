@@ -162,7 +162,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
                 }
                 if (_connection is null)
                 {
-                    var motion = AnimationScope.ForHost(this);
+                    var motion = AnimationScope.Get(this);
                     var clock = motion.Clock;
                     _connection = Source?.Connect(clock, Label)
                         ?? new VisibilityConnection(new Transition<bool>(Visible, clock, Label), true);

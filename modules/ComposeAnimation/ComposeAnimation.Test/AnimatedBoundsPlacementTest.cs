@@ -99,7 +99,7 @@ public partial class AnimatedBoundsTest
         if (targetFailure) Assert.Null(f.Root.Snapshot);
         card.IntermediateLayout = BoundsLayout.Empty; f.Layout();
         Equal(f.Root.Snapshot!.Results[text].Bounds, f.Actual(text));
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(card)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(card)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Fact]

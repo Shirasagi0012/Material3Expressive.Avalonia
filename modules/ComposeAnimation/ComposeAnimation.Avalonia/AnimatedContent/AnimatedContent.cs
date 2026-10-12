@@ -256,7 +256,7 @@ public class AnimatedContent : ContentControl
                     throw new InvalidOperationException("AnimatedContent requires PART_ContentPanel with a ContentSlotPanel child.");
                 if (_connection is null)
                 {
-                    var motion = AnimationScope.ForHost(this);
+                    var motion = AnimationScope.Get(this);
                     var clock = motion.Clock;
                     var label = Label ?? "AnimatedContent";
                     _connection = Source?.Connect(clock, label)

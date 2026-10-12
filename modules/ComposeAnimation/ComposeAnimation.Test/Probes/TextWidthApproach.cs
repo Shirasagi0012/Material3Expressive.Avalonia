@@ -19,7 +19,6 @@ internal sealed class TextWidthApproach : Decorator, ILookaheadLayoutNode, ILook
         new SpringSpec<double>(stiffness: Spring.StiffnessMediumLow, visibilityThreshold: 0.5);
 
     private event EventHandler? TargetMeasureInvalidated;
-    private AnimationScope? _motion;
     private Animatable<double>? _width;
     private double _target;
 
@@ -53,7 +52,7 @@ internal sealed class TextWidthApproach : Decorator, ILookaheadLayoutNode, ILook
         var target = LookaheadRoot.TargetFor(this)?.MeasuredSize.Width ?? Math.Min(TargetWidth, availableSize.Width);
         if (_width is null)
         {
-            var clock = TopLevel.GetTopLevel(this) is null ? null : (_motion ??= AnimationScope.Create(this)).Clock;
+            var clock = TopLevel.GetTopLevel(this) is null ? null : AnimationScope.Get(this).Clock;
             if (clock is null) return MeasureText(text, target, availableSize);
             _target = target;
             _width = new Animatable<double>(new ComposeAnimation.Runtime.DoubleConverter(), target, clock, 0.5, "Text width approach");
@@ -99,8 +98,6 @@ internal sealed class TextWidthApproach : Decorator, ILookaheadLayoutNode, ILook
             width.Stop();
             _width = null;
         }
-        _motion?.Dispose();
-        _motion = null;
         base.OnDetachedFromVisualTree(e);
     }
 

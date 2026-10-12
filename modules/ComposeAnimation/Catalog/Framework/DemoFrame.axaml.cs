@@ -30,7 +30,7 @@ public sealed partial class DemoFrame : UserControl
         SpeedPicker.SelectionChanged += (_, _) =>
         {
             if (_current is { } demo)
-                Animated.SetDurationScale(demo, SpeedPicker.SelectedIndex switch { 0 => 4, 1 => 2, _ => 1 });
+                AnimationScope.SetDurationScale(demo, SpeedPicker.SelectedIndex switch { 0 => 4, 1 => 2, _ => 1 });
         };
         DetailsToggle.IsCheckedChanged += (_, _) => SetDetailsVisible();
         _diagnosticTimer.Tick += (_, _) => _current?.RefreshDiagnostics();
@@ -64,7 +64,7 @@ public sealed partial class DemoFrame : UserControl
         _lifetime = new CancellationTokenSource();
         demo.AttachEnvironment(new InteractiveEnvironment(_lifetime.Token));
         _current = demo;
-        Animated.SetDurationScale(demo, 1);
+        AnimationScope.SetDurationScale(demo, 1);
         ContentHost.Content = demo;
         DiagnosticsList.ItemsSource = demo.Diagnostics;
         SetDetailsVisible();
