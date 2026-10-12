@@ -40,8 +40,21 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
     private ContentSlotPanel? _panel;
     private Border? _sizeBox;
     private ContentConnection? _connection;
-    private bool _resumePending;
-    private IDisposable? _motionConnection;
+    private readonly ScopeResumeBinding _scopeBinding;
+
+    public AnimatedContent()
+    {
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, () =>
+        {
+            _failed = true;
+            Disconnect();
+        });
+    }
+
+    // One launch path for the first start (deferred) and a D17 resume (immediate).
+    private void StartLoop(ContentConnection connection, AnimationScope motion, bool immediate)
+        => ScopeResumeBinding.StartLoop(motion, () => ReferenceEquals(_connection, connection),
+            ct => RunAsync(connection, motion, ct), Label ?? "AnimatedContent", immediate);
     private ContentTransform? _fallbackTransform;
     private ContentTransform? _resolvedTransform;
     private object? _targetContent;
@@ -131,10 +144,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _attached = false;
-        // No reset here (D17): the scope ends at the next drain if the control stays detached
-        // (the resource callback disconnects then), or is rebuilt if it was re-attached elsewhere
-        // (OnScopeChanged re-runs the kept state).
-        Synchronize(reset: _connection is null);
+        Synchronize(); // No reset (D17): see ScopeResumeBinding.
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -207,8 +217,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
     // continuing from its stored play time. Detach is handled by OnDetachedFromVisualTree.
     void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
     {
-        var resume = _resumePending;
-        _resumePending = false;
+        var resume = _scopeBinding.TakeResume();
         if (e.NewScope is not AnimationScope motion)
         {
             if (resume)
@@ -221,31 +230,13 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
         _failed = false;
         if (resume && _connection is { } connection && !connection.Transition.IsDisposed)
         {
-            Bind(motion);
+            _scopeBinding.Bind(motion);
             // A re-entrant Get from a ScopeChanged handler that runs it again simply takes over.
-            if (connection.OwnsLoop)
-                _ = motion.Launch(ct => RunAsync(connection, motion, ct), Label ?? "AnimatedContent");
+            if (connection.OwnsLoop) StartLoop(connection, motion, immediate: true);
             Synchronize();
             return;
         }
         Synchronize(reset: true);
-    }
-
-    private void Bind(AnimationScope motion)
-    {
-        _motionConnection = motion.RegisterResource(() =>
-        {
-            if (!motion.IsEnding) return;
-            _motionConnection = null;
-            // Still attached: the scope is being rebuilt; keep the state for OnScopeChanged (D17).
-            if (_attached && !AnimationScope.IsEnvironmentEnding(this))
-            {
-                _resumePending = true;
-                return;
-            }
-            _failed = true;
-            Disconnect();
-        });
     }
 
     internal void OnPhaseChanged() => Synchronize();
@@ -313,23 +304,9 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
                         ?? new ContentConnection(new Transition<object?>(Content, label), true);
                     _connection.Transition.PhaseChanged += OnPhaseChanged;
                     _connection.Transition.TargetChanging += OnParentTargetChanging;
-                    Bind(motion);
+                    _scopeBinding.Bind(motion);
                     _lastContent ??= Content;
-                    if (_connection.OwnsLoop)
-                    {
-                        var connection = _connection;
-                        Dispatcher.UIThread.Post(() =>
-                        {
-                            if (!ReferenceEquals(_connection, connection)) return;
-                            // Keep the layout barrier, but let awaits in the frame loop capture
-                            // Normal rather than inheriting Loaded for the loop's lifetime.
-                            Dispatcher.UIThread.Post(() =>
-                            {
-                                if (ReferenceEquals(_connection, connection) && !motion.IsEnding)
-                                    _ = motion.Launch(ct => RunAsync(connection, motion, ct), label);
-                            }, DispatcherPriority.Normal);
-                        }, DispatcherPriority.Loaded);
-                    }
+                    if (_connection.OwnsLoop) StartLoop(_connection, motion, immediate: false);
                 }
                 var parent = _connection.Transition;
                 if (parent.IsDisposed)
@@ -527,9 +504,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
 
     private void Disconnect()
     {
-        _resumePending = false;
-        _motionConnection?.Dispose();
-        _motionConnection = null;
+        _scopeBinding.Reset();
         var connection = _connection;
         _connection = null;
         if (connection is not null)
