@@ -300,22 +300,18 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     /// multiplex: every session still waits on the window's FrameClock.
     /// </summary>
     private sealed class FailureObservedClock(IAnimationFrameClock provider, Action<Exception> onFailure)
-        : IAnimationFrameClock, IAnimationLifetimeClock
+        : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
         public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? MotionDurationScale.ScaleFactor;
         public void VerifyAccess() => provider.VerifyAccess();
-        public async ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
-        {
-            try
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => NextFrameAsync(cancellationToken, null);
+        // Pass-through, not async: keeps the FrameClock's inline resumption (see FrameWait).
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
+            => FrameWait.Observe(provider, cancellationToken, error =>
             {
-                return await provider.NextFrameAsync(cancellationToken).ConfigureAwait(true);
-            }
-            catch (Exception error) when (error is not OperationCanceledException)
-            {
-                onFailure(error);
-                throw;
-            }
-        }
+                if (error is not OperationCanceledException) onFailure(error);
+                onFault?.Invoke(error);
+            });
     }
 }

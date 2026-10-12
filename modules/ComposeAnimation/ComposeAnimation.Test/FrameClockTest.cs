@@ -76,8 +76,8 @@ public sealed class FrameClockTest
 
         using var a = new CancellationTokenSource();
         using var b = new CancellationTokenSource();
-        var first = clock.WaitAsync(a.Token).AsTask();
-        var second = clock.WaitAsync(b.Token).AsTask();
+        var first = clock.WaitAsync(a.Token).AsValueTask().AsTask();
+        var second = clock.WaitAsync(b.Token).AsValueTask().AsTask();
         Assert.Equal(1, source.PendingFrameCount);
         a.Cancel();
         Assert.Equal(1, source.PendingFrameCount);
@@ -88,7 +88,7 @@ public sealed class FrameClockTest
         Assert.Equal(0, source.PendingFrameCount);
 
         // A new waiter after the canceled wait was observed requests exactly one new wait.
-        var third = clock.WaitAsync(default).AsTask();
+        var third = clock.WaitAsync(default).AsValueTask().AsTask();
         Assert.Equal(1, source.PendingFrameCount);
         Advance(source);
         Assert.Equal(Frame, third.Result);
@@ -100,8 +100,8 @@ public sealed class FrameClockTest
         var source = new ManualAnimationFrameClock();
         using var clock = new FrameClock(source);
         using var cancellation = new CancellationTokenSource();
-        var canceled = clock.WaitAsync(cancellation.Token).AsTask();
-        var kept = clock.WaitAsync(default).AsTask();
+        var canceled = clock.WaitAsync(cancellation.Token).AsValueTask().AsTask();
+        var kept = clock.WaitAsync(default).AsValueTask().AsTask();
         cancellation.Cancel();
 
         Advance(source);
@@ -116,8 +116,8 @@ public sealed class FrameClockTest
         var source = new PendingFailClock();
         var reports = new List<Exception>();
         using var clock = new FrameClock(source, reports.Add);
-        var first = clock.WaitAsync(default).AsTask();
-        var second = clock.WaitAsync(default).AsTask();
+        var first = clock.WaitAsync(default).AsValueTask().AsTask();
+        var second = clock.WaitAsync(default).AsValueTask().AsTask();
         Assert.Equal(1, source.Requests);
 
         source.Fail();
@@ -126,7 +126,7 @@ public sealed class FrameClockTest
         Assert.Same(source.Failure, Assert.Single(reports));
         Assert.Same(source.Failure, first.Exception!.InnerException);
         Assert.Same(source.Failure, second.Exception!.InnerException);
-        var later = clock.WaitAsync(default).AsTask();
+        var later = clock.WaitAsync(default).AsValueTask().AsTask();
         Assert.Same(source.Failure, later.Exception!.InnerException);
         Assert.Equal(1, source.Requests);
         Assert.Single(reports);
@@ -138,7 +138,7 @@ public sealed class FrameClockTest
         var source = new PendingFailClock();
         using var clock = new FrameClock(source);
         using var hook = clock.RegisterAfterWaiter(() => throw new ArgumentException("hook"));
-        var waiters = Enumerable.Range(0, 3).Select(_ => clock.WaitAsync(default).AsTask()).ToArray();
+        var waiters = Enumerable.Range(0, 3).Select(_ => clock.WaitAsync(default).AsValueTask().AsTask()).ToArray();
         source.Fail();
         Dispatcher.UIThread.RunJobs();
         Assert.All(waiters, w => Assert.Same(source.Failure, w.Exception!.InnerException));
@@ -149,7 +149,7 @@ public sealed class FrameClockTest
     {
         var source = new ManualAnimationFrameClock();
         var clock = new FrameClock(source);
-        var pending = clock.WaitAsync(default).AsTask();
+        var pending = clock.WaitAsync(default).AsValueTask().AsTask();
 
         clock.Dispose();
 
@@ -209,12 +209,12 @@ public sealed class FrameClockTest
             added ??= clock.RegisterBeforeFrame(() => log.Add("added"));
         });
         second = clock.RegisterBeforeFrame(() => log.Add("second"));
-        _ = clock.WaitAsync(default);
+        _ = clock.WaitAsync(default).AsValueTask().AsTask();
         Advance(source);
         Assert.Equal(["first", "second"], log);
 
         log.Clear();
-        _ = clock.WaitAsync(default);
+        _ = clock.WaitAsync(default).AsValueTask().AsTask();
         Advance(source);
         Assert.Equal(["first", "added"], log);
         added!.Dispose();
@@ -227,15 +227,15 @@ public sealed class FrameClockTest
         using var clock = new FrameClock(source);
         var boom = new InvalidOperationException("hook");
         var hook = clock.RegisterBeforeFrame(() => throw boom);
-        var a = clock.WaitAsync(default).AsTask();
-        var b = clock.WaitAsync(default).AsTask();
+        var a = clock.WaitAsync(default).AsValueTask().AsTask();
+        var b = clock.WaitAsync(default).AsValueTask().AsTask();
 
         Advance(source);
 
         Assert.Same(boom, a.Exception!.InnerException);
         Assert.Same(boom, b.Exception!.InnerException);
         hook.Dispose();
-        var next = clock.WaitAsync(default).AsTask();
+        var next = clock.WaitAsync(default).AsValueTask().AsTask();
         Advance(source);
         Assert.Equal(Frame * 2, next.Result);
     });
@@ -247,8 +247,8 @@ public sealed class FrameClockTest
         using var clock = new FrameClock(source);
         var boom = new InvalidOperationException("hook");
         using var hook = clock.RegisterAfterWaiter(() => throw boom);
-        var a = clock.WaitAsync(default).AsTask();
-        var b = clock.WaitAsync(default).AsTask();
+        var a = clock.WaitAsync(default).AsValueTask().AsTask();
+        var b = clock.WaitAsync(default).AsValueTask().AsTask();
 
         Advance(source);
 
@@ -257,26 +257,29 @@ public sealed class FrameClockTest
     });
 
     [Theory]
-    [InlineData(0)] // Background
-    [InlineData(1)] // Loaded
-    public Task Resumption_DoesNotDependOnTheContextOfTheFirstWaiter(int start) => Run(() =>
+    [InlineData(0, false)] // Background, awaiting the FrameAwaitable
+    [InlineData(1, false)] // Loaded, awaiting the FrameAwaitable
+    [InlineData(0, true)]  // Background, through the ValueTask adapter
+    [InlineData(1, true)]  // Loaded, through the ValueTask adapter
+    public Task Resumption_IsInlineInTheBatch_WhateverContextTheWaiterStartedFrom(int start, bool adapter) => Run(() =>
     {
         var priority = start == 0 ? DispatcherPriority.Background : DispatcherPriority.Loaded;
         var source = new ManualAnimationFrameClock();
         using var clock = new FrameClock(source);
         var log = new List<string>();
+        SynchronizationContext? batchContext = null;
+        using var before = clock.RegisterBeforeFrame(() => batchContext = SynchronizationContext.Current);
         using var after = clock.RegisterAfterWaiter(() => log.Add("after"));
         Task? waiter = null;
-        SynchronizationContext? captured = null;
+        SynchronizationContext? started = null;
         SynchronizationContext? resumedOn = null;
         Dispatcher.UIThread.Post(() =>
         {
-            captured = SynchronizationContext.Current;
+            started = SynchronizationContext.Current;
             waiter = Wait();
         }, priority);
         Dispatcher.UIThread.RunJobs();
         Assert.NotNull(waiter);
-        Assert.NotNull(captured);
         Assert.Equal(1, source.PendingFrameCount);
 
         source.AdvanceBy(Frame);
@@ -284,17 +287,75 @@ public sealed class FrameClockTest
         Dispatcher.UIThread.RunJobs(FrameClock.ResumePriority);
 
         Assert.True(waiter!.IsCompleted);
-        // The continuation ran inline inside the batch, before the after-waiter hook.
+        // Inline inside the batch: the continuation ran before the after-waiter hook.
         Assert.Equal(["resumed", "after"], log);
-        // ...and it observed the context its own await captured.
-        Assert.Same(captured, resumedOn);
+        // The batch's own dispatcher context stays current; nothing was swapped in.
+        Assert.IsAssignableFrom<AvaloniaSynchronizationContext>(resumedOn);
+        Assert.Same(batchContext, resumedOn);
+        Assert.NotSame(started, resumedOn);
 
         async Task Wait()
         {
-            await clock.WaitAsync(default).ConfigureAwait(true);
+            if (adapter) await clock.WaitAsync(default).AsValueTask();
+            else await clock.WaitAsync(default);
             resumedOn = SynchronizationContext.Current;
             log.Add("resumed");
         }
+    });
+
+    [Fact]
+    public Task Resumption_NeedsNoPost_WaitersCompleteDuringTheBatchJob() => Run(() =>
+    {
+        var source = new ManualAnimationFrameClock();
+        using var clock = new FrameClock(source);
+        var resumed = new List<int>();
+        var completedAtHook = new List<bool>();
+        Task a = null!, b = null!;
+        async Task Wait(int id) { await clock.WaitAsync(default); resumed.Add(id); }
+        a = Wait(1);
+        b = Wait(2);
+        using var after = clock.RegisterAfterWaiter(() => completedAtHook.Add(resumed.Count == completedAtHook.Count + 1));
+
+        source.AdvanceBy(Frame);
+        // Exactly one job (the clock's hop) is run; every continuation finishes inside it.
+        var ran = 0;
+        Dispatcher.UIThread.Post(() => ran++, DispatcherPriority.Normal); // queued behind the hop
+        Assert.Empty(resumed);
+        Dispatcher.UIThread.RunJobs(DispatcherPriority.Send); // nothing at Send: no inline-before-hop
+        Assert.Empty(resumed);
+        Dispatcher.UIThread.RunJobs(FrameClock.ResumePriority);
+        Assert.Equal([1, 2], resumed);
+        Assert.Equal([true, true], completedAtHook);
+        Assert.True(a.IsCompletedSuccessfully && b.IsCompletedSuccessfully);
+        Assert.Equal(1, ran);
+    });
+
+    [Fact]
+    public Task CancelFromOffTheUiThread_IsPostedAndReleasesTheSourceWait() => Run(() =>
+    {
+        var source = new ManualAnimationFrameClock();
+        using var clock = new FrameClock(source);
+        using var cancellation = new CancellationTokenSource();
+        var uiThread = Environment.CurrentManagedThreadId;
+        int? continuationThread = null;
+        async Task Wait()
+        {
+            try { await clock.WaitAsync(cancellation.Token); }
+            catch (OperationCanceledException) { continuationThread = Environment.CurrentManagedThreadId; throw; }
+        }
+        var waiter = Wait();
+        Assert.Equal(1, source.PendingFrameCount);
+
+        // A dedicated thread: Task.Run(...).Wait() may inline the cancel onto this UI thread.
+        var canceler = new Thread(cancellation.Cancel);
+        canceler.Start();
+        canceler.Join();
+        Assert.False(waiter.IsCompleted); // posted, not completed on the pool thread
+
+        Dispatcher.UIThread.RunJobs(FrameClock.ResumePriority);
+        Assert.True(waiter.IsCanceled);
+        Assert.Equal(uiThread, continuationThread);
+        Assert.Equal(0, source.PendingFrameCount);
     });
 
     [Fact]
@@ -323,7 +384,7 @@ public sealed class FrameClockTest
     private sealed class Adapter(FrameClock clock) : IAnimationFrameClock
     {
         public void VerifyAccess() => clock.VerifyAccess();
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => clock.WaitAsync(cancellationToken);
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => clock.WaitAsync(cancellationToken).AsValueTask();
     }
 
     private sealed class PendingFailClock : IAnimationFrameClock

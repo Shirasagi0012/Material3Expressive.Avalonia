@@ -364,18 +364,27 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         return new ValueTask(_ended.Task);
     }
 
-    private sealed class ScopeClock(VisualAnimationScope owner) : IAnimationFrameClock, IAnimationLifetimeClock
+    // Not async: it hands out the FrameClock wait itself, so callers resume inline in the batch
+    // regardless of the context they awaited from (an async layer here would reintroduce that).
+    private sealed class ScopeClock(VisualAnimationScope owner) : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime AnimationLifetime => owner._lifecycle;
         public double DurationScale => owner.DurationScale * owner.Host.GetValue(Animated.DurationScaleProperty);
         public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public async ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => NextFrameAsync(cancellationToken, null);
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
         {
-            owner.VerifyActive();
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, owner.Lifetime);
-            var frame = await owner._frameClock.WaitAsync(linked.Token).ConfigureAwait(true);
-            linked.Token.ThrowIfCancellationRequested();
-            return frame;
+            try
+            {
+                owner.VerifyActive();
+                return owner._frameClock.WaitAsync(cancellationToken, owner.Lifetime, onFault).AsValueTask();
+            }
+            catch (Exception error)
+            {
+                // Same observable shape as before: failures surface from the returned task.
+                onFault?.Invoke(error);
+                return ValueTask.FromException<TimeSpan>(error);
+            }
         }
     }
 

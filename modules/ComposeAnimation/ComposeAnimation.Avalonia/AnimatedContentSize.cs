@@ -269,25 +269,20 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
 
     // Distinguish provider failures (including unexpected cancellation) from spec failures.
     // The root environment does not retry a failed provider.
-    private sealed class ObservedClock(IAnimationFrameClock provider) : IAnimationFrameClock, IAnimationLifetimeClock
+    private sealed class ObservedClock(IAnimationFrameClock provider) : IAnimationFrameClock, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
         public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? 1;
         public bool Faulted { get; private set; }
         public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public async ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
-        {
-            try
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => NextFrameAsync(cancellationToken, null);
+        // Pass-through, not async: keeps the FrameClock's inline resumption (see FrameWait).
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
+            => FrameWait.Observe(provider, cancellationToken, error =>
             {
-                provider.VerifyAccess();
-                return await provider.NextFrameAsync(cancellationToken);
-            }
-            catch (Exception error) when (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                Faulted = true;
-                throw;
-            }
-        }
+                if (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested) Faulted = true;
+                onFault?.Invoke(error);
+            });
     }
 
     private static Size Constrain(Size size, Size available)
