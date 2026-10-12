@@ -19,10 +19,7 @@
 
 <StackPanel m3:MaterialText.Style="{m3:Typography BodyMedium}">
   <TextBlock Text="继承 BodyMedium" />
-  <StackPanel>
-    <m3:MaterialText.Style>
-      <m3:TextStyle FontWeight="Bold" />
-    </m3:MaterialText.Style>
+  <StackPanel m3:MaterialText.Style="{m3:TextStyle FontWeight=Bold}">
     <TextBlock Text="保留 BodyMedium 度量，只改变字重" />
   </StackPanel>
 </StackPanel>
