@@ -23,6 +23,8 @@ public MainWindow()
 
 控件已附着后调用 `AnimationScope.Get(owner)`（`owner` 为 Visual），重复调用返回同一个 Scope。它的父级是最近的祖先控件 `Get` Scope（沿继承链，含 Popup/Flyout），否则是窗口根。不要释放它：控件脱离树时 Scope 结束；在树内移动时 Scope 会被标记为过期，并在下一帧等待者恢复前合并重建一次（每帧至多一次），随后控件的直接路由事件 `AnimationScope.ScopeChangedEvent` 触发，参数 `AnimationScopeChangedEventArgs` 携带 `OldScope` 与 `NewScope`（控件离开树时 `NewScope` 为 null）。用 `AnimationScope.AddScopeChangedHandler(control, handler)` / `RemoveScopeChangedHandler` 订阅，并在处理程序中重启运行；恢复期间发生的移动从下一帧生效。
 
+控件脱离树时 Scope 不会同步结束：它与移动一样先标记为过期，在下一次排空（下一帧开始前，或没有帧时由一次合并的分发器回调）结束，`ScopeChanged` 以 `NewScope = null` 触发；在此之前它的任务和动画仍在运行。若 Scope 已因父 Scope 结束而结束，`Get` 会当场同步重建它（同时触发 `ScopeChanged`），因此 `Get` 不会返回已结束的 Scope。通过 `AddScopeChangedHandler` 添加的处理程序相互隔离：某个处理程序抛错会被报告到 `AnimationFailed`，其余处理程序照常执行。非 `Interactive` 宿主的事件参数 `Source` 为 null。`AnimatedBounds` 在 `Lookahead.MoveContent` 保留的飞行结束前推迟自身 Scope 的重建，跨不同祖先 Scope 移动也不会中断动画。
+
 ```csharp
 var motion = AnimationScope.Get(button);
 var surface = currentSurface; // 捕获本次模板，异步退出不重新读取可变字段
