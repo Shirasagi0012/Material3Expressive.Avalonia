@@ -30,7 +30,13 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
     private LookaheadContext? _context;
     private Point _target;
 
+    static LookaheadPosition() => AnimationScope.ScopeChangedEvent.AddClassHandler<LookaheadPosition>((control, e) => control.OnScopeChanged(e));
+
     public LookaheadPosition() => _entry = new(this);
+
+    // The old scope's end released the animation state; measure again to start on the new scope.
+    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {

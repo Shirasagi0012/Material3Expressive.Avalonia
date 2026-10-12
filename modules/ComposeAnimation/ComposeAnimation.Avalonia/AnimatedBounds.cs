@@ -117,8 +117,15 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private sealed record TargetLayout(BoundsLayoutResult Layout, LookaheadConstraints InnerConstraints,
         Size InnerSize, Rect InnerBounds);
 
-    static AnimatedBounds() => AffectsMeasure<AnimatedBounds>(TargetSizeProperty, IntermediateLayoutProperty,
-        ChildProperty, PaddingProperty, ParentLayoutModeProperty);
+    static AnimatedBounds()
+    {
+        AffectsMeasure<AnimatedBounds>(TargetSizeProperty, IntermediateLayoutProperty,
+            ChildProperty, PaddingProperty, ParentLayoutModeProperty);
+        AnimationScope.ScopeChangedEvent.AddClassHandler<AnimatedBounds>((control, e) => control.OnScopeChanged(e));
+    }
+
+    // The old scope's end released the animation state; measure again to start on the new scope.
+    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
 
     public AnimatedBounds()
     {

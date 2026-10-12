@@ -46,7 +46,15 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
 
     public LookaheadSize() => _entry = new(this);
 
-    static LookaheadSize() => AffectsMeasure<LookaheadSize>(TargetSizeProperty);
+    // The old scope's end released the animation state; measure again to start on the new scope.
+    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+
+
+    static LookaheadSize()
+    {
+        AffectsMeasure<LookaheadSize>(TargetSizeProperty);
+        AnimationScope.ScopeChangedEvent.AddClassHandler<LookaheadSize>((control, e) => control.OnScopeChanged(e));
+    }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {

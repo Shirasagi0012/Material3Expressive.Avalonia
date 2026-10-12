@@ -56,6 +56,7 @@ public class AnimatedContent : ContentControl
 
     static AnimatedContent()
     {
+        AnimationScope.ScopeChangedEvent.AddClassHandler<AnimatedContent>((control, e) => control.OnScopeChanged(e));
         HorizontalContentAlignmentProperty.OverrideDefaultValue<AnimatedContent>(Avalonia.Layout.HorizontalAlignment.Stretch);
         VerticalContentAlignmentProperty.OverrideDefaultValue<AnimatedContent>(Avalonia.Layout.VerticalAlignment.Stretch);
         TemplateProperty.OverrideDefaultValue<AnimatedContent>(new FuncControlTemplate<AnimatedContent>((host, names) =>
@@ -195,6 +196,15 @@ public class AnimatedContent : ContentControl
             }
         }
         Synchronize();
+    }
+
+    // A rebuilt scope ended the old connection (its resource callback disconnected it); reconnect
+    // on the replacement. Detach is handled by OnDetachedFromVisualTree.
+    private void OnScopeChanged(AnimationScopeChangedEventArgs e)
+    {
+        if (e.NewScope is null) return;
+        _failed = false;
+        Synchronize(reset: true);
     }
 
     internal void OnPhaseChanged() => Synchronize();

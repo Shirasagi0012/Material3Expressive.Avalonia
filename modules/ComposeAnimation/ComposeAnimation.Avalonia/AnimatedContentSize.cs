@@ -60,6 +60,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
 
     static AnimatedContentSize()
     {
+        AnimationScope.ScopeChangedEvent.AddClassHandler<AnimatedContentSize>((control, e) => control.OnScopeChanged(e));
         ClipToBoundsProperty.OverrideDefaultValue<AnimatedContentSize>(true);
         AffectsArrange<AnimatedContentSize>(ContentAlignmentProperty, FlowDirectionProperty);
         HorizontalContentAlignmentProperty.OverrideDefaultValue<AnimatedContentSize>(HorizontalAlignment.Stretch);
@@ -92,6 +93,9 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
             InvalidateMeasure();
         }
     }
+
+    // The old scope's end released the animation state; measure again to start on the new scope.
+    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
