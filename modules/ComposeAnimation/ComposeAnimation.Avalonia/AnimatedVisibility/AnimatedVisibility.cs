@@ -14,7 +14,7 @@ namespace ComposeAnimation;
 /// Presents live content until every animation in its visibility scope finishes exiting.
 /// Bind Visible for animated visibility; native IsVisible still hides immediately.
 /// </summary>
-public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
+public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimationScopeHost
 {
     public static readonly StyledProperty<bool> VisibleProperty =
         AvaloniaProperty.Register<AnimatedVisibility, bool>(nameof(Visible), true);
@@ -55,7 +55,6 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
 
     static AnimatedVisibility()
     {
-        AnimationScope.ScopeChangedEvent.AddClassHandler<AnimatedVisibility>((control, e) => control.OnScopeChanged(e));
         HorizontalContentAlignmentProperty.OverrideDefaultValue<AnimatedVisibility>(HorizontalAlignment.Stretch);
         VerticalContentAlignmentProperty.OverrideDefaultValue<AnimatedVisibility>(VerticalAlignment.Stretch);
         TemplateProperty.OverrideDefaultValue<AnimatedVisibility>(new FuncControlTemplate<AnimatedVisibility>((host, names) =>
@@ -139,7 +138,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
 
     // A rebuilt scope ended the old connection (its resource callback disconnected it); reconnect
     // on the replacement. Detach is handled by OnDetachedFromVisualTree.
-    private void OnScopeChanged(AnimationScopeChangedEventArgs e)
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
     {
         if (e.NewScope is null) return;
         _failed = false;

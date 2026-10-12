@@ -18,7 +18,7 @@ namespace ComposeAnimation;
 /// constraint path preserves minima; the legacy Size path retains Avalonia maximum-only behavior.
 /// Padding is not supported.
 /// </remarks>
-public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementHost, ILookaheadApproach
+public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementHost, ILookaheadApproach, IAnimationScopeHost
 {
     private readonly LookaheadEntry _entry;
     public static readonly StyledProperty<Size?> TargetSizeProperty =
@@ -47,13 +47,12 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
     public LookaheadSize() => _entry = new(this);
 
     // The old scope's end released the animation state; measure again to start on the new scope.
-    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
 
 
     static LookaheadSize()
     {
         AffectsMeasure<LookaheadSize>(TargetSizeProperty);
-        AnimationScope.ScopeChangedEvent.AddClassHandler<LookaheadSize>((control, e) => control.OnScopeChanged(e));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

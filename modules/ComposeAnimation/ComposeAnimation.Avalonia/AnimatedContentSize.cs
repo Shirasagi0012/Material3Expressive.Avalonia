@@ -22,7 +22,7 @@ namespace ComposeAnimation;
 /// LookaheadRoot opts into cooperative target measurement and its documented tree restrictions.
 /// Padding and borders in the template are part of the animated content size. Margin is outside.
 /// </remarks>
-public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookaheadPlacementHost
+public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookaheadPlacementHost, IAnimationScopeHost
 {
     public static readonly StyledProperty<IFiniteAnimationSpec<Size>> AnimationSpecProperty =
         AvaloniaProperty.Register<AnimatedContentSize, IFiniteAnimationSpec<Size>>(
@@ -60,7 +60,6 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
 
     static AnimatedContentSize()
     {
-        AnimationScope.ScopeChangedEvent.AddClassHandler<AnimatedContentSize>((control, e) => control.OnScopeChanged(e));
         ClipToBoundsProperty.OverrideDefaultValue<AnimatedContentSize>(true);
         AffectsArrange<AnimatedContentSize>(ContentAlignmentProperty, FlowDirectionProperty);
         HorizontalContentAlignmentProperty.OverrideDefaultValue<AnimatedContentSize>(HorizontalAlignment.Stretch);
@@ -95,7 +94,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     }
 
     // The old scope's end released the animation state; measure again to start on the new scope.
-    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {

@@ -24,7 +24,7 @@ namespace ComposeAnimation;
 /// Lookahead.MoveContent preserves same-instance motion through synchronous same-domain parent changes.
 /// </remarks>
 public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, ILookaheadPlacementHost,
-    ILookaheadPlacementApproach, ILookaheadMotionFrameObserver, ILookaheadMoveParticipant, ILookaheadEntryParticipant
+    ILookaheadPlacementApproach, ILookaheadMotionFrameObserver, ILookaheadMoveParticipant, ILookaheadEntryParticipant, IAnimationScopeHost
 {
     public static readonly StyledProperty<Control?> ChildProperty = Decorator.ChildProperty.AddOwner<AnimatedBounds>();
     public static readonly StyledProperty<Thickness> PaddingProperty = Decorator.PaddingProperty.AddOwner<AnimatedBounds>();
@@ -112,7 +112,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private TargetLayout? _approachLayout;
     private LookaheadConstraints? _lastInnerConstraints;
     private MoveState? _pendingMove;
-    internal bool RetainsAnimationAttachment => _pendingMove is not null;
+    // A committed move keeps its flight on the pre-move scope until that flight settles (S3).
+    private bool _retainedMove;
     private Vector _motionBasis;
     private sealed record TargetLayout(BoundsLayoutResult Layout, LookaheadConstraints InnerConstraints,
         Size InnerSize, Rect InnerBounds);
@@ -121,11 +122,21 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     {
         AffectsMeasure<AnimatedBounds>(TargetSizeProperty, IntermediateLayoutProperty,
             ChildProperty, PaddingProperty, ParentLayoutModeProperty);
-        AnimationScope.ScopeChangedEvent.AddClassHandler<AnimatedBounds>((control, e) => control.OnScopeChanged(e));
     }
 
     // The old scope's end released the animation state; measure again to start on the new scope.
-    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+
+    // S3: a scope rebuild would release the runs a move retained. Defer it while the move is in
+    // progress, and after the move until the retained runs settle; then the stale scope rebuilds.
+    bool IAnimationScopeHost.DefersScopeRebuild => _pendingMove is not null || _retainedMove;
+
+    private void EndRetainedMove()
+    {
+        if (!_retainedMove) return;
+        _retainedMove = false;
+        AnimationScope.RebuildPolicyChanged(this);
+    }
 
     public AnimatedBounds()
     {
@@ -451,6 +462,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         // Re-read the committed target so no obsolete target is republished after that callback.
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, TargetBounds);
         SetAndRaise(IsRunningProperty, ref _isRunning, _outer.IsRunning || _inner.IsRunning);
+        // Settled: the flight ran and stopped, or the first layout after the commit started none.
+        if (_retainedMove && !_isRunning && _targetLayout is not null) EndRetainedMove();
     }
 
     private void EnsureClock()
@@ -498,6 +511,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         SetAndRaise(CurrentBoundsProperty, ref _currentBounds, null);
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, null);
         SetAndRaise(IsRunningProperty, ref _isRunning, false);
+        _retainedMove = false;
+        AnimationScope.RebuildPolicyChanged(this);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -579,7 +594,12 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
             if (!IsCurrent) return;
             _owner._pendingMove = null;
             if (!_owner.IsEffectivelyVisible) _owner.Release();
-            else _owner._motionBasis += _basisDelta;
+            else
+            {
+                _owner._motionBasis += _basisDelta;
+                _owner._retainedMove = true;
+                AnimationScope.RebuildPolicyChanged(_owner);
+            }
             _owner._targetLayout = null;
             _owner._lastInnerConstraints = null;
             _owner.InvalidateMeasure();

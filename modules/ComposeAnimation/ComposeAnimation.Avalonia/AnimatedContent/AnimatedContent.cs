@@ -16,7 +16,7 @@ namespace ComposeAnimation;
 /// Presents overlapping enter/exit content when <see cref="ContentControl.Content"/> changes.
 /// Bind Content as the target state; each live slot freezes that value and the current template.
 /// </summary>
-public class AnimatedContent : ContentControl
+public class AnimatedContent : ContentControl, IAnimationScopeHost
 {
     public static readonly StyledProperty<ContentSource?> SourceProperty =
         AvaloniaProperty.Register<AnimatedContent, ContentSource?>(nameof(Source));
@@ -56,7 +56,6 @@ public class AnimatedContent : ContentControl
 
     static AnimatedContent()
     {
-        AnimationScope.ScopeChangedEvent.AddClassHandler<AnimatedContent>((control, e) => control.OnScopeChanged(e));
         HorizontalContentAlignmentProperty.OverrideDefaultValue<AnimatedContent>(Avalonia.Layout.HorizontalAlignment.Stretch);
         VerticalContentAlignmentProperty.OverrideDefaultValue<AnimatedContent>(Avalonia.Layout.VerticalAlignment.Stretch);
         TemplateProperty.OverrideDefaultValue<AnimatedContent>(new FuncControlTemplate<AnimatedContent>((host, names) =>
@@ -200,7 +199,7 @@ public class AnimatedContent : ContentControl
 
     // A rebuilt scope ended the old connection (its resource callback disconnected it); reconnect
     // on the replacement. Detach is handled by OnDetachedFromVisualTree.
-    private void OnScopeChanged(AnimationScopeChangedEventArgs e)
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
     {
         if (e.NewScope is null) return;
         _failed = false;

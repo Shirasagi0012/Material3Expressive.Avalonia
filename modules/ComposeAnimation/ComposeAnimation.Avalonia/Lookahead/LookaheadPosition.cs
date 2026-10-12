@@ -12,7 +12,7 @@ namespace ComposeAnimation;
 /// Size is not animated.
 /// Cooperative motion-frame offsets follow immediately. No reference selection or render-transform conversion is provided.
 /// </summary>
-public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementApproach, ILookaheadPlacementHost
+public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementApproach, ILookaheadPlacementHost, IAnimationScopeHost
 {
     private readonly LookaheadEntry _entry;
     public static readonly StyledProperty<IFiniteAnimationSpec<Point>> AnimationSpecProperty =
@@ -30,12 +30,10 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
     private LookaheadContext? _context;
     private Point _target;
 
-    static LookaheadPosition() => AnimationScope.ScopeChangedEvent.AddClassHandler<LookaheadPosition>((control, e) => control.OnScopeChanged(e));
-
     public LookaheadPosition() => _entry = new(this);
 
     // The old scope's end released the animation state; measure again to start on the new scope.
-    private void OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
 
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

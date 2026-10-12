@@ -10,22 +10,41 @@ using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation;
 
+/// <summary>Describes one animation failure, raised by the root scope's <see cref="AnimationScope.AnimationFailed"/>.</summary>
 public sealed class AnimationFailureEventArgs : EventArgs
 {
     internal AnimationFailureEventArgs(Guid id, AnimationScope source, string? label, Exception error, Visual? host = null)
-        => (FailureId, SourceScope, Host, OperationLabel, Exception) = (id, source, host ?? source.Host, label, error);
+    {
+        FailureId = id;
+        SourceScope = source;
+        Host = host ?? source.Host;
+        OperationLabel = label;
+        Exception = error;
+    }
+
+    /// <summary>Identity of the failure; the same failure observed again keeps its id.</summary>
     public Guid FailureId { get; }
+    /// <summary>The scope that reported the failure.</summary>
     public AnimationScope SourceScope { get; }
+    /// <summary>The visual the failure belongs to (the source scope's host unless reported for another visual).</summary>
     public Visual Host { get; }
+    /// <summary>The label of the failing operation, when one was given.</summary>
     public string? OperationLabel { get; }
+    /// <summary>The original exception.</summary>
     public Exception Exception { get; }
 }
 
 /// <summary>Arguments of <see cref="AnimationScope.ScopeChangedEvent"/>.</summary>
+/// <remarks><see cref="RoutedEventArgs.Source"/> is the host for <see cref="Interactive"/> hosts and null otherwise.</remarks>
 public sealed class AnimationScopeChangedEventArgs : RoutedEventArgs
 {
     internal AnimationScopeChangedEventArgs(AnimationScope? oldScope, AnimationScope? newScope)
-        : base(AnimationScope.ScopeChangedEvent) => (OldScope, NewScope) = (oldScope, newScope);
+        : base(AnimationScope.ScopeChangedEvent)
+    {
+        OldScope = oldScope;
+        NewScope = newScope;
+    }
+
     /// <summary>The scope that ended.</summary>
     public AnimationScope? OldScope { get; }
     /// <summary>The replacement scope, or null when the control left the tree.</summary>
@@ -38,53 +57,67 @@ public sealed class AnimationScopeChangedEventArgs : RoutedEventArgs
 /// </summary>
 public class AnimationScope
 {
+    /// <summary>
+    /// How a scope is created and what ends it.
+    /// <code>
+    /// Kind       created by                  parent              ends on                          rebuilt by drain
+    /// Root       Initialize                  none                window Closed                    no
+    /// PopupRoot  Resolve (popup TopLevel)    parent TopLevel's   popup Closed / visual detach     no
+    /// Owned      Get                         ancestor or root    drain (detach/move), parent end  yes (stale -> Kept/Replaced/Ended/Superseded/Deferred)
+    /// Detached   CreateDetached (internal)   window root         owner visual detach              no
+    /// Child      CreateChild                 creating scope      Dispose, parent end              no
+    /// </code>
+    /// </summary>
     private enum Kind { Root, PopupRoot, Owned, Detached, Child }
 
+    private enum RebuildResult { Kept, Replaced, Ended, Superseded, Deferred }
+
     private static readonly ConditionalWeakTable<TopLevel, AnimationScope> Roots = new();
-    private static readonly ConditionalWeakTable<Visual, List<EventHandler<AnimationScopeChangedEventArgs>>> VisualHandlers = new();
+    private static readonly ConditionalWeakTable<Visual, List<HandlerEntry>> Handlers = new();
+    private static readonly AsyncLocal<Operation?> CurrentOperation = new();
 
     /// <summary>The scope owned by a control (local value); descendants inherit it as their parent.</summary>
     internal static readonly AttachedProperty<AnimationScope?> ScopeProperty =
         AvaloniaProperty.RegisterAttached<AnimationScope, Visual, AnimationScope?>("Scope", inherits: true);
 
-    /// <summary>Raised directly on a control when the drain replaced or ended its <see cref="Get"/> scope.</summary>
+    /// <summary>
+    /// Raised directly on a control when the drain (or <see cref="Get"/>) replaced or ended its
+    /// <see cref="Get"/> scope. Handlers added with <see cref="AddScopeChangedHandler"/> are isolated:
+    /// one that throws is reported and the others still run.
+    /// </summary>
     public static readonly RoutedEvent<AnimationScopeChangedEventArgs> ScopeChangedEvent =
         RoutedEvent.Register<AnimationScopeChangedEventArgs>("ScopeChanged", RoutingStrategies.Direct, typeof(AnimationScope));
 
     /// <summary>Inherited playback duration multiplier for the visual subtree. Raw frame timestamps are unchanged.</summary>
     public static readonly AttachedProperty<double> DurationScaleProperty =
         AvaloniaProperty.RegisterAttached<AnimationScope, Visual, double>("DurationScale", 1, inherits: true,
-            validate: value => double.IsFinite(value) && value >= 0);
-    public static double GetDurationScale(Visual visual) => visual.GetValue(DurationScaleProperty);
-    public static void SetDurationScale(Visual visual, double value) => visual.SetValue(DurationScaleProperty, value);
-
-    // The exact Avalonia inheritance parent (logical parent, or the ContentPresenter / popup parent
-    // that Avalonia substitutes), so the lookup matches what inherited values see (D13).
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_InheritanceParent")]
-    private static extern AvaloniaObject? InheritanceParentOf(AvaloniaObject element);
+            validate: IsValidScale);
 
     private readonly Kind _kind;
-    private readonly StaleSet? _stale;
-    private static readonly AsyncLocal<Operation?> CurrentOperation = new();
     private readonly AnimationScope? _parent;
     private readonly AnimationScope _root;
+    private readonly StaleSet? _stale;
     private readonly FrameClock _frameClock;
     private readonly AnimationLifetime _lifecycle = new();
+    private readonly CancellationToken _token;
     private readonly HashSet<AnimationScope> _children = [];
     private readonly HashSet<Operation> _tasks = [];
     private readonly HashSet<ScopeResource> _subscriptions = [];
     private readonly HashSet<ScopeResource> _bindings = [];
     private readonly ConditionalWeakTable<Exception, Failure> _failures;
     private readonly TaskCompletionSource _ended = new();
-    private readonly CancellationToken _token;
-    private bool _isStale;
-    private int _rebuildCount;
     private bool _ending;
     private bool _cleanupStarted;
+    private bool _isStale;
+    private bool _parked;
+    private int _generation;
     private double? _durationScale;
+    private Exception? _lastError;
+    private Exception? _lastDiagnosticError;
 
-    private protected AnimationScope(Visual host, AnimationScope? parent, IAnimationFrameClock? clock, string? label,
-        TimeProvider? timeProvider = null) : this(Kind.Child, host, parent, clock, label, timeProvider) { }
+    // Exists only so AnimationChildScope can derive; every other kind uses the private constructor.
+    private protected AnimationScope(Visual host, AnimationScope parent, string? label)
+        : this(Kind.Child, host, parent, null, label) { }
 
     private AnimationScope(Kind kind, Visual host, AnimationScope? parent, IAnimationFrameClock? clock, string? label,
         TimeProvider? timeProvider = null)
@@ -109,7 +142,7 @@ public class AnimationScope
         parent?._children.Add(this);
         if (_root == this)
         {
-            _stale = new StaleSet();
+            _stale = new StaleSet(this);
             _stale.Hook = _frameClock.RegisterBeforeFrame(DrainStale);
         }
         if (kind != Kind.Child) host.PropertyChanged += OnHostPropertyChanged;
@@ -127,6 +160,8 @@ public class AnimationScope
         }
     }
 
+    // ---- Public surface -------------------------------------------------------------------------
+
     public Visual Host { get; }
     public string? Label { get; }
 
@@ -136,18 +171,14 @@ public class AnimationScope
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public IAnimationFrameClock Clock { get; }
-    /// <summary>The window's frame clock, shared by every scope of this environment.</summary>
-    internal FrameClock FrameClock => _frameClock;
+
     /// <summary>Coroutine delay time source, inherited by children; independent of frame timestamps and DurationScale.</summary>
     public TimeProvider TimeProvider { get; }
+
     /// <summary>The scope's only cancellation signal; cancelled when the scope ends.</summary>
     public CancellationToken Lifetime => _token;
-    private Exception? _lastError;
-    /// <summary>Last exception thrown by a diagnostic subscriber. Never recursively reported.</summary>
-    private Exception? _lastDiagnosticError;
+
     public event EventHandler<AnimationFailureEventArgs>? AnimationFailed;
-    internal bool IsEnding => _ending;
-    internal AnimationScopeDiagnostics Diagnostics => new(this);
 
     /// <summary>
     /// Inherited playback duration multiplier, multiplied by the host's attached
@@ -160,11 +191,14 @@ public class AnimationScope
         set
         {
             VerifyActive();
-            if (!double.IsFinite(value) || value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!IsValidScale(value)) throw new ArgumentOutOfRangeException(nameof(value));
             _durationScale = value;
             PlaybackChanged();
         }
     }
+
+    public static double GetDurationScale(Visual visual) => visual.GetValue(DurationScaleProperty);
+    public static void SetDurationScale(Visual visual, double value) => visual.SetValue(DurationScaleProperty, value);
 
     public static AnimationScope Initialize(TopLevel host, IAnimationFrameClock? source = null)
         => Initialize(host, source, System.TimeProvider.System);
@@ -172,14 +206,13 @@ public class AnimationScope
     /// <summary>Initializes an environment with an explicit ordinary-delay scheduler.</summary>
     public static AnimationScope Initialize(TopLevel host, IAnimationFrameClock? source, TimeProvider timeProvider)
     {
-        var clock = source;
         ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(timeProvider);
         Dispatcher.UIThread.VerifyAccess();
         if (Roots.TryGetValue(host, out _)) throw new InvalidOperationException("This TopLevel already has an animation environment.");
-        clock ??= new AvaloniaAnimationFrameClock(host);
-        clock.VerifyAccess();
-        var root = new AnimationScope(Kind.Root, host, null, clock, "Root", timeProvider);
+        source ??= new AvaloniaAnimationFrameClock(host);
+        source.VerifyAccess();
+        var root = new AnimationScope(Kind.Root, host, null, source, "Root", timeProvider);
         Roots.Add(host, root);
         host.Closed += root.OnClosed;
         return root;
@@ -190,16 +223,21 @@ public class AnimationScope
     /// the nearest ancestor's scope (through the inheritance chain, popups included), or the window
     /// root. When the control moves in the tree the scope is marked stale and replaced (or ended)
     /// once, coalesced, before the next frame's waiters resume; <see cref="ScopeChangedEvent"/> then
-    /// fires on the control. Until then <c>Get</c> keeps returning the current scope. A move made
+    /// fires on the control. Until then <c>Get</c> keeps returning the current scope, unless that
+    /// scope already ended (its parent ended): then it is rebuilt synchronously here, raising
+    /// <see cref="ScopeChangedEvent"/>, so <c>Get</c> never returns an ended scope. A move made
     /// while a frame's waiters are resuming takes effect for the next frame.
     /// </summary>
     public static AnimationScope Get(Visual control)
     {
         ArgumentNullException.ThrowIfNull(control);
         Dispatcher.UIThread.VerifyAccess();
-        if (control.GetValue(ScopeProperty) is { } current && ReferenceEquals(current.Host, control) &&
-            current._kind == Kind.Owned && (!current._ending || current._isStale))
-            return current;
+        if (OwnedScopeOf(control) is { } current)
+        {
+            if (!current._ending) return current;
+            current.RebuildNow();
+            if (OwnedScopeOf(control) is { _ending: false } rebuilt) return rebuilt;
+        }
         var parent = ResolveParent(control) ?? throw new InvalidOperationException("Animation scopes require an attached Visual with a TopLevel.");
         parent.VerifyActive();
         var scope = new AnimationScope(Kind.Owned, control, parent, null, control.GetType().Name);
@@ -207,65 +245,30 @@ public class AnimationScope
         return scope;
     }
 
-    // Null when the control is not attached to a TopLevel. The value is read one step above the
-    // control, because the control's own local value shadows the inherited one (D13). It may be an
-    // ancestor scope that already ended and awaits its own rebuild; callers decide.
-    private static AnimationScope? ResolveParent(Visual control)
-    {
-        var top = TopLevel.GetTopLevel(control);
-        if (top is null) return null;
-        if (InheritanceParentOf(control) is { } above && above.GetValue(ScopeProperty) is { } inherited)
-            return inherited;
-        return Resolve(top);
-    }
-
-    /// <summary>
-    /// A scope parented to the window root that ends when <paramref name="owner"/> detaches; not
-    /// stored in the tree. For hosts whose scope ownership is still undecided (O5).
-    /// </summary>
-    internal static AnimationScope CreateDetached(Visual owner)
-    {
-        ArgumentNullException.ThrowIfNull(owner);
-        Dispatcher.UIThread.VerifyAccess();
-        var host = TopLevel.GetTopLevel(owner) ?? throw new InvalidOperationException("Animation scopes require an attached Visual with a TopLevel.");
-        var environment = Resolve(host);
-        environment.VerifyActive();
-        return new AnimationScope(Kind.Detached, owner, environment, null, owner.GetType().Name);
-    }
-
+    /// <summary>Adds a <see cref="ScopeChangedEvent"/> handler. UI thread only. For a host that is not
+    /// <see cref="Interactive"/>, the event's <see cref="RoutedEventArgs.Source"/> is null.</summary>
     public static void AddScopeChangedHandler(Visual control, EventHandler<AnimationScopeChangedEventArgs> handler)
     {
         ArgumentNullException.ThrowIfNull(control);
         ArgumentNullException.ThrowIfNull(handler);
-        if (control is Interactive interactive) interactive.AddHandler(ScopeChangedEvent, handler);
-        else VisualHandlers.GetOrCreateValue(control).Add(handler);
+        Dispatcher.UIThread.VerifyAccess();
+        var entry = new HandlerEntry(handler, control);
+        Handlers.GetOrCreateValue(control).Add(entry);
+        if (control is Interactive interactive) interactive.AddHandler(ScopeChangedEvent, entry.Invoke);
     }
 
+    /// <summary>Removes a handler added with <see cref="AddScopeChangedHandler"/>. UI thread only.</summary>
     public static void RemoveScopeChangedHandler(Visual control, EventHandler<AnimationScopeChangedEventArgs> handler)
     {
         ArgumentNullException.ThrowIfNull(control);
         ArgumentNullException.ThrowIfNull(handler);
-        if (control is Interactive interactive) interactive.RemoveHandler(ScopeChangedEvent, handler);
-        else if (VisualHandlers.TryGetValue(control, out var list)) list.Remove(handler);
-    }
-
-    private static AnimationScope Resolve(TopLevel host)
-    {
-        if (Roots.TryGetValue(host, out var root))
-        {
-            if (!root.IsEnding || host is not PopupRoot) return root;
-            Roots.Remove(host);
-        }
-        if (host is PopupRoot popup && popup.ParentTopLevel is { } parent)
-        {
-            var environment = Resolve(parent);
-            environment.VerifyActive();
-            root = new AnimationScope(Kind.PopupRoot, host, environment, null, "Popup");
-            Roots.Add(host, root);
-            host.Closed += root.OnClosed;
-            return root;
-        }
-        throw new InvalidOperationException("Call AnimationScope.Initialize(topLevel, clock) before loading or setting its content.");
+        Dispatcher.UIThread.VerifyAccess();
+        if (!Handlers.TryGetValue(control, out var list)) return;
+        var index = list.FindIndex(e => e.Handler == handler);
+        if (index < 0) return;
+        var entry = list[index];
+        list.RemoveAt(index);
+        if (control is Interactive interactive) interactive.RemoveHandler(ScopeChangedEvent, entry.Invoke);
     }
 
     /// <summary>
@@ -284,22 +287,6 @@ public class AnimationScope
     /// </summary>
     public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken = default)
         => ((ScopeClock)Clock).NextFrameAsync(cancellationToken, null);
-
-    internal static bool IsEnvironmentEnding(Visual owner)
-        => TopLevel.GetTopLevel(owner) is { } host && Roots.TryGetValue(host, out var scope) && scope._root.IsEnding;
-
-    internal static void ReportError(Visual host, Exception error)
-    {
-        if (host.GetValue(ScopeProperty) is { } scope && ReferenceEquals(scope.Host, host) && !scope._ending)
-            scope.Report(error, null, CurrentOperation.Value);
-        else if (TopLevel.GetTopLevel(host) is { } top) Resolve(top).Report(error, null, CurrentOperation.Value, host);
-    }
-
-    internal void VerifyActive()
-    {
-        Dispatcher.UIThread.VerifyAccess();
-        ObjectDisposedException.ThrowIf(_ending, this);
-    }
 
     public Task Launch(Func<CancellationToken, Task> operation, string? label = null)
     {
@@ -333,6 +320,382 @@ public class AnimationScope
         }, "Coroutine delay");
     }
 
+    // ---- Internal surface -----------------------------------------------------------------------
+
+    /// <summary>The window's frame clock, shared by every scope of this environment.</summary>
+    internal FrameClock FrameClock => _frameClock;
+    internal bool IsEnding => _ending;
+    internal ScopeDiagnostics Diagnostics => new(this);
+
+    /// <summary>
+    /// A scope parented to the window root that ends when <paramref name="owner"/> detaches; not
+    /// stored in the tree. For hosts whose scope ownership is still undecided (O5).
+    /// </summary>
+    internal static AnimationScope CreateDetached(Visual owner)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        Dispatcher.UIThread.VerifyAccess();
+        var host = TopLevel.GetTopLevel(owner) ?? throw new InvalidOperationException("Animation scopes require an attached Visual with a TopLevel.");
+        var environment = Resolve(host);
+        environment.VerifyActive();
+        return new AnimationScope(Kind.Detached, owner, environment, null, owner.GetType().Name);
+    }
+
+    /// <summary>
+    /// Called by an <see cref="IAnimationScopeHost"/> when <see cref="IAnimationScopeHost.DefersScopeRebuild"/>
+    /// may have turned false: a parked stale scope is queued for the drain again.
+    /// </summary>
+    internal static void RebuildPolicyChanged(Visual host)
+    {
+        if (OwnedScopeOf(host) is { _parked: true } scope && !Defers(scope)) scope.MarkStale();
+    }
+
+    internal static bool IsEnvironmentEnding(Visual owner)
+        => TopLevel.GetTopLevel(owner) is { } host && Roots.TryGetValue(host, out var scope) && scope._root._ending;
+
+    internal static void ReportError(Visual host, Exception error)
+    {
+        if (OwnedScopeOf(host) is { _ending: false } scope) scope.Report(error, null, CurrentOperation.Value);
+        else if (TopLevel.GetTopLevel(host) is { } top) Resolve(top).Report(error, null, CurrentOperation.Value, host);
+    }
+
+    internal void VerifyActive()
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        ObjectDisposedException.ThrowIf(_ending, this);
+    }
+
+    internal void ReportFailure(Exception error, string? label = null) => Report(error, label, CurrentOperation.Value);
+
+    internal IDisposable RegisterResource(Action dispose, bool binding = false)
+    {
+        VerifyActive();
+        var resource = new ScopeResource(this, dispose, binding);
+        (binding ? _bindings : _subscriptions).Add(resource);
+        return resource;
+    }
+
+    /// <summary>
+    /// Ends this scope and its descendants: mark ending, release subscriptions, then bindings,
+    /// cancel, wait for tracked tasks and children, drain, remove from parent. Used by rebuild,
+    /// detach, child disposal and window close.
+    /// </summary>
+    internal void End()
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        if (_cleanupStarted) return;
+        MarkEnding();
+        DisableConsumers(false);
+        DisableConsumers(true);
+        StartCleanup();
+    }
+
+    /// <summary>Ends the scope and completes when its cleanup finished (tests).</summary>
+    internal Task EndAsync()
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        for (var operation = CurrentOperation.Value; operation is not null; operation = operation.Parent)
+        {
+            if (!operation.Active) continue;
+            for (var scope = operation.Scope; scope is not null; scope = scope._parent)
+                if (ReferenceEquals(scope, this))
+                    throw new InvalidOperationException("An animation operation cannot await disposal of its own scope or an ancestor.");
+        }
+        End();
+        return _ended.Task;
+    }
+
+    // ---- Lookup ---------------------------------------------------------------------------------
+
+    private static bool IsValidScale(double value) => double.IsFinite(value) && value >= 0;
+
+    private static AnimationScope? OwnedScopeOf(Visual control)
+        => control.GetValue(ScopeProperty) is { _kind: Kind.Owned } scope && ReferenceEquals(scope.Host, control) ? scope : null;
+
+    private static bool Defers(AnimationScope scope)
+        => !scope._ending && scope.Host is IAnimationScopeHost { DefersScopeRebuild: true };
+
+    // Null when the control is not attached to a TopLevel. The value is read one step above the
+    // control, because the control's own local value shadows the inherited one (D13). It may be an
+    // ancestor scope that already ended and awaits its own rebuild; callers decide.
+    private static AnimationScope? ResolveParent(Visual control)
+    {
+        var top = TopLevel.GetTopLevel(control);
+        if (top is null) return null;
+        if (AvaloniaInternals.GetInheritanceParent(control) is { } above && above.GetValue(ScopeProperty) is { } inherited)
+            return inherited;
+        return Resolve(top);
+    }
+
+    private static AnimationScope Resolve(TopLevel host)
+    {
+        if (Roots.TryGetValue(host, out var root))
+        {
+            if (!root._ending || host is not PopupRoot) return root;
+            Roots.Remove(host);
+        }
+        if (host is PopupRoot popup && popup.ParentTopLevel is { } parent)
+        {
+            var environment = Resolve(parent);
+            environment.VerifyActive();
+            root = new AnimationScope(Kind.PopupRoot, host, environment, null, "Popup");
+            Roots.Add(host, root);
+            host.Closed += root.OnClosed;
+            return root;
+        }
+        throw new InvalidOperationException("Call AnimationScope.Initialize(topLevel, clock) before loading or setting its content.");
+    }
+
+    // ---- Stale marking, drain and rebuild -------------------------------------------------------
+
+    private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (_kind == Kind.Owned) MarkStale();
+        else End();
+    }
+
+    private void OnLogicalTreeChanged(object? sender, LogicalTreeAttachmentEventArgs e) => MarkStale();
+    private void OnClosed(object? sender, EventArgs e) => End();
+
+    private void OnHostPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == DurationScaleProperty) PlaybackChanged();
+    }
+
+    // Mark only; the drain rebuilds (D14). Coalesced: one set per window, one fallback post.
+    // A parked scope (deferred by its host's policy) is queued again.
+    private void MarkStale()
+    {
+        if (_kind != Kind.Owned || _isStale && !_parked) return;
+        _isStale = true;
+        _parked = false;
+        var set = _root._stale!;
+        set.Scopes.Add(this);
+        set.ArmFallback();
+    }
+
+    // Runs in the FrameClock before-frame hook (before the waiter snapshot, so restarted runs join
+    // this frame, D16) and in the fallback post. Whichever runs first drains; the other is a no-op.
+    // All buffers live on the StaleSet, so a drain with deferred entries does not allocate.
+    private void DrainStale()
+    {
+        var set = _stale!;
+        if (set.Scopes.Count == 0) return;
+        if (set.Draining) return;
+        set.Draining = true;
+        var nextFrame = false;
+        var retry = false;
+        try
+        {
+            // Index loop: scopes marked during the drain (cascade) are handled in this drain too.
+            for (var i = 0; i < set.Scopes.Count; i++)
+            {
+                var scope = set.Scopes[i];
+                if (!scope._isStale || scope._parked) continue;
+                // D18: at most one rebuild per host per drain; a host made stale again waits.
+                if (set.Rebuilt.Contains(scope.Host))
+                {
+                    set.Deferred.Add(scope);
+                    nextFrame = true;
+                    continue;
+                }
+                bool defers;
+                try { defers = Defers(scope); }
+                catch (Exception error)
+                {
+                    scope.Report(error, "Scope rebuild", null);
+                    defers = false;
+                }
+                if (defers)
+                {
+                    // Out of the queue until the host calls RebuildPolicyChanged (no per-frame polling).
+                    scope._parked = true;
+                    continue;
+                }
+                scope._isStale = false;
+                RebuildResult result;
+                try { result = scope.Rebuild(); }
+                catch (Exception error)
+                {
+                    // Isolated: the rest of the window's stale scopes still rebuild.
+                    scope.Report(error, "Scope rebuild", null);
+                    continue;
+                }
+                switch (result)
+                {
+                    case RebuildResult.Replaced:
+                    case RebuildResult.Ended:
+                        set.Rebuilt.Add(scope.Host);
+                        break;
+                    case RebuildResult.Deferred:
+                        scope._isStale = true;
+                        set.Deferred.Add(scope);
+                        retry = true;
+                        break;
+                }
+            }
+        }
+        finally
+        {
+            set.Scopes.Clear();
+            set.Scopes.AddRange(set.Deferred);
+            set.Deferred.Clear();
+            set.Rebuilt.Clear();
+            set.Draining = false;
+            // Deferred entries are never stranded: a host rebuilt in this drain waits for the next
+            // frame (D18), so request one; an entry waiting on its ancestor retries in the fallback post.
+            if (nextFrame) RequestFrame();
+            if (retry) set.ArmFallback();
+        }
+    }
+
+    private void RequestFrame()
+    {
+        if (_ending) return;
+        try { _ = _frameClock.WaitAsync(_token); }
+        catch (Exception error) { Report(error, "Scope rebuild", null); }
+    }
+
+    // Get on an ended scope: rebuild this one scope now (its ended ancestors first), outside the drain.
+    private void RebuildNow()
+    {
+        if (ResolveParent(Host) is { _kind: Kind.Owned, _ending: true } parent && OwnedScopeOf(parent.Host) == parent)
+            parent.RebuildNow();
+        _isStale = false;
+        _parked = false;
+        var result = Rebuild();
+        if (result is RebuildResult.Replaced or RebuildResult.Ended && _root._stale is { Draining: true } set)
+            set.Rebuilt.Add(Host);
+    }
+
+    private RebuildResult Rebuild()
+    {
+        var host = Host;
+        if (!ReferenceEquals(host.GetValue(ScopeProperty), this))
+        {
+            // The local value was replaced: nothing to keep alive.
+            if (!_ending) End();
+            return RebuildResult.Superseded;
+        }
+        AnimationScope? parent;
+        try { parent = ResolveParent(host); }
+        catch (Exception error)
+        {
+            Report(error, "Scope rebuild", null);
+            parent = null;
+        }
+        if (parent is not null && !_ending && ReferenceEquals(parent, _parent)) return RebuildResult.Kept;
+        // The ancestor is itself waiting for its rebuild (D18 deferral); follow it.
+        if (parent is { _ending: true, _isStale: true, _kind: Kind.Owned }) return RebuildResult.Deferred;
+
+        End();
+        if (parent is not null && !parent._ending)
+        {
+            var replacement = new AnimationScope(Kind.Owned, host, parent, null, Label) { _generation = _generation + 1 };
+            host.SetValue(ScopeProperty, replacement);
+            RaiseScopeChanged(host, this, replacement);
+            return RebuildResult.Replaced;
+        }
+        host.ClearValue(ScopeProperty);
+        RaiseScopeChanged(host, this, null);
+        return RebuildResult.Ended;
+    }
+
+    // The component's own reaction runs first and directly, independent of routed-event order;
+    // then the routed event (Interactive) or the handler table (plain Visual). Each failure is
+    // reported on the new scope (the old one when the control left the tree).
+    private static void RaiseScopeChanged(Visual host, AnimationScope old, AnimationScope? replacement)
+    {
+        var args = new AnimationScopeChangedEventArgs(old, replacement) { Source = host as Interactive };
+        if (host is IAnimationScopeHost component)
+        {
+            try { component.OnScopeChanged(args); }
+            catch (Exception error) { ReportHandlerError(host, args, error); }
+        }
+        if (host is Interactive interactive)
+        {
+            // Handlers from AddScopeChangedHandler isolate themselves; this catches raw AddHandler ones.
+            try { interactive.RaiseEvent(args); }
+            catch (Exception error) { ReportHandlerError(host, args, error); }
+        }
+        else if (Handlers.TryGetValue(host, out var list))
+        {
+            foreach (var entry in list.ToArray()) entry.Invoke(host, args);
+        }
+    }
+
+    private static void ReportHandlerError(Visual host, AnimationScopeChangedEventArgs args, Exception error)
+        => (args.NewScope ?? args.OldScope)!.Report(error, "ScopeChanged handler", null, host);
+
+    // ---- Ending ---------------------------------------------------------------------------------
+
+    // One recursive pass over a snapshot of each level: mark ending, and (when this Get-owned scope
+    // ends while still attached) mark Get-owned descendants stale so the drain rebuilds them under
+    // their new parent.
+    private void MarkEnding()
+    {
+        var restale = _kind == Kind.Owned && !_root._ending && TopLevel.GetTopLevel(Host) is not null;
+        MarkEnding(restale, top: true);
+    }
+
+    private void MarkEnding(bool restale, bool top)
+    {
+        _ending = true;
+        _lifecycle.MarkEnding();
+        if (restale && !top) MarkStale();
+        foreach (var child in _children.ToArray()) child.MarkEnding(restale, top: false);
+    }
+
+    private void PlaybackChanged()
+    {
+        _lifecycle.PlaybackChanged();
+        foreach (var child in _children.ToArray()) child.PlaybackChanged();
+    }
+
+    private void DisableConsumers(bool binding)
+    {
+        foreach (var child in _children.ToArray()) child.DisableConsumers(binding);
+        foreach (var resource in (binding ? _bindings : _subscriptions).ToArray()) TryCleanup(resource.Dispose);
+    }
+
+    private void StartCleanup()
+    {
+        if (_cleanupStarted) return;
+        _cleanupStarted = true;
+        Host.DetachedFromVisualTree -= OnDetached;
+        Host.AttachedToLogicalTree -= OnLogicalTreeChanged;
+        Host.DetachedFromLogicalTree -= OnLogicalTreeChanged;
+        Host.PropertyChanged -= OnHostPropertyChanged;
+        if (_stale is not null) TryCleanup(_stale.Hook!.Dispose);
+        if (Host is TopLevel top) top.Closed -= OnClosed;
+        foreach (var child in _children.ToArray()) child.StartCleanup();
+        TryCleanup(_lifecycle.Cancel);
+        if (_root == this) TryCleanup(_frameClock.Dispose);
+        _ = FinishCleanupAsync();
+    }
+
+    private void TryCleanup(Action cleanup)
+    {
+        try { cleanup(); } catch (Exception error) { Report(error, "Scope cleanup", CurrentOperation.Value); }
+    }
+
+    private async Task FinishCleanupAsync()
+    {
+        try
+        {
+            while (_tasks.Count > 0 || _children.Count > 0)
+                await Task.WhenAll(_tasks.Select(t => t.Completion.Task).Concat(_children.Select(c => c._ended.Task)).ToArray()).ConfigureAwait(true);
+            await _lifecycle.DrainAsync().ConfigureAwait(true);
+        }
+        finally
+        {
+            _parent?._children.Remove(this);
+            _ended.TrySetResult();
+        }
+    }
+
+    // ---- Tasks and failures ---------------------------------------------------------------------
+
     private async Task ObserveAsync(Operation entry)
     {
         try { await entry.Task.ConfigureAwait(true); }
@@ -349,8 +712,6 @@ public class AnimationScope
             entry.Completion.TrySetResult();
         }
     }
-
-    internal void ReportFailure(Exception error, string? label = null) => Report(error, label, CurrentOperation.Value);
 
     private void Report(Exception error, string? label, Operation? operation, Visual? host = null, bool frameSource = false)
     {
@@ -396,239 +757,28 @@ public class AnimationScope
         => error is AggregateException { InnerExceptions.Count: > 0 } aggregate
             ? aggregate.InnerExceptions.SelectMany(Leaves) : [error];
 
-    internal IDisposable RegisterResource(Action dispose, bool binding = false)
-    {
-        VerifyActive();
-        var resource = new ScopeResource(this, dispose, binding);
-        (binding ? _bindings : _subscriptions).Add(resource);
-        return resource;
-    }
+    // ---- Nested types ---------------------------------------------------------------------------
 
-    private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e)
+    /// <summary>Internal diagnostics view of a scope (tests).</summary>
+    internal readonly struct ScopeDiagnostics(AnimationScope scope)
     {
-        if (_kind == Kind.Owned) MarkStale();
-        else End();
-    }
-    private void OnLogicalTreeChanged(object? sender, LogicalTreeAttachmentEventArgs e) => MarkStale();
-    private void OnClosed(object? sender, EventArgs e) => End();
-    private void OnHostPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property == DurationScaleProperty) PlaybackChanged();
-    }
-
-    // Mark only; the drain rebuilds (D14). Coalesced: one set per window, one fallback post.
-    private void MarkStale()
-    {
-        if (_kind != Kind.Owned || _isStale) return;
-        _isStale = true;
-        var set = _root._stale!;
-        set.Scopes.Add(this);
-        if (set.PostPending || set.Draining) return;
-        set.PostPending = true;
-        var root = _root;
-        Dispatcher.UIThread.Post(() =>
-        {
-            set.PostPending = false;
-            root.DrainStale();
-        }, FrameClock.ResumePriority);
-    }
-
-    // Runs in the FrameClock before-frame hook (before the waiter snapshot, so restarted runs join
-    // this frame, D16) and in the fallback post. Whichever runs first drains; the other is a no-op.
-    private void DrainStale()
-    {
-        var set = _stale!;
-        if (set.Scopes.Count == 0) return;
-        if (set.Draining) return;
-        set.Draining = true;
-        HashSet<Visual>? rebuilt = null;
-        List<AnimationScope>? deferred = null;
-        try
-        {
-            // Index loop: scopes marked during the drain (cascade) are handled in this drain too.
-            for (var i = 0; i < set.Scopes.Count; i++)
-            {
-                var scope = set.Scopes[i];
-                if (!scope._isStale) continue;
-                // D18: at most one rebuild per host per frame; a host made stale again waits.
-                if (rebuilt?.Contains(scope.Host) == true ||
-                    scope.Host is AnimatedBounds { RetainsAnimationAttachment: true } && TopLevel.GetTopLevel(scope.Host) is null)
-                {
-                    (deferred ??= []).Add(scope);
-                    continue;
-                }
-                scope._isStale = false;
-                switch (scope.Rebuild())
-                {
-                    case RebuildResult.Replaced: (rebuilt ??= []).Add(scope.Host); break;
-                    case RebuildResult.Deferred:
-                        scope._isStale = true;
-                        (deferred ??= []).Add(scope);
-                        break;
-                }
-            }
-        }
-        finally
-        {
-            set.Scopes.Clear();
-            if (deferred is not null) set.Scopes.AddRange(deferred);
-            set.Draining = false;
-        }
-    }
-
-    private enum RebuildResult { Kept, Replaced, Deferred }
-
-    private RebuildResult Rebuild()
-    {
-        var host = Host;
-        if (!ReferenceEquals(host.GetValue(ScopeProperty), this))
-        {
-            // Superseded (the local value was replaced): nothing to keep alive.
-            if (!_ending) End();
-            return RebuildResult.Kept;
-        }
-        AnimationScope? parent;
-        try { parent = ResolveParent(host); }
-        catch (Exception error)
-        {
-            Report(error, "Scope rebuild", null);
-            parent = null;
-        }
-        if (parent is not null && !_ending && ReferenceEquals(parent, _parent)) return RebuildResult.Kept;
-        // The ancestor is itself waiting for its rebuild (D18 deferral); follow it next frame.
-        if (parent is { _ending: true, _isStale: true, _kind: Kind.Owned }) return RebuildResult.Deferred;
-
-        End();
-        AnimationScope? replacement = null;
-        if (parent is not null && !parent._ending)
-        {
-            replacement = new AnimationScope(Kind.Owned, host, parent, null, Label) { _rebuildCount = _rebuildCount + 1 };
-            host.SetValue(ScopeProperty, replacement);
-        }
-        else host.ClearValue(ScopeProperty);
-        RaiseScopeChanged(host, this, replacement);
-        return RebuildResult.Replaced;
-    }
-
-    private static void RaiseScopeChanged(Visual host, AnimationScope old, AnimationScope? replacement)
-    {
-        var args = new AnimationScopeChangedEventArgs(old, replacement) { Source = host as Interactive };
-        try
-        {
-            if (host is Interactive interactive) interactive.RaiseEvent(args);
-            else if (VisualHandlers.TryGetValue(host, out var list))
-                foreach (var handler in list.ToArray()) handler(host, args);
-        }
-        catch (Exception error)
-        {
-            (replacement ?? old).Report(error, "ScopeChanged handler", null, host);
-        }
-    }
-    private void PlaybackChanged()
-    {
-        _lifecycle.PlaybackChanged();
-        foreach (var child in _children.ToArray()) child.PlaybackChanged();
-    }
-
-    /// <summary>
-    /// Ends this scope and its descendants: mark ending, release subscriptions, then bindings,
-    /// cancel, wait for tracked tasks and children, drain, remove from parent. Used by rebuild,
-    /// detach, child disposal and window close.
-    /// </summary>
-    internal void End()
-    {
-        Dispatcher.UIThread.VerifyAccess();
-        if (_cleanupStarted) return;
-        MarkEnding();
-        DisableConsumers(false);
-        DisableConsumers(true);
-        StartCleanup();
-    }
-
-    private void MarkEnding()
-    {
-        _ending = true;
-        _lifecycle.MarkEnding();
-        foreach (var child in _children.ToArray()) child.MarkEnding();
-        // Cascade: Get-owned descendants are rebuilt under their new parent by the drain.
-        if (_kind == Kind.Owned && !_root._ending && TopLevel.GetTopLevel(Host) is not null)
-            foreach (var child in _children) child.MarkStaleAfterParentEnded();
-    }
-
-    private void MarkStaleAfterParentEnded()
-    {
-        if (_kind == Kind.Owned) MarkStale();
-        foreach (var child in _children) child.MarkStaleAfterParentEnded();
-    }
-
-    private void DisableConsumers(bool binding)
-    {
-        foreach (var child in _children.ToArray()) child.DisableConsumers(binding);
-        foreach (var resource in (binding ? _bindings : _subscriptions).ToArray()) TryCleanup(resource.Dispose);
-    }
-
-    private void StartCleanup()
-    {
-        if (_cleanupStarted) return;
-        _cleanupStarted = true;
-        Host.DetachedFromVisualTree -= OnDetached;
-        Host.AttachedToLogicalTree -= OnLogicalTreeChanged;
-        Host.DetachedFromLogicalTree -= OnLogicalTreeChanged;
-        Host.PropertyChanged -= OnHostPropertyChanged;
-        if (_stale is not null) TryCleanup(_stale.Hook!.Dispose);
-        if (Host is TopLevel top) top.Closed -= OnClosed;
-        foreach (var child in _children.ToArray()) child.StartCleanup();
-        TryCleanup(_lifecycle.Cancel);
-        if (_root == this) TryCleanup(_frameClock.Dispose);
-        _ = FinishCleanupAsync();
-    }
-
-    private void TryCleanup(Action cleanup)
-    {
-        try { cleanup(); } catch (Exception error) { Report(error, "Scope cleanup", CurrentOperation.Value); }
-    }
-
-    private async Task FinishCleanupAsync()
-    {
-        try
-        {
-            while (_tasks.Count > 0 || _children.Count > 0)
-                await Task.WhenAll(_tasks.Select(t => t.Completion.Task).Concat(_children.Select(c => c._ended.Task)).ToArray()).ConfigureAwait(true);
-            await _lifecycle.DrainAsync().ConfigureAwait(true);
-        }
-        finally
-        {
-            _parent?._children.Remove(this);
-            _ended.TrySetResult();
-        }
-    }
-
-    internal Task Ended => _ended.Task;
-    internal AnimationScope? Parent => _parent;
-    internal bool IsStale => _isStale;
-    internal int RebuildCount => _rebuildCount;
-    internal int WindowStaleCount => _root._stale!.Scopes.Count;
-    internal Exception? LastErrorCore => _lastError;
-    internal Exception? LastDiagnosticErrorCore => _lastDiagnosticError;
-    internal int TaskCount => _tasks.Count;
-    internal int ChildCount => _children.Count;
-    internal int SubscriptionCountCore => _subscriptions.Count;
-    internal int BindingCountCore => _bindings.Count;
-    internal int PendingAnimationCountCore => _lifecycle.PendingCount;
-
-    /// <summary>Ends the scope and completes when its cleanup finished (tests).</summary>
-    internal Task EndAsync()
-    {
-        Dispatcher.UIThread.VerifyAccess();
-        for (var operation = CurrentOperation.Value; operation is not null; operation = operation.Parent)
-        {
-            if (!operation.Active) continue;
-            for (var scope = operation.Scope; scope is not null; scope = scope._parent)
-                if (ReferenceEquals(scope, this))
-                    throw new InvalidOperationException("An animation operation cannot await disposal of its own scope or an ancestor.");
-        }
-        End();
-        return _ended.Task;
+        public int ActiveTaskCount => scope._tasks.Count;
+        public int ActiveChildCount => scope._children.Count;
+        public int SubscriptionCount => scope._subscriptions.Count;
+        public int BindingCount => scope._bindings.Count;
+        public int PendingAnimationCount => scope._lifecycle.PendingCount;
+        public Exception? LastError => scope._lastError;
+        /// <summary>Last exception thrown by a diagnostic subscriber. Never recursively reported.</summary>
+        public Exception? LastDiagnosticError => scope._lastDiagnosticError;
+        public bool IsEnding => scope._ending;
+        public bool IsStale => scope._isStale;
+        public bool IsParked => scope._parked;
+        public AnimationScope? Parent => scope._parent;
+        /// <summary>0 for a first scope; each rebuild's replacement is one higher.</summary>
+        public int Generation => scope._generation;
+        public int WindowStaleCount => scope._root._stale!.Scopes.Count;
+        public Task Ended => scope._ended.Task;
+        public Task EndAsync() => scope.EndAsync();
     }
 
     // Not async: it hands out the FrameClock wait itself, so callers resume inline in the batch
@@ -652,6 +802,17 @@ public class AnimationScope
                 onFault?.Invoke(error);
                 return ValueTask.FromException<TimeSpan>(error);
             }
+        }
+    }
+
+    private sealed class HandlerEntry(EventHandler<AnimationScopeChangedEventArgs> handler, Visual host)
+    {
+        public EventHandler<AnimationScopeChangedEventArgs> Handler { get; } = handler;
+
+        public void Invoke(object? sender, AnimationScopeChangedEventArgs args)
+        {
+            try { Handler(sender ?? host, args); }
+            catch (Exception error) { ReportHandlerError(host, args, error); }
         }
     }
 
@@ -681,39 +842,37 @@ public class AnimationScope
 
     private sealed record Failure(Guid Id, HashSet<Guid> Ancestors, bool FrameSource, string? Trace);
 
-    private sealed class StaleSet
+    // One per window, held on the root. Buffers are reused across drains.
+    private sealed class StaleSet(AnimationScope root)
     {
         public readonly List<AnimationScope> Scopes = [];
+        public readonly List<AnimationScope> Deferred = [];
+        public readonly HashSet<Visual> Rebuilt = [];
         public IDisposable? Hook;
         public bool PostPending;
         public bool Draining;
+
+        public void ArmFallback()
+        {
+            if (PostPending || Draining) return;
+            PostPending = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                PostPending = false;
+                root.DrainStale();
+            }, FrameClock.ResumePriority);
+        }
     }
 }
 
 /// <summary>A child scope from <see cref="AnimationScope.CreateChild"/>; dispose it to end only this child.</summary>
 public sealed class AnimationChildScope : AnimationScope, IDisposable
 {
-    internal AnimationChildScope(Visual host, AnimationScope parent, string? label) : base(host, parent, null, label) { }
+    internal AnimationChildScope(Visual host, AnimationScope parent, string? label) : base(host, parent, label) { }
 
-    /// <summary>Ends this child and its descendants. Idempotent; a no-op once the parent ended it.</summary>
+    /// <summary>
+    /// Ends this child and its descendants. Must be called on the UI thread. Idempotent; a no-op
+    /// once the parent ended it.
+    /// </summary>
     public void Dispose() => End();
-}
-
-/// <summary>Internal diagnostics view of a scope (tests).</summary>
-internal readonly struct AnimationScopeDiagnostics(AnimationScope scope)
-{
-    public int ActiveTaskCount => scope.TaskCount;
-    public int ActiveChildCount => scope.ChildCount;
-    public int SubscriptionCount => scope.SubscriptionCountCore;
-    public int BindingCount => scope.BindingCountCore;
-    public int PendingAnimationCount => scope.PendingAnimationCountCore;
-    public Exception? LastError => scope.LastErrorCore;
-    public Exception? LastDiagnosticError => scope.LastDiagnosticErrorCore;
-    public bool IsEnding => scope.IsEnding;
-    public bool IsStale => scope.IsStale;
-    public AnimationScope? Parent => scope.Parent;
-    public int RebuildCount => scope.RebuildCount;
-    public int WindowStaleCount => scope.WindowStaleCount;
-    public Task Ended => scope.Ended;
-    public Task EndAsync() => scope.EndAsync();
 }
