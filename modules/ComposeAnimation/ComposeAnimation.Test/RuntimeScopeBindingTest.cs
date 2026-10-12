@@ -1,3 +1,4 @@
+using Avalonia.Controls;
 using System.Reflection;
 using Avalonia.Animation.Easings;
 using Avalonia.Threading;
@@ -206,5 +207,112 @@ public class RuntimeScopeBindingTest
         Assert.IsType<InvalidOperationException>(error);
         window.Close();
         return Task.CompletedTask;
+    });
+}
+
+public class RuntimeScopeInlineResumptionTest
+{
+    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+    private static TweenSpec<double> Linear(double ms) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
+
+    public static TheoryData<string, int> Cases()
+    {
+        var data = new TheoryData<string, int>();
+        foreach (var kind in new[] { "Animatable", "Transition", "InfiniteTransition", "SuspendAnimation" })
+            for (var p = 0; p < 3; p++) data.Add(kind, p);
+        return data;
+    }
+
+    // Each run loop, started from a Normal, Background or Loaded post, samples inside the frame
+    // batch: before a waiter registered after it on the same frame resumes.
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public Task RunLoop_ResumesInlineInTheBatch(string kind, int start) => OnUi(() =>
+    {
+        var priority = start switch { 0 => DispatcherPriority.Normal, 1 => DispatcherPriority.Background, _ => DispatcherPriority.Loaded };
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock) { Content = new Border(), Width = 100, Height = 100 };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var root = window.AnimationRoot;
+        var log = new List<string>();
+        IDisposable? keep = null;
+        Dispatcher.UIThread.Post(() =>
+        {
+            switch (kind)
+            {
+                case "Animatable":
+                    var value = Animatable.Create(0d);
+                    _ = value.AnimateToAsync(root, 1, Linear(1000), block: _ => log.Add("sample"));
+                    break;
+                case "Transition":
+                    var state = new MutableTransitionState<bool>(false);
+                    var transition = new Transition<bool>(state);
+                    var node = transition.AnimateDouble(s => s ? 1 : 0, _ => Linear(1000));
+                    node.PropertyChanged += (_, e) => { if (e.PropertyName == "Value") log.Add("sample"); };
+                    state.TargetState = true;
+                    _ = transition.RunAsync(root);
+                    keep = transition;
+                    break;
+                case "InfiniteTransition":
+                    var infinite = new InfiniteTransition();
+                    var loop = infinite.AnimateDouble(0, 1, new InfiniteRepeatableSpec<double>(Linear(1000), RepeatMode.Restart));
+                    loop.PropertyChanged += (_, e) => { if (e.PropertyName == "Value") log.Add("sample"); };
+                    _ = infinite.RunAsync(root);
+                    keep = infinite;
+                    break;
+                default:
+                    _ = SuspendAnimation.AnimateAsync(root, 0, 1, animationSpec: Linear(1000), block: (_, _) => log.Add("sample"));
+                    break;
+            }
+        }, priority);
+        Dispatcher.UIThread.RunJobs();
+        // First frame starts the timeline; the second must sample inline, before "after".
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Dispatcher.UIThread.RunJobs(FrameClock.ResumePriority);
+        log.Clear();
+        _ = root.NextFrameAsync().AsTask().ContinueWith(_ => log.Add("after"), TaskContinuationOptions.ExecuteSynchronously);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Dispatcher.UIThread.RunJobs(FrameClock.ResumePriority);
+        Assert.Equal("sample", log[0]);
+        Assert.Contains("after", log);
+        Assert.True(log.IndexOf("after") > log.IndexOf("sample"));
+        keep?.Dispose();
+        window.Close();
+    });
+
+    private sealed class FaultingSource : IFrameSource
+    {
+        internal TaskCompletionSource<TimeSpan> Pending { get; } = new();
+        public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
+            => new(Pending.Task.WaitAsync(cancellationToken));
+    }
+
+    // Former ObservedClock/FailureObservedClock order: observers innermost first, then the
+    // caller's own onFault, all before the waiting run's continuation.
+    [Fact]
+    public Task FaultObservers_RunInnermostFirst_BeforeTheContinuation() => OnUi(() =>
+    {
+        var source = new FaultingSource();
+        var window = new AnimationTestWindow(source) { Content = new Border(), Width = 100, Height = 100 };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var log = new List<string>();
+        var inner = new ObservedFrameScope(window.AnimationRoot, (_, _) => log.Add("inner"));
+        var outer = new ObservedFrameScope(inner, (_, _) => log.Add("outer"));
+        var wait = outer.WaitFrameAsync(CancellationToken.None, _ => log.Add("caller")).AsTask();
+        _ = wait.ContinueWith(_ => log.Add("continuation"), TaskContinuationOptions.ExecuteSynchronously);
+        var faulting = ObservedFrameScope.Faulting(window.AnimationRoot);
+        var value = Animatable.Create(0d);
+        var run = value.AnimateToAsync(faulting, 1, Linear(100));
+        _ = run.ContinueWith(_ => log.Add(faulting.Faulted ? "run ended after observer" : "run ended first"), TaskContinuationOptions.ExecuteSynchronously);
+        source.Pending.SetException(new InvalidOperationException("source"));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(["inner", "outer", "caller", "continuation"], log.Take(4));
+        Assert.Contains("run ended after observer", log);
+        Assert.True(wait.IsFaulted);
+        Assert.True(run.IsFaulted);
+        window.Close();
     });
 }
