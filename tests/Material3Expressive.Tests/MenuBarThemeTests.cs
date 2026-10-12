@@ -97,6 +97,26 @@ public sealed class MenuBarThemeTests
     }
 
     [AvaloniaFact]
+    public void FlyoutSubmenuParent_KeepsItsOwnHoverLayerWhenItsSubmenuOpens()
+    {
+        using var clock = new MotionTestClockScope();
+        var name = new MenuItem { Header = "Name" };
+        var sortBy = new MenuItem { Header = "Sort by", Items = { name, new MenuItem { Header = "Date" } } };
+        var flyout = new MenuFlyout { Items = { new MenuItem { Header = "Copy" }, sortBy } };
+        var target = new Border { Width = 40, Height = 20 };
+        var window = Show(target);
+        flyout.Popup.ShouldUseOverlayLayer = true;
+        flyout.ShowAt(target); Settle(clock, window);
+        window.MouseMove(Center(sortBy, window)); Settle(clock, window);
+        AssertHovered(sortBy);
+        sortBy.IsSubMenuOpen = true; sortBy.Focus(); Settle(clock, window); // what the open delay does
+        Assert.True(sortBy.IsSubMenuOpen);
+        AssertHovered(sortBy);
+        Assert.Equal(0.08, MaterialInteraction.GetOrCreate(sortBy).StateLayerOpacity, 3);
+        flyout.Hide(); window.Close();
+    }
+
+    [AvaloniaFact]
     public void OpenSubmenuParent_ShowsOneHoverOpacityHighlight_WhileThePointerIsInTheSubmenu()
     {
         using var clock = new MotionTestClockScope();
