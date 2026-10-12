@@ -55,7 +55,7 @@ public sealed class AnimationScopeChangedEventArgs : RoutedEventArgs
 /// Owns animation work, samples and children within a fixed TopLevel environment. Obtain a
 /// control's scope with <see cref="Get"/>; the window root comes from <see cref="Initialize(TopLevel, IFrameSource?)"/>.
 /// </summary>
-public class AnimationScope
+public class AnimationScope : FrameScope
 {
     /// <summary>
     /// How a scope is created and what ends it.
@@ -176,7 +176,7 @@ public class AnimationScope
     public TimeProvider TimeProvider { get; }
 
     /// <summary>The scope's only cancellation signal; cancelled when the scope ends.</summary>
-    public CancellationToken Lifetime => _token;
+    public override CancellationToken Lifetime => _token;
 
     public event EventHandler<AnimationFailureEventArgs>? AnimationFailed;
 
@@ -185,7 +185,7 @@ public class AnimationScope
     /// <see cref="DurationScaleProperty"/>. Raw frame timestamps are unchanged. A value set here on a
     /// <see cref="Get"/> scope is lost when that scope is rebuilt.
     /// </summary>
-    public double DurationScale
+    public override double DurationScale
     {
         get => _durationScale ?? _parent?.DurationScale ?? 1;
         set
@@ -281,13 +281,6 @@ public class AnimationScope
         return new AnimationChildScope(Host, this, label);
     }
 
-    /// <summary>
-    /// Waits for the window's next frame. Cancelled by <paramref name="cancellationToken"/> or when
-    /// this scope ends. The continuation resumes inline inside the frame batch.
-    /// </summary>
-    public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken = default)
-        => ((ScopeClock)Clock).NextFrameAsync(cancellationToken, null);
-
     public Task Launch(Func<CancellationToken, Task> operation, string? label = null)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -324,7 +317,33 @@ public class AnimationScope
 
     /// <summary>The window's frame clock, shared by every scope of this environment.</summary>
     internal FrameClock FrameClock => _frameClock;
-    internal bool IsEnding => _ending;
+    internal override bool IsEnding => _ending;
+
+    // ---- FrameScope: what runs need ----
+
+    // Not async: it hands out the FrameClock wait itself, so callers resume inline in the batch
+    // regardless of the context they awaited from (an async layer here would reintroduce that).
+    internal override ValueTask<TimeSpan> WaitFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
+    {
+        try
+        {
+            VerifyActive();
+            return _frameClock.WaitAsync(cancellationToken, _token, onFault).AsValueTask();
+        }
+        catch (Exception error)
+        {
+            // Same observable shape as before: failures surface from the returned task.
+            onFault?.Invoke(error);
+            return ValueTask.FromException<TimeSpan>(error);
+        }
+    }
+
+    internal override double EffectiveDurationScale => DurationScale * Host.GetValue(DurationScaleProperty);
+    internal override void VerifyAccess() => VerifyActive();
+    internal override Task<T> Track<T>(Func<Task<T>> run) => _lifecycle.Track(run);
+    internal override Task Track(Func<Task> run) => _lifecycle.Track(run);
+    internal override void ReportRunFailure(Exception error) => ReportFailure(error);
+    internal override void RegisterPlaybackChanged<T>(T owner, Action<T> changed) => _lifecycle.RegisterPlayback(owner, changed);
     internal ScopeDiagnostics Diagnostics => new(this);
 
     /// <summary>
@@ -786,23 +805,11 @@ public class AnimationScope
     private sealed class ScopeClock(AnimationScope owner) : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
     {
         public AnimationLifetime AnimationLifetime => owner._lifecycle;
-        public double DurationScale => owner.DurationScale * owner.Host.GetValue(DurationScaleProperty);
+        public double DurationScale => owner.EffectiveDurationScale;
         public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => NextFrameAsync(cancellationToken, null);
+        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => owner.WaitFrameAsync(cancellationToken, null);
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
-        {
-            try
-            {
-                owner.VerifyActive();
-                return owner._frameClock.WaitAsync(cancellationToken, owner.Lifetime, onFault).AsValueTask();
-            }
-            catch (Exception error)
-            {
-                // Same observable shape as before: failures surface from the returned task.
-                onFault?.Invoke(error);
-                return ValueTask.FromException<TimeSpan>(error);
-            }
-        }
+            => owner.WaitFrameAsync(cancellationToken, onFault);
     }
 
     private sealed class HandlerEntry(EventHandler<AnimationScopeChangedEventArgs> handler, Visual host)
