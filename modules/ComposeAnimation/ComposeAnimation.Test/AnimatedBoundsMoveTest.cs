@@ -49,6 +49,44 @@ public partial class AnimatedBoundsTest
     });
 
     [Fact]
+    public Task MoveContent_UnderADifferentAncestorScope_KeepsTheFlightAndRebuildsAfterItSettles() => OnUi(() =>
+    {
+        var card = Bounds(Text());
+        var (scene, left, right) = MoveSlots(card);
+        using var f = new Fixture(scene);
+        var leftScope = AnimationScope.Get(left);
+        var rightScope = AnimationScope.Get(right);
+        var old = AnimationScope.Get(card);
+        Assert.NotSame(rightScope, old.Diagnostics.Parent); // created during the first layout, under the root
+        var changes = new List<AnimationScopeChangedEventArgs>();
+        AnimationScope.AddScopeChangedHandler(card, (_, e) => changes.Add(e));
+        var before = f.Actual(card);
+        f.Root.MoveContent(card, () => { left.Children.Remove(card); right.Children.Add(card); });
+        f.Layout();
+        Assert.Empty(changes);
+        Assert.True(old.Diagnostics.IsParked);
+        Equal(before, f.Actual(card));
+        Assert.True(card.IsRunning);
+        f.Step(16); f.Step(100);
+        // The rebuild waits: the retained flight continues on the pre-move scope.
+        Assert.True(card.IsRunning);
+        Assert.Empty(changes);
+        Assert.Same(old, AnimationScope.Get(card));
+        Assert.True(old.Diagnostics.IsStale);
+        Equal(new Rect(110, 50, 120, 160), f.Actual(card));
+        f.Step(100);
+        Assert.False(card.IsRunning);
+        f.Layout();
+        var change = Assert.Single(changes);
+        Assert.Same(old, change.OldScope);
+        Assert.Same(rightScope, change.NewScope!.Diagnostics.Parent);
+        Assert.Same(change.NewScope, AnimationScope.Get(card));
+        Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
+        Assert.False(card.IsRunning);
+        Assert.Equal(0, f.Clock.PendingFrameCount);
+    });
+
+    [Fact]
     public Task MoveContent_ActiveSpringPreservesAllFourEdgeVelocities() => OnUi(() =>
     {
         var text = Text();

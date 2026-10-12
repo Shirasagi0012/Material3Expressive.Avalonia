@@ -89,7 +89,7 @@ public sealed class AnimationScopeRebuildTest
         Assert.Same(old, change.OldScope);
         Assert.Same(AnimationScope.Get(control), change.NewScope);
         Assert.Same(rightScope, change.NewScope!.Diagnostics.Parent);
-        Assert.Equal(1, change.NewScope.Diagnostics.RebuildCount);
+        Assert.Equal(1, change.NewScope.Diagnostics.Generation);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
         Assert.Equal(["released", "canceled"], order);
         Assert.True(old.Diagnostics.IsEnding);
@@ -131,7 +131,7 @@ public sealed class AnimationScopeRebuildTest
         Dispatcher.UIThread.RunJobs();
         Assert.Empty(events);
         Assert.Same(scope, AnimationScope.Get(control));
-        Assert.Equal(0, scope.Diagnostics.RebuildCount);
+        Assert.Equal(0, scope.Diagnostics.Generation);
         window.Close();
     });
 
@@ -289,6 +289,7 @@ public sealed class AnimationScopeRebuildTest
         Dispatcher.UIThread.RunJobs(); // post drain: one rebuild; the move back is deferred
         Assert.Equal(1, changes);
         Assert.True(AnimationScope.Get(control).Diagnostics.IsStale);
+        Assert.Equal(1, clock.PendingFrameCount); // the drain requested the frame it deferred to
         _ = window.AnimationRoot.NextFrameAsync();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Dispatcher.UIThread.RunJobs();
@@ -362,7 +363,7 @@ public sealed class AnimationScopeRebuildTest
     });
 
     [Fact]
-    public Task StandalonePopup_FallsBackToPopupRootUnderTheWindowAndSharesItsFrames() => OnUi(() =>
+    public Task StandalonePopup_FallsBackToItsTopLevelRoot_AndSharesTheWindowFrames() => OnUi(() =>
     {
         var clock = new ManualAnimationFrameClock();
         var anchor = new Border { Width = 40, Height = 40 };
@@ -373,11 +374,11 @@ public sealed class AnimationScopeRebuildTest
         panel.Children.Add(popup);
         popup.IsOpen = true; Dispatcher.UIThread.RunJobs();
         var scope = AnimationScope.Get(content);
-        // No ancestor scope: falls back to the content's TopLevel root. A real popup window gets a
-        // popup root parented to the window root; headless overlay popups resolve the window root.
-        var fallback = scope.Diagnostics.Parent!;
-        if (fallback.Host is PopupRoot) Assert.Same(window.AnimationRoot, fallback.Diagnostics.Parent);
-        else Assert.Same(window.AnimationRoot, fallback);
+        // No ancestor scope: falls back to the content's TopLevel root. The headless platform hosts
+        // popups in the window's overlay layer, so that TopLevel is the window itself. The PopupRoot
+        // branch of Resolve (a popup root parented to the window root) is not reachable headless.
+        Assert.Same(window, TopLevel.GetTopLevel(content));
+        Assert.Same(window.AnimationRoot, scope.Diagnostics.Parent);
         _ = scope.NextFrameAsync();
         _ = window.AnimationRoot.NextFrameAsync();
         Assert.Equal(1, clock.PendingFrameCount);
@@ -506,7 +507,7 @@ public sealed class AnimationScopeRebuildTest
         var scope = AnimationScope.Get(control);
         var d = scope.Diagnostics;
         Assert.Same(window.AnimationRoot, d.Parent);
-        Assert.False(d.IsStale); Assert.False(d.IsEnding); Assert.Equal(0, d.RebuildCount);
+        Assert.False(d.IsStale); Assert.False(d.IsEnding); Assert.Equal(0, d.Generation);
         var child = scope.CreateChild();
         child.RegisterResource(() => { });
         Assert.Equal(1, scope.Diagnostics.ActiveChildCount);
