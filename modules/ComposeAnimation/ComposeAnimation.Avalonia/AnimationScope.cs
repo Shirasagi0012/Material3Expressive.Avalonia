@@ -152,8 +152,7 @@ public class AnimationScope
     /// <summary>
     /// Inherited playback duration multiplier, multiplied by the host's attached
     /// <see cref="DurationScaleProperty"/>. Raw frame timestamps are unchanged. A value set here on a
-    /// <see cref="Get"/> scope is lost when that scope is rebuilt; use the attached property for a
-    /// durable setting (or set it again from a <see cref="ScopeChangedEvent"/> handler).
+    /// <see cref="Get"/> scope is lost when that scope is rebuilt.
     /// </summary>
     public double DurationScale
     {
