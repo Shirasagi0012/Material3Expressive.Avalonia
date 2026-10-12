@@ -45,6 +45,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
     private bool _isContentPresent;
     private AnimatedVisibilityScope? _scope;
     private VisibilityConnection? _connection;
+    private bool _resumePending;
     private IDisposable? _motionConnection;
     private VisibilityLayer? _layer;
     private bool _attached;
@@ -102,7 +103,10 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _attached = false;
-        Synchronize(reset: true);
+        // No reset here (D17): the scope ends at the next drain if the control stays detached
+        // (the resource callback disconnects then), or is rebuilt if it was re-attached elsewhere
+        // (OnScopeChanged re-runs the kept state).
+        Synchronize(reset: _connection is null);
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -136,13 +140,50 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
         }
     }
 
-    // A rebuilt scope ended the old connection (its resource callback disconnected it); reconnect
-    // on the replacement. Detach is handled by OnDetachedFromVisualTree.
+    // D17: a rebuild while attached keeps the connection and its transition state (the resource
+    // callback only cancelled the run); re-run the same transition in the replacement scope. The
+    // drain runs before the frame's waiter snapshot, so the run samples this frame, continuing
+    // from its stored play time. Detach is handled by OnDetachedFromVisualTree.
     void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
     {
-        if (e.NewScope is null) return;
+        var resume = _resumePending;
+        _resumePending = false;
+        if (e.NewScope is not AnimationScope motion)
+        {
+            if (resume)
+            {
+                _failed = true;
+                Disconnect();
+            }
+            return;
+        }
         _failed = false;
+        if (resume && _connection is { } connection && !connection.Transition.IsDisposed)
+        {
+            Bind(motion);
+            // A re-entrant Get from a ScopeChanged handler that runs it again simply takes over.
+            if (connection.OwnsLoop) _ = motion.Launch(ct => RunAsync(connection, motion, ct), Label ?? "Visibility");
+            Synchronize();
+            return;
+        }
         Synchronize(reset: true);
+    }
+
+    private void Bind(AnimationScope motion)
+    {
+        _motionConnection = motion.RegisterResource(() =>
+        {
+            if (!motion.IsEnding) return;
+            _motionConnection = null;
+            // Still attached: the scope is being rebuilt; keep the state for OnScopeChanged (D17).
+            if (_attached && !AnimationScope.IsEnvironmentEnding(this))
+            {
+                _resumePending = true;
+                return;
+            }
+            _failed = true;
+            Disconnect();
+        });
     }
 
     private void OnPhaseChanged() => Synchronize();
@@ -175,12 +216,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
                     _connection = Source?.Connect(Label)
                         ?? new VisibilityConnection(new Transition<bool>(Visible, Label), true);
                     _connection.Transition.PhaseChanged += OnPhaseChanged;
-                    _motionConnection = motion.RegisterResource(() =>
-                    {
-                        if (!motion.IsEnding) return;
-                        _failed = true;
-                        Disconnect();
-                    });
+                    Bind(motion);
                     if (_connection.OwnsLoop)
                     {
                         // Queue loop startup so registration and the first layout can finish first.
@@ -279,6 +315,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
 
     private void Disconnect()
     {
+        _resumePending = false;
         _motionConnection?.Dispose();
         _motionConnection = null;
         var connection = _connection;

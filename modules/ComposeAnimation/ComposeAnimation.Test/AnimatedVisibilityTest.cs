@@ -541,7 +541,7 @@ public class AnimatedVisibilityTest
     });
 
     [Fact]
-    public Task ParentTransition_WaitsForVisibility_AndSurvivesHostDetach() => OnUi(() =>
+    public Task ParentTransition_WaitsForVisibility_AndReleasesAtTheDrainAfterHostDetach() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
@@ -565,6 +565,8 @@ public class AnimatedVisibilityTest
         Assert.False(host.IsContentPresent);
         Assert.Equal(0, parent.CurrentState);
         f.Window.Content = null;
+        Assert.NotEmpty(parent.Transitions); // still connected until the detached scope ends
+        Dispatcher.UIThread.RunJobs(); // the drain (fallback post) ends the scope and releases
         Assert.Empty(parent.Transitions);
         parent.UpdateTarget(2);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();

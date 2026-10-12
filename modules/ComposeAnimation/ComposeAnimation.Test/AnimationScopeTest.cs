@@ -82,7 +82,7 @@ public class AnimationScopeTest
     });
 
     [Fact]
-    public Task QueuedSnap_StillCommitsWhenItsRunsScopeEndsFromACancellationNotification() => OnUi(async () =>
+    public Task QueuedSnap_CommitsWithoutAScope_WhenTheRunsScopeEndsFromACancellationNotification() => OnUi(async () =>
     {
         var window = new AnimationTestWindow(new ManualFrameSource());
         var scope = window.AnimationRoot.CreateChild();
