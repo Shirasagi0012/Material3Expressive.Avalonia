@@ -2,7 +2,6 @@
   <Styles.Resources>
     <m3:MenuColorConverter x:Key="MenuColorConverter" />
     <conv:PlatformKeyGestureConverter x:Key="MenuGestureConverter" />
-    <m3:MenuItemThemeConverter x:Key="MenuItemThemeConverter" />
     <ControlTheme x:Key="MaterialBaselineMenuItemTheme" TargetType="MenuItem">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
@@ -384,14 +383,6 @@
     </ControlTheme>
     <ControlTheme x:Key="{x:Type MenuFlyoutPresenter}" TargetType="MenuFlyoutPresenter" BasedOn="{StaticResource MaterialVerticalMenuTheme}" />
   </Styles.Resources>
-  <Style Selector="MenuFlyoutPresenter MenuItem">
-    <Setter Property="Theme">
-      <MultiBinding Converter="{StaticResource MenuItemThemeConverter}">
-        <Binding Path="(m3:MenuThemeProperties.ItemTheme)" RelativeSource="{RelativeSource Self}" />
-        <ReflectionBinding Path="ItemContainerTheme" RelativeSource="{RelativeSource FindAncestor, AncestorType=ItemsControl, Tree=Logical}" />
-      </MultiBinding>
-    </Setter>
-  </Style>
   <Style Selector="MenuFlyoutPresenter Separator">
     <Setter Property="Margin" Value="12,2" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />

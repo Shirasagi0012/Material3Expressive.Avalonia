@@ -23,6 +23,167 @@ namespace Material3Expressive.Tests;
 
 public sealed class MenuBarThemeTests
 {
+    // Root cause of the missing chevron/icons and hover after a popup reopens: the default item
+    // theme came from a descendant-style Theme binding that dropped to null and back on every
+    // popup close/open, and a template that survives that loses the theme's /template/ styles.
+    [AvaloniaFact]
+    public void DefaultItemThemes_AreAssignedOnce_AcrossPopupCloseAndReopen()
+    {
+        using var clock = new MotionTestClockScope();
+        var leaf = new MenuItem { Header = "Leaf" };
+        var parent = new MenuItem { Header = "Parent", Items = { leaf } };
+        var flyout = new MenuFlyout { Items = { new MenuItem { Header = "Other" }, parent } };
+        var (menu, file, _, recent, recentChild, _) = Bar();
+        var target = new Border { Width = 40, Height = 20 };
+        var window = Show(new StackPanel { Children = { menu, target } });
+        var cleared = 0;
+        foreach (var item in new[] { parent, leaf, recent, recentChild })
+            item.PropertyChanged += (_, e) => { if (e.Property == StyledElement.ThemeProperty && e.NewValue is null) cleared++; };
+        flyout.Popup.ShouldUseOverlayLayer = true;
+        for (var i = 0; i < 3; i++)
+        {
+            flyout.ShowAt(target); Settle(clock, window);
+            parent.IsSubMenuOpen = true; Settle(clock, window);
+            AssertChevronDrawn(parent);
+            flyout.Hide(); Settle(clock, window);
+            file.IsSubMenuOpen = true; Settle(clock, window);
+            recent.IsSubMenuOpen = true; Settle(clock, window);
+            AssertChevronDrawn(recent);
+            file.IsSubMenuOpen = false; Settle(clock, window);
+        }
+        Assert.Equal(0, cleared);
+        var vertical = window.FindResource("MaterialVerticalMenuItemTheme");
+        Assert.All(new[] { parent, leaf, recent, recentChild }, item => Assert.Same(vertical, item.Theme));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Hover_ShowsTheStateLayer_InsideMenuBarSubmenus()
+    {
+        using var clock = new MotionTestClockScope();
+        var (menu, file, open, recent, recentChild, _) = Bar();
+        var window = Show(menu);
+        Click(window, file);
+        Assert.True(file.IsSubMenuOpen);
+        foreach (var item in new[] { open, recent })
+        {
+            window.MouseMove(Center(item, window)); Settle(clock, window);
+            AssertHovered(item);
+        }
+        recent.IsSubMenuOpen = true; Settle(clock, window);
+        window.MouseMove(Center(recentChild, window)); Settle(clock, window);
+        AssertHovered(recentChild);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Hover_ShowsTheStateLayer_InsideAMenuFlyout()
+    {
+        using var clock = new MotionTestClockScope();
+        var leaf = new MenuItem { Header = "Leaf" };
+        var parent = new MenuItem { Header = "Parent", Items = { leaf } };
+        var other = new MenuItem { Header = "Other" };
+        var flyout = new MenuFlyout { Items = { other, parent } };
+        var target = new Border { Width = 40, Height = 20 };
+        var window = Show(target);
+        flyout.Popup.ShouldUseOverlayLayer = true;
+        flyout.ShowAt(target); Settle(clock, window);
+        foreach (var item in new[] { other, parent })
+        {
+            window.MouseMove(Center(item, window)); Settle(clock, window);
+            AssertHovered(item);
+        }
+        flyout.Hide(); window.Close();
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SubmenuChevron_IsDrawn_InBarSubmenusAndFlyouts(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var (menu, file, _, recent, _, _) = Bar();
+        var window = Show(menu);
+        if (rtl) window.FlowDirection = FlowDirection.RightToLeft;
+        file.IsSubMenuOpen = true; Settle(clock, window);
+        AssertChevronDrawn(recent);
+
+        var parent = new MenuItem { Header = "Parent", Items = { new MenuItem { Header = "Leaf" } } };
+        var flyout = new MenuFlyout { Items = { parent } };
+        var target = new Border { Width = 40, Height = 20 };
+        ((DockPanel)window.Content!).Children.Add(target);
+        flyout.Popup.ShouldUseOverlayLayer = true;
+        file.IsSubMenuOpen = false;
+        flyout.ShowAt(target); Settle(clock, window);
+        AssertChevronDrawn(parent);
+        flyout.Hide(); window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Reopened_SubmenuItems_StillHoverAndDrawTheirChevron()
+    {
+        using var clock = new MotionTestClockScope();
+        var (menu, file, open, recent, recentChild, _) = Bar();
+        var window = Show(menu);
+        Click(window, file); Settle(clock, window);
+        Press(window, Avalonia.Input.Key.Escape, PhysicalKey.Escape); Settle(clock, window);
+        Assert.False(file.IsSubMenuOpen);
+        Click(window, file); Settle(clock, window);
+        Assert.True(file.IsSubMenuOpen);
+        AssertChevronDrawn(recent);
+        window.MouseMove(Center(open, window)); Settle(clock, window);
+        AssertHovered(open);
+        // A nested submenu reopened inside a reopened menu.
+        recent.IsSubMenuOpen = true; Settle(clock, window);
+        recent.IsSubMenuOpen = false; Settle(clock, window);
+        recent.IsSubMenuOpen = true; Settle(clock, window);
+        window.MouseMove(Center(recentChild, window)); Settle(clock, window);
+        AssertHovered(recentChild);
+        Assert.Same(window.FindResource("MaterialVerticalMenuItemTheme"), recentChild.Theme);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Reopened_FlyoutItems_StillHoverAndDrawTheirChevron()
+    {
+        using var clock = new MotionTestClockScope();
+        var leaf = new MenuItem { Header = "Leaf" };
+        var parent = new MenuItem { Header = "Parent", Items = { leaf } };
+        var other = new MenuItem { Header = "Other" };
+        var flyout = new MenuFlyout { Items = { other, parent } };
+        var target = new Border { Width = 40, Height = 20 };
+        var window = Show(target);
+        flyout.Popup.ShouldUseOverlayLayer = true;
+        flyout.ShowAt(target); Settle(clock, window);
+        flyout.Hide(); Settle(clock, window);
+        flyout.ShowAt(target); Settle(clock, window);
+        AssertChevronDrawn(parent);
+        window.MouseMove(Center(other, window)); Settle(clock, window);
+        AssertHovered(other);
+        flyout.Hide(); window.Close();
+    }
+
+    static void AssertHovered(MenuItem item)
+    {
+        var controller = MaterialInteraction.GetOrCreate(item);
+        Assert.True(controller.Interaction.HasFlag(InteractionState.Hovered), $"{item.Header} not hovered: {controller.Interaction}");
+        Assert.True(controller.StateLayerOpacity > 0, $"{item.Header}: no state layer drawn");
+    }
+
+    static void AssertChevronDrawn(MenuItem item)
+    {
+        var chevron = Part<Viewbox>(item, "PART_Chevron");
+        Assert.True(chevron.IsEffectivelyVisible);
+        Assert.True(chevron.Bounds.Width > 0 && chevron.Bounds.Height > 0, $"chevron bounds {chevron.Bounds}");
+        var path = chevron.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>().Single();
+        Assert.True(path.Bounds.Width > 0, $"path bounds {path.Bounds}");
+        Assert.True(path.Fill is ISolidColorBrush { Color.A: > 0 }, $"fill {path.Fill}");
+        // Inside the item's surface, not clipped away.
+        var surface = Surface(item);
+        var origin = chevron.TranslatePoint(default, surface)!.Value;
+        Assert.InRange(origin.X, 0, surface.Bounds.Width - chevron.Bounds.Width);
+    }
+
     [AvaloniaFact]
     public void Theme_AppliesToMenuAndTopLevelItems_AsATransparentHorizontalBar()
     {

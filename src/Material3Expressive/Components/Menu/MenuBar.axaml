@@ -9,7 +9,6 @@
     ContextMenu or FlyoutPresenter.
   -->
   <Styles.Resources>
-    <m3:MenuItemThemeConverter x:Key="MenuBarItemThemeConverter" />
     <!-- Top-level item. BasedOn the vertical item so the popup container, icon slot, access keys,
          colors, disabled state and MaterialInteraction feedback are shared; only the layout and
          the popup behavior of a bar item differ:
@@ -70,17 +69,9 @@
     </ControlTheme>
   </Styles.Resources>
 
-  <!-- Submenu items at any depth: the vertical item theme, unless the owning ItemsControl names an
-       ItemContainerTheme (same rule as MenuFlyoutPresenter). Top-level items get theirs from
-       Menu.ItemContainerTheme, which Avalonia does not pass down to their children. -->
-  <Style Selector="Menu MenuItem MenuItem">
-    <Setter Property="Theme">
-      <MultiBinding Converter="{StaticResource MenuBarItemThemeConverter}">
-        <Binding Path="(m3:MenuThemeProperties.ItemTheme)" RelativeSource="{RelativeSource Self}" />
-        <ReflectionBinding Path="ItemContainerTheme" RelativeSource="{RelativeSource FindAncestor, AncestorType=ItemsControl, Tree=Logical}" />
-      </MultiBinding>
-    </Setter>
-  </Style>
+  <!-- Submenu items at any depth get the vertical item theme from the inherited
+       MenuThemeProperties.ItemTheme set on the Menu (same mechanism as MenuFlyoutPresenter); an
+       ItemContainerTheme on the owning item still wins. -->
   <Style Selector="Menu MenuItem Separator">
     <Setter Property="Margin" Value="12,2" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
