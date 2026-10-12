@@ -87,7 +87,7 @@ await ripple.Launch(ct => radius.AnimateToAsync(100, cancellationToken: ct), "Gr
 
 Scope 链的 `DurationScale` 是继承的时长乘数；控件子树用继承的附加属性 `AnimationScope.DurationScale`（`AnimationScope.GetDurationScale` / `SetDurationScale`，XAML 写作 `AnimationScope.DurationScale="0.5"`）。有效倍率 = Scope 链的 `DurationScale`（根在初始化时取自 `MotionDurationScale.ScaleFactor`）× 宿主自身的附加属性值。4 表示 0.25× 播放，0 让有限动画在下一帧到达终点。它们改变播放策略，保持原始帧时间戳；有限播放保持已有进度，无限 Transition 沿用改变时长后重新起播的语义，0 时暂停并等待正数策略恢复。
 
-在 `Get` 得到的 Scope 上直接设置 `scope.DurationScale` 会在该 Scope 重建后丢失；请使用附加属性，或在 `ScopeChanged` 处理程序中重新设置。
+在 `Get` 得到的 Scope 上直接设置 `scope.DurationScale` 会在该 Scope 重建后丢失，需要时在 `ScopeChanged` 处理程序中重新设置。
 
 ```csharp
 AnimationScope.SetDurationScale(demo, 4);
