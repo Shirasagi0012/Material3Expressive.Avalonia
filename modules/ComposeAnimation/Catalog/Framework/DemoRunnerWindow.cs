@@ -98,7 +98,7 @@ public sealed class DemoRunnerWindow : Window
     {
         var probe = _probe;
         var environment = new AutomationEnvironment(probe, _outputDirectory, demo.Id, action.Name);
-        var context = new DemoContext { Clock = probe, IsAutomation = true };
+        var context = new DemoContext { FrameSource = probe, IsAutomation = true };
         var instance = DemoRegistry.Create(demo, context);
         instance.AttachEnvironment(environment);
 

@@ -18,7 +18,7 @@ public class AnimatedContentSizeBehaviorTest
     private static TweenSpec<Size> Tween(int ms = 100) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Border Leaf { get; } = new() { Width = 100, Height = 40 };
         public AnimatedContentSize Host { get; }
         public Grid Surface { get; } = new() { Width = 400, Height = 350 };
@@ -36,11 +36,11 @@ public class AnimatedContentSizeBehaviorTest
             configure?.Invoke(Host);
             Host.AnimationCompleted += (_, e) => Completions.Add(e);
             Surface.Children.Add(Host);
-            Window = new AnimationTestWindow(clock ?? Clock) { Width = 600, Height = 500, Content = Surface };
+            Window = new AnimationTestWindow(clock ?? Frames) { Width = 600, Height = 500, Content = Surface };
             Window.Show(); Layout();
         }
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() => Window.Close();
     }
 
@@ -85,7 +85,7 @@ public class AnimatedContentSizeBehaviorTest
         f.Host.FlowDirection = FlowDirection.RightToLeft;
         f.Layout();
         Assert.Equal(new Point(0, 160), f.TemplateRoot.Bounds.TopLeft);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -164,8 +164,8 @@ public class AnimatedContentSizeBehaviorTest
         f.Leaf.Height = 140; f.Layout(); f.Step(16); f.Step(50);
         Assert.Equal(90, f.Host.Bounds.Height);
         f.Surface.Children.Remove(f.Host);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
-        f.Clock.AdvanceBy(TimeSpan.FromSeconds(10));
+        Assert.Equal(0, f.Frames.PendingFrameCount);
+        f.Frames.AdvanceBy(TimeSpan.FromSeconds(10));
         f.Surface.Children.Add(f.Host); f.Layout();
         Assert.Equal(90, f.Host.Bounds.Height);
         f.Step(16); f.Step(50);
@@ -177,7 +177,7 @@ public class AnimatedContentSizeBehaviorTest
         f.Host.ResetAnimation(); f.Layout();
         Assert.Equal(40, f.Host.Bounds.Height);
         Assert.Single(f.Completions);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -189,7 +189,7 @@ public class AnimatedContentSizeBehaviorTest
             ((Border)host.Content!).Height = 140;
         });
         Assert.Equal(140, f.Host.Bounds.Height);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         Assert.Empty(f.Completions);
     });
 
@@ -235,7 +235,7 @@ public class AnimatedContentSizeBehaviorTest
         Assert.Equal(new Size(100, 60), f.Completions[0].TargetSize);
         Assert.Equal(new Size(100, 60), f.Completions[1].InitialSize);
         Assert.Equal(new Size(100, 120), f.Completions[1].TargetSize);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -266,7 +266,7 @@ public class AnimatedContentSizeBehaviorTest
             f.Leaf.Height = 140; f.Layout(); f.Step(16);
             Assert.Equal(140, f.Host.Bounds.Height);
             Assert.Single(f.Completions);
-            Assert.Equal(0, f.Clock.PendingFrameCount);
+            Assert.Equal(0, f.Frames.PendingFrameCount);
         }
         finally { MotionDurationScale.ScaleFactor = previous; }
     });
@@ -386,7 +386,7 @@ public class AnimatedContentSizeBehaviorTest
         Assert.Equal(140, f.Host.Bounds.Height);
         Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
         Assert.Empty(f.Completions);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
     private sealed class NonFiniteEasing : Easing
     {

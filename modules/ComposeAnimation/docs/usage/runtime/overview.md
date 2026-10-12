@@ -22,12 +22,12 @@ InitializeComponent();
 
 // 控件附着之后；重复调用返回同一个 Scope，不需要也不应释放
 var motion = AnimationScope.Get(control);
-var alpha = motion.CreateAnimatable(0d);
+var alpha = Animatable.Create(0d);
 motion.BindAnimatedValue(control, Visual.OpacityProperty, alpha);
-_ = motion.Launch(ct => alpha.AnimateToAsync(1, cancellationToken: ct), "Fade in");
+_ = motion.Launch(ct => alpha.AnimateToAsync(motion, 1, cancellationToken: ct), "Fade in");
 ```
 
-控件在树内移动时，旧 Scope 会在下一帧等待者恢复前合并重建一次，随后控件的 `ScopeChanged` 事件触发，持有旧 Scope 的运行应在 `AnimationScope.AddScopeChangedHandler` 注册的处理程序中重启。控件脱离树时 Scope 结束，窗口关闭结束根环境（根没有公开的 `Dispose`）。`scope.NextFrameAsync(ct)` 等待窗口的下一帧，并在帧批次中内联恢复。工厂对象终身受其 Scope 约束：结束后可以读最终值、调用清理操作，不能启动或变更新动画。详见 [Scope 使用与迁移](../animation-scope.md)。
+控件在树内移动时，旧 Scope 会在下一帧等待者恢复前合并重建一次，随后控件的 `ScopeChanged` 事件触发，持有旧 Scope 的运行应在 `AnimationScope.AddScopeChangedHandler` 注册的处理程序中重启。控件脱离树时 Scope 结束，窗口关闭结束根环境（根没有公开的 `Dispose`）。`scope.NextFrameAsync(ct)` 等待窗口的下一帧，并在帧批次中内联恢复。状态对象不绑定 Scope：每次运行传入 Scope，Scope 结束会取消其中的运行，状态仍可在新 Scope 中继续。详见 [Scope 使用与迁移](../animation-scope.md)。
 
 测试项目引用 `ComposeAnimation.TestSupport`，使用 `AnimationTestWindow(clock)` 在 Content 初始化前建立环境。`ManualFrameSource.SendFrame(absoluteTime)` 发送一个绝对时间戳；`AdvanceBy(delta)` 只发送一帧，不隐式补起点帧。送帧后仍需推进 Dispatcher；`AnimationTestDispatcher.WaitUntilAsync` 提供有上限的条件等待。
 
@@ -77,7 +77,7 @@ await operation;
 `Animatable<T>`（以及 `Transition`、`InfiniteTransition`、它们的动画节点）继承自 CommunityToolkit.Mvvm 的 `ObservableObject`，实现 `INotifyPropertyChanged`。`Value`、`Velocity`、`IsRunning`、`TargetValue`、`LowerBound`、`UpperBound` 等属性在时钟线程上逐帧引发 `PropertyChanged`，可以**直接作为 Avalonia 绑定源**：
 
 ```csharp
-var animatable = new Animatable<double>(new DoubleConverter(), 0, clock);
+var animatable = new Animatable<double>(new DoubleConverter(), 0);
 // XAML: <ProgressBar Value="{Binding Progress.Value}" />，Progress 是这个 Animatable<double>
 ```
 
@@ -125,9 +125,9 @@ public static class MotionDurationScale
 ```csharp
 // UI 控件附着后
 var motion = AnimationScope.Get(control);
-var animatable = motion.CreateAnimatable(0d);
+var animatable = Animatable.Create(0d);
 
-var task = animatable.AnimateToAsync(100,
+var task = animatable.AnimateToAsync(motion, 100,
     new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(100), easing: new LinearEasing()));
 
 try

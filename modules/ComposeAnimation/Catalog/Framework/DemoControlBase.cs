@@ -37,8 +37,7 @@ public abstract class DemoControlBase : UserControl
     }
 
     protected AnimationScope Motion => AnimationScope.Get(this);
-    protected IFrameSource Clock => Motion.Clock;
-    internal IFrameSource EnvironmentClock => Clock;
+    internal FrameScope EnvironmentScope => Motion;
 
     /// <summary>
     /// 推进动画帧。自动化模式：每帧 ProbeFrameSource.Step(1/60s) + UpdateLayout + Render 优先级 flush；
@@ -74,7 +73,7 @@ public abstract class DemoControlBase : UserControl
     private IDemoEnvironment Environment => _environment ??= CreateFallbackEnvironment();
 
     private IDemoEnvironment CreateFallbackEnvironment()
-        => Context.IsAutomation && Context.Clock is ProbeFrameSource probe
+        => Context.IsAutomation && Context.FrameSource is ProbeFrameSource probe
             ? new AutomationEnvironment(probe, Path.Combine(Path.GetTempPath(), "Catalog"), GetType().Name, "default")
             : new InteractiveEnvironment();
 }

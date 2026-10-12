@@ -13,7 +13,7 @@ using ComposeAnimation.Runtime;
 
 // 为值类型挑选对应的转换器与类型化阈值（取自 LookaheadPosition.cs 的生产用法）
 var position = new Animatable<Point>(
-    new PointConverter(), new Point(0, 0), clock,
+    new PointConverter(), new Point(0, 0),
     visibilityThreshold: VisibilityThresholds.Point);
 
 await position.AnimateToAsync(new Point(100, 200), new SpringSpec<Point>());
@@ -128,7 +128,7 @@ public sealed class Progress2DConverter : ITwoWayConverter<Progress2D>
 }
 ```
 
-之后 `new Animatable<Progress2D>(new Progress2DConverter(), new Progress2D(0, 0), clock)` 即可使用全部规格与边界能力。
+之后 `new Animatable<Progress2D>(new Progress2DConverter(), new Progress2D(0, 0))` 即可使用全部规格与边界能力。
 
 ### 为类型选阈值
 

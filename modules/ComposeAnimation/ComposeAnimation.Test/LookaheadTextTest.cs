@@ -21,19 +21,19 @@ public class LookaheadTextTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control child, params Control[] animations)
         {
 
             Root = new LookaheadRoot { Width = 350, Height = 500, Child = child };
-            Window = new AnimationTestWindow(Clock) { Width = 600, Height = 600, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = 600, Height = 600, Content = Root };
             Window.Show();
             Layout();
         }
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() { Window.Close(); }
     }
 
@@ -195,7 +195,7 @@ public class LookaheadTextTest
         approach.TargetWidth = 300;
         f.Layout();
         f.Window.Content = null;
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Window.Content = f.Root;
         f.Layout();
         Assert.Equal(300, text.Bounds.Width);

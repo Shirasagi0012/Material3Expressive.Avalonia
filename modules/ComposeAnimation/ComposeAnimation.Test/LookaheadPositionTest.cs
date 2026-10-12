@@ -21,19 +21,19 @@ public class LookaheadPositionTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control content, params LookaheadPosition[] nodes)
         {
 
             Root = new LookaheadRoot { Width = 350, Height = 350, Child = content };
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 500, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 500, Content = Root };
             Window.Show(); Layout();
         }
         public Point Position(Control control) => control.TranslatePoint(default, Root)!.Value;
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() { Window.Close(); }
     }
 
@@ -47,7 +47,7 @@ public class LookaheadPositionTest
         var stack = new LookaheadStackPanel { Orientation = orientation, Spacing = 10, Children = { a, b, c } };
         using var f = new Fixture(stack, a, b, c);
         double Along(Point p) => orientation == Orientation.Vertical ? p.Y : p.X;
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         stack.Children.Move(0, 2);
         f.Layout();
         var target = f.Root.Snapshot!;
@@ -172,17 +172,17 @@ public class LookaheadPositionTest
         stack.Children.Remove(b); f.Layout();
         Assert.False(f.Root.Snapshot!.Results.ContainsKey(b));
         a.IsVisible = false; f.Layout();
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         a.IsVisible = true; f.Layout();
         Assert.Equal(f.Root.Snapshot!.Results[a].Bounds.TopLeft, f.Position(a));
         stack.Spacing = 80; f.Layout();
-        Assert.True(f.Clock.PendingFrameCount > 0);
+        Assert.True(f.Frames.PendingFrameCount > 0);
         f.Window.Content = null;
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         stack.Spacing = 20;
         f.Window.Content = f.Root; f.Layout();
         Assert.Equal(f.Root.Snapshot!.Results[a].Bounds.TopLeft, f.Position(a));
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     private sealed class CountingLeaf : Control

@@ -17,14 +17,14 @@ public class LookaheadCompositionTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control child)
         {
             Root = new LookaheadRoot { Width = 500, Height = 400, Child = child, UseLayoutRounding = false };
             SetClock(child);
-            Window = new AnimationTestWindow(Clock) { Width = 600, Height = 500, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = 600, Height = 500, Content = Root };
             Window.Show(); Layout();
             void SetClock(Control node)
             {
@@ -35,7 +35,7 @@ public class LookaheadCompositionTest
         }
         public Point Position(Control node) => node.TranslatePoint(default, Root)!.Value;
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() { Window.Close(); }
     }
 
@@ -262,7 +262,7 @@ public class LookaheadCompositionTest
         for (var i = 0; i < 3; i++) { size.InvalidateMeasure(); f.Layout(); }
         Assert.Equal(calls, spec.Calls);
         Assert.Same(snapshot, f.Root.Snapshot);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         size.AnimationSpec = Tween<Size>(100); f.Layout();
         size.TargetSize = new Size(100, 80); f.Layout(); f.Step(16); f.Step(50);
         Assert.Equal(new Size(150, 120), size.Bounds.Size);
@@ -285,18 +285,18 @@ public class LookaheadCompositionTest
         };
         using var f = new Fixture(size);
         size.TargetSize = new Size(200, 160); f.Layout(); f.Step(16); f.Step(50);
-        Assert.True(f.Clock.PendingFrameCount > 0);
+        Assert.True(f.Frames.PendingFrameCount > 0);
         size.IsVisible = false; f.Layout();
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         size.IsVisible = true; f.Layout();
         Assert.Equal(new Size(200, 160), size.Bounds.Size);
         size.TargetSize = new Size(100, 80); f.Layout(); f.Step(16);
         f.Window.Content = null;
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Root.Child = null;
         f.Window.Content = size; f.Layout();
         Assert.Equal(new Size(100, 80), size.Bounds.Size);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     // A deliberately different policy, declared entirely through the public extension protocol.

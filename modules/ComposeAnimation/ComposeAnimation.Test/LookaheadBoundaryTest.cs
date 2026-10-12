@@ -63,18 +63,18 @@ public class LookaheadBoundaryTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control child, double width = 400, double height = 300, params Control?[] clocks)
         {
             Root = new LookaheadRoot { Width = width, Height = height, Child = child, UseLayoutRounding = false };
-            Window = new AnimationTestWindow(Clock) { Width = width + 100, Height = height + 100, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = width + 100, Height = height + 100, Content = Root };
             Window.Show();
             Layout();
         }
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public Point Position(Control node) => node.TranslatePoint(default, Root)!.Value;
         public void Dispose() { Window.Close(); }
     }

@@ -274,8 +274,8 @@ public IVectorizedFiniteAnimationSpec Vectorize(ITwoWayConverter<T> converter)
 
 ```csharp
 // Animatable<T>（时钟见 ../runtime/overview.md）
-var animatable = new Animatable<double>(new DoubleConverter(), 0, clock);
-var result = await animatable.AnimateToAsync(100, new OvershootSpec<double>(TimeSpan.FromMilliseconds(300)));
+var animatable = new Animatable<double>(new DoubleConverter(), 0);
+var result = await animatable.AnimateToAsync(motion, 100, new OvershootSpec<double>(TimeSpan.FromMilliseconds(300)));
 
 // Transition<TState>：作为某段的规格
 var alpha = transition.AnimateDouble(

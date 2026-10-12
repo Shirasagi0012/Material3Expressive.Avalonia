@@ -98,7 +98,7 @@ public class AnimationScope : FrameScope
     private readonly AnimationScope _root;
     private readonly StaleSet? _stale;
     private readonly FrameClock _frameClock;
-    private readonly AnimationLifetime _lifecycle = new();
+    private readonly RunTracker _lifecycle = new();
     private readonly CancellationToken _token;
     private readonly HashSet<AnimationScope> _children = [];
     private readonly HashSet<Operation> _tasks = [];
@@ -139,7 +139,6 @@ public class AnimationScope : FrameScope
         {
             if (CurrentOperation.Value?.Active != true) ReportFailure(error);
         };
-        Clock = new ScopeClock(this);
         parent?._children.Add(this);
         if (_root == this)
         {
@@ -165,13 +164,6 @@ public class AnimationScope : FrameScope
 
     public Visual Host { get; }
     public string? Label { get; }
-
-    /// <summary>
-    /// Transitional: the frame clock that runtime state types still capture. Removed in stage 3,
-    /// when runs take a scope instead.
-    /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public IFrameSource Clock { get; }
 
     /// <summary>Coroutine delay time source, inherited by children; independent of frame timestamps and DurationScale.</summary>
     public TimeProvider TimeProvider { get; }
@@ -809,16 +801,59 @@ public class AnimationScope : FrameScope
         public Task EndAsync() => scope.EndAsync();
     }
 
-    // Not async: it hands out the FrameClock wait itself, so callers resume inline in the batch
-    // regardless of the context they awaited from (an async layer here would reintroduce that).
-    private sealed class ScopeClock(AnimationScope owner) : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
+    /// <summary>
+    /// The scope's run bookkeeping: the lifetime token, the tracked runs (for
+    /// <see cref="AnimationScopeDiagnostics.PendingAnimationCount"/> and the drain on end) and
+    /// failure observation of unmanaged runs.
+    /// </summary>
+    private sealed class RunTracker
     {
-        public AnimationLifetime AnimationLifetime => owner._lifecycle;
-        public double DurationScale => owner.EffectiveDurationScale;
-        public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => owner.WaitFrameAsync(cancellationToken, null);
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
-            => owner.WaitFrameAsync(cancellationToken, onFault);
+        private readonly CancellationTokenSource _cancellation = new();
+        private readonly HashSet<Task> _operations = [];
+        private bool _ending;
+        internal RunTracker() => Token = _cancellation.Token;
+        internal CancellationToken Token { get; }
+        internal int PendingCount => _operations.Count;
+        internal Action<Exception>? UnmanagedFailure { get; set; }
+        internal void MarkEnding() => _ending = true;
+        internal void Cancel() => _cancellation.Cancel();
+
+        internal Task<T> Track<T>(Func<Task<T>> operation)
+        {
+            Task<T>? task = null;
+            Track((Func<Task>)(() => task = operation()));
+            return task!;
+        }
+
+        internal Task Track(Func<Task> operation)
+        {
+            ObjectDisposedException.ThrowIf(_ending, this);
+            var entry = new TaskCompletionSource();
+            _operations.Add(entry.Task); // Before synchronous callbacks can dispose the scope.
+            Task task;
+            try { task = operation(); }
+            catch { _operations.Remove(entry.Task); entry.TrySetResult(); throw; }
+            _ = ObserveAsync(task, entry);
+            return task;
+        }
+
+        private async Task ObserveAsync(Task task, TaskCompletionSource entry)
+        {
+            try { await task.ConfigureAwait(true); }
+            catch
+            {
+                if (task.IsFaulted)
+                    foreach (var error in task.Exception!.InnerExceptions) UnmanagedFailure?.Invoke(error);
+            }
+            finally { _operations.Remove(entry.Task); entry.TrySetResult(); }
+        }
+
+        internal async Task DrainAsync()
+        {
+            while (_operations.Count > 0)
+                try { await Task.WhenAll(_operations.ToArray()).ConfigureAwait(true); } catch { }
+            _cancellation.Dispose();
+        }
     }
 
     private sealed class HandlerEntry(EventHandler<AnimationScopeChangedEventArgs> handler, Visual host)

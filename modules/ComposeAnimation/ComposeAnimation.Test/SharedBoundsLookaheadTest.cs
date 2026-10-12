@@ -25,7 +25,7 @@ public class SharedBoundsLookaheadTest
     }
     private sealed class Scene : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Transition<bool> Parent { get; }
         public TextProbe FromText { get; } = Text();
         public TextProbe ToText { get; } = Text();
@@ -50,7 +50,7 @@ public class SharedBoundsLookaheadTest
             stage.Children.Add(Source); stage.Children.Add(Target);
             Host = new SharedTransitionHost { Width = 700, Height = 400, Transition = Parent,
                 PreparationTimeout = Timeout.InfiniteTimeSpan, Content = stage };
-            Window = new AnimationTestWindow(Clock) { Width = 700, Height = 400, Content = Host };
+            Window = new AnimationTestWindow(Frames) { Width = 700, Height = 400, Content = Host };
             Window.Show(); Layout(); Parent.OnFrame(TimeSpan.Zero);
 
             SharedBounds Endpoint(Control content) => new()

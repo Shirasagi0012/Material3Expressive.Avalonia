@@ -21,18 +21,18 @@ public class LookaheadTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control child, params AnimatedContentSize[] animations)
         {
             Root = new LookaheadRoot { Width = 300, Height = 350, Child = child };
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 500, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 500, Content = Root };
             Window.Show();
             Layout();
         }
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() { Window.Close(); }
     }
 
@@ -54,7 +54,7 @@ public class LookaheadTest
         double Position(Rect r) => horizontal ? r.X : r.Y;
         var initial = f.Root.Snapshot!;
         Assert.Equal(45, Position(initial.Results[marker].Bounds));
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         if (horizontal) leaf.Width = 140; else leaf.Height = 140;
         f.Layout();
         var target = f.Root.Snapshot!;
@@ -172,7 +172,7 @@ public class LookaheadTest
         f.Window.Content = null;
         f.Layout();
         Assert.Null(f.Root.Snapshot);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         newLeaf.Height = 80;
         f.Window.Content = f.Root;
         f.Layout();
@@ -181,7 +181,7 @@ public class LookaheadTest
         f.Step(16);
         f.Step(100);
         Assert.Equal(80, animated.Bounds.Height);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]

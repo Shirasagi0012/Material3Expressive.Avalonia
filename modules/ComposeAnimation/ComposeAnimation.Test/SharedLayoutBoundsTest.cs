@@ -15,15 +15,15 @@ public class SharedLayoutBoundsTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; }
+        public ManualFrameSource Frames { get; }
         public Window Window { get; }
         public Control Stage { get; }
         public Fixture(Control stage, ManualFrameSource? clock = null, double width = 800, double height = 600)
         {
-            Clock = clock ?? new ManualFrameSource();
+            Frames = clock ?? new ManualFrameSource();
             StampClock(stage);
             Stage = stage;
-            Window = new AnimationTestWindow(Clock) { Width = width, Height = height, Content = stage };
+            Window = new AnimationTestWindow(Frames) { Width = width, Height = height, Content = stage };
             Window.Show();
             Layout();
         }
@@ -54,9 +54,9 @@ public class SharedLayoutBoundsTest
             Assert.True(SpinWait.SpinUntil(() =>
             {
                 Layout();
-                return host.IsIdle || Clock.PendingFrameCount > 0;
+                return host.IsIdle || Frames.PendingFrameCount > 0;
             }, TimeSpan.FromSeconds(5)), "The visibility loop did not request a frame.");
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
         public void Dispose() => Window.Close();

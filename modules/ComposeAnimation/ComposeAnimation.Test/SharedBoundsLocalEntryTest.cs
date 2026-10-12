@@ -42,7 +42,7 @@ public class SharedBoundsLocalEntryTest
 
     private sealed class Scene : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Transition<bool> Parent { get; }
         public SharedBounds From { get; }
         public SharedBounds To { get; }
@@ -77,7 +77,7 @@ public class SharedBoundsLocalEntryTest
                 PreparationTimeout = Timeout.InfiniteTimeSpan,
                 Content = stage
             };
-            Window = new AnimationTestWindow(Clock) { Width = 700, Height = 400, Content = Host };
+            Window = new AnimationTestWindow(Frames) { Width = 700, Height = 400, Content = Host };
             Window.Show();
             Layout();
             Parent.OnFrame(TimeSpan.Zero);

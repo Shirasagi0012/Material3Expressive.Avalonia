@@ -14,11 +14,11 @@ using ComposeAnimation.Runtime;
 
 // 根环境已在窗口加载内容前初始化；control 已附着
 var motion = AnimationScope.Get(control);
-var animatable = motion.CreateAnimatable(0d);
+var animatable = Animatable.Create(0d);
 
 // animationSpec 缺省为弹簧；这里显式给一个 64ms 的补间
-AnimationResult<double> result = await animatable.AnimateToAsync(
-    100, new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(64)));
+AnimationResult<double> result = await animatable.AnimateToAsync(motion, 
+    motion, 100, new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(64)));
 
 if (result.EndReason == AnimationEndReason.Finished)
 {
@@ -34,7 +34,7 @@ if (result.EndReason == AnimationEndReason.Finished)
 
 | 成员 | 类型/签名 | 默认值 | 说明 |
 |---|---|---|---|
-| `Animatable` | `Animatable(ITwoWayConverter<T> typeConverter, T initialValue, IFrameSource clock, T? visibilityThreshold = default, string? label = null)` | — | `typeConverter` 决定值的向量化维度（见 [类型转换器](./converters-and-easing.md)）；`visibilityThreshold` 只作用于缺省弹簧 spec 的结束判定；`label` 用于在工具中区分动画 |
+| `Animatable` | `Animatable(ITwoWayConverter<T> typeConverter, T initialValue, T? visibilityThreshold = default, string? label = null)` | — | `typeConverter` 决定值的向量化维度（见 [类型转换器](./converters-and-easing.md)）；`visibilityThreshold` 只作用于缺省弹簧 spec 的结束判定；`label` 用于在工具中区分动画 |
 
 ### 属性
 
@@ -82,10 +82,10 @@ if (result.EndReason == AnimationEndReason.Finished)
 
 ```csharp
 var tween = new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(100));
-var first = animatable.AnimateToAsync(100, tween);
+var first = animatable.AnimateToAsync(motion, 100, tween);
 
 // ……若干帧之后，值已走到 0~100 之间，此时下达新目标
-var second = animatable.AnimateToAsync(200, tween);
+var second = animatable.AnimateToAsync(motion, 200, tween);
 
 try
 {
@@ -123,7 +123,7 @@ animatable.UpdateBounds(new(-20, 90));   // 位置构造：下界 -20、上界 9
 
 await animatable.SnapToAsync(500);       // 越界，立即被夹取到 90
 
-var result = await animatable.AnimateToAsync(
+var result = await animatable.AnimateToAsync(motion, 
     -100, new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(320)));
 // 到达下界时动画提前结束：result.EndReason == AnimationEndReason.BoundReached，
 // animatable.Value == -20
@@ -144,12 +144,12 @@ await animatable.SnapToAsync(30); // 取消在途动画并立即跳到 30（越�
 ### 变更优先级 MutatePriority
 
 ```csharp
-var running = animatable.AnimateToAsync(100, tween, priority: MutatePriority.PreventUserInput);
+var running = animatable.AnimateToAsync(motion, 100, tween, priority: MutatePriority.PreventUserInput);
 
 // 优先级低于在途动画的变更会被直接拒绝，任务立即以取消完成
 try
 {
-    await animatable.AnimateToAsync(200, tween);
+    await animatable.AnimateToAsync(motion, 200, tween);
 }
 catch (OperationCanceledException)
 {
@@ -163,7 +163,7 @@ catch (OperationCanceledException)
 
 ```csharp
 // 从 500/秒 的初速度指数衰减到静止，常用于 fling 手势松手之后
-var result = await animatable.AnimateDecayAsync(
+var result = await animatable.AnimateDecayAsync(motion, 
     500, DecayAnimationSpec.ExponentialDecay<double>());
 // result.EndReason == Finished；终值由物理决定，不在调用时指定
 ```
@@ -175,8 +175,8 @@ var result = await animatable.AnimateDecayAsync(
 不需要互斥、也不需要长期持有状态时，可以直接在时钟上跑一次性动画，值通过每帧回调消费：
 
 ```csharp
-// double 便捷重载；泛型重载 clock.AnimateAsync<T>(converter, from, to, ...) 适用于任意类型
-await clock.AnimateAsync(0, 100,
+// double 便捷重载；泛型重载 SuspendAnimation.AnimateAsync<T>(scope, converter, from, to, ...) 适用于任意类型
+await SuspendAnimation.AnimateAsync(motion, 0, 100,
     animationSpec: new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(64),
         easing: new LinearEasing()),
     block: (value, velocity) => { /* 每帧回调 */ });
@@ -186,15 +186,15 @@ await clock.AnimateAsync(0, 100,
 
 ```csharp
 var state = new AnimationState<double>(new DoubleConverter(), 0);
-await state.AnimateToAsync(100, clock,
+await SuspendAnimation.AnimateToAsync(motion, state, 100,
     new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(64)));
 // state.Value == 100，state.IsFinished == true
 
 // 接续上一个动画的动量：以 state.LastFrameTime 为起点，第一帧同步处理
-await state.AnimateToAsync(200, clock, spec, sequentialAnimation: true);
+await SuspendAnimation.AnimateToAsync(motion, state, 200, spec, sequentialAnimation: true);
 ```
 
-**注意**：`SuspendAnimation` 系列（`AnimationState<T>.AnimateToAsync` / `AnimateDecayAsync`、`clock.AnimateAsync`）**没有任何互斥保护**——对同一个 `AnimationState<T>` 并发启动两个动画会交错写入帧值。需要打断安全时请用 `Animatable<T>`。每帧回调拿到的是 `AnimationRun<T>`（`Value`/`Velocity`/`TargetValue`/`CancelAnimation()` 等）。（取自 `SuspendAnimationTest.cs`。）
+**注意**：`SuspendAnimation` 系列（`AnimationState<T>.AnimateToAsync` / `AnimateDecayAsync`、`SuspendAnimation.AnimateAsync`）**没有任何互斥保护**——对同一个 `AnimationState<T>` 并发启动两个动画会交错写入帧值。需要打断安全时请用 `Animatable<T>`。每帧回调拿到的是 `AnimationRun<T>`（`Value`/`Velocity`/`TargetValue`/`CancelAnimation()` 等）。（取自 `SuspendAnimationTest.cs`。）
 
 ## 注意事项
 

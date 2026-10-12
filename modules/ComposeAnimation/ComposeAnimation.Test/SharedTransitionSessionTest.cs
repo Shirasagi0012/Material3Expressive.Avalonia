@@ -9,7 +9,7 @@ public class SharedTransitionSessionTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Transition<bool> Parent { get; }
         public Transition<EnterExitState> Source { get; }
         public Transition<EnterExitState> Target { get; }
@@ -61,7 +61,7 @@ public class SharedTransitionSessionTest
         });
         Assert.Same(f.Parent, session.Transition.ParentTransition);
         Assert.False(f.Parent.IsPreparing);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Parent.OnFrame(Ms(0));
         f.Parent.OnFrame(Ms(100));
         Assert.Equal(SharedSessionState.AwaitingHandoff, session.State);

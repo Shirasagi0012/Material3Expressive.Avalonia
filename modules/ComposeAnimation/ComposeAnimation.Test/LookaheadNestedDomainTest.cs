@@ -79,7 +79,7 @@ public class LookaheadNestedDomainTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot OuterRoot { get; }
         public Window Window { get; }
 
@@ -93,7 +93,7 @@ public class LookaheadNestedDomainTest
                 Child = content,
                 UseLayoutRounding = false
             };
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 400, Content = OuterRoot };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 400, Content = OuterRoot };
             Window.Show();
             Layout();
         }
@@ -107,7 +107,7 @@ public class LookaheadNestedDomainTest
 
         public void Step(int milliseconds)
         {
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
 

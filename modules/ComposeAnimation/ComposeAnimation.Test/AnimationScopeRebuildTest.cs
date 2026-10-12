@@ -478,13 +478,12 @@ public sealed class AnimationScopeRebuildTest
         var scope = AnimationScope.Get(control);
         AnimationScope.SetDurationScale(host, 2);
         Assert.Equal(2, AnimationScope.GetDurationScale(control));
-        var lifetimeClock = (IAnimationLifetimeClock)scope.Clock;
-        Assert.Equal(root.DurationScale * 2, lifetimeClock.DurationScale, 7);
+        Assert.Equal(root.DurationScale * 2, scope.EffectiveDurationScale, 7);
         root.DurationScale = 3;
-        Assert.Equal(6 , lifetimeClock.DurationScale, 7);
+        Assert.Equal(6 , scope.EffectiveDurationScale, 7);
         var child = scope.CreateChild();
         child.DurationScale = 0.5;
-        Assert.Equal(0.5 * 2, ((IAnimationLifetimeClock)child.Clock).DurationScale, 7);
+        Assert.Equal(0.5 * 2, child.EffectiveDurationScale, 7);
 
         var value = Animatable.Create(0d);
         var task = value.AnimateToAsync(scope, 1, Tween());

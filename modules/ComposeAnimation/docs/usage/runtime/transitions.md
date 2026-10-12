@@ -22,10 +22,10 @@ using Avalonia.Animation.Easings;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 
-// this 为 Window（TopLevel）。构造函数必须在时钟所属线程（UI 线程）调用
+// this 为 Window（TopLevel）。状态对象由构造线程（UI 线程）拥有；运行时传入 Scope
 var state = new MutableTransitionState<bool>(false);
 var motion = AnimationScope.Get(this); // 根环境已在加载内容前初始化
-var transition = motion.CreateTransition(state, label: "Demo");
+var transition = new Transition<bool>(state, label: "Demo");
 
 var alpha = transition.AnimateDouble(
     s => s ? 1.0 : 0.0,
@@ -37,7 +37,7 @@ var position = transition.AnimatePoint(
     label: "Position");   // 省略 transitionSpec 时默认使用弹簧
 
 // 帧循环只在根过渡上运行一次；子过渡随父级时间线运行，不要对子过渡调用 RunAsync
-_ = motion.Launch(ct => transition.RunAsync(ct));
+_ = motion.Launch(ct => transition.RunAsync(motion, ct));
 
 // 改变目标状态即触发过渡。动画值逐帧更新并触发 PropertyChanged，可直接用于绑定
 state.TargetState = true;
@@ -62,7 +62,7 @@ transition.Dispose();   // RunAsync 返回的任务以 OperationCanceledExceptio
 也可以在创建时直接传初始状态，由过渡内部创建状态对象：
 
 ```csharp
-using var transition = new Transition<bool>(false, clock);   // 等价于内部 new MutableTransitionState<bool>(false)
+using var transition = new Transition<bool>(false);   // 等价于内部 new MutableTransitionState<bool>(false)
 transition.UpdateTarget(true);   // 没有外部状态时，用 UpdateTarget 改目标
 ```
 
@@ -118,7 +118,7 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 
 ### 帧循环与生命周期
 
-- `RunAsync(CancellationToken)` 是根过渡的帧循环：只能在**根**上调用（子过渡调用抛 `InvalidOperationException`），且同一时刻只能有一个循环。
+- `RunAsync(FrameScope scope, CancellationToken)` 是根过渡的帧循环，在 `scope` 中运行（帧、生命周期与时长倍率来自 Scope）：只能在**根**上调用（子过渡调用抛 `InvalidOperationException`）；再次调用会接管：旧循环被取消并完成清理后新循环才采样。
 - 循环空闲时不请求帧；目标变更、注册动画等变化会自动唤醒它。
 - 取消令牌或 `Dispose()` 都会结束循环，任务以 `OperationCanceledException` 完成；取消只是停止推进，不会把状态/值吸附到终点。
 - 所有公共成员都必须在时钟所属线程调用（UI Scope 即 UI 线程），详见 [引擎总览](./overview.md)。
@@ -142,7 +142,7 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 | `TotalDuration` | `TimeSpan` | 全树最长动画时长（含子过渡） |
 | `DurationScale` | `double`，可读写 | 树范围时长倍率（读写都作用于根）；必须有限且 ≥ 0，否则抛 `ArgumentOutOfRangeException`；`0` 表示子动画下一帧直达终值 |
 | `BeginPreparation()` | `TransitionPreparationLease` | 获取准备租约，阻止过渡完成；seeking 中调用抛 `InvalidOperationException` |
-| `RunAsync(CancellationToken cancellationToken = default)` | `Task` | 根帧循环；子过渡或重复调用抛 `InvalidOperationException` |
+| `RunAsync(FrameScope scope, CancellationToken cancellationToken = default)` | `Task` | 根帧循环；子过渡调用抛 `InvalidOperationException`；重复调用接管旧循环 |
 | `RefreshAnimations()` | `void` | 重新求值全树的目标值/规格闭包 |
 | `Dispose()` | `void` | 幂等；取消帧循环、撤销租约、分离子动画与子过渡；之后访问成员抛 `ObjectDisposedException` |
 
@@ -152,8 +152,8 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 
 | 成员 | 类型/签名 | 说明 |
 | --- | --- | --- |
-| 构造函数 | `Transition(TState initialState, IFrameSource clock, string? label = null)` | 内部创建 `MutableTransitionState<TState>` |
-| 构造函数 | `Transition(TransitionState<TState> transitionState, IFrameSource clock, string? label = null)` | 使用外部持有的状态对象 |
+| 构造函数 | `Transition(TState initialState, string? label = null)` | 内部创建 `MutableTransitionState<TState>` |
+| 构造函数 | `Transition(TransitionState<TState> transitionState, string? label = null)` | 使用外部持有的状态对象 |
 | `CurrentState` / `TargetState` | `TState` | 当前状态 / 目标状态 |
 | `Segment` | `TransitionSegment<TState>` | 当前段；`readonly record struct`，含 `InitialState`、`TargetState` 与 `IsTransitioningTo(TState, TState)` |
 | `PendingTargetState` / `HasPendingTargetState` | `TState?` / `bool` | 延迟状态对象的挂起目标（见 `DeferredTransitionState<T>`） |
@@ -214,11 +214,11 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 | `DeferredTransitionState<T>` | `(T initialState)` | `Defer(target)` 暂存目标（不动画），`AnimateTo(target)` 提交 | 无 | 需等待测量/资源就绪再提交的过渡；配合 `DeferredTransition<TState>` 与 `CreateDeferredAnimation` |
 | `SeekableTransitionState<T>` | `(T initialState)` | `SeekToAsync` / `SnapToAsync` / `AnimateToAsync` | `Fraction`（0..1） | 手势驱动的进度（抽屉拖动）、设计器/预览 |
 
-`DeferredTransition<TState>` 是 `sealed class DeferredTransition<TState>(DeferredTransitionState<TState> transitionState, IFrameSource clock, string? label = null) : Transition<TState>`，与后两者中的 `DeferredTransitionState` 搭配使用。
+`DeferredTransition<TState>` 是 `sealed class DeferredTransition<TState>(DeferredTransitionState<TState> transitionState, string? label = null) : Transition<TState>`，与后两者中的 `DeferredTransitionState` 搭配使用。
 
 ### `InfiniteTransition`
 
-`sealed class InfiniteTransition : ObservableObject, IDisposable`。构造函数：`InfiniteTransition(IFrameSource clock, string? label = "InfiniteTransition")`。
+`sealed class InfiniteTransition : ObservableObject, IDisposable`。构造函数：`InfiniteTransition(string? label = "InfiniteTransition")`。
 
 | 成员 | 类型/签名 | 说明 |
 | --- | --- | --- |
@@ -226,7 +226,7 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 | `Animations` | `IReadOnlyList<IInfiniteTransitionAnimation>` | 已注册动画；接口暴露 `Label`/`IsFinished`（无限动画没有 `Duration`） |
 | `DurationScale` | `double`，可读写 | 必须有限且 ≥ 0。**改动会重启所有子动画**（与 `Transition` 不同）；`0` = 全部吸附到目标值并挂起帧循环，恢复正值后从头重启 |
 | `AnimateValue<TValue>(TValue initialValue, TValue targetValue, ITwoWayConverter<TValue> typeConverter, InfiniteRepeatableSpec<TValue> animationSpec, string label = "ValueAnimation")` | `TransitionAnimationState<TValue>` | 注册无限动画 |
-| `RunAsync(CancellationToken cancellationToken = default)` | `Task` | 帧循环；重复调用抛 `InvalidOperationException` |
+| `RunAsync(FrameScope scope, CancellationToken cancellationToken = default)` | `Task` | 帧循环；重复调用接管旧循环，播放时间连续（调用方取消或 Dispose 时清零） |
 | `Dispose()` | `void` | 幂等；取消循环、分离子动画；值不吸附 |
 
 其子动画 `InfiniteTransition.TransitionAnimationState<TValue>`（`ObservableObject, IDisposable`）暴露 `Value`/`InitialValue`/`TargetValue`/`AnimationSpec`/`Animation`/`IsFinished`/`Label`/`TypeConverter`，并提供运行时重定向方法：
@@ -258,7 +258,7 @@ var alpha = transition.AnimateDouble(
 子过渡把父状态映射为子状态，共享父时间线；父级改目标时若映射结果不变，子动画不会重启：
 
 ```csharp
-using var transition = new Transition<int>(0, clock, "Parent");
+using var transition = new Transition<int>(0, "Parent");
 transition.AnimateDouble(s => s, _ => new TweenSpec<double>(TimeSpan.FromMilliseconds(50)));
 
 var child = transition.CreateChildTransition(s => s > 0, "Visible");
@@ -283,7 +283,7 @@ bool done = state.IsIdle;     // CurrentState == TargetState 且未在运行
 
 ```csharp
 var state = new DeferredTransitionState<bool>(false);
-using var transition = new DeferredTransition<bool>(state, clock);
+using var transition = new DeferredTransition<bool>(state);
 
 state.Defer(true);
 // transition.HasPendingTargetState == true，PendingTargetState == true
@@ -298,7 +298,7 @@ state.AnimateTo(true);        // 提交：先清除挂起，再写 TargetState�
 
 ```csharp
 var state = new SeekableTransitionState<bool>(false);
-using var transition = new Transition<bool>(state, clock);
+using var transition = new Transition<bool>(state);
 var value = transition.AnimateDouble(s => s ? 100 : 0,
     _ => new TweenSpec<double>(TimeSpan.FromMilliseconds(100), easing: new LinearEasing()));
 
@@ -306,18 +306,18 @@ await state.SeekToAsync(true, 0.25);   // 整棵树采样到 25%，停留在手�
 // state.Fraction == 0.25；value.Value == 25；transition.IsSeeking == true
 
 await state.SeekToAsync(0.75);         // 省略目标 = 当前目标
-await state.AnimateToAsync(true);      // 按时钟把进度动画到 100%，完成后退出手动模式
+await state.AnimateToAsync(motion, true);      // 按时钟把进度动画到 100%，完成后退出手动模式
 await state.SnapToAsync(false);        // 立即跳到指定状态并退出手动模式
 ```
 
-注意：seek 与动画操作经内部互斥锁串行化——新操作会取消正在等待帧的旧操作（旧任务收到 `OperationCanceledException`）；`AnimateToAsync(target, animationSpec)` 可传入 `IFiniteAnimationSpec<double>` 控制进度本身的节奏（缺省时沿过渡时间线线性推进）；一个 `SeekableTransitionState<T>` 实例只能配置给一个 `Transition`，否则抛 `InvalidOperationException`；seekable 过渡自己驱动帧，不要再对它调用 `RunAsync`。
+注意：seek 与动画操作经内部互斥锁串行化——新操作会取消正在等待帧的旧操作（旧任务收到 `OperationCanceledException`）；`AnimateToAsync(scope, target, animationSpec)` 可传入 `IFiniteAnimationSpec<double>` 控制进度本身的节奏（缺省时沿过渡时间线线性推进）；一个 `SeekableTransitionState<T>` 实例只能配置给一个 `Transition`，否则抛 `InvalidOperationException`；seekable 过渡自己驱动帧，不要再对它调用 `RunAsync`；`AnimateToAsync(scope, …)` 先取状态互斥锁、再取过渡的运行互斥锁（全库统一这一顺序），因此会取消正在运行的 `RunAsync`。
 
 ### 延迟注册动画：`CreateDeferredAnimation`
 
 注册时初始值尚未确定（例如要等布局测量）时，先占位、后提交：
 
 ```csharp
-using var transition = new Transition<bool>(false, clock);
+using var transition = new Transition<bool>(false);
 using var deferred = transition.CreateDeferredAnimation(new DoubleConverter(), label: "Progress");
 // transition.Animations 此时仍为空
 
@@ -334,7 +334,7 @@ deferred.Animate(_ => new SpringSpec<double>(), 40, velocity, s => s ? 100 : 0);
 ### 无限循环：`InfiniteTransition`
 
 ```csharp
-using var transition = new InfiniteTransition(clock);
+using var transition = new InfiniteTransition();
 
 var pulse = transition.AnimateDouble(
     0, 100,
@@ -343,7 +343,7 @@ var pulse = transition.AnimateDouble(
         RepeatMode.Reverse,                                  // 往返；Restart 为每次从头
         new StartOffset(250, StartOffsetType.FastForward))); // 首轮立即从 250ms 处开始
 
-var run = transition.RunAsync();
+var run = transition.RunAsync(motion);
 ```
 
 - `StartOffset(offsetMillis)` 默认为 `StartOffsetType.Delay`（推迟首轮开始）；`FastForward` 为首轮快进到指定播放时间立即开始。偏移只在首轮前应用一次，不随重复生效。被重复的动画时长与延迟不能同时为 0（构造时抛 `ArgumentException`）。

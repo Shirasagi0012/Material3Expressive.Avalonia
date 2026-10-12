@@ -53,7 +53,7 @@ public class LookaheadBoxTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
 
@@ -61,7 +61,7 @@ public class LookaheadBoxTest
         {
 
             Root = new LookaheadRoot { Width = 400, Height = 300, Child = child, UseLayoutRounding = false };
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 400, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 400, Content = Root };
             Window.Show();
             Layout();
         }
@@ -76,7 +76,7 @@ public class LookaheadBoxTest
 
         public void Step(int ms)
         {
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms));
             Layout();
         }
 
@@ -233,7 +233,7 @@ public class LookaheadBoxTest
         using var f = new Fixture(box, size, overlay);
         Assert.Equal(new Size(100, 80), f.Root.Snapshot!.Results[box].Bounds.Size);
         Assert.Equal(new Point(60, 60), f.Root.Snapshot.Results[overlay].Bounds.TopLeft);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
 
         size.TargetSize = new Size(200, 140);
         f.Layout();

@@ -22,7 +22,7 @@ public partial class SpecGalleryDemo : DemoControlBase
     private static readonly TimeSpan TweenDuration = TimeSpan.FromMilliseconds(1200);
 
     private readonly List<SpecRow> _rows = [];
-    private IFrameSource? _clock;
+    private AnimationScope? _clock;
 
     public SpecGalleryDemo(DemoContext context) : base(context)
     {
@@ -47,7 +47,7 @@ public partial class SpecGalleryDemo : DemoControlBase
     {
         if (_clock is not null) return;
 
-        // 引擎组件必须等基类 Clock 可用（控件附加到可视树后）再创建。
+        // 引擎组件必须等基类 Motion 作用域可用（控件附加到可视树后）再创建。
         // Scope 工厂和声明式属性动画共享同一个根帧请求。
         var clock = Motion;
 
@@ -75,7 +75,7 @@ public partial class SpecGalleryDemo : DemoControlBase
             new ArcAnimationSpec<Point>(ArcMode.ArcAbove, TimeSpan.FromMilliseconds(900), easing: new LinearEasing()),
             clock));
 
-        _clock = clock.Clock;
+        _clock = clock;
         Diagnostics.Clear();
         foreach (var row in _rows)
             AddDiagnostic(row.Name, () => row.Animatable.Value, () => row.Animatable.TargetValue, "DIP");

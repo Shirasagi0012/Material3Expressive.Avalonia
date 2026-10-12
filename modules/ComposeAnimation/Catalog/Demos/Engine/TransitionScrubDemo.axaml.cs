@@ -52,7 +52,7 @@ public partial class TransitionScrubDemo : DemoControlBase
     {
         if (_state is not null) return;
 
-        // 引擎组件必须等基类 Clock 可用（控件附加到可视树后）再创建。
+        // 引擎组件必须等基类 Motion 作用域可用（控件附加到可视树后）再创建。
         var state = new SeekableTransitionState<bool>(false);
         var transition = new Transition<bool>(state, label: "Scrub");
 

@@ -17,14 +17,14 @@ public class CrossfadeTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Crossfade Host { get; }
         public Window Window { get; }
         public Fixture(Crossfade host)
         {
             Host = host;
 
-            Window = new AnimationTestWindow(Clock) { Width = 400, Height = 400, Content = host };
+            Window = new AnimationTestWindow(Frames) { Width = 400, Height = 400, Content = host };
             Window.Show();
             Layout();
         }
@@ -39,14 +39,14 @@ public class CrossfadeTest
             Assert.True(SpinWait.SpinUntil(() =>
             {
                 Layout();
-                return Host.IsIdle || Clock.PendingFrameCount > 0;
+                return Host.IsIdle || Frames.PendingFrameCount > 0;
             }, TimeSpan.FromSeconds(5)));
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
         public void Finish()
         {
-            for (var i = 0; i < 200 && (!Host.IsIdle || Clock.PendingFrameCount > 0); i++) Step(16);
+            for (var i = 0; i < 200 && (!Host.IsIdle || Frames.PendingFrameCount > 0); i++) Step(16);
             Assert.True(Host.IsIdle);
             Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError);
         }

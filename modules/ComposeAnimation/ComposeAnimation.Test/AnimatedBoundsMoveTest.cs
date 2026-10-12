@@ -44,7 +44,7 @@ public partial class AnimatedBoundsTest
         f.Step(100);
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         Assert.Equal(1, targets);
     });
 
@@ -83,7 +83,7 @@ public partial class AnimatedBoundsTest
         Assert.Same(change.NewScope, AnimationScope.Get(card));
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -120,7 +120,7 @@ public partial class AnimatedBoundsTest
         Equal(f.Actual(card), f.Actual(text));
         f.Step(10000);
         Equal(nextTarget, f.Actual(card));
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Theory]
@@ -158,7 +158,7 @@ public partial class AnimatedBoundsTest
         f.Root.MoveContent(card, () => { leftContent.Children.Remove(card); rightContent.Children.Add(card); });
         f.Layout(); f.Step(16); f.Step(50);
         middle = f.Actual(card);
-        var clock = f.Clock;
+        var clock = f.Frames;
         f.Layout();
         Equal(middle, f.Actual(card));
         clock.Pump(TimeSpan.FromMilliseconds(16)); f.Layout();
@@ -239,7 +239,7 @@ public partial class AnimatedBoundsTest
         f.Step(100);
         Equal(new Rect(0, 110, 120, 160), f.Actual(card));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -284,7 +284,7 @@ public partial class AnimatedBoundsTest
         })));
         Assert.DoesNotContain(card, left.Children);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         right.Children.Add(card); f.Layout();
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
         Assert.False(card.IsRunning);
@@ -304,7 +304,7 @@ public partial class AnimatedBoundsTest
             source.Children.Remove(card); destination.Children.Add(card);
         }));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, first.Clock.PendingFrameCount);
+        Assert.Equal(0, first.Frames.PendingFrameCount);
         first.Layout(); second.Layout();
         Equal(second.Root.Snapshot!.Results[card].Bounds, second.Actual(card));
     });
@@ -341,7 +341,7 @@ public partial class AnimatedBoundsTest
             else card.ResetAnimation();
         });
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Layout(); right.IsVisible = true; f.Layout();
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
     });
@@ -394,7 +394,7 @@ public partial class AnimatedBoundsTest
         }));
         Assert.False(parent.IsRunning);
         Assert.False(child.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Layout();
         Equal(f.Root.Snapshot!.Results[parent].Bounds, f.Actual(parent));
     });
@@ -411,7 +411,7 @@ public partial class AnimatedBoundsTest
         Assert.True(card.IsRunning);
         right.Children.Remove(card);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         left.Children.Add(card); f.Layout();
         Assert.False(card.IsRunning);
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));

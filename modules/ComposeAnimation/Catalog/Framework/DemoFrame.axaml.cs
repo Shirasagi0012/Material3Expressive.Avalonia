@@ -59,7 +59,7 @@ public sealed partial class DemoFrame : UserControl
     {
         ReleaseDemo();
         SpeedPicker.SelectedIndex = 2;
-        _instanceContext = new DemoContext { Clock = _context.Clock, IsAutomation = _context.IsAutomation };
+        _instanceContext = new DemoContext { FrameSource = _context.FrameSource, IsAutomation = _context.IsAutomation };
         var demo = DemoRegistry.Create(_descriptor, _instanceContext);
         _lifetime = new CancellationTokenSource();
         demo.AttachEnvironment(new InteractiveEnvironment(_lifetime.Token));

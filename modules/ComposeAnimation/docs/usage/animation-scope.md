@@ -28,10 +28,10 @@ public MainWindow()
 ```csharp
 var motion = AnimationScope.Get(button);
 var surface = currentSurface; // 捕获本次模板，异步退出不重新读取可变字段
-var alpha = motion.CreateAnimatable(0d, label: "State layer");
+var alpha = Animatable.Create(0d, label: "State layer");
 motion.SubscribeValue(alpha, value => surface.SetLayerOpacity(value));
 
-_ = motion.Launch(ct => alpha.AnimateToAsync(.12,
+_ = motion.Launch(ct => alpha.AnimateToAsync(motion, .12,
     new TweenSpec<double>(TimeSpan.FromMilliseconds(75)), cancellationToken: ct), "Hover");
 ```
 
@@ -44,7 +44,7 @@ AnimationScope.AddScopeChangedHandler(button, (_, e) =>
 
 逻辑子 Scope 用 `scope.CreateChild(label)`，返回 `AnimationChildScope : AnimationScope, IDisposable`；`using var child = scope.CreateChild();` 只结束该子 Scope 及其后代，父 Scope 结束或重建时它也会自动结束。没有 `DisposeAsync`。
 
-所有工厂对象都受 Scope 生命周期约束，包括创建时尚未运行的对象。结束后新的播放、吸附、目标/规格/边界变更会抛 `ObjectDisposedException`；最终值仍可读取，Stop/Dispose 等清理操作仍允许调用。工厂优先使用 `CreateAnimatable` / `CreateTransition` / `CreateInfiniteTransition` 扩展方法；`scope.Clock` 已隐藏，只是过渡入口，将在后续移除。Runtime 的显式时钟构造保留为独立运行入口，使用 `scope.Clock` 构造也会继承其生命周期。
+`Animatable`、`Transition`、`InfiniteTransition` 只是状态，不持有时钟、生命周期或 Scope（D19）。每次运行在调用处指定 Scope：`AnimateToAsync(scope, …)`、`AnimateDecayAsync(scope, …)`、`RunAsync(scope, …)`、`SeekableTransitionState.AnimateToAsync(scope, …)`；Scope 提供帧、生命周期和时长倍率。Scope 结束时其中的运行被取消，之后在该 Scope 上启动运行会抛 `ObjectDisposedException`；状态对象本身不受影响，可以在新 Scope 中从停下的值继续。不带 Scope 的成员（`SnapToAsync`、`UpdateTarget`、`Stop` 等）只在对象自身 `Dispose` 之后抛错。同一对象的第二次运行接管第一次：旧运行的清理完成后新运行才采样。
 
 ## 任务、取消和诊断
 
@@ -61,7 +61,7 @@ AnimationScope.AddScopeChangedHandler(button, (_, e) =>
 ## 值订阅与动画绑定
 
 ```csharp
-var progress = motion.CreateAnimatable(0d);
+var progress = Animatable.Create(0d);
 using var binding = motion.BindAnimatedValue(bar, ProgressBar.ValueProperty, progress);
 using var subscription = motion.SubscribeValue(progress, value => UpdateDrawing(value));
 ```
@@ -78,9 +78,9 @@ Scope 因控件脱离树、在树内移动重建、父 Scope 结束或重建、�
 
 ```csharp
 using var ripple = motion.CreateChild("Ripple");
-var radius = ripple.CreateAnimatable(0d);
+var radius = Animatable.Create(0d);
 ripple.SubscribeValue(radius, value => surface.SetRippleRadius(value));
-await ripple.Launch(ct => radius.AnimateToAsync(100, cancellationToken: ct), "Grow");
+await ripple.Launch(ct => radius.AnimateToAsync(ripple, 100, cancellationToken: ct), "Grow");
 ```
 
 子 Scope 提前 `Dispose()` 只结束它自己和后代，父 Scope 不受影响；父 Scope 结束或重建时也会自动结束它。完成任务和提前释放的消费资源会及时移出活动登记。
@@ -109,8 +109,8 @@ window.Show();
 Dispatcher.UIThread.RunJobs();
 
 var motion = AnimationScope.Get(control);
-var value = motion.CreateAnimatable(0d);
-var playing = motion.Launch(ct => value.AnimateToAsync(1,
+var value = Animatable.Create(0d);
+var playing = motion.Launch(ct => value.AnimateToAsync(motion, 1,
     new TweenSpec<double>(TimeSpan.FromMilliseconds(100)), cancellationToken: ct));
 clock.SendFrame(TimeSpan.Zero); // 显式起点帧
 Dispatcher.UIThread.RunJobs();
@@ -128,6 +128,6 @@ window.Close();
 - 删除 Animated.LastError/GetLastError：监听根 Scope 的 `AnimationFailed`；`LastError`、`LastDiagnosticError` 等不再公开。
 - 删除 `VisualAnimationScope.Create` 与 Scope 的显式 `Dispose`/`DisposeAsync`：控件用 `AnimationScope.Get` 取 Scope，移动/模板替换时自动重建，脱离时结束；持有旧 Scope 的运行在 `ScopeChanged` 处理程序中重启。
 - 删除 `Animated.DurationScale`（含 `Animated.SetDurationScale`）：改用 `AnimationScope.DurationScale` 附加属性与 `AnimationScope.SetDurationScale`。
-- 默认 Avalonia 时钟与每窗口唯一的内部 FrameClock 均为内部实现；`SharedAnimationFrameClock` 已删除，没有兼容别名。UI 消费者使用 `AnimationScope.Get` 上的 `CreateAnimatable`/`CreateTransition`/`CreateInfiniteTransition` 工厂扩展，`scope.Clock` 是将在后续移除的过渡入口；测试使用独立 TestSupport。
+- 默认 Avalonia 时钟与每窗口唯一的内部 FrameClock 均为内部实现；`SharedAnimationFrameClock` 已删除，没有兼容别名。Scope 的 `Clock` 属性与 `CreateAnimatable`/`CreateTransition`/`CreateInfiniteTransition` 已删除：用 `Animatable.Create(...)`、`new Transition<T>(...)`、`new InfiniteTransition()` 创建状态，运行时传入 Scope；测试使用独立 TestSupport。
 - 控件在树内移动、模板替换或卸载/重挂时不再手动结束 Scope；不在同一环境热换帧源。
 - Catalog 通过 `AnimationScope.DurationScale` 附加属性保留速度控制；Material 用子 Scope 拥有 Ripple、Elevation 和 Shape，保留其领域规则。

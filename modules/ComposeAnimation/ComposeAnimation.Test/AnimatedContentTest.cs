@@ -30,14 +30,14 @@ public class AnimatedContentTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualFrameSource Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public AnimatedContent Host { get; }
         public Window Window { get; }
         public Fixture(AnimatedContent host)
         {
             Host = host;
 
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 500, Content = host };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 500, Content = host };
             Window.Show();
             Layout();
         }
@@ -52,14 +52,14 @@ public class AnimatedContentTest
             Assert.True(SpinWait.SpinUntil(() =>
             {
                 Layout();
-                return Host.IsIdle || Clock.PendingFrameCount > 0;
+                return Host.IsIdle || Frames.PendingFrameCount > 0;
             }, TimeSpan.FromSeconds(5)), "The animation loop did not request its next frame.");
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
         public void Finish()
         {
-            for (var i = 0; i < 200 && (!Host.IsIdle || Clock.PendingFrameCount > 0); i++) Step(16);
+            for (var i = 0; i < 200 && (!Host.IsIdle || Frames.PendingFrameCount > 0); i++) Step(16);
             Assert.True(Host.IsIdle,
                 $"Target={Host.TargetContent}, slots={Host.VisibleSlotCount}, idle={Host.IsIdle}, error={((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError}");
             Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError);

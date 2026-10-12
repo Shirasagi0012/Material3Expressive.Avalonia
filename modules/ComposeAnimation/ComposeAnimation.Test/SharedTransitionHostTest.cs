@@ -18,7 +18,7 @@ public class SharedTransitionHostTest
 
     private sealed class Scene : IDisposable
     {
-        internal ManualFrameSource Clock { get; } = new();
+        internal ManualFrameSource Frames { get; } = new();
         internal Transition<bool> Parent { get; }
         internal SharedTransitionHost Host { get; }
         internal SharedElement From { get; }
@@ -70,7 +70,7 @@ public class SharedTransitionHostTest
             Canvas.SetLeft(Target, 250); Canvas.SetTop(Target, 100);
             Stage.Children.Add(Source); Stage.Children.Add(Target);
             Host.Content = Stage;
-            Window = new AnimationTestWindow(Clock) { Width = 800, Height = 600, Content = Host };
+            Window = new AnimationTestWindow(Frames) { Width = 800, Height = 600, Content = Host };
             Window.Show();
             Layout();
             Parent.OnFrame(TimeSpan.Zero);
