@@ -26,7 +26,7 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
     private static readonly AsyncLocal<Operation?> CurrentOperation = new();
     private readonly VisualAnimationScope? _parent;
     private readonly VisualAnimationScope _root;
-    private readonly SharedAnimationFrameClock _dispatcher;
+    private readonly FrameClock _frameClock;
     private readonly AnimationLifetime _lifecycle = new();
     private readonly HashSet<VisualAnimationScope> _children = [];
     private readonly HashSet<Operation> _tasks = [];
@@ -49,9 +49,9 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         if (parent is null) _durationScale = MotionDurationScale.ScaleFactor;
         _root = parent?._root ?? this;
         TimeProvider = parent?.TimeProvider ?? timeProvider ?? System.TimeProvider.System;
-        _dispatcher = parent?._dispatcher ?? new SharedAnimationFrameClock(clock!,
-            onInnerFailure: error => Report(error, "Frame source", null, frameSource: true),
-            normalizeDispatcherContext: true);
+        // D3: only the root creates the window's FrameClock; every descendant copies the reference.
+        _frameClock = parent?._frameClock ?? new FrameClock(clock!,
+            onSourceFailure: error => Report(error, "Frame source", null, frameSource: true));
         _failures = _root == this ? new() : _root._failures;
         _token = _lifecycle.Token;
         _lifecycle.UnmanagedFailure = error =>
@@ -67,6 +67,8 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
     public Visual Host { get; }
     public string? Label { get; }
     public IAnimationFrameClock Clock { get; }
+    /// <summary>The window's frame clock, shared by every scope of this environment.</summary>
+    internal FrameClock FrameClock => _frameClock;
     /// <summary>Coroutine delay time source, inherited by children; independent of frame timestamps and DurationScale.</summary>
     public TimeProvider TimeProvider { get; }
     public CancellationToken Lifetime => _token;
@@ -324,7 +326,7 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         if (Host is TopLevel top) top.Closed -= OnClosed;
         foreach (var child in _children.ToArray()) child.StartCleanup();
         TryCleanup(_lifecycle.Cancel);
-        if (_root == this) TryCleanup(_dispatcher.Dispose);
+        if (_root == this) TryCleanup(_frameClock.Dispose);
         _ = FinishCleanupAsync();
     }
 
@@ -371,7 +373,7 @@ public sealed class VisualAnimationScope : IDisposable, IAsyncDisposable
         {
             owner.VerifyActive();
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, owner.Lifetime);
-            var frame = await owner._dispatcher.NextFrameAsync(linked.Token).ConfigureAwait(true);
+            var frame = await owner._frameClock.WaitAsync(linked.Token).ConfigureAwait(true);
             linked.Token.ThrowIfCancellationRequested();
             return frame;
         }

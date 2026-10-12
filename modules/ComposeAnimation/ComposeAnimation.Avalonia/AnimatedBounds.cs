@@ -104,7 +104,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private Control? _reference;
     private ObservedClock? _clock;
     private IDisposable? _motionRegistration;
-    private SharedAnimationFrameClock? _sharedClock;
     private Rect _outerSample;
     private Rect _innerSample;
     private long _lifecycle;
@@ -260,7 +259,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         _reference = LookaheadCoordinates.ResolveReference(this, root, ReferenceScope);
         _targetLayout = layout;
         EnsureClock();
-        var clock = _clock?.Faulted == false ? _sharedClock : null;
+        var clock = _clock?.Faulted == false ? _clock : null;
         var lifecycle = _lifecycle;
         var outerTarget = ToReference(target.Bounds);
         var innerTarget = ToReference(layout.InnerBounds);
@@ -455,7 +454,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         var motion = VisualAnimationScope.ForHost(this);
         _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Release(); });
         _clock = new ObservedClock(motion.Clock);
-        _sharedClock = new SharedAnimationFrameClock(_clock);
     }
 
     /// <summary>Cancel both boundaries and initialize at the destination on the next layout.</summary>
@@ -489,8 +487,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         _approachLayout = null;
         _reference = null;
         _lastInnerConstraints = null;
-        _sharedClock?.Dispose();
-        _sharedClock = null;
         _clock = null;
         SetAndRaise(CurrentBoundsProperty, ref _currentBounds, null);
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, null);

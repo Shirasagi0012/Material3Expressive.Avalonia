@@ -16,8 +16,8 @@ public interface IAnimationFrameClock
 
     /// <summary>
     /// Suspends until the next frame and returns its timestamp in the clock's timebase (this is
-    /// not elapsed play time). Typical implementations allow at most one pending call; use
-    /// <see cref="SharedAnimationFrameClock"/> when several consumers must share one inner clock.
+    /// not elapsed play time). Typical implementations allow at most one pending call; when used as a window's frame
+    /// source, the window's internal frame clock is its only consumer and multiplexes it.
     /// </summary>
     ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken);
 }

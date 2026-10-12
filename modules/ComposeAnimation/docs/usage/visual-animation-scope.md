@@ -112,6 +112,6 @@ await window.AnimationRoot.DisposeAsync();
 
 - 删除 Animated.FrameClock/GetFrameClock/SetFrameClock：在 TopLevel 加载内容前初始化固定根环境。
 - 删除 Animated.LastError/GetLastError：保存根 Scope，监听 AnimationFailed 并读取 LastError。
-- 默认 Avalonia 时钟与 SharedAnimationFrameClock 改为内部实现；UI 消费者使用 Scope.Clock，测试使用独立 TestSupport。
+- 默认 Avalonia 时钟与 每窗口唯一的内部 FrameClock 均为内部实现；UI 消费者使用 Scope.Clock，测试使用独立 TestSupport。
 - 控件模板替换、卸载/重挂结束旧 Scope 并创建新 Scope；不在同一环境热换帧源。
 - Catalog 通过播放策略保留速度控制；Material 用子 Scope 拥有 Ripple、Elevation 和 Shape，保留其领域规则。

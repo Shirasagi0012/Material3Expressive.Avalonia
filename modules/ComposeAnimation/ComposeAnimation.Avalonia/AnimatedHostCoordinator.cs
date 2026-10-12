@@ -29,7 +29,9 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private readonly Queue<Action> _work = new();
     private AnimatedPropertyCollection? _collection;
     private VisualAnimationScope? _motion;
-    private SharedAnimationFrameClock? _sharedClock;
+    private FailureObservedClock? _sessionClock;
+    private IDisposable? _beforeFrame;
+    private IDisposable? _afterWaiter;
     private bool _attached;
     private bool _processing;
     private bool _clockFailed;
@@ -115,7 +117,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         session?.SetClock(SessionClock, _motion);
     }
 
-    private IAnimationFrameClock? SessionClock => _clockFailed ? null : _sharedClock;
+    private IAnimationFrameClock? SessionClock => _clockFailed ? null : _sessionClock;
 
     private IPropertySession? CreateSession(AnimatedProperty declaration)
     {
@@ -183,16 +185,31 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         var previous = _motion;
         _motion = _attached ? VisualAnimationScope.Create(_host) : null;
         _clockFailed = false;
-        var previousShared = _sharedClock;
-        _sharedClock = _motion is null ? null : new SharedAnimationFrameClock(
-            _motion.Clock, AfterEachWaiter, OnInnerFailure, BeforeEachFrame, normalizeDispatcherContext: true);
-        foreach (var session in _sessions.Values) session?.SetClock(_sharedClock, _motion);
-        previousShared?.Dispose();
+        ReleaseFrameHooks();
+        _sessionClock = _motion is null ? null : new FailureObservedClock(_motion.Clock, OnInnerFailure);
+        if (_motion is not null)
+        {
+            // The sessions wait directly on the window's FrameClock (through the scope clock).
+            // Retargeting runs in its before-frame hook, i.e. after the frame arrives and before
+            // any waiter of this frame (this host's included) samples, and replacement runs it
+            // starts join this frame's batch.
+            _beforeFrame = _motion.FrameClock.RegisterBeforeFrame(BeforeEachFrame);
+            _afterWaiter = _motion.FrameClock.RegisterAfterWaiter(AfterEachWaiter);
+        }
+        foreach (var session in _sessions.Values) session?.SetClock(SessionClock, _motion);
         previous?.Dispose();
+    }
+
+    private void ReleaseFrameHooks()
+    {
+        _beforeFrame?.Dispose();
+        _afterWaiter?.Dispose();
+        _beforeFrame = _afterWaiter = null;
     }
 
     private void BeforeEachFrame()
     {
+        if (_disposed || _sessions.Count == 0 && _work.Count == 0) return;
         try
         {
             foreach (var session in _sessions.Values.ToArray())
@@ -210,6 +227,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
 
     private void AfterEachWaiter()
     {
+        if (_work.Count == 0) return;
         try
         {
             DrainWork();
@@ -270,9 +288,34 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         if (_collection is not null)
             _collection.CollectionChanged -= OnCollectionChanged;
         ClearSessions();
-        _sharedClock?.Dispose();
-        _sharedClock = null;
+        ReleaseFrameHooks();
+        _sessionClock = null;
         _motion?.Dispose();
         _motion = null;
     });
+
+    /// <summary>
+    /// Pass-through view of the host scope's clock that observes source failures for the host,
+    /// replacing the failure callback of the removed per-host shared clock. It does not
+    /// multiplex: every session still waits on the window's FrameClock.
+    /// </summary>
+    private sealed class FailureObservedClock(IAnimationFrameClock provider, Action<Exception> onFailure)
+        : IAnimationFrameClock, IAnimationLifetimeClock
+    {
+        public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
+        public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? MotionDurationScale.ScaleFactor;
+        public void VerifyAccess() => provider.VerifyAccess();
+        public async ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await provider.NextFrameAsync(cancellationToken).ConfigureAwait(true);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                onFailure(error);
+                throw;
+            }
+        }
+    }
 }
