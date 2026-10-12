@@ -11,7 +11,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     private readonly StyledProperty<T> _property;
     private readonly ITwoWayConverter<T> _converter;
     private readonly AnimationVector _scratch;
-    private IFrameSource? _clock;
+    private FrameScope? _clock;
     private AnimationScope? _scope;
     private Animatable<T>? _animatable;
     private AnimationSampleObservable<T>? _observable;
@@ -42,7 +42,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
 
     public AvaloniaProperty Property => _property;
 
-    public void SetClock(IFrameSource? clock, AnimationScope? scope = null)
+    public void SetClock(FrameScope? clock, AnimationScope? scope = null)
     {
         _invalidation?.Dispose();
         _invalidation = null;
@@ -117,10 +117,11 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     {
         var gen = ++_driveGen;
         var animatable = _animatable;
-        if (animatable is null) return;
+        var scope = _clock;
+        if (animatable is null || scope is null) return;
         try
         {
-            await animatable.AnimateToAsync(target, _declaration.ResolveSpec(), block: OnFrame)
+            await animatable.AnimateToAsync(scope, target, _declaration.ResolveSpec(), block: OnFrame)
                 .ConfigureAwait(true);
             if (gen != _driveGen || _disposed || !_enabled) return;
             if (!EqualityComparer<T>.Default.Equals(ReadBase(), animatable.Value))
@@ -193,7 +194,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         _animatable = null;
         if (!_enabled || _clock is null || _disposed) return;
         if (!IsFinite(_displayed)) return;
-        _animatable = new Animatable<T>(_converter, _displayed, _clock);
+        _animatable = new Animatable<T>(_converter, _displayed);
     }
 
     private void StopOverlay()

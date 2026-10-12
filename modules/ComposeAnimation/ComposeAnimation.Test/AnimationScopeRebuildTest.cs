@@ -226,8 +226,8 @@ public sealed class AnimationScopeRebuildTest
         var right = new Decorator();
         var window = Show(new StackPanel { Children = { left, right } }, clock);
         AnimationScope.Get(left); AnimationScope.Get(right);
-        var keepAlive = window.AnimationRoot.CreateAnimatable(0d);
-        _ = keepAlive.AnimateToAsync(1, new TweenSpec<double>(TimeSpan.FromSeconds(10), easing: new LinearEasing()));
+        var keepAlive = Animatable.Create(0d);
+        _ = keepAlive.AnimateToAsync(window.AnimationRoot, 1, new TweenSpec<double>(TimeSpan.FromSeconds(10), easing: new LinearEasing()));
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs(FrameClock.ResumePriority);
         var restartedAt = new List<TimeSpan>();
         AnimationScope.AddScopeChangedHandler(control, (_, e) =>
@@ -486,8 +486,8 @@ public sealed class AnimationScopeRebuildTest
         child.DurationScale = 0.5;
         Assert.Equal(0.5 * 2, ((IAnimationLifetimeClock)child.Clock).DurationScale, 7);
 
-        var value = scope.CreateAnimatable(0d);
-        var task = value.AnimateToAsync(1, Tween());
+        var value = Animatable.Create(0d);
+        var task = value.AnimateToAsync(scope, 1, Tween());
         clock.AdvanceBy(TimeSpan.Zero); Dispatcher.UIThread.RunJobs();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(300)); Dispatcher.UIThread.RunJobs();
         Assert.Equal(.5, value.Value, 7);        // 300ms at 3x2

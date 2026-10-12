@@ -25,6 +25,8 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
         set => SetValue(AnimationSpecProperty, value);
     }
 
+    // The scope the animatable's runs use; replaced together with it.
+    private FrameScope? _runScope;
     private Animatable<Point>? _position;
     private IDisposable? _motionRegistration;
     private LookaheadContext? _context;
@@ -49,11 +51,12 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
         if (_position is null)
         {
             var clock = TopLevel.GetTopLevel(this) is not null && !AnimationScope.IsEnvironmentEnding(this)
-                ? AnimationScope.Get(this).Clock : null;
+                ? AnimationScope.Get(this) : null;
             if (clock is null) return target + LookaheadCoordinates.MotionOffset(this, root.CoordinateReference);
             _target = target;
-            _position = new Animatable<Point>(new PointConverter(), target, clock,
+            _position = new Animatable<Point>(new PointConverter(), target,
                 VisibilityThresholds.Point, "Lookahead position");
+            _runScope = clock;
             _position.PropertyChanged += PositionChanged;
             var motion = AnimationScope.Get(this);
             _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Reset(); });
@@ -68,7 +71,7 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     private async Task Animate(Animatable<Point> position, Point target)
     {
-        try { await position.AnimateToAsync(target, AnimationSpec); }
+        try { await position.AnimateToAsync(_runScope!, target, AnimationSpec); }
         catch (OperationCanceledException) { }
     }
 

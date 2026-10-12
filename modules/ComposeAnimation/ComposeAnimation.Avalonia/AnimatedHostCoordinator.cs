@@ -11,7 +11,7 @@ namespace ComposeAnimation;
 internal interface IPropertySession : IDisposable
 {
     AvaloniaProperty Property { get; }
-    void SetClock(IFrameSource? clock, AnimationScope? scope = null);
+    void SetClock(FrameScope? clock, AnimationScope? scope = null);
     void ReconcileTarget();
     void Abort();
     void SnapToTarget();
@@ -29,7 +29,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private readonly Queue<Action> _work = new();
     private AnimatedPropertyCollection? _collection;
     private AnimationScope? _motion;
-    private FailureObservedClock? _sessionClock;
+    private ObservedFrameScope? _sessionClock;
     private IDisposable? _beforeFrame;
     private IDisposable? _afterWaiter;
     private bool _attached;
@@ -117,7 +117,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         session?.SetClock(SessionClock, _motion);
     }
 
-    private IFrameSource? SessionClock => _clockFailed ? null : _sessionClock;
+    private FrameScope? SessionClock => _clockFailed ? null : _sessionClock;
 
     private IPropertySession? CreateSession(AnimatedProperty declaration)
     {
@@ -186,7 +186,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _motion = _attached ? AnimationScope.CreateDetached(_host) : null;
         _clockFailed = false;
         ReleaseFrameHooks();
-        _sessionClock = _motion is null ? null : new FailureObservedClock(_motion.Clock, OnInnerFailure);
+        _sessionClock = _motion is null ? null : new ObservedFrameScope(_motion, (error, _) => { if (error is not OperationCanceledException) OnInnerFailure(error); });
         if (_motion is not null)
         {
             // The sessions wait directly on the window's FrameClock (through the scope clock).
@@ -293,25 +293,4 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _motion?.End();
         _motion = null;
     });
-
-    /// <summary>
-    /// Pass-through view of the host scope's clock that observes source failures for the host,
-    /// replacing the failure callback of the removed per-host shared clock. It does not
-    /// multiplex: every session still waits on the window's FrameClock.
-    /// </summary>
-    private sealed class FailureObservedClock(IFrameSource provider, Action<Exception> onFailure)
-        : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
-    {
-        public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
-        public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? MotionDurationScale.ScaleFactor;
-        public void VerifyAccess() => provider.VerifyAccess();
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => NextFrameAsync(cancellationToken, null);
-        // Pass-through, not async: keeps the FrameClock's inline resumption (see FrameWait).
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
-            => FrameWait.Observe(provider, cancellationToken, error =>
-            {
-                if (error is not OperationCanceledException) onFailure(error);
-                onFault?.Invoke(error);
-            });
-    }
 }

@@ -35,22 +35,21 @@ public class AnimationScopeTest
     });
 
     [Fact]
-    public Task ScopeObjects_ArePermanentlyInvalid_ButFinalValueIsReadable() => OnUi(async () =>
+    public Task EndedScope_RejectsAndCancelsItsRuns_ButStateStaysUsableInANewScope() => OnUi(async () =>
     {
         using var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var scope = window.AnimationRoot.CreateChild();
-        var value = scope.CreateAnimatable(0d);
+        var value = Animatable.Create(0d);
         var transition = scope.CreateTransition(false);
         var child = transition.AnimateDouble(state => state ? 1 : 0);
         var infinite = scope.CreateInfiniteTransition();
-        var playing = value.AnimateToAsync(1, Tween());
+        var playing = value.AnimateToAsync(scope, 1, Tween());
         Send(clock, 0); Send(clock, 25);
         var final = value.Value;
         scope.Dispose();
-        Assert.Throws<ObjectDisposedException>(() => { _ = value.AnimateToAsync(2); });
-        Assert.Throws<ObjectDisposedException>(() => { _ = value.SnapToAsync(2); });
-        Assert.Throws<ObjectDisposedException>(() => value.UpdateBounds(default));
+        // Runs in the ended scope are rejected; the state itself is not bound to it (D19/D22).
+        Assert.Throws<ObjectDisposedException>(() => { _ = value.AnimateToAsync(scope, 2); });
         Assert.Throws<ObjectDisposedException>(() => transition.UpdateTarget(true));
         Assert.Throws<ObjectDisposedException>(() => transition.AnimateDouble(_ => 0));
         Assert.Throws<ObjectDisposedException>(() => child.Update(_ => 2));
@@ -58,6 +57,19 @@ public class AnimationScopeTest
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playing);
         await scope.Diagnostics.EndAsync();
         Assert.Equal(final, value.Value);
+        value.UpdateBounds(default);
+        // The state continues in another scope from where it stopped.
+        var next = window.AnimationRoot.CreateChild();
+        var resumed = value.AnimateToAsync(next, 1, Tween());
+        Assert.Equal(final, value.Value);
+        Send(clock, 0);
+        Assert.Equal(final, value.Value, 7);
+        Send(clock, 1000);
+        await resumed;
+        Assert.Equal(1, value.Value);
+        await value.SnapToAsync(2);
+        Assert.Equal(2, value.Value);
+        next.Dispose();
         value.Stop(); transition.Dispose(); infinite.Dispose(); scope.Dispose();
         Assert.Equal(0, clock.PendingFrameCount);
         window.Close();
@@ -68,8 +80,8 @@ public class AnimationScopeTest
     {
         var window = new AnimationTestWindow(new ManualFrameSource());
         var scope = window.AnimationRoot.CreateChild();
-        var value = scope.CreateAnimatable(0d);
-        var playing = value.AnimateToAsync(1, Tween());
+        var value = Animatable.Create(0d);
+        var playing = value.AnimateToAsync(scope, 1, Tween());
         value.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(value.IsRunning) && !value.IsRunning) scope.Dispose();
@@ -240,7 +252,7 @@ public class AnimationScopeTest
         for (var i = 0; i < 1500; i++)
         {
             using var ripple = root.CreateChild("Ripple");
-            var alpha = ripple.CreateAnimatable(0d);
+            var alpha = Animatable.Create(0d);
             ripple.SubscribeValue(alpha, _ => { });
             ripple.BindAnimatedValue(new Border(), Visual.OpacityProperty, alpha);
             await ripple.Launch(ct => alpha.SnapToAsync(1, ct));
@@ -268,10 +280,10 @@ public class AnimationScopeTest
         window.Show(); Dispatcher.UIThread.RunJobs();
         var first = AnimationScope.Get(a);
         var second = AnimationScope.Get(b);
-        var x = first.CreateAnimatable(0d);
-        var y = second.CreateAnimatable(0d);
-        var firstTask = first.Launch(ct => x.AnimateToAsync(1, Tween(), cancellationToken: ct));
-        var secondTask = second.Launch(ct => y.AnimateToAsync(1, Tween(), cancellationToken: ct));
+        var x = Animatable.Create(0d);
+        var y = Animatable.Create(0d);
+        var firstTask = first.Launch(ct => x.AnimateToAsync(first, 1, Tween(), cancellationToken: ct));
+        var secondTask = second.Launch(ct => y.AnimateToAsync(second, 1, Tween(), cancellationToken: ct));
         a.Opacity = b.Opacity = 0;
         Assert.Equal(1, clock.PendingFrameCount);
         Send(clock, 0); Send(clock, 25);
@@ -331,8 +343,8 @@ public class AnimationScopeTest
         panel.Children.Add(popup);
         popup.IsOpen = true; Dispatcher.UIThread.RunJobs();
         var scope = AnimationScope.Get(content);
-        var sample = scope.CreateAnimatable(0d);
-        _ = scope.Launch(ct => sample.AnimateToAsync(1, Tween(), cancellationToken: ct));
+        var sample = Animatable.Create(0d);
+        _ = scope.Launch(ct => sample.AnimateToAsync(scope, 1, Tween(), cancellationToken: ct));
         Assert.Equal(1, clock.PendingFrameCount);
         popup.IsOpen = false; Dispatcher.UIThread.RunJobs();
         Assert.True(scope.IsEnding);
@@ -385,15 +397,15 @@ public class AnimationScopeTest
         var failures = new List<AnimationFailureEventArgs>();
         root.AnimationFailed += (_, e) => failures.Add(e);
         var a = root.CreateChild(); var b = root.CreateChild();
-        var first = a.Launch(ct => a.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
-        var second = b.Launch(ct => b.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
+        var first = a.Launch(ct => Animatable.Create(0d).AnimateToAsync(a, 1, Tween(), cancellationToken: ct));
+        var second = b.Launch(ct => Animatable.Create(0d).AnimateToAsync(b, 1, Tween(), cancellationToken: ct));
         Assert.Equal(1, clock.Requests);
         var error = new InvalidOperationException("frame source");
         clock.Pending.SetException(error);
         await Assert.ThrowsAsync<InvalidOperationException>(() => first);
         await Assert.ThrowsAsync<InvalidOperationException>(() => second);
         await Assert.ThrowsAsync<InvalidOperationException>(() => a.Launch(ct =>
-            a.CreateAnimatable(0d).AnimateToAsync(2, cancellationToken: ct)));
+            Animatable.Create(0d).AnimateToAsync(a, 2, cancellationToken: ct)));
         Assert.Same(root, Assert.Single(failures).SourceScope);
         Assert.Same(error, root.Diagnostics.LastError);
         Assert.Equal(1, clock.Requests);
@@ -406,8 +418,8 @@ public class AnimationScopeTest
         using var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var root = window.AnimationRoot;
-        var value = root.CreateAnimatable(0d);
-        var task = value.AnimateToAsync(1, Tween());
+        var value = Animatable.Create(0d);
+        var task = value.AnimateToAsync(root, 1, Tween());
         Send(clock, 0); Send(clock, 25);
         Assert.Equal(.25, value.Value, 7);
         root.DurationScale = 2;
@@ -532,8 +544,8 @@ public class AnimationScopeTest
         inner.IsOpen = true; Dispatcher.UIThread.RunJobs();
         var first = AnimationScope.Get(outerContent);
         var nested = AnimationScope.Get(innerContent);
-        var a = first.Launch(ct => first.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
-        var b = nested.Launch(ct => nested.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
+        var a = first.Launch(ct => Animatable.Create(0d).AnimateToAsync(first, 1, Tween(), cancellationToken: ct));
+        var b = nested.Launch(ct => Animatable.Create(0d).AnimateToAsync(nested, 1, Tween(), cancellationToken: ct));
         Assert.Equal(1, clock.PendingFrameCount);
         inner.IsOpen = false; outer.IsOpen = false; Dispatcher.UIThread.RunJobs();
         await first.Diagnostics.Ended; await nested.Diagnostics.Ended;
@@ -543,7 +555,7 @@ public class AnimationScopeTest
         var reopened = AnimationScope.Get(outerContent);
         Assert.NotSame(first, reopened);
         Assert.False(reopened.IsEnding);
-        var task = reopened.Launch(ct => reopened.CreateAnimatable(0d).AnimateToAsync(1, Tween(), cancellationToken: ct));
+        var task = reopened.Launch(ct => Animatable.Create(0d).AnimateToAsync(reopened, 1, Tween(), cancellationToken: ct));
         Send(clock, 0); Send(clock, 100); await task;
         outer.IsOpen = false; window.Close();
         await window.AnimationRoot.Diagnostics.EndAsync();

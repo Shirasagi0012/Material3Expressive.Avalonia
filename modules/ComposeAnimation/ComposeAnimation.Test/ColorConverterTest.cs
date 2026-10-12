@@ -7,6 +7,8 @@ namespace ComposeAnimation.Test;
 
 public class ColorConverterTest
 {
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+
     private static readonly TimeSpan Frame = TimeSpan.FromMilliseconds(16);
 
     [Theory]
@@ -62,7 +64,7 @@ public class ColorConverterTest
     }
 
     [Fact]
-    public async Task Animatable_EndsAtOriginalColor_AndSnapKeepsItsExactValue()
+    public Task Animatable_EndsAtOriginalColor_AndSnapKeepsItsExactValue() => OnUi(async () =>
     {
         var converter = new ColorConverter();
         var target = Color.FromUInt32(0xFF00FE01);
@@ -71,20 +73,23 @@ public class ColorConverterTest
         // The actual fixed Compose color round trip loses this blue byte.
         Assert.Equal(Color.FromUInt32(0xFF00FE00), converter.From(vector));
         var clock = new ManualFrameSource();
-        var animation = new Animatable<Color>(converter, Colors.Black, clock);
-        var task = animation.AnimateToAsync(target, new SpringSpec<Color>(1, 1600));
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animation = new Animatable<Color>(converter, Colors.Black);
+        var task = animation.AnimateToAsync(scope, target, new SpringSpec<Color>(1, 1600));
         clock.AdvanceBy(Frame);
         clock.AdvanceBy(TimeSpan.FromSeconds(2));
         await task;
         Assert.Equal(target, animation.Value);
         Assert.Equal(target, animation.TargetValue);
         Assert.False(animation.IsRunning);
-        var next = animation.AnimateToAsync(Colors.Red);
+        var next = animation.AnimateToAsync(scope, Colors.Red);
         await animation.SnapToAsync(target);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => next);
         Assert.Equal(target, animation.Value);
         Assert.Equal(target, animation.TargetValue);
-    }
+        window.Close();
+    });
 
     [Fact]
     public void ColorSprings_MatchFixedComposeAtIntegerFrameSamples()
@@ -232,12 +237,15 @@ public class ColorConverterTest
     }
 
     [Fact]
-    public async Task AnimatableInterruption_PreservesUnprojectedOklabVelocity()
+    public Task AnimatableInterruption_PreservesUnprojectedOklabVelocity() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var converter = new ColorConverter();
-        var animatable = new Animatable<Color>(converter, Colors.Red, clock);
+        var animatable = new Animatable<Color>(converter, Colors.Red);
         var first = animatable.AnimateToAsync(
+            scope,
             Colors.Blue,
             new TweenSpec<Color>(TimeSpan.FromMilliseconds(1000), easing: new LinearEasing()));
         clock.AdvanceBy(Frame);
@@ -245,7 +253,7 @@ public class ColorConverterTest
         var initialValue = animatable.Value;
         var initialVelocity = AnimationVector.From(animatable.State.VelocityVector);
 
-        var second = animatable.AnimateToAsync(Colors.Lime, new SpringSpec<Color>());
+        var second = animatable.AnimateToAsync(scope, Colors.Lime, new SpringSpec<Color>());
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
         AssertVectorsEqual(initialVelocity.AsReadOnlySpan(), animatable.State.VelocityVector);
         var expected = new TargetBasedAnimation<Color>(
@@ -258,7 +266,8 @@ public class ColorConverterTest
         AssertVectorsEqual(expectedVelocity, animatable.State.VelocityVector);
         animatable.Stop();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
-    }
+        window.Close();
+    });
 
     private static void AssertVectorsEqual(ReadOnlySpan<double> expected, ReadOnlySpan<double> actual)
     {

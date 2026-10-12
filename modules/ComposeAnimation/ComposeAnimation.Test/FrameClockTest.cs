@@ -362,30 +362,25 @@ public sealed class FrameClockTest
     public Task AnimatableInterrupt_CancelsFirstRunOnFrameClock() => Run(() =>
     {
         var source = new ManualFrameSource();
-        using var clock = new FrameClock(source);
-        var animatable = new Animatable<double>(new DoubleConverter(), 0, new Adapter(clock));
+        var window = new AnimationTestWindow(source);
+        var animatable = new Animatable<double>(new DoubleConverter(), 0);
         var tween = new TweenSpec<double>(TimeSpan.FromMilliseconds(100), easing: new LinearEasing());
 
-        var first = animatable.AnimateToAsync(100, tween);
+        var first = animatable.AnimateToAsync(window.AnimationRoot, 100, tween);
         Advance(source);
         Advance(source, TimeSpan.FromMilliseconds(50));
         var mid = animatable.Value;
         Assert.InRange(mid, 40, 60);
 
-        var second = animatable.AnimateToAsync(0, tween);
+        var second = animatable.AnimateToAsync(window.AnimationRoot, 0, tween);
         Dispatcher.UIThread.RunJobs();
         Assert.True(first.IsCanceled);
 
         Advance(source);
         Assert.True(animatable.Value <= mid + 0.5, $"Continued toward 100: {mid} -> {animatable.Value}");
         Assert.False(second.IsCompleted);
+        window.Close();
     });
-
-    private sealed class Adapter(FrameClock clock) : IFrameSource
-    {
-        public void VerifyAccess() => clock.VerifyAccess();
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => clock.WaitAsync(cancellationToken).AsValueTask();
-    }
 
     private sealed class PendingFailClock : IFrameSource
     {

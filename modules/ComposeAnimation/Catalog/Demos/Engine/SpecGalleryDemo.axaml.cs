@@ -84,7 +84,7 @@ public partial class SpecGalleryDemo : DemoControlBase
     private void PlayAllButton_OnClick(object? sender, RoutedEventArgs e)
     {
         EnsureInitialized();
-        foreach (var row in _rows) _ = Motion.Launch(_ => row.PlayAsync());
+        foreach (var row in _rows) _ = Motion.Launch(_ => row.PlayAsync(Motion));
     }
 
     [DemoAction("统一播放：15 帧后各球位置互不相同且全部在途中；轮询收敛后全部到达终点")]
@@ -144,7 +144,7 @@ public partial class SpecGalleryDemo : DemoControlBase
         public static SpecRow Create(string name, Border ball, Point target, IAnimationSpec<Point> spec,
             AnimationScope clock)
         {
-            var animatable = clock.CreateAnimatable(new Point(), label: name);
+            var animatable = ComposeAnimation.Runtime.Animatable.Create(new Point(), label: name);
 
             // 位移展示用渲染层 TranslateTransform，不触发布局。
             var transform = new TranslateTransform();
@@ -159,11 +159,11 @@ public partial class SpecGalleryDemo : DemoControlBase
             return row;
         }
 
-        public async Task PlayAsync()
+        public async Task PlayAsync(FrameScope scope)
         {
             try
             {
-                await Animatable.AnimateToAsync(Target, _spec);
+                await Animatable.AnimateToAsync(scope, Target, _spec);
             }
             catch (OperationCanceledException)
             {

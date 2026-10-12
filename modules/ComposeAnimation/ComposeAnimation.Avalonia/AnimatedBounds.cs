@@ -102,7 +102,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     internal Control Presentation => _presentation;
     private LookaheadContext? _context;
     private Control? _reference;
-    private ObservedClock? _clock;
+    private ObservedFrameScope? _clock;
     private IDisposable? _motionRegistration;
     private Rect _outerSample;
     private Rect _innerSample;
@@ -473,7 +473,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (TopLevel.GetTopLevel(this) is null) return;
         var motion = AnimationScope.Get(this);
         _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Release(); });
-        _clock = new ObservedClock(motion.Clock);
+        _clock = ObservedFrameScope.Faulting(motion);
     }
 
     /// <summary>Cancel both boundaries and initialize at the destination on the next layout.</summary>
@@ -742,19 +742,4 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         else base.ArrangeCore(finalRect);
     }
 
-    private sealed class ObservedClock(IFrameSource provider) : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
-    {
-        public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
-        public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? 1;
-        public bool Faulted { get; private set; }
-        public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => NextFrameAsync(cancellationToken, null);
-        // Pass-through, not async: keeps the FrameClock's inline resumption (see FrameWait).
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
-            => FrameWait.Observe(provider, cancellationToken, error =>
-            {
-                if (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested) Faulted = true;
-                onFault?.Invoke(error);
-            });
-    }
 }

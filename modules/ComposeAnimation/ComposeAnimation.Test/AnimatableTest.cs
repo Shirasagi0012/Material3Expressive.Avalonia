@@ -5,27 +5,33 @@ namespace ComposeAnimation.Test;
 
 public class AnimatableTest
 {
+    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+    private static Task OnUi(Func<Task> action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
+
     [Fact]
-    public async Task CompletedAnimation_AfterIdle_StartsOnFreshFrame()
+    public Task CompletedAnimation_AfterIdle_StartsOnFreshFrame() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
-        await DriveToEnd(clock, animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100))));
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
+        await DriveToEnd(clock, animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100))));
         clock.AdvanceBy(TimeSpan.FromSeconds(10));
 
-        var second = animatable.AnimateToAsync(200, Tween(TimeSpan.FromMilliseconds(100)));
+        var second = animatable.AnimateToAsync(scope, 200, Tween(TimeSpan.FromMilliseconds(100)));
         clock.AdvanceBy(Frame);
         Assert.Equal(100, animatable.Value);
         Assert.False(second.IsCompleted);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(50));
         Assert.Equal(150, animatable.Value, 6);
         await DriveToEnd(clock, second);
-    }
+        window.Close();
+    });
 
     private static readonly TimeSpan Frame = TimeSpan.FromMilliseconds(16);
 
-    private static Animatable<double> CreateDouble(ManualFrameSource clock, double initial = 0)
-        => new(new DoubleConverter(), initial, clock);
+    private static Animatable<double> CreateDouble(double initial = 0)
+        => new(new DoubleConverter(), initial);
 
     private static TweenSpec<double> Tween(TimeSpan duration)
         => new(duration: duration, easing: new LinearEasing());
@@ -41,14 +47,16 @@ public class AnimatableTest
     }
 
     [Fact]
-    public async Task AnimateTo_CompletesWithFinishedAndReachesTarget()
+    public Task AnimateTo_CompletesWithFinishedAndReachesTarget() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
         var values = new List<double>();
 
         var task = animatable.AnimateToAsync(
-            100, Tween(TimeSpan.FromMilliseconds(64)), block: a => values.Add(a.Value));
+            scope, 100, Tween(TimeSpan.FromMilliseconds(64)), block: a => values.Add(a.Value));
 
         Assert.True(animatable.IsRunning);
         Assert.Equal(100, animatable.TargetValue);
@@ -62,22 +70,25 @@ public class AnimatableTest
         Assert.Equal(0, animatable.Velocity);
         Assert.NotEmpty(values);
         Assert.Equal(0, values[0]); // first frame is sampled at play time 0
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimateTo_Interrupted_RestartsFromCurrentValueOnOldTimebase()
+    public Task AnimateTo_Interrupted_RestartsFromCurrentValueOnOldTimebase() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
 
-        var first = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)));
+        var first = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100)));
         clock.AdvanceBy(Frame);
         clock.AdvanceBy(Frame);
         var valueAtInterruption = animatable.Value;
         Assert.True(valueAtInterruption is > 0 and < 100);
 
         var frames = 0;
-        var second = animatable.AnimateToAsync(200, Tween(TimeSpan.FromMilliseconds(100)),
+        var second = animatable.AnimateToAsync(scope, 200, Tween(TimeSpan.FromMilliseconds(100)),
             block: _ => frames++);
 
         // The interrupting animation re-anchors onto the interrupted one's last frame time, so
@@ -90,17 +101,20 @@ public class AnimatableTest
         var result = await DriveToEnd(clock, second);
         Assert.Equal(AnimationEndReason.Finished, result.EndReason);
         Assert.Equal(200, animatable.Value);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimateTo_WithLowerPriority_IsRejected()
+    public Task AnimateTo_WithLowerPriority_IsRejected() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
 
-        var running = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)),
+        var running = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100)),
             priority: MutatePriority.PreventUserInput);
-        var rejected = animatable.AnimateToAsync(200, Tween(TimeSpan.FromMilliseconds(100)));
+        var rejected = animatable.AnimateToAsync(scope, 200, Tween(TimeSpan.FromMilliseconds(100)));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rejected);
         Assert.Equal(100, animatable.TargetValue);
@@ -108,29 +122,35 @@ public class AnimatableTest
         var result = await DriveToEnd(clock, running);
         Assert.Equal(AnimationEndReason.Finished, result.EndReason);
         Assert.Equal(100, animatable.Value);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimateDecay_RunsUntilItSettles()
+    public Task AnimateDecay_RunsUntilItSettles() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
 
-        var task = animatable.AnimateDecayAsync(500, DecayAnimationSpec.ExponentialDecay<double>());
+        var task = animatable.AnimateDecayAsync(scope, 500, DecayAnimationSpec.ExponentialDecay<double>());
         var result = await DriveToEnd(clock, task);
 
         Assert.Equal(AnimationEndReason.Finished, result.EndReason);
         Assert.True(animatable.Value > 0);
         Assert.False(animatable.IsRunning);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task UpdateBounds_WhileRunning_AppliesFromNextFrame()
+    public Task UpdateBounds_WhileRunning_AppliesFromNextFrame() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
 
-        var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(160)));
+        var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(160)));
         animatable.UpdateBounds(new()
         {
             Upper = 50.0,
@@ -142,13 +162,15 @@ public class AnimatableTest
         Assert.Equal(50, animatable.Value);
         Assert.Equal(50, result.EndState.Value);
         Assert.Equal(50.0, animatable.UpperBound);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public void UpdateBounds_WhenIdle_ClampsImmediately()
+    public Task UpdateBounds_WhenIdle_ClampsImmediately() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock, initial: 80);
+        var window = new AnimationTestWindow(clock);
+        var animatable = CreateDouble(initial: 80);
 
         animatable.UpdateBounds(new()
         {
@@ -156,23 +178,29 @@ public class AnimatableTest
         });
 
         Assert.Equal(50, animatable.Value);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public void UpdateBounds_LowerAboveUpper_Throws()
-    {
-        var animatable = CreateDouble(new ManualFrameSource());
-
-        Assert.Throws<ArgumentException>(() => animatable.UpdateBounds(new(60,50)));
-    }
-
-    [Fact]
-    public async Task SnapTo_CancelsAnimationAndSetsValue()
+    public Task UpdateBounds_LowerAboveUpper_Throws() => OnUi(() =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var animatable = CreateDouble();
 
-        var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(160)));
+        Assert.Throws<ArgumentException>(() => animatable.UpdateBounds(new(60,50)));
+        window.Close();
+    });
+
+    [Fact]
+    public Task SnapTo_CancelsAnimationAndSetsValue() => OnUi(async () =>
+    {
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
+
+        var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(160)));
         clock.AdvanceBy(Frame);
 
         await animatable.SnapToAsync(30);
@@ -182,26 +210,32 @@ public class AnimatableTest
         Assert.Equal(30, animatable.TargetValue);
         Assert.False(animatable.IsRunning);
         Assert.Equal(0, animatable.Velocity);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task SnapTo_ClampsToBounds()
+    public Task SnapTo_ClampsToBounds() => OnUi(async () =>
     {
-        var animatable = CreateDouble(new ManualFrameSource());
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var animatable = CreateDouble();
         animatable.UpdateBounds(new(0.0, 50.0));
 
         await animatable.SnapToAsync(80);
 
         Assert.Equal(50, animatable.Value);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task Stop_CancelsAnimationInPlace()
+    public Task Stop_CancelsAnimationInPlace() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
 
-        var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)));
+        var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100)));
         clock.AdvanceBy(Frame);
         clock.AdvanceBy(Frame);
 
@@ -210,32 +244,38 @@ public class AnimatableTest
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
         Assert.False(animatable.IsRunning);
         Assert.True(animatable.Value is > 0 and < 100); // stopped in its tracks
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task StopAsync_WaitsForUnwind()
+    public Task StopAsync_WaitsForUnwind() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
 
-        var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(100)));
+        var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(100)));
         clock.AdvanceBy(Frame);
 
         await animatable.StopAsync();
 
         Assert.True(task.IsCanceled);
         Assert.False(animatable.IsRunning);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimateTo_RaisesPropertyChanged()
+    public Task AnimateTo_RaisesPropertyChanged() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
         var raised = new List<string?>();
         animatable.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
 
-        var task = animatable.AnimateToAsync(100, Tween(TimeSpan.FromMilliseconds(64)));
+        var task = animatable.AnimateToAsync(scope, 100, Tween(TimeSpan.FromMilliseconds(64)));
 
         Assert.Contains(nameof(Animatable<double>.IsRunning), raised);
         Assert.Contains(nameof(Animatable<double>.TargetValue), raised);
@@ -244,12 +284,15 @@ public class AnimatableTest
         Assert.Contains(nameof(Animatable<double>.Value), raised);
 
         await DriveToEnd(clock, task);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task SnapTo_SameValueStillNotifies()
+    public Task SnapTo_SameValueStillNotifies() => OnUi(async () =>
     {
-        var animatable = CreateDouble(new ManualFrameSource());
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var animatable = CreateDouble();
         var valueNotifications = 0;
         animatable.PropertyChanged += (_, e) =>
         {
@@ -260,20 +303,23 @@ public class AnimatableTest
 
         Assert.Equal(1, valueNotifications);
         Assert.Equal(0, animatable.Value);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimateTo_NotifiesValueOnHoldFrames()
+    public Task AnimateTo_NotifiesValueOnHoldFrames() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = CreateDouble(clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = CreateDouble();
         var valueNotifications = 0;
         animatable.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Animatable<double>.Value)) valueNotifications++;
         };
 
-        var task = animatable.AnimateToAsync(100,
+        var task = animatable.AnimateToAsync(scope, 100,
             new TweenSpec<double>(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(50),
                 new LinearEasing()));
         clock.AdvanceBy(Frame);
@@ -283,20 +329,23 @@ public class AnimatableTest
 
         await animatable.StopAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimateTo_NotifiesVelocityWhenConvertedValueHolds()
+    public Task AnimateTo_NotifiesVelocityWhenConvertedValueHolds() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
-        var animatable = new Animatable<int>(new Int32Converter(), 0, clock);
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
+        var animatable = new Animatable<int>(new Int32Converter(), 0);
         var velocityNotifications = 0;
         animatable.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Animatable<int>.Velocity)) velocityNotifications++;
         };
 
-        var task = animatable.AnimateToAsync(10,
+        var task = animatable.AnimateToAsync(scope, 10,
             new TweenSpec<int>(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(50),
                 new LinearEasing()));
         clock.AdvanceBy(Frame);
@@ -307,5 +356,6 @@ public class AnimatableTest
 
         await animatable.StopAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
-    }
+        window.Close();
+    });
 }

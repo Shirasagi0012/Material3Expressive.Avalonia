@@ -7,44 +7,6 @@ namespace ComposeAnimation;
 
 public static class AnimationScopeExtensions
 {
-    public static Animatable<T> CreateAnimatable<T>(this AnimationScope scope, T initialValue,
-        ITwoWayConverter<T> converter, T? visibilityThreshold = default, string? label = null)
-    {
-        ArgumentNullException.ThrowIfNull(scope);
-        scope.VerifyActive();
-        return new Animatable<T>(converter, initialValue, scope.Clock, visibilityThreshold, label);
-    }
-
-    public static Animatable<double> CreateAnimatable(this AnimationScope scope, double initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new DoubleConverter(), VisibilityThresholds.Double, label);
-
-    public static Animatable<float> CreateAnimatable(this AnimationScope scope, float initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new FloatConverter(), VisibilityThresholds.Float, label);
-
-    public static Animatable<int> CreateAnimatable(this AnimationScope scope, int initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new Int32Converter(), VisibilityThresholds.Int32, label);
-
-    public static Animatable<Point> CreateAnimatable(this AnimationScope scope, Point initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new PointConverter(), VisibilityThresholds.Point, label);
-
-    public static Animatable<Vector> CreateAnimatable(this AnimationScope scope, Vector initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new VectorConverter(), VisibilityThresholds.Vector, label);
-
-    public static Animatable<Size> CreateAnimatable(this AnimationScope scope, Size initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new SizeConverter(), VisibilityThresholds.Size, label);
-
-    public static Animatable<Rect> CreateAnimatable(this AnimationScope scope, Rect initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new RectConverter(), VisibilityThresholds.Rect, label);
-
-    public static Animatable<Thickness> CreateAnimatable(this AnimationScope scope, Thickness initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new ThicknessConverter(), VisibilityThresholds.Thickness, label);
-
-    public static Animatable<CornerRadius> CreateAnimatable(this AnimationScope scope, CornerRadius initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new CornerRadiusConverter(), VisibilityThresholds.CornerRadius, label);
-
-    public static Animatable<Avalonia.Media.Color> CreateAnimatable(this AnimationScope scope, Avalonia.Media.Color initialValue, string? label = null)
-        => scope.CreateAnimatable(initialValue, new ColorConverter(), default, label);
-
     public static Transition<TState> CreateTransition<TState>(this AnimationScope scope,
         TState initialState, string? label = null)
     {

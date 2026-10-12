@@ -48,7 +48,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     public event EventHandler<AnimatedContentSizeChangedEventArgs>? AnimationCompleted;
 
     private Animatable<Size>? _animatable;
-    private ObservedClock? _clock;
+    private ObservedFrameScope? _clock;
     private IDisposable? _motionRegistration;
     private Size? _value;
     private Size? _requestedTarget;
@@ -169,7 +169,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         EnsureClock();
         if (_clock is null) { _value = to; return; }
         _failedTarget = null;
-        _animatable ??= new Animatable<Size>(new SizeConverter(), from, _clock,
+        _animatable ??= new Animatable<Size>(new SizeConverter(), from,
             VisibilityThresholds.Size, "AnimatedContentSize");
         _animatable.PropertyChanged -= OnAnimationChanged;
         _animatable.PropertyChanged += OnAnimationChanged;
@@ -177,17 +177,18 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         _requestedTarget = to;
         _runPending = true;
         var motion = AnimationScope.Get(this);
-        _ = motion.Launch(ct => AnimateAsync(_animatable, to, AnimationSpec, generation, ct), "Content size");
+        var scope = _clock;
+        _ = motion.Launch(ct => AnimateAsync(scope, _animatable, to, AnimationSpec, generation, ct), "Content size");
     }
 
-    private async Task AnimateAsync(Animatable<Size> animatable, Size target,
+    private async Task AnimateAsync(FrameScope scope, Animatable<Size> animatable, Size target,
         IFiniteAnimationSpec<Size> spec, long generation, CancellationToken cancellationToken)
     {
         var initial = animatable.Value;
         AnimationResult<Size> result;
         try
         {
-            result = await animatable.AnimateToAsync(target, spec, cancellationToken: cancellationToken);
+            result = await animatable.AnimateToAsync(scope, target, spec, cancellationToken: cancellationToken);
         }
         catch (Exception error)
         {
@@ -240,7 +241,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         {
             if (motion.IsEnding) ReleaseAnimator();
         });
-        _clock = new ObservedClock(motion.Clock);
+        _clock = ObservedFrameScope.Faulting(motion);
     }
 
     /// <summary>
@@ -268,24 +269,6 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         _animatable = null;
         animatable.PropertyChanged -= OnAnimationChanged;
         animatable.Stop();
-    }
-
-    // Distinguish provider failures (including unexpected cancellation) from spec failures.
-    // The root environment does not retry a failed provider.
-    private sealed class ObservedClock(IFrameSource provider) : IFrameSource, IAnimationLifetimeClock, IFrameWaitProvider
-    {
-        public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
-        public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? 1;
-        public bool Faulted { get; private set; }
-        public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken) => NextFrameAsync(cancellationToken, null);
-        // Pass-through, not async: keeps the FrameClock's inline resumption (see FrameWait).
-        public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
-            => FrameWait.Observe(provider, cancellationToken, error =>
-            {
-                if (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested) Faulted = true;
-                onFault?.Invoke(error);
-            });
     }
 
     private static Size Constrain(Size size, Size available)

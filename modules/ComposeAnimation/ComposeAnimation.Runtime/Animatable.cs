@@ -10,7 +10,13 @@ namespace ComposeAnimation.Runtime;
 /// Unlike <see cref="AnimationState{T}"/>, <see cref="Animatable{T}"/> guarantees mutual
 /// exclusion of its animations via an internal <see cref="MutatorMutex"/>.
 ///
-/// All public members must be called on the frame clock's thread. State changes raise
+/// State only (D19): an <see cref="Animatable{T}"/> holds no clock, lifetime or scope. Each run
+/// names the <see cref="FrameScope"/> it runs in, which supplies frames, lifetime and duration
+/// scale. One run at a time (D21): a run in any scope cancels the current one, which leaves value
+/// and velocity where it stopped (D22). Ending a scope cancels its runs; the state stays usable.
+///
+/// Threading: the thread that constructs the animatable owns it (in an app, the UI thread); every
+/// member checks it. Runs additionally check their scope (UI thread, not ended). State changes raise
 /// <see cref="ObservableObject.PropertyChanged"/> on that thread, so the value can be consumed
 /// by Avalonia bindings directly.
 ///
@@ -20,9 +26,8 @@ namespace ComposeAnimation.Runtime;
 /// </summary>
 public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
 {
-    private readonly AnimationLifetime? _lifetime;
     private readonly ITwoWayConverter<T> _converter;
-    private readonly IFrameSource _clock;
+    private readonly ThreadAffinity _owner = ThreadAffinity.Current;
     private readonly AnimationState<T> _internalState;
     private readonly MutatorMutex _mutatorMutex = new();
     private readonly SpringSpec<T> _defaultSpringSpec;
@@ -37,17 +42,12 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     public Animatable(
         ITwoWayConverter<T> typeConverter,
         T initialValue,
-        IFrameSource clock,
         T? visibilityThreshold = default,
         string? label = null
     )
     {
         ArgumentNullException.ThrowIfNull(typeConverter);
-        ArgumentNullException.ThrowIfNull(clock);
         _converter = typeConverter;
-        _clock = clock;
-        _lifetime = (clock as IAnimationLifetimeClock)?.AnimationLifetime;
-        _lifetime?.Register(this, static animation => animation.Stop());
         _internalState = new AnimationState<T>(typeConverter, initialValue);
         _targetValue = initialValue;
         _defaultSpringSpec = new SpringSpec<T>(visibilityThreshold: visibilityThreshold);
@@ -129,6 +129,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// the returned <see cref="AnimationResult{T}"/>.
     /// </summary>
     public Task<AnimationResult<T>> AnimateToAsync(
+        FrameScope scope,
         T targetValue,
         IAnimationSpec<T>? animationSpec = null,
         Action<Animatable<T>>? block = null,
@@ -136,8 +137,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         CancellationToken cancellationToken = default
     )
     {
-        _clock.VerifyAccess();
-        _lifetime?.VerifyActive(this);
+        VerifyRun(scope);
         var initialVelocity = AnimationVector.From(_internalState.VelocityVector);
         var animation = new TargetBasedAnimation<T>(
             animationSpec ?? _defaultSpringSpec,
@@ -145,11 +145,12 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
             Value,
             targetValue,
             initialVelocityVector: initialVelocity);
-        return Track(() => RunAnimationAsync(animation, initialVelocity, block, priority, cancellationToken));
+        return scope.Track(() => RunAnimationAsync(scope, animation, initialVelocity, block, priority, cancellationToken));
     }
 
     /// <summary>Starts an animation with an explicitly supplied initial velocity.</summary>
     public Task<AnimationResult<T>> AnimateToAsync(
+        FrameScope scope,
         T targetValue,
         IAnimationSpec<T>? animationSpec,
         T initialVelocity,
@@ -158,8 +159,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         CancellationToken cancellationToken = default
     )
     {
-        _clock.VerifyAccess();
-        _lifetime?.VerifyActive(this);
+        VerifyRun(scope);
         var initialVelocityVector = new AnimationVector(_converter.Dimension);
         _converter.To(initialVelocity, initialVelocityVector.AsSpan());
         var anim = new TargetBasedAnimation<T>(
@@ -168,7 +168,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
             Value,
             targetValue,
             initialVelocity);
-        return Track(() => RunAnimationAsync(anim, initialVelocityVector, block, priority, cancellationToken));
+        return scope.Track(() => RunAnimationAsync(scope, anim, initialVelocityVector, block, priority, cancellationToken));
     }
 
     /// <summary>
@@ -177,6 +177,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// gesture. Cancellation semantics match <see cref="AnimateToAsync"/>.
     /// </summary>
     public Task<AnimationResult<T>> AnimateDecayAsync(
+        FrameScope scope,
         T initialVelocity,
         IDecayAnimationSpec<T> animationSpec,
         Action<Animatable<T>>? block = null,
@@ -184,17 +185,17 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         CancellationToken cancellationToken = default
     )
     {
-        _clock.VerifyAccess();
-        _lifetime?.VerifyActive(this);
+        VerifyRun(scope);
         ArgumentNullException.ThrowIfNull(animationSpec);
         var initialVelocityVector = new AnimationVector(_converter.Dimension);
         _converter.To(initialVelocity, initialVelocityVector.AsSpan());
         var anim = new DecayAnimation<T>(animationSpec, _converter, Value, initialVelocity);
-        return Track(() => RunAnimationAsync(anim, initialVelocityVector, block, priority, cancellationToken));
+        return scope.Track(() => RunAnimationAsync(scope, anim, initialVelocityVector, block, priority, cancellationToken));
     }
 
     // All the different types of animation code paths eventually converge to this method.
     private async Task<AnimationResult<T>> RunAnimationAsync(
+        FrameScope scope,
         Animation<T> animation,
         AnimationVector initialVelocity,
         Action<Animatable<T>>? block,
@@ -202,29 +203,32 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         CancellationToken cancellationToken
     )
     {
-        using var linked = _lifetime is null ? null : CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
-        if (linked is not null) cancellationToken = linked.Token;
         // Capture the start time before the mutex is entered: when this animation interrupts
         // another one, it re-anchors onto the interrupted animation's last frame time.
         var startTime = _internalState.LastFrameTime;
         return await _mutatorMutex.MutateAsync(
-            mutationToken => RunAnimationCoreAsync(animation, initialVelocity, block, startTime, mutationToken),
+            mutationToken => RunAnimationCoreAsync(scope, animation, initialVelocity, block, startTime, cancellationToken, mutationToken),
             priority,
             cancellationToken);
     }
 
     private async Task<AnimationResult<T>> RunAnimationCoreAsync(
+        FrameScope scope,
         Animation<T> animation,
         AnimationVector initialVelocity,
         Action<Animatable<T>>? block,
         TimeSpan startTime,
-        CancellationToken mutationToken
+        CancellationToken cancellationToken,
+        CancellationToken mutexToken
     )
     {
+        // The run's one token: caller, scope lifetime and mutex (a newer run in any scope).
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime, mutexToken);
+        var mutationToken = linked.Token;
         try
         {
             mutationToken.ThrowIfCancellationRequested();
-            if (_lifetime?.IsEnding == true) throw new OperationCanceledException(mutationToken);
+            if (scope.IsEnding) throw new OperationCanceledException(mutationToken);
             initialVelocity.AsReadOnlySpan().CopyTo(_internalState.MutableVelocityVector);
             TargetValue = animation.TargetValue;
             mutationToken.ThrowIfCancellationRequested();
@@ -235,13 +239,13 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
             endState.FinishedTime = AnimationConstants.UnspecifiedTime;
             var clampingNeeded = false;
 
-            await endState.AnimateAsync(animation, _clock, startTime,
-                scope =>
+            await endState.AnimateAsync(animation, scope, startTime,
+                run =>
                 {
                     mutationToken.ThrowIfCancellationRequested();
-                    if (_lifetime?.IsEnding == true) throw new OperationCanceledException(mutationToken);
-                    _internalState.UpdateFrom(scope);
-                    var value = scope.Value;
+                    if (scope.IsEnding) throw new OperationCanceledException(mutationToken);
+                    _internalState.UpdateFrom(run);
+                    var value = run.Value;
                     var clamped = ClampToBounds(value);
                     if (!EqualityComparer<T>.Default.Equals(clamped, value))
                     {
@@ -250,7 +254,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
                         OnFrameChanged();
                         mutationToken.ThrowIfCancellationRequested();
                         block?.Invoke(this);
-                        scope.CancelAnimation();
+                        run.CancelAnimation();
                         clampingNeeded = true;
                     }
                     else
@@ -277,20 +281,16 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// </summary>
     public Task SnapToAsync(T targetValue, CancellationToken cancellationToken = default)
     {
-        _clock.VerifyAccess();
-        _lifetime?.VerifyActive(this);
-        return Track(() => SnapCoreAsync(targetValue, cancellationToken));
+        VerifyAccess();
+        return SnapCoreAsync(targetValue, cancellationToken);
     }
 
     private async Task SnapCoreAsync(T targetValue, CancellationToken cancellationToken)
     {
-        using var linked = _lifetime is null ? null : CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
-        var token = linked?.Token ?? cancellationToken;
         await _mutatorMutex.MutateAsync(
             mutationToken =>
             {
                 mutationToken.ThrowIfCancellationRequested();
-                if (_lifetime?.IsEnding == true) throw new OperationCanceledException(mutationToken);
                 EndAnimation();
                 mutationToken.ThrowIfCancellationRequested();
                 var clampedValue = ClampToBounds(targetValue);
@@ -298,11 +298,17 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
                 TargetValue = clampedValue;
                 OnPropertyChanged(nameof(Value));
                 return Task.FromResult(true);
-            }, MutatePriority.Default, token);
+            }, MutatePriority.Default, cancellationToken);
     }
 
-    private Task<TResult> Track<TResult>(Func<Task<TResult>> operation) => _lifetime?.Track(operation) ?? operation();
-    private Task Track(Func<Task> operation) => _lifetime?.Track(operation) ?? operation();
+    private void VerifyRun(FrameScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        scope.VerifyAccess();
+        _owner.Verify();
+    }
+
+    private void VerifyAccess() => _owner.Verify();
 
     /// <summary>
     /// Stops any on-going animation in its track, without skipping to the target value. Returns
@@ -314,7 +320,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// </summary>
     public void Stop()
     {
-        _clock.VerifyAccess();
+        VerifyAccess();
         _mutatorMutex.CancelCurrent();
     }
 
@@ -324,7 +330,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// </summary>
     public async Task StopAsync()
     {
-        _clock.VerifyAccess();
+        VerifyAccess();
         var task = _mutatorMutex.CurrentCompletion;
         _mutatorMutex.CancelCurrent();
         if (task is not null)
@@ -347,9 +353,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// </summary>
     public void UpdateBounds(AnimatableBounds<T> bounds)
     {
-        _clock.VerifyAccess();
-
-        _lifetime?.VerifyActive(this);
+        VerifyAccess();
         var lowerVector = bounds.Lower.HasValue ? ToVector(bounds.Lower.Value) : _negativeInfinityBounds;
         var upperVector = bounds.Upper.HasValue ? ToVector(bounds.Upper.Value) : _positiveInfinityBounds;
 
@@ -363,13 +367,11 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
             }
         }
 
-        _lifetime?.VerifyActive(this);
         _lowerBoundVector = lowerVector;
         _upperBoundVector = upperVector;
         _hasLowerBound = bounds.Lower.HasValue;
         _hasUpperBound = bounds.Upper.HasValue;
         LowerBound = bounds.Lower.HasValue ? bounds.Lower.Value : default;
-        _lifetime?.VerifyActive(this);
         UpperBound = bounds.Upper.HasValue ? bounds.Upper.Value : default;
 
         if (!IsRunning)

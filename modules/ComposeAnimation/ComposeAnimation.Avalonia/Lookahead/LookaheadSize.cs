@@ -37,6 +37,8 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
         set => SetValue(AnimationSpecProperty, value);
     }
 
+    // The scope the animatable's runs use; replaced together with it.
+    private FrameScope? _runScope;
     private Animatable<Size>? _size;
     private IDisposable? _motionRegistration;
     private LookaheadContext? _context;
@@ -86,12 +88,13 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
         if (_size is null && _failedTarget != destination)
         {
             var clock = TopLevel.GetTopLevel(this) is not null && !AnimationScope.IsEnvironmentEnding(this)
-                ? AnimationScope.Get(this).Clock : null;
+                ? AnimationScope.Get(this) : null;
             if (clock is not null)
             {
                 _target = destination;
-                _size = new Animatable<Size>(new SizeConverter(), destination, clock,
+                _size = new Animatable<Size>(new SizeConverter(), destination,
                     VisibilityThresholds.Size, "Lookahead size");
+                _runScope = clock;
                 _size.PropertyChanged += OnSizeSampleChanged;
                 var motion = AnimationScope.Get(this);
                 _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Reset(); });
@@ -111,7 +114,7 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
 
     private async Task Animate(Animatable<Size> size, Size target, long generation)
     {
-        try { await size.AnimateToAsync(target, AnimationSpec); }
+        try { await size.AnimateToAsync(_runScope!, target, AnimationSpec); }
         catch (Exception error)
         {
             if (generation != _generation || !ReferenceEquals(_size, size)) return;
