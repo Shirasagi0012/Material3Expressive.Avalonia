@@ -10,7 +10,7 @@
       <Setter Property="DefaultContentPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.ContentPadding}}" />
       <Setter Property="CornerRadius" Value="{Binding DefaultShape, RelativeSource={RelativeSource Self}}" />
       <Setter Property="Padding" Value="{Binding DefaultContentPadding, RelativeSource={RelativeSource Self}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{Binding DefaultLabelStyle, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{Binding DefaultLabelStyle, RelativeSource={RelativeSource Self}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />

@@ -46,14 +46,14 @@ public class InputGeometryConfigurationTests
         var badge = new Badge();
         var textStyle = new TextStyle { FontSize = 19 };
         var style = new Style { Setters = { new Setter(Badge.PaddingProperty, new Thickness(7)),
-            new Setter(Badge.CornerRadiusProperty, new CornerRadius(3)), new Setter(MaterialText.DefaultStyleProperty, textStyle) } };
+            new Setter(Badge.CornerRadiusProperty, new CornerRadius(3)), new Setter(MaterialText.StyleProperty, textStyle) } };
         badge.Styles.Add(style);
         using var clock = new MotionTestClockScope(); var window = Show(badge);
         try
         {
             badge.Content = new Border { Width = 10, Height = 8 }; Flush(window);
             Assert.Equal(new Thickness(7), badge.Padding); Assert.Equal(new CornerRadius(3), badge.CornerRadius);
-            Assert.Same(textStyle, MaterialText.GetDefaultStyle(badge));
+            Assert.Same(textStyle, MaterialText.GetStyle(badge));
             badge.Content = null; badge.ContentTemplate = new FuncDataTemplate<object>((_, _) => new Border()); Flush(window);
             Assert.Equal(new Thickness(7), badge.Padding); Assert.Equal(new CornerRadius(3), badge.CornerRadius);
             badge.Padding = new Thickness(9); Flush(window); badge.ClearValue(Badge.PaddingProperty); Flush(window);
@@ -61,7 +61,7 @@ public class InputGeometryConfigurationTests
             badge.Styles.Remove(style); Flush(window); Assert.Equal(new Thickness(4, 0), badge.Padding);
             badge.Resources[Comp.Badge.LargeContentPadding] = new Thickness(6, 1); Flush(window);
             Assert.Equal(new Thickness(6, 1), badge.Padding);
-            badge.ContentTemplate = null; Flush(window); Assert.Equal(default, badge.Padding); Assert.Null(MaterialText.GetDefaultStyle(badge));
+            badge.ContentTemplate = null; Flush(window); Assert.Equal(default, badge.Padding); Assert.Null(MaterialText.GetStyle(badge));
         }
         finally { window.Close(); }
     }

@@ -6,7 +6,7 @@
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextColor}}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContainerShape}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextFont}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextFont}}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContentPadding}}" />
       <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinWidth}}" />
       <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinHeight}}" />
@@ -51,7 +51,7 @@
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextColor}}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContainerShape}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextFont}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.SupportingTextFont}}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.ContentPadding}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />

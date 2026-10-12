@@ -85,13 +85,13 @@ public class TypographyTests
     }
 
     [AvaloniaFact]
-    public void DefaultsMerge_ExplicitStyleReplaces_AndNullRestoresEnvironment()
+    public void PartialStylesMerge_OverAncestors_AndNullRestoresEnvironment()
     {
         var text = new TextBlock { Text = "Example" };
         var inner = new StackPanel { Children = { text } };
         var outer = new StackPanel { Children = { inner } };
-        MaterialText.SetDefaultStyle(outer, new TextStyle { FontSize = 30, FontWeight = FontWeight.Bold });
-        MaterialText.SetDefaultStyle(inner, new TextStyle { LetterSpacing = 2 });
+        MaterialText.SetStyle(outer, new TextStyle { FontSize = 30, FontWeight = FontWeight.Bold });
+        MaterialText.SetStyle(inner, new TextStyle { LetterSpacing = 2 });
         var window = Show(outer);
         try
         {
@@ -100,11 +100,11 @@ public class TypographyTests
             Assert.Equal(2, text.LetterSpacing);
             MaterialText.SetStyle(text, new TextStyle { FontSize = 11 });
             Assert.Equal(11, text.FontSize);
-            Assert.Equal(FontWeight.Normal, text.FontWeight);
-            Assert.Equal(0, text.LetterSpacing);
+            Assert.Equal(FontWeight.Bold, text.FontWeight); // unspecified fields keep inheriting
+            Assert.Equal(2, text.LetterSpacing);
             MaterialText.SetStyle(text, null);
             Assert.Equal(30, text.FontSize);
-            MaterialText.SetDefaultStyle(outer, new TextStyle { FontSize = 32, FontWeight = FontWeight.Medium });
+            MaterialText.SetStyle(outer, new TextStyle { FontSize = 32, FontWeight = FontWeight.Medium });
             Assert.Equal(32, text.FontSize);
             Assert.Equal(FontWeight.Medium, text.FontWeight);
         }
@@ -146,11 +146,11 @@ public class TypographyTests
     {
         var text = new TextBlock { Text = "Moves" };
         var scope = new StackPanel { Children = { text } };
-        MaterialText.SetDefaultStyle(scope, new TextStyle { FontWeight = FontWeight.Bold });
+        MaterialText.SetStyle(scope, new TextStyle { FontWeight = FontWeight.Bold });
         var left = new StackPanel { Children = { scope } };
         var right = new StackPanel();
-        MaterialText.SetDefaultStyle(left, new TextStyle { FontSize = 20 });
-        MaterialText.SetDefaultStyle(right, new TextStyle { FontSize = 28 });
+        MaterialText.SetStyle(left, new TextStyle { FontSize = 20 });
+        MaterialText.SetStyle(right, new TextStyle { FontSize = 28 });
         var window = Show(new StackPanel { Children = { left, right } });
         try
         {
@@ -159,9 +159,9 @@ public class TypographyTests
             right.Children.Add(scope);
             window.UpdateLayout();
             Assert.Equal(28, text.FontSize);
-            MaterialText.SetDefaultStyle(left, new TextStyle { FontSize = 40 });
+            MaterialText.SetStyle(left, new TextStyle { FontSize = 40 });
             Assert.Equal(28, text.FontSize);
-            MaterialText.SetDefaultStyle(right, new TextStyle { FontSize = 29 });
+            MaterialText.SetStyle(right, new TextStyle { FontSize = 29 });
             Assert.Equal(29, text.FontSize);
             Assert.Equal(FontWeight.Bold, text.FontWeight);
         }
@@ -215,11 +215,11 @@ public class TypographyTests
             Assert.Equal(FontWeight.Normal, text.FontWeight);
             panel.SetValue(TextElement.ForegroundProperty, Brushes.Green);
             Assert.Same(Brushes.Green, text.Foreground);
-            MaterialText.SetDefaultStyle(panel, new TextStyle { FontSize = 30 });
-            Assert.NotEqual(30, text.FontSize); // Empty opts out of the aggregate default.
+            MaterialText.SetStyle(panel, new TextStyle { FontSize = 30 });
+            Assert.Equal(30, text.FontSize); // Empty specifies nothing, so the ancestor value inherits.
             MaterialText.SetStyle(text, null);
             Assert.Equal(30, text.FontSize);
-            MaterialText.SetDefaultStyle(panel, null);
+            MaterialText.SetStyle(panel, null);
             Assert.Equal(16, text.FontSize);
         }
         finally { window.Close(); }

@@ -18,7 +18,7 @@
       <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="ClipToBounds" Value="False" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography BodyLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
       <Setter Property="Template">
         <ControlTemplate TargetType="ButtonSpinner">
           <m3:MaterialSurface Name="PART_Container"
@@ -44,7 +44,7 @@
                                 Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                                 HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                m3:TextStyleHost.IsEnabled="True" />
+                                />
             </DockPanel>
           </m3:MaterialSurface>
         </ControlTemplate>

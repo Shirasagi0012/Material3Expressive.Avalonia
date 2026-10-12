@@ -254,7 +254,7 @@ public class WideNavigationRailItem : Button
         if (_label is null) return;
         var style = EffectiveIconPosition == NavigationItemIconPosition.Top && (_position?.Value ?? 0) < 0.5f
             ? TopIconLabelTextStyle : StartIconLabelTextStyle;
-        _label.SetCurrentValue(MaterialText.DefaultStyleProperty, style);
+        _label.SetCurrentValue(MaterialText.StyleProperty, style);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

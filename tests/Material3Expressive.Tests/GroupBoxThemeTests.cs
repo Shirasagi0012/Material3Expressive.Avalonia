@@ -97,7 +97,7 @@ public sealed class GroupBoxThemeTests
         var body = new TextBlock { Text = "Body" };
         var custom = new TextBlock { Text = "Own style" };
         var bodyLarge = new TextStyle { FontSize = 22, FontWeight = FontWeight.Light };
-        MaterialText.SetDefaultStyle(custom, bodyLarge);
+        MaterialText.SetStyle(custom, bodyLarge);
         var group = new GroupBox { Header = "Title", Content = body };
         var own = new GroupBox { Header = custom, Content = new Border() };
         var window = Show(group, own);
@@ -108,7 +108,7 @@ public sealed class GroupBoxThemeTests
         Assert.Equal(22, custom.FontSize);
         Assert.Equal(FontWeight.Light, custom.FontWeight);
         own.Header = null; Draw(window);
-        Assert.Same(bodyLarge, MaterialText.GetDefaultStyle(custom));
+        Assert.Same(bodyLarge, MaterialText.GetStyle(custom));
         window.Close();
     }
 

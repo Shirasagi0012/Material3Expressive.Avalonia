@@ -5,8 +5,7 @@
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="m3:TextStyleHost.IsEnabled" Value="True" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography BodyLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
       <Setter Property="Foreground" Value="{Binding (m3:TextFieldThemeDefaults.Foreground), RelativeSource={RelativeSource Self}}" />
       <Setter Property="Background" Value="{Binding (m3:TextFieldThemeDefaults.Background), RelativeSource={RelativeSource Self}}" />
       <Setter Property="BorderBrush" Value="{Binding (m3:TextFieldThemeDefaults.BorderBrush), RelativeSource={RelativeSource Self}}" />
@@ -40,18 +39,18 @@
             <m3:TextFieldDecoration Name="Decoration" IsHitTestVisible="False" />
             <!-- Independent, unmeasured typography endpoints share the label's environment.
                  Never derive a missing endpoint from the label's animated output. -->
-            <ContentPresenter Name="ExpandedLabelStyle" IsVisible="False" IsHitTestVisible="False" m3:TextStyleHost.IsEnabled="True"
-                              m3:MaterialText.DefaultStyle="{Binding LargeTextStyle, ElementName=PART_Decoration}" />
-            <ContentPresenter Name="FloatingLabelStyle" IsVisible="False" IsHitTestVisible="False" m3:TextStyleHost.IsEnabled="True"
-                              m3:MaterialText.DefaultStyle="{Binding SmallTextStyle, ElementName=PART_Decoration}" />
+            <ContentPresenter Name="ExpandedLabelStyle" IsVisible="False" IsHitTestVisible="False"
+                              m3:MaterialText.Style="{Binding LargeTextStyle, ElementName=PART_Decoration}" />
+            <ContentPresenter Name="FloatingLabelStyle" IsVisible="False" IsHitTestVisible="False"
+                              m3:MaterialText.Style="{Binding SmallTextStyle, ElementName=PART_Decoration}" />
             <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
             <m3:TextFieldIconPresenter Name="Trailing" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
             <ContentPresenter Name="Prefix" Content="{TemplateBinding m3:MaterialTextField.Prefix}" ContentTemplate="{TemplateBinding m3:MaterialTextField.PrefixTemplate}"
-                              MinHeight="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                              MinHeight="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap" />
             <ContentPresenter Name="Suffix" Content="{TemplateBinding m3:MaterialTextField.Suffix}" ContentTemplate="{TemplateBinding m3:MaterialTextField.SuffixTemplate}"
-                              MinHeight="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                              MinHeight="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap" />
             <Border Name="Editor" MinHeight="24">
               <ScrollViewer Name="PART_ScrollViewer"
                             HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
@@ -72,12 +71,12 @@
             </Border>
             <ContentPresenter Name="Placeholder" Content="{TemplateBinding PlaceholderText}" ContentTemplate="{TemplateBinding m3:MaterialTextField.PlaceholderTemplate}"
                               Foreground="{TemplateBinding PlaceholderForeground}" MinHeight="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap"
-                              IsHitTestVisible="False" m3:TextStyleHost.IsEnabled="True" />
+                              IsHitTestVisible="False" />
             <ContentPresenter Name="Supporting" Content="{TemplateBinding m3:MaterialTextField.SupportingText}" ContentTemplate="{TemplateBinding m3:MaterialTextField.SupportingTextTemplate}"
-                              MinHeight="16" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True"
-                              m3:MaterialText.DefaultStyle="{m3:Typography BodySmall}" />
+                              MinHeight="16" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap"
+                              m3:MaterialText.Style="{m3:Typography BodySmall}" />
             <m3:TextFieldLabelPresenter Name="Label" Content="{TemplateBinding m3:MaterialTextField.Label}" ContentTemplate="{TemplateBinding m3:MaterialTextField.LabelTemplate}"
-                              VerticalContentAlignment="Center" TextWrapping="Wrap" IsHitTestVisible="False" m3:TextStyleHost.IsEnabled="True" />
+                              VerticalContentAlignment="Center" TextWrapping="Wrap" IsHitTestVisible="False" />
           </m3:TextFieldLayout>
         </ControlTemplate>
       </Setter>

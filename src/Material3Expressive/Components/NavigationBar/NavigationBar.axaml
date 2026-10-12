@@ -73,7 +73,7 @@
                               m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.IconSize}}" />
             <Border RenderOptions.RequiresFullOpacityHandling="True">
               <ContentPresenter x:Name="PART_Label" Content="{TemplateBinding Label}" ContentTemplate="{TemplateBinding LabelTemplate}"
-                m3:MaterialText.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.LabelTextStyle}}" TextWrapping="Wrap" />
+                m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.LabelTextStyle}}" TextWrapping="Wrap" />
             </Border>
             <m3:MaterialSurface x:Name="PART_IndicatorRipple" Background="Transparent"
                 TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}"

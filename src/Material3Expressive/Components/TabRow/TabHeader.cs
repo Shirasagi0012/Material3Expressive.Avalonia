@@ -50,9 +50,6 @@ internal sealed class TabHeader : Panel
     private bool _initialSelected;
     private Rect _labelBox, _iconBox;
     private Size _inner;
-    private Control? _styledLabel;
-    private Style? _labelDefaults;
-    private TextStyle? _providedLabelStyle;
     private ContentPresenter Label => (ContentPresenter)Children[0];
     private ContentPresenter Icon => (ContentPresenter)Children[1];
     private bool HasLabel => Label.Content is not null;
@@ -83,8 +80,6 @@ internal sealed class TabHeader : Panel
         _run?.Cancel(); _run?.Dispose(); _run = null; _runTask = null;
         _transition?.Dispose(); _transition = null; _color = null;
         _motion?.Dispose(); _motion = null; _pending = false;
-        if (_styledLabel is not null && _labelDefaults is not null) _styledLabel.Styles.Remove(_labelDefaults);
-        _styledLabel = null; _labelDefaults = null; _providedLabelStyle = null;
         base.OnDetachedFromVisualTree(e);
     }
     private void SlotChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
@@ -163,26 +158,11 @@ internal sealed class TabHeader : Panel
     private void ApplyContentPolicy()
     {
         var custom = ContentLayout == TabContentLayout.Custom;
-        MaterialText.SetDefaultStyle(Label, custom ? null : LabelTextStyle is { } style ? style with { TextAlignment = TextAlignment.Center } : null);
+        // The label presenter is its content's inheritance parent, so explicit Content gets the style too.
+        MaterialText.SetStyle(Label, custom ? null : LabelTextStyle is { } style ? style with { TextAlignment = TextAlignment.Center } : null);
         if (custom) Label.ClearValue(ContentPresenter.TextWrappingProperty);
         else Label.TextWrapping = TextWrapping.Wrap;
         BadgeBounds.SetIsEnabled(this, ContentLayout == TabContentLayout.Stacked);
-        UpdateLabelDefaults();
-    }
-    private void UpdateLabelDefaults()
-    {
-        var provided = ContentLayout == TabContentLayout.Custom ? null : LabelTextStyle is { } style ? style with { TextAlignment = TextAlignment.Center } : null;
-        if (ReferenceEquals(_styledLabel, Label.Child) && provided == _providedLabelStyle) return;
-        if (_styledLabel is not null && _labelDefaults is not null) _styledLabel.Styles.Remove(_labelDefaults);
-        _styledLabel = Label.Child; _providedLabelStyle = provided; _labelDefaults = null;
-        if (_styledLabel is not null && provided is not null)
-        {
-            // Explicit Content retains Tab as its logical parent. A default style on
-            // the presenter alone cannot supply MaterialText's logical environment to it.
-            // Project the label-slot default at style priority, below caller overrides.
-            _labelDefaults = new Style { Setters = { new Setter(MaterialText.DefaultStyleProperty, provided) } };
-            _styledLabel.Styles.Insert(0, _labelDefaults); _styledLabel.ApplyStyling();
-        }
     }
     private void TransitionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -197,7 +177,6 @@ internal sealed class TabHeader : Panel
     internal int IntrinsicWidth(int height, double scale)
     {
         Label.UpdateChild(); Icon.UpdateChild();
-        UpdateLabelDefaults();
         Label.Measure(new Size(double.PositiveInfinity, height == int.MaxValue ? double.PositiveInfinity : height / scale));
         Icon.Measure(new Size(double.PositiveInfinity, height == int.MaxValue ? double.PositiveInfinity : height / scale));
         var label = HasLabel ? MathUtils.DipToPx(Label.DesiredSize.Width, scale) : 0;
@@ -210,7 +189,6 @@ internal sealed class TabHeader : Panel
     internal int IntrinsicHeight(int width, double scale)
     {
         Label.UpdateChild(); Icon.UpdateChild();
-        UpdateLabelDefaults();
         var maximum = width == int.MaxValue ? double.PositiveInfinity : width / scale;
         Icon.Measure(new Size(maximum, double.PositiveInfinity));
         Label.Measure(new Size(Math.Max(0, maximum - (ContentLayout == TabContentLayout.Custom ? 0 : 32)
@@ -226,7 +204,6 @@ internal sealed class TabHeader : Panel
     {
         if (Children.Count != 2) return default;
         Label.UpdateChild(); Icon.UpdateChild();
-        UpdateLabelDefaults();
         var scale = LayoutHelper.GetLayoutScale(this);
         var maxWidth = double.IsFinite(availableSize.Width) ? MathUtils.DipToPx(availableSize.Width, scale) : int.MaxValue;
         var maxHeight = double.IsFinite(availableSize.Height) ? MathUtils.DipToPx(availableSize.Height, scale) : int.MaxValue;

@@ -5,7 +5,7 @@
     <ControlTheme x:Key="MaterialBaselineMenuItemTheme" TargetType="MenuItem">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemPadding}}" />
       <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Background" Value="#00000000" />
@@ -52,7 +52,7 @@
                       </Canvas>
                     </Viewbox>
                   </Grid>
-                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" m3:TextStyleHost.IsEnabled="True" />
+                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" />
                   <StackPanel Name="PART_Trailing" Grid.Column="2" Orientation="Horizontal" Spacing="12" Margin="12,0,0,0" VerticalAlignment="Center" IsVisible="{TemplateBinding InputGesture, Converter={x:Static ObjectConverters.IsNotNull}}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}">
                     <TextBlock Text="{TemplateBinding InputGesture, Converter={StaticResource MenuGestureConverter}}" VerticalAlignment="Center">
                       <TextBlock.Foreground>
@@ -164,7 +164,7 @@
     <ControlTheme x:Key="MaterialVerticalMenuItemTheme" TargetType="MenuItem">
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemShape}}" />
       <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" />
@@ -240,7 +240,7 @@
                       </Canvas>
                     </Viewbox>
                   </Grid>
-                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" m3:TextStyleHost.IsEnabled="True" />
+                  <ContentPresenter Name="PART_HeaderPresenter" Grid.Column="1" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" RecognizesAccessKey="True" />
                   <StackPanel Name="PART_Trailing" Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0" VerticalAlignment="Center" IsVisible="{TemplateBinding InputGesture, Converter={x:Static ObjectConverters.IsNotNull}}" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}">
                     <TextBlock Text="{TemplateBinding InputGesture, Converter={StaticResource MenuGestureConverter}}" VerticalAlignment="Center">
                       <TextBlock.Foreground>

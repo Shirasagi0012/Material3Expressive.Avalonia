@@ -68,7 +68,7 @@
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ActiveIndicatorShape}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.LabelTextStyle}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.LabelTextStyle}}" />
       <Setter Property="SelectedContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.SelectedContainerColor}}" />
       <Setter Property="UnselectedContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.UnselectedContainerColor}}" />
       <Setter Property="SelectedIconColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.SelectedIconColor}}" />
@@ -86,7 +86,7 @@
                   m3:MaterialIcon.DefaultSize="24" />
               <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
                   ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"
-                  m3:TextStyleHost.IsEnabled="True" />
+                  />
               <ContentPresenter x:Name="PART_Badge" Content="{TemplateBinding Badge}" ContentTemplate="{TemplateBinding BadgeTemplate}"
                   IsVisible="{TemplateBinding Badge, Converter={x:Static ObjectConverters.IsNotNull}}" />
             </m3:NavigationDrawerItemLayout>

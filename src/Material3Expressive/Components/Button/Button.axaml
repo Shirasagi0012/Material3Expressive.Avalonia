@@ -39,7 +39,7 @@
       <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContentColor}}" />
       <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{Binding Path=(m3:ButtonThemeProperties.TextStyle), RelativeSource={RelativeSource Self}}" />
+      <Setter Property="m3:MaterialText.Style" Value="{Binding Path=(m3:ButtonThemeProperties.TextStyle), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -90,7 +90,7 @@
                                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                            TextWrapping="Wrap"
-                                           m3:TextStyleHost.IsEnabled="True" />
+                                           />
                 <ContentPresenter x:Name="PART_IconPresenter"
                                   Content="{TemplateBinding m3:MaterialButton.Icon}"
                                   ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}"

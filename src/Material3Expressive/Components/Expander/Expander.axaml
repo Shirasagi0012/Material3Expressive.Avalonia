@@ -48,7 +48,7 @@
                                 HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                 RecognizesAccessKey="True"
-                                m3:PresenterTextStyle.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+BodyLarge.Style}}" />
+                                m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+BodyLarge.Style}}" />
             </DockPanel>
           </m3:MaterialSurface>
         </ControlTemplate>

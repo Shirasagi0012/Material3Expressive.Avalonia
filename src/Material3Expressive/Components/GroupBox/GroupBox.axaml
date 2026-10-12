@@ -45,7 +45,7 @@
                                 HorizontalContentAlignment="Stretch"
                                 RecognizesAccessKey="True"
                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}"
-                                m3:PresenterTextStyle.DefaultStyle="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleSmall.Style}}" />
+                                m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleSmall.Style}}" />
               <ContentPresenter x:Name="PART_ContentPresenter"
                                 Content="{TemplateBinding Content}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"

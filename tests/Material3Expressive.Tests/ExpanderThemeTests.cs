@@ -82,10 +82,10 @@ public sealed class ExpanderThemeTests
     {
         var control = new TextBlock { Text = "Control" };
         var styled = new TextBlock { Text = "Styled" };
-        MaterialText.SetDefaultStyle(styled, new TextStyle { FontSize = 30 });
+        MaterialText.SetStyle(styled, new TextStyle { FontSize = 30 });
         var templated = new Expander { Header = "Data", HeaderTemplate = new FuncDataTemplate<string>((s, _) => new TextBlock { Text = s }) };
         var content = new TextBlock { Text = "Content" };
-        MaterialText.SetDefaultStyle(content, new TextStyle { FontSize = 11 });
+        MaterialText.SetStyle(content, new TextStyle { FontSize = 11 });
         var (window, _) = Show(new Expander { Header = control, Content = content, IsExpanded = true }, new Expander { Header = styled }, templated);
         var size = ((TextStyle)TokenScan.Resolve(window, MaterialTokens.Sys.TypeScale.BodyLarge.Style)).FontSize;
         Assert.Equal(size, control.FontSize);

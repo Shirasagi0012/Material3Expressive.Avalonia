@@ -1,7 +1,10 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
-  <Style Selector=":is(TextBlock)">
-    <Setter Property="m3:TextStyleHost.IsEnabled" Value="True" />
+  <!-- The BodyLarge baseline (Compose's default LocalTextStyle) on each top-level. Text below
+       inherits it through Avalonia's native text properties. A popup inherits from its Popup
+       instead, so popup roots are excluded. -->
+  <Style Selector=":is(TopLevel):not(:is(PopupRoot))">
+    <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
   </Style>
 </Styles>

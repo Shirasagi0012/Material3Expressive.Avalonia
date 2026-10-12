@@ -14,7 +14,7 @@
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
-      <Setter Property="m3:MaterialText.DefaultStyle" Value="{m3:Typography BodyLarge}" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
       <Setter Property="Template">
         <ControlTemplate>
           <m3:SwitchLayout>
@@ -54,13 +54,13 @@
                 ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
                 HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                RecognizesAccessKey="True" TextWrapping="Wrap" m3:TextStyleHost.IsEnabled="True" />
+                RecognizesAccessKey="True" TextWrapping="Wrap" />
             <ContentPresenter x:Name="PART_OnContentPresenter" IsVisible="False" Content="{TemplateBinding OnContent}"
                 ContentTemplate="{TemplateBinding OnContentTemplate}" Foreground="{TemplateBinding Foreground}"
-                VerticalContentAlignment="Center" m3:TextStyleHost.IsEnabled="True" />
+                VerticalContentAlignment="Center" />
             <ContentPresenter x:Name="PART_OffContentPresenter" Content="{TemplateBinding OffContent}"
                 ContentTemplate="{TemplateBinding OffContentTemplate}" Foreground="{TemplateBinding Foreground}"
-                VerticalContentAlignment="Center" m3:TextStyleHost.IsEnabled="True" />
+                VerticalContentAlignment="Center" />
           </m3:SwitchLayout>
         </ControlTemplate>
       </Setter>
