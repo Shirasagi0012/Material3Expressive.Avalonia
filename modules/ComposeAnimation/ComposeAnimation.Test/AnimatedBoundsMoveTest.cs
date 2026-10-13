@@ -108,7 +108,7 @@ public partial class AnimatedBoundsTest
             drainedInside = changes.Count;
         }));
         Assert.Equal(0, drainedInside);
-        Assert.Contains("layout", error.Message);
+        Assert.Contains("layout ran inside the move callback", error.Message);
         Assert.False(old.Diagnostics.IsEnding);
         Dispatcher.UIThread.RunJobs();
         var change = Assert.Single(changes);
@@ -348,10 +348,11 @@ public partial class AnimatedBoundsTest
         using var first = new Fixture(source);
         using var second = new Fixture(destination);
         card.TargetSize = new Size(240, 100); first.Layout(); first.Step(16); first.Step(50);
-        Assert.Throws<InvalidOperationException>(() => first.Root.MoveContent(card, () =>
+        var crossRoot = Assert.Throws<InvalidOperationException>(() => first.Root.MoveContent(card, () =>
         {
             source.Children.Remove(card); destination.Children.Add(card);
         }));
+        Assert.Contains("outside this Lookahead domain", crossRoot.Message);
         Assert.False(card.IsRunning);
         Assert.Equal(0, first.Frames.PendingFrameCount);
         first.Layout(); second.Layout();
@@ -365,10 +366,11 @@ public partial class AnimatedBoundsTest
         var (scene, left, right) = MoveSlots(card);
         card.ReferenceScope = left;
         using var f = new Fixture(scene);
-        Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
+        var error = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
         {
             left.Children.Remove(card); right.Children.Add(card);
         }));
+        Assert.Contains("no longer under its coordinate reference", error.Message);
         Assert.False(card.IsRunning);
         card.ReferenceScope = null; f.Layout();
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
@@ -402,11 +404,12 @@ public partial class AnimatedBoundsTest
         var (scene, left, right) = MoveSlots(card);
         using var f = new Fixture(scene);
         card.TargetSize = new Size(160, 100); f.Layout();
-        Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
+        var layout = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
         {
             left.Children.Remove(card); right.Children.Add(card);
             f.Window.UpdateLayout();
         }));
+        Assert.Contains("Layout cannot run during MoveContent", layout.Message);
         Assert.False(card.IsRunning);
         f.Layout();
         Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () => f.Root.MoveContent(card, () => { })));
@@ -436,11 +439,12 @@ public partial class AnimatedBoundsTest
         using var f = new Fixture(scene);
         parent.TargetSize = new Size(160, 100); child.TargetSize = new Size(90, 80);
         f.Layout(); f.Step(16);
-        Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(parent, () =>
+        var frames = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(parent, () =>
         {
             left.Children.Remove(parent); right.Children.Add(parent);
             f.Step(20); // Pump frame continuations and layout while the tree edit is still open.
         }));
+        Assert.Contains("during MoveContent", frames.Message); // layout is refused first
         Assert.False(parent.IsRunning);
         Assert.False(child.IsRunning);
         Assert.Equal(0, f.Frames.PendingFrameCount);

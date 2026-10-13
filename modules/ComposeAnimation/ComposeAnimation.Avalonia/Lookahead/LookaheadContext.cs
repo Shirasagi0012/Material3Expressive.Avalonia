@@ -84,10 +84,16 @@ internal sealed partial class LookaheadContext
             foreach (var node in new Visual[] { content }.Concat(content.GetVisualDescendants()).OfType<ILookaheadMoveParticipant>())
                 if (node.CaptureMove(this) is { } state) states.Add(state);
             move();
-            if (_moveLayoutAttempted || !_attached || TopLevel.GetTopLevel(Owner) != topLevel ||
-                LookaheadScope.FindParticipatingContext(content) != this ||
-                states.Any(state => !state.CanCommit()))
-                throw new InvalidOperationException("MoveContent must finish in the same domain/reference without running layout or animation frames. Tree edits are not rolled back.");
+            if (_moveLayoutAttempted)
+                Fail("layout ran inside the move callback; do not pump layout or the dispatcher during the move");
+            if (!_attached)
+                Fail("the Lookahead domain was detached during the move");
+            if (TopLevel.GetTopLevel(Owner) != topLevel)
+                Fail("the Lookahead domain moved to another window during the move");
+            if (LookaheadScope.FindParticipatingContext(content) != this)
+                Fail("the content ended outside this Lookahead domain");
+            foreach (var state in states)
+                if (state.CommitBlocker() is { } reason) Fail(reason);
             foreach (var state in states) state.Commit();
             committed = true;
         }
@@ -101,6 +107,9 @@ internal sealed partial class LookaheadContext
             InvalidateApproachPlacement();
         }
     }
+
+    private static void Fail(string reason)
+        => throw new InvalidOperationException($"MoveContent failed: {reason}. Tree edits are not rolled back.");
 
     /// <summary>Invalidates the target after external layout-policy inputs change.</summary>
     public void InvalidateTargetLayout()

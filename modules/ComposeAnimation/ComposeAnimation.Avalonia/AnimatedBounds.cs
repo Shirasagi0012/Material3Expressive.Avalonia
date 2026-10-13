@@ -597,12 +597,16 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
         private bool IsCurrent => ReferenceEquals(_owner._pendingMove, this);
 
-        public bool CanCommit()
+        public string? CommitBlocker()
         {
             // An explicit Reset, scope/reference change, or failure already released this state.
-            if (!IsCurrent) return true;
-            if (FrameAdvanced || LookaheadScope.FindContext(_owner) != _context ||
-                (_owner.ReferenceScope ?? _context.CoordinateReference) != _reference || !_owner.GetVisualAncestors().Contains(_reference)) return false;
+            if (!IsCurrent) return null;
+            if (FrameAdvanced) return "an animation frame ran inside the move callback";
+            if (LookaheadScope.FindContext(_owner) != _context) return "a moved AnimatedBounds ended in another Lookahead domain";
+            if ((_owner.ReferenceScope ?? _context.CoordinateReference) != _reference)
+                return "a moved AnimatedBounds changed its coordinate reference";
+            if (!_owner.GetVisualAncestors().Contains(_reference))
+                return "a moved AnimatedBounds is no longer under its coordinate reference";
             if (!_owner.AnimateMotionFrameOfReference)
             {
                 _basisDelta = default;
@@ -617,7 +621,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
                 if (!double.IsFinite(basis.X) || !double.IsFinite(basis.Y))
                     throw new InvalidOperationException("Moving content produced a non-finite motion-frame basis.");
             }
-            return true;
+            return null;
         }
 
         public void Commit()
