@@ -260,11 +260,11 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
         _changed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
-    internal void VerifyThreadAccess() => _owner.Verify();
+    internal void VerifyThreadAccess() => _owner.Verify(this);
 
     internal void VerifyAccess()
     {
-        _owner.Verify();
+        _owner.Verify(this);
         ObjectDisposedException.ThrowIf(_disposed, this);
     }
 

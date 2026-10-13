@@ -12,9 +12,13 @@ internal readonly struct ThreadAffinity
 
     public static ThreadAffinity Current => new(Environment.CurrentManagedThreadId);
 
-    public void Verify()
+    /// <summary>Throws unless called on the owning thread; the message names <paramref name="owner"/>'s type.</summary>
+    public void Verify(object owner)
     {
+        // default(ThreadAffinity) has no thread (managed thread ids start at 1): always a bug.
+        if (_thread == 0) throw new InvalidOperationException("ThreadAffinity used before it was captured.");
         if (Environment.CurrentManagedThreadId != _thread)
-            throw new InvalidOperationException("Call this animation state object from the thread that created it.");
+            throw new InvalidOperationException(
+                $"Call this {owner.GetType().Name.Split('`')[0]} from the thread that created it.");
     }
 }

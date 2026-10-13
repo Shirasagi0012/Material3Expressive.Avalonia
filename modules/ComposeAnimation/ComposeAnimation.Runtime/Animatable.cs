@@ -305,10 +305,10 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     {
         ArgumentNullException.ThrowIfNull(scope);
         scope.VerifyAccess();
-        _owner.Verify();
+        _owner.Verify(this);
     }
 
-    private void VerifyAccess() => _owner.Verify();
+    private void VerifyAccess() => _owner.Verify(this);
 
     /// <summary>
     /// Stops any on-going animation in its track, without skipping to the target value. Returns

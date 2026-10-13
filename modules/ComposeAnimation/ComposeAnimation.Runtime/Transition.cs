@@ -476,11 +476,11 @@ public abstract class Transition : ObservableObject, IDisposable
     }
 
     /// <summary>Owning-thread check only (no disposed check).</summary>
-    internal void VerifyThreadAccess() => _owner.Verify();
+    internal void VerifyThreadAccess() => _owner.Verify(this);
 
     internal void VerifyAccess()
     {
-        _owner.Verify();
+        _owner.Verify(this);
         ObjectDisposedException.ThrowIf(_disposed || Root._disposed, this);
     }
 
