@@ -121,6 +121,9 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
         var keepPlayTime = false;
         try
         {
+            // No PlayTimeAccumulator here: upstream parity. A scale change restarts the infinite
+            // animations from the start, which the accumulator would not
+            // (InfiniteTransitionTest.DurationScale_SlowsThenRestartOnChange; see DurationScale docs).
             // One token check per frame: here once, then after each frame wait. The change waits
             // observe the token themselves.
             token.ThrowIfCancellationRequested();

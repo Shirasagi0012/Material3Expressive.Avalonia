@@ -40,8 +40,13 @@ public abstract class Transition : ObservableObject, IDisposable
     // The root's frame loop and the seekable state's seek run share this mutex. Lock order: a
     // caller that takes both takes its state mutex BEFORE this run mutex (never the reverse).
     private readonly MutatorMutex _runMutex = new();
-    // Mutations are confined to the owning clock thread. Wake the idle loop inline so
-    // it registers for the next frame batch before the mutation returns.
+    // Deliberately NOT RunContinuationsAsynchronously: completing this wakes the idle LoopAsync
+    // inline, so it registers for the next frame batch before the owning mutation returns.
+    // Asynchronous continuations would add a one-frame start delay (the loop would only register
+    // after a later dispatcher pump); AnimationLoopSchedulingTest.
+    // IdleTransition_RegistersNextFrameBeforeOwningMutationReturns pins this. The loop therefore
+    // re-enters during a mutation; that is expected (mutations are confined to the owning thread
+    // and the loop only registers a frame wait before yielding).
     private TaskCompletionSource _changed = new();
     private bool _processing;
     private bool _disposed;
@@ -217,6 +222,9 @@ public abstract class Transition : ObservableObject, IDisposable
         var token = linked.Token;
         try
         {
+            // No PlayTimeAccumulator here: upstream parity. A scale change recalculates play time
+            // from the start (_startTime anchor), which the accumulator's per-delta math would not
+            // (TransitionBoundaryTest.ScaleChange_RecalculatesPlayTimeFromStartAsUpstreamDoes).
             // One token check per frame: here once, then after each frame wait. The change waits
             // observe the token themselves.
             token.ThrowIfCancellationRequested();
