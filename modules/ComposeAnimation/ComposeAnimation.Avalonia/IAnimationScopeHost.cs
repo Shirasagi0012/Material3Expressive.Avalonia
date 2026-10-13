@@ -13,7 +13,8 @@ internal interface IAnimationScopeHost
     /// <para>A parked flight keeps the pre-move scope (stage 2 decision, Q-E): its runs finish
     /// under that scope's DurationScale and lifetime, and are released if the old ancestor ends.
     /// Runs now take a scope, so the flight could move to the new scope at rebuild; that would
-    /// reopen the decision and touch <c>RetainsAnimationAttachment</c>, so it is left for stage 4.</para>
+    /// reopen the decision and touch <see cref="AnimatedBounds"/>'s move retention
+    /// (<c>_retainedMove</c>/<c>_pendingMove</c>), so it is left for stage 4.</para>
     /// </summary>
     bool DefersScopeRebuild => false;
 

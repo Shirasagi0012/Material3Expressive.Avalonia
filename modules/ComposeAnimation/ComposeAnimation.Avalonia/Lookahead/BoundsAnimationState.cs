@@ -16,11 +16,11 @@ internal sealed class BoundsAnimationState(Action changed, Action<Exception> fai
     public Rect? Value { get; private set; }
     public bool IsRunning => _pending || _animation?.IsRunning == true;
 
-    public void UpdateTarget(Rect target, FrameScope? clock, BoundsTransform transform)
+    public void UpdateTarget(Rect target, FrameScope? runScope, BoundsTransform transform)
     {
         if (!IsFinite(target)) throw new InvalidOperationException("AnimatedBounds requires finite target bounds.");
         Value ??= target; // First layout initializes at its destination, without invoking the policy.
-        if (clock is null)
+        if (runScope is null)
         {
             Reset();
             Value = target;
@@ -31,7 +31,7 @@ internal sealed class BoundsAnimationState(Action changed, Action<Exception> fai
         _requestedTarget = target; // Includes requests queued behind the Animatable mutation mutex.
         if (_animation.Value == target && !IsRunning) return;
         _pending = true;
-        _ = Animate(clock, _animation, target, transform, ++_generation);
+        _ = Animate(runScope, _animation, target, transform, ++_generation);
     }
 
     private Animatable<Rect> CreateAnimation(Rect initial)

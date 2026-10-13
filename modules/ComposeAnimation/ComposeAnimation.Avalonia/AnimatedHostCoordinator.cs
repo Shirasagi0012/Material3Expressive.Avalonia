@@ -11,7 +11,7 @@ namespace ComposeAnimation;
 internal interface IPropertySession : IDisposable
 {
     AvaloniaProperty Property { get; }
-    void SetClock(FrameScope? clock, AnimationScope? scope = null);
+    void Attach(FrameScope? runScope, AnimationScope? scope = null);
     void ReconcileTarget();
     void Abort();
     void SnapToTarget();
@@ -29,12 +29,12 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private readonly Queue<Action> _work = new();
     private AnimatedPropertyCollection? _collection;
     private AnimationScope? _motion;
-    private ObservedFrameScope? _sessionClock;
+    private ObservedFrameScope? _sessionScope;
     private IDisposable? _beforeFrame;
     private IDisposable? _afterWaiter;
     private bool _attached;
     private bool _processing;
-    private bool _clockFailed;
+    private bool _scopeFailed;
     private bool _disposed;
 
     private AnimatedHostCoordinator(Visual host)
@@ -83,7 +83,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _collection.CollectionChanged += OnCollectionChanged;
         foreach (var declaration in collection)
             AddDeclaration(declaration);
-        ApplyClock();
+        ApplyScope();
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -114,10 +114,10 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         var session = CreateSession(declaration);
         _sessions.Add(declaration, session);
         declaration.PropertyChanged += OnDeclarationPropertyChanged;
-        session?.SetClock(SessionClock, _motion);
+        session?.Attach(SessionScope, _motion);
     }
 
-    private FrameScope? SessionClock => _clockFailed ? null : _sessionClock;
+    private FrameScope? SessionScope => _scopeFailed ? null : _sessionScope;
 
     private IPropertySession? CreateSession(AnimatedProperty declaration)
     {
@@ -148,7 +148,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
             var replacement = CreateSession(declaration);
             _sessions[declaration] = replacement;
             previous?.Dispose();
-            replacement?.SetClock(SessionClock, _motion);
+            replacement?.Attach(SessionScope, _motion);
         });
     }
 
@@ -163,10 +163,10 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     }
 
     private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)
-        => Execute(() => { _attached = true; ApplyClock(); });
+        => Execute(() => { _attached = true; ApplyScope(); });
 
     private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e)
-        => Execute(() => { _attached = false; ApplyClock(); });
+        => Execute(() => { _attached = false; ApplyScope(); });
 
     private void OnHostPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -179,24 +179,24 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         });
     }
 
-    private void ApplyClock()
+    private void ApplyScope()
     {
         if (_attached && _motion is { IsEnding: false }) return;
         var previous = _motion;
         _motion = _attached ? AnimationScope.CreateDetached(_host) : null;
-        _clockFailed = false;
+        _scopeFailed = false;
         ReleaseFrameHooks();
-        _sessionClock = _motion is null ? null : new ObservedFrameScope(_motion, (error, _) => { if (error is not OperationCanceledException) OnInnerFailure(error); });
+        _sessionScope = _motion is null ? null : new ObservedFrameScope(_motion, (error, _) => { if (error is not OperationCanceledException) OnInnerFailure(error); });
         if (_motion is not null)
         {
-            // The sessions wait directly on the window's FrameClock (through the scope clock).
+            // The sessions wait directly on the window's FrameClock (through the scope).
             // Retargeting runs in its before-frame hook, i.e. after the frame arrives and before
             // any waiter of this frame (this host's included) samples, and replacement runs it
             // starts join this frame's batch.
             _beforeFrame = _motion.FrameClock.RegisterBeforeFrame(BeforeEachFrame);
             _afterWaiter = _motion.FrameClock.RegisterAfterWaiter(AfterEachWaiter);
         }
-        foreach (var session in _sessions.Values) session?.SetClock(SessionClock, _motion);
+        foreach (var session in _sessions.Values) session?.Attach(SessionScope, _motion);
         previous?.End();
     }
 
@@ -241,10 +241,10 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private void OnInnerFailure(Exception error)
         => Execute(() =>
         {
-            if (_clockFailed) return;
-            _clockFailed = true;
+            if (_scopeFailed) return;
+            _scopeFailed = true;
             foreach (var session in _sessions.Values)
-                session?.SetClock(null);
+                session?.Attach(null);
             _motion?.ReportFailure(error);
         });
 
@@ -289,7 +289,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
             _collection.CollectionChanged -= OnCollectionChanged;
         ClearSessions();
         ReleaseFrameHooks();
-        _sessionClock = null;
+        _sessionScope = null;
         _motion?.End();
         _motion = null;
     });

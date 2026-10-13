@@ -102,7 +102,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     internal Control Presentation => _presentation;
     private LookaheadContext? _context;
     private Control? _reference;
-    private ObservedFrameScope? _clock;
+    private ObservedFrameScope? _runScope;
     private IDisposable? _motionRegistration;
     private Rect _outerSample;
     private Rect _innerSample;
@@ -277,14 +277,14 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         BindContext(root);
         _reference = LookaheadCoordinates.ResolveReference(this, root, ReferenceScope);
         _targetLayout = layout;
-        EnsureClock();
-        var clock = _clock?.Faulted == false ? _clock : null;
+        EnsureScope();
+        var runScope = _runScope?.Faulted == false ? _runScope : null;
         var lifecycle = _lifecycle;
         var outerTarget = ToReference(target.Bounds);
         var innerTarget = ToReference(layout.InnerBounds);
-        _outer.UpdateTarget(outerTarget, clock, BoundsTransform);
+        _outer.UpdateTarget(outerTarget, runScope, BoundsTransform);
         if (lifecycle == _lifecycle) // A user BoundsTransform can reset or detach this owner.
-            _inner.UpdateTarget(innerTarget, clock, BoundsTransform);
+            _inner.UpdateTarget(innerTarget, runScope, BoundsTransform);
         // Capture both boundaries once for this measure/arrange pass. No live Bounds reads.
         _outerSample = _outer.Value ?? outerTarget;
         _innerSample = _inner.Value ?? innerTarget;
@@ -467,14 +467,14 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (_retainedMove && !_isRunning && _targetLayout is not null) EndRetainedMove();
     }
 
-    private void EnsureClock()
+    private void EnsureScope()
     {
-        if (_clock is not null) return;
+        if (_runScope is not null) return;
         if (AnimationScope.IsEnvironmentEnding(this)) return;
         if (TopLevel.GetTopLevel(this) is null) return;
         var motion = AnimationScope.Get(this);
         _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Release(); });
-        _clock = ObservedFrameScope.Faulting(motion);
+        _runScope = ObservedFrameScope.Faulting(motion);
     }
 
     /// <summary>Cancel both boundaries and initialize at the destination on the next layout.</summary>
@@ -508,7 +508,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         _approachLayout = null;
         _reference = null;
         _lastInnerConstraints = null;
-        _clock = null;
+        _runScope = null;
         SetAndRaise(CurrentBoundsProperty, ref _currentBounds, null);
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, null);
         SetAndRaise(IsRunningProperty, ref _isRunning, false);
@@ -569,7 +569,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
         public bool CanCommit()
         {
-            // An explicit Reset, clock/reference change, or failure already released this state.
+            // An explicit Reset, scope/reference change, or failure already released this state.
             if (!IsCurrent) return true;
             if (FrameAdvanced || LookaheadScope.FindContext(_owner) != _context ||
                 (_owner.ReferenceScope ?? _context.CoordinateReference) != _reference || !_owner.GetVisualAncestors().Contains(_reference)) return false;

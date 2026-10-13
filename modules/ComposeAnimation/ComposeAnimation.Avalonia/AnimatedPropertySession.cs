@@ -11,7 +11,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     private readonly StyledProperty<T> _property;
     private readonly ITwoWayConverter<T> _converter;
     private readonly AnimationVector _scratch;
-    private FrameScope? _clock;
+    private FrameScope? _runScope;
     private AnimationScope? _scope;
     private Animatable<T>? _animatable;
     private AnimationSampleObservable<T>? _observable;
@@ -42,14 +42,14 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
 
     public AvaloniaProperty Property => _property;
 
-    public void SetClock(FrameScope? clock, AnimationScope? scope = null)
+    public void Attach(FrameScope? runScope, AnimationScope? scope = null)
     {
         _invalidation?.Dispose();
         _invalidation = null;
         StopDrive();
-        _clock = clock;
+        _runScope = runScope;
         _scope = scope;
-        _enabled = clock is not null;
+        _enabled = runScope is not null;
         if (!_enabled) return;
         _invalidation = scope!.RegisterResource(() => { _enabled = false; _driveGen++; });
         _displayed = _host.GetValue(_property);
@@ -110,14 +110,14 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         _invalidation?.Dispose();
         _invalidation = null;
         StopDrive();
-        _clock = null;
+        _runScope = null;
     }
 
     private async Task DriveAsync(T target)
     {
         var gen = ++_driveGen;
         var animatable = _animatable;
-        var scope = _clock;
+        var scope = _runScope;
         if (animatable is null || scope is null) return;
         try
         {
@@ -192,7 +192,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     {
         _animatable?.Stop();
         _animatable = null;
-        if (!_enabled || _clock is null || _disposed) return;
+        if (!_enabled || _runScope is null || _disposed) return;
         if (!IsFinite(_displayed)) return;
         _animatable = new Animatable<T>(_converter, _displayed);
     }

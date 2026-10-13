@@ -120,7 +120,7 @@ public class AnimationScope : FrameScope
     private protected AnimationScope(Visual host, AnimationScope parent, string? label)
         : this(Kind.Child, host, parent, null, label) { }
 
-    private AnimationScope(Kind kind, Visual host, AnimationScope? parent, IFrameSource? clock, string? label,
+    private AnimationScope(Kind kind, Visual host, AnimationScope? parent, IFrameSource? frameSource, string? label,
         TimeProvider? timeProvider = null)
     {
         _kind = kind;
@@ -131,7 +131,7 @@ public class AnimationScope : FrameScope
         _root = parent?._root ?? this;
         TimeProvider = parent?.TimeProvider ?? timeProvider ?? System.TimeProvider.System;
         // D3: only the root creates the window's FrameClock; every descendant copies the reference.
-        _frameClock = parent?._frameClock ?? new FrameClock(clock!,
+        _frameClock = parent?._frameClock ?? new FrameClock(frameSource!,
             onSourceFailure: error => Report(error, "Frame source", null, frameSource: true));
         _failures = _root == this ? new() : _root._failures;
         _lifecycle = new RunTracker(this);

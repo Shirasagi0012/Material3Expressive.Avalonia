@@ -48,7 +48,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     public event EventHandler<AnimatedContentSizeChangedEventArgs>? AnimationCompleted;
 
     private Animatable<Size>? _animatable;
-    private ObservedFrameScope? _clock;
+    private ObservedFrameScope? _runScope;
     private IDisposable? _motionRegistration;
     private Size? _value;
     private Size? _requestedTarget;
@@ -100,7 +100,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     {
         base.OnAttachedToVisualTree(e);
         _attached = true;
-        _clock = null;
+        _runScope = null;
         _failedTarget = null;
         InvalidateMeasure();
     }
@@ -109,7 +109,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     {
         _attached = false;
         ReleaseAnimator();
-        _clock = null;
+        _runScope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -132,7 +132,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
             _value = target;
             return Constrain(target, availableSize);
         }
-        if (_clock?.Faulted == true || _failedTarget == target)
+        if (_runScope?.Faulted == true || _failedTarget == target)
         {
             _value = target; // Render usable content after a failure; never retry every layout.
             return Constrain(target, availableSize);
@@ -166,8 +166,8 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     {
         if (!_attached) return;
         if (AnimationScope.IsEnvironmentEnding(this)) { _value = to; return; }
-        EnsureClock();
-        if (_clock is null) { _value = to; return; }
+        EnsureScope();
+        if (_runScope is null) { _value = to; return; }
         _failedTarget = null;
         _animatable ??= new Animatable<Size>(new SizeConverter(), from,
             VisibilityThresholds.Size, "AnimatedContentSize");
@@ -177,7 +177,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         _requestedTarget = to;
         _runPending = true;
         var motion = AnimationScope.Get(this);
-        var scope = _clock;
+        var scope = _runScope;
         _ = motion.Launch(ct => AnimateAsync(scope, _animatable, to, AnimationSpec, generation, ct), "Content size");
     }
 
@@ -231,9 +231,9 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         }
     }
 
-    private void EnsureClock()
+    private void EnsureScope()
     {
-        if (_clock is not null) return;
+        if (_runScope is not null) return;
         if (TopLevel.GetTopLevel(this) is null) return;
         var motion = AnimationScope.Get(this);
         _motionRegistration?.Dispose();
@@ -241,7 +241,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         {
             if (motion.IsEnding) ReleaseAnimator();
         });
-        _clock = ObservedFrameScope.Faulting(motion);
+        _runScope = ObservedFrameScope.Faulting(motion);
     }
 
     /// <summary>
@@ -254,7 +254,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         VerifyAccess();
         ReleaseAnimator();
         _value = null;
-        _clock = null;
+        _runScope = null;
         _failedTarget = null;
         InvalidateMeasure();
     }

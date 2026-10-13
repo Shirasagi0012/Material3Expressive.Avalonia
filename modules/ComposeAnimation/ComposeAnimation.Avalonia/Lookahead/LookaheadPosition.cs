@@ -50,16 +50,15 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
         _context = root;
         if (_position is null)
         {
-            var clock = TopLevel.GetTopLevel(this) is not null && !AnimationScope.IsEnvironmentEnding(this)
+            var scope = TopLevel.GetTopLevel(this) is not null && !AnimationScope.IsEnvironmentEnding(this)
                 ? AnimationScope.Get(this) : null;
-            if (clock is null) return target + LookaheadCoordinates.MotionOffset(this, root.CoordinateReference);
+            if (scope is null) return target + LookaheadCoordinates.MotionOffset(this, root.CoordinateReference);
             _target = target;
             _position = new Animatable<Point>(new PointConverter(), target,
                 VisibilityThresholds.Point, "Lookahead position");
-            _runScope = clock;
+            _runScope = scope;
             _position.PropertyChanged += PositionChanged;
-            var motion = AnimationScope.Get(this);
-            _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Reset(); });
+            _motionRegistration = scope.RegisterResource(() => { if (scope.IsEnding) Reset(); });
         }
         if (_target != target)
         {
