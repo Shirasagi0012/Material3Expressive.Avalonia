@@ -42,6 +42,9 @@ Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间�
 
 - `WideNavigationRail.axaml` 组合 Surface、物理 inset、内容 padding、header 和 ItemsPresenter。
   `WideNavigationRailLayout` 保留四条 animateDpAsState 轨迹：最小宽、宽度上限、项间距和项最小高度。
+  这四条轨迹挂在 layout 自己的 `AnimationScope.Get` 上。Modal 把 overlay 移入 Popup 时 layout 会脱离再挂上，
+  但父级作用域不变，Get 作用域不会结束，旧订阅和已启动的轨迹会继续写字段。脱离时要先作废这一代轨迹并停止它们，
+  再清空字段；否则隐藏 rail 打开后，脱离过程中 token 短暂回落到 0 会把宽度弹簧留在新 layout 上，表面缩到 0 而 scrim 仍淡入。
   默认宽度收起 96、展开至少 220、至多 360 DIP；header 与项内容决定是否继续增宽。
   横向像素取整、保存展开最大宽、反向时的宽度约束和逐项测量顺序按上游保留。
   物理像素转回 Avalonia DIP 时使用原始 double 布局缩放，避免 float 除法误差被默认 LayoutRounding

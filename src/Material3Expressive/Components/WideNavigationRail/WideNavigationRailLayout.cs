@@ -48,6 +48,8 @@ internal sealed class WideNavigationRailLayout : Panel
     public Thickness ContentPadding { get => GetValue(ContentPaddingProperty); set => SetValue(ContentPaddingProperty, value); }
 
     private Animatable<float>? _minWidth, _widthFullRange, _itemSpacing, _itemHeight;
+    private IDisposable? _minWidthSubscription, _widthSubscription, _spacingSubscription, _heightSubscription;
+    private int _trackGeneration;
     private bool _pending;
     private float _minimumWidth, _fullWidth, _spacing, _minimumHeight;
     private int _currentWidth, _actualMaxExpandedWidth;
@@ -71,13 +73,28 @@ internal sealed class WideNavigationRailLayout : Panel
         _widthFullRange = new Animatable<float>(new FloatConverter(), _fullWidth, VisibilityThresholds.Float);
         _itemSpacing = new Animatable<float>(new FloatConverter(), _spacing, VisibilityThresholds.Float);
         _itemHeight = new Animatable<float>(new FloatConverter(), _minimumHeight, VisibilityThresholds.Float);
-        scope.SubscribeValue(_minWidth, value => { _minimumWidth = value; InvalidateMeasure(); });
-        scope.SubscribeValue(_widthFullRange, value => { _fullWidth = value; InvalidateMeasure(); });
-        scope.SubscribeValue(_itemSpacing, value => { _spacing = value; InvalidateMeasure(); });
-        scope.SubscribeValue(_itemHeight, value => { _minimumHeight = value; InvalidateMeasure(); });
+        // The Get scope stays alive when this layout moves into the modal popup, so these
+        // subscriptions have to be released explicitly. Dropping the fields alone leaves the
+        // previous tracks writing into the new layout.
+        _minWidthSubscription = scope.SubscribeValue(_minWidth, value => { _minimumWidth = value; InvalidateMeasure(); });
+        _widthSubscription = scope.SubscribeValue(_widthFullRange, value => { _fullWidth = value; InvalidateMeasure(); });
+        _spacingSubscription = scope.SubscribeValue(_itemSpacing, value => { _spacing = value; InvalidateMeasure(); });
+        _heightSubscription = scope.SubscribeValue(_itemHeight, value => { _minimumHeight = value; InvalidateMeasure(); });
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // Bump before Stop so a continuation that resumes inline does not retarget a track
+        // whose styled widths just fell back to their unset defaults.
+        _trackGeneration++;
+        _minWidthSubscription?.Dispose();
+        _widthSubscription?.Dispose();
+        _spacingSubscription?.Dispose();
+        _heightSubscription?.Dispose();
+        _minWidthSubscription = _widthSubscription = _spacingSubscription = _heightSubscription = null;
+        _minWidth?.Stop();
+        _widthFullRange?.Stop();
+        _itemSpacing?.Stop();
+        _itemHeight?.Stop();
         _minWidth = _widthFullRange = _itemSpacing = _itemHeight = null;
         _pending = false;
         _currentWidth = _actualMaxExpandedWidth = 0;
@@ -92,8 +109,13 @@ internal sealed class WideNavigationRailLayout : Panel
     }
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _minWidth is null) return;
         var motion = AnimationScope.Get(this);
+        var generation = _trackGeneration;
+        var min = _minWidth;
+        var full = _widthFullRange!;
+        var spacing = _itemSpacing!;
+        var height = _itemHeight!;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
@@ -101,22 +123,23 @@ internal sealed class WideNavigationRailLayout : Panel
             // frame. Its animateDpAsState effects start in that recomposition,
             // so a second frame gate here would delay all four tracks.
             if (!IsModal) await motion.NextFrameAsync(ct);
-            if (_minWidth is null) return;
+            if (generation != _trackGeneration || !ReferenceEquals(min, _minWidth)) return;
             _pending = false;
             var spatial = LayoutAnimation;
             var widthSpec = IsModal ? ModalWidthAnimation : spatial;
             if (spatial.Stiffness <= 0 || widthSpec.Stiffness <= 0) return;
-            Restart(_minWidth!, (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth), widthSpec);
-            Restart(_widthFullRange!, (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth), widthSpec);
-            Restart(_itemSpacing!, (float)(Expanded ? 0 : CollapsedItemVerticalSpace), spatial);
-            Restart(_itemHeight!, (float)(Expanded ? 48 : CollapsedItemMinHeight), spatial);
+            Restart(min, (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth), widthSpec);
+            Restart(full, (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth), widthSpec);
+            Restart(spacing, (float)(Expanded ? 0 : CollapsedItemVerticalSpace), spatial);
+            Restart(height, (float)(Expanded ? 48 : CollapsedItemMinHeight), spatial);
 
             void Restart(Animatable<float> track, float target, Foundation.Motion.SpringSpec spec)
             {
-                if (track.TargetValue == target) return;
+                if (generation != _trackGeneration || track.TargetValue == target) return;
                 _ = motion.Launch(async lifetime =>
                 {
                     await track.StopAsync();
+                    if (generation != _trackGeneration) return;
                     lifetime.ThrowIfCancellationRequested();
                     await track.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: lifetime);
                 }, "Wide rail layout track");
