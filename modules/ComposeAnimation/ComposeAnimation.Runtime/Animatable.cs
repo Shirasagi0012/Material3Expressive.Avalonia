@@ -120,7 +120,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// <summary>
     /// Starts an animation from <see cref="Value"/> to <paramref name="targetValue"/>. If an
     /// animation is already in flight, it is canceled and the new animation continues from the
-    /// current value and <paramref name="initialVelocity"/>. When no
+    /// current value and velocity. When no
     /// <paramref name="animationSpec"/> is specified, a spring is used.
     ///
     /// If the animation gets interrupted (by another animation, <see cref="Stop"/>, or

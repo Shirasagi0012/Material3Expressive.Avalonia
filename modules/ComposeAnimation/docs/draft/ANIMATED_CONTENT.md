@@ -1,5 +1,7 @@
 # AnimatedContent
 
+> **Historical draft.** Written before stage 3 (FrameScope/AnimationScope own runs; D17 scope resume). API names and run ownership described here may be out of date; see `docs/usage` and the XML docs for the current model.
+
 `AnimatedContent` presents overlapping enter/exit content when `Content` changes. Each live
 slot freezes that value and the current `ContentTemplate`. The default transform is Material
 fade-through (delayed fade+scale in, short fade out) plus a clipped size spring — not a

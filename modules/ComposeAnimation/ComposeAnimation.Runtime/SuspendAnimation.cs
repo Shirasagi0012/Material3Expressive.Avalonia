@@ -141,7 +141,7 @@ public static class SuspendAnimation
             anim,
             scope,
             startTime: AnimationConstants.UnspecifiedTime,
-            block is null ? null : scope => block(scope.Value, scope.Velocity),
+            block is null ? null : run => block(run.Value, run.Velocity),
             cancellationToken);
     }
 
@@ -198,7 +198,7 @@ public static class SuspendAnimation
             anim,
             scope,
             startTime: AnimationConstants.UnspecifiedTime,
-            block is null ? null : scope => block(scope.Value, scope.Velocity),
+            block is null ? null : run => block(run.Value, run.Velocity),
             cancellationToken);
     }
 
@@ -239,14 +239,14 @@ public static class SuspendAnimation
             {
                 // A start time is supplied when this animation continues an interrupted one:
                 // process the first frame immediately on the previous animation's timebase.
-                run = CreateScope(state, animation, startTime);
+                run = CreateRun(state, animation, startTime);
                 Sample(startTime);
             }
             else
             {
                 var firstFrame = await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true);
                 cancellationToken.ThrowIfCancellationRequested();
-                run = CreateScope(state, animation, firstFrame);
+                run = CreateRun(state, animation, firstFrame);
                 Sample(firstFrame);
             }
 
@@ -272,7 +272,7 @@ public static class SuspendAnimation
         }
     }
 
-    private static AnimationRun<T> CreateScope<T>(
+    private static AnimationRun<T> CreateRun<T>(
         AnimationState<T> state,
         Animation<T> animation,
         TimeSpan startTime)

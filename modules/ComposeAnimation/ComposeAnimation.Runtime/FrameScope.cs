@@ -13,7 +13,11 @@ public abstract class FrameScope : IFrameWaitProvider
     /// <summary>Cancelled when the scope ends. Runs in this scope are cancelled with it.</summary>
     public abstract CancellationToken Lifetime { get; }
 
-    /// <summary>Playback duration multiplier of the scope. Raw frame timestamps are unchanged.</summary>
+    /// <summary>
+    /// Playback duration multiplier of the scope. Raw frame timestamps are unchanged; runs divide
+    /// frame deltas by the effective scale (this value times the ancestors' and the host's), and 0
+    /// snaps runs to their end.
+    /// </summary>
     public abstract double DurationScale { get; set; }
 
     /// <summary>
@@ -34,11 +38,13 @@ public abstract class FrameScope : IFrameWaitProvider
     /// <summary>Thread check plus "the scope has not ended" (<see cref="ObjectDisposedException"/>).</summary>
     internal abstract void VerifyAccess();
 
+    /// <summary>True once the scope has started ending; new work must not start.</summary>
     internal abstract bool IsEnding { get; }
 
     /// <summary>Counts <paramref name="run"/> as an active run of this scope until it completes.</summary>
     internal abstract Task<T> Track<T>(Func<Task<T>> run);
 
+    /// <inheritdoc cref="Track{T}(Func{Task{T}})"/>
     internal abstract Task Track(Func<Task> run);
 
     /// <summary>Reports a run failure that no awaiting caller observes.</summary>
@@ -50,6 +56,7 @@ public abstract class FrameScope : IFrameWaitProvider
     /// </summary>
     internal abstract IDisposable RegisterPlaybackChanged<T>(T owner, Action<T> changed) where T : class;
 
+    /// <summary>Lets frame-driven helpers wait through this scope (same as <see cref="WaitFrameAsync"/>).</summary>
     ValueTask<TimeSpan> IFrameWaitProvider.NextFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault)
         => WaitFrameAsync(cancellationToken, onFault);
 }

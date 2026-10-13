@@ -1,5 +1,7 @@
 # AnimatedVisibility
 
+> **Historical draft.** Written before stage 3 (FrameScope/AnimationScope own runs; D17 scope resume). API names and run ownership described here may be out of date; see `docs/usage` and the XML docs for the current model.
+
 `ComposeAnimation.Avalonia` now provides the core Compose visibility model: a content
 host, reusable enter/exit declarations, child effects, and a shared
 `Transition<EnterExitState>` that determines when exiting content can be removed.

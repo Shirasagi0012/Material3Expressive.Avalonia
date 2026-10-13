@@ -18,27 +18,9 @@ public class InfiniteTransitionTest
         StartOffset offset = default)
         => new(animation, mode, offset);
 
-    private static async Task WaitForPendingFrame(ManualFrameSource clock)
-    {
-        // Headless dispatcher timers do not advance on their own: drain the queue instead.
-        for (var i = 0; i < 100 && clock.PendingFrameCount == 0; i++)
-        {
-            Dispatcher.UIThread.RunJobs();
-            await Task.Yield();
-        }
-        Assert.True(clock.PendingFrameCount > 0);
-    }
+    private static Task WaitForPendingFrame(ManualFrameSource clock) => WaitUntilAsync(() => clock.PendingFrameCount > 0);
 
-    private static async Task WaitForNoPendingFrame(ManualFrameSource clock)
-    {
-        // Headless dispatcher timers do not advance on their own: drain the queue instead.
-        for (var i = 0; i < 100 && clock.PendingFrameCount > 0; i++)
-        {
-            Dispatcher.UIThread.RunJobs();
-            await Task.Yield();
-        }
-        Assert.Equal(0, clock.PendingFrameCount);
-    }
+    private static Task WaitForNoPendingFrame(ManualFrameSource clock) => WaitUntilAsync(() => clock.PendingFrameCount == 0);
 
     [Fact]
     public void Restart_SamplesAgainstTheSameInfiniteSpec()
