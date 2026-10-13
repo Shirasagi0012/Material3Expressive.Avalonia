@@ -62,12 +62,12 @@ public class FloatingActionButtonMenuItem : Button
     internal float RevealAlpha => _alpha?.Value ?? (_visible ? 1 : 0);
     internal FloatingActionButtonMenuAlignment MenuAlignment { get; private set; }
     private bool _visible, _revealDeferred;
-    private VisualAnimationScope? _scope;
+    private AnimationScope? _scope;
     private Animatable<float>? _width, _alpha;
     private FabMenuItemLayout? _layout;
     protected override void OnApplyTemplate(Avalonia.Controls.Primitives.TemplateAppliedEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _width = _alpha = null; _revealDeferred = false;
+        _scope = null; _width = _alpha = null; _revealDeferred = false;
         base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<FabMenuItemLayout>("PART_ContentLayout");
     }
@@ -95,8 +95,8 @@ public class FloatingActionButtonMenuItem : Button
         if (_scope is null && this.IsAttachedToVisualTree())
         {
             _visible = visible;
-            _scope = VisualAnimationScope.Create(this);
-            _width = _scope.CreateAnimatable(_visible ? 1f : 0f); _alpha = _scope.CreateAnimatable(_visible ? 1f : 0f);
+            _scope = AnimationScope.Get(this);
+            _width = new Animatable<float>(new FloatConverter(), _visible ? 1f : 0f, VisibilityThresholds.Float); _alpha = new Animatable<float>(new FloatConverter(), _visible ? 1f : 0f, VisibilityThresholds.Float);
             var initializing = true;
             _scope.SubscribeValue(_width, _ => { if (!initializing || invalidateInitial) InvalidateReveal(); });
             _scope.SubscribeValue(_alpha, _ =>
@@ -114,7 +114,7 @@ public class FloatingActionButtonMenuItem : Button
                 // Placement initializes the value after measurement upstream. Apply it
                 // to the following layout frame, preserving the first zero-width pass.
                 var initialScope = _scope;
-                _ = initialScope.Launch(async ct => { await initialScope.Clock.NextFrameAsync(ct); InvalidateReveal(); }, "FAB menu initial placement");
+                _ = initialScope.Launch(async ct => { await initialScope.NextFrameAsync(ct); InvalidateReveal(); }, "FAB menu initial placement");
             }
         }
         if (_visible == visible)
@@ -122,7 +122,8 @@ public class FloatingActionButtonMenuItem : Button
             _revealDeferred = false;
             return;
         }
-        if (_scope is not { IsEnding: false } scope) return;
+        if (!this.IsAttachedToVisualTree() || _scope is null) return;
+        var scope = _scope = AnimationScope.Get(this);
         if (!FabMotion.TrySpring(RevealWidthMotion, out var widthSpec) ||
             !FabMotion.TrySpring(RevealAlphaMotion, out var alphaSpec))
         {
@@ -134,13 +135,13 @@ public class FloatingActionButtonMenuItem : Button
         _ = scope.Launch(async ct =>
         {
             await Task.WhenAll(
-                _width!.AnimateToAsync(_visible ? 1 : 0, widthSpec, cancellationToken: ct),
-                _alpha!.AnimateToAsync(_visible ? 1 : 0, alphaSpec, cancellationToken: ct));
+                _width!.AnimateToAsync(scope, _visible ? 1 : 0, widthSpec, cancellationToken: ct),
+                _alpha!.AnimateToAsync(scope, _visible ? 1 : 0, alphaSpec, cancellationToken: ct));
         }, "FAB menu item reveal");
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _width = _alpha = null; _revealDeferred = false;
+        _scope = null; _width = _alpha = null; _revealDeferred = false;
         base.OnDetachedFromVisualTree(e);
     }
 }
@@ -194,7 +195,7 @@ internal sealed class FabMenuLayout : Panel
     public static readonly StyledProperty<MotionSpring?> StaggerMotionProperty = AvaloniaProperty.Register<FabMenuLayout, MotionSpring?>(nameof(StaggerMotion));
     public MotionSpring? StaggerMotion { get => GetValue(StaggerMotionProperty); set => SetValue(StaggerMotionProperty, value); }
     private FloatingActionButtonMenu? _owner;
-    private VisualAnimationScope? _scope;
+    private AnimationScope? _scope;
     private Animatable<int>? _stagger;
     private bool _pending;
     private double _itemsWidth, _itemsHeight, _buttonWidth, _buttonHeight;
@@ -206,7 +207,7 @@ internal sealed class FabMenuLayout : Panel
         _owner = this.FindAncestorOfType<FloatingActionButtonMenu>()!;
         _owner.PropertyChanged += OwnerChanged;
         _owner.Items.CollectionChanged += ItemsChanged;
-        _scope = VisualAnimationScope.Create(this);
+        _scope = AnimationScope.Get(this);
     }
     private void ItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => UpdateTarget();
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -218,7 +219,7 @@ internal sealed class FabMenuLayout : Panel
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) { _owner.PropertyChanged -= OwnerChanged; _owner.Items.CollectionChanged -= ItemsChanged; }
-        _scope?.Dispose(); _scope = null; _stagger = null; _pending = false;
+        _scope = null; _stagger = null; _pending = false;
         base.OnDetachedFromVisualTree(e);
     }
     protected override Size MeasureOverride(Size available)
@@ -231,19 +232,21 @@ internal sealed class FabMenuLayout : Panel
         var initializing = _stagger is null;
         if (_stagger is null && _scope is { } scope)
         {
-            _stagger = scope.CreateAnimatable(_owner?.Expanded == true ? items.Length : 0);
+            _stagger = new Animatable<int>(new Int32Converter(), _owner?.Expanded == true ? items.Length : 0, VisibilityThresholds.Int32);
             scope.SubscribeValue(_stagger, _ => InvalidateMeasure());
         }
         var targetCount = _owner?.Expanded == true ? items.Length : 0;
         if (_stagger is not null && _stagger.TargetValue != targetCount && !_pending &&
-            FabMotion.IsReady(StaggerMotion) && _scope is { IsEnding: false } active)
+            FabMotion.IsReady(StaggerMotion) && this.IsAttachedToVisualTree() && _scope is not null)
         {
+            var active = _scope = AnimationScope.Get(this);
             _pending = true;
             _ = active.Launch(async ct =>
             {
-                await active.Clock.NextFrameAsync(ct); _pending = false;
+                await active.NextFrameAsync(ct); _pending = false;
+                if (_stagger is null) return;
                 if (!FabMotion.TrySpring(StaggerMotion, out var spec, 1)) return;
-                await _stagger.AnimateToAsync(_owner?.Expanded == true ? Items.Length : 0,
+                await _stagger.AnimateToAsync(active, _owner?.Expanded == true ? Items.Length : 0,
                     new SpringSpec<int>(spec.DampingRatio, spec.Stiffness, 1), cancellationToken: ct);
             }, "FAB menu stagger count");
         }
