@@ -70,7 +70,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         _enabled = true;
         _invalidation = RegisterEnding(scope);
         _displayed = animatable.Value;
-        if (_interrupted is { } interrupted) animatable.RestoreInterruptedState(interrupted);
+        if (_interrupted is { } interrupted) animatable.ResumeFrom(interrupted);
         _interrupted = null;
         // Keeps the Animatable (value and velocity; its old run was cancelled with the old
         // scope); ReconcileTarget re-runs it toward the base value in the new scope.

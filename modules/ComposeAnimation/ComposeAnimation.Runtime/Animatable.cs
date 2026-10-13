@@ -313,13 +313,34 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// <summary>
     /// Restores the velocity and frame timebase of a run that was cancelled with its scope, so the
     /// next run continues as if it had interrupted that run in place (a D17 resume). No-op while running.
+    ///
+    /// Why this exists (open item O7, end ordering vs host resume): when a scope ends, the
+    /// cancellation callbacks run synchronously inside <c>AnimationScope.End</c>, and a run whose
+    /// continuation can run inline unwinds there, before any host gets its ScopeChanged resume.
+    /// The unwind resets the velocity and <c>LastFrameTime</c>, so the host has to put back the
+    /// snapshot it took at the scope ending. The public <c>AnimateToAsync(initialVelocity)</c> restores the velocity
+    /// but not the timebase (one held frame, different trajectory), hence this internal hook.
+    ///
+    /// Why <c>AnimatedContentSize</c> does not need it (found 2026-10-13, behaviour unchanged): the
+    /// difference is the SynchronizationContext the run was started under, not the hosts.
+    /// ContentSize starts its run from measure, under Avalonia's Render-priority
+    /// <c>AvaloniaSynchronizationContext</c>. The coordinator starts from a property change, under the
+    /// Normal-priority one. The fallback drain runs at Normal. Avalonia's contexts are one instance
+    /// per priority, so <c>await</c> runs the coordinator's continuation inline during the cancellation
+    /// (the run is stopped by the time the host resumes) but posts ContentSize's continuation.
+    /// ContentSize's run is therefore still <c>IsRunning</c> when it resumes (state intact), and it
+    /// unwinds on a later dispatcher turn. Under a different start or drain priority, either host
+    /// could fall on the other side, so O7 has to fix the ordering, not this hook.
     /// </summary>
-    internal void RestoreInterruptedState(AnimationState<T> interrupted)
+    internal void ResumeFrom(AnimationState<T> snapshot)
     {
         VerifyAccess();
         if (_internalState.IsRunning) return;
-        interrupted.VelocityVector.CopyTo(_internalState.MutableVelocityVector);
-        _internalState.LastFrameTime = interrupted.LastFrameTime;
+        System.Diagnostics.Debug.Assert(
+            snapshot.VelocityVector.Length == _internalState.MutableVelocityVector.Length,
+            "ResumeFrom: snapshot velocity dimension does not match this Animatable's converter.");
+        snapshot.VelocityVector.CopyTo(_internalState.MutableVelocityVector);
+        _internalState.LastFrameTime = snapshot.LastFrameTime;
     }
 
     /// <summary>
