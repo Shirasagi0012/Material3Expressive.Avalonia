@@ -110,6 +110,44 @@ public sealed class LiveReparentDemo : DemoControlBase
     private void ToggleBounds()
         => _bounds.TargetSize = _bounds.TargetSize?.Width < 200 ? new Size(260, 120) : new Size(120, 80);
 
+    private async Task ResetSectionAsync(string name)
+    {
+        Func<bool> idle;
+        switch (name)
+        {
+            case "visibility":
+                Place(_visibility, _visibilityLeft, _visibilityRight);
+                _visibility.Visible = true;
+                idle = () => _visibility.IsIdle && _visibility.IsContentPresent;
+                break;
+            case "content-size":
+                Place(_size, _sizeLeft, _sizeRight);
+                _sizeContent.Width = 120;
+                _size.ResetAnimation();
+                idle = () => Math.Abs(_size.Bounds.Width - 120) < 0.5;
+                break;
+            default:
+                if (!ReferenceEquals(_bounds.Parent, _boundsLeft))
+                {
+                    _boundsRight.Children.Remove(_bounds);
+                    _boundsLeft.Children.Add(_bounds);
+                }
+                _bounds.TargetSize = new Size(120, 80);
+                _bounds.ResetAnimation();
+                idle = () => !_bounds.IsRunning;
+                break;
+        }
+        for (var i = 0; i < 200 && !idle(); i++) await AdvanceAsync(3);
+        Assert(idle(), $"{name}: 复位后应静止");
+    }
+
+    private static void Place(Control child, Border left, Border right)
+    {
+        if (ReferenceEquals(child.Parent, left)) return;
+        right.Child = null;
+        left.Child = child;
+    }
+
     [DemoAction("AnimatedVisibility 收起途中换容器：在新 Scope 中继续，排空帧不跳变")]
     public Task VisibilityResumesWithoutJump()
         => RunAsync("visibility", () => _visibility.Visible = false, () => Move(_visibility, _visibilityLeft, _visibilityRight),
@@ -136,6 +174,8 @@ public sealed class LiveReparentDemo : DemoControlBase
 
     private async Task RunAsync(string name, Action start, Action move, Func<double> sample, Func<bool> running, Func<bool> settled)
     {
+        // 先把本区复位到初始状态（左侧容器、初始尺寸、静止），同一页面上重复运行结果一致。
+        await ResetSectionAsync(name);
         await AdvanceAsync(2);
         await CaptureAsync(name + "-initial");
         start();
