@@ -49,8 +49,10 @@ public partial class AnimatedBoundsTest
     });
 
     [Fact]
-    public Task MoveContent_UnderADifferentAncestorScope_KeepsTheFlightAndRebuildsAfterItSettles() => OnUi(() =>
+    public Task MoveContent_UnderADifferentAncestorScope_MovesTheFlightIntoTheNewScope() => OnUi(() =>
     {
+        // Q-E: the rebuild is deferred only while the move transaction is open. After Commit the
+        // drain rebuilds and the flight resumes in the destination's scope (no parking).
         var card = Bounds(Text());
         var (scene, left, right) = MoveSlots(card);
         using var f = new Fixture(scene);
@@ -63,27 +65,41 @@ public partial class AnimatedBoundsTest
         var before = f.Actual(card);
         f.Root.MoveContent(card, () => { left.Children.Remove(card); right.Children.Add(card); });
         f.Layout();
-        Assert.Empty(changes);
-        Assert.True(old.Diagnostics.IsParked);
+        var change = Assert.Single(changes);
+        Assert.Same(old, change.OldScope);
+        Assert.False(old.Diagnostics.IsParked);
+        Assert.Same(rightScope, change.NewScope!.Diagnostics.Parent);
+        Assert.Same(change.NewScope, AnimationScope.Get(card));
         Equal(before, f.Actual(card));
         Assert.True(card.IsRunning);
         f.Step(16); f.Step(100);
-        // The rebuild waits: the retained flight continues on the pre-move scope.
         Assert.True(card.IsRunning);
-        Assert.Empty(changes);
-        Assert.Same(old, AnimationScope.Get(card));
-        Assert.True(old.Diagnostics.IsStale);
-        Equal(new Rect(110, 50, 120, 160), f.Actual(card));
+        Equal(new Rect(110, 50, 120, 160), f.Actual(card)); // same trajectory, now in the new scope
         f.Step(100);
         Assert.False(card.IsRunning);
         f.Layout();
-        var change = Assert.Single(changes);
-        Assert.Same(old, change.OldScope);
-        Assert.Same(rightScope, change.NewScope!.Diagnostics.Parent);
-        Assert.Same(change.NewScope, AnimationScope.Get(card));
+        Assert.Single(changes);
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
-        Assert.False(card.IsRunning);
         Assert.Equal(0, f.Frames.PendingFrameCount);
+    });
+
+    [Fact]
+    public Task MoveContent_UnderADifferentAncestorScope_FollowsTheDestinationDurationScale() => OnUi(() =>
+    {
+        var card = Bounds(Text());
+        var (scene, left, right) = MoveSlots(card);
+        using var f = new Fixture(scene);
+        AnimationScope.Get(left);
+        AnimationScope.Get(right).DurationScale = 2;
+        AnimationScope.Get(card);
+        f.Root.MoveContent(card, () => { left.Children.Remove(card); right.Children.Add(card); });
+        f.Layout();
+        f.Step(16); f.Step(200); // 200 ms at scale 2 is half of the 200 ms tween
+        Assert.True(card.IsRunning);
+        Equal(new Rect(110, 50, 120, 160), f.Actual(card));
+        f.Step(200);
+        Assert.False(card.IsRunning);
+        Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
     });
 
     [Fact]

@@ -105,9 +105,10 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private ObservedFrameScope? _runScope;
     private readonly ScopeResumeBinding _scopeBinding;
     private bool _attached;
-    // Motion-frame offset (owner to reference) at the last approach measure. A resume after a
-    // reparent outside a move transaction is only exact when this is unchanged (Q-H).
-    private Vector _lastMotionOffset;
+    // Motion-frame offset (owner to reference) minus the motion basis at the last approach
+    // measure. A resume is exact only when this is unchanged: true after a committed move (the
+    // basis absorbed the delta) and after a reparent with no motion-frame edge change (Q-H).
+    private Vector _lastMotionFrame;
     private Rect _outerSample;
     private Rect _innerSample;
     private long _lifecycle;
@@ -116,8 +117,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private TargetLayout? _approachLayout;
     private LookaheadConstraints? _lastInnerConstraints;
     private MoveState? _pendingMove;
-    // A committed move keeps its flight on the pre-move scope until that flight settles (S3).
-    private bool _retainedMove;
     private Vector _motionBasis;
     private sealed record TargetLayout(BoundsLayoutResult Layout, LookaheadConstraints InnerConstraints,
         Size InnerSize, Rect InnerBounds);
@@ -162,7 +161,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (LookaheadScope.FindContext(this) != context) return false;
         if ((ReferenceScope ?? context.CoordinateReference) != reference) return false;
         if (reference != this && !this.GetVisualAncestors().Contains(reference)) return false;
-        return AnimateMotionFrameOfReference || LookaheadCoordinates.MotionOffset(this, reference) == _lastMotionOffset;
+        return AnimateMotionFrameOfReference ||
+            LookaheadCoordinates.MotionOffset(this, reference) - _motionBasis == _lastMotionFrame;
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -171,17 +171,10 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         base.OnAttachedToVisualTree(e);
     }
 
-    // S3: a scope rebuild would release the runs a move retained. Defer it while the move is in
-    // progress, and after the move until the retained runs settle; then the stale scope rebuilds.
-    // The parked flight keeps running in the pre-move scope (see IAnimationScopeHost.DefersScopeRebuild).
-    bool IAnimationScopeHost.DefersScopeRebuild => _pendingMove is not null || _retainedMove;
-
-    private void EndRetainedMove()
-    {
-        if (!_retainedMove) return;
-        _retainedMove = false;
-        AnimationScope.RebuildPolicyChanged(this);
-    }
+    // Q-E: defer a rebuild only while the move transaction is open (its basis delta is not
+    // committed yet). After Commit the drain rebuilds and OnScopeChanged resumes the flight in the
+    // new scope with the committed basis, so it follows the destination's DurationScale and lifetime.
+    bool IAnimationScopeHost.DefersScopeRebuild => _pendingMove is not null;
 
     public AnimatedBounds()
     {
@@ -321,7 +314,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (_context != root) Release();
         BindContext(root);
         _reference = LookaheadCoordinates.ResolveReference(this, root, ReferenceScope);
-        _lastMotionOffset = LookaheadCoordinates.MotionOffset(this, _reference);
+        _lastMotionFrame = LookaheadCoordinates.MotionOffset(this, _reference) - _motionBasis;
         _targetLayout = layout;
         EnsureScope();
         var runScope = _runScope?.Faulted == false ? _runScope : null;
@@ -509,8 +502,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         // Re-read the committed target so no obsolete target is republished after that callback.
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, TargetBounds);
         SetAndRaise(IsRunningProperty, ref _isRunning, _outer.IsRunning || _inner.IsRunning);
-        // Settled: the flight ran and stopped, or the first layout after the commit started none.
-        if (_retainedMove && !_isRunning && _targetLayout is not null) EndRetainedMove();
     }
 
     private void EnsureScope()
@@ -557,7 +548,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         SetAndRaise(CurrentBoundsProperty, ref _currentBounds, null);
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, null);
         SetAndRaise(IsRunningProperty, ref _isRunning, false);
-        _retainedMove = false;
         AnimationScope.RebuildPolicyChanged(this);
     }
 
@@ -567,9 +557,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         // The animation is released when the scope ends at the drain (D17), or resumes if the
         // control was re-attached elsewhere; a pending move keeps it for the move transaction.
         _attached = false;
-        // An ordinary removal after a committed move ends the retention, so the drain can end
-        // (or rebuild) the parked scope instead of deferring it until the flight settles.
-        EndRetainedMove();
         LookaheadMeasure.Forget(this);
         ReleaseLocalEntry();
         base.OnDetachedFromVisualTree(e);
@@ -645,7 +632,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
             else
             {
                 _owner._motionBasis += _basisDelta;
-                _owner._retainedMove = true;
+                // The transaction closed: let the drain rebuild (and resume) the stale scope.
                 AnimationScope.RebuildPolicyChanged(_owner);
             }
             _owner._targetLayout = null;
