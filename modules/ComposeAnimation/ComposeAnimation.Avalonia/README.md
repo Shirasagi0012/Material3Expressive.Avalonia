@@ -43,7 +43,7 @@ border.Animate(new AnimatedDouble
 
 ## Playback and lifetime
 
-Call `AnimationScope.Initialize(window, clock?)` before loading XAML or assigning Content. The root owns one fixed, on-demand frame environment shared by properties, direct animation and derived popup hosts. Default clocks and the single per-window internal FrameClock are internal; `SharedAnimationFrameClock` no longer exists.
+Call `AnimationScope.Initialize(window, clock?)` before loading XAML or assigning Content. The root owns one fixed, on-demand frame environment shared by properties, direct animation and derived popup hosts. Default clocks and the single per-window internal FrameClock are internal; the former shared frame-clock type no longer exists.
 
 For ordinary coroutine waits, use `await scope.DelayAsync(duration, cancellationToken)`. This managed operation links caller/scope cancellation, resumes on the captured context, and checks cancellation again before continuing. It does not request frames or use DurationScale. `Initialize(window, clock, timeProvider)` injects a .NET TimeProvider inherited by children and popup roots; the original overload defaults to TimeProvider.System. TestSupport's ManualTimeProvider advances delay time independently of ManualFrameSource and does not pump the UI dispatcher. This adapts kotlinx.coroutines scheduling; it does not replace animation-core's per-frame timing.
 

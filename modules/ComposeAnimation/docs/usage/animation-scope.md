@@ -17,7 +17,7 @@ public MainWindow()
 }
 ```
 
-`Initialize(window, clock)` 可以提供固定帧源；源仍由提供者拥有。默认 UI 帧源和每窗口唯一的内部 FrameClock 由内部实现提供，`SharedAnimationFrameClock` 已删除。同根控件和派生 PopupRoot 自动共享按需请求，空闲时不泵帧；Overlay 使用所在根环境。关闭窗口结束根环境，根没有公开的 `Dispose`；根结束后不能重新初始化同一个普通 TopLevel。
+`Initialize(window, clock)` 可以提供固定帧源；源仍由提供者拥有。默认 UI 帧源和每窗口唯一的内部 FrameClock 由内部实现提供，旧的共享帧时钟类型已删除。同根控件和派生 PopupRoot 自动共享按需请求，空闲时不泵帧；Overlay 使用所在根环境。关闭窗口结束根环境，根没有公开的 `Dispose`；根结束后不能重新初始化同一个普通 TopLevel。
 
 ## 控件与 Scope 归属
 
@@ -130,6 +130,6 @@ window.Close();
 - 删除 Animated.LastError/GetLastError：监听根 Scope 的 `AnimationFailed`；`LastError`、`LastDiagnosticError` 等不再公开。
 - 删除 `VisualAnimationScope.Create` 与 Scope 的显式 `Dispose`/`DisposeAsync`：控件用 `AnimationScope.Get` 取 Scope，移动/模板替换时自动重建，脱离时结束；持有旧 Scope 的运行在 `ScopeChanged` 处理程序中重启。
 - 删除 `Animated.DurationScale`（含 `Animated.SetDurationScale`）：改用 `AnimationScope.DurationScale` 附加属性与 `AnimationScope.SetDurationScale`。
-- 默认 Avalonia 时钟与每窗口唯一的内部 FrameClock 均为内部实现；`SharedAnimationFrameClock` 已删除，没有兼容别名。Scope 的 `Clock` 属性与 `CreateAnimatable`/`CreateTransition`/`CreateInfiniteTransition` 已删除：用 `Animatable.Create(...)`、`new Transition<T>(...)`、`new InfiniteTransition()` 创建状态，运行时传入 Scope；测试使用独立 TestSupport。
+- 默认 Avalonia 时钟与每窗口唯一的内部 FrameClock 均为内部实现；旧的共享帧时钟类型已删除，没有兼容别名。Scope 的 `Clock` 属性与 `CreateAnimatable`/`CreateTransition`/`CreateInfiniteTransition` 已删除：用 `Animatable.Create(...)`、`new Transition<T>(...)`、`new InfiniteTransition()` 创建状态，运行时传入 Scope；测试使用独立 TestSupport。
 - 控件在树内移动、模板替换或卸载/重挂时不再手动结束 Scope；不在同一环境热换帧源。
 - Catalog 通过 `AnimationScope.DurationScale` 附加属性保留速度控制；Material 用子 Scope 拥有 Ripple、Elevation 和 Shape，保留其领域规则。

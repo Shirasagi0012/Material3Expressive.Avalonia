@@ -13,7 +13,7 @@
 
 `IFrameSource` 保留显式时钟的底层入口：`VerifyAccess()` 检查所属线程；`NextFrameAsync(CancellationToken)` 返回下一帧的绝对时间戳并支持取消。独立 Runtime 调用者自行提供时钟。
 
-Avalonia 应用在加载 XAML 或设置 Content 之前调用 `AnimationScope.Initialize(topLevel, clock?)`。默认帧源与每窗口唯一的内部 FrameClock 由内部实现提供，不再公开构造；`SharedAnimationFrameClock` 已删除。一个根环境固定一个帧源，同根控件、直接动画与派生 Popup 自动共享按需请求；整个根最多有一个挂起的源请求。UI 动画 API 必须在 UI 线程调用。
+Avalonia 应用在加载 XAML 或设置 Content 之前调用 `AnimationScope.Initialize(topLevel, clock?)`。默认帧源与每窗口唯一的内部 FrameClock 由内部实现提供，不再公开构造；旧的共享帧时钟类型已删除。一个根环境固定一个帧源，同根控件、直接动画与派生 Popup 自动共享按需请求；整个根最多有一个挂起的源请求。UI 动画 API 必须在 UI 线程调用。
 
 ```csharp
 // Window 构造函数内，InitializeComponent 之前
