@@ -53,7 +53,7 @@ xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation"
 // Window 构造函数：必须在 InitializeComponent 之前建立根环境
 public MainWindow()
 {
-    VisualAnimationScope.Initialize(this);
+    AnimationScope.Initialize(this);
     InitializeComponent();
 }
 
@@ -73,7 +73,8 @@ private void OnChange(object? sender, RoutedEventArgs e)
 
 | 组件 | 用途 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| `VisualAnimationScope` | 根动画环境、生命周期、任务与值消费 | [visual-animation-scope.md](visual-animation-scope.md) | 已实现 |
+| `AnimationScope` | 根动画环境、控件 Scope 生命周期、任务与值消费 | [animation-scope.md](animation-scope.md) | 已实现 |
+| `AnimatedState<T>` | 显式目标、布局内合并提交、Scope 恢复与长期属性连接 | [animated-state.md](animated-state.md) | 已实现 |
 | `Animated.Properties` | 附加属性集合：任意 styled 属性的值变化按声明的规格播放动画 | [components/animated-properties.md](components/animated-properties.md) | 稳定 |
 | `AnimatedVisibility` | 内容出现/消失的进出场过渡（`Visible` 驱动，支持子元素级联） | [components/animated-visibility.md](components/animated-visibility.md) | 稳定 |
 | `AnimatedContent` / `Crossfade` | `Content` 切换时的进出场过渡与容器尺寸动画 | [components/animated-content.md](components/animated-content.md) | 稳定 |
@@ -85,13 +86,19 @@ private void OnChange(object? sender, RoutedEventArgs e)
 ## 核心概念
 
 - **规格（Spec）**：`IAnimationSpec<T>` 描述动画曲线（弹簧 `SpringSpec`、补间 `TweenSpec`、关键帧 `KeyframesSpec` 等），与值分离、可复用；未指定规格时默认使用弹簧。
-- **帧时钟**：动画由 `IAnimationFrameClock` 逐帧驱动（拉模型），所有动画 API 必须在时钟所属线程（通常是 UI 线程）调用。
+- **帧时钟**：动画由 `IFrameSource` 逐帧驱动（拉模型），所有动画 API 必须在时钟所属线程（通常是 UI 线程）调用。
 - **Task 异步与中断**：动画方法返回 `Task`（方法名带 `Async` 后缀）；动画被新动画、`Stop()` 或 `SnapToAsync` 打断时，旧 Task 以 `OperationCanceledException` 结束，调用方必须捕获。
 - **Transition 状态驱动**：`Transition<TState>` 把一组属性动画绑定到状态机，改 `TargetState` 即整树切换。
 
 详见 [runtime/overview.md](runtime/overview.md)。
 
 ## 文档目录
+
+核心：
+
+- [animation-scope.md](animation-scope.md) —— Scope 模型、重建与恢复（D17）、MoveContent、已知限制与图示
+- [animated-state.md](animated-state.md) —— 目标驱动状态、布局提交与模板属性连接
+- [migration-from-visual-animation-scope.md](migration-from-visual-animation-scope.md) —— 从旧 Scope API 迁移
 
 组件层：
 
@@ -118,21 +125,4 @@ Runtime 引擎：
 
 ## 旧文档说明
 
-`docs/` 根目录下的文档多为开发过程中的设计与记录文档，时效性不一，阅读时请注意：
-
-| 文档 | 内容 | 时效性 |
-| --- | --- | --- |
-| [ANIMATED_VISIBILITY.md](../draft/ANIMATED_VISIBILITY.md) | `AnimatedVisibility` 设计与行为 | 仍有效 |
-| [ANIMATED_CONTENT.md](../draft/ANIMATED_CONTENT.md) | `AnimatedContent`/`Crossfade` 行为说明 | 仍有效 |
-| [ANIMATED_CONTENT_SIZE.md](../draft/ANIMATED_CONTENT_SIZE.md) | `AnimatedContentSize` 行为说明 | 仍有效（其中 lookahead 部分已过时） |
-| [ANIMATED_BOUNDS.md](../draft/ANIMATED_BOUNDS.md) | `AnimatedBounds`（实验性）说明 | 仍有效 |
-| [SHARED_TRANSITION.md](../draft/SHARED_TRANSITION.md) | `SharedElement`/`SharedBounds` 说明 | 仍有效 |
-| [LOOKAHEAD_PROTOCOL.md](../draft/LOOKAHEAD_PROTOCOL.md) | 实验性 Lookahead 布局协议 | 仍有效 |
-| [LOOKAHEAD_EXPERIMENT.md](../draft/LOOKAHEAD_EXPERIMENT.md) | 协作式 Lookahead 实验记录 | 仍有效 |
-| [CURRENT_STATUS.md](../draft/CURRENT_STATUS.md) | 项目现状 | 仍有效 |
-| [ANIMATED_CONTENT_DESIGN.md](../draft/ANIMATED_CONTENT_DESIGN.md) | AnimatedContent 落地设计 | 设计文档 |
-| [LOOKAHEAD_BOUNDARY_DESIGN.md](../draft/LOOKAHEAD_BOUNDARY_DESIGN.md) | LookaheadBoundary 设计说明 | 历史设计 |
-| [LOCAL_LOOKAHEAD_DESIGN.md](../draft/LOCAL_LOOKAHEAD_DESIGN.md) / [LOCAL_LOOKAHEAD_IMPLEMENTATION_PLAN.md](../draft/LOCAL_LOOKAHEAD_IMPLEMENTATION_PLAN.md) / [LOCAL_LOOKAHEAD_IMPLEMENTATION_STATUS.md](../draft/LOCAL_LOOKAHEAD_IMPLEMENTATION_STATUS.md) | 局部 Lookahead 提案、计划与实施状态 | 设计/计划/历史记录 |
-| [SHARED_COORDINATION_PROTOCOL.md](../draft/SHARED_COORDINATION_PROTOCOL.md) / [SHARED_BOUNDS_RUNTIME.md](../draft/SHARED_BOUNDS_RUNTIME.md) / [SHARED_CONTENT_SEMANTICS.md](../draft/SHARED_CONTENT_SEMANTICS.md) | SharedTransition 协议与语义设计 | 设计文档 |
-| [SHARED_IMPLEMENTATION_PLAN.md](../draft/SHARED_IMPLEMENTATION_PLAN.md) / [SHARED_DEMO_REGRESSION_PLAN.md](../draft/SHARED_DEMO_REGRESSION_PLAN.md) / [SHARED_REFRESH_PERFORMANCE.md](../draft/SHARED_REFRESH_PERFORMANCE.md) | SharedTransition 计划与性能记录 | 计划/历史记录 |
-| [TRANSITION_PREPARATION.md](../draft/TRANSITION_PREPARATION.md) | Transition preparation lease 设计 | 设计文档 |
+`docs/draft/` 下是 2026-10 动画基础重构之前的设计与记录文档，每页顶部都有“历史设计稿”横幅：名称与行为可能已过时，仅作背景参考。现行行为以本目录为准。

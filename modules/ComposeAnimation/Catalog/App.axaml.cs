@@ -24,7 +24,7 @@ public partial class App : Application
                 {
                     var demo = DemoRegistry.Find(options.DemoId!)!;
                     var window = new Window();
-                    VisualAnimationScope.Initialize(window);
+                    AnimationScope.Initialize(window);
                     window.Title = $"{demo.Title} — ComposeAnimation Catalog";
                     window.Width = 960;
                     window.Height = 720;
@@ -51,7 +51,7 @@ public partial class App : Application
                 }
                 case CatalogMode.VerifyUi:
                 {
-                    var window = new CatalogWindow(new ProbeClock());
+                    var window = new CatalogWindow(new ProbeFrameSource());
                     window.Opened += async (_, _) => desktop.Shutdown(
                         await CatalogUiVerification.RunAsync(window, options.OutputDirectory!));
                     desktop.MainWindow = window;

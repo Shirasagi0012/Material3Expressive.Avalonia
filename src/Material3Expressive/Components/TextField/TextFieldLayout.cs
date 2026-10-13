@@ -30,9 +30,9 @@ internal sealed partial class TextFieldLayout : Panel
     private TextFieldDecoration? _decoration;
     private Border _editor = null!;
     private TextPresenter _text = null!;
-    private VisualAnimationScope? _motion;
     private Animatable<float>? _labelProgress, _placeholderAlpha, _affixAlpha, _thickness;
     private Animatable<Color>? _labelColor, _containerColor, _indicatorColor;
+    private AnimationChildScope? _attachScope;
     private bool _pending;
     private int _phase;
     private double _cutoutTop, _aboveHeight, _supportingHeight, _containerHeight;
@@ -84,22 +84,22 @@ internal sealed partial class TextFieldLayout : Panel
         // Style priority preserves application-provided accessibility metadata.
 
         UpdateAccessibility();
-        _motion = VisualAnimationScope.Create(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("TextField");
         _phase = Phase;
-        _labelProgress = _motion.CreateAnimatable(LabelTarget);
-        _placeholderAlpha = _motion.CreateAnimatable(Phase == 1 || Phase == 0 && !Expanded ? 1f : 0f);
-        _affixAlpha = _motion.CreateAnimatable(Phase != 0 || !Expanded ? 1f : 0f);
-        _thickness = _motion.CreateAnimatable(ThicknessTarget);
-        _labelColor = _motion.CreateAnimatable(ColorOf(LabelBrush));
-        _containerColor = _motion.CreateAnimatable(ColorOf(ContainerBrush));
-        _indicatorColor = _motion.CreateAnimatable(ColorOf(IndicatorBrush));
-        _motion.SubscribeValue(_labelProgress, _ => UpdateSlots());
-        _motion.SubscribeValue(_placeholderAlpha, _ => UpdateSlots());
-        _motion.SubscribeValue(_affixAlpha, _ => UpdateSlots());
-        _motion.SubscribeValue(_labelColor, _ => UpdateSlots());
-        _motion.SubscribeValue(_containerColor, _ => InvalidateDecoration());
-        _motion.SubscribeValue(_indicatorColor, _ => InvalidateDecoration());
-        _motion.SubscribeValue(_thickness, _ => InvalidateDecoration());
+        _labelProgress = new Animatable<float>(new FloatConverter(), LabelTarget, VisibilityThresholds.Float);
+        _placeholderAlpha = new Animatable<float>(new FloatConverter(), Phase == 1 || Phase == 0 && !Expanded ? 1f : 0f, VisibilityThresholds.Float);
+        _affixAlpha = new Animatable<float>(new FloatConverter(), Phase != 0 || !Expanded ? 1f : 0f, VisibilityThresholds.Float);
+        _thickness = new Animatable<float>(new FloatConverter(), ThicknessTarget, VisibilityThresholds.Float);
+        _labelColor = new Animatable<Color>(new ColorConverter(), ColorOf(LabelBrush), default);
+        _containerColor = new Animatable<Color>(new ColorConverter(), ColorOf(ContainerBrush), default);
+        _indicatorColor = new Animatable<Color>(new ColorConverter(), ColorOf(IndicatorBrush), default);
+        motion.SubscribeValue(_labelProgress, _ => UpdateSlots());
+        motion.SubscribeValue(_placeholderAlpha, _ => UpdateSlots());
+        motion.SubscribeValue(_affixAlpha, _ => UpdateSlots());
+        motion.SubscribeValue(_labelColor, _ => UpdateSlots());
+        motion.SubscribeValue(_containerColor, _ => InvalidateDecoration());
+        motion.SubscribeValue(_indicatorColor, _ => InvalidateDecoration());
+        motion.SubscribeValue(_thickness, _ => InvalidateDecoration());
         UpdateSlots();
     }
 
@@ -109,7 +109,7 @@ internal sealed partial class TextFieldLayout : Panel
         // UpdateSlots assigns them again on attach.
         if (_leading != null) { _leading.Content = null; _leading.ContentTemplate = null; }
         if (_trailing != null) { _trailing.Content = null; _trailing.ContentTemplate = null; }
-        _motion?.Dispose(); _motion = null; _pending = false;
+        _pending = false;
         if (_owner != null) _owner.PropertyChanged -= OwnerChanged;
         if (_text != null) _text.PropertyChanged -= PresenterChanged;
         foreach (var slot in new[] { _leading, _trailing, _prefix, _suffix, _supporting, _placeholder })
@@ -118,6 +118,7 @@ internal sealed partial class TextFieldLayout : Panel
         _floatingLabelStyle.PropertyChanged -= LabelEndpointChanged;
         _nameBinding?.Dispose(); _helpBinding?.Dispose();
         _nameBinding = _helpBinding = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _owner = null;
         base.OnDetachedFromVisualTree(e);
     }
@@ -263,11 +264,13 @@ internal sealed partial class TextFieldLayout : Panel
 
     private void Retarget()
     {
-        if (_motion is not { IsEnding: false } motion || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct); _pending = false;
+            await motion.NextFrameAsync(ct); _pending = false;
+            if (_owner is null) return;
             if (SpatialAnimation is not { } spatial || FastEffectsAnimation is not { } fast || SlowEffectsAnimation is not { } slow) return;
             var previous = _phase; _phase = Phase;
             var idleColorChange = previous == _phase && !_labelProgress!.IsRunning && !_labelColor!.IsRunning;
@@ -289,7 +292,7 @@ internal sealed partial class TextFieldLayout : Panel
                     if (ReferenceEquals(value, _thickness)) await value.StopAsync();
                     token.ThrowIfCancellationRequested();
                     if (snap) await value.SnapToAsync(target);
-                    else await value.AnimateToAsync(target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f), cancellationToken: token);
+                    else await value.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f), cancellationToken: token);
                 }, "TextField scalar");
             }
             void AnimateColor(Animatable<Color> value, Color target, bool snap)
@@ -300,10 +303,10 @@ internal sealed partial class TextFieldLayout : Panel
                     if (!ReferenceEquals(value, _labelColor)) await value.StopAsync();
                     // An idle Transition starts its new child color on the next transition frame;
                     // animateColorAsState (container/indicator) has its own earlier registration.
-                    else if (idleColorChange) await motion.Clock.NextFrameAsync(token);
+                    else if (idleColorChange) await motion.NextFrameAsync(token);
                     token.ThrowIfCancellationRequested();
                     if (snap) await value.SnapToAsync(target);
-                    else await value.AnimateToAsync(target, new SpringSpec<Color>(fast.DampingRatio, fast.Stiffness), cancellationToken: token);
+                    else await value.AnimateToAsync(motion, target, new SpringSpec<Color>(fast.DampingRatio, fast.Stiffness), cancellationToken: token);
                 }, "TextField color");
             }
         }, "TextField targets");

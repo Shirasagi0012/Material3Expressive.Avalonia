@@ -13,3 +13,24 @@ Compose `animation` 的能力基本上全部移植了，也包括依赖 Compose 
 本模块源码现由 Material3Expressive 主仓库维护，通过仓内 ProjectReference 调试。
 三个包分别在各自 csproj 声明版本，统一由主仓库的手动工作流打包发布，见 [根 README](../../README.md#版本与发布)。
 交互演示运行 `dotnet run --project Catalog/Catalog.csproj`，用法见 [Catalog](Catalog/README.md)。
+
+## 目录结构
+
+| 路径 | 内容 |
+| --- | --- |
+| `ComposeAnimation.Runtime` | 与 UI 无关的引擎：`Animatable`、`Transition`、`InfiniteTransition`、规格、转换器、`FrameScope` |
+| `ComposeAnimation.Avalonia` | Avalonia 宿主：`AnimationScope`、组件、Lookahead 容器（[README](ComposeAnimation.Avalonia/README.md)） |
+| `ComposeAnimation.TestSupport` | `ManualFrameSource`、`AnimationTestWindow` 等测试辅助（NuGet 包） |
+| `ComposeAnimation.Test` | 单元测试，含文档示例编译检查 `DocSamples.cs` |
+| `Catalog` | 交互演示与自动化动作（[README](Catalog/README.md)） |
+| `docs/usage` | 现行文档（[入口](docs/usage/README.md)，[迁移指南](docs/usage/migration-from-visual-animation-scope.md)） |
+| `docs/draft` | 重构前的历史设计稿 |
+
+## 构建与测试
+
+```bash
+dotnet build ComposeAnimation.slnx
+dotnet test ComposeAnimation.Test
+dotnet run --project Catalog/Catalog.csproj -- --run --all --out /tmp/catalog   # 需要桌面
+```
+

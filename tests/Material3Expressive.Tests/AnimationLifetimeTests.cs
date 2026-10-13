@@ -18,17 +18,17 @@ public class AnimationLifetimeTests
     {
         using var clock = new MotionTestClockScope();
         var parent = clock.Scope;
-        var sibling = parent.CreateAnimatable(0d);
-        var baseline = parent.ActiveChildCount;
+        var sibling = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
+        var baseline = parent.Diagnostics.ActiveChildCount;
         IDisposable effect = shape
             ? new MaterialCorners(new CornerRadius(20), MotionScheme.Expressive.DefaultEffects, parent)
             : new RippleAnimation(new Point(), new Size(80, 40), parent);
-        Assert.Equal(baseline + 1, parent.ActiveChildCount);
+        Assert.Equal(baseline + 1, parent.Diagnostics.ActiveChildCount);
         effect.Dispose();
-        Assert.False(parent.IsEnding);
-        Assert.Equal(baseline, parent.ActiveChildCount);
+        Assert.False(parent.Diagnostics.IsEnding);
+        Assert.Equal(baseline, parent.Diagnostics.ActiveChildCount);
 
-        var playing = sibling.AnimateToAsync(1, new TweenSpec<double>(TimeSpan.FromMilliseconds(100)));
+        var playing = sibling.AnimateToAsync(parent, 1, new TweenSpec<double>(TimeSpan.FromMilliseconds(100)));
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(100));
         await playing;
@@ -49,9 +49,9 @@ public class AnimationLifetimeTests
 
         ripple.Dispose();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playing);
-        Assert.False(parent.IsEnding);
-        Assert.Equal(0, parent.ActiveChildCount);
-        Assert.Null(parent.LastError);
+        Assert.False(parent.Diagnostics.IsEnding);
+        Assert.Equal(0, parent.Diagnostics.ActiveChildCount);
+        Assert.Null(parent.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]

@@ -236,7 +236,7 @@ Lookahead.MoveContent(MoveCard, () =>
 });
 ```
 
-移动必须同步完成，且留在同一个已附加的域、窗口与坐标参考祖先下；不允许 `await`/`async void`、推进时钟、运行布局或嵌套移动事务。移动回调失败会取消保留状态并安排布局，但**不回滚树**。普通的 `Remove`/`Add`（不走 `MoveContent`）仍会释放动画。显式域入口本身不能用这种方式跨域移动。
+移动必须同步完成，且留在同一个已附加的域、窗口与坐标参考祖先下；不允许 `await`/`async void`、推进时钟、运行布局或嵌套移动事务。移动回调失败会取消保留状态并安排布局，但**不回滚树**。普通的 `Remove`/`Add`（不走 `MoveContent`）在同一轮内重挂、且运动参考基准不变时，会在下一次 Scope 排空时恢复动画；否则（不再挂回、换了坐标参考祖先或运动帧）在该次排空释放。显式域入口本身不能用这种方式跨域移动。
 
 ### `LookaheadPosition` / `LookaheadSize`：轻量组合
 
@@ -340,3 +340,7 @@ void UpdateOutline()
 - [自定义协作式 Lookahead 容器](../advanced/custom-lookahead-containers.md)
 - [动画规格（Runtime）](../runtime/animation-specs.md)
 - 可运行示例：`Catalog/Demos/Bounds`（`dotnet run --project Catalog/Catalog.csproj -- --demo bounds/basic`）
+
+## Scope 与换父 · Scope and reparenting
+
+`AnimatedBounds` 仅在运动参考基准不变（同一坐标参考祖先、同一运动帧）时恢复在途飞行（D17）；基准改变时释放并从新位置开始（Q-H）。`Lookahead.MoveContent` 提交后，飞行在下一次排空时移入新 Scope 并采用其 `DurationScale` 与生命周期（Q-E）。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。

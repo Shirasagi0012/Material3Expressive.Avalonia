@@ -58,7 +58,9 @@ internal sealed partial class LookaheadContext
     /// visual subtree. Update the actual parent collections inside move; content and retained nodes must
     /// remain in this attached domain with the same coordinate reference. Do not await, pump frames/layout,
     /// or nest MoveContent in this domain. Failures release retained motion; tree edits are not rolled back.
-    /// Ordinary removal still releases animations immediately. This is not keyed content or exit retention.
+    /// Ordinary removal (outside MoveContent) releases animations at the next scope drain, or resumes them
+    /// there when the control is re-attached in the same pass with an unchanged motion-frame basis.
+    /// This is not keyed content or exit retention.
     /// </summary>
     public void MoveContent(Control content, Action move)
     {
@@ -73,6 +75,8 @@ internal sealed partial class LookaheadContext
         var topLevel = TopLevel.GetTopLevel(Owner);
         var states = new List<ILookaheadMoveState>();
         var committed = false;
+        // No scope drain while the move is open (its basis is uncommitted); re-armed on dispose.
+        var drainGate = AnimationScope.BeginMove(Owner);
         _movingContent = true;
         _moveLayoutAttempted = false;
         try
@@ -80,10 +84,16 @@ internal sealed partial class LookaheadContext
             foreach (var node in new Visual[] { content }.Concat(content.GetVisualDescendants()).OfType<ILookaheadMoveParticipant>())
                 if (node.CaptureMove(this) is { } state) states.Add(state);
             move();
-            if (_moveLayoutAttempted || !_attached || TopLevel.GetTopLevel(Owner) != topLevel ||
-                LookaheadScope.FindParticipatingContext(content) != this ||
-                states.Any(state => !state.CanCommit()))
-                throw new InvalidOperationException("MoveContent must finish in the same domain/reference without running layout or animation frames. Tree edits are not rolled back.");
+            if (_moveLayoutAttempted)
+                Fail("layout ran inside the move callback; do not pump layout or the dispatcher during the move");
+            if (!_attached)
+                Fail("the Lookahead domain was detached during the move");
+            if (TopLevel.GetTopLevel(Owner) != topLevel)
+                Fail("the Lookahead domain moved to another window during the move");
+            if (LookaheadScope.FindParticipatingContext(content) != this)
+                Fail("the content ended outside this Lookahead domain");
+            foreach (var state in states)
+                if (state.CommitBlocker() is { } reason) Fail(reason);
             foreach (var state in states) state.Commit();
             committed = true;
         }
@@ -92,10 +102,14 @@ internal sealed partial class LookaheadContext
             if (!committed)
                 foreach (var state in states) state.Cancel();
             _movingContent = false;
+            drainGate?.Dispose();
             InvalidateTargetLayout();
             InvalidateApproachPlacement();
         }
     }
+
+    private static void Fail(string reason)
+        => throw new InvalidOperationException($"MoveContent failed: {reason}. Tree edits are not rolled back.");
 
     /// <summary>Invalidates the target after external layout-policy inputs change.</summary>
     public void InvalidateTargetLayout()

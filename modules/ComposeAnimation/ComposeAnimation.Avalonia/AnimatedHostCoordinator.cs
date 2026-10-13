@@ -11,10 +11,12 @@ namespace ComposeAnimation;
 internal interface IPropertySession : IDisposable
 {
     AvaloniaProperty Property { get; }
-    void SetClock(IAnimationFrameClock? clock, VisualAnimationScope? scope = null);
+    void Attach(FrameScope? runScope, AnimationScope? scope = null);
     void ReconcileTarget();
     void Abort();
     void SnapToTarget();
+    /// <summary>D17: re-runs toward the current target in <paramref name="scope"/>, keeping value and velocity.</summary>
+    void Resume(FrameScope runScope, AnimationScope scope);
 }
 
 internal sealed class AnimatedHostCoordinator : IDisposable
@@ -28,11 +30,13 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private readonly Dictionary<AnimatedProperty, IPropertySession?> _sessions = new();
     private readonly Queue<Action> _work = new();
     private AnimatedPropertyCollection? _collection;
-    private VisualAnimationScope? _motion;
-    private SharedAnimationFrameClock? _sharedClock;
+    private AnimationScope? _motion;
+    private ObservedFrameScope? _sessionScope;
+    private IDisposable? _beforeFrame;
+    private IDisposable? _afterWaiter;
     private bool _attached;
     private bool _processing;
-    private bool _clockFailed;
+    private bool _scopeFailed;
     private bool _disposed;
 
     private AnimatedHostCoordinator(Visual host)
@@ -41,6 +45,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _host.AttachedToVisualTree += OnAttached;
         _host.DetachedFromVisualTree += OnDetached;
         _host.PropertyChanged += OnHostPropertyChanged;
+        AnimationScope.AddScopeChangedHandler(_host, OnScopeChanged);
         _attached = TopLevel.GetTopLevel(host) is not null;
     }
 
@@ -81,7 +86,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _collection.CollectionChanged += OnCollectionChanged;
         foreach (var declaration in collection)
             AddDeclaration(declaration);
-        ApplyClock();
+        ApplyScope();
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -112,10 +117,10 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         var session = CreateSession(declaration);
         _sessions.Add(declaration, session);
         declaration.PropertyChanged += OnDeclarationPropertyChanged;
-        session?.SetClock(SessionClock, _motion);
+        session?.Attach(SessionScope, _motion);
     }
 
-    private IAnimationFrameClock? SessionClock => _clockFailed ? null : _sharedClock;
+    private FrameScope? SessionScope => _scopeFailed ? null : _sessionScope;
 
     private IPropertySession? CreateSession(AnimatedProperty declaration)
     {
@@ -146,7 +151,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
             var replacement = CreateSession(declaration);
             _sessions[declaration] = replacement;
             previous?.Dispose();
-            replacement?.SetClock(SessionClock, _motion);
+            replacement?.Attach(SessionScope, _motion);
         });
     }
 
@@ -161,10 +166,27 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     }
 
     private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)
-        => Execute(() => { _attached = true; ApplyClock(); });
+        => Execute(() => { _attached = true; ApplyScope(); });
 
+    // The host's Get scope is released by the drain (D17), not here: a reparent in the same pass
+    // keeps the runs, and a detach without return ends them in OnScopeChanged.
     private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e)
-        => Execute(() => { _attached = false; ApplyClock(); });
+        => Execute(() => _attached = false);
+
+    // Drain rebuild (D17): the runs move into the replacement scope; an end releases them.
+    // Not ScopeResumeBinding.Handle: the coordinator is not an IAnimationScopeHost (it may sit on
+    // one and share its Get scope), it reacts through the routed event inside its Execute queue,
+    // and it tells a rebuild from a final end by the event itself (OldScope is its scope, NewScope
+    // null or not) rather than by a scope resource plus an attached check: a detached host that
+    // does not come back gets NewScope == null at the same drain. Each session keeps its own
+    // interruption snapshot (OnScopeEnding) because its Animatable's run has already unwound here.
+    private void OnScopeChanged(object? sender, AnimationScopeChangedEventArgs e)
+        => Execute(() =>
+        {
+            if (!ReferenceEquals(e.OldScope, _motion)) return;
+            if (e.NewScope is null) { BindScope(null); return; }
+            BindScope(e.NewScope, resume: true);
+        });
 
     private void OnHostPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -177,22 +199,45 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         });
     }
 
-    private void ApplyClock()
+    private void ApplyScope()
     {
-        if (_attached && _motion is { IsEnding: false }) return;
-        var previous = _motion;
-        _motion = _attached ? VisualAnimationScope.Create(_host) : null;
-        _clockFailed = false;
-        var previousShared = _sharedClock;
-        _sharedClock = _motion is null ? null : new SharedAnimationFrameClock(
-            _motion.Clock, AfterEachWaiter, OnInnerFailure, BeforeEachFrame, normalizeDispatcherContext: true);
-        foreach (var session in _sessions.Values) session?.SetClock(_sharedClock, _motion);
-        previousShared?.Dispose();
-        previous?.Dispose();
+        if (!_attached || _motion is { IsEnding: false }) return;
+        BindScope(AnimationScope.Get(_host));
+    }
+
+    private void BindScope(AnimationScope? scope, bool resume = false)
+    {
+        _motion = scope;
+        _scopeFailed = false;
+        ReleaseFrameHooks();
+        _sessionScope = _motion is null ? null : new ObservedFrameScope(_motion, (error, _) => { if (error is not OperationCanceledException) OnInnerFailure(error); });
+        if (_motion is not null)
+        {
+            // The sessions wait directly on the window's FrameClock (through the scope).
+            // Retargeting runs in its before-frame hook, i.e. after the frame arrives and before
+            // any waiter of this frame (this host's included) samples, and replacement runs it
+            // starts join this frame's batch.
+            _beforeFrame = _motion.FrameClock.RegisterBeforeFrame(BeforeEachFrame);
+            _afterWaiter = _motion.FrameClock.RegisterAfterWaiter(AfterEachWaiter);
+        }
+        foreach (var session in _sessions.Values)
+        {
+            if (session is null) continue;
+            if (resume) Guard(session, () => session.Resume(_sessionScope!, _motion!));
+            else Guard(session, () => session.Attach(SessionScope, _motion));
+        }
+    }
+
+    private void ReleaseFrameHooks()
+    {
+        _beforeFrame?.Dispose();
+        _afterWaiter?.Dispose();
+        _beforeFrame = _afterWaiter = null;
     }
 
     private void BeforeEachFrame()
     {
+        if (_disposed || _sessions.Count == 0 && _work.Count == 0) return;
         try
         {
             foreach (var session in _sessions.Values.ToArray())
@@ -210,6 +255,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
 
     private void AfterEachWaiter()
     {
+        if (_work.Count == 0) return;
         try
         {
             DrainWork();
@@ -223,10 +269,10 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private void OnInnerFailure(Exception error)
         => Execute(() =>
         {
-            if (_clockFailed) return;
-            _clockFailed = true;
+            if (_scopeFailed) return;
+            _scopeFailed = true;
             foreach (var session in _sessions.Values)
-                session?.SetClock(null);
+                session?.Attach(null);
             _motion?.ReportFailure(error);
         });
 
@@ -267,12 +313,13 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _host.AttachedToVisualTree -= OnAttached;
         _host.DetachedFromVisualTree -= OnDetached;
         _host.PropertyChanged -= OnHostPropertyChanged;
+        AnimationScope.RemoveScopeChangedHandler(_host, OnScopeChanged);
         if (_collection is not null)
             _collection.CollectionChanged -= OnCollectionChanged;
         ClearSessions();
-        _sharedClock?.Dispose();
-        _sharedClock = null;
-        _motion?.Dispose();
+        ReleaseFrameHooks();
+        _sessionScope = null;
+        // The host's Get scope is not ours to end.
         _motion = null;
     });
 }

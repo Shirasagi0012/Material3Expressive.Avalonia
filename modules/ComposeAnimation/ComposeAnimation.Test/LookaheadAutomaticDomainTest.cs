@@ -9,7 +9,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadAutomaticDomainTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static AnimatedBounds Card(Control child, Size? size) => new()
     {
         Child = child, TargetSize = size, UseLayoutRounding = false,
@@ -23,15 +22,15 @@ public class LookaheadAutomaticDomainTest
     private sealed class Fixture : IDisposable
     {
         public Window Window { get; }
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Fixture(Control content, params AnimatedBounds[] cards)
         {
 
-            Window = new AnimationTestWindow(Clock) { Content = content, Width = 500, Height = 400 };
+            Window = new AnimationTestWindow(Frames) { Content = content, Width = 500, Height = 400 };
             Window.Show(); Layout();
         }
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() { Window.Close(); }
     }
 
@@ -70,7 +69,7 @@ public class LookaheadAutomaticDomainTest
         f.Step(50);
         Assert.False(outer.IsRunning);
         Assert.False(inner.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]

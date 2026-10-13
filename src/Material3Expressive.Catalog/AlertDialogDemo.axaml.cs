@@ -7,7 +7,7 @@ namespace Material3Expressive.Catalog;
 
 public partial class AlertDialogDemo : Window
 {
-    public AlertDialogDemo() { VisualAnimationScope.Initialize(this); InitializeComponent(); }
+    public AlertDialogDemo() { AnimationScope.Initialize(this); InitializeComponent(); }
     private void OnOpenAlert(object? sender, RoutedEventArgs e) => Alert.IsOpen = true;
     private void OnOpenBasic(object? sender, RoutedEventArgs e) => Basic.IsOpen = true;
     private void OnCloseBasic(object? sender, RoutedEventArgs e) => Basic.IsOpen = false;

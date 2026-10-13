@@ -70,11 +70,11 @@ public class NavigationRailItem : Button
         AvaloniaProperty.Register<NavigationRailItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
 
-    private VisualAnimationScope? _motion;
     private Animatable<float>? _alpha;
     private Animatable<float>? _size;
     private Animatable<Color>? _iconColor;
     private Animatable<Color>? _textColor;
+    private AnimationChildScope? _attachScope;
     private NavigationRailItemLayout? _layout;
     private ContentPresenter? _icon;
     private ContentPresenter? _label;
@@ -103,10 +103,11 @@ public class NavigationRailItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _motion?.Dispose();
-        _motion = null;
+        // The motion lease follows the template parts it samples. Replacing the template
+        // cancels in-flight selection work before those parts are cleared.
+        _attachScope?.Dispose(); _attachScope = null;
+        _alpha = _size = null; _iconColor = _textColor = null; _targetsPending = false;
         base.OnApplyTemplate(e);
-        _targetsPending = false;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<NavigationRailItemLayout>("PART_Layout");
         if (_layout is not null) _layout.PropertyChanged += MotionConfigurationChanged;
@@ -126,13 +127,12 @@ public class NavigationRailItem : Button
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _motion?.Dispose();
-        _motion = null;
         _alpha = _size = null;
         _targetsPending = false;
         _activationKey = null;
         _iconColor = _textColor = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -161,26 +161,30 @@ public class NavigationRailItem : Button
 
     private void InitializeMotion()
     {
-        if (_layout is null || !this.IsAttachedToVisualTree() || _motion is not null)
+        if (_layout is null || !this.IsAttachedToVisualTree() || _alpha is not null)
             return;
-        _motion = VisualAnimationScope.Create(this);
-        _alpha = _motion.CreateAnimatable(IsSelected ? 1f : 0f);
-        _size = _motion.CreateAnimatable(IsSelected ? 1f : 0f);
-        _iconColor = _motion.CreateAnimatable(IconTarget);
-        _textColor = _motion.CreateAnimatable(TextTarget);
-        _motion.SubscribeValue(_alpha, value =>
+        if (_attachScope is not { } motion || motion.Lifetime.IsCancellationRequested)
+        {
+            _attachScope?.Dispose();
+            motion = _attachScope = AnimationScope.Get(this).CreateChild("Navigation rail item");
+        }
+        _alpha = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
+        _size = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
+        _iconColor = new Animatable<Color>(new ColorConverter(), IconTarget, default);
+        _textColor = new Animatable<Color>(new ColorConverter(), TextTarget, default);
+        motion.SubscribeValue(_alpha, value =>
         {
             _layout.AlphaProgress = value;
             if (_indicator is not null) _indicator.Opacity = Math.Clamp(value, 0, 1);
         });
-        _motion.SubscribeValue(_size, value =>
+        motion.SubscribeValue(_size, value =>
         {
             var wasPlaced = _layout.SizeProgress > 0;
             _layout.SizeProgress = value;
             if (wasPlaced != (value > 0)) _peer?.RefreshChildren();
         });
-        _motion.SubscribeValue(_iconColor, value => { if (_icon is not null) _icon.Foreground = new SolidColorBrush(value); });
-        _motion.SubscribeValue(_textColor, value => { if (_label is not null) _label.Foreground = new SolidColorBrush(value); });
+        motion.SubscribeValue(_iconColor, value => { if (_icon is not null) _icon.Foreground = new SolidColorBrush(value); });
+        motion.SubscribeValue(_textColor, value => { if (_label is not null) _label.Foreground = new SolidColorBrush(value); });
         UpdateIconSemantics();
     }
 
@@ -192,7 +196,8 @@ public class NavigationRailItem : Button
 
     private void UpdateTargets()
     {
-        if (_motion is not { IsEnding: false } motion)
+        if (!this.IsAttachedToVisualTree() || _alpha is null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested)
             return;
         if (_targetsPending) return;
         _targetsPending = true;
@@ -201,7 +206,7 @@ public class NavigationRailItem : Button
         // receive their first animation frame. Coalesce targets in that same order.
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _targetsPending = false;
             CommitTargets();
         }, "Rail animation targets");
@@ -209,8 +214,9 @@ public class NavigationRailItem : Button
 
     private void CommitTargets()
     {
-        if (_motion is not { IsEnding: false } motion || _alpha is null || _size is null
-            || _iconColor is null || _textColor is null)
+        if (!this.IsAttachedToVisualTree() || _alpha is null || _size is null
+            || _iconColor is null || _textColor is null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested)
             return;
         // Fixed AnimateAsState.restartAnimation cancels its previous job before
         // animateTo: cancellation resets velocity and the frame anchor. Calling
@@ -232,7 +238,7 @@ public class NavigationRailItem : Button
             {
                 await track.StopAsync();
                 ct.ThrowIfCancellationRequested();
-                await track.AnimateToAsync(target, spec, cancellationToken: ct);
+                await track.AnimateToAsync(motion, target, spec, cancellationToken: ct);
             }, label);
         }
     }

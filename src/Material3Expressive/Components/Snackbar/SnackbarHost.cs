@@ -10,6 +10,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 
@@ -33,8 +34,7 @@ public class SnackbarHost : TemplatedControl
 
     private readonly List<Item> _items = [];
     private Panel? _panel;
-    private VisualAnimationScope? _scope;
-    private VisualAnimationScope? _timeout;
+    private AnimationChildScope? _attachScope, _timeout;
     private SnackbarHostState? _observedState;
     private ISnackbarData? _current;
     private bool _updatePending;
@@ -56,22 +56,23 @@ public class SnackbarHost : TemplatedControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _scope = VisualAnimationScope.Create(this);
+        _attachScope = AnimationScope.Get(this).CreateChild("Snackbar host");
         ObserveState(initial: true);
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_observedState is not null) _observedState.PropertyChanged -= StateChanged;
         _observedState = null;
-        _scope?.Dispose(); _scope = null; _timeout = null;
-        foreach (var item in _items) item.Effect?.Dispose();
+        _attachScope?.Dispose(); _attachScope = null;
+        _timeout = null;
+        foreach (var item in _items) { item.Effect?.Dispose(); item.Scope.Dispose(); }
         _items.Clear(); _panel?.Children.Clear(); _current = null; _updatePending = false;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == StateProperty && _scope is not null) ObserveState();
+        if (change.Property == StateProperty && this.IsAttachedToVisualTree()) ObserveState();
         if (change.Property == SnackbarTemplateProperty || change.Property == ScaleAnimationProperty || change.Property == OpacityAnimationProperty) RequestUpdate();
     }
     private void ObserveState(bool initial = false)
@@ -90,13 +91,14 @@ public class SnackbarHost : TemplatedControl
     }
     private void RequestUpdate()
     {
-        if (_scope is not { IsEnding: false } scope || _updatePending) return;
+        if (!this.IsAttachedToVisualTree() || _updatePending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _updatePending = true;
         // Compose samples the old animations, then recomposes SnackbarHost on this frame.
         // State changes immediately; presentation/effects commit at the next frame boundary.
-        _ = scope.Launch(async ct =>
+        _ = motion.Launch(async ct =>
         {
-            await scope.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _updatePending = false;
             foreach (var item in _items) item.Presenter.ContentTemplate = SnackbarTemplate;
             UpdateCurrent();
@@ -104,7 +106,8 @@ public class SnackbarHost : TemplatedControl
     }
     private void UpdateCurrent()
     {
-        if (_scope is null || _scope.IsEnding || ScaleAnimation is not { } scaleSpec || OpacityAnimation is not { } opacitySpec) return;
+        if (!this.IsAttachedToVisualTree() || ScaleAnimation is not { } scaleSpec || OpacityAnimation is not { } opacitySpec
+            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         var current = State.CurrentSnackbarData;
         if (ReferenceEquals(_current, current)) return;
         _current = current;
@@ -118,14 +121,15 @@ public class SnackbarHost : TemplatedControl
                 SnackbarDuration.Indefinite => Timeout.InfiniteTimeSpan,
                 _ => throw new ArgumentOutOfRangeException(nameof(current.Visuals.Duration))
             };
-            var timeout = _timeout = _scope.CreateChild("Snackbar timeout");
+            var timeout = _timeout = scope.CreateChild("Snackbar timeout");
             _ = timeout.Launch(async ct => { await Task.Delay(duration, ct); current.Dismiss(); }, "Display duration");
             if (!_items.Any(item => ReferenceEquals(item.Data, current)))
             {
-                var itemScope = _scope.CreateChild("Snackbar item");
+                var itemScope = scope.CreateChild("Snackbar item");
                 var presenter = new SnackbarPresenter { Content = current, ContentTemplate = SnackbarTemplate };
                 var item = new Item(current, presenter, itemScope,
-                    itemScope.CreateAnimatable(0f, "Snackbar opacity"), itemScope.CreateAnimatable(.8f, "Snackbar scale"));
+                    new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float, "Snackbar opacity"),
+                    new Animatable<float>(new FloatConverter(), .8f, VisibilityThresholds.Float, "Snackbar scale"));
                 _items.Add(item); _panel?.Children.Add(presenter);
                 itemScope.SubscribeValue(item.Opacity, value => presenter.Opacity = value);
                 itemScope.SubscribeValue(item.Scale, value => presenter.RenderTransform = new ScaleTransform(value, value));
@@ -143,13 +147,13 @@ public class SnackbarHost : TemplatedControl
             _ = item.Scope.Launch(async _ =>
             {
                 var alpha = AnimateOpacity();
-                var scale = item.Scale.AnimateToAsync(visible ? 1f : .8f,
+                var scale = item.Scale.AnimateToAsync(item.Scope, visible ? 1f : .8f,
                     Spec(scaleSpec), cancellationToken: token);
                 await Task.WhenAll(alpha, scale);
 
                 async Task AnimateOpacity()
                 {
-                    await item.Opacity.AnimateToAsync(visible ? 1f : 0f,
+                    await item.Opacity.AnimateToAsync(item.Scope, visible ? 1f : 0f,
                         Spec(opacitySpec), cancellationToken: token);
                     if (!ReferenceEquals(item.Data, _current))
                     {
@@ -162,12 +166,12 @@ public class SnackbarHost : TemplatedControl
     }
     private static SpringSpec<float> Spec(Foundation.Motion.SpringSpec spec) =>
         new(spec.DampingRatio, spec.Stiffness, .01f);
-    private sealed class Item(ISnackbarData data, SnackbarPresenter presenter, VisualAnimationScope scope,
+    private sealed class Item(ISnackbarData data, SnackbarPresenter presenter, AnimationChildScope scope,
         Animatable<float> opacity, Animatable<float> scale)
     {
         public ISnackbarData Data { get; } = data;
         public SnackbarPresenter Presenter { get; } = presenter;
-        public VisualAnimationScope Scope { get; } = scope;
+        public AnimationChildScope Scope { get; } = scope;
         public Animatable<float> Opacity { get; } = opacity;
         public Animatable<float> Scale { get; } = scale;
         public bool? Visible;

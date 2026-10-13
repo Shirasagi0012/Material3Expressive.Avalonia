@@ -270,7 +270,7 @@ public sealed class AppBarCases
         internal void Fling(float velocity)
         {
             _ = _host.Window.AnimationRoot.Launch(async token =>
-            { _flingTask = Scope.DispatchFlingAsync(new Vector(0, velocity * AvaloniaHost.RenderScale), (_, _) => Task.FromResult(default(Vector)), _host.Window.AnimationRoot.Clock, token); _flingResult = await _flingTask; }, "AppBar parity fling");
+            { _flingTask = Scope.DispatchFlingAsync(new Vector(0, velocity * AvaloniaHost.RenderScale), (_, _) => Task.FromResult(default(Vector)), _host.Window.AnimationRoot, token); _flingResult = await _flingTask; }, "AppBar parity fling");
         }
         internal void SetColors(bool custom)
         {

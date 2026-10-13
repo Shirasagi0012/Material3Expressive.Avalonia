@@ -10,7 +10,7 @@ public partial class TextFieldDemo : Window
 {
     public TextFieldDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 

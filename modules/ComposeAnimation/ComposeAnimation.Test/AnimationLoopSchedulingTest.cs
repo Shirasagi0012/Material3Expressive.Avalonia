@@ -38,7 +38,7 @@ public class AnimationLoopSchedulingTest
         }, TimeSpan.FromSeconds(5)), "The animation loop did not resume at the permitted dispatcher priority.");
     }
 
-    private static void Initialize(Window window, ContentControl host, ManualAnimationFrameClock clock)
+    private static void Initialize(Window window, ContentControl host, ManualFrameSource clock)
     {
         window.Show();
         for (var i = 0; i < 20; i++)
@@ -54,10 +54,11 @@ public class AnimationLoopSchedulingTest
     public Task IdleTransition_RegistersNextFrameBeforeOwningMutationReturns() =>
         HeadlessApp.Session.Dispatch(() =>
         {
-            using var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
-            using var transition = new Transition<bool>(false, clock);
+            using var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
+            var window = new AnimationTestWindow(clock);
+            using var transition = new Transition<bool>(false);
             var value = transition.AnimateDouble(visible => visible ? 1 : 0, _ => Tween());
-            var loop = transition.RunAsync();
+            var loop = transition.RunAsync(window.AnimationRoot);
             try
             {
                 Assert.Equal(0, clock.PendingFrameCount);
@@ -84,6 +85,7 @@ public class AnimationLoopSchedulingTest
                 Dispatcher.UIThread.RunJobs();
             }
             Assert.True(loop.IsCanceled);
+            window.Close();
         }, CancellationToken.None);
 
     [Theory]
@@ -93,7 +95,7 @@ public class AnimationLoopSchedulingTest
         HeadlessApp.Session.Dispatch(() =>
         {
             var host = CreateHost(content);
-            var clock = new ManualAnimationFrameClock();
+            var clock = new ManualFrameSource();
 
             var window = new AnimationTestWindow(clock) { Content = host, Width = 500, Height = 500 };
             try
@@ -116,7 +118,7 @@ public class AnimationLoopSchedulingTest
                     Assert.True(IsIdle(host));
                     Assert.Equal(0, clock.PendingFrameCount);
                     Assert.False(loadedRan);
-                    Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+                    Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
                 }
             }
             finally
@@ -135,7 +137,7 @@ public class AnimationLoopSchedulingTest
         HeadlessApp.Session.Dispatch(() =>
         {
             var host = CreateHost(content);
-            var clock = new ManualAnimationFrameClock();
+            var clock = new ManualFrameSource();
 
             var window = new AnimationTestWindow(clock) { Content = host, Width = 500, Height = 500 };
             try
@@ -148,7 +150,7 @@ public class AnimationLoopSchedulingTest
                 Initialize(window, host, clock);
                 ChangeTarget(host);
                 PumpUntil(window, () => clock.PendingFrameCount == 1);
-                Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+                Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
             }
             finally
             {

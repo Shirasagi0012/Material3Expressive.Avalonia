@@ -45,8 +45,7 @@ public class Dialog : ContentControl
     private DialogPresenter? _modal;
     private Control? _contentPresenter;
     private DialogScrim? _scrim;
-    private VisualAnimationScope? _scope;
-    private VisualAnimationScope? _entrance;
+    private AnimationChildScope? _entrance;
     private readonly List<ExitPresentation> _exits = [];
     private float _progress;
     private bool _isPresented, _closing;
@@ -104,7 +103,6 @@ public class Dialog : ContentControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         ClosePresentation(false);
-        _scope?.Dispose(); _scope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -118,7 +116,7 @@ public class Dialog : ContentControl
     {
         if (!this.IsAttachedToVisualTree() || _modal is null || _templateRoot is null || _surface is null || _scrim is null) return;
         if (IsOpen && IsPresented && !_closing || !IsOpen && (_closing || !IsPresented)) return;
-        _scope ??= VisualAnimationScope.Create(this);
+        var scope = AnimationScope.Get(this);
 
         if (IsOpen)
         {
@@ -135,12 +133,12 @@ public class Dialog : ContentControl
             }
             else if (FocusManager.FindFirstFocusableElement(_surface) is { } first) first.Focus();
             if (!AnimateTransition) return;
-            var entrance = _entrance = _scope.CreateChild("Dialog entrance");
+            var entrance = _entrance = scope.CreateChild("Dialog entrance");
             _ = entrance.Launch(async ct =>
             {
                 // Install the layer effect on the presentation's first composition
                 // frame. AnimateProgress establishes its timestamp on the next frame.
-                await entrance.Clock.NextFrameAsync(ct);
+                await entrance.NextFrameAsync(ct);
                 await AnimateProgress(entrance, 200, UpdateAppearance, ct);
             }, "Dialog appearance");
         }
@@ -149,14 +147,14 @@ public class Dialog : ContentControl
             _closing = true;
             if (!AnimateTransition) { ClosePresentation(true); return; }
             var entrance = _entrance;
-            var exit = FreezeContent();
+            var exit = FreezeContent(scope);
             _surface.IsVisible = _scrim.IsVisible = false;
             _modal.Focus();
             _ = exit.Scope.Launch(async ct =>
             {
                 // Core disposes the entering composition after its animation has
                 // consumed this frame. Freeze that last progress for a partial exit.
-                await exit.Scope.Clock.NextFrameAsync(ct);
+                await exit.Scope.NextFrameAsync(ct);
                 var initialProgress = exit.InitialProgress;
                 if (ReferenceEquals(_entrance, entrance))
                 {
@@ -172,14 +170,14 @@ public class Dialog : ContentControl
         }
     }
 
-    private static async Task AnimateProgress(VisualAnimationScope scope, double durationMilliseconds, Action<float> update, CancellationToken ct)
+    private static async Task AnimateProgress(AnimationScope scope, double durationMilliseconds, Action<float> update, CancellationToken ct)
     {
-        if (durationMilliseconds == 0 || scope.DurationScale * scope.Host.GetValue(Animated.DurationScaleProperty) == 0)
+        if (durationMilliseconds == 0 || scope.DurationScale * AnimationScope.GetDurationScale(scope.Host) == 0)
         {
             update(1);
             return;
         }
-        await scope.Clock.AnimateAsync(new FloatConverter(), 0f, 1f,
+        await SuspendAnimation.AnimateAsync(scope, new FloatConverter(), 0f, 1f,
             animationSpec: new TweenSpec<float>(TimeSpan.FromMilliseconds(durationMilliseconds), easing: DialogEaseOut.Instance),
             block: (value, _) => update(value), cancellationToken: ct);
     }
@@ -200,7 +198,7 @@ public class Dialog : ContentControl
         surface.RenderTransform = new MatrixTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(0, 10f * (1f - progress)));
     }
 
-    private ExitPresentation FreezeContent()
+    private ExitPresentation FreezeContent(AnimationScope scope)
     {
         var size = _surface!.Bounds.Size;
         RenderTargetBitmap? bitmap = null;
@@ -217,7 +215,7 @@ public class Dialog : ContentControl
         var scrim = new DialogScrim { Background = ScrimBrush is ISolidColorBrush solid
             ? new ImmutableSolidColorBrush(solid.Color, solid.Opacity) : ScrimBrush };
         var layer = new Grid { IsHitTestVisible = false, Children = { scrim, content } };
-        var exit = new ExitPresentation(layer, content, scrim, _scope!.CreateChild("Dialog exit"), _progress);
+        var exit = new ExitPresentation(layer, content, scrim, scope.CreateChild("Dialog exit"), _progress);
         ApplyAppearance(content, scrim, _progress);
         _modal!.Children.Insert(_modal.Children.Count - 2, layer);
         _exits.Add(exit);
@@ -282,7 +280,7 @@ public class Dialog : ContentControl
     }
 
     private sealed record ExitPresentation(Grid Layer, DialogSnapshot Content, DialogScrim Scrim,
-        VisualAnimationScope Scope, float InitialProgress);
+        AnimationChildScope Scope, float InitialProgress);
 }
 
 internal sealed class DialogPresenter : ModalPresenter

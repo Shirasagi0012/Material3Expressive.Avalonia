@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Motion;
@@ -32,8 +33,8 @@ internal sealed class MenuItemChrome : Decorator
     public static readonly DirectProperty<MenuItemChrome, IBrush?> PaintedBrushProperty = AvaloniaProperty.RegisterDirect<MenuItemChrome, IBrush?>(nameof(PaintedBrush), o => o.PaintedBrush);
     private IBrush? _paintedBrush;
     public IBrush? PaintedBrush { get => _paintedBrush; private set => SetAndRaise(PaintedBrushProperty, ref _paintedBrush, value); }
-    private VisualAnimationScope? _motion;
     private Animatable<Color>? _color;
+    private AnimationChildScope? _attachScope;
     private bool _pending;
     private MenuItem? _keyboardOwner;
 
@@ -69,12 +70,12 @@ internal sealed class MenuItemChrome : Decorator
             owner.AddHandler(InputElement.KeyDownEvent, OnOwnerKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
             owner.AddHandler(InputElement.KeyUpEvent, OnOwnerKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
-        _motion = VisualAnimationScope.Create(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("Menu item chrome");
         PaintedBrush = TargetBrush;
         if (TargetBrush is ISolidColorBrush { Opacity: 1 } brush)
         {
-            _color = _motion.CreateAnimatable(brush.Color);
-            _motion.SubscribeValue(_color, color => PaintedBrush = new SolidColorBrush(color));
+            _color = new Animatable<Color>(new ColorConverter(), brush.Color, default);
+            motion.SubscribeValue(_color, color => PaintedBrush = new SolidColorBrush(color));
         }
     }
 
@@ -86,7 +87,8 @@ internal sealed class MenuItemChrome : Decorator
             owner.RemoveHandler(InputElement.KeyUpEvent, OnOwnerKeyUp);
             _keyboardOwner = null;
         }
-        _motion?.Dispose(); _motion = null; _color = null; _pending = false;
+        _attachScope?.Dispose(); _attachScope = null;
+        _color = null; _pending = false;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -107,11 +109,12 @@ internal sealed class MenuItemChrome : Decorator
     {
         base.OnPropertyChanged(change);
         if (change.Property != TargetBrushProperty && change.Property != ColorAnimationProperty) return;
-        if (_motion is not { IsEnding: false } motion || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _pending = false;
             if (TargetBrush is not ISolidColorBrush { Opacity: 1 } target)
             {
@@ -120,7 +123,7 @@ internal sealed class MenuItemChrome : Decorator
             }
             if (_color is null)
             {
-                _color = motion.CreateAnimatable(target.Color);
+                _color = new Animatable<Color>(new ColorConverter(), target.Color, default);
                 motion.SubscribeValue(_color, color => PaintedBrush = new SolidColorBrush(color));
             }
             var color = _color;
@@ -133,7 +136,7 @@ internal sealed class MenuItemChrome : Decorator
                 // the old mutation cannot unwind after the replacement starts.
                 await color.StopAsync();
                 token.ThrowIfCancellationRequested();
-                await color.AnimateToAsync(targetColor, new SpringSpec<Color>(spec.DampingRatio, spec.Stiffness), cancellationToken: token);
+                await color.AnimateToAsync(motion, targetColor, new SpringSpec<Color>(spec.DampingRatio, spec.Stiffness), cancellationToken: token);
             }, "Menu container color");
         }, "Menu color target");
     }

@@ -21,7 +21,7 @@ internal sealed class ScrollBarThumb : Border
     private readonly SolidColorBrush _brush = new();
     private ScrollBar? _owner;
     private Thumb? _thumb;
-    private VisualAnimationScope? _motion;
+    private AnimationChildScope? _attachScope;
     private Animatable<Color>? _color;
     private bool _dragging, _pending;
     internal Color PaintedColor => _brush.Color;
@@ -42,10 +42,10 @@ internal sealed class ScrollBarThumb : Border
             _thumb.DragStarted += DragStarted;
             _thumb.DragCompleted += DragCompleted;
         }
-        _motion = VisualAnimationScope.Create(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("ScrollBar thumb");
         _brush.Color = ColorTarget;
-        _color = _motion.CreateAnimatable(ColorTarget);
-        _motion.SubscribeValue(_color, value => _brush.Color = value);
+        _color = new Animatable<Color>(new ColorConverter(), ColorTarget, default);
+        motion.SubscribeValue(_color, value => _brush.Color = value);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -56,8 +56,7 @@ internal sealed class ScrollBarThumb : Border
             _thumb.DragStarted -= DragStarted;
             _thumb.DragCompleted -= DragCompleted;
         }
-        _motion?.Dispose();
-        _motion = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _color = null;
         _owner = null;
         _thumb = null;
@@ -77,21 +76,22 @@ internal sealed class ScrollBarThumb : Border
 
     private void UpdateTarget()
     {
-        if (_motion is not { IsEnding: false } motion || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         // Like animateColorAsState, coalesce property changes before retargeting the animation.
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _pending = false;
-            if (_color is not { } color || color.TargetValue == ColorTarget) return;
+            if (_owner is null || _color is not { } color || color.TargetValue == ColorTarget) return;
             var target = ColorTarget;
             var spec = new TweenSpec<Color>(ScrollBarAppearance.GetHoverDuration(_owner!));
             _ = motion.Launch(async token =>
             {
                 await color.StopAsync();
                 token.ThrowIfCancellationRequested();
-                await color.AnimateToAsync(target, spec, cancellationToken: token);
+                await color.AnimateToAsync(motion, target, spec, cancellationToken: token);
             }, "ScrollBar color");
         }, "ScrollBar target");
     }

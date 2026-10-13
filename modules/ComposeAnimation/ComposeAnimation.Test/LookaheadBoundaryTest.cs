@@ -11,7 +11,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadBoundaryTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class Probe : Control
     {
@@ -63,18 +62,18 @@ public class LookaheadBoundaryTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control child, double width = 400, double height = 300, params Control?[] clocks)
         {
             Root = new LookaheadRoot { Width = width, Height = height, Child = child, UseLayoutRounding = false };
-            Window = new AnimationTestWindow(Clock) { Width = width + 100, Height = height + 100, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = width + 100, Height = height + 100, Content = Root };
             Window.Show();
             Layout();
         }
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public Point Position(Control node) => node.TranslatePoint(default, Root)!.Value;
         public void Dispose() { Window.Close(); }
     }
@@ -377,8 +376,8 @@ public class LookaheadBoundaryTest
     [Fact]
     public Task SharedBoundsEndpoints_KeepIndependentDestinationContent_AndFlightCaptureSize() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
-        var parent = new Transition<bool>(true, clock);
+        var clock = new ManualFrameSource();
+        var parent = new Transition<bool>(true);
         var fromProbe = new Probe { Natural = new Size(80, 40) };
         var toProbe = new Probe { Natural = new Size(160, 80) };
         SharedBounds Endpoint(Probe probe, Size size) => new()

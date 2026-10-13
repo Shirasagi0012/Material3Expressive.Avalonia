@@ -154,7 +154,7 @@ public class SnackbarTests
             Assert.Equal(dismiss ? SnackbarResult.Dismissed : SnackbarResult.ActionPerformed, await request.WaitAsync(TimeSpan.FromSeconds(2), cancellation.Token));
             Advance(clock, window, 30);
             Assert.Empty(host.GetVisualDescendants().OfType<Snackbar>());
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { cancellation.Cancel(); window.Close(); }
     }

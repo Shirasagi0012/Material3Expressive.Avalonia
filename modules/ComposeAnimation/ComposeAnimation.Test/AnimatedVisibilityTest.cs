@@ -16,18 +16,17 @@ public class AnimatedVisibilityTest
 {
     private static TweenSpec<T> Tween<T>(int milliseconds = 100)
         => new(TimeSpan.FromMilliseconds(milliseconds), easing: new LinearEasing());
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public AnimatedVisibility Host { get; }
         public Window Window { get; }
         public Fixture(AnimatedVisibility host)
         {
             Host = host;
 
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 500, Content = host };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 500, Content = host };
             Window.Show();
             Layout();
         }
@@ -44,16 +43,16 @@ public class AnimatedVisibilityTest
             Assert.True(SpinWait.SpinUntil(() =>
             {
                 Layout();
-                return Host.IsIdle || Clock.PendingFrameCount > 0;
+                return Host.IsIdle || Frames.PendingFrameCount > 0;
             }, TimeSpan.FromSeconds(5)), "The animation loop did not request its next frame.");
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
         public void Finish()
         {
-            for (var i = 0; i < 200 && (!Host.IsIdle || Clock.PendingFrameCount > 0); i++) Step(16);
+            for (var i = 0; i < 200 && (!Host.IsIdle || Frames.PendingFrameCount > 0); i++) Step(16);
             Assert.True(Host.IsIdle, $"Target={Host.TargetVisible}, Scope={Host.Scope?.Transition.CurrentState}->{Host.Scope?.Transition.TargetState}, PlayTime={Host.Scope?.Transition.PlayTime}, Nodes={string.Join("; ", Host.Scope?.Transition.Animations.Select(a => $"{a.Label} finished={a.IsFinished} duration={a.Duration}") ?? [])}");
-            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.LastError);
+            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError);
         }
         public void Dispose() => Window.Close();
     }
@@ -116,7 +115,7 @@ public class AnimatedVisibilityTest
         Assert.True(host.IsContentPresent);
         fixture.Finish();
         Assert.False(host.IsContentPresent);
-        Assert.Equal(0, fixture.Clock.PendingFrameCount);
+        Assert.Equal(0, fixture.Frames.PendingFrameCount);
     });
 
     [Theory]
@@ -124,7 +123,7 @@ public class AnimatedVisibilityTest
     [InlineData(true)]
     public Task SharedParent_AutomaticPreparationRetainsExitNoneWithoutManualLease(bool zeroDuration) => OnUi(() =>
     {
-        using var parent = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var parent = new Transition<bool>(true);
         using var shared = SharedTransitionScope.Create(parent);
         var host = Host();
         host.Enter = EnterTransition.None;
@@ -152,7 +151,7 @@ public class AnimatedVisibilityTest
     [InlineData(false, true)]
     public Task SharedSession_TwoHostsRetainContentThroughHandoffAndReversal(bool reverse, bool zeroDuration) => OnUi(() =>
     {
-        using var parent = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var parent = new Transition<bool>(true);
         using var shared = SharedTransitionScope.Create(parent);
         var source = Host();
         var target = Host(false);
@@ -217,11 +216,11 @@ public class AnimatedVisibilityTest
         Assert.Equal(reverse, source.IsContentPresent);
         Assert.Equal(!reverse, target.IsContentPresent);
         Assert.False(parent.IsRunning);
-        Assert.Equal(0, first.Clock.PendingFrameCount);
-        Assert.Equal(0, second.Clock.PendingFrameCount);
+        Assert.Equal(0, first.Frames.PendingFrameCount);
+        Assert.Equal(0, second.Frames.PendingFrameCount);
         Assert.Null(shared.LastSessionError);
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(source)!).AnimationRoot.LastError);
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(target)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(source)!).AnimationRoot.Diagnostics.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(target)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Theory]
@@ -541,34 +540,38 @@ public class AnimatedVisibilityTest
     });
 
     [Fact]
-    public Task ParentTransition_WaitsForVisibility_AndSurvivesHostDetach() => OnUi(() =>
+    public Task ParentTransition_WaitsForVisibility_AndReleasesAtTheDrainAfterHostDetach() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
-        using var parent = new Transition<int>(1, clock);
-        var loop = parent.RunAsync();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var parent = new Transition<int>(1);
+        var loop = parent.RunAsync(window.AnimationRoot);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s == 1);
         using var f = new Fixture(host);
         parent.UpdateTarget(0);
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
         f.Layout();
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(50));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(50)); Dispatcher.UIThread.RunJobs();
         f.Layout();
         Assert.True(host.IsContentPresent);
         Assert.True(parent.IsRunning);
         for (var i = 0; i < 50 && host.IsContentPresent; i++)
         {
-            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
             f.Layout();
         }
         Assert.False(host.IsContentPresent);
         Assert.Equal(0, parent.CurrentState);
         f.Window.Content = null;
+        Assert.NotEmpty(parent.Transitions); // still connected until the detached scope ends
+        Dispatcher.UIThread.RunJobs(); // the drain (fallback post) ends the scope and releases
         Assert.Empty(parent.Transitions);
         parent.UpdateTarget(2);
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
         Assert.Equal(2, parent.CurrentState);
         Assert.False(loop.IsFaulted);
+        window.Close();
     });
 
     [Fact]
@@ -585,7 +588,7 @@ public class AnimatedVisibilityTest
         f.Layout();
         Assert.Null(host.Scope);
         Assert.Equal(1, released);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         host.Visible = true;
         f.Window.Content = host;
         f.Layout();
@@ -793,8 +796,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task ParentCanBeDisposedWhileHostIsAttached() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
-        var parent = new Transition<bool>(true, clock);
+        var parent = new Transition<bool>(true);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s);
         using var f = new Fixture(host);
@@ -808,9 +810,10 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task SharedParentWaitsForLongestHostWithoutDrivingOwnClocks() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
-        using var parent = new Transition<bool>(true, clock);
-        _ = parent.RunAsync();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var parent = new Transition<bool>(true);
+        _ = parent.RunAsync(window.AnimationRoot);
         var a = Host();
         var b = Host();
         a.Source = b.Source = VisibilitySource.From(parent, s => s);
@@ -825,12 +828,13 @@ public class AnimatedVisibilityTest
         Assert.False(a.IsContentPresent);
         Assert.True(b.IsContentPresent);
         Assert.True(parent.IsRunning);
-        Assert.Equal(0, first.Clock.PendingFrameCount);
-        Assert.Equal(0, second.Clock.PendingFrameCount);
+        Assert.Equal(0, first.Frames.PendingFrameCount);
+        Assert.Equal(0, second.Frames.PendingFrameCount);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
         first.Layout(); second.Layout();
         Assert.False(b.IsContentPresent);
         Assert.False(parent.IsRunning);
+        window.Close();
     });
 
     [Fact]
@@ -921,7 +925,7 @@ public class AnimatedVisibilityTest
     });
 
 
-    private sealed class FailedClock : IAnimationFrameClock
+    private sealed class FailedClock : IFrameSource
     {
         public void VerifyAccess() { }
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
@@ -941,8 +945,7 @@ public class AnimatedVisibilityTest
     [Fact]
     public Task ParentSeekingSamplesTheWholePresentationAndKeepsHiddenEndpoint() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
-        using var parent = new Transition<bool>(true, clock);
+        using var parent = new Transition<bool>(true);
         var host = Host();
         host.Source = VisibilitySource.From(parent, s => s);
         using var f = new Fixture(host);
@@ -957,7 +960,7 @@ public class AnimatedVisibilityTest
         parent.SetPlaytimeAfterInitialAndTargetStateEstablished(false, true, TimeSpan.FromMilliseconds(25));
         f.Layout();
         Assert.InRange(Layer(host).Surface.Opacity, 0.24, 0.26);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -1017,7 +1020,7 @@ public class AnimatedVisibilityTest
         for (var i = 0; i < 100 && host.IsContentPresent; i++) f.Step(16);
         Assert.False(host.IsContentPresent);
         Assert.False(card.IsAnimating(Border.CornerRadiusProperty));
-        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Fact]

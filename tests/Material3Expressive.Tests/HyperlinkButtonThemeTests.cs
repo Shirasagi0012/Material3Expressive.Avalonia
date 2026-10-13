@@ -177,7 +177,7 @@ public sealed class HyperlinkButtonThemeTests
     static Color? Brush(IBrush? brush) => (brush as ISolidColorBrush)?.Color;
     static AnimationTestWindow Show(Control control, Control? sibling = null)
     {
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = new AnimationTestWindow(clock) { Width = 480, Height = 320 };
         window.Styles.Add(new MaterialTheme());
         var panel = new StackPanel { Margin = new Thickness(16), Spacing = 16, Children = { control } };

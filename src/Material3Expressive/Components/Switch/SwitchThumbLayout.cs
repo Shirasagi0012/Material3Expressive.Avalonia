@@ -28,7 +28,7 @@ internal sealed class SwitchThumbLayout : Panel
 
     private ToggleSwitch? _owner;
     private MaterialInteractionController? _interaction;
-    private VisualAnimationScope? _motion;
+    private AnimationChildScope? _attachScope;
     private Animatable<float>? _sizeAnim, _offsetAnim;
     private float _initialSize = float.NaN, _initialOffset = float.NaN;
     private float _sizePx, _offsetPx;
@@ -42,13 +42,16 @@ internal sealed class SwitchThumbLayout : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Switch thumb");
+        // A reparent rebuilds the owned scope on the next frame and ends this child.
+        // The replacement scope arrives through ScopeChanged while the thumb stays attached.
+        AnimationScope.AddScopeChangedHandler(this, ScopeRebuilt);
         _owner = (ToggleSwitch)TemplatedParent!;
         _checked = _owner.IsChecked == true;
         _interaction = MaterialInteraction.GetOrCreate(_owner);
         _interaction.IsRippleBounded = false;
         _interaction.RippleRadius = 20;
         _interaction.RippleFollowsPresenterCenter = true;
-        _motion = VisualAnimationScope.Create(this);
         // Observe the existing controller after its tunnel handlers, without another input
         // state machine or an activation path.
         _owner.AddHandler(InputElement.PointerPressedEvent, InputChanged, RoutingStrategies.Tunnel, true);
@@ -65,6 +68,7 @@ internal sealed class SwitchThumbLayout : Panel
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
         if (_owner is { } owner)
         {
             owner.RemoveHandler(InputElement.PointerPressedEvent, InputChanged);
@@ -78,13 +82,24 @@ internal sealed class SwitchThumbLayout : Panel
             owner.Classes.CollectionChanged -= ClassesChanged;
         }
         if (Children.FirstOrDefault() is { } moving) moving.PropertyChanged -= MovingChanged;
-        _motion?.Dispose(); _motion = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _sizeAnim = _offsetAnim = null;
         _initialSize = _initialOffset = float.NaN;
         _updatePending = false;
         _nativeDragging = _dragging = _dragHandoff = false;
         _owner = null; _interaction = null;
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void ScopeRebuilt(object? sender, AnimationScopeChangedEventArgs e)
+    {
+        if (e.NewScope is not { } scope || !this.IsAttachedToVisualTree()) return;
+        _attachScope?.Dispose();
+        _updatePending = false;
+        var motion = _attachScope = scope.CreateChild("Switch thumb");
+        if (_sizeAnim is { } size) motion.SubscribeValue(size, value => { _sizePx = value; InvalidateMeasure(); });
+        if (_offsetAnim is { } offset) motion.SubscribeValue(offset, value => { _offsetPx = value; InvalidateMeasure(); });
+        ScheduleThumbUpdate();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -149,19 +164,20 @@ internal sealed class SwitchThumbLayout : Panel
     }
     private void ScheduleThumbUpdate()
     {
-        if (_motion is not { IsEnding: false } motion || _updatePending) return;
+        if (!this.IsAttachedToVisualTree() || _updatePending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _updatePending = true;
         // ThumbElement.update runs during recomposition. Ordinary state changes initialize
         // from the first measurement; native drag release instead hands off the current pose.
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _updatePending = false;
             _checked = _owner?.IsChecked == true;
             if (!float.IsNaN(_initialSize) && _sizeAnim is null)
             {
-                _sizeAnim = motion.CreateAnimatable(_dragHandoff ? _dragSizePx : _initialSize);
-                _offsetAnim = motion.CreateAnimatable(_dragHandoff ? _dragOffsetPx : _initialOffset);
+                _sizeAnim = new Animatable<float>(new FloatConverter(), _dragHandoff ? _dragSizePx : _initialSize, VisibilityThresholds.Float);
+                _offsetAnim = new Animatable<float>(new FloatConverter(), _dragHandoff ? _dragOffsetPx : _initialOffset, VisibilityThresholds.Float);
                 motion.SubscribeValue(_sizeAnim, value => { _sizePx = value; InvalidateMeasure(); });
                 motion.SubscribeValue(_offsetAnim, value => { _offsetPx = value; InvalidateMeasure(); });
             }
@@ -201,12 +217,13 @@ internal sealed class SwitchThumbLayout : Panel
         if (!_dragging && !_dragHandoff) Animate(_offsetAnim, offset);
         void Animate(Animatable<float>? track, float target)
         {
-            if (track is null || track.TargetValue == target || _motion is not { IsEnding: false } motion) return;
+            if (track is null || track.TargetValue == target || !this.IsAttachedToVisualTree()
+                || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested) return;
             if (!pressed && ThumbAnimation is null) return;
             IFiniteAnimationSpec<float> animationSpec = pressed ? new SnapSpec<float>()
                 : new SpringSpec<float>(ThumbAnimation!.Value.DampingRatio, ThumbAnimation.Value.Stiffness, 0.01f);
             // ThumbNode launches animateTo directly; interruption retains current velocity.
-            _ = motion.Launch(ct => track.AnimateToAsync(target, animationSpec, cancellationToken: ct), "Switch thumb animation");
+            _ = motion.Launch(ct => track.AnimateToAsync(motion, target, animationSpec, cancellationToken: ct), "Switch thumb animation");
         }
         PaintedSize = (int)(_dragHandoff ? _dragSizePx : _sizeAnim is null ? size : _sizePx) / (double)scale;
         PaintedOffset = (int)(_offsetAnim is null ? offset : _offsetPx) / (double)scale;

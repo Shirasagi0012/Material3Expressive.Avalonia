@@ -54,7 +54,7 @@ public partial class AnimatedBoundsTest
         Equal(snapshot.Results[text].Bounds, f.Actual(text));
         Assert.Equal(measures, policy.Measures);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -94,12 +94,12 @@ public partial class AnimatedBoundsTest
         else f.Root.InvalidateApproachPlacement();
         Assert.Throws<InvalidOperationException>(f.Layout);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         Assert.Equal(0, targets);
         if (targetFailure) Assert.Null(f.Root.Snapshot);
         card.IntermediateLayout = BoundsLayout.Empty; f.Layout();
         Equal(f.Root.Snapshot!.Results[text].Bounds, f.Actual(text));
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(card)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(card)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Fact]
@@ -119,7 +119,7 @@ public partial class AnimatedBoundsTest
         Assert.True(reset);
         Assert.False(card.IsRunning);
         Equal(f.Root.Snapshot!.Results[(Control)card.Child!].Bounds, f.Actual(card.Child!));
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -179,7 +179,7 @@ public partial class AnimatedBoundsTest
         Equal(new Rect(target.TopLeft - new Vector(0, 80), target.Size), f.Actual(text));
         Assert.False(parent.IsRunning);
         Assert.False(child.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -205,6 +205,6 @@ public partial class AnimatedBoundsTest
         Assert.Same(snapshot, f.Root.Snapshot);
         f.Step(100);
         Assert.All(cards, card => Assert.False(card.IsRunning));
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 }

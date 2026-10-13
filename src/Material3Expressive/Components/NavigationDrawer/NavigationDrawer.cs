@@ -36,7 +36,6 @@ public abstract class NavigationDrawer : ContentControl
     private Point _down, _last;
     private bool _dragging;
     private readonly VelocityTracker _velocity = new();
-    private VisualAnimationScope? _focusScope;
     private int _focusGeneration;
 
     protected NavigationDrawer()
@@ -61,7 +60,7 @@ public abstract class NavigationDrawer : ContentControl
         CancelPointer();
         if (_attachedState is { } state) { state.PropertyChanged -= StateChanged; state.Detach(this); }
         _attachedState = null;
-        _focusGeneration++; _focusScope?.Dispose(); _focusScope = null;
+        _focusGeneration++;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -91,12 +90,13 @@ public abstract class NavigationDrawer : ContentControl
     }
     private void FocusDrawer()
     {
+        if (!this.IsAttachedToVisualTree()) return;
         var generation = ++_focusGeneration;
-        var scope = _focusScope ??= VisualAnimationScope.Create(this);
+        var scope = AnimationScope.Get(this);
         _ = scope.Launch(async ct =>
         {
             // LaunchedEffect(isOpen) runs after the next composition frame, including snapTo.
-            await scope.Clock.NextFrameAsync(ct);
+            await scope.NextFrameAsync(ct);
             if (generation == _focusGeneration && AnimatedState?.IsOpen == true && _sheet is not null)
                 _sheet.GetVisualDescendants().OfType<Control>().FirstOrDefault(c => c.Focusable && c.IsEffectivelyVisible && c.IsEffectivelyEnabled)?.Focus();
         }, "Drawer focus after composition");

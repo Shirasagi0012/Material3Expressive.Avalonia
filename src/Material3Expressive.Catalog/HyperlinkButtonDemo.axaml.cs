@@ -10,7 +10,7 @@ public partial class HyperlinkButtonDemo : Window
 
     public HyperlinkButtonDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
         VisitedLink.PropertyChanged += (_, e) =>
         {

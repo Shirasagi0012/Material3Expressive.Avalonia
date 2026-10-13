@@ -41,9 +41,9 @@ internal sealed class TabHeader : Panel
     internal Color PaintedContentColor { get; private set; }
     private Color Active => SelectedContentColor ?? (AmbientBrush as ISolidColorBrush)?.Color ?? Colors.Black;
     private Color Inactive => UnselectedContentColor ?? Active;
-    private VisualAnimationScope? _motion;
     private Transition<bool>? _transition;
     private Transition<bool>.TransitionAnimationState<Color>? _color;
+    private AnimationChildScope? _attachScope;
     private CancellationTokenSource? _run;
     private Task? _runTask;
     private bool _pending;
@@ -64,9 +64,9 @@ internal sealed class TabHeader : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Tab header");
         Label.PropertyChanged += SlotChanged;
         Icon.PropertyChanged += SlotChanged;
-        _motion = VisualAnimationScope.Create(this);
         _initialSelected = IsSelected;
         ApplyContentPolicy();
         PaintColor(IsSelected ? Active : Inactive);
@@ -79,7 +79,8 @@ internal sealed class TabHeader : Panel
         if (_transition is not null) _transition.PropertyChanged -= TransitionChanged;
         _run?.Cancel(); _run?.Dispose(); _run = null; _runTask = null;
         _transition?.Dispose(); _transition = null; _color = null;
-        _motion?.Dispose(); _motion = null; _pending = false;
+        _attachScope?.Dispose(); _attachScope = null;
+        _pending = false;
         base.OnDetachedFromVisualTree(e);
     }
     private void SlotChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
@@ -93,11 +94,12 @@ internal sealed class TabHeader : Panel
     }
     private void InitializeColorMotion()
     {
-        if (_motion is not { IsEnding: false } motion || _transition is not null
+        if (!this.IsAttachedToVisualTree() || _transition is not null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested
             || SelectedContentAnimation.Stiffness <= 0 || UnselectedContentAnimation.Stiffness <= 0) return;
         var selected = SelectedContentAnimation;
         var unselected = UnselectedContentAnimation;
-        _transition = motion.CreateTransition(_initialSelected, "Tab content color");
+        _transition = new Transition<bool>(_initialSelected, "Tab content color");
         _color = _transition.AnimateColor(state => state ? Active : Inactive,
             segment => ColorSpec(!segment.InitialState && segment.TargetState, selected, unselected));
         motion.SubscribeValue(_color, PaintColor);
@@ -119,11 +121,12 @@ internal sealed class TabHeader : Panel
     {
         if (this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault() is { } surface)
             surface.StateLayerBrush = new SolidColorBrush(Active);
-        if (_motion is not { IsEnding: false } motion || _transition is null || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _transition is null || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _pending = false;
             if (_transition is null || _color is null || SelectedContentAnimation.Stiffness <= 0 || UnselectedContentAnimation.Stiffness <= 0) return;
             var selected = SelectedContentAnimation;
@@ -137,10 +140,11 @@ internal sealed class TabHeader : Panel
             if ((!_color.IsFinished || _transition.CurrentState != _transition.TargetState) && (_runTask is null || _runTask.IsCompleted))
             {
                 // Mapping-only changes launch on the following composition frame.
-                if (!changedState) await motion.Clock.NextFrameAsync(ct);
+                if (!changedState) await motion.NextFrameAsync(ct);
+                if (_transition is null) return;
                 if (_runTask is { IsCompleted: false }) return;
                 _run?.Dispose(); _run = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                _runTask = motion.Launch(_ => _transition.RunAsync(_run.Token), "Tab transition");
+                _runTask = motion.Launch(_ => _transition.RunAsync(motion, _run.Token), "Tab transition");
             }
         }, "Tab color targets");
     }

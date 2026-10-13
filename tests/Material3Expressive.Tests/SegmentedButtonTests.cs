@@ -55,7 +55,7 @@ public class SegmentedButtonTests
         try
         {
             var item = (SegmentedButton)row.Items[0]!;
-            Assert.Equal(Color.Parse("#126E60"), Assert.IsType<SolidColorBrush>(item.Background).Color);
+            Assert.Equal(Color.Parse("#126E60"), Assert.IsAssignableFrom<ISolidColorBrush>(item.Background).Color);
             Assert.Equal(new CornerRadius(8, 0, 0, 8), item.CornerRadius);
             Assert.NotNull(item.ActiveIconTemplate); Assert.NotNull(item.InactiveIconTemplate);
             item.IsSelected = false; window.UpdateLayout(); clock.SendFrame(TimeSpan.FromMilliseconds(1));

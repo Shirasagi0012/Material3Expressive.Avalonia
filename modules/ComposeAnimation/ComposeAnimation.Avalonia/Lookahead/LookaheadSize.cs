@@ -18,7 +18,7 @@ namespace ComposeAnimation;
 /// constraint path preserves minima; the legacy Size path retains Avalonia maximum-only behavior.
 /// Padding is not supported.
 /// </remarks>
-public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementHost, ILookaheadApproach
+public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementHost, ILookaheadApproach, IAnimationScopeHost
 {
     private readonly LookaheadEntry _entry;
     public static readonly StyledProperty<Size?> TargetSizeProperty =
@@ -37,16 +37,48 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
         set => SetValue(AnimationSpecProperty, value);
     }
 
+    // The scope the animatable's runs use; replaced together with it.
+    private FrameScope? _runScope;
     private Animatable<Size>? _size;
-    private IDisposable? _motionRegistration;
+    private readonly ScopeResumeBinding _scopeBinding;
+    private bool _attached;
     private LookaheadContext? _context;
     private Size _target;
     private Size? _failedTarget;
     private long _generation;
 
-    public LookaheadSize() => _entry = new(this);
+    public LookaheadSize()
+    {
+        _entry = new(this);
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, Reset);
+    }
 
-    static LookaheadSize() => AffectsMeasure<LookaheadSize>(TargetSizeProperty);
+    // D17: a rebuild while attached keeps the animatable (value and velocity where the cancelled
+    // run stopped) and the target; re-run toward the target in the replacement scope. A real
+    // lookahead context change still resets (it is not a scope rebuild).
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+        => _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_size is not { } animatable) return false;
+                _runScope = motion;
+                if (animatable.Value != _target) _ = Animate(animatable, _target, ++_generation);
+                return true;
+            },
+            onLost: Reset,
+            invalidate: _ => InvalidateMeasure());
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _attached = true;
+        base.OnAttachedToVisualTree(e);
+    }
+
+
+    static LookaheadSize()
+    {
+        AffectsMeasure<LookaheadSize>(TargetSizeProperty);
+    }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -78,16 +110,17 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
         var destination = target.Bounds.Size;
         if (_size is null && _failedTarget != destination)
         {
-            var clock = TopLevel.GetTopLevel(this) is not null && !VisualAnimationScope.IsEnvironmentEnding(this)
-                ? VisualAnimationScope.ForHost(this).Clock : null;
-            if (clock is not null)
+            var scope = TopLevel.GetTopLevel(this) is not null && !AnimationScope.IsEnvironmentEnding(this)
+                ? AnimationScope.Get(this) : null;
+            if (scope is not null)
             {
                 _target = destination;
-                _size = new Animatable<Size>(new SizeConverter(), destination, clock,
+                _size = new Animatable<Size>(new SizeConverter(), destination,
                     VisibilityThresholds.Size, "Lookahead size");
+                _runScope = scope;
                 _size.PropertyChanged += OnSizeSampleChanged;
-                var motion = VisualAnimationScope.ForHost(this);
-                _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Reset(); });
+                _scopeBinding.Reset();
+                _scopeBinding.Bind(scope);
             }
         }
         if (_size is { } size && _target != destination)
@@ -104,16 +137,19 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
 
     private async Task Animate(Animatable<Size> size, Size target, long generation)
     {
-        try { await size.AnimateToAsync(target, AnimationSpec); }
+        var scope = _runScope!;
+        try { await size.AnimateToAsync(scope, target, AnimationSpec); }
         catch (Exception error)
         {
             if (generation != _generation || !ReferenceEquals(_size, size)) return;
+            // Cancelled because its scope ended (rebuild or release): not a failure.
+            if (error is OperationCanceledException && scope.Lifetime.IsCancellationRequested) return;
             var root = _context;
             Reset();
             _context = root;
             _failedTarget = target;
             InvalidateMeasure();
-            VisualAnimationScope.ReportError(this, error);
+            AnimationScope.ReportError(this, error);
         }
     }
 
@@ -179,9 +215,7 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
     }
     private void Reset()
     {
-        var registration = _motionRegistration;
-        _motionRegistration = null;
-        registration?.Dispose();
+        _scopeBinding.Reset();
         ++_generation;
         if (_size is { } size)
         {
@@ -195,8 +229,10 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // The lookahead entry belongs to the tree position and goes now; the animation is released
+        // when the scope ends at the drain (D17), or resumes if re-attached elsewhere.
+        _attached = false;
         _entry.Detach();
-        Reset();
         base.OnDetachedFromVisualTree(e);
     }
 }

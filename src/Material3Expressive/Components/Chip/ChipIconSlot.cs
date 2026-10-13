@@ -42,8 +42,8 @@ internal sealed class ChipIconSlot : Decorator
     private bool MotionConfigurationReady => SizeEnterAnimation is not null && SizeExitAnimation is not null
         && AlphaEnterAnimation is not null && AlphaExitAnimation is not null;
     private bool _pendingWidthUpdate;
-    private VisualAnimationScope? _motion;
-    private VisualAnimationScope? _visibilityMotion;
+    private AnimationChildScope? _motion;
+    private AnimationChildScope? _visibilityMotion;
     private Transition<EnterExitState>? _transition;
     private Transition<EnterExitState>.TransitionAnimationState<float>? _width;
     private object? _requested;
@@ -59,7 +59,7 @@ internal sealed class ChipIconSlot : Decorator
     private bool RequestedPresent => _requested is not null || _requestedTemplate is not null;
     private IDataTemplate? _requestedTemplate;
     public ChipIconSlot() { ClipToBounds = true; }
-    internal void Initialize(VisualAnimationScope parent) => _motion = parent.CreateChild("Chip icon visibility");
+    internal void Initialize(AnimationScope parent) => _motion = parent.CreateChild("Chip icon visibility");
     internal void Stop()
     {
         _motion?.Dispose(); _motion = null; _visibilityMotion = null; _transition = null;
@@ -89,9 +89,9 @@ internal sealed class ChipIconSlot : Decorator
         if (!MotionConfigurationReady) return;
         _visibilityMotion?.Dispose();
         _loopStarted = false;
-        if (_motion is not { IsEnding: false } motion) return;
+        if (_motion is not { } motion || motion.Lifetime.IsCancellationRequested) return;
         var scope = _visibilityMotion = motion.CreateChild("AnimatedVisibility transition");
-        var transition = _transition = scope.CreateTransition(initial);
+        var transition = _transition = new Transition<EnterExitState>(initial);
         _width = transition.AnimateValue(new ChipWidthConverter(), WidthTarget, SizeSpec);
         var alpha = transition.AnimateValue(new FloatConverter(), state => state == EnterExitState.Visible ? 1f : 0f, AlphaSpec);
         scope.SubscribeValue(_width, _ => InvalidateMeasure());
@@ -167,18 +167,18 @@ internal sealed class ChipIconSlot : Decorator
 
     private void QueueVisibility()
     {
-        if (_motion is not { IsEnding: false } motion || _pending || !MotionConfigurationReady) return;
+        if (_motion is not { } motion || motion.Lifetime.IsCancellationRequested || _pending || !MotionConfigurationReady) return;
         _pending = true;
         // Coalesce setters in one request: avatar takes precedence over leadingIcon.
         Dispatcher.UIThread.Post(() =>
         {
-            if (motion.IsEnding) return;
+            if (motion.Lifetime.IsCancellationRequested) return;
             if (!MotionConfigurationReady) { _pending = false; return; }
             _ = motion.Launch(async ct =>
             {
                 if (!_transitionPresent || _transition is { IsRunning: true })
                 {
-                    await motion.Clock.NextFrameAsync(ct);
+                    await motion.NextFrameAsync(ct);
                     if (!MotionConfigurationReady) { _pending = false; return; }
                     if (!_transitionPresent) CreateTransition(EnterExitState.PreEnter);
                 }
@@ -196,7 +196,7 @@ internal sealed class ChipIconSlot : Decorator
                     if (!_loopStarted && _visibilityMotion is { } scope && _transition is { } transition)
                     {
                         _loopStarted = true;
-                        _ = scope.Launch(token => transition.RunAsync(token), "Chip visibility transition");
+                        _ = scope.Launch(token => transition.RunAsync(scope, token), "Chip visibility transition");
                     }
                 }
                 _visibilityTarget = visible;

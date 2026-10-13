@@ -16,33 +16,45 @@ internal sealed class BoundsAnimationState(Action changed, Action<Exception> fai
     public Rect? Value { get; private set; }
     public bool IsRunning => _pending || _animation?.IsRunning == true;
 
-    public void UpdateTarget(Rect target, IAnimationFrameClock? clock, BoundsTransform transform)
+    public void UpdateTarget(Rect target, FrameScope? runScope, BoundsTransform transform)
     {
         if (!IsFinite(target)) throw new InvalidOperationException("AnimatedBounds requires finite target bounds.");
         Value ??= target; // First layout initializes at its destination, without invoking the policy.
-        if (clock is null)
+        if (runScope is null)
         {
             Reset();
             Value = target;
             return;
         }
         if (_failedTarget == target || _requestedTarget == target) return;
-        _animation ??= CreateAnimation(clock, Value.Value);
+        _animation ??= CreateAnimation(Value.Value);
         _requestedTarget = target; // Includes requests queued behind the Animatable mutation mutex.
         if (_animation.Value == target && !IsRunning) return;
         _pending = true;
-        _ = Animate(_animation, target, transform, ++_generation);
+        _ = Animate(runScope, _animation, target, transform, ++_generation);
     }
 
-    private Animatable<Rect> CreateAnimation(IAnimationFrameClock clock, Rect initial)
+    /// <summary>
+    /// D17: re-runs an in-flight request toward its stored target in <paramref name="runScope"/>,
+    /// from the value and velocity where the cancelled run stopped. No-op when nothing was in flight.
+    /// </summary>
+    public void Resume(FrameScope runScope, BoundsTransform transform)
     {
-        var animation = new Animatable<Rect>(new RectConverter(), initial, clock,
+        if (_animation is not { } animation || _requestedTarget is not { } target) return;
+        if (animation.Value == target && !IsRunning) return;
+        _pending = true;
+        _ = Animate(runScope, animation, target, transform, ++_generation);
+    }
+
+    private Animatable<Rect> CreateAnimation(Rect initial)
+    {
+        var animation = new Animatable<Rect>(new RectConverter(), initial,
             VisibilityThresholds.Rect, "Animated bounds");
         animation.PropertyChanged += SampleChanged;
         return animation;
     }
 
-    private async Task Animate(Animatable<Rect> animation, Rect target, BoundsTransform transform, long generation)
+    private async Task Animate(FrameScope scope, Animatable<Rect> animation, Rect target, BoundsTransform transform, long generation)
     {
         try
         {
@@ -50,11 +62,13 @@ internal sealed class BoundsAnimationState(Action changed, Action<Exception> fai
                 ?? throw new InvalidOperationException("BoundsTransform returned a null animation spec.");
             // A user policy may synchronously reset/detach its owner.
             if (!IsCurrent()) return;
-            await animation.AnimateToAsync(target, spec);
+            await animation.AnimateToAsync(scope, target, spec);
         }
         catch (Exception error)
         {
             if (!IsCurrent()) return;
+            // Cancelled because its scope ended (a rebuild resumes it; a release resets it): not a failure.
+            if (error is OperationCanceledException && scope.Lifetime.IsCancellationRequested) return;
             Reset();
             Value = target;
             _failedTarget = target;

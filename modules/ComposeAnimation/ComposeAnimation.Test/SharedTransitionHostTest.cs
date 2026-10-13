@@ -12,13 +12,12 @@ namespace ComposeAnimation.Test;
 public class SharedTransitionHostTest
 {
     private static TimeSpan Ms(int value) => TimeSpan.FromMilliseconds(value);
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static readonly Rect Start = new(10, 20, 100, 80);
     private static readonly Rect End = new(250, 100, 200, 160);
 
     private sealed class Scene : IDisposable
     {
-        internal ManualAnimationFrameClock Clock { get; } = new();
+        internal ManualFrameSource Frames { get; } = new();
         internal Transition<bool> Parent { get; }
         internal SharedTransitionHost Host { get; }
         internal SharedElement From { get; }
@@ -32,7 +31,7 @@ public class SharedTransitionHostTest
 
         internal Scene(bool bounds = false, bool nested = false)
         {
-            Parent = new Transition<bool>(true, Clock);
+            Parent = new Transition<bool>(true);
             var boundsSpec = new SharedBoundsTransform
             {
                 Spec = new TweenSpec<Rect>(Ms(100), easing: new LinearEasing())
@@ -70,7 +69,7 @@ public class SharedTransitionHostTest
             Canvas.SetLeft(Target, 250); Canvas.SetTop(Target, 100);
             Stage.Children.Add(Source); Stage.Children.Add(Target);
             Host.Content = Stage;
-            Window = new AnimationTestWindow(Clock) { Width = 800, Height = 600, Content = Host };
+            Window = new AnimationTestWindow(Frames) { Width = 800, Height = 600, Content = Host };
             Window.Show();
             Layout();
             Parent.OnFrame(TimeSpan.Zero);

@@ -12,7 +12,7 @@ namespace Material3Expressive.Components;
 internal sealed class FabVisibilityLayout : Decorator
 {
     private FloatingActionButton? _owner;
-    private VisualAnimationScope? _scope;
+    private AnimationChildScope? _attachScope;
     private Animatable<float>? _scale, _alpha;
     private bool _pending, _needsTransition;
     private readonly ScaleTransform _transform = new();
@@ -24,18 +24,20 @@ internal sealed class FabVisibilityLayout : Decorator
     {
         base.OnAttachedToVisualTree(e);
         _owner = this.FindAncestorOfType<FloatingActionButton>()!;
-        _scope = VisualAnimationScope.Create(this);
+        var scope = _attachScope = AnimationScope.Get(this).CreateChild("FAB visibility");
         var initial = _owner.AnimatedVisible ? 1f : 0f;
-        _scale = _scope.CreateAnimatable(initial); _alpha = _scope.CreateAnimatable(initial);
-        _scope.SubscribeValue(_scale, _ => InvalidateArrange());
-        _scope.SubscribeValue(_alpha, _ => InvalidateMeasure());
+        _scale = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
+        _alpha = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
+        scope.SubscribeValue(_scale, _ => InvalidateArrange());
+        scope.SubscribeValue(_alpha, _ => InvalidateMeasure());
         _owner.PropertyChanged += OwnerChanged;
         InvalidateMeasure();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
-        _scope?.Dispose(); _scope = null; _scale = _alpha = null; _pending = _needsTransition = false;
+        _attachScope?.Dispose(); _attachScope = null;
+        _scale = _alpha = null; _pending = _needsTransition = false;
         base.OnDetachedFromVisualTree(e);
     }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -50,20 +52,22 @@ internal sealed class FabVisibilityLayout : Decorator
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || _scope is not { IsEnding: false } scope ||
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested ||
             _owner?.VisibilityScaleSpec is null || _owner.VisibilityAlphaSpec is null) return;
         _pending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.Clock.NextFrameAsync(ct); _pending = false;
+            await scope.NextFrameAsync(ct); _pending = false;
+            if (_scale is null || _alpha is null) return;
             // A binding can become unavailable between the request and this frame.
             // Keep the request pending; never pass null to Animatable's default spring.
             if (_owner?.VisibilityScaleSpec is not { } scaleSpec ||
                 _owner.VisibilityAlphaSpec is not { } alphaSpec) return;
             var target = _owner.AnimatedVisible ? 1f : 0f;
             _needsTransition = false;
-            await Task.WhenAll(_scale!.AnimateToAsync(target, scaleSpec, cancellationToken: ct),
-                _alpha!.AnimateToAsync(target, alphaSpec, cancellationToken: ct));
+            await Task.WhenAll(_scale!.AnimateToAsync(scope, target, scaleSpec, cancellationToken: ct),
+                _alpha!.AnimateToAsync(scope, target, alphaSpec, cancellationToken: ct));
         }, "FAB visibility");
     }
     protected override Size MeasureOverride(Size available)

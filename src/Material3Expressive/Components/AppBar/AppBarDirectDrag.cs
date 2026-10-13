@@ -11,18 +11,17 @@ namespace Material3Expressive.Components;
 internal sealed class AppBarDirectDrag : IDisposable
 {
     private readonly Control _owner;
-    private readonly VisualAnimationScope _motion;
+    private AnimationChildScope? _motion;
     private readonly AppBarVerticalGesture _gesture;
     private CancellationTokenSource? _run;
 
     internal AppBarDirectDrag(
         Control owner,
         Func<IHidingAppBarState?> state,
-        Func<float, IAnimationFrameClock, CancellationToken, Task<Vector>> settle,
+        Func<float, FrameScope, CancellationToken, Task<Vector>> settle,
         float deltaSign = 1)
     {
         _owner = owner;
-        _motion = VisualAnimationScope.Create(owner);
         _gesture = new AppBarVerticalGesture(
             () => state() is { },
             () =>
@@ -55,12 +54,15 @@ internal sealed class AppBarDirectDrag : IDisposable
                 foreach (var scope in scopes)
                     scope.Register(run);
 
-                _ = _motion.Launch(async token =>
+                if (_motion is null || _motion.Lifetime.IsCancellationRequested)
+                    _motion = AnimationScope.Get(owner).CreateChild("AppBar direct drag settle");
+                var motion = _motion;
+                _ = motion.Launch(async token =>
                 {
                     using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, run.Token);
                     try
                     {
-                        await settle(velocity * (float)LayoutHelper.GetLayoutScale(owner), _motion.Clock, linked.Token);
+                        await settle(velocity * (float)LayoutHelper.GetLayoutScale(owner), motion, linked.Token);
                     }
                     finally
                     {
@@ -86,6 +88,8 @@ internal sealed class AppBarDirectDrag : IDisposable
         _run?.Cancel();
         _run?.Dispose();
         _run = null;
-        _motion.Dispose();
+        var motion = _motion;
+        _motion = null;
+        motion?.Dispose();
     }
 }

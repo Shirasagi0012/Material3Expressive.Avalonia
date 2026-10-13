@@ -8,13 +8,12 @@ namespace ComposeAnimation.Test;
 
 public class SharedBoundsVisualBackendTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     [Fact]
     public Task BoundaryScaleChild_AndRemeasureTarget_StayReadyThroughReverse() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
-        var transition = new Transition<bool>(true, clock);
+        var clock = new ManualFrameSource();
+        var transition = new Transition<bool>(true);
         var fromChild = new SharedBounds
         {
             Key = "color", Content = new Border { Width = 120, Height = 80 },

@@ -62,8 +62,8 @@ public class ShortNavigationBarItem : Button
 
     public static readonly StyledProperty<Color> DisabledTextColorProperty = AvaloniaProperty.Register<ShortNavigationBarItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
-    private VisualAnimationScope? _scope;
     private Animatable<float>? _selection;
+    private AnimationChildScope? _attachScope;
     private ShortNavigationBarItemLayout? _layout;
     private ContentPresenter? _icon, _label;
     private Border? _indicator;
@@ -99,7 +99,10 @@ public class ShortNavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _pending = false;
+        // The motion lease follows the template parts it samples. Replacing the template
+        // cancels in-flight selection work before those parts are cleared.
+        _attachScope?.Dispose(); _attachScope = null;
+        _selection = null; _pending = false;
         base.OnApplyTemplate(e);
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<ShortNavigationBarItemLayout>("PART_Layout");
@@ -114,12 +117,14 @@ public class ShortNavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; } InitializeMotion();
+        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
+        InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _selection = null; _pending = false; _activationKey = null;
+        _selection = null; _pending = false; _activationKey = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -159,10 +164,14 @@ public class ShortNavigationBarItem : Button
     }
     private void InitializeMotion()
     {
-        if (_layout is null || _scope is not null || !this.IsAttachedToVisualTree()) return;
-        _scope = VisualAnimationScope.Create(this);
-        _selection = _scope.CreateAnimatable(IsSelected ? 1f : 0f);
-        _scope.SubscribeValue(_selection, value =>
+        if (_layout is null || _selection is not null || !this.IsAttachedToVisualTree()) return;
+        if (_attachScope is not { } scope || scope.Lifetime.IsCancellationRequested)
+        {
+            _attachScope?.Dispose();
+            scope = _attachScope = AnimationScope.Get(this).CreateChild("Short navigation item");
+        }
+        _selection = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
+        scope.SubscribeValue(_selection, value =>
         {
             _layout.SelectionProgress = value;
             if (_indicator is not null) _indicator.Opacity = Math.Clamp(value, 0, 1);
@@ -170,19 +179,21 @@ public class ShortNavigationBarItem : Button
     }
     private void UpdateTarget()
     {
-        if (_scope is not { IsEnding: false } scope || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _selection is null || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
-        _ = scope.Launch(async ct =>
+        _ = motion.Launch(async ct =>
         {
-            await scope.Clock.NextFrameAsync(ct); _pending = false;
+            await motion.NextFrameAsync(ct); _pending = false;
+            if (_selection is not { } selection) return;
             var target = IsSelected ? 1f : 0f;
-            if (_selection!.TargetValue == target) return;
+            if (selection.TargetValue == target) return;
             var spatial = _layout!.IndicatorAnimation;
             if (spatial.Stiffness <= 0) return;
-            _ = scope.Launch(async lifetime =>
+            _ = motion.Launch(async lifetime =>
             {
-                await _selection.StopAsync(); lifetime.ThrowIfCancellationRequested();
-                await _selection.AnimateToAsync(target, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: lifetime);
+                await selection.StopAsync(); lifetime.ThrowIfCancellationRequested();
+                await selection.AnimateToAsync(motion, target, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: lifetime);
             }, "Short navigation item indicator");
         }, "Short navigation item target");
     }

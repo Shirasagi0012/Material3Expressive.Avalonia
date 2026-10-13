@@ -20,7 +20,7 @@ public sealed class FloatingToolbarState(float initialOffsetLimit = -float.MaxVa
 public sealed class FloatingToolbarScrollBehavior
 {
     private FloatingToolbar? _owner;
-    private VisualAnimationScope? _scope;
+    private AnimationChildScope? _scope;
     private CancellationTokenSource? _settling;
     public FloatingToolbarExitDirection ExitDirection { get; }
     public FloatingToolbarState State { get; }
@@ -28,7 +28,7 @@ public sealed class FloatingToolbarScrollBehavior
     public IDecayAnimationSpec<float>? FlingAnimationSpec { get; }
     internal FloatingToolbarScrollBehavior(FloatingToolbarExitDirection direction, FloatingToolbarState state,
         IAnimationSpec<float>? snap, IDecayAnimationSpec<float>? fling) { ExitDirection = direction; State = state; SnapAnimationSpec = snap; FlingAnimationSpec = fling; }
-    internal void Attach(FloatingToolbar owner, VisualAnimationScope scope)
+    internal void Attach(FloatingToolbar owner, AnimationScope scope)
     {
         if (_owner is not null && _owner != owner) throw new InvalidOperationException("A floating-toolbar scroll behavior cannot drive two attached toolbars.");
         _owner = owner; _scope = scope.CreateChild("Floating toolbar scroll");
@@ -55,7 +55,7 @@ public sealed class FloatingToolbarScrollBehavior
     {
         var fraction = State.CollapsedFraction;
         if (fraction < .01f || fraction == 1) return 0;
-        if (_scope is not { IsEnding: false } scope || _owner is null) throw new InvalidOperationException("Attach the scroll behavior to a visible floating toolbar before settling.");
+        if (_scope is not { } scope || scope.Lifetime.IsCancellationRequested || _owner is null) throw new InvalidOperationException("Attach the scroll behavior to a visible floating toolbar before settling.");
         _settling?.Cancel(); _settling?.Dispose();
         using var settling = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime);
         _settling = settling;
@@ -71,7 +71,7 @@ public sealed class FloatingToolbarScrollBehavior
                 var lastValue = 0f;
                 var state = new AnimationState<float>(new FloatConverter(), 0, AnimationVector.From(new double[] { velocity * units }));
                 var spec = FlingAnimationSpec ?? DecayAnimationSpec.SplineBasedDecay<float>(density);
-                await state.AnimateDecayAsync(spec, scope.Clock, block: animation =>
+                await SuspendAnimation.AnimateDecayAsync(scope, state, spec, block: animation =>
                 {
                     var delta = (animation.Value - lastValue) / units;
                     var initialOffset = State.Offset;
@@ -89,7 +89,7 @@ public sealed class FloatingToolbarScrollBehavior
                 if (SnapAnimationSpec is null && _owner.ScrollSnapAnimation.Stiffness <= 0)
                     throw new InvalidOperationException("FloatingToolbar scroll-snap configuration is not ready. Provide a valid animation before settling.");
                 var state = new AnimationState<float>(new FloatConverter(), State.Offset * units);
-                await state.AnimateToAsync(State.CollapsedFraction < .5f ? 0 : State.OffsetLimit * units, scope.Clock,
+                await SuspendAnimation.AnimateToAsync(scope, state, State.CollapsedFraction < .5f ? 0 : State.OffsetLimit * units,
                     SnapAnimationSpec ?? new SpringSpec<float>((float)_owner.ScrollSnapAnimation.DampingRatio, (float)_owner.ScrollSnapAnimation.Stiffness, .01f),
                     block: animation => State.Offset = animation.Value / units, cancellationToken: settling.Token);
             }

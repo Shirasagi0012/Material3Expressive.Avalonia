@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadNestedDomainTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private static LookaheadPosition Moving(Control child, int duration = 100) => new()
     {
@@ -79,7 +78,7 @@ public class LookaheadNestedDomainTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot OuterRoot { get; }
         public Window Window { get; }
 
@@ -93,7 +92,7 @@ public class LookaheadNestedDomainTest
                 Child = content,
                 UseLayoutRounding = false
             };
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 400, Content = OuterRoot };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 400, Content = OuterRoot };
             Window.Show();
             Layout();
         }
@@ -107,7 +106,7 @@ public class LookaheadNestedDomainTest
 
         public void Step(int milliseconds)
         {
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
 

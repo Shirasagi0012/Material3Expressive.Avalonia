@@ -19,7 +19,7 @@ internal sealed class InteractiveEnvironment(CancellationToken cancellationToken
             if (topLevel is null)
                 await Task.Delay(16, cancellationToken);
             else
-                await demo.EnvironmentClock.NextFrameAsync(cancellationToken);
+                await demo.EnvironmentScope.NextFrameAsync(cancellationToken);
         }
     }
 

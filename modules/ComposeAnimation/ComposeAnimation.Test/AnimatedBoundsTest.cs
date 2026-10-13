@@ -10,7 +10,6 @@ namespace ComposeAnimation.Test;
 
 public partial class AnimatedBoundsTest
 {
-    private static Task OnUi(Action action) => HeadlessApp.Session.Dispatch(action, CancellationToken.None);
     private static BoundsTransform Tween(int ms = 200) => new()
     {
         Spec = new TweenSpec<Rect>(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing())
@@ -32,7 +31,7 @@ public partial class AnimatedBoundsTest
             => create(initialBounds, targetBounds);
     }
 
-    private sealed class BrokenClock : IAnimationFrameClock
+    private sealed class BrokenClock : IFrameSource
     {
         public int Requests { get; private set; }
         public void VerifyAccess() { }
@@ -70,14 +69,14 @@ public partial class AnimatedBoundsTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public LookaheadRoot Root { get; }
         public Window Window { get; }
         public Fixture(Control content, BoundsParentLayoutMode mode = BoundsParentLayoutMode.AnimatedSize)
         {
             SetClock(content);
             Root = new LookaheadRoot { Width = 400, Height = 300, Child = content, UseLayoutRounding = false };
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 400, Content = Root };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 400, Content = Root };
             Window.Show(); Layout();
             void SetClock(Control node)
             {
@@ -91,7 +90,7 @@ public partial class AnimatedBoundsTest
         }
         public Rect Actual(Control node) => new(node.TranslatePoint(default, Root)!.Value, node.Bounds.Size);
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() { Window.Close(); }
     }
 
@@ -134,7 +133,7 @@ public partial class AnimatedBoundsTest
         f.Step(100);
         Equal(snapshot.Results[text].Bounds, f.Actual(text));
         Assert.False(bounds.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         bounds.InvalidateMeasure(); f.Layout();
         Assert.Equal(2, transform.Calls.Count);
         Assert.Same(snapshot, f.Root.Snapshot);
@@ -286,7 +285,7 @@ public partial class AnimatedBoundsTest
             f.Layout(); f.Step(16);
             Equal(f.Root.Snapshot!.Results[bounds].Bounds, f.Actual(bounds));
             Assert.False(bounds.IsRunning);
-            Assert.Equal(0, f.Clock.PendingFrameCount);
+            Assert.Equal(0, f.Frames.PendingFrameCount);
         }
         finally { MotionDurationScale.ScaleFactor = previousScale; }
     });
@@ -306,12 +305,12 @@ public partial class AnimatedBoundsTest
             return new KeyframesSpec<Rect>(config);
         });
         bounds.TargetSize = new Size(240, 100); f.Layout(); f.Step(16);
-        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.LastError);
+        Assert.NotNull(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.Diagnostics.LastError);
         Equal(f.Root.Snapshot!.Results[bounds].Bounds, f.Actual(bounds));
         Assert.False(bounds.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         bounds.InvalidateMeasure(); f.Layout();
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         bounds.BoundsTransform = Tween();
         bounds.TargetSize = new Size(120, 160); f.Layout(); f.Step(16); f.Step(100);
         Assert.Equal(180, bounds.Bounds.Width, 5);
@@ -329,9 +328,9 @@ public partial class AnimatedBoundsTest
             return Tween().Spec;
         });
         bounds.TargetSize = new Size(240, 100); f.Layout();
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.Diagnostics.LastError);
         Assert.False(bounds.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         Equal(f.Root.Snapshot!.Results[bounds].Bounds, f.Actual(bounds));
     });
 
@@ -355,7 +354,7 @@ public partial class AnimatedBoundsTest
         using var other = new Fixture(new LookaheadBox { Children = { bounds } });
         Equal(other.Root.Snapshot!.Results[bounds].Bounds, other.Actual(bounds));
         Assert.False(bounds.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -615,7 +614,7 @@ public partial class AnimatedBoundsTest
         Assert.Empty(policy.Calls);
         Equal(snapshot.Results[text].Bounds, f.Actual(text));
         Assert.False(bounds.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -665,9 +664,9 @@ public partial class AnimatedBoundsTest
         Assert.Throws<InvalidOperationException>(() => f.Step(100));
         Assert.False(bounds.IsMeasureValid);
         Assert.False(bounds.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         bounds.IntermediateLayout = BoundsLayout.Empty; f.Layout();
         Equal(f.Root.Snapshot!.Results[text].Bounds, f.Actual(text));
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.LastError); // The layout exception is propagated to the caller.
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(bounds)!).AnimationRoot.Diagnostics.LastError); // The layout exception is propagated to the caller.
     });
 }

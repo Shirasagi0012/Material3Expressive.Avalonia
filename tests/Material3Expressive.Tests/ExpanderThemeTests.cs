@@ -405,11 +405,11 @@ public sealed class ExpanderThemeTests
 
     static Color? Brush(IBrush? brush) => (brush as ISolidColorBrush)?.Color;
 
-    static (AnimationTestWindow, ManualAnimationFrameClock) Show(params Control[] controls) => Show(Orientation.Vertical, controls);
+    static (AnimationTestWindow, ManualFrameSource) Show(params Control[] controls) => Show(Orientation.Vertical, controls);
 
-    static (AnimationTestWindow, ManualAnimationFrameClock) Show(Orientation orientation, params Control[] controls)
+    static (AnimationTestWindow, ManualFrameSource) Show(Orientation orientation, params Control[] controls)
     {
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = new AnimationTestWindow(clock) { Width = 640, Height = 480 };
         window.Styles.Add(new MaterialTheme());
         var panel = new StackPanel { Orientation = orientation, Margin = new Thickness(16) };
@@ -419,7 +419,7 @@ public sealed class ExpanderThemeTests
         Draw(window); return (window, clock);
     }
 
-    static void Advance(Window window, ManualAnimationFrameClock clock, int frames)
+    static void Advance(Window window, ManualFrameSource clock, int frames)
     {
         for (var i = 0; i < frames; i++)
         {
@@ -428,7 +428,7 @@ public sealed class ExpanderThemeTests
         }
     }
 
-    static void Settle(Window window, ManualAnimationFrameClock clock) => Advance(window, clock, 120);
+    static void Settle(Window window, ManualFrameSource clock) => Advance(window, clock, 120);
 
     static void Draw(Window window)
     {

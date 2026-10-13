@@ -21,17 +21,23 @@ internal interface IInfiniteTransitionAnimationNode : IInfiniteTransitionAnimati
 /// <c>InfiniteTransition</c>. Unlike <see cref="Transition"/>, children join the parent play time
 /// (they stay in phase) and a <see cref="DurationScale"/> change restarts every child from its
 /// initial value rather than scaling remaining time.
+///
+/// State only (D19): no clock, lifetime or scope field. <see cref="RunAsync"/> runs the loop in a
+/// <see cref="FrameScope"/>; one loop at a time (D21), a newer run cancels the current one and
+/// starts after its cleanup. When a run ends because its scope ended or a newer run took over,
+/// play time is kept and the next run continues it; cancelling through the caller's token or
+/// <see cref="Dispose"/> resets it as before. Threading: the constructing thread owns the object.
 /// </summary>
 public sealed class InfiniteTransition : ObservableObject, IDisposable
 {
     private readonly List<IInfiniteTransitionAnimationNode> _animations = [];
     private readonly Queue<Action> _mutations = new();
     private readonly Queue<Action> _notifications = new();
-    private readonly CancellationTokenSource _lifetime = new();
-    private readonly AnimationLifetime? _scopeLifetime;
+    private readonly ThreadAffinity _owner = ThreadAffinity.Current;
+    private readonly MutatorMutex _runMutex = new();
     private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool _processing;
-    private bool _loopActive;
+    private bool _resumePlayTime;
     private bool _disposed;
     private bool _running;
     private bool _refreshChildNeeded;
@@ -41,14 +47,8 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
     private double _durationScale = 1;
     private double _appliedDurationScale = 1;
 
-    public InfiniteTransition(IAnimationFrameClock clock, string? label = "InfiniteTransition")
+    public InfiniteTransition(string? label = "InfiniteTransition")
     {
-        ArgumentNullException.ThrowIfNull(clock);
-        clock.VerifyAccess();
-        Clock = clock;
-        _scopeLifetime = (clock as IAnimationLifetimeClock)?.AnimationLifetime;
-        _scopeLifetime?.Register(this, static animation => animation.Dispose());
-        _scopeLifetime?.RegisterPlayback(this, static animation => animation._changed.TrySetResult());
         Label = label;
         Animations = _animations.AsReadOnly();
     }
@@ -57,7 +57,6 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
     public bool IsRunning => _running;
     public TimeSpan PlayTime => _playTime;
     public IReadOnlyList<IInfiniteTransitionAnimation> Animations { get; }
-    internal IAnimationFrameClock Clock { get; }
 
     /// <summary>
     /// Multiplier applied to wall-clock deltas when computing play time. Default is 1.
@@ -80,7 +79,7 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
         }
     }
 
-    private double EffectiveDurationScale => _durationScale * ((Clock as IAnimationLifetimeClock)?.DurationScale ?? 1);
+    private double EffectiveDurationScale(double scopeScale) => _durationScale * scopeScale;
 
     private bool HasWork => _refreshChildNeeded || _animations.Any(a => !a.IsFinished);
 
@@ -103,58 +102,77 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
         return animation;
     }
 
-    public Task RunAsync(CancellationToken cancellationToken = default)
+    public Task RunAsync(FrameScope scope, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(scope);
         VerifyAccess();
-        return _scopeLifetime?.Track(() => RunCoreAsync(cancellationToken)) ?? RunCoreAsync(cancellationToken);
+        scope.VerifyAccess();
+        return scope.Track(() => _runMutex.MutateAsync(mutexToken => LoopAsync(scope, cancellationToken, mutexToken),
+            MutatePriority.Default, cancellationToken));
     }
 
-    private async Task RunCoreAsync(CancellationToken cancellationToken)
+    private async Task<bool> LoopAsync(FrameScope scope, CancellationToken cancellationToken, CancellationToken mutexToken)
     {
         VerifyAccess();
-        if (_loopActive) throw new InvalidOperationException("This infinite transition already has a frame loop.");
-        _loopActive = true;
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token, _scopeLifetime?.Token ?? default);
+        // The run's one token: caller, scope lifetime and mutex (Dispose or a newer run).
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime, mutexToken);
+        var token = linked.Token;
+        using var playback = scope.RegisterPlaybackChanged(this, static animation => animation._changed.TrySetResult());
+        var keepPlayTime = false;
         try
         {
+            // No PlayTimeAccumulator here: upstream parity. A scale change restarts the infinite
+            // animations from the start, which the accumulator would not
+            // (InfiniteTransitionTest.DurationScale_SlowsThenRestartOnChange; see DurationScale docs).
+            // One token check per frame: here once, then after each frame wait. The change waits
+            // observe the token themselves.
+            token.ThrowIfCancellationRequested();
             while (true)
             {
-                linked.Token.ThrowIfCancellationRequested();
-                if (_disposed) throw new OperationCanceledException(linked.Token);
+                if (_disposed) throw new OperationCanceledException(token);
 
-                if (EffectiveDurationScale == 0)
+                if (EffectiveDurationScale(scope.EffectiveDurationScale) == 0)
                 {
-                    Mutate(SkipToEndAll);
-                    await WaitForChangeAsync(linked.Token).ConfigureAwait(true);
+                    Mutate(() => SkipToEndAll());
+                    await WaitForChangeAsync(token).ConfigureAwait(true);
                     continue;
                 }
 
                 if (!HasWork)
                 {
-                    await WaitForChangeAsync(linked.Token).ConfigureAwait(true);
+                    await WaitForChangeAsync(token).ConfigureAwait(true);
                     continue;
                 }
 
-                var frame = await Clock.NextFrameAsync(linked.Token).ConfigureAwait(true);
-                linked.Token.ThrowIfCancellationRequested();
-                if (!_disposed) OnFrame(frame);
+                // The scope's own wait (no async layer): resumes inline in the frame batch.
+                var frame = await scope.WaitFrameAsync(token, null).ConfigureAwait(true);
+                token.ThrowIfCancellationRequested();
+                if (!_disposed) OnFrame(frame, scope.EffectiveDurationScale);
             }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && !_disposed)
+        {
+            // Scope ended or a newer run took over: the next run continues this play time.
+            keepPlayTime = true;
+            throw;
         }
         finally
         {
-            _loopActive = false;
             Execute(() =>
             {
                 _lastFrameTime = AnimationConstants.UnspecifiedTime;
                 _startTime = AnimationConstants.UnspecifiedTime;
-                _playTime = TimeSpan.Zero;
+                _resumePlayTime = keepPlayTime && !_disposed;
+                if (!_resumePlayTime) _playTime = TimeSpan.Zero;
                 SetRunning(false);
                 Notify(nameof(PlayTime));
             });
         }
     }
 
-    internal void OnFrame(TimeSpan frameTime)
+    internal void OnFrame(TimeSpan frameTime) => OnFrame(frameTime, 1);
+
+    private void OnFrame(TimeSpan frameTime, double scopeScale)
     {
         Mutate(() =>
         {
@@ -162,22 +180,32 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
             if (!AnimationConstants.IsUnspecified(_lastFrameTime) && frameTime < _lastFrameTime)
                 throw new ArgumentOutOfRangeException(nameof(frameTime));
             _lastFrameTime = frameTime;
+            var scale = EffectiveDurationScale(scopeScale);
 
-            if (AnimationConstants.IsUnspecified(_startTime) || _appliedDurationScale != EffectiveDurationScale)
+            if (AnimationConstants.IsUnspecified(_startTime) || _appliedDurationScale != scale)
             {
-                _startTime = frameTime;
-                foreach (var animation in _animations) animation.Reset();
-                _appliedDurationScale = EffectiveDurationScale;
+                if (_resumePlayTime && AnimationConstants.IsUnspecified(_startTime) && _appliedDurationScale == scale && scale > 0)
+                {
+                    // A new run continues the play time of a run its scope or a newer run ended.
+                    _startTime = frameTime - TimeSpan.FromTicks(checked((long)Math.Round(_playTime.Ticks * scale)));
+                }
+                else
+                {
+                    _startTime = frameTime;
+                    foreach (var animation in _animations) animation.Reset();
+                }
+                _resumePlayTime = false;
+                _appliedDurationScale = scale;
             }
 
-            if (EffectiveDurationScale == 0)
+            if (scale == 0)
             {
                 SkipToEndAll();
                 return;
             }
 
             _playTime = TimeSpan.FromTicks(
-                checked((long)Math.Round((frameTime - _startTime).Ticks / EffectiveDurationScale)));
+                checked((long)Math.Round((frameTime - _startTime).Ticks / scale)));
             Pulse(_playTime);
             Notify(nameof(PlayTime));
         });
@@ -235,17 +263,18 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
         _changed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
+    internal void VerifyThreadAccess() => _owner.Verify(this);
+
     internal void VerifyAccess()
     {
-        Clock.VerifyAccess();
-        _scopeLifetime?.VerifyActive(this);
+        _owner.Verify(this);
         ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     internal void Mutate(Action action)
     {
         VerifyAccess();
-        Execute(() => { if (!_disposed && _scopeLifetime?.IsEnding != true) action(); });
+        Execute(() => { if (!_disposed) action(); });
     }
 
     private void Execute(Action action)
@@ -274,7 +303,7 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        Clock.VerifyAccess();
+        VerifyThreadAccess();
         if (_disposed) return;
         Execute(DisposeCore);
     }
@@ -283,7 +312,7 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        _lifetime.Cancel();
+        _runMutex.CancelCurrent();
         foreach (var animation in _animations) animation.Detach();
         _animations.Clear();
         SetRunning(false);
@@ -291,7 +320,6 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
         _lastFrameTime = AnimationConstants.UnspecifiedTime;
         _startTime = AnimationConstants.UnspecifiedTime;
         _changed.TrySetResult();
-        _lifetime.Dispose();
         Notify(nameof(PlayTime));
     }
 
@@ -413,7 +441,7 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
 
         public void Dispose()
         {
-            _owner.Clock.VerifyAccess();
+            _owner.VerifyThreadAccess();
             if (_detached) return;
             _owner.Mutate(() =>
             {

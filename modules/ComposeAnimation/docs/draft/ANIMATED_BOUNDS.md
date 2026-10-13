@@ -1,3 +1,5 @@
+> **历史设计稿**：本文早于 2026-10 的动画基础重构，仅作历史参考，名称与行为可能已过时。现行用法见 [`docs/usage`](../usage/README.md)；迁移见 [迁移指南](../usage/migration-from-visual-animation-scope.md)。主要改名：`VisualAnimationScope` → `AnimationScope`（`AnimationScope.Get`），`SharedAnimationFrameClock` → 内部 `FrameClock`，`IAnimationFrameClock` → `IFrameSource`，`AnimationScope<T>` → `AnimationRun<T>`。
+
 # AnimatedBounds（实验性）
 
 `AnimatedBounds` 把目标位置和尺寸作为完整矩形动画，并按当前内层尺寸测量、放置真实内容。它可直接放在普通 Grid/StackPanel 中；没有可加入的协议父域时自动创建局部域。无需额外 Scope，不使用 VisualBrush 缩放，不改写用户 Width/Height 或 RenderTransform。

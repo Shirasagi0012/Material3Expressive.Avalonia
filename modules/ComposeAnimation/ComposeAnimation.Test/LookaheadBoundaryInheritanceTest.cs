@@ -8,7 +8,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadBoundaryInheritanceTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     [Fact]
     public Task ContentHost_CutsLookaheadContextButPreservesOrdinaryInheritance() => OnUi(() =>

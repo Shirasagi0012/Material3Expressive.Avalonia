@@ -22,7 +22,7 @@ namespace ComposeAnimation;
 /// LookaheadRoot opts into cooperative target measurement and its documented tree restrictions.
 /// Padding and borders in the template are part of the animated content size. Margin is outside.
 /// </remarks>
-public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookaheadPlacementHost
+public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookaheadPlacementHost, IAnimationScopeHost
 {
     public static readonly StyledProperty<IFiniteAnimationSpec<Size>> AnimationSpecProperty =
         AvaloniaProperty.Register<AnimatedContentSize, IFiniteAnimationSpec<Size>>(
@@ -48,8 +48,8 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     public event EventHandler<AnimatedContentSizeChangedEventArgs>? AnimationCompleted;
 
     private Animatable<Size>? _animatable;
-    private ObservedClock? _clock;
-    private IDisposable? _motionRegistration;
+    private ObservedFrameScope? _runScope;
+    private readonly ScopeResumeBinding _scopeBinding;
     private Size? _value;
     private Size? _requestedTarget;
     private Size? _failedTarget;
@@ -57,6 +57,16 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     private bool _runPending;
     private bool _attached;
     private static readonly IControlTemplate DefaultTemplate;
+
+    public AnimatedContentSize()
+    {
+        // The scope ending for good (detached at the drain, environment ending) releases the run.
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, () =>
+        {
+            ReleaseAnimator();
+            _runScope = null;
+        });
+    }
 
     static AnimatedContentSize()
     {
@@ -93,20 +103,38 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         }
     }
 
+    // D17: a rebuild while attached keeps the animatable (value and velocity where the cancelled
+    // run stopped) and the requested target; re-run toward it in the replacement scope. The drain
+    // runs before the frame's waiter snapshot, so the run's first sample is this frame.
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+    {
+        // Intentional: the old run scope is dead in every branch.
+        _runScope = null;
+        _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_animatable is not { } animatable || _requestedTarget is not { } target) return false;
+                _runScope = ObservedFrameScope.Faulting(motion);
+                StartAnimation(animatable.Value, target);
+                return true;
+            },
+            onLost: ReleaseAnimator,
+            invalidate: _ => InvalidateMeasure());
+    }
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
         _attached = true;
-        _clock = null;
         _failedTarget = null;
         InvalidateMeasure();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // No release here (D17): see ScopeResumeBinding.Bind. A control that stays detached is
+        // released when its scope ends at the drain; one re-attached elsewhere resumes.
         _attached = false;
-        ReleaseAnimator();
-        _clock = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -129,7 +157,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
             _value = target;
             return Constrain(target, availableSize);
         }
-        if (_clock?.Faulted == true || _failedTarget == target)
+        if (_runScope?.Faulted == true || _failedTarget == target)
         {
             _value = target; // Render usable content after a failure; never retry every layout.
             return Constrain(target, availableSize);
@@ -162,33 +190,35 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     private void StartAnimation(Size from, Size to)
     {
         if (!_attached) return;
-        if (VisualAnimationScope.IsEnvironmentEnding(this)) { _value = to; return; }
-        EnsureClock();
-        if (_clock is null) { _value = to; return; }
+        if (AnimationScope.IsEnvironmentEnding(this)) { _value = to; return; }
+        EnsureScope();
+        if (_runScope is null) { _value = to; return; }
         _failedTarget = null;
-        _animatable ??= new Animatable<Size>(new SizeConverter(), from, _clock,
+        _animatable ??= new Animatable<Size>(new SizeConverter(), from,
             VisibilityThresholds.Size, "AnimatedContentSize");
         _animatable.PropertyChanged -= OnAnimationChanged;
         _animatable.PropertyChanged += OnAnimationChanged;
         var generation = ++_generation;
         _requestedTarget = to;
         _runPending = true;
-        var motion = VisualAnimationScope.ForHost(this);
-        _ = motion.Launch(ct => AnimateAsync(_animatable, to, AnimationSpec, generation, ct), "Content size");
+        var motion = AnimationScope.Get(this);
+        var scope = _runScope;
+        _ = motion.Launch(ct => AnimateAsync(scope, _animatable, to, AnimationSpec, generation, ct), "Content size");
     }
 
-    private async Task AnimateAsync(Animatable<Size> animatable, Size target,
+    private async Task AnimateAsync(FrameScope scope, Animatable<Size> animatable, Size target,
         IFiniteAnimationSpec<Size> spec, long generation, CancellationToken cancellationToken)
     {
         var initial = animatable.Value;
         AnimationResult<Size> result;
         try
         {
-            result = await animatable.AnimateToAsync(target, spec, cancellationToken: cancellationToken);
+            result = await animatable.AnimateToAsync(scope, target, spec, cancellationToken: cancellationToken);
         }
         catch (Exception error)
         {
-            if (!IsCurrent() || cancellationToken.IsCancellationRequested) throw;
+            // Cancelled because its scope ended (a rebuild resumes it; a release resets it): not a failure.
+            if (!IsCurrent() || scope.Lifetime.IsCancellationRequested) throw;
             // Our detach/reset/retarget cancellations have already changed the generation.
             // A current-run cancellation is a failure too (a spec can throw OCE), not a reason
             // to restart indefinitely on each layout pass.
@@ -196,7 +226,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
             _value = target;
             _failedTarget = target;
             InvalidateMeasure();
-            VisualAnimationScope.ReportError(this, error);
+            AnimationScope.ReportError(this, error);
             throw;
         }
         if (!IsCurrent()) return;
@@ -208,7 +238,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
             // Publish after all run state has settled, allowing handlers to change content,
             // reset the control or detach it synchronously.
             try { AnimationCompleted?.Invoke(this, new AnimatedContentSizeChangedEventArgs(initial, result.EndState.Value)); }
-            catch (Exception error) { VisualAnimationScope.ReportError(this, error); }
+            catch (Exception error) { AnimationScope.ReportError(this, error); }
         }
 
         bool IsCurrent() => _attached && generation == _generation && ReferenceEquals(_animatable, animatable);
@@ -227,17 +257,14 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         }
     }
 
-    private void EnsureClock()
+    private void EnsureScope()
     {
-        if (_clock is not null) return;
+        if (_runScope is not null) return;
         if (TopLevel.GetTopLevel(this) is null) return;
-        var motion = VisualAnimationScope.ForHost(this);
-        _motionRegistration?.Dispose();
-        _motionRegistration = motion.RegisterResource(() =>
-        {
-            if (motion.IsEnding) ReleaseAnimator();
-        });
-        _clock = new ObservedClock(motion.Clock);
+        var motion = AnimationScope.Get(this);
+        _scopeBinding.Reset();
+        _scopeBinding.Bind(motion);
+        _runScope = ObservedFrameScope.Faulting(motion);
     }
 
     /// <summary>
@@ -250,7 +277,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         VerifyAccess();
         ReleaseAnimator();
         _value = null;
-        _clock = null;
+        _runScope = null;
         _failedTarget = null;
         InvalidateMeasure();
     }
@@ -265,29 +292,6 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         _animatable = null;
         animatable.PropertyChanged -= OnAnimationChanged;
         animatable.Stop();
-    }
-
-    // Distinguish provider failures (including unexpected cancellation) from spec failures.
-    // The root environment does not retry a failed provider.
-    private sealed class ObservedClock(IAnimationFrameClock provider) : IAnimationFrameClock, IAnimationLifetimeClock
-    {
-        public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
-        public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? 1;
-        public bool Faulted { get; private set; }
-        public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public async ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                provider.VerifyAccess();
-                return await provider.NextFrameAsync(cancellationToken);
-            }
-            catch (Exception error) when (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                Faulted = true;
-                throw;
-            }
-        }
     }
 
     private static Size Constrain(Size size, Size available)

@@ -31,7 +31,7 @@ dotnet run --project Catalog/Catalog.csproj -- --run properties/basic --action T
 dotnet run --project Catalog/Catalog.csproj -- --verify-ui artifacts/catalog-ui
 ```
 
-`--run` 使用 `ProbeClock`，以 1/60 秒推进动画；固定浅色主题。输出路径为 `<out>/<demo-id>/<action>/`，包含 PNG 和 `manifest.json`，每个 demo 另有聚合 manifest。`--verify-ui` 在真实桌面窗口中使用根级手动帧环境，输出浅／深色及最小窗口截图和 `ui-verification.json`；失败时输出 `failure.txt`。两种模式会短暂开窗并自动退出。
+`--run` 使用 `ProbeFrameSource`，以 1/60 秒推进动画；固定浅色主题。输出路径为 `<out>/<demo-id>/<action>/`，包含 PNG 和 `manifest.json`，每个 demo 另有聚合 manifest。`--verify-ui` 在真实桌面窗口中使用根级手动帧环境，输出浅／深色及最小窗口截图和 `ui-verification.json`；失败时输出 `failure.txt`。两种模式会短暂开窗并自动退出。
 
 退出码：`0` 成功；`1` 验证失败；`2` 参数错误。不同运行建议使用不同输出目录，避免旧截图混入。
 
@@ -46,7 +46,13 @@ dotnet run --project Catalog/Catalog.csproj -- --verify-ui artifacts/catalog-ui
 - 演示显隐尺寸过渡时，将 `AnimatedVisibility` 在变化轴上设为 `Center` 或 `Top` / `Left`，避免固定舞台的 `Stretch` 抵消尺寸变化。滑动示例显式使用 -1 倍宽／高并裁剪视口；库保留 Compose 的 -0.5 默认比例。
 - 使用主题令牌和 `demo-actor`、`demo-well`、`demo-caption` 等样式。按钮只写动作名称，不添加实现说明或常驻状态行。
 - 通过 `AddDiagnostic("宽度", () => current, () => target, "DIP")` 提供调试数据。目标可省略；矩形用 `AddBoundsDiagnostics`。不要自行订阅逐帧事件来更新调试文字。
-- 自建引擎对象使用基类 `Motion` 的工厂、订阅和 `Launch`，在附着后初始化，脱离时 Scope 统一结束。外壳通过继承的 `Animated.DurationScale` 调速；自动化在加载内容之前固定手动根帧源。
+- 自建引擎对象使用基类 `Motion`（`AnimationScope.Get(this)`，重复调用返回同一 Scope、不需要释放；控件移动时自动重建、脱离时结束）的工厂、订阅和 `Launch`。外壳通过继承的 `AnimationScope.DurationScale` 调速；自动化在加载内容之前固定手动根帧源。
 - 用 `[DemoAction]` 标记公开、无参数、返回 `void` 或 `Task` 的验证方法。通过 `AdvanceAsync`、`CaptureAsync`、`Assert`、`Click` 复用宿主设施。等待动画收敛应有轮询上限。
 
 `DemoFrame` 负责实例生命周期与展开栏，`CatalogWindow` 负责导航与主题，`CatalogTheme.axaml` 维护统一的视觉样式。已有 demo ID 与动作名称保持稳定，可继续使用原来的调用方式。
+
+## 弹层与新增页面
+
+- `popup/flyout`（显隐过渡）：`Flyout` 中的 `AnimatedVisibility`。`--run` 使用真实桌面平台，弹层是真实的 `PopupRoot`，与窗口共用 `ProbeFrameSource`，因此动作是确定性的。页面只做公开可见的检查（推进、途中关闭后重新打开、所有者上的 `DurationScale` 继承到弹层内容）；内容 Scope 的父级身份与 `AnimationFailed` 计数需要内部 API，由单元测试覆盖（`AnimationScopeRebuildTest.FlyoutContent_ParentsToTheOwnerControlsScope` 等）。
+- `lookahead/size-position`（布局动画）：`LookaheadSize` 与 `LookaheadPosition` 的重排、途中改尺寸与运行中换栏。
+- `engine/infinite-transition`（时间控制）：`InfiniteTransition` 与 `Transition` 在 0.5×/1×/3× 速度下；改速时 `InfiniteTransition` 从初值重新开始，`Transition` 按新缩放从起点重算播放时间（与上游一致）。

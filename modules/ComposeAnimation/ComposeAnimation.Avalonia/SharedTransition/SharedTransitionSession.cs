@@ -112,7 +112,7 @@ internal sealed class SharedTransitionSession : IDisposable
 
     internal bool TryComplete(long generation)
     {
-        _scope.ParentTransition.Clock.VerifyAccess();
+        _scope.ParentTransition.VerifyThreadAccess();
         if (IsClosed || !_activated || !Finished(Transition) || State != SharedSessionState.AwaitingHandoff || generation != Generation ||
             generation != _scope.Generation || _scope.IsPreparing || _scope.IsUpdating) return false;
         End(SharedSessionEndReason.Completed);
@@ -124,7 +124,7 @@ internal sealed class SharedTransitionSession : IDisposable
 
     private void End(SharedSessionEndReason reason)
     {
-        _scope.ParentTransition.Clock.VerifyAccess();
+        _scope.ParentTransition.VerifyThreadAccess();
         if (IsClosed) return;
         State = reason == SharedSessionEndReason.Completed ? SharedSessionState.Completed : SharedSessionState.Cancelled;
         EndReason = reason;

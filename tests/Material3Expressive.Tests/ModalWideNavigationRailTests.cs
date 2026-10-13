@@ -52,7 +52,7 @@ public class ModalWideNavigationRailTests
                 _ = rail.State.CollapseAsync(); Advance(clock, window);
                 Assert.False(rail.IsModalVisible);
             }
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -98,7 +98,7 @@ public class ModalWideNavigationRailTests
                 Assert.Equal(44, item.TranslatePoint(default, window)!.Value.Y);
             }
             else if (!hide) Assert.Equal(44, item.TranslatePoint(default, rail)!.Value.Y);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -123,7 +123,7 @@ public class ModalWideNavigationRailTests
             window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.Tab, "\t"); Assert.True(item.IsFocused);
             _ = rail.State.CollapseAsync(); Advance(clock, window);
             Assert.False(rail.IsModalVisible); Assert.True(button.IsFocused);
-            Assert.Same(item, rail.NavigationItems.Single()); Assert.Null(window.MotionRoot.LastError);
+            Assert.Same(item, rail.NavigationItems.Single()); Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -156,7 +156,7 @@ public class ModalWideNavigationRailTests
             Assert.Equal(2, created);
             Assert.Same(data, Part<Panel>(window, "PART_Overlay").DataContext);
             Assert.Equal(Color.Parse("#FFF2ECF5"), ((ISolidColorBrush)rail.ModalBackground!).Color);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -190,7 +190,7 @@ public class ModalWideNavigationRailTests
             var back = new RoutedEventArgs(TopLevel.BackRequestedEvent);
             window.RaiseEvent(back); Assert.True(back.Handled);
             Advance(clock, window); Assert.False(rail.IsModalVisible);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -214,7 +214,7 @@ public class ModalWideNavigationRailTests
             Assert.True(rail.IsModalVisible); Assert.Single(rail.NavigationItems);
             Assert.IsAssignableFrom<IInvokeProvider>(ControlAutomationPeer.CreatePeerForElement(Part<Border>(window, "PART_Scrim"))).Invoke();
             Advance(clock, window); Assert.False(rail.IsModalVisible);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -232,7 +232,7 @@ public class ModalWideNavigationRailTests
             var point = new Point(480, 120); window.MouseDown(point, MouseButton.Left); window.MouseUp(point, MouseButton.Left);
             if (hide) Assert.Equal(WideNavigationRailValue.Expanded, rail.State.TargetValue);
             else Assert.Equal(WideNavigationRailValue.Collapsed, rail.State.TargetValue);
-            Advance(clock, window); Assert.Null(window.MotionRoot.LastError);
+            Advance(clock, window); Assert.Null(window.MotionRoot.Diagnostics.LastError);
             Assert.False(rail.IsModalVisible, $"target={rail.State.TargetValue}, position={rail.PositionProgress}, offset={rail.ModalOffset}, alpha={rail.ScrimAlpha}"); Assert.Equal(0, clicks);
         }
         finally { window.Close(); }
@@ -246,7 +246,7 @@ public class ModalWideNavigationRailTests
         {
             rail.DismissFromScrim(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.Content = null;
             Assert.False(rail.IsModalVisible); Advance(clock, window);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -288,7 +288,7 @@ public class ModalWideNavigationRailTests
             // The new anchored mutation cancels the fling's awaited outer animation.
             // Fixed Compose retains its raw value at 1 even after setting target 0.
             if (closes) Assert.Equal(WideNavigationRailValue.Expanded, rail.State.CurrentValue);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -314,7 +314,7 @@ public class ModalWideNavigationRailTests
             Send(132, RawPointerEventType.CancelCapture, origin - new Point(160, 0));
             Advance(clock, window);
             Assert.Equal(0, clicks); Assert.False(item.IsPressed); Assert.False(rail.IsModalVisible);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }

@@ -172,7 +172,7 @@ public sealed class ScrollBarTests
             Assert.Equal(ScrollBarAppearance.GetHoverColor(bar), visual.PaintedColor);
             pointer.Capture(null); Settle(clock);
             Assert.Equal(ScrollBarAppearance.GetUnhoverColor(bar), visual.PaintedColor);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
         Assert.Equal(0, clock.PendingFrameCount);
@@ -199,7 +199,7 @@ public sealed class ScrollBarTests
             Assert.InRange(visual.PaintedColor.A, (byte)(normal.A + 1), (byte)(halfway.A - 1));
             clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
             Assert.Equal(normal, visual.PaintedColor); Assert.Equal(0, clock.PendingFrameCount);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -225,7 +225,7 @@ public sealed class ScrollBarTests
             Assert.Equal(Colors.Red, visual.PaintedColor);
             Assert.Equal(detachedColor, oldVisual.PaintedColor);
             Assert.Equal(8, bar.Bounds.Height); Assert.Equal(0, clock.PendingFrameCount);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -273,7 +273,7 @@ public sealed class ScrollBarTests
             Assert.Equal(oldColor, visual.PaintedColor); Assert.Equal(0, clock.PendingFrameCount);
             window.MouseMove(new Point(220, 220)); root.Children.Add(bar); window.UpdateLayout();
             Assert.Equal(ScrollBarAppearance.GetUnhoverColor(bar), visual.PaintedColor);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
         Assert.Equal(0, clock.PendingFrameCount);

@@ -14,7 +14,7 @@ public partial class SnackbarDemo : Window
 
     public SnackbarDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
         Closed += (_, _) => { _requests.Cancel(); _requests.Dispose(); };
     }

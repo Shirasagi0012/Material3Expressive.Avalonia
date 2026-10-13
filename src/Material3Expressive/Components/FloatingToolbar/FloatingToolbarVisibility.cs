@@ -12,7 +12,6 @@ internal sealed class FloatingToolbarVisibility : AnimatedVisibility
     public static readonly StyledProperty<Foundation.Motion.SpringSpec> SizeAnimationProperty = AvaloniaProperty.Register<FloatingToolbarVisibility, Foundation.Motion.SpringSpec>(nameof(SizeAnimation));
     public Foundation.Motion.SpringSpec SizeAnimation { get => GetValue(SizeAnimationProperty); set => SetValue(SizeAnimationProperty, value); }
     private FloatingToolbar? _owner;
-    private VisualAnimationScope? _targetScope;
     private bool _pending;
     private Foundation.Motion.SpringSpec? _configuredAnimation;
     private double _configuredScale;
@@ -24,7 +23,6 @@ internal sealed class FloatingToolbarVisibility : AnimatedVisibility
         _owner = owner;
         Visible = ConfigureTransitions() && owner.EffectiveExpanded;
         base.OnAttachedToVisualTree(e);
-        _targetScope = VisualAnimationScope.Create(this);
         owner.PropertyChanged += Changed;
     }
     private bool ConfigureTransitions()
@@ -60,15 +58,16 @@ internal sealed class FloatingToolbarVisibility : AnimatedVisibility
     }
     private void UpdateTarget()
     {
-        if (_pending || _targetScope is not { IsEnding: false } scope) return;
+        if (_pending || !this.IsAttachedToVisualTree()) return;
+        var scope = AnimationScope.Get(this);
         _pending = true;
-        _ = scope.Launch(async ct => { await scope.Clock.NextFrameAsync(ct); _pending = false;
+        _ = scope.Launch(async ct => { await scope.NextFrameAsync(ct); if (_owner is null) return; _pending = false;
             if (ConfigureTransitions()) Visible = _owner!.EffectiveExpanded; }, "Floating toolbar visibility target");
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= Changed;
-        _targetScope?.Dispose(); _targetScope = null; _owner = null; _pending = false; _configuredAnimation = null;
+        _owner = null; _pending = false; _configuredAnimation = null;
         base.OnDetachedFromVisualTree(e);
     }
 }

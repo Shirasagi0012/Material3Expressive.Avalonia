@@ -22,16 +22,16 @@ public abstract class ContentSource
     public static ContentSource From<T>(Transition<T> transition)
         => From(transition, s => s!);
 
-    internal abstract ContentConnection Connect(IAnimationFrameClock clock, string? label);
+    internal abstract ContentConnection Connect(string? label);
 
     private sealed class ObjectStateSource(MutableTransitionState<object?> state) : ContentSource
     {
         private static readonly ConditionalWeakTable<MutableTransitionState<object?>, object> Owners = new();
-        internal override ContentConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override ContentConnection Connect(string? label)
         {
             if (!Owners.TryAdd(state, new object()))
                 throw new InvalidOperationException("A content state cannot drive multiple active hosts. Share a parent Transition instead.");
-            try { return new(new Transition<object?>(state, clock, label), true, null, () => Owners.Remove(state)); }
+            try { return new(new Transition<object?>(state, label), true, null, () => Owners.Remove(state)); }
             catch { Owners.Remove(state); throw; }
         }
     }
@@ -39,13 +39,13 @@ public abstract class ContentSource
     private sealed class TypedStateSource<T>(MutableTransitionState<T> state, Func<T, object?> content) : ContentSource
     {
         private static readonly ConditionalWeakTable<object, object> Owners = new();
-        internal override ContentConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override ContentConnection Connect(string? label)
         {
             if (!Owners.TryAdd(state, new object()))
                 throw new InvalidOperationException("A content state cannot drive multiple active hosts. Share a parent Transition instead.");
             try
             {
-                var root = new Transition<T>(state, clock, label);
+                var root = new Transition<T>(state, label);
                 var child = root.CreateChildTransition(content, "AnimatedContent");
                 return new(child, true, root, () => Owners.Remove(state));
             }
@@ -55,7 +55,7 @@ public abstract class ContentSource
 
     private sealed class ParentSource<T>(Transition<T> transition, Func<T, object?> content) : ContentSource
     {
-        internal override ContentConnection Connect(IAnimationFrameClock clock, string? label)
+        internal override ContentConnection Connect(string? label)
         {
             transition.VerifyAccess();
             return new(transition.CreateChildTransition(content, label ?? "AnimatedContent"), false);

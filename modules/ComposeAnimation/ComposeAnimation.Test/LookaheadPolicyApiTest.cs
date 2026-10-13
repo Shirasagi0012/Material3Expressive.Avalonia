@@ -6,7 +6,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadPolicyApiTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     [Fact]
     public Task SinglePolicy_DrivesTargetAndApproach_AndTryGetTargetIsApproachOnly() => OnUi(() =>

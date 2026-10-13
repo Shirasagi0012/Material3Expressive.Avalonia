@@ -12,7 +12,7 @@ public partial class TabRowDemo : Window
 {
     public TabRowDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
     private void OnTabClick(object? sender, RoutedEventArgs e)

@@ -1,7 +1,7 @@
 namespace ComposeAnimation.TestSupport;
 
 /// <summary>
-/// Manually advanced coroutine time, independent of ManualAnimationFrameClock. Advance on the
+/// Manually advanced coroutine time, independent of ManualFrameSource. Advance on the
 /// owning thread; timer changes and cancellation are thread-safe. Timer callbacks run in due-time
 /// order. This provider does not pump a UI dispatcher or send animation frames.
 /// </summary>

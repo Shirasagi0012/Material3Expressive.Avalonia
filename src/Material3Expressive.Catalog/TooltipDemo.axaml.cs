@@ -10,7 +10,7 @@ public partial class TooltipDemo : Window
 {
     public TooltipDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
         // Keep hover/focus requests from rejecting this programmatic demo's Default priority.
         Programmatic.State = new TooltipState(isPersistent: false, mutatorMutex: new());

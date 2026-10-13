@@ -314,7 +314,7 @@ public sealed class ProgressBarThemeTests
 
     static AnimationTestWindow Show(ProgressBar bar, Control? sibling = null)
     {
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = new AnimationTestWindow(clock) { Width = 320, Height = 240 };
         window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
         var grid = new Grid { Width = 160, Height = 120, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Children = { bar } };

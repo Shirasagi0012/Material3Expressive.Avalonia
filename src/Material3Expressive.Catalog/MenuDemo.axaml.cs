@@ -12,7 +12,7 @@ public partial class MenuDemo : Window
 {
     public MenuDemo()
     {
-        VisualAnimationScope.Initialize(this); InitializeComponent();
+        AnimationScope.Initialize(this); InitializeComponent();
         FirstGroup.Shapes = MenuDefaults.GroupShape(0, 2); LastGroup.Shapes = MenuDefaults.GroupShape(1, 2);
         ReadOnlyItem.Shapes = NameItem.Shapes = MenuDefaults.ItemShape(0, 2);
         DetailsItem.Shapes = DateItem.Shapes = MenuDefaults.ItemShape(1, 2);

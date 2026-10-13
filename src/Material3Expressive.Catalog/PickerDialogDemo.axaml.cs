@@ -7,7 +7,7 @@ namespace Material3Expressive.Catalog;
 
 public partial class PickerDialogDemo : Window
 {
-    public PickerDialogDemo() { VisualAnimationScope.Initialize(this); InitializeComponent(); }
+    public PickerDialogDemo() { AnimationScope.Initialize(this); InitializeComponent(); }
     private void OnOpenDate(object? sender, RoutedEventArgs e) => DateDialog.IsOpen = true;
     private void OnOpenTime(object? sender, RoutedEventArgs e) => TimeDialog.IsOpen = true;
     private void OnCancelDate(object? sender, RoutedEventArgs e) => DateDialog.IsOpen = false;

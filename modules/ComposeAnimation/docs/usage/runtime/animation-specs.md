@@ -19,11 +19,11 @@ IDecayAnimationSpec<T>                   // 衰减规格，独立的一支
 using ComposeAnimation.Runtime;
 
 // 时长精确：300ms 补间（默认缓动 FastOutSlowIn）
-await animatable.AnimateToAsync(100,
+await animatable.AnimateToAsync(motion, 100,
     new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(300)));
 
 // 物理手感：弹簧，被打断时带着速度接续
-await animatable.AnimateToAsync(100,
+await animatable.AnimateToAsync(motion, 100,
     new SpringSpec<double>(Spring.DampingRatioMediumBouncy));
 ```
 
@@ -56,7 +56,7 @@ var bouncy = new SpringSpec<double>(
     Spring.DampingRatioMediumBouncy,
     Spring.StiffnessMedium,
     visibilityThreshold: 0.01);
-await animatable.AnimateToAsync(100, bouncy);
+await animatable.AnimateToAsync(motion, 100, bouncy);
 ```
 
 位移类值建议传类型化阈值（如 `VisibilityThresholds.Point`，每分量 0.5 DIP），否则默认 0.01 会让收尾拖长——见 [VisibilityThresholds](./converters-and-easing.md)。
@@ -122,7 +122,7 @@ config.At(0, 0).Using(new CubicEaseIn());
 config.At(200, 100);
 config.At(400, 200);
 
-await animatable.AnimateToAsync(200, new KeyframesSpec<double>(config));
+await animatable.AnimateToAsync(motion, 200, new KeyframesSpec<double>(config));
 ```
 
 ### KeyframesWithSplineSpec\<T\>：样条关键帧
@@ -206,7 +206,7 @@ var infinite = new InfiniteRepeatableSpec<double>(
 
 ```csharp
 // fling 松手后的惯性滚动（取自 AnimatableTest.cs）
-var result = await animatable.AnimateDecayAsync(500, DecayAnimationSpec.ExponentialDecay<double>());
+var result = await animatable.AnimateDecayAsync(motion, 500, DecayAnimationSpec.ExponentialDecay<double>());
 
 // 预测落点，用于「惯性结束后对齐到最近项」之类的计算（取自 DecayAnimationSpecTest.cs）
 var decay = DecayAnimationSpec.ExponentialDecay<double>();

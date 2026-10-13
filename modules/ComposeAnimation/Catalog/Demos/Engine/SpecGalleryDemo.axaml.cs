@@ -22,7 +22,7 @@ public partial class SpecGalleryDemo : DemoControlBase
     private static readonly TimeSpan TweenDuration = TimeSpan.FromMilliseconds(1200);
 
     private readonly List<SpecRow> _rows = [];
-    private IAnimationFrameClock? _clock;
+    private AnimationScope? _clock;
 
     public SpecGalleryDemo(DemoContext context) : base(context)
     {
@@ -47,7 +47,7 @@ public partial class SpecGalleryDemo : DemoControlBase
     {
         if (_clock is not null) return;
 
-        // 引擎组件必须等基类 Clock 可用（控件附加到可视树后）再创建。
+        // 引擎组件必须等基类 Motion 作用域可用（控件附加到可视树后）再创建。
         // Scope 工厂和声明式属性动画共享同一个根帧请求。
         var clock = Motion;
 
@@ -75,7 +75,7 @@ public partial class SpecGalleryDemo : DemoControlBase
             new ArcAnimationSpec<Point>(ArcMode.ArcAbove, TimeSpan.FromMilliseconds(900), easing: new LinearEasing()),
             clock));
 
-        _clock = clock.Clock;
+        _clock = clock;
         Diagnostics.Clear();
         foreach (var row in _rows)
             AddDiagnostic(row.Name, () => row.Animatable.Value, () => row.Animatable.TargetValue, "DIP");
@@ -84,7 +84,7 @@ public partial class SpecGalleryDemo : DemoControlBase
     private void PlayAllButton_OnClick(object? sender, RoutedEventArgs e)
     {
         EnsureInitialized();
-        foreach (var row in _rows) _ = Motion.Launch(_ => row.PlayAsync());
+        foreach (var row in _rows) _ = Motion.Launch(_ => row.PlayAsync(Motion));
     }
 
     [DemoAction("统一播放：15 帧后各球位置互不相同且全部在途中；轮询收敛后全部到达终点")]
@@ -142,9 +142,9 @@ public partial class SpecGalleryDemo : DemoControlBase
         public Point Target { get; }
 
         public static SpecRow Create(string name, Border ball, Point target, IAnimationSpec<Point> spec,
-            VisualAnimationScope clock)
+            AnimationScope clock)
         {
-            var animatable = clock.CreateAnimatable(new Point(), label: name);
+            var animatable = ComposeAnimation.Runtime.Animatable.Create(new Point(), label: name);
 
             // 位移展示用渲染层 TranslateTransform，不触发布局。
             var transform = new TranslateTransform();
@@ -159,11 +159,11 @@ public partial class SpecGalleryDemo : DemoControlBase
             return row;
         }
 
-        public async Task PlayAsync()
+        public async Task PlayAsync(FrameScope scope)
         {
             try
             {
-                await Animatable.AnimateToAsync(Target, _spec);
+                await Animatable.AnimateToAsync(scope, Target, _spec);
             }
             catch (OperationCanceledException)
             {

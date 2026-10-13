@@ -430,7 +430,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Flush(window);
             Assert.Equal(initialWidth + 2, fab.Bounds.Width);
             Assert.Equal(174, clip.Bounds.Width);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -464,7 +464,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Frames(clock, window, 20);
             Assert.Equal(1, layout.ScaleProgress);
             Assert.Equal(1, layout.Alpha);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
             // An unavailable target is not submitted or forgotten when it changes again.
             fab.AnimatedVisible = true;
             fab.AnimatedVisible = false;
@@ -489,7 +489,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Frames(clock, window, 70);
             Assert.Equal(1, layout.Alpha);
             Assert.Equal(1, layout.ScaleProgress);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { binding?.Dispose(); window.Close(); }
     }
@@ -509,11 +509,11 @@ public class FloatingActionButtonTokenConfigurationTests
             toggle.Resources[Comp.ToggleFab.CheckedMotion] = default(MotionSpring);
             Frames(clock, window, 10);
             Assert.Equal(0, toggle.CheckedProgress);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
             toggle.Resources.Remove(Comp.ToggleFab.CheckedMotion);
             Frames(clock, window, 70);
             Assert.Equal(1, toggle.CheckedProgress);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -552,13 +552,13 @@ public class FloatingActionButtonTokenConfigurationTests
                 Assert.Equal(initialExpanded ? 1 : 0, layout.WidthProgress);
             fab.Resources[alphaKey] = default(MotionSpring);
             Frames(clock, window, 10);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
             Assert.Equal(initialExpanded ? 1 : 0, layout.LabelAlpha);
             fab.Resources.Remove(alphaKey);
             Frames(clock, window, 70);
             Assert.Equal(initialExpanded ? 0 : 1, layout.LabelAlpha);
             Assert.Equal(!initialExpanded, Part<FabLabelClip>(fab).IsVisible);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -582,7 +582,7 @@ public class FloatingActionButtonTokenConfigurationTests
             menu.Resources[Comp.FabMenu.StaggerMotion] = default(MotionSpring);
             Frames(clock, window, 10);
             Assert.Equal(0, layout.VisibleCount);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
             menu.Resources.Remove(Comp.FabMenu.StaggerMotion);
             Frames(clock, window, 70);
             Assert.Equal(1, layout.VisibleCount);
@@ -594,13 +594,13 @@ public class FloatingActionButtonTokenConfigurationTests
             item.Resources[Comp.FabMenu.ItemAlphaMotion] = default(MotionSpring);
             Frames(clock, window, 10);
             Assert.Equal(0, item.RevealAlpha);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
             item.Resources.Remove(Comp.FabMenu.ItemAlphaMotion);
             Frames(clock, window, 70);
             Assert.Equal(1, item.RevealWidth);
             Assert.Equal(1, item.RevealAlpha);
             Assert.True(item.IsHitTestVisible);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
 
             // A deferred collapse can be superseded before configuration returns.
             item.Resources[Comp.FabMenu.ItemAlphaMotion] = new TokenRef(MissingMotion);
@@ -619,7 +619,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.Equal(0, item.RevealAlpha);
             Assert.Equal(0, item.RevealWidth);
             Assert.False(item.IsHitTestVisible);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -654,7 +654,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Frames(clock, window, 70);
             Assert.Equal(1, Part<FabVisibilityLayout>(fab).Alpha);
             Assert.Equal(0, toggle.CheckedProgress);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -733,7 +733,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.Equal(189, Part<FabLabelClip>(fab).Bounds.Width);
             Assert.Equal(236, fab.Bounds.Width);
             AssertClassicSettled(layout);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -770,7 +770,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Frames(clock, window, 140);
             Assert.Equal(200, Part<FabLabelClip>(fab).Bounds.Width);
             AssertClassicSettled(layout);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -819,7 +819,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.Equal(0, layout.LabelAlpha);
             Assert.False(Part<FabLabelClip>(fab).IsVisible);
             AssertClassicSettled(layout);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -850,7 +850,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Frames(clock, window, 70);
             Assert.Equal(190, Part<FabLabelClip>(fab).Bounds.Width);
             AssertClassicSettled(layout);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -875,7 +875,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.True(oldWidthTask.IsCanceled);
             Assert.True(oldAlphaTask.IsCanceled);
             AssertClassicSettled(layout);
-            Assert.Null(ClassicField(layout, "_scope"));
+            Assert.Null(ClassicField(layout, "_attachScope"));
             Assert.Equal(0, clock.PendingFrameCount);
             host.Children.Add(fab);
             Flush(window);
@@ -891,7 +891,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Frames(clock, window, 2);
             AssertClassicSettled(layout);
             Assert.Equal(0, clock.PendingFrameCount);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -930,7 +930,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.Equal(178, Part<FabLabelClip>(fab).Bounds.Width);
             Assert.Equal(225, fab.Bounds.Width);
             AssertClassicSettled(layout);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -980,7 +980,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Frames(clock, window, 70);
             Assert.Equal(196, Part<FabLabelClip>(fab).Bounds.Width);
             AssertClassicSettled(layout);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }

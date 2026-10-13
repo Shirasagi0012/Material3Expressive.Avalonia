@@ -61,11 +61,10 @@ public class DropdownMenuPopup : ItemsControl
     private Border? _presentation;
     private Control? _layer;
     private TopLevel? _topLevel;
-    private VisualAnimationScope? _motion;
-    private VisualAnimationScope? _composition;
     private bool _recomposePending;
     private MutableTransitionState<bool>? _state;
     private Transition<bool>? _transition;
+    private AnimationChildScope? _attachScope, _presentationScope;
     private bool _isPresented, _redirectingFocus;
     private IInputElement? _previousFocus;
     private Control? _lastFocus;
@@ -119,10 +118,15 @@ public class DropdownMenuPopup : ItemsControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Dropdown menu");
         Dispatcher.UIThread.Post(() => { if (this.IsAttachedToVisualTree()) { ApplyTemplate(); UpdatePresentation(); } });
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    { ClosePresentation(true); base.OnDetachedFromVisualTree(e); }
+    {
+        ClosePresentation(true);
+        _attachScope?.Dispose(); _attachScope = null;
+        base.OnDetachedFromVisualTree(e);
+    }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -155,12 +159,12 @@ public class DropdownMenuPopup : ItemsControl
     private void QueuePresentation()
     {
         if (_recomposePending) return;
-        _composition ??= VisualAnimationScope.Create(this);
-        var scope = _composition;
+        if (!this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return;
         _recomposePending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.Clock.NextFrameAsync(ct);
+            await scope.NextFrameAsync(ct);
             _recomposePending = false;
             UpdatePresentation();
         }, "Dropdown composition");
@@ -186,6 +190,7 @@ public class DropdownMenuPopup : ItemsControl
         if (_transition is not null) return;
         var anchor = PlacementTarget ?? this.GetVisualParent() as Control;
         if (anchor is null || !anchor.IsAttachedToVisualTree()) return;
+        if (_attachScope is not { } attachScope || attachScope.Lifetime.IsCancellationRequested) return;
         _topLevel = TopLevel.GetTopLevel(anchor);
         if (_topLevel is null || _topLevel != TopLevel.GetTopLevel(this)) return;
         _previousFocus = _topLevel.FocusManager?.GetFocusedElement();
@@ -197,14 +202,14 @@ public class DropdownMenuPopup : ItemsControl
         _topLevel.BackRequested += OnBackRequested;
         _topLevel.LayoutUpdated += OnWindowLayout;
         _topLevel.PropertyChanged += OnWindowPropertyChanged;
-        _motion = VisualAnimationScope.Create(this);
-        _transition = _motion.CreateTransition(_state, "DropDownMenu");
+        var motion = _presentationScope = attachScope.CreateChild("Dropdown presentation");
+        _transition = new Transition<bool>(_state, "DropDownMenu");
         var scale = _transition.AnimateValue(new FloatConverter(), open => open ? 1f : .8f,
             _ => Spec(ScaleAnimation!.Value));
         var alpha = _transition.AnimateValue(new FloatConverter(), open => open ? 1f : 0f,
             _ => Spec(AlphaAnimation!.Value));
-        _motion.SubscribeValue(scale, value => { AppearanceScale = value; UpdateAppearance(); });
-        _motion.SubscribeValue(alpha, value => { AppearanceAlpha = value; UpdateAppearance(); });
+        motion.SubscribeValue(scale, value => { AppearanceScale = value; UpdateAppearance(); });
+        motion.SubscribeValue(alpha, value => { AppearanceAlpha = value; UpdateAppearance(); });
         AppearanceScale = _state.CurrentState ? 1 : .8f;
         AppearanceAlpha = _state.CurrentState ? 1 : 0; UpdateAppearance();
         _state.PropertyChanged += OnTransitionChanged;
@@ -219,7 +224,7 @@ public class DropdownMenuPopup : ItemsControl
         UpdatePosition(true);
         if (IsPopupFocusable) _presentation.Focus();
         var transition = _transition;
-        _ = _motion.Launch(ct => transition.RunAsync(ct), "Dropdown appearance");
+        _ = motion.Launch(ct => transition.RunAsync(motion, ct), "Dropdown appearance");
     }
 
     private static SpringSpec<float> Spec(MaterialSpring spec) => new(spec.DampingRatio, spec.Stiffness, .01f);
@@ -252,11 +257,12 @@ public class DropdownMenuPopup : ItemsControl
             topLevel.PropertyChanged -= OnWindowPropertyChanged;
         }
         if (_state is not null) _state.PropertyChanged -= OnTransitionChanged;
-        _motion?.Dispose(); _motion = null; _transition = null;
+        _transition = null;
+        _presentationScope?.Dispose(); _presentationScope = null;
         if (!preserveState)
         {
             _state = null;
-            _composition?.Dispose(); _composition = null; _recomposePending = false;
+            _recomposePending = false;
         }
         _shieldLayer?.Children.Remove(_inputShield); _shieldLayer = null;
         _popup.Close(); _host = null; IsPresented = false;

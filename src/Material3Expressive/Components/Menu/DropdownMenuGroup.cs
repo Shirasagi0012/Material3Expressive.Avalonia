@@ -26,8 +26,8 @@ public class DropdownMenuGroup : ItemsControl
     public CornerRadius InactiveCornerRadius { get => GetValue(InactiveCornerRadiusProperty); set => SetValue(InactiveCornerRadiusProperty, value); }
     internal MaterialSpring? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
     private MaterialSurface? _surface;
-    private VisualAnimationScope? _scope;
     private AnimatedCornerRadius? _shape;
+    private AnimationChildScope? _attachScope;
     private bool _hasBeenHovered, _pending;
     private (CornerRadius, CornerRadius, MaterialSpring)? _configuration;
     private CornerRadius Target => _hasBeenHovered && !IsPointerOver ? InactiveCornerRadius : CornerRadius;
@@ -35,9 +35,9 @@ public class DropdownMenuGroup : ItemsControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     { Stop(); base.OnApplyTemplate(e); _surface = e.NameScope.Find<MaterialSurface>("PART_GroupSurface"); Initialize(); }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    { base.OnAttachedToVisualTree(e); Initialize(); }
+    { base.OnAttachedToVisualTree(e); _attachScope = AnimationScope.Get(this).CreateChild("Menu group"); Initialize(); }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    { Stop(); _hasBeenHovered = false; base.OnDetachedFromVisualTree(e); }
+    { Stop(); _hasBeenHovered = false; _attachScope?.Dispose(); _attachScope = null; base.OnDetachedFromVisualTree(e); }
     protected override void OnPointerEntered(PointerEventArgs e)
     { base.OnPointerEntered(e); Queue(); }
     protected override void OnPointerExited(PointerEventArgs e)
@@ -51,29 +51,31 @@ public class DropdownMenuGroup : ItemsControl
     }
     private void Initialize()
     {
-        if (_surface is null || !this.IsAttachedToVisualTree() || ShapeAnimation is not { } spec || _scope is not null) return;
-        _scope = VisualAnimationScope.Create(this);
+        if (_surface is null || !this.IsAttachedToVisualTree() || ShapeAnimation is not { } spec || _shape is not null
+            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         var surface = _surface;
         void BoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         { if (e.Property == BoundsProperty) Paint(); }
         surface.PropertyChanged += BoundsChanged;
-        _scope.Lifetime.Register(() => surface.PropertyChanged -= BoundsChanged);
+        scope.Lifetime.Register(() => surface.PropertyChanged -= BoundsChanged);
         ResetShape(spec);
     }
     private void ResetShape(MaterialSpring spec)
     {
         _shape?.Dispose();
         _configuration = (CornerRadius, InactiveCornerRadius, spec);
-        _shape = new AnimatedCornerRadius(Target, spec, _scope!, Paint);
+        _shape = new AnimatedCornerRadius(Target, spec, _attachScope!, Paint);
         Paint();
     }
     private void Queue()
     {
-        if (_pending || _scope is not { IsEnding: false } scope) return;
+        if (_pending || !this.IsAttachedToVisualTree() || _shape is null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
-        _ = scope.Launch(async ct =>
+        _ = motion.Launch(async ct =>
         {
-            await scope.Clock.NextFrameAsync(ct); _pending = false;
+            await motion.NextFrameAsync(ct); _pending = false;
+            if (_shape is null) return;
             // Like the composable, remember hover only when a composition observes it.
             _hasBeenHovered |= IsPointerOver;
             if (ShapeAnimation is not { } spec) return;
@@ -89,7 +91,7 @@ public class DropdownMenuGroup : ItemsControl
         _surface.SetAnimatedCorners(_shape.Current);
     }
     private void Stop()
-    { _shape?.Dispose(); _shape = null; _surface?.SetAnimatedCorners(null); _scope?.Dispose(); _scope = null; _pending = false; _configuration = null; }
+    { _shape?.Dispose(); _shape = null; _surface?.SetAnimatedCorners(null); _pending = false; _configuration = null; }
 }
 
 internal sealed class MenuShapeConverter : IMultiValueConverter

@@ -78,8 +78,8 @@ public static class Lookahead
         => RequireContext(participant).InvalidateApproachPlacement();
 
     /// <summary>
-    /// Runs a synchronous move inside the content's current domain while retaining eligible motion
-    /// state. The move must finish in the same attached domain and coordinate reference.
+    /// Runs a synchronous move inside the content's current domain while preserving eligible
+    /// in-flight motion. The move must finish in the same attached domain and coordinate reference.
     /// </summary>
     public static void MoveContent(Control content, Action move)
     {

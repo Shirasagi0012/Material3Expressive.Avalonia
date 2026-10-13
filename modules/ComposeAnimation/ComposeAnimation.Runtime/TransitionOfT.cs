@@ -8,14 +8,14 @@ public partial class Transition<TState> : Transition
     private TState? _pendingTargetState;
     private bool _hasPendingTargetState;
 
-    public Transition(TState initialState, IAnimationFrameClock clock, string? label = null)
-        : this(new MutableTransitionState<TState>(initialState), clock, null, label) { }
+    public Transition(TState initialState, string? label = null)
+        : this(new MutableTransitionState<TState>(initialState), null, label) { }
 
-    public Transition(TransitionState<TState> transitionState, IAnimationFrameClock clock, string? label = null)
-        : this(transitionState, clock, null, label) { }
+    public Transition(TransitionState<TState> transitionState, string? label = null)
+        : this(transitionState, null, label) { }
 
-    internal Transition(TransitionState<TState> transitionState, IAnimationFrameClock clock,
-        Transition? parent, string? label) : base(clock, parent, label)
+    internal Transition(TransitionState<TState> transitionState,
+        Transition? parent, string? label) : base(parent, label)
     {
         ArgumentNullException.ThrowIfNull(transitionState);
         _transitionState = transitionState;
@@ -171,7 +171,7 @@ public partial class Transition<TState> : Transition
         VerifyAccess();
         ArgumentNullException.ThrowIfNull(transformToChildState);
         var state = new MutableTransitionState<TChild>(transformToChildState(CurrentState));
-        var child = new Transition<TChild>(state, Clock, this, $"{Label} > {label}");
+        var child = new Transition<TChild>(state, this, $"{Label} > {label}");
         child.SynchronizeWithParent = () =>
         {
             if (IsSeeking)
@@ -259,4 +259,4 @@ public partial class Transition<TState> : Transition
 }
 
 public sealed class DeferredTransition<TState>(DeferredTransitionState<TState> transitionState,
-    IAnimationFrameClock clock, string? label = null) : Transition<TState>(transitionState, clock, label);
+    string? label = null) : Transition<TState>(transitionState, label);

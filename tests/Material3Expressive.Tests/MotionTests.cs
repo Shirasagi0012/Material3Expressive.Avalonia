@@ -246,12 +246,12 @@ public class MaterialMotionTests
         var oldMotion = controller.Motion!;
         window.Content = null;
         Dispatcher.UIThread.RunJobs();
-        await oldMotion.DisposeAsync();
-        Assert.Equal(0, oldMotion.ActiveTaskCount);
-        Assert.Equal(0, oldMotion.ActiveChildCount);
-        Assert.Equal(0, oldMotion.SubscriptionCount);
-        Assert.Equal(0, oldMotion.BindingCount);
-        Assert.Null(oldMotion.LastError);
+        await oldMotion.Diagnostics.EndAsync();
+        Assert.Equal(0, oldMotion.Diagnostics.ActiveTaskCount);
+        Assert.Equal(0, oldMotion.Diagnostics.ActiveChildCount);
+        Assert.Equal(0, oldMotion.Diagnostics.SubscriptionCount);
+        Assert.Equal(0, oldMotion.Diagnostics.BindingCount);
+        Assert.Null(oldMotion.Diagnostics.LastError);
         Assert.Equal(0, clock.PendingFrameCount);
         Assert.Equal(0, controller.RippleCount);
         Assert.Equal(InteractionState.None, controller.Interaction);
@@ -346,10 +346,10 @@ public class MaterialMotionTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(150));
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
-        await AnimationTestDispatcher.WaitUntilAsync(() => motion.ActiveTaskCount == 0);
-        var children = motion.ActiveChildCount;
-        var subscriptions = motion.SubscriptionCount;
-        var bindings = motion.BindingCount;
+        await AnimationTestDispatcher.WaitUntilAsync(() => motion.Diagnostics.ActiveTaskCount == 0);
+        var children = motion.Diagnostics.ActiveChildCount;
+        var subscriptions = motion.Diagnostics.SubscriptionCount;
+        var bindings = motion.Diagnostics.BindingCount;
         for (var i = 0; i < 1500; i++)
         {
             controller.StartPress(new Point(8, 8));
@@ -363,13 +363,13 @@ public class MaterialMotionTests
             clock.SendFrame(clock.Now);
             clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
             await AnimationTestDispatcher.WaitUntilAsync(() =>
-                motion.ActiveTaskCount == 0 && motion.ActiveChildCount == children);
+                motion.Diagnostics.ActiveTaskCount == 0 && motion.Diagnostics.ActiveChildCount == children);
             Assert.Equal(0, controller.RippleCount);
-            Assert.Equal(0, motion.ActiveTaskCount);
-            Assert.Equal(0, motion.PendingAnimationCount);
-            Assert.Equal(children, motion.ActiveChildCount);
-            Assert.Equal(subscriptions, motion.SubscriptionCount);
-            Assert.Equal(bindings, motion.BindingCount);
+            Assert.Equal(0, motion.Diagnostics.ActiveTaskCount);
+            Assert.Equal(0, motion.Diagnostics.PendingAnimationCount);
+            Assert.Equal(children, motion.Diagnostics.ActiveChildCount);
+            Assert.Equal(subscriptions, motion.Diagnostics.SubscriptionCount);
+            Assert.Equal(bindings, motion.Diagnostics.BindingCount);
             Assert.Equal(0, clock.PendingFrameCount);
         }
         Assert.Null(MotionTestClockScope.Error(button));

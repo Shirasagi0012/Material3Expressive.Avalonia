@@ -7,7 +7,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadApiTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     [Fact]
     public void StandaloneBuilderSnapshot_UsesMeasuredEntryAsItsCoordinateReference()

@@ -5,24 +5,27 @@ namespace ComposeAnimation.Test;
 
 public class SuspendAnimationTest
 {
+
     private static readonly TimeSpan Frame = TimeSpan.FromMilliseconds(16);
 
     private static TweenSpec<double> Tween(TimeSpan duration)
         => new(duration: duration, easing: new LinearEasing());
 
-    private static void Drive(Task task, ManualAnimationFrameClock clock, int maxFrames = 1000)
+    private static void Drive(Task task, ManualFrameSource clock, int maxFrames = 1000)
     {
         for (var i = 0; i < maxFrames && !task.IsCompleted; i++)
-            clock.AdvanceBy(Frame);
+            clock.Pump(Frame);
     }
 
     [Fact]
-    public async Task OneShotAnimate_ReportsFramesAndCompletes()
+    public Task OneShotAnimate_ReportsFramesAndCompletes() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var samples = new List<double>();
 
-        var task = clock.AnimateAsync(0, 100,
+        var task = SuspendAnimation.AnimateAsync(scope, 0, 100,
             animationSpec: Tween(TimeSpan.FromMilliseconds(64)),
             block: (value, _) => samples.Add(value));
         Drive(task, clock);
@@ -31,45 +34,54 @@ public class SuspendAnimationTest
         Assert.NotEmpty(samples);
         Assert.Equal(0, samples[0]); // first frame is sampled at play time 0
         Assert.Equal(100, samples[^1]);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task OneShotAnimate_GenericConverter_Works()
+    public Task OneShotAnimate_GenericConverter_Works() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var samples = new List<double>();
 
-        var task = clock.AnimateAsync(new DoubleConverter(), 0.0, 10.0, 0.0,
+        var task = SuspendAnimation.AnimateAsync(scope, new DoubleConverter(), 0.0, 10.0, 0.0,
             Tween(TimeSpan.FromMilliseconds(32)), (value, _) => samples.Add(value));
         Drive(task, clock);
         await task;
 
         Assert.Equal(10, samples[^1]);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task OneShotAnimate_CancellableByCallerToken()
+    public Task OneShotAnimate_CancellableByCallerToken() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         using var cts = new CancellationTokenSource();
 
-        var task = clock.AnimateAsync(0, 100,
+        var task = SuspendAnimation.AnimateAsync(scope, 0, 100,
             animationSpec: Tween(TimeSpan.FromMilliseconds(160)),
             cancellationToken: cts.Token);
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
 
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task OneShotAnimateDecay_ReportsDecayingVelocity()
+    public Task OneShotAnimateDecay_ReportsDecayingVelocity() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var samples = new List<(double Value, double Velocity)>();
 
-        var task = clock.AnimateDecayAsync(0, 500, DecayAnimationSpec.ExponentialDecay<double>(),
+        var task = SuspendAnimation.AnimateDecayAsync(scope, 0, 500, DecayAnimationSpec.ExponentialDecay<double>(),
             block: (value, velocity) => samples.Add((value, velocity)));
         Drive(task, clock);
         await task;
@@ -78,19 +90,22 @@ public class SuspendAnimationTest
         Assert.Equal(500, samples[0].Velocity, 3);
         Assert.True(samples[^1].Value > 0);
         Assert.True(samples[^1].Velocity < samples[0].Velocity);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimationStateAnimateTo_UpdatesState()
+    public Task AnimationStateAnimateTo_UpdatesState() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var state = new AnimationState<double>(new DoubleConverter(), 0);
 
-        var task = state.AnimateToAsync(100, clock, Tween(TimeSpan.FromMilliseconds(64)));
+        var task = SuspendAnimation.AnimateToAsync(scope, state, 100, Tween(TimeSpan.FromMilliseconds(64)));
 
         // The state only starts reporting IsRunning once the first frame is processed (matches
         // upstream, where the scope is created in the first frame callback).
-        clock.AdvanceBy(Frame);
+        clock.Pump(Frame);
         Assert.True(state.IsRunning);
 
         Drive(task, clock);
@@ -99,15 +114,18 @@ public class SuspendAnimationTest
         Assert.Equal(100, state.Value);
         Assert.False(state.IsRunning);
         Assert.True(state.IsFinished);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimationStateSequentialAnimation_StartsImmediatelyOnOldTimebase()
+    public Task AnimationStateSequentialAnimation_StartsImmediatelyOnOldTimebase() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var state = new AnimationState<double>(new DoubleConverter(), 0);
 
-        var first = state.AnimateToAsync(100, clock, Tween(TimeSpan.FromMilliseconds(32)));
+        var first = SuspendAnimation.AnimateToAsync(scope, state, 100, Tween(TimeSpan.FromMilliseconds(32)));
         Drive(first, clock);
         await first;
         Assert.True(state.IsFinished);
@@ -115,44 +133,50 @@ public class SuspendAnimationTest
         // sequentialAnimation uses the state's last frame time as the start time, so the first
         // frame is processed synchronously, without advancing the clock.
         var frames = 0;
-        var second = state.AnimateToAsync(200, clock, Tween(TimeSpan.FromMilliseconds(64)),
+        var second = SuspendAnimation.AnimateToAsync(scope, state, 200, Tween(TimeSpan.FromMilliseconds(64)),
             sequentialAnimation: true, block: _ => frames++);
         Assert.Equal(1, frames);
 
         Drive(second, clock);
         await second;
         Assert.Equal(200, state.Value);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimationStateNonSequential_WaitsForNextFrame()
+    public Task AnimationStateNonSequential_WaitsForNextFrame() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var state = new AnimationState<double>(new DoubleConverter(), 0);
 
-        var first = state.AnimateToAsync(100, clock, Tween(TimeSpan.FromMilliseconds(32)));
+        var first = SuspendAnimation.AnimateToAsync(scope, state, 100, Tween(TimeSpan.FromMilliseconds(32)));
         Drive(first, clock);
         await first;
 
         var frames = 0;
-        var second = state.AnimateToAsync(200, clock, Tween(TimeSpan.FromMilliseconds(64)),
+        var second = SuspendAnimation.AnimateToAsync(scope, state, 200, Tween(TimeSpan.FromMilliseconds(64)),
             block: _ => frames++);
         Assert.Equal(0, frames); // no start time supplied: waits for the next frame
 
         Drive(second, clock);
         await second;
         Assert.Equal(200, state.Value);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task AnimationStateAnimateDecay_SettlesAndStops()
+    public Task AnimationStateAnimateDecay_SettlesAndStops() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         var state = new AnimationState<double>(new DoubleConverter(), 0,
             AnimationVector.From(new[] { 500.0 }));
 
-        var task = state.AnimateDecayAsync(DecayAnimationSpec.ExponentialDecay<double>(), clock);
-        clock.AdvanceBy(Frame); // IsRunning starts reporting once the first frame is processed
+        var task = SuspendAnimation.AnimateDecayAsync(scope, state, DecayAnimationSpec.ExponentialDecay<double>());
+        clock.Pump(Frame); // IsRunning starts reporting once the first frame is processed
         Assert.True(state.IsRunning);
 
         Drive(task, clock);
@@ -161,16 +185,21 @@ public class SuspendAnimationTest
         Assert.True(state.Value > 0);
         Assert.True(Math.Abs(state.Velocity) < 1);
         Assert.False(state.IsRunning);
-    }
-[Fact]
-    public async Task MotionDurationScale_ZeroSnapsToEnd()
+        window.Close();
+    });
+
+    [Fact]
+    public Task MotionDurationScale_ZeroSnapsToEnd() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        // The root scope reads the ambient scale when it is created (D21).
         MotionDurationScale.ScaleFactor = 0;
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         try
         {
             var samples = new List<double>();
-            var task = clock.AnimateAsync(0, 100,
+            var task = SuspendAnimation.AnimateAsync(scope, 0, 100,
                 animationSpec: Tween(TimeSpan.FromMilliseconds(1000)),
                 block: (value, _) => samples.Add(value));
             Drive(task, clock, maxFrames: 5);
@@ -184,17 +213,21 @@ public class SuspendAnimationTest
         {
             MotionDurationScale.Reset();
         }
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task MotionDurationScale_TwoSlowsPlayTime()
+    public Task MotionDurationScale_TwoSlowsPlayTime() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
+        // The root scope reads the ambient scale when it is created (D21).
         MotionDurationScale.ScaleFactor = 2;
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        var scope = window.AnimationRoot;
         try
         {
             double? mid = null;
-            var task = clock.AnimateAsync(0, 100,
+            var task = SuspendAnimation.AnimateAsync(scope, 0, 100,
                 animationSpec: Tween(TimeSpan.FromMilliseconds(64)),
                 block: (value, _) =>
                 {
@@ -202,10 +235,10 @@ public class SuspendAnimationTest
                     if (clock.Now == TimeSpan.FromMilliseconds(32))
                         mid = value;
                 });
-            clock.SendFrame(TimeSpan.Zero); // first frame: startTime = 0
-            clock.SendFrame(TimeSpan.FromMilliseconds(32));
+            clock.PumpTo(TimeSpan.Zero); // first frame: startTime = 0
+            clock.PumpTo(TimeSpan.FromMilliseconds(32));
             for (var i = 0; i < 20 && !task.IsCompleted; i++)
-                clock.AdvanceBy(Frame);
+                clock.Pump(Frame);
             await task;
 
             Assert.NotNull(mid);
@@ -215,5 +248,6 @@ public class SuspendAnimationTest
         {
             MotionDurationScale.Reset();
         }
-    }
+        window.Close();
+    });
 }

@@ -12,7 +12,7 @@ namespace ComposeAnimation;
 /// Size is not animated.
 /// Cooperative motion-frame offsets follow immediately. No reference selection or render-transform conversion is provided.
 /// </summary>
-public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementApproach, ILookaheadPlacementHost
+public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNode, ILookaheadPlacementApproach, ILookaheadPlacementHost, IAnimationScopeHost
 {
     private readonly LookaheadEntry _entry;
     public static readonly StyledProperty<IFiniteAnimationSpec<Point>> AnimationSpecProperty =
@@ -25,12 +25,47 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
         set => SetValue(AnimationSpecProperty, value);
     }
 
+    // The scope the animatable's runs use; replaced together with it.
+    private FrameScope? _runScope;
+    private long _generation;
     private Animatable<Point>? _position;
-    private IDisposable? _motionRegistration;
+    private readonly ScopeResumeBinding _scopeBinding;
+    private bool _attached;
     private LookaheadContext? _context;
     private Point _target;
 
-    public LookaheadPosition() => _entry = new(this);
+    public LookaheadPosition()
+    {
+        _entry = new(this);
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, Reset);
+    }
+
+    // D17: a rebuild while attached keeps the animatable (value and velocity where the cancelled
+    // run stopped) and the target; re-run toward the target in the replacement scope. A real
+    // lookahead context change still resets (it is not a scope rebuild).
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+        => _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_position is not { } animatable) return false;
+                _runScope = motion;
+                if (animatable.Value != _target) _ = Animate(animatable, _target);
+                return true;
+            },
+            onLost: Reset,
+            // Intentional: a placement-only host also invalidates the domain's approach placement.
+            invalidate: _ =>
+            {
+                _context?.InvalidateApproachPlacement();
+                InvalidateMeasure();
+            });
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _attached = true;
+        base.OnAttachedToVisualTree(e);
+    }
+
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -44,15 +79,16 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
         _context = root;
         if (_position is null)
         {
-            var clock = TopLevel.GetTopLevel(this) is not null && !VisualAnimationScope.IsEnvironmentEnding(this)
-                ? VisualAnimationScope.ForHost(this).Clock : null;
-            if (clock is null) return target + LookaheadCoordinates.MotionOffset(this, root.CoordinateReference);
+            var scope = TopLevel.GetTopLevel(this) is not null && !AnimationScope.IsEnvironmentEnding(this)
+                ? AnimationScope.Get(this) : null;
+            if (scope is null) return target + LookaheadCoordinates.MotionOffset(this, root.CoordinateReference);
             _target = target;
-            _position = new Animatable<Point>(new PointConverter(), target, clock,
+            _position = new Animatable<Point>(new PointConverter(), target,
                 VisibilityThresholds.Point, "Lookahead position");
+            _runScope = scope;
             _position.PropertyChanged += PositionChanged;
-            var motion = VisualAnimationScope.ForHost(this);
-            _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Reset(); });
+            _scopeBinding.Reset();
+            _scopeBinding.Bind(scope);
         }
         if (_target != target)
         {
@@ -64,8 +100,13 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     private async Task Animate(Animatable<Point> position, Point target)
     {
-        try { await position.AnimateToAsync(target, AnimationSpec); }
-        catch (OperationCanceledException) { }
+        var generation = ++_generation;
+        var scope = _runScope!;
+        try { await position.AnimateToAsync(scope, target, AnimationSpec); }
+        // Interrupted by a newer run or a reset, or cancelled because its scope ended (a rebuild
+        // resumes it; a release resets it): not a failure.
+        catch (OperationCanceledException) when (generation != _generation || !ReferenceEquals(_position, position) ||
+                                                  scope.Lifetime.IsCancellationRequested) { }
     }
 
     private void PositionChanged(object? sender, PropertyChangedEventArgs e)
@@ -76,9 +117,7 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     private void Reset()
     {
-        var registration = _motionRegistration;
-        _motionRegistration = null;
-        registration?.Dispose();
+        _scopeBinding.Reset();
         if (_position is { } position)
         {
             position.PropertyChanged -= PositionChanged;
@@ -92,8 +131,10 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // The lookahead entry belongs to the tree position and goes now; the animation is released
+        // when the scope ends at the drain (D17), or resumes if re-attached elsewhere.
+        _attached = false;
         _entry.Detach();
-        Reset();
         base.OnDetachedFromVisualTree(e);
     }
 

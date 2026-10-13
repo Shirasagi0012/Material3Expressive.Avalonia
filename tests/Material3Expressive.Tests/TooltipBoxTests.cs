@@ -94,7 +94,7 @@ public class TooltipBoxTests
         window.Content = null; Flush(window);
         Assert.False(box.IsPresented); Assert.Equal(0, clock.PendingFrameCount);
         Assert.True(show.IsCanceled);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]
@@ -162,7 +162,7 @@ public class TooltipBoxTests
         Assert.Null(oldTooltip.Parent); Assert.Same(box, next.Parent);
         window.Content = null; Flush(window); window.Content = root; Flush(window);
         Assert.True(box.IsPresented); Assert.Equal("new", next.Content);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -223,7 +223,7 @@ public class TooltipBoxTests
         Assert.True(state.Transition.TargetState);
         await Task.Delay(TooltipDefaults.TooltipDuration + TimeSpan.FromMilliseconds(40), TestContext.Current.CancellationToken);
         Flush(window); Assert.False(state.Transition.TargetState);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -240,7 +240,7 @@ public class TooltipBoxTests
             new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased), KeyModifiers.None, MouseButton.Left);
         anchor.RaiseEvent(up); Assert.False(up.Handled);
         await Task.Delay((box.GetPlatformSettings()?.HoldWaitDuration ?? TimeSpan.FromMilliseconds(500)) + TimeSpan.FromMilliseconds(20), TestContext.Current.CancellationToken);
-        Assert.False(box.State.IsVisible); Assert.Null(window.MotionRoot.LastError);
+        Assert.False(box.State.IsVisible); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     static TooltipBox Box(PlainTooltip tooltip, TooltipState state) => new() { Content = new Border { Width = 24, Height = 24 }, Tooltip = tooltip, State = state,

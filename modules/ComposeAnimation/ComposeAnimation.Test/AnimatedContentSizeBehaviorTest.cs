@@ -14,18 +14,17 @@ namespace ComposeAnimation.Test;
 
 public class AnimatedContentSizeBehaviorTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static TweenSpec<Size> Tween(int ms = 100) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Border Leaf { get; } = new() { Width = 100, Height = 40 };
         public AnimatedContentSize Host { get; }
         public Grid Surface { get; } = new() { Width = 400, Height = 350 };
         public Window Window { get; }
         public List<AnimatedContentSizeChangedEventArgs> Completions { get; } = [];
         public Control TemplateRoot => Host.GetVisualChildren().OfType<Control>().Single();
-        public Fixture(Action<AnimatedContentSize>? configure = null, IAnimationFrameClock? clock = null)
+        public Fixture(Action<AnimatedContentSize>? configure = null, IFrameSource? clock = null)
         {
             Host = new AnimatedContentSize
             {
@@ -36,11 +35,11 @@ public class AnimatedContentSizeBehaviorTest
             configure?.Invoke(Host);
             Host.AnimationCompleted += (_, e) => Completions.Add(e);
             Surface.Children.Add(Host);
-            Window = new AnimationTestWindow(clock ?? Clock) { Width = 600, Height = 500, Content = Surface };
+            Window = new AnimationTestWindow(clock ?? Frames) { Width = 600, Height = 500, Content = Surface };
             Window.Show(); Layout();
         }
         public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
-        public void Step(int ms) { Clock.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
+        public void Step(int ms) { Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
         public void Dispose() => Window.Close();
     }
 
@@ -85,7 +84,7 @@ public class AnimatedContentSizeBehaviorTest
         f.Host.FlowDirection = FlowDirection.RightToLeft;
         f.Layout();
         Assert.Equal(new Point(0, 160), f.TemplateRoot.Bounds.TopLeft);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -164,8 +163,10 @@ public class AnimatedContentSizeBehaviorTest
         f.Leaf.Height = 140; f.Layout(); f.Step(16); f.Step(50);
         Assert.Equal(90, f.Host.Bounds.Height);
         f.Surface.Children.Remove(f.Host);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
-        f.Clock.AdvanceBy(TimeSpan.FromSeconds(10));
+        // Released at the drain (D17), not on detach: the fallback post drains with no frame.
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(0, f.Frames.PendingFrameCount);
+        f.Frames.AdvanceBy(TimeSpan.FromSeconds(10));
         f.Surface.Children.Add(f.Host); f.Layout();
         Assert.Equal(90, f.Host.Bounds.Height);
         f.Step(16); f.Step(50);
@@ -177,7 +178,7 @@ public class AnimatedContentSizeBehaviorTest
         f.Host.ResetAnimation(); f.Layout();
         Assert.Equal(40, f.Host.Bounds.Height);
         Assert.Single(f.Completions);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -189,7 +190,7 @@ public class AnimatedContentSizeBehaviorTest
             ((Border)host.Content!).Height = 140;
         });
         Assert.Equal(140, f.Host.Bounds.Height);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         Assert.Empty(f.Completions);
     });
 
@@ -235,7 +236,7 @@ public class AnimatedContentSizeBehaviorTest
         Assert.Equal(new Size(100, 60), f.Completions[0].TargetSize);
         Assert.Equal(new Size(100, 60), f.Completions[1].InitialSize);
         Assert.Equal(new Size(100, 120), f.Completions[1].TargetSize);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -266,7 +267,7 @@ public class AnimatedContentSizeBehaviorTest
             f.Leaf.Height = 140; f.Layout(); f.Step(16);
             Assert.Equal(140, f.Host.Bounds.Height);
             Assert.Single(f.Completions);
-            Assert.Equal(0, f.Clock.PendingFrameCount);
+            Assert.Equal(0, f.Frames.PendingFrameCount);
         }
         finally { MotionDurationScale.ScaleFactor = previous; }
     });
@@ -298,7 +299,7 @@ public class AnimatedContentSizeBehaviorTest
         using var f = new Fixture(host => host.AnimationSpec = new BrokenSpec(failure));
         f.Leaf.Height = 140; f.Layout();
         Assert.Equal(140, f.Host.Bounds.Height);
-        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.LastError);
+        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
         Assert.Empty(f.Completions);
         f.Host.AnimationSpec = Tween();
         f.Leaf.Height = 60; f.Layout(); f.Step(16);
@@ -306,7 +307,7 @@ public class AnimatedContentSizeBehaviorTest
         EventHandler<AnimatedContentSizeChangedEventArgs> listener = (_, _) => throw listenerFailure;
         f.Host.AnimationCompleted += listener;
         f.Step(100);
-        Assert.Same(listenerFailure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.LastError);
+        Assert.Same(listenerFailure, ((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
         Assert.Equal(60, f.Host.Bounds.Height);
         f.Host.AnimationCompleted -= listener;
         f.Leaf.Height = 120; f.Layout(); f.Step(16); f.Step(100);
@@ -365,14 +366,14 @@ public class AnimatedContentSizeBehaviorTest
         Assert.Equal(0, f.Completions[0].TargetSize.Height);
     });
 
-    private sealed class FailingClock(bool cancellation) : IAnimationFrameClock
+    private sealed class FailingClock(bool cancellation) : IFrameSource
     {
         public Exception Error { get; } = cancellation ? new OperationCanceledException("clock") : new InvalidOperationException("clock");
         public int Calls { get; private set; }
         public void VerifyAccess() { }
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken token) { Calls++; return ValueTask.FromException<TimeSpan>(Error); }
     }
-    private sealed class ImmediateClock : IAnimationFrameClock
+    private sealed class ImmediateClock : IFrameSource
     {
         public void VerifyAccess() { }
         public ValueTask<TimeSpan> NextFrameAsync(CancellationToken token) => ValueTask.FromResult(TimeSpan.Zero);
@@ -384,9 +385,9 @@ public class AnimatedContentSizeBehaviorTest
             TimeSpan.FromMilliseconds(100), easing: new NonFiniteEasing()));
         f.Leaf.Height = 140; f.Layout(); f.Step(16); f.Step(50);
         Assert.Equal(140, f.Host.Bounds.Height);
-        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.LastError);
+        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
         Assert.Empty(f.Completions);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
     private sealed class NonFiniteEasing : Easing
     {

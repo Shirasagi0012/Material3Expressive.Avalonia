@@ -32,16 +32,26 @@ internal sealed class SegmentedButtonContentLayout : Panel
             (TemplatedParent as SegmentedButton)?.Row?.InvalidateItemsLayout();
     }
 
-    private VisualAnimationScope? _motion;
     private Animatable<int>? _offset;
+    private AnimationChildScope? _attachScope;
     private int? _initialOffset;
     private Size _icon, _label;
     private int _reservation;
     private int _contentWidth;
     private int _targetOffset;
     private bool _commitPending;
-    internal void Stop() { _motion?.Dispose(); _motion = null; _offset = null; _initialOffset = null; _commitPending = false; }
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { Stop(); base.OnDetachedFromVisualTree(e); }
+    internal void Stop() { _offset = null; _initialOffset = null; _commitPending = false; }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Segmented button content");
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        Stop();
+        _attachScope?.Dispose(); _attachScope = null;
+        base.OnDetachedFromVisualTree(e);
+    }
     internal Size IntrinsicSize(double height, Thickness padding)
     {
         if (Children.Count != 2) return default;
@@ -67,28 +77,28 @@ internal sealed class SegmentedButtonContentLayout : Panel
         _reservation = iconSize + MathUtils.DipToPx(IconSpacing, scale);
         var offset = _icon.Width == 0 ? -_reservation / 2 : 0;
         if (_initialOffset is null) _initialOffset = offset;
-        else if (this.IsAttachedToVisualTree())
+        else if (this.IsAttachedToVisualTree() && _attachScope is { } attachScope
+            && !attachScope.Lifetime.IsCancellationRequested)
         {
-            if (_motion is null)
+            if (_offset is null)
             {
-                _motion = VisualAnimationScope.Create(this);
-                _offset = _motion.CreateAnimatable(_initialOffset.Value);
-                _motion.SubscribeValue(_offset, _ => InvalidateArrange());
+                _offset = new Animatable<int>(new Int32Converter(), _initialOffset.Value, VisibilityThresholds.Int32);
+                attachScope.SubscribeValue(_offset, _ => InvalidateArrange());
             }
             _targetOffset = offset;
-            if (_offset!.TargetValue != offset && !_commitPending)
+            if (_offset.TargetValue != offset && !_commitPending)
             {
                 _commitPending = true;
-                var motion = _motion; var anim = _offset;
+                var motion = attachScope; var anim = _offset;
                 var defer = offset == 0;
                 // Compose launches from measure after the current layout/recomposition.
                 // Commit on the shared frame before Animatable requests its first sample.
                 _ = motion.Launch(async ct =>
                 {
-                    if (defer) await motion.Clock.NextFrameAsync(ct);
+                    if (defer) await motion.NextFrameAsync(ct);
                     _commitPending = false;
                     if (OffsetAnimation is not { } spring) return;
-                    await anim.AnimateToAsync(_targetOffset,
+                    await anim.AnimateToAsync(motion, _targetOffset,
                         new SpringSpec<int>(spring.DampingRatio, spring.Stiffness, 1), cancellationToken: ct);
                 }, "Segmented label offset");
             }

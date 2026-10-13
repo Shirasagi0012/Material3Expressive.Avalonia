@@ -14,7 +14,7 @@ namespace ComposeAnimation;
 /// Presents live content until every animation in its visibility scope finishes exiting.
 /// Bind Visible for animated visibility; native IsVisible still hides immediately.
 /// </summary>
-public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
+public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimationScopeHost
 {
     public static readonly StyledProperty<bool> VisibleProperty =
         AvaloniaProperty.Register<AnimatedVisibility, bool>(nameof(Visible), true);
@@ -45,7 +45,21 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
     private bool _isContentPresent;
     private AnimatedVisibilityScope? _scope;
     private VisibilityConnection? _connection;
-    private IDisposable? _motionConnection;
+    private readonly ScopeResumeBinding _scopeBinding;
+
+    public AnimatedVisibility()
+    {
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, () =>
+        {
+            _failed = true;
+            Disconnect();
+        });
+    }
+
+    // One launch path for the first start (deferred) and a D17 resume (immediate).
+    private void StartLoop(VisibilityConnection connection, AnimationScope motion, bool immediate)
+        => ScopeResumeBinding.StartLoop(motion, () => ReferenceEquals(_connection, connection),
+            ct => RunAsync(connection, motion, ct), Label ?? "Visibility", immediate);
     private VisibilityLayer? _layer;
     private bool _attached;
     private bool _synchronizing;
@@ -102,7 +116,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _attached = false;
-        Synchronize(reset: true);
+        Synchronize(); // No reset (D17): see ScopeResumeBinding.
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -136,6 +150,32 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         }
     }
 
+    // D17: a rebuild while attached keeps the connection and its transition state (the resource
+    // callback only cancelled the run); re-run the same transition in the replacement scope. The
+    // drain runs before the frame's waiter snapshot, so the run samples this frame, continuing
+    // from its stored play time. Detach is handled by OnDetachedFromVisualTree.
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+        => _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_connection is not { } connection || connection.Transition.IsDisposed) return false;
+                _failed = false;
+                // A re-entrant Get from a ScopeChanged handler that runs it again simply takes over.
+                if (connection.OwnsLoop) StartLoop(connection, motion, immediate: true);
+                return true;
+            },
+            onLost: () =>
+            {
+                _failed = true;
+                Disconnect();
+            },
+            // Intentional: a scope change without a resume resets the presentation (reset: true).
+            invalidate: resumed =>
+            {
+                _failed = false;
+                Synchronize(reset: !resumed);
+            });
+
     private void OnPhaseChanged() => Synchronize();
 
     private void Synchronize(bool reset = false)
@@ -155,40 +195,19 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
                     _resetPending = false;
                     Disconnect();
                 }
-                if (!_attached || !IsVisible || _failed || VisualAnimationScope.IsEnvironmentEnding(this))
+                if (!_attached || !IsVisible || _failed || AnimationScope.IsEnvironmentEnding(this))
                 {
                     SetAndRaise(IsIdleProperty, ref _isIdle, true);
                     continue;
                 }
                 if (_connection is null)
                 {
-                    var motion = VisualAnimationScope.ForHost(this);
-                    var clock = motion.Clock;
-                    _connection = Source?.Connect(clock, Label)
-                        ?? new VisibilityConnection(new Transition<bool>(Visible, clock, Label), true);
+                    var motion = AnimationScope.Get(this);
+                    _connection = Source?.Connect(Label)
+                        ?? new VisibilityConnection(new Transition<bool>(Visible, Label), true);
                     _connection.Transition.PhaseChanged += OnPhaseChanged;
-                    _motionConnection = motion.RegisterResource(() =>
-                    {
-                        if (!motion.IsEnding) return;
-                        _failed = true;
-                        Disconnect();
-                    });
-                    if (_connection.OwnsLoop)
-                    {
-                        // Queue loop startup so registration and the first layout can finish first.
-                        var connection = _connection;
-                        Dispatcher.UIThread.Post(() =>
-                        {
-                            if (!ReferenceEquals(_connection, connection)) return;
-                            // Keep the layout barrier, but let awaits in the frame loop capture
-                            // Normal rather than inheriting Loaded for the loop's lifetime.
-                            Dispatcher.UIThread.Post(() =>
-                            {
-                                if (ReferenceEquals(_connection, connection) && !motion.IsEnding)
-                                    _ = motion.Launch(ct => RunAsync(connection, ct), Label ?? "Visibility");
-                            }, DispatcherPriority.Normal);
-                        }, DispatcherPriority.Loaded);
-                    }
+                    _scopeBinding.Bind(motion);
+                    if (_connection.OwnsLoop) StartLoop(_connection, motion, immediate: false);
                 }
                 var parent = _connection.Transition;
                 if (parent.IsDisposed)
@@ -221,7 +240,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         {
             _failed = true;
             try { Disconnect(); }
-            finally { VisualAnimationScope.ReportError(this, error); }
+            finally { AnimationScope.ReportError(this, error); }
             throw;
         }
         finally { _synchronizing = false; }
@@ -271,8 +290,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
 
     private void Disconnect()
     {
-        _motionConnection?.Dispose();
-        _motionConnection = null;
+        _scopeBinding.Reset();
         var connection = _connection;
         _connection = null;
         if (connection is not null) connection.Transition.PhaseChanged -= OnPhaseChanged;
@@ -280,9 +298,9 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         finally { connection?.Dispose(); }
     }
 
-    private async Task RunAsync(VisibilityConnection connection, CancellationToken cancellationToken)
+    private async Task RunAsync(VisibilityConnection connection, FrameScope scope, CancellationToken cancellationToken)
     {
-        try { await connection.Transition.RunAsync(cancellationToken); }
+        try { await connection.Transition.RunAsync(scope, cancellationToken); }
         catch (OperationCanceledException) { throw; }
         catch (Exception)
         {
@@ -303,7 +321,7 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost
         {
             _failed = true;
             Synchronize(reset: true);
-            VisualAnimationScope.ReportError(this, error);
+            AnimationScope.ReportError(this, error);
             throw;
         }
     }

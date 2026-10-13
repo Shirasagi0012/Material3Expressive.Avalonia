@@ -37,8 +37,8 @@ internal sealed class AppBarTopChrome : Panel
     private AppBarTopRow Expanded => (AppBarTopRow)Children[1];
 
     private TopAppBarState? _state;
-    private VisualAnimationScope? _motion;
     private AppBarDirectDrag? _drag;
+    private AnimationChildScope? _attachScope;
     private Animatable<Color>? _container;
     private bool _pending;
     private readonly Dictionary<Control, (Color Color, Style Style)> _actionDefaults = [];
@@ -96,15 +96,15 @@ internal sealed class AppBarTopChrome : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _motion = VisualAnimationScope.Create(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("Top app bar");
         _drag = new AppBarDirectDrag(
             this,
             () => Owner.ScrollBehavior is { IsPinned: false } behavior ? behavior.State : null,
             (velocity, clock, token) => Owner.ScrollBehavior!.SettleAsync(velocity, clock, token));
         ObserveState();
         ConfigureRows();
-        _container = _motion.CreateAnimatable(ContainerTarget);
-        _motion.SubscribeValue(_container, Paint);
+        _container = new Animatable<Color>(new ColorConverter(), ContainerTarget);
+        motion.SubscribeValue(_container, Paint);
         UpdateAppearance();
     }
 
@@ -131,8 +131,7 @@ internal sealed class AppBarTopChrome : Panel
         foreach (var (control, entry) in _actionDefaults)
             control.Styles.Remove(entry.Style);
         _actionDefaults.Clear();
-        _motion?.Dispose();
-        _motion = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _container = null;
         _pending = false;
         base.OnDetachedFromVisualTree(e);
@@ -287,13 +286,14 @@ internal sealed class AppBarTopChrome : Panel
             return;
         }
 
-        if (_motion is not { IsEnding: false } motion || _pending || _container.TargetValue == ContainerTarget)
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested || _container.TargetValue == ContainerTarget)
             return;
 
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _pending = false;
             var target = ContainerTarget;
             if (_container is null || _container.TargetValue == target)
@@ -301,7 +301,10 @@ internal sealed class AppBarTopChrome : Panel
 
             var spring = ContainerColorAnimation;
             await _container.StopAsync();
+            if (_container is null)
+                return;
             await _container.AnimateToAsync(
+                motion,
                 target,
                 new SpringSpec<Color>(spring.DampingRatio, spring.Stiffness),
                 cancellationToken: ct);

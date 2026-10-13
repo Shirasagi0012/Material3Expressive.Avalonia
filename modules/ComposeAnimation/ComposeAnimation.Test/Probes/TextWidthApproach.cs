@@ -19,7 +19,7 @@ internal sealed class TextWidthApproach : Decorator, ILookaheadLayoutNode, ILook
         new SpringSpec<double>(stiffness: Spring.StiffnessMediumLow, visibilityThreshold: 0.5);
 
     private event EventHandler? TargetMeasureInvalidated;
-    private VisualAnimationScope? _motion;
+    private ComposeAnimation.Runtime.FrameScope? _scope;
     private Animatable<double>? _width;
     private double _target;
 
@@ -53,10 +53,11 @@ internal sealed class TextWidthApproach : Decorator, ILookaheadLayoutNode, ILook
         var target = LookaheadRoot.TargetFor(this)?.MeasuredSize.Width ?? Math.Min(TargetWidth, availableSize.Width);
         if (_width is null)
         {
-            var clock = TopLevel.GetTopLevel(this) is null ? null : (_motion ??= VisualAnimationScope.Create(this)).Clock;
+            var clock = TopLevel.GetTopLevel(this) is null ? null : AnimationScope.Get(this);
             if (clock is null) return MeasureText(text, target, availableSize);
             _target = target;
-            _width = new Animatable<double>(new ComposeAnimation.Runtime.DoubleConverter(), target, clock, 0.5, "Text width approach");
+            _width = new Animatable<double>(new ComposeAnimation.Runtime.DoubleConverter(), target, 0.5, "Text width approach");
+            _scope = clock;
             _width.PropertyChanged += WidthChanged;
         }
         if (_target != target)
@@ -87,7 +88,7 @@ internal sealed class TextWidthApproach : Decorator, ILookaheadLayoutNode, ILook
 
     private async Task AnimateWidth(Animatable<double> width, double target)
     {
-        try { await width.AnimateToAsync(target, AnimationSpec); }
+        try { await width.AnimateToAsync(_scope!, target, AnimationSpec); }
         catch (OperationCanceledException) { }
     }
 
@@ -99,8 +100,6 @@ internal sealed class TextWidthApproach : Decorator, ILookaheadLayoutNode, ILook
             width.Stop();
             _width = null;
         }
-        _motion?.Dispose();
-        _motion = null;
         base.OnDetachedFromVisualTree(e);
     }
 

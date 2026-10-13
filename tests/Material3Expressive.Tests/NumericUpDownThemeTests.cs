@@ -371,7 +371,7 @@ public sealed class NumericUpDownThemeTests
 
     static AnimationTestWindow Show(Control control, Control? sibling = null, bool fluent = false)
     {
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = new AnimationTestWindow(clock) { Width = 480, Height = 320 };
         if (fluent) window.Styles.Add(new FluentTheme());
         window.Styles.Add(new MaterialTheme());

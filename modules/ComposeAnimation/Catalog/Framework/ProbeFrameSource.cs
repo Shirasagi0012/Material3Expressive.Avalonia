@@ -4,7 +4,7 @@ using ComposeAnimation.Runtime;
 namespace Catalog.Framework;
 
 /// <summary>手动推进的动画时钟，用于自动化模式下的确定性逐帧驱动。</summary>
-public sealed class ProbeClock : IAnimationFrameClock
+public sealed class ProbeFrameSource : IFrameSource
 {
     private readonly List<TaskCompletionSource<TimeSpan>> _pending = [];
     private TimeSpan _time;

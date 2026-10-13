@@ -65,10 +65,10 @@ internal sealed class CheckBoxIndicator : Control
     public static readonly StyledProperty<Color> DisabledCheckmarkColorProperty = AvaloniaProperty.Register<CheckBoxIndicator, Color>(nameof(DisabledCheckmarkColor));
     public Color DisabledCheckmarkColor { get => GetValue(DisabledCheckmarkColorProperty); set => SetValue(DisabledCheckmarkColorProperty, value); }
 
-    private VisualAnimationScope? _motion;
     private Transition<bool?>? _transition;
     private CancellationTokenSource? _transitionRun;
     private Task? _transitionTask;
+    private AnimationChildScope? _attachScope;
     private Animatable<Color>? _checkColor, _boxColor, _borderColor;
     private bool _pending, _colorsEnabled;
     internal float DrawFraction { get; private set; }
@@ -100,21 +100,23 @@ internal sealed class CheckBoxIndicator : Control
             interaction.IsRippleBounded = false;
             interaction.RippleRadius = 20;
         }
-        _motion = VisualAnimationScope.Create(this);
+        _attachScope = AnimationScope.Get(this).CreateChild("CheckBox indicator");
         EnsureShapeTransition();
-        _checkColor = _motion.CreateAnimatable(CheckTarget);
-        _boxColor = _motion.CreateAnimatable(BoxTarget);
-        _borderColor = _motion.CreateAnimatable(BorderTarget);
+        _checkColor = new Animatable<Color>(new ColorConverter(), CheckTarget, default);
+        _boxColor = new Animatable<Color>(new ColorConverter(), BoxTarget, default);
+        _borderColor = new Animatable<Color>(new ColorConverter(), BorderTarget, default);
         _colorsEnabled = IsEffectivelyEnabled;
-        _motion.SubscribeValue(_checkColor, value => { PaintedCheckmark = value; InvalidateVisual(); });
-        _motion.SubscribeValue(_boxColor, value => { PaintedBox = value; InvalidateVisual(); });
-        _motion.SubscribeValue(_borderColor, value => { PaintedBorder = value; InvalidateVisual(); });
+        var motion = _attachScope;
+        motion.SubscribeValue(_checkColor, value => { PaintedCheckmark = value; InvalidateVisual(); });
+        motion.SubscribeValue(_boxColor, value => { PaintedBox = value; InvalidateVisual(); });
+        motion.SubscribeValue(_borderColor, value => { PaintedBorder = value; InvalidateVisual(); });
     }
 
     private void EnsureShapeTransition()
     {
-        if (_transition is not null || _motion is not { IsEnding: false } motion || ShapeAnimation is null) return;
-        _transition = motion.CreateTransition(IsChecked, "CheckBox shape");
+        if (_transition is not null || !this.IsAttachedToVisualTree() || ShapeAnimation is null
+            || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested) return;
+        _transition = new Transition<bool?>(IsChecked, "CheckBox shape");
         var draw = _transition.AnimateFloat(state => state == false ? 0 : 1, segment =>
             segment.InitialState == false || segment.TargetState != false ? Spatial() : new SnapSpec<float>(TimeSpan.FromMilliseconds(100)));
         var gravitation = _transition.AnimateFloat(state => state is null ? 1 : 0, segment =>
@@ -134,8 +136,7 @@ internal sealed class CheckBoxIndicator : Control
         _transitionTask = null;
         _transition?.Dispose();
         _transition = null;
-        _motion?.Dispose();
-        _motion = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _checkColor = _boxColor = _borderColor = null;
         _pending = false;
         base.OnDetachedFromVisualTree(e);
@@ -167,12 +168,13 @@ internal sealed class CheckBoxIndicator : Control
 
     private void UpdateTargets()
     {
-        if (_motion is not { IsEnding: false } motion || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         // Apply targets at the corresponding recomposition frame, before the first animation frame.
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _pending = false;
             if (_checkColor is null || _boxColor is null || _borderColor is null) return;
             var targetChanged = ShapeAnimation is not null && _transition is not null && _transition.TargetState != IsChecked;
@@ -181,7 +183,7 @@ internal sealed class CheckBoxIndicator : Control
             {
                 _transitionRun?.Dispose();
                 _transitionRun = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                _transitionTask = motion.Launch(_ => _transition!.RunAsync(_transitionRun.Token), "CheckBox transition");
+                _transitionTask = motion.Launch(_ => _transition!.RunAsync(motion, _transitionRun.Token), "CheckBox transition");
             }
             var spec = IsChecked == false
                 ? UncheckColorAnimation
@@ -202,7 +204,7 @@ internal sealed class CheckBoxIndicator : Control
                 {
                     await track.StopAsync();
                     token.ThrowIfCancellationRequested();
-                    if (animate) await track.AnimateToAsync(target, colorSpec, cancellationToken: token);
+                    if (animate) await track.AnimateToAsync(motion, target, colorSpec, cancellationToken: token);
                     else await track.SnapToAsync(target);
                 }, "CheckBox color");
             }

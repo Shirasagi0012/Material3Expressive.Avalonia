@@ -339,14 +339,14 @@ public sealed record ButtonElevation
 internal sealed class ButtonElevationController : IDisposable
 {
     private readonly Animatable<double> _elevation;
-    private readonly VisualAnimationScope _motion;
+    private readonly AnimationChildScope _motion;
     private (ButtonElevation Values, InteractionState Interaction, bool Enabled) _pending;
     private bool _commitPending;
 
-    internal ButtonElevationController(MaterialSurface surface, VisualAnimationScope parentScope, double initial)
+    internal ButtonElevationController(MaterialSurface surface, AnimationScope parentScope, double initial)
     {
         _motion = parentScope.CreateChild("Elevation");
-        _elevation = _motion.CreateAnimatable(initial);
+        _elevation = new Animatable<double>(new DoubleConverter(), initial, VisibilityThresholds.Double);
         _motion.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, _elevation);
     }
 
@@ -362,13 +362,13 @@ internal sealed class ButtonElevationController : IDisposable
     internal void Update(ButtonElevation values, InteractionState interaction, bool enabled)
     {
         _pending = (values, interaction, enabled);
-        if (_commitPending || _motion.IsEnding)
+        if (_commitPending || _motion.Lifetime.IsCancellationRequested)
             return;
         _commitPending = true;
         _ = _motion.Launch(async ct =>
         {
             // Button.kt's LaunchedEffect runs after composition. Coalesce changes in that frame.
-            await _motion.Clock.NextFrameAsync(ct);
+            await _motion.NextFrameAsync(ct);
             _commitPending = false;
             var pending = _pending;
             Apply(pending.Values, pending.Interaction, pending.Enabled);
@@ -400,7 +400,7 @@ internal sealed class ButtonElevationController : IDisposable
 
         // material3/internal/Elevation.kt: incoming 120ms; outgoing hover 120ms, others 150ms.
         var incoming = interaction != InteractionState.None;
-        _ = _motion.Launch(ct => _elevation.AnimateToAsync(target,
+        _ = _motion.Launch(ct => _elevation.AnimateToAsync(_motion, target,
             new TweenSpec<double>(TimeSpan.FromMilliseconds(incoming || from == InteractionState.Hovered ? 120 : 150),
                 easing: incoming ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
             cancellationToken: ct), "Elevation");

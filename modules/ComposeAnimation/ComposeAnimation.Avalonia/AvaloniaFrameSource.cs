@@ -1,29 +1,14 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
+using ComposeAnimation.Runtime;
 
-namespace ComposeAnimation.Runtime;
+namespace ComposeAnimation;
 
 /// <summary>
-/// Time source for animation frame loops. Pull model: the consumer awaits one frame at a time
-/// via <see cref="NextFrameAsync"/>, so cancellation of the supplied token unwinds the waiting
-/// loop with an <see cref="OperationCanceledException"/>. All members must be called on the
-/// clock's owning thread.
+/// Drives animations using Avalonia's UI-thread animation frames. This is the default
+/// <see cref="IFrameSource"/> for a window; it is the only place the engine touches a control.
 /// </summary>
-public interface IAnimationFrameClock
-{
-    /// <summary>Throws if called from a thread other than the clock's owning thread.</summary>
-    void VerifyAccess();
-
-    /// <summary>
-    /// Suspends until the next frame and returns its timestamp in the clock's timebase (this is
-    /// not elapsed play time). Typical implementations allow at most one pending call; use
-    /// <see cref="SharedAnimationFrameClock"/> when several consumers must share one inner clock.
-    /// </summary>
-    ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken);
-}
-
-/// <summary>Drives animations using Avalonia's UI-thread animation frames.</summary>
-internal sealed class AvaloniaAnimationFrameClock(TopLevel topLevel) : IAnimationFrameClock
+internal sealed class AvaloniaFrameSource(TopLevel topLevel) : IFrameSource
 {
     private readonly TopLevel _topLevel = topLevel ?? throw new ArgumentNullException(nameof(topLevel));
 

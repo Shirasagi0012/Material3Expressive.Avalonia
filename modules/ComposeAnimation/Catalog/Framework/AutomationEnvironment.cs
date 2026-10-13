@@ -5,7 +5,7 @@ using Avalonia.Threading;
 namespace Catalog.Framework;
 
 /// <summary>
-/// 自动化环境：ProbeClock 逐帧推进 + 布局/渲染 flush；截图落盘到
+/// 自动化环境：ProbeFrameSource 逐帧推进 + 布局/渲染 flush；截图落盘到
 /// <c>&lt;out&gt;/&lt;demo-id&gt;/&lt;action&gt;/&lt;name&gt;.png</c>；断言记入列表供 manifest 输出。
 /// 每个 (demo, action) 运行使用一个全新实例。
 /// </summary>
@@ -13,11 +13,11 @@ internal sealed class AutomationEnvironment : IDemoEnvironment
 {
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000.0 / 60);
 
-    private readonly ProbeClock _clock;
+    private readonly ProbeFrameSource _clock;
     private readonly List<string> _captures = [];
     private readonly List<AssertionRecord> _assertions = [];
 
-    public AutomationEnvironment(ProbeClock clock, string outputRoot, string demoId, string actionName)
+    public AutomationEnvironment(ProbeFrameSource clock, string outputRoot, string demoId, string actionName)
     {
         _clock = clock;
         DemoId = demoId;

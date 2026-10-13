@@ -13,7 +13,7 @@ public class LookaheadNotificationFailureTest
     public Task NotificationFailure_ClearsTargetAndCancelsEveryParticipant(bool legacyRoot)
         => HeadlessApp.Session.Dispatch(() =>
         {
-            var clock = new ManualAnimationFrameClock();
+            var clock = new ManualFrameSource();
             var first = Card();
             var second = Card();
             var box = new LookaheadStackPanel { Children = { first, second }, Width = 300, Height = 240 };

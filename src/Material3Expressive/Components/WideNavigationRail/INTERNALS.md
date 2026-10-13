@@ -41,7 +41,12 @@ Item 模板的布局容器使用透明背景，让整个矩形参与 hover 与�
 Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间均沿用实际 Item 边界。
 
 - `WideNavigationRail.axaml` 组合 Surface、物理 inset、内容 padding、header 和 ItemsPresenter。
-  `WideNavigationRailLayout` 保留四条 animateDpAsState 轨迹：最小宽、宽度上限、项间距和项最小高度。
+  `WideNavigationRailLayout` 的四条 animateDpAsState（最小宽、宽度上限、项间距、项最小高度）使用 `AnimatedState<float>`。
+  每条轨迹在 attach 时以当前目标为初值创建，不播放进入动画；`UpdateTarget` 把目标合并到到达帧，不再额外等一帧。
+  Dp 弹簧阈值保持 0.1 DIP。未就绪规格（stiffness ≤ 0）不提交。
+  脱离时 Dispose 这四条轨迹：Modal 把 overlay 移入 Popup 时 layout 会脱离再挂上，
+  旧轨迹不会写回新 layout；隐藏 rail 打开后，宽度弹簧从新 layout 的当前目标开始，
+  不会因脱离过程中 token 短暂回落到 0 把表面缩到 0 而 scrim 仍淡入。
   默认宽度收起 96、展开至少 220、至多 360 DIP；header 与项内容决定是否继续增宽。
   横向像素取整、保存展开最大宽、反向时的宽度约束和逐项测量顺序按上游保留。
   物理像素转回 Avalonia DIP 时使用原始 double 布局缩放，避免 float 除法误差被默认 LayoutRounding
@@ -50,12 +55,15 @@ Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间�
 - `NavigationRailArrangement` 提供 Top、Center、Bottom、SpaceBetween、SpaceAround、SpaceEvenly 和 SpacedBy。
   Center 按整个容器居中；有 header 时其他排列使用 header 下方的空间。
   SpacedBy(0, Center) 仍按剩余空间居中，不能替换标准 Center。
-- `WideNavigationRailState` 使用 DefaultSpatial Animatable，保留动画中断时的速度。
+- `WideNavigationRailState` 仍使用 DefaultSpatial Animatable，而不是 animate*AsState。它要保留显式 Expand/Collapse/Snap、中断速度和多消费者作用域。
   TargetValue 是目标；CurrentValue 只有原始值恰好等于 1 时才为 Expanded，空间 spring 的过冲期间也为 Collapsed。
   实际布局和 item 的展开目标跟随 TargetValue。
 - `WideNavigationRailItemLayout` 翻译 AnimatedMeasurePolicy / placeAnimatedLabelAndIcon，含纯 icon 分支。
-  选择尺寸与透明度共用一条 DefaultSpatial 轨迹，Top→Start 位置使用另一条轨迹，标签颜色使用 DefaultEffects。
-  图标颜色按上游直接更新。标签透明度为 `4 * (progress - .5)^2`；padding 插值裁到 0..1，布局保留空间 spring 过冲。
+  选择进度与指示器透明度共用一条 DefaultSpatial `AnimatedState<float>`，Top→Start 位置使用另一条，标签颜色使用 DefaultEffects `AnimatedState<Color>`。
+  浮点阈值 0.01；颜色弹簧不覆盖阈值。图标颜色按上游直接更新。
+  非 Modal item 的状态跟随着色控件；Modal item 把这三条状态固定在窗口根 Scope 上，使 movableContentOf 的宿主转移不重置速度。
+  真正脱离或 hidden 内容重新挂载时 Dispose，下一次挂载按当前目标新建身份，不播放收起到展开的进入动画。
+  标签透明度为 `4 * (progress - .5)^2`；padding 插值裁到 0..1，布局保留空间 spring 过冲。
   Top 标签样式在目标 Top 且进度小于 .5 时为 LabelMedium，其余为 LabelLarge。
 - Icon presenter 将 WideNavigationRail.IconSize Token 24 DIP 作为 MaterialIcon.DefaultSize 传给无显式尺寸的
   MaterialSymbol；组件不为用户图标施加固定宽高约束。
@@ -64,15 +72,20 @@ Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间�
   Top / Start 目标切换时复用 Surface 的卸载/挂载流程，按上游 indication 节点重建语义清空反馈；Button 的点击入口继续生效。
 - Token 保留 System 引用、disabled 0.38 alpha 与默认 padding 的尺寸派生关系；资源变化继续驱动模板和布局。
 - `ModalWideNavigationRail` 将同一个 ItemsPresenter 迁入 PopupOverlayLayer 内的模态 Popup，保留 item 对象和外部选中状态。
-  非 hidden 模式按 movableContentOf 保留进行中的 Item 动画；hidden 模式在内容重新挂载时释放旧作用域，
+  非 hidden 模式按 movableContentOf 保留进行中的 Item 动画；hidden 模式在内容重新挂载时释放旧的 AnimatedState，
   按当前目标初始化位置、选择与颜色，对齐上游首次组合内容的动画初值，不额外播放收起到展开的进入动画。
   hidden 的水平锚点动画归属 rail 状态，在浮层关闭后仍保留并完成；再次打开从收起锚点滑入。
   替换 State 或卸载 rail 时释放该锚点状态，对齐上游 remember(state) 的生命周期。
-  常驻模式始终保留收起态占位；隐藏模式不占布局空间，并以两条水平锚点处理滑出与拖动。
-  position 与 scrim 使用 DefaultEffects，水平偏移使用 DefaultSpatial；modal 宽度使用 FastSpatial。
+  常驻模式始终保留收起态占位；隐藏模式不占布局空间，并以水平锚点处理滑出与拖动。
+  position 与 scrim 是 DefaultEffects 的 `AnimatedState<float>`，跟随 rail 的挂载与浮层开关；
+  水平偏移仍是 DefaultSpatial Animatable（拖动、速度、边界和 fling 不是 animate*AsState），挂在 rail 的子 Scope 上。
+  modal 宽度使用 FastSpatial。替换 State 时先抑制 position 对旧偏移的跟随，再释放该偏移。
   拖动释放保留上游 LSQ2 速度计算、125 DIP/s 阈值、半程目标选择及 SnapFlingBehavior 的增量消费与边界停止。
   程序化偏移动画允许过冲。拖动关闭回调仍属于锚点任务，新目标替换该任务时一并取消其等待的外部状态动画。
   因此上游拖动关闭后可能出现 TargetValue=Collapsed、CurrentValue=Expanded、IsAnimating=false，不强行统一两个状态。
+  2026-10-14 对照：静态端点与这些 AnimatedState 的静止初值对齐。空闲时改变目标后，提交与首次采样落在同一到达帧，
+  比 Compose `animate*AsState` 的下一帧首采样大约早一帧；过程中的宽度、位置、选择和颜色会领先，弹簧终点重新对齐。
+  这是 AnimatedState 的提交时序，不在组件里加回额外等帧。`WideNavigationRailState` 与水平偏移仍走 Animatable，拖动回弹不受这条提前采样影响。
 - Modal 阻挡背景指针输入、限制 Tab 和程序化焦点、关闭时恢复先前焦点。Escape 在 KeyUp 关闭；
   ShouldDismissOnBackPress 仅控制 TopLevel.BackRequested，不关闭上游 commonMain 的 Escape KeyUp 分支。
   自动化暴露 pane 和可 Invoke 的 scrim，默认英文名称为 Navigation rail / Close rail，可用 AutomationProperties.Name 覆盖。

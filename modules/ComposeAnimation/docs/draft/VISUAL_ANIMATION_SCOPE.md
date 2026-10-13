@@ -1,3 +1,5 @@
+> **历史设计稿**：本文早于 2026-10 的动画基础重构，仅作历史参考，名称与行为可能已过时。现行用法见 [`docs/usage`](../usage/README.md)；迁移见 [迁移指南](../usage/migration-from-visual-animation-scope.md)。主要改名：`VisualAnimationScope` → `AnimationScope`（`AnimationScope.Get`），`SharedAnimationFrameClock` → 内部 `FrameClock`，`IAnimationFrameClock` → `IFrameSource`，`AnimationScope<T>` → `AnimationRun<T>`。
+
 # VisualAnimationScope 与动画宿主集成设计草案
 
 状态：已实现；使用与迁移见 [VisualAnimationScope](../usage/visual-animation-scope.md)，验证范围见 [实施记录](../VISUAL_ANIMATION_SCOPE_IMPLEMENTATION.md)。

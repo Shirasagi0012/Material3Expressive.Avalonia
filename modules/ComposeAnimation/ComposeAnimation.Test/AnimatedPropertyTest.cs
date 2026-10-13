@@ -19,19 +19,17 @@ public class AnimatedPropertyTest
     private static TweenSpec<double> LinearTween(TimeSpan? duration = null)
         => new(duration ?? TweenDuration, easing: new LinearEasing());
 
-    private static Task OnUi(Action body)
-        => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private sealed class WindowCloser(Window window) : IDisposable
     {
         public void Dispose() => window.Close();
     }
 
-    private static (Window window, Border border, ManualAnimationFrameClock clock) ShowBorder(
+    private static (Window window, Border border, ManualFrameSource clock) ShowBorder(
         IFiniteAnimationSpec<double>? spec = null,
         double opacity = 1)
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var border = new Border
         {
             Width = 80,
@@ -60,7 +58,7 @@ public class AnimatedPropertyTest
     }
 
     private static void StepUntilIdle(AvaloniaObject target, AvaloniaProperty property,
-        ManualAnimationFrameClock clock, int maxFrames = 200)
+        ManualFrameSource clock, int maxFrames = 200)
     {
         for (var i = 0; i < maxFrames && target.IsAnimating(property); i++)
         {
@@ -203,7 +201,7 @@ public class AnimatedPropertyTest
     [Fact]
     public Task NotAttached_DoesNotAnimate() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var border = new Border { Opacity = 1 };
 
         border.Animate(new AnimatedDouble
@@ -222,7 +220,7 @@ public class AnimatedPropertyTest
     [Fact]
     public Task CodeBehind_AnimateHelper_UsesAnimationPriority() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var border = new Border { Width = 80, Height = 80, Opacity = 1 };
 
         border.Animate(new AnimatedDouble
@@ -257,8 +255,8 @@ public class AnimatedPropertyTest
     [Fact]
     public Task SharedCollection_KeepsIndependentSessions() => OnUi(() =>
     {
-        var clockA = new ManualAnimationFrameClock();
-        var clockB = new ManualAnimationFrameClock();
+        var clockA = new ManualFrameSource();
+        var clockB = new ManualFrameSource();
         var collection = new AnimatedPropertyCollection
         {
             new AnimatedDouble { Property = Visual.OpacityProperty, Spec = LinearTween() }
@@ -313,10 +311,10 @@ public class AnimatedPropertyTest
             </Window>
             """;
 
-        var window = new AnimationTestWindow(new ManualAnimationFrameClock());
+        var window = new AnimationTestWindow(new ManualFrameSource());
         AvaloniaRuntimeXamlLoader.Load(xaml, typeof(AnimatedDouble).Assembly, rootInstance: window);
         var border = window.FindControl<Border>("Panel")!;
-        var clock = (ManualAnimationFrameClock)window.TestClock!;
+        var clock = (ManualFrameSource)window.FrameSource!;
 
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -370,12 +368,12 @@ public class AnimatedPropertyTest
             </Window>
             """;
 
-        var window = new AnimationTestWindow(new ManualAnimationFrameClock());
+        var window = new AnimationTestWindow(new ManualFrameSource());
         AvaloniaRuntimeXamlLoader.Load(xaml, typeof(AnimatedDouble).Assembly, rootInstance: window);
         var a = window.FindControl<Border>("A")!;
         var b = window.FindControl<Border>("B")!;
-        var clockA = new ManualAnimationFrameClock();
-        var clockB = new ManualAnimationFrameClock();
+        var clockA = new ManualFrameSource();
+        var clockB = new ManualFrameSource();
 
 
         window.Show();
@@ -396,7 +394,7 @@ public class AnimatedPropertyTest
     [Fact]
     public Task OneWayBinding_IsTheDestination() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var source = new TestOpacitySource { Value = 1 };
         var border = new Border { Width = 80, Height = 80 };
         border.Bind(Visual.OpacityProperty, new Binding(nameof(TestOpacitySource.Value))
@@ -484,7 +482,7 @@ public class AnimatedPropertyTest
     [Fact]
     public Task StyleRemoval_AnimatesToDefaultWithoutReadingItsOwnSample() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
+        var clock = new ManualFrameSource();
         var border = new Border { Width = 80, Height = 80 };
         border.Styles.Add(new Style(x => x.OfType<Border>().Class("dim"))
         {
@@ -596,7 +594,7 @@ public class AnimatedPropertyTest
         using var closer = new WindowCloser(window);
         border.Opacity = 0;
         clock.AdvanceBy(Frame); Dispatcher.UIThread.RunJobs();
-        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.LastError);
+        Assert.Same(failure, ((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.Diagnostics.LastError);
         Assert.False(border.IsAnimating(Visual.OpacityProperty));
         Assert.Equal(0, border.Opacity);
         Assert.Equal(0, clock.PendingFrameCount);
@@ -619,6 +617,7 @@ public class AnimatedPropertyTest
         clock.AdvanceBy(Frame); Dispatcher.UIThread.RunJobs();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(50)); Dispatcher.UIThread.RunJobs();
         window.Content = null;
+        Dispatcher.UIThread.RunJobs(); // Released at the drain (D17).
         Assert.Equal(0, border.Opacity);
         border.Opacity = 0.25;
         window.Content = border;
@@ -670,7 +669,7 @@ public class AnimatedPropertyTest
         clock.AdvanceBy(Frame); Dispatcher.UIThread.RunJobs();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(50)); Dispatcher.UIThread.RunJobs();
         Assert.Equal(150, border.Width, 8);
-        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.LastError);
+        Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(border)!).AnimationRoot.Diagnostics.LastError);
     });
 
     private sealed class FailingEasing(Exception failure) : Easing
@@ -678,7 +677,7 @@ public class AnimatedPropertyTest
         public override double Ease(double progress) => throw failure;
     }
 
-    private sealed class FailingClock : IAnimationFrameClock
+    private sealed class FailingClock : IFrameSource
     {
         public Exception Failure { get; } = new InvalidOperationException("clock failed");
         public int Requests { get; private set; }

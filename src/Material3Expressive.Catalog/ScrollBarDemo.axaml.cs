@@ -7,7 +7,7 @@ public partial class ScrollBarDemo : Window
 {
     public ScrollBarDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 }

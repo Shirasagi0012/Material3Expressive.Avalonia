@@ -24,7 +24,7 @@ namespace ComposeAnimation;
 /// Lookahead.MoveContent preserves same-instance motion through synchronous same-domain parent changes.
 /// </remarks>
 public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, ILookaheadPlacementHost,
-    ILookaheadPlacementApproach, ILookaheadMotionFrameObserver, ILookaheadMoveParticipant, ILookaheadEntryParticipant
+    ILookaheadPlacementApproach, ILookaheadMotionFrameObserver, ILookaheadMoveParticipant, ILookaheadEntryParticipant, IAnimationScopeHost
 {
     public static readonly StyledProperty<Control?> ChildProperty = Decorator.ChildProperty.AddOwner<AnimatedBounds>();
     public static readonly StyledProperty<Thickness> PaddingProperty = Decorator.PaddingProperty.AddOwner<AnimatedBounds>();
@@ -102,9 +102,13 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     internal Control Presentation => _presentation;
     private LookaheadContext? _context;
     private Control? _reference;
-    private ObservedClock? _clock;
-    private IDisposable? _motionRegistration;
-    private SharedAnimationFrameClock? _sharedClock;
+    private ObservedFrameScope? _runScope;
+    private readonly ScopeResumeBinding _scopeBinding;
+    private bool _attached;
+    // Motion-frame offset (owner to reference) minus the motion basis at the last approach
+    // measure. A resume is exact only when this is unchanged: true after a committed move (the
+    // basis absorbed the delta) and after a reparent with no motion-frame edge change (Q-H).
+    private Vector _lastMotionFrame;
     private Rect _outerSample;
     private Rect _innerSample;
     private long _lifecycle;
@@ -113,18 +117,71 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private TargetLayout? _approachLayout;
     private LookaheadConstraints? _lastInnerConstraints;
     private MoveState? _pendingMove;
-    internal bool RetainsAnimationAttachment => _pendingMove is not null;
     private Vector _motionBasis;
     private sealed record TargetLayout(BoundsLayoutResult Layout, LookaheadConstraints InnerConstraints,
         Size InnerSize, Rect InnerBounds);
 
-    static AnimatedBounds() => AffectsMeasure<AnimatedBounds>(TargetSizeProperty, IntermediateLayoutProperty,
-        ChildProperty, PaddingProperty, ParentLayoutModeProperty);
+    static AnimatedBounds()
+    {
+        AffectsMeasure<AnimatedBounds>(TargetSizeProperty, IntermediateLayoutProperty,
+            ChildProperty, PaddingProperty, ParentLayoutModeProperty);
+    }
+
+    // D17: a rebuild while attached keeps both boundaries (value, velocity, target), the target
+    // layout, reference and motion basis, and re-runs them in the replacement scope. A reparent
+    // outside a move transaction has no committed basis delta: resume only when the motion-frame
+    // offset to the same reference is unchanged; otherwise release (snap) as before (Q-H).
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+    {
+        // Intentional: the old run scope is dead in every branch.
+        _runScope = null;
+        _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_outer.Value is null && _inner.Value is null) return false;
+                // Q-E: the drain never runs while a MoveContent is open (the window root's move flag
+                // holds it until commit/abort), so this always sees a committed basis; no host defers.
+                if (!CanResumeBasis())
+                {
+                    Release(); // Q-H: a changed motion-frame basis cannot resume
+                    return false;
+                }
+                _runScope = ObservedFrameScope.Faulting(motion);
+                _outer.Resume(_runScope, BoundsTransform);
+                _inner.Resume(_runScope, BoundsTransform);
+                return true;
+            },
+            // Intentional: Bounds also unbinds its lookahead context on a final end.
+            onLost: () => { Release(); BindContext(null); },
+            // Intentional: Bounds owns arrange-time placement too.
+            invalidate: _ =>
+            {
+                InvalidateMeasure();
+                InvalidateArrange();
+            });
+    }
+
+    private bool CanResumeBasis()
+    {
+        if (_context is not { } context || _reference is not { } reference) return false;
+        if (LookaheadScope.FindContext(this) != context) return false;
+        if ((ReferenceScope ?? context.CoordinateReference) != reference) return false;
+        if (reference != this && !this.GetVisualAncestors().Contains(reference)) return false;
+        return AnimateMotionFrameOfReference ||
+            LookaheadCoordinates.MotionOffset(this, reference) - _motionBasis == _lastMotionFrame;
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _attached = true;
+        base.OnAttachedToVisualTree(e);
+    }
 
     public AnimatedBounds()
     {
-        _outer = new BoundsAnimationState(SampleChanged, error => VisualAnimationScope.ReportError(this, error));
-        _inner = new BoundsAnimationState(SampleChanged, error => VisualAnimationScope.ReportError(this, error));
+        _outer = new BoundsAnimationState(SampleChanged, error => AnimationScope.ReportError(this, error));
+        _inner = new BoundsAnimationState(SampleChanged, error => AnimationScope.ReportError(this, error));
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, () => { Release(); BindContext(null); });
         _presentation = new LookaheadPresentationHost(this, MeasurePresentation, ArrangeApproach, ContentInvalidated);
         _presentation.UseLayoutRounding = false;
         VisualChildren.Add(_presentation);
@@ -258,15 +315,16 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (_context != root) Release();
         BindContext(root);
         _reference = LookaheadCoordinates.ResolveReference(this, root, ReferenceScope);
+        _lastMotionFrame = LookaheadCoordinates.MotionOffset(this, _reference) - _motionBasis;
         _targetLayout = layout;
-        EnsureClock();
-        var clock = _clock?.Faulted == false ? _sharedClock : null;
+        EnsureScope();
+        var runScope = _runScope?.Faulted == false ? _runScope : null;
         var lifecycle = _lifecycle;
         var outerTarget = ToReference(target.Bounds);
         var innerTarget = ToReference(layout.InnerBounds);
-        _outer.UpdateTarget(outerTarget, clock, BoundsTransform);
+        _outer.UpdateTarget(outerTarget, runScope, BoundsTransform);
         if (lifecycle == _lifecycle) // A user BoundsTransform can reset or detach this owner.
-            _inner.UpdateTarget(innerTarget, clock, BoundsTransform);
+            _inner.UpdateTarget(innerTarget, runScope, BoundsTransform);
         // Capture both boundaries once for this measure/arrange pass. No live Bounds reads.
         _outerSample = _outer.Value ?? outerTarget;
         _innerSample = _inner.Value ?? innerTarget;
@@ -447,15 +505,15 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         SetAndRaise(IsRunningProperty, ref _isRunning, _outer.IsRunning || _inner.IsRunning);
     }
 
-    private void EnsureClock()
+    private void EnsureScope()
     {
-        if (_clock is not null) return;
-        if (VisualAnimationScope.IsEnvironmentEnding(this)) return;
+        if (_runScope is not null) return;
+        if (AnimationScope.IsEnvironmentEnding(this)) return;
         if (TopLevel.GetTopLevel(this) is null) return;
-        var motion = VisualAnimationScope.ForHost(this);
-        _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Release(); });
-        _clock = new ObservedClock(motion.Clock);
-        _sharedClock = new SharedAnimationFrameClock(_clock);
+        var motion = AnimationScope.Get(this);
+        _scopeBinding.Reset();
+        _scopeBinding.Bind(motion);
+        _runScope = ObservedFrameScope.Faulting(motion);
     }
 
     /// <summary>Cancel both boundaries and initialize at the destination on the next layout.</summary>
@@ -474,11 +532,9 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
     private void Release(bool preserveValue = false)
     {
-        var registration = _motionRegistration;
-        _motionRegistration = null;
-        registration?.Dispose();
-        // A configuration change during a tree edit forfeits move retention. Keeping a value
-        // without committing its old-to-new coordinate basis would cause a misplaced resume.
+        _scopeBinding.Reset();
+        // A configuration change during an open move cancels the move. Keeping a value without
+        // committing its old-to-new coordinate basis would cause a misplaced resume.
         if (_pendingMove is not null) preserveValue = false;
         _pendingMove = null;
         if (!preserveValue) _motionBasis = default;
@@ -489,9 +545,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         _approachLayout = null;
         _reference = null;
         _lastInnerConstraints = null;
-        _sharedClock?.Dispose();
-        _sharedClock = null;
-        _clock = null;
+        _runScope = null;
         SetAndRaise(CurrentBoundsProperty, ref _currentBounds, null);
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, null);
         SetAndRaise(IsRunningProperty, ref _isRunning, false);
@@ -499,13 +553,12 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // Tree-position state goes now: the measure cache entry and a local lookahead domain.
+        // The animation is released when the scope ends at the drain (D17), or resumes if the
+        // control was re-attached elsewhere (a MoveContent commit included).
+        _attached = false;
         LookaheadMeasure.Forget(this);
         ReleaseLocalEntry();
-        if (_pendingMove is null)
-        {
-            Release();
-            BindContext(null);
-        }
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -548,12 +601,16 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
         private bool IsCurrent => ReferenceEquals(_owner._pendingMove, this);
 
-        public bool CanCommit()
+        public string? CommitBlocker()
         {
-            // An explicit Reset, clock/reference change, or failure already released this state.
-            if (!IsCurrent) return true;
-            if (FrameAdvanced || LookaheadScope.FindContext(_owner) != _context ||
-                (_owner.ReferenceScope ?? _context.CoordinateReference) != _reference || !_owner.GetVisualAncestors().Contains(_reference)) return false;
+            // An explicit Reset, scope/reference change, or failure already released this state.
+            if (!IsCurrent) return null;
+            if (FrameAdvanced) return "an animation frame ran inside the move callback";
+            if (LookaheadScope.FindContext(_owner) != _context) return "a moved AnimatedBounds ended in another Lookahead domain";
+            if ((_owner.ReferenceScope ?? _context.CoordinateReference) != _reference)
+                return "a moved AnimatedBounds changed its coordinate reference";
+            if (!_owner.GetVisualAncestors().Contains(_reference))
+                return "a moved AnimatedBounds is no longer under its coordinate reference";
             if (!_owner.AnimateMotionFrameOfReference)
             {
                 _basisDelta = default;
@@ -568,7 +625,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
                 if (!double.IsFinite(basis.X) || !double.IsFinite(basis.Y))
                     throw new InvalidOperationException("Moving content produced a non-finite motion-frame basis.");
             }
-            return true;
+            return null;
         }
 
         public void Commit()
@@ -576,7 +633,11 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
             if (!IsCurrent) return;
             _owner._pendingMove = null;
             if (!_owner.IsEffectivelyVisible) _owner.Release();
-            else _owner._motionBasis += _basisDelta;
+            else
+            {
+                // The drain that follows rebuilds the scope and resumes the flight there (Q-E).
+                _owner._motionBasis += _basisDelta;
+            }
             _owner._targetLayout = null;
             _owner._lastInnerConstraints = null;
             _owner.InvalidateMeasure();
@@ -719,24 +780,4 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         else base.ArrangeCore(finalRect);
     }
 
-    private sealed class ObservedClock(IAnimationFrameClock provider) : IAnimationFrameClock, IAnimationLifetimeClock
-    {
-        public AnimationLifetime? AnimationLifetime => (provider as IAnimationLifetimeClock)?.AnimationLifetime;
-        public double DurationScale => (provider as IAnimationLifetimeClock)?.DurationScale ?? 1;
-        public bool Faulted { get; private set; }
-        public void VerifyAccess() => Dispatcher.UIThread.VerifyAccess();
-        public async ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                provider.VerifyAccess();
-                return await provider.NextFrameAsync(cancellationToken);
-            }
-            catch (Exception error) when (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                Faulted = true;
-                throw;
-            }
-        }
-    }
 }

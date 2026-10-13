@@ -84,16 +84,15 @@ public class WideNavigationRailItem : Button
     private static readonly StyledProperty<bool> RailExpandedOwnerProperty = RailExpandedProperty.AddOwner<WideNavigationRail>();
     internal NavigationItemIconPosition EffectiveIconPosition => IconPosition ?? (RailExpanded ? NavigationItemIconPosition.Start : NavigationItemIconPosition.Top);
 
-    private VisualAnimationScope? _scope;
-    private Animatable<float>? _selection, _position;
-    private Animatable<Color>? _textColor;
+    private AnimatedState<float>? _selection, _position;
+    private AnimatedState<Color>? _textColor;
     private WideNavigationRailItemLayout? _layout;
     private ContentPresenter? _icon, _label;
     private Border? _indicator;
     private MaterialSurface? _ripple;
     private bool _indicationTop;
     private WideNavigationRailItemAutomationPeer? _peer;
-    private bool _pending, _suppressKeyboardClick;
+    private bool _suppressKeyboardClick;
     private Key? _activationKey;
 
     public WideNavigationRailItem()
@@ -123,7 +122,7 @@ public class WideNavigationRailItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _pending = false;
+        ReleaseMotion();
         base.OnApplyTemplate(e);
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<WideNavigationRailItemLayout>("PART_Layout");
@@ -149,8 +148,8 @@ public class WideNavigationRailItem : Button
             base.OnDetachedFromVisualTree(e);
             return;
         }
-        _scope?.Dispose(); _scope = null;
-        _selection = _position = null; _textColor = null; _pending = false; _activationKey = null;
+        ReleaseMotion();
+        _activationKey = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
@@ -199,55 +198,72 @@ public class WideNavigationRailItem : Button
     }
     private void InitializeMotion()
     {
-        if (_layout is null || _scope is not null || !this.IsAttachedToVisualTree()) return;
+        if (_layout is null || _selection is not null || !this.IsAttachedToVisualTree()) return;
         var topLevel = TopLevel.GetTopLevel(this);
         if (topLevel is null) return; // A parent's detach can transfer the presenter before child detach notifications.
-        // movableContentOf keeps item animations while transferring between hosts.
-        // A TopLevel lease survives that visual detach; the real item detach still disposes it.
-        _scope = VisualAnimationScope.Create(this.FindLogicalAncestorOfType<ModalWideNavigationRail>() is not null ? topLevel : this);
-        _selection = _scope.CreateAnimatable(IsSelected ? 1f : 0f);
-        _position = _scope.CreateAnimatable(EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f);
-        _textColor = _scope.CreateAnimatable(TextTarget);
-        if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget);
-        _scope.SubscribeValue(_selection, value =>
+        var selected = IsSelected ? 1f : 0f;
+        var position = EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f;
+        var text = TextTarget;
+        // movableContentOf keeps one animation identity across the host transfer.
+        // A window-root state survives that visual detach; a real detach still disposes it.
+        // Hidden content is not moving, so it gets a new identity at the current targets.
+        if (this.FindLogicalAncestorOfType<ModalWideNavigationRail>() is not null)
         {
-            _layout.SelectionProgress = value;
-            if (_indicator is not null) _indicator.Opacity = Math.Clamp(value, 0, 1);
-        });
-        _scope.SubscribeValue(_position, value => { _layout.IconPositionProgress = value; UpdateLabelStyle(); });
-        _scope.SubscribeValue(_textColor, value => { if (_label is not null) _label.Foreground = new SolidColorBrush(value); });
+            var root = AnimationScope.GetRoot(topLevel);
+            _selection = AnimatedState.Create(root, selected, label: "Wide rail selection");
+            _position = AnimatedState.Create(root, position, label: "Wide rail icon position");
+            _textColor = AnimatedState.Create(root, text, label: "Wide rail text color");
+        }
+        else
+        {
+            _selection = AnimatedState.Create(this, selected, label: "Wide rail selection");
+            _position = AnimatedState.Create(this, position, label: "Wide rail icon position");
+            _textColor = AnimatedState.Create(this, text, label: "Wide rail text color");
+        }
+        _selection.ValueChanged += OnSelection;
+        _position.ValueChanged += OnPosition;
+        _textColor.ValueChanged += OnTextColor;
+        if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget);
+        OnSelection(selected);
+        OnPosition(position);
+        OnTextColor(text);
+    }
+    private void ReleaseMotion()
+    {
+        _selection?.Dispose();
+        _position?.Dispose();
+        _textColor?.Dispose();
+        _selection = _position = null;
+        _textColor = null;
+    }
+    private void OnSelection(float value)
+    {
+        if (_layout is not null) _layout.SelectionProgress = value;
+        if (_indicator is not null) _indicator.Opacity = Math.Clamp(value, 0, 1);
+    }
+    private void OnPosition(float value)
+    {
+        if (_layout is not null) _layout.IconPositionProgress = value;
+        UpdateLabelStyle();
+    }
+    private void OnTextColor(Color value)
+    {
+        if (_label is not null) _label.Foreground = new SolidColorBrush(value);
     }
     private void UpdateTargets()
     {
-        if (_scope is not { IsEnding: false } scope || _pending) return;
-        // A modal fling can change the hoisted target from its animation callback.
-        // Its recomposition starts effects before the next frame, without another gate.
-        var frameDriven = this.FindLogicalAncestorOfType<ModalWideNavigationRail>()?.HasFrameDrivenTarget == true;
-        _pending = true;
-        _ = scope.Launch(async ct =>
-        {
-            if (!frameDriven) await scope.Clock.NextFrameAsync(ct);
-            _pending = false;
-            if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget); // Upstream iconColor does not animate.
-            var spatial = _layout!.SpatialAnimation;
-            var effects = _layout!.EffectsAnimation;
-            if (spatial.Stiffness <= 0 || effects.Stiffness <= 0) return;
-            Restart(_selection!, IsSelected ? 1f : 0f, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f));
-            Restart(_position!, EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f));
-            Restart(_textColor!, TextTarget, new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness));
-            UpdateLabelStyle();
-
-            void Restart<T>(Animatable<T> track, T target, SpringSpec<T> spec)
-            {
-                if (EqualityComparer<T>.Default.Equals(track.TargetValue, target)) return;
-                _ = scope.Launch(async lifetime =>
-                {
-                    await track.StopAsync();
-                    lifetime.ThrowIfCancellationRequested();
-                    await track.AnimateToAsync(target, spec, cancellationToken: lifetime);
-                }, "Wide rail item track");
-            }
-        }, "Wide rail item targets");
+        if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget); // Upstream iconColor does not animate.
+        if (_selection is null || _position is null || _textColor is null || _layout is null) return;
+        var spatial = _layout.SpatialAnimation;
+        var effects = _layout.EffectsAnimation;
+        if (spatial.Stiffness <= 0 || effects.Stiffness <= 0) return;
+        const float threshold = 0.01f;
+        var spatialSpec = new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, threshold);
+        _selection.UpdateTarget(IsSelected ? 1f : 0f, spatialSpec);
+        _position.UpdateTarget(EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f,
+            new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, threshold));
+        _textColor.UpdateTarget(TextTarget, new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness));
+        UpdateLabelStyle();
     }
     private void UpdateLabelStyle()
     {

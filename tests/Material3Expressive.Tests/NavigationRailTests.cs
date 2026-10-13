@@ -114,7 +114,7 @@ public class NavigationRailTests
             window.Content = null;
             window.Content = new Grid { Children = { item } }; window.UpdateLayout();
             Assert.Equal(0, Part<Border>(item, "PART_Indicator").Opacity);
-            Assert.Null(((MotionTestWindow)window).MotionRoot.LastError);
+            Assert.Null(((MotionTestWindow)window).MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -135,7 +135,7 @@ public class NavigationRailTests
             item.ApplyTemplate(); window.UpdateLayout();
             clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
             Assert.Equal(0, clock.PendingFrameCount);
-            Assert.Null(((MotionTestWindow)window).MotionRoot.LastError);
+            Assert.Null(((MotionTestWindow)window).MotionRoot.Diagnostics.LastError);
             item.ClearValue(TemplatedControl.TemplateProperty); item.ApplyTemplate(); window.UpdateLayout();
             Assert.Equal(1, Part<Border>(item, "PART_Indicator").Opacity);
         }

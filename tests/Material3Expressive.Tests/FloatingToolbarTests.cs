@@ -176,7 +176,7 @@ public sealed class FloatingToolbarTests
             clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout();
             await Task.Yield();
         }
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
         Assert.Equal(horizontal ? new Size(128, 80) : new Size(80, 128), toolbar.Bounds.Size);
         Assert.Equal(new Size(80, 80), fab.Bounds.Size);
         var surface = toolbar.GetVisualDescendants().OfType<MaterialSurface>().First(surface => surface.Name == "PART_Container");

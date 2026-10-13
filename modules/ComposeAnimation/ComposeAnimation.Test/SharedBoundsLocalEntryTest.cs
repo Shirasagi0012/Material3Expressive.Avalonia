@@ -9,7 +9,6 @@ namespace ComposeAnimation.Test;
 
 public class SharedBoundsLocalEntryTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
     private static TimeSpan Ms(int value) => TimeSpan.FromMilliseconds(value);
 
     private sealed class ConstraintProbe : Control, ILookaheadConstrainedLayoutNode
@@ -42,7 +41,7 @@ public class SharedBoundsLocalEntryTest
 
     private sealed class Scene : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Transition<bool> Parent { get; }
         public SharedBounds From { get; }
         public SharedBounds To { get; }
@@ -55,7 +54,7 @@ public class SharedBoundsLocalEntryTest
 
         public Scene()
         {
-            Parent = new Transition<bool>(true, Clock);
+            Parent = new Transition<bool>(true);
             FromText = Text();
             ToText = Text();
             From = Endpoint(FromText, 120, 160);
@@ -77,7 +76,7 @@ public class SharedBoundsLocalEntryTest
                 PreparationTimeout = Timeout.InfiniteTimeSpan,
                 Content = stage
             };
-            Window = new AnimationTestWindow(Clock) { Width = 700, Height = 400, Content = Host };
+            Window = new AnimationTestWindow(Frames) { Width = 700, Height = 400, Content = Host };
             Window.Show();
             Layout();
             Parent.OnFrame(TimeSpan.Zero);

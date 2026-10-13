@@ -17,7 +17,6 @@ public class AnimatedContentTest
 {
     private static TweenSpec<T> Tween<T>(int milliseconds = 100, int delay = 0)
         => new(TimeSpan.FromMilliseconds(milliseconds), TimeSpan.FromMilliseconds(delay), new LinearEasing());
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private static ContentTransform LinearFade(int enterMs = 220, int enterDelay = 90, int exitMs = 90,
         SizeTransform? size = null)
@@ -30,14 +29,14 @@ public class AnimatedContentTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public AnimatedContent Host { get; }
         public Window Window { get; }
         public Fixture(AnimatedContent host)
         {
             Host = host;
 
-            Window = new AnimationTestWindow(Clock) { Width = 500, Height = 500, Content = host };
+            Window = new AnimationTestWindow(Frames) { Width = 500, Height = 500, Content = host };
             Window.Show();
             Layout();
         }
@@ -52,17 +51,17 @@ public class AnimatedContentTest
             Assert.True(SpinWait.SpinUntil(() =>
             {
                 Layout();
-                return Host.IsIdle || Clock.PendingFrameCount > 0;
+                return Host.IsIdle || Frames.PendingFrameCount > 0;
             }, TimeSpan.FromSeconds(5)), "The animation loop did not request its next frame.");
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
         public void Finish()
         {
-            for (var i = 0; i < 200 && (!Host.IsIdle || Clock.PendingFrameCount > 0); i++) Step(16);
+            for (var i = 0; i < 200 && (!Host.IsIdle || Frames.PendingFrameCount > 0); i++) Step(16);
             Assert.True(Host.IsIdle,
-                $"Target={Host.TargetContent}, slots={Host.VisibleSlotCount}, idle={Host.IsIdle}, error={((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.LastError}");
-            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.LastError);
+                $"Target={Host.TargetContent}, slots={Host.VisibleSlotCount}, idle={Host.IsIdle}, error={((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError}");
+            Assert.Null(((AnimationTestWindow)TopLevel.GetTopLevel(Host)!).AnimationRoot.Diagnostics.LastError);
         }
         public void Dispose() => Window.Close();
     }
@@ -572,9 +571,8 @@ public class AnimatedContentTest
     [Fact]
     public Task Source_ParentTransition_WaitsForSlots() => OnUi(() =>
     {
-        var clock = new ManualAnimationFrameClock();
-        using var parent = new Transition<string>("A", clock, "Page");
-        _ = parent.RunAsync();
+        var clock = new ManualFrameSource();
+        using var parent = new Transition<string>("A", "Page");
         var host = new AnimatedContent
         {
             HorizontalAlignment = HorizontalAlignment.Left,
@@ -585,17 +583,18 @@ public class AnimatedContentTest
         };
 
         var window = new AnimationTestWindow(clock) { Width = 400, Height = 400, Content = host };
+        _ = parent.RunAsync(window.AnimationRoot);
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.UpdateLayout();
         parent.UpdateTarget("B");
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
         window.UpdateLayout();
         Assert.True(host.VisibleSlotCount >= 1);
         Assert.True(parent.IsRunning);
         for (var i = 0; i < 40 && host.VisibleSlotCount > 1; i++)
         {
-            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Dispatcher.UIThread.RunJobs();
             window.UpdateLayout();
         }
         Assert.Equal(1, host.VisibleSlotCount);
@@ -737,7 +736,7 @@ public class AnimatedContentTest
         using var f = new Fixture(host);
         host.TransitionSpec = _ => throw new InvalidOperationException("boom");
         Assert.Throws<InvalidOperationException>(() => host.Content = "B");
-        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.LastError);
+        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(host)!).AnimationRoot.Diagnostics.LastError);
     });
 
     [Fact]

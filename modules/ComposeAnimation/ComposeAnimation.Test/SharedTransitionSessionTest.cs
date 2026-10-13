@@ -9,7 +9,7 @@ public class SharedTransitionSessionTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Transition<bool> Parent { get; }
         public Transition<EnterExitState> Source { get; }
         public Transition<EnterExitState> Target { get; }
@@ -18,7 +18,7 @@ public class SharedTransitionSessionTest
         public SharedTransitionParticipant To { get; }
         public Fixture()
         {
-            Parent = new(true, Clock);
+            Parent = new(true);
             Source = Parent.CreateChildTransition(s => s ? EnterExitState.Visible : EnterExitState.PostExit);
             Target = Parent.CreateChildTransition(s => s ? EnterExitState.PostExit : EnterExitState.Visible);
             Scope = SharedTransitionScope.Create(Parent);
@@ -61,7 +61,7 @@ public class SharedTransitionSessionTest
         });
         Assert.Same(f.Parent, session.Transition.ParentTransition);
         Assert.False(f.Parent.IsPreparing);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Parent.OnFrame(Ms(0));
         f.Parent.OnFrame(Ms(100));
         Assert.Equal(SharedSessionState.AwaitingHandoff, session.State);
@@ -328,7 +328,7 @@ public class SharedTransitionSessionTest
     [Fact]
     public void DisposingAncestorOfSharedParent_DoesNotMutateDisposingEndpointTree()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true);
         var parent = root.CreateChildTransition(s => s);
         var source = parent.CreateChildTransition(s => s ? EnterExitState.Visible : EnterExitState.PostExit);
         var target = parent.CreateChildTransition(s => s ? EnterExitState.PostExit : EnterExitState.Visible);

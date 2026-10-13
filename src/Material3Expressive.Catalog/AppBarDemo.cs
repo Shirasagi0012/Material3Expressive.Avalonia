@@ -30,7 +30,7 @@ public sealed class AppBarDemo : Window
     public AppBarDemo()
     {
         Title = "AppBar"; Width = 820; Height = 680;
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         var body = new Border { Child = _bodyScroll };
         body.Bind(Border.WidthProperty, new Avalonia.Data.Binding("Bounds.Width") { Source = _screen });
         body.Bind(Border.HeightProperty, new Avalonia.Data.Binding("Bounds.Height") { Source = _screen });

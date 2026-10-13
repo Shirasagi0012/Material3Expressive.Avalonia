@@ -218,3 +218,7 @@ if (host.TargetScope is { } scope)
 - [共享元素过渡](./shared-transition.md)：与外部 `Transition` 共享状态
 - [使用文档入口](../README.md)
 - [旧版设计文档 ANIMATED_CONTENT.md](../../draft/ANIMATED_CONTENT.md)（更偏实现细节，仍有效）
+
+## Scope 与换父 · Scope and reparenting
+
+`AnimatedContent` 在 Scope 重建时恢复在途的内容切换（D17），已进入与正在退出的子项都在新 Scope 中继续；`ResetAnimation` 与脱离后未挂回（排空时释放）仍会重置。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。

@@ -54,7 +54,7 @@ internal sealed class RailLayoutTrace : IDisposable
         _samples.Add(new
         {
             kind = "start", rail = rail.Name, target = rail.State.TargetValue.ToString(),
-            durationScale = Animated.GetDurationScale(_window), scale = _window.RenderScaling,
+            durationScale = AnimationScope.GetDurationScale(_window), scale = _window.RenderScaling,
             timebase = "Stopwatch elapsed ms from target change; pass is a layout observation, not a presented frame",
             coordinates = "window client physical pixels; unrounded double values; boxes are x,y,width,height",
             layoutModel = "continuous vertical geometry with Compose integer endpoints",
@@ -145,15 +145,15 @@ internal sealed class RailLayoutTrace : IDisposable
         var now = _time.Elapsed.TotalMilliseconds;
         var moving = rail.State.IsAnimating;
         if (rail is ModalWideNavigationRail modal)
-            moving |= Pending(modal) || Running(modal, "_position", "_offset", "_alpha");
+            moving |= Running(modal, "_position", "_offset", "_alpha");
         foreach (var item in rail.Items.OfType<WideNavigationRailItem>())
         {
-            moving |= Pending(item) || Running(item, "_position", "_selection");
+            moving |= Running(item, "_position", "_selection");
             if (FindItemLayout(item)?.GetVisualAncestors().FirstOrDefault(v => v.GetType().Name == "WideNavigationRailLayout") is { } layout)
-                moving |= Pending(layout) || Running(layout, "_minWidth", "_widthFullRange", "_itemSpacing", "_itemHeight");
+                moving |= Running(layout, "_minWidth", "_widthFullRange", "_itemSpacing", "_itemHeight");
         }
         if (moving) _lastMotionMs = now;
-        if (now > Math.Max(15_000, 5_000 * Animated.GetDurationScale(_window)) || _samples.Count >= 20_000)
+        if (now > Math.Max(15_000, 5_000 * AnimationScope.GetDurationScale(_window)) || _samples.Count >= 20_000)
         {
             Capture("capture-limit");
             Flush("capture-limit");
@@ -167,8 +167,13 @@ internal sealed class RailLayoutTrace : IDisposable
 
     private static Control? FindItemLayout(WideNavigationRailItem item) => item.GetVisualDescendants().OfType<Control>()
         .FirstOrDefault(c => c.GetType().Name == "WideNavigationRailItemLayout");
-    private bool Pending(object owner) => Read<bool>(owner, "_pending");
-    private bool Running(object owner, params string[] names) => names.Any(name => Read<Animatable<float>?>(owner, name)?.IsRunning == true);
+    private bool Running(object owner, params string[] names) => names.Any(name => InMotion(Read<object?>(owner, name)));
+    private static bool InMotion(object? value) => value switch
+    {
+        Animatable<float> animatable => animatable.IsRunning,
+        AnimatedState<float> state => state.IsRunning || state.TargetValue != state.Value,
+        _ => false
+    };
 
     private T Read<T>(object owner, string name)
     {

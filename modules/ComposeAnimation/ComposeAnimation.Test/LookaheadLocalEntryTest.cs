@@ -11,7 +11,6 @@ namespace ComposeAnimation.Test;
 
 public class LookaheadLocalEntryTest
 {
-    private static Task OnUi(Action body) => HeadlessApp.Session.Dispatch(body, CancellationToken.None);
 
     private static BoundsTransform Tween(int milliseconds = 100) => new()
     {
@@ -41,13 +40,13 @@ public class LookaheadLocalEntryTest
 
     private sealed class Fixture : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new();
+        public ManualFrameSource Frames { get; } = new();
         public Window Window { get; }
 
         public Fixture(Control content, params AnimatedBounds[] animations)
         {
 
-            Window = new AnimationTestWindow(Clock) { Width = 420, Height = 320, Content = content };
+            Window = new AnimationTestWindow(Frames) { Width = 420, Height = 320, Content = content };
             Window.Show();
             Layout();
         }
@@ -62,7 +61,7 @@ public class LookaheadLocalEntryTest
 
         public void Step(int milliseconds)
         {
-            Clock.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
+            Frames.AdvanceBy(TimeSpan.FromMilliseconds(milliseconds));
             Layout();
         }
 
@@ -87,7 +86,7 @@ public class LookaheadLocalEntryTest
         Assert.NotNull(snapshot);
         Assert.Same(snapshot, Lookahead.GetSnapshot(text));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         Assert.Equal(card.TargetBounds, card.CurrentBounds);
         Assert.Equal(card.Bounds, card.TargetBounds);
         Assert.Equal(new Size(120, 60), card.Bounds.Size);

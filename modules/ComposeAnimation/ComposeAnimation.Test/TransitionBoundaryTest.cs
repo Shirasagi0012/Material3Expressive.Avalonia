@@ -47,7 +47,7 @@ public class TransitionBoundaryTest
     [Fact]
     public void NestedSeek_AndDeferredRefreshUseCurrentManualTime()
     {
-        using var root = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(false);
         var child = root.CreateChildTransition(s => s);
         var grandchild = child.CreateChildTransition(s => s);
         var distance = 100.0;
@@ -70,7 +70,7 @@ public class TransitionBoundaryTest
     public void ReturningFromDeferredPhase_UsesManualValueInsteadOfMappedInitialState()
     {
         var state = new DeferredTransitionState<bool>(false);
-        using var transition = new DeferredTransition<bool>(state, new ManualAnimationFrameClock());
+        using var transition = new DeferredTransition<bool>(state);
         using var deferred = transition.CreateDeferredAnimation(new DoubleConverter());
         var value = deferred.Animate(_ => new SpringSpec<double>(), s => s ? 100 : 0);
         state.Defer(true);
@@ -90,7 +90,7 @@ public class TransitionBoundaryTest
     [Fact]
     public void EmptyTransitionAndRemovalOfLastChild_CanComplete()
     {
-        using var root = new Transition<int>(0, new ManualAnimationFrameClock());
+        using var root = new Transition<int>(0);
         root.UpdateTarget(1);
         root.OnFrame(Ms(0));
         Assert.Equal(1, root.CurrentState);
@@ -111,7 +111,7 @@ public class TransitionBoundaryTest
     [Fact]
     public void ScaleChange_RecalculatesPlayTimeFromStartAsUpstreamDoes()
     {
-        using var root = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(false);
         var value = root.AnimateDouble(s => s ? 100 : 0, _ => Tween(1000));
         root.DurationScale = 2;
         root.UpdateTarget(true);
@@ -124,35 +124,62 @@ public class TransitionBoundaryTest
     }
 
     [Fact]
-    public async Task CancelledLoop_CanResumeWithoutCountingInactiveTime()
+    public Task ScopeScaleChange_RecalculatesPlayTimeFromStart() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
-        using var root = new Transition<bool>(false, clock);
+        // Amendment A2 repro: 1000 ms linear 0 -> 300, scope scale 1 -> 2 after 30 frames.
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var root = new Transition<bool>(false);
+        var value = root.AnimateDouble(s => s ? 300 : 0, _ => Tween(1000));
+        root.UpdateTarget(true);
+        using var cts = new CancellationTokenSource();
+        var run = root.RunAsync(window.AnimationRoot, cts.Token);
+        var frame = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60);
+        clock.Pump(Ms(0));
+        for (var i = 0; i < 29; i++) clock.Pump(frame);
+        Assert.InRange(value.Value, 144, 146);
+        AnimationScope.SetDurationScale(window, 2);
+        clock.Pump(frame);
+        clock.Pump(frame);
+        // 31 frames since the start / 2 = 258 ms of play time: about 77, not the accumulated 150.
+        Assert.InRange(value.Value, 76, 79);
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        window.Close();
+    });
+
+    [Fact]
+    public Task CancelledLoop_CanResumeWithoutCountingInactiveTime() => OnUi(async () =>
+    {
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var root = new Transition<bool>(false);
         var value = root.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         root.UpdateTarget(true);
         using var firstCancellation = new CancellationTokenSource();
-        var first = root.RunAsync(firstCancellation.Token);
-        clock.AdvanceBy(Ms(0));
-        clock.AdvanceBy(Ms(50));
+        var first = root.RunAsync(window.AnimationRoot, firstCancellation.Token);
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(50));
         firstCancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
-        clock.SendFrame(Ms(1000));
+        clock.PumpTo(Ms(1000));
 
         using var secondCancellation = new CancellationTokenSource();
-        var second = root.RunAsync(secondCancellation.Token);
-        clock.AdvanceBy(Ms(0));
+        var second = root.RunAsync(window.AnimationRoot, secondCancellation.Token);
+        clock.Pump(Ms(0));
         Assert.Equal(50, value.Value, 8);
-        clock.AdvanceBy(Ms(25));
+        clock.Pump(Ms(25));
         Assert.Equal(75, value.Value, 8);
         secondCancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
-    }
+        window.Close();
+    });
 
     [Fact]
     public void Disposal_CompletesLogicalStateWithoutSnappingAnimatedValue()
     {
         var state = new MutableTransitionState<bool>(false);
-        var root = new Transition<bool>(state, new ManualAnimationFrameClock());
+        var root = new Transition<bool>(state);
         var value = root.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         root.UpdateTarget(true);
         root.OnFrame(Ms(0));
@@ -168,7 +195,7 @@ public class TransitionBoundaryTest
     public void StateNotification_CanChainNextTargetAtCompletion()
     {
         var state = new MutableTransitionState<int>(0);
-        using var root = new Transition<int>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<int>(state);
         var value = root.AnimateDouble(s => s * 100, _ => Tween());
         state.PropertyChanged += (_, e) =>
         {
@@ -193,7 +220,7 @@ public class TransitionBoundaryTest
     public void RunningNotification_CanRetargetThroughMutableState()
     {
         var state = new MutableTransitionState<int>(0);
-        using var root = new Transition<int>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<int>(state);
         var value = root.AnimateDouble(s => s * 100, _ => Tween());
         state.PropertyChanged += (_, e) =>
         {

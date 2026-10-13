@@ -6,7 +6,7 @@
 共享元素过渡（shared element transition）让两个页面上的控件在导航时表现为"同一个元素飞过去"：列表里的卡片展开成详情页大图，而不是各自淡入淡出。ComposeAnimation 的 SharedTransition 将 Jetpack Compose 的共享元素模型移植到 Avalonia，建立在两层既有设施之上：
 
 - **[`AnimatedVisibility`](./animated-visibility.md)**：每个端点（共享内容）必须放在一个 `AnimatedVisibility` 之下，由它提供进入/退出的可见性作用域；
-- **调用方持有的 [`Transition<TState>`](../runtime/transitions.md)**：页面状态机由调用方创建、驱动帧循环（`RunAsync()`）并负责 `Dispose()`；`SharedTransitionHost` 只在其上协调共享过渡，不接管它的生命周期。
+- **调用方持有的 [`Transition<TState>`](../runtime/transitions.md)**：页面状态机由调用方创建、驱动帧循环（`RunAsync(scope)`）并负责 `Dispose()`；`SharedTransitionHost` 只在其上协调共享过渡，不接管它的生命周期。
 
 配对、准备、会话生命周期和覆盖层绘制由 host 内部的协调器完成；应用代码只需要声明端点的 `Key`、接线页面可见性，并在导航时调用 `BeginUpdate()`。
 
@@ -68,14 +68,14 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        var motion = VisualAnimationScope.Initialize(this);
+        var motion = AnimationScope.Initialize(this);
         InitializeComponent();
         // true 表示"当前在列表页"；根环境负责帧源与生命周期。
-        _page = motion.CreateTransition(true);
+        _page = new Transition<bool>(true);
         Host.Transition = _page;
         ListPage.Source = VisibilitySource.From(_page, list => list);
         DetailsPage.Source = VisibilitySource.From(_page, list => !list);
-        Opened += (_, _) => _ = motion.Launch(ct => _page.RunAsync(ct));
+        Opened += (_, _) => _ = motion.Launch(ct => _page.RunAsync(motion, ct));
     }
 
     private void Navigate(DemoItem? item)
@@ -268,7 +268,7 @@ _vm.IsTransitioning = _page.IsRunning || Host.IsPreparing || Host.IsOverlayActiv
 
 ## 注意事项与诊断
 
-- **调用方拥有父 transition**：创建 `Transition<TState>`、设置 `Host.Transition`、`RunAsync()` 启动帧循环、窗口关闭时 `Dispose()`，都是应用的责任。host 只协调，不接管生命周期。
+- **调用方拥有父 transition**：创建 `Transition<TState>`、设置 `Host.Transition`、`RunAsync(scope)` 启动帧循环、窗口关闭时 `Dispose()`，都是应用的责任。host 只协调，不接管生命周期。
 - **先设 `Transition` 再 `BeginUpdate()`**，且开始共享准备后不得更换 `Transition`（抛 `InvalidOperationException`）。
 - **端点必须在某个祖先 `AnimatedVisibility` 下**，且两侧页面的 `Source` 必须派生自同一个父 transition，否则永不配对。
 - **Key 规则**：`null` 不注册；同侧重复 key 按二义回退；`SharedElement` 与 `SharedBounds` 同 key 不配对。
@@ -302,3 +302,7 @@ dotnet run --project Catalog/Catalog.csproj -- --run shared/list-detail --out ar
 - [文档入口](../README.md)
 - `docs/SHARED_TRANSITION.md`（即 [../../SHARED_TRANSITION.md](../../draft/SHARED_TRANSITION.md)）：英文参考，含布局契约细节与支持矩阵
 - 可运行示例：`Catalog/Demos/Shared/SharedListDetailDemo.axaml`
+
+## Scope 与换父 · Scope and reparenting
+
+共享过渡的元素飞行由 `AnimatedBounds` 驱动，遵循其恢复规则（D17、Q-H）：参考基准不变时跨 Scope 继续，否则释放。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。

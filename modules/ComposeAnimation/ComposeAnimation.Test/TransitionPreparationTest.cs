@@ -14,7 +14,7 @@ public class TransitionPreparationTest
     public void NestedLeases_HoldAncestorsWithoutAddingDuration(double durationScale)
     {
         var state = new MutableTransitionState<bool>(true);
-        using var root = new Transition<bool>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(state);
         root.DurationScale = durationScale;
         var child = root.CreateChildTransition(s => s);
         var leaf = child.CreateChildTransition(s => s);
@@ -47,7 +47,7 @@ public class TransitionPreparationTest
     [Fact]
     public void Preparation_DoesNotPauseExistingAnimation_AndTransfersToLateAnimation()
     {
-        using var root = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(false);
         var value = root.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         using var preparation = root.BeginPreparation();
         root.UpdateTarget(true);
@@ -73,7 +73,7 @@ public class TransitionPreparationTest
     public void ReverseToOriginalState_StillWaitsForPreparation()
     {
         var state = new MutableTransitionState<bool>(true);
-        using var root = new Transition<bool>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(state);
         using var preparation = root.BeginPreparation();
         root.UpdateTarget(false);
         root.OnFrame(Ms(0));
@@ -89,7 +89,7 @@ public class TransitionPreparationTest
     [Fact]
     public void DisposingChild_RevokesItsLeases_WithoutReleasingSibling()
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true);
         var child = root.CreateChildTransition(s => s);
         var sibling = root.CreateChildTransition(s => s);
         var childLease = child.BeginPreparation();
@@ -111,7 +111,7 @@ public class TransitionPreparationTest
     [Fact]
     public void ManualSeek_RevokesPendingPreparation_AndSamplesNormally()
     {
-        using var root = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(false);
         var child = root.CreateChildTransition(s => s);
         var value = child.AnimateDouble(s => s ? 100 : 0, _ => Tween());
         using var preparation = child.BeginPreparation();
@@ -128,7 +128,7 @@ public class TransitionPreparationTest
     public async Task SeekableSnap_RevokesPendingPreparation()
     {
         var state = new SeekableTransitionState<bool>(false);
-        using var root = new Transition<bool>(state, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(state);
         using var preparation = root.BeginPreparation();
         await state.SnapToAsync(true);
         Assert.False(preparation.IsActive);
@@ -145,7 +145,7 @@ public class TransitionPreparationTest
     [Fact]
     public void ReleaseDuringNotification_DoesNotLeakAQueuedReservation()
     {
-        using var root = new Transition<bool>(false, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(false);
         TransitionPreparationLease? lease = null;
         root.PropertyChanged += (_, e) =>
         {
@@ -163,19 +163,20 @@ public class TransitionPreparationTest
     }
 
     [Fact]
-    public async Task FrameLoop_CompletesAfterRelease_AndCancellationDoesNotOwnCallerLease()
+    public Task FrameLoop_CompletesAfterRelease_AndCancellationDoesNotOwnCallerLease() => OnUi(async () =>
     {
-        var clock = new ManualAnimationFrameClock();
-        using var root = new Transition<bool>(true, clock);
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var root = new Transition<bool>(true);
         using var lease = root.BeginPreparation();
         using var cancellation = new CancellationTokenSource();
         root.UpdateTarget(false);
-        var loop = root.RunAsync(cancellation.Token);
-        clock.AdvanceBy(Ms(16));
+        var loop = root.RunAsync(window.AnimationRoot, cancellation.Token);
+        clock.Pump(Ms(16));
         Assert.True(root.CurrentState);
         Assert.Equal(1, clock.PendingFrameCount);
         lease.Dispose();
-        clock.AdvanceBy(Ms(16));
+        clock.Pump(Ms(16));
         Assert.False(root.CurrentState);
         Assert.False(root.IsRunning);
         Assert.Equal(0, clock.PendingFrameCount);
@@ -186,7 +187,7 @@ public class TransitionPreparationTest
         // outstanding preparation (usually via using/finally), or dispose the transition.
         using var pending = root.BeginPreparation();
         using var secondCancellation = new CancellationTokenSource();
-        var secondLoop = root.RunAsync(secondCancellation.Token);
+        var secondLoop = root.RunAsync(window.AnimationRoot, secondCancellation.Token);
         secondCancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => secondLoop);
         Assert.True(pending.IsActive);
@@ -196,12 +197,15 @@ public class TransitionPreparationTest
         root.OnFrame(Ms(48));
         Assert.False(root.IsPreparing);
         Assert.False(root.IsRunning);
-    }
+        window.Close();
+    });
 
     [Fact]
-    public async Task CancellationFinally_ReleasesReservationWithoutDisposingTransition()
+    // On the UI thread: the transition is owned by its constructing thread, so the lease's
+    // release after the awaited delay must resume there.
+    public Task CancellationFinally_ReleasesReservationWithoutDisposingTransition() => OnUi(async () =>
     {
-        using var root = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var root = new Transition<bool>(true);
         using var cancellation = new CancellationTokenSource();
         TransitionPreparationLease? lease = null;
         async Task Prepare()
@@ -221,5 +225,6 @@ public class TransitionPreparationTest
         root.UpdateTarget(true);
         root.OnFrame(Ms(32));
         Assert.True(root.CurrentState);
-    }
+    });
+
 }

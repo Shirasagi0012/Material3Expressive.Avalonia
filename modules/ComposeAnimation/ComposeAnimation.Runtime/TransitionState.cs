@@ -218,31 +218,37 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
             cancellationToken);
     }
 
-    public Task AnimateToAsync(IFiniteAnimationSpec<double>? animationSpec = null,
+    public Task AnimateToAsync(FrameScope scope, IFiniteAnimationSpec<double>? animationSpec = null,
         CancellationToken cancellationToken = default)
-        => AnimateToAsync(TargetState, animationSpec, cancellationToken);
+        => AnimateToAsync(scope, TargetState, animationSpec, cancellationToken);
 
     /// <summary>
     /// Animates the progress to the end of the current segment.  The optional animation spec
     /// controls progress itself; the transition's child animations are sampled at the resulting
-    /// fraction on every frame.
+    /// fraction on every frame. Frames come from <paramref name="scope"/>. Like any run of the
+    /// transition, the seek run takes the transition's run mutex, so it cancels a running
+    /// <see cref="Transition.RunAsync"/> (and vice versa) instead of racing it.
     /// </summary>
-    public Task AnimateToAsync(T targetState, IFiniteAnimationSpec<double>? animationSpec = null,
+    public Task AnimateToAsync(FrameScope scope, T targetState, IFiniteAnimationSpec<double>? animationSpec = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(scope);
         var transition = _transition;
         if (transition is null) return Task.CompletedTask;
         transition.VerifyAccess();
+        scope.VerifyAccess();
 
-        return _mutatorMutex.MutateAsync(
-            token => AnimateCoreAsync(transition, targetState, animationSpec, token),
-            MutatePriority.Default,
-            cancellationToken);
+        return scope.Track(() => transition.MutateWithRunMutexAsync(_mutatorMutex,
+            (stateToken, runToken) => AnimateCoreAsync(scope, transition, targetState, animationSpec, stateToken, runToken),
+            cancellationToken));
     }
 
-    private async Task<bool> AnimateCoreAsync(Transition<T> transition, T targetState,
-        IFiniteAnimationSpec<double>? animationSpec, CancellationToken cancellationToken)
+    private async Task<bool> AnimateCoreAsync(FrameScope scope, Transition<T> transition, T targetState,
+        IFiniteAnimationSpec<double>? animationSpec, CancellationToken stateToken, CancellationToken runToken)
     {
+        // The run's one token: state mutex (caller token included), run mutex and scope lifetime.
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(stateToken, runToken, scope.Lifetime);
+        var cancellationToken = linked.Token;
         cancellationToken.ThrowIfCancellationRequested();
 
         var oldTarget = TargetState;
@@ -262,7 +268,7 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
 
         var totalDuration = transition.TotalDuration;
         var startFraction = Math.Clamp(Fraction, 0, 1);
-        if (startFraction >= 1 || totalDuration <= TimeSpan.Zero || transition.DurationScale <= 0)
+        if (startFraction >= 1 || totalDuration <= TimeSpan.Zero || transition.DurationScale * scope.EffectiveDurationScale <= 0)
         {
             Fraction = 1;
             transition.SeekToPlayTime(totalDuration);
@@ -282,26 +288,23 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
         var running = false;
         try
         {
-            var firstFrame = await transition.Clock.NextFrameAsync(cancellationToken);
-            var previousFrame = firstFrame;
-            var animationPlayTime = TimeSpan.Zero;
+            var clock = new PlayTimeAccumulator();
+            clock.Advance(await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true), 1);
             while (true)
             {
+                // The wait observes the run token; one check per frame after it resumes.
+                var frame = await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true);
                 cancellationToken.ThrowIfCancellationRequested();
-                
-                var frame = await transition.Clock.NextFrameAsync(cancellationToken);
-                
-                if (frame < previousFrame)
+                if (clock.IsBeforeLast(frame))
                     throw new ArgumentOutOfRangeException(nameof(frame),
                         "Animation frame time moved backwards.");
-                
-                var durationScale = transition.DurationScale;
-                var delta = frame - previousFrame;
+
+                // The transition's own scale times the scope's, read per frame (D21).
+                var durationScale = transition.DurationScale * scope.EffectiveDurationScale;
+                var animationPlayTime = clock.Advance(frame, durationScale);
                 var playTime = durationScale <= 0
                     ? animation?.Duration ?? transition.TotalDuration
-                    : animationPlayTime += TimeSpan.FromTicks(Math.Max(0,
-                        (long)Math.Round(delta.Ticks / durationScale)));
-                previousFrame = frame;
+                    : animationPlayTime;
                 var currentDuration = transition.TotalDuration;
                 var progress = animation is null
                     ? currentDuration <= TimeSpan.Zero

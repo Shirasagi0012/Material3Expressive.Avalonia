@@ -64,7 +64,7 @@ public sealed class ScrollViewerTests
             Render(window);
             Assert.Equal(maximum, inner.Offset.Y);
             Assert.Equal(chaining, outer.Offset.Y > 0);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -211,7 +211,7 @@ public sealed class ScrollViewerTests
             viewer.ScrollToEnd();
             Render(window);
             Assert.True(viewer.Offset.Y > 0);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }

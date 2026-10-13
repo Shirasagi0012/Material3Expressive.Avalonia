@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ComposeAnimation.Runtime;
@@ -101,8 +102,8 @@ public partial class Transition<TState>
             Value = Animation.GetValue(playTime);
             Animation.GetVelocityVector(playTime, _velocityVector.AsSpan());
             IsFinished = Animation.IsFinished(playTime);
-            if (!EqualityComparer<TValue>.Default.Equals(old, Value)) Notify(nameof(Value));
-            Notify(nameof(Velocity));
+            if (!EqualityComparer<TValue>.Default.Equals(old, Value)) Notify(ValueChangedArgs);
+            Notify(VelocityChangedArgs);
             if (wasFinished != IsFinished) Notify(nameof(IsFinished));
         }
 
@@ -138,9 +139,16 @@ public partial class Transition<TState>
             });
         }
 
-        private void Notify(string name) => _owner.Publish(() =>
+        private static readonly PropertyChangedEventArgs ValueChangedArgs = new(nameof(Value));
+        private static readonly PropertyChangedEventArgs VelocityChangedArgs = new(nameof(Velocity));
+
+        private void Notify(string name) => Notify(new PropertyChangedEventArgs(name));
+
+        // Static callback with explicit state: steady frames publish without allocating.
+        private void Notify(PropertyChangedEventArgs args) => _owner.Publish(this, args, static (s, a) =>
         {
-            if (!_detached) OnPropertyChanged(name);
+            var state = (TransitionAnimationState<TValue>)s!;
+            if (!state._detached) state.OnPropertyChanged((PropertyChangedEventArgs)a!);
         });
 
         private void VerifyAttached()
@@ -151,7 +159,7 @@ public partial class Transition<TState>
 
         public void Dispose()
         {
-            _owner.Clock.VerifyAccess();
+            _owner.VerifyThreadAccess();
             if (_detached) return;
             _owner.Mutate(() =>
             {
@@ -211,7 +219,7 @@ public partial class Transition<TState>
 
         public void Dispose()
         {
-            _owner.Clock.VerifyAccess();
+            _owner.VerifyThreadAccess();
             if (_disposed) return;
             _disposed = true;
             _animation?.Dispose();

@@ -325,7 +325,7 @@ public class TextFieldTypographyTests
         fixture.Advance(100);
         Assert.Equal(originalColor, Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color);
         Assert.Equal(24, text.LineHeight);
-        Assert.Null(fixture.Window.MotionRoot.LastError);
+        Assert.Null(fixture.Window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]
@@ -344,12 +344,12 @@ public class TextFieldTypographyTests
         MaterialTextField.SetAlwaysMinimizeLabel(fixture.Box, true);
         fixture.Advance(4);
         Assert.Equal(0, fixture.Layout.LabelProgress);
-        Assert.Null(fixture.Window.MotionRoot.LastError);
+        Assert.Null(fixture.Window.MotionRoot.Diagnostics.LastError);
         fixture.Box.Resources.Remove(key);
         fixture.Advance(100);
         Assert.Equal(1, fixture.Layout.LabelProgress);
         Assert.Equal(12, fixture.Endpoint("Label").FontSize);
-        Assert.Null(fixture.Window.MotionRoot.LastError);
+        Assert.Null(fixture.Window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -381,7 +381,7 @@ public class TextFieldTypographyTests
         fixture.Advance(100);
         Assert.Equal(1, fixture.Layout.LabelProgress);
         Assert.Equal(10, label.FontSize);
-        Assert.Null(fixture.Window.MotionRoot.LastError);
+        Assert.Null(fixture.Window.MotionRoot.Diagnostics.LastError);
     }
 
     private sealed class Fixture : IDisposable

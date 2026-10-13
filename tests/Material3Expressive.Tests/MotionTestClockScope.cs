@@ -3,7 +3,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using ComposeAnimation;
-using ComposeAnimation.Runtime;
 using ComposeAnimation.TestSupport;
 
 namespace Material3Expressive.Tests;
@@ -12,27 +11,17 @@ namespace Material3Expressive.Tests;
 internal sealed class MotionTestClockScope : IDisposable
 {
     private static readonly AsyncLocal<MotionTestClockScope?> Current = new();
-    private readonly ManualAnimationFrameClock _clock = new(Dispatcher.UIThread.VerifyAccess);
+    private readonly ManualFrameSource _clock = new(Dispatcher.UIThread.VerifyAccess);
     private readonly List<Window> _windows = [];
     private readonly Queue<ExceptionDispatchInfo> _failures = [];
-    private VisualAnimationScope? _standalone;
+    private MotionTestWindow? _standalone;
     private bool _disposed;
     internal TimeSpan Now => _clock.Now;
     internal int PendingFrameCount => _clock.PendingFrameCount;
-    internal static IAnimationFrameClock? CurrentClock => Current.Value?._clock;
-    internal VisualAnimationScope Scope
-    {
-        get
-        {
-            if (_standalone is null)
-            {
-                var window = new Window();
-                _windows.Add(window);
-                _standalone = VisualAnimationScope.Initialize(window, _clock);
-            }
-            return _standalone;
-        }
-    }
+    internal static ManualFrameSource? CurrentFrameSource => Current.Value?._clock;
+
+    /// <summary>A hidden window root for tests that need a scope without a control.</summary>
+    internal AnimationScope Scope => (_standalone ??= new MotionTestWindow()).MotionRoot;
 
     internal MotionTestClockScope()
     {
@@ -41,7 +30,7 @@ internal sealed class MotionTestClockScope : IDisposable
     }
 
     internal static void Register(Window window) => Current.Value?._windows.Add(window);
-    internal static Exception? Error(Visual owner) => ((MotionTestWindow)TopLevel.GetTopLevel(owner)!).MotionRoot.LastError;
+    internal static Exception? Error(Visual owner) => ((MotionTestWindow)TopLevel.GetTopLevel(owner)!).MotionRoot.Diagnostics.LastError;
     internal void Track(Task task) => _ = ObserveAsync(task);
 
     private async Task ObserveAsync(Task task)
@@ -78,8 +67,13 @@ internal sealed class MotionTestClockScope : IDisposable
         if (_disposed) return;
         _disposed = true;
         Current.Value = null;
-        foreach (var window in _windows) window.Close();
-        _standalone?.Dispose();
+        foreach (var window in _windows)
+        {
+            window.Close();
+            // Close ends a shown window. A hidden root used only as a scope still has to end here.
+            if (window is MotionTestWindow motion && !motion.MotionRoot.Diagnostics.IsEnding)
+                _ = motion.MotionRoot.Diagnostics.EndAsync();
+        }
         _clock.Dispose();
         Dispatcher.UIThread.RunJobs();
         ThrowIfFailed();
@@ -88,10 +82,10 @@ internal sealed class MotionTestClockScope : IDisposable
 
 internal sealed class MotionTestWindow : Window
 {
-    internal VisualAnimationScope MotionRoot { get; }
+    internal AnimationScope MotionRoot { get; }
     public MotionTestWindow()
     {
-        MotionRoot = VisualAnimationScope.Initialize(this, MotionTestClockScope.CurrentClock);
+        MotionRoot = AnimationScope.Initialize(this, MotionTestClockScope.CurrentFrameSource);
         MotionTestClockScope.Register(this);
     }
 }

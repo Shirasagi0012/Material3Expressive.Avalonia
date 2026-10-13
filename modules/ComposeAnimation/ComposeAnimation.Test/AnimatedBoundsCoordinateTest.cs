@@ -36,7 +36,7 @@ public partial class AnimatedBoundsTest
         Assert.Same(snapshot, f.Root.Snapshot);
         Assert.Empty(policy.Calls);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -64,7 +64,7 @@ public partial class AnimatedBoundsTest
         Equal(new Rect(0, -120, 120, 160), f.Actual(card));
         Assert.Same(snapshot, f.Root.Snapshot);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -208,7 +208,7 @@ public partial class AnimatedBoundsTest
         Assert.Equal(new Vector(0, 400), scroll.Offset);
         Equal(new Rect(0, -400, 120, 160), f.Actual(card));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Theory]

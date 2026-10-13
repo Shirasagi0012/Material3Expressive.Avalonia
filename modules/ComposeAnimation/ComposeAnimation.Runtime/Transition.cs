@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ComposeAnimation.Runtime;
@@ -17,21 +19,36 @@ internal interface ITransitionAnimationNode : ITransitionAnimation
     void Detach();
 }
 
+/// <summary>
+/// State only (D19): a transition holds no clock, lifetime or scope. The root's frame loop runs
+/// in the <see cref="FrameScope"/> passed to <see cref="RunAsync"/>; one loop at a time (D21), so
+/// a newer run, in any scope, cancels the current one and takes over after its cleanup. Ending a
+/// scope cancels its run and leaves the state usable; <see cref="Dispose"/> stops and releases.
+/// Threading: the thread that constructs the root owns the tree; every member checks it, and runs
+/// also check their scope.
+/// </summary>
 public abstract class Transition : ObservableObject, IDisposable
 {
     private readonly List<ITransitionAnimationNode> _animations = [];
     private readonly List<Transition> _transitions = [];
     private readonly HashSet<TransitionPreparationLease> _preparations = [];
     private readonly HashSet<TransitionPreparationLease> _runtimeRetentions = [];
-    private readonly Queue<Action> _mutations = new();
-    private readonly Queue<Action> _notifications = new();
-    private readonly CancellationTokenSource _lifetime = new();
-    private readonly AnimationLifetime? _scopeLifetime;
-    // Mutations are confined to the owning clock thread. Wake the idle loop inline so
-    // it registers for the next frame batch before the mutation returns.
+    // Static callback plus state, so the per-frame path queues work without allocating closures.
+    private readonly Queue<Deferred> _mutations = new();
+    private readonly Queue<Deferred> _notifications = new();
+    private readonly ThreadAffinity _owner;
+    // The root's frame loop and the seekable state's seek run share this mutex. Lock order: a
+    // caller that takes both takes its state mutex BEFORE this run mutex (never the reverse).
+    private readonly MutatorMutex _runMutex = new();
+    // Deliberately NOT RunContinuationsAsynchronously: completing this wakes the idle LoopAsync
+    // inline, so it registers for the next frame batch before the owning mutation returns.
+    // Asynchronous continuations would add a one-frame start delay (the loop would only register
+    // after a later dispatcher pump); AnimationLoopSchedulingTest.
+    // IdleTransition_RegistersNextFrameBeforeOwningMutationReturns pins this. The loop therefore
+    // re-enters during a mutation; that is expected (mutations are confined to the owning thread
+    // and the loop only registers a frame wait before yielding).
     private TaskCompletionSource _changed = new();
     private bool _processing;
-    private bool _loopActive;
     private bool _disposed;
     private bool _running;
     private bool _phaseQueued;
@@ -41,13 +58,10 @@ public abstract class Transition : ObservableObject, IDisposable
     private TimeSpan _startTime = AnimationConstants.UnspecifiedTime;
     private double _durationScale = 1;
 
-    private protected Transition(IAnimationFrameClock clock, Transition? parent, string? label)
+    private protected Transition(Transition? parent, string? label)
     {
-        ArgumentNullException.ThrowIfNull(clock);
-        clock.VerifyAccess();
-        Clock = clock;
-        _scopeLifetime = (clock as IAnimationLifetimeClock)?.AnimationLifetime;
-        _scopeLifetime?.Register(this, static animation => animation.Dispose());
+        parent?.VerifyThreadAccess();
+        _owner = parent?._owner ?? ThreadAffinity.Current;
         ParentTransition = parent;
         Label = label;
         Animations = _animations.AsReadOnly();
@@ -81,7 +95,24 @@ public abstract class Transition : ObservableObject, IDisposable
         }
     }
 
-    internal IAnimationFrameClock Clock { get; }
+    /// <summary>The root's run mutex (frame loop and seek runs).</summary>
+    internal MutatorMutex RunMutex => Root._runMutex;
+
+    /// <summary>
+    /// Takes <paramref name="stateMutex"/> and then this transition's run mutex, the one lock order
+    /// (state before run) every two-mutex caller must use; enforcing it here rules out the reverse.
+    /// </summary>
+    internal Task<TResult> MutateWithRunMutexAsync<TResult>(MutatorMutex stateMutex,
+        Func<CancellationToken, CancellationToken, Task<TResult>> mutation, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(stateMutex);
+        ArgumentNullException.ThrowIfNull(mutation);
+        var runMutex = RunMutex;
+        return stateMutex.MutateAsync(
+            stateToken => runMutex.MutateAsync(runToken => mutation(stateToken, runToken), MutatePriority.Default, stateToken),
+            MutatePriority.Default,
+            cancellationToken);
+    }
     internal bool IsDisposed => _disposed;
     internal Action? SynchronizeWithParent { get; set; }
     // One delivery per mutation batch, after that batch. Play time, segment, duration, and
@@ -130,7 +161,7 @@ public abstract class Transition : ObservableObject, IDisposable
 
     internal void ReleasePreparation(TransitionPreparationLease lease)
     {
-        Clock.VerifyAccess();
+        VerifyThreadAccess();
         if (!lease.IsActive) return;
         lease.Revoke();
         Root.Execute(() =>
@@ -163,68 +194,116 @@ public abstract class Transition : ObservableObject, IDisposable
         PreparationChanged();
     }
 
-    // Explicit lifetime and registration replace remember/DisposableEffect, not animation sampling.
-    public Task RunAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Runs the root's frame loop in <paramref name="scope"/> until cancelled (caller token, scope
+    /// end, <see cref="Dispose"/>, or a newer run). A newer run cancels this one; its loop starts
+    /// only after this loop's cleanup has run. A child transition uses its parent's loop and throws.
+    /// </summary>
+    public Task RunAsync(FrameScope scope, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(scope);
         VerifyAccess();
-        return _scopeLifetime?.Track(() => RunCoreAsync(cancellationToken)) ?? RunCoreAsync(cancellationToken);
+        scope.VerifyAccess();
+        return scope.Track(() => RunCoreAsync(scope, cancellationToken));
     }
 
-    private async Task RunCoreAsync(CancellationToken cancellationToken)
+    private async Task RunCoreAsync(FrameScope scope, CancellationToken cancellationToken)
     {
         VerifyAccess();
         if (ParentTransition is not null) throw new InvalidOperationException("A child uses its parent's frame loop.");
-        if (_loopActive) throw new InvalidOperationException("This transition already has a frame loop.");
-        _loopActive = true;
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token, _scopeLifetime?.Token ?? default);
+        await _runMutex.MutateAsync(mutexToken => LoopAsync(scope, cancellationToken, mutexToken),
+            MutatePriority.Default, cancellationToken).ConfigureAwait(true);
+    }
+
+    private async Task<bool> LoopAsync(FrameScope scope, CancellationToken cancellationToken, CancellationToken mutexToken)
+    {
+        // The run's one token: caller, scope lifetime and mutex (Dispose or a newer run).
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime, mutexToken);
+        var token = linked.Token;
         try
         {
+            // No PlayTimeAccumulator here: upstream parity. A change of the own or the scope scale
+            // recalculates play time from the start (_startTime anchor), which per-delta math would
+            // not (TransitionBoundaryTest.ScaleChange_RecalculatesPlayTimeFromStartAsUpstreamDoes,
+            // ScopeScaleChange_RecalculatesPlayTimeFromStart).
+            // One token check per frame: here once, then after each frame wait. The change waits
+            // observe the token themselves.
+            token.ThrowIfCancellationRequested();
             while (true)
             {
-                linked.Token.ThrowIfCancellationRequested();
+                if (_disposed) throw new OperationCanceledException(token);
                 if (!HasWork)
                 {
-                    await _changed.Task.WaitAsync(linked.Token).ConfigureAwait(true);
+                    await _changed.Task.WaitAsync(token).ConfigureAwait(true);
                     _changed = new TaskCompletionSource();
                     continue;
                 }
-                var frame = await Clock.NextFrameAsync(linked.Token).ConfigureAwait(true);
-                linked.Token.ThrowIfCancellationRequested();
-                if (!IsSeeking && !_disposed) OnFrame(frame);
+                // The scope's own wait (no async layer): resumes inline in the frame batch.
+                var frame = await scope.WaitFrameAsync(token, null).ConfigureAwait(true);
+                token.ThrowIfCancellationRequested();
+                if (!IsSeeking && !_disposed) OnFrame(frame, scope.EffectiveDurationScale);
             }
         }
         finally
         {
-            _loopActive = false;
+            // Play time is kept: the next run resumes from it (D17).
             _lastFrameTime = AnimationConstants.UnspecifiedTime;
             _startTime = AnimationConstants.UnspecifiedTime;
             Execute(() => SetRunningRecursively(false));
         }
     }
 
-    internal void OnFrame(TimeSpan frameTime)
+    /// <summary>
+    /// Advances the tree to <paramref name="frameTime"/> without a scope (tests and drivers that
+    /// supply frames directly): play time is (frame - start) / own scale, as before stage 3.
+    /// </summary>
+    internal void OnFrame(TimeSpan frameTime) => OnFrame(frameTime, scopeScale: null);
+
+    /// <summary>
+    /// One frame. Play time is (frame - start) / (own scale x <paramref name="scopeScale"/>), so a
+    /// change of either scale recalculates play time from the start anchor (upstream parity). A new
+    /// run re-anchors the start from the stored play time, so it resumes rather than restarts.
+    /// </summary>
+    private void OnFrame(TimeSpan frameTime, double? scopeScale)
     {
-        Mutate(() =>
-        {
-            if (IsSeeking) return;
-            if (!AnimationConstants.IsUnspecified(_lastFrameTime) && frameTime < _lastFrameTime)
-                throw new ArgumentOutOfRangeException(nameof(frameTime));
-            var scale = _durationScale * ((Clock as IAnimationLifetimeClock)?.DurationScale ?? 1);
-            if (AnimationConstants.IsUnspecified(_startTime))
-                _startTime = frameTime - TimeSpan.FromTicks(checked((long)(_playTime.Ticks * scale)));
-            if (scale > 0)
-            {
-                if (_scopeLifetime is not null)
-                {
-                    if (!AnimationConstants.IsUnspecified(_lastFrameTime))
-                        _playTime += TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _lastFrameTime).Ticks / scale)));
-                }
-                else _playTime = TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _startTime).Ticks / scale)));
-            }
-            _lastFrameTime = frameTime;
-            Pulse(_playTime, scale == 0);
-            Notify(nameof(PlayTime));
-        });
+        _frameTime = frameTime;
+        _frameScopeScale = scopeScale;
+        Mutate(this, static t => t.OnFrameCore(t._frameTime, t._frameScopeScale));
+    }
+
+    // Frame arguments ride on fields so the per-frame mutation is a static, allocation-free callback.
+    private TimeSpan _frameTime;
+    private double? _frameScopeScale;
+
+    private void OnFrameCore(TimeSpan frameTime, double? scopeScale)
+    {
+        if (IsSeeking) return;
+        if (!AnimationConstants.IsUnspecified(_lastFrameTime) && frameTime < _lastFrameTime)
+            throw new ArgumentOutOfRangeException(nameof(frameTime));
+        var scale = _durationScale * (scopeScale ?? 1);
+        if (AnimationConstants.IsUnspecified(_startTime))
+            _startTime = frameTime - TimeSpan.FromTicks(checked((long)(_playTime.Ticks * scale)));
+        if (scale > 0)
+            _playTime = TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _startTime).Ticks / scale)));
+        _lastFrameTime = frameTime;
+        Pulse(_playTime, scale == 0);
+        Notify(PlayTimeChangedArgs);
+    }
+
+    private static readonly PropertyChangedEventArgs PlayTimeChangedArgs = new(nameof(PlayTime));
+
+    private bool AllAnimationsFinished()
+    {
+        foreach (var animation in _animations)
+            if (!animation.IsFinished) return false;
+        return true;
+    }
+
+    private bool AnyChildHasWork()
+    {
+        foreach (var transition in _transitions)
+            if (transition.HasWork) return true;
+        return false;
     }
 
     private void Pulse(TimeSpan playTime, bool scaleToEnd)
@@ -236,7 +315,7 @@ public abstract class Transition : ObservableObject, IDisposable
             if (!animation.IsFinished) animation.Pulse(playTime, scaleToEnd);
         foreach (var transition in _transitions) transition.Pulse(playTime, scaleToEnd);
 
-        if (_preparations.Count == 0 && _animations.All(a => a.IsFinished) && _transitions.All(t => !t.HasWork))
+        if (_preparations.Count == 0 && AllAnimationsFinished() && !AnyChildHasWork())
         {
             CompleteState();
             SetRunning(false);
@@ -396,21 +475,44 @@ public abstract class Transition : ObservableObject, IDisposable
         Notify(nameof(IsSeeking));
     }
 
+    /// <summary>Owning-thread check only (no disposed check).</summary>
+    internal void VerifyThreadAccess() => _owner.Verify(this);
+
     internal void VerifyAccess()
     {
-        Clock.VerifyAccess();
-        _scopeLifetime?.VerifyActive(this);
+        _owner.Verify(this);
         ObjectDisposedException.ThrowIf(_disposed || Root._disposed, this);
     }
 
     internal void Mutate(Action action)
     {
         VerifyAccess();
-        Root.Execute(() => { if (!_disposed && _scopeLifetime?.IsEnding != true) action(); });
+        Root.Execute(new Deferred(InvokeAction, action, null, this));
+    }
+
+    /// <summary>Allocation-free <see cref="Mutate(Action)"/>: a static callback with explicit state.</summary>
+    internal void Mutate<TArg>(TArg arg, Action<TArg> action) where TArg : class
+    {
+        VerifyAccess();
+        Root.Execute(new Deferred(InvokeArg<TArg>, action, arg, this));
+    }
+
+    private static void InvokeAction(object? action, object? _) => ((Action)action!)();
+    private static void InvokeArg<TArg>(object? action, object? arg) => Unsafe.As<Action<TArg>>(action!)((TArg)arg!);
+
+    private readonly struct Deferred(Action<object?, object?> callback, object? first, object? second, Transition? guard = null)
+    {
+        public void Invoke()
+        {
+            if (guard is { _disposed: true }) return;
+            callback(first, second);
+        }
     }
 
     // PropertyChanged handlers can synchronously mutate the tree; finish the current batch first.
-    private void Execute(Action action)
+    private void Execute(Action action) => Execute(new Deferred(InvokeAction, action, null));
+
+    private void Execute(Deferred action)
     {
         _mutations.Enqueue(action);
         if (_processing) return;
@@ -419,8 +521,8 @@ public abstract class Transition : ObservableObject, IDisposable
         {
             while (_mutations.Count > 0 || _notifications.Count > 0)
             {
-                while (_mutations.TryDequeue(out var mutation)) mutation();
-                while (_notifications.TryDequeue(out var notification)) notification();
+                while (_mutations.TryDequeue(out var mutation)) mutation.Invoke();
+                while (_notifications.TryDequeue(out var notification)) notification.Invoke();
             }
         }
         catch
@@ -438,8 +540,16 @@ public abstract class Transition : ObservableObject, IDisposable
         }
     }
 
-    internal void Publish(Action notification) => Root._notifications.Enqueue(notification);
-    private protected void Notify(string name) => Publish(() => OnPropertyChanged(name));
+    internal void Publish(Action notification)
+        => Root._notifications.Enqueue(new Deferred(InvokeAction, notification, null));
+
+    /// <summary>Allocation-free <see cref="Publish(Action)"/>: a static callback with explicit state.</summary>
+    internal void Publish(object target, object? arg, Action<object?, object?> notification)
+        => Root._notifications.Enqueue(new Deferred(notification, target, arg));
+    private protected void Notify(string name) => Notify(new PropertyChangedEventArgs(name));
+
+    private protected void Notify(PropertyChangedEventArgs args)
+        => Publish(this, args, static (t, a) => ((Transition)t!).OnPropertyChanged((PropertyChangedEventArgs)a!));
 
     // PropertyChanged still carries the name. PhaseChanged is the coalesced structural signal.
     private protected void NotifyPhase(string name)
@@ -462,7 +572,7 @@ public abstract class Transition : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        Clock.VerifyAccess();
+        VerifyThreadAccess();
         if (_disposed) return;
         Root.Execute(DisposeCore);
     }
@@ -471,7 +581,7 @@ public abstract class Transition : ObservableObject, IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        _lifetime.Cancel();
+        _runMutex.CancelCurrent();
         foreach (var lease in _preparations) lease.Revoke();
         _preparations.Clear();
         NotifyPhase(nameof(IsPreparing));
@@ -494,7 +604,6 @@ public abstract class Transition : ObservableObject, IDisposable
             parent._transitions.Remove(this);
             parent.PreparationChanged();
         }
-        _lifetime.Dispose();
     }
 }
 

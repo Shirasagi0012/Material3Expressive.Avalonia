@@ -181,7 +181,7 @@ internal sealed class SharedTransitionCoordinator : IDisposable
     }
     public void Dispose()
     {
-        _scope.ParentTransition.Clock.VerifyAccess();
+        _scope.ParentTransition.VerifyThreadAccess();
         if (_disposed) return;
         _disposed = true;
         _scope.PreparationRequested -= Requested;

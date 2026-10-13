@@ -444,7 +444,8 @@ public sealed class MaterialSurface : Control
 
     private void UpdateButtonBorder()
     {
-        if (ButtonSurfaceState.GetAnimateBorder(this) && _interactionController?.Motion is { IsEnding: false } motion)
+        if (ButtonSurfaceState.GetAnimateBorder(this) && _interactionController?.Motion is { } motion
+            && !motion.Lifetime.IsCancellationRequested)
         {
             _animatedBorder ??= new AnimatedButtonBorder(this, _outline, motion);
             _animatedBorder.Update();
@@ -512,7 +513,7 @@ public sealed class MaterialSurface : Control
 
     private void QueueShapeMorph()
     {
-        if (_interactionController?.Motion is not { IsEnding: false } motion)
+        if (_interactionController?.Motion is not { } motion || motion.Lifetime.IsCancellationRequested)
             return;
 
         // rememberAnimatedShape creates its initial state during composition. Subsequent
@@ -531,7 +532,7 @@ public sealed class MaterialSurface : Control
         var generation = _shapeGeneration;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             if (generation != _shapeGeneration)
                 return;
             _shapeCommitPending = false;
@@ -591,7 +592,7 @@ public sealed class MaterialSurface : Control
         }, "Shape composition");
     }
 
-    private void RecreateShapeMorph(VisualAnimationScope motion, SpringSpec spec)
+    private void RecreateShapeMorph(AnimationScope motion, SpringSpec spec)
     {
         _shapeMorph?.Dispose();
         _shapeRest = CornerRadius;

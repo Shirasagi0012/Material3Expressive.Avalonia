@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -44,8 +45,94 @@ public partial class AnimatedBoundsTest
         f.Step(100);
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         Assert.Equal(1, targets);
+    });
+
+    [Fact]
+    public Task MoveContent_UnderADifferentAncestorScope_MovesTheFlightIntoTheNewScope() => OnUi(() =>
+    {
+        // Q-E: after the (synchronous) move commits, the drain rebuilds and the flight resumes in
+        // the destination's scope (no parking).
+        var card = Bounds(Text());
+        var (scene, left, right) = MoveSlots(card);
+        using var f = new Fixture(scene);
+        var leftScope = AnimationScope.Get(left);
+        var rightScope = AnimationScope.Get(right);
+        var old = AnimationScope.Get(card);
+        Assert.NotSame(rightScope, old.Diagnostics.Parent); // created during the first layout, under the root
+        var changes = new List<AnimationScopeChangedEventArgs>();
+        AnimationScope.AddScopeChangedHandler(card, (_, e) => changes.Add(e));
+        var before = f.Actual(card);
+        f.Root.MoveContent(card, () => { left.Children.Remove(card); right.Children.Add(card); });
+        f.Layout();
+        var change = Assert.Single(changes);
+        Assert.Same(old, change.OldScope);
+        Assert.Same(rightScope, change.NewScope!.Diagnostics.Parent);
+        Assert.Same(change.NewScope, AnimationScope.Get(card));
+        Equal(before, f.Actual(card));
+        Assert.True(card.IsRunning);
+        f.Step(16); f.Step(100);
+        Assert.True(card.IsRunning);
+        Equal(new Rect(110, 50, 120, 160), f.Actual(card)); // same trajectory, now in the new scope
+        f.Step(100);
+        Assert.False(card.IsRunning);
+        f.Layout();
+        Assert.Single(changes);
+        Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
+        Assert.Equal(0, f.Frames.PendingFrameCount);
+    });
+
+    [Fact]
+    public Task MoveContent_DispatcherTurnInsideTheMove_DoesNotDrainScopes() => OnUi(() =>
+    {
+        // The window root's move flag keeps the fallback-post drain away from the uncommitted
+        // basis; the drain is re-armed when the move ends (here it aborts: layout ran inside).
+        var card = Bounds(Text());
+        var (scene, left, right) = MoveSlots(card);
+        using var f = new Fixture(scene);
+        AnimationScope.Get(left);
+        AnimationScope.Get(right);
+        var old = AnimationScope.Get(card);
+        var changes = new List<AnimationScopeChangedEventArgs>();
+        AnimationScope.AddScopeChangedHandler(card, (_, e) => changes.Add(e));
+        var drainedInside = -1;
+        var error = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
+        {
+            left.Children.Remove(card); right.Children.Add(card);
+            for (var i = 0; i < 4; i++)
+            {
+                try { Dispatcher.UIThread.RunJobs(); }
+                catch (InvalidOperationException) { } // layout is refused inside the move
+            }
+            drainedInside = changes.Count;
+        }));
+        Assert.Equal(0, drainedInside);
+        Assert.Contains("layout ran inside the move callback", error.Message);
+        Assert.False(old.Diagnostics.IsEnding);
+        Dispatcher.UIThread.RunJobs();
+        var change = Assert.Single(changes);
+        Assert.Same(old, change.OldScope);
+        Assert.NotNull(change.NewScope);
+    });
+
+    [Fact]
+    public Task MoveContent_UnderADifferentAncestorScope_FollowsTheDestinationDurationScale() => OnUi(() =>
+    {
+        var card = Bounds(Text());
+        var (scene, left, right) = MoveSlots(card);
+        using var f = new Fixture(scene);
+        AnimationScope.Get(left);
+        AnimationScope.Get(right).DurationScale = 2;
+        AnimationScope.Get(card);
+        f.Root.MoveContent(card, () => { left.Children.Remove(card); right.Children.Add(card); });
+        f.Layout();
+        f.Step(16); f.Step(200); // 200 ms at scale 2 is half of the 200 ms tween
+        Assert.True(card.IsRunning);
+        Equal(new Rect(110, 50, 120, 160), f.Actual(card));
+        f.Step(200);
+        Assert.False(card.IsRunning);
+        Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
     });
 
     [Fact]
@@ -82,7 +169,7 @@ public partial class AnimatedBoundsTest
         Equal(f.Actual(card), f.Actual(text));
         f.Step(10000);
         Equal(nextTarget, f.Actual(card));
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Theory]
@@ -120,11 +207,11 @@ public partial class AnimatedBoundsTest
         f.Root.MoveContent(card, () => { leftContent.Children.Remove(card); rightContent.Children.Add(card); });
         f.Layout(); f.Step(16); f.Step(50);
         middle = f.Actual(card);
-        var clock = f.Clock;
+        var clock = f.Frames;
         f.Layout();
         Equal(middle, f.Actual(card));
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); f.Layout();
-        clock.AdvanceBy(TimeSpan.FromMilliseconds(200)); f.Layout();
+        clock.Pump(TimeSpan.FromMilliseconds(16)); f.Layout();
+        clock.Pump(TimeSpan.FromMilliseconds(200)); f.Layout();
         Equal(new Rect(220, 10, 120, 160), f.Actual(card));
     });
 
@@ -201,7 +288,7 @@ public partial class AnimatedBoundsTest
         f.Step(100);
         Equal(new Rect(0, 110, 120, 160), f.Actual(card));
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
     });
 
     [Fact]
@@ -246,7 +333,7 @@ public partial class AnimatedBoundsTest
         })));
         Assert.DoesNotContain(card, left.Children);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         right.Children.Add(card); f.Layout();
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
         Assert.False(card.IsRunning);
@@ -261,12 +348,13 @@ public partial class AnimatedBoundsTest
         using var first = new Fixture(source);
         using var second = new Fixture(destination);
         card.TargetSize = new Size(240, 100); first.Layout(); first.Step(16); first.Step(50);
-        Assert.Throws<InvalidOperationException>(() => first.Root.MoveContent(card, () =>
+        var crossRoot = Assert.Throws<InvalidOperationException>(() => first.Root.MoveContent(card, () =>
         {
             source.Children.Remove(card); destination.Children.Add(card);
         }));
+        Assert.Contains("outside this Lookahead domain", crossRoot.Message);
         Assert.False(card.IsRunning);
-        Assert.Equal(0, first.Clock.PendingFrameCount);
+        Assert.Equal(0, first.Frames.PendingFrameCount);
         first.Layout(); second.Layout();
         Equal(second.Root.Snapshot!.Results[card].Bounds, second.Actual(card));
     });
@@ -278,10 +366,11 @@ public partial class AnimatedBoundsTest
         var (scene, left, right) = MoveSlots(card);
         card.ReferenceScope = left;
         using var f = new Fixture(scene);
-        Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
+        var error = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
         {
             left.Children.Remove(card); right.Children.Add(card);
         }));
+        Assert.Contains("no longer under its coordinate reference", error.Message);
         Assert.False(card.IsRunning);
         card.ReferenceScope = null; f.Layout();
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
@@ -303,7 +392,7 @@ public partial class AnimatedBoundsTest
             else card.ResetAnimation();
         });
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Layout(); right.IsVisible = true; f.Layout();
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
     });
@@ -315,11 +404,12 @@ public partial class AnimatedBoundsTest
         var (scene, left, right) = MoveSlots(card);
         using var f = new Fixture(scene);
         card.TargetSize = new Size(160, 100); f.Layout();
-        Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
+        var layout = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
         {
             left.Children.Remove(card); right.Children.Add(card);
             f.Window.UpdateLayout();
         }));
+        Assert.Contains("Layout cannot run during MoveContent", layout.Message);
         Assert.False(card.IsRunning);
         f.Layout();
         Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () => f.Root.MoveContent(card, () => { })));
@@ -349,21 +439,22 @@ public partial class AnimatedBoundsTest
         using var f = new Fixture(scene);
         parent.TargetSize = new Size(160, 100); child.TargetSize = new Size(90, 80);
         f.Layout(); f.Step(16);
-        Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(parent, () =>
+        var frames = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(parent, () =>
         {
             left.Children.Remove(parent); right.Children.Add(parent);
             f.Step(20); // Pump frame continuations and layout while the tree edit is still open.
         }));
+        Assert.Contains("during MoveContent", frames.Message); // layout is refused first
         Assert.False(parent.IsRunning);
         Assert.False(child.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Layout();
         Equal(f.Root.Snapshot!.Results[parent].Bounds, f.Actual(parent));
     });
 
 
     [Fact]
-    public Task MoveContent_OrdinaryRemovalAfterCommitStillReleasesImmediately() => OnUi(() =>
+    public Task MoveContent_OrdinaryRemovalAfterCommitStillReleasesAtTheDrain() => OnUi(() =>
     {
         var card = Bounds(Text());
         var (scene, left, right) = MoveSlots(card);
@@ -372,8 +463,9 @@ public partial class AnimatedBoundsTest
         f.Layout(); f.Step(16); f.Step(50);
         Assert.True(card.IsRunning);
         right.Children.Remove(card);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs(); // released at the drain (D17), not on detach
         Assert.False(card.IsRunning);
-        Assert.Equal(0, f.Clock.PendingFrameCount);
+        Assert.Equal(0, f.Frames.PendingFrameCount);
         left.Children.Add(card); f.Layout();
         Assert.False(card.IsRunning);
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));

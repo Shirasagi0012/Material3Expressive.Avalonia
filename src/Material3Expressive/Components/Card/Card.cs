@@ -35,7 +35,7 @@ public class Card : Button
 
     private MaterialSurface? _surface;
     private MaterialInteractionController? _interaction;
-    private VisualAnimationScope? _motion;
+    private AnimationChildScope? _attachScope;
     private Animatable<double>? _elevation;
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationTask;
@@ -54,6 +54,7 @@ public class Card : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Card");
         _passiveElevation = null;
         Refresh();
         InitializeMotion();
@@ -63,6 +64,7 @@ public class Card : Button
     {
         _passiveElevation = null;
         DisposeMotion();
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -113,19 +115,18 @@ public class Card : Button
 
     private void InitializeMotion()
     {
-        if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _motion is not null) return;
-        _motion = VisualAnimationScope.Create(this);
-        _elevation = _motion.CreateAnimatable(Target(Elevation, _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled));
-        _motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is not null) return;
+        _elevation = new Animatable<double>(new DoubleConverter(), Target(Elevation, _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled), VisibilityThresholds.Double);
+        motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
     }
 
     private void QueueElevation()
     {
-        if (!IsClickable || _motion is not { IsEnding: false } motion || _pending) return;
+        if (!IsClickable || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is null || _pending) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             // A recomposition commits effects after existing animation waiters sample this
             // frame. In particular, replacing CardElevation must retain that sampled value.
             await Task.Yield();
@@ -156,7 +157,7 @@ public class Card : Button
                     if (!enabled || (from == InteractionState.None && interaction == InteractionState.None))
                         await elevation.SnapToAsync(target, effect.Token);
                     else
-                        await elevation.AnimateToAsync(target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
+                        await elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
                             interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
                             easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(.4, 0, .6, 1)),
                             cancellationToken: effect.Token);
@@ -169,7 +170,7 @@ public class Card : Button
     private void DisposeMotion()
     {
         _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
-        _motion?.Dispose(); _motion = null; _elevation = null; _pending = false;
+        _elevation = null; _pending = false;
     }
 
     protected override void OnClick() { if (IsClickable) base.OnClick(); }

@@ -62,10 +62,10 @@ public class ToggleFloatingActionButton : Button
     public Color IconColor => _iconColor;
     internal bool HasIcon => Icon is not null || IconTemplate is not null;
     public event EventHandler<FabCheckedChangeRequestedEventArgs>? CheckedChangeRequested;
-    private VisualAnimationScope? _scope;
     private Animatable<float>? _progress;
     private ToggleFabLayout? _layout;
     private MaterialSurface? _surface;
+    private AnimationChildScope? _attachScope;
     private bool _pending, _needsTransition;
     internal double InitialSize => ContainerSize(0);
     internal double CurrentSize => ContainerSize(CheckedProgress);
@@ -82,18 +82,27 @@ public class ToggleFloatingActionButton : Button
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
         if (this.IsAttachedToVisualTree()) StartMotion();
     }
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) { base.OnAttachedToVisualTree(e); StartMotion(); }
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { EndMotion(); base.OnDetachedFromVisualTree(e); }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Toggle FAB");
+        StartMotion();
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        EndMotion();
+        _attachScope?.Dispose(); _attachScope = null;
+        base.OnDetachedFromVisualTree(e);
+    }
     private void StartMotion()
     {
-        if (_scope is not null || _surface is null) return;
-        _scope = VisualAnimationScope.Create(this);
-        _progress = _scope.CreateAnimatable(IsChecked ? 1f : 0f);
-        _scope.SubscribeValue(_progress, value => { SetAndRaise(CheckedProgressProperty, ref _checkedProgress, value); Refresh(); });
+        if (_progress is not null || _surface is null || _attachScope is not { } scope) return;
+        _progress = new Animatable<float>(new FloatConverter(), IsChecked ? 1f : 0f, VisibilityThresholds.Float);
+        scope.SubscribeValue(_progress, value => { SetAndRaise(CheckedProgressProperty, ref _checkedProgress, value); Refresh(); });
         SetAndRaise(CheckedProgressProperty, ref _checkedProgress, _progress.Value);
         Refresh();
     }
-    private void EndMotion() { _scope?.Dispose(); _scope = null; _progress = null; _pending = _needsTransition = false; }
+    private void EndMotion() { _progress = null; _pending = _needsTransition = false; }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -102,7 +111,7 @@ public class ToggleFloatingActionButton : Button
         if (change.Property == IsCheckedProperty)
         {
             PseudoClasses.Set(":checked", IsChecked);
-            if (_scope is not null)
+            if (_progress is not null)
             {
                 _needsTransition = true;
                 QueueTransition();
@@ -114,18 +123,19 @@ public class ToggleFloatingActionButton : Button
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || _scope is not { IsEnding: false } scope ||
-            !FabMotion.IsReady(CheckedMotion)) return;
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested || !FabMotion.IsReady(CheckedMotion)) return;
         _pending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.Clock.NextFrameAsync(ct); _pending = false;
-            if (!FabMotion.TrySpring(CheckedMotion, out var spec)) return;
+            await scope.NextFrameAsync(ct); _pending = false;
+            // A Get scope ends at the drain, not at detach: EndMotion may already have run.
+            if (_progress is null || !FabMotion.TrySpring(CheckedMotion, out var spec)) return;
             _needsTransition = false;
             // AnimateAsState cancels its previous job before launching a new one.
             // Unlike an Animatable retarget, this clears velocity and frame time.
             await _progress!.StopAsync();
-            await _progress!.AnimateToAsync(IsChecked ? 1 : 0, spec, cancellationToken: ct);
+            await _progress!.AnimateToAsync(scope, IsChecked ? 1 : 0, spec, cancellationToken: ct);
         }, "Toggle FAB checked progress");
     }
     private void Refresh()

@@ -2,15 +2,15 @@ namespace ComposeAnimation.Runtime;
 
 /// <summary>
 /// Per-frame view of a running animation, adapted from AndroidX AnimationScope (Apache-2.0).
-/// A scope is created for each animation run and updated on every frame; it is only meaningful
+/// A run view is created for each animation run and updated on every frame; it is only meaningful
 /// for the duration of that run.
 /// </summary>
-public sealed class AnimationScope<T>
+public sealed class AnimationRun<T>
 {
     private readonly AnimationVector _velocityVector;
     private readonly Action _onCancel;
 
-    internal AnimationScope(
+    internal AnimationRun(
         ITwoWayConverter<T> typeConverter,
         T initialValue,
         ReadOnlySpan<double> initialVelocityVector,

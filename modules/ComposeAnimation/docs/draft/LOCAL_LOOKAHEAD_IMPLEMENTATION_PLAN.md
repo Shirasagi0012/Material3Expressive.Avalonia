@@ -1,3 +1,5 @@
+> **历史设计稿**：本文早于 2026-10 的动画基础重构，仅作历史参考，名称与行为可能已过时。现行用法见 [`docs/usage`](../usage/README.md)；迁移见 [迁移指南](../usage/migration-from-visual-animation-scope.md)。主要改名：`VisualAnimationScope` → `AnimationScope`（`AnimationScope.Get`），`SharedAnimationFrameClock` → 内部 `FrameClock`，`IAnimationFrameClock` → `IFrameSource`，`AnimationScope<T>` → `AnimationRun<T>`。
+
 # 局部 Lookahead 落地计划
 
 状态：A–F 已实现，公开 API 仍为实验性。日期：2026-09-22。最终实现选择及验证证据见 [实施状态](LOCAL_LOOKAHEAD_IMPLEMENTATION_STATUS.md)。

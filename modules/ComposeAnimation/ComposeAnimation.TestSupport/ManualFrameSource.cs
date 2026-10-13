@@ -3,13 +3,13 @@ using ComposeAnimation.Runtime;
 namespace ComposeAnimation.TestSupport;
 
 /// <summary>A manually advanced, multi-consumer clock. One send publishes one fixed batch.</summary>
-public sealed class ManualAnimationFrameClock : IAnimationFrameClock, IDisposable
+public sealed class ManualFrameSource : IFrameSource, IDisposable
 {
     private readonly object _gate = new();
     private readonly HashSet<Waiter> _waiters = [];
     private readonly Action? _verifyAccess;
     private bool _disposed;
-    public ManualAnimationFrameClock(Action? verifyAccess = null) => _verifyAccess = verifyAccess;
+    public ManualFrameSource(Action? verifyAccess = null) => _verifyAccess = verifyAccess;
     public TimeSpan Now { get; private set; }
     public int PendingFrameCount { get { lock (_gate) return _waiters.Count; } }
     public void VerifyAccess() => _verifyAccess?.Invoke();

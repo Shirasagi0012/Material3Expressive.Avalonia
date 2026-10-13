@@ -12,7 +12,7 @@ namespace Material3Expressive.Catalog;
 
 public partial class NavigationDrawerDemo : Window
 {
-    public NavigationDrawerDemo() { VisualAnimationScope.Initialize(this); InitializeComponent(); }
+    public NavigationDrawerDemo() { AnimationScope.Initialize(this); InitializeComponent(); }
     private void ToggleTheme(object? sender, RoutedEventArgs e) => RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     private void ToggleDirection(object? sender, RoutedEventArgs e) => FlowDirection = FlowDirection == FlowDirection.LeftToRight ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
     private async void ToggleDrawer(object? sender, RoutedEventArgs e)

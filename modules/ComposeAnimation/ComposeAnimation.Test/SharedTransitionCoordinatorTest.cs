@@ -38,7 +38,7 @@ public class SharedTransitionCoordinatorTest
     }
     private sealed class Fixture : IDisposable
     {
-        internal Transition<bool> Parent { get; } = new(true, new ManualAnimationFrameClock());
+        internal Transition<bool> Parent { get; } = new(true);
         internal Transition<EnterExitState> Source { get; }
         internal Transition<EnterExitState> Target { get; }
         internal SharedTransitionScope Scope { get; }
@@ -345,7 +345,7 @@ public class SharedTransitionCoordinatorTest
     public Task RealLayout_LateVisibilityScopePairsAndRetargetsWithinOneHost(bool reverse, bool zeroDuration)
         => HeadlessApp.Session.Dispatch(() =>
     {
-        using var parent = new Transition<bool>(true, new ManualAnimationFrameClock());
+        using var parent = new Transition<bool>(true);
         using var scope = SharedTransitionScope.Create(parent);
         var backend = new Backend();
         using var coordinator = new SharedTransitionCoordinator(scope, backend,

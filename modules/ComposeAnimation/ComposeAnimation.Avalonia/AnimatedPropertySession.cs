@@ -11,9 +11,10 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     private readonly StyledProperty<T> _property;
     private readonly ITwoWayConverter<T> _converter;
     private readonly AnimationVector _scratch;
-    private IAnimationFrameClock? _clock;
-    private VisualAnimationScope? _scope;
+    private FrameScope? _runScope;
+    private AnimationScope? _scope;
     private Animatable<T>? _animatable;
+    private AnimationState<T>? _interrupted;
     private AnimationSampleObservable<T>? _observable;
     private IDisposable? _binding;
     private IDisposable? _invalidation;
@@ -42,18 +43,52 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
 
     public AvaloniaProperty Property => _property;
 
-    public void SetClock(IAnimationFrameClock? clock, VisualAnimationScope? scope = null)
+    public void Attach(FrameScope? runScope, AnimationScope? scope = null)
     {
         _invalidation?.Dispose();
         _invalidation = null;
         StopDrive();
-        _clock = clock;
+        _interrupted = null;
+        _runScope = runScope;
         _scope = scope;
-        _enabled = clock is not null;
+        _enabled = runScope is not null;
         if (!_enabled) return;
-        _invalidation = scope!.RegisterResource(() => { _enabled = false; _driveGen++; });
+        _invalidation = RegisterEnding(scope!);
         _displayed = _host.GetValue(_property);
         RecreateAnimatable();
+    }
+
+    public void Resume(FrameScope runScope, AnimationScope scope)
+    {
+        var animatable = _animatable;
+        if (_disposed || animatable is null || !IsFinite(animatable.Value)) { Attach(runScope, scope); return; }
+        _invalidation?.Dispose();
+        _driveGen++;
+        StopOverlay();
+        _runScope = runScope;
+        _scope = scope;
+        _enabled = true;
+        _invalidation = RegisterEnding(scope);
+        _displayed = animatable.Value;
+        if (_interrupted is { } interrupted) animatable.ResumeFrom(interrupted);
+        _interrupted = null;
+        // Keeps the Animatable (value and velocity; its old run was cancelled with the old
+        // scope); ReconcileTarget re-runs it toward the base value in the new scope.
+        ReconcileTarget();
+    }
+
+    // A resource callback also runs when the registration is disposed (Attach, Resume, Dispose);
+    // only the scope's own end is an interruption to snapshot.
+    private IDisposable RegisterEnding(AnimationScope scope)
+        => scope.RegisterResource(() => { if (scope.IsEnding) OnScopeEnding(); });
+
+    // Runs before the scope cancels its runs: snapshot the in-flight state so a D17 resume
+    // continues like an in-place interruption (velocity and frame timebase).
+    private void OnScopeEnding()
+    {
+        _interrupted = _animatable is { IsRunning: true } animatable ? animatable.State : null;
+        _enabled = false;
+        _driveGen++;
     }
 
     public void ReconcileTarget()
@@ -110,17 +145,18 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         _invalidation?.Dispose();
         _invalidation = null;
         StopDrive();
-        _clock = null;
+        _runScope = null;
     }
 
     private async Task DriveAsync(T target)
     {
         var gen = ++_driveGen;
         var animatable = _animatable;
-        if (animatable is null) return;
+        var scope = _runScope;
+        if (animatable is null || scope is null) return;
         try
         {
-            await animatable.AnimateToAsync(target, _declaration.ResolveSpec(), block: OnFrame)
+            await animatable.AnimateToAsync(scope, target, _declaration.ResolveSpec(), block: OnFrame)
                 .ConfigureAwait(true);
             if (gen != _driveGen || _disposed || !_enabled) return;
             if (!EqualityComparer<T>.Default.Equals(ReadBase(), animatable.Value))
@@ -191,9 +227,9 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     {
         _animatable?.Stop();
         _animatable = null;
-        if (!_enabled || _clock is null || _disposed) return;
+        if (!_enabled || _runScope is null || _disposed) return;
         if (!IsFinite(_displayed)) return;
-        _animatable = new Animatable<T>(_converter, _displayed, _clock);
+        _animatable = new Animatable<T>(_converter, _displayed);
     }
 
     private void StopOverlay()
@@ -205,7 +241,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     }
 }
 
-internal sealed class AnimationSampleObservable<T>(T value) : IObservable<T>
+internal sealed class AnimationSampleObservable<T>(T value, bool publishOnSubscribe = true) : IObservable<T>
 {
     private IObserver<T>? _observer;
     private T _value = value;
@@ -214,7 +250,10 @@ internal sealed class AnimationSampleObservable<T>(T value) : IObservable<T>
     {
         ArgumentNullException.ThrowIfNull(observer);
         _observer = observer;
-        observer.OnNext(_value);
+        
+        if (publishOnSubscribe) 
+            observer.OnNext(_value);
+        
         return new Subscription(this, observer);
     }
 
