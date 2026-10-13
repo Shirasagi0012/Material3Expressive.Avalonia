@@ -10,7 +10,7 @@ public partial class NumericUpDownDemo : Window
 
     public NumericUpDownDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 

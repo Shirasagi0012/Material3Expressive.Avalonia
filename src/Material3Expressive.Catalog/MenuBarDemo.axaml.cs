@@ -9,7 +9,7 @@ public partial class MenuBarDemo : Window
 {
     public MenuBarDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
         DarkToggle.IsCheckedChanged += (_, _) =>
             RequestedThemeVariant = DarkToggle.IsChecked == true ? ThemeVariant.Dark : ThemeVariant.Light;

@@ -7,7 +7,7 @@ public partial class LoadingIndicatorDemo : Window
 {
     public LoadingIndicatorDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 }

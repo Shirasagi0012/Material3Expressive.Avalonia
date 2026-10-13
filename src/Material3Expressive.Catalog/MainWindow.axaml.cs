@@ -42,7 +42,7 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
         _scaffoldTopBar = DemoScaffold.TopBar;
         _scaffoldBottomBar = DemoScaffold.BottomBar;

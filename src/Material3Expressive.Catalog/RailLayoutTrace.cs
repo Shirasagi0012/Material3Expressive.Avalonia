@@ -54,7 +54,7 @@ internal sealed class RailLayoutTrace : IDisposable
         _samples.Add(new
         {
             kind = "start", rail = rail.Name, target = rail.State.TargetValue.ToString(),
-            durationScale = Animated.GetDurationScale(_window), scale = _window.RenderScaling,
+            durationScale = AnimationScope.GetDurationScale(_window), scale = _window.RenderScaling,
             timebase = "Stopwatch elapsed ms from target change; pass is a layout observation, not a presented frame",
             coordinates = "window client physical pixels; unrounded double values; boxes are x,y,width,height",
             layoutModel = "continuous vertical geometry with Compose integer endpoints",
@@ -153,7 +153,7 @@ internal sealed class RailLayoutTrace : IDisposable
                 moving |= Pending(layout) || Running(layout, "_minWidth", "_widthFullRange", "_itemSpacing", "_itemHeight");
         }
         if (moving) _lastMotionMs = now;
-        if (now > Math.Max(15_000, 5_000 * Animated.GetDurationScale(_window)) || _samples.Count >= 20_000)
+        if (now > Math.Max(15_000, 5_000 * AnimationScope.GetDurationScale(_window)) || _samples.Count >= 20_000)
         {
             Capture("capture-limit");
             Flush("capture-limit");

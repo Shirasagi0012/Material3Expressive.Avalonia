@@ -8,7 +8,7 @@ public partial class GroupBoxDemo : Window
 {
     public GroupBoxDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
         DarkToggle.IsCheckedChanged += (_, _) =>
             RequestedThemeVariant = DarkToggle.IsChecked == true ? ThemeVariant.Dark : ThemeVariant.Light;

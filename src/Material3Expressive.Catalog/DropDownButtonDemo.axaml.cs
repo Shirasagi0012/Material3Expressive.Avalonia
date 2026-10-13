@@ -8,7 +8,7 @@ public partial class DropDownButtonDemo : Window
 {
     public DropDownButtonDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 

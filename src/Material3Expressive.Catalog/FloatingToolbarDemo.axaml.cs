@@ -8,7 +8,7 @@ public partial class FloatingToolbarDemo : Window
 {
     public FloatingToolbarDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
         ScrollingToolbar.ScrollBehavior = FloatingToolbarDefaults.ExitAlwaysScrollBehavior(FloatingToolbarExitDirection.Bottom);
     }

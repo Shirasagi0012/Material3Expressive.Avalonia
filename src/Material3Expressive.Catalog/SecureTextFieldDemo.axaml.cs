@@ -10,7 +10,7 @@ public partial class SecureTextFieldDemo : Window
 {
     public SecureTextFieldDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 

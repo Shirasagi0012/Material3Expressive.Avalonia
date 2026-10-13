@@ -7,7 +7,7 @@ public partial class ProgressIndicatorDemo : Window
 {
     public ProgressIndicatorDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 }

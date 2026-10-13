@@ -10,7 +10,7 @@ public partial class RepeatButtonDemo : Window
 
     public RepeatButtonDemo()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 
