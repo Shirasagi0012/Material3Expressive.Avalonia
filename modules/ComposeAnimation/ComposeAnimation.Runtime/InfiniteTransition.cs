@@ -121,9 +121,11 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
         var keepPlayTime = false;
         try
         {
+            // One token check per frame: here once, then after each frame wait. The change waits
+            // observe the token themselves.
+            token.ThrowIfCancellationRequested();
             while (true)
             {
-                token.ThrowIfCancellationRequested();
                 if (_disposed) throw new OperationCanceledException(token);
 
                 if (EffectiveDurationScale(scope.EffectiveDurationScale) == 0)

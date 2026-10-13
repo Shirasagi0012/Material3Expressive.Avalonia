@@ -92,6 +92,22 @@ public abstract class Transition : ObservableObject, IDisposable
 
     /// <summary>The root's run mutex (frame loop and seek runs).</summary>
     internal MutatorMutex RunMutex => Root._runMutex;
+
+    /// <summary>
+    /// Takes <paramref name="stateMutex"/> and then this transition's run mutex, the one lock order
+    /// (state before run) every two-mutex caller must use; enforcing it here rules out the reverse.
+    /// </summary>
+    internal Task<TResult> MutateWithRunMutexAsync<TResult>(MutatorMutex stateMutex,
+        Func<CancellationToken, CancellationToken, Task<TResult>> mutation, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(stateMutex);
+        ArgumentNullException.ThrowIfNull(mutation);
+        var runMutex = RunMutex;
+        return stateMutex.MutateAsync(
+            stateToken => runMutex.MutateAsync(runToken => mutation(stateToken, runToken), MutatePriority.Default, stateToken),
+            MutatePriority.Default,
+            cancellationToken);
+    }
     internal bool IsDisposed => _disposed;
     internal Action? SynchronizeWithParent { get; set; }
     // One delivery per mutation batch, after that batch. Play time, segment, duration, and
@@ -201,9 +217,11 @@ public abstract class Transition : ObservableObject, IDisposable
         var token = linked.Token;
         try
         {
+            // One token check per frame: here once, then after each frame wait. The change waits
+            // observe the token themselves.
+            token.ThrowIfCancellationRequested();
             while (true)
             {
-                token.ThrowIfCancellationRequested();
                 if (_disposed) throw new OperationCanceledException(token);
                 if (!HasWork)
                 {

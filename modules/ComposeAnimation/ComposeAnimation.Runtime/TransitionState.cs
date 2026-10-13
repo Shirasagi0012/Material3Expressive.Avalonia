@@ -238,13 +238,8 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
         transition.VerifyAccess();
         scope.VerifyAccess();
 
-        // Lock order: the state mutex first, then the transition's run mutex (everywhere).
-        return scope.Track(() => _mutatorMutex.MutateAsync(
-            stateToken => transition.RunMutex.MutateAsync(
-                runToken => AnimateCoreAsync(scope, transition, targetState, animationSpec, stateToken, runToken),
-                MutatePriority.Default,
-                stateToken),
-            MutatePriority.Default,
+        return scope.Track(() => transition.MutateWithRunMutexAsync(_mutatorMutex,
+            (stateToken, runToken) => AnimateCoreAsync(scope, transition, targetState, animationSpec, stateToken, runToken),
             cancellationToken));
     }
 
