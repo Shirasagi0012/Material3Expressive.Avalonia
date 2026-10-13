@@ -529,8 +529,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private void Release(bool preserveValue = false)
     {
         _scopeBinding.Reset();
-        // A configuration change during a tree edit forfeits move retention. Keeping a value
-        // without committing its old-to-new coordinate basis would cause a misplaced resume.
+        // A configuration change during an open move cancels the move. Keeping a value without
+        // committing its old-to-new coordinate basis would cause a misplaced resume.
         if (_pendingMove is not null) preserveValue = false;
         _pendingMove = null;
         if (!preserveValue) _motionBasis = default;
@@ -551,7 +551,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     {
         // Tree-position state goes now: the measure cache entry and a local lookahead domain.
         // The animation is released when the scope ends at the drain (D17), or resumes if the
-        // control was re-attached elsewhere; a pending move keeps it for the move transaction.
+        // control was re-attached elsewhere (a MoveContent commit included).
         _attached = false;
         LookaheadMeasure.Forget(this);
         ReleaseLocalEntry();

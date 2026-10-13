@@ -23,7 +23,7 @@ public MainWindow()
 
 控件已附着后调用 `AnimationScope.Get(owner)`（`owner` 为 Visual），重复调用返回同一个 Scope。它的父级是最近的祖先控件 `Get` Scope（沿继承链，含 Popup/Flyout），否则是窗口根。不要释放它：控件脱离树时 Scope 结束；在树内移动时 Scope 会被标记为过期，并在下一帧等待者恢复前合并重建一次（每帧至多一次），随后控件的直接路由事件 `AnimationScope.ScopeChangedEvent` 触发，参数 `AnimationScopeChangedEventArgs` 携带 `OldScope` 与 `NewScope`（控件离开树时 `NewScope` 为 null）。用 `AnimationScope.AddScopeChangedHandler(control, handler)` / `RemoveScopeChangedHandler` 订阅，并在处理程序中重启运行；恢复期间发生的移动从下一帧生效。
 
-控件脱离树时 Scope 不会同步结束：它与移动一样先标记为过期，在下一次排空（下一帧开始前，或没有帧时由一次合并的分发器回调）结束，`ScopeChanged` 以 `NewScope = null` 触发；在此之前它的任务和动画仍在运行。若 Scope 已因父 Scope 结束而结束，`Get` 会当场同步重建它（同时触发 `ScopeChanged`），因此 `Get` 不会返回已结束的 Scope。通过 `AddScopeChangedHandler` 添加的处理程序相互隔离：某个处理程序抛错会被报告到 `AnimationFailed`，其余处理程序照常执行。非 `Interactive` 宿主的事件参数 `Source` 为 null。`AnimatedBounds` 只在 `Lookahead.MoveContent` 事务进行期间推迟自身 Scope 的重建；事务提交后，即使跨不同祖先 Scope 移动，飞行也在重建时移入新 Scope（随之采用新 Scope 的 `DurationScale`），不会中断。
+控件脱离树时 Scope 不会同步结束：它与移动一样先标记为过期，在下一次排空（下一帧开始前，或没有帧时由一次合并的分发器回调）结束，`ScopeChanged` 以 `NewScope = null` 触发；在此之前它的任务和动画仍在运行。若 Scope 已因父 Scope 结束而结束，`Get` 会当场同步重建它（同时触发 `ScopeChanged`），因此 `Get` 不会返回已结束的 Scope。通过 `AddScopeChangedHandler` 添加的处理程序相互隔离：某个处理程序抛错会被报告到 `AnimationFailed`，其余处理程序照常执行。非 `Interactive` 宿主的事件参数 `Source` 为 null。没有宿主会推迟自身 Scope 的重建：`Lookahead.MoveContent` 是同步事务，事务进行期间排空不会运行（窗口根上的移动标志让排空保持队列不动，事务提交或中止后再重新安排）。事务提交后，即使跨不同祖先 Scope 移动，`AnimatedBounds` 的飞行也会在下一次排空时移入新 Scope（随之采用新 Scope 的 `DurationScale` 与生命周期），不会中断。
 
 内置宿主在 Scope 重建时恢复在途运行，而不是重启或丢弃：`AnimatedVisibility`、`AnimatedContent`、`AnimatedContentSize`、`LookaheadSize`、`LookaheadPosition`、`AnimatedBounds` 与 `Animated.Properties` 都把当前值与速度带入新 Scope；控件脱离且不再挂回时在该次排空释放。`AnimatedBounds` 仅在运动参考基准不受影响时恢复（同一坐标参考祖先、同一运动帧），否则释放。重建处理程序若让宿主再次过期，会在下一帧再重建一次，期间数值保持一帧。
 
