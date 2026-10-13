@@ -21,6 +21,8 @@ public partial class App : Application
                 ? new SecureTextFieldDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--text-fields") >= 0
                 ? new TextFieldDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--combo-box") >= 0
+                ? new ComboBoxDemo()
                 : new MainWindow();
         }
 

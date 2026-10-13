@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.ComboBoxDemo"
+        Title="Material ComboBox" Width="780" Height="640" RequestedThemeVariant="Light">
+  <ScrollViewer>
+    <StackPanel Margin="32" Spacing="24">
+      <TextBlock Text="ComboBox" FontSize="24" />
+      <TextBlock Text="Native selection and editable text, with the read-only exposed dropdown menu." TextWrapping="Wrap" />
+      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="28" RowSpacing="24">
+        <TextBlock Text="Filled" /><TextBlock Grid.Column="1" Text="Outlined" />
+        <ComboBox Grid.Row="1" m3:MaterialComboBox.Label="City" PlaceholderText="Choose a city"
+                  m3:MaterialComboBox.SupportingText="The menu matches this field" SelectedIndex="0">
+          <ComboBoxItem>Shanghai</ComboBoxItem>
+          <ComboBoxItem>Hangzhou</ComboBoxItem>
+          <ComboBoxItem>Nanjing</ComboBoxItem>
+        </ComboBox>
+        <ComboBox Grid.Row="1" Grid.Column="1" Theme="{StaticResource MaterialOutlinedComboBoxTheme}"
+                  m3:MaterialComboBox.Label="City" PlaceholderText="Choose a city" SelectedIndex="1">
+          <ComboBoxItem>Shanghai</ComboBoxItem>
+          <ComboBoxItem>Hangzhou</ComboBoxItem>
+          <ComboBoxItem>Nanjing</ComboBoxItem>
+        </ComboBox>
+        <ComboBox Grid.Row="2" IsEditable="True" m3:MaterialComboBox.Label="Filter" PlaceholderText="Type or choose"
+                  m3:MaterialComboBox.LeadingIcon="{m3:Symbol Search}">
+          <ComboBoxItem>Apple</ComboBoxItem>
+          <ComboBoxItem>Apricot</ComboBoxItem>
+          <ComboBoxItem>Banana</ComboBoxItem>
+        </ComboBox>
+        <ComboBox Grid.Row="2" Grid.Column="1" Theme="{StaticResource MaterialOutlinedComboBoxTheme}"
+                  m3:MaterialComboBox.Label="Required" m3:MaterialComboBox.IsError="True"
+                  m3:MaterialComboBox.SupportingText="Choose a value" m3:MaterialComboBox.ErrorMessage="Required">
+          <ComboBoxItem>One</ComboBoxItem>
+          <ComboBoxItem>Two</ComboBoxItem>
+        </ComboBox>
+        <ComboBox Grid.Row="3" IsEnabled="False" m3:MaterialComboBox.Label="Disabled" SelectedIndex="0">
+          <ComboBoxItem>Kept while disabled</ComboBoxItem>
+        </ComboBox>
+      </Grid>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Content="Toggle light / dark" Click="ToggleTheme" />
+        <Button Content="Toggle RTL" Click="ToggleDirection" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

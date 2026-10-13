@@ -19,6 +19,7 @@
 
 - [TextField](../src/Material3Expressive/Components/TextField/README.md)：原生 TextBox 装饰与标签
 - [SecureTextField](../src/Material3Expressive/Components/SecureTextField/README.md)：密码显示、输入限制及安全边界
+- [ComboBox](../src/Material3Expressive/Components/ComboBox/README.md)：原生 ComboBox 的字段装饰与单组下拉菜单
 - [CheckBox](../src/Material3Expressive/Components/CheckBox/README.md)：原生复选框与三态
 - [RadioButton](../src/Material3Expressive/Components/RadioButton/README.md)：原生单选按钮与分组
 - [Switch](../src/Material3Expressive/Components/Switch/README.md)：原生 ToggleSwitch 与拖动

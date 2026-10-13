@@ -59,6 +59,7 @@
                 <Button Content="ScrollBar demo" Click="OnScrollBarDemo" HorizontalAlignment="Left" />
                 <Button Content="AlertDialog demo" Click="OnAlertDialogDemo" HorizontalAlignment="Left" />
                 <Button Content="Menu / DropdownMenu demo" Click="OnMenuDemo" HorizontalAlignment="Left" />
+                <Button Content="ComboBox demo" Click="OnComboBoxDemo" HorizontalAlignment="Left" />
                 <TextBlock Text="Card" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>
                     <m3:Card Width="180" Height="100" Margin="0,0,16,16">

@@ -193,6 +193,10 @@ SecureTextField 的原生 Filled / Outlined 主题复用 TextField 装饰，
 PasswordChar / RevealPassword 控制。该原生方案未替换 automation peer 或 IME 客户端；
 安全语义缺口和已确认的 RevealLastTyped 暂缺见[组件说明](../src/Material3Expressive/Components/SecureTextField/README.md)。
 
+ComboBox 使用原生 `ComboBox` 的 Filled / Outlined `ControlTheme`。关闭态是单行 TextField 装饰；
+弹出层留在模板的 `PART_Popup` 中，外观取官方只读 Exposed Dropdown 样例的单组 Standard 菜单。
+选择、文本匹配、键盘和自动化仍由 Avalonia 负责。见[组件说明](../src/Material3Expressive/Components/ComboBox/README.md)。
+
 ## 动画接入
 
 动画执行通过仓内 ProjectReference 依赖 `modules/ComposeAnimation`，与主库共同构建和调试。
