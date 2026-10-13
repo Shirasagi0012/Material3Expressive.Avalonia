@@ -27,6 +27,7 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     // The scope the animatable's runs use; replaced together with it.
     private FrameScope? _runScope;
+    private long _generation;
     private Animatable<Point>? _position;
     private readonly ScopeResumeBinding _scopeBinding;
     private bool _attached;
@@ -99,8 +100,13 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     private async Task Animate(Animatable<Point> position, Point target)
     {
-        try { await position.AnimateToAsync(_runScope!, target, AnimationSpec); }
-        catch (OperationCanceledException) { }
+        var generation = ++_generation;
+        var scope = _runScope!;
+        try { await position.AnimateToAsync(scope, target, AnimationSpec); }
+        // Interrupted by a newer run or a reset, or cancelled because its scope ended (a rebuild
+        // resumes it; a release resets it): not a failure.
+        catch (OperationCanceledException) when (generation != _generation || !ReferenceEquals(_position, position) ||
+                                                  scope.Lifetime.IsCancellationRequested) { }
     }
 
     private void PositionChanged(object? sender, PropertyChangedEventArgs e)

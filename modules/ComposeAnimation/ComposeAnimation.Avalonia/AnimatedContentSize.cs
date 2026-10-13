@@ -217,7 +217,8 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         }
         catch (Exception error)
         {
-            if (!IsCurrent() || cancellationToken.IsCancellationRequested) throw;
+            // Cancelled because its scope ended (a rebuild resumes it; a release resets it): not a failure.
+            if (!IsCurrent() || scope.Lifetime.IsCancellationRequested) throw;
             // Our detach/reset/retarget cancellations have already changed the generation.
             // A current-run cancellation is a failure too (a spec can throw OCE), not a reason
             // to restart indefinitely on each layout pass.
