@@ -26,7 +26,7 @@ namespace Material3Expressive.Foundation.Interaction;
 /// </remarks>
 public sealed class AnimatedCornerRadius : IDisposable
 {
-    private readonly VisualAnimationScope _motion;
+    private readonly AnimationChildScope _motion;
     private readonly Animatable<float> _progress;
     private readonly Action? _onFrame;
     private SpringSpec _spec;
@@ -37,11 +37,11 @@ public sealed class AnimatedCornerRadius : IDisposable
     private bool _disposed;
 
     /// <summary>Creates a morph in its own child scope; disposing it leaves the parent active.</summary>
-    public AnimatedCornerRadius(CornerRadius initial, SpringSpec spec, VisualAnimationScope parentScope,
+    public AnimatedCornerRadius(CornerRadius initial, SpringSpec spec, AnimationScope parentScope,
         Action? onFrame = null)
         : this(new CornerShape.Defined(initial), spec, parentScope, onFrame) { }
 
-    internal AnimatedCornerRadius(CornerShape.Defined initial, SpringSpec spec, VisualAnimationScope parentScope,
+    internal AnimatedCornerRadius(CornerShape.Defined initial, SpringSpec spec, AnimationScope parentScope,
         Action? onFrame = null)
     {
         ArgumentNullException.ThrowIfNull(parentScope);
@@ -51,7 +51,7 @@ public sealed class AnimatedCornerRadius : IDisposable
         _requestedTarget = initial;
         _spec = spec;
         _onFrame = onFrame;
-        _progress = _motion.CreateAnimatable(1f);
+        _progress = new Animatable<float>(new FloatConverter(), 1f, VisibilityThresholds.Float);
     }
 
     /// <summary>The current interpolation fraction.</summary>
@@ -127,7 +127,7 @@ public sealed class AnimatedCornerRadius : IDisposable
         _onFrame?.Invoke();
         if (_disposed || generation != _generation)
             throw new OperationCanceledException(new CancellationToken(true));
-        await _progress.AnimateToAsync(1f,
+        await _progress.AnimateToAsync(_motion, 1f,
             new ComposeAnimation.Runtime.SpringSpec<float>(_spec.DampingRatio, _spec.Stiffness, (float)_spec.VisibilityThreshold), initialVelocity,
             block: _ => _onFrame?.Invoke(), cancellationToken: cancellationToken);
     }

@@ -22,18 +22,18 @@ public sealed record FloatingActionButtonElevation(double Default, double Presse
 // its elevation equals another state's height. Button's target-height inference is different.
 internal sealed class FloatingActionButtonElevationController : IDisposable
 {
-    private readonly VisualAnimationScope _scope;
+    private readonly AnimationChildScope _scope;
     private readonly Animatable<double> _value;
     private FloatingActionButtonElevation _values;
     private InteractionState _last, _target;
     private bool _pending;
     private (FloatingActionButtonElevation Values, InteractionState Interaction) _next;
 
-    internal FloatingActionButtonElevationController(MaterialSurface surface, VisualAnimationScope parent, FloatingActionButtonElevation values, InteractionState interaction)
+    internal FloatingActionButtonElevationController(MaterialSurface surface, AnimationScope parent, FloatingActionButtonElevation values, InteractionState interaction)
     {
         _values = values;
         _scope = parent.CreateChild("FAB elevation");
-        _value = _scope.CreateAnimatable(values.Default);
+        _value = new Animatable<double>(new DoubleConverter(), values.Default, VisibilityThresholds.Double);
         _scope.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, _value);
         Update(values, interaction);
     }
@@ -45,11 +45,11 @@ internal sealed class FloatingActionButtonElevationController : IDisposable
     internal void Update(FloatingActionButtonElevation values, InteractionState interaction)
     {
         _next = (values, interaction);
-        if (_pending || _scope.IsEnding) return;
+        if (_pending || _scope.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = _scope.Launch(async ct =>
         {
-            await _scope.Clock.NextFrameAsync(ct);
+            await _scope.NextFrameAsync(ct);
             _pending = false;
             var (configuration, state) = _next;
             if (_values != configuration)
@@ -69,7 +69,7 @@ internal sealed class FloatingActionButtonElevationController : IDisposable
                     if (from == InteractionState.None && state == InteractionState.None)
                         await _value.SnapToAsync(target, ct);
                     else
-                        await _value.AnimateToAsync(target,
+                        await _value.AnimateToAsync(_scope, target,
                             new TweenSpec<double>(TimeSpan.FromMilliseconds(state != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
                                 easing: state != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)), cancellationToken: ct);
                 }

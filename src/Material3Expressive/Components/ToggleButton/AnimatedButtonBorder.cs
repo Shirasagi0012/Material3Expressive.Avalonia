@@ -10,26 +10,26 @@ internal sealed class AnimatedButtonBorder : IDisposable
 {
     private readonly MaterialSurface _surface;
     private readonly SurfaceOutline _outline;
-    private readonly VisualAnimationScope _motion;
+    private readonly AnimationChildScope _motion;
     private readonly Animatable<float> _width;
     private readonly Animatable<Color> _color;
     private bool _pending;
 
-    internal AnimatedButtonBorder(MaterialSurface surface, SurfaceOutline outline, VisualAnimationScope parent)
+    internal AnimatedButtonBorder(MaterialSurface surface, SurfaceOutline outline, AnimationScope parent)
     {
         _surface = surface; _outline = outline; _motion = parent.CreateChild("Toggle border");
-        _width = _motion.CreateAnimatable((float)surface.BorderThickness.Left);
-        _color = _motion.CreateAnimatable(surface.BorderBrush is ISolidColorBrush brush ? brush.Color : default);
+        _width = new Animatable<float>(new FloatConverter(), (float)surface.BorderThickness.Left, VisibilityThresholds.Float);
+        _color = new Animatable<Color>(new ColorConverter(), surface.BorderBrush is ISolidColorBrush brush ? brush.Color : default, default);
         Paint();
     }
 
     internal void Update()
     {
-        if (_pending || _motion.IsEnding) return;
+        if (_pending || _motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = _motion.Launch(async ct =>
         {
-            await _motion.Clock.NextFrameAsync(ct);
+            await _motion.NextFrameAsync(ct);
             _pending = false;
             if (ButtonSurfaceState.GetBorderWidthAnimation(_surface) is not { } widthSpec
                 || ButtonSurfaceState.GetBorderColorAnimation(_surface) is not { } colorSpec
@@ -38,9 +38,9 @@ internal sealed class AnimatedButtonBorder : IDisposable
             var color = _surface.BorderBrush is ISolidColorBrush brush ? brush.Color : default;
             if (_width.TargetValue != width)
                 // Spring<Dp> without an explicit threshold uses Dp.VisibilityThreshold (0.4).
-                _ = _motion.Launch(c => _width.AnimateToAsync(width, new ComposeAnimation.Runtime.SpringSpec<float>(widthSpec.DampingRatio, widthSpec.Stiffness, .4f), block: _ => Paint(), cancellationToken: c), "Border width");
+                _ = _motion.Launch(c => _width.AnimateToAsync(_motion, width, new ComposeAnimation.Runtime.SpringSpec<float>(widthSpec.DampingRatio, widthSpec.Stiffness, .4f), block: _ => Paint(), cancellationToken: c), "Border width");
             if (_color.TargetValue != color)
-                _ = _motion.Launch(c => _color.AnimateToAsync(color, new ComposeAnimation.Runtime.SpringSpec<Color>(colorSpec.DampingRatio, colorSpec.Stiffness), block: _ => Paint(), cancellationToken: c), "Border ink");
+                _ = _motion.Launch(c => _color.AnimateToAsync(_motion, color, new ComposeAnimation.Runtime.SpringSpec<Color>(colorSpec.DampingRatio, colorSpec.Stiffness), block: _ => Paint(), cancellationToken: c), "Border ink");
             Paint();
         }, "Border composition");
     }
