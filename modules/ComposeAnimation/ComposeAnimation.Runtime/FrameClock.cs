@@ -44,6 +44,9 @@ internal sealed class FrameClock : IDisposable
     private readonly IFrameSource _source;
     private readonly Action<Exception>? _onSourceFailure;
     private readonly List<Waiter> _waiters = [];
+    // Completed waiters whose result was consumed; reused by WaitAsync (O4, stage 5a).
+    private readonly Stack<Waiter> _pool = new();
+    private const int MaxPooled = 4096;
     private readonly List<Hook> _beforeFrame = [];
     private readonly List<Hook> _afterWaiter = [];
     private CancellationTokenSource? _sourceWait;
@@ -71,7 +74,7 @@ internal sealed class FrameClock : IDisposable
         CancellationToken secondToken = default, Action<Exception>? onFault = null)
     {
         VerifyAccess();
-        var waiter = new Waiter(this, onFault);
+        var waiter = Rent(onFault);
         var canceled = cancellationToken.IsCancellationRequested ? cancellationToken
             : secondToken.IsCancellationRequested ? secondToken : (CancellationToken?)null;
         if (canceled is { } token)
@@ -123,10 +126,27 @@ internal sealed class FrameClock : IDisposable
             waiter.Complete(default, new OperationCanceledException());
     }
 
-    // Runs on the UI thread (inline or posted by Waiter's token callback).
-    private void CancelWaiter(Waiter waiter, CancellationToken token)
+    private Waiter Rent(Action<Exception>? onFault)
     {
-        if (waiter.IsCompleted) return;
+        if (_pool.TryPop(out var waiter))
+        {
+            waiter.Prepare(onFault);
+            return waiter;
+        }
+        return new Waiter(this, onFault);
+    }
+
+    // Called by a waiter once its result has been consumed (UI thread).
+    private void Return(Waiter waiter)
+    {
+        if (_pool.Count < MaxPooled) _pool.Push(waiter);
+    }
+
+    // Runs on the UI thread (inline or posted by Waiter's token callback). The version guards a
+    // posted cancellation against a waiter that has since completed and been reused.
+    private void CancelWaiter(Waiter waiter, short version, CancellationToken token)
+    {
+        if (waiter.IsCompleted || waiter.Version != version) return;
         var wasLast = _waiters.Remove(waiter) && _waiters.Count == 0;
         waiter.Complete(default, new OperationCanceledException(token));
         if (wasLast) _sourceWait?.Cancel();
@@ -191,11 +211,16 @@ internal sealed class FrameClock : IDisposable
         }
 
         var batch = _waiters.ToArray();
+        var versions = new short[batch.Length];
+        for (var i = 0; i < batch.Length; i++) versions[i] = batch[i].Version;
         _waiters.Clear();
         VerifyAccess();
         for (var i = 0; i < batch.Length; i++)
         {
-            batch[i].Complete(timestamp, null);
+            // A waiter of this batch may have been cancelled, consumed and reused by an earlier
+            // continuation; its new wait belongs to the next frame. The after-waiter hooks still
+            // run for that entry, exactly as they did for an already-cancelled waiter before pooling.
+            if (batch[i].Version == versions[i]) batch[i].Complete(timestamp, null);
             try
             {
                 foreach (var hook in after) hook.Action();
@@ -203,7 +228,7 @@ internal sealed class FrameClock : IDisposable
             catch (Exception error)
             {
                 for (var j = i + 1; j < batch.Length; j++)
-                    batch[j].Complete(default, error);
+                    if (batch[j].Version == versions[j]) batch[j].Complete(default, error);
                 FailWaiters(error, after);
                 return;
             }
@@ -251,11 +276,14 @@ internal sealed class FrameClock : IDisposable
     }
 
     /// <summary>
-    /// One frame wait. Allocated per wait for now; the version-token protocol keeps it ready for
-    /// pooling (O4) without changing callers.
+    /// One frame wait. Pooled per clock: once its result has been consumed (<see cref="GetResult"/>
+    /// with the current version), it is reset and reused, and the version-token protocol makes any
+    /// stale awaiter fail instead of observing the next wait. Await a wait once.
     /// </summary>
     internal sealed class Waiter(FrameClock owner, Action<Exception>? onFault) : IValueTaskSource<TimeSpan>
     {
+        private Action<Exception>? _onFault = onFault;
+        private bool _consumed;
         // Synchronous: completing the waiter runs its continuation right here, inside the batch.
         private ManualResetValueTaskSourceCore<TimeSpan> _core = new() { RunContinuationsAsynchronously = false };
         private CancellationTokenRegistration _first, _second;
@@ -276,10 +304,29 @@ internal sealed class FrameClock : IDisposable
         {
             var (waiter, token) = ((Waiter, CancellationToken))state!;
             if (Dispatcher.UIThread.CheckAccess()) waiter.CancelOnUiThread(token);
-            else Dispatcher.UIThread.Post(() => waiter.CancelOnUiThread(token), ResumePriority);
+            else
+            {
+                var version = waiter.Version;
+                Dispatcher.UIThread.Post(() => waiter.CancelOnUiThread(version, token), ResumePriority);
+            }
         }
 
-        private void CancelOnUiThread(CancellationToken token) => owner.CancelWaiter(this, token);
+        private void CancelOnUiThread(CancellationToken token) => owner.CancelWaiter(this, Version, token);
+        private void CancelOnUiThread(short version, CancellationToken token) => owner.CancelWaiter(this, version, token);
+
+        /// <summary>Resets a pooled waiter for its next wait (bumps the version).</summary>
+        public void Prepare(Action<Exception>? onFault)
+        {
+            _core.Reset();
+            _onFault = onFault;
+            _first = default;
+            _second = default;
+            IsCompleted = false;
+            _consumed = false;
+#if DEBUG
+            _awaited = false;
+#endif
+        }
 
         /// <summary>Completes on the UI thread; the stored continuation runs inline.</summary>
         public void Complete(TimeSpan timestamp, Exception? error)
@@ -293,11 +340,21 @@ internal sealed class FrameClock : IDisposable
                 _core.SetResult(timestamp);
                 return;
             }
-            try { onFault?.Invoke(error); } catch { /* observers must not strand the waiter */ }
+            try { _onFault?.Invoke(error); } catch { /* observers must not strand the waiter */ }
             _core.SetException(error);
         }
 
-        public TimeSpan GetResult(short token) => _core.GetResult(token);
+        public TimeSpan GetResult(short token)
+        {
+            if (token != _core.Version || !IsCompleted || _consumed) return _core.GetResult(token);
+            _consumed = true;
+            try { return _core.GetResult(token); }
+            finally
+            {
+                _onFault = null;
+                owner.Return(this);
+            }
+        }
         public ValueTaskSourceStatus GetStatus(short token) => _core.GetStatus(token);
 
         public void OnCompleted(Action<object?> continuation, object? state, short token,
