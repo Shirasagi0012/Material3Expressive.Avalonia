@@ -512,10 +512,10 @@ public readonly record struct AnimationResult<T>(
 /// </summary>
 internal static class AnimatableArgs
 {
-    internal static readonly System.ComponentModel.PropertyChangedEventArgs TargetValue = new("TargetValue");
-    internal static readonly System.ComponentModel.PropertyChangedEventArgs LowerBound = new("LowerBound");
-    internal static readonly System.ComponentModel.PropertyChangedEventArgs UpperBound = new("UpperBound");
-    internal static readonly System.ComponentModel.PropertyChangedEventArgs IsRunning = new("IsRunning");
-    internal static readonly System.ComponentModel.PropertyChangedEventArgs Value = new("Value");
-    internal static readonly System.ComponentModel.PropertyChangedEventArgs Velocity = new("Velocity");
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs TargetValue = new(nameof(Animatable<object>.TargetValue));
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs LowerBound = new(nameof(Animatable<object>.LowerBound));
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs UpperBound = new(nameof(Animatable<object>.UpperBound));
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs IsRunning = new(nameof(Animatable<object>.IsRunning));
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs Value = new(nameof(Animatable<object>.Value));
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs Velocity = new(nameof(Animatable<object>.Velocity));
 }

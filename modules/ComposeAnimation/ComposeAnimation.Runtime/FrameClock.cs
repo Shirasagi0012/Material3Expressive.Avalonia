@@ -127,6 +127,9 @@ internal sealed class FrameClock : IDisposable
         _beforeFrame.Clear();
         _afterWaiter.Clear();
         _sourceWait?.Cancel();
+        _spareSourceWait?.Dispose();
+        _spareSourceWait = null;
+        _pool.Clear();
         foreach (var waiter in pending)
             waiter.Complete(default, new OperationCanceledException());
     }
@@ -219,6 +222,8 @@ internal sealed class FrameClock : IDisposable
             return;
         }
 
+        // RunFrame is never re-entered: the spare buffer is always empty when the batch swaps in.
+        Debug.Assert(_spare.Count == 0);
         var batch = _waiters;
         _waiters = _spare;
         if (_batchVersions.Length < batch.Count) _batchVersions = new short[Math.Max(batch.Count, _batchVersions.Length * 2)];

@@ -277,21 +277,17 @@ public abstract class Transition : ObservableObject, IDisposable
 
     private void OnFrameCore(TimeSpan frameTime, double? scopeScale)
     {
-        {
-            if (IsSeeking) return;
-            if (!AnimationConstants.IsUnspecified(_lastFrameTime) && frameTime < _lastFrameTime)
-                throw new ArgumentOutOfRangeException(nameof(frameTime));
-            var scale = _durationScale * (scopeScale ?? 1);
-            if (AnimationConstants.IsUnspecified(_startTime))
-                _startTime = frameTime - TimeSpan.FromTicks(checked((long)(_playTime.Ticks * scale)));
-            if (scale > 0)
-            {
-                _playTime = TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _startTime).Ticks / scale)));
-            }
-            _lastFrameTime = frameTime;
-            Pulse(_playTime, scale == 0);
-            Notify(PlayTimeChangedArgs);
-        }
+        if (IsSeeking) return;
+        if (!AnimationConstants.IsUnspecified(_lastFrameTime) && frameTime < _lastFrameTime)
+            throw new ArgumentOutOfRangeException(nameof(frameTime));
+        var scale = _durationScale * (scopeScale ?? 1);
+        if (AnimationConstants.IsUnspecified(_startTime))
+            _startTime = frameTime - TimeSpan.FromTicks(checked((long)(_playTime.Ticks * scale)));
+        if (scale > 0)
+            _playTime = TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _startTime).Ticks / scale)));
+        _lastFrameTime = frameTime;
+        Pulse(_playTime, scale == 0);
+        Notify(PlayTimeChangedArgs);
     }
 
     private static readonly PropertyChangedEventArgs PlayTimeChangedArgs = new(nameof(PlayTime));
