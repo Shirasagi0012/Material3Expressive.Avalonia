@@ -38,6 +38,8 @@ public sealed class LiveReparentDemo : DemoControlBase
         _visibility = new AnimatedVisibility
         {
             Visible = true,
+            // 只淡入淡出：卡片在飞行途中保持尺寸（默认退出会同时收缩）。
+            Enter = new FadeIn(), Exit = new FadeOut(),
             Content = new Border { Width = 160, Height = 80, Background = Brush("CatalogActorTintBrush"), Child = new TextBlock { Text = "AnimatedVisibility", Margin = new Thickness(8) } },
         };
         _sizeContent = new Border { Width = 120, Height = 60, Background = Brush("CatalogActorTintBrush"), Child = new TextBlock { Text = "AnimatedContentSize", Margin = new Thickness(8) } };
