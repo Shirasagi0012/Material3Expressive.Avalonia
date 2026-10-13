@@ -96,7 +96,7 @@ private void OnChange(object? sender, RoutedEventArgs e)
 核心：
 
 - [animation-scope.md](animation-scope.md) —— Scope 模型、重建与恢复（D17）、MoveContent、已知限制与图示
-- [migration-from-visual-animation-scope.md](migration-from-visual-animation-scope.md) —— 从 `VisualAnimationScope` 旧 API 迁移
+- [migration-from-visual-animation-scope.md](migration-from-visual-animation-scope.md) —— 从旧 Scope API 迁移
 
 组件层：
 
