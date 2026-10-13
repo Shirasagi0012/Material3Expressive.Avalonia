@@ -12,6 +12,8 @@ namespace Material3Expressive.Components;
 // WideNavigationRailLayout: four animateDpAsState tracks and its measure policy.
 // Width decisions retain Compose's integer pixels. Vertical motion is continuous,
 // with the original integer geometry retained at its endpoints.
+// The tracks are AnimatedState identities. Detach drops them so the next attach
+// starts at the current targets instead of resuming a token fallback.
 internal sealed class WideNavigationRailLayout : Panel
 {
     public static readonly StyledProperty<double> CollapsedContainerWidthProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(CollapsedContainerWidth));
@@ -47,9 +49,7 @@ internal sealed class WideNavigationRailLayout : Panel
     public NavigationRailArrangement Arrangement { get => GetValue(ArrangementProperty); set => SetValue(ArrangementProperty, value); }
     public Thickness ContentPadding { get => GetValue(ContentPaddingProperty); set => SetValue(ContentPaddingProperty, value); }
 
-    private Animatable<float>? _minWidth, _widthFullRange, _itemSpacing, _itemHeight;
-    private AnimationChildScope? _attachScope;
-    private bool _pending;
+    private AnimatedState<float>? _minWidth, _widthFullRange, _itemSpacing, _itemHeight;
     private float _minimumWidth, _fullWidth, _spacing, _minimumHeight;
     private int _currentWidth, _actualMaxExpandedWidth;
     private WideNavigationRailItemsPanel? _items;
@@ -63,26 +63,27 @@ internal sealed class WideNavigationRailLayout : Panel
     {
         base.OnAttachedToVisualTree(e);
         if (_minWidth is not null) return;
-        var motion = _attachScope = AnimationScope.Get(this).CreateChild("Wide rail layout");
         _minimumWidth = (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth);
         _fullWidth = (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth);
         _spacing = (float)(Expanded ? 0 : CollapsedItemVerticalSpace);
         _minimumHeight = (float)(Expanded ? 48 : CollapsedItemMinHeight);
-        _minWidth = new Animatable<float>(new FloatConverter(), _minimumWidth, VisibilityThresholds.Float);
-        _widthFullRange = new Animatable<float>(new FloatConverter(), _fullWidth, VisibilityThresholds.Float);
-        _itemSpacing = new Animatable<float>(new FloatConverter(), _spacing, VisibilityThresholds.Float);
-        _itemHeight = new Animatable<float>(new FloatConverter(), _minimumHeight, VisibilityThresholds.Float);
-        motion.SubscribeValue(_minWidth, value => { _minimumWidth = value; InvalidateMeasure(); });
-        motion.SubscribeValue(_widthFullRange, value => { _fullWidth = value; InvalidateMeasure(); });
-        motion.SubscribeValue(_itemSpacing, value => { _spacing = value; InvalidateMeasure(); });
-        motion.SubscribeValue(_itemHeight, value => { _minimumHeight = value; InvalidateMeasure(); });
+        _minWidth = Track("Wide rail minimum width", _minimumWidth);
+        _widthFullRange = Track("Wide rail width range", _fullWidth);
+        _itemSpacing = Track("Wide rail item spacing", _spacing);
+        _itemHeight = Track("Wide rail item height", _minimumHeight);
+        _minWidth.ValueChanged += value => { _minimumWidth = value; InvalidateMeasure(); };
+        _widthFullRange.ValueChanged += value => { _fullWidth = value; InvalidateMeasure(); };
+        _itemSpacing.ValueChanged += value => { _spacing = value; InvalidateMeasure(); };
+        _itemHeight.ValueChanged += value => { _minimumHeight = value; InvalidateMeasure(); };
+
+        AnimatedState<float> Track(string label, float initial) => AnimatedState.Create(this, initial, label: label);
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        // Disposing the attach scope cancels the four runs and drops their subscriptions.
-        _attachScope?.Dispose(); _attachScope = null;
+        // Popup reparenting detaches this layout. Drop the tracks before the base
+        // detach so a token fallback cannot commit, and the next attach starts clean.
+        _minWidth?.Dispose(); _widthFullRange?.Dispose(); _itemSpacing?.Dispose(); _itemHeight?.Dispose();
         _minWidth = _widthFullRange = _itemSpacing = _itemHeight = null;
-        _pending = false;
         _currentWidth = _actualMaxExpandedWidth = 0;
         base.OnDetachedFromVisualTree(e);
     }
@@ -95,40 +96,20 @@ internal sealed class WideNavigationRailLayout : Panel
     }
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _pending || _minWidth is null || _attachScope is not { } motion
-            || motion.Lifetime.IsCancellationRequested) return;
-        var min = _minWidth;
-        var full = _widthFullRange!;
-        var spacing = _itemSpacing!;
-        var height = _itemHeight!;
-        _pending = true;
-        _ = motion.Launch(async ct =>
-        {
-            // Modal's target is derived from a position animation in the current
-            // frame. Its animateDpAsState effects start in that recomposition,
-            // so a second frame gate here would delay all four tracks.
-            if (!IsModal) await motion.NextFrameAsync(ct);
-            if (!ReferenceEquals(min, _minWidth)) return;
-            _pending = false;
-            var spatial = LayoutAnimation;
-            var widthSpec = IsModal ? ModalWidthAnimation : spatial;
-            if (spatial.Stiffness <= 0 || widthSpec.Stiffness <= 0) return;
-            Restart(min, (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth), widthSpec);
-            Restart(full, (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth), widthSpec);
-            Restart(spacing, (float)(Expanded ? 0 : CollapsedItemVerticalSpace), spatial);
-            Restart(height, (float)(Expanded ? 48 : CollapsedItemMinHeight), spatial);
-
-            void Restart(Animatable<float> track, float target, Foundation.Motion.SpringSpec spec)
-            {
-                if (track.TargetValue == target) return;
-                _ = motion.Launch(async lifetime =>
-                {
-                    await track.StopAsync();
-                    lifetime.ThrowIfCancellationRequested();
-                    await track.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: lifetime);
-                }, "Wide rail layout track");
-            }
-        }, "Wide rail layout targets");
+        if (!this.IsAttachedToVisualTree() || _minWidth is null || _widthFullRange is null
+            || _itemSpacing is null || _itemHeight is null) return;
+        var spatial = LayoutAnimation;
+        var widthSource = IsModal ? ModalWidthAnimation : spatial;
+        // An unresolved motion token stays unsubmitted. AnimatedState commits the latest
+        // target on the arriving frame, which is the animateDpAsState conflation point.
+        if (spatial.Stiffness <= 0 || widthSource.Stiffness <= 0) return;
+        const float threshold = 0.1f;
+        var spatialSpec = new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, threshold);
+        var widthSpec = IsModal ? new SpringSpec<float>(widthSource.DampingRatio, widthSource.Stiffness, threshold) : spatialSpec;
+        _minWidth.UpdateTarget((float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth), widthSpec);
+        _widthFullRange.UpdateTarget((float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth), widthSpec);
+        _itemSpacing.UpdateTarget((float)(Expanded ? 0 : CollapsedItemVerticalSpace), spatialSpec);
+        _itemHeight.UpdateTarget((float)(Expanded ? 48 : CollapsedItemMinHeight), spatialSpec);
     }
 
     protected override Size MeasureOverride(Size availableSize)

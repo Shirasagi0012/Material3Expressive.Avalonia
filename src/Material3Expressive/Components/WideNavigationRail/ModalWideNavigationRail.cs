@@ -58,11 +58,11 @@ public class ModalWideNavigationRail : WideNavigationRail
     private readonly Popup _popup = new();
     private TopLevel? _topLevel;
     private AnimationChildScope? _attachScope;
-    private Animatable<float>? _position, _alpha, _offset;
-    private IDisposable? _alphaSubscription, _offsetSubscription;
+    private AnimatedState<float>? _position, _alpha;
+    private Animatable<float>? _offset;
+    private IDisposable? _offsetSubscription;
     private CancellationTokenSource? _flingCancellation;
-    private bool _samplingFling, _offsetDismissing;
-    private bool _pending, _scrimTarget, _closingOverlay, _dragging, _moving;
+    private bool _replacingState, _closingOverlay, _dragging, _moving;
     private float _width;
     private WideNavigationRailValue _anchorTarget;
     private IPointer? _pointer;
@@ -70,7 +70,6 @@ public class ModalWideNavigationRail : WideNavigationRail
     private readonly VelocityTracker _velocity = new();
     private Action? _restoreAfterDetach;
     internal bool IsMovingContent => _moving;
-    internal bool HasFrameDrivenTarget => _samplingFling || _offsetDismissing;
     internal bool IsModalVisible => _topLevel is not null;
     internal float PositionProgress => _position?.Value ?? (State.TargetValue == WideNavigationRailValue.Expanded ? 1 : 0);
     internal float ModalOffset => _offset?.Value ?? 0;
@@ -135,14 +134,19 @@ public class ModalWideNavigationRail : WideNavigationRail
         CloseOverlay(false);
         _pendingDragSettle = null;
         _pendingDismiss = false;
-        _position = _alpha = _offset = null; _pending = false; _width = 0;
+        _position?.Dispose(); _alpha?.Dispose();
+        _position = _alpha = null; _offset = null; _width = 0;
         _offsetSubscription = null;
         _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        base.OnPropertyChanged(change);
+        // Base notifies expansion before this method replaces the anchored offset.
+        var replacingState = change.Property == StateProperty;
+        if (replacingState) _replacingState = true;
+        try { base.OnPropertyChanged(change); }
+        finally { if (replacingState) _replacingState = false; }
         if (change.Property == HeaderProperty || change.Property == HeaderTemplateProperty || change.Property == ExpandedHeaderProperty
             || change.Property == ExpandedHeaderTemplateProperty || change.Property == ExpandedHeaderTopPaddingProperty)
             UpdateHeader();
@@ -179,30 +183,13 @@ public class ModalWideNavigationRail : WideNavigationRail
         // The channel's anchoredDrag mutation replaces the entire fling, including
         // its finally block awaiting the hoisted state animation.
         if (HideOnCollapse && !_dragging) _flingCancellation?.Cancel();
-        if (!this.IsAttachedToVisualTree() || _position is null || _pending || _attachScope is not { } scope
-            || scope.Lifetime.IsCancellationRequested) return;
-        var frameDriven = HasFrameDrivenTarget;
-        _pending = true;
-        _ = scope.Launch(async ct =>
-        {
-            if (!frameDriven) await scope.NextFrameAsync(ct);
-            if (_position is null) return;
-            _pending = false;
-            var target = State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f;
-            var effects = EffectsAnimation;
-            if (effects.Stiffness <= 0) return;
-            if (_position.TargetValue != target)
-            {
-                _ = scope.Launch(async lifetime =>
-                {
-                    await _position.StopAsync();
-                    if (_position is null) return;
-                    lifetime.ThrowIfCancellationRequested();
-                    await _position.AnimateToAsync(scope, target, Spring(effects), cancellationToken: lifetime);
-                }, "Modal rail position");
-                if (IsModalVisible && HideOnCollapse && !_dragging) _ = AnimateOffset(State.TargetValue);
-            }
-        }, "Modal rail target");
+        if (!this.IsAttachedToVisualTree() || _position is null) return;
+        var target = State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f;
+        var effects = EffectsAnimation;
+        if (effects.Stiffness <= 0 || _position.TargetValue == target) return;
+        _position.UpdateTarget(target, Spring(effects));
+        // Replacing State discards the previous offset after this notification.
+        if (!_replacingState && IsModalVisible && HideOnCollapse && !_dragging) _ = AnimateOffset(State.TargetValue);
     }
     private static SpringSpec<float> Spring(Foundation.Motion.SpringSpec spec)
     {
@@ -210,11 +197,12 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void InitializeMotion()
     {
-        if (_position is not null || !this.IsAttachedToVisualTree() || _attachScope is not { } scope
-            || scope.Lifetime.IsCancellationRequested) return;
+        if (_position is not null || !this.IsAttachedToVisualTree()) return;
         _anchorTarget = State.TargetValue;
-        _position = new Animatable<float>(new FloatConverter(), State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f, VisibilityThresholds.Float);
-        scope.SubscribeValue(_position, _ => RefreshPresentation());
+        var initial = State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f;
+        _position = AnimatedState.Create(this, initial, label: "Modal rail position");
+        _position.ValueChanged += _ => RefreshPresentation();
+        RefreshPresentation();
     }
     private void UpdateHeader()
     {
@@ -251,10 +239,11 @@ public class ModalWideNavigationRail : WideNavigationRail
         // Only the retained rail uses movableContentOf upstream. Hidden content is
         // composed afresh: reattachment initializes item motion at its current targets.
         MoveItems(RailLayout, _modalLayout, !HideOnCollapse);
-        _alpha = new Animatable<float>(new FloatConverter(), HideOnCollapse ? (initialAnchor == WideNavigationRailValue.Expanded ? 1f : 0f) : (PositionProgress >= .3f ? 1f : 0f), VisibilityThresholds.Float);
-        _scrimTarget = _alpha.Value == 1;
-        if (_attachScope is { } scope && !scope.Lifetime.IsCancellationRequested)
-            _alphaSubscription = scope.SubscribeValue(_alpha, value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); });
+        var initialAlpha = HideOnCollapse ? (initialAnchor == WideNavigationRailValue.Expanded ? 1f : 0f) : (PositionProgress >= .3f ? 1f : 0f);
+        _alpha?.Dispose();
+        _alpha = AnimatedState.Create(this, initialAlpha, label: "Modal rail scrim");
+        _alpha.ValueChanged += value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); };
+        if (_scrim is not null) _scrim.Opacity = Math.Clamp(_alpha.Value, 0, 1);
         // ModalWideNavigationRailState remains remembered while hidden content is absent.
         // Keep its anchors/offset across closes so reopening slides from the collapsed anchor.
         if (!HideOnCollapse) { _width = 0; _offset = null; }
@@ -303,9 +292,7 @@ public class ModalWideNavigationRail : WideNavigationRail
             _templateRoot?.Children.Add(_overlay);
         }
         _topLevel = null; _closingOverlay = false;
-        if (_alpha is not null) _ = _alpha.StopAsync();
-        _alphaSubscription?.Dispose(); _alphaSubscription = null;
-        _alpha = null;
+        _alpha?.Dispose(); _alpha = null;
         if (!HideOnCollapse)
         {
             if (_offset is not null) _ = _offset.StopAsync();
@@ -315,23 +302,12 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void UpdateScrim()
     {
-        if (!this.IsAttachedToVisualTree() || _alpha is null || EffectsAnimation.Stiffness <= 0
-            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
-        var effects = EffectsAnimation;
+        if (!this.IsAttachedToVisualTree() || _alpha is null || EffectsAnimation.Stiffness <= 0) return;
         var visible = HideOnCollapse ? _anchorTarget == WideNavigationRailValue.Expanded : PositionProgress >= .3f;
-        if (visible == _scrimTarget) return;
-        _scrimTarget = visible;
-        var track = _alpha;
-        var frameDriven = HasFrameDrivenTarget;
-        _ = scope.Launch(async ct =>
-        {
-            // The hidden rail's scrim target changes from input / channel effects;
-            // animateFloatAsState conflates that target before starting its track.
-            if (HideOnCollapse && !frameDriven) await scope.NextFrameAsync(ct);
-            if (!ReferenceEquals(track, _alpha)) return;
-            await track.StopAsync();
-            await track.AnimateToAsync(scope, _scrimTarget ? 1f : 0f, Spring(effects), cancellationToken: ct);
-        }, "Modal rail scrim");
+        var target = visible ? 1f : 0f;
+        // Repeated samples share one target. AnimatedState keeps that target until it changes.
+        if (_alpha.TargetValue == target) return;
+        _alpha.UpdateTarget(target, Spring(EffectsAnimation));
     }
     internal void UpdateAnchors(double measuredWidth)
     {
@@ -390,14 +366,8 @@ public class ModalWideNavigationRail : WideNavigationRail
             else await State.CollapseAsync(ct);
         }, "Modal rail dismiss");
     }
-    private Task CollapseStateFromAnimationAsync(CancellationToken cancellationToken)
-    {
-        // Only the synchronous target notification originates from this frame.
-        // Later unrelated changes must retain their own animateAsState gate.
-        _offsetDismissing = true;
-        try { return State.CollapseAsync(cancellationToken); }
-        finally { _offsetDismissing = false; }
-    }
+    private Task CollapseStateFromAnimationAsync(CancellationToken cancellationToken) =>
+        State.CollapseAsync(cancellationToken);
     private void OnModalDismissRequested(object? sender, DismissRequestedEventArgs e)
     {
         // Rail's common Escape path remains independent of its platform Back setting.
@@ -488,8 +458,7 @@ public class ModalWideNavigationRail : WideNavigationRail
                             var consumed = value - track.Value;
                             _ = track.SnapToAsync(value);
                             _anchorTarget = Math.Abs(value + _width) < Math.Abs(value) ? WideNavigationRailValue.Collapsed : WideNavigationRailValue.Expanded;
-                            _samplingFling = true;
-                            try { UpdateScrim(); } finally { _samplingFling = false; }
+                            UpdateScrim();
                             if (Math.Abs(delta - consumed) > .5f || realValue != frame.Value) frame.CancelAnimation();
                             consumedUpToNow += consumed;
                         }, cancellationToken: cancellation.Token);
