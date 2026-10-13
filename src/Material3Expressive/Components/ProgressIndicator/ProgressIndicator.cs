@@ -51,7 +51,8 @@ public abstract class ProgressIndicator : Control
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double? DefaultWavelength { get => GetValue(DefaultWavelengthProperty); set => SetValue(DefaultWavelengthProperty, value); }
 
-    VisualAnimationScope? motion, indeterminateMotion, offsetMotion, amplitudeMotion;
+    AnimationScope? motion;
+    AnimationChildScope? indeterminateMotion, offsetMotion, amplitudeMotion;
     InfiniteTransition? infinite;
     Animatable<float>? amplitude;
     Task? amplitudeTask;
@@ -72,7 +73,7 @@ public abstract class ProgressIndicator : Control
     internal float Sweep => sweep;
     internal float GlobalRotation => globalRotation;
     internal float AdditionalRotation => additionalRotation;
-    internal VisualAnimationScope? AnimationScope => motion;
+    internal AnimationScope? AnimationScope => motion;
     bool HasWavelength => ((WavyProgressIndicator)this).Wavelength is not null || DefaultWavelength is not null;
     float Wavelength => (float)(((WavyProgressIndicator)this).Wavelength ?? DefaultWavelength)!.Value;
     float WaveSpeed => (float)(((WavyProgressIndicator)this).WaveSpeed ?? Wavelength);
@@ -95,14 +96,14 @@ public abstract class ProgressIndicator : Control
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        motion = VisualAnimationScope.Create(this);
+        motion = AnimationScope.Get(this);
         StartIndeterminate();
         if (Wavy && !Circular) StartOffset();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        motion?.Dispose(); motion = indeterminateMotion = offsetMotion = amplitudeMotion = null;
+        motion = indeterminateMotion = offsetMotion = amplitudeMotion = null;
         infinite = null; amplitude = null; amplitudeTask = null; amplitudeDirty = true;
         observesAmplitude = false; waveWidth = waveHeight = waveScale = -1;
         linearCache?.Dispose(); linearCache = null; circularCache?.Dispose(); circularCache = null;
@@ -150,7 +151,8 @@ public abstract class ProgressIndicator : Control
     {
         indeterminateMotion?.Dispose(); indeterminateMotion = null; infinite = null;
         firstHead = firstTail = secondHead = secondTail = globalRotation = additionalRotation = 0; sweep = .1f;
-        if (!IsIndeterminate || motion is not { IsEnding: false }) return;
+        if (!IsIndeterminate || !this.IsAttachedToVisualTree() || this.motion is null) return;
+        var motion = this.motion = AnimationScope.Get(this);
         var scope = indeterminateMotion = motion.CreateChild("Indeterminate progress");
         if (this is CircularWavyProgressIndicator)
         {
@@ -160,14 +162,14 @@ public abstract class ProgressIndicator : Control
             Animate(.1f, .87f, ProgressIndicatorMotion.Sweep, value => sweep = value);
             void Animate(float initial, float target, IAnimationSpec<float> spec, Action<float> sample)
             {
-                var value = scope.CreateAnimatable(initial);
+                var value = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
                 scope.SubscribeValue(value, current => { sample(current); InvalidateVisual(); });
-                _ = scope.Launch(ct => value.AnimateToAsync(target, spec, cancellationToken: ct), "Circular wavy indeterminate");
+                _ = scope.Launch(ct => value.AnimateToAsync(scope, target, spec, cancellationToken: ct), "Circular wavy indeterminate");
             }
         }
         else
         {
-            infinite = scope.CreateInfiniteTransition("Progress indicator");
+            infinite = new InfiniteTransition("Progress indicator");
             if (Circular)
             {
                 Track(0, 1080, ProgressIndicatorMotion.GlobalRotation, value => globalRotation = value);
@@ -181,7 +183,7 @@ public abstract class ProgressIndicator : Control
                 Track(0, 1, ProgressIndicatorMotion.Linear(650, 850), value => secondHead = value);
                 Track(0, 1, ProgressIndicatorMotion.Linear(900, 850), value => secondTail = value);
             }
-            _ = scope.Launch(ct => infinite.RunAsync(ct), "Infinite progress transition");
+            _ = scope.Launch(ct => infinite.RunAsync(scope, ct), "Infinite progress transition");
             void Track(float initial, float target, InfiniteRepeatableSpec<float> spec, Action<float> sample)
             {
                 var value = infinite.AnimateFloat(initial, target, spec);
@@ -193,7 +195,8 @@ public abstract class ProgressIndicator : Control
     void StartOffset()
     {
         offsetMotion?.Dispose(); offsetMotion = null;
-        if (motion is not { IsEnding: false } || !Wavy || !HasWavelength) return;
+        if (!this.IsAttachedToVisualTree() || this.motion is null || !Wavy || !HasWavelength) return;
+        var motion = this.motion = AnimationScope.Get(this);
         if (Circular && animatedAmplitude <= 0) return;
         if (WaveSpeed <= 0 || Wavelength <= 0) { waveOffset = 0; return; }
         var vertexCount = Circular ? shapes?.VertexCount ?? -1 : 1;
@@ -202,10 +205,10 @@ public abstract class ProgressIndicator : Control
             MidpointRounding.AwayFromZero));
         var scope = offsetMotion = motion.CreateChild("Progress wave offset");
         var start = waveOffset;
-        var value = scope.CreateAnimatable(start);
+        var value = new Animatable<float>(new FloatConverter(), start, VisibilityThresholds.Float);
         value.UpdateBounds(Animatable<float>.AnimatableBounds<float>.Unbounded.WithLower(start).WithUpper(start + 1));
         scope.SubscribeValue(value, current => { waveOffset = current % 1; if (!preparingWave) InvalidateVisual(); });
-        _ = scope.Launch(ct => value.AnimateToAsync(start + 1,
+        _ = scope.Launch(ct => value.AnimateToAsync(scope, start + 1,
             new InfiniteRepeatableSpec<float>(new TweenSpec<float>(TimeSpan.FromMilliseconds(duration), easing: ComposeEasings.Linear)),
             cancellationToken: ct), "Progress wave offset");
     }
@@ -223,12 +226,13 @@ public abstract class ProgressIndicator : Control
             amplitudeDirty = false;
             var target = targetAmplitude = Math.Clamp((float)(wave.Amplitude ?? (IsIndeterminate ? 1 : wave.AmplitudeSelector(CoercedProgress))), 0, 1);
             if (this is CircularWavyProgressIndicator && IsIndeterminate) animatedAmplitude = target;
-            else if (motion is { IsEnding: false } scope)
+            else if (this.IsAttachedToVisualTree() && motion is not null)
             {
+                var motion = this.motion = AnimationScope.Get(this);
                 if (amplitude is null)
                 {
-                    amplitudeMotion = scope.CreateChild("Progress amplitude");
-                    amplitude = amplitudeMotion.CreateAnimatable(target);
+                    amplitudeMotion = motion.CreateChild("Progress amplitude");
+                    amplitude = new Animatable<float>(new FloatConverter(), target, VisibilityThresholds.Float);
                     amplitudeMotion.SubscribeValue(amplitude, value =>
                     {
                         animatedAmplitude = value;
@@ -240,10 +244,11 @@ public abstract class ProgressIndicator : Control
                 if (amplitude.TargetValue != target && (amplitudeTask is null || amplitudeTask.IsCompleted))
                 {
                     var value = amplitude;
+                    var scope = amplitudeMotion!;
                     var easing = value.Value < target ? ProgressIndicatorMotion.Standard : ProgressIndicatorMotion.Accelerate;
-                    amplitudeTask = amplitudeMotion!.Launch(async ct =>
+                    amplitudeTask = scope.Launch(async ct =>
                     {
-                        await value.AnimateToAsync(target, new TweenSpec<float>(TimeSpan.FromMilliseconds(500), easing: easing), cancellationToken: ct);
+                        await value.AnimateToAsync(scope, target, new TweenSpec<float>(TimeSpan.FromMilliseconds(500), easing: easing), cancellationToken: ct);
                         if (Circular && target == 0) { offsetMotion?.Dispose(); offsetMotion = null; }
                         // Keep the cache invalidation from the final observed value until the
                         // async job has completed, so its upstream completion gate can open.

@@ -39,8 +39,8 @@ public sealed class RippleAnimation : IDisposable
     private readonly Animatable<double> _radiusFraction;
     private readonly Animatable<double> _centerFraction;
     private readonly TaskCompletionSource _finishSignal = new();
-    private readonly VisualAnimationScope _motion;
-    internal VisualAnimationScope Motion => _motion;
+    private readonly AnimationChildScope _motion;
+    internal AnimationChildScope Motion => _motion;
     private Action? _onFrame;
 
     private Point _origin;
@@ -57,7 +57,7 @@ public sealed class RippleAnimation : IDisposable
     private bool _disposed;
 
     /// <summary>Creates a ripple in its own child scope; disposing it leaves the parent active.</summary>
-    public RippleAnimation(Point origin, Size bounds, VisualAnimationScope parentScope,
+    public RippleAnimation(Point origin, Size bounds, AnimationScope parentScope,
         bool bounded = true, double? radius = null)
     {
         ArgumentNullException.ThrowIfNull(parentScope);
@@ -71,9 +71,9 @@ public sealed class RippleAnimation : IDisposable
         _startRadius = StartRadius(bounds);
         _endRadius = radius ?? EndRadius(bounds, bounded);
 
-        _alpha = _motion.CreateAnimatable(0d);
-        _radiusFraction = _motion.CreateAnimatable(0d);
-        _centerFraction = _motion.CreateAnimatable(0d);
+        _alpha = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
+        _radiusFraction = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
+        _centerFraction = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
         _motion.SubscribeValue(_alpha, _ => _onFrame?.Invoke());
         _motion.SubscribeValue(_radiusFraction, _ => _onFrame?.Invoke());
         _motion.SubscribeValue(_centerFraction, _ => _onFrame?.Invoke());
@@ -125,17 +125,17 @@ public sealed class RippleAnimation : IDisposable
         try
         {
             await Task.WhenAll(
-                _alpha.AnimateToAsync(1, new TweenSpec<double>(FadeIn, easing: ComposeEasings.Linear),
+                _alpha.AnimateToAsync(_motion, 1, new TweenSpec<double>(FadeIn, easing: ComposeEasings.Linear),
                     cancellationToken: token),
-                _radiusFraction.AnimateToAsync(1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.FastOutSlowIn),
+                _radiusFraction.AnimateToAsync(_motion, 1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.FastOutSlowIn),
                     cancellationToken: token),
-                _centerFraction.AnimateToAsync(1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.Linear),
+                _centerFraction.AnimateToAsync(_motion, 1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.Linear),
                     cancellationToken: token));
 
             // All three curves must finish, including the 225ms expansion on a quick tap.
             _finishedFadingIn = true;
             await _finishSignal.Task.WaitAsync(token);
-            await _alpha.AnimateToAsync(0, new TweenSpec<double>(FadeOut, easing: ComposeEasings.Linear),
+            await _alpha.AnimateToAsync(_motion, 0, new TweenSpec<double>(FadeOut, easing: ComposeEasings.Linear),
                 cancellationToken: token);
             IsComplete = true;
         }

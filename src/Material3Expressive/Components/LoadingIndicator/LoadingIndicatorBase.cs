@@ -9,6 +9,7 @@ using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using MaterialShapes;
@@ -46,10 +47,11 @@ public abstract class LoadingIndicatorBase : Control
     public double IndicatorSize { get => GetValue(IndicatorSizeProperty); set => SetValue(IndicatorSizeProperty, value); }
 
     LoadingIndicatorShapes? shapes;
-    VisualAnimationScope? motion, effect, polygonUpdate;
+    AnimationScope? motion;
+    AnimationChildScope? effect, polygonUpdate;
     IReadOnlyList<RoundedPolygon>? activePolygons;
     Animatable<float>? morphProgress, globalRotation;
-    internal VisualAnimationScope? AnimationScope => motion;
+    internal AnimationScope? AnimationScope => motion;
     internal IReadOnlyList<RoundedPolygon> EffectivePolygons => Polygons ?? (IsIndeterminate
         ? LoadingIndicatorDefaults.IndeterminateIndicatorPolygons : LoadingIndicatorDefaults.DeterminateIndicatorPolygons);
     internal float CoercedProgress => Math.Clamp((float)Progress, 0f, 1f);
@@ -82,7 +84,7 @@ public abstract class LoadingIndicatorBase : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        motion?.Dispose(); motion = effect = polygonUpdate = null;
+        motion = effect = polygonUpdate = null;
         activePolygons = null;
         morphProgress = globalRotation = null;
         MorphIndex = 0; MorphProgress = GlobalRotation = 0; RotationTarget = 90;
@@ -94,17 +96,17 @@ public abstract class LoadingIndicatorBase : Control
     {
         effect?.Dispose(); effect = null;
         // Selecting the other Compose overload replaces its remembered state.
-        motion?.Dispose(); motion = null;
+        motion = null;
         polygonUpdate = null;
         activePolygons = EffectivePolygons;
         morphProgress = globalRotation = null;
         MorphIndex = 0; MorphProgress = GlobalRotation = 0; RotationTarget = 90;
         shapes = null;
         if (TopLevel.GetTopLevel(this) is null) return;
-        motion = VisualAnimationScope.Create(this);
+        motion = AnimationScope.Get(this);
         if (!IsIndeterminate) return;
-        morphProgress = motion.CreateAnimatable(0f);
-        globalRotation = motion.CreateAnimatable(0f);
+        morphProgress = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
+        globalRotation = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
         motion.SubscribeValue(morphProgress, value => { MorphProgress = value; InvalidateVisual(); });
         motion.SubscribeValue(globalRotation, value => { GlobalRotation = value; InvalidateVisual(); });
         RestartEffect();
@@ -114,7 +116,8 @@ public abstract class LoadingIndicatorBase : Control
     {
         effect?.Dispose(); effect = null;
         MorphIndex = 0;
-        if (!IsIndeterminate || motion is not { IsEnding: false }) return;
+        if (!IsIndeterminate || !this.IsAttachedToVisualTree() || motion is null) return;
+        motion = AnimationScope.Get(this);
         var scope = effect = motion.CreateChild("Loading indicator polygon sequence");
         var progress = morphProgress!;
         var rotation = globalRotation!;
@@ -130,7 +133,7 @@ public abstract class LoadingIndicatorBase : Control
                     {
                         try
                         {
-                            var result = await progress.AnimateToAsync(1, spring, cancellationToken: token);
+                            var result = await progress.AnimateToAsync(scope, 1, spring, cancellationToken: token);
                             token.ThrowIfCancellationRequested();
                             if (result.EndReason == AnimationEndReason.Finished)
                             {
@@ -153,7 +156,7 @@ public abstract class LoadingIndicatorBase : Control
         {
             try
             {
-                await rotation.AnimateToAsync(360,
+                await rotation.AnimateToAsync(scope, 360,
                     new InfiniteRepeatableSpec<float>(new TweenSpec<float>(TimeSpan.FromMilliseconds(4666), easing: new Avalonia.Animation.Easings.LinearEasing())),
                     cancellationToken: ct);
             }
@@ -165,13 +168,15 @@ public abstract class LoadingIndicatorBase : Control
     {
         polygonUpdate?.Dispose(); polygonUpdate = null;
         if ((activePolygons ?? EffectivePolygons).SequenceEqual(EffectivePolygons)) return;
-        var scope = polygonUpdate = motion!.CreateChild("Loading polygon recomposition");
+        if (!this.IsAttachedToVisualTree() || motion is null) return;
+        motion = AnimationScope.Get(this);
+        var scope = polygonUpdate = motion.CreateChild("Loading polygon recomposition");
         _ = scope.Launch(async ct =>
         {
             // FrameRecomposer first samples the old Animatables, then applies the new
             // remember keys and LaunchedEffect. Retain that final old-frame sample before
             // canceling the effect; restarting inline would retain the previous frame.
-            await scope.Clock.NextFrameAsync(ct);
+            await scope.NextFrameAsync(ct);
             polygonUpdate = null;
             activePolygons = EffectivePolygons;
             shapes = null;
@@ -187,7 +192,7 @@ public abstract class LoadingIndicatorBase : Control
         if (change.Property == IsIndeterminateProperty) RestartMode();
         if (change.Property == PolygonsProperty)
         {
-            if (IsIndeterminate && motion is { IsEnding: false }) QueuePolygonUpdate();
+            if (IsIndeterminate && this.IsAttachedToVisualTree() && motion is not null) QueuePolygonUpdate();
             else { activePolygons = EffectivePolygons; shapes = null; }
         }
         if (change.Property == ProgressProperty && !IsIndeterminate)

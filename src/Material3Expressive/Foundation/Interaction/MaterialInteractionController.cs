@@ -38,7 +38,7 @@ namespace Material3Expressive.Foundation.Interaction;
 internal sealed class MaterialInteractionController
 {
     private readonly Control _owner;
-    private VisualAnimationScope? _motion;
+    private AnimationChildScope? _motion;
     private readonly List<RippleAnimation> _ripples = [];
     private readonly List<InteractionState> _interactions = [];
     private readonly SolidColorBrush _alphaReplacedBrush = new();
@@ -125,7 +125,7 @@ internal sealed class MaterialInteractionController
     }
 
     /// <summary>The attached presenter's shared frame clock and cancellation lifetime.</summary>
-    internal VisualAnimationScope? Motion => _motion;
+    internal AnimationChildScope? Motion => _motion;
 
     /// <summary>Which interactions the owner is currently under.</summary>
     internal InteractionState Interaction => _interaction;
@@ -169,7 +169,8 @@ internal sealed class MaterialInteractionController
         if (_presenter is not null && !ReferenceEquals(_presenter, presenter))
             ResetAnimations();
         _presenter = presenter;
-        _motion ??= VisualAnimationScope.Create(_owner);
+        if (_motion is null || _motion.Lifetime.IsCancellationRequested)
+            _motion = AnimationScope.Get(_owner).CreateChild("Interaction motion");
         var inputMode = MaterialInputMode.For(_owner);
         if (_owner.IsFocused && !_interaction.HasFlag(InteractionState.Focused))
             _indicationFocused = inputMode?.IsKeyboard ?? true;
@@ -284,7 +285,7 @@ internal sealed class MaterialInteractionController
         Set(InteractionState.Pressed, true);
 
         var presenter = _presenter;
-        if (presenter is null || Motion is not { IsEnding: false } motion
+        if (presenter is null || Motion is not { } motion || motion.Lifetime.IsCancellationRequested
             || presenter.Bounds.Width <= 0 || presenter.Bounds.Height <= 0)
             return;
 
@@ -450,10 +451,10 @@ internal sealed class MaterialInteractionController
             // Clickable's enabled update disposes interactions during recomposition.
             // Its StateLayer exit starts after that event frame, unlike pointer exits,
             // whose interaction collector runs directly before the next animation frame.
-            if (deferStateLayer && Motion is { IsEnding: false } motion)
+            if (deferStateLayer && Motion is { } motion && !motion.Lifetime.IsCancellationRequested)
                 _ = motion.Launch(async ct =>
                 {
-                    await motion.Clock.NextFrameAsync(ct);
+                    await motion.NextFrameAsync(ct);
                     UpdateStateLayer();
                 }, "Disabled state layer exit");
             else UpdateStateLayer();
@@ -472,12 +473,12 @@ internal sealed class MaterialInteractionController
         UpdateButtonElevation();
         // Disabling cancels Clickable's press during composition. Its shape observer therefore
         // invalidates the following composition, unlike cancellation by a pointer event.
-        if (deferShape && Motion is { IsEnding: false } motion)
+        if (deferShape && Motion is { } motion && !motion.Lifetime.IsCancellationRequested)
         {
             _presenter?.DeferShapeInteraction();
             _ = motion.Launch(async ct =>
             {
-                await motion.Clock.NextFrameAsync(ct);
+                await motion.NextFrameAsync(ct);
                 // Drain this frame's existing animation callbacks before registering the
                 // invalidated composition, as Core's frame recomposer does after sendFrame.
                 Dispatcher.UIThread.Post(() =>
@@ -493,7 +494,7 @@ internal sealed class MaterialInteractionController
     {
         if (_owner is FloatingActionButton fab)
         {
-            if (_presenter is null || _motion is null || _motion.IsEnding) return;
+            if (_presenter is null || _motion is null || _motion.Lifetime.IsCancellationRequested) return;
             if (fab.Elevation is not { } elevation)
             {
                 _fabElevation?.Dispose();
@@ -512,7 +513,7 @@ internal sealed class MaterialInteractionController
             _buttonElevation = null;
             return;
         }
-        if (_presenter is null || _motion is null || _motion.IsEnding)
+        if (_presenter is null || _motion is null || _motion.Lifetime.IsCancellationRequested)
             return;
 
         // Button.kt collects only press, hover, and focus; drag belongs to other components.
@@ -563,16 +564,16 @@ internal sealed class MaterialInteractionController
             : StateLayer.FadeInDuration(topmost);
 
         _shownInteraction = topmost;
-        if (Motion is not { IsEnding: false } motion)
+        if (Motion is not { } motion || motion.Lifetime.IsCancellationRequested)
             return;
         var surface = _presenter;
         if (_stateLayerAlpha is null)
         {
-            _stateLayerAlpha = motion.CreateAnimatable(0f);
+            _stateLayerAlpha = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
             motion.SubscribeValue(_stateLayerAlpha, _ => surface?.OnInteractionFrame());
         }
         var alpha = _stateLayerAlpha;
-        _ = motion.Launch(ct => alpha.AnimateToAsync(targetOpacity,
+        _ = motion.Launch(ct => alpha.AnimateToAsync(motion, targetOpacity,
             new TweenSpec<float>(duration, easing: ComposeEasings.Linear), cancellationToken: ct), "State layer");
     }
 
