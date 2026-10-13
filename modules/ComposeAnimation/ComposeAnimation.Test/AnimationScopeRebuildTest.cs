@@ -346,6 +346,24 @@ public sealed class AnimationScopeRebuildTest
     });
 
     [Fact]
+    public Task GetRoot_ReturnsTheExistingRoot_WithoutCreatingOrReparenting() => OnUi(() =>
+    {
+        var control = new Border();
+        var window = Show(new StackPanel { Children = { control } });
+        var before = AnimationScope.Get(control);
+        var root = AnimationScope.GetRoot(window);
+        Assert.Same(window.AnimationRoot, root);
+        Assert.Same(root, AnimationScope.GetRoot(window));
+        Assert.Null(window.GetValue(AnimationScope.ScopeProperty));
+        Assert.Same(before, AnimationScope.Get(control));
+        Assert.Same(root, AnimationScope.Get(control).Diagnostics.Parent);
+        using var shared = root.CreateChild("Shared");
+        Assert.Same(root, shared.Diagnostics.Parent);
+        Assert.Throws<InvalidOperationException>(() => AnimationScope.GetRoot(new Window()));
+        window.Close();
+    });
+
+    [Fact]
     public Task FlyoutContent_ParentsToTheOwnerControlsScope() => OnUi(() =>
     {
         var content = new Border { Width = 20, Height = 20 };

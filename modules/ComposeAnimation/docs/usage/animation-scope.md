@@ -19,6 +19,10 @@ public MainWindow()
 
 `Initialize(window, clock)` 可以提供固定帧源；源仍由提供者拥有。默认 UI 帧源和每窗口唯一的内部 FrameClock 由内部实现提供，旧的共享帧时钟类型已删除。同根控件和派生 PopupRoot 自动共享按需请求，空闲时不泵帧；Overlay 使用所在根环境。关闭窗口结束根环境，根没有公开的 `Dispose`；根结束后不能重新初始化同一个普通 TopLevel。
 
+### 窗口生命周期的 Scope：`GetRoot`
+
+多个控件共享、需要在某个使用者脱离后继续存在的状态（例如抽屉或导航栏的共享状态），用 `AnimationScope.GetRoot(topLevel)` 取得 `Initialize` 创建的窗口根 Scope，再在其上 `CreateChild("…")`。`GetRoot` 不创建 Scope、不写继承属性，窗口中其他控件 Scope 的父级不受影响；TopLevel 未初始化时抛 `InvalidOperationException`。**不要**对 TopLevel 调用 `Get`：那会在 TopLevel 上创建一个控件 Scope，并让窗口中之后的所有控件 Scope 挂到它下面。
+
 ## 控件与 Scope 归属
 
 控件已附着后调用 `AnimationScope.Get(owner)`（`owner` 为 Visual），重复调用返回同一个 Scope。它的父级是最近的祖先控件 `Get` Scope（沿继承链，含 Popup/Flyout），否则是窗口根。不要释放它：控件脱离树时 Scope 结束；在树内移动时 Scope 会被标记为过期，并在下一帧等待者恢复前合并重建一次（每帧至多一次），随后控件的直接路由事件 `AnimationScope.ScopeChangedEvent` 触发，参数 `AnimationScopeChangedEventArgs` 携带 `OldScope` 与 `NewScope`（控件离开树时 `NewScope` 为 null）。用 `AnimationScope.AddScopeChangedHandler(control, handler)` / `RemoveScopeChangedHandler` 订阅，并在处理程序中重启运行；恢复期间发生的移动从下一帧生效。

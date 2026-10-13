@@ -210,6 +210,23 @@ public class AnimationScope : FrameScope
     }
 
     /// <summary>
+    /// Returns the existing root scope that <see cref="Initialize(TopLevel, IFrameSource?)"/> created
+    /// for <paramref name="host"/>: a window-lifetime scope that survives any one control detaching
+    /// and ends when the TopLevel closes. It creates no scope and writes no inherited property, so
+    /// unlike <see cref="Get"/> on a TopLevel it does not reparent the window's control scopes. Use
+    /// <see cref="CreateChild"/> on it for state shared by several consumers. Throws
+    /// <see cref="InvalidOperationException"/> when <paramref name="host"/> has no environment.
+    /// </summary>
+    public static AnimationScope GetRoot(TopLevel host)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        Dispatcher.UIThread.VerifyAccess();
+        return Roots.TryGetValue(host, out var root) && root._kind == Kind.Root
+            ? root
+            : throw new InvalidOperationException("This TopLevel has no animation environment; call AnimationScope.Initialize first.");
+    }
+
+    /// <summary>
     /// Returns the scope owned by <paramref name="control"/>, creating it on first use. Its parent is
     /// the nearest ancestor's scope (through the inheritance chain, popups included), or the window
     /// root. When the control moves in the tree the scope is marked stale and replaced (or ended)
