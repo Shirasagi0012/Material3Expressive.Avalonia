@@ -74,6 +74,7 @@ private void OnChange(object? sender, RoutedEventArgs e)
 | 组件 | 用途 | 文档 | 状态 |
 | --- | --- | --- | --- |
 | `AnimationScope` | 根动画环境、控件 Scope 生命周期、任务与值消费 | [animation-scope.md](animation-scope.md) | 已实现 |
+| `AnimatedState<T>` | 显式目标、布局内合并提交、Scope 恢复与长期属性连接 | [animated-state.md](animated-state.md) | 已实现 |
 | `Animated.Properties` | 附加属性集合：任意 styled 属性的值变化按声明的规格播放动画 | [components/animated-properties.md](components/animated-properties.md) | 稳定 |
 | `AnimatedVisibility` | 内容出现/消失的进出场过渡（`Visible` 驱动，支持子元素级联） | [components/animated-visibility.md](components/animated-visibility.md) | 稳定 |
 | `AnimatedContent` / `Crossfade` | `Content` 切换时的进出场过渡与容器尺寸动画 | [components/animated-content.md](components/animated-content.md) | 稳定 |
@@ -96,6 +97,7 @@ private void OnChange(object? sender, RoutedEventArgs e)
 核心：
 
 - [animation-scope.md](animation-scope.md) —— Scope 模型、重建与恢复（D17）、MoveContent、已知限制与图示
+- [animated-state.md](animated-state.md) —— 目标驱动状态、布局提交与模板属性连接
 - [migration-from-visual-animation-scope.md](migration-from-visual-animation-scope.md) —— 从旧 Scope API 迁移
 
 组件层：

@@ -241,7 +241,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     }
 }
 
-internal sealed class AnimationSampleObservable<T>(T value) : IObservable<T>
+internal sealed class AnimationSampleObservable<T>(T value, bool publishOnSubscribe = true) : IObservable<T>
 {
     private IObserver<T>? _observer;
     private T _value = value;
@@ -250,7 +250,10 @@ internal sealed class AnimationSampleObservable<T>(T value) : IObservable<T>
     {
         ArgumentNullException.ThrowIfNull(observer);
         _observer = observer;
-        observer.OnNext(_value);
+        
+        if (publishOnSubscribe) 
+            observer.OnNext(_value);
+        
         return new Subscription(this, observer);
     }
 

@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Catalog.Demos.Engine.AnimatedStateDemo">
+    <UserControl.Resources>
+        <DataTemplate x:Key="SecondActorTemplate">
+            <Border Classes="demo-actor" Width="80" Height="48" HorizontalAlignment="Left">
+                <TextBlock Text="B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel Classes="demo-root" Spacing="12">
+        <Border Classes="demo-stage" Height="210" MinWidth="360">
+            <StackPanel x:Name="Actors" Spacing="16" Margin="24">
+                <Border x:Name="FirstActor" Classes="demo-actor"
+                        Width="80" Height="48" HorizontalAlignment="Left">
+                    <TextBlock Text="A" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border x:Name="SecondActor" Classes="demo-actor"
+                        Width="80" Height="48" HorizontalAlignment="Left">
+                    <TextBlock Text="B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </StackPanel>
+        </Border>
+        <StackPanel Classes="demo-controls" Orientation="Horizontal" Spacing="8">
+            <Button Click="ToggleButton_OnClick">展开 / 收起</Button>
+            <Button Click="ReplaceButton_OnClick">替换部件</Button>
+            <Button Click="ReconnectButton_OnClick">移出 / 挂回</Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

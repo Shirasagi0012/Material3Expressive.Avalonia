@@ -283,3 +283,18 @@ CubicBezierEasing 的 double 运算。固定 Compose 的 Float 运算和不同�
 影响：本地值、模板值与触发样式按 Avalonia 优先级覆盖；已附着元素上字段由未指定变为指定时，新绑定排在已有同级样式之后。
 范围：Foundation/Typography 与所有排版使用者。
 
+## ComposeAnimation 的动画属性贡献
+
+决定：ComposeAnimation 驱动 Avalonia 属性时，采样必须以 `BindingPriority.Animation` 贡献；
+不采用普通属性 setter 或未指定动画优先级的值绑定。沿用 `BindAnimatedValue` 的单向采样绑定与独立撤销形式，
+释放后恢复底层绑定、样式或本地值，不覆盖或删除这些目标来源。
+原因：动画状态本身没有属性优先级；属性系统中的动画贡献需要单独建立，普通赋值无法保留对应的覆盖与恢复语义。
+范围：已有及后续组件的 ComposeAnimation 属性动画；内部字段和直接消费的布局/绘制数值不属于属性贡献。
+DirectProperty 的能力限制应明确说明，不以普通赋值降级。现有普通赋值路径（如 ChipIconSlot 的 Opacity 动画）留待后续迁移。
+接入：采用 `AnimatedState<T>` 与 `AnimatedStateConnection<T>` 两类职责：前者管理唯一动画及 owner Scope 恢复，
+后者管理目标 Visual、StyledProperty、物理绑定和目标附着状态；连接不创建自己的 Animatable 或子动画。
+模板替换显式 Dispose 旧连接并建立新连接，保留稳定 owner 的 AnimatedState；Scope 重建先恢复当前值的属性贡献，再恢复动画。
+不改变现有 Scope 绑定结束即撤销的契约，也不以 `Animated.Properties` 的重设计为前提。
+Bind 的公开返回建议为 IDisposable，连接类的公开可见性尚属于设计建议。当前只记录决定，不迁移组件。
+确认：2026-10-14，维护者明确拒绝属性动画使用普通赋值，并确认 `BindAnimatedValue` 的 Animation 优先级形式。
+

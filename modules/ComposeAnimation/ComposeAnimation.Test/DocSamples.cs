@@ -47,3 +47,23 @@ internal static class AnimationScopeSamples
         await Animated.SnapToTargetAsync(demo, Avalonia.Visual.OpacityProperty);
     }
 }
+
+/// <summary>docs/usage/animated-state.md: public factories and template connection lifetime.</summary>
+internal sealed class AnimatedStateSamples : Avalonia.Controls.Primitives.TemplatedControl
+{
+    private readonly AnimatedState<double> _opacity;
+    private IDisposable? _connection;
+
+    public AnimatedStateSamples() => _opacity = AnimatedState.Create(this, 1d, label: "Content opacity");
+
+    protected override void OnApplyTemplate(Avalonia.Controls.Primitives.TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+        _connection?.Dispose();
+        _connection = e.NameScope.Find<Border>("PART_Content") is { } target
+            ? _opacity.Bind(target, Avalonia.Visual.OpacityProperty) : null;
+    }
+
+    public void Update(bool active) => _opacity.UpdateTarget(active ? 1 : .4,
+        new TweenSpec<double>(TimeSpan.FromMilliseconds(150)));
+}

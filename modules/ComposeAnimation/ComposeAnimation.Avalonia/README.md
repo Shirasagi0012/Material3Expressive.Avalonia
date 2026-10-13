@@ -1,12 +1,11 @@
 # ComposeAnimation.Avalonia
 
 Avalonia host for the ComposeAnimation runtime: `AnimationScope` (per-control scopes, frame
-environment, rebuild and resume), `Animated.Properties`, `AnimatedVisibility`, `AnimatedContent`,
+environment, rebuild and resume), `AnimatedState`, `Animated.Properties`, `AnimatedVisibility`, `AnimatedContent`,
 `AnimatedContentSize`, the cooperative Lookahead containers, `AnimatedBounds` and SharedTransition.
 
 Start here (Chinese, with diagrams): [docs/usage](../docs/usage/README.md).
 
-- Scope model, rebuild rules, D17 resume, `MoveContent`, known limits: [animation-scope.md](../docs/usage/animation-scope.md)
 - Components: [docs/usage/components](../docs/usage/components/)
 - Migrating from the pre-refactor scope API: [migration guide](../docs/usage/migration-from-visual-animation-scope.md)
 - Troubleshooting: [advanced/troubleshooting.md](../docs/usage/advanced/troubleshooting.md)

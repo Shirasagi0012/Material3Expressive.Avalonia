@@ -70,6 +70,8 @@ internal sealed class FrameClock : IDisposable
 
     public void VerifyAccess() => _source.VerifyAccess();
 
+    internal bool IsUnavailable => _disposed || _failure is not null;
+
     /// <summary>
     /// Waits for the next frame and returns its source timestamp. Cancelled when either token is.
     /// <paramref name="onFault"/>, if given, observes the completing exception (cancellation
