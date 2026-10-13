@@ -24,7 +24,7 @@ public sealed class DrawerState : AvaloniaObject
     private bool _running;
     private Control? _owner;
     private readonly HashSet<Control> _owners = [];
-    private VisualAnimationScope? _scope;
+    private AnimationChildScope? _scope;
     private CancellationTokenSource? _mutation, _restart;
     private DrawerValue? _dragTarget;
     private float _offset = float.NaN, _closed = float.NaN, _velocity;
@@ -68,7 +68,7 @@ public sealed class DrawerState : AvaloniaObject
     {
         if (!_owners.Add(owner)) return;
         _owner = owner;
-        _scope ??= VisualAnimationScope.Create(TopLevel.GetTopLevel(owner)!);
+        _scope ??= AnimationScope.GetRoot(TopLevel.GetTopLevel(owner)!).CreateChild("Drawer state");
     }
     internal void Detach(Control owner)
     {
@@ -124,7 +124,7 @@ public sealed class DrawerState : AvaloniaObject
     {
         Dispatcher.UIThread.VerifyAccess();
         cancellationToken.ThrowIfCancellationRequested();
-        if (_scope is not { IsEnding: false } scope)
+        if (_scope is not { } scope || scope.Lifetime.IsCancellationRequested)
             throw new InvalidOperationException("Mount a drawer before animating. Use the constructor or SnapToAsync to seed its state.");
         CancelMutation(); _dragging = false;
         var mutation = CancellationTokenSource.CreateLinkedTokenSource(scope.Lifetime, cancellationToken);
@@ -150,7 +150,7 @@ public sealed class DrawerState : AvaloniaObject
                             && (velocity > 0 ? projected >= target : projected <= target))
                         {
                             var previous = initial;
-                            await animation.AnimateDecayAsync(decay, scope.Clock, block: frame =>
+                            await SuspendAnimation.AnimateDecayAsync(scope, animation, decay, block: frame =>
                             {
                                 var crossed = frame.Value < target && previous > target || frame.Value > target && previous < target;
                                 DragTo(crossed ? target : frame.Value, frame.Velocity);
@@ -162,7 +162,7 @@ public sealed class DrawerState : AvaloniaObject
                         {
                             // NavigationDrawer.kt captures this tween in the anchored state constructor.
                             IAnimationSpec<float> spec = settle ? new TweenSpec<float>(TimeSpan.FromMilliseconds(256)) : Spring(latest);
-                            await animation.AnimateToAsync(target, scope.Clock, spec, block: frame => { DragTo(frame.Value, frame.Velocity); Refresh(); }, cancellationToken: restart.Token);
+                            await SuspendAnimation.AnimateToAsync(scope, animation, target, spec, block: frame => { DragTo(frame.Value, frame.Velocity); Refresh(); }, cancellationToken: restart.Token);
                         }
                         if (Confirm(value)) { DragTo(Position(value), _velocity); SetSettled(value); }
                         break;

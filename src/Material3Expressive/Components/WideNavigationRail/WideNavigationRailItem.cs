@@ -84,7 +84,7 @@ public class WideNavigationRailItem : Button
     private static readonly StyledProperty<bool> RailExpandedOwnerProperty = RailExpandedProperty.AddOwner<WideNavigationRail>();
     internal NavigationItemIconPosition EffectiveIconPosition => IconPosition ?? (RailExpanded ? NavigationItemIconPosition.Start : NavigationItemIconPosition.Top);
 
-    private VisualAnimationScope? _scope;
+    private AnimationChildScope? _scope;
     private Animatable<float>? _selection, _position;
     private Animatable<Color>? _textColor;
     private WideNavigationRailItemLayout? _layout;
@@ -204,10 +204,10 @@ public class WideNavigationRailItem : Button
         if (topLevel is null) return; // A parent's detach can transfer the presenter before child detach notifications.
         // movableContentOf keeps item animations while transferring between hosts.
         // A TopLevel lease survives that visual detach; the real item detach still disposes it.
-        _scope = VisualAnimationScope.Create(this.FindLogicalAncestorOfType<ModalWideNavigationRail>() is not null ? topLevel : this);
-        _selection = _scope.CreateAnimatable(IsSelected ? 1f : 0f);
-        _position = _scope.CreateAnimatable(EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f);
-        _textColor = _scope.CreateAnimatable(TextTarget);
+        _scope = (this.FindLogicalAncestorOfType<ModalWideNavigationRail>() is not null ? AnimationScope.GetRoot(topLevel) : AnimationScope.Get(this)).CreateChild("Wide rail item");
+        _selection = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
+        _position = new Animatable<float>(new FloatConverter(), EffectiveIconPosition == NavigationItemIconPosition.Top ? 0f : 1f, VisibilityThresholds.Float);
+        _textColor = new Animatable<Color>(new ColorConverter(), TextTarget, default);
         if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget);
         _scope.SubscribeValue(_selection, value =>
         {
@@ -219,15 +219,16 @@ public class WideNavigationRailItem : Button
     }
     private void UpdateTargets()
     {
-        if (_scope is not { IsEnding: false } scope || _pending) return;
+        if (_scope is not { } scope || scope.Lifetime.IsCancellationRequested || _pending) return;
         // A modal fling can change the hoisted target from its animation callback.
         // Its recomposition starts effects before the next frame, without another gate.
         var frameDriven = this.FindLogicalAncestorOfType<ModalWideNavigationRail>()?.HasFrameDrivenTarget == true;
         _pending = true;
         _ = scope.Launch(async ct =>
         {
-            if (!frameDriven) await scope.Clock.NextFrameAsync(ct);
+            if (!frameDriven) await scope.NextFrameAsync(ct);
             _pending = false;
+            if (_selection is null || _position is null || _textColor is null) return;
             if (_icon is not null) _icon.Foreground = new SolidColorBrush(IconTarget); // Upstream iconColor does not animate.
             var spatial = _layout!.SpatialAnimation;
             var effects = _layout!.EffectsAnimation;
@@ -244,7 +245,7 @@ public class WideNavigationRailItem : Button
                 {
                     await track.StopAsync();
                     lifetime.ThrowIfCancellationRequested();
-                    await track.AnimateToAsync(target, spec, cancellationToken: lifetime);
+                    await track.AnimateToAsync(scope, target, spec, cancellationToken: lifetime);
                 }, "Wide rail item track");
             }
         }, "Wide rail item targets");

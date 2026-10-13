@@ -47,7 +47,7 @@ internal sealed class WideNavigationRailLayout : Panel
     public NavigationRailArrangement Arrangement { get => GetValue(ArrangementProperty); set => SetValue(ArrangementProperty, value); }
     public Thickness ContentPadding { get => GetValue(ContentPaddingProperty); set => SetValue(ContentPaddingProperty, value); }
 
-    private VisualAnimationScope? _scope;
+    private AnimationScope? _scope;
     private Animatable<float>? _minWidth, _widthFullRange, _itemSpacing, _itemHeight;
     private bool _pending;
     private float _minimumWidth, _fullWidth, _spacing, _minimumHeight;
@@ -63,15 +63,15 @@ internal sealed class WideNavigationRailLayout : Panel
     {
         base.OnAttachedToVisualTree(e);
         if (_scope is not null) return;
-        _scope = VisualAnimationScope.Create(this);
+        _scope = AnimationScope.Get(this);
         _minimumWidth = (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth);
         _fullWidth = (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth);
         _spacing = (float)(Expanded ? 0 : CollapsedItemVerticalSpace);
         _minimumHeight = (float)(Expanded ? 48 : CollapsedItemMinHeight);
-        _minWidth = _scope.CreateAnimatable(_minimumWidth);
-        _widthFullRange = _scope.CreateAnimatable(_fullWidth);
-        _itemSpacing = _scope.CreateAnimatable(_spacing);
-        _itemHeight = _scope.CreateAnimatable(_minimumHeight);
+        _minWidth = new Animatable<float>(new FloatConverter(), _minimumWidth, VisibilityThresholds.Float);
+        _widthFullRange = new Animatable<float>(new FloatConverter(), _fullWidth, VisibilityThresholds.Float);
+        _itemSpacing = new Animatable<float>(new FloatConverter(), _spacing, VisibilityThresholds.Float);
+        _itemHeight = new Animatable<float>(new FloatConverter(), _minimumHeight, VisibilityThresholds.Float);
         _scope.SubscribeValue(_minWidth, value => { _minimumWidth = value; InvalidateMeasure(); });
         _scope.SubscribeValue(_widthFullRange, value => { _fullWidth = value; InvalidateMeasure(); });
         _scope.SubscribeValue(_itemSpacing, value => { _spacing = value; InvalidateMeasure(); });
@@ -79,7 +79,6 @@ internal sealed class WideNavigationRailLayout : Panel
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope?.Dispose();
         _scope = null;
         _minWidth = _widthFullRange = _itemSpacing = _itemHeight = null;
         _pending = false;
@@ -95,14 +94,16 @@ internal sealed class WideNavigationRailLayout : Panel
     }
     private void UpdateTargets()
     {
-        if (_scope is not { IsEnding: false } scope || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _scope is null || _pending) return;
+        var motion = _scope = AnimationScope.Get(this);
         _pending = true;
-        _ = scope.Launch(async ct =>
+        _ = motion.Launch(async ct =>
         {
             // Modal's target is derived from a position animation in the current
             // frame. Its animateDpAsState effects start in that recomposition,
             // so a second frame gate here would delay all four tracks.
-            if (!IsModal) await scope.Clock.NextFrameAsync(ct);
+            if (!IsModal) await motion.NextFrameAsync(ct);
+            if (_minWidth is null) return;
             _pending = false;
             var spatial = LayoutAnimation;
             var widthSpec = IsModal ? ModalWidthAnimation : spatial;
@@ -115,11 +116,11 @@ internal sealed class WideNavigationRailLayout : Panel
             void Restart(Animatable<float> track, float target, Foundation.Motion.SpringSpec spec)
             {
                 if (track.TargetValue == target) return;
-                _ = scope.Launch(async lifetime =>
+                _ = motion.Launch(async lifetime =>
                 {
                     await track.StopAsync();
                     lifetime.ThrowIfCancellationRequested();
-                    await track.AnimateToAsync(target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: lifetime);
+                    await track.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: lifetime);
                 }, "Wide rail layout track");
             }
         }, "Wide rail layout targets");
