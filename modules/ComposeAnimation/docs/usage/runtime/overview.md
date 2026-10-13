@@ -142,3 +142,13 @@ catch (OperationCanceledException)
 ```
 
 更多内容：[../README.md](../README.md) 返回文档入口；遇到问题时见 [../advanced/troubleshooting.md](../advanced/troubleshooting.md)。
+
+## 运行与 Scope
+
+运行时状态类型（`Animatable`、`Transition`、`InfiniteTransition`、`SeekableTransitionState`）构造时不需要时钟或 Scope。每次运行在调用处传入 `FrameScope`（Avalonia 中即 `AnimationScope`）：`AnimateToAsync(scope, …)`、`AnimateDecayAsync(scope, …)`、`RunAsync(scope, …)`，`SuspendAnimation` 同样接收 `FrameScope`。
+
+- **一个状态同一时刻一个运行**（D21）：同一对象的新运行通过 `MutatorMutex` 接管旧运行，旧运行清理完成后新运行才采样；`RunAsync` 在第二个 Scope 上启动会取消第一个，而不是抛错。
+- **取消保留状态**（D22）：被取消的运行停在当前值与速度，下一次运行从那里继续。
+- **子过渡没有自己的帧**：子 `Transition` 由父过渡的帧循环驱动，对其调用 `RunAsync` 会抛错。
+- **已结束的 Scope**：在其上启动运行抛 `ObjectDisposedException`；状态对象仍可用。
+- `Animatable.AnimateToAsync` 的重载组合（带/不带初速度）目前**仍在评审中**，本阶段不做改动。

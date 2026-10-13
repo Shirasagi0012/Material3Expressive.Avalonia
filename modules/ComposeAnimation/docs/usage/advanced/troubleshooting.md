@@ -123,3 +123,36 @@ root.AnimationFailed += (_, failure) => Log(failure.Host, failure.OperationLabel
 **原因**：时长缩放被设为 0。`MotionDurationScale.ScaleFactor = 0` 会让有限动画在下一帧直接吸附到终值（无限规格保持播放时间为 0）；`Transition.DurationScale = 0` 对 `Transition` 树同理。
 
 **解决**：把 `MotionDurationScale.ScaleFactor` 恢复为 `1`（或调用 `MotionDurationScale.Reset()` 恢复当前异步上下文的默认值），`Transition.DurationScale` 恢复为 `1`。注意 `MotionDurationScale` 基于 `AsyncLocal`——在某个异步上下文里设置后没有恢复，会顺着 `await` 流影响同上下文的其他动画。
+
+## `MoveContent failed: {reason}. Tree edits are not rolled back.`
+
+`Lookahead.MoveContent` 是同步事务。原因文本是以下之一：
+
+- `layout ran inside the move callback; …`：回调内运行了布局或分发器；
+- `the Lookahead domain was detached during the move`：移动期间 Lookahead 域脱离了树；
+- `the Lookahead domain moved to another window during the move`：域被移到另一个窗口；
+- `the content ended outside this Lookahead domain`：内容最终不在该 Lookahead 域内。
+
+抛出时已经执行的树编辑**不会回滚**，调用方需要自行恢复或重建该子树。不要在事务回调里 `await`、调用 `UpdateLayout` 或推进帧。
+
+## 在 Scope 上启动运行抛 `ObjectDisposedException`
+
+Scope 已结束（控件脱离、窗口关闭、父 Scope 结束或子 Scope 已 `Dispose`）。不要缓存 `Get` 的结果跨越脱离：使用时再调用 `AnimationScope.Get(control)`，或在 `ScopeChanged` 处理程序里拿 `e.NewScope`。状态对象（`Animatable`、`Transition`）不受影响，可以在新 Scope 上从停下的值继续。
+
+## `DelayAsync` 抛 `ArgumentOutOfRangeException`
+
+`scope.DelayAsync` 不接受负值（`Timeout.InfiniteTimeSpan` 除外），与 `Task.Delay` 一样同步抛出。它也不请求帧、不受 `DurationScale` 影响；需要按动画时间等待时用 `NextFrameAsync` 循环或带延迟的规格。
+
+## 换父后运行重新开始而不是继续
+
+按顺序检查：
+
+1. 是否调用了 `ResetAnimation`，或进入了另一个 Lookahead 根（真正的上下文变化会重置）。
+2. `AnimatedBounds`：坐标参考祖先或运动帧是否变了（Q-H，基准改变时释放）。
+3. 控件是否在本次排空前挂回；先移除、过一帧再添加会在排空时释放。
+4. 自建运行：是否在 `ScopeChanged` 处理程序里重新启动，并让状态对象从当前值继续，而不是新建对象。
+5. 处理程序是否反复让宿主过期：每帧至多重建一次（D18），数值会保持一帧。
+
+## 测试中的帧与等待
+
+测试用 `ManualFrameSource` 驱动帧（`SendFrame` 绝对时间、`AdvanceBy` 只送一帧，不补帧），每步后 `Dispatcher.UIThread.RunJobs()`。本仓库测试项目的条件等待默认 15 s，可用环境变量 `COMPOSE_ANIMATION_TEST_WAIT_MS` 调整（只影响本仓库的测试辅助）。
