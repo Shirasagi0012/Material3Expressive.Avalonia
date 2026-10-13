@@ -58,7 +58,9 @@ internal sealed partial class LookaheadContext
     /// visual subtree. Update the actual parent collections inside move; content and retained nodes must
     /// remain in this attached domain with the same coordinate reference. Do not await, pump frames/layout,
     /// or nest MoveContent in this domain. Failures release retained motion; tree edits are not rolled back.
-    /// Ordinary removal still releases animations immediately. This is not keyed content or exit retention.
+    /// Ordinary removal (outside MoveContent) releases animations at the next scope drain, or resumes them
+    /// there when the control is re-attached in the same pass with an unchanged motion-frame basis.
+    /// This is not keyed content or exit retention.
     /// </summary>
     public void MoveContent(Control content, Action move)
     {
@@ -73,6 +75,8 @@ internal sealed partial class LookaheadContext
         var topLevel = TopLevel.GetTopLevel(Owner);
         var states = new List<ILookaheadMoveState>();
         var committed = false;
+        // No scope drain while the move is open (its basis is uncommitted); re-armed on dispose.
+        var drainGate = AnimationScope.BeginMove(Owner);
         _movingContent = true;
         _moveLayoutAttempted = false;
         try
@@ -92,6 +96,7 @@ internal sealed partial class LookaheadContext
             if (!committed)
                 foreach (var state in states) state.Cancel();
             _movingContent = false;
+            drainGate?.Dispose();
             InvalidateTargetLayout();
             InvalidateApproachPlacement();
         }

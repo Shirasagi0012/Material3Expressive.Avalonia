@@ -366,6 +366,32 @@ public class AnimationScope : FrameScope
     }
     internal ScopeDiagnostics Diagnostics => new(this);
 
+    /// <summary>
+    /// Marks a synchronous <c>Lookahead.MoveContent</c> open on <paramref name="owner"/>'s window root
+    /// until the returned token is disposed. While any move is open the drain does not run; disposing
+    /// the last token re-arms it. One window-level counter, no per-host state (this is not parking).
+    /// Null when the owner has no live animation environment.
+    /// </summary>
+    internal static IDisposable? BeginMove(Visual owner)
+    {
+        if (TopLevel.GetTopLevel(owner) is not { } host || !Roots.TryGetValue(host, out var root) ||
+            root._ending || root._stale is not { } set) return null;
+        set.MovesOpen++;
+        return new MoveToken(set);
+    }
+
+    private sealed class MoveToken(StaleSet set) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            if (--set.MovesOpen == 0 && set.Scopes.Count > 0) set.ArmFallback();
+        }
+    }
+
     internal static bool IsEnvironmentEnding(Visual owner)
         => TopLevel.GetTopLevel(owner) is { } host && Roots.TryGetValue(host, out var scope) && scope._root._ending;
 
@@ -493,6 +519,9 @@ public class AnimationScope : FrameScope
         var set = _stale!;
         if (set.Scopes.Count == 0) return;
         if (set.Draining) return;
+        // A Lookahead.MoveContent is open in this window: its coordinate basis is not committed
+        // yet. Leave the queue untouched; EndMove re-arms the drain when the move commits or aborts.
+        if (set.MovesOpen > 0) return;
         set.Draining = true;
         var nextFrame = false;
         var retry = false;
@@ -904,6 +933,7 @@ public class AnimationScope : FrameScope
         public IDisposable? Hook;
         public bool PostPending;
         public bool Draining;
+        public int MovesOpen;
 
         public void ArmFallback()
         {

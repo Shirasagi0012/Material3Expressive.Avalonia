@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -80,6 +81,39 @@ public partial class AnimatedBoundsTest
         Assert.Single(changes);
         Equal(f.Root.Snapshot!.Results[card].Bounds, f.Actual(card));
         Assert.Equal(0, f.Frames.PendingFrameCount);
+    });
+
+    [Fact]
+    public Task MoveContent_DispatcherTurnInsideTheMove_DoesNotDrainScopes() => OnUi(() =>
+    {
+        // The window root's move flag keeps the fallback-post drain away from the uncommitted
+        // basis; the drain is re-armed when the move ends (here it aborts: layout ran inside).
+        var card = Bounds(Text());
+        var (scene, left, right) = MoveSlots(card);
+        using var f = new Fixture(scene);
+        AnimationScope.Get(left);
+        AnimationScope.Get(right);
+        var old = AnimationScope.Get(card);
+        var changes = new List<AnimationScopeChangedEventArgs>();
+        AnimationScope.AddScopeChangedHandler(card, (_, e) => changes.Add(e));
+        var drainedInside = -1;
+        var error = Assert.Throws<InvalidOperationException>(() => f.Root.MoveContent(card, () =>
+        {
+            left.Children.Remove(card); right.Children.Add(card);
+            for (var i = 0; i < 4; i++)
+            {
+                try { Dispatcher.UIThread.RunJobs(); }
+                catch (InvalidOperationException) { } // layout is refused inside the move
+            }
+            drainedInside = changes.Count;
+        }));
+        Assert.Equal(0, drainedInside);
+        Assert.Contains("layout", error.Message);
+        Assert.False(old.Diagnostics.IsEnding);
+        Dispatcher.UIThread.RunJobs();
+        var change = Assert.Single(changes);
+        Assert.Same(old, change.OldScope);
+        Assert.NotNull(change.NewScope);
     });
 
     [Fact]

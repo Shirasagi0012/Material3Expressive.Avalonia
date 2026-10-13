@@ -142,8 +142,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         }
         if (resume && (_outer.Value is not null || _inner.Value is not null))
         {
-            // Q-E: MoveContent is synchronous (no layout, frame or dispatcher turn inside it), so
-            // the drain always sees a committed basis; the scope never needs to defer a rebuild.
+            // Q-E: the drain never runs while a MoveContent is open (the window root's move flag
+            // holds it until commit/abort), so this always sees a committed basis; no host defers.
             if (CanResumeBasis())
             {
                 _scopeBinding.Bind(motion);
