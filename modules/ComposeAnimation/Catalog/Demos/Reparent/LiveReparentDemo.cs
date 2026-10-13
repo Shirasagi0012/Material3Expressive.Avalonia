@@ -16,12 +16,17 @@ namespace Catalog.Demos.Reparent;
 [Demo("reparent/live", Title = "运行中换父级", Page = "布局动画", PageOrder = 3, Order = 7)]
 public sealed class LiveReparentDemo : DemoControlBase
 {
-    private readonly Border _visibilityLeft = Zone("demo-zone-a"), _visibilityRight = Zone("demo-zone-b");
-    private readonly Border _sizeLeft = Zone("demo-zone-a"), _sizeRight = Zone("demo-zone-b");
+    // 三行结构相同：共享 LookaheadBox 内的两个 LookaheadBox 容器，移动的控件外包 AnimatedBounds，换容器时位置随之飞行。
+    private readonly LookaheadBox _visibilityLeft = BoundsZone("demo-zone-a", HorizontalAlignment.Left);
+    private readonly LookaheadBox _visibilityRight = BoundsZone("demo-zone-b", HorizontalAlignment.Right);
+    private readonly LookaheadBox _sizeLeft = BoundsZone("demo-zone-a", HorizontalAlignment.Left);
+    private readonly LookaheadBox _sizeRight = BoundsZone("demo-zone-b", HorizontalAlignment.Right);
     private readonly LookaheadBox _boundsLeft = BoundsZone("demo-zone-a", HorizontalAlignment.Left);
     private readonly LookaheadBox _boundsRight = BoundsZone("demo-zone-b", HorizontalAlignment.Right);
     private readonly AnimatedVisibility _visibility;
+    private readonly AnimatedBounds _visibilityMover;
     private readonly AnimatedContentSize _size;
+    private readonly AnimatedBounds _sizeMover;
     private readonly Border _sizeContent;
     private readonly AnimatedBounds _bounds;
     private readonly Button _visibilityButton = new() { Content = "显隐切换并换容器" };
@@ -37,17 +42,19 @@ public sealed class LiveReparentDemo : DemoControlBase
         };
         _sizeContent = new Border { Width = 120, Height = 60, Background = Brush("CatalogActorTintBrush"), Child = new TextBlock { Text = "AnimatedContentSize", Margin = new Thickness(8) } };
         _size = new AnimatedContentSize { Content = _sizeContent, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        _visibilityMover = Mover(_visibility);
+        _sizeMover = Mover(_size);
         _bounds = new AnimatedBounds
         {
             TargetSize = new Size(120, 80), Padding = new Thickness(8), Margin = new Thickness(10),
             HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
             Child = new LookaheadTextBlock { Text = "AnimatedBounds", Background = Brush("CatalogActorTintBrush") },
         };
-        _visibilityLeft.Child = _visibility;
-        _sizeLeft.Child = _size;
+        _visibilityLeft.Children.Add(_visibilityMover);
+        _sizeLeft.Children.Add(_sizeMover);
         _boundsLeft.Children.Add(_bounds);
-        _visibilityButton.Click += (_, _) => { _visibility.Visible = !_visibility.Visible; Move(_visibility, _visibilityLeft, _visibilityRight); };
-        _sizeButton.Click += (_, _) => { ToggleSize(); Move(_size, _sizeLeft, _sizeRight); };
+        _visibilityButton.Click += (_, _) => { _visibility.Visible = !_visibility.Visible; MoveVisibility(); };
+        _sizeButton.Click += (_, _) => { ToggleSize(); MoveSize(); };
         _boundsButton.Click += (_, _) => { ToggleBounds(); MoveBounds(); };
 
         Content = new StackPanel
@@ -55,13 +62,9 @@ public sealed class LiveReparentDemo : DemoControlBase
             Classes = { "demo-root" }, VerticalAlignment = VerticalAlignment.Top, Spacing = 12,
             Children =
             {
-                Row(_visibilityLeft, _visibilityRight),
-                Row(_sizeLeft, _sizeRight),
-                new Border
-                {
-                    Classes = { "demo-stage" }, Padding = new Thickness(0), Height = 160, MinWidth = 640,
-                    Child = new LookaheadBox { Children = { new LookaheadBox { Children = { _boundsLeft, _boundsRight } } } },
-                },
+                Stage(_visibilityLeft, _visibilityRight),
+                Stage(_sizeLeft, _sizeRight),
+                Stage(_boundsLeft, _boundsRight),
                 new StackPanel { Classes = { "demo-controls" }, Orientation = Orientation.Horizontal, Spacing = 8, Children = { _visibilityButton, _sizeButton, _boundsButton } },
             },
         };
@@ -73,9 +76,11 @@ public sealed class LiveReparentDemo : DemoControlBase
         AddBoundsDiagnostics(() => _bounds.CurrentBounds, () => _bounds.TargetBounds, "AnimatedBounds ");
     }
 
-    private static Border Zone(string zoneClass) => new()
+    // 普通控件经 LookaheadBoundary 接入 lookahead 树，外层 AnimatedBounds 负责换容器时的位置飞行。
+    private static AnimatedBounds Mover(Control child) => new()
     {
-        Classes = { zoneClass }, Width = 300, Height = 120, Padding = new Thickness(10),
+        Margin = new Thickness(10), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+        Child = new LookaheadBoundary { Child = child },
     };
 
     private static LookaheadBox BoundsZone(string zoneClass, HorizontalAlignment alignment) => new()
@@ -83,25 +88,31 @@ public sealed class LiveReparentDemo : DemoControlBase
         Classes = { zoneClass }, Width = 300, Height = 150, HorizontalAlignment = alignment, VerticalAlignment = VerticalAlignment.Top,
     };
 
-    private static StackPanel Row(Control left, Control right) => new()
+    // 两个容器位于同一 LookaheadBox 坐标空间，AnimatedBounds 才能在换容器时从旧位置飞到新位置。
+    private static Border Stage(LookaheadBox left, LookaheadBox right) => new()
     {
-        Orientation = Orientation.Horizontal, Spacing = 40, Children = { left, right },
+        Classes = { "demo-stage" }, Padding = new Thickness(0), Height = 160, MinWidth = 640,
+        Child = new LookaheadBox { Children = { new LookaheadBox { Children = { left, right } } } },
     };
 
     private IBrush? Brush(string key) => this.TryFindResource(key, out var value) ? value as IBrush : Brushes.LightSteelBlue;
 
-    private static void Move(Control child, Border left, Border right)
+    private void MoveVisibility() => Move(_visibilityMover, _visibilityLeft, _visibilityRight);
+    private void MoveSize() => Move(_sizeMover, _sizeLeft, _sizeRight);
+    private void MoveBounds() => Move(_bounds, _boundsLeft, _boundsRight);
+
+    private static void Move(AnimatedBounds mover, LookaheadBox left, LookaheadBox right)
     {
-        var (from, to) = ReferenceEquals(child.Parent, left) ? (left, right) : (right, left);
-        from.Child = null;
-        to.Child = child;
+        var (from, to) = ReferenceEquals(mover.Parent, left) ? (left, right) : (right, left);
+        from.Children.Remove(mover);
+        to.Children.Add(mover);
     }
 
-    private void MoveBounds()
+    private static void Place(AnimatedBounds mover, LookaheadBox left, LookaheadBox right)
     {
-        var (from, to) = ReferenceEquals(_bounds.Parent, _boundsLeft) ? (_boundsLeft, _boundsRight) : (_boundsRight, _boundsLeft);
-        from.Children.Remove(_bounds);
-        to.Children.Add(_bounds);
+        if (ReferenceEquals(mover.Parent, left)) return;
+        right.Children.Remove(mover);
+        left.Children.Add(mover);
     }
 
     private void ToggleSize()
@@ -116,22 +127,20 @@ public sealed class LiveReparentDemo : DemoControlBase
         switch (name)
         {
             case "visibility":
-                Place(_visibility, _visibilityLeft, _visibilityRight);
+                Place(_visibilityMover, _visibilityLeft, _visibilityRight);
                 _visibility.Visible = true;
-                idle = () => _visibility.IsIdle && _visibility.IsContentPresent;
+                _visibilityMover.ResetAnimation();
+                idle = () => _visibility.IsIdle && _visibility.IsContentPresent && !_visibilityMover.IsRunning;
                 break;
             case "content-size":
-                Place(_size, _sizeLeft, _sizeRight);
+                Place(_sizeMover, _sizeLeft, _sizeRight);
                 _sizeContent.Width = 120;
                 _size.ResetAnimation();
-                idle = () => Math.Abs(_size.Bounds.Width - 120) < 0.5;
+                _sizeMover.ResetAnimation();
+                idle = () => Math.Abs(_size.Bounds.Width - 120) < 0.5 && !_sizeMover.IsRunning;
                 break;
             default:
-                if (!ReferenceEquals(_bounds.Parent, _boundsLeft))
-                {
-                    _boundsRight.Children.Remove(_bounds);
-                    _boundsLeft.Children.Add(_bounds);
-                }
+                Place(_bounds, _boundsLeft, _boundsRight);
                 _bounds.TargetSize = new Size(120, 80);
                 _bounds.ResetAnimation();
                 idle = () => !_bounds.IsRunning;
@@ -141,16 +150,9 @@ public sealed class LiveReparentDemo : DemoControlBase
         Assert(idle(), $"{name}: 复位后应静止");
     }
 
-    private static void Place(Control child, Border left, Border right)
-    {
-        if (ReferenceEquals(child.Parent, left)) return;
-        right.Child = null;
-        left.Child = child;
-    }
-
     [DemoAction("AnimatedVisibility 收起途中换容器：在新 Scope 中继续，排空帧不跳变")]
     public Task VisibilityResumesWithoutJump()
-        => RunAsync("visibility", () => _visibility.Visible = false, () => Move(_visibility, _visibilityLeft, _visibilityRight),
+        => RunAsync("visibility", () => _visibility.Visible = false, MoveVisibility,
             VisibilityAlphaPercent, () => !_visibility.IsIdle, () => !_visibility.IsContentPresent);
 
     // 内容到宿主之间各层 Opacity 之积（淡出由内部表面层承担），以百分比表示。
@@ -164,7 +166,7 @@ public sealed class LiveReparentDemo : DemoControlBase
 
     [DemoAction("AnimatedContentSize 变宽途中换容器：在新 Scope 中继续，排空帧不跳变")]
     public Task ContentSizeResumesWithoutJump()
-        => RunAsync("content-size", ToggleSize, () => Move(_size, _sizeLeft, _sizeRight),
+        => RunAsync("content-size", ToggleSize, MoveSize,
             () => _size.Bounds.Width, () => Math.Abs(_size.Bounds.Width - 260) > 0.5, () => Math.Abs(_size.Bounds.Width - 260) < 0.5);
 
     [DemoAction("AnimatedBounds 改尺寸途中换容器（不走 MoveContent）：在新 Scope 中继续，排空帧不跳变")]
