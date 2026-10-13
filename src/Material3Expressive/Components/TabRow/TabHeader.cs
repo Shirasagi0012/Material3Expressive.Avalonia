@@ -41,7 +41,6 @@ internal sealed class TabHeader : Panel
     internal Color PaintedContentColor { get; private set; }
     private Color Active => SelectedContentColor ?? (AmbientBrush as ISolidColorBrush)?.Color ?? Colors.Black;
     private Color Inactive => UnselectedContentColor ?? Active;
-    private AnimationScope? _motion;
     private Transition<bool>? _transition;
     private Transition<bool>.TransitionAnimationState<Color>? _color;
     private CancellationTokenSource? _run;
@@ -66,7 +65,6 @@ internal sealed class TabHeader : Panel
         base.OnAttachedToVisualTree(e);
         Label.PropertyChanged += SlotChanged;
         Icon.PropertyChanged += SlotChanged;
-        _motion = AnimationScope.Get(this);
         _initialSelected = IsSelected;
         ApplyContentPolicy();
         PaintColor(IsSelected ? Active : Inactive);
@@ -79,7 +77,7 @@ internal sealed class TabHeader : Panel
         if (_transition is not null) _transition.PropertyChanged -= TransitionChanged;
         _run?.Cancel(); _run?.Dispose(); _run = null; _runTask = null;
         _transition?.Dispose(); _transition = null; _color = null;
-        _motion = null; _pending = false;
+        _pending = false;
         base.OnDetachedFromVisualTree(e);
     }
     private void SlotChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
@@ -93,9 +91,9 @@ internal sealed class TabHeader : Panel
     }
     private void InitializeColorMotion()
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null || _transition is not null
+        if (!this.IsAttachedToVisualTree() || _transition is not null
             || SelectedContentAnimation.Stiffness <= 0 || UnselectedContentAnimation.Stiffness <= 0) return;
-        var motion = _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         var selected = SelectedContentAnimation;
         var unselected = UnselectedContentAnimation;
         _transition = new Transition<bool>(_initialSelected, "Tab content color");
@@ -120,8 +118,8 @@ internal sealed class TabHeader : Panel
     {
         if (this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault() is { } surface)
             surface.StateLayerBrush = new SolidColorBrush(Active);
-        if (!this.IsAttachedToVisualTree() || _motion is null || _transition is null || _pending) return;
-        var motion = _motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _transition is null || _pending) return;
+        var motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {

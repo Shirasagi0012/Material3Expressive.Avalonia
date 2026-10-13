@@ -34,7 +34,6 @@ public class SnackbarHost : TemplatedControl
 
     private readonly List<Item> _items = [];
     private Panel? _panel;
-    private AnimationScope? _scope;
     private AnimationChildScope? _timeout;
     private SnackbarHostState? _observedState;
     private ISnackbarData? _current;
@@ -57,14 +56,13 @@ public class SnackbarHost : TemplatedControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _scope = AnimationScope.Get(this);
         ObserveState(initial: true);
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_observedState is not null) _observedState.PropertyChanged -= StateChanged;
         _observedState = null;
-        _scope = null; _timeout = null;
+        _timeout = null;
         foreach (var item in _items) item.Effect?.Dispose();
         _items.Clear(); _panel?.Children.Clear(); _current = null; _updatePending = false;
         base.OnDetachedFromVisualTree(e);
@@ -72,7 +70,7 @@ public class SnackbarHost : TemplatedControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == StateProperty && _scope is not null) ObserveState();
+        if (change.Property == StateProperty && this.IsAttachedToVisualTree()) ObserveState();
         if (change.Property == SnackbarTemplateProperty || change.Property == ScaleAnimationProperty || change.Property == OpacityAnimationProperty) RequestUpdate();
     }
     private void ObserveState(bool initial = false)
@@ -91,8 +89,8 @@ public class SnackbarHost : TemplatedControl
     }
     private void RequestUpdate()
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || _updatePending) return;
-        var motion = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _updatePending) return;
+        var motion = AnimationScope.Get(this);
         _updatePending = true;
         // Compose samples the old animations, then recomposes SnackbarHost on this frame.
         // State changes immediately; presentation/effects commit at the next frame boundary.
@@ -106,8 +104,8 @@ public class SnackbarHost : TemplatedControl
     }
     private void UpdateCurrent()
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || ScaleAnimation is not { } scaleSpec || OpacityAnimation is not { } opacitySpec) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || ScaleAnimation is not { } scaleSpec || OpacityAnimation is not { } opacitySpec) return;
+        var scope = AnimationScope.Get(this);
         var current = State.CurrentSnackbarData;
         if (ReferenceEquals(_current, current)) return;
         _current = current;

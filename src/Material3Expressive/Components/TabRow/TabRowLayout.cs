@@ -191,7 +191,6 @@ internal sealed class TabRowContent : Panel
     public static readonly StyledProperty<Foundation.Motion.SpringSpec> ScrollAnimationProperty = AvaloniaProperty.Register<TabRowContent, Foundation.Motion.SpringSpec>(nameof(ScrollAnimation));
     public Foundation.Motion.SpringSpec ScrollAnimation { get => GetValue(ScrollAnimationProperty); set => SetValue(ScrollAnimationProperty, value); }
 
-    private AnimationScope? _motion;
     private Animatable<float>? _offset, _width, _scroll;
     private int? _selectedForScroll;
     private float _scrollPrevious, _scrollFraction;
@@ -203,10 +202,6 @@ internal sealed class TabRowContent : Panel
     internal float IndicatorOffset => _offset?.Value ?? 0;
     internal float IndicatorWidth => _width?.Value ?? 0;
     internal double LayoutHeight { get; private set; }
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e); _motion = AnimationScope.Get(this);
-    }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -218,7 +213,7 @@ internal sealed class TabRowContent : Panel
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _motion = null; _offset = _width = _scroll = null; _selectedForScroll = null; _requested.Clear();
+        _offset = _width = _scroll = null; _selectedForScroll = null; _requested.Clear();
         _scrollPrevious = _scrollFraction = 0; _scrollGeneration++;
         _scrollRun?.Cancel(); _scrollRun?.Dispose(); _scrollRun = null;
         base.OnDetachedFromVisualTree(e);
@@ -242,9 +237,9 @@ internal sealed class TabRowContent : Panel
         chrome.Indicator.IsVisible = true;
         var position = positions[chrome.SelectedIndex];
         var targetWidth = (float)(chrome.Primary ? position.ContentWidth : position.Width);
-        if (this.IsAttachedToVisualTree() && _motion is not null)
+        if (this.IsAttachedToVisualTree())
         {
-            var motion = _motion = AnimationScope.Get(this);
+            var motion = AnimationScope.Get(this);
             if (_offset is null)
             {
                 _offset = new Animatable<float>(new FloatConverter(), (float)position.Left, VisibilityThresholds.Float);
@@ -261,8 +256,8 @@ internal sealed class TabRowContent : Panel
     }
     private void Animate(Animatable<float> track, float target, string label, bool intrinsicChange)
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
-        var motion = _motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
+        var motion = AnimationScope.Get(this);
         var spec = IndicatorAnimation;
         if (spec.Stiffness <= 0) return;
         _requested[track] = target;
@@ -322,9 +317,9 @@ internal sealed class TabRowContent : Panel
         var position = positions[chrome.SelectedIndex];
         var spec = ScrollAnimation;
         if (spec.Stiffness <= 0) return;
-        if (chrome.Scrollable && _selectedForScroll != chrome.SelectedIndex && this.IsAttachedToVisualTree() && _motion is not null && chrome.Scroller.Viewport.Width > 0)
+        if (chrome.Scrollable && _selectedForScroll != chrome.SelectedIndex && this.IsAttachedToVisualTree() && chrome.Scroller.Viewport.Width > 0)
         {
-            var motion = _motion = AnimationScope.Get(this);
+            var motion = AnimationScope.Get(this);
             var firstLayout = _selectedForScroll is null;
             _selectedForScroll = chrome.SelectedIndex;
             var generation = ++_scrollGeneration;

@@ -45,7 +45,6 @@ public class Dialog : ContentControl
     private DialogPresenter? _modal;
     private Control? _contentPresenter;
     private DialogScrim? _scrim;
-    private AnimationScope? _scope;
     private AnimationChildScope? _entrance;
     private readonly List<ExitPresentation> _exits = [];
     private float _progress;
@@ -104,7 +103,6 @@ public class Dialog : ContentControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         ClosePresentation(false);
-        _scope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -118,7 +116,7 @@ public class Dialog : ContentControl
     {
         if (!this.IsAttachedToVisualTree() || _modal is null || _templateRoot is null || _surface is null || _scrim is null) return;
         if (IsOpen && IsPresented && !_closing || !IsOpen && (_closing || !IsPresented)) return;
-        _scope ??= AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
 
         if (IsOpen)
         {
@@ -135,7 +133,6 @@ public class Dialog : ContentControl
             }
             else if (FocusManager.FindFirstFocusableElement(_surface) is { } first) first.Focus();
             if (!AnimateTransition) return;
-            var scope = _scope = AnimationScope.Get(this);
             var entrance = _entrance = scope.CreateChild("Dialog entrance");
             _ = entrance.Launch(async ct =>
             {
@@ -150,7 +147,7 @@ public class Dialog : ContentControl
             _closing = true;
             if (!AnimateTransition) { ClosePresentation(true); return; }
             var entrance = _entrance;
-            var exit = FreezeContent();
+            var exit = FreezeContent(scope);
             _surface.IsVisible = _scrim.IsVisible = false;
             _modal.Focus();
             _ = exit.Scope.Launch(async ct =>
@@ -201,9 +198,8 @@ public class Dialog : ContentControl
         surface.RenderTransform = new MatrixTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(0, 10f * (1f - progress)));
     }
 
-    private ExitPresentation FreezeContent()
+    private ExitPresentation FreezeContent(AnimationScope scope)
     {
-        var scope = _scope = AnimationScope.Get(this);
         var size = _surface!.Bounds.Size;
         RenderTargetBitmap? bitmap = null;
         if (size.Width > 0 && size.Height > 0)

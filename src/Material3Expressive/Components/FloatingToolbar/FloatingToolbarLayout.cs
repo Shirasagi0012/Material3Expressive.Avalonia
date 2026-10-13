@@ -23,7 +23,6 @@ internal sealed class FloatingToolbarLayout : Panel
     static FloatingToolbarLayout() => AffectsMeasure<FloatingToolbarLayout>(ContainerSizeProperty);
     public double ContainerSize { get => GetValue(ContainerSizeProperty); set => SetValue(ContainerSizeProperty, value); }
     private FloatingToolbar? _owner;
-    private AnimationScope? _scope;
     private Transition<bool>? _transition;
     private Transition<bool>.TransitionAnimationState<float>? _progress;
     private Animatable<float>? _elevation;
@@ -45,7 +44,6 @@ internal sealed class FloatingToolbarLayout : Panel
     {
         base.OnAttachedToVisualTree(e);
         _owner = this.FindAncestorOfType<FloatingToolbar>()!;
-        _scope = AnimationScope.Get(this);
         _initialExpanded = _owner.EffectiveExpanded;
         InitializeMotion();
         _owner.PropertyChanged += OwnerChanged;
@@ -57,9 +55,9 @@ internal sealed class FloatingToolbarLayout : Panel
     }
     private void InitializeMotion()
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || _transition is not null || _owner?.AnimationSpec is not { } animationSpec
+        if (!this.IsAttachedToVisualTree() || _transition is not null || _owner?.AnimationSpec is not { } animationSpec
             || ElevationAnimation.Stiffness <= 0) return;
-        var scope = _scope = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         _transition = new Transition<bool>(_initialExpanded, "Floating toolbar expanded");
         _progress = _transition.AnimateValue(new FloatConverter(), expanded => expanded ? 1f : 0f,
             _ => animationSpec);
@@ -86,7 +84,7 @@ internal sealed class FloatingToolbarLayout : Panel
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
         DetachScroll();
         if (_progress is not null) _progress.PropertyChanged -= ProgressChanged;
-        _transition?.Dispose(); _scope = null; _transition = null; _progress = null; _elevation = null; _owner = null; _pending = false;
+        _transition?.Dispose(); _transition = null; _progress = null; _elevation = null; _owner = null; _pending = false;
         foreach (var lease in _focus.Values) lease.Dispose(); _focus.Clear();
         RemoveHandler(PointerPressedEvent, Pressed); RemoveHandler(PointerMovedEvent, Moved); RemoveHandler(PointerReleasedEvent, Released);
         PointerCaptureLost -= CaptureLost; _pressed = null; _dragging = false;
@@ -107,8 +105,8 @@ internal sealed class FloatingToolbarLayout : Panel
     }
     private void UpdateTarget()
     {
-        if (_pending || _transition is null || !this.IsAttachedToVisualTree() || _scope is null) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (_pending || _transition is null || !this.IsAttachedToVisualTree()) return;
+        var scope = AnimationScope.Get(this);
         _pending = true;
         _ = scope.Launch(async ct =>
         {
@@ -125,9 +123,10 @@ internal sealed class FloatingToolbarLayout : Panel
     }
     private void AttachScroll()
     {
-        if (_owner is null || _scope is null || _owner.TouchExplorationEnabled) return;
+        if (_owner is null || !this.IsAttachedToVisualTree() || _owner.TouchExplorationEnabled) return;
+        var scope = AnimationScope.Get(this);
         _behavior = _owner.ScrollBehavior;
-        if (_behavior is not null) { _behavior.Attach(_owner, _scope); _behavior.State.PropertyChanged += ScrollStateChanged; }
+        if (_behavior is not null) { _behavior.Attach(_owner, scope); _behavior.State.PropertyChanged += ScrollStateChanged; }
         _source = _owner.ScrollSource;
         if (_source is not null) _source.ScrollChanged += Scrolled;
     }
@@ -166,10 +165,10 @@ internal sealed class FloatingToolbarLayout : Panel
     }
     private void Released(object? sender, PointerReleasedEventArgs e)
     {
-        if (!_dragging || _behavior is null || !this.IsAttachedToVisualTree() || _scope is null) { _pressed = null; return; }
+        if (!_dragging || _behavior is null || !this.IsAttachedToVisualTree()) { _pressed = null; return; }
         var behavior = _behavior;
         var velocity = _velocity.Calculate(e.Timestamp);
-        var scope = _scope = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         _pressed = null; _dragging = false; e.Pointer.Capture(null); e.Handled = true;
         _ = scope.Launch(async ct => { await behavior.SettleAsync(velocity, ct); }, "Floating toolbar drag settle");
     }
@@ -327,7 +326,6 @@ internal sealed class FloatingToolbarBalancedPadding : Decorator
     public Foundation.Motion.SpringSpec PaddingAnimation { get => GetValue(PaddingAnimationProperty); set => SetValue(PaddingAnimationProperty, value); }
 
     private FloatingToolbar? _owner;
-    private AnimationScope? _scope;
     private Animatable<float>? _padding;
     private Point _lines;
     private bool _pending;
@@ -335,13 +333,13 @@ internal sealed class FloatingToolbarBalancedPadding : Decorator
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e); _owner = this.FindAncestorOfType<FloatingToolbar>()!;
-        _scope = AnimationScope.Get(this); _padding = new Animatable<float>(new FloatConverter(), HasSide ? 0f : 1f, VisibilityThresholds.Float);
-        _scope.SubscribeValue(_padding, _ => InvalidateMeasure()); _owner.PropertyChanged += Changed;
+        var scope = AnimationScope.Get(this); _padding = new Animatable<float>(new FloatConverter(), HasSide ? 0f : 1f, VisibilityThresholds.Float);
+        scope.SubscribeValue(_padding, _ => InvalidateMeasure()); _owner.PropertyChanged += Changed;
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= Changed;
-        _scope = null; _padding = null; _owner = null; _pending = false; _lines = default;
+        _padding = null; _owner = null; _pending = false; _lines = default;
         base.OnDetachedFromVisualTree(e);
     }
     private void Changed(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -355,8 +353,8 @@ internal sealed class FloatingToolbarBalancedPadding : Decorator
     }
     private void UpdateTarget()
     {
-        if (_pending || !this.IsAttachedToVisualTree() || _scope is null) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (_pending || !this.IsAttachedToVisualTree()) return;
+        var scope = AnimationScope.Get(this);
         _pending = true;
         _ = scope.Launch(async ct => { await scope.NextFrameAsync(ct); _pending = false;
             if (_padding is null || _owner is null) return;

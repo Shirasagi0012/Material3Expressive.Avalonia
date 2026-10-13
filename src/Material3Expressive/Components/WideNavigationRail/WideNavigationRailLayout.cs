@@ -47,7 +47,6 @@ internal sealed class WideNavigationRailLayout : Panel
     public NavigationRailArrangement Arrangement { get => GetValue(ArrangementProperty); set => SetValue(ArrangementProperty, value); }
     public Thickness ContentPadding { get => GetValue(ContentPaddingProperty); set => SetValue(ContentPaddingProperty, value); }
 
-    private AnimationScope? _scope;
     private Animatable<float>? _minWidth, _widthFullRange, _itemSpacing, _itemHeight;
     private bool _pending;
     private float _minimumWidth, _fullWidth, _spacing, _minimumHeight;
@@ -62,8 +61,8 @@ internal sealed class WideNavigationRailLayout : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        if (_scope is not null) return;
-        _scope = AnimationScope.Get(this);
+        if (_minWidth is not null) return;
+        var scope = AnimationScope.Get(this);
         _minimumWidth = (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth);
         _fullWidth = (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth);
         _spacing = (float)(Expanded ? 0 : CollapsedItemVerticalSpace);
@@ -72,14 +71,13 @@ internal sealed class WideNavigationRailLayout : Panel
         _widthFullRange = new Animatable<float>(new FloatConverter(), _fullWidth, VisibilityThresholds.Float);
         _itemSpacing = new Animatable<float>(new FloatConverter(), _spacing, VisibilityThresholds.Float);
         _itemHeight = new Animatable<float>(new FloatConverter(), _minimumHeight, VisibilityThresholds.Float);
-        _scope.SubscribeValue(_minWidth, value => { _minimumWidth = value; InvalidateMeasure(); });
-        _scope.SubscribeValue(_widthFullRange, value => { _fullWidth = value; InvalidateMeasure(); });
-        _scope.SubscribeValue(_itemSpacing, value => { _spacing = value; InvalidateMeasure(); });
-        _scope.SubscribeValue(_itemHeight, value => { _minimumHeight = value; InvalidateMeasure(); });
+        scope.SubscribeValue(_minWidth, value => { _minimumWidth = value; InvalidateMeasure(); });
+        scope.SubscribeValue(_widthFullRange, value => { _fullWidth = value; InvalidateMeasure(); });
+        scope.SubscribeValue(_itemSpacing, value => { _spacing = value; InvalidateMeasure(); });
+        scope.SubscribeValue(_itemHeight, value => { _minimumHeight = value; InvalidateMeasure(); });
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope = null;
         _minWidth = _widthFullRange = _itemSpacing = _itemHeight = null;
         _pending = false;
         _currentWidth = _actualMaxExpandedWidth = 0;
@@ -94,8 +92,8 @@ internal sealed class WideNavigationRailLayout : Panel
     }
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || _pending) return;
-        var motion = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _pending) return;
+        var motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {

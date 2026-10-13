@@ -57,7 +57,6 @@ public class ModalWideNavigationRail : WideNavigationRail
     private Control? _surface;
     private readonly Popup _popup = new();
     private TopLevel? _topLevel;
-    private AnimationScope? _scope;
     private Animatable<float>? _position, _alpha, _offset;
     private IDisposable? _alphaSubscription, _offsetSubscription;
     private CancellationTokenSource? _flingCancellation;
@@ -134,7 +133,6 @@ public class ModalWideNavigationRail : WideNavigationRail
         CloseOverlay(false);
         _pendingDragSettle = null;
         _pendingDismiss = false;
-        _scope = null;
         _position = _alpha = _offset = null; _pending = false; _width = 0;
         _offsetSubscription = null;
         base.OnDetachedFromVisualTree(e);
@@ -178,8 +176,8 @@ public class ModalWideNavigationRail : WideNavigationRail
         // The channel's anchoredDrag mutation replaces the entire fling, including
         // its finally block awaiting the hoisted state animation.
         if (HideOnCollapse && !_dragging) _flingCancellation?.Cancel();
-        if (!this.IsAttachedToVisualTree() || _scope is null || _position is null || _pending) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _position is null || _pending) return;
+        var scope = AnimationScope.Get(this);
         var frameDriven = HasFrameDrivenTarget;
         _pending = true;
         _ = scope.Launch(async ct =>
@@ -209,11 +207,11 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void InitializeMotion()
     {
-        if (_scope is not null || !this.IsAttachedToVisualTree()) return;
-        _scope = AnimationScope.Get(this);
+        if (_position is not null || !this.IsAttachedToVisualTree()) return;
+        var scope = AnimationScope.Get(this);
         _anchorTarget = State.TargetValue;
         _position = new Animatable<float>(new FloatConverter(), State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f, VisibilityThresholds.Float);
-        _scope.SubscribeValue(_position, _ => RefreshPresentation());
+        scope.SubscribeValue(_position, _ => RefreshPresentation());
     }
     private void UpdateHeader()
     {
@@ -252,7 +250,7 @@ public class ModalWideNavigationRail : WideNavigationRail
         MoveItems(RailLayout, _modalLayout, !HideOnCollapse);
         _alpha = new Animatable<float>(new FloatConverter(), HideOnCollapse ? (initialAnchor == WideNavigationRailValue.Expanded ? 1f : 0f) : (PositionProgress >= .3f ? 1f : 0f), VisibilityThresholds.Float);
         _scrimTarget = _alpha.Value == 1;
-        _alphaSubscription = _scope!.SubscribeValue(_alpha, value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); });
+        _alphaSubscription = AnimationScope.Get(this).SubscribeValue(_alpha, value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); });
         // ModalWideNavigationRailState remains remembered while hidden content is absent.
         // Keep its anchors/offset across closes so reopening slides from the collapsed anchor.
         if (!HideOnCollapse) { _width = 0; _offset = null; }
@@ -313,8 +311,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void UpdateScrim()
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || _alpha is null || EffectsAnimation.Stiffness <= 0) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _alpha is null || EffectsAnimation.Stiffness <= 0) return;
+        var scope = AnimationScope.Get(this);
         var effects = EffectsAnimation;
         var visible = HideOnCollapse ? _anchorTarget == WideNavigationRailValue.Expanded : PositionProgress >= .3f;
         if (visible == _scrimTarget) return;
@@ -333,8 +331,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     internal void UpdateAnchors(double measuredWidth)
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree()) return;
+        var scope = AnimationScope.Get(this);
         var width = (float)MathUtils.DipToPx(measuredWidth, LayoutHelper.GetLayoutScale(this));
         if (_width == width) return;
         _width = width;
@@ -352,8 +350,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private Task AnimateOffset(WideNavigationRailValue target)
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || _offset is null) return Task.CompletedTask;
-        var scope = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _offset is null) return Task.CompletedTask;
+        var scope = AnimationScope.Get(this);
         _flingCancellation?.Cancel();
         _anchorTarget = target;
         UpdateScrim();
@@ -374,8 +372,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     private bool _pendingDismiss;
     internal void DismissFromScrim()
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree()) return;
+        var scope = AnimationScope.Get(this);
         if (HideOnCollapse && OffsetAnimation.Stiffness <= 0) { _pendingDismiss = true; return; }
         _pendingDismiss = false;
         _ = scope.Launch(async ct =>
@@ -457,8 +455,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     private (WideNavigationRailValue Target, float Velocity, WideNavigationRailValue StateTarget)? _pendingDragSettle;
     private void SettleDrag(WideNavigationRailValue target, float velocity)
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || _offset is not { } track) return;
-        var scope = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _offset is not { } track) return;
+        var scope = AnimationScope.Get(this);
         var offsetAnimation = OffsetAnimation;
         if (offsetAnimation.Stiffness <= 0) { _pendingDragSettle = (target, velocity, State.TargetValue); return; }
         _pendingDragSettle = null;

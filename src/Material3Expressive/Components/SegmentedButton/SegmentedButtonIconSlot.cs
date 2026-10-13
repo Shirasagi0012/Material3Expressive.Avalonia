@@ -36,7 +36,6 @@ internal sealed class SegmentedButtonIconSlot : Decorator
     private IDataTemplate? _activeTemplate, _inactiveTemplate;
     private Material3Expressive.Foundation.Motion.SpringSpec _effects, _spatial;
     private readonly Control?[] _icons = new Control?[2];
-    private AnimationScope? _motion;
     private Transition<bool>? _selection;
     private CancellationTokenSource? _loopCancellation;
     private Task? _loop;
@@ -51,7 +50,7 @@ internal sealed class SegmentedButtonIconSlot : Decorator
         foreach (var presenter in _icons.OfType<ContentPresenter>())
         { presenter.Content = null; presenter.ContentTemplate = null; presenter.UpdateChild(); }
         Child = null; _owner = null;
-        _motion = null; _selection = null;
+        _selection = null;
         _loopCancellation?.Dispose(); _loopCancellation = null; _loop = null;
         Array.Clear(_icons);
     }
@@ -71,7 +70,6 @@ internal sealed class SegmentedButtonIconSlot : Decorator
             Stop(); _owner = owner; _crossfade = crossfade;
             _active = owner.ActiveIcon; _inactive = owner.InactiveIcon;
             _activeTemplate = owner.ActiveIconTemplate; _inactiveTemplate = owner.InactiveIconTemplate;
-            _motion = AnimationScope.Get(owner);
             _selection = new Transition<bool>(owner.IsSelected, "Segmented selection icon");
             _effects = effects;
             _spatial = spatial;
@@ -125,7 +123,7 @@ internal sealed class SegmentedButtonIconSlot : Decorator
     private void StartLoop(bool defer)
     {
         if (_owner is not { } owner || !owner.IsAttachedToVisualTree()) return;
-        var motion = _motion = AnimationScope.Get(owner);
+        var motion = AnimationScope.Get(owner);
         var previous = _loop; var transition = _selection!;
         var cancellation = new CancellationTokenSource(); var old = _loopCancellation;
         _loopCancellation = cancellation;

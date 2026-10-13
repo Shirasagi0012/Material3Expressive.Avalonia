@@ -36,7 +36,6 @@ internal sealed class ExtendedFabLayout : Panel
     public static readonly StyledProperty<MotionSpring?> CollapseAlphaMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring?>(nameof(CollapseAlphaMotion));
     public MotionSpring? CollapseAlphaMotion { get => GetValue(CollapseAlphaMotionProperty); set => SetValue(CollapseAlphaMotionProperty, value); }
     private ExtendedFloatingActionButton? _owner;
-    private AnimationScope? _scope;
     private Animatable<float>? _width, _alpha;
     private Animatable<float>? _classicWidth;
     private Task? _classicWidthTask, _classicAlphaTask;
@@ -54,14 +53,14 @@ internal sealed class ExtendedFabLayout : Panel
     {
         base.OnAttachedToVisualTree(e);
         _owner = this.FindAncestorOfType<ExtendedFloatingActionButton>()!;
-        _scope = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         var initial = _owner.Expanded ? 1f : 0f;
         _fullyCollapsed = initial == 0;
         _classicCurrentExpanded = _owner.Expanded;
         _width = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
         _alpha = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
-        _scope.SubscribeValue(_width, _ => InvalidateMeasure());
-        _scope.SubscribeValue(_alpha, _ => { InvalidateMeasure(); InvalidateVisual(); });
+        scope.SubscribeValue(_width, _ => InvalidateMeasure());
+        scope.SubscribeValue(_alpha, _ => { InvalidateMeasure(); InvalidateVisual(); });
         _owner.PropertyChanged += OwnerChanged;
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -69,7 +68,7 @@ internal sealed class ExtendedFabLayout : Panel
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
         ++_classicTransitionId;
         _classicTransitionActive = false;
-        _scope = null; _width = _alpha = _classicWidth = null; _pending = _needsTransition = false;
+        _width = _alpha = _classicWidth = null; _pending = _needsTransition = false;
         _classicWidthTask = _classicAlphaTask = null;
         base.OnDetachedFromVisualTree(e);
     }
@@ -97,10 +96,10 @@ internal sealed class ExtendedFabLayout : Panel
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _scope is null || _owner is null ||
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _owner is null ||
             !FabMotion.IsReady(_owner.Expanded ? ExpandWidthMotion : CollapseWidthMotion) ||
             !FabMotion.IsReady(_owner.Expanded ? ExpandAlphaMotion : CollapseAlphaMotion)) return;
-        var scope = _scope = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         _pending = true;
         _ = scope.Launch(async ct =>
         {
@@ -156,7 +155,7 @@ internal sealed class ExtendedFabLayout : Panel
     private void CompleteClassicTransition(int transitionId)
     {
         if (!_classicTransitionActive || transitionId != _classicTransitionId || _classicWidthChanging ||
-            !this.IsAttachedToVisualTree() || _scope is null || _classicWidthTask?.IsCompletedSuccessfully != true ||
+            !this.IsAttachedToVisualTree() || _classicWidthTask?.IsCompletedSuccessfully != true ||
             _classicAlphaTask?.IsCompletedSuccessfully != true) return;
         // A changed full size can still be waiting for a valid width specification.
         if (_classicSegmentExpanded && _owner is { Expanded: true, Size: FloatingActionButtonSize.Default, HasIcon: true } &&
@@ -188,9 +187,9 @@ internal sealed class ExtendedFabLayout : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var labelExtent = _labelWidth;
         _labelExtentPx = MathUtils.DipToPx(labelExtent, scale);
-        if (classic && hasIcon && this.IsAttachedToVisualTree() && _scope is not null)
+        if (classic && hasIcon && this.IsAttachedToVisualTree())
         {
-            var scope = _scope = AnimationScope.Get(this);
+            var scope = AnimationScope.Get(this);
             if (_classicWidth is null)
             {
                 _classicWidth = new Animatable<float>(new ClassicWidthConverter(), expanded ? (float)_labelExtentPx : 0, 1);

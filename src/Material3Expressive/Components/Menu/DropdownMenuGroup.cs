@@ -26,7 +26,6 @@ public class DropdownMenuGroup : ItemsControl
     public CornerRadius InactiveCornerRadius { get => GetValue(InactiveCornerRadiusProperty); set => SetValue(InactiveCornerRadiusProperty, value); }
     internal MaterialSpring? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
     private MaterialSurface? _surface;
-    private AnimationScope? _scope;
     private AnimatedCornerRadius? _shape;
     private bool _hasBeenHovered, _pending;
     private (CornerRadius, CornerRadius, MaterialSpring)? _configuration;
@@ -51,31 +50,31 @@ public class DropdownMenuGroup : ItemsControl
     }
     private void Initialize()
     {
-        if (_surface is null || !this.IsAttachedToVisualTree() || ShapeAnimation is not { } spec || _scope is not null) return;
-        _scope = AnimationScope.Get(this);
+        if (_surface is null || !this.IsAttachedToVisualTree() || ShapeAnimation is not { } spec || _shape is not null) return;
+        var scope = AnimationScope.Get(this);
         var surface = _surface;
         void BoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         { if (e.Property == BoundsProperty) Paint(); }
         surface.PropertyChanged += BoundsChanged;
-        _scope.Lifetime.Register(() => surface.PropertyChanged -= BoundsChanged);
+        scope.Lifetime.Register(() => surface.PropertyChanged -= BoundsChanged);
         ResetShape(spec);
     }
     private void ResetShape(MaterialSpring spec)
     {
         _shape?.Dispose();
         _configuration = (CornerRadius, InactiveCornerRadius, spec);
-        _shape = new AnimatedCornerRadius(Target, spec, _scope!, Paint);
+        _shape = new AnimatedCornerRadius(Target, spec, AnimationScope.Get(this), Paint);
         Paint();
     }
     private void Queue()
     {
-        if (_pending || !this.IsAttachedToVisualTree() || _scope is null) return;
-        var motion = _scope = AnimationScope.Get(this);
+        if (_pending || !this.IsAttachedToVisualTree() || _shape is null) return;
+        var motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {
             await motion.NextFrameAsync(ct); _pending = false;
-            if (_scope is null) return;
+            if (_shape is null) return;
             // Like the composable, remember hover only when a composition observes it.
             _hasBeenHovered |= IsPointerOver;
             if (ShapeAnimation is not { } spec) return;
@@ -91,7 +90,7 @@ public class DropdownMenuGroup : ItemsControl
         _surface.SetAnimatedCorners(_shape.Current);
     }
     private void Stop()
-    { _shape?.Dispose(); _shape = null; _surface?.SetAnimatedCorners(null); _scope = null; _pending = false; _configuration = null; }
+    { _shape?.Dispose(); _shape = null; _surface?.SetAnimatedCorners(null); _pending = false; _configuration = null; }
 }
 
 internal sealed class MenuShapeConverter : IMultiValueConverter

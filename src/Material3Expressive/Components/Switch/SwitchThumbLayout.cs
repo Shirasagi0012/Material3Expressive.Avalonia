@@ -28,7 +28,6 @@ internal sealed class SwitchThumbLayout : Panel
 
     private ToggleSwitch? _owner;
     private MaterialInteractionController? _interaction;
-    private AnimationScope? _motion;
     private Animatable<float>? _sizeAnim, _offsetAnim;
     private float _initialSize = float.NaN, _initialOffset = float.NaN;
     private float _sizePx, _offsetPx;
@@ -48,7 +47,6 @@ internal sealed class SwitchThumbLayout : Panel
         _interaction.IsRippleBounded = false;
         _interaction.RippleRadius = 20;
         _interaction.RippleFollowsPresenterCenter = true;
-        _motion = AnimationScope.Get(this);
         // Observe the existing controller after its tunnel handlers, without another input
         // state machine or an activation path.
         _owner.AddHandler(InputElement.PointerPressedEvent, InputChanged, RoutingStrategies.Tunnel, true);
@@ -78,7 +76,6 @@ internal sealed class SwitchThumbLayout : Panel
             owner.Classes.CollectionChanged -= ClassesChanged;
         }
         if (Children.FirstOrDefault() is { } moving) moving.PropertyChanged -= MovingChanged;
-        _motion = null;
         _sizeAnim = _offsetAnim = null;
         _initialSize = _initialOffset = float.NaN;
         _updatePending = false;
@@ -149,8 +146,8 @@ internal sealed class SwitchThumbLayout : Panel
     }
     private void ScheduleThumbUpdate()
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null || _updatePending) return;
-        var motion = _motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _updatePending) return;
+        var motion = AnimationScope.Get(this);
         _updatePending = true;
         // ThumbElement.update runs during recomposition. Ordinary state changes initialize
         // from the first measurement; native drag release instead hands off the current pose.
@@ -202,11 +199,11 @@ internal sealed class SwitchThumbLayout : Panel
         if (!_dragging && !_dragHandoff) Animate(_offsetAnim, offset);
         void Animate(Animatable<float>? track, float target)
         {
-            if (track is null || track.TargetValue == target || !this.IsAttachedToVisualTree() || _motion is null) return;
+            if (track is null || track.TargetValue == target || !this.IsAttachedToVisualTree()) return;
             if (!pressed && ThumbAnimation is null) return;
             IFiniteAnimationSpec<float> animationSpec = pressed ? new SnapSpec<float>()
                 : new SpringSpec<float>(ThumbAnimation!.Value.DampingRatio, ThumbAnimation.Value.Stiffness, 0.01f);
-            var motion = _motion = AnimationScope.Get(this);
+            var motion = AnimationScope.Get(this);
             // ThumbNode launches animateTo directly; interruption retains current velocity.
             _ = motion.Launch(ct => track.AnimateToAsync(motion, target, animationSpec, cancellationToken: ct), "Switch thumb animation");
         }

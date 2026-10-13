@@ -32,7 +32,6 @@ internal sealed class SegmentedButtonContentLayout : Panel
             (TemplatedParent as SegmentedButton)?.Row?.InvalidateItemsLayout();
     }
 
-    private AnimationScope? _motion;
     private Animatable<int>? _offset;
     private int? _initialOffset;
     private Size _icon, _label;
@@ -40,7 +39,7 @@ internal sealed class SegmentedButtonContentLayout : Panel
     private int _contentWidth;
     private int _targetOffset;
     private bool _commitPending;
-    internal void Stop() { _motion = null; _offset = null; _initialOffset = null; _commitPending = false; }
+    internal void Stop() { _offset = null; _initialOffset = null; _commitPending = false; }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { Stop(); base.OnDetachedFromVisualTree(e); }
     internal Size IntrinsicSize(double height, Thickness padding)
     {
@@ -69,17 +68,17 @@ internal sealed class SegmentedButtonContentLayout : Panel
         if (_initialOffset is null) _initialOffset = offset;
         else if (this.IsAttachedToVisualTree())
         {
-            if (_motion is null)
+            if (_offset is null)
             {
-                _motion = AnimationScope.Get(this);
+                var scope = AnimationScope.Get(this);
                 _offset = new Animatable<int>(new Int32Converter(), _initialOffset.Value, VisibilityThresholds.Int32);
-                _motion.SubscribeValue(_offset, _ => InvalidateArrange());
+                scope.SubscribeValue(_offset, _ => InvalidateArrange());
             }
             _targetOffset = offset;
-            if (_offset!.TargetValue != offset && !_commitPending)
+            if (_offset.TargetValue != offset && !_commitPending)
             {
                 _commitPending = true;
-                var motion = _motion = AnimationScope.Get(this); var anim = _offset;
+                var motion = AnimationScope.Get(this); var anim = _offset;
                 var defer = offset == 0;
                 // Compose launches from measure after the current layout/recomposition.
                 // Commit on the shared frame before Animatable requests its first sample.

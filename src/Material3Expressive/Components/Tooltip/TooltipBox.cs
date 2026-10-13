@@ -58,7 +58,6 @@ public class TooltipBox : ContentControl
     private readonly Border _layer;
     private Grid? _root;
     private TopLevel? _topLevel;
-    private AnimationScope? _scope;
     private AnimationChildScope? _stateScope;
     private TooltipState? _activeState;
     private Transition<bool>? _transition;
@@ -122,7 +121,6 @@ public class TooltipBox : ContentControl
         base.OnAttachedToVisualTree(e);
         _topLevel = TopLevel.GetTopLevel(this);
         _topLevel?.AddHandler(PointerPressedEvent, OnOutsidePressed, RoutingStrategies.Tunnel, true);
-        _scope = AnimationScope.Get(this);
         AttachState();
         // The owner's Window template establishes the popup layer during its first layout.
         Dispatcher.UIThread.Post(() => { if (this.IsAttachedToVisualTree()) { ApplyTemplate(); UpdatePresentation(); } });
@@ -134,7 +132,6 @@ public class TooltipBox : ContentControl
         ReleasePointer();
         DetachState();
         _popup.Close();
-        _scope = null;
         _receivedKeyboardFocus = false;
         base.OnDetachedFromVisualTree(e);
     }
@@ -147,7 +144,7 @@ public class TooltipBox : ContentControl
             if (change.OldValue is ILogical old) LogicalChildren.Remove(old);
             if (change.NewValue is ILogical child) LogicalChildren.Add(child);
         }
-        if (change.Property == StateProperty && _scope is not null)
+        if (change.Property == StateProperty && this.IsAttachedToVisualTree())
         {
             ReleasePointer(); DetachState(); AttachState();
         }
@@ -162,7 +159,7 @@ public class TooltipBox : ContentControl
     {
         _activeState = State;
         _activeState.PropertyChanged += OnStateChanged;
-        var motion = _scope = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         var scope = _stateScope = motion.CreateChild("Tooltip state");
         var transition = _transition = new Transition<bool>(_activeState.Transition, "Tooltip appearance");
         ConfigureMotion();

@@ -62,7 +62,6 @@ public class ToggleFloatingActionButton : Button
     public Color IconColor => _iconColor;
     internal bool HasIcon => Icon is not null || IconTemplate is not null;
     public event EventHandler<FabCheckedChangeRequestedEventArgs>? CheckedChangeRequested;
-    private AnimationScope? _scope;
     private Animatable<float>? _progress;
     private ToggleFabLayout? _layout;
     private MaterialSurface? _surface;
@@ -86,14 +85,14 @@ public class ToggleFloatingActionButton : Button
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { EndMotion(); base.OnDetachedFromVisualTree(e); }
     private void StartMotion()
     {
-        if (_scope is not null || _surface is null) return;
-        _scope = AnimationScope.Get(this);
+        if (_progress is not null || _surface is null) return;
+        var scope = AnimationScope.Get(this);
         _progress = new Animatable<float>(new FloatConverter(), IsChecked ? 1f : 0f, VisibilityThresholds.Float);
-        _scope.SubscribeValue(_progress, value => { SetAndRaise(CheckedProgressProperty, ref _checkedProgress, value); Refresh(); });
+        scope.SubscribeValue(_progress, value => { SetAndRaise(CheckedProgressProperty, ref _checkedProgress, value); Refresh(); });
         SetAndRaise(CheckedProgressProperty, ref _checkedProgress, _progress.Value);
         Refresh();
     }
-    private void EndMotion() { _scope = null; _progress = null; _pending = _needsTransition = false; }
+    private void EndMotion() { _progress = null; _pending = _needsTransition = false; }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -102,7 +101,7 @@ public class ToggleFloatingActionButton : Button
         if (change.Property == IsCheckedProperty)
         {
             PseudoClasses.Set(":checked", IsChecked);
-            if (_scope is not null)
+            if (_progress is not null)
             {
                 _needsTransition = true;
                 QueueTransition();
@@ -114,9 +113,9 @@ public class ToggleFloatingActionButton : Button
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _scope is null ||
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() ||
             !FabMotion.IsReady(CheckedMotion)) return;
-        var scope = _scope = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         _pending = true;
         _ = scope.Launch(async ct =>
         {

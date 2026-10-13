@@ -61,8 +61,6 @@ public class DropdownMenuPopup : ItemsControl
     private Border? _presentation;
     private Control? _layer;
     private TopLevel? _topLevel;
-    private AnimationScope? _motion;
-    private AnimationScope? _composition;
     private bool _recomposePending;
     private MutableTransitionState<bool>? _state;
     private Transition<bool>? _transition;
@@ -156,7 +154,7 @@ public class DropdownMenuPopup : ItemsControl
     {
         if (_recomposePending) return;
         if (!this.IsAttachedToVisualTree()) return;
-        var scope = _composition = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         _recomposePending = true;
         _ = scope.Launch(async ct =>
         {
@@ -197,7 +195,7 @@ public class DropdownMenuPopup : ItemsControl
         _topLevel.BackRequested += OnBackRequested;
         _topLevel.LayoutUpdated += OnWindowLayout;
         _topLevel.PropertyChanged += OnWindowPropertyChanged;
-        var motion = _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         _transition = new Transition<bool>(_state, "DropDownMenu");
         var scale = _transition.AnimateValue(new FloatConverter(), open => open ? 1f : .8f,
             _ => Spec(ScaleAnimation!.Value));
@@ -252,11 +250,11 @@ public class DropdownMenuPopup : ItemsControl
             topLevel.PropertyChanged -= OnWindowPropertyChanged;
         }
         if (_state is not null) _state.PropertyChanged -= OnTransitionChanged;
-        _motion = null; _transition = null;
+        _transition = null;
         if (!preserveState)
         {
             _state = null;
-            _composition = null; _recomposePending = false;
+            _recomposePending = false;
         }
         _shieldLayer?.Children.Remove(_inputShield); _shieldLayer = null;
         _popup.Close(); _host = null; IsPresented = false;

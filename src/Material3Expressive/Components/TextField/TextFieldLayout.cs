@@ -30,7 +30,6 @@ internal sealed partial class TextFieldLayout : Panel
     private TextFieldDecoration? _decoration;
     private Border _editor = null!;
     private TextPresenter _text = null!;
-    private AnimationScope? _motion;
     private Animatable<float>? _labelProgress, _placeholderAlpha, _affixAlpha, _thickness;
     private Animatable<Color>? _labelColor, _containerColor, _indicatorColor;
     private bool _pending;
@@ -84,7 +83,7 @@ internal sealed partial class TextFieldLayout : Panel
         // Style priority preserves application-provided accessibility metadata.
 
         UpdateAccessibility();
-        _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         _phase = Phase;
         _labelProgress = new Animatable<float>(new FloatConverter(), LabelTarget, VisibilityThresholds.Float);
         _placeholderAlpha = new Animatable<float>(new FloatConverter(), Phase == 1 || Phase == 0 && !Expanded ? 1f : 0f, VisibilityThresholds.Float);
@@ -93,13 +92,13 @@ internal sealed partial class TextFieldLayout : Panel
         _labelColor = new Animatable<Color>(new ColorConverter(), ColorOf(LabelBrush), default);
         _containerColor = new Animatable<Color>(new ColorConverter(), ColorOf(ContainerBrush), default);
         _indicatorColor = new Animatable<Color>(new ColorConverter(), ColorOf(IndicatorBrush), default);
-        _motion.SubscribeValue(_labelProgress, _ => UpdateSlots());
-        _motion.SubscribeValue(_placeholderAlpha, _ => UpdateSlots());
-        _motion.SubscribeValue(_affixAlpha, _ => UpdateSlots());
-        _motion.SubscribeValue(_labelColor, _ => UpdateSlots());
-        _motion.SubscribeValue(_containerColor, _ => InvalidateDecoration());
-        _motion.SubscribeValue(_indicatorColor, _ => InvalidateDecoration());
-        _motion.SubscribeValue(_thickness, _ => InvalidateDecoration());
+        motion.SubscribeValue(_labelProgress, _ => UpdateSlots());
+        motion.SubscribeValue(_placeholderAlpha, _ => UpdateSlots());
+        motion.SubscribeValue(_affixAlpha, _ => UpdateSlots());
+        motion.SubscribeValue(_labelColor, _ => UpdateSlots());
+        motion.SubscribeValue(_containerColor, _ => InvalidateDecoration());
+        motion.SubscribeValue(_indicatorColor, _ => InvalidateDecoration());
+        motion.SubscribeValue(_thickness, _ => InvalidateDecoration());
         UpdateSlots();
     }
 
@@ -109,7 +108,7 @@ internal sealed partial class TextFieldLayout : Panel
         // UpdateSlots assigns them again on attach.
         if (_leading != null) { _leading.Content = null; _leading.ContentTemplate = null; }
         if (_trailing != null) { _trailing.Content = null; _trailing.ContentTemplate = null; }
-        _motion = null; _pending = false;
+        _pending = false;
         if (_owner != null) _owner.PropertyChanged -= OwnerChanged;
         if (_text != null) _text.PropertyChanged -= PresenterChanged;
         foreach (var slot in new[] { _leading, _trailing, _prefix, _suffix, _supporting, _placeholder })
@@ -263,8 +262,8 @@ internal sealed partial class TextFieldLayout : Panel
 
     private void Retarget()
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null || _pending) return;
-        var motion = _motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _pending) return;
+        var motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {

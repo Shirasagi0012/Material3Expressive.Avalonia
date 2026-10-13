@@ -33,7 +33,6 @@ internal sealed class MenuItemChrome : Decorator
     public static readonly DirectProperty<MenuItemChrome, IBrush?> PaintedBrushProperty = AvaloniaProperty.RegisterDirect<MenuItemChrome, IBrush?>(nameof(PaintedBrush), o => o.PaintedBrush);
     private IBrush? _paintedBrush;
     public IBrush? PaintedBrush { get => _paintedBrush; private set => SetAndRaise(PaintedBrushProperty, ref _paintedBrush, value); }
-    private AnimationScope? _motion;
     private Animatable<Color>? _color;
     private bool _pending;
     private MenuItem? _keyboardOwner;
@@ -70,12 +69,12 @@ internal sealed class MenuItemChrome : Decorator
             owner.AddHandler(InputElement.KeyDownEvent, OnOwnerKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
             owner.AddHandler(InputElement.KeyUpEvent, OnOwnerKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
-        _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         PaintedBrush = TargetBrush;
         if (TargetBrush is ISolidColorBrush { Opacity: 1 } brush)
         {
             _color = new Animatable<Color>(new ColorConverter(), brush.Color, default);
-            _motion.SubscribeValue(_color, color => PaintedBrush = new SolidColorBrush(color));
+            motion.SubscribeValue(_color, color => PaintedBrush = new SolidColorBrush(color));
         }
     }
 
@@ -87,7 +86,7 @@ internal sealed class MenuItemChrome : Decorator
             owner.RemoveHandler(InputElement.KeyUpEvent, OnOwnerKeyUp);
             _keyboardOwner = null;
         }
-        _motion = null; _color = null; _pending = false;
+        _color = null; _pending = false;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -108,9 +107,9 @@ internal sealed class MenuItemChrome : Decorator
     {
         base.OnPropertyChanged(change);
         if (change.Property != TargetBrushProperty && change.Property != ColorAnimationProperty) return;
-        if (!this.IsAttachedToVisualTree() || _motion is null || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending) return;
         _pending = true;
-        var motion = _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         _ = motion.Launch(async ct =>
         {
             await motion.NextFrameAsync(ct);

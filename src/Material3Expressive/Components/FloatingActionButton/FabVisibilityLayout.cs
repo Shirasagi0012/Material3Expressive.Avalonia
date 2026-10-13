@@ -12,7 +12,6 @@ namespace Material3Expressive.Components;
 internal sealed class FabVisibilityLayout : Decorator
 {
     private FloatingActionButton? _owner;
-    private AnimationScope? _scope;
     private Animatable<float>? _scale, _alpha;
     private bool _pending, _needsTransition;
     private readonly ScaleTransform _transform = new();
@@ -24,19 +23,19 @@ internal sealed class FabVisibilityLayout : Decorator
     {
         base.OnAttachedToVisualTree(e);
         _owner = this.FindAncestorOfType<FloatingActionButton>()!;
-        _scope = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         var initial = _owner.AnimatedVisible ? 1f : 0f;
         _scale = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
         _alpha = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
-        _scope.SubscribeValue(_scale, _ => InvalidateArrange());
-        _scope.SubscribeValue(_alpha, _ => InvalidateMeasure());
+        scope.SubscribeValue(_scale, _ => InvalidateArrange());
+        scope.SubscribeValue(_alpha, _ => InvalidateMeasure());
         _owner.PropertyChanged += OwnerChanged;
         InvalidateMeasure();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
-        _scope = null; _scale = _alpha = null; _pending = _needsTransition = false;
+        _scale = _alpha = null; _pending = _needsTransition = false;
         base.OnDetachedFromVisualTree(e);
     }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -51,9 +50,9 @@ internal sealed class FabVisibilityLayout : Decorator
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _scope is null ||
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() ||
             _owner?.VisibilityScaleSpec is null || _owner.VisibilityAlphaSpec is null) return;
-        var scope = _scope = AnimationScope.Get(this);
+        var scope = AnimationScope.Get(this);
         _pending = true;
         _ = scope.Launch(async ct =>
         {

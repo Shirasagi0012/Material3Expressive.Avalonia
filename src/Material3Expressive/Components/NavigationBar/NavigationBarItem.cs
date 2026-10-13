@@ -70,7 +70,6 @@ public class NavigationBarItem : Button
         AvaloniaProperty.Register<NavigationBarItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
 
-    private AnimationScope? _motion;
     private Animatable<float>? _alpha;
     private Animatable<float>? _size;
     private Animatable<Color>? _iconColor;
@@ -109,7 +108,7 @@ public class NavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _motion = null;
+        _alpha = _size = null;
         base.OnApplyTemplate(e);
         _targetsPending = false;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
@@ -131,7 +130,6 @@ public class NavigationBarItem : Button
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _motion = null;
         _alpha = _size = null;
         _targetsPending = false;
         _activationKey = null;
@@ -165,26 +163,26 @@ public class NavigationBarItem : Button
 
     private void InitializeMotion()
     {
-        if (_layout is null || !this.IsAttachedToVisualTree() || _motion is not null)
+        if (_layout is null || !this.IsAttachedToVisualTree() || _alpha is not null)
             return;
-        _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         _alpha = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         _size = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         _iconColor = new Animatable<Color>(new ColorConverter(), IconTarget, default);
         _textColor = new Animatable<Color>(new ColorConverter(), TextTarget, default);
-        _motion.SubscribeValue(_alpha, value =>
+        motion.SubscribeValue(_alpha, value =>
         {
             _layout.AlphaProgress = value;
             if (_indicator is not null) _indicator.Opacity = Math.Clamp(value, 0, 1);
         });
-        _motion.SubscribeValue(_size, value =>
+        motion.SubscribeValue(_size, value =>
         {
             var wasPlaced = _layout.SizeProgress > 0;
             _layout.SizeProgress = value;
             if (wasPlaced != (value > 0)) _peer?.RefreshChildren();
         });
-        _motion.SubscribeValue(_iconColor, value => { if (_icon is not null) _icon.Foreground = new SolidColorBrush(value); });
-        _motion.SubscribeValue(_textColor, value => { if (_label is not null) _label.Foreground = new SolidColorBrush(value); });
+        motion.SubscribeValue(_iconColor, value => { if (_icon is not null) _icon.Foreground = new SolidColorBrush(value); });
+        motion.SubscribeValue(_textColor, value => { if (_label is not null) _label.Foreground = new SolidColorBrush(value); });
         UpdateIconSemantics();
     }
 
@@ -196,9 +194,9 @@ public class NavigationBarItem : Button
 
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null)
+        if (!this.IsAttachedToVisualTree() || _alpha is null)
             return;
-        var motion = _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         if (_targetsPending) return;
         _targetsPending = true;
         // AnimateAsState.update is a composition SideEffect. The fixed Desktop
@@ -214,10 +212,10 @@ public class NavigationBarItem : Button
 
     private void CommitTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null || _alpha is null || _size is null
+        if (!this.IsAttachedToVisualTree() || _alpha is null || _size is null
             || _iconColor is null || _textColor is null)
             return;
-        var motion = _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         // Fixed AnimateAsState.restartAnimation cancels its previous job before
         // animateTo: cancellation resets velocity and the frame anchor. Calling
         // AnimateTo directly would instead carry the old velocity into the new target.

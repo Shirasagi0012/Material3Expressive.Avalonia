@@ -39,7 +39,6 @@ internal sealed class RadioButtonIndicator : Control
     public static readonly StyledProperty<Color> DisabledUnselectedColorProperty = AvaloniaProperty.Register<RadioButtonIndicator, Color>(nameof(DisabledUnselectedColor));
     public Color DisabledUnselectedColor { get => GetValue(DisabledUnselectedColorProperty); set => SetValue(DisabledUnselectedColorProperty, value); }
 
-    private AnimationScope? _motion;
     private Animatable<float>? _dotRadius;
     private Animatable<Color>? _color;
     private bool _pending, _colorsEnabled;
@@ -64,17 +63,16 @@ internal sealed class RadioButtonIndicator : Control
             interaction.IsRippleBounded = false;
             interaction.RippleRadius = 20;
         }
-        _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         _dotRadius = new Animatable<float>(new FloatConverter(), RadiusTarget, VisibilityThresholds.Float);
         _color = new Animatable<Color>(new ColorConverter(), ColorTarget, default);
         _colorsEnabled = IsEffectivelyEnabled;
-        _motion.SubscribeValue(_dotRadius, value => { DotRadius = value; InvalidateVisual(); });
-        _motion.SubscribeValue(_color, value => { PaintedColor = value; InvalidateVisual(); });
+        motion.SubscribeValue(_dotRadius, value => { DotRadius = value; InvalidateVisual(); });
+        motion.SubscribeValue(_color, value => { PaintedColor = value; InvalidateVisual(); });
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _motion = null;
         _dotRadius = null;
         _color = null;
         _pending = false;
@@ -92,9 +90,9 @@ internal sealed class RadioButtonIndicator : Control
 
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending) return;
         _pending = true;
-        var motion = _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         // animate*AsState retargets after recomposition. Coalesce property/token changes in that frame.
         _ = motion.Launch(async ct =>
         {

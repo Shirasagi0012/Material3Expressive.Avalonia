@@ -62,7 +62,6 @@ public class ShortNavigationBarItem : Button
 
     public static readonly StyledProperty<Color> DisabledTextColorProperty = AvaloniaProperty.Register<ShortNavigationBarItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
-    private AnimationScope? _scope;
     private Animatable<float>? _selection;
     private ShortNavigationBarItemLayout? _layout;
     private ContentPresenter? _icon, _label;
@@ -99,7 +98,7 @@ public class ShortNavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _scope = null; _pending = false;
+        _selection = null; _pending = false;
         base.OnApplyTemplate(e);
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<ShortNavigationBarItemLayout>("PART_Layout");
@@ -118,7 +117,7 @@ public class ShortNavigationBarItem : Button
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope = null; _selection = null; _pending = false; _activationKey = null;
+        _selection = null; _pending = false; _activationKey = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
@@ -159,10 +158,10 @@ public class ShortNavigationBarItem : Button
     }
     private void InitializeMotion()
     {
-        if (_layout is null || _scope is not null || !this.IsAttachedToVisualTree()) return;
-        _scope = AnimationScope.Get(this);
+        if (_layout is null || _selection is not null || !this.IsAttachedToVisualTree()) return;
+        var scope = AnimationScope.Get(this);
         _selection = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
-        _scope.SubscribeValue(_selection, value =>
+        scope.SubscribeValue(_selection, value =>
         {
             _layout.SelectionProgress = value;
             if (_indicator is not null) _indicator.Opacity = Math.Clamp(value, 0, 1);
@@ -170,8 +169,8 @@ public class ShortNavigationBarItem : Button
     }
     private void UpdateTarget()
     {
-        if (!this.IsAttachedToVisualTree() || _scope is null || _pending) return;
-        var motion = _scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _selection is null || _pending) return;
+        var motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {

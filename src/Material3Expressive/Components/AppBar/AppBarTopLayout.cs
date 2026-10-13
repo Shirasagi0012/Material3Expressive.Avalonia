@@ -37,7 +37,6 @@ internal sealed class AppBarTopChrome : Panel
     private AppBarTopRow Expanded => (AppBarTopRow)Children[1];
 
     private TopAppBarState? _state;
-    private AnimationScope? _motion;
     private AppBarDirectDrag? _drag;
     private Animatable<Color>? _container;
     private bool _pending;
@@ -96,7 +95,7 @@ internal sealed class AppBarTopChrome : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         _drag = new AppBarDirectDrag(
             this,
             () => Owner.ScrollBehavior is { IsPinned: false } behavior ? behavior.State : null,
@@ -104,7 +103,7 @@ internal sealed class AppBarTopChrome : Panel
         ObserveState();
         ConfigureRows();
         _container = new Animatable<Color>(new ColorConverter(), ContainerTarget);
-        _motion.SubscribeValue(_container, Paint);
+        motion.SubscribeValue(_container, Paint);
         UpdateAppearance();
     }
 
@@ -131,7 +130,6 @@ internal sealed class AppBarTopChrome : Panel
         foreach (var (control, entry) in _actionDefaults)
             control.Styles.Remove(entry.Style);
         _actionDefaults.Clear();
-        _motion = null;
         _container = null;
         _pending = false;
         base.OnDetachedFromVisualTree(e);
@@ -286,10 +284,10 @@ internal sealed class AppBarTopChrome : Panel
             return;
         }
 
-        if (!this.IsAttachedToVisualTree() || _motion is null || _pending || _container.TargetValue == ContainerTarget)
+        if (!this.IsAttachedToVisualTree() || _pending || _container.TargetValue == ContainerTarget)
             return;
 
-        var motion = _motion = AnimationScope.Get(this);
+        var motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {
