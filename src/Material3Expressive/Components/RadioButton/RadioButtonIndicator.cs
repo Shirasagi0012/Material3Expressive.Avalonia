@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
+using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
@@ -38,7 +39,7 @@ internal sealed class RadioButtonIndicator : Control
     public static readonly StyledProperty<Color> DisabledUnselectedColorProperty = AvaloniaProperty.Register<RadioButtonIndicator, Color>(nameof(DisabledUnselectedColor));
     public Color DisabledUnselectedColor { get => GetValue(DisabledUnselectedColorProperty); set => SetValue(DisabledUnselectedColorProperty, value); }
 
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private Animatable<float>? _dotRadius;
     private Animatable<Color>? _color;
     private bool _pending, _colorsEnabled;
@@ -63,9 +64,9 @@ internal sealed class RadioButtonIndicator : Control
             interaction.IsRippleBounded = false;
             interaction.RippleRadius = 20;
         }
-        _motion = VisualAnimationScope.Create(this);
-        _dotRadius = _motion.CreateAnimatable(RadiusTarget);
-        _color = _motion.CreateAnimatable(ColorTarget);
+        _motion = AnimationScope.Get(this);
+        _dotRadius = new Animatable<float>(new FloatConverter(), RadiusTarget, VisibilityThresholds.Float);
+        _color = new Animatable<Color>(new ColorConverter(), ColorTarget, default);
         _colorsEnabled = IsEffectivelyEnabled;
         _motion.SubscribeValue(_dotRadius, value => { DotRadius = value; InvalidateVisual(); });
         _motion.SubscribeValue(_color, value => { PaintedColor = value; InvalidateVisual(); });
@@ -73,7 +74,6 @@ internal sealed class RadioButtonIndicator : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _motion?.Dispose();
         _motion = null;
         _dotRadius = null;
         _color = null;
@@ -92,12 +92,13 @@ internal sealed class RadioButtonIndicator : Control
 
     private void UpdateTargets()
     {
-        if (_motion is not { IsEnding: false } motion || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _motion is null || _pending) return;
         _pending = true;
+        var motion = _motion = AnimationScope.Get(this);
         // animate*AsState retargets after recomposition. Coalesce property/token changes in that frame.
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _pending = false;
             if (_dotRadius is not { } dot || _color is not { } color) return;
             var radiusTarget = RadiusTarget;
@@ -110,7 +111,7 @@ internal sealed class RadioButtonIndicator : Control
                     token.ThrowIfCancellationRequested();
                     // The supplied motion-scheme spring has no Dp threshold: vectorization uses 0.01,
                     // rather than animateDpAsState's unused default dpDefaultSpring (0.1 DIP).
-                    await dot.AnimateToAsync(radiusTarget, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: token);
+                    await dot.AnimateToAsync(motion, radiusTarget, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: token);
                 }, "RadioButton dot radius");
             }
             var colorTarget = ColorTarget;
@@ -124,7 +125,7 @@ internal sealed class RadioButtonIndicator : Control
             {
                 await color.StopAsync();
                 token.ThrowIfCancellationRequested();
-                if (animate) await color.AnimateToAsync(colorTarget, new SpringSpec<Color>(effects!.Value.DampingRatio, effects.Value.Stiffness), cancellationToken: token);
+                if (animate) await color.AnimateToAsync(motion, colorTarget, new SpringSpec<Color>(effects!.Value.DampingRatio, effects.Value.Stiffness), cancellationToken: token);
                 else await color.SnapToAsync(colorTarget);
             }, "RadioButton color");
         }, "RadioButton targets");

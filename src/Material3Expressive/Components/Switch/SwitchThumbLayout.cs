@@ -28,7 +28,7 @@ internal sealed class SwitchThumbLayout : Panel
 
     private ToggleSwitch? _owner;
     private MaterialInteractionController? _interaction;
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private Animatable<float>? _sizeAnim, _offsetAnim;
     private float _initialSize = float.NaN, _initialOffset = float.NaN;
     private float _sizePx, _offsetPx;
@@ -48,7 +48,7 @@ internal sealed class SwitchThumbLayout : Panel
         _interaction.IsRippleBounded = false;
         _interaction.RippleRadius = 20;
         _interaction.RippleFollowsPresenterCenter = true;
-        _motion = VisualAnimationScope.Create(this);
+        _motion = AnimationScope.Get(this);
         // Observe the existing controller after its tunnel handlers, without another input
         // state machine or an activation path.
         _owner.AddHandler(InputElement.PointerPressedEvent, InputChanged, RoutingStrategies.Tunnel, true);
@@ -78,7 +78,7 @@ internal sealed class SwitchThumbLayout : Panel
             owner.Classes.CollectionChanged -= ClassesChanged;
         }
         if (Children.FirstOrDefault() is { } moving) moving.PropertyChanged -= MovingChanged;
-        _motion?.Dispose(); _motion = null;
+        _motion = null;
         _sizeAnim = _offsetAnim = null;
         _initialSize = _initialOffset = float.NaN;
         _updatePending = false;
@@ -149,19 +149,20 @@ internal sealed class SwitchThumbLayout : Panel
     }
     private void ScheduleThumbUpdate()
     {
-        if (_motion is not { IsEnding: false } motion || _updatePending) return;
+        if (!this.IsAttachedToVisualTree() || _motion is null || _updatePending) return;
+        var motion = _motion = AnimationScope.Get(this);
         _updatePending = true;
         // ThumbElement.update runs during recomposition. Ordinary state changes initialize
         // from the first measurement; native drag release instead hands off the current pose.
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _updatePending = false;
             _checked = _owner?.IsChecked == true;
             if (!float.IsNaN(_initialSize) && _sizeAnim is null)
             {
-                _sizeAnim = motion.CreateAnimatable(_dragHandoff ? _dragSizePx : _initialSize);
-                _offsetAnim = motion.CreateAnimatable(_dragHandoff ? _dragOffsetPx : _initialOffset);
+                _sizeAnim = new Animatable<float>(new FloatConverter(), _dragHandoff ? _dragSizePx : _initialSize, VisibilityThresholds.Float);
+                _offsetAnim = new Animatable<float>(new FloatConverter(), _dragHandoff ? _dragOffsetPx : _initialOffset, VisibilityThresholds.Float);
                 motion.SubscribeValue(_sizeAnim, value => { _sizePx = value; InvalidateMeasure(); });
                 motion.SubscribeValue(_offsetAnim, value => { _offsetPx = value; InvalidateMeasure(); });
             }
@@ -201,12 +202,13 @@ internal sealed class SwitchThumbLayout : Panel
         if (!_dragging && !_dragHandoff) Animate(_offsetAnim, offset);
         void Animate(Animatable<float>? track, float target)
         {
-            if (track is null || track.TargetValue == target || _motion is not { IsEnding: false } motion) return;
+            if (track is null || track.TargetValue == target || !this.IsAttachedToVisualTree() || _motion is null) return;
             if (!pressed && ThumbAnimation is null) return;
             IFiniteAnimationSpec<float> animationSpec = pressed ? new SnapSpec<float>()
                 : new SpringSpec<float>(ThumbAnimation!.Value.DampingRatio, ThumbAnimation.Value.Stiffness, 0.01f);
+            var motion = _motion = AnimationScope.Get(this);
             // ThumbNode launches animateTo directly; interruption retains current velocity.
-            _ = motion.Launch(ct => track.AnimateToAsync(target, animationSpec, cancellationToken: ct), "Switch thumb animation");
+            _ = motion.Launch(ct => track.AnimateToAsync(motion, target, animationSpec, cancellationToken: ct), "Switch thumb animation");
         }
         PaintedSize = (int)(_dragHandoff ? _dragSizePx : _sizeAnim is null ? size : _sizePx) / (double)scale;
         PaintedOffset = (int)(_offsetAnim is null ? offset : _offsetPx) / (double)scale;
