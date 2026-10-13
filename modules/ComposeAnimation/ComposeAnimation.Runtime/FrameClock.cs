@@ -43,12 +43,15 @@ internal sealed class FrameClock : IDisposable
 
     private readonly IFrameSource _source;
     private readonly Action<Exception>? _onSourceFailure;
-    private readonly List<Waiter> _waiters = [];
+    // Double-buffered: a frame swaps _waiters with the empty _spare instead of copying it.
+    private List<Waiter> _waiters = [];
+    private List<Waiter> _spare = [];
+    private short[] _batchVersions = new short[16];
     // Completed waiters whose result was consumed; reused by WaitAsync (O4, stage 5a).
     private readonly Stack<Waiter> _pool = new();
     private const int MaxPooled = 4096;
-    private readonly List<Hook> _beforeFrame = [];
-    private readonly List<Hook> _afterWaiter = [];
+    private readonly HookList _beforeFrame = new();
+    private readonly HookList _afterWaiter = new();
     private CancellationTokenSource? _sourceWait;
     private bool _pumping;
     private bool _disposed;
@@ -104,7 +107,7 @@ internal sealed class FrameClock : IDisposable
     /// <summary>Runs <paramref name="hook"/> after each waiter of a batch is resumed.</summary>
     public IDisposable RegisterAfterWaiter(Action hook) => AddHook(_afterWaiter, hook);
 
-    private IDisposable AddHook(List<Hook> hooks, Action action)
+    private IDisposable AddHook(HookList hooks, Action action)
     {
         ArgumentNullException.ThrowIfNull(action);
         VerifyAccess();
@@ -179,7 +182,7 @@ internal sealed class FrameClock : IDisposable
                         : frame.Exception!.InnerExceptions.Count == 1 ? frame.Exception.InnerException! : frame.Exception;
                     _failure = error;
                     try { _onSourceFailure?.Invoke(error); } catch { /* reporting must not strand waiters */ }
-                    FailWaiters(error, _afterWaiter.ToArray());
+                    FailWaiters(error, _afterWaiter.Snapshot());
                     return;
                 }
                 RunFrame(frame.Result);
@@ -198,8 +201,10 @@ internal sealed class FrameClock : IDisposable
 
     private void RunFrame(TimeSpan timestamp)
     {
-        var before = _beforeFrame.ToArray();
-        var after = _afterWaiter.ToArray();
+        // Cached snapshots: a hook (un)registered during this frame invalidates the cache for the
+        // next frame and leaves the arrays held here untouched (same semantics as a copy).
+        var before = _beforeFrame.Snapshot();
+        var after = _afterWaiter.Snapshot();
         try
         {
             foreach (var hook in before) hook.Action();
@@ -210,12 +215,26 @@ internal sealed class FrameClock : IDisposable
             return;
         }
 
-        var batch = _waiters.ToArray();
-        var versions = new short[batch.Length];
-        for (var i = 0; i < batch.Length; i++) versions[i] = batch[i].Version;
-        _waiters.Clear();
+        var batch = _waiters;
+        _waiters = _spare;
+        if (_batchVersions.Length < batch.Count) _batchVersions = new short[Math.Max(batch.Count, _batchVersions.Length * 2)];
+        var versions = _batchVersions;
+        for (var i = 0; i < batch.Count; i++) versions[i] = batch[i].Version;
         VerifyAccess();
-        for (var i = 0; i < batch.Length; i++)
+        try
+        {
+            ResumeBatch(batch, versions, timestamp, after);
+        }
+        finally
+        {
+            batch.Clear();
+            _spare = batch;
+        }
+    }
+
+    private void ResumeBatch(List<Waiter> batch, short[] versions, TimeSpan timestamp, Hook[] after)
+    {
+        for (var i = 0; i < batch.Count; i++)
         {
             // A waiter of this batch may have been cancelled, consumed and reused by an earlier
             // continuation; its new wait belongs to the next frame. The after-waiter hooks still
@@ -227,7 +246,7 @@ internal sealed class FrameClock : IDisposable
             }
             catch (Exception error)
             {
-                for (var j = i + 1; j < batch.Length; j++)
+                for (var j = i + 1; j < batch.Count; j++)
                     if (batch[j].Version == versions[j]) batch[j].Complete(default, error);
                 FailWaiters(error, after);
                 return;
@@ -384,10 +403,21 @@ internal sealed class FrameClock : IDisposable
                 continuation, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
-    private sealed class Hook(List<Hook> list, Action action) : IDisposable
+    private sealed class Hook(HookList list, Action action) : IDisposable
     {
         public Action Action { get; } = action;
         public void Dispose() => list.Remove(this);
+    }
+
+    /// <summary>A hook list with a cached array snapshot, rebuilt only after a change.</summary>
+    private sealed class HookList
+    {
+        private readonly List<Hook> _items = [];
+        private Hook[]? _snapshot;
+        public void Add(Hook hook) { _items.Add(hook); _snapshot = null; }
+        public void Remove(Hook hook) { if (_items.Remove(hook)) _snapshot = null; }
+        public void Clear() { _items.Clear(); _snapshot = null; }
+        public Hook[] Snapshot() => _snapshot ??= _items.ToArray();
     }
 }
 
