@@ -31,15 +31,19 @@ internal static class Ui
 
     /// <summary>
     /// Drains the UI queue until <paramref name="condition"/> holds. Headless dispatcher timers do
-    /// not advance on their own, so this loops on RunJobs (and yields) instead of waiting.
+    /// not advance on their own, so this loops on RunJobs (and yields) instead of waiting. Bounded
+    /// by time, not turns: a TaskCompletionSource with asynchronous continuations (the idle wake of
+    /// InfiniteTransition) hops through the thread pool before it posts back, which a fixed turn
+    /// budget can outrun when the pool is busy.
     /// </summary>
-    internal static async Task WaitUntilAsync(Func<bool> condition, int maximumTurns = 100)
+    internal static async Task WaitUntilAsync(Func<bool> condition, int timeoutMilliseconds = 5000)
     {
-        for (var i = 0; i < maximumTurns && !condition(); i++)
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        while (!condition() && watch.ElapsedMilliseconds < timeoutMilliseconds)
         {
             Avalonia.Threading.Dispatcher.UIThread.RunJobs();
             await Task.Yield();
         }
-        Assert.True(condition(), $"Condition did not hold within {maximumTurns} dispatcher turns.");
+        Assert.True(condition(), $"Condition did not hold within {timeoutMilliseconds} ms.");
     }
 }
