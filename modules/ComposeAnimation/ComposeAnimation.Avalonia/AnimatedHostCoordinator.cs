@@ -15,6 +15,8 @@ internal interface IPropertySession : IDisposable
     void ReconcileTarget();
     void Abort();
     void SnapToTarget();
+    /// <summary>D17: re-runs toward the current target in <paramref name="scope"/>, keeping value and velocity.</summary>
+    void Resume(FrameScope runScope, AnimationScope scope);
 }
 
 internal sealed class AnimatedHostCoordinator : IDisposable
@@ -43,6 +45,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _host.AttachedToVisualTree += OnAttached;
         _host.DetachedFromVisualTree += OnDetached;
         _host.PropertyChanged += OnHostPropertyChanged;
+        AnimationScope.AddScopeChangedHandler(_host, OnScopeChanged);
         _attached = TopLevel.GetTopLevel(host) is not null;
     }
 
@@ -165,8 +168,19 @@ internal sealed class AnimatedHostCoordinator : IDisposable
     private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)
         => Execute(() => { _attached = true; ApplyScope(); });
 
+    // The host's Get scope is released by the drain (D17), not here: a reparent in the same pass
+    // keeps the runs, and a detach without return ends them in OnScopeChanged.
     private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e)
-        => Execute(() => { _attached = false; ApplyScope(); });
+        => Execute(() => _attached = false);
+
+    // Drain rebuild (D17): the runs move into the replacement scope; an end releases them.
+    private void OnScopeChanged(object? sender, AnimationScopeChangedEventArgs e)
+        => Execute(() =>
+        {
+            if (!ReferenceEquals(e.OldScope, _motion)) return;
+            if (e.NewScope is null) { BindScope(null); return; }
+            BindScope(e.NewScope, resume: true);
+        });
 
     private void OnHostPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -181,9 +195,13 @@ internal sealed class AnimatedHostCoordinator : IDisposable
 
     private void ApplyScope()
     {
-        if (_attached && _motion is { IsEnding: false }) return;
-        var previous = _motion;
-        _motion = _attached ? AnimationScope.CreateDetached(_host) : null;
+        if (!_attached || _motion is { IsEnding: false }) return;
+        BindScope(AnimationScope.Get(_host));
+    }
+
+    private void BindScope(AnimationScope? scope, bool resume = false)
+    {
+        _motion = scope;
         _scopeFailed = false;
         ReleaseFrameHooks();
         _sessionScope = _motion is null ? null : new ObservedFrameScope(_motion, (error, _) => { if (error is not OperationCanceledException) OnInnerFailure(error); });
@@ -196,8 +214,12 @@ internal sealed class AnimatedHostCoordinator : IDisposable
             _beforeFrame = _motion.FrameClock.RegisterBeforeFrame(BeforeEachFrame);
             _afterWaiter = _motion.FrameClock.RegisterAfterWaiter(AfterEachWaiter);
         }
-        foreach (var session in _sessions.Values) session?.Attach(SessionScope, _motion);
-        previous?.End();
+        foreach (var session in _sessions.Values)
+        {
+            if (session is null) continue;
+            if (resume) Guard(session, () => session.Resume(_sessionScope!, _motion!));
+            else session.Attach(SessionScope, _motion);
+        }
     }
 
     private void ReleaseFrameHooks()
@@ -285,12 +307,13 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         _host.AttachedToVisualTree -= OnAttached;
         _host.DetachedFromVisualTree -= OnDetached;
         _host.PropertyChanged -= OnHostPropertyChanged;
+        AnimationScope.RemoveScopeChangedHandler(_host, OnScopeChanged);
         if (_collection is not null)
             _collection.CollectionChanged -= OnCollectionChanged;
         ClearSessions();
         ReleaseFrameHooks();
         _sessionScope = null;
-        _motion?.End();
+        // The host's Get scope is not ours to end.
         _motion = null;
     });
 }

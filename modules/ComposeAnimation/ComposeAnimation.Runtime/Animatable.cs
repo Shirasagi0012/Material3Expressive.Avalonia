@@ -311,6 +311,18 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     private void VerifyAccess() => _owner.Verify(this);
 
     /// <summary>
+    /// Restores the velocity and frame timebase of a run that was cancelled with its scope, so the
+    /// next run continues as if it had interrupted that run in place (a D17 resume). No-op while running.
+    /// </summary>
+    internal void RestoreInterruptedState(AnimationState<T> interrupted)
+    {
+        VerifyAccess();
+        if (_internalState.IsRunning) return;
+        interrupted.VelocityVector.CopyTo(_internalState.MutableVelocityVector);
+        _internalState.LastFrameTime = interrupted.LastFrameTime;
+    }
+
+    /// <summary>
     /// Stops any on-going animation in its track, without skipping to the target value. Returns
     /// immediately; the canceled animation's task completes as canceled once it has unwound.
     /// Consider <see cref="SnapToAsync"/> if the value should also jump to a given value.

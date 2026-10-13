@@ -14,6 +14,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
     private FrameScope? _runScope;
     private AnimationScope? _scope;
     private Animatable<T>? _animatable;
+    private AnimationState<T>? _interrupted;
     private AnimationSampleObservable<T>? _observable;
     private IDisposable? _binding;
     private IDisposable? _invalidation;
@@ -47,13 +48,42 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         _invalidation?.Dispose();
         _invalidation = null;
         StopDrive();
+        _interrupted = null;
         _runScope = runScope;
         _scope = scope;
         _enabled = runScope is not null;
         if (!_enabled) return;
-        _invalidation = scope!.RegisterResource(() => { _enabled = false; _driveGen++; });
+        _invalidation = scope!.RegisterResource(OnScopeEnding);
         _displayed = _host.GetValue(_property);
         RecreateAnimatable();
+    }
+
+    public void Resume(FrameScope runScope, AnimationScope scope)
+    {
+        var animatable = _animatable;
+        if (_disposed || animatable is null || !IsFinite(animatable.Value)) { Attach(runScope, scope); return; }
+        _invalidation?.Dispose();
+        _driveGen++;
+        StopOverlay();
+        _runScope = runScope;
+        _scope = scope;
+        _enabled = true;
+        _invalidation = scope.RegisterResource(OnScopeEnding);
+        _displayed = animatable.Value;
+        if (_interrupted is { } interrupted) animatable.RestoreInterruptedState(interrupted);
+        _interrupted = null;
+        // Keeps the Animatable (value and velocity; its old run was cancelled with the old
+        // scope); ReconcileTarget re-runs it toward the base value in the new scope.
+        ReconcileTarget();
+    }
+
+    // Runs before the scope cancels its runs: snapshot the in-flight state so a D17 resume
+    // continues like an in-place interruption (velocity and frame timebase).
+    private void OnScopeEnding()
+    {
+        _interrupted = _animatable is { IsRunning: true } animatable ? animatable.State : null;
+        _enabled = false;
+        _driveGen++;
     }
 
     public void ReconcileTarget()

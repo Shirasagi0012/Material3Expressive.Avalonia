@@ -617,6 +617,7 @@ public class AnimatedPropertyTest
         clock.AdvanceBy(Frame); Dispatcher.UIThread.RunJobs();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(50)); Dispatcher.UIThread.RunJobs();
         window.Content = null;
+        Dispatcher.UIThread.RunJobs(); // Released at the drain (D17).
         Assert.Equal(0, border.Opacity);
         border.Opacity = 0.25;
         window.Content = border;

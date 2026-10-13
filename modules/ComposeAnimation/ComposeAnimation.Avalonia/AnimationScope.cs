@@ -64,11 +64,10 @@ public class AnimationScope : FrameScope
     /// Root       Initialize                  none                window Closed                    no
     /// PopupRoot  Resolve (popup TopLevel)    parent TopLevel's   popup Closed / visual detach     no
     /// Owned      Get                         ancestor or root    drain (detach/move), parent end  yes (stale -> Kept/Replaced/Ended/Superseded/Deferred)
-    /// Detached   CreateDetached (internal)   window root         owner visual detach              no
     /// Child      CreateChild                 creating scope      Dispose, parent end              no
     /// </code>
     /// </summary>
-    private enum Kind { Root, PopupRoot, Owned, Detached, Child }
+    private enum Kind { Root, PopupRoot, Owned, Child }
 
     private enum RebuildResult { Kept, Replaced, Ended, Superseded, Deferred }
 
@@ -149,7 +148,6 @@ public class AnimationScope : FrameScope
         if (kind != Kind.Child) host.PropertyChanged += OnHostPropertyChanged;
         switch (kind)
         {
-            case Kind.Detached:
             case Kind.PopupRoot:
                 host.DetachedFromVisualTree += OnDetached;
                 break;
@@ -368,20 +366,6 @@ public class AnimationScope : FrameScope
         return entry;
     }
     internal ScopeDiagnostics Diagnostics => new(this);
-
-    /// <summary>
-    /// A scope parented to the window root that ends when <paramref name="owner"/> detaches; not
-    /// stored in the tree. For hosts whose scope ownership is still undecided (O5).
-    /// </summary>
-    internal static AnimationScope CreateDetached(Visual owner)
-    {
-        ArgumentNullException.ThrowIfNull(owner);
-        Dispatcher.UIThread.VerifyAccess();
-        var host = TopLevel.GetTopLevel(owner) ?? throw new InvalidOperationException("Animation scopes require an attached Visual with a TopLevel.");
-        var environment = Resolve(host);
-        environment.VerifyActive();
-        return new AnimationScope(Kind.Detached, owner, environment, null, owner.GetType().Name);
-    }
 
     /// <summary>
     /// Called by an <see cref="IAnimationScopeHost"/> when <see cref="IAnimationScopeHost.DefersScopeRebuild"/>
