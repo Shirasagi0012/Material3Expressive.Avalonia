@@ -145,10 +145,15 @@ border.Animate(new AnimatedDouble
 
 - **`Property` 约束**：只能动画**非继承、非 Direct 的 styled 属性**。对继承属性（如 `TextBlock.FontSize`）声明会抛 `NotSupportedException`，对 Direct 属性（如 `Layoutable.DesiredSize`）会抛 `InvalidOperationException`。
 - **绑定方向**：目标值请使用 `OneWay` 表示层绑定；`TwoWay` 绑定可能把动画采样值写回数据源。可编辑的值请走独立路径。
-- **同一属性只配置一个动画来源**：不要把本组件的声明与 Avalonia 自带 `Transition`/`Animation` 叠加在同一属性上。
+- **同一属性只配置一个动画来源**：不要把本组件的声明与 Avalonia 自带 `Transition`/`Animation` 叠加在同一属性上（见下文“已知交互”）。
+- **Scope 与移动**：属性动画运行在宿主控件的 `AnimationScope.Get` Scope 中，因此祖先 Scope 的 `DurationScale` 会作用于它。控件在树内移动或卸载后同一轮重挂时，运行在下一次排空时移入重建后的 Scope，保留当前值与速度（补间从当前值重新计时，与 Compose `animateTo` 一致）；脱离后不再挂回时，贡献在该次排空时释放。
 - **非有限端点**：`Width="Auto"`（`NaN`）这类非有限数值没有插值轨迹，直接落到基础值；之后的有限值变化照常动画。
 - **诊断**：根 Scope 的 `AnimationFailed` 报告失败来源、标签与异常（`LastError` 等成员不再公开）。规格失败释放该运行的贡献；帧源失败停止整个固定环境的后续源请求。
 - **规格改动**：修改已在使用中的 `Spec` 只影响下一次目标变化，不重新计时当前运行。
+
+## 已知交互
+
+Avalonia `Transitions`（如 `DoubleTransition`）与本组件的声明作用于同一属性时，两者都以 `Animation` 优先级贡献值：本组件运行期间，较新的叠加层生效；运行结束后显示的是 Avalonia 过渡自己的当前值，它由 Avalonia 的动画时钟推进，与 Scope 的 FrameClock、`DurationScale` 无关。结果取决于两个时钟的相对进度，因此不受支持，行为由 `KnownInteractionsTest` 记录。请为每个属性只选一种动画来源。
 
 ## 延伸阅读
 
