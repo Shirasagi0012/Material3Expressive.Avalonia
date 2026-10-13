@@ -80,7 +80,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         private set
         {
             _targetValue = value;
-            OnPropertyChanged(nameof(TargetValue));
+            OnPropertyChanged(AnimatableArgs.TargetValue);
         }
     }
 
@@ -95,7 +95,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         private set
         {
             field = value;
-            OnPropertyChanged(nameof(LowerBound));
+            OnPropertyChanged(AnimatableArgs.LowerBound);
         }
     }
 
@@ -110,7 +110,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         private set
         {
             field = value;
-            OnPropertyChanged(nameof(UpperBound));
+            OnPropertyChanged(AnimatableArgs.UpperBound);
         }
     }
 
@@ -233,7 +233,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
             TargetValue = animation.TargetValue;
             mutationToken.ThrowIfCancellationRequested();
             _internalState.IsRunning = true;
-            OnPropertyChanged(nameof(IsRunning));
+            OnPropertyChanged(AnimatableArgs.IsRunning);
 
             var endState = _internalState.Copy();
             endState.FinishedTime = AnimationConstants.UnspecifiedTime;
@@ -296,7 +296,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
                 var clampedValue = ClampToBounds(targetValue);
                 _internalState.Value = clampedValue;
                 TargetValue = clampedValue;
-                OnPropertyChanged(nameof(Value));
+                OnPropertyChanged(AnimatableArgs.Value);
                 return Task.FromResult(true);
             }, MutatePriority.Default, cancellationToken);
     }
@@ -412,7 +412,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
             var clampedValue = ClampToBounds(Value);
             if (EqualityComparer<T>.Default.Equals(clampedValue, Value)) return;
             _internalState.Value = clampedValue;
-            OnPropertyChanged(nameof(Value));
+            OnPropertyChanged(AnimatableArgs.Value);
         }
     }
 
@@ -484,14 +484,14 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         // Only an in-flight interruption shares the previous frame's timebase (captured
         // before entering the mutex). A later run must start on its own first frame.
         _internalState.LastFrameTime = AnimationConstants.UnspecifiedTime;
-        OnPropertyChanged(nameof(IsRunning));
-        OnPropertyChanged(nameof(Velocity));
+        OnPropertyChanged(AnimatableArgs.IsRunning);
+        OnPropertyChanged(AnimatableArgs.Velocity);
     }
 
     private void OnFrameChanged()
     {
-        OnPropertyChanged(nameof(Value));
-        OnPropertyChanged(nameof(Velocity));
+        OnPropertyChanged(AnimatableArgs.Value);
+        OnPropertyChanged(AnimatableArgs.Velocity);
     }
 }
 
@@ -504,3 +504,18 @@ public readonly record struct AnimationResult<T>(
     AnimationState<T> EndState,
     AnimationEndReason EndReason
 );
+
+/// <summary>
+/// Cached change args for <see cref="Animatable{T}"/>. The args carry only the property name, so one
+/// instance per name is equivalent to a new one per change (the toolkit's string overload does
+/// exactly that) and keeps the per-frame <c>Value</c> notification allocation-free.
+/// </summary>
+internal static class AnimatableArgs
+{
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs TargetValue = new("TargetValue");
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs LowerBound = new("LowerBound");
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs UpperBound = new("UpperBound");
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs IsRunning = new("IsRunning");
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs Value = new("Value");
+    internal static readonly System.ComponentModel.PropertyChangedEventArgs Velocity = new("Velocity");
+}
