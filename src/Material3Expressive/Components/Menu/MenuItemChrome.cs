@@ -34,6 +34,7 @@ internal sealed class MenuItemChrome : Decorator
     private IBrush? _paintedBrush;
     public IBrush? PaintedBrush { get => _paintedBrush; private set => SetAndRaise(PaintedBrushProperty, ref _paintedBrush, value); }
     private Animatable<Color>? _color;
+    private AnimationChildScope? _attachScope;
     private bool _pending;
     private MenuItem? _keyboardOwner;
 
@@ -69,7 +70,7 @@ internal sealed class MenuItemChrome : Decorator
             owner.AddHandler(InputElement.KeyDownEvent, OnOwnerKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
             owner.AddHandler(InputElement.KeyUpEvent, OnOwnerKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
-        var motion = AnimationScope.Get(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("Menu item chrome");
         PaintedBrush = TargetBrush;
         if (TargetBrush is ISolidColorBrush { Opacity: 1 } brush)
         {
@@ -86,6 +87,7 @@ internal sealed class MenuItemChrome : Decorator
             owner.RemoveHandler(InputElement.KeyUpEvent, OnOwnerKeyUp);
             _keyboardOwner = null;
         }
+        _attachScope?.Dispose(); _attachScope = null;
         _color = null; _pending = false;
         base.OnDetachedFromVisualTree(e);
     }
@@ -107,9 +109,9 @@ internal sealed class MenuItemChrome : Decorator
     {
         base.OnPropertyChanged(change);
         if (change.Property != TargetBrushProperty && change.Property != ColorAnimationProperty) return;
-        if (!this.IsAttachedToVisualTree() || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
-        var motion = AnimationScope.Get(this);
         _ = motion.Launch(async ct =>
         {
             await motion.NextFrameAsync(ct);

@@ -64,6 +64,7 @@ public class DropdownMenuPopup : ItemsControl
     private bool _recomposePending;
     private MutableTransitionState<bool>? _state;
     private Transition<bool>? _transition;
+    private AnimationChildScope? _attachScope, _presentationScope;
     private bool _isPresented, _redirectingFocus;
     private IInputElement? _previousFocus;
     private Control? _lastFocus;
@@ -117,10 +118,15 @@ public class DropdownMenuPopup : ItemsControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Dropdown menu");
         Dispatcher.UIThread.Post(() => { if (this.IsAttachedToVisualTree()) { ApplyTemplate(); UpdatePresentation(); } });
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    { ClosePresentation(true); base.OnDetachedFromVisualTree(e); }
+    {
+        ClosePresentation(true);
+        _attachScope?.Dispose(); _attachScope = null;
+        base.OnDetachedFromVisualTree(e);
+    }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -153,8 +159,8 @@ public class DropdownMenuPopup : ItemsControl
     private void QueuePresentation()
     {
         if (_recomposePending) return;
-        if (!this.IsAttachedToVisualTree()) return;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return;
         _recomposePending = true;
         _ = scope.Launch(async ct =>
         {
@@ -184,6 +190,7 @@ public class DropdownMenuPopup : ItemsControl
         if (_transition is not null) return;
         var anchor = PlacementTarget ?? this.GetVisualParent() as Control;
         if (anchor is null || !anchor.IsAttachedToVisualTree()) return;
+        if (_attachScope is not { } attachScope || attachScope.Lifetime.IsCancellationRequested) return;
         _topLevel = TopLevel.GetTopLevel(anchor);
         if (_topLevel is null || _topLevel != TopLevel.GetTopLevel(this)) return;
         _previousFocus = _topLevel.FocusManager?.GetFocusedElement();
@@ -195,7 +202,7 @@ public class DropdownMenuPopup : ItemsControl
         _topLevel.BackRequested += OnBackRequested;
         _topLevel.LayoutUpdated += OnWindowLayout;
         _topLevel.PropertyChanged += OnWindowPropertyChanged;
-        var motion = AnimationScope.Get(this);
+        var motion = _presentationScope = attachScope.CreateChild("Dropdown presentation");
         _transition = new Transition<bool>(_state, "DropDownMenu");
         var scale = _transition.AnimateValue(new FloatConverter(), open => open ? 1f : .8f,
             _ => Spec(ScaleAnimation!.Value));
@@ -251,6 +258,7 @@ public class DropdownMenuPopup : ItemsControl
         }
         if (_state is not null) _state.PropertyChanged -= OnTransitionChanged;
         _transition = null;
+        _presentationScope?.Dispose(); _presentationScope = null;
         if (!preserveState)
         {
             _state = null;

@@ -27,6 +27,7 @@ public class DropdownMenuGroup : ItemsControl
     internal MaterialSpring? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
     private MaterialSurface? _surface;
     private AnimatedCornerRadius? _shape;
+    private AnimationChildScope? _attachScope;
     private bool _hasBeenHovered, _pending;
     private (CornerRadius, CornerRadius, MaterialSpring)? _configuration;
     private CornerRadius Target => _hasBeenHovered && !IsPointerOver ? InactiveCornerRadius : CornerRadius;
@@ -34,9 +35,9 @@ public class DropdownMenuGroup : ItemsControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     { Stop(); base.OnApplyTemplate(e); _surface = e.NameScope.Find<MaterialSurface>("PART_GroupSurface"); Initialize(); }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    { base.OnAttachedToVisualTree(e); Initialize(); }
+    { base.OnAttachedToVisualTree(e); _attachScope = AnimationScope.Get(this).CreateChild("Menu group"); Initialize(); }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    { Stop(); _hasBeenHovered = false; base.OnDetachedFromVisualTree(e); }
+    { Stop(); _hasBeenHovered = false; _attachScope?.Dispose(); _attachScope = null; base.OnDetachedFromVisualTree(e); }
     protected override void OnPointerEntered(PointerEventArgs e)
     { base.OnPointerEntered(e); Queue(); }
     protected override void OnPointerExited(PointerEventArgs e)
@@ -50,8 +51,8 @@ public class DropdownMenuGroup : ItemsControl
     }
     private void Initialize()
     {
-        if (_surface is null || !this.IsAttachedToVisualTree() || ShapeAnimation is not { } spec || _shape is not null) return;
-        var scope = AnimationScope.Get(this);
+        if (_surface is null || !this.IsAttachedToVisualTree() || ShapeAnimation is not { } spec || _shape is not null
+            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         var surface = _surface;
         void BoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         { if (e.Property == BoundsProperty) Paint(); }
@@ -63,13 +64,13 @@ public class DropdownMenuGroup : ItemsControl
     {
         _shape?.Dispose();
         _configuration = (CornerRadius, InactiveCornerRadius, spec);
-        _shape = new AnimatedCornerRadius(Target, spec, AnimationScope.Get(this), Paint);
+        _shape = new AnimatedCornerRadius(Target, spec, _attachScope!, Paint);
         Paint();
     }
     private void Queue()
     {
-        if (_pending || !this.IsAttachedToVisualTree() || _shape is null) return;
-        var motion = AnimationScope.Get(this);
+        if (_pending || !this.IsAttachedToVisualTree() || _shape is null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {

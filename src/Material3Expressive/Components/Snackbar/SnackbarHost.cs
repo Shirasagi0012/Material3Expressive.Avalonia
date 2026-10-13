@@ -34,7 +34,7 @@ public class SnackbarHost : TemplatedControl
 
     private readonly List<Item> _items = [];
     private Panel? _panel;
-    private AnimationChildScope? _timeout;
+    private AnimationChildScope? _attachScope, _timeout;
     private SnackbarHostState? _observedState;
     private ISnackbarData? _current;
     private bool _updatePending;
@@ -56,14 +56,16 @@ public class SnackbarHost : TemplatedControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Snackbar host");
         ObserveState(initial: true);
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_observedState is not null) _observedState.PropertyChanged -= StateChanged;
         _observedState = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _timeout = null;
-        foreach (var item in _items) item.Effect?.Dispose();
+        foreach (var item in _items) { item.Effect?.Dispose(); item.Scope.Dispose(); }
         _items.Clear(); _panel?.Children.Clear(); _current = null; _updatePending = false;
         base.OnDetachedFromVisualTree(e);
     }
@@ -89,8 +91,8 @@ public class SnackbarHost : TemplatedControl
     }
     private void RequestUpdate()
     {
-        if (!this.IsAttachedToVisualTree() || _updatePending) return;
-        var motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _updatePending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _updatePending = true;
         // Compose samples the old animations, then recomposes SnackbarHost on this frame.
         // State changes immediately; presentation/effects commit at the next frame boundary.
@@ -104,8 +106,8 @@ public class SnackbarHost : TemplatedControl
     }
     private void UpdateCurrent()
     {
-        if (!this.IsAttachedToVisualTree() || ScaleAnimation is not { } scaleSpec || OpacityAnimation is not { } opacitySpec) return;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || ScaleAnimation is not { } scaleSpec || OpacityAnimation is not { } opacitySpec
+            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         var current = State.CurrentSnackbarData;
         if (ReferenceEquals(_current, current)) return;
         _current = current;
