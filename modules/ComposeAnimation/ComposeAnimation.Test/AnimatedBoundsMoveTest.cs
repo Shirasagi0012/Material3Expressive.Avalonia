@@ -401,7 +401,7 @@ public partial class AnimatedBoundsTest
 
 
     [Fact]
-    public Task MoveContent_OrdinaryRemovalAfterCommitStillReleasesImmediately() => OnUi(() =>
+    public Task MoveContent_OrdinaryRemovalAfterCommitStillReleasesAtTheDrain() => OnUi(() =>
     {
         var card = Bounds(Text());
         var (scene, left, right) = MoveSlots(card);
@@ -410,6 +410,7 @@ public partial class AnimatedBoundsTest
         f.Layout(); f.Step(16); f.Step(50);
         Assert.True(card.IsRunning);
         right.Children.Remove(card);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs(); // released at the drain (D17), not on detach
         Assert.False(card.IsRunning);
         Assert.Equal(0, f.Frames.PendingFrameCount);
         left.Children.Add(card); f.Layout();

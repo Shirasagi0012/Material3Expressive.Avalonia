@@ -103,7 +103,11 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     private LookaheadContext? _context;
     private Control? _reference;
     private ObservedFrameScope? _runScope;
-    private IDisposable? _motionRegistration;
+    private readonly ScopeResumeBinding _scopeBinding;
+    private bool _attached;
+    // Motion-frame offset (owner to reference) at the last approach measure. A resume after a
+    // reparent outside a move transaction is only exact when this is unchanged (Q-H).
+    private Vector _lastMotionOffset;
     private Rect _outerSample;
     private Rect _innerSample;
     private long _lifecycle;
@@ -124,8 +128,48 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
             ChildProperty, PaddingProperty, ParentLayoutModeProperty);
     }
 
-    // The old scope's end released the animation state; measure again to start on the new scope.
-    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    // D17: a rebuild while attached keeps both boundaries (value, velocity, target), the target
+    // layout, reference and motion basis, and re-runs them in the replacement scope. A reparent
+    // outside a move transaction has no committed basis delta: resume only when the motion-frame
+    // offset to the same reference is unchanged; otherwise release (snap) as before (Q-H).
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+    {
+        var resume = _scopeBinding.TakeResume();
+        _runScope = null;
+        if (e.NewScope is not AnimationScope motion)
+        {
+            if (resume) { Release(); BindContext(null); }
+            return;
+        }
+        if (resume && (_outer.Value is not null || _inner.Value is not null))
+        {
+            if (CanResumeBasis())
+            {
+                _scopeBinding.Bind(motion);
+                _runScope = ObservedFrameScope.Faulting(motion);
+                _outer.Resume(_runScope, BoundsTransform);
+                _inner.Resume(_runScope, BoundsTransform);
+            }
+            else Release();
+        }
+        InvalidateMeasure();
+        InvalidateArrange();
+    }
+
+    private bool CanResumeBasis()
+    {
+        if (_context is not { } context || _reference is not { } reference) return false;
+        if (LookaheadScope.FindContext(this) != context) return false;
+        if ((ReferenceScope ?? context.CoordinateReference) != reference) return false;
+        if (reference != this && !this.GetVisualAncestors().Contains(reference)) return false;
+        return AnimateMotionFrameOfReference || LookaheadCoordinates.MotionOffset(this, reference) == _lastMotionOffset;
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _attached = true;
+        base.OnAttachedToVisualTree(e);
+    }
 
     // S3: a scope rebuild would release the runs a move retained. Defer it while the move is in
     // progress, and after the move until the retained runs settle; then the stale scope rebuilds.
@@ -143,6 +187,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     {
         _outer = new BoundsAnimationState(SampleChanged, error => AnimationScope.ReportError(this, error));
         _inner = new BoundsAnimationState(SampleChanged, error => AnimationScope.ReportError(this, error));
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, () => { Release(); BindContext(null); });
         _presentation = new LookaheadPresentationHost(this, MeasurePresentation, ArrangeApproach, ContentInvalidated);
         _presentation.UseLayoutRounding = false;
         VisualChildren.Add(_presentation);
@@ -276,6 +321,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (_context != root) Release();
         BindContext(root);
         _reference = LookaheadCoordinates.ResolveReference(this, root, ReferenceScope);
+        _lastMotionOffset = LookaheadCoordinates.MotionOffset(this, _reference);
         _targetLayout = layout;
         EnsureScope();
         var runScope = _runScope?.Faulted == false ? _runScope : null;
@@ -473,7 +519,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         if (AnimationScope.IsEnvironmentEnding(this)) return;
         if (TopLevel.GetTopLevel(this) is null) return;
         var motion = AnimationScope.Get(this);
-        _motionRegistration = motion.RegisterResource(() => { if (motion.IsEnding) Release(); });
+        _scopeBinding.Reset();
+        _scopeBinding.Bind(motion);
         _runScope = ObservedFrameScope.Faulting(motion);
     }
 
@@ -493,9 +540,7 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
     private void Release(bool preserveValue = false)
     {
-        var registration = _motionRegistration;
-        _motionRegistration = null;
-        registration?.Dispose();
+        _scopeBinding.Reset();
         // A configuration change during a tree edit forfeits move retention. Keeping a value
         // without committing its old-to-new coordinate basis would cause a misplaced resume.
         if (_pendingMove is not null) preserveValue = false;
@@ -518,13 +563,15 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // Tree-position state goes now: the measure cache entry and a local lookahead domain.
+        // The animation is released when the scope ends at the drain (D17), or resumes if the
+        // control was re-attached elsewhere; a pending move keeps it for the move transaction.
+        _attached = false;
+        // An ordinary removal after a committed move ends the retention, so the drain can end
+        // (or rebuild) the parked scope instead of deferring it until the flight settles.
+        EndRetainedMove();
         LookaheadMeasure.Forget(this);
         ReleaseLocalEntry();
-        if (_pendingMove is null)
-        {
-            Release();
-            BindContext(null);
-        }
         base.OnDetachedFromVisualTree(e);
     }
 

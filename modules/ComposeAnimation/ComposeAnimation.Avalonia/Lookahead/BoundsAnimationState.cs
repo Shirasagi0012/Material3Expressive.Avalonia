@@ -34,6 +34,18 @@ internal sealed class BoundsAnimationState(Action changed, Action<Exception> fai
         _ = Animate(runScope, _animation, target, transform, ++_generation);
     }
 
+    /// <summary>
+    /// D17: re-runs an in-flight request toward its stored target in <paramref name="runScope"/>,
+    /// from the value and velocity where the cancelled run stopped. No-op when nothing was in flight.
+    /// </summary>
+    public void Resume(FrameScope runScope, BoundsTransform transform)
+    {
+        if (_animation is not { } animation || _requestedTarget is not { } target) return;
+        if (animation.Value == target && !IsRunning) return;
+        _pending = true;
+        _ = Animate(runScope, animation, target, transform, ++_generation);
+    }
+
     private Animatable<Rect> CreateAnimation(Rect initial)
     {
         var animation = new Animatable<Rect>(new RectConverter(), initial,
@@ -55,6 +67,8 @@ internal sealed class BoundsAnimationState(Action changed, Action<Exception> fai
         catch (Exception error)
         {
             if (!IsCurrent()) return;
+            // Cancelled because its scope ended (a rebuild resumes it; a release resets it): not a failure.
+            if (error is OperationCanceledException && scope.Lifetime.IsCancellationRequested) return;
             Reset();
             Value = target;
             _failedTarget = target;
