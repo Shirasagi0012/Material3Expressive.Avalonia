@@ -35,7 +35,7 @@ public class Card : Button
 
     private MaterialSurface? _surface;
     private MaterialInteractionController? _interaction;
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private Animatable<double>? _elevation;
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationTask;
@@ -114,18 +114,19 @@ public class Card : Button
     private void InitializeMotion()
     {
         if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _motion is not null) return;
-        _motion = VisualAnimationScope.Create(this);
-        _elevation = _motion.CreateAnimatable(Target(Elevation, _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled));
+        _motion = AnimationScope.Get(this);
+        _elevation = new Animatable<double>(new DoubleConverter(), Target(Elevation, _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled), VisibilityThresholds.Double);
         _motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
     }
 
     private void QueueElevation()
     {
-        if (!IsClickable || _motion is not { IsEnding: false } motion || _pending) return;
+        if (!IsClickable || !this.IsAttachedToVisualTree() || _motion is null || _pending) return;
+        var motion = _motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             // A recomposition commits effects after existing animation waiters sample this
             // frame. In particular, replacing CardElevation must retain that sampled value.
             await Task.Yield();
@@ -156,7 +157,7 @@ public class Card : Button
                     if (!enabled || (from == InteractionState.None && interaction == InteractionState.None))
                         await elevation.SnapToAsync(target, effect.Token);
                     else
-                        await elevation.AnimateToAsync(target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
+                        await elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
                             interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
                             easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(.4, 0, .6, 1)),
                             cancellationToken: effect.Token);
@@ -169,7 +170,7 @@ public class Card : Button
     private void DisposeMotion()
     {
         _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
-        _motion?.Dispose(); _motion = null; _elevation = null; _pending = false;
+        _motion = null; _elevation = null; _pending = false;
     }
 
     protected override void OnClick() { if (IsClickable) base.OnClick(); }

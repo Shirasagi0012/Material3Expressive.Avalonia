@@ -58,7 +58,8 @@ public class TooltipBox : ContentControl
     private readonly Border _layer;
     private Grid? _root;
     private TopLevel? _topLevel;
-    private VisualAnimationScope? _scope, _stateScope;
+    private AnimationScope? _scope;
+    private AnimationChildScope? _stateScope;
     private TooltipState? _activeState;
     private Transition<bool>? _transition;
     private Transition<bool>.DeferredAnimation<float>? _scaleAnimation, _opacityAnimation;
@@ -121,7 +122,7 @@ public class TooltipBox : ContentControl
         base.OnAttachedToVisualTree(e);
         _topLevel = TopLevel.GetTopLevel(this);
         _topLevel?.AddHandler(PointerPressedEvent, OnOutsidePressed, RoutingStrategies.Tunnel, true);
-        _scope = VisualAnimationScope.Create(this);
+        _scope = AnimationScope.Get(this);
         AttachState();
         // The owner's Window template establishes the popup layer during its first layout.
         Dispatcher.UIThread.Post(() => { if (this.IsAttachedToVisualTree()) { ApplyTemplate(); UpdatePresentation(); } });
@@ -133,7 +134,7 @@ public class TooltipBox : ContentControl
         ReleasePointer();
         DetachState();
         _popup.Close();
-        _scope?.Dispose(); _scope = null;
+        _scope = null;
         _receivedKeyboardFocus = false;
         base.OnDetachedFromVisualTree(e);
     }
@@ -161,16 +162,17 @@ public class TooltipBox : ContentControl
     {
         _activeState = State;
         _activeState.PropertyChanged += OnStateChanged;
-        var scope = _stateScope = _scope!.CreateChild("Tooltip state");
-        var transition = _transition = scope.CreateTransition(_activeState.Transition, "Tooltip appearance");
+        var motion = _scope = AnimationScope.Get(this);
+        var scope = _stateScope = motion.CreateChild("Tooltip state");
+        var transition = _transition = new Transition<bool>(_activeState.Transition, "Tooltip appearance");
         ConfigureMotion();
-        _ = scope.Launch(ct => transition.RunAsync(ct), "Tooltip transition");
+        _ = scope.Launch(ct => transition.RunAsync(scope, ct), "Tooltip transition");
         UpdatePresentation();
     }
 
     private void ConfigureMotion()
     {
-        if (_transition is not { } transition || _stateScope is not { IsEnding: false } scope) return;
+        if (_transition is not { } transition || _stateScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         if (ScaleAnimation is null || OpacityAnimation is null)
         {
             // Keep TooltipState unfinished while theme inputs are temporarily unavailable.
@@ -302,7 +304,7 @@ public class TooltipBox : ContentControl
     }
     private void ShowFromInput(MutatePriority priority)
     {
-        if (_stateScope is { IsEnding: false } scope)
+        if (_stateScope is { } scope && !scope.Lifetime.IsCancellationRequested)
             _ = scope.Launch(ct => State.ShowAsync(priority, ct), "Tooltip input");
     }
 
@@ -331,7 +333,7 @@ public class TooltipBox : ContentControl
     private void OnAnchorPressed(object? sender, PointerPressedEventArgs e)
     {
         if (!EnableUserInput || e.Pointer.Type is not (PointerType.Touch or PointerType.Pen) || _heldPointer is not null
-            || _stateScope is not { IsEnding: false } scope) return;
+            || _stateScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         _heldPointer = e.Pointer;
         var press = _press = new CancellationTokenSource();
         var release = _release = new TaskCompletionSource();
