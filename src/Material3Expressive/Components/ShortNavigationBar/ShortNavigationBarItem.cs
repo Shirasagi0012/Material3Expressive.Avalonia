@@ -63,6 +63,7 @@ public class ShortNavigationBarItem : Button
     public static readonly StyledProperty<Color> DisabledTextColorProperty = AvaloniaProperty.Register<ShortNavigationBarItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
     private Animatable<float>? _selection;
+    private AnimationChildScope? _attachScope;
     private ShortNavigationBarItemLayout? _layout;
     private ContentPresenter? _icon, _label;
     private Border? _indicator;
@@ -113,12 +114,14 @@ public class ShortNavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Short navigation item");
         if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; } InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _selection = null; _pending = false; _activationKey = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -158,8 +161,8 @@ public class ShortNavigationBarItem : Button
     }
     private void InitializeMotion()
     {
-        if (_layout is null || _selection is not null || !this.IsAttachedToVisualTree()) return;
-        var scope = AnimationScope.Get(this);
+        if (_layout is null || _selection is not null || !this.IsAttachedToVisualTree()
+            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         _selection = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         scope.SubscribeValue(_selection, value =>
         {
@@ -169,8 +172,8 @@ public class ShortNavigationBarItem : Button
     }
     private void UpdateTarget()
     {
-        if (!this.IsAttachedToVisualTree() || _selection is null || _pending) return;
-        var motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _selection is null || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {

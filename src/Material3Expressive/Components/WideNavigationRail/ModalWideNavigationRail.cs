@@ -57,6 +57,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     private Control? _surface;
     private readonly Popup _popup = new();
     private TopLevel? _topLevel;
+    private AnimationChildScope? _attachScope;
     private Animatable<float>? _position, _alpha, _offset;
     private IDisposable? _alphaSubscription, _offsetSubscription;
     private CancellationTokenSource? _flingCancellation;
@@ -126,6 +127,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     {
         _restoreAfterDetach?.Invoke(); _restoreAfterDetach = null;
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Modal wide rail");
         InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -135,6 +137,7 @@ public class ModalWideNavigationRail : WideNavigationRail
         _pendingDismiss = false;
         _position = _alpha = _offset = null; _pending = false; _width = 0;
         _offsetSubscription = null;
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -176,8 +179,8 @@ public class ModalWideNavigationRail : WideNavigationRail
         // The channel's anchoredDrag mutation replaces the entire fling, including
         // its finally block awaiting the hoisted state animation.
         if (HideOnCollapse && !_dragging) _flingCancellation?.Cancel();
-        if (!this.IsAttachedToVisualTree() || _position is null || _pending) return;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _position is null || _pending || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return;
         var frameDriven = HasFrameDrivenTarget;
         _pending = true;
         _ = scope.Launch(async ct =>
@@ -207,8 +210,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void InitializeMotion()
     {
-        if (_position is not null || !this.IsAttachedToVisualTree()) return;
-        var scope = AnimationScope.Get(this);
+        if (_position is not null || !this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return;
         _anchorTarget = State.TargetValue;
         _position = new Animatable<float>(new FloatConverter(), State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f, VisibilityThresholds.Float);
         scope.SubscribeValue(_position, _ => RefreshPresentation());
@@ -250,7 +253,8 @@ public class ModalWideNavigationRail : WideNavigationRail
         MoveItems(RailLayout, _modalLayout, !HideOnCollapse);
         _alpha = new Animatable<float>(new FloatConverter(), HideOnCollapse ? (initialAnchor == WideNavigationRailValue.Expanded ? 1f : 0f) : (PositionProgress >= .3f ? 1f : 0f), VisibilityThresholds.Float);
         _scrimTarget = _alpha.Value == 1;
-        _alphaSubscription = AnimationScope.Get(this).SubscribeValue(_alpha, value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); });
+        if (_attachScope is { } scope && !scope.Lifetime.IsCancellationRequested)
+            _alphaSubscription = scope.SubscribeValue(_alpha, value => { if (_scrim is not null) _scrim.Opacity = Math.Clamp(value, 0, 1); });
         // ModalWideNavigationRailState remains remembered while hidden content is absent.
         // Keep its anchors/offset across closes so reopening slides from the collapsed anchor.
         if (!HideOnCollapse) { _width = 0; _offset = null; }
@@ -311,8 +315,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private void UpdateScrim()
     {
-        if (!this.IsAttachedToVisualTree() || _alpha is null || EffectsAnimation.Stiffness <= 0) return;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _alpha is null || EffectsAnimation.Stiffness <= 0
+            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
         var effects = EffectsAnimation;
         var visible = HideOnCollapse ? _anchorTarget == WideNavigationRailValue.Expanded : PositionProgress >= .3f;
         if (visible == _scrimTarget) return;
@@ -331,8 +335,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     internal void UpdateAnchors(double measuredWidth)
     {
-        if (!this.IsAttachedToVisualTree()) return;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return;
         var width = (float)MathUtils.DipToPx(measuredWidth, LayoutHelper.GetLayoutScale(this));
         if (_width == width) return;
         _width = width;
@@ -350,8 +354,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     }
     private Task AnimateOffset(WideNavigationRailValue target)
     {
-        if (!this.IsAttachedToVisualTree() || _offset is null) return Task.CompletedTask;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _offset is null || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return Task.CompletedTask;
         _flingCancellation?.Cancel();
         _anchorTarget = target;
         UpdateScrim();
@@ -372,8 +376,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     private bool _pendingDismiss;
     internal void DismissFromScrim()
     {
-        if (!this.IsAttachedToVisualTree()) return;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return;
         if (HideOnCollapse && OffsetAnimation.Stiffness <= 0) { _pendingDismiss = true; return; }
         _pendingDismiss = false;
         _ = scope.Launch(async ct =>
@@ -455,8 +459,8 @@ public class ModalWideNavigationRail : WideNavigationRail
     private (WideNavigationRailValue Target, float Velocity, WideNavigationRailValue StateTarget)? _pendingDragSettle;
     private void SettleDrag(WideNavigationRailValue target, float velocity)
     {
-        if (!this.IsAttachedToVisualTree() || _offset is not { } track) return;
-        var scope = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _offset is not { } track || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested) return;
         var offsetAnimation = OffsetAnimation;
         if (offsetAnimation.Stiffness <= 0) { _pendingDragSettle = (target, velocity, State.TargetValue); return; }
         _pendingDragSettle = null;

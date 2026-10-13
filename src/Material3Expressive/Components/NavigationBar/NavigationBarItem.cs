@@ -74,6 +74,7 @@ public class NavigationBarItem : Button
     private Animatable<float>? _size;
     private Animatable<Color>? _iconColor;
     private Animatable<Color>? _textColor;
+    private AnimationChildScope? _attachScope;
     private NavigationBarItemLayout? _layout;
     private ContentPresenter? _icon;
     private ContentPresenter? _label;
@@ -124,6 +125,7 @@ public class NavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Navigation bar item");
         if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
         InitializeMotion();
     }
@@ -135,6 +137,7 @@ public class NavigationBarItem : Button
         _activationKey = null;
         _iconColor = _textColor = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -163,9 +166,9 @@ public class NavigationBarItem : Button
 
     private void InitializeMotion()
     {
-        if (_layout is null || !this.IsAttachedToVisualTree() || _alpha is not null)
+        if (_layout is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested || _alpha is not null)
             return;
-        var motion = AnimationScope.Get(this);
         _alpha = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         _size = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         _iconColor = new Animatable<Color>(new ColorConverter(), IconTarget, default);
@@ -194,9 +197,9 @@ public class NavigationBarItem : Button
 
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _alpha is null)
+        if (!this.IsAttachedToVisualTree() || _alpha is null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested)
             return;
-        var motion = AnimationScope.Get(this);
         if (_targetsPending) return;
         _targetsPending = true;
         // AnimateAsState.update is a composition SideEffect. The fixed Desktop
@@ -213,9 +216,9 @@ public class NavigationBarItem : Button
     private void CommitTargets()
     {
         if (!this.IsAttachedToVisualTree() || _alpha is null || _size is null
-            || _iconColor is null || _textColor is null)
+            || _iconColor is null || _textColor is null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested)
             return;
-        var motion = AnimationScope.Get(this);
         // Fixed AnimateAsState.restartAnimation cancels its previous job before
         // animateTo: cancellation resets velocity and the frame anchor. Calling
         // AnimateTo directly would instead carry the old velocity into the new target.

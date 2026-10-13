@@ -43,6 +43,7 @@ internal sealed class TabHeader : Panel
     private Color Inactive => UnselectedContentColor ?? Active;
     private Transition<bool>? _transition;
     private Transition<bool>.TransitionAnimationState<Color>? _color;
+    private AnimationChildScope? _attachScope;
     private CancellationTokenSource? _run;
     private Task? _runTask;
     private bool _pending;
@@ -63,6 +64,7 @@ internal sealed class TabHeader : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Tab header");
         Label.PropertyChanged += SlotChanged;
         Icon.PropertyChanged += SlotChanged;
         _initialSelected = IsSelected;
@@ -77,6 +79,7 @@ internal sealed class TabHeader : Panel
         if (_transition is not null) _transition.PropertyChanged -= TransitionChanged;
         _run?.Cancel(); _run?.Dispose(); _run = null; _runTask = null;
         _transition?.Dispose(); _transition = null; _color = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _pending = false;
         base.OnDetachedFromVisualTree(e);
     }
@@ -91,9 +94,9 @@ internal sealed class TabHeader : Panel
     }
     private void InitializeColorMotion()
     {
-        if (!this.IsAttachedToVisualTree() || _transition is not null
+        if (!this.IsAttachedToVisualTree() || _transition is not null || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested
             || SelectedContentAnimation.Stiffness <= 0 || UnselectedContentAnimation.Stiffness <= 0) return;
-        var motion = AnimationScope.Get(this);
         var selected = SelectedContentAnimation;
         var unselected = UnselectedContentAnimation;
         _transition = new Transition<bool>(_initialSelected, "Tab content color");
@@ -118,8 +121,8 @@ internal sealed class TabHeader : Panel
     {
         if (this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault() is { } surface)
             surface.StateLayerBrush = new SolidColorBrush(Active);
-        if (!this.IsAttachedToVisualTree() || _transition is null || _pending) return;
-        var motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _transition is null || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
