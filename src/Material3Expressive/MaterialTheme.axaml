@@ -108,4 +108,5 @@
     <StyleInclude Source="/Components/Menu/Menu.axaml" />
     <StyleInclude Source="/Components/Menu/MenuBar.axaml" />
     <StyleInclude Source="/Components/Menu/DropdownMenu.axaml" />
+    <StyleInclude Source="/Components/ComboBox/ComboBox.axaml" />
 </Styles>

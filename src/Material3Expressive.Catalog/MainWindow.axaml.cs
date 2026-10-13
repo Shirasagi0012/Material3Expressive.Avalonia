@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private void OnSnackbarDemo(object? sender, RoutedEventArgs e) => new SnackbarDemo().Show(this);
     private void OnNavigationDrawerDemo(object? sender, RoutedEventArgs e) => new NavigationDrawerDemo().Show(this);
     private void OnTextFieldDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new TextFieldDemo().Show(this);
+    private void OnComboBoxDemo(object? sender, RoutedEventArgs e) => new ComboBoxDemo().Show(this);
     private void OnSecureTextFieldDemo(object? sender, RoutedEventArgs e) => new SecureTextFieldDemo().Show(this);
     private void OnNumericUpDownDemo(object? sender, RoutedEventArgs e) => new NumericUpDownDemo().Show(this);
     private void OnRepeatButtonDemo(object? sender, RoutedEventArgs e) => new RepeatButtonDemo().Show(this);
