@@ -163,6 +163,8 @@ public class AnimatedContentSizeBehaviorTest
         f.Leaf.Height = 140; f.Layout(); f.Step(16); f.Step(50);
         Assert.Equal(90, f.Host.Bounds.Height);
         f.Surface.Children.Remove(f.Host);
+        // Released at the drain (D17), not on detach: the fallback post drains with no frame.
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Frames.AdvanceBy(TimeSpan.FromSeconds(10));
         f.Surface.Children.Add(f.Host); f.Layout();

@@ -49,7 +49,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
 
     private Animatable<Size>? _animatable;
     private ObservedFrameScope? _runScope;
-    private IDisposable? _motionRegistration;
+    private readonly ScopeResumeBinding _scopeBinding;
     private Size? _value;
     private Size? _requestedTarget;
     private Size? _failedTarget;
@@ -57,6 +57,16 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     private bool _runPending;
     private bool _attached;
     private static readonly IControlTemplate DefaultTemplate;
+
+    public AnimatedContentSize()
+    {
+        // The scope ending for good (detached at the drain, environment ending) releases the run.
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, () =>
+        {
+            ReleaseAnimator();
+            _runScope = null;
+        });
+    }
 
     static AnimatedContentSize()
     {
@@ -93,23 +103,40 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         }
     }
 
-    // The old scope's end released the animation state; measure again to start on the new scope.
-    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    // D17: a rebuild while attached keeps the animatable (value and velocity where the cancelled
+    // run stopped) and the requested target; re-run toward it in the replacement scope. The drain
+    // runs before the frame's waiter snapshot, so the run's first sample is this frame.
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+    {
+        var resume = _scopeBinding.TakeResume();
+        _runScope = null;
+        if (e.NewScope is not AnimationScope motion)
+        {
+            if (resume) ReleaseAnimator();
+            return;
+        }
+        if (resume && _animatable is { } animatable && _requestedTarget is { } target)
+        {
+            _scopeBinding.Bind(motion);
+            _runScope = ObservedFrameScope.Faulting(motion);
+            StartAnimation(animatable.Value, target);
+        }
+        InvalidateMeasure();
+    }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
         _attached = true;
-        _runScope = null;
         _failedTarget = null;
         InvalidateMeasure();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // No release here (D17): see ScopeResumeBinding.Bind. A control that stays detached is
+        // released when its scope ends at the drain; one re-attached elsewhere resumes.
         _attached = false;
-        ReleaseAnimator();
-        _runScope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -236,11 +263,8 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         if (_runScope is not null) return;
         if (TopLevel.GetTopLevel(this) is null) return;
         var motion = AnimationScope.Get(this);
-        _motionRegistration?.Dispose();
-        _motionRegistration = motion.RegisterResource(() =>
-        {
-            if (motion.IsEnding) ReleaseAnimator();
-        });
+        _scopeBinding.Reset();
+        _scopeBinding.Bind(motion);
         _runScope = ObservedFrameScope.Faulting(motion);
     }
 

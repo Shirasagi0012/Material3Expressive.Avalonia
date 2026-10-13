@@ -15,7 +15,7 @@ public sealed class ScopeRebuildResumeTest
 {
     private static TweenSpec<double> Linear(int ms) => new(TimeSpan.FromMilliseconds(ms), easing: new LinearEasing());
 
-    private sealed class Stage : IDisposable
+    internal sealed class Stage : IDisposable
     {
         public ManualFrameSource Frames { get; } = new();
         public Decorator Left { get; } = new();
