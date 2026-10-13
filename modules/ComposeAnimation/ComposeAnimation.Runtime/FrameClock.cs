@@ -296,20 +296,21 @@ internal sealed class FrameClock : IDisposable
 
         public void Register(CancellationToken first, CancellationToken second)
         {
-            if (first.CanBeCanceled) _first = first.UnsafeRegister(OnCanceled, (this, first));
-            if (second.CanBeCanceled) _second = second.UnsafeRegister(OnCanceled, (this, second));
+            // The (state, token) overload passes the token back, so no (waiter, token) tuple is boxed.
+            if (first.CanBeCanceled) _first = first.UnsafeRegister(OnCanceled, this);
+            if (second.CanBeCanceled) _second = second.UnsafeRegister(OnCanceled, this);
         }
 
-        private static void OnCanceled(object? state)
+        private static readonly Action<object?, CancellationToken> OnCanceled = static (state, token) =>
         {
-            var (waiter, token) = ((Waiter, CancellationToken))state!;
+            var waiter = (Waiter)state!;
             if (Dispatcher.UIThread.CheckAccess()) waiter.CancelOnUiThread(token);
             else
             {
                 var version = waiter.Version;
                 Dispatcher.UIThread.Post(() => waiter.CancelOnUiThread(version, token), ResumePriority);
             }
-        }
+        };
 
         private void CancelOnUiThread(CancellationToken token) => owner.CancelWaiter(this, Version, token);
         private void CancelOnUiThread(short version, CancellationToken token) => owner.CancelWaiter(this, version, token);
