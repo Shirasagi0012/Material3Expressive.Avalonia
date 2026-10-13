@@ -60,7 +60,7 @@ public abstract class Chip : Button
     private ChipContentLayout? _content;
     private ChipIconSlot? _leading;
     private ChipIconSlot? _trailing;
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private Animatable<double>? _elevation;
     private AnimatedCornerRadius? _shape;
     private (CornerRadius Shape, CornerRadius Selected, CornerRadius Pressed)? _shapeConfiguration;
@@ -103,8 +103,8 @@ public abstract class Chip : Button
     private void InitializeMotion()
     {
         if (_surface is null || !this.IsAttachedToVisualTree() || _motion is not null) return;
-        _motion = VisualAnimationScope.Create(this);
-        _elevation = _motion.CreateAnimatable(ElevationTarget());
+        _motion = AnimationScope.Get(this);
+        _elevation = new Animatable<double>(new DoubleConverter(), ElevationTarget(), VisibilityThresholds.Double);
         _motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
         var surface = _surface;
         void OnSurfaceBoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
@@ -125,7 +125,7 @@ public abstract class Chip : Button
         _shapeEffect?.Cancel(); _shapeEffect = null; _shapeTask = null;
         _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
         _surface?.SetAnimatedCorners(null);
-        _motion?.Dispose(); _motion = null; _elevation = null; _pending = false;
+        _motion = null; _elevation = null; _pending = false;
         _lastElevationInteraction = InteractionState.None;
     }
 
@@ -193,11 +193,12 @@ public abstract class Chip : Button
 
     private void QueueTargets()
     {
-        if (_motion is not { IsEnding: false } motion || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _motion is null || _pending) return;
+        var motion = _motion = AnimationScope.Get(this);
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _pending = false;
             var target = ElevationTarget();
             if (_elevation is { } elevation && elevation.TargetValue != target)
@@ -207,7 +208,7 @@ public abstract class Chip : Button
                 _lastElevationInteraction = interaction;
                 _ = motion.Launch(token => !IsEffectivelyEnabled || (interaction == InteractionState.None && from == InteractionState.None)
                     ? elevation.SnapToAsync(target, token)
-                    : elevation.AnimateToAsync(target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
+                    : elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
                         interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
                         easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
                         cancellationToken: token), "Chip elevation");
@@ -218,7 +219,8 @@ public abstract class Chip : Button
 
     private void RefreshShape(bool initial)
     {
-        if (_surface is null || _motion is not { } motion) return;
+        if (_surface is null || !this.IsAttachedToVisualTree() || _motion is null) return;
+        var motion = _motion = AnimationScope.Get(this);
         var shapes = MorphShapes;
         if (shapes is null)
         {

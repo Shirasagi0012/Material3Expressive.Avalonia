@@ -32,7 +32,7 @@ internal sealed class SegmentedButtonContentLayout : Panel
             (TemplatedParent as SegmentedButton)?.Row?.InvalidateItemsLayout();
     }
 
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private Animatable<int>? _offset;
     private int? _initialOffset;
     private Size _icon, _label;
@@ -40,7 +40,7 @@ internal sealed class SegmentedButtonContentLayout : Panel
     private int _contentWidth;
     private int _targetOffset;
     private bool _commitPending;
-    internal void Stop() { _motion?.Dispose(); _motion = null; _offset = null; _initialOffset = null; _commitPending = false; }
+    internal void Stop() { _motion = null; _offset = null; _initialOffset = null; _commitPending = false; }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { Stop(); base.OnDetachedFromVisualTree(e); }
     internal Size IntrinsicSize(double height, Thickness padding)
     {
@@ -71,24 +71,24 @@ internal sealed class SegmentedButtonContentLayout : Panel
         {
             if (_motion is null)
             {
-                _motion = VisualAnimationScope.Create(this);
-                _offset = _motion.CreateAnimatable(_initialOffset.Value);
+                _motion = AnimationScope.Get(this);
+                _offset = new Animatable<int>(new Int32Converter(), _initialOffset.Value, VisibilityThresholds.Int32);
                 _motion.SubscribeValue(_offset, _ => InvalidateArrange());
             }
             _targetOffset = offset;
             if (_offset!.TargetValue != offset && !_commitPending)
             {
                 _commitPending = true;
-                var motion = _motion; var anim = _offset;
+                var motion = _motion = AnimationScope.Get(this); var anim = _offset;
                 var defer = offset == 0;
                 // Compose launches from measure after the current layout/recomposition.
                 // Commit on the shared frame before Animatable requests its first sample.
                 _ = motion.Launch(async ct =>
                 {
-                    if (defer) await motion.Clock.NextFrameAsync(ct);
+                    if (defer) await motion.NextFrameAsync(ct);
                     _commitPending = false;
                     if (OffsetAnimation is not { } spring) return;
-                    await anim.AnimateToAsync(_targetOffset,
+                    await anim.AnimateToAsync(motion, _targetOffset,
                         new SpringSpec<int>(spring.DampingRatio, spring.Stiffness, 1), cancellationToken: ct);
                 }, "Segmented label offset");
             }
