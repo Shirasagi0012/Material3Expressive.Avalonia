@@ -108,20 +108,18 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     // runs before the frame's waiter snapshot, so the run's first sample is this frame.
     void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
     {
-        var resume = _scopeBinding.TakeResume();
+        // Intentional: the old run scope is dead in every branch.
         _runScope = null;
-        if (e.NewScope is not AnimationScope motion)
-        {
-            if (resume) ReleaseAnimator();
-            return;
-        }
-        if (resume && _animatable is { } animatable && _requestedTarget is { } target)
-        {
-            _scopeBinding.Bind(motion);
-            _runScope = ObservedFrameScope.Faulting(motion);
-            StartAnimation(animatable.Value, target);
-        }
-        InvalidateMeasure();
+        _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_animatable is not { } animatable || _requestedTarget is not { } target) return false;
+                _runScope = ObservedFrameScope.Faulting(motion);
+                StartAnimation(animatable.Value, target);
+                return true;
+            },
+            onLost: ReleaseAnimator,
+            invalidate: _ => InvalidateMeasure());
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)

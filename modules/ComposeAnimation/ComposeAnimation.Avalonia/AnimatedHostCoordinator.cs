@@ -174,6 +174,12 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         => Execute(() => _attached = false);
 
     // Drain rebuild (D17): the runs move into the replacement scope; an end releases them.
+    // Not ScopeResumeBinding.Handle: the coordinator is not an IAnimationScopeHost (it may sit on
+    // one and share its Get scope), it reacts through the routed event inside its Execute queue,
+    // and it tells a rebuild from a final end by the event itself (OldScope is its scope, NewScope
+    // null or not) rather than by a scope resource plus an attached check: a detached host that
+    // does not come back gets NewScope == null at the same drain. Each session keeps its own
+    // interruption snapshot (OnScopeEnding) because its Animatable's run has already unwound here.
     private void OnScopeChanged(object? sender, AnimationScopeChangedEventArgs e)
         => Execute(() =>
         {

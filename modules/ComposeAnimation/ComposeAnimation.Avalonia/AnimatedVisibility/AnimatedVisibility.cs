@@ -155,28 +155,26 @@ public class AnimatedVisibility : ContentControl, IEnterExitScopeHost, IAnimatio
     // drain runs before the frame's waiter snapshot, so the run samples this frame, continuing
     // from its stored play time. Detach is handled by OnDetachedFromVisualTree.
     void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
-    {
-        var resume = _scopeBinding.TakeResume();
-        if (e.NewScope is not AnimationScope motion)
-        {
-            if (resume)
+        => _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_connection is not { } connection || connection.Transition.IsDisposed) return false;
+                _failed = false;
+                // A re-entrant Get from a ScopeChanged handler that runs it again simply takes over.
+                if (connection.OwnsLoop) StartLoop(connection, motion, immediate: true);
+                return true;
+            },
+            onLost: () =>
             {
                 _failed = true;
                 Disconnect();
-            }
-            return;
-        }
-        _failed = false;
-        if (resume && _connection is { } connection && !connection.Transition.IsDisposed)
-        {
-            _scopeBinding.Bind(motion);
-            // A re-entrant Get from a ScopeChanged handler that runs it again simply takes over.
-            if (connection.OwnsLoop) StartLoop(connection, motion, immediate: true);
-            Synchronize();
-            return;
-        }
-        Synchronize(reset: true);
-    }
+            },
+            // Intentional: a scope change without a resume resets the presentation (reset: true).
+            invalidate: resumed =>
+            {
+                _failed = false;
+                Synchronize(reset: !resumed);
+            });
 
     private void OnPhaseChanged() => Synchronize();
 

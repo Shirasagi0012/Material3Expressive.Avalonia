@@ -43,22 +43,21 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
     // run stopped) and the target; re-run toward the target in the replacement scope. A real
     // lookahead context change still resets (it is not a scope rebuild).
     void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
-    {
-        var resume = _scopeBinding.TakeResume();
-        if (e.NewScope is not AnimationScope motion)
-        {
-            if (resume) Reset();
-            return;
-        }
-        if (resume && _position is { } animatable)
-        {
-            _runScope = motion;
-            _scopeBinding.Bind(motion);
-            if (animatable.Value != _target) _ = Animate(animatable, _target);
-        }
-        _context?.InvalidateApproachPlacement();
-        InvalidateMeasure();
-    }
+        => _scopeBinding.Handle(e,
+            onResume: motion =>
+            {
+                if (_position is not { } animatable) return false;
+                _runScope = motion;
+                if (animatable.Value != _target) _ = Animate(animatable, _target);
+                return true;
+            },
+            onLost: Reset,
+            // Intentional: a placement-only host also invalidates the domain's approach placement.
+            invalidate: _ =>
+            {
+                _context?.InvalidateApproachPlacement();
+                InvalidateMeasure();
+            });
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {

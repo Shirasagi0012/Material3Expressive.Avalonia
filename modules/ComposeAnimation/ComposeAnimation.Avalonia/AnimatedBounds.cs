@@ -133,28 +133,32 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
     // offset to the same reference is unchanged; otherwise release (snap) as before (Q-H).
     void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
     {
-        var resume = _scopeBinding.TakeResume();
+        // Intentional: the old run scope is dead in every branch.
         _runScope = null;
-        if (e.NewScope is not AnimationScope motion)
-        {
-            if (resume) { Release(); BindContext(null); }
-            return;
-        }
-        if (resume && (_outer.Value is not null || _inner.Value is not null))
-        {
-            // Q-E: the drain never runs while a MoveContent is open (the window root's move flag
-            // holds it until commit/abort), so this always sees a committed basis; no host defers.
-            if (CanResumeBasis())
+        _scopeBinding.Handle(e,
+            onResume: motion =>
             {
-                _scopeBinding.Bind(motion);
+                if (_outer.Value is null && _inner.Value is null) return false;
+                // Q-E: the drain never runs while a MoveContent is open (the window root's move flag
+                // holds it until commit/abort), so this always sees a committed basis; no host defers.
+                if (!CanResumeBasis())
+                {
+                    Release(); // Q-H: a changed motion-frame basis cannot resume
+                    return false;
+                }
                 _runScope = ObservedFrameScope.Faulting(motion);
                 _outer.Resume(_runScope, BoundsTransform);
                 _inner.Resume(_runScope, BoundsTransform);
-            }
-            else Release();
-        }
-        InvalidateMeasure();
-        InvalidateArrange();
+                return true;
+            },
+            // Intentional: Bounds also unbinds its lookahead context on a final end.
+            onLost: () => { Release(); BindContext(null); },
+            // Intentional: Bounds owns arrange-time placement too.
+            invalidate: _ =>
+            {
+                InvalidateMeasure();
+                InvalidateArrange();
+            });
     }
 
     private bool CanResumeBasis()

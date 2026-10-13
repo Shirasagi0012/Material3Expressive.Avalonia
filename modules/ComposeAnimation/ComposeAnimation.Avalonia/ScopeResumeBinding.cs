@@ -4,9 +4,12 @@ using Avalonia.Threading;
 namespace ComposeAnimation;
 
 /// <summary>
-/// Shared D17 plumbing for scope-driven hosts (<see cref="AnimatedVisibility"/>,
-/// <see cref="AnimatedContent"/>): the scope resource that notices a rebuild, the pending-resume
-/// flag, and the deferred loop launch with its single staleness guard.
+/// The single D17 rule for the library's <see cref="IAnimationScopeHost"/>s
+/// (<see cref="AnimatedVisibility"/>, <see cref="AnimatedContent"/>, <see cref="AnimatedContentSize"/>,
+/// <see cref="LookaheadSize"/>, <see cref="LookaheadPosition"/>, <see cref="AnimatedBounds"/>): a scope
+/// resource that tells a rebuild (resume pending) from a final end (release), and <see cref="Handle"/>,
+/// which runs the host's reaction in one fixed order. Also the deferred loop launch used by the
+/// transition-loop hosts. <c>Animated.Properties</c> does not use it; see AnimatedHostCoordinator.
 /// </summary>
 internal sealed class ScopeResumeBinding
 {
@@ -18,7 +21,12 @@ internal sealed class ScopeResumeBinding
 
     /// <param name="owner">The host control, used to detect an ending environment.</param>
     /// <param name="isAttached">Whether the host is still in the visual tree.</param>
-    /// <param name="onLost">Marks the host failed and disconnects when the scope ends for good.</param>
+    /// <param name="onLost">
+    /// The host's release when its scope ends for good while no resume is possible: the control is
+    /// detached (and did not come back before the drain) or the window environment is ending. It
+    /// drops the kept animation state (and, for transition-loop hosts, marks the host failed and
+    /// disconnects). Called from the scope's resource callback, before the scope cancels its runs.
+    /// </param>
     public ScopeResumeBinding(Visual owner, Func<bool> isAttached, Action onLost)
     {
         _owner = owner;
@@ -34,9 +42,15 @@ internal sealed class ScopeResumeBinding
     /// </remarks>
     public void Bind(AnimationScope motion)
     {
-        _resource = motion.RegisterResource(() =>
+        // One watched scope at a time: a previous registration is dropped first, and a callback
+        // that is not for the current registration (a dispose, or a stale scope) does nothing.
+        var previous = _resource;
+        _resource = null;
+        previous?.Dispose();
+        IDisposable? registration = null;
+        registration = motion.RegisterResource(() =>
         {
-            if (!motion.IsEnding) return;
+            if (!motion.IsEnding || !ReferenceEquals(_resource, registration)) return;
             _resource = null;
             // Still attached: the scope is being rebuilt; keep the state for OnScopeChanged (D17).
             if (_isAttached() && !AnimationScope.IsEnvironmentEnding(_owner))
@@ -46,6 +60,33 @@ internal sealed class ScopeResumeBinding
             }
             _onLost();
         });
+        _resource = registration;
+    }
+
+    /// <summary>
+    /// The host's whole D17 reaction to <see cref="IAnimationScopeHost.OnScopeChanged"/>, in one order:
+    /// take the pending resume; on an end (no new scope) call <paramref name="onLost"/> if a resume was
+    /// pending and stop; otherwise, if a resume is pending, bind the new scope and call
+    /// <paramref name="onResume"/> (it returns false when the kept state cannot resume, and the binding
+    /// is dropped); finally call <paramref name="invalidate"/> with whether it resumed.
+    /// </summary>
+    public void Handle(AnimationScopeChangedEventArgs e, Func<AnimationScope, bool> onResume, Action onLost,
+        Action<bool>? invalidate = null)
+    {
+        var resume = TakeResume();
+        if (e.NewScope is not AnimationScope motion)
+        {
+            if (resume) onLost();
+            return;
+        }
+        var resumed = false;
+        if (resume)
+        {
+            Bind(motion);
+            resumed = onResume(motion);
+            if (!resumed) Reset();
+        }
+        invalidate?.Invoke(resumed);
     }
 
     /// <summary>Returns and clears the pending-resume flag.</summary>
@@ -60,8 +101,9 @@ internal sealed class ScopeResumeBinding
     public void Reset()
     {
         _resumePending = false;
-        _resource?.Dispose();
+        var resource = _resource;
         _resource = null;
+        resource?.Dispose();
     }
 
     /// <summary>
