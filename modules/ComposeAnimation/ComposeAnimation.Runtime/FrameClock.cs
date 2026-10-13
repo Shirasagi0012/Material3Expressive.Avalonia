@@ -53,6 +53,8 @@ internal sealed class FrameClock : IDisposable
     private readonly HookList _beforeFrame = new();
     private readonly HookList _afterWaiter = new();
     private CancellationTokenSource? _sourceWait;
+    // Reused across frames while never cancelled (TryReset); a cancelled one is replaced.
+    private CancellationTokenSource? _spareSourceWait;
     private bool _pumping;
     private bool _disposed;
     private Exception? _failure;
@@ -161,7 +163,8 @@ internal sealed class FrameClock : IDisposable
         {
             while (!_disposed && _failure is null && _waiters.Count > 0)
             {
-                var sourceWait = new CancellationTokenSource();
+                var sourceWait = _spareSourceWait ?? new CancellationTokenSource();
+                _spareSourceWait = null;
                 _sourceWait = sourceWait;
                 Task<TimeSpan> frame;
                 try { frame = _source.NextFrameAsync(sourceWait.Token).AsTask(); }
@@ -172,7 +175,8 @@ internal sealed class FrameClock : IDisposable
 
                 _sourceWait = null;
                 var canceledByClock = sourceWait.IsCancellationRequested;
-                sourceWait.Dispose();
+                if (!canceledByClock && sourceWait.TryReset()) _spareSourceWait = sourceWait;
+                else sourceWait.Dispose();
                 if (_disposed) return;
                 if (frame.IsCanceled && canceledByClock) continue;
                 if (!frame.IsCompletedSuccessfully)
@@ -392,6 +396,9 @@ internal sealed class FrameClock : IDisposable
 
     // Awaits the source and resumes with one dispatcher post, issued on the completing thread
     // (ExecuteSynchronously), so a synchronous source deterministically queues the batch.
+    // Not replaceable by an await continuation: the runtime refuses to inline those while a
+    // non-default SynchronizationContext (Avalonia's) is current and queues them to the thread
+    // pool, which would change the hop's ordering. So ContinueWith's task stays (stage 5a residue).
     private readonly struct DispatcherHop(Task source) : ICriticalNotifyCompletion
     {
         public DispatcherHop GetAwaiter() => this;
