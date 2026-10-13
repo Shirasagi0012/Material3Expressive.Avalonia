@@ -40,16 +40,44 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
     // The scope the animatable's runs use; replaced together with it.
     private FrameScope? _runScope;
     private Animatable<Size>? _size;
-    private IDisposable? _motionRegistration;
+    private readonly ScopeResumeBinding _scopeBinding;
+    private bool _attached;
     private LookaheadContext? _context;
     private Size _target;
     private Size? _failedTarget;
     private long _generation;
 
-    public LookaheadSize() => _entry = new(this);
+    public LookaheadSize()
+    {
+        _entry = new(this);
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, Reset);
+    }
 
-    // The old scope's end released the animation state; measure again to start on the new scope.
-    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    // D17: a rebuild while attached keeps the animatable (value and velocity where the cancelled
+    // run stopped) and the target; re-run toward the target in the replacement scope. A real
+    // lookahead context change still resets (it is not a scope rebuild).
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+    {
+        var resume = _scopeBinding.TakeResume();
+        if (e.NewScope is not AnimationScope motion)
+        {
+            if (resume) Reset();
+            return;
+        }
+        if (resume && _size is { } animatable)
+        {
+            _runScope = motion;
+            _scopeBinding.Bind(motion);
+            if (animatable.Value != _target) _ = Animate(animatable, _target, ++_generation);
+        }
+        InvalidateMeasure();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _attached = true;
+        base.OnAttachedToVisualTree(e);
+    }
 
 
     static LookaheadSize()
@@ -96,7 +124,8 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
                     VisibilityThresholds.Size, "Lookahead size");
                 _runScope = scope;
                 _size.PropertyChanged += OnSizeSampleChanged;
-                _motionRegistration = scope.RegisterResource(() => { if (scope.IsEnding) Reset(); });
+                _scopeBinding.Reset();
+                _scopeBinding.Bind(scope);
             }
         }
         if (_size is { } size && _target != destination)
@@ -113,10 +142,13 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
 
     private async Task Animate(Animatable<Size> size, Size target, long generation)
     {
-        try { await size.AnimateToAsync(_runScope!, target, AnimationSpec); }
+        var scope = _runScope!;
+        try { await size.AnimateToAsync(scope, target, AnimationSpec); }
         catch (Exception error)
         {
             if (generation != _generation || !ReferenceEquals(_size, size)) return;
+            // Cancelled because its scope ended (rebuild or release): not a failure.
+            if (error is OperationCanceledException && scope.Lifetime.IsCancellationRequested) return;
             var root = _context;
             Reset();
             _context = root;
@@ -188,9 +220,7 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
     }
     private void Reset()
     {
-        var registration = _motionRegistration;
-        _motionRegistration = null;
-        registration?.Dispose();
+        _scopeBinding.Reset();
         ++_generation;
         if (_size is { } size)
         {
@@ -204,8 +234,10 @@ public sealed class LookaheadSize : Decorator, ILookaheadConstrainedLayoutNode, 
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // The lookahead entry belongs to the tree position and goes now; the animation is released
+        // when the scope ends at the drain (D17), or resumes if re-attached elsewhere.
+        _attached = false;
         _entry.Detach();
-        Reset();
         base.OnDetachedFromVisualTree(e);
     }
 }

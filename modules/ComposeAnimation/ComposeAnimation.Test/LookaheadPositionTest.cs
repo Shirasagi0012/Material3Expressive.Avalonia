@@ -177,6 +177,7 @@ public class LookaheadPositionTest
         stack.Spacing = 80; f.Layout();
         Assert.True(f.Frames.PendingFrameCount > 0);
         f.Window.Content = null;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs(); // released at the drain (D17), not on detach
         Assert.Equal(0, f.Frames.PendingFrameCount);
         stack.Spacing = 20;
         f.Window.Content = f.Root; f.Layout();

@@ -291,6 +291,7 @@ public class LookaheadCompositionTest
         Assert.Equal(new Size(200, 160), size.Bounds.Size);
         size.TargetSize = new Size(100, 80); f.Layout(); f.Step(16);
         f.Window.Content = null;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs(); // released at the drain (D17), not on detach
         Assert.Equal(0, f.Frames.PendingFrameCount);
         f.Root.Child = null;
         f.Window.Content = size; f.Layout();

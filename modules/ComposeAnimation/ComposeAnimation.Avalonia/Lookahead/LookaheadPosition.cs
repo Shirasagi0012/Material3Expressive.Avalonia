@@ -28,14 +28,43 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
     // The scope the animatable's runs use; replaced together with it.
     private FrameScope? _runScope;
     private Animatable<Point>? _position;
-    private IDisposable? _motionRegistration;
+    private readonly ScopeResumeBinding _scopeBinding;
+    private bool _attached;
     private LookaheadContext? _context;
     private Point _target;
 
-    public LookaheadPosition() => _entry = new(this);
+    public LookaheadPosition()
+    {
+        _entry = new(this);
+        _scopeBinding = new ScopeResumeBinding(this, () => _attached, Reset);
+    }
 
-    // The old scope's end released the animation state; measure again to start on the new scope.
-    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => InvalidateMeasure();
+    // D17: a rebuild while attached keeps the animatable (value and velocity where the cancelled
+    // run stopped) and the target; re-run toward the target in the replacement scope. A real
+    // lookahead context change still resets (it is not a scope rebuild).
+    void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
+    {
+        var resume = _scopeBinding.TakeResume();
+        if (e.NewScope is not AnimationScope motion)
+        {
+            if (resume) Reset();
+            return;
+        }
+        if (resume && _position is { } animatable)
+        {
+            _runScope = motion;
+            _scopeBinding.Bind(motion);
+            if (animatable.Value != _target) _ = Animate(animatable, _target);
+        }
+        _context?.InvalidateApproachPlacement();
+        InvalidateMeasure();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _attached = true;
+        base.OnAttachedToVisualTree(e);
+    }
 
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -58,7 +87,8 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
                 VisibilityThresholds.Point, "Lookahead position");
             _runScope = scope;
             _position.PropertyChanged += PositionChanged;
-            _motionRegistration = scope.RegisterResource(() => { if (scope.IsEnding) Reset(); });
+            _scopeBinding.Reset();
+            _scopeBinding.Bind(scope);
         }
         if (_target != target)
         {
@@ -82,9 +112,7 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     private void Reset()
     {
-        var registration = _motionRegistration;
-        _motionRegistration = null;
-        registration?.Dispose();
+        _scopeBinding.Reset();
         if (_position is { } position)
         {
             position.PropertyChanged -= PositionChanged;
@@ -98,8 +126,10 @@ public sealed class LookaheadPosition : Decorator, ILookaheadConstrainedLayoutNo
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        // The lookahead entry belongs to the tree position and goes now; the animation is released
+        // when the scope ends at the drain (D17), or resumes if re-attached elsewhere.
+        _attached = false;
         _entry.Detach();
-        Reset();
         base.OnDetachedFromVisualTree(e);
     }
 
