@@ -53,7 +53,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         _scope = scope;
         _enabled = runScope is not null;
         if (!_enabled) return;
-        _invalidation = scope!.RegisterResource(OnScopeEnding);
+        _invalidation = RegisterEnding(scope!);
         _displayed = _host.GetValue(_property);
         RecreateAnimatable();
     }
@@ -68,7 +68,7 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         _runScope = runScope;
         _scope = scope;
         _enabled = true;
-        _invalidation = scope.RegisterResource(OnScopeEnding);
+        _invalidation = RegisterEnding(scope);
         _displayed = animatable.Value;
         if (_interrupted is { } interrupted) animatable.RestoreInterruptedState(interrupted);
         _interrupted = null;
@@ -76,6 +76,11 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         // scope); ReconcileTarget re-runs it toward the base value in the new scope.
         ReconcileTarget();
     }
+
+    // A resource callback also runs when the registration is disposed (Attach, Resume, Dispose);
+    // only the scope's own end is an interruption to snapshot.
+    private IDisposable RegisterEnding(AnimationScope scope)
+        => scope.RegisterResource(() => { if (scope.IsEnding) OnScopeEnding(); });
 
     // Runs before the scope cancels its runs: snapshot the in-flight state so a D17 resume
     // continues like an in-place interruption (velocity and frame timebase).
