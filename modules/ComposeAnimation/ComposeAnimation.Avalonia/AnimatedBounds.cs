@@ -142,6 +142,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         }
         if (resume && (_outer.Value is not null || _inner.Value is not null))
         {
+            // Q-E: MoveContent is synchronous (no layout, frame or dispatcher turn inside it), so
+            // the drain always sees a committed basis; the scope never needs to defer a rebuild.
             if (CanResumeBasis())
             {
                 _scopeBinding.Bind(motion);
@@ -170,11 +172,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         _attached = true;
         base.OnAttachedToVisualTree(e);
     }
-
-    // Q-E: defer a rebuild only while the move transaction is open (its basis delta is not
-    // committed yet). After Commit the drain rebuilds and OnScopeChanged resumes the flight in the
-    // new scope with the committed basis, so it follows the destination's DurationScale and lifetime.
-    bool IAnimationScopeHost.DefersScopeRebuild => _pendingMove is not null;
 
     public AnimatedBounds()
     {
@@ -548,7 +545,6 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
         SetAndRaise(CurrentBoundsProperty, ref _currentBounds, null);
         SetAndRaise(TargetBoundsProperty, ref _targetBounds, null);
         SetAndRaise(IsRunningProperty, ref _isRunning, false);
-        AnimationScope.RebuildPolicyChanged(this);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -631,9 +627,8 @@ public sealed class AnimatedBounds : Control, ILookaheadConstrainedLayoutNode, I
             if (!_owner.IsEffectivelyVisible) _owner.Release();
             else
             {
+                // The drain that follows rebuilds the scope and resumes the flight there (Q-E).
                 _owner._motionBasis += _basisDelta;
-                // The transaction closed: let the drain rebuild (and resume) the stale scope.
-                AnimationScope.RebuildPolicyChanged(_owner);
             }
             _owner._targetLayout = null;
             _owner._lastInnerConstraints = null;

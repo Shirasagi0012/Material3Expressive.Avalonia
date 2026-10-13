@@ -36,13 +36,6 @@ public sealed class AnimationScopeFixPassTest
         void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) => log.Add("component");
     }
 
-    private sealed class DeferringHost : Border, IAnimationScopeHost
-    {
-        public bool Defer { get; set; }
-        bool IAnimationScopeHost.DefersScopeRebuild => Defer;
-        void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e) { }
-    }
-
     // Item 1
     [Fact]
     public Task ThrowDuringRebuild_IsReported_AndTheRestOfTheDrainStillRebuilds() => OnUi(() =>
@@ -173,60 +166,6 @@ public sealed class AnimationScopeFixPassTest
         Assert.Equal(["first", "second"], log);
         Assert.Single(failures, f => f.OperationLabel == "ScopeChanged handler");
         Assert.NotSame(old, AnimationScope.Get(visual));
-        window.Close();
-    });
-
-    // Item 5 / S3 at the scope level
-    [Fact]
-    public Task DeferringHost_IsParkedWithoutPolling_AndRebuildsWhenItsPolicyClears() => OnUi(() =>
-    {
-        var clock = new ManualFrameSource();
-        var host = new DeferringHost();
-        var left = new Decorator { Child = host };
-        var right = new Decorator();
-        var window = Show(new StackPanel { Children = { left, right } }, clock);
-        var leftScope = AnimationScope.Get(left); var rightScope = AnimationScope.Get(right);
-        var old = AnimationScope.Get(host);
-        var changes = new List<AnimationScopeChangedEventArgs>();
-        AnimationScope.AddScopeChangedHandler(host, (_, e) => changes.Add(e));
-        host.Defer = true;
-        left.Child = null; right.Child = host;
-        Dispatcher.UIThread.RunJobs();
-        Assert.Empty(changes);
-        Assert.True(old.Diagnostics.IsParked);
-        Assert.Equal(0, window.AnimationRoot.Diagnostics.WindowStaleCount); // not re-queued every turn
-        Assert.Equal(0, clock.PendingFrameCount);
-        Assert.Same(old, AnimationScope.Get(host));
-        Assert.Same(leftScope, old.Diagnostics.Parent);
-        host.Defer = false;
-        AnimationScope.RebuildPolicyChanged(host);
-        Dispatcher.UIThread.RunJobs();
-        var change = Assert.Single(changes);
-        Assert.Same(old, change.OldScope);
-        Assert.Same(rightScope, change.NewScope!.Diagnostics.Parent);
-        window.Close();
-    });
-
-    [Fact]
-    public Task ParkedHost_WhoseAncestorEnds_IsQueuedAgain() => OnUi(() =>
-    {
-        var host = new DeferringHost { Defer = true };
-        var parent = new Decorator { Child = host };
-        var left = new Decorator { Child = parent };
-        var right = new Decorator();
-        var window = Show(new StackPanel { Children = { left, right } });
-        AnimationScope.Get(left); AnimationScope.Get(right); AnimationScope.Get(parent);
-        var old = AnimationScope.Get(host);
-        // Park it: a logical-tree change of the host alone.
-        parent.Child = null; parent.Child = host;
-        Dispatcher.UIThread.RunJobs();
-        Assert.True(old.Diagnostics.IsParked);
-        left.Child = null; right.Child = parent; // the parent rebuilds and ends the parked scope
-        Dispatcher.UIThread.RunJobs();
-        Assert.True(old.Diagnostics.IsEnding);
-        var current = AnimationScope.Get(host);
-        Assert.False(current.Diagnostics.IsEnding);
-        Assert.Same(AnimationScope.Get(parent), current.Diagnostics.Parent);
         window.Close();
     });
 

@@ -51,8 +51,8 @@ public partial class AnimatedBoundsTest
     [Fact]
     public Task MoveContent_UnderADifferentAncestorScope_MovesTheFlightIntoTheNewScope() => OnUi(() =>
     {
-        // Q-E: the rebuild is deferred only while the move transaction is open. After Commit the
-        // drain rebuilds and the flight resumes in the destination's scope (no parking).
+        // Q-E: after the (synchronous) move commits, the drain rebuilds and the flight resumes in
+        // the destination's scope (no parking).
         var card = Bounds(Text());
         var (scene, left, right) = MoveSlots(card);
         using var f = new Fixture(scene);
@@ -67,7 +67,6 @@ public partial class AnimatedBoundsTest
         f.Layout();
         var change = Assert.Single(changes);
         Assert.Same(old, change.OldScope);
-        Assert.False(old.Diagnostics.IsParked);
         Assert.Same(rightScope, change.NewScope!.Diagnostics.Parent);
         Assert.Same(change.NewScope, AnimationScope.Get(card));
         Equal(before, f.Actual(card));

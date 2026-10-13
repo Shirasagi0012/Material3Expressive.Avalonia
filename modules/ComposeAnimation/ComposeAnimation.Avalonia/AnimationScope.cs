@@ -109,7 +109,6 @@ public class AnimationScope : FrameScope
     private bool _ending;
     private bool _cleanupStarted;
     private bool _isStale;
-    private bool _parked;
     private int _generation;
     private double? _durationScale;
     private Exception? _lastError;
@@ -367,15 +366,6 @@ public class AnimationScope : FrameScope
     }
     internal ScopeDiagnostics Diagnostics => new(this);
 
-    /// <summary>
-    /// Called by an <see cref="IAnimationScopeHost"/> when <see cref="IAnimationScopeHost.DefersScopeRebuild"/>
-    /// may have turned false: a parked stale scope is queued for the drain again.
-    /// </summary>
-    internal static void RebuildPolicyChanged(Visual host)
-    {
-        if (OwnedScopeOf(host) is { _parked: true } scope && !Defers(scope)) scope.MarkStale();
-    }
-
     internal static bool IsEnvironmentEnding(Visual owner)
         => TopLevel.GetTopLevel(owner) is { } host && Roots.TryGetValue(host, out var scope) && scope._root._ending;
 
@@ -438,9 +428,6 @@ public class AnimationScope : FrameScope
     private static AnimationScope? OwnedScopeOf(Visual control)
         => control.GetValue(ScopeProperty) is { _kind: Kind.Owned } scope && ReferenceEquals(scope.Host, control) ? scope : null;
 
-    private static bool Defers(AnimationScope scope)
-        => !scope._ending && scope.Host is IAnimationScopeHost { DefersScopeRebuild: true };
-
     // Null when the control is not attached to a TopLevel. The value is read one step above the
     // control, because the control's own local value shadows the inherited one (D13). It may be an
     // ancestor scope that already ended and awaits its own rebuild; callers decide.
@@ -489,12 +476,10 @@ public class AnimationScope : FrameScope
     }
 
     // Mark only; the drain rebuilds (D14). Coalesced: one set per window, one fallback post.
-    // A parked scope (deferred by its host's policy) is queued again.
     private void MarkStale()
     {
-        if (_kind != Kind.Owned || _isStale && !_parked) return;
+        if (_kind != Kind.Owned || _isStale) return;
         _isStale = true;
-        _parked = false;
         var set = _root._stale!;
         set.Scopes.Add(this);
         set.ArmFallback();
@@ -517,25 +502,12 @@ public class AnimationScope : FrameScope
             for (var i = 0; i < set.Scopes.Count; i++)
             {
                 var scope = set.Scopes[i];
-                if (!scope._isStale || scope._parked) continue;
+                if (!scope._isStale) continue;
                 // D18: at most one rebuild per host per drain; a host made stale again waits.
                 if (set.Rebuilt.Contains(scope.Host))
                 {
                     set.Deferred.Add(scope);
                     nextFrame = true;
-                    continue;
-                }
-                bool defers;
-                try { defers = Defers(scope); }
-                catch (Exception error)
-                {
-                    scope.Report(error, "Scope rebuild", null);
-                    defers = false;
-                }
-                if (defers)
-                {
-                    // Out of the queue until the host calls RebuildPolicyChanged (no per-frame polling).
-                    scope._parked = true;
                     continue;
                 }
                 scope._isStale = false;
@@ -588,7 +560,6 @@ public class AnimationScope : FrameScope
         if (ResolveParent(Host) is { _kind: Kind.Owned, _ending: true } parent && OwnedScopeOf(parent.Host) == parent)
             parent.RebuildNow();
         _isStale = false;
-        _parked = false;
         var result = Rebuild();
         if (result is RebuildResult.Replaced or RebuildResult.Ended && _root._stale is { Draining: true } set)
             set.Rebuilt.Add(Host);
@@ -806,7 +777,6 @@ public class AnimationScope : FrameScope
         public Exception? LastDiagnosticError => scope._lastDiagnosticError;
         public bool IsEnding => scope._ending;
         public bool IsStale => scope._isStale;
-        public bool IsParked => scope._parked;
         public AnimationScope? Parent => scope._parent;
         /// <summary>0 for a first scope; each rebuild's replacement is one higher.</summary>
         public int Generation => scope._generation;
