@@ -93,7 +93,7 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
     public MaterialSpring? SizeAnimation { get => GetValue(SizeAnimationProperty); set => SetValue(SizeAnimationProperty, value); }
     public MaterialSpring? AlphaAnimation { get => GetValue(AlphaAnimationProperty); set => SetValue(AlphaAnimationProperty, value); }
     private DropdownMenuItem? _owner;
-    private VisualAnimationScope? _scope;
+    private AnimationScope? _scope;
     private Transition<bool>? _transition;
     private Transition<bool>.TransitionAnimationState<float>? _width;
     private bool _visible, _animated, _updatePending;
@@ -127,8 +127,8 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
             _visible = visible;
             presenter.Measure(Size.Infinity);
             _fullWidth = MathUtils.DipToPx(presenter.DesiredSize.Width, LayoutHelper.GetLayoutScale(this));
-            _scope = VisualAnimationScope.Create(this);
-            _transition = _scope.CreateTransition(visible, "Menu leading icon");
+            _scope = AnimationScope.Get(this);
+            _transition = new Transition<bool>(visible, "Menu leading icon");
             _transition.PropertyChanged += (_, _) =>
             {
                 if (_transition is { CurrentState: false, TargetState: false, IsRunning: false })
@@ -145,22 +145,25 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
             _scope.SubscribeValue(alpha, value => Opacity = Math.Clamp(value, 0, 1));
             Opacity = visible ? 1 : 0;
             var transition = _transition;
-            _ = _scope.Launch(ct => transition.RunAsync(ct));
+            var scope = _scope;
+            _ = scope.Launch(ct => transition.RunAsync(scope, ct));
         }
         else if (_transition is not null && _visible != visible)
         {
             _visible = visible;
-            if (!_updatePending)
+            if (!_updatePending && this.IsAttachedToVisualTree())
             {
                 _updatePending = true;
-                var scope = _scope!;
+                var scope = _scope = AnimationScope.Get(this);
                 // AnimatedVisibility observes selected in composition; its newly started
                 // animation first receives a frame in the following broadcast batch.
                 _ = scope.Launch(async ct =>
                 {
-                    await scope.Clock.NextFrameAsync(ct);
+                    await scope.NextFrameAsync(ct);
                     _updatePending = false;
-                    _transition!.UpdateTarget(_visible);
+                    // A Get scope ends at the drain, not at detach: Stop may already have run.
+                    if (_transition is not { } transition) return;
+                    transition.UpdateTarget(_visible);
                     InvalidateIntrinsicMeasure();
                 });
             }
@@ -175,7 +178,7 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
         // Avalonia normally remeasures a parent only when DesiredSize changes.
         (this.GetVisualParent() as Layoutable)?.InvalidateMeasure();
     }
-    private void Stop() { _scope?.Dispose(); _scope = null; _transition = null; _width = null; _updatePending = false; }
+    private void Stop() { _scope = null; _transition = null; _width = null; _updatePending = false; }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     { base.OnAttachedToVisualTree(e); Update(_owner); }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
