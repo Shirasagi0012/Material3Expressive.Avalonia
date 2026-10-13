@@ -5,7 +5,6 @@ using Avalonia;
 using Avalonia.Layout;
 using Avalonia.Data;
 using Avalonia.Metadata;
-using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Tokens;
@@ -92,9 +91,9 @@ public sealed class TopAppBarScrollBehavior : StyledElement
         ReferenceEquals(FlingAnimationSpec, AppBarSettle.FlingDefault)
             ? DecayAnimationSpec.SplineBasedDecay<float>((float)(Host is { } host ? LayoutHelper.GetLayoutScale(host) : 1))
             : FlingAnimationSpec;
-    internal Task<Vector> SettleAsync(float velocity, IAnimationFrameClock clock,
+    internal Task<Vector> SettleAsync(float velocity, FrameScope scope,
         CancellationToken cancellationToken = default) =>
-        AppBarSettle.RunAsync(State, velocity, GetFlingAnimationSpec(), GetSnapAnimationSpec(), clock, cancellationToken);
+        AppBarSettle.RunAsync(State, velocity, GetFlingAnimationSpec(), GetSnapAnimationSpec(), scope, cancellationToken);
 
     internal void UpdateContentAtStart(bool value)
     {
@@ -159,9 +158,9 @@ public sealed class BottomAppBarScrollBehavior : StyledElement
         ReferenceEquals(FlingAnimationSpec, AppBarSettle.FlingDefault)
             ? DecayAnimationSpec.SplineBasedDecay<float>((float)(Host is { } host ? LayoutHelper.GetLayoutScale(host) : 1))
             : FlingAnimationSpec;
-    internal Task<Vector> SettleAsync(float velocity, IAnimationFrameClock clock,
+    internal Task<Vector> SettleAsync(float velocity, FrameScope scope,
         CancellationToken cancellationToken = default) =>
-        AppBarSettle.RunAsync(State, velocity, GetFlingAnimationSpec(), GetSnapAnimationSpec(), clock, cancellationToken);
+        AppBarSettle.RunAsync(State, velocity, GetFlingAnimationSpec(), GetSnapAnimationSpec(), scope, cancellationToken);
 }
 
 internal static class AppBarSettle
@@ -196,7 +195,7 @@ internal static class AppBarSettle
         float velocity,
         IDecayAnimationSpec<float>? fling,
         IAnimationSpec<float>? snap,
-        IAnimationFrameClock clock,
+        FrameScope scope,
         CancellationToken cancellationToken)
     {
         if (state.CollapsedFraction is < .01f or 1)
@@ -207,7 +206,7 @@ internal static class AppBarSettle
         {
             var lastValue = 0f;
             var animation = new AnimationState<float>(new FloatConverter(), 0, AnimationVector.From([velocity]));
-            await animation.AnimateDecayAsync(fling, clock, block: frame =>
+            await SuspendAnimation.AnimateDecayAsync(scope, animation, fling, block: frame =>
             {
                 var delta = frame.Value - lastValue;
                 var initial = state.HeightOffset;
@@ -225,9 +224,10 @@ internal static class AppBarSettle
         if (snap is { } && state.HeightOffset < 0 && state.HeightOffset > state.HeightOffsetLimit)
         {
             var animation = new AnimationState<float>(new FloatConverter(), state.HeightOffset);
-            await animation.AnimateToAsync(
+            await SuspendAnimation.AnimateToAsync(
+                scope,
+                animation,
                 state.CollapsedFraction < .5f ? 0 : state.HeightOffsetLimit,
-                clock,
                 snap,
                 block: frame => state.HeightOffset = frame.Value,
                 cancellationToken: cancellationToken);
