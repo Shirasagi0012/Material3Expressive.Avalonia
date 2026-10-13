@@ -224,7 +224,7 @@ internal sealed class AnimatedHostCoordinator : IDisposable
         {
             if (session is null) continue;
             if (resume) Guard(session, () => session.Resume(_sessionScope!, _motion!));
-            else session.Attach(SessionScope, _motion);
+            else Guard(session, () => session.Attach(SessionScope, _motion));
         }
     }
 
