@@ -93,6 +93,11 @@ private void OnChange(object? sender, RoutedEventArgs e)
 
 ## 文档目录
 
+核心：
+
+- [animation-scope.md](animation-scope.md) —— Scope 模型、重建与恢复（D17）、MoveContent、已知限制与图示
+- [migration-from-visual-animation-scope.md](migration-from-visual-animation-scope.md) —— 从 `VisualAnimationScope` 旧 API 迁移
+
 组件层：
 
 - [components/animated-properties.md](components/animated-properties.md) —— `Animated.Properties` 属性动画
@@ -118,21 +123,4 @@ Runtime 引擎：
 
 ## 旧文档说明
 
-`docs/` 根目录下的文档多为开发过程中的设计与记录文档，时效性不一，阅读时请注意：
-
-| 文档 | 内容 | 时效性 |
-| --- | --- | --- |
-| [ANIMATED_VISIBILITY.md](../draft/ANIMATED_VISIBILITY.md) | `AnimatedVisibility` 设计与行为 | 仍有效 |
-| [ANIMATED_CONTENT.md](../draft/ANIMATED_CONTENT.md) | `AnimatedContent`/`Crossfade` 行为说明 | 仍有效 |
-| [ANIMATED_CONTENT_SIZE.md](../draft/ANIMATED_CONTENT_SIZE.md) | `AnimatedContentSize` 行为说明 | 仍有效（其中 lookahead 部分已过时） |
-| [ANIMATED_BOUNDS.md](../draft/ANIMATED_BOUNDS.md) | `AnimatedBounds`（实验性）说明 | 仍有效 |
-| [SHARED_TRANSITION.md](../draft/SHARED_TRANSITION.md) | `SharedElement`/`SharedBounds` 说明 | 仍有效 |
-| [LOOKAHEAD_PROTOCOL.md](../draft/LOOKAHEAD_PROTOCOL.md) | 实验性 Lookahead 布局协议 | 仍有效 |
-| [LOOKAHEAD_EXPERIMENT.md](../draft/LOOKAHEAD_EXPERIMENT.md) | 协作式 Lookahead 实验记录 | 仍有效 |
-| [CURRENT_STATUS.md](../draft/CURRENT_STATUS.md) | 项目现状 | 仍有效 |
-| [ANIMATED_CONTENT_DESIGN.md](../draft/ANIMATED_CONTENT_DESIGN.md) | AnimatedContent 落地设计 | 设计文档 |
-| [LOOKAHEAD_BOUNDARY_DESIGN.md](../draft/LOOKAHEAD_BOUNDARY_DESIGN.md) | LookaheadBoundary 设计说明 | 历史设计 |
-| [LOCAL_LOOKAHEAD_DESIGN.md](../draft/LOCAL_LOOKAHEAD_DESIGN.md) / [LOCAL_LOOKAHEAD_IMPLEMENTATION_PLAN.md](../draft/LOCAL_LOOKAHEAD_IMPLEMENTATION_PLAN.md) / [LOCAL_LOOKAHEAD_IMPLEMENTATION_STATUS.md](../draft/LOCAL_LOOKAHEAD_IMPLEMENTATION_STATUS.md) | 局部 Lookahead 提案、计划与实施状态 | 设计/计划/历史记录 |
-| [SHARED_COORDINATION_PROTOCOL.md](../draft/SHARED_COORDINATION_PROTOCOL.md) / [SHARED_BOUNDS_RUNTIME.md](../draft/SHARED_BOUNDS_RUNTIME.md) / [SHARED_CONTENT_SEMANTICS.md](../draft/SHARED_CONTENT_SEMANTICS.md) | SharedTransition 协议与语义设计 | 设计文档 |
-| [SHARED_IMPLEMENTATION_PLAN.md](../draft/SHARED_IMPLEMENTATION_PLAN.md) / [SHARED_DEMO_REGRESSION_PLAN.md](../draft/SHARED_DEMO_REGRESSION_PLAN.md) / [SHARED_REFRESH_PERFORMANCE.md](../draft/SHARED_REFRESH_PERFORMANCE.md) | SharedTransition 计划与性能记录 | 计划/历史记录 |
-| [TRANSITION_PREPARATION.md](../draft/TRANSITION_PREPARATION.md) | Transition preparation lease 设计 | 设计文档 |
+`docs/draft/` 下是 2026-10 动画基础重构之前的设计与记录文档，每页顶部都有“历史设计稿”横幅：名称与行为可能已过时，仅作背景参考。现行行为以本目录为准。
