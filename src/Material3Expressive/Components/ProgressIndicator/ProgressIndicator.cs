@@ -51,7 +51,7 @@ public abstract class ProgressIndicator : Control
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double? DefaultWavelength { get => GetValue(DefaultWavelengthProperty); set => SetValue(DefaultWavelengthProperty, value); }
 
-    AnimationScope? motion;
+    AnimationChildScope? _attachScope;
     AnimationChildScope? indeterminateMotion, offsetMotion, amplitudeMotion;
     InfiniteTransition? infinite;
     Animatable<float>? amplitude;
@@ -73,7 +73,7 @@ public abstract class ProgressIndicator : Control
     internal float Sweep => sweep;
     internal float GlobalRotation => globalRotation;
     internal float AdditionalRotation => additionalRotation;
-    internal AnimationScope? AnimationScope => motion;
+    internal AnimationScope? AnimationScope => _attachScope;
     bool HasWavelength => ((WavyProgressIndicator)this).Wavelength is not null || DefaultWavelength is not null;
     float Wavelength => (float)(((WavyProgressIndicator)this).Wavelength ?? DefaultWavelength)!.Value;
     float WaveSpeed => (float)(((WavyProgressIndicator)this).WaveSpeed ?? Wavelength);
@@ -96,14 +96,17 @@ public abstract class ProgressIndicator : Control
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        motion = AnimationScope.Get(this);
+        _attachScope = AnimationScope.Get(this).CreateChild("Progress indicator");
         StartIndeterminate();
         if (Wavy && !Circular) StartOffset();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        motion = indeterminateMotion = offsetMotion = amplitudeMotion = null;
+        indeterminateMotion?.Dispose(); indeterminateMotion = null;
+        offsetMotion?.Dispose(); offsetMotion = null;
+        amplitudeMotion?.Dispose(); amplitudeMotion = null;
+        _attachScope?.Dispose(); _attachScope = null;
         infinite = null; amplitude = null; amplitudeTask = null; amplitudeDirty = true;
         observesAmplitude = false; waveWidth = waveHeight = waveScale = -1;
         linearCache?.Dispose(); linearCache = null; circularCache?.Dispose(); circularCache = null;
@@ -151,8 +154,8 @@ public abstract class ProgressIndicator : Control
     {
         indeterminateMotion?.Dispose(); indeterminateMotion = null; infinite = null;
         firstHead = firstTail = secondHead = secondTail = globalRotation = additionalRotation = 0; sweep = .1f;
-        if (!IsIndeterminate || !this.IsAttachedToVisualTree() || this.motion is null) return;
-        var motion = this.motion = AnimationScope.Get(this);
+        if (!IsIndeterminate || !this.IsAttachedToVisualTree() || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         var scope = indeterminateMotion = motion.CreateChild("Indeterminate progress");
         if (this is CircularWavyProgressIndicator)
         {
@@ -195,8 +198,8 @@ public abstract class ProgressIndicator : Control
     void StartOffset()
     {
         offsetMotion?.Dispose(); offsetMotion = null;
-        if (!this.IsAttachedToVisualTree() || this.motion is null || !Wavy || !HasWavelength) return;
-        var motion = this.motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested || !Wavy || !HasWavelength) return;
         if (Circular && animatedAmplitude <= 0) return;
         if (WaveSpeed <= 0 || Wavelength <= 0) { waveOffset = 0; return; }
         var vertexCount = Circular ? shapes?.VertexCount ?? -1 : 1;
@@ -226,9 +229,8 @@ public abstract class ProgressIndicator : Control
             amplitudeDirty = false;
             var target = targetAmplitude = Math.Clamp((float)(wave.Amplitude ?? (IsIndeterminate ? 1 : wave.AmplitudeSelector(CoercedProgress))), 0, 1);
             if (this is CircularWavyProgressIndicator && IsIndeterminate) animatedAmplitude = target;
-            else if (this.IsAttachedToVisualTree() && motion is not null)
+            else if (this.IsAttachedToVisualTree() && _attachScope is { } motion && !motion.Lifetime.IsCancellationRequested)
             {
-                var motion = this.motion = AnimationScope.Get(this);
                 if (amplitude is null)
                 {
                     amplitudeMotion = motion.CreateChild("Progress amplitude");

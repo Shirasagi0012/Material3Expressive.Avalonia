@@ -68,6 +68,7 @@ internal sealed class CheckBoxIndicator : Control
     private Transition<bool?>? _transition;
     private CancellationTokenSource? _transitionRun;
     private Task? _transitionTask;
+    private AnimationChildScope? _attachScope;
     private Animatable<Color>? _checkColor, _boxColor, _borderColor;
     private bool _pending, _colorsEnabled;
     internal float DrawFraction { get; private set; }
@@ -99,12 +100,13 @@ internal sealed class CheckBoxIndicator : Control
             interaction.IsRippleBounded = false;
             interaction.RippleRadius = 20;
         }
+        _attachScope = AnimationScope.Get(this).CreateChild("CheckBox indicator");
         EnsureShapeTransition();
         _checkColor = new Animatable<Color>(new ColorConverter(), CheckTarget, default);
         _boxColor = new Animatable<Color>(new ColorConverter(), BoxTarget, default);
         _borderColor = new Animatable<Color>(new ColorConverter(), BorderTarget, default);
         _colorsEnabled = IsEffectivelyEnabled;
-        var motion = AnimationScope.Get(this);
+        var motion = _attachScope;
         motion.SubscribeValue(_checkColor, value => { PaintedCheckmark = value; InvalidateVisual(); });
         motion.SubscribeValue(_boxColor, value => { PaintedBox = value; InvalidateVisual(); });
         motion.SubscribeValue(_borderColor, value => { PaintedBorder = value; InvalidateVisual(); });
@@ -112,8 +114,8 @@ internal sealed class CheckBoxIndicator : Control
 
     private void EnsureShapeTransition()
     {
-        if (_transition is not null || !this.IsAttachedToVisualTree() || ShapeAnimation is null) return;
-        var motion = AnimationScope.Get(this);
+        if (_transition is not null || !this.IsAttachedToVisualTree() || ShapeAnimation is null
+            || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested) return;
         _transition = new Transition<bool?>(IsChecked, "CheckBox shape");
         var draw = _transition.AnimateFloat(state => state == false ? 0 : 1, segment =>
             segment.InitialState == false || segment.TargetState != false ? Spatial() : new SnapSpec<float>(TimeSpan.FromMilliseconds(100)));
@@ -134,6 +136,7 @@ internal sealed class CheckBoxIndicator : Control
         _transitionTask = null;
         _transition?.Dispose();
         _transition = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _checkColor = _boxColor = _borderColor = null;
         _pending = false;
         base.OnDetachedFromVisualTree(e);
@@ -165,8 +168,8 @@ internal sealed class CheckBoxIndicator : Control
 
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _pending) return;
-        var motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         // Apply targets at the corresponding recomposition frame, before the first animation frame.
         _ = motion.Launch(async ct =>

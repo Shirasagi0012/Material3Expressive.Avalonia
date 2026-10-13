@@ -47,11 +47,11 @@ public abstract class LoadingIndicatorBase : Control
     public double IndicatorSize { get => GetValue(IndicatorSizeProperty); set => SetValue(IndicatorSizeProperty, value); }
 
     LoadingIndicatorShapes? shapes;
-    AnimationScope? motion;
+    AnimationChildScope? _attachScope;
     AnimationChildScope? effect, polygonUpdate;
     IReadOnlyList<RoundedPolygon>? activePolygons;
     Animatable<float>? morphProgress, globalRotation;
-    internal AnimationScope? AnimationScope => motion;
+    internal AnimationScope? AnimationScope => _attachScope;
     internal IReadOnlyList<RoundedPolygon> EffectivePolygons => Polygons ?? (IsIndeterminate
         ? LoadingIndicatorDefaults.IndeterminateIndicatorPolygons : LoadingIndicatorDefaults.DeterminateIndicatorPolygons);
     internal float CoercedProgress => Math.Clamp((float)Progress, 0f, 1f);
@@ -79,12 +79,15 @@ public abstract class LoadingIndicatorBase : Control
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Loading indicator");
         RestartMode();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        motion = effect = polygonUpdate = null;
+        effect?.Dispose(); effect = null;
+        polygonUpdate?.Dispose(); polygonUpdate = null;
+        _attachScope?.Dispose(); _attachScope = null;
         activePolygons = null;
         morphProgress = globalRotation = null;
         MorphIndex = 0; MorphProgress = GlobalRotation = 0; RotationTarget = 90;
@@ -96,14 +99,12 @@ public abstract class LoadingIndicatorBase : Control
     {
         effect?.Dispose(); effect = null;
         // Selecting the other Compose overload replaces its remembered state.
-        motion = null;
         polygonUpdate = null;
         activePolygons = EffectivePolygons;
         morphProgress = globalRotation = null;
         MorphIndex = 0; MorphProgress = GlobalRotation = 0; RotationTarget = 90;
         shapes = null;
-        if (TopLevel.GetTopLevel(this) is null) return;
-        motion = AnimationScope.Get(this);
+        if (TopLevel.GetTopLevel(this) is null || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested) return;
         if (!IsIndeterminate) return;
         morphProgress = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
         globalRotation = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
@@ -116,8 +117,8 @@ public abstract class LoadingIndicatorBase : Control
     {
         effect?.Dispose(); effect = null;
         MorphIndex = 0;
-        if (!IsIndeterminate || !this.IsAttachedToVisualTree() || motion is null) return;
-        motion = AnimationScope.Get(this);
+        if (!IsIndeterminate || !this.IsAttachedToVisualTree() || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         var scope = effect = motion.CreateChild("Loading indicator polygon sequence");
         var progress = morphProgress!;
         var rotation = globalRotation!;
@@ -168,8 +169,7 @@ public abstract class LoadingIndicatorBase : Control
     {
         polygonUpdate?.Dispose(); polygonUpdate = null;
         if ((activePolygons ?? EffectivePolygons).SequenceEqual(EffectivePolygons)) return;
-        if (!this.IsAttachedToVisualTree() || motion is null) return;
-        motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested) return;
         var scope = polygonUpdate = motion.CreateChild("Loading polygon recomposition");
         _ = scope.Launch(async ct =>
         {
@@ -192,7 +192,8 @@ public abstract class LoadingIndicatorBase : Control
         if (change.Property == IsIndeterminateProperty) RestartMode();
         if (change.Property == PolygonsProperty)
         {
-            if (IsIndeterminate && this.IsAttachedToVisualTree() && motion is not null) QueuePolygonUpdate();
+            if (IsIndeterminate && this.IsAttachedToVisualTree() && _attachScope is { } attach
+                && !attach.Lifetime.IsCancellationRequested) QueuePolygonUpdate();
             else { activePolygons = EffectivePolygons; shapes = null; }
         }
         if (change.Property == ProgressProperty && !IsIndeterminate)

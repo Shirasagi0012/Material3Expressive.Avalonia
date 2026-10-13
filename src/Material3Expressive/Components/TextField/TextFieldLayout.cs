@@ -32,6 +32,7 @@ internal sealed partial class TextFieldLayout : Panel
     private TextPresenter _text = null!;
     private Animatable<float>? _labelProgress, _placeholderAlpha, _affixAlpha, _thickness;
     private Animatable<Color>? _labelColor, _containerColor, _indicatorColor;
+    private AnimationChildScope? _attachScope;
     private bool _pending;
     private int _phase;
     private double _cutoutTop, _aboveHeight, _supportingHeight, _containerHeight;
@@ -83,7 +84,7 @@ internal sealed partial class TextFieldLayout : Panel
         // Style priority preserves application-provided accessibility metadata.
 
         UpdateAccessibility();
-        var motion = AnimationScope.Get(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("TextField");
         _phase = Phase;
         _labelProgress = new Animatable<float>(new FloatConverter(), LabelTarget, VisibilityThresholds.Float);
         _placeholderAlpha = new Animatable<float>(new FloatConverter(), Phase == 1 || Phase == 0 && !Expanded ? 1f : 0f, VisibilityThresholds.Float);
@@ -117,6 +118,7 @@ internal sealed partial class TextFieldLayout : Panel
         _floatingLabelStyle.PropertyChanged -= LabelEndpointChanged;
         _nameBinding?.Dispose(); _helpBinding?.Dispose();
         _nameBinding = _helpBinding = null;
+        _attachScope?.Dispose(); _attachScope = null;
         _owner = null;
         base.OnDetachedFromVisualTree(e);
     }
@@ -262,8 +264,8 @@ internal sealed partial class TextFieldLayout : Panel
 
     private void Retarget()
     {
-        if (!this.IsAttachedToVisualTree() || _pending) return;
-        var motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {

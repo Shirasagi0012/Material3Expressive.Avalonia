@@ -21,6 +21,7 @@ internal sealed class ScrollBarThumb : Border
     private readonly SolidColorBrush _brush = new();
     private ScrollBar? _owner;
     private Thumb? _thumb;
+    private AnimationChildScope? _attachScope;
     private Animatable<Color>? _color;
     private bool _dragging, _pending;
     internal Color PaintedColor => _brush.Color;
@@ -41,7 +42,7 @@ internal sealed class ScrollBarThumb : Border
             _thumb.DragStarted += DragStarted;
             _thumb.DragCompleted += DragCompleted;
         }
-        var motion = AnimationScope.Get(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("ScrollBar thumb");
         _brush.Color = ColorTarget;
         _color = new Animatable<Color>(new ColorConverter(), ColorTarget, default);
         motion.SubscribeValue(_color, value => _brush.Color = value);
@@ -55,6 +56,7 @@ internal sealed class ScrollBarThumb : Border
             _thumb.DragStarted -= DragStarted;
             _thumb.DragCompleted -= DragCompleted;
         }
+        _attachScope?.Dispose(); _attachScope = null;
         _color = null;
         _owner = null;
         _thumb = null;
@@ -74,9 +76,9 @@ internal sealed class ScrollBarThumb : Border
 
     private void UpdateTarget()
     {
-        if (!this.IsAttachedToVisualTree() || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
-        var motion = AnimationScope.Get(this);
         // Like animateColorAsState, coalesce property changes before retargeting the animation.
         _ = motion.Launch(async ct =>
         {

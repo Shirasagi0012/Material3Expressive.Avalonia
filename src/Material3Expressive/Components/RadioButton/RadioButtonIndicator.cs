@@ -39,6 +39,7 @@ internal sealed class RadioButtonIndicator : Control
     public static readonly StyledProperty<Color> DisabledUnselectedColorProperty = AvaloniaProperty.Register<RadioButtonIndicator, Color>(nameof(DisabledUnselectedColor));
     public Color DisabledUnselectedColor { get => GetValue(DisabledUnselectedColorProperty); set => SetValue(DisabledUnselectedColorProperty, value); }
 
+    private AnimationChildScope? _attachScope;
     private Animatable<float>? _dotRadius;
     private Animatable<Color>? _color;
     private bool _pending, _colorsEnabled;
@@ -63,7 +64,7 @@ internal sealed class RadioButtonIndicator : Control
             interaction.IsRippleBounded = false;
             interaction.RippleRadius = 20;
         }
-        var motion = AnimationScope.Get(this);
+        var motion = _attachScope = AnimationScope.Get(this).CreateChild("RadioButton indicator");
         _dotRadius = new Animatable<float>(new FloatConverter(), RadiusTarget, VisibilityThresholds.Float);
         _color = new Animatable<Color>(new ColorConverter(), ColorTarget, default);
         _colorsEnabled = IsEffectivelyEnabled;
@@ -73,6 +74,7 @@ internal sealed class RadioButtonIndicator : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _attachScope?.Dispose(); _attachScope = null;
         _dotRadius = null;
         _color = null;
         _pending = false;
@@ -90,9 +92,9 @@ internal sealed class RadioButtonIndicator : Control
 
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
-        var motion = AnimationScope.Get(this);
         // animate*AsState retargets after recomposition. Coalesce property/token changes in that frame.
         _ = motion.Launch(async ct =>
         {
