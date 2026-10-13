@@ -1,3 +1,5 @@
+> **历史设计稿**：本文早于 2026-10 的动画基础重构，仅作历史参考，名称与行为可能已过时。现行用法见 [`docs/usage`](../usage/README.md)；迁移见 [迁移指南](../usage/migration-from-visual-animation-scope.md)。主要改名：`VisualAnimationScope` → `AnimationScope`（`AnimationScope.Get`），`SharedAnimationFrameClock` → 内部 `FrameClock`，`IAnimationFrameClock` → `IFrameSource`，`AnimationScope<T>` → `AnimationRun<T>`。
+
 # LookaheadBoundary 历史设计说明
 
 状态：历史设计，已由 [局部 Lookahead 设计](LOCAL_LOOKAHEAD_DESIGN.md) 和

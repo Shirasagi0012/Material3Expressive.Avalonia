@@ -1,3 +1,5 @@
+> **历史设计稿**：本文早于 2026-10 的动画基础重构，仅作历史参考，名称与行为可能已过时。现行用法见 [`docs/usage`](../usage/README.md)；迁移见 [迁移指南](../usage/migration-from-visual-animation-scope.md)。主要改名：`VisualAnimationScope` → `AnimationScope`（`AnimationScope.Get`），`SharedAnimationFrameClock` → 内部 `FrameClock`，`IAnimationFrameClock` → `IFrameSource`，`AnimationScope<T>` → `AnimationRun<T>`。
+
 # SharedTransition 后续实施计划
 
 制定日期：2026-09-09。当前基线：355 项测试通过；正式库已有准备事务、Session、双端保留、自动匹配、布局重定向与 generation / layout revision 校验。
