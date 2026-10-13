@@ -10,30 +10,6 @@ namespace ComposeAnimation.Test;
 /// <summary>D17 for <see cref="LookaheadSize"/> and <see cref="LookaheadPosition"/> inside one lookahead context.</summary>
 public sealed class LookaheadRebuildResumeTest
 {
-    private sealed class Fixture : IDisposable
-    {
-        public ManualFrameSource Frames { get; } = new();
-        public LookaheadStackPanel Left { get; } = new() { Orientation = Orientation.Vertical };
-        public LookaheadStackPanel Right { get; } = new() { Orientation = Orientation.Vertical };
-        public LookaheadStackPanel Outer { get; }
-        public LookaheadRoot Root { get; }
-        public Window Window { get; }
-        public Fixture(Control content)
-        {
-            Left.Children.Add(content);
-            Outer = new LookaheadStackPanel { Orientation = Orientation.Vertical, Children = { Left, Right } };
-            Root = new LookaheadRoot { Width = 500, Height = 400, Child = Outer, UseLayoutRounding = false };
-            Window = new AnimationTestWindow(Frames) { Width = 600, Height = 500, Content = Root };
-            Window.Show(); Layout();
-            AnimationScope.Get(Left); AnimationScope.Get(Right); AnimationScope.Get(content);
-        }
-        public void Move(Control content) { Left.Children.Remove(content); Right.Children.Add(content); }
-        public Point Position(Control node) => node.TranslatePoint(default, Root)!.Value;
-        public void Layout() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); }
-        public void Step(int ms) { Layout(); Frames.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Layout(); }
-        public void Dispose() => Window.Close();
-    }
-
     private static LookaheadSize Sized() => new()
     {
         Child = new LookaheadTextBlock { Text = "Text" },
@@ -45,13 +21,13 @@ public sealed class LookaheadRebuildResumeTest
     private static List<double> SizeRun(bool move, int frames)
     {
         var size = Sized();
-        using var f = new Fixture(size);
+        using var f = new ReparentFixture(size, lookahead: true);
         size.TargetSize = new Size(200, 140);
         f.Step(0);
         var samples = new List<double>();
         for (var i = 0; i < frames; i++)
         {
-            if (move && i == 4) f.Move(size);
+            if (move && i == 4) f.Move();
             f.Step(16);
             samples.Add(size.Bounds.Height);
         }
@@ -75,10 +51,10 @@ public sealed class LookaheadRebuildResumeTest
     public Task LookaheadSize_DetachedWithoutReturn_IsReleasedAtTheDrain() => OnUi(() =>
     {
         var size = Sized();
-        using var f = new Fixture(size);
+        using var f = new ReparentFixture(size, lookahead: true);
         size.TargetSize = new Size(200, 140);
         f.Step(0); f.Step(16);
-        f.Left.Children.Remove(size);
+        f.Detach();
         Assert.True(f.Frames.PendingFrameCount > 0);
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(0, f.Frames.PendingFrameCount);
@@ -88,11 +64,11 @@ public sealed class LookaheadRebuildResumeTest
     public Task LookaheadSize_ReentrantGetInScopeChanged_LeavesOneLiveRun() => OnUi(() =>
     {
         var size = Sized();
-        using var f = new Fixture(size);
+        using var f = new ReparentFixture(size, lookahead: true);
         AnimationScope.AddScopeChangedHandler(size, (_, e) => { if (e.NewScope is not null) _ = AnimationScope.Get(size); });
         size.TargetSize = new Size(200, 140);
         f.Step(0); f.Step(16); f.Step(16);
-        f.Move(size);
+        f.Move();
         f.Step(16);
         Assert.Equal(1, f.Frames.PendingFrameCount);
         for (var i = 0; i < 20; i++) f.Step(16);
@@ -113,13 +89,13 @@ public sealed class LookaheadRebuildResumeTest
         var spacer = new Border { Width = 40, Height = 0 };
         var moving = Moving();
         var host = new LookaheadStackPanel { Orientation = Orientation.Vertical, Children = { spacer, moving } };
-        using var f = new Fixture(host);
+        using var f = new ReparentFixture(host, lookahead: true);
         // Start a run, then move the moving node's container mid-flight.
         spacer.Height = 160; f.Layout();
         f.Step(16); f.Step(16); f.Step(16);
         var before = f.Position(moving).Y;
         Assert.InRange(before, 1, 159);
-        f.Left.Children.Remove(host); f.Right.Children.Add(host);
+        f.Move();
         f.Step(16);
         var after = f.Position(moving).Y;
         Assert.InRange(after - before, 0, 16.01); // continues from where it was, no snap
@@ -133,9 +109,9 @@ public sealed class LookaheadRebuildResumeTest
         var spacer = new Border { Width = 40, Height = 0 };
         var moving = Moving();
         var host = new LookaheadStackPanel { Orientation = Orientation.Vertical, Children = { spacer, moving } };
-        using var f = new Fixture(host);
+        using var f = new ReparentFixture(host, lookahead: true);
         spacer.Height = 160; f.Layout(); f.Step(16);
-        f.Left.Children.Remove(host);
+        f.Detach();
         Assert.True(f.Frames.PendingFrameCount > 0);
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(0, f.Frames.PendingFrameCount);

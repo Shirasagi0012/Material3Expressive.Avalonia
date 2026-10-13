@@ -16,7 +16,7 @@ public partial class AnimatedBoundsTest
     }
 
     [Fact]
-    public Task Reparent_MidFlight_OutsideAMove_ResumesWithoutJump() => OnUi(() =>
+    public Task AnimatedBounds_ReparentedMidFlightOutsideAMove_ResumesWithoutJump() => OnUi(() =>
     {
         var (card, f, left, right) = ReparentScene();
         using var _ = f;
@@ -38,7 +38,7 @@ public partial class AnimatedBoundsTest
     });
 
     [Fact]
-    public Task Reparent_DetachedWithoutReturn_IsReleasedAtTheDrain() => OnUi(() =>
+    public Task AnimatedBounds_DetachedWithoutReturn_IsReleasedAtTheDrain() => OnUi(() =>
     {
         var (card, f, left, _) = ReparentScene();
         using var __ = f;
@@ -51,7 +51,7 @@ public partial class AnimatedBoundsTest
     });
 
     [Fact]
-    public Task Reparent_ReentrantGetInScopeChanged_LeavesOneLiveRunPerBoundary() => OnUi(() =>
+    public Task AnimatedBounds_ReentrantGetInScopeChanged_LeavesOneLiveRunPerBoundary() => OnUi(() =>
     {
         var (card, f, left, right) = ReparentScene();
         using var _ = f;
@@ -65,7 +65,7 @@ public partial class AnimatedBoundsTest
     });
 
     [Fact]
-    public Task ResetAnimation_AfterReparent_StillResetsImmediately() => OnUi(() =>
+    public Task AnimatedBounds_ResetAnimationAfterReparent_StillResetsImmediately() => OnUi(() =>
     {
         var (card, f, _, _) = ReparentScene();
         using var __ = f;
@@ -76,7 +76,7 @@ public partial class AnimatedBoundsTest
     });
 
     [Fact]
-    public Task Reparent_IntoAMotionFrame_OutsideAMove_ReleasesInsteadOfResumingWithAWrongBasis() => OnUi(() =>
+    public Task AnimatedBounds_ReparentedIntoAMotionFrameOutsideAMove_ReleasesInsteadOfResumingWithAWrongBasis() => OnUi(() =>
     {
         var card = Bounds(Text());
         var (scene, left, right) = MoveSlots(card);
