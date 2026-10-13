@@ -56,7 +56,7 @@ public class RuntimeScopeBindingTest
     });
 
     [Fact]
-    public Task Transition_ScopeDurationScaleChangeMidRun_AppliesFromNextFrameWithoutJump() => OnUi(async () =>
+    public Task Transition_ScopeDurationScaleChangeMidRun_RecalculatesFromStart() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
@@ -71,12 +71,13 @@ public class RuntimeScopeBindingTest
         clock.Pump(Ms(0));
         clock.Pump(Ms(40));
         Assert.Equal(40, value.Value, 8);
+        // A scope scale change recalculates play time from the start (upstream parity): 80 / 2.
         scope.DurationScale = 2;
         clock.Pump(Ms(40));
-        Assert.Equal(60, value.Value, 8);
-        transition.DurationScale = 0.5; // own scale times scope scale: 1
+        Assert.Equal(40, value.Value, 8);
+        transition.DurationScale = 0.5; // own scale times scope scale: 1, so 100 / 1 finishes
         clock.Pump(Ms(20));
-        Assert.Equal(80, value.Value, 8);
+        Assert.Equal(100, value.Value, 8);
         cts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
         scope.Dispose();

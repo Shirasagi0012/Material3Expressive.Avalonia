@@ -222,9 +222,10 @@ public abstract class Transition : ObservableObject, IDisposable
         var token = linked.Token;
         try
         {
-            // No PlayTimeAccumulator here: upstream parity. A scale change recalculates play time
-            // from the start (_startTime anchor), which the accumulator's per-delta math would not
-            // (TransitionBoundaryTest.ScaleChange_RecalculatesPlayTimeFromStartAsUpstreamDoes).
+            // No PlayTimeAccumulator here: upstream parity. A change of the own or the scope scale
+            // recalculates play time from the start (_startTime anchor), which per-delta math would
+            // not (TransitionBoundaryTest.ScaleChange_RecalculatesPlayTimeFromStartAsUpstreamDoes,
+            // ScopeScaleChange_RecalculatesPlayTimeFromStart).
             // One token check per frame: here once, then after each frame wait. The change waits
             // observe the token themselves.
             token.ThrowIfCancellationRequested();
@@ -259,9 +260,9 @@ public abstract class Transition : ObservableObject, IDisposable
     internal void OnFrame(TimeSpan frameTime) => OnFrame(frameTime, scopeScale: null);
 
     /// <summary>
-    /// One frame. With a <paramref name="scopeScale"/> (a scope-driven run), play time accumulates
-    /// each frame delta divided by own scale x scope scale, so scale changes apply from the next
-    /// frame and a new run resumes from the stored play time. Same math as the former scope clock.
+    /// One frame. Play time is (frame - start) / (own scale x <paramref name="scopeScale"/>), so a
+    /// change of either scale recalculates play time from the start anchor (upstream parity). A new
+    /// run re-anchors the start from the stored play time, so it resumes rather than restarts.
     /// </summary>
     private void OnFrame(TimeSpan frameTime, double? scopeScale)
     {
@@ -285,12 +286,7 @@ public abstract class Transition : ObservableObject, IDisposable
                 _startTime = frameTime - TimeSpan.FromTicks(checked((long)(_playTime.Ticks * scale)));
             if (scale > 0)
             {
-                if (scopeScale is not null)
-                {
-                    if (!AnimationConstants.IsUnspecified(_lastFrameTime))
-                        _playTime += TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _lastFrameTime).Ticks / scale)));
-                }
-                else _playTime = TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _startTime).Ticks / scale)));
+                _playTime = TimeSpan.FromTicks(checked((long)Math.Round((frameTime - _startTime).Ticks / scale)));
             }
             _lastFrameTime = frameTime;
             Pulse(_playTime, scale == 0);

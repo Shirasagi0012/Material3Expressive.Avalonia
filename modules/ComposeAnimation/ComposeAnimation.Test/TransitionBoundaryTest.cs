@@ -124,6 +124,31 @@ public class TransitionBoundaryTest
     }
 
     [Fact]
+    public Task ScopeScaleChange_RecalculatesPlayTimeFromStart() => OnUi(async () =>
+    {
+        // Amendment A2 repro: 1000 ms linear 0 -> 300, scope scale 1 -> 2 after 30 frames.
+        var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var root = new Transition<bool>(false);
+        var value = root.AnimateDouble(s => s ? 300 : 0, _ => Tween(1000));
+        root.UpdateTarget(true);
+        using var cts = new CancellationTokenSource();
+        var run = root.RunAsync(window.AnimationRoot, cts.Token);
+        var frame = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60);
+        clock.Pump(Ms(0));
+        for (var i = 0; i < 29; i++) clock.Pump(frame);
+        Assert.InRange(value.Value, 144, 146);
+        AnimationScope.SetDurationScale(window, 2);
+        clock.Pump(frame);
+        clock.Pump(frame);
+        // 31 frames since the start / 2 = 258 ms of play time: about 77, not the accumulated 150.
+        Assert.InRange(value.Value, 76, 79);
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        window.Close();
+    });
+
+    [Fact]
     public Task CancelledLoop_CanResumeWithoutCountingInactiveTime() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();
