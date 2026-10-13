@@ -50,3 +50,9 @@ dotnet run --project Catalog/Catalog.csproj -- --verify-ui artifacts/catalog-ui
 - 用 `[DemoAction]` 标记公开、无参数、返回 `void` 或 `Task` 的验证方法。通过 `AdvanceAsync`、`CaptureAsync`、`Assert`、`Click` 复用宿主设施。等待动画收敛应有轮询上限。
 
 `DemoFrame` 负责实例生命周期与展开栏，`CatalogWindow` 负责导航与主题，`CatalogTheme.axaml` 维护统一的视觉样式。已有 demo ID 与动作名称保持稳定，可继续使用原来的调用方式。
+
+## 弹层与新增页面
+
+- `popup/flyout`（显隐过渡）：`Flyout` 中的 `AnimatedVisibility`。`--run` 使用真实桌面平台，弹层是真实的 `PopupRoot`，与窗口共用 `ProbeFrameSource`，因此动作是确定性的。页面只做公开可见的检查（推进、途中关闭后重新打开、所有者上的 `DurationScale` 继承到弹层内容）；内容 Scope 的父级身份与 `AnimationFailed` 计数需要内部 API，由单元测试覆盖（`AnimationScopeRebuildTest.FlyoutContent_ParentsToTheOwnerControlsScope` 等）。
+- `lookahead/size-position`（布局动画）：`LookaheadSize` 与 `LookaheadPosition` 的重排、途中改尺寸与运行中换栏。
+- `engine/infinite-transition`（时间控制）：`InfiniteTransition` 与 `Transition` 在 0.5×/1×/3× 速度下；改速时 `InfiniteTransition` 从初值重新开始，`Transition` 按新缩放从起点重算播放时间（与上游一致）。
