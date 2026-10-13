@@ -130,7 +130,7 @@ public class SwitchTests
             box.IsChecked = !state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
             box.IsChecked = state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
         }
-        Animated.SetDurationScale(window, durationScale);
+        AnimationScope.SetDurationScale(window, durationScale);
         var clicks = 0; box.Click += (_, _) => clicks++;
         var moving = Moving(box);
         var start = moving.TranslatePoint(new Point(moving.Bounds.Width / 2, moving.Bounds.Height / 2), window)!.Value;
@@ -160,7 +160,7 @@ public class SwitchTests
         Advance(800 * durationScale);
         Assert.Equal(targetCenter, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
         Assert.Equal(box.IsChecked == true ? 24 : 16, Thumb(box).PaintedSize);
-        Assert.Equal(0, clicks); window.Close(); Assert.Null(window.MotionRoot.LastError);
+        Assert.Equal(0, clicks); window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
 
         void Advance(double milliseconds, Action? check = null)
         {
@@ -192,7 +192,7 @@ public class SwitchTests
         clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
         Assert.Equal(!state, box.IsChecked);
         Assert.Equal(!state ? 36 : 16, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
 
         Point Drag(double distance)
         {
@@ -234,7 +234,7 @@ public class SwitchTests
         }
         if (!unload) Assert.Equal(16, Thumb(box).PaintedOffset + Thumb(box).PaintedSize / 2);
         Assert.False(box.IsChecked); window.Close();
-        Assert.Equal(0, window.MotionRoot.ActiveTaskCount); Assert.Null(window.MotionRoot.LastError);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveTaskCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -296,7 +296,7 @@ public class SwitchTests
             box.IsChecked = !state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
             box.IsChecked = state; clock.SendFrame(clock.Now); window.UpdateLayout(); Advance(800);
         }
-        Animated.SetDurationScale(window, durationScale);
+        AnimationScope.SetDurationScale(window, durationScale);
         var controller = MaterialInteraction.GetOrCreate(box);
         var moving = Moving(box);
         var start = moving.TranslatePoint(new Point(moving.Bounds.Width / 2, moving.Bounds.Height / 2), window)!.Value;
@@ -311,7 +311,7 @@ public class SwitchTests
         Advance(32 * durationScale); AssertCentered();
         Advance(64 * durationScale); AssertCentered();
         Advance(800 * durationScale); Assert.Equal(0, controller.RippleCount);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
 
         void AssertCentered()
         {
@@ -407,9 +407,9 @@ public class SwitchTests
         box.Template = template; window.UpdateLayout(); Assert.Equal(16, Thumb(box).PaintedSize);
         var root = window.Content; window.Content = null; window.UpdateLayout();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount); Assert.Equal(0, window.MotionRoot.ActiveTaskCount);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveTaskCount);
         window.Content = root; window.UpdateLayout(); Assert.NotNull(Thumb(box));
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     static SwitchThumbLayout Thumb(ToggleSwitch box) => box.GetVisualDescendants().OfType<SwitchThumbLayout>().Single();

@@ -142,7 +142,7 @@ public class AppBarCompositionTests
             chrome.SetComposition(offsets, appearance, colors);
             state.HeightOffset = -range * .65f - .125f; window.UpdateLayout();
             Assert.Equal(-range, state.HeightOffsetLimit);
-            var settling = behavior.SettleAsync(0, MotionTestClockScope.CurrentClock!);
+            var settling = behavior.SettleAsync(0, window.MotionRoot);
             clock.Track(settling); clock.SendFrame(TimeSpan.Zero);
             for (var frame = 0; frame < 120 && !settling.IsCompleted; frame++)
             {

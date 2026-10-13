@@ -45,7 +45,7 @@ public class SnackbarHostTests
         Advance(clock, window, 30);
         Assert.Empty(Layers(host));
         Assert.Equal(0, clock.PendingFrameCount);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -69,7 +69,7 @@ public class SnackbarHostTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => showing);
         Advance(clock, window, 30);
         Assert.Empty(Layers(host));
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -100,7 +100,7 @@ public class SnackbarHostTests
         Assert.Equal(SnackbarResult.Dismissed, await second);
         cancellation.Cancel(); await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
         Advance(clock, window, 30);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]

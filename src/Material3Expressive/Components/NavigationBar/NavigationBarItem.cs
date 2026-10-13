@@ -109,9 +109,11 @@ public class NavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _alpha = _size = null;
+        // The motion lease follows the template parts it samples. Replacing the template
+        // cancels in-flight selection work before those parts are cleared.
+        _attachScope?.Dispose(); _attachScope = null;
+        _alpha = _size = null; _iconColor = _textColor = null; _targetsPending = false;
         base.OnApplyTemplate(e);
-        _targetsPending = false;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<NavigationBarItemLayout>("PART_Layout");
         if (_layout is not null) _layout.PropertyChanged += MotionConfigurationChanged;
@@ -125,7 +127,6 @@ public class NavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _attachScope = AnimationScope.Get(this).CreateChild("Navigation bar item");
         if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
         InitializeMotion();
     }
@@ -166,9 +167,13 @@ public class NavigationBarItem : Button
 
     private void InitializeMotion()
     {
-        if (_layout is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion
-            || motion.Lifetime.IsCancellationRequested || _alpha is not null)
+        if (_layout is null || !this.IsAttachedToVisualTree() || _alpha is not null)
             return;
+        if (_attachScope is not { } motion || motion.Lifetime.IsCancellationRequested)
+        {
+            _attachScope?.Dispose();
+            motion = _attachScope = AnimationScope.Get(this).CreateChild("Navigation bar item");
+        }
         _alpha = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         _size = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         _iconColor = new Animatable<Color>(new ColorConverter(), IconTarget, default);

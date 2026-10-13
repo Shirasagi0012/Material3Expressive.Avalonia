@@ -88,7 +88,7 @@ public class AppBarOverflowTests
         Assert.True(bar.Layout!.Menu.IsPresented);
         window.Content = null; Flush(window); Assert.False(bar.Layout.Menu.IsPresented);
         window.Content = bar; Advance(clock, window, 80); Assert.True(bar.Layout.Menu.IsPresented);
-        window.Close(); Advance(clock, window, 1); Assert.Equal(0, window.MotionRoot.ActiveChildCount);
+        window.Close(); Advance(clock, window, 1); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
     }
 
     [AvaloniaFact]
@@ -162,7 +162,7 @@ public class AppBarOverflowTests
         Assert.Equal(0, bar.Layout.VisibleCount);
         Assert.Equal(3, bar.Layout.Menu.Items.Count);
         window.Close(); Advance(clock, window, 1);
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
     }
 
     [AvaloniaFact]

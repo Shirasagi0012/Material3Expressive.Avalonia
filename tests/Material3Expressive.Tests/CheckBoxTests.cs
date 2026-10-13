@@ -140,7 +140,7 @@ public class CheckBoxTests
         Assert.Equal(1, Part(box).CenterGravitation);
         Assert.Equal(0, clock.PendingFrameCount);
         window.Close();
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]
@@ -172,12 +172,12 @@ public class CheckBoxTests
         var root = window.Content;
         window.Content = null; window.UpdateLayout();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount);
-        Assert.Equal(0, window.MotionRoot.ActiveTaskCount);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveTaskCount);
         window.Content = root; window.UpdateLayout();
         Assert.NotNull(Part(box));
         window.Close();
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     static CheckBoxIndicator Part(CheckBox box) => box.GetVisualDescendants().OfType<CheckBoxIndicator>().Single();

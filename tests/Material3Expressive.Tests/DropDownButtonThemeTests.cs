@@ -264,9 +264,9 @@ public sealed class DropDownButtonThemeTests
 
     static Color? Brush(IBrush? brush) => (brush as ISolidColorBrush)?.Color;
 
-    static (AnimationTestWindow, ManualAnimationFrameClock) Show(params Control[] controls)
+    static (AnimationTestWindow, ManualFrameSource) Show(params Control[] controls)
     {
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = new AnimationTestWindow(clock) { Width = 640, Height = 480 };
         // Headless popups need an overlay layer; the bare test window has no theme template.
         window.Template = new FuncControlTemplate<Window>((owner, scope) =>
@@ -286,7 +286,7 @@ public sealed class DropDownButtonThemeTests
         Draw(window); return (window, clock);
     }
 
-    static void Advance(Window window, ManualAnimationFrameClock clock, int frames)
+    static void Advance(Window window, ManualFrameSource clock, int frames)
     {
         for (var i = 0; i < frames; i++)
         {
@@ -295,7 +295,7 @@ public sealed class DropDownButtonThemeTests
         }
     }
 
-    static void Settle(Window window, ManualAnimationFrameClock clock) => Advance(window, clock, 90);
+    static void Settle(Window window, ManualFrameSource clock) => Advance(window, clock, 90);
 
     static void Draw(Window window)
     {

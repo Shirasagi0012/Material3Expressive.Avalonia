@@ -22,7 +22,7 @@ public sealed class AvaloniaHost : IAsyncDisposable
     static readonly FieldInfo NextCommit = CompositionBatchField("_nextCommit");
     static readonly FieldInfo PendingBatch = CompositionBatchField("_pendingBatch");
     readonly CaptureWriter writer;
-    readonly ManualAnimationFrameClock clock = new(Dispatcher.UIThread.VerifyAccess);
+    readonly ManualFrameSource clock = new(Dispatcher.UIThread.VerifyAccess);
     readonly ManualTimeProvider? delayTime;
     public AnimationTestWindow Window { get; }
     public long TimeUs { get; private set; } = -2000;
@@ -172,10 +172,10 @@ public sealed class AvaloniaHost : IAsyncDisposable
         Window.Close();
         try
         {
-            await Window.AnimationRoot.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
-            if (!Window.AnimationRoot.IsEnding || Window.AnimationRoot.ActiveTaskCount != 0
-                                               || Window.AnimationRoot.ActiveChildCount != 0 ||
-                                               Window.AnimationRoot.PendingAnimationCount != 0)
+            await Window.AnimationRoot.Diagnostics.EndAsync().WaitAsync(TimeSpan.FromSeconds(5));
+            if (!Window.AnimationRoot.Diagnostics.IsEnding || Window.AnimationRoot.Diagnostics.ActiveTaskCount != 0
+                                               || Window.AnimationRoot.Diagnostics.ActiveChildCount != 0 ||
+                                               Window.AnimationRoot.Diagnostics.PendingAnimationCount != 0)
                 writer.Errors.Add("Animation root retained work after close.");
         }
         finally

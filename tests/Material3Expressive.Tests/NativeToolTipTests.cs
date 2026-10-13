@@ -162,7 +162,7 @@ public class NativeToolTipTests
     sealed class Host : IDisposable
     {
         private readonly Border _anchor;
-        // An ordinary Window intentionally has no VisualAnimationScope.Initialize call.
+        // An ordinary Window intentionally has no AnimationScope.Initialize call.
         public Window Window { get; } = new() { Width = 400, Height = 240 };
         public Point Center => _anchor.TranslatePoint(new Point(20, 12), Window)!.Value;
         public ToolTip Tip => Assert.IsType<ToolTip>(_anchor.GetValue(ToolTipDiagnostics.ToolTipProperty));

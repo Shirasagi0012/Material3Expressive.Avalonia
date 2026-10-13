@@ -71,8 +71,8 @@ public sealed class LoadingIndicatorTests
         var old = indicator.AnimationScope!;
         var sibling = host.Window.AnimationRoot.DelayAsync(TimeSpan.FromSeconds(2));
         host.Root.Children.Remove(indicator); host.Draw();
-        Assert.True(old.IsEnding); Assert.Null(indicator.AnimationScope);
-        Assert.False(host.Window.AnimationRoot.IsEnding); Assert.False(sibling.IsCompleted);
+        Assert.True(old.Diagnostics.IsEnding); Assert.Null(indicator.AnimationScope);
+        Assert.False(host.Window.AnimationRoot.Diagnostics.IsEnding); Assert.False(sibling.IsCompleted);
         Assert.Equal(1, host.Time.ActiveTimerCount);
         host.Root.Children.Add(indicator); host.Draw();
         Assert.NotSame(old, indicator.AnimationScope);
@@ -192,7 +192,7 @@ public sealed class LoadingIndicatorTests
 
     sealed class Host : IDisposable
     {
-        public ManualAnimationFrameClock Clock { get; } = new(Dispatcher.UIThread.VerifyAccess);
+        public ManualFrameSource Clock { get; } = new(Dispatcher.UIThread.VerifyAccess);
         public ManualTimeProvider Time { get; } = new(Dispatcher.UIThread.VerifyAccess);
         public AnimationTestWindow Window { get; }
         public Grid Root { get; } = new();
@@ -220,7 +220,7 @@ public sealed class LoadingIndicatorTests
         public void Dispose()
         {
             Window.Close(); Dispatcher.UIThread.RunJobs();
-            Assert.Equal(0, Clock.PendingFrameCount); Assert.Equal(0, Time.ActiveTimerCount); Assert.Null(Window.AnimationRoot.LastError);
+            Assert.Equal(0, Clock.PendingFrameCount); Assert.Equal(0, Time.ActiveTimerCount); Assert.Null(Window.AnimationRoot.Diagnostics.LastError);
             Clock.Dispose();
         }
     }

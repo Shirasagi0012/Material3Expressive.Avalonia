@@ -120,7 +120,7 @@ public class TabRowTests
             row.Template = new FuncControlTemplate<TabRow>((_, _) => new Border()); row.ApplyTemplate(); window.UpdateLayout();
             clock.SendFrame(TimeSpan.FromMilliseconds(32)); Assert.Equal(0, clock.PendingFrameCount); Assert.Empty(row.TabPositions);
             row.ClearValue(TemplatedControl.TemplateProperty); row.ApplyTemplate(); window.UpdateLayout(); Assert.Equal(2, row.TabPositions.Count);
-            Assert.Equal(1, row.SelectedIndex); Assert.Null(window.MotionRoot.LastError);
+            Assert.Equal(1, row.SelectedIndex); Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -187,7 +187,7 @@ public class TabRowTests
             Assert.Equal(0, scroller.Offset.X);
             row.SelectedIndex = 7; window.UpdateLayout(); clock.SendFrame(TimeSpan.FromMilliseconds(976));
             window.Content = null; window.UpdateLayout(); clock.SendFrame(TimeSpan.FromMilliseconds(992));
-            Assert.Equal(0, clock.PendingFrameCount); Assert.Null(window.MotionRoot.LastError);
+            Assert.Equal(0, clock.PendingFrameCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
             Assert.Empty(row.TabPositions);
             window.Content = root; window.UpdateLayout(); Assert.Equal(8, row.TabPositions.Count);
         }

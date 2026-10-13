@@ -23,14 +23,14 @@ internal abstract class AppBarNestedScrollConnection
 
     public virtual ValueTask<Vector> OnPreFlingAsync(
         Vector available,
-        IAnimationFrameClock clock,
+        FrameScope clock,
         CancellationToken cancellationToken = default) =>
         ValueTask.FromResult(default(Vector));
 
     public virtual ValueTask<Vector> OnPostFlingAsync(
         Vector consumed,
         Vector available,
-        IAnimationFrameClock clock,
+        FrameScope clock,
         CancellationToken cancellationToken = default) =>
         ValueTask.FromResult(default(Vector));
 }
@@ -81,7 +81,7 @@ internal static class AppBarNestedScrollConnectionExtensions
         public override async ValueTask<Vector> OnPostFlingAsync(
             Vector consumed,
             Vector available,
-            IAnimationFrameClock clock,
+            FrameScope clock,
             CancellationToken cancellationToken = default)
         {
             if (available.Y > 0)
@@ -106,7 +106,7 @@ internal static class AppBarNestedScrollConnectionExtensions
         public override async ValueTask<Vector> OnPostFlingAsync(
             Vector consumed,
             Vector available,
-            IAnimationFrameClock clock,
+            FrameScope clock,
             CancellationToken cancellationToken = default)
         {
             var state = owner.State;

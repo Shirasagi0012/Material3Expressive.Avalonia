@@ -92,7 +92,7 @@ public class DialogTests
         Assert.Equal(2, dialog.ExitingPresentationCount); Assert.True(dialog.IsPresented);
         window.Content = null; Flush(window);
         Assert.Equal(0, dialog.ExitingPresentationCount); Assert.False(dialog.IsPresented);
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount); Assert.Null(window.MotionRoot.LastError);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -232,7 +232,7 @@ public class DialogTests
         dialog.IsOpen = false; Flush(window);
         Assert.False(dialog.IsPresented);
         Assert.True(page.IsFocused);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -311,7 +311,7 @@ public class DialogTests
         window.Content = null; Flush(window);
         Assert.False(dialog.IsPresented); Assert.False(dialog.Popup.IsOpen);
         window.Content = root; Advance(clock, window, 20); Assert.True(dialog.IsPresented);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     internal static MotionTestWindow Show(Control content, double height = 300, bool fluent = false)

@@ -109,8 +109,8 @@ public class MenuTests
         Assert.True(check.IsVisible);
         flyout.Hide(); window.Close();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Null(window.MotionRoot.LastError);
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
     }
 
     [AvaloniaTheory]
@@ -289,9 +289,9 @@ public class MenuTests
         item.Template = template; Flush(window);
         Assert.Equal(new CornerRadius(12), Surface(item).EffectiveCornerRadius);
         flyout.Hide(); window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount);
-        Assert.Equal(0, window.MotionRoot.ActiveTaskCount);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveTaskCount);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]

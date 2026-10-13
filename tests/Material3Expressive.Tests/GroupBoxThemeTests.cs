@@ -224,7 +224,7 @@ public sealed class GroupBoxThemeTests
 
     static AnimationTestWindow Show(params Control[] controls)
     {
-        var window = new AnimationTestWindow(new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess)) { Width = 640, Height = 600 };
+        var window = new AnimationTestWindow(new ManualFrameSource(Dispatcher.UIThread.VerifyAccess)) { Width = 640, Height = 600 };
         window.Styles.Add(new MaterialTheme());
         var panel = new StackPanel { Margin = new Thickness(16), Spacing = 16 };
         foreach (var control in controls) panel.Children.Add(control);

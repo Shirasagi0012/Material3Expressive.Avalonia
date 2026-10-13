@@ -43,6 +43,9 @@ internal sealed class SwitchThumbLayout : Panel
     {
         base.OnAttachedToVisualTree(e);
         _attachScope = AnimationScope.Get(this).CreateChild("Switch thumb");
+        // A reparent rebuilds the owned scope on the next frame and ends this child.
+        // The replacement scope arrives through ScopeChanged while the thumb stays attached.
+        AnimationScope.AddScopeChangedHandler(this, ScopeRebuilt);
         _owner = (ToggleSwitch)TemplatedParent!;
         _checked = _owner.IsChecked == true;
         _interaction = MaterialInteraction.GetOrCreate(_owner);
@@ -65,6 +68,7 @@ internal sealed class SwitchThumbLayout : Panel
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
         if (_owner is { } owner)
         {
             owner.RemoveHandler(InputElement.PointerPressedEvent, InputChanged);
@@ -85,6 +89,17 @@ internal sealed class SwitchThumbLayout : Panel
         _nativeDragging = _dragging = _dragHandoff = false;
         _owner = null; _interaction = null;
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void ScopeRebuilt(object? sender, AnimationScopeChangedEventArgs e)
+    {
+        if (e.NewScope is not { } scope || !this.IsAttachedToVisualTree()) return;
+        _attachScope?.Dispose();
+        _updatePending = false;
+        var motion = _attachScope = scope.CreateChild("Switch thumb");
+        if (_sizeAnim is { } size) motion.SubscribeValue(size, value => { _sizePx = value; InvalidateMeasure(); });
+        if (_offsetAnim is { } offset) motion.SubscribeValue(offset, value => { _offsetPx = value; InvalidateMeasure(); });
+        ScheduleThumbUpdate();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

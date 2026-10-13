@@ -105,7 +105,7 @@ public class AppBarSmoothScrollTests
             scene.Viewer.Content = new Border { Height = 1200 };
             Render(scene.Window);
             Assert.Same(connection, GetSmoothConnection(scene.Scope, scene.Viewer));
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Window.Close(); }
     }
@@ -136,7 +136,7 @@ public class AppBarSmoothScrollTests
             Assert.Equal(0, scene.Viewer.Offset.Y);
             Assert.Equal(0, scene.Top.HeightOffset);
             Assert.Same(connection, GetSmoothConnection(scene.Scope, scene.Viewer));
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Window.Close(); }
     }
@@ -152,7 +152,7 @@ public class AppBarSmoothScrollTests
             uiToken = token;
             await Task.Delay(Timeout.Infinite, token);
             return default;
-        }, MotionTestClockScope.CurrentClock!);
+        }, scene.Window.MotionRoot);
         try
         {
             Assert.False(fling.IsCompleted);
@@ -166,7 +166,7 @@ public class AppBarSmoothScrollTests
             var bodyOffset = scene.Viewer.Offset.Y;
             Wheel(scene, -1);
             Assert.True(scene.Viewer.Offset.Y > bodyOffset);
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Scope.Interrupt(); scene.Window.Close(); }
     }
@@ -226,7 +226,7 @@ public class AppBarSmoothScrollTests
             Assert.Equal(0, scene.Top.HeightOffset);
             Assert.Equal(0, scene.Viewer.Offset.Y);
             Assert.Equal(0, connection.LastSnapshot.BodyOffset);
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Window.Close(); }
     }
@@ -349,7 +349,7 @@ public class AppBarSmoothScrollTests
             Assert.Equal(0, scene.Bottom.HeightOffset);
             Assert.Equal(0, scene.Viewer.Offset.Y);
             Assert.Equal(208, scene.Viewer.Viewport.Height);
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Window.Close(); }
     }
@@ -426,7 +426,7 @@ public class AppBarSmoothScrollTests
             Assert.True(chrome.CompositionEnabled);
             Wheel(scene, 1);
             Assert.Equal(0, scene.Top.HeightOffset);
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Window.Close(); }
     }
@@ -806,7 +806,7 @@ public class AppBarSmoothScrollTests
             Render(scene.Window);
             Assert.Equal(stopped, scene.Viewer.Offset.Y);
             Send(196, RawPointerEventType.TouchCancel, press);
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Window.Close(); }
     }
@@ -836,7 +836,7 @@ public class AppBarSmoothScrollTests
             Assert.Equal(top.State.HeightOffsetLimit, top.State.HeightOffset);
             Assert.True(bottom.State.HeightOffset < 0);
             Assert.True(viewer.Offset.Y > 0);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }
@@ -895,7 +895,7 @@ public class AppBarSmoothScrollTests
             Assert.Equal(replacement.HeightOffsetLimit, replacement.HeightOffset);
             Assert.Equal(-1, scene.Top.HeightOffset);
             Assert.Equal(-999, scene.Top.ContentOffset);
-            Assert.Null(scene.Window.MotionRoot.LastError);
+            Assert.Null(scene.Window.MotionRoot.Diagnostics.LastError);
         }
         finally { scene.Window.Close(); }
     }

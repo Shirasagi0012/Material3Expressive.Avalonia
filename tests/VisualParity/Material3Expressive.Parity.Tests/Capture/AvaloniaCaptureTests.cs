@@ -95,12 +95,12 @@ public partial class ParityTests
             var marker = new Border { Width = 18, Height = 18, Background = Brushes.Black };
             host.Mount(new Canvas { Children = { marker } });
             host.Frame(0);
-            var scope = VisualAnimationScope.Create(marker);
-            var value = scope.CreateAnimatable(0d);
+            var scope = AnimationScope.Get(marker);
+            var value = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
             scope.SubscribeValue(value, x => Canvas.SetLeft(marker, x));
             foreach (var target in new[] { 100d, 0d })
             {
-                _ = host.Window.AnimationRoot.Launch(ct => value.AnimateToAsync(target,
+                _ = host.Window.AnimationRoot.Launch(ct => value.AnimateToAsync(scope, target,
                     new TweenSpec<double>(TimeSpan.FromMilliseconds(100), easing: ComposeEasings.Linear), cancellationToken: ct));
                 foreach (var offset in new long[] { 16000, 40000, 80000 })
                 {

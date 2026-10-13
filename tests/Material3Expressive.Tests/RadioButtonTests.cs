@@ -148,7 +148,7 @@ public class RadioButtonTests
         window.Resources[MaterialTokens.Comp.RadioButton.SelectedColor] = Colors.Teal;
         clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromSeconds(1));
         Assert.Equal(Colors.Teal, Part(radio).PaintedColor);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -168,7 +168,7 @@ public class RadioButtonTests
         // The shared interaction controller commits the disabled state-layer cleanup on its next frame.
         clock.SendFrame(origin + TimeSpan.FromMilliseconds(49));
         Assert.Equal(0, clock.PendingFrameCount);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -185,7 +185,7 @@ public class RadioButtonTests
         // Keep the trailing bounce in animation state even when it has no positive painted radius.
         Assert.InRange(Part(radio).DotRadius, 0.01f, 0.02f);
         clock.SendFrame(origin + TimeSpan.FromMilliseconds(800)); Assert.Equal(0, Part(radio).DotRadius);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]
@@ -196,7 +196,7 @@ public class RadioButtonTests
         using var clock = new MotionTestClockScope();
         var radio = new RadioButton { IsChecked = true }; var window = Show(radio);
         window.Background = Brushes.White;
-        Animated.SetDurationScale(window, durationScale);
+        AnimationScope.SetDurationScale(window, durationScale);
         var center = Center(window, radio);
         // The central 10 DIP square contains the dot, but cannot touch the 9 DIP outer ring.
         bool DotIsPainted()
@@ -224,7 +224,7 @@ public class RadioButtonTests
             else Assert.False(disappeared, $"Dot reappeared at animation time {time} ms (duration scale {durationScale}).");
         }
         Assert.True(disappeared); Assert.Equal(0, Part(radio).DotRadius);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -245,9 +245,9 @@ public class RadioButtonTests
         radio.Template = template; window.UpdateLayout(); Assert.Equal(6, Part(radio).DotRadius);
         var root = window.Content; window.Content = null; window.UpdateLayout();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount); Assert.Equal(0, window.MotionRoot.ActiveTaskCount);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveTaskCount);
         window.Content = root; window.UpdateLayout(); Assert.Equal(6, Part(radio).DotRadius);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     static RadioButtonIndicator Part(RadioButton radio) => radio.GetVisualDescendants().OfType<RadioButtonIndicator>().Single();

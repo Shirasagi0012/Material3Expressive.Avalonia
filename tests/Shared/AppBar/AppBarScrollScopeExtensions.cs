@@ -24,7 +24,7 @@ internal static class AppBarScrollScopeExtensions
         return bottom + top;
     }
 
-    private static async ValueTask<Vector> PreFling(AppBarScrollScope scope, Vector available, IAnimationFrameClock clock, CancellationToken token)
+    private static async ValueTask<Vector> PreFling(AppBarScrollScope scope, Vector available, FrameScope clock, CancellationToken token)
     {
         var top = scope.TopScrollBehavior is { } topBehavior
             ? await topBehavior.GetNestedScrollConnection().OnPreFlingAsync(available, clock, token)
@@ -35,7 +35,7 @@ internal static class AppBarScrollScopeExtensions
         return top + bottom;
     }
 
-    private static async ValueTask<Vector> PostFling(AppBarScrollScope scope, Vector consumed, Vector available, IAnimationFrameClock clock, CancellationToken token)
+    private static async ValueTask<Vector> PostFling(AppBarScrollScope scope, Vector consumed, Vector available, FrameScope clock, CancellationToken token)
     {
         var bottom = scope.BottomScrollBehavior is { } bottomBehavior
             ? await bottomBehavior.GetNestedScrollConnection().OnPostFlingAsync(consumed, available, clock, token)
@@ -74,7 +74,7 @@ internal static class AppBarScrollScopeExtensions
     /// <summary>The synthetic content callback returns consumed velocity in physical px/s.
     /// Send each content-inertia delta through DispatchScroll with SideEffect.</summary>
     internal static async Task<Vector> DispatchFlingAsync(this AppBarScrollScope scope, Vector available,
-        Func<Vector, CancellationToken, Task<Vector>> consumeContent, IAnimationFrameClock clock,
+        Func<Vector, CancellationToken, Task<Vector>> consumeContent, FrameScope clock,
         CancellationToken cancellationToken = default)
     {
         var scopes = new[] { scope }

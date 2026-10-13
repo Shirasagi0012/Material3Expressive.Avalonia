@@ -99,6 +99,9 @@ public class ShortNavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
+        // The motion lease follows the template parts it samples. Replacing the template
+        // cancels in-flight selection work before those parts are cleared.
+        _attachScope?.Dispose(); _attachScope = null;
         _selection = null; _pending = false;
         base.OnApplyTemplate(e);
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
@@ -114,8 +117,8 @@ public class ShortNavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _attachScope = AnimationScope.Get(this).CreateChild("Short navigation item");
-        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; } InitializeMotion();
+        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
+        InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -161,8 +164,12 @@ public class ShortNavigationBarItem : Button
     }
     private void InitializeMotion()
     {
-        if (_layout is null || _selection is not null || !this.IsAttachedToVisualTree()
-            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
+        if (_layout is null || _selection is not null || !this.IsAttachedToVisualTree()) return;
+        if (_attachScope is not { } scope || scope.Lifetime.IsCancellationRequested)
+        {
+            _attachScope?.Dispose();
+            scope = _attachScope = AnimationScope.Get(this).CreateChild("Short navigation item");
+        }
         _selection = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         scope.SubscribeValue(_selection, value =>
         {

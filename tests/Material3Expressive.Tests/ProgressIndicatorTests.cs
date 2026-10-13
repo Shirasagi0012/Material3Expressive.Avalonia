@@ -8,6 +8,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
 using ComposeAnimation;
+using ComposeAnimation.Runtime;
 using ComposeAnimation.TestSupport;
 using Material3Expressive.Components;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -29,7 +30,7 @@ public sealed class ProgressIndicatorTests
     public void DefaultSize_UsesSoftConstraintsAndSupportsExplicitSize(string kind, double width, double height)
     {
         var indicator = Create(kind);
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = Show(clock, indicator);
         Assert.Equal(new Size(width, height), indicator.Bounds.Size);
         Assert.False(indicator.Focusable);
@@ -49,7 +50,7 @@ public sealed class ProgressIndicatorTests
     public void Automation_IsReadOnlyAndSuppressesRangeWhenIndeterminate(string kind)
     {
         var indicator = Create(kind);
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = Show(clock, indicator);
         var peer = ControlAutomationPeer.CreatePeerForElement(indicator)!;
         Assert.Equal(AutomationControlType.ProgressBar, peer.GetAutomationControlType());
@@ -74,31 +75,31 @@ public sealed class ProgressIndicatorTests
     public void Detach_CancelsAnimationsAndReattachStartsFreshWithoutEndingSibling(string kind)
     {
         var indicator = Create(kind); indicator.IsIndeterminate = true;
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = Show(clock, indicator);
         var grid = (Grid)window.Content!;
-        var sibling = window.AnimationRoot.CreateAnimatable(0f);
-        var playing = sibling.AnimateToAsync(1, new ComposeAnimation.Runtime.TweenSpec<float>(TimeSpan.FromSeconds(2)));
+        var sibling = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
+        var playing = sibling.AnimateToAsync(window.AnimationRoot, 1, new TweenSpec<float>(TimeSpan.FromSeconds(2)));
         clock.SendFrame(TimeSpan.FromSeconds(1)); Draw(window);
         clock.SendFrame(TimeSpan.FromMilliseconds(1400)); Draw(window);
         Assert.NotNull(indicator.AnimationScope);
         Assert.True(indicator.Circular ? indicator.GlobalRotation > 0 : indicator.Fractions[1] > 0);
         var old = indicator.AnimationScope!;
         grid.Children.Remove(indicator); Draw(window);
-        Assert.True(old.IsEnding); Assert.Null(indicator.AnimationScope);
-        Assert.False(window.AnimationRoot.IsEnding); Assert.False(playing.IsCompleted);
-        Assert.Equal(0, window.AnimationRoot.ActiveChildCount);
+        Assert.True(old.Diagnostics.IsEnding); Assert.Null(indicator.AnimationScope);
+        Assert.False(window.AnimationRoot.Diagnostics.IsEnding); Assert.False(playing.IsCompleted);
+        Assert.Equal(0, window.AnimationRoot.Diagnostics.ActiveChildCount);
         grid.Children.Add(indicator); Draw(window);
         Assert.NotSame(old, indicator.AnimationScope);
         Assert.Equal(0, indicator.GlobalRotation); Assert.Equal(0, indicator.Fractions[1]);
-        window.Close(); Assert.Equal(0, clock.PendingFrameCount); Assert.Null(window.AnimationRoot.LastError);
+        window.Close(); Assert.Equal(0, clock.PendingFrameCount); Assert.Null(window.AnimationRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
     public void Tokens_UpdateDefaultsWhileExplicitPaintAndStrokeRemainLocal()
     {
         var indicator = new LinearWavyProgressIndicator { Progress = .5, WaveSpeed = 0 };
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = Show(clock, indicator);
         window.Resources[Comp.ProgressIndicator.ActiveIndicatorColor] = Colors.Red;
         window.Resources[Comp.LinearProgressIndicator.WaveHeight] = 16d;
@@ -119,7 +120,7 @@ public sealed class ProgressIndicatorTests
     public void CircularAmplitudeCache_ObservesPendingTargetWhenWaveMotionIsStopped()
     {
         var indicator = new CircularWavyProgressIndicator { Progress = .05, WaveSpeed = 0 };
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = Show(clock, indicator);
         var time = 0;
         void Advance(int target)
@@ -144,7 +145,7 @@ public sealed class ProgressIndicatorTests
     public void CircularMode_ChangesDefaultTrackAndLinearMode_ChangesDefaultWavelength()
     {
         var circular = new CircularProgressIndicator(); var linear = new LinearWavyProgressIndicator { WaveSpeed = 0 };
-        var clock = new ManualAnimationFrameClock(Dispatcher.UIThread.VerifyAccess);
+        var clock = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
         var window = Show(clock, circular);
         var initial = circular.TrackColor;
         circular.IsIndeterminate = true; Assert.Equal(Colors.Transparent, circular.TrackColor);
@@ -156,7 +157,7 @@ public sealed class ProgressIndicatorTests
         window.Close();
     }
 
-    static AnimationTestWindow Show(ManualAnimationFrameClock clock, ProgressIndicator indicator)
+    static AnimationTestWindow Show(ManualFrameSource clock, ProgressIndicator indicator)
     {
         var window = new AnimationTestWindow(clock) { Width = 320, Height = 160 };
         window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));

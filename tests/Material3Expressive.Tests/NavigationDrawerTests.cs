@@ -89,7 +89,7 @@ public class NavigationDrawerTests
             var closing = drawer.State.CloseAsync(); Advance(clock, window, 70);
             Assert.True(opening.IsCanceled); Assert.True(closing.IsCompletedSuccessfully);
             Assert.True(drawer.State.IsClosed); Assert.Equal(-360, drawer.State.CurrentOffset); Assert.False(drawer.State.IsAnimationRunning);
-            Assert.Null(window.MotionRoot.LastError);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
         finally { window.Close(); }
     }

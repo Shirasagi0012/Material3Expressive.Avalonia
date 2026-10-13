@@ -96,8 +96,8 @@ public class DropdownMenuTests
         window.MouseUp(new(450, 250), MouseButton.Left);
         Assert.Equal(1, requests);
         window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount);
-        Assert.Null(window.MotionRoot.LastError);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -123,8 +123,8 @@ public class DropdownMenuTests
         Advance(clock, window, 100);
         Assert.False(menu.IsPresented);
         Assert.Same(anchor, window.FocusManager!.GetFocusedElement());
-        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.ActiveChildCount);
-        Assert.Null(window.MotionRoot.LastError);
+        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -142,8 +142,8 @@ public class DropdownMenuTests
         Advance(clock, window, 100); Assert.Equal(1, menu.AppearanceScale);
         ((Grid)window.Content!).Children.Remove(menu); Flush(window);
         Assert.False(menu.IsPresented);
-        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.ActiveChildCount);
-        Assert.Null(window.MotionRoot.LastError);
+        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaTheory]
@@ -240,7 +240,7 @@ public class DropdownMenuTests
         item.IsSelected = true; Advance(clock, window, 100); Assert.Equal(20, slot.Bounds.Width);
         Assert.Equal(1, slot.Opacity);
         item.Template = null; Flush(window);
-        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.ActiveChildCount); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -257,7 +257,7 @@ public class DropdownMenuTests
         Assert.Equal(new CornerRadius(8), surface.EffectiveCornerRadius);
         window.MouseMove(group.TranslatePoint(new Point(30, 20), window)!.Value); Advance(clock, window, 100);
         Assert.Equal(new CornerRadius(16), surface.EffectiveCornerRadius);
-        window.Close(); Assert.Null(window.MotionRoot.LastError);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -324,7 +324,7 @@ public class DropdownMenuTests
         Advance(clock, window, 100);
         Assert.True(menu.IsPresented); Assert.False(child.IsPresented); Assert.True(parentItem.IsFocused);
         window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
     }
 
     [AvaloniaFact]
@@ -380,7 +380,7 @@ public class DropdownMenuTests
         window.RequestedThemeVariant = ThemeVariant.Dark; Flush(window);
         Assert.NotEqual(theme, window.ActualThemeVariant);
         window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-        Assert.Equal(0, window.MotionRoot.ActiveChildCount); Assert.Null(window.MotionRoot.LastError);
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
     [AvaloniaFact]
@@ -435,7 +435,7 @@ public class DropdownMenuTests
         menu.ConsumePointerInputOutside = false; Flush(window);
         window.MouseMove(new(61, 75)); Assert.True(anchor.IsPointerOver);
         window.MouseWheel(new(61, 75), new(0, -1)); Assert.Equal(1, wheels);
-        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.ActiveChildCount);
+        window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
     }
 
     private static (MotionTestWindow Window, Button Anchor) Show(DropdownMenuPopup menu)
