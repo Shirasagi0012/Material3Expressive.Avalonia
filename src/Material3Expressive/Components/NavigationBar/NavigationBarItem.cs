@@ -70,7 +70,7 @@ public class NavigationBarItem : Button
         AvaloniaProperty.Register<NavigationBarItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
 
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private Animatable<float>? _alpha;
     private Animatable<float>? _size;
     private Animatable<Color>? _iconColor;
@@ -109,7 +109,6 @@ public class NavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _motion?.Dispose();
         _motion = null;
         base.OnApplyTemplate(e);
         _targetsPending = false;
@@ -132,7 +131,6 @@ public class NavigationBarItem : Button
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _motion?.Dispose();
         _motion = null;
         _alpha = _size = null;
         _targetsPending = false;
@@ -169,11 +167,11 @@ public class NavigationBarItem : Button
     {
         if (_layout is null || !this.IsAttachedToVisualTree() || _motion is not null)
             return;
-        _motion = VisualAnimationScope.Create(this);
-        _alpha = _motion.CreateAnimatable(IsSelected ? 1f : 0f);
-        _size = _motion.CreateAnimatable(IsSelected ? 1f : 0f);
-        _iconColor = _motion.CreateAnimatable(IconTarget);
-        _textColor = _motion.CreateAnimatable(TextTarget);
+        _motion = AnimationScope.Get(this);
+        _alpha = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
+        _size = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
+        _iconColor = new Animatable<Color>(new ColorConverter(), IconTarget, default);
+        _textColor = new Animatable<Color>(new ColorConverter(), TextTarget, default);
         _motion.SubscribeValue(_alpha, value =>
         {
             _layout.AlphaProgress = value;
@@ -198,8 +196,9 @@ public class NavigationBarItem : Button
 
     private void UpdateTargets()
     {
-        if (_motion is not { IsEnding: false } motion)
+        if (!this.IsAttachedToVisualTree() || _motion is null)
             return;
+        var motion = _motion = AnimationScope.Get(this);
         if (_targetsPending) return;
         _targetsPending = true;
         // AnimateAsState.update is a composition SideEffect. The fixed Desktop
@@ -207,7 +206,7 @@ public class NavigationBarItem : Button
         // receive their first animation frame. Coalesce targets in that same order.
         _ = motion.Launch(async ct =>
         {
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             _targetsPending = false;
             CommitTargets();
         }, "Navigation bar animation targets");
@@ -215,9 +214,10 @@ public class NavigationBarItem : Button
 
     private void CommitTargets()
     {
-        if (_motion is not { IsEnding: false } motion || _alpha is null || _size is null
+        if (!this.IsAttachedToVisualTree() || _motion is null || _alpha is null || _size is null
             || _iconColor is null || _textColor is null)
             return;
+        var motion = _motion = AnimationScope.Get(this);
         // Fixed AnimateAsState.restartAnimation cancels its previous job before
         // animateTo: cancellation resets velocity and the frame anchor. Calling
         // AnimateTo directly would instead carry the old velocity into the new target.
@@ -238,7 +238,7 @@ public class NavigationBarItem : Button
             {
                 await track.StopAsync();
                 ct.ThrowIfCancellationRequested();
-                await track.AnimateToAsync(target, spec, cancellationToken: ct);
+                await track.AnimateToAsync(motion, target, spec, cancellationToken: ct);
             }, label);
         }
     }

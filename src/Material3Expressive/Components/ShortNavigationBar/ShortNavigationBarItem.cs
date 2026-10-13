@@ -62,7 +62,7 @@ public class ShortNavigationBarItem : Button
 
     public static readonly StyledProperty<Color> DisabledTextColorProperty = AvaloniaProperty.Register<ShortNavigationBarItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
-    private VisualAnimationScope? _scope;
+    private AnimationScope? _scope;
     private Animatable<float>? _selection;
     private ShortNavigationBarItemLayout? _layout;
     private ContentPresenter? _icon, _label;
@@ -99,7 +99,7 @@ public class ShortNavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _pending = false;
+        _scope = null; _pending = false;
         base.OnApplyTemplate(e);
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<ShortNavigationBarItemLayout>("PART_Layout");
@@ -118,7 +118,7 @@ public class ShortNavigationBarItem : Button
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _selection = null; _pending = false; _activationKey = null;
+        _scope = null; _selection = null; _pending = false; _activationKey = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
@@ -160,8 +160,8 @@ public class ShortNavigationBarItem : Button
     private void InitializeMotion()
     {
         if (_layout is null || _scope is not null || !this.IsAttachedToVisualTree()) return;
-        _scope = VisualAnimationScope.Create(this);
-        _selection = _scope.CreateAnimatable(IsSelected ? 1f : 0f);
+        _scope = AnimationScope.Get(this);
+        _selection = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
         _scope.SubscribeValue(_selection, value =>
         {
             _layout.SelectionProgress = value;
@@ -170,19 +170,21 @@ public class ShortNavigationBarItem : Button
     }
     private void UpdateTarget()
     {
-        if (_scope is not { IsEnding: false } scope || _pending) return;
+        if (!this.IsAttachedToVisualTree() || _scope is null || _pending) return;
+        var motion = _scope = AnimationScope.Get(this);
         _pending = true;
-        _ = scope.Launch(async ct =>
+        _ = motion.Launch(async ct =>
         {
-            await scope.Clock.NextFrameAsync(ct); _pending = false;
+            await motion.NextFrameAsync(ct); _pending = false;
+            if (_selection is not { } selection) return;
             var target = IsSelected ? 1f : 0f;
-            if (_selection!.TargetValue == target) return;
+            if (selection.TargetValue == target) return;
             var spatial = _layout!.IndicatorAnimation;
             if (spatial.Stiffness <= 0) return;
-            _ = scope.Launch(async lifetime =>
+            _ = motion.Launch(async lifetime =>
             {
-                await _selection.StopAsync(); lifetime.ThrowIfCancellationRequested();
-                await _selection.AnimateToAsync(target, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: lifetime);
+                await selection.StopAsync(); lifetime.ThrowIfCancellationRequested();
+                await selection.AnimateToAsync(motion, target, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: lifetime);
             }, "Short navigation item indicator");
         }, "Short navigation item target");
     }

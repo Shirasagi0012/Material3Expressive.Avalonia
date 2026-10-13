@@ -191,7 +191,7 @@ internal sealed class TabRowContent : Panel
     public static readonly StyledProperty<Foundation.Motion.SpringSpec> ScrollAnimationProperty = AvaloniaProperty.Register<TabRowContent, Foundation.Motion.SpringSpec>(nameof(ScrollAnimation));
     public Foundation.Motion.SpringSpec ScrollAnimation { get => GetValue(ScrollAnimationProperty); set => SetValue(ScrollAnimationProperty, value); }
 
-    private VisualAnimationScope? _motion;
+    private AnimationScope? _motion;
     private Animatable<float>? _offset, _width, _scroll;
     private int? _selectedForScroll;
     private float _scrollPrevious, _scrollFraction;
@@ -205,7 +205,7 @@ internal sealed class TabRowContent : Panel
     internal double LayoutHeight { get; private set; }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        base.OnAttachedToVisualTree(e); _motion = VisualAnimationScope.Create(this);
+        base.OnAttachedToVisualTree(e); _motion = AnimationScope.Get(this);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -218,7 +218,7 @@ internal sealed class TabRowContent : Panel
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _motion?.Dispose(); _motion = null; _offset = _width = _scroll = null; _selectedForScroll = null; _requested.Clear();
+        _motion = null; _offset = _width = _scroll = null; _selectedForScroll = null; _requested.Clear();
         _scrollPrevious = _scrollFraction = 0; _scrollGeneration++;
         _scrollRun?.Cancel(); _scrollRun?.Dispose(); _scrollRun = null;
         base.OnDetachedFromVisualTree(e);
@@ -242,12 +242,13 @@ internal sealed class TabRowContent : Panel
         chrome.Indicator.IsVisible = true;
         var position = positions[chrome.SelectedIndex];
         var targetWidth = (float)(chrome.Primary ? position.ContentWidth : position.Width);
-        if (_motion is { IsEnding: false } motion)
+        if (this.IsAttachedToVisualTree() && _motion is not null)
         {
+            var motion = _motion = AnimationScope.Get(this);
             if (_offset is null)
             {
-                _offset = motion.CreateAnimatable((float)position.Left);
-                _width = motion.CreateAnimatable(targetWidth);
+                _offset = new Animatable<float>(new FloatConverter(), (float)position.Left, VisibilityThresholds.Float);
+                _width = new Animatable<float>(new FloatConverter(), targetWidth, VisibilityThresholds.Float);
                 motion.SubscribeValue(_offset, _ => InvalidateMeasure());
                 motion.SubscribeValue(_width, _ => InvalidateMeasure());
             }
@@ -260,7 +261,8 @@ internal sealed class TabRowContent : Panel
     }
     private void Animate(Animatable<float> track, float target, string label, bool intrinsicChange)
     {
-        if (_motion is not { IsEnding: false } motion || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
+        if (!this.IsAttachedToVisualTree() || _motion is null || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
+        var motion = _motion = AnimationScope.Get(this);
         var spec = IndicatorAnimation;
         if (spec.Stiffness <= 0) return;
         _requested[track] = target;
@@ -269,13 +271,13 @@ internal sealed class TabRowContent : Panel
         {
             // Apply the measure-triggered coroutine after the corresponding composition
             // frame. Its first animation frame is the next one, as in the Desktop node.
-            await motion.Clock.NextFrameAsync(ct);
+            await motion.NextFrameAsync(ct);
             // FixedTabRow queries intrinsics before measuring tabs; its offset node
             // observes the TabPositions write on the next layout frame. ScrollableTabRow
             // measures the tabs before querying intrinsics and measuring the indicator.
-            if (intrinsicChange && !Chrome.Scrollable) await motion.Clock.NextFrameAsync(ct);
+            if (intrinsicChange && !Chrome.Scrollable) await motion.NextFrameAsync(ct);
             if (_requested[track] != target) return;
-            await track.AnimateToAsync(target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: ct);
+            await track.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: ct);
         }, label);
     }
     protected override Size ArrangeOverride(Size finalSize)
@@ -320,8 +322,9 @@ internal sealed class TabRowContent : Panel
         var position = positions[chrome.SelectedIndex];
         var spec = ScrollAnimation;
         if (spec.Stiffness <= 0) return;
-        if (chrome.Scrollable && _selectedForScroll != chrome.SelectedIndex && _motion is { IsEnding: false } motion && chrome.Scroller.Viewport.Width > 0)
+        if (chrome.Scrollable && _selectedForScroll != chrome.SelectedIndex && this.IsAttachedToVisualTree() && _motion is not null && chrome.Scroller.Viewport.Width > 0)
         {
+            var motion = _motion = AnimationScope.Get(this);
             var firstLayout = _selectedForScroll is null;
             _selectedForScroll = chrome.SelectedIndex;
             var generation = ++_scrollGeneration;
@@ -331,7 +334,7 @@ internal sealed class TabRowContent : Panel
             var target = Math.Clamp(MathUtils.DipToPx(position.Left, scale) - (visible / 2 - MathUtils.DipToPx(position.Width, scale) / 2), 0, Math.Max(0, total - visible));
             if (_scroll is null)
             {
-                _scroll = motion.CreateAnimatable(0f);
+                _scroll = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
                 motion.SubscribeValue(_scroll, current =>
                 {
                     if (_resetScroll) return;
@@ -354,15 +357,21 @@ internal sealed class TabRowContent : Panel
                 // The mount's onLaidOut coroutine is already scheduled before the first
                 // frame. Later selection changes run after their composition frame; let
                 // the outgoing animation consume that frame before MutatorMutex cancellation.
-                if (!firstLayout) await motion.Clock.NextFrameAsync(ct);
+                if (!firstLayout) await motion.NextFrameAsync(ct);
                 if (generation != _scrollGeneration) return;
                 _resetScroll = true;
-                try { await _scroll.StopAsync(); await _scroll.SnapToAsync(0f); }
+                try
+                {
+                    await _scroll.StopAsync();
+                    if (_scroll is null) return;
+                    await _scroll.SnapToAsync(0f);
+                }
                 finally { _resetScroll = false; }
+                if (_scroll is null) return;
                 _scrollPrevious = 0;
                 ct.ThrowIfCancellationRequested();
                 _scrollRun?.Dispose(); _scrollRun = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                await _scroll.AnimateToAsync(target - MathUtils.DipToPx(scroller.Offset.X, scale),
+                await _scroll.AnimateToAsync(motion, target - MathUtils.DipToPx(scroller.Offset.X, scale),
                     new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f), cancellationToken: _scrollRun.Token);
             }, "Tab scroll target");
         }
