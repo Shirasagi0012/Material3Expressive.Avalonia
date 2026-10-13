@@ -215,3 +215,7 @@ host.Source = VisibilitySource.From(pageTransition, page => page == Page.Details
 - [属性动画](./animated-properties.md)：`Animate*` 扩展方法与动画规格体系
 - [使用文档入口](../README.md)
 - [旧版设计文档 ANIMATED_VISIBILITY.md](../../draft/ANIMATED_VISIBILITY.md)（更偏实现细节，仍有效）
+
+## Scope 与换父 · Scope and reparenting
+
+`AnimatedVisibility` 在 Scope 重建时恢复在途的进入/退出过渡（D17），不会重新起播；`ResetAnimation` 与脱离后未挂回（排空时释放）仍会重置。放在 `Flyout`/`ContextMenu`/`ToolTip` 中时以所有者控件的 Scope 为父（D15）。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。

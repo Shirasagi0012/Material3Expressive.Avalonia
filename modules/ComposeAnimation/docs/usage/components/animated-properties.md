@@ -62,7 +62,7 @@ private void Button_OnClick(object? sender, RoutedEventArgs e)
 | --- | --- | --- | --- |
 | `Animated.Properties` | `AttachedProperty<AnimatedPropertyCollection?>` | `null` | 该可视元素的动画声明集合，XAML 中以 `<ca:Animated.Properties>` 设置 |
 
-`Animated.DurationScale` 已迁移为 `AnimationScope.DurationScale` 附加属性，用 `AnimationScope.GetDurationScale` / `SetDurationScale` 读写，XAML 写作 `AnimationScope.DurationScale="0.5"`；语义不变：播放时长乘数，0 下一帧吸附，2 半速，不改变根帧时间戳。
+调速使用 `AnimationScope.DurationScale` 附加属性，用 `AnimationScope.GetDurationScale` / `SetDurationScale` 读写，XAML 写作 `AnimationScope.DurationScale="0.5"`：播放时长乘数，0 下一帧吸附，2 半速，不改变根帧时间戳。
 
 常用方法：`GetProperties` / `SetProperties`、`SnapToTargetAsync<T>(Visual, StyledProperty<T>)`、`GetOrCreateProperties`，以及流式扩展 `TDeclaration Animate<TDeclaration>(this Visual, TDeclaration)`（把声明追加到集合，按需创建集合并返回声明本身）。
 
@@ -162,3 +162,7 @@ Avalonia `Transitions`（如 `DoubleTransition`）与本组件的声明作用于
 - [AnimatedContent：内容切换过渡](./animated-content.md)
 - [运行时概览与时钟](../runtime/overview.md)
 - 仓库内参考：程序集自述 `ComposeAnimation.Avalonia/README.md`、示例 `Catalog/Demos/Properties/PropertiesAnimationDemo.axaml`、行为测试 `ComposeAnimation.Test/AnimatedPropertyTest.cs`
+
+## Scope 与换父 · Scope and reparenting
+
+`Animated.Properties` 的运行使用宿主控件自己的 `AnimationScope.Get(host)` Scope（O5），因此跟随祖先的 `DurationScale`（乘积）。宿主在树内移动或模板替换时，在途过渡把当前值与速度带入新 Scope 继续（D17）；宿主脱离且未在本次排空前挂回时释放贡献。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。

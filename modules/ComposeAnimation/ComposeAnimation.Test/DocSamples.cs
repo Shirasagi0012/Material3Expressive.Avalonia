@@ -16,3 +16,34 @@ internal sealed class MigrationSamples : Border
     // Former `{ IsEnding: false }` guard on a stored scope.
     private static bool IsLive(AnimationScope scope) => !scope.Lifetime.IsCancellationRequested;
 }
+
+/// <summary>docs/usage/animation-scope.md samples.</summary>
+internal static class AnimationScopeSamples
+{
+    public static void Hover(Button button, Action<double> setLayerOpacity)
+    {
+        var motion = AnimationScope.Get(button);
+        var alpha = Animatable.Create(0d, label: "State layer");
+        motion.SubscribeValue(alpha, setLayerOpacity);
+        _ = motion.Launch(ct => alpha.AnimateToAsync(motion, .12,
+            new TweenSpec<double>(TimeSpan.FromMilliseconds(75)), cancellationToken: ct), "Hover");
+        AnimationScope.AddScopeChangedHandler(button, (_, e) =>
+        {
+            if (e.NewScope is { } scope) _ = alpha.AnimateToAsync(scope, .12);
+        });
+    }
+
+    public static async Task Ripple(AnimationScope motion, Action<double> setRadius)
+    {
+        using var ripple = motion.CreateChild("Ripple");
+        var radius = Animatable.Create(0d);
+        ripple.SubscribeValue(radius, setRadius);
+        await ripple.Launch(ct => radius.AnimateToAsync(ripple, 100, cancellationToken: ct), "Grow");
+    }
+
+    public static async Task Speed(Border demo)
+    {
+        AnimationScope.SetDurationScale(demo, 4);
+        await Animated.SnapToTargetAsync(demo, Avalonia.Visual.OpacityProperty);
+    }
+}

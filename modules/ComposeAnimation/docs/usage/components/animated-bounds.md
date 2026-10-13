@@ -340,3 +340,7 @@ void UpdateOutline()
 - [自定义协作式 Lookahead 容器](../advanced/custom-lookahead-containers.md)
 - [动画规格（Runtime）](../runtime/animation-specs.md)
 - 可运行示例：`Catalog/Demos/Bounds`（`dotnet run --project Catalog/Catalog.csproj -- --demo bounds/basic`）
+
+## Scope 与换父 · Scope and reparenting
+
+`AnimatedBounds` 仅在运动参考基准不变（同一坐标参考祖先、同一运动帧）时恢复在途飞行（D17）；基准改变时释放并从新位置开始（Q-H）。`Lookahead.MoveContent` 提交后，飞行在下一次排空时移入新 Scope 并采用其 `DurationScale` 与生命周期（Q-E）。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。

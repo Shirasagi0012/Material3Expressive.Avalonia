@@ -302,3 +302,7 @@ dotnet run --project Catalog/Catalog.csproj -- --run shared/list-detail --out ar
 - [文档入口](../README.md)
 - `docs/SHARED_TRANSITION.md`（即 [../../SHARED_TRANSITION.md](../../draft/SHARED_TRANSITION.md)）：英文参考，含布局契约细节与支持矩阵
 - 可运行示例：`Catalog/Demos/Shared/SharedListDetailDemo.axaml`
+
+## Scope 与换父 · Scope and reparenting
+
+共享过渡的元素飞行由 `AnimatedBounds` 驱动，遵循其恢复规则（D17、Q-H）：参考基准不变时跨 Scope 继续，否则释放。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。

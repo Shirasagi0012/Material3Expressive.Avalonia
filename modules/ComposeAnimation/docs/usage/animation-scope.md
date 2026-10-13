@@ -48,6 +48,101 @@ AnimationScope.AddScopeChangedHandler(button, (_, e) =>
 
 `Animatable`、`Transition`、`InfiniteTransition` 只是状态，不持有时钟、生命周期或 Scope（D19）。每次运行在调用处指定 Scope：`AnimateToAsync(scope, …)`、`AnimateDecayAsync(scope, …)`、`RunAsync(scope, …)`、`SeekableTransitionState.AnimateToAsync(scope, …)`；Scope 提供帧、生命周期和时长倍率。Scope 结束时其中的运行被取消，之后在该 Scope 上启动运行会抛 `ObjectDisposedException`；状态对象本身不受影响，可以在新 Scope 中从停下的值继续。不带 Scope 的成员（`SnapToAsync`、`UpdateTarget`、`Stop` 等）只在对象自身 `Dispose` 之后抛错。同一对象的第二次运行接管第一次：旧运行的清理完成后新运行才采样。
 
+## FrameScope：运行为什么接收 Scope
+
+`ComposeAnimation.Runtime` 不依赖 Avalonia，因此不认识 `AnimationScope`。运行入口接收它的基类 `FrameScope`：提供 `NextFrameAsync`、`Lifetime`（Scope 结束时取消）与有效 `DurationScale`。`AnimationScope` 就是一个 `FrameScope`，所以 `alpha.AnimateToAsync(AnimationScope.Get(this), …)` 直接可用；`SuspendAnimation` 等运行时辅助同样接收 `FrameScope`。
+
+`scope.DelayAsync(delay, ct)` 是普通的挂起等待：不请求动画帧、不受 `DurationScale` 影响，取消跟随调用者令牌与 Scope 生命周期；负的 `delay`（`Timeout.InfiniteTimeSpan` 除外）同步抛 `ArgumentOutOfRangeException`。
+
+## ScopeChanged 的重入
+
+`ScopeChangedEvent` 是直接路由事件。`AddScopeChangedHandler` 添加的处理程序彼此隔离（抛错报告到 `AnimationFailed`，其余照常执行）；直接用 `AddHandler(ScopeChangedEvent, …)` 添加的处理程序**不隔离**，抛错会打断同一次分发。处理程序内再次移动控件或让 Scope 过期是允许的：它在下一帧再重建一次（每帧至多一次，D18），期间数值保持一帧。
+
+## 重建规则
+
+- **父级**：沿逻辑/继承父链找最近的 `Get` Scope（D13），否则窗口根。
+- **过期与排空**：移动、模板替换、脱离只把 Scope 标记为过期；同一帧内的多次变化合并，在下一帧等待者恢复前统一排空（D14/D16）；没有帧时由一次合并的分发器回调排空。
+- **每帧至多一次**（D18）：排空中再次过期的宿主留到下一帧。
+- **弹层**（D15）：`Flyout`、`ContextMenu`、`ToolTip` 的内容以所有者控件的 Scope 为父，继承其 `DurationScale` 并共用窗口帧时钟；独立 `Popup` 没有所有者 Scope 时回退到所在窗口的根。
+
+## D17：恢复而不是重启
+
+七个内置宿主在重建时把当前值与速度带入新 Scope 继续：`AnimatedVisibility`、`AnimatedContent`、`AnimatedContentSize`、`LookaheadSize`、`LookaheadPosition`、`AnimatedBounds`、`Animated.Properties`。仍然重置的情况：
+
+- 显式 `ResetAnimation`；
+- 真正的 Lookahead 上下文变化（进入另一个 Lookahead 根）；
+- `AnimatedBounds` 的运动参考基准改变（Q-H：坐标参考祖先或运动帧不同）；
+- 控件脱离后没有在本次排空前挂回：在排空时释放。
+
+批次进行中发生的换父从下一帧生效。
+
+## MoveContent 规则
+
+`Lookahead.MoveContent` 是同步事务：事务内不能发生布局、帧或分发器轮转，否则抛 `InvalidOperationException("MoveContent failed: {reason}. Tree edits are not rolled back.")`——已做的树编辑**不会回滚**。事务打开期间排空被挂起；提交后，已提交的 `AnimatedBounds` 飞行在下一次排空时移入新 Scope，随之采用新 Scope 的 `DurationScale` 与生命周期（Q-E），不会中断。
+
+## 已知交互
+
+同一属性上不要同时使用 Avalonia `Transitions` 与 `Animated.Properties`：运行期间较新的 `Animated.Properties` 贡献胜出；它结束后 Avalonia 过渡自己的值重新显现，而该过渡按 Avalonia 的墙钟计时而非 Scope 的帧时钟，结果不确定（O6，`KnownInteractionsTest` 记录当前行为，不是承诺）。
+
+## 已知限制
+
+- **O3**：D18 的“每帧至多一次重建”是权宜方案；处理程序反复让宿主过期时，数值每次保持一帧。
+- **O7**：被取消的运行在何处展开（内联还是投递）取决于它启动时的 `SynchronizationContext`；Avalonia 每个优先级一个上下文，属性变化中启动的运行按 Normal 投递，布局中启动的按 Render 投递。详见研究备忘（仓库外 `O7.md`），目前没有修改承诺。
+- **O2（帧跳转）**：每帧的分发器跳转（D4）有约 356 B 的固定分配，与动画数量无关；替换它需要改变顺序，留待评审。
+
+## 图示
+
+一帧的流程：
+
+```mermaid
+sequenceDiagram
+    participant Src as IFrameSource (RAF)
+    participant FC as FrameClock (每窗口)
+    participant Hooks as 帧前钩子
+    participant D as Dispatcher
+    participant W as 等待者 / 运行
+    participant After as 等待者后钩子
+    Src->>FC: 帧时间 t
+    FC->>Hooks: 排空过期 Scope → 重建 → OnScopeChanged / 恢复
+    FC->>FC: 快照等待者列表
+    FC->>D: 一次跳转（D4，Normal）
+    D->>W: 按登记顺序以同一时间戳 t 恢复
+    W->>W: 采样、写值
+    W->>After: 协调器 / Bounds 应用
+    alt 没有等待者
+        FC-->>Src: 空闲，不再请求帧
+    else
+        FC->>Src: 请求下一帧
+    end
+```
+
+Scope 树：
+
+```mermaid
+flowchart TD
+    Root["窗口根 (Initialize)"] --> A["Get(panel)"]
+    A --> B["Get(button)"]
+    B --> C["CreateChild(#quot;Ripple#quot;)"]
+    B --> P["Get(flyout 内容)<br/>父级为所有者 Scope（D15）"]
+    Root --> S["Get(独立 Popup 内容)<br/>无所有者，回退到根"]
+    An["Animatable"] -.运行绑定.-> B
+    T["Transition"] -.运行绑定.-> C
+    I["InfiniteTransition"] -.运行绑定.-> P
+```
+
+Scope 的生命：
+
+```mermaid
+stateDiagram-v2
+    [*] --> Live: Get / CreateChild
+    Live --> Stale: 移动 / 模板替换 / 脱离
+    Stale --> Rebuilt: 排空时仍在树内
+    Rebuilt --> Live: 旧 Scope 结束，ScopeChanged(old, new)
+    Stale --> Ended: 排空时已脱离
+    Live --> Ended: 窗口关闭 / 父 Scope 结束 / 子 Scope Dispose
+    Ended --> [*]
+```
+
 ## 任务、取消和诊断
 
 `Launch(Func<CancellationToken, Task>, label?)` 在调用线程同步调用委托，在用户代码之前登记，不使用 Task.Run。它返回委托原任务，保留成功、取消和失败状态，同时完整观察错误。委托的同步异常转成失败任务；错误线程、已结束 Scope 或空委托属于同步调用错误。
@@ -89,7 +184,7 @@ await ripple.Launch(ct => radius.AnimateToAsync(ripple, 100, cancellationToken: 
 
 ## 调速与属性吸附
 
-Scope 链的 `DurationScale` 是继承的时长乘数；控件子树用继承的附加属性 `AnimationScope.DurationScale`（`AnimationScope.GetDurationScale` / `SetDurationScale`，XAML 写作 `AnimationScope.DurationScale="0.5"`）。有效倍率 = Scope 链的 `DurationScale`（根在初始化时取自 `MotionDurationScale.ScaleFactor`）× 宿主自身的附加属性值。4 表示 0.25× 播放，0 让有限动画在下一帧到达终点。它们改变播放策略，保持原始帧时间戳；有限播放保持已有进度，无限 Transition 沿用改变时长后重新起播的语义，0 时暂停并等待正数策略恢复。
+Scope 链的 `DurationScale` 是继承的时长乘数；控件子树用继承的附加属性 `AnimationScope.DurationScale`（`AnimationScope.GetDurationScale` / `SetDurationScale`，XAML 写作 `AnimationScope.DurationScale="0.5"`）。有效倍率 = Scope 链的 `DurationScale`（根在初始化时取自 `MotionDurationScale.ScaleFactor`）× 宿主自身的附加属性值。4 表示 0.25× 播放，0 让有限动画在下一帧到达终点。它们改变播放策略，保持原始帧时间戳；倍率变化时沿用上游语义：`Transition` 按新倍率从起点重算播放时间（`(帧时间 − 起点) / 倍率`，可能出现一次跳变），`InfiniteTransition` 从初值重新起播；`Animatable` 的单次运行按每帧增量计时。0 时有限动画到达终点，`InfiniteTransition` 吸附到目标并在倍率恢复为正数后重新起播。
 
 在 `Get` 得到的 Scope 上直接设置 `scope.DurationScale` 会在该 Scope 重建后丢失，需要时在 `ScopeChanged` 处理程序中重新设置。
 
@@ -124,12 +219,6 @@ window.Close();
 
 `SendFrame` 绝对时间单调不减；`AdvanceBy` 不隐式补帧。手动时钟支持多等待者、取消、PendingFrameCount 和 Dispose。送帧不代表布局或渲染完成。条件等待有 Dispatcher 轮数上限，也不声称整个应用已空闲。`window.Close()` 结束根环境，根没有公开的 Dispose。
 
-## 破坏性迁移
+## 从旧 API 迁移
 
-- 删除 Animated.FrameClock/GetFrameClock/SetFrameClock：在 TopLevel 加载内容前初始化固定根环境。
-- 删除 Animated.LastError/GetLastError：监听根 Scope 的 `AnimationFailed`；`LastError`、`LastDiagnosticError` 等不再公开。
-- 删除 `VisualAnimationScope.Create` 与 Scope 的显式 `Dispose`/`DisposeAsync`：控件用 `AnimationScope.Get` 取 Scope，移动/模板替换时自动重建，脱离时结束；持有旧 Scope 的运行在 `ScopeChanged` 处理程序中重启。
-- 删除 `Animated.DurationScale`（含 `Animated.SetDurationScale`）：改用 `AnimationScope.DurationScale` 附加属性与 `AnimationScope.SetDurationScale`。
-- 默认 Avalonia 时钟与每窗口唯一的内部 FrameClock 均为内部实现；旧的共享帧时钟类型已删除，没有兼容别名。Scope 的 `Clock` 属性与 `CreateAnimatable`/`CreateTransition`/`CreateInfiniteTransition` 已删除：用 `Animatable.Create(...)`、`new Transition<T>(...)`、`new InfiniteTransition()` 创建状态，运行时传入 Scope；测试使用独立 TestSupport。
-- 控件在树内移动、模板替换或卸载/重挂时不再手动结束 Scope；不在同一环境热换帧源。
-- Catalog 通过 `AnimationScope.DurationScale` 附加属性保留速度控制；Material 用子 Scope 拥有 Ripple、Elevation 和 Shape，保留其领域规则。
+旧的 Scope、时钟和工厂成员已删除，没有兼容别名。逐项对照、前后代码与行为差异见 [迁移指南](migration-from-visual-animation-scope.md)。

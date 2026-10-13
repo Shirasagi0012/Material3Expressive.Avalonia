@@ -148,3 +148,7 @@ SizeHost.Content = nextItem;
 - [AnimatedContent：内容切换过渡](./animated-content.md)
 - [AnimatedBounds 与协作式 lookahead](./animated-bounds.md)
 - [运行时概览与时钟](../runtime/overview.md)
+
+## Scope 与换父 · Scope and reparenting
+
+`AnimatedContentSize` 在 Scope 重建时把当前尺寸与速度带入新 Scope 继续（D17）；真正的 Lookahead 上下文变化、`ResetAnimation` 或脱离后未挂回时重置。 详见 [AnimationScope](../animation-scope.md#d17恢复而不是重启)。
