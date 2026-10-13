@@ -23,7 +23,7 @@ public sealed class AppBarDemo : Window
     };
     private readonly ComboBox _variant = new() { ItemsSource = new[] { "TopAppBar", "CenterAlignedTopAppBar", "MediumTopAppBar", "LargeTopAppBar", "MediumFlexibleTopAppBar", "LargeFlexibleTopAppBar", "TwoRowsTopAppBar" }, SelectedIndex = 4 };
     private readonly ComboBox _behavior = new() { ItemsSource = new[] { "pinned", "enterAlways", "exitUntilCollapsed" }, SelectedIndex = 2 };
-    private readonly CheckBox _flexible = new() { Content = "Flexible bottom" };
+    private readonly CheckBox _flexible = new() { Content = "Docked toolbar (flexible bottom)" };
     private readonly CheckBox _custom = new() { Content = "Custom bottom content" };
     private readonly CheckBox _rtl = new() { Content = "RTL" };
     private readonly CheckBox _nested = new() { Content = "Nested scrolling" };
@@ -123,11 +123,42 @@ public sealed class AppBarDemo : Window
     {
         _bottom.HeightOffset = 0; _bottom.ContentOffset = 0;
         BottomAppBar bar = _flexible.IsChecked == true ? new FlexibleBottomAppBar() : new BottomAppBar();
-        bar.Items.Add(Action(MaterialSymbolCodepoint.Favorite, "Favorite")); bar.Items.Add(Action(MaterialSymbolCodepoint.Search, "Search"));
-        if (bar is not FlexibleBottomAppBar) bar.FloatingActionButton = new FloatingActionButton { Icon = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Add } };
+        if (bar is FlexibleBottomAppBar)
+        {
+            // Docked toolbar, mirroring Compose's ExitAlwaysBottomAppBarSpacedEvenly sample:
+            // SpaceEvenly, no horizontal content padding, IconButtons around an embedded
+            // FilledIconButton of width 56 as the primary action.
+            bar.HorizontalArrangement = AppBarArrangement.SpaceEvenly;
+            bar.ContentPadding = new Thickness(0, bar.ContentPadding.Top, 0, bar.ContentPadding.Bottom);
+            var primary = Action(MaterialSymbolCodepoint.Add, "Add");
+            primary.Width = 56;
+            primary.Theme = (Avalonia.Styling.ControlTheme?)Application.Current?.FindResource("MaterialFilledIconButtonTheme");
+            // Square shape from the token, bound like {m3:Token} so it follows token and theme changes.
+            // The template draws TemplateBinding CornerRadius; the theme only feeds it at Style
+            // priority from its internal ButtonThemeProperties.CornerRadius, so a local binding on the
+            // public CornerRadius wins. No press morph applies unless MaterialButton.PressedCornerRadius is set.
+            primary.Bind(TemplatedControl.CornerRadiusProperty,
+                new Material3Expressive.Foundation.Tokens.TokenExtension(Material3Expressive.Tokens.MaterialTokens.Comp.IconButtonSmall.ContainerShapeSquare)
+                    .ProvideValue(NoServices.Instance));
+            bar.Items.Add(Action(MaterialSymbolCodepoint.ArrowBack, "Back"));
+            bar.Items.Add(Action(MaterialSymbolCodepoint.ArrowForward, "Forward"));
+            bar.Items.Add(primary);
+            bar.Items.Add(Action(MaterialSymbolCodepoint.Tab, "Tabs"));
+            bar.Items.Add(Action(MaterialSymbolCodepoint.MoreVert, "More"));
+        }
+        else
+        {
+            bar.Items.Add(Action(MaterialSymbolCodepoint.Favorite, "Favorite")); bar.Items.Add(Action(MaterialSymbolCodepoint.Search, "Search"));
+            bar.FloatingActionButton = new FloatingActionButton { Icon = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Add } };
+        }
         if (_custom.IsChecked == true) bar.CustomContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, VerticalAlignment = VerticalAlignment.Center,
             Children = { new TextBlock { Text = "Custom content replaces actions and FAB" }, new Button { Content = "Action" } } };
         bar.ScrollBehavior = new BottomAppBarScrollBehavior { State = _bottom };
         _screen.BottomBar = bar;
+    }
+    private sealed class NoServices : System.IServiceProvider
+    {
+        public static readonly NoServices Instance = new();
+        public object? GetService(System.Type serviceType) => null;
     }
 }
