@@ -36,6 +36,7 @@ internal sealed class ExtendedFabLayout : Panel
     public static readonly StyledProperty<MotionSpring?> CollapseAlphaMotionProperty = AvaloniaProperty.Register<ExtendedFabLayout, MotionSpring?>(nameof(CollapseAlphaMotion));
     public MotionSpring? CollapseAlphaMotion { get => GetValue(CollapseAlphaMotionProperty); set => SetValue(CollapseAlphaMotionProperty, value); }
     private ExtendedFloatingActionButton? _owner;
+    private AnimationChildScope? _attachScope;
     private Animatable<float>? _width, _alpha;
     private Animatable<float>? _classicWidth;
     private Task? _classicWidthTask, _classicAlphaTask;
@@ -53,7 +54,7 @@ internal sealed class ExtendedFabLayout : Panel
     {
         base.OnAttachedToVisualTree(e);
         _owner = this.FindAncestorOfType<ExtendedFloatingActionButton>()!;
-        var scope = AnimationScope.Get(this);
+        var scope = _attachScope = AnimationScope.Get(this).CreateChild("Extended FAB");
         var initial = _owner.Expanded ? 1f : 0f;
         _fullyCollapsed = initial == 0;
         _classicCurrentExpanded = _owner.Expanded;
@@ -68,6 +69,7 @@ internal sealed class ExtendedFabLayout : Panel
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
         ++_classicTransitionId;
         _classicTransitionActive = false;
+        _attachScope?.Dispose(); _attachScope = null;
         _width = _alpha = _classicWidth = null; _pending = _needsTransition = false;
         _classicWidthTask = _classicAlphaTask = null;
         base.OnDetachedFromVisualTree(e);
@@ -96,10 +98,10 @@ internal sealed class ExtendedFabLayout : Panel
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _owner is null ||
-            !FabMotion.IsReady(_owner.Expanded ? ExpandWidthMotion : CollapseWidthMotion) ||
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _owner is null
+            || _attachScope is not { } scope || scope.Lifetime.IsCancellationRequested
+            || !FabMotion.IsReady(_owner.Expanded ? ExpandWidthMotion : CollapseWidthMotion) ||
             !FabMotion.IsReady(_owner.Expanded ? ExpandAlphaMotion : CollapseAlphaMotion)) return;
-        var scope = AnimationScope.Get(this);
         _pending = true;
         _ = scope.Launch(async ct =>
         {
@@ -187,9 +189,8 @@ internal sealed class ExtendedFabLayout : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var labelExtent = _labelWidth;
         _labelExtentPx = MathUtils.DipToPx(labelExtent, scale);
-        if (classic && hasIcon && this.IsAttachedToVisualTree())
+        if (classic && hasIcon && this.IsAttachedToVisualTree() && _attachScope is { } scope)
         {
-            var scope = AnimationScope.Get(this);
             if (_classicWidth is null)
             {
                 _classicWidth = new Animatable<float>(new ClassicWidthConverter(), expanded ? (float)_labelExtentPx : 0, 1);

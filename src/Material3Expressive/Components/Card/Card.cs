@@ -35,7 +35,7 @@ public class Card : Button
 
     private MaterialSurface? _surface;
     private MaterialInteractionController? _interaction;
-    private AnimationScope? _motion;
+    private AnimationChildScope? _attachScope;
     private Animatable<double>? _elevation;
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationTask;
@@ -54,6 +54,7 @@ public class Card : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Card");
         _passiveElevation = null;
         Refresh();
         InitializeMotion();
@@ -63,6 +64,7 @@ public class Card : Button
     {
         _passiveElevation = null;
         DisposeMotion();
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -113,16 +115,14 @@ public class Card : Button
 
     private void InitializeMotion()
     {
-        if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _motion is not null) return;
-        _motion = AnimationScope.Get(this);
+        if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is not null) return;
         _elevation = new Animatable<double>(new DoubleConverter(), Target(Elevation, _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled), VisibilityThresholds.Double);
-        _motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
     }
 
     private void QueueElevation()
     {
-        if (!IsClickable || !this.IsAttachedToVisualTree() || _motion is null || _pending) return;
-        var motion = _motion = AnimationScope.Get(this);
+        if (!IsClickable || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is null || _pending) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
@@ -170,7 +170,7 @@ public class Card : Button
     private void DisposeMotion()
     {
         _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
-        _motion = null; _elevation = null; _pending = false;
+        _elevation = null; _pending = false;
     }
 
     protected override void OnClick() { if (IsClickable) base.OnClick(); }

@@ -65,6 +65,7 @@ public class ToggleFloatingActionButton : Button
     private Animatable<float>? _progress;
     private ToggleFabLayout? _layout;
     private MaterialSurface? _surface;
+    private AnimationChildScope? _attachScope;
     private bool _pending, _needsTransition;
     internal double InitialSize => ContainerSize(0);
     internal double CurrentSize => ContainerSize(CheckedProgress);
@@ -81,12 +82,21 @@ public class ToggleFloatingActionButton : Button
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
         if (this.IsAttachedToVisualTree()) StartMotion();
     }
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) { base.OnAttachedToVisualTree(e); StartMotion(); }
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { EndMotion(); base.OnDetachedFromVisualTree(e); }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Toggle FAB");
+        StartMotion();
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        EndMotion();
+        _attachScope?.Dispose(); _attachScope = null;
+        base.OnDetachedFromVisualTree(e);
+    }
     private void StartMotion()
     {
-        if (_progress is not null || _surface is null) return;
-        var scope = AnimationScope.Get(this);
+        if (_progress is not null || _surface is null || _attachScope is not { } scope) return;
         _progress = new Animatable<float>(new FloatConverter(), IsChecked ? 1f : 0f, VisibilityThresholds.Float);
         scope.SubscribeValue(_progress, value => { SetAndRaise(CheckedProgressProperty, ref _checkedProgress, value); Refresh(); });
         SetAndRaise(CheckedProgressProperty, ref _checkedProgress, _progress.Value);
@@ -113,9 +123,8 @@ public class ToggleFloatingActionButton : Button
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() ||
-            !FabMotion.IsReady(CheckedMotion)) return;
-        var scope = AnimationScope.Get(this);
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested || !FabMotion.IsReady(CheckedMotion)) return;
         _pending = true;
         _ = scope.Launch(async ct =>
         {

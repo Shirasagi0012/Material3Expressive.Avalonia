@@ -33,6 +33,7 @@ internal sealed class SegmentedButtonContentLayout : Panel
     }
 
     private Animatable<int>? _offset;
+    private AnimationChildScope? _attachScope;
     private int? _initialOffset;
     private Size _icon, _label;
     private int _reservation;
@@ -40,7 +41,17 @@ internal sealed class SegmentedButtonContentLayout : Panel
     private int _targetOffset;
     private bool _commitPending;
     internal void Stop() { _offset = null; _initialOffset = null; _commitPending = false; }
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { Stop(); base.OnDetachedFromVisualTree(e); }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Segmented button content");
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        Stop();
+        _attachScope?.Dispose(); _attachScope = null;
+        base.OnDetachedFromVisualTree(e);
+    }
     internal Size IntrinsicSize(double height, Thickness padding)
     {
         if (Children.Count != 2) return default;
@@ -66,19 +77,19 @@ internal sealed class SegmentedButtonContentLayout : Panel
         _reservation = iconSize + MathUtils.DipToPx(IconSpacing, scale);
         var offset = _icon.Width == 0 ? -_reservation / 2 : 0;
         if (_initialOffset is null) _initialOffset = offset;
-        else if (this.IsAttachedToVisualTree())
+        else if (this.IsAttachedToVisualTree() && _attachScope is { } attachScope
+            && !attachScope.Lifetime.IsCancellationRequested)
         {
             if (_offset is null)
             {
-                var scope = AnimationScope.Get(this);
                 _offset = new Animatable<int>(new Int32Converter(), _initialOffset.Value, VisibilityThresholds.Int32);
-                scope.SubscribeValue(_offset, _ => InvalidateArrange());
+                attachScope.SubscribeValue(_offset, _ => InvalidateArrange());
             }
             _targetOffset = offset;
             if (_offset.TargetValue != offset && !_commitPending)
             {
                 _commitPending = true;
-                var motion = AnimationScope.Get(this); var anim = _offset;
+                var motion = attachScope; var anim = _offset;
                 var defer = offset == 0;
                 // Compose launches from measure after the current layout/recomposition.
                 // Commit on the shared frame before Animatable requests its first sample.

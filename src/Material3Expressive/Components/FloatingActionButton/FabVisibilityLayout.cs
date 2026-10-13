@@ -12,6 +12,7 @@ namespace Material3Expressive.Components;
 internal sealed class FabVisibilityLayout : Decorator
 {
     private FloatingActionButton? _owner;
+    private AnimationChildScope? _attachScope;
     private Animatable<float>? _scale, _alpha;
     private bool _pending, _needsTransition;
     private readonly ScaleTransform _transform = new();
@@ -23,7 +24,7 @@ internal sealed class FabVisibilityLayout : Decorator
     {
         base.OnAttachedToVisualTree(e);
         _owner = this.FindAncestorOfType<FloatingActionButton>()!;
-        var scope = AnimationScope.Get(this);
+        var scope = _attachScope = AnimationScope.Get(this).CreateChild("FAB visibility");
         var initial = _owner.AnimatedVisible ? 1f : 0f;
         _scale = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
         _alpha = new Animatable<float>(new FloatConverter(), initial, VisibilityThresholds.Float);
@@ -35,6 +36,7 @@ internal sealed class FabVisibilityLayout : Decorator
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
+        _attachScope?.Dispose(); _attachScope = null;
         _scale = _alpha = null; _pending = _needsTransition = false;
         base.OnDetachedFromVisualTree(e);
     }
@@ -50,9 +52,9 @@ internal sealed class FabVisibilityLayout : Decorator
     }
     private void QueueTransition()
     {
-        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() ||
+        if (!_needsTransition || _pending || !this.IsAttachedToVisualTree() || _attachScope is not { } scope
+            || scope.Lifetime.IsCancellationRequested ||
             _owner?.VisibilityScaleSpec is null || _owner.VisibilityAlphaSpec is null) return;
-        var scope = AnimationScope.Get(this);
         _pending = true;
         _ = scope.Launch(async ct =>
         {

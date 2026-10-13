@@ -60,7 +60,7 @@ public abstract class Chip : Button
     private ChipContentLayout? _content;
     private ChipIconSlot? _leading;
     private ChipIconSlot? _trailing;
-    private AnimationScope? _motion;
+    private AnimationChildScope? _attachScope;
     private Animatable<double>? _elevation;
     private AnimatedCornerRadius? _shape;
     private (CornerRadius Shape, CornerRadius Selected, CornerRadius Pressed)? _shapeConfiguration;
@@ -90,6 +90,7 @@ public abstract class Chip : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _attachScope = AnimationScope.Get(this).CreateChild("Chip");
         InitializeMotion();
         Refresh();
     }
@@ -97,15 +98,15 @@ public abstract class Chip : Button
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         DisposeMotion();
+        _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
 
     private void InitializeMotion()
     {
-        if (_surface is null || !this.IsAttachedToVisualTree() || _motion is not null) return;
-        _motion = AnimationScope.Get(this);
+        if (_surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is not null) return;
         _elevation = new Animatable<double>(new DoubleConverter(), ElevationTarget(), VisibilityThresholds.Double);
-        _motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
         var surface = _surface;
         void OnSurfaceBoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
         {
@@ -113,9 +114,9 @@ public abstract class Chip : Button
             { shape.Size = surface.Bounds.Size; surface.SetAnimatedCorners(shape.Current); }
         }
         surface.PropertyChanged += OnSurfaceBoundsChanged;
-        _motion.Lifetime.Register(() => surface.PropertyChanged -= OnSurfaceBoundsChanged);
-        _leading?.Initialize(_motion);
-        _trailing?.Initialize(_motion);
+        motion.Lifetime.Register(() => surface.PropertyChanged -= OnSurfaceBoundsChanged);
+        _leading?.Initialize(motion);
+        _trailing?.Initialize(motion);
         RefreshShape(initial: true);
     }
 
@@ -125,7 +126,7 @@ public abstract class Chip : Button
         _shapeEffect?.Cancel(); _shapeEffect = null; _shapeTask = null;
         _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
         _surface?.SetAnimatedCorners(null);
-        _motion = null; _elevation = null; _pending = false;
+        _elevation = null; _pending = false;
         _lastElevationInteraction = InteractionState.None;
     }
 
@@ -193,8 +194,7 @@ public abstract class Chip : Button
 
     private void QueueTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _motion is null || _pending) return;
-        var motion = _motion = AnimationScope.Get(this);
+        if (!this.IsAttachedToVisualTree() || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested || _pending) return;
         _pending = true;
         _ = motion.Launch(async ct =>
         {
@@ -219,8 +219,8 @@ public abstract class Chip : Button
 
     private void RefreshShape(bool initial)
     {
-        if (_surface is null || !this.IsAttachedToVisualTree() || _motion is null) return;
-        var motion = _motion = AnimationScope.Get(this);
+        if (_surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion
+            || motion.Lifetime.IsCancellationRequested) return;
         var shapes = MorphShapes;
         if (shapes is null)
         {
