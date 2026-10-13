@@ -39,9 +39,10 @@ public sealed class KnownInteractionsTest
         // contribution) wins: a plain 1 -> 0 tween.
         for (var i = 0; i < 10; i++) Assert.Equal(1 - i * 0.1, samples[i], 6);
         // When it ends, the Avalonia transition's own Animation-priority value shows again. Its
-        // clock is Avalonia's, not the scope's FrameClock, and does not tick here, so it is still 1.
-        Assert.Equal(1, samples[10]);
-        Assert.Equal(1, samples[11]);
+        // clock is Avalonia's (wall time), not the scope's FrameClock, so how far it has run here
+        // depends on real time: only its range and direction are deterministic.
+        Assert.InRange(samples[10], 0, 1);
+        Assert.True(samples[11] <= samples[10]);
         Assert.Equal(0, border.GetBaseValue(Visual.OpacityProperty).Value);
         window.Close();
     });
