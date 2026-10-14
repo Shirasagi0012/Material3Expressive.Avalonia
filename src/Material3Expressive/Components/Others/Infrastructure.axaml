@@ -1,0 +1,67 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <!--
+        Structural default themes for the TopLevel hosts and the theme-variant boundary.
+        Templates are carried over from Avalonia.Themes.Fluent verbatim; the only change is that
+        Fluent's theme brushes (SystemControl*/SystemRegion*) resolve through Material sys.color
+        tokens instead.
+
+        Fluent also pinned FontFamily/FontSize/FontWeight/FontStyle here
+        (ContentControlThemeFontFamily = Inter, ControlContentThemeFontSize = 14). Those are
+        deliberately not carried over: Material typography already supplies the BodyLarge baseline
+        and the Roboto typeface by inheritance, and a setter on these hosts would override it.
+
+        TopLevel.SystemBarColor is likewise not set: it is typed SolidColorBrush while tokens
+        resolve to Color, and the token binding converter only bridges Color to IBrush targets.
+        See INTERNALS.md.
+    -->
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type PopupRoot}" TargetType="PopupRoot">
+            <Setter Property="Background" Value="{x:Null}" />
+            <Setter Property="TransparencyLevelHint" Value="Transparent" />
+            <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+            <Setter Property="Inline.TextDecorations" Value="" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <LayoutTransformControl LayoutTransform="{TemplateBinding Transform}">
+                        <Panel>
+                            <Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+                            <VisualLayerManager Name="PART_VisualLayerManager">
+                                <ContentPresenter Name="PART_ContentPresenter"
+                                                  Background="{TemplateBinding Background}"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  Padding="{TemplateBinding Padding}" />
+                            </VisualLayerManager>
+                        </Panel>
+                    </LayoutTransformControl>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type EmbeddableControlRoot}" TargetType="EmbeddableControlRoot">
+            <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}" />
+            <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Panel>
+                        <Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+                        <Border Background="{TemplateBinding Background}">
+                            <VisualLayerManager Name="PART_VisualLayerManager">
+                                <ContentPresenter Name="PART_ContentPresenter"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  Margin="{TemplateBinding Padding}" />
+                            </VisualLayerManager>
+                        </Border>
+                    </Panel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="{x:Type ThemeVariantScope}" TargetType="ThemeVariantScope">
+            <Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

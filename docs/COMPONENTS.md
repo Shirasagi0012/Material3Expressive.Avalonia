@@ -44,6 +44,7 @@
 - [Card](../src/Material3Expressive/Components/Card/README.md)：填充、阴影与描边卡片
 - [Scaffold](../src/Material3Expressive/Components/Scaffold/README.md)：屏幕槽位、Padding 与 Insets
 - [Divider](../src/Material3Expressive/Components/Divider/README.md)：原生 Separator 与水平/垂直分隔
+- [Others](../src/Material3Expressive/Components/Others/README.md)：ItemsControl、Label、Window、PopupRoot、GridSplitter、TableViewCell 等通用控件的结构主题
 
 ## 提示与状态
 

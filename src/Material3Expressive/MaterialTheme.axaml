@@ -116,4 +116,10 @@
     <StyleInclude Source="/Components/DatePicker/DatePicker.axaml" />
     <StyleInclude Source="/Components/TimePicker/TimePicker.axaml" />
     <StyleInclude Source="/Components/ComboBox/ComboBox.axaml" />
+    <StyleInclude Source="/Components/Others/Layout.axaml" />
+    <StyleInclude Source="/Components/Others/Infrastructure.axaml" />
+    <StyleInclude Source="/Components/Others/Window.axaml" />
+    <StyleInclude Source="/Components/Others/TextSelection.axaml" />
+    <StyleInclude Source="/Components/Others/Splitter.axaml" />
+    <StyleInclude Source="/Components/Others/TableView.axaml" />
 </Styles>

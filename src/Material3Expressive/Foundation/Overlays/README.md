@@ -7,9 +7,10 @@ TextField 使用现阶段 Avalonia 的编辑能力，由独立组件负责。
 ## 接入
 
 引入 `MaterialTheme`，在可视树中声明 Dialog；声明本身不占布局空间。
-宿主使用标准 Window 模板，或包含名为 `PART_VisualLayerManager` 的 VisualLayerManager 的 Window 模板。
-Window 在应用该模板时启用内部 PopupOverlayLayer。仅在 Content 内放置启用普通 OverlayLayer 的
-VisualLayerManager 不满足此条件。主题提供 OverlayPopupHost 的内容模板。
+Material 提供标准 Window 默认主题（见 [Others](../../Components/Others/README.md)），其中包含
+名为 `PART_VisualLayerManager` 的 VisualLayerManager，Window 应用该模板时即启用内部 PopupOverlayLayer。
+自定义 Window 模板必须保留同名部件；仅在 Content 内放置启用普通 OverlayLayer 的
+VisualLayerManager 不满足此条件。主题另提供 OverlayPopupHost 的内容模板。
 
 ```xml
 <m3:Dialog IsOpen="{Binding IsDialogOpen}"

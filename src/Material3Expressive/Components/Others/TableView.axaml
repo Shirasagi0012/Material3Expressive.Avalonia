@@ -1,0 +1,13 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Default theme for a table cell. Carried over from Avalonia.Themes.Fluent; the cell has no
+        template of its own, only Fluent's 6,0 horizontal padding, which is kept as a local value
+        because the row layout (TableViewRow) depends on that inset.
+    -->
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type TableViewCell}" TargetType="TableViewCell">
+            <Setter Property="Padding" Value="6,0" />
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>
