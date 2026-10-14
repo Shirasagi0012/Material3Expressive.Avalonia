@@ -26,11 +26,6 @@ public sealed class MaterialText : AvaloniaObject
     public static readonly AttachedProperty<TextStyle?> StyleProperty =
         AvaloniaProperty.RegisterAttached<MaterialText, StyledElement, TextStyle?>("Style");
 
-    /// <summary>Former provider property; now merged beneath <see cref="StyleProperty" /> with the same behaviour.</summary>
-    [Obsolete("Use MaterialText.Style. Both now merge with inherited text properties.")]
-    public static readonly AttachedProperty<TextStyle?> DefaultStyleProperty =
-        AvaloniaProperty.RegisterAttached<MaterialText, StyledElement, TextStyle?>("DefaultStyle");
-
     private static readonly AttachedProperty<Projection?> ProjectionProperty =
         AvaloniaProperty.RegisterAttached<MaterialText, StyledElement, Projection?>("Projection");
 
@@ -38,21 +33,14 @@ public sealed class MaterialText : AvaloniaObject
     static MaterialText()
     {
         StyleProperty.Changed.AddClassHandler<StyledElement>((owner, _) => Project(owner));
-        DefaultStyleProperty.Changed.AddClassHandler<StyledElement>((owner, _) => Project(owner));
     }
 
     public static TextStyle? GetStyle(StyledElement element) => element.GetValue(StyleProperty);
     public static void SetStyle(StyledElement element, TextStyle? value) => element.SetValue(StyleProperty, value);
-    [Obsolete("Use MaterialText.GetStyle.")]
-    public static TextStyle? GetDefaultStyle(StyledElement element) => element.GetValue(DefaultStyleProperty);
-    [Obsolete("Use MaterialText.SetStyle.")]
-    public static void SetDefaultStyle(StyledElement element, TextStyle? value) => element.SetValue(DefaultStyleProperty, value);
 
     private static void Project(StyledElement owner)
     {
-        var provided = owner.GetValue(DefaultStyleProperty);
-        var selected = owner.GetValue(StyleProperty);
-        var style = provided is null ? selected : provided.Merge(selected);
+        var style = owner.GetValue(StyleProperty);
 #pragma warning restore CS0618
 
         var projection = owner.GetValue(ProjectionProperty);

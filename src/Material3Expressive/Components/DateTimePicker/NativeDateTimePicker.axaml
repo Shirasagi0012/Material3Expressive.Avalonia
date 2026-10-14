@@ -1,0 +1,273 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <!-- Native pickers retain their presenters, validation and commit behavior. -->
+    <ControlTheme x:Key="MaterialNativePickerButtonTheme" TargetType="Button">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="MinHeight" Value="56" />
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Small}}" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHighest}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+BodyLarge.Style}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+                              BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+            <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" Padding="{TemplateBinding Padding}"
+                              Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="Center" />
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:focus-visible">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        <Setter Property="BorderThickness" Value="2" />
+      </Style>
+      <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.38" /></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialNativePickerItemTheme" TargetType="ListBoxItem">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Small}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleMedium.Style}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+            <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:selected">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.PrimaryContainer}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnPrimaryContainer}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialNativePickerRepeatTheme" TargetType="RepeatButton" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
+      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" />
+      <Style Selector="^:pointerover"><Setter Property="Opacity" Value="1" /></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialDatePickerTheme" TargetType="DatePicker">
+      <Setter Property="MinWidth" Value="296" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHighest}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Small}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <DataValidationErrors>
+            <Grid Margin="{TemplateBinding Padding}">
+              <Button Name="PART_FlyoutButton" Theme="{StaticResource MaterialNativePickerButtonTheme}"
+                      TemplatedControl.IsTemplateFocusTarget="True" Background="{TemplateBinding Background}"
+                      Foreground="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                <Grid Name="PART_ButtonContentGrid" ColumnDefinitions="*,Auto,*,Auto,*">
+                  <TextBlock Name="PART_DayTextBlock" Text="Day" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Name="PART_MonthTextBlock" Text="Month" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Name="PART_YearTextBlock" Text="Year" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <Rectangle Name="PART_FirstSpacer" Grid.Column="1" Width="1" Margin="4,0" Fill="{TemplateBinding BorderBrush}" />
+                  <Rectangle Name="PART_SecondSpacer" Grid.Column="3" Width="1" Margin="4,0" Fill="{TemplateBinding BorderBrush}" />
+                </Grid>
+              </Button>
+              <Popup Name="PART_Popup" IsLightDismissEnabled="True" ShouldUseOverlayLayer="True"
+                     Placement="Bottom" PlacementTarget="{TemplateBinding}">
+                <DatePickerPresenter Name="PART_PickerPresenter" />
+              </Popup>
+            </Grid>
+          </DataValidationErrors>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:error /template/ Button#PART_FlyoutButton">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Error}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type DatePicker}" TargetType="DatePicker" BasedOn="{StaticResource MaterialDatePickerTheme}" />
+    <ControlTheme x:Key="MaterialTimePickerTheme" TargetType="TimePicker">
+      <Setter Property="MinWidth" Value="240" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHighest}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Small}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <DataValidationErrors>
+            <Grid Margin="{TemplateBinding Padding}">
+              <Button Name="PART_FlyoutButton" Theme="{StaticResource MaterialNativePickerButtonTheme}"
+                      TemplatedControl.IsTemplateFocusTarget="True" Background="{TemplateBinding Background}"
+                      Foreground="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                <Grid Name="PART_FlyoutButtonContentGrid" ColumnDefinitions="*,Auto,*,Auto,*,Auto,*">
+                  <Border Name="PART_FirstPickerHost" Grid.Column="0"><TextBlock Name="PART_HourTextBlock" Text="Hour" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                  <Rectangle Name="PART_FirstColumnDivider" Grid.Column="1" Width="1" Margin="4,0" Fill="{TemplateBinding BorderBrush}" />
+                  <Border Name="PART_SecondPickerHost" Grid.Column="2"><TextBlock Name="PART_MinuteTextBlock" Text="Minute" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                  <Rectangle Name="PART_SecondColumnDivider" Grid.Column="3" Width="1" Margin="4,0" Fill="{TemplateBinding BorderBrush}" />
+                  <Border Name="PART_ThirdPickerHost" Grid.Column="4"><TextBlock Name="PART_SecondTextBlock" Text="Second" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                  <Rectangle Name="PART_ThirdColumnDivider" Grid.Column="5" Width="1" Margin="4,0" Fill="{TemplateBinding BorderBrush}" />
+                  <Border Name="PART_FourthPickerHost" Grid.Column="6"><TextBlock Name="PART_PeriodTextBlock" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                </Grid>
+              </Button>
+              <Popup Name="PART_Popup" IsLightDismissEnabled="True" ShouldUseOverlayLayer="True"
+                     Placement="Bottom" PlacementTarget="{TemplateBinding}">
+                <TimePickerPresenter Name="PART_PickerPresenter" />
+              </Popup>
+            </Grid>
+          </DataValidationErrors>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:error /template/ Button#PART_FlyoutButton">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Error}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type TimePicker}" TargetType="TimePicker" BasedOn="{StaticResource MaterialTimePickerTheme}" />
+    <ControlTheme x:Key="{x:Type DatePickerPresenter}" TargetType="DatePickerPresenter">
+      <Setter Property="Width" Value="320" />
+      <Setter Property="Height" Value="304" />
+      <Setter Property="MaxHeight" Value="304" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.ExtraLarge}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" ClipToBounds="True">
+            <Grid RowDefinitions="*,64">
+              <Grid Name="PART_PickerContainer" Margin="8,0">
+                <Grid.Styles>
+                  <Style Selector="DateTimePickerPanel > ListBoxItem"><Setter Property="Theme" Value="{StaticResource MaterialNativePickerItemTheme}" /></Style>
+                </Grid.Styles>
+              <Panel Name="PART_MonthHost" Grid.Column="0">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                  <DateTimePickerPanel Name="PART_MonthSelector" PanelType="Month" ItemHeight="48" ShouldLoop="True" />
+                </ScrollViewer>
+                <RepeatButton Name="PART_MonthUpButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Top" AutomationProperties.Name="Previous Month">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,6 L 6,0 L 12,6" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+                <RepeatButton Name="PART_MonthDownButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Bottom" AutomationProperties.Name="Next Month">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,0 L 6,6 L 12,0" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+              </Panel>
+              <Panel Name="PART_DayHost" Grid.Column="2">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                  <DateTimePickerPanel Name="PART_DaySelector" PanelType="Day" ItemHeight="48" ShouldLoop="True" />
+                </ScrollViewer>
+                <RepeatButton Name="PART_DayUpButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Top" AutomationProperties.Name="Previous Day">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,6 L 6,0 L 12,6" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+                <RepeatButton Name="PART_DayDownButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Bottom" AutomationProperties.Name="Next Day">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,0 L 6,6 L 12,0" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+              </Panel>
+              <Panel Name="PART_YearHost" Grid.Column="4">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                  <DateTimePickerPanel Name="PART_YearSelector" PanelType="Year" ItemHeight="48" ShouldLoop="False" />
+                </ScrollViewer>
+                <RepeatButton Name="PART_YearUpButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Top" AutomationProperties.Name="Previous Year">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,6 L 6,0 L 12,6" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+                <RepeatButton Name="PART_YearDownButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Bottom" AutomationProperties.Name="Next Year">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,0 L 6,6 L 12,0" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+              </Panel>
+<Border Name="PART_FirstSpacer" Grid.Column="1" Width="8" />
+<Border Name="PART_SecondSpacer" Grid.Column="3" Width="8" />
+              </Grid>
+              <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="8,8">
+                <Button Name="PART_DismissButton" Theme="{StaticResource MaterialTextButtonTheme}" Content="Cancel" HorizontalAlignment="Stretch" />
+                <Button Name="PART_AcceptButton" Grid.Column="1" Theme="{StaticResource MaterialTextButtonTheme}" Content="OK" HorizontalAlignment="Stretch" />
+              </Grid>
+            </Grid>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type TimePickerPresenter}" TargetType="TimePickerPresenter">
+      <Setter Property="Width" Value="320" />
+      <Setter Property="Height" Value="304" />
+      <Setter Property="MaxHeight" Value="304" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.ExtraLarge}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" ClipToBounds="True">
+            <Grid RowDefinitions="*,64">
+              <Grid Name="PART_PickerContainer" Margin="8,0">
+                <Grid.Styles>
+                  <Style Selector="DateTimePickerPanel > ListBoxItem"><Setter Property="Theme" Value="{StaticResource MaterialNativePickerItemTheme}" /></Style>
+                </Grid.Styles>
+              <Panel Name="PART_HourHost" Grid.Column="0">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                  <DateTimePickerPanel Name="PART_HourSelector" PanelType="Hour" ItemHeight="48" ShouldLoop="True" />
+                </ScrollViewer>
+                <RepeatButton Name="PART_HourUpButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Top" AutomationProperties.Name="Previous Hour">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,6 L 6,0 L 12,6" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+                <RepeatButton Name="PART_HourDownButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Bottom" AutomationProperties.Name="Next Hour">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,0 L 6,6 L 12,0" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+              </Panel>
+              <Panel Name="PART_MinuteHost" Grid.Column="2">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                  <DateTimePickerPanel Name="PART_MinuteSelector" PanelType="Minute" ItemHeight="48" ShouldLoop="True" />
+                </ScrollViewer>
+                <RepeatButton Name="PART_MinuteUpButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Top" AutomationProperties.Name="Previous Minute">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,6 L 6,0 L 12,6" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+                <RepeatButton Name="PART_MinuteDownButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Bottom" AutomationProperties.Name="Next Minute">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,0 L 6,6 L 12,0" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+              </Panel>
+              <Panel Name="PART_SecondHost" Grid.Column="4">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                  <DateTimePickerPanel Name="PART_SecondSelector" PanelType="Second" ItemHeight="48" ShouldLoop="True" />
+                </ScrollViewer>
+                <RepeatButton Name="PART_SecondUpButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Top" AutomationProperties.Name="Previous Second">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,6 L 6,0 L 12,6" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+                <RepeatButton Name="PART_SecondDownButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Bottom" AutomationProperties.Name="Next Second">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,0 L 6,6 L 12,0" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+              </Panel>
+              <Panel Name="PART_PeriodHost" Grid.Column="6">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                  <DateTimePickerPanel Name="PART_PeriodSelector" PanelType="TimePeriod" ItemHeight="48" ShouldLoop="False" />
+                </ScrollViewer>
+                <RepeatButton Name="PART_PeriodUpButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Top" AutomationProperties.Name="Previous Period">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,6 L 6,0 L 12,6" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+                <RepeatButton Name="PART_PeriodDownButton" Theme="{StaticResource MaterialNativePickerRepeatTheme}" VerticalAlignment="Bottom" AutomationProperties.Name="Next Period">
+                  <Path Width="12" Height="6" Stretch="Fill" Data="M 0,0 L 6,6 L 12,0" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" HorizontalAlignment="Center" />
+                </RepeatButton>
+              </Panel>
+<Border Name="PART_FirstSpacer" Grid.Column="1" Width="8" />
+<Border Name="PART_SecondSpacer" Grid.Column="3" Width="8" />
+<Border Name="PART_ThirdSpacer" Grid.Column="5" Width="8" />
+              </Grid>
+              <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="8,8">
+                <Button Name="PART_DismissButton" Theme="{StaticResource MaterialTextButtonTheme}" Content="Cancel" HorizontalAlignment="Stretch" />
+                <Button Name="PART_AcceptButton" Grid.Column="1" Theme="{StaticResource MaterialTextButtonTheme}" Content="OK" HorizontalAlignment="Stretch" />
+              </Grid>
+            </Grid>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

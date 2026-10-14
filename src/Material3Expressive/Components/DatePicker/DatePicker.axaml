@@ -1,0 +1,120 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Styles.Resources>
+        <ControlTheme x:Key="MaterialDateDayTheme" TargetType="Button">
+            <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateUnselectedLabelTextColor}}" />
+            <Setter Property="m3:MaterialText.Style"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateLabelTextFont}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:MaterialSurface Width="40" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Background="{TemplateBinding Background}"
+                                        CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateContainerShape}}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                    </m3:MaterialSurface>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^.today">
+                <Setter Property="BorderBrush"
+                        Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateTodayContainerOutlineColor}}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground"
+                        Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateTodayLabelTextColor}}" />
+            </Style>
+            <Style Selector="^.in-range">
+                <Setter Property="Foreground"
+                        Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.SelectionDateInRangeLabelTextColor}}" />
+            </Style>
+            <Style Selector="^.selected">
+                <Setter Property="Background"
+                        Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateSelectedContainerColor}}" />
+                <Setter Property="Foreground"
+                        Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateSelectedLabelTextColor}}" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Opacity" Value="0.38" />
+            </Style>
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:DateMonthPanel}" TargetType="m3:DateMonthPanel">
+            <Setter Property="RangeBrush"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.RangeSelectionActiveIndicatorContainerColor}}" />
+        </ControlTheme>
+        <ControlTheme x:Key="MaterialDateYearTheme" TargetType="Button" BasedOn="{StaticResource MaterialDateDayTheme}">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:MaterialSurface Width="72" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Background="{TemplateBinding Background}" CornerRadius="18"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
+                                          HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                    </m3:MaterialSurface>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+        <ControlTemplate x:Key="MaterialDateEntryTemplate" TargetType="TemplatedControl">
+            <Border Background="{TemplateBinding Background}">
+                <StackPanel>
+                    <Grid MinHeight="120" RowDefinitions="Auto,*">
+                        <ContentPresenter Name="PART_Title" Margin="24,16,12,0"
+                                          Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderSupportingTextColor}}"
+                                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderSupportingTextFont}}" />
+                        <Grid Grid.Row="1" ColumnDefinitions="*,48" Margin="24,0,12,12">
+                            <ContentPresenter Name="PART_Headline" VerticalAlignment="Center"
+                                              Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderHeadlineColor}}"
+                                              m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderHeadlineFont}}" />
+                            <Button Name="PART_ModeToggle" Grid.Column="1"
+                                    Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0"
+                                    Height="48" />
+                        </Grid>
+                    </Grid>
+                    <Separator />
+                    <m3:DateEntryContent Name="PART_Body"
+                                         Spatial="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialDefault}}"
+                                         Effects="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.EffectsDefault}}"
+                                         FastEffects="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.EffectsFast}}" />
+                </StackPanel>
+            </Border>
+        </ControlTemplate>
+        <ControlTheme x:Key="{x:Type m3:DatePicker}" TargetType="m3:DatePicker">
+            <Setter Property="MinWidth"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerWidth}}" />
+            <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Background"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerColor}}" />
+            <Setter Property="Foreground"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateUnselectedLabelTextColor}}" />
+            <Setter Property="Template" Value="{StaticResource MaterialDateEntryTemplate}" />
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:DateRangePicker}" TargetType="m3:DateRangePicker">
+            <Setter Property="MinWidth"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerWidth}}" />
+            <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Background"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerColor}}" />
+            <Setter Property="Foreground"
+                    Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateUnselectedLabelTextColor}}" />
+            <Setter Property="Template" Value="{StaticResource MaterialDateEntryTemplate}" />
+            <Style Selector="^ /template/ ContentPresenter#PART_Headline">
+                <Setter Property="m3:MaterialText.Style"
+                        Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.RangeSelectionHeaderHeadlineFont}}" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+    <Style Selector="TextBlock.date-weekday">
+        <Setter Property="m3:MaterialText.Style"
+                Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.WeekdaysLabelTextFont}}" />
+    </Style>
+    <Style Selector="TextBlock.date-month-title">
+        <Setter Property="m3:MaterialText.Style"
+                Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.RangeSelectionMonthSubheadFont}}" />
+    </Style>
+</Styles>

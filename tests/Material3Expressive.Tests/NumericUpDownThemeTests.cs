@@ -315,8 +315,8 @@ public sealed class NumericUpDownThemeTests
     public void FluentControlsOutsideTheSpinner_KeepTheirThemes()
     {
         // A plain RepeatButton is themed by RepeatButtonThemeTests; the pickers' keyed ones stay Fluent.
-        var date = new DatePicker();
-        var time = new TimePicker();
+        var date = new Avalonia.Controls.DatePicker();
+        var time = new Avalonia.Controls.TimePicker();
         var window = Show(new StackPanel { Children = { date, time } }, fluent: true);
         Assert.All(time.GetVisualDescendants().OfType<RepeatButton>(), b => Assert.False(MaterialInteraction.GetIsInteractive(b)));
         Assert.True(date.Bounds.Width > 0); Assert.True(time.Bounds.Width > 0);

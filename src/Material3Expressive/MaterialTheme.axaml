@@ -46,7 +46,6 @@
                     <m3:ChipTokenSource />
                     <m3:TabRowTokenSource />
                     <m3:DialogTokenSource />
-                    <m3:DatePickerDialogTokenSource />
                     <m3:CardTokenSource />
                     <m3:SegmentedButtonTokenSource />
                     <m3:ProgressIndicatorTokenSource />
@@ -56,6 +55,10 @@
                     <m3:PlainTooltipTokenSource />
                     <m3:SnackbarTokenSource />
                     <m3:MenuTokenSource />
+                    <m3:DatePickerModalTokenSource />
+                    <m3:DateInputModalTokenSource />
+                    <m3:TimePickerTokenSource />
+                    <m3:TimeInputTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -108,5 +111,9 @@
     <StyleInclude Source="/Components/Menu/Menu.axaml" />
     <StyleInclude Source="/Components/Menu/MenuBar.axaml" />
     <StyleInclude Source="/Components/Menu/DropdownMenu.axaml" />
+    <StyleInclude Source="/Components/DateTimePicker/NativeDateTimePicker.axaml" />
+    <StyleInclude Source="/Components/DateTimePicker/NativeCalendarDatePicker.axaml" />
+    <StyleInclude Source="/Components/DatePicker/DatePicker.axaml" />
+    <StyleInclude Source="/Components/TimePicker/TimePicker.axaml" />
     <StyleInclude Source="/Components/ComboBox/ComboBox.axaml" />
 </Styles>

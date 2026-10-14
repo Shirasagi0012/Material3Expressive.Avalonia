@@ -1,7 +1,7 @@
 # TimePickerDialog
 
 `TimePickerDialog` 是库提供的时间编辑器对话框容器，继承 Foundation Dialog。
-标题、编辑器与动作由调用方提供，当前不包含 TimePicker/TimeInput 本体或时间状态。
+标题、编辑器与动作由调用方提供。对话框不持有时间状态，也不在钟面和输入之间切换。
 先完成[公共接入](../../../../docs/GETTING_STARTED.md)，包括 Window 动画初始化与
 [Dialog 宿主模板](../../Foundation/Overlays/README.md#接入)。维护说明见 [INTERNALS](INTERNALS.md)。
 
@@ -18,7 +18,10 @@
     <TextBlock Text="输入时间" Margin="0,0,0,20"
                m3:MaterialText.Style="{m3:Typography LabelMedium}" />
   </m3:TimePickerDialog.Title>
-  <TextBox Text="09:30" Width="256" Margin="0,0,0,20" />
+  <m3:TimePicker x:Name="DraftTime" Layout="Vertical" />
+  <m3:TimePickerDialog.ModeToggleButton>
+    <Button Content="Keyboard" Click="OnToggleMode" Theme="{StaticResource MaterialTextButtonTheme}" />
+  </m3:TimePickerDialog.ModeToggleButton>
   <m3:TimePickerDialog.ConfirmButton>
     <Button Content="确定" Click="OnConfirm" Theme="{StaticResource MaterialTextButtonTheme}" />
   </m3:TimePickerDialog.ConfirmButton>
@@ -28,6 +31,7 @@
 </m3:TimePickerDialog>
 ```
 
+`OnToggleMode` 由应用把 Content 换成 `TimeInput`，或再换回 `TimePicker`。Catalog 同时放着两个控件，用 `IsVisible` 切换，确认时读取有效的 `SelectedTime`。
 IsOpen 可绑定 ViewModel；按钮可绑定业务 Command。Dialog 不创建按钮，不自动关闭或校验输入。
 DismissRequested 仅表示外部点击、Escape/Back 请求，调用方决定是否修改 IsOpen。
 完整可编译例子见 [PickerDialogDemo](../../../Material3Expressive.Catalog/PickerDialogDemo.axaml)。

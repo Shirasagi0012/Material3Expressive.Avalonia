@@ -1,0 +1,83 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialTimeSelectorTheme" TargetType="Button" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
+      <Setter Property="Padding" Value="0" /><Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.TimeSelectorLabelTextFont}}" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.TimeSelectorUnselectedContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.TimeSelectorUnselectedLabelTextColor}}" />
+      <Style Selector="^.selected">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.TimeSelectorSelectedContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.TimeSelectorSelectedLabelTextColor}}" />
+      </Style>
+      <Style Selector="^.vibrant">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Style Selector="^.selected"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" /></Style>
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialTimePeriodTheme" TargetType="Button" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
+      <Setter Property="MinHeight" Value="0" /><Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="0" /><Setter Property="CornerRadius" Value="8" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.PeriodSelectorLabelTextFont}}" />
+      <!-- Fixed Compose baseline enables isUpdatedTimepickerToggleEnabled. -->
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
+      <Style Selector="^.selected">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.PrimaryContainer}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnPrimaryContainer}}" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialTimeInputFieldTheme" TargetType="TextBox" BasedOn="{StaticResource MaterialOutlinedTextFieldTheme}">
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldLabelTextFont}}" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldContainerColor}}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldContainerShape}}" />
+      <Style Selector="^:focus">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldFocusContainerColor}}" />
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldFocusOutlineColor}}" />
+      </Style>
+      <Style Selector="^.vibrant">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" />
+        <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+DisplayLarge.Style}}" />
+        <Setter Property="CornerRadius" Value="16" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialClockLabelTheme" TargetType="Button" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
+      <Setter Property="MinHeight" Value="48" /><Setter Property="MinWidth" Value="48" />
+      <Setter Property="Padding" Value="0" /><Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialLabelTextFont}}" />
+      <Style Selector="^.selected"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialSelectedLabelTextColor}}" /></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:ClockFace}" TargetType="m3:ClockFace">
+      <Setter Property="DialBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialColor}}" />
+      <Setter Property="SelectorBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialSelectorHandleContainerColor}}" />
+      <Setter Property="Motion" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialDefault}}" />
+      <Style Selector="^.vibrant"><Setter Property="DialBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" /></Style>
+    </ControlTheme>
+    <ControlTemplate x:Key="MaterialTimeEntryTemplate" TargetType="TemplatedControl"><Grid Name="PART_Body" /></ControlTemplate>
+    <ControlTheme x:Key="{x:Type m3:TimePicker}" TargetType="m3:TimePicker">
+      <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Template" Value="{StaticResource MaterialTimeEntryTemplate}" />
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:TimeInput}" TargetType="m3:TimeInput">
+      <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Template" Value="{StaticResource MaterialTimeEntryTemplate}" />
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:TimeScroll}" TargetType="m3:TimeScroll">
+      <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Template" Value="{StaticResource MaterialTimeEntryTemplate}" />
+    </ControlTheme>
+  </Styles.Resources>
+  <Style Selector="TextBlock.time-separator"><Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.TimeSelectorSeparatorFont}}" /></Style>
+  <Style Selector="TextBlock.time-support"><Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldSupportingTextFont}}" /></Style>
+  <Style Selector="m3|MaterialSurface.time-scroll-surface"><Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLow}}" /></Style>
+  <Style Selector="DateTimePickerPanel.time-scroll > ListBoxItem">
+    <Setter Property="Theme" Value="{StaticResource MaterialNativePickerItemTheme}" />
+  </Style>
+</Styles>

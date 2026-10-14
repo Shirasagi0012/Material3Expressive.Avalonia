@@ -1,7 +1,7 @@
 # DatePickerDialog
 
 `DatePickerDialog` 是库提供的日期编辑器对话框容器，继承 BasicAlertDialog。
-编辑器由调用方放入 Content；当前不包含 DatePicker 本体、日期选择状态或输入校验。
+编辑器由调用方放入 Content。对话框不持有日期选择状态，也不校验输入。
 先完成[公共接入](../../../../docs/GETTING_STARTED.md)，包括 Window 的动画初始化和
 [Dialog 宿主模板](../../Foundation/Overlays/README.md#接入)。维护说明见 [INTERNALS](INTERNALS.md)。
 
@@ -9,14 +9,11 @@
 
 以下片段放入 Window 的 Grid；Window 声明
 `xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"`。
-示例采用普通 TextBox 作为应用编辑器，另放一个 `Click="OnOpen"` 的打开按钮。
+示例把 `DatePicker` 放进 Content，另放一个 `Click="OnOpen"` 的打开按钮。日期范围同样放入 `DateRangePicker`。
 
 ```xml
 <m3:DatePickerDialog x:Name="PickerDialog" DismissRequested="OnDismissRequested">
-  <StackPanel Margin="24" Spacing="16">
-    <TextBlock Text="输入日期" />
-    <TextBox Text="2026-10-11" />
-  </StackPanel>
+  <m3:DatePicker x:Name="DraftDate" Background="{Binding #PickerDialog.Background}" />
   <m3:DatePickerDialog.ConfirmButton>
     <Button Content="确定" Click="OnConfirm" Theme="{StaticResource MaterialTextButtonTheme}" />
   </m3:DatePickerDialog.ConfirmButton>
@@ -35,7 +32,7 @@ using Material3Expressive.Foundation.Overlays;
 private void OnOpen(object? sender, RoutedEventArgs e) => PickerDialog.IsOpen = true;
 private void OnConfirm(object? sender, RoutedEventArgs e)
 {
-    // 在这里校验并保存应用编辑器的值。
+    // 在这里读取 DraftDate.SelectedDate 并写回应用。
     PickerDialog.IsOpen = false;
 }
 private void OnCancel(object? sender, RoutedEventArgs e) => PickerDialog.IsOpen = false;
@@ -68,7 +65,9 @@ UsePlatformDefaultWidth 默认 false；显式启用则应用 Foundation 平台�
 
 Background、Foreground、CornerRadius 定制 Surface；动作提供 Primary / LabelLarge 环境。
 TonalElevation 默认 Level0，仅背景等于 Surface 色时参与色调叠加，没有默认投影。
-Comp.DatePickerModal Token 保留颜色、圆角及尺寸动态引用；当前没有完整 DatePickerColors 类型。
+内容中的 DatePicker/DateRangePicker 背景绑定到对话框 Background，保持两者容器色一致并跟随更新。
+DatePicker 年份视图覆盖在保留的月视图上；将它的 Background 设为 Transparent 会让下层月视图透出。
+颜色、圆角和尺寸来自 DatePickerModal Token。对话框没有单独的 DatePickerColors 类型。
 内容的局部字体、Width/Height 等继续按 Avalonia 属性语义执行。
 
 系统/IME inset 和平台安全窗口选项尚未实现；文字像素、真实输入法、屏幕阅读器模态隔离、

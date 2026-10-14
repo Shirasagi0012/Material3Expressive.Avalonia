@@ -169,7 +169,7 @@ public sealed class RepeatButtonThemeTests
     {
         var scrollBar = new ScrollBar { Orientation = Orientation.Vertical, Height = 200, Maximum = 100, ViewportSize = 20, Value = 40, AllowAutoHide = false };
         var nud = new NumericUpDown { Value = 5, Width = 280 };
-        var time = new TimePicker();
+        var time = new Avalonia.Controls.TimePicker();
         var window = Show(scrollBar, nud, fluent: true);
         ((StackPanel)window.Content!).Children.Add(time); Draw(window);
 

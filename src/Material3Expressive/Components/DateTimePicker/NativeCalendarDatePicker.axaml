@@ -1,0 +1,109 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="MaterialNativeCalendarDayTheme" TargetType="CalendarDayButton" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
+      <Setter Property="MinWidth" Value="40" /><Setter Property="MinHeight" Value="40" />
+      <Setter Property="Padding" Value="0" /><Setter Property="Margin" Value="2" />
+      <Setter Property="BorderThickness" Value="0" /><Setter Property="Background" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Full}}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Style Selector="^:today">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+      </Style>
+      <Style Selector="^:inactive"><Setter Property="Opacity" Value="0.38" /></Style>
+      <Style Selector="^:blackout"><Setter Property="Opacity" Value="0.38" /></Style>
+      <Style Selector="^:selected">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnPrimary}}" />
+      </Style>
+      <Style Selector="^:dayfocused">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        <Setter Property="BorderThickness" Value="2" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialNativeCalendarYearTheme" TargetType="CalendarButton" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
+      <Setter Property="MinWidth" Value="64" /><Setter Property="MinHeight" Value="48" />
+      <Setter Property="Padding" Value="8" /><Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" /><Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Style Selector="^:selected">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnPrimary}}" />
+      </Style>
+      <Style Selector="^:inactive"><Setter Property="Opacity" Value="0.38" /></Style>
+      <Style Selector="^:btnfocused">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        <Setter Property="BorderThickness" Value="2" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialNativeCalendarItemTheme" TargetType="CalendarItem">
+      <Setter Property="DayTitleTemplate"><Template x:DataType="x:String"><TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Template></Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid RowDefinitions="48,*" Width="336" Margin="12">
+            <Grid.Styles>
+              <Style Selector="CalendarDayButton"><Setter Property="Theme" Value="{StaticResource MaterialNativeCalendarDayTheme}" /></Style>
+              <Style Selector="CalendarButton"><Setter Property="Theme" Value="{StaticResource MaterialNativeCalendarYearTheme}" /></Style>
+            </Grid.Styles>
+            <Grid ColumnDefinitions="48,*,48">
+              <Button Name="PART_PreviousButton" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0" AutomationProperties.Name="Previous">
+                <Path Width="6" Height="12" Stretch="Fill" Data="M 6,0 L 0,6 L 6,12" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" />
+              </Button>
+              <Button Name="PART_HeaderButton" Grid.Column="1" Theme="{StaticResource MaterialTextButtonTheme}" HorizontalAlignment="Stretch" />
+              <Button Name="PART_NextButton" Grid.Column="2" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0" AutomationProperties.Name="Next">
+                <Path Width="6" Height="12" Stretch="Fill" Data="M 0,0 L 6,6 L 0,12" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" />
+              </Button>
+            </Grid>
+            <Grid Name="PART_MonthView" Grid.Row="1" ColumnDefinitions="*,*,*,*,*,*,*" RowDefinitions="40,48,48,48,48,48,48" />
+            <Grid Name="PART_YearView" Grid.Row="1" ColumnDefinitions="*,*,*,*" RowDefinitions="*,*,*" IsVisible="False" />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialNativeCalendarTheme" TargetType="Calendar">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.ExtraLarge}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+            <StackPanel Name="PART_Root">
+              <CalendarItem Name="PART_CalendarItem" Theme="{StaticResource MaterialNativeCalendarItemTheme}" />
+            </StackPanel>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialCalendarDatePickerTheme" TargetType="CalendarDatePicker">
+      <Setter Property="MinWidth" Value="280" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid>
+            <TextBox Name="PART_TextBox" Theme="{StaticResource MaterialOutlinedTextFieldTheme}"
+                     PlaceholderText="{TemplateBinding PlaceholderText}"
+                     DataValidationErrors.Errors="{TemplateBinding (DataValidationErrors.Errors)}">
+              <m3:MaterialTextField.TrailingIcon>
+                <Button Name="PART_Button" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0" Focusable="False" AutomationProperties.Name="Choose date">
+                  <Path Width="20" Height="20" Stretch="Fill" Data="M 2,4 L 18,4 L 18,18 L 2,18 Z M 2,8 L 18,8 M 6,1 L 6,6 M 14,1 L 14,6"
+                        Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" StrokeThickness="1.5" />
+                </Button>
+              </m3:MaterialTextField.TrailingIcon>
+            </TextBox>
+            <Popup Name="PART_Popup" PlacementTarget="{TemplateBinding}" Placement="Bottom" IsLightDismissEnabled="True" ShouldUseOverlayLayer="True">
+              <Calendar Name="PART_Calendar" Theme="{StaticResource MaterialNativeCalendarTheme}"
+                        DisplayDate="{TemplateBinding DisplayDate}" DisplayDateStart="{TemplateBinding DisplayDateStart}"
+                        DisplayDateEnd="{TemplateBinding DisplayDateEnd}" FirstDayOfWeek="{TemplateBinding FirstDayOfWeek}"
+                        IsTodayHighlighted="{TemplateBinding IsTodayHighlighted}"
+                        SelectedDate="{Binding SelectedDate, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+            </Popup>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type CalendarDatePicker}" TargetType="CalendarDatePicker" BasedOn="{StaticResource MaterialCalendarDatePickerTheme}" />
+  </Styles.Resources>
+</Styles>
+

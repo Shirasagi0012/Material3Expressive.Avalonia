@@ -1,0 +1,426 @@
+# ==============================================================================
+# C# Code Style — Adaptive Compact
+#
+# 目标：
+#   - 简单表达式保持紧凑
+#   - 复杂 Lambda / LINQ / chained calls 按结构展开
+#   - 避免按 '(' 或第一参数做深度列对齐
+#   - Lambda 使用 K&R
+#   - 普通方法、类型、控制块使用 Allman
+#   - 保留有意的手工换行
+#   - file-scoped namespace
+#   - 简短成员优先 expression body
+#   - 对 var 保守：仅类型显而易见时偏好 var
+#
+# [标准]        = EditorConfig / Roslyn / .NET 标准或 Microsoft 扩展
+# [R# 专属]     = ReSharper / Rider 的 resharper_csharp_* 扩展
+# ==============================================================================
+
+root = true
+
+
+# ==============================================================================
+# 基础文件格式
+# ==============================================================================
+
+[*]
+
+# [标准]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+indent_style = space
+indent_size = 4
+tab_width = 4
+
+
+# ==============================================================================
+# C#
+# ==============================================================================
+
+[*.cs]
+
+# ------------------------------------------------------------------------------
+# 行宽
+#
+# 130 是“可读性 vs. 少浪费行数”的折中值。
+# 注意：JetBrains 的 max_line_length 是 desired maximum；
+# Rider 中实际自动切断超长行还取决于 Wrap long lines 是否启用。
+# ------------------------------------------------------------------------------
+
+# [标准；Rider 也识别]
+max_line_length = 130
+
+
+# ------------------------------------------------------------------------------
+# Roslyn / 跨 IDE：大括号与换行
+#
+# 普通 declarations / control blocks = Allman
+# Lambda / anonymous method             = K&R
+# object/collection/anonymous initializer 不强制把 { 单独放一行
+#
+# 刻意没有加入：
+#   lambdas
+#   anonymous_methods
+#   anonymous_types
+#   object_collection_array_initializers
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_new_line_before_open_brace = accessors, control_blocks, events, indexers, local_functions, methods, properties, types
+
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# initializer 简单时允许紧凑；复杂时依赖行宽和人工语义换行
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = false
+
+# query-syntax LINQ 一旦多行，每个 clause 独立更清楚
+csharp_new_line_between_query_expression_clauses = true
+
+
+# ------------------------------------------------------------------------------
+# Roslyn / 跨 IDE：缩进
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = false
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+
+# ------------------------------------------------------------------------------
+# Roslyn / 跨 IDE：空格
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_space_after_comma = true
+csharp_space_before_comma = false
+
+csharp_space_around_binary_operators = before_and_after
+
+csharp_space_after_keywords_in_control_flow_statements = true
+
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+
+csharp_space_between_parentheses = false
+csharp_space_between_square_brackets = false
+
+
+# ------------------------------------------------------------------------------
+# Roslyn / 跨 IDE：单行块
+#
+# 不保留 "void M() { Foo(); }" 这种压缩方法。
+# 真正适合单行的成员由 expression-bodied style 处理。
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_preserve_single_line_blocks = false
+csharp_preserve_single_line_statements = false
+
+
+# ------------------------------------------------------------------------------
+# Namespace / using
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_using_directive_placement = outside_namespace:suggestion
+
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# [R# 专属]
+resharper_csharp_namespace_body = file_scoped
+
+
+# ------------------------------------------------------------------------------
+# Expression-bodied members
+#
+# 关键点：不是“凡是单 statement 都改 expression body”，
+# 而是“能够保持单行时才偏好 expression body”。
+#
+# Constructors 保持普通 block body，避免为了省两行而牺牲可扫描性。
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_local_functions = when_on_single_line:suggestion
+csharp_style_expression_bodied_operators = when_on_single_line:suggestion
+
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+csharp_style_expression_bodied_indexers = when_on_single_line:suggestion
+csharp_style_expression_bodied_accessors = when_on_single_line:suggestion
+
+csharp_style_expression_bodied_lambdas = true:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+
+# [R# 专属]
+# 保留 Rider 对“不适合 expression body”的额外启发式判断；
+# 尤其复杂 lambda-containing methods 不应被机械压成 expression body。
+resharper_csharp_use_heuristics_for_body_style = true
+
+
+# ------------------------------------------------------------------------------
+# var：保守偏好
+#
+# int/string/bool 等 built-in     -> 明确类型
+# new Customer(...) 等类型显然    -> var
+# 无法从右侧一眼看出类型          -> 明确类型
+#
+# Rider 使用 Roslyn/VS 的 "type is evident" 判定，尽量与其他 IDE 一致。
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# [R# 专属]
+resharper_csharp_for_built_in_types = use_explicit_type
+resharper_csharp_for_simple_types = use_var_when_evident
+resharper_csharp_for_other_types = use_var_when_evident
+resharper_csharp_use_roslyn_logic_for_evident_types = true
+
+
+# ------------------------------------------------------------------------------
+# 单语句控制流
+#
+# 单行 guard clause 不强迫加 braces；
+# 一旦 body 本身为多行，则偏好 braces。
+#
+# 例如：
+#   if (!item.IsValid)
+#       continue;
+#
+# 而复杂 foreach/if 仍保持明确层次。
+# ------------------------------------------------------------------------------
+
+# [标准 / Roslyn]
+csharp_prefer_braces = when_multiline:suggestion
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：保留人工布局
+# ==============================================================================
+
+# [R# 专属]
+# 这是整套风格最重要的设置之一：
+# 复杂表达式经过人工按语义分组后，不让 formatter 随意重新合并行。
+resharper_csharp_keep_user_linebreaks = true
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：Brace layout
+# ==============================================================================
+
+# Type / namespace-like declarations: Allman
+resharper_csharp_type_declaration_braces = next_line
+
+# Methods / constructors / local functions: Allman
+resharper_csharp_invocable_declaration_braces = next_line
+
+# Properties / indexers / events: Allman
+resharper_csharp_accessor_owner_declaration_braces = next_line
+resharper_csharp_accessor_declaration_braces = next_line
+
+# if / for / foreach / while / try 等：Allman
+resharper_csharp_other_braces = next_line
+
+# Lambda / delegate：K&R
+#
+# items.Select(x => {
+#     ...
+# })
+resharper_csharp_anonymous_method_declaration_braces = end_of_line
+
+# Initializer / switch expression / pattern / collection expression：紧凑 K&R
+#
+# return state switch {
+#     ...
+# };
+#
+# var x = new Foo {
+#     ...
+# };
+resharper_csharp_initializer_braces = end_of_line
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：禁止深度按列对齐
+#
+# 原则：
+#   continuation indent，而不是 visual/column alignment。
+#
+# 避免：
+#   Foo(first,
+#       second,
+#       third)
+#
+# 更倾向：
+#   Foo(first,
+#       second,   <-- formatter 不会为了 '(' 做很远的列对齐
+#       third)
+#
+# 对非常深的 lambda / LINQ 尤其重要。
+# ==============================================================================
+
+resharper_csharp_align_multiline_calls_chain = false
+resharper_csharp_align_multiline_argument = false
+resharper_csharp_align_first_arg_by_paren = false
+resharper_csharp_align_multiline_parameter = false
+resharper_csharp_align_multiline_expression = false
+resharper_csharp_align_multiline_switch_expression = false
+
+# 即便某些 alignment 规则未来被打开，也不允许产生非常远的 alignment。
+resharper_csharp_allow_far_alignment = false
+
+# 普通 continuation indent：1 × indent_size
+resharper_csharp_continuous_indent_multiplier = 1
+
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：参数列表
+#
+# wrap_if_long 而不是 chop_if_long：
+#   - 短调用维持单行
+#   - 超长后简单折行
+#   - 不因已经出现一个多行 lambda 就强制所有参数“一参一行”
+# ==============================================================================
+
+resharper_csharp_wrap_arguments_style = wrap_if_long
+resharper_csharp_wrap_parameters_style = wrap_if_long
+resharper_csharp_wrap_primary_constructor_parameters_style = wrap_if_long
+
+# 不人为制造：
+#
+# Foo(
+#     arg1,
+#     arg2
+# )
+#
+# 这种“括号自己占行”的垂直膨胀。
+resharper_csharp_wrap_after_invocation_lpar = false
+resharper_csharp_wrap_before_invocation_rpar = false
+
+resharper_csharp_wrap_after_declaration_lpar = false
+resharper_csharp_wrap_before_declaration_rpar = false
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：链式调用 / fluent API / LINQ method syntax
+#
+# chop_if_long：
+#   短链：
+#       source.Where(...).ToArray();
+#
+#   长链：
+#       source
+#           .Where(...)
+#           .Select(...)
+#           .OrderBy(...)
+#           .ToArray();
+# ==============================================================================
+
+resharper_csharp_wrap_chained_method_calls = chop_if_long
+
+# false = 更倾向在 "." 前换行，也就是 "." 出现在新行开头。
+resharper_csharp_wrap_after_dot_in_method_calls = false
+
+# 不把 receiver 和第一个 call 无条件拆开；
+# 只有整个 chain 确实需要展开时才展开。
+resharper_csharp_wrap_before_first_method_call = false
+
+# property + 紧跟的方法尽量视为一个局部单元，减少机械碎行。
+resharper_csharp_wrap_after_property_in_chained_method_calls = false
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：LINQ query syntax
+# ==============================================================================
+
+# 一旦整个 LINQ expression 太长，就建立清晰的纵向结构；
+# 短 query 不拆。
+resharper_csharp_wrap_linq_expressions = chop_if_long
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：Switch expression
+#
+# 简单 switch：
+#   x switch { A => 1, B => 2 }
+#
+# 复杂 switch：
+#   x switch {
+#       A => ...,
+#       B => ...,
+#       ...
+#   }
+# ==============================================================================
+
+resharper_csharp_keep_existing_switch_expression_arrangement = true
+resharper_csharp_place_simple_switch_expression_on_single_line = true
+resharper_csharp_wrap_switch_expression = chop_if_long
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：其它长表达式
+#
+# 二元/三元表达式使用 simple wrap，而不是见长就“一项一行”。
+# ==============================================================================
+
+resharper_csharp_wrap_chained_binary_expressions = wrap_if_long
+resharper_csharp_wrap_ternary_expr_style = wrap_if_long
+
+
+# ==============================================================================
+# ReSharper / Rider 专属：避免 block 的伪紧凑
+#
+# 我们要压缩的是“表达式”，不是把 statement block 挤成一行。
+#
+# 好：
+#   int Count => Items.Count;
+#
+# 不鼓励：
+#   void Update() { Refresh(); }
+#   if (ready) { Start(); }
+# ==============================================================================
+
+resharper_csharp_place_simple_method_on_single_line = false
+resharper_csharp_place_simple_embedded_block_on_same_line = false
+resharper_csharp_place_simple_anonymousmethod_on_single_line = false
+
+
+
+# 参数与初始化器的对齐
+resharper_csharp_align_multiline_array_and_object_initializer = false
+
+# 自动属性单行，带逻辑的属性保留多行
+resharper_csharp_place_abstract_accessorholder_on_single_line = true
+resharper_csharp_place_simple_accessorholder_on_single_line = false
+resharper_csharp_keep_existing_declaration_block_arrangement = false
+
+# 简单对象初始化器保持单行
+resharper_csharp_place_simple_initializer_on_single_line = true
+resharper_csharp_wrap_object_and_collection_initializer_style = wrap_if_long
+resharper_csharp_keep_existing_initializer_arrangement = false
+
+resharper_csharp_align_multiline_binary_expressions_chain = false
+resharper_csharp_wrap_before_binary_operator = true
+resharper_csharp_outdent_binary_ops = true
+resharper_csharp_outdent_binary_pattern_ops = true
+resharper_csharp_outdent_dots = true

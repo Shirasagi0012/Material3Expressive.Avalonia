@@ -1,32 +1,37 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        x:Class="Material3Expressive.Catalog.PickerDialogDemo" Width="760" Height="680" Title="Picker dialogs">
+        x:Class="Material3Expressive.Catalog.PickerDialogDemo" Width="980" Height="960" Title="Picker dialogs">
   <Grid>
-    <StackPanel Margin="32" Spacing="16" HorizontalAlignment="Left">
-      <TextBlock Text="Picker dialog containers" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
-      <TextBlock Text="These examples supply text editors in the content slots." />
-      <Button Content="Open date dialog" Click="OnOpenDate" />
-      <Button Content="Open time dialog" Click="OnOpenTime" />
-      <TextBlock x:Name="Result" Text="Choose an editor" />
+    <StackPanel Margin="32" Spacing="16" HorizontalAlignment="Left" MaxWidth="360">
+      <TextBlock Text="Picker dialogs" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <TextBlock Text="Confirm writes the picker value. Cancel and dismiss leave the committed value unchanged." TextWrapping="Wrap" />
+      <Button Content="Open date dialog" Click="OnOpenDate" HorizontalAlignment="Left" />
+      <Button Content="Open date range dialog" Click="OnOpenRange" HorizontalAlignment="Left" />
+      <Button Content="Open time dialog" Click="OnOpenTime" HorizontalAlignment="Left" />
+      <TextBlock x:Name="Result" TextWrapping="Wrap" />
     </StackPanel>
     <m3:DatePickerDialog x:Name="DateDialog" DismissRequested="OnDismissRequested">
-      <StackPanel Margin="24" Spacing="16">
-        <TextBlock Text="Enter date" m3:MaterialText.Style="{m3:Typography LabelLarge}" />
-        <TextBox x:Name="DateEditor" Text="2026-10-11" m3:MaterialTextField.Label="YYYY-MM-DD" />
-      </StackPanel>
+      <m3:DatePicker x:Name="DraftDate" Background="{Binding #DateDialog.Background}" />
       <m3:DatePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmDate" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:DatePickerDialog.ConfirmButton>
       <m3:DatePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelDate" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:DatePickerDialog.DismissButton>
     </m3:DatePickerDialog>
+    <m3:DatePickerDialog x:Name="RangeDialog" DismissRequested="OnDismissRequested">
+      <m3:DateRangePicker x:Name="DraftRange" Background="{Binding #RangeDialog.Background}" />
+      <m3:DatePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmRange" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:DatePickerDialog.ConfirmButton>
+      <m3:DatePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelRange" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:DatePickerDialog.DismissButton>
+    </m3:DatePickerDialog>
     <m3:TimePickerDialog x:Name="TimeDialog" DismissRequested="OnDismissRequested">
       <m3:TimePickerDialog.Title>
-        <TextBlock Text="Enter time" Margin="0,0,0,20" m3:MaterialText.Style="{m3:Typography LabelMedium}" />
+        <TextBlock x:Name="TimeTitle" Text="Select time" Margin="0,0,0,20" m3:MaterialText.Style="{m3:Typography LabelMedium}" />
       </m3:TimePickerDialog.Title>
-      <StackPanel Width="256" Spacing="12" Margin="0,0,0,20">
-        <TextBox x:Name="TimeEditor" Text="09:30" m3:MaterialTextField.Label="HH:mm" />
-        <TextBlock x:Name="TimeHelp" IsVisible="False" Text="Use a 24-hour time, such as 18:45." TextWrapping="Wrap" />
-      </StackPanel>
+      <Grid>
+        <m3:TimePicker x:Name="DraftDial" Layout="Vertical" />
+        <m3:TimeInput x:Name="DraftInput" IsVisible="False"
+                      SelectedTime="{Binding #DraftDial.SelectedTime, Mode=TwoWay}"
+                      Is24Hour="{Binding #DraftDial.Is24Hour, Mode=TwoWay}" />
+      </Grid>
       <m3:TimePickerDialog.ModeToggleButton>
-        <Button Content="Help" Click="OnToggleHelp" Theme="{StaticResource MaterialTextButtonTheme}" />
+        <Button x:Name="TimeModeButton" Content="Keyboard" Click="OnToggleTimeMode" Theme="{StaticResource MaterialTextButtonTheme}" />
       </m3:TimePickerDialog.ModeToggleButton>
       <m3:TimePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimePickerDialog.ConfirmButton>
       <m3:TimePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimePickerDialog.DismissButton>

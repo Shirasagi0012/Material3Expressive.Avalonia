@@ -35,6 +35,8 @@ public partial class App : Application
                 ? new NumericUpDownDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--text-fields") >= 0
                 ? new TextFieldDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--date-time-pickers") >= 0
+                ? new DateTimePickerDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--combo-box") >= 0
                 ? new ComboBoxDemo()
                 : new MainWindow();

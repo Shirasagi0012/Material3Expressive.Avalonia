@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.DateTimePickerDemo" Title="Date and time pickers" Width="1100" Height="850">
+  <Grid>
+    <ScrollViewer>
+      <StackPanel Margin="24" Spacing="24">
+        <TextBlock Text="Date and time pickers" FontSize="28" />
+        <WrapPanel>
+          <Button Content="Light / dark" Click="ToggleTheme" Margin="0,0,12,0" />
+          <Button Content="LTR / RTL" Click="ToggleDirection" Margin="0,0,12,0" />
+          <Button Content="12 / 24 hours" Click="ToggleClock" />
+        </WrapPanel>
+        <TextBlock Text="Compose date content — calendar and input modes" FontSize="20" />
+        <WrapPanel>
+          <m3:DatePicker Name="Date" Margin="0,0,24,0" />
+          <m3:DateRangePicker Name="Range" Width="420" />
+        </WrapPanel>
+        <TextBlock Text="TimePicker · TimeInput · TimeScroll — shared valid value" FontSize="20" />
+        <WrapPanel>
+          <m3:TimePicker Name="Dial" Layout="Vertical" Margin="0,0,32,0" />
+          <StackPanel Spacing="24">
+            <m3:TimeInput Name="Input" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
+            <m3:TimeScroll Name="Scroll" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
+            <TextBlock Text="{Binding #Dial.SelectedTime}" />
+            <TextBlock Text="{Binding #Input.IsInputValid, StringFormat='Input valid: {0}'}" />
+          </StackPanel>
+        </WrapPanel>
+        <TextBlock Text="Vibrant / horizontal / uncontained" FontSize="20" />
+        <m3:TimePicker Name="Vibrant" Variant="Vibrant" Layout="Horizontal" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
+        <m3:TimeInput Name="Uncontained" Variant="Vibrant" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}">
+          <m3:TimeInput.Toggle><Button Content="Input" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimeInput.Toggle>
+        </m3:TimeInput>
+        <TextBlock Text="Avalonia native controls — original API and flyout behavior" FontSize="20" />
+        <WrapPanel>
+          <DatePicker Margin="0,0,24,0" />
+          <TimePicker UseSeconds="True" MinuteIncrement="5" SecondIncrement="5" Margin="0,0,24,0" />
+          <CalendarDatePicker PlaceholderText="Enter a date" />
+        </WrapPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</Window>

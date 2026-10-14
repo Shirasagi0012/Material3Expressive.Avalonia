@@ -47,5 +47,8 @@
         <InternalsVisibleTo Include="Material3Expressive.Tests" />
         <InternalsVisibleTo Include="Material3Expressive.Parity" />
     </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Components/DateTimePicker/DateTimeStrings.json" />
+    </ItemGroup>
 
 </Project>
