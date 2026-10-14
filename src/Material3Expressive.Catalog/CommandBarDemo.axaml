@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.CommandBarDemo" Title="M3 CommandBar" Width="840" Height="540">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="16">
+      <TextBlock Text="CommandBar" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <TextBlock Text="Resize the window for dynamic overflow. Toggle Pin and Bold to compare selection motion." TextWrapping="Wrap" />
+      <TextBlock Text="Stacked labels" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <CommandBar Theme="{StaticResource MaterialCommandBarStackedTheme}">
+        <CommandBar.PrimaryCommands>
+          <CommandBarButton Label="New" Icon="{m3:Symbol Add}" Click="OnAction" DynamicOverflowOrder="0" />
+          <CommandBarButton Label="Copy" Icon="{m3:Symbol ContentCopy}" Click="OnAction" DynamicOverflowOrder="0" />
+          <CommandBarSeparator />
+          <CommandBarToggleButton Label="Pin" Icon="{m3:Symbol PushPin}" IsChecked="True" Click="OnAction" DynamicOverflowOrder="1" />
+          <CommandBarToggleButton Label="Bold" Icon="{m3:Symbol FormatBold}" Click="OnAction" DynamicOverflowOrder="1" />
+          <CommandBarButton Label="Share" Icon="{m3:Symbol Share}" Click="OnAction" DynamicOverflowOrder="2" />
+          <CommandBarButton Label="Delete" Icon="{m3:Symbol Delete}" IsEnabled="False" DynamicOverflowOrder="3" />
+        </CommandBar.PrimaryCommands>
+        <CommandBar.SecondaryCommands>
+          <CommandBarButton Label="Properties" Icon="{m3:Symbol Info}" Click="OnAction" />
+          <CommandBarToggleButton Label="Read only" Icon="{m3:Symbol Lock}" IsChecked="True" Click="OnAction" />
+        </CommandBar.SecondaryCommands>
+      </CommandBar>
+      <TextBlock Text="Inline labels" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <CommandBar Theme="{StaticResource MaterialCommandBarInlineTheme}">
+        <CommandBar.PrimaryCommands>
+          <CommandBarButton Label="New" Icon="{m3:Symbol Add}" Click="OnAction" DynamicOverflowOrder="0" />
+          <CommandBarButton Label="Copy" Icon="{m3:Symbol ContentCopy}" Click="OnAction" DynamicOverflowOrder="0" />
+          <CommandBarSeparator />
+          <CommandBarToggleButton Label="Pin" Icon="{m3:Symbol PushPin}" IsChecked="True" Click="OnAction" DynamicOverflowOrder="1" />
+          <CommandBarToggleButton Label="Bold" Icon="{m3:Symbol FormatBold}" Click="OnAction" DynamicOverflowOrder="1" />
+          <CommandBarButton Label="Share" Icon="{m3:Symbol Share}" Click="OnAction" DynamicOverflowOrder="2" />
+          <CommandBarButton Label="Delete" Icon="{m3:Symbol Delete}" IsEnabled="False" DynamicOverflowOrder="3" />
+        </CommandBar.PrimaryCommands>
+        <CommandBar.SecondaryCommands>
+          <CommandBarButton Label="Properties" Icon="{m3:Symbol Info}" Click="OnAction" />
+          <CommandBarToggleButton Label="Read only" Icon="{m3:Symbol Lock}" IsChecked="True" Click="OnAction" />
+        </CommandBar.SecondaryCommands>
+      </CommandBar>
+      <TextBlock Text="Icons only" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <CommandBar Theme="{StaticResource MaterialCommandBarIconTheme}">
+        <CommandBar.PrimaryCommands>
+          <CommandBarButton Label="New" Icon="{m3:Symbol Add}" Click="OnAction" DynamicOverflowOrder="0" />
+          <CommandBarButton Label="Copy" Icon="{m3:Symbol ContentCopy}" Click="OnAction" DynamicOverflowOrder="0" />
+          <CommandBarSeparator />
+          <CommandBarToggleButton Label="Pin" Icon="{m3:Symbol PushPin}" IsChecked="True" Click="OnAction" DynamicOverflowOrder="1" />
+          <CommandBarToggleButton Label="Bold" Icon="{m3:Symbol FormatBold}" Click="OnAction" DynamicOverflowOrder="1" />
+          <CommandBarButton Label="Share" Icon="{m3:Symbol Share}" Click="OnAction" DynamicOverflowOrder="2" />
+          <CommandBarButton Label="Delete" Icon="{m3:Symbol Delete}" IsEnabled="False" DynamicOverflowOrder="3" />
+        </CommandBar.PrimaryCommands>
+        <CommandBar.SecondaryCommands>
+          <CommandBarButton Label="Properties" Icon="{m3:Symbol Info}" Click="OnAction" />
+          <CommandBarToggleButton Label="Read only" Icon="{m3:Symbol Lock}" IsChecked="True" Click="OnAction" />
+        </CommandBar.SecondaryCommands>
+      </CommandBar>
+      <TextBlock x:Name="Status" Text="Ready" />
+    </StackPanel>
+  </ScrollViewer>
+</Window>

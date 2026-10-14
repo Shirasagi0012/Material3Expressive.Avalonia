@@ -9,8 +9,6 @@ using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using ComposeAnimation;
-using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
@@ -70,17 +68,12 @@ public class NavigationBarItem : Button
         AvaloniaProperty.Register<NavigationBarItem, Color>(nameof(DisabledTextColor), default);
     public Color DisabledTextColor { get => GetValue(DisabledTextColorProperty); set => SetValue(DisabledTextColorProperty, value); }
 
-    private Animatable<float>? _alpha;
-    private Animatable<float>? _size;
-    private Animatable<Color>? _iconColor;
-    private Animatable<Color>? _textColor;
-    private AnimationChildScope? _attachScope;
+    private SelectionIndicatorAnimation? _selectionAnimation;
     private NavigationBarItemLayout? _layout;
     private ContentPresenter? _icon;
     private ContentPresenter? _label;
     private Border? _indicator;
     private NavigationBarItemAutomationPeer? _peer;
-    private bool _targetsPending;
     private Key? _activationKey;
     private bool _suppressKeyboardClick;
 
@@ -109,10 +102,7 @@ public class NavigationBarItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        // The motion lease follows the template parts it samples. Replacing the template
-        // cancels in-flight selection work before those parts are cleared.
-        _attachScope?.Dispose(); _attachScope = null;
-        _alpha = _size = null; _iconColor = _textColor = null; _targetsPending = false;
+        ReleaseMotion();
         base.OnApplyTemplate(e);
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _layout = e.NameScope.Find<NavigationBarItemLayout>("PART_Layout");
@@ -127,18 +117,20 @@ public class NavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
+        if (_layout is not null)
+        {
+            _layout.PropertyChanged -= MotionConfigurationChanged;
+            _layout.PropertyChanged += MotionConfigurationChanged;
+        }
         InitializeMotion();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _alpha = _size = null;
-        _targetsPending = false;
+        ReleaseMotion();
         _activationKey = null;
-        _iconColor = _textColor = null;
-        if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
-        _attachScope?.Dispose(); _attachScope = null;
+        if (_layout is not null)
+            _layout.PropertyChanged -= MotionConfigurationChanged;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -167,88 +159,69 @@ public class NavigationBarItem : Button
 
     private void InitializeMotion()
     {
-        if (_layout is null || !this.IsAttachedToVisualTree() || _alpha is not null)
+        if (_layout is not { } layout || !this.IsAttachedToVisualTree() || _selectionAnimation is not null)
             return;
-        if (_attachScope is not { } motion || motion.Lifetime.IsCancellationRequested)
-        {
-            _attachScope?.Dispose();
-            motion = _attachScope = AnimationScope.Get(this).CreateChild("Navigation bar item");
-        }
-        _alpha = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
-        _size = new Animatable<float>(new FloatConverter(), IsSelected ? 1f : 0f, VisibilityThresholds.Float);
-        _iconColor = new Animatable<Color>(new ColorConverter(), IconTarget, default);
-        _textColor = new Animatable<Color>(new ColorConverter(), TextTarget, default);
-        motion.SubscribeValue(_alpha, value =>
-        {
-            _layout.AlphaProgress = value;
-            if (_indicator is not null) _indicator.Opacity = Math.Clamp(value, 0, 1);
-        });
-        motion.SubscribeValue(_size, value =>
-        {
-            var wasPlaced = _layout.SizeProgress > 0;
-            _layout.SizeProgress = value;
-            if (wasPlaced != (value > 0)) _peer?.RefreshChildren();
-        });
-        motion.SubscribeValue(_iconColor, value => { if (_icon is not null) _icon.Foreground = new SolidColorBrush(value); });
-        motion.SubscribeValue(_textColor, value => { if (_label is not null) _label.Foreground = new SolidColorBrush(value); });
+
+        var animation = new SelectionIndicatorAnimation(this, IsSelected, IconTarget, TextTarget);
+        _selectionAnimation = animation;
+
+        // These connections belong to this template's animation identity and are released with it.
+        animation.IndicatorOpacity.Bind(layout, NavigationBarItemLayout.AlphaProgressProperty);
+        animation.IndicatorSize.Bind(layout, NavigationBarItemLayout.SizeProgressProperty);
+        var labelWasPlaced = animation.IndicatorSize.Value > 0;
+        animation.IndicatorOpacity.ValueChanged += ApplyIndicatorOpacity;
+        animation.IndicatorSize.ValueChanged += OnIndicatorSizeChanged;
+        animation.IconColor.ValueChanged += ApplyIconColor;
+        animation.TextColor.ValueChanged += ApplyTextColor;
+
+        ApplyIndicatorOpacity(animation.IndicatorOpacity.Value);
+        ApplyIconColor(animation.IconColor.Value);
+        ApplyTextColor(animation.TextColor.Value);
         UpdateIconSemantics();
+
+        void ApplyIndicatorOpacity(float opacity)
+        {
+            if (_indicator is not null)
+                _indicator.Opacity = Math.Clamp(opacity, 0, 1);
+        }
+
+        void OnIndicatorSizeChanged(float progress)
+        {
+            var labelIsPlaced = progress > 0;
+            if (labelWasPlaced != labelIsPlaced)
+                _peer?.RefreshChildren();
+            labelWasPlaced = labelIsPlaced;
+        }
+
+        void ApplyIconColor(Color color)
+        {
+            if (_icon is not null)
+                _icon.Foreground = new SolidColorBrush(color);
+        }
+
+        void ApplyTextColor(Color color)
+        {
+            if (_label is not null)
+                _label.Foreground = new SolidColorBrush(color);
+        }
     }
 
-    private void UpdateIconSemantics()
+    private void ReleaseMotion()
     {
-        // Suppress the entire icon subtree while the label supplies the destination name.
-        _peer?.RefreshChildren();
+        _selectionAnimation?.Dispose();
+        _selectionAnimation = null;
     }
+
+    private void UpdateIconSemantics() => _peer?.RefreshChildren();
 
     private void UpdateTargets()
     {
-        if (!this.IsAttachedToVisualTree() || _alpha is null || _attachScope is not { } motion
-            || motion.Lifetime.IsCancellationRequested)
+        if (_layout is not { } layout)
             return;
-        if (_targetsPending) return;
-        _targetsPending = true;
-        // AnimateAsState.update is a composition SideEffect. The fixed Desktop
-        // FrameRecomposer applies it on the next frame, before these animatables
-        // receive their first animation frame. Coalesce targets in that same order.
-        _ = motion.Launch(async ct =>
-        {
-            await motion.NextFrameAsync(ct);
-            _targetsPending = false;
-            CommitTargets();
-        }, "Navigation bar animation targets");
+
+        _selectionAnimation?.UpdateTargets(
+            IsSelected, IconTarget, TextTarget, layout.EffectsAnimation, layout.IndicatorSizeAnimation);
     }
-
-    private void CommitTargets()
-    {
-        if (!this.IsAttachedToVisualTree() || _alpha is null || _size is null
-            || _iconColor is null || _textColor is null || _attachScope is not { } motion
-            || motion.Lifetime.IsCancellationRequested)
-            return;
-        // Fixed AnimateAsState.restartAnimation cancels its previous job before
-        // animateTo: cancellation resets velocity and the frame anchor. Calling
-        // AnimateTo directly would instead carry the old velocity into the new target.
-        // Spec changes apply at the next target change.
-        var effects = _layout!.EffectsAnimation;
-        var spatial = _layout!.IndicatorSizeAnimation;
-        if (effects.Stiffness <= 0 || spatial.Stiffness <= 0) return;
-        var selected = IsSelected ? 1f : 0f;
-        Restart(_alpha, selected, new SpringSpec<float>(effects.DampingRatio, effects.Stiffness, 0.01f), "Navigation bar indicator alpha");
-        Restart(_size, selected, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), "Navigation bar indicator size");
-        Restart(_iconColor, IconTarget, new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness), "Navigation bar icon color");
-        Restart(_textColor, TextTarget, new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness), "Navigation bar label color");
-
-        void Restart<T>(Animatable<T> track, T target, SpringSpec<T> spec, string label)
-        {
-            if (EqualityComparer<T>.Default.Equals(track.TargetValue, target)) return;
-            _ = motion.Launch(async ct =>
-            {
-                await track.StopAsync();
-                ct.ThrowIfCancellationRequested();
-                await track.AnimateToAsync(motion, target, spec, cancellationToken: ct);
-            }, label);
-        }
-    }
-
 
     protected override AutomationPeer OnCreateAutomationPeer() => _peer = new NavigationBarItemAutomationPeer(this);
 

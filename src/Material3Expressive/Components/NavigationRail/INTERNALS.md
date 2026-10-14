@@ -36,9 +36,9 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
   受约束布局和按物理像素舍入。selected-only label 在 sizeProgress 为零时不绘制。
 - Icon presenter 将 NavigationRail.IconSize Token 24 DIP 作为 MaterialIcon.DefaultSize 传给无显式尺寸的
   MaterialSymbol；自定义图标仍按实际测量值布局，不通过外层尺寸属性裁限。
-- Item 的 icon/text 颜色、指示器透明度和尺寸分别使用 ComposeAnimation Animatable。
+- Item 的 icon/text 颜色、指示器透明度和尺寸通过共享 `SelectionIndicatorAnimation` 使用四条 `AnimatedState`。
   EffectsDefault 控制颜色与透明度，SpatialFast 控制尺寸；尺寸只下限裁到零，保留过冲。
-  固定 AnimateAsState 的 SideEffect 对应下一帧目标提交；反向中断先取消旧任务、清零速度与帧锚点。
+  目标合并、反向中断与 Scope 连接由 AnimatedState 管理；不再由组件手动等帧或启动动画任务。
   detach / 模板替换释放作用域，重挂载按当前目标初始化。
 - 复用共享 ripple 与状态层。MappedInteractionSource 按 token 宽度差映射 `(12, 0)`，
   不减去实际 pill 位置。无标签的 pill/ripple 为圆形；有标签使用 ActiveIndicatorShape。
@@ -105,3 +105,19 @@ Catalog 入口为 [MainWindow.axaml](../../../Material3Expressive.Catalog/MainWi
 上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/NavigationRail/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+## 共享选择动画（2026-10-15）
+
+Bar 与 Rail 使用 [SelectionIndicatorAnimation](../NavigationBar/SelectionIndicatorAnimation.cs)。
+组件负责选择目标颜色、绑定布局进度和将采样应用于模板部件；共享对象只持有四条状态、提交规格与目标并统一释放。
+同类型布局属性通过 `AnimatedState.Bind` 建立 Animation 优先级连接；颜色到画刷和透明度裁限仍由呈现端处理。
+调用方不另建子 Scope，不缓存 pending 标记，也不包装每条轨迹的异步任务。
+
+本次保留原有生命周期：模板替换或 detach 释放整个选择动画身份，重新挂载按当前状态初始化。
+这不同于长期保留 AnimatedState、仅替换输出连接的用法，是当前导航组件已有的重置语义。
+
+AnimatedState 的新运行在到达帧进入采样，不再额外等待原实现的 NextFrameAsync 路径；
+静止端点与 spring 参数保留。当前 AnimatedState 还会在目标替换时接续速度，
+旧本地实现则先 Stop 清零速度。维护者已确认采用当前 AnimatedState 默认行为，
+组件不添加中断或等帧补偿；固定上游的实际中断轨迹仍待独立研究，不据此声称逐帧相等。
+本次没有修改 Compose 参考或比较容差，也没有重新执行双端视觉验证。

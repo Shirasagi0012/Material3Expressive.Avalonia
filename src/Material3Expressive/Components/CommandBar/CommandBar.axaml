@@ -1,0 +1,235 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ControlTemplate x:Key="MaterialCommandBarButtonTemplate" TargetType="CommandBarButton">
+        <m3:CommandBarItemLayout x:Name="CommandLayout" Background="Transparent"
+            LabelPosition="{TemplateBinding LabelPosition}"
+            IsInOverflow="{TemplateBinding IsInOverflow}"
+            EffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.EffectsAnimation}}"
+            SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorSizeAnimation}}"
+            IndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorWidth}}"
+            IndicatorHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorHeight}}"
+            InlineContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.InlineContentPadding}}"
+            MenuContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}"
+            MenuMinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}"
+            MenuMaximumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MaxItemWidth}}"
+            MenuContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemHeight}}"
+            MenuMinimumInteractiveHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}"
+            MenuItemShape="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemShape}}"
+            MenuSelectedItemShape="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.SelectedItemShape}}"
+            SelectedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.SelectedIconColor}}"
+            SelectedTextColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.SelectedTextColor}}"
+            UnselectedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.UnselectedIconColor}}"
+            UnselectedTextColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.UnselectedTextColor}}"
+            DisabledIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.DisabledIconColor}}"
+            DisabledTextColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.DisabledTextColor}}"
+            >
+          <Border IsHitTestVisible="False" RenderOptions.RequiresFullOpacityHandling="True"
+                  Opacity="{Binding IndicatorOpacity, ElementName=CommandLayout}">
+            <Border x:Name="PART_Indicator" Background="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorColor}}" />
+          </Border>
+          <ContentPresenter x:Name="PART_Icon" IsHitTestVisible="False"
+              IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
+              Content="{TemplateBinding Icon}"
+              Foreground="{Binding AnimatedIconColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
+              m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconSize}}" />
+          <ContentPresenter x:Name="PART_Label" IsHitTestVisible="False"
+              Content="{TemplateBinding Label}"
+              Foreground="{Binding AnimatedTextColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
+              m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.LabelTextStyle}}" />
+          <m3:MaterialSurface x:Name="PART_IndicatorRipple" Background="Transparent" IsHitTestVisible="False"
+              TextElement.Foreground="{TemplateBinding Foreground}"
+              StateLayerBrush="{TemplateBinding Foreground}"
+              HoverStateLayerOpacity="0" FocusStateLayerOpacity="0" />
+        </m3:CommandBarItemLayout>
+      </ControlTemplate>
+      <ControlTemplate x:Key="MaterialCommandBarToggleButtonTemplate" TargetType="CommandBarToggleButton">
+        <m3:CommandBarItemLayout x:Name="CommandLayout" Background="Transparent"
+            LabelPosition="{TemplateBinding LabelPosition}"
+            IsInOverflow="{TemplateBinding IsInOverflow}"
+            EffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.EffectsAnimation}}"
+            SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorSizeAnimation}}"
+            IndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorWidth}}"
+            IndicatorHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorHeight}}"
+            InlineContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.InlineContentPadding}}"
+            MenuContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}"
+            MenuMinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}"
+            MenuMaximumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MaxItemWidth}}"
+            MenuContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemHeight}}"
+            MenuMinimumInteractiveHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}"
+            MenuItemShape="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemShape}}"
+            MenuSelectedItemShape="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.SelectedItemShape}}"
+            SelectedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.SelectedIconColor}}"
+            SelectedTextColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.SelectedTextColor}}"
+            UnselectedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.UnselectedIconColor}}"
+            UnselectedTextColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.UnselectedTextColor}}"
+            DisabledIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.DisabledIconColor}}"
+            DisabledTextColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.DisabledTextColor}}"
+            >
+          <Border IsHitTestVisible="False" RenderOptions.RequiresFullOpacityHandling="True"
+                  Opacity="{Binding IndicatorOpacity, ElementName=CommandLayout}">
+            <Border x:Name="PART_Indicator" Background="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorColor}}" />
+          </Border>
+          <ContentPresenter x:Name="PART_Icon" IsHitTestVisible="False"
+              IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
+              Content="{TemplateBinding Icon}"
+              Foreground="{Binding AnimatedIconColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
+              m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconSize}}" />
+          <ContentPresenter x:Name="PART_Label" IsHitTestVisible="False"
+              Content="{TemplateBinding Label}"
+              Foreground="{Binding AnimatedTextColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
+              m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.LabelTextStyle}}" />
+          <m3:MaterialSurface x:Name="PART_IndicatorRipple" Background="Transparent" IsHitTestVisible="False"
+              TextElement.Foreground="{TemplateBinding Foreground}"
+              StateLayerBrush="{TemplateBinding Foreground}"
+              HoverStateLayerOpacity="0" FocusStateLayerOpacity="0" />
+        </m3:CommandBarItemLayout>
+      </ControlTemplate>
+      <ControlTheme x:Key="MaterialCommandBarItemBaseTheme" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.UnselectedIconColor}}" />
+      </ControlTheme>
+      <ControlTheme x:Key="{x:Type CommandBarButton}" TargetType="CommandBarButton" BasedOn="{StaticResource MaterialCommandBarItemBaseTheme}">
+        <Setter Property="Template" Value="{StaticResource MaterialCommandBarButtonTemplate}" />
+        <Style Selector="^[IsCompact=True][IsInOverflow=False]">
+          <Setter Property="ToolTip.Tip" Value="{Binding Label, RelativeSource={RelativeSource Self}}" />
+        </Style>
+        <Style Selector="^[IsCompact=True] /template/ ContentPresenter#PART_Label">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True]">
+          <Setter Property="HorizontalAlignment" Value="Stretch" />
+          <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True] /template/ m3|CommandBarItemLayout#CommandLayout">
+          <Setter Property="IconLabelSpacing" Value="8" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Icon">
+          <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+          <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Label">
+          <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="{x:Type CommandBarToggleButton}" TargetType="CommandBarToggleButton" BasedOn="{StaticResource MaterialCommandBarItemBaseTheme}">
+        <Setter Property="Template" Value="{StaticResource MaterialCommandBarToggleButtonTemplate}" />
+        <Style Selector="^[IsCompact=True][IsInOverflow=False]">
+          <Setter Property="ToolTip.Tip" Value="{Binding Label, RelativeSource={RelativeSource Self}}" />
+        </Style>
+        <Style Selector="^[IsCompact=True] /template/ ContentPresenter#PART_Label">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True]">
+          <Setter Property="HorizontalAlignment" Value="Stretch" />
+          <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True] /template/ m3|CommandBarItemLayout#CommandLayout">
+          <Setter Property="IconLabelSpacing" Value="8" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Icon">
+          <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+          <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+        </Style>
+        <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Label">
+          <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="{x:Type CommandBarSeparator}" TargetType="CommandBarSeparator">
+        <Setter Property="Margin" Value="8,8" />
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Template">
+          <ControlTemplate><Border Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" /></ControlTemplate>
+        </Setter>
+        <Style Selector="^[IsInOverflow=True]">
+          <Setter Property="Width" Value="NaN" />
+          <Setter Property="Height" Value="1" />
+          <Setter Property="Margin" Value="8,4" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="MaterialCommandBarBaseTheme" TargetType="CommandBar">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="4,0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="IsDynamicOverflowEnabled" Value="True" />
+        <Setter Property="ItemWidthBottom" Value="76" />
+        <Setter Property="ItemWidthRight" Value="104" />
+        <Setter Property="ItemWidthCollapsed" Value="48" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}">
+              <Grid ColumnDefinitions="*,Auto" Margin="{TemplateBinding Padding}">
+                <DockPanel Grid.Column="0" LastChildFill="True">
+                  <ContentPresenter x:Name="PART_ContentPresenter" DockPanel.Dock="Left"
+                      Content="{TemplateBinding Content}"
+                      VerticalAlignment="Center" />
+                  <ItemsControl x:Name="PART_PrimaryCommands" ClipToBounds="True" HorizontalAlignment="Left"
+                      ItemsSource="{Binding VisiblePrimaryCommands, RelativeSource={RelativeSource TemplatedParent}}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  </ItemsControl>
+                </DockPanel>
+                <CommandBarButton x:Name="PART_OverflowButton" Grid.Column="1" Label="More" Icon="{m3:Symbol MoreHoriz}"
+                    Width="48" ToolTip.Tip="More commands" AutomationProperties.Name="More commands"
+                    LabelPosition="Collapsed"
+                    IsCompact="True"
+                    IsVisible="{TemplateBinding IsOverflowButtonVisible}" />
+                <Popup x:Name="PART_OverflowPopup" IsOpen="{TemplateBinding IsOpen, Mode=TwoWay}"
+                    PlacementTarget="{Binding #PART_OverflowButton}" Placement="BottomEdgeAlignedRight"
+                    IsLightDismissEnabled="True" ShouldUseOverlayLayer="True" WindowManagerAddShadowHint="False">
+                  <Popup.Styles>
+                    <Style Selector="OverlayPopupHost">
+                      <Setter Property="ClipToBounds" Value="False" />
+                    </Style>
+                    <Style Selector="OverlayPopupHost /template/ LayoutTransformControl">
+                      <Setter Property="ClipToBounds" Value="False" />
+                    </Style>
+                  </Popup.Styles>
+                  <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}}"
+                      CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalShape}}"
+                      ShadowElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShadowElevation}}"
+                      Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalPadding}}">
+                    <m3:MenuIntrinsicWidth>
+                      <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch">
+                        <ItemsControl x:Name="PART_OverflowPresenter"
+                            ItemsSource="{Binding OverflowItems, RelativeSource={RelativeSource TemplatedParent}}">
+                          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemContainerTheme>
+                            <ControlTheme TargetType="ContentPresenter"><Setter Property="HorizontalContentAlignment" Value="Stretch" /></ControlTheme>
+                          </ItemsControl.ItemContainerTheme>
+                        </ItemsControl>
+                      </ScrollViewer>
+                    </m3:MenuIntrinsicWidth>
+                  </m3:MaterialSurface>
+                </Popup>
+              </Grid>
+            </m3:MaterialSurface>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
+      <ControlTheme x:Key="MaterialCommandBarStackedTheme" TargetType="CommandBar" BasedOn="{StaticResource MaterialCommandBarBaseTheme}">
+        <Setter Property="DefaultLabelPosition" Value="Bottom" />
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.StackedContainerHeight}}" />
+      </ControlTheme>
+      <ControlTheme x:Key="MaterialCommandBarInlineTheme" TargetType="CommandBar" BasedOn="{StaticResource MaterialCommandBarBaseTheme}">
+        <Setter Property="DefaultLabelPosition" Value="Right" />
+        <Setter Property="MinHeight" Value="48" />
+      </ControlTheme>
+      <ControlTheme x:Key="MaterialCommandBarIconTheme" TargetType="CommandBar" BasedOn="{StaticResource MaterialCommandBarBaseTheme}">
+        <Setter Property="DefaultLabelPosition" Value="Collapsed" />
+        <Setter Property="MinHeight" Value="48" />
+      </ControlTheme>
+      <ControlTheme x:Key="{x:Type CommandBar}" TargetType="CommandBar" BasedOn="{StaticResource MaterialCommandBarStackedTheme}" />
+      </ResourceDictionary>
+  </Styles.Resources>
+</Styles>

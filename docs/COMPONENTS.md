@@ -13,6 +13,7 @@
 - [SplitButton](../src/Material3Expressive/Components/SplitButton/README.md)：双操作按钮组合
 - [Chip](../src/Material3Expressive/Components/Chip/README.md)：操作与选择标签
 - [FloatingActionButton](../src/Material3Expressive/Components/FloatingActionButton/README.md)：FAB、Extended、Toggle 与菜单
+- [CommandBar](../src/Material3Expressive/Components/CommandBar/README.md)：原生命令栏的三套紧凑主题
 - [FloatingToolbar](../src/Material3Expressive/Components/FloatingToolbar/README.md)：横向/纵向浮动工具栏
 
 ## 输入与选择

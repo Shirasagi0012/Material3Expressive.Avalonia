@@ -31,6 +31,7 @@
                     <m3:NavigationRailTokenSource />
                     <m3:NavigationDrawerTokenSource />
                     <m3:NavigationBarTokenSource />
+                    <m3:CommandBarTokenSource />
                     <m3:ShortNavigationBarTokenSource />
                     <m3:WideNavigationRailTokenSource />
                     <m3:SliderTokenSource />
@@ -80,6 +81,7 @@
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
     <StyleInclude Source="/Components/NavigationDrawer/NavigationDrawer.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />
+    <StyleInclude Source="/Components/CommandBar/CommandBar.axaml" />
     <StyleInclude Source="/Components/ShortNavigationBar/ShortNavigationBar.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/WideNavigationRail.axaml" />
     <StyleInclude Source="/Components/WideNavigationRail/ModalWideNavigationRail.axaml" />

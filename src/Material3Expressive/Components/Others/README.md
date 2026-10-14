@@ -69,5 +69,5 @@
   的 BodyLarge 基线负责，避免覆盖应用排版。
 - `HeaderedContentControl` / `Label` 不保留 Fluent 的 `Padding="3"`，使用 Avalonia 默认值。
 - `WindowNotificationManager` 未纳入：其语义与 [Snackbar](../Snackbar/README.md) 重叠，尚未决定归属。
-- 其余 Fluent 视觉型控件（MenuItem、TabItem、Calendar、CommandBar、FlyoutPresenter、TableView 等）
+- 其余 Fluent 视觉型控件（MenuItem、TabItem、Calendar、FlyoutPresenter、TableView 等）
   仍需按 Material3 重做，不在本组。

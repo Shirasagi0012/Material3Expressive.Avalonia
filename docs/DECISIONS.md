@@ -297,4 +297,3 @@ DirectProperty 的能力限制应明确说明，不以普通赋值降级。现�
 不改变现有 Scope 绑定结束即撤销的契约，也不以 `Animated.Properties` 的重设计为前提。
 Bind 的公开返回建议为 IDisposable，连接类的公开可见性尚属于设计建议。当前只记录决定，不迁移组件。
 确认：2026-10-14，维护者明确拒绝属性动画使用普通赋值，并确认 `BindAnimatedValue` 的 Animation 优先级形式。
-

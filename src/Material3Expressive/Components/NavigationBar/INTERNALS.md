@@ -42,7 +42,7 @@ RowColumnMeasurePolicy 与 Arrangement.SpacedAligned。
 - Icon presenter 将 NavigationBar.IconSize Token 24 DIP 作为 MaterialIcon.DefaultSize 传给无显式尺寸的
   MaterialSymbol；显式尺寸和自定义图标布局不受槽约束。
 - icon/text 颜色与指示器 alpha 使用 DefaultEffects，尺寸使用 FastSpatial；保留 spring 过冲。
-  使用 ComposeAnimation、下一帧目标提交、取消旧 AnimateAsState 任务后清零速度的重启动作。
+  通过共享 `SelectionIndicatorAnimation` 使用四条 `AnimatedState`，目标合并、中断与 Scope 连接由 AnimatedState 管理。
   detach 和模板替换释放作用域，重挂载按当前选中/禁用状态初始化。
 - 整个 Item 矩形参与输入，包括胶囊与标签的空隙；反馈只在胶囊区域绘制。
   复用已有共享交互控制器，按实际 Item 宽度与 Token 指示器宽度映射 `((itemWidth − 56) / 2, 12)`。
@@ -105,3 +105,19 @@ Catalog 入口为 [MainWindow.axaml](../../../Material3Expressive.Catalog/MainWi
 上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/NavigationBar/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+## 共享选择动画（2026-10-15）
+
+Bar 与 Rail 使用 [SelectionIndicatorAnimation](../NavigationBar/SelectionIndicatorAnimation.cs)。
+组件负责选择目标颜色、绑定布局进度和将采样应用于模板部件；共享对象只持有四条状态、提交规格与目标并统一释放。
+同类型布局属性通过 `AnimatedState.Bind` 建立 Animation 优先级连接；颜色到画刷和透明度裁限仍由呈现端处理。
+调用方不另建子 Scope，不缓存 pending 标记，也不包装每条轨迹的异步任务。
+
+本次保留原有生命周期：模板替换或 detach 释放整个选择动画身份，重新挂载按当前状态初始化。
+这不同于长期保留 AnimatedState、仅替换输出连接的用法，是当前导航组件已有的重置语义。
+
+AnimatedState 的新运行在到达帧进入采样，不再额外等待原实现的 NextFrameAsync 路径；
+静止端点与 spring 参数保留。当前 AnimatedState 还会在目标替换时接续速度，
+旧本地实现则先 Stop 清零速度。维护者已确认采用当前 AnimatedState 默认行为，
+组件不添加中断或等帧补偿；固定上游的实际中断轨迹仍待独立研究，不据此声称逐帧相等。
+本次没有修改 Compose 参考或比较容差，也没有重新执行双端视觉验证。
