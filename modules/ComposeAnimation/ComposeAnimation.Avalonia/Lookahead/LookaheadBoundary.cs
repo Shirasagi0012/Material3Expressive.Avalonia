@@ -116,7 +116,7 @@ public sealed class LookaheadBoundary : Control,
             throw new InvalidOperationException("LookaheadBoundary requires a target content slot.");
         var padding = EffectivePadding;
         var current = finalSize.Deflate(padding);
-        var aligned = VisibilityMotion.Align(slot, current, ContentAlignment, FlowDirection);
+        var aligned = EnterExitMotion.Align(slot, current, ContentAlignment, FlowDirection);
         LookaheadPlacement.ArrangeNativeChild(this, _contentHost,
             new Rect(aligned.X + padding.Left, aligned.Y + padding.Top, slot.Width, slot.Height));
         return finalSize;

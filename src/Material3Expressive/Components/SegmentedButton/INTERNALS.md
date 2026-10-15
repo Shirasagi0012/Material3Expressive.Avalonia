@@ -85,7 +85,7 @@ Space/Enter 释放激活，失焦/禁用清理待激活键；共享控制器仍�
 
 进入途中反向曾暴露共享 AnimatedVisibility 缺口：Exit.None 缺失 fade/scale 规格时错误用 Snap，
 且缩放中心使用像素 Point/Snap 而非比例坐标 spring。历史确认保留在上面的拆分前组件记录，
-当前共享实现见仓内 [VisibilityMotion](../../../../modules/ComposeAnimation/ComposeAnimation.Avalonia/AnimatedVisibility/VisibilityMotion.cs)。
+当前共享实现见仓内 [EnterExitMotion](../../../../modules/ComposeAnimation/ComposeAnimation.Avalonia/AnimatedVisibility/EnterExitMotion.cs)。
 复核 ResetNoSnap 后保留状态改变时重建通道规则；fade/scale fallback stiffness400、scale 阈值 0.002，
 origin 为比例坐标默认 spring、阈值 0.01。组件不复制依赖动画，也不新增公共 API。
 当前 ComposeAnimation 通过仓内 ProjectReference 构建；历史记录中的打包版本不应覆盖现有项目引用。

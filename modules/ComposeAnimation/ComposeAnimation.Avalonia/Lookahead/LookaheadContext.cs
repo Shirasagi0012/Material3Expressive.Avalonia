@@ -6,6 +6,12 @@ using Avalonia.VisualTree;
 
 namespace ComposeAnimation;
 
+// Runs before observing/building a target generation; pure policy callbacks never realize templates.
+internal interface ILookaheadPreparationParticipant
+{
+    void PrepareLookahead();
+}
+
 /// <summary>Stable domain identity and target coordinator, independent of its layout entry control.</summary>
 internal sealed partial class LookaheadContext
 {
@@ -38,6 +44,7 @@ internal sealed partial class LookaheadContext
     private bool _approachPlacementPending;
     private bool _actualPass;
     private bool _building;
+    private bool _preparing;
     private bool _checkingDependencies;
     private bool _buildInvalidated;
     private bool _publishingTarget;
@@ -327,7 +334,7 @@ internal sealed partial class LookaheadContext
             _moveLayoutAttempted = true;
             throw new InvalidOperationException("Layout cannot run during MoveContent; finish the synchronous tree edit first.");
         }
-        if (_building || _checkingDependencies || _publishingTarget)
+        if (_building || _preparing || _checkingDependencies || _publishingTarget)
             throw new InvalidOperationException("A lookahead domain cannot re-enter layout during target measurement, dependency checks, or target notification.");
     }
 
@@ -337,6 +344,12 @@ internal sealed partial class LookaheadContext
             throw new InvalidOperationException("LookaheadChildren must form a tree: a control was registered more than once.");
         _observed.Add(control);
         if (_attached) control.PropertyChanged += InputChanged;
+        if (control is ILookaheadPreparationParticipant participant)
+        {
+            _preparing = true;
+            try { participant.PrepareLookahead(); }
+            finally { _preparing = false; }
+        }
         if (_attached && control is ILookaheadMotionFrameProvider motion)
             motion.MotionFrameChanged += MotionFrameChanged;
         if (control is ILookaheadLayoutNode node)

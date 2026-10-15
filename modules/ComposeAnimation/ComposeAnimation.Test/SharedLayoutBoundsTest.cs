@@ -99,7 +99,7 @@ public class SharedLayoutBoundsTest
         using var fixture = new Fixture(new Canvas { Children = { host } });
         host.Visible = true;
         fixture.Step(host, 100);
-        var layer = host.GetVisualDescendants().OfType<VisibilityLayer>().Single();
+        var layer = host.GetVisualDescendants().OfType<EnterExitLayout>().Single();
         Assert.NotNull(layer.Motion);
         Assert.NotEqual(1, ((MatrixTransform)layer.Surface.RenderTransform!).Matrix.M11);
         var layout = SharedLayoutBounds.ReadLayout(content, fixture.Stage);

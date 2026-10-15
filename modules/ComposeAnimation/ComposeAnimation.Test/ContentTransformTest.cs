@@ -40,8 +40,7 @@ public class ContentTransformTest
     public void CreateFadeThrough_MatchesMaterialTimings()
     {
         var transform = ContentTransform.CreateFadeThrough();
-        var enter = new VisibilityEffects();
-        transform.Enter.Apply(enter);
+        var enter = EnterExitEffects.Read(transform.Enter);
         Assert.NotNull(enter.Fade);
         var fadeTween = Assert.IsType<TweenSpec<double>>(enter.Fade.Spec);
         Assert.Equal(TimeSpan.FromMilliseconds(220), fadeTween.Duration);
@@ -54,8 +53,7 @@ public class ContentTransformTest
         Assert.Equal(TimeSpan.FromMilliseconds(220), scaleTween.Duration);
         Assert.Equal(TimeSpan.FromMilliseconds(90), scaleTween.Delay);
 
-        var exit = new VisibilityEffects();
-        transform.Exit.Apply(exit);
+        var exit = EnterExitEffects.Read(transform.Exit);
         Assert.NotNull(exit.Fade);
         var outTween = Assert.IsType<TweenSpec<double>>(exit.Fade.Spec);
         Assert.Equal(TimeSpan.FromMilliseconds(90), outTween.Duration);
@@ -81,8 +79,7 @@ public class ContentTransformTest
     public void KeepUntilTransitionsFinished_AppliesHoldAlongsideFade()
     {
         var exit = new FadeOut() + ExitTransition.KeepUntilTransitionsFinished;
-        var effects = new VisibilityEffects();
-        exit.Apply(effects);
+        var effects = EnterExitEffects.Read(exit);
         Assert.True(effects.Hold);
         Assert.NotNull(effects.Fade);
     }

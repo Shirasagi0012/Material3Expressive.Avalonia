@@ -173,7 +173,7 @@ public class SharedTransitionSessionTest
     }
 
     [Fact]
-    public void SessionWaitsForLongestContentAnimation_ButDoesNotWaitForOrdinaryVisibilityEffects()
+    public void SessionWaitsForLongestContentAnimation_ButDoesNotWaitForOrdinaryEnterExitEffects()
     {
         using var f = new Fixture();
         var exit = f.Source.AnimateDouble(s => s == EnterExitState.Visible ? 1 : 0,

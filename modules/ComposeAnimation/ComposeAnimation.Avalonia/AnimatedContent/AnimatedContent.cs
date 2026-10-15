@@ -395,7 +395,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
 
         var parent = _connection!.Transition;
         var slot = new ContentSlot(this, state, KeyOf(state));
-        var mapper = new EnterExitStateMapper<object?>(parent, s => KeysEqual(s, slot.State), HasBeenVisibleMode.ParentCurrent);
+        var mapper = new EnterExitStateMapper<object?>(parent, s => KeysEqual(s, slot.State));
         slot.Mapper = mapper;
         var child = parent.CreateChildTransition(mapper.Map, "EnterExit");
         slot.AttachScope(new AnimatedVisibilityScope(child));
@@ -432,7 +432,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
                 EqualityComparer<object?>.Default.Equals(parent.CurrentState, parent.TargetState))
                 continue;
             var scope = slot.Scope;
-            if (scope is null || scope.IsDisposed || !scope.IsReady) continue;
+            if (scope is null || scope.IsDisposed || !scope.IsInitialLayoutReady) continue;
             var child = scope.Transition;
             var childIdle = !child.IsPreparing && !child.IsRunning &&
                 child.CurrentState == EnterExitState.PostExit &&
@@ -465,7 +465,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
             EqualityComparer<object?>.Default.Equals(parent.CurrentState, parent.TargetState) &&
             parent.Animations.All(x => x.IsFinished) && parent.Transitions.All(IsFinished) &&
             _currentlyVisible.Count <= 1 &&
-            (target?.Scope is not { } scope || (scope.IsReady && !scope.Transition.IsRunning &&
+            (target?.Scope is not { } scope || (scope.IsInitialLayoutReady && !scope.Transition.IsRunning &&
                 scope.Transition.CurrentState == scope.Transition.TargetState &&
                 scope.Transition.Animations.All(x => x.IsFinished)));
         SetAndRaise(IsIdleProperty, ref _isIdle, idle);
@@ -561,32 +561,32 @@ internal sealed class AnimatedContentTransitionScope(
         IFiniteAnimationSpec<Vector>? spec = null, Func<double, double>? offset = null)
     {
         offset ??= static x => x;
-        spec ??= VisibilityEffects.Spring<Vector>();
+        spec ??= EnterExitEffects.Spring<Vector>();
         return towards switch
         {
             _ when IsLeft(towards) => new SlideInHorizontally
             {
                 Spec = spec,
                 InitialOffsetSelector = width => offset(host.CurrentSize.Width -
-                    VisibilityMotion.Align(new Size(width, width), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).X)
+                    EnterExitMotion.Align(new Size(width, width), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).X)
             },
             _ when IsRight(towards) => new SlideInHorizontally
             {
                 Spec = spec,
                 InitialOffsetSelector = width => offset(
-                    -VisibilityMotion.Align(new Size(width, width), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).X - width)
+                    -EnterExitMotion.Align(new Size(width, width), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).X - width)
             },
             ContentSlideDirection.Up => new SlideInVertically
             {
                 Spec = spec,
                 InitialOffsetSelector = height => offset(host.CurrentSize.Height -
-                    VisibilityMotion.Align(new Size(height, height), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).Y)
+                    EnterExitMotion.Align(new Size(height, height), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).Y)
             },
             ContentSlideDirection.Down => new SlideInVertically
             {
                 Spec = spec,
                 InitialOffsetSelector = height => offset(
-                    -VisibilityMotion.Align(new Size(height, height), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).Y - height)
+                    -EnterExitMotion.Align(new Size(height, height), host.CurrentSize, host.ContentAlignment, FlowDirection.LeftToRight).Y - height)
             },
             _ => EnterTransition.None
         };
@@ -596,7 +596,7 @@ internal sealed class AnimatedContentTransitionScope(
         IFiniteAnimationSpec<Vector>? spec = null, Func<double, double>? offset = null)
     {
         offset ??= static x => x;
-        spec ??= VisibilityEffects.Spring<Vector>();
+        spec ??= EnterExitEffects.Spring<Vector>();
         return towards switch
         {
             _ when IsLeft(towards) => new SlideOutHorizontally
@@ -605,7 +605,7 @@ internal sealed class AnimatedContentTransitionScope(
                 TargetOffsetSelector = width =>
                 {
                     var target = host.TargetContentSize;
-                    return offset(-VisibilityMotion.Align(new Size(width, width), target, host.ContentAlignment, FlowDirection.LeftToRight).X - width);
+                    return offset(-EnterExitMotion.Align(new Size(width, width), target, host.ContentAlignment, FlowDirection.LeftToRight).X - width);
                 }
             },
             _ when IsRight(towards) => new SlideOutHorizontally
@@ -614,7 +614,7 @@ internal sealed class AnimatedContentTransitionScope(
                 TargetOffsetSelector = width =>
                 {
                     var target = host.TargetContentSize;
-                    return offset(-VisibilityMotion.Align(new Size(width, width), target, host.ContentAlignment, FlowDirection.LeftToRight).X + target.Width);
+                    return offset(-EnterExitMotion.Align(new Size(width, width), target, host.ContentAlignment, FlowDirection.LeftToRight).X + target.Width);
                 }
             },
             ContentSlideDirection.Up => new SlideOutVertically
@@ -623,7 +623,7 @@ internal sealed class AnimatedContentTransitionScope(
                 TargetOffsetSelector = height =>
                 {
                     var target = host.TargetContentSize;
-                    return offset(-VisibilityMotion.Align(new Size(height, height), target, host.ContentAlignment, FlowDirection.LeftToRight).Y - height);
+                    return offset(-EnterExitMotion.Align(new Size(height, height), target, host.ContentAlignment, FlowDirection.LeftToRight).Y - height);
                 }
             },
             ContentSlideDirection.Down => new SlideOutVertically
@@ -632,7 +632,7 @@ internal sealed class AnimatedContentTransitionScope(
                 TargetOffsetSelector = height =>
                 {
                     var target = host.TargetContentSize;
-                    return offset(-VisibilityMotion.Align(new Size(height, height), target, host.ContentAlignment, FlowDirection.LeftToRight).Y + target.Height);
+                    return offset(-EnterExitMotion.Align(new Size(height, height), target, host.ContentAlignment, FlowDirection.LeftToRight).Y + target.Height);
                 }
             },
             _ => ExitTransition.None

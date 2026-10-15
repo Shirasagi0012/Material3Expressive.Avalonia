@@ -181,7 +181,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
         foreach (var child in this.GetVisualChildren().OfType<Control>())
         {
             var childSize = child.DesiredSize;
-            var offset = VisibilityMotion.Align(childSize, finalSize, ContentAlignment, FlowDirection);
+            var offset = EnterExitMotion.Align(childSize, finalSize, ContentAlignment, FlowDirection);
             LookaheadPlacement.ArrangeChild(this, child, new Rect(offset, childSize));
         }
         return finalSize;
@@ -332,7 +332,7 @@ public class AnimatedContentSize : ContentControl, ILookaheadLayoutNode, ILookah
     {
         if (Content is not Control child) return;
         var size = builder.Desired(child);
-        var offset = VisibilityMotion.Align(size, bounds.Size, ContentAlignment, FlowDirection);
+        var offset = EnterExitMotion.Align(size, bounds.Size, ContentAlignment, FlowDirection);
         builder.Place(child, new Rect(bounds.TopLeft + new Vector(offset.X, offset.Y), size));
     }
 }

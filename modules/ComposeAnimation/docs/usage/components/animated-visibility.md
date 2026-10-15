@@ -66,7 +66,7 @@
 | `ExpandHorizontally` / `ShrinkHorizontally` | `InitialWidth` / `TargetWidth` 系列、`ExpandFrom` / `ShrinkTowards` = `VisibilityHorizontalAlignment.End`、`Clip` = true | `IFiniteAnimationSpec<Size>` |
 | `ExpandVertically` / `ShrinkVertically` | `InitialHeight` / `TargetHeight` 系列、`ExpandFrom` / `ShrinkTowards` = `VerticalAlignment.Bottom`、`Clip` = true | `IFiniteAnimationSpec<Size>` |
 
-偏移/尺寸的终点按 `绝对值 + 比例 × 内容完整尺寸` 计算；提供了 Selector 时以 Selector 为准。`ExpandIn`/`ShrinkOut` 的锚点是 `VisibilityAlignment` 九值枚举（`TopStart`…`BottomEnd`），水平方向锚点是 `VisibilityHorizontalAlignment`；`Start`/`End` 会随 `FlowDirection` 翻转。注意 `ExpandVertically`/`ShrinkVertically` 的锚点用的是 Avalonia 自带的 `VerticalAlignment`（不支持 `Stretch`）。
+偏移/尺寸的终点按 `绝对值 + 比例 × 内容完整尺寸` 计算；提供了 Selector 时以 Selector 为准。`ExpandIn`/`ShrinkOut` 的锚点是 `VisibilityAlignment` 九值枚举（`TopStart`…`BottomEnd`），水平方向锚点是 `VisibilityHorizontalAlignment`。效果内部按固定版本 Compose 的物理 LTR 坐标计算，`Start`/`End` 不再额外随 `FlowDirection` 翻转；普通内容布局仍遵循 Avalonia 的 FlowDirection。注意 `ExpandVertically`/`ShrinkVertically` 的锚点用的是 Avalonia 自带的 `VerticalAlignment`（不支持 `Stretch`）。
 
 XAML 中的动画规格别名：`DoubleTweenSpec`、`VectorTweenSpec`、`SizeTweenSpec`、`SizeSpringSpec` 等（`Double`/`Float`/`Int32`/`Point`/`Size`/`Vector`/`Rect`/`Thickness`/`CornerRadius`/`Color` 各有一套 Tween/Spring 版本）。`TweenSpec<T>` 构造参数 `TweenSpec(TimeSpan? duration = null, TimeSpan? delay = null, Easing? easing = null)` 均可省略；`*SpringSpec` 暴露可写的 `DampingRatio`/`Stiffness`。
 
@@ -198,6 +198,29 @@ host.Source = VisibilitySource.From(pageTransition, page => page == Page.Details
 
 ## 注意事项
 
+### Lookahead 布局
+
+`AnimatedVisibility`、`AnimateEnterExit` 和默认呈现路径已实现协作式布局协议。它们加入祖先 Lookahead 域，不自动创建局部域；域外继续使用普通显隐动画。
+
+```xml
+<ca:LookaheadRoot>
+    <ca:LookaheadStackPanel>
+        <ca:AnimatedVisibility Visible="{Binding IsExpanded}">
+            <ca:LookaheadBox Height="200">
+                <!-- 协作式内容；原生子树需显式使用 LookaheadBoundary -->
+            </ca:LookaheadBox>
+        </ca:AnimatedVisibility>
+        <ca:LookaheadTextBlock Text="Header" />
+    </ca:LookaheadStackPanel>
+</ca:LookaheadRoot>
+```
+
+收起时目标布局立即移除宿主的外层占位，实际布局继续展开/收缩动画；退出内容的完整目标几何仍保留到呈现结束。宿主自己的 Margin/最小尺寸不会留下目标占位，需要保留空间时在外部容器设置尺寸。原生内容需要 Boundary，不能通过把整个 AnimatedVisibility 包在 Boundary 中获得内部元素预测。
+
+控件模板替换会重新连接呈现层，保留现有 Scope、通道和速度；替换 Content/ContentTemplate/Source 仍重建呈现。外部 `DeferredTransition` 的 pending 可见目标会提前准备内容；提交或取消仍使用同一状态映射。此支持不包含 MutableTransform/veil 等手动效果交接能力。
+
+### 显隐与动画
+
 - **绑定 `Visible` 才有动画**。原生 `IsVisible=false` 仍然立即隐藏并结束当前呈现；两者不要绑到同一个目标。
 - **动画规格默认值**：所有内置过渡的 `Spec` 默认是 `new SpringSpec<T>(stiffness: 400)`（即 `Spring.StiffnessMediumLow`，`DampingRatioNoBouncy` 无弹性），弹簧没有固定时长，由物理参数决定；而 `TweenSpec<T>` 默认 `Duration` 300ms、`Easing` 为 FastOutSlowIn、`Delay` 为 0。想精确控制时长用 Tween，想物理感用 Spring。
 - **组合规则**：不同类效果（淡入+展开）并行；同类效果后写的覆盖先写的（写两个 `FadeOut` 只有后一个生效）。过渡组不允许成环或含 `null` 子项。
@@ -214,7 +237,8 @@ host.Source = VisibilitySource.From(pageTransition, page => page == Page.Details
 - [共享元素过渡](./shared-transition.md)：跨控件共享动画状态
 - [属性动画](./animated-properties.md)：`Animate*` 扩展方法与动画规格体系
 - [使用文档入口](../README.md)
-- [旧版设计文档 ANIMATED_VISIBILITY.md](../../draft/ANIMATED_VISIBILITY.md)（更偏实现细节，仍有效）
+- [内部结构与适配决定](../../../ComposeAnimation.Avalonia/AnimatedVisibility/INTERNALS.md)
+- [历史设计文档 ANIMATED_VISIBILITY.md](../../draft/ANIMATED_VISIBILITY.md)（部分结构与行为已过时）
 
 ## Scope 与换父 · Scope and reparenting
 

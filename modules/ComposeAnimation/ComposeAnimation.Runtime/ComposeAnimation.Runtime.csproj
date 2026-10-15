@@ -5,10 +5,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>Shirasagi0012.ComposeAnimation.Runtime</PackageId>
-        <Version>0.3.0-alpha</Version>
+        <Version>0.3.1-alpha</Version>
         <Description>Compose animation-core APIs and animation algorithms ported to .NET for Avalonia.</Description>
     </PropertyGroup>
-    
+
     <ItemGroup>
       <PackageReference Include="Avalonia" Version="12.1.2" />
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

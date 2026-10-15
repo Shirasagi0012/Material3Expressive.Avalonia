@@ -49,6 +49,11 @@ public sealed class LookaheadMeasureContext
     public LookaheadMeasureResult Layout(Size size,
         Action<LookaheadPlacementContext>? placement = null, object? layoutData = null)
         => _pass.Layout(size, placement, layoutData);
+
+    // Visibility retains its measured children while removing only the outer footprint.
+    internal LookaheadMeasureResult LayoutWithoutFootprint(
+        Action<LookaheadPlacementContext>? placement = null)
+        => _pass.Layout(default, placement, null, hasLayoutFootprint: false);
 }
 
 public sealed class LookaheadMeasureResult
@@ -56,16 +61,18 @@ public sealed class LookaheadMeasureResult
     private readonly LookaheadPolicyPass _pass;
 
     internal LookaheadMeasureResult(LookaheadPolicyPass pass, Size size,
-        Action<LookaheadPlacementContext>? placement, object? layoutData)
+        Action<LookaheadPlacementContext>? placement, object? layoutData, bool hasLayoutFootprint = true)
     {
         _pass = pass;
         Size = size;
         Placement = placement;
         LayoutData = layoutData;
+        HasLayoutFootprint = hasLayoutFootprint;
     }
 
     public Size Size { get; }
     public object? LayoutData { get; }
+    internal bool HasLayoutFootprint { get; }
     internal Action<LookaheadPlacementContext>? Placement { get; }
     internal bool BelongsTo(LookaheadPolicyPass pass) => ReferenceEquals(_pass, pass);
 }
@@ -176,12 +183,12 @@ internal sealed class LookaheadPolicyPass
     }
 
     internal LookaheadMeasureResult Layout(Size size,
-        Action<LookaheadPlacementContext>? placement, object? layoutData)
+        Action<LookaheadPlacementContext>? placement, object? layoutData, bool hasLayoutFootprint = true)
     {
         if (!_measuring || _placing)
             throw new InvalidOperationException("Layout may only be created while MeasureLayout is running.");
         ValidateSize(size);
-        return new LookaheadMeasureResult(this, size, placement, layoutData);
+        return new LookaheadMeasureResult(this, size, placement, layoutData, hasLayoutFootprint);
     }
 
     internal void RunPlacement(LookaheadMeasureResult result, Size finalSize)
@@ -294,21 +301,34 @@ internal static class LookaheadPolicyRuntime
 
     internal static bool HasActualState(Control owner) => ActualStates.TryGetValue(owner, out _);
 
+    internal static bool HasLayoutFootprint(Control owner)
+        => !ActualStates.TryGetValue(owner, out var state) || state.Result.HasLayoutFootprint;
+
     internal static void Forget(Control owner) => ActualStates.Remove(owner);
 }
 
 /// <summary>Low-level bridge for controls that cannot derive from the supplied helper bases.</summary>
 public static class LookaheadLayout
 {
-    private sealed class EntryHolder(Control owner)
+    private sealed class EntryHolder(Control owner, bool createsLocalDomain = true)
     {
-        internal readonly LookaheadEntry Entry = new(owner);
+        internal readonly LookaheadEntry Entry = new(owner, createsLocalDomain);
     }
 
     private static readonly ConditionalWeakTable<Control, EntryHolder> Entries = new();
+    private static readonly ConditionalWeakTable<Control, object> InheritedParticipants = new();
+
+    private static EntryHolder CreateEntry(Control owner)
+        => new(owner, createsLocalDomain: !InheritedParticipants.TryGetValue(owner, out _));
 
     internal static void Register(Control owner)
-        => Entries.GetValue(owner, static value => new EntryHolder(value));
+        => Entries.GetValue(owner, CreateEntry);
+
+    internal static void RegisterInherited(Control owner)
+    {
+        InheritedParticipants.GetValue(owner, static _ => new object());
+        Entries.GetValue(owner, CreateEntry);
+    }
 
     public static bool TryMeasureCore(Control owner, Size availableSize, out Size desiredSize)
     {
@@ -317,7 +337,7 @@ public static class LookaheadLayout
         desiredSize = default;
         if (owner is not ILookaheadLayoutPolicy) return false;
         var fellBack = false;
-        desiredSize = Entries.GetValue(owner, static value => new EntryHolder(value)).Entry.MeasureCore(
+        desiredSize = Entries.GetValue(owner, CreateEntry).Entry.MeasureCore(
             availableSize, () => { fellBack = true; return default; });
         if (!fellBack) return true;
         if (LookaheadScope.FindParticipatingContext(owner)?.Snapshot is null) return false;
@@ -343,7 +363,9 @@ public static class LookaheadLayout
             size => LookaheadPolicyRuntime.ArrangeActual(owner, size), out bounds)) return true;
         if (!LookaheadPolicyRuntime.HasActualState(owner) ||
             LookaheadScope.FindParticipatingContext(owner)?.Snapshot is null) return false;
-        bounds = LookaheadLayoutBuilder.ResolveBounds(owner, finalRect, owner.DesiredSize, default);
+        bounds = LookaheadPolicyRuntime.HasLayoutFootprint(owner)
+            ? LookaheadLayoutBuilder.ResolveBounds(owner, finalRect, owner.DesiredSize, default)
+            : new Rect(finalRect.TopLeft, default(Size));
         var actual = LookaheadPolicyRuntime.ArrangeActual(owner, bounds.Size);
         if (actual != bounds.Size)
             throw new InvalidOperationException("Lookahead policy arrangement must return its supplied finalSize.");

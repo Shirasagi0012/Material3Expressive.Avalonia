@@ -67,8 +67,8 @@ public class AnimatedVisibilityTest
         Exit = new FadeOut { Spec = Tween<double>() }
     };
 
-    private static VisibilityLayer Layer(AnimatedVisibility host)
-        => host.GetVisualDescendants().OfType<VisibilityLayer>().First();
+    private static EnterExitLayout Layer(AnimatedVisibility host)
+        => host.GetVisualDescendants().OfType<EnterExitLayout>().First();
 
     [Fact]
     public Task EnterInterruptedByExitNone_UsesDefaultSpringsAndPivotFractions() => OnUi(() =>
@@ -454,7 +454,7 @@ public class AnimatedVisibilityTest
         f.Step(16);
         f.Step(150);
         Assert.True(host.IsContentPresent);
-        var surface = child.GetVisualDescendants().OfType<VisibilitySurface>().First();
+        var surface = child.GetVisualDescendants().OfType<EnterExitSurface>().First();
         var transform = Assert.IsType<MatrixTransform>(surface.RenderTransform);
         Assert.InRange(transform.Matrix.M31, 29.9, 30.1);
         f.Finish();
@@ -894,8 +894,8 @@ public class AnimatedVisibilityTest
 
     [Theory]
     [InlineData(FlowDirection.LeftToRight, -50)]
-    [InlineData(FlowDirection.RightToLeft, 0)]
-    public Task EndAnchorRespectsFlowDirection(FlowDirection direction, double expectedX) => OnUi(() =>
+    [InlineData(FlowDirection.RightToLeft, -50)]
+    public Task EffectEndAnchor_UsesUpstreamPhysicalAlignment(FlowDirection direction, double expectedX) => OnUi(() =>
     {
         var host = Host();
         host.FlowDirection = direction;

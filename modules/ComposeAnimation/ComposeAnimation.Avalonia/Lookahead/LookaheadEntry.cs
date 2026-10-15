@@ -17,6 +17,7 @@ internal sealed class LookaheadEntry
 {
     private static readonly ConditionalWeakTable<Control, LookaheadEntry> Entries = new();
     private readonly Control owner;
+    private readonly bool _createsLocalDomain;
     private LookaheadContext? _local;
     private Size _available;
     private LookaheadConstraints? _requested;
@@ -25,9 +26,10 @@ internal sealed class LookaheadEntry
     private Size _approachDesired;
     private LookaheadConstraints? _approachEffective;
 
-    internal LookaheadEntry(Control owner)
+    internal LookaheadEntry(Control owner, bool createsLocalDomain = true)
     {
         this.owner = owner;
+        _createsLocalDomain = createsLocalDomain;
         Entries.Add(owner, this);
     }
 
@@ -128,6 +130,7 @@ internal sealed class LookaheadEntry
 
     internal void EnsureCore()
     {
+        if (!_createsLocalDomain) return;
         if (_local is not null)
         {
             var parentContext = owner.GetVisualParent() is { } parent

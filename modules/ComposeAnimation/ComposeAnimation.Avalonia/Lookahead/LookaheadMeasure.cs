@@ -152,7 +152,9 @@ public static class LookaheadMeasure
         bounds = control.Bounds;
         if (!TryState(control, out var state) || !state.Applied) return false;
         if (!control.IsVisible) return true;
-        bounds = LookaheadLayoutBuilder.ResolveBounds(control, slot, control.DesiredSize, default, state.Effective);
+        bounds = LookaheadPolicyRuntime.HasLayoutFootprint(control)
+            ? LookaheadLayoutBuilder.ResolveBounds(control, slot, control.DesiredSize, default, state.Effective)
+            : new Rect(slot.TopLeft, default(Size));
         try
         {
             var actual = arrange(bounds.Size);
@@ -195,8 +197,9 @@ public static class LookaheadMeasure
     }
 
     internal static Size Desired(Control control, Size measured, LookaheadConstraints effective,
-        LookaheadConstraints incoming, Thickness margin)
+        LookaheadConstraints incoming, Thickness margin, bool? hasLayoutFootprint = null)
     {
+        if (!(hasLayoutFootprint ?? LookaheadPolicyRuntime.HasLayoutFootprint(control))) return default;
         if (!double.IsFinite(measured.Width) || !double.IsFinite(measured.Height) || measured.Width < 0 || measured.Height < 0)
             throw new InvalidOperationException("A full-constraint policy must return a finite non-negative size.");
         var size = effective.Constrain(measured);

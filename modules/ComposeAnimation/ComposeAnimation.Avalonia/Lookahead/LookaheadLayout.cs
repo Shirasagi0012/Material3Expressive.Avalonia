@@ -15,6 +15,7 @@ public sealed record LookaheadLayoutResult(
     public LookaheadConstraints? FullMeasureConstraints { get; init; }
     /// <summary>Optional immutable policy data belonging to this target generation, never actual samples.</summary>
     public object? LayoutData { get; init; }
+    internal bool HasLayoutFootprint { get; init; } = true;
 }
 
 /// <summary>A complete, immutable target layout generation; never contains animation samples.</summary>
@@ -112,11 +113,14 @@ public sealed class LookaheadLayoutBuilder
             // Fixed-size ordinary content is an opaque leaf: its descendants are not predicted.
             measured = constraints;
         }
+        var hasLayoutFootprint = HasLayoutFootprint(control);
         var desired = LayoutHelper.ApplyLayoutConstraints(control, measured);
         if (control.UseLayoutRounding)
             desired = LayoutHelper.RoundLayoutSizeUp(desired, LayoutHelper.GetLayoutScale(control));
         desired = desired.Inflate(margin).Constrain(available);
-        _results.Add(control, new(constraints, measured, desired, default) { LayoutData = GetLayoutData(control) });
+        if (!hasLayoutFootprint) desired = default;
+        _results.Add(control, new(constraints, measured, desired, default)
+            { LayoutData = GetLayoutData(control), HasLayoutFootprint = hasLayoutFootprint });
         return desired;
     }
 
@@ -138,9 +142,10 @@ public sealed class LookaheadLayoutBuilder
         var margin = LookaheadMeasure.Margin(control);
         var effective = constraints.Deflate(margin).ApplyTo(control);
         var measured = node.MeasureLookahead(this, effective);
-        var desired = LookaheadMeasure.Desired(control, measured, effective, constraints, margin);
+        var hasLayoutFootprint = HasLayoutFootprint(control);
+        var desired = hasLayoutFootprint ? LookaheadMeasure.Desired(control, measured, effective, constraints, margin, hasLayoutFootprint: true) : default;
         _results.Add(control, new(effective.MaxSize, measured, desired, default)
-            { FullMeasureConstraints = effective, LayoutData = GetLayoutData(control) });
+            { FullMeasureConstraints = effective, LayoutData = GetLayoutData(control), HasLayoutFootprint = hasLayoutFootprint });
         return desired;
     }
 
@@ -204,7 +209,9 @@ public sealed class LookaheadLayoutBuilder
     {
         if (!control.IsVisible) return;
         var result = _results[control];
-        var bounds = ResolveBounds(control, slot, result.DesiredSize, _parentOrigin, result.FullMeasureConstraints);
+        var bounds = result.HasLayoutFootprint
+            ? ResolveBounds(control, slot, result.DesiredSize, _parentOrigin, result.FullMeasureConstraints)
+            : new Rect(_parentOrigin + new Vector(slot.X, slot.Y), default(Size));
         _results[control] = result with { Bounds = bounds };
         if (control is ILookaheadLayoutNode node)
         {
@@ -214,6 +221,9 @@ public sealed class LookaheadLayoutBuilder
             finally { _parentOrigin = previousOrigin; }
         }
     }
+
+    private bool HasLayoutFootprint(Control control)
+        => !_policyResults.TryGetValue(control, out var state) || state.Result.HasLayoutFootprint;
 
     private void ResetPolicySubtree(Control control)
     {

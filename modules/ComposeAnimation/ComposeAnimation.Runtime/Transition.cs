@@ -118,6 +118,8 @@ public abstract class Transition : ObservableObject, IDisposable
     // One delivery per mutation batch, after that batch. Play time, segment, duration, and
     // sampled values stay on PropertyChanged.
     internal event Action? PhaseChanged;
+    // Presentation definitions must be coherent before any channel selects its new endpoint.
+    internal event Action? AnimationsReconfiguring;
     private protected Transition Root => ParentTransition?.Root ?? this;
     private protected abstract bool HasStateChange { get; }
     private protected abstract void SetStateRunning(bool value);
@@ -445,6 +447,7 @@ public abstract class Transition : ObservableObject, IDisposable
 
     private protected void ReconfigureAnimations(bool reset, bool preserveCurrentValue = false)
     {
+        AnimationsReconfiguring?.Invoke();
         foreach (var animation in _animations)
             animation.Reconfigure(reset, IsSeeking, preserveCurrentValue);
         foreach (var child in _transitions) child.SynchronizeWithParent?.Invoke();

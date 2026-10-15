@@ -5,7 +5,12 @@ using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation;
 
-public enum EnterExitState { PreEnter, Visible, PostExit }
+public enum EnterExitState
+{
+    PreEnter,
+    Visible,
+    PostExit
+}
 
 public sealed class VisibilityScopeEventArgs(AnimatedVisibilityScope scope) : EventArgs
 {
@@ -19,9 +24,7 @@ public sealed class VisibilityScopeEventArgs(AnimatedVisibilityScope scope) : Ev
 public sealed class AnimatedVisibilityScope
 {
     private readonly List<IDisposable> _resources = [];
-    private readonly HashSet<VisibilityMotion> _motions = [];
-    private readonly TransitionPreparationLease? _gate;
-    private bool _measured;
+    private readonly TransitionPreparationLease? _initialLayoutPreparation;
     internal bool IsDisposed { get; private set; }
     public Transition<EnterExitState> Transition { get; }
 
@@ -29,7 +32,7 @@ public sealed class AnimatedVisibilityScope
     {
         Transition = transition;
         // A scope created by a manual seek is a preview and must not acquire preparation.
-        _gate = transition.IsSeeking ? null : transition.BeginPreparation();
+        _initialLayoutPreparation = transition.IsSeeking ? null : transition.BeginPreparation();
     }
 
     /// <summary>
@@ -55,11 +58,13 @@ public sealed class AnimatedVisibilityScope
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(property);
         ArgumentNullException.ThrowIfNull(animation);
+
         Transition.VerifyAccess();
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         if (animation.Owner != Transition)
             throw new ArgumentException("The animation must belong to this scope's Transition.", nameof(animation));
-        var lease = target.Bind(property, new AnimationObservable<T>(animation), BindingPriority.Animation);
+
+        IDisposable lease = target.Bind(property, new AnimationObservable<T>(animation), BindingPriority.Animation);
         return Own(lease);
     }
 
@@ -69,48 +74,60 @@ public sealed class AnimatedVisibilityScope
         ArgumentNullException.ThrowIfNull(resource);
         Transition.VerifyAccess();
         ObjectDisposedException.ThrowIf(IsDisposed, this);
+
         var lease = new ResourceLease(_resources, resource);
         _resources.Add(lease);
         return lease;
     }
 
-    internal void Register(VisibilityMotion motion) => _motions.Add(motion);
-    internal void Unregister(VisibilityMotion motion) => _motions.Remove(motion);
-    internal void Measured()
+    internal void MarkInitialLayoutReady()
     {
-        if (!_measured)
+        if (!IsInitialLayoutReady)
         {
-            _measured = true;
-            _gate?.Dispose();
+            IsInitialLayoutReady = true;
+            _initialLayoutPreparation?.Dispose();
         }
     }
 
-    internal bool IsReady => _measured;
+    internal bool IsInitialLayoutReady { get; private set; }
 
     internal void Dispose()
     {
         if (IsDisposed) return;
         IsDisposed = true;
         List<Exception>? errors = null;
-        void Release(Action release)
-        {
-            try { release(); }
-            catch (Exception error) { (errors ??= []).Add(error); }
-        }
-        foreach (var motion in _motions.ToArray()) Release(motion.Dispose);
-        foreach (var resource in _resources.ToArray()) Release(resource.Dispose);
-        _motions.Clear();
+
+        foreach (IDisposable resource in _resources.ToArray())
+            Release(resource.Dispose);
+
         _resources.Clear();
         Release(Transition.Dispose);
-        if (errors is not null) throw new AggregateException("Visibility scope cleanup failed.", errors);
+
+        if (errors is { })
+            throw new AggregateException("Visibility scope cleanup failed.", errors);
+
+        return;
+
+        void Release(Action release)
+        {
+            try
+            {
+                release();
+            }
+            catch (Exception error)
+            {
+                (errors ??= []).Add(error);
+            }
+        }
     }
 
     private sealed class ResourceLease(List<IDisposable> owner, IDisposable resource) : IDisposable
     {
         private IDisposable? _resource = resource;
+
         public void Dispose()
         {
-            var resource = Interlocked.Exchange(ref _resource, null);
+            IDisposable? resource = Interlocked.Exchange(ref _resource, null);
             if (resource is null) return;
             owner.Remove(this);
             resource.Dispose();
@@ -121,14 +138,23 @@ public sealed class AnimatedVisibilityScope
     {
         public IDisposable Subscribe(IObserver<T> observer)
         {
+            animation.PropertyChanged += Changed;
+            try
+            {
+                observer.OnNext(animation.Value);
+            }
+            catch
+            {
+                animation.PropertyChanged -= Changed;
+                throw;
+            }
+
+            return new ActionDisposable(() => animation.PropertyChanged -= Changed);
+
             void Changed(object? sender, PropertyChangedEventArgs e)
             {
                 if (e.PropertyName == nameof(animation.Value)) observer.OnNext(animation.Value);
             }
-            animation.PropertyChanged += Changed;
-            try { observer.OnNext(animation.Value); }
-            catch { animation.PropertyChanged -= Changed; throw; }
-            return new ActionDisposable(() => animation.PropertyChanged -= Changed);
         }
     }
 }

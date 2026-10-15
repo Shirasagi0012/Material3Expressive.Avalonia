@@ -297,3 +297,14 @@ DirectProperty 的能力限制应明确说明，不以普通赋值降级。现�
 不改变现有 Scope 绑定结束即撤销的契约，也不以 `Animated.Properties` 的重设计为前提。
 Bind 的公开返回建议为 IDisposable，连接类的公开可见性尚属于设计建议。当前只记录决定，不迁移组件。
 确认：2026-10-14，维护者明确拒绝属性动画使用普通赋值，并确认 `BindAnimatedValue` 的 Animation 优先级形式。
+
+## AnimatedVisibility 的协作式布局与状态所有权
+
+决定：进出效果状态由各效果宿主的一轮呈现持有，模板 Layout 只连接并应用；模板替换保留 Motion。
+可见性节点加入祖先 Lookahead 域，不自动创建局部域。模板准备在纯目标构建前完成；目标隐藏时外层
+零占位，内部退出内容的完整目标几何仍保留。零占位包含宿主自身 Margin/尺寸偏好，父容器保留的空间不变。
+原因：避免实际收缩尺寸污染共享元素的最终目标，同时保留已有隐藏测量合同及动画中断状态。
+接入：现有协议增加内部准备、无占位结果及 inherited-only 注册；普通节点的约束规则与自动入口不变。
+活动效果、转换段规格、对齐补偿与裁剪按固定基线移植；效果内部 RTL 采用基线的物理坐标公式。
+范围及剩余缺口见 [AnimatedVisibility INTERNALS](../modules/ComposeAnimation/ComposeAnimation.Avalonia/AnimatedVisibility/INTERNALS.md)。
+确认：2026-10-16，维护者确认最终类型/文件/调用顺序方案并明确要求实施。

@@ -8,7 +8,7 @@ namespace ComposeAnimation;
 
 /// <summary>
 /// Host-space rectangles for shared content. Layout bounds strip library enter/exit presentation
-/// (VisibilitySurface transforms and expand alignment) and keep user RenderTransforms. Display
+/// (EnterExitSurface transforms and expand alignment) and keep user RenderTransforms. Display
 /// bounds are the current on-screen AABB, including those effects. Animated drawing uses the
 /// Runtime rect, never these layout samples.
 /// </summary>
@@ -22,10 +22,10 @@ internal static class SharedLayoutBounds
         var origin = new Point();
         for (var current = visual; current != host;)
         {
-            if (current.HasMirrorTransform || current is not VisibilitySurface &&
+            if (current.HasMirrorTransform || current is not EnterExitSurface &&
                 current.RenderTransform?.Value is { } render && render != Matrix.Identity)
                 throw new NotSupportedException("SharedBounds lookahead currently requires layout translations only (no user render transforms or mirroring) between Root and Host.");
-            if (!(current is VisibilitySurface && current.GetVisualParent() is VisibilityLayer { Motion.ChangesSize: true }))
+            if (!(current is EnterExitSurface && current.GetVisualParent() is EnterExitLayout { Motion.ChangesSize: true }))
                 origin += new Vector(current.Bounds.X, current.Bounds.Y);
             if (current.GetVisualParent() is not { } parent) return null;
             current = parent;
@@ -53,9 +53,9 @@ internal static class SharedLayoutBounds
         Visual? current = visual;
         while (current is not null && current != host)
         {
-            var skipRender = !display && current is VisibilitySurface;
-            var skipOffset = !display && current is VisibilitySurface &&
-                current.GetVisualParent() is VisibilityLayer { Motion.ChangesSize: true };
+            var skipRender = !display && current is EnterExitSurface;
+            var skipOffset = !display && current is EnterExitSurface &&
+                current.GetVisualParent() is EnterExitLayout { Motion.ChangesSize: true };
             if (current.HasMirrorTransform)
                 result *= new Matrix(-1, 0, 0, 1, current.Bounds.Width, 0);
             if (!skipRender && current.RenderTransform?.Value is { } render)

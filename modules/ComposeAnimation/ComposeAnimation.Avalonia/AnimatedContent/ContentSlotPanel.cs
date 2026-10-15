@@ -117,7 +117,7 @@ internal sealed class ContentSlotPanel : Panel
             if (child is not ContentSlot slot) continue;
             var childSize = slot.DesiredSize;
             var offset = host is null ? default
-                : VisibilityMotion.Align(childSize, finalSize, host.ContentAlignment, FlowDirection);
+                : EnterExitMotion.Align(childSize, finalSize, host.ContentAlignment, FlowDirection);
             slot.Arrange(new Rect(offset, childSize));
         }
         return finalSize;

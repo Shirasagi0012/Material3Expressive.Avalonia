@@ -26,7 +26,7 @@ public sealed class ScopeRebuildResumeTest
     };
 
     private static double Opacity(AnimatedVisibility host)
-        => host.GetVisualDescendants().OfType<VisibilityLayer>().First().Surface.Opacity;
+        => host.GetVisualDescendants().OfType<EnterExitLayout>().First().Surface.Opacity;
 
     [Fact]
     public Task AnimatedVisibility_ReparentedMidEnter_ContinuesFromStoredPlayTimeAtTheDrainFrame() => OnUi(() =>

@@ -19,15 +19,7 @@ internal sealed class ContentSlot : Control, IEnterExitScopeHost
             HorizontalContentAlignment = HorizontalAlignment.Left,
             VerticalContentAlignment = VerticalAlignment.Top
         };
-        Layer = new VisibilityLayer
-        {
-            ResolveScope = () => Scope,
-            Enter = () => Enter,
-            Exit = () => Exit,
-            CrossfadeAlphaSpec = host is Crossfade crossfade ? () => crossfade.Spec : null,
-            Label = () => Host.Label ?? "AnimatedContent",
-            Measured = () => Scope?.Measured()
-        };
+        Layer = new EnterExitLayout();
         VisualChildren.Add(Layer);
         LogicalChildren.Add(Layer);
         Layer.Surface.Child = Presenter;
@@ -37,9 +29,20 @@ internal sealed class ContentSlot : Control, IEnterExitScopeHost
     internal object? State { get; set; }
     internal object? Key { get; set; }
     internal ContentPresenter Presenter { get; }
-    internal VisibilityLayer Layer { get; }
-    internal EnterTransition Enter { get; set; } = EnterTransition.None;
-    internal ExitTransition Exit { get; set; } = ExitTransition.None;
+    internal EnterExitLayout Layer { get; }
+    private EnterExitMotion? _motion;
+    private EnterTransition _enter = EnterTransition.None;
+    private ExitTransition _exit = ExitTransition.None;
+    internal EnterTransition Enter
+    {
+        get => _enter;
+        set { _enter = value; UpdateMotionTransitions(); }
+    }
+    internal ExitTransition Exit
+    {
+        get => _exit;
+        set { _exit = value; UpdateMotionTransitions(); }
+    }
     internal float ZIndexFloat { get; set; }
     internal bool IsTarget { get; set; }
     internal IDataTemplate? FrozenTemplate { get; set; }
@@ -49,6 +52,9 @@ internal sealed class ContentSlot : Control, IEnterExitScopeHost
     internal void AttachScope(AnimatedVisibilityScope scope)
     {
         Scope = scope;
+        _motion = new EnterExitMotion(scope, Host.Label ?? "AnimatedContent");
+        UpdateMotionTransitions();
+        Layer.SetMotion(_motion);
         scope.Transition.PhaseChanged += Host.OnPhaseChanged;
     }
 
@@ -69,22 +75,19 @@ internal sealed class ContentSlot : Control, IEnterExitScopeHost
         InvalidateMeasure();
     }
 
-    internal bool Hold
-    {
-        get
-        {
-            var effects = new VisibilityEffects();
-            Exit.Apply(effects);
-            return effects.Hold;
-        }
-    }
+    internal bool Hold => EnterExitEffects.Read(Exit).Hold;
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        UpdateMotionTransitions();
         Layer.FlowDirection = FlowDirection;
         Layer.Measure(availableSize);
-        return Layer.FullSize;
+        Scope?.MarkInitialLayoutReady();
+        return Layer.MeasuredContentSize;
     }
+
+    private void UpdateMotionTransitions()
+        => _motion?.UpdateTransitions(Enter, Exit, Host is Crossfade crossfade ? crossfade.Spec : null);
 
     protected override Size ArrangeOverride(Size finalSize)
     {
@@ -102,7 +105,9 @@ internal sealed class ContentSlot : Control, IEnterExitScopeHost
         if (Scope is { } scope)
         {
             scope.Transition.PhaseChanged -= Host.OnPhaseChanged;
-            Layer.ResetMotion();
+            Layer.SetMotion(null);
+            _motion?.Dispose();
+            _motion = null;
             scope.Dispose();
             Scope = null;
         }

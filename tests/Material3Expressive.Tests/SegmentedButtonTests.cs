@@ -111,7 +111,7 @@ public class SegmentedButtonTests
         clock.SendFrame(TimeSpan.FromMilliseconds(1));
         for (var time = 16; time <= 160; time += 16) { clock.SendFrame(TimeSpan.FromMilliseconds(time)); window.UpdateLayout(); }
         Assert.False(item.GetVisualDescendants().OfType<ComposeAnimation.AnimatedVisibility>().Single().ClipToBounds);
-        var surface = item.GetVisualDescendants().Single(v => v.GetType().Name == "VisibilitySurface");
+        var surface = item.GetVisualDescendants().OfType<ComposeAnimation.EnterExitSurface>().Single();
         Assert.True(surface.RenderTransform!.Value.M11 > 1);
         Assert.Null(MotionTestClockScope.Error(item));
         window.Close(); Assert.Equal(0, clock.PendingFrameCount);
