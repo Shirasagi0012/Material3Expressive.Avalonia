@@ -30,6 +30,7 @@
     </ControlTheme>
 
     <ControlTheme x:Key="MaterialFilledButtonTheme" TargetType="Button">
+      <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="CornerRadius" Value="{Binding Path=(m3:ButtonThemeProperties.CornerRadius), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerShapeRound}}" />
@@ -89,7 +90,7 @@
                                            Padding="{TemplateBinding Padding}"
                                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                           TextWrapping="Wrap"
+                                           TextWrapping="{TemplateBinding TextBlock.TextWrapping}"
                                            />
                 <ContentPresenter x:Name="PART_IconPresenter"
                                   Content="{TemplateBinding m3:MaterialButton.Icon}"

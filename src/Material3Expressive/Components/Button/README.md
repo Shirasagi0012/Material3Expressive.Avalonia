@@ -145,6 +145,12 @@ M3 没有下拉按钮。原生 `DropDownButton` 未指定 `Theme` 时是 Filled 
 
 `Content` 可以是字符串或任意控件，也支持原生 `ContentTemplate` 和匹配的 `DataTemplate`。
 普通字符串自动应用当前尺寸的标签排版、换行和有限边界内裁剪；自定义内容控件与模板优先。
+换行通过原生附加属性 `TextBlock.TextWrapping` 控制，默认为 `Wrap`；主题、绑定和运行时修改均会传给标签。
+
+```xml
+<Button Content="保持单行的操作" TextBlock.TextWrapping="NoWrap" />
+```
+
 通过 `MaterialButton.Icon` / `IconTemplate` 设置可选的前导图标槽，模板-only 也会占用图标槽：
 
 ```xml

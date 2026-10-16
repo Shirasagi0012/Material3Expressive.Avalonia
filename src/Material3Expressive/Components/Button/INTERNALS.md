@@ -94,6 +94,8 @@ ButtonLayout 分开处理可见容器的默认最小值与外层 48 DIP 留白�
 软换行后保留可用段落宽度，避免 Avalonia 按最长行回报宽度而使整段重新居中。
 普通裁剪保持完整文本布局，在有限标签边界裁剪；省略号仍使用有限高度格式化。
 直接提供的控件、显式 ContentTemplate 和匹配的 DataTemplate 不由此路径改写。
+主题在 Button 上提供 `TextBlock.TextWrapping=Wrap` 默认值，Presenter 用 TemplateBinding 读取该附加属性，
+自动标签继续通过原生继承消费。不得在 Presenter 上写死 Wrap，否则按钮的样式与局部设置无法传入。
 
 `MaterialButton.Icon` 与 `IconTemplate` 附加到原生 Button，`ButtonContentRow` 在图标存在时以固定尺寸盒
 排列图标和标签，标签仍使用原 `PART_ContentPresenter` 与 ButtonContentPresenter。presence 包含非空 Icon
