@@ -8,7 +8,7 @@
 
     <PropertyGroup>
         <PackageId>Shirasagi0012.Material3Expressive.Avalonia</PackageId>
-        <Version>0.0.5</Version>
+        <Version>0.0.6</Version>
         <Authors>Shirasagi0012</Authors>
         <Description>Material 3 Expressive theme and controls for Avalonia, ported from Compose Material3.</Description>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
