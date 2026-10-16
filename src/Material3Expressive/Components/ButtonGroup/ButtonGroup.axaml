@@ -1,0 +1,143 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:ButtonGroup}" TargetType="m3:ButtonGroup">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="ItemVerticalAlignment" Value="Top" />
+      <Setter Property="SpacingAlignment" Value="Left" />
+      <Setter Property="Spacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.Spacing}}" />
+      <Setter Property="ExpandedRatio" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.ExpandedRatio}}" />
+      <Setter Property="HorizontalArrangement" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.HorizontalArrangement}}" />
+      <Setter Property="WidthAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.WidthAnimation}}" />
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate><m3:ButtonGroupItemsPanel /></ItemsPanelTemplate>
+      </Setter>
+      <Setter Property="OverflowIndicatorTemplate">
+        <DataTemplate>
+          <m3:TooltipBox AnchorPosition="Above">
+            <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="More options" /></m3:TooltipBox.Tooltip>
+            <m3:ButtonGroupOverflowButton Symbol="MoreVert"
+                                         Theme="{StaticResource MaterialFilledIconButtonTheme}"
+                                         AutomationProperties.Name="More options" />
+          </m3:TooltipBox>
+        </DataTemplate>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:ButtonGroupLayout x:Name="PART_Layout">
+            <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+            <m3:ButtonGroupSlot ContentTemplate="{TemplateBinding OverflowIndicatorTemplate}" />
+            <m3:DropdownMenu />
+          </m3:ButtonGroupLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="ButtonGroupItemTheme" TargetType="m3:ButtonGroupItem">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="CompressionLimit" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.CompressionLimit}}" />
+    </ControlTheme>
+
+    <ControlTheme x:Key="ButtonGroupButtonTheme" TargetType="Button"
+                  BasedOn="{StaticResource MaterialFilledButtonTheme}">
+      <Setter Property="TextBlock.TextWrapping" Value="NoWrap" />
+    </ControlTheme>
+
+    <ControlTheme x:Key="ButtonGroupToggleButtonTheme" TargetType="ToggleButton"
+                  BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
+      <Setter Property="TextBlock.TextWrapping" Value="NoWrap" />
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:ButtonGroupAction}" TargetType="m3:ButtonGroupAction"
+                  BasedOn="{StaticResource ButtonGroupItemTheme}">
+      <Setter Property="Padding">
+        <MultiBinding Converter="{x:Static m3:ButtonGroupThemeConverters.ContentPadding}">
+          <Binding Path="Icon" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IconTemplate" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonGroup.ContentPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonGroup.IconContentPadding}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Button x:Name="PART_Action" Content="{TemplateBinding Label}" Padding="{TemplateBinding Padding}"
+                  Theme="{StaticResource ButtonGroupButtonTheme}"
+                  HorizontalAlignment="Stretch" VerticalAlignment="Center">
+            <m3:MaterialButton.Icon><TemplateBinding Property="Icon" /></m3:MaterialButton.Icon>
+            <m3:MaterialButton.IconTemplate><TemplateBinding Property="IconTemplate" /></m3:MaterialButton.IconTemplate>
+          </Button>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:ButtonGroupToggleAction}" TargetType="m3:ButtonGroupToggleAction"
+                  BasedOn="{StaticResource {x:Type m3:ButtonGroupAction}}">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:ButtonGroupToggleButton x:Name="PART_Action" Content="{TemplateBinding Label}"
+                                      Theme="{StaticResource ButtonGroupToggleButtonTheme}"
+                                      IsChecked="{TemplateBinding IsChecked}" Padding="{TemplateBinding Padding}"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Center">
+            <m3:MaterialButton.Icon><TemplateBinding Property="Icon" /></m3:MaterialButton.Icon>
+            <m3:MaterialButton.IconTemplate><TemplateBinding Property="IconTemplate" /></m3:MaterialButton.IconTemplate>
+          </m3:ButtonGroupToggleButton>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="{x:Type m3:ButtonGroupCustomItem}" TargetType="m3:ButtonGroupCustomItem"
+                  BasedOn="{StaticResource ButtonGroupItemTheme}">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="MaterialConnectedMiddleToggleButtonTheme" TargetType="ToggleButton"
+                  BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.InnerCornerRadius}}" />
+      <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.PressedInnerCornerRadius}}" />
+      <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.CheckedCornerRadius}}" />
+    </ControlTheme>
+
+    <ControlTheme x:Key="MaterialConnectedLeadingToggleButtonTheme" TargetType="ToggleButton"
+                  BasedOn="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+      <Setter Property="CornerRadius">
+        <MultiBinding Converter="{x:Static m3:ButtonGroupThemeConverters.LeadingCorners}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.OuterCornerRadius}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.InnerCornerRadius}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="m3:MaterialButton.PressedCornerRadius">
+        <MultiBinding Converter="{x:Static m3:ButtonGroupThemeConverters.LeadingCorners}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.OuterCornerRadius}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.PressedInnerCornerRadius}" />
+        </MultiBinding>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="MaterialConnectedTrailingToggleButtonTheme" TargetType="ToggleButton"
+                  BasedOn="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+      <Setter Property="CornerRadius">
+        <MultiBinding Converter="{x:Static m3:ButtonGroupThemeConverters.TrailingCorners}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.OuterCornerRadius}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.InnerCornerRadius}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="m3:MaterialButton.PressedCornerRadius">
+        <MultiBinding Converter="{x:Static m3:ButtonGroupThemeConverters.TrailingCorners}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.OuterCornerRadius}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ConnectedButtonGroup.PressedInnerCornerRadius}" />
+        </MultiBinding>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

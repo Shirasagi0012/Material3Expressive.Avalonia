@@ -11,6 +11,7 @@
 - [ToggleButton](../src/Material3Expressive/Components/ToggleButton/README.md)：原生切换按钮
 - [SegmentedButton](../src/Material3Expressive/Components/SegmentedButton/README.md)：单选/多选分段按钮
 - [SplitButton](../src/Material3Expressive/Components/SplitButton/README.md)：双操作按钮组合
+- [ButtonGroup](../src/Material3Expressive/Components/ButtonGroup/README.md)：按压扩宽、邻项压缩与自动溢出菜单
 - [Chip](../src/Material3Expressive/Components/Chip/README.md)：操作与选择标签
 - [FloatingActionButton](../src/Material3Expressive/Components/FloatingActionButton/README.md)：FAB、Extended、Toggle 与菜单
 - [CommandBar](../src/Material3Expressive/Components/CommandBar/README.md)：原生命令栏的三套紧凑主题

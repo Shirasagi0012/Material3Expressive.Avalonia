@@ -1,0 +1,177 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:local="using:Material3Expressive.Catalog"
+        x:Class="Material3Expressive.Catalog.ButtonGroupDemo"
+        Title="ButtonGroup" Width="840" Height="900">
+  <Window.Resources>
+    <local:CheckedFillConverter x:Key="CheckedFill" />
+  </Window.Resources>
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="28">
+      <StackPanel Spacing="8">
+        <TextBlock Text="ButtonGroup" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <TextBlock TextWrapping="Wrap"
+                   Text="Five sections from the pinned ButtonGroupSamples.kt. The slider limits only the two ButtonGroup sections, standing in for the catalog's available width. Resize this window to wrap the connected rows. Icons use Rounded Material Symbols: Fill 0 unchecked, Fill 1 checked." />
+        <TextBlock Text="{Binding #AvailableWidth.Value, StringFormat=Available width \{0:0\} DIP}" />
+        <Slider x:Name="AvailableWidth" Minimum="200" Maximum="860" Value="420" />
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="ButtonGroupSample" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock TextWrapping="Wrap"
+                   Text="Ten clickable items and the default overflow indicator. Press a button to widen it. Overflow menu clicks dismiss the menu." />
+        <m3:ButtonGroup MaxWidth="{Binding #AvailableWidth.Value}">
+          <m3:ButtonGroupAction Label="0" />
+          <m3:ButtonGroupAction Label="1" />
+          <m3:ButtonGroupAction Label="2" />
+          <m3:ButtonGroupAction Label="3" />
+          <m3:ButtonGroupAction Label="4" />
+          <m3:ButtonGroupAction Label="5" />
+          <m3:ButtonGroupAction Label="6" />
+          <m3:ButtonGroupAction Label="7" />
+          <m3:ButtonGroupAction Label="8" />
+          <m3:ButtonGroupAction Label="9" />
+        </m3:ButtonGroup>
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="ButtonGroupWithCustomItemSample" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock TextWrapping="Wrap"
+                   Text="ExpandedRatio is 1. Each item is a connected toggle with icon padding 16,8,24,8 and a 24 DIP compression limit. The sample's menu rows are labels only, and their clicks do not toggle or dismiss." />
+        <m3:ButtonGroup MaxWidth="{Binding #AvailableWidth.Value}" ExpandedRatio="1">
+          <m3:ButtonGroupCustomItem PressSource="{Binding #CustomWork}" CompressionLimit="24">
+            <ToggleButton x:Name="CustomWork" Content="Work" Padding="16,8,24,8"
+                          HorizontalAlignment="Stretch" TextBlock.TextWrapping="NoWrap"
+                          Theme="{StaticResource MaterialConnectedLeadingToggleButtonTheme}">
+              <m3:MaterialButton.Icon>
+                <m3:MaterialSymbol Symbol="Work" Fill="{Binding #CustomWork.IsChecked, Converter={StaticResource CheckedFill}}" />
+              </m3:MaterialButton.Icon>
+            </ToggleButton>
+            <m3:ButtonGroupCustomItem.MenuContent>
+              <m3:DropdownMenuItem Content="Work" />
+            </m3:ButtonGroupCustomItem.MenuContent>
+          </m3:ButtonGroupCustomItem>
+          <m3:ButtonGroupCustomItem PressSource="{Binding #CustomRestaurant}" CompressionLimit="24">
+            <ToggleButton x:Name="CustomRestaurant" Content="Restaurant" Padding="16,8,24,8"
+                          HorizontalAlignment="Stretch" TextBlock.TextWrapping="NoWrap"
+                          Theme="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+              <m3:MaterialButton.Icon>
+                <m3:MaterialSymbol Symbol="Restaurant" Fill="{Binding #CustomRestaurant.IsChecked, Converter={StaticResource CheckedFill}}" />
+              </m3:MaterialButton.Icon>
+            </ToggleButton>
+            <m3:ButtonGroupCustomItem.MenuContent>
+              <m3:DropdownMenuItem Content="Restaurant" />
+            </m3:ButtonGroupCustomItem.MenuContent>
+          </m3:ButtonGroupCustomItem>
+          <m3:ButtonGroupCustomItem PressSource="{Binding #CustomHome}" CompressionLimit="24">
+            <ToggleButton x:Name="CustomHome" Content="Home" Padding="16,8,24,8"
+                          HorizontalAlignment="Stretch" TextBlock.TextWrapping="NoWrap"
+                          Theme="{StaticResource MaterialConnectedTrailingToggleButtonTheme}">
+              <m3:MaterialButton.Icon>
+                <m3:MaterialSymbol Symbol="Home" Fill="{Binding #CustomHome.IsChecked, Converter={StaticResource CheckedFill}}" />
+              </m3:MaterialButton.Icon>
+            </ToggleButton>
+            <m3:ButtonGroupCustomItem.MenuContent>
+              <m3:DropdownMenuItem Content="Home" />
+            </m3:ButtonGroupCustomItem.MenuContent>
+          </m3:ButtonGroupCustomItem>
+        </m3:ButtonGroup>
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="SingleSelectConnectedButtonGroupSample" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock TextWrapping="Wrap"
+                   Text="Connected toggles in a wrapping row, 8 DIP side inset and 2 DIP gaps. Choosing one keeps it selected." />
+        <WrapPanel x:Name="SingleSelectRow" Margin="8,0,-2,-2">
+          <ToggleButton x:Name="SingleWork" Content="Work" IsChecked="True" Margin="0,0,2,2" Click="OnSingleSelect"
+                        Theme="{StaticResource MaterialConnectedLeadingToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Work" Fill="{Binding #SingleWork.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="SingleRestaurant" Content="Restaurant" Margin="0,0,2,2" Click="OnSingleSelect"
+                        Theme="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Restaurant" Fill="{Binding #SingleRestaurant.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="SingleCoffee" Content="Coffee" Margin="0,0,2,2" Click="OnSingleSelect"
+                        Theme="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Coffee" Fill="{Binding #SingleCoffee.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="SingleSearch" Content="Search" Margin="0,0,2,2" Click="OnSingleSelect"
+                        Theme="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Search" Fill="{Binding #SingleSearch.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="SingleHome" Content="Home" Margin="0,0,2,2" Click="OnSingleSelect"
+                        Theme="{StaticResource MaterialConnectedTrailingToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Home" Fill="{Binding #SingleHome.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+        </WrapPanel>
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="MultiSelectConnectedButtonGroupSample" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock TextWrapping="Wrap" Text="The same connected row, with each toggle independent." />
+        <WrapPanel Margin="8,0,-2,-2">
+          <ToggleButton x:Name="MultiWork" Content="Work" Margin="0,0,2,2"
+                        Theme="{StaticResource MaterialConnectedLeadingToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Work" Fill="{Binding #MultiWork.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="MultiRestaurant" Content="Restaurant" Margin="0,0,2,2"
+                        Theme="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Restaurant" Fill="{Binding #MultiRestaurant.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="MultiCoffee" Content="Coffee" Margin="0,0,2,2"
+                        Theme="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Coffee" Fill="{Binding #MultiCoffee.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="MultiSearch" Content="Search" Margin="0,0,2,2"
+                        Theme="{StaticResource MaterialConnectedMiddleToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Search" Fill="{Binding #MultiSearch.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+          <ToggleButton x:Name="MultiHome" Content="Home" Margin="0,0,2,2"
+                        Theme="{StaticResource MaterialConnectedTrailingToggleButtonTheme}">
+            <m3:MaterialButton.Icon>
+              <m3:MaterialSymbol Symbol="Home" Fill="{Binding #MultiHome.IsChecked, Converter={StaticResource CheckedFill}}" />
+            </m3:MaterialButton.Icon>
+          </ToggleButton>
+        </WrapPanel>
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="VerticalButtonGroupSample" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock TextWrapping="Wrap"
+                   Text="Single-select column, overlapped by 6 DIP. Outer corners are full, inner corners are 8 DIP, pressed corners stay 6 DIP, and the checked shape is full." />
+        <StackPanel x:Name="VerticalGroup" Spacing="-6" HorizontalAlignment="Left">
+          <ToggleButton Content="Button 1" IsChecked="True" Click="OnSingleSelect"
+                        CornerRadius="1000,1000,8,8"
+                        m3:ToggleButtonAppearance.CheckedCornerRadius="1000" />
+          <ToggleButton Content="Button 2" Click="OnSingleSelect" CornerRadius="8"
+                        m3:ToggleButtonAppearance.CheckedCornerRadius="1000" />
+          <ToggleButton Content="Button 3" Click="OnSingleSelect" CornerRadius="8"
+                        m3:ToggleButtonAppearance.CheckedCornerRadius="1000" />
+          <ToggleButton Content="Button 4" Click="OnSingleSelect" CornerRadius="8"
+                        m3:ToggleButtonAppearance.CheckedCornerRadius="1000" />
+          <ToggleButton Content="Button 5" Click="OnSingleSelect" CornerRadius="8,8,1000,1000"
+                        m3:ToggleButtonAppearance.CheckedCornerRadius="1000" />
+        </StackPanel>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

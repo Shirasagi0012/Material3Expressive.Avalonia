@@ -22,6 +22,7 @@
                     <m3:TextButtonTokenSource />
                     <m3:ToggleButtonTokenSource />
                     <m3:SplitButtonTokenSource />
+                    <m3:ButtonGroupTokenSource />
 
                     <m3:IconButtonSizesTokenSource />
                     <m3:StandardIconButtonTokenSource />
@@ -78,6 +79,7 @@
     <StyleInclude Source="/Components/SplitButton/SplitButton.axaml" />
     <StyleInclude Source="/Components/IconButton/IconButton.axaml" />
     <StyleInclude Source="/Components/AppBar/AppBarRow.axaml" />
+    <StyleInclude Source="/Components/ButtonGroup/ButtonGroup.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
     <StyleInclude Source="/Components/NavigationDrawer/NavigationDrawer.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />

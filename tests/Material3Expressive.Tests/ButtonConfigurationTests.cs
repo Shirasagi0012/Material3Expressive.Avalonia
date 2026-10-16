@@ -19,6 +19,63 @@ namespace Material3Expressive.Tests;
 public class ButtonConfigurationTests
 {
     [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TextWrappingUpdatesTheLabelAndRestoresDefaults(bool toggle)
+    {
+        using var clock = new MotionTestClockScope();
+        Button button = toggle ? new ToggleButton() : new Button();
+        button.Content = "Several words in a narrow button";
+        button.Width = 120;
+        var window = Show(button);
+        try
+        {
+            var label = Assert.Single(button.GetVisualDescendants().OfType<TextBlock>());
+            Assert.True(label.TextLayout.TextLines.Count > 1);
+
+            var style = new Style
+            {
+                Setters = { new Setter(TextBlock.TextWrappingProperty, TextWrapping.NoWrap) }
+            };
+            button.Styles.Add(style);
+            Flush(window);
+            Assert.Single(label.TextLayout.TextLines);
+
+            TextBlock.SetTextWrapping(button, TextWrapping.Wrap);
+            Flush(window);
+            Assert.True(label.TextLayout.TextLines.Count > 1);
+
+            button.ClearValue(TextBlock.TextWrappingProperty);
+            Flush(window);
+            Assert.Single(label.TextLayout.TextLines);
+
+            button.Styles.Remove(style);
+            Flush(window);
+            Assert.True(label.TextLayout.TextLines.Count > 1);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExplicitContentWrappingOverridesTheButtonSetting(bool toggle)
+    {
+        using var clock = new MotionTestClockScope();
+        var label = new TextBlock { Text = "Several words in a narrow button", TextWrapping = TextWrapping.Wrap };
+        Button button = toggle ? new ToggleButton() : new Button();
+        button.Content = label;
+        button.Width = 120;
+        TextBlock.SetTextWrapping(button, TextWrapping.NoWrap);
+        var window = Show(button);
+        try
+        {
+            Assert.True(label.TextLayout.TextLines.Count > 1);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData("button")] [InlineData("icon")] [InlineData("toggle")] [InlineData("split")]
     public void ConditionalDefaults_PreserveUserStylesAndRestoreCurrentTokens(string family)
     {
