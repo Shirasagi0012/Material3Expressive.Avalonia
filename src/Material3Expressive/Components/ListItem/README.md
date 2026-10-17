@@ -1,0 +1,93 @@
+# ListItem / SegmentedListItem
+
+两个独立控件提供普通列表行和带分组圆角的列表行，移植固定 Compose Material3 的新入口，不包含已废弃的 ListItem 重载。
+先按[公共接入](../../../../docs/GETTING_STARTED.md)安装 MaterialTheme、字体和 TopLevel 动画作用域。
+
+```xml
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:ListItem Content="账户" OverlineContent="个人设置" SupportingContent="管理个人资料"
+               LeadingContent="{m3:Symbol Person}" />
+</StackPanel>
+```
+
+## 交互与受控状态
+
+默认 `InteractionMode="None"` 仅展示内容。`Click` 提供 Click / Command；`SingleSelection` 额外读取 IsSelected；
+`MultipleSelection` 读取 IsChecked，激活时发出 CheckedChangeRequested（Value 为请求的新值）并执行 Command，不发出行自己的 Click。
+两个选择模式均不自动写回状态；单选互斥由调用方维护。原生 Button 的 Click 是路由事件，监听整行时应区分 `e.Source`，避免把嵌套按钮的冒泡事件当成整行激活。
+
+以下片段假设 DataContext 提供 Checked 属性，代码后置持有对应 ViewModel：
+
+```xml
+<m3:ListItem Content="同步" InteractionMode="MultipleSelection"
+             IsChecked="{Binding Checked, Mode=OneWay}" CheckedChangeRequested="OnCheckedChange" />
+```
+
+```csharp
+void OnCheckedChange(object? sender, ListItemCheckedChangeEventArgs e)
+    => ViewModel.Checked = e.Value;
+```
+
+`IsInteractionEnabled="False"` 对应 Compose enabled：禁用整行交互、切换禁用颜色和 automation 状态，槽内按钮仍可用。
+`IsEnabled="False"` 则沿用 Avalonia 禁用整个子树的行为。Command.CanExecute 阻止该命令激活，不负责禁用子树或改变整行颜色。
+Space / Enter 在释放时激活；鼠标左键和键盘支持 500ms 长按，通过 LongClick / LongClickCommand 接收，长按后不再触发该次短按。
+LongClickCommandParameter 与 LongClickLabel 分别提供参数和说明。
+
+Avalonia automation 没有第二个长按动作，LongClickLabel 映射到 HelpText。需要辅助技术直接调用时，组合一个同命令按钮：
+
+```xml
+<m3:ListItem Content="文件" InteractionMode="Click" LongClickCommand="{Binding MoreCommand}" LongClickLabel="更多操作">
+  <m3:ListItem.TrailingContent><Button Content="更多操作" Command="{Binding MoreCommand}" /></m3:ListItem.TrailingContent>
+</m3:ListItem>
+```
+
+## 内容与分组
+
+五个槽为 Content、LeadingContent、TrailingContent、OverlineContent、SupportingContent，各有同名前缀的 ContentTemplate（主槽为 ContentTemplate）。
+槽可使用对象、控件或 IDataTemplate；文字继承对应排版和颜色。默认一/二/三行高度为 56/72/88 DIP，过大内容可以继续撑高。
+普通 supporting TextBlock 的多行会选择三行高度；复杂模板不保证自动合并多个子元素的首末基线。
+`ItemVerticalAlignment` 支持 Auto / Top / Center / Bottom；Auto 根据内部内容区域高度选择居中或顶部。Padding 使用逻辑起止边，随 RTL 镜像。
+
+SegmentedListItem 通过 GroupIndex（从 0 起）和 GroupCount 决定默认首尾圆角；调用方须维护有效索引，并在插入、删除或排序后更新它们。
+间距由容器提供：
+
+```xml
+<StackPanel Spacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SegmentedGap}}">
+  <m3:SegmentedListItem GroupIndex="0" GroupCount="2" Content="第一项" />
+  <m3:SegmentedListItem GroupIndex="1" GroupCount="2" Content="第二项" />
+</StackPanel>
+```
+
+## 定制
+
+颜色、排版、尺寸、动画和默认圆角读取 `MaterialTokens.Comp.ListItem`。实例可覆盖 ContainerColor、ContentColor 及各槽/状态颜色、Elevation、DraggedElevation。
+六状态圆角通过 Shapes 设置；显式 Shapes 取代分组默认形状。CornerRadius 使用 Avalonia 的物理角顺序；默认分组形状左右对称。
+
+```xml
+<m3:ListItem Content="自定义" InteractionMode="Click">
+  <m3:ListItem.Shapes>
+    <m3:ListItemShapes Shape="4" SelectedShape="16" PressedShape="24"
+                      FocusedShape="16" HoveredShape="12" DraggedShape="16" />
+  </m3:ListItem.Shapes>
+</m3:ListItem>
+```
+
+外部拖拽可向 InteractionSource 发出配对事件；该源仅报告交互，不自动移动或重排列表项，也不改变选择值：
+
+```csharp
+using Material3Expressive.Foundation.Interaction;
+
+var source = new MaterialInteractionSource();
+item.InteractionSource = source;
+var drag = new MaterialInteractionEvent.DragStart();
+source.Emit(drag); // UI 线程
+// 拖拽结束：取消时改用 DragCancel(drag)
+source.Emit(new MaterialInteractionEvent.DragStop(drag));
+```
+
+前后槽提供缩小后的最小交互布局尺寸，默认 20 DIP；CheckBox / RadioButton 仍保留自身 24 DIP 绘制盒。
+`MaterialInteractiveSize.Minimum` 可在祖先上调整这个继承环境，它不会创建额外触摸命中区。
+
+尚不支持任意路径/切角 Shape 和可配置 inset focus ring，焦点使用默认 opacity 反馈。
+Catalog 入口为 [ListItemDemo](../../../Material3Expressive.Catalog/ListItemDemo.axaml)；维护机制和验证范围见 [INTERNALS](INTERNALS.md)。

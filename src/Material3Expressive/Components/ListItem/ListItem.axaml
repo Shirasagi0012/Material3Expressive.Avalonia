@@ -1,0 +1,127 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:ListItem}" TargetType="m3:ListItem">
+      <Setter Property="ContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.ContainerColor}}" />
+      <Setter Property="ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.ContentColor}}" />
+      <Setter Property="LeadingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.LeadingContentColor}}" />
+      <Setter Property="TrailingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.TrailingContentColor}}" />
+      <Setter Property="OverlineContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.OverlineContentColor}}" />
+      <Setter Property="SupportingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SupportingContentColor}}" />
+      <Setter Property="DisabledContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DisabledContainerColor}}" />
+      <Setter Property="DisabledContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DisabledContentColor}}" />
+      <Setter Property="DisabledLeadingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DisabledLeadingContentColor}}" />
+      <Setter Property="DisabledTrailingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DisabledTrailingContentColor}}" />
+      <Setter Property="DisabledOverlineContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DisabledOverlineContentColor}}" />
+      <Setter Property="DisabledSupportingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DisabledSupportingContentColor}}" />
+      <Setter Property="SelectedContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SelectedContainerColor}}" />
+      <Setter Property="SelectedContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SelectedContentColor}}" />
+      <Setter Property="SelectedLeadingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SelectedLeadingContentColor}}" />
+      <Setter Property="SelectedTrailingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SelectedTrailingContentColor}}" />
+      <Setter Property="SelectedOverlineContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SelectedOverlineContentColor}}" />
+      <Setter Property="SelectedSupportingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SelectedSupportingContentColor}}" />
+      <Setter Property="DraggedContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedContainerColor}}" />
+      <Setter Property="DraggedContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedContentColor}}" />
+      <Setter Property="DraggedLeadingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedLeadingContentColor}}" />
+      <Setter Property="DraggedTrailingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedTrailingContentColor}}" />
+      <Setter Property="DraggedOverlineContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedOverlineContentColor}}" />
+      <Setter Property="DraggedSupportingContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedSupportingContentColor}}" />
+      <Setter Property="Elevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.Elevation}}" />
+      <Setter Property="DraggedElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedElevation}}" />
+      <Setter Property="DefaultShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.Shape}}" />
+      <Setter Property="DefaultSelectedShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SelectedShape}}" />
+      <Setter Property="DefaultPressedShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.PressedShape}}" />
+      <Setter Property="DefaultFocusedShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.FocusedShape}}" />
+      <Setter Property="DefaultHoveredShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.HoveredShape}}" />
+      <Setter Property="DefaultDraggedShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.DraggedShape}}" />
+      <Setter Property="DefaultGroupShape" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.GroupShape}}" />
+      <Setter Property="OneLineHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.OneLineHeight}}" />
+      <Setter Property="TwoLineHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.TwoLineHeight}}" />
+      <Setter Property="ThreeLineHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.ThreeLineHeight}}" />
+      <Setter Property="InternalSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.InternalSpacing}}" />
+      <Setter Property="ColorAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.ColorAnimation}}" />
+      <Setter Property="ShapeAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.ShapeAnimation}}" />
+      <Setter Property="ElevationAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.ElevationAnimation}}" />
+      <Setter Property="ContentTextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.ContentTextStyle}}" />
+      <Setter Property="LeadingTextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.LeadingTextStyle}}" />
+      <Setter Property="TrailingTextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.TrailingTextStyle}}" />
+      <Setter Property="OverlineTextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.OverlineTextStyle}}" />
+      <Setter Property="SupportingTextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SupportingTextStyle}}" />
+      <Setter Property="Padding">
+        <MultiBinding Converter="{x:Static m3:ListItemThemeConverters.Padding}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.StartPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.TopPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.EndPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.BottomPadding}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="VerticalAlignmentBreakpoint">
+        <MultiBinding Converter="{x:Static m3:ListItemThemeConverters.Breakpoint}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.ThreeLineHeight}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.TwoLineHeight}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.TopPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ListItem.BottomPadding}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="ZIndex" Value="{Binding AnimatedElevation, RelativeSource={RelativeSource Self}, Converter={x:Static m3:ListItemThemeConverters.ElevationZIndex}}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Background" Value="{Binding AnimatedContainerColor, RelativeSource={RelativeSource Self}, Converter={x:Static m3:ListItemThemeConverters.Brush}}" />
+      <Setter Property="Foreground" Value="{Binding AnimatedContentColor, RelativeSource={RelativeSource Self}, Converter={x:Static m3:ListItemThemeConverters.Brush}}" />
+      <Setter Property="Template">
+          <ControlTemplate>
+              <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                               MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+                               ContainerMinWidth="0" ContainerMinHeight="0"
+                               IsMinimumInteractiveSizeEnabled="{TemplateBinding InteractionMode, Converter={x:Static m3:ListItemThemeConverters.Interactive}}"
+                               HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                               VerticalAlignment="{TemplateBinding VerticalAlignment}"
+                               MinimumInteractiveSize="{Binding MinimumLayoutSize, RelativeSource={RelativeSource TemplatedParent}}">
+                  <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                                      StateLayerBrush="{TemplateBinding Foreground}"
+                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                      Padding="{TemplateBinding Padding}"
+                                      ShadowElevation="{TemplateBinding AnimatedElevation}">
+                      <m3:ListItemLayout x:Name="PART_Layout">
+                          <ContentPresenter x:Name="PART_LeadingContent" Content="{TemplateBinding LeadingContent}"
+                                            ContentTemplate="{TemplateBinding LeadingContentTemplate}"
+                                            Foreground="{TemplateBinding AnimatedLeadingContentColor, Converter={x:Static m3:ListItemThemeConverters.Brush}}"
+                                            HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                                            TextWrapping="Wrap" />
+                          <ContentPresenter x:Name="PART_TrailingContent" Content="{TemplateBinding TrailingContent}"
+                                            ContentTemplate="{TemplateBinding TrailingContentTemplate}"
+                                            Foreground="{TemplateBinding AnimatedTrailingContentColor, Converter={x:Static m3:ListItemThemeConverters.Brush}}"
+                                            HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                                            TextWrapping="Wrap" />
+                          <ContentPresenter x:Name="PART_OverlineContent" Content="{TemplateBinding OverlineContent}"
+                                            ContentTemplate="{TemplateBinding OverlineContentTemplate}"
+                                            Foreground="{TemplateBinding AnimatedOverlineContentColor, Converter={x:Static m3:ListItemThemeConverters.Brush}}"
+                                            HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                                            TextWrapping="Wrap" />
+                          <ContentPresenter x:Name="PART_SupportingContent"
+                                            Content="{TemplateBinding SupportingContent}"
+                                            ContentTemplate="{TemplateBinding SupportingContentTemplate}"
+                                            Foreground="{TemplateBinding AnimatedSupportingContentColor, Converter={x:Static m3:ListItemThemeConverters.Brush}}"
+                                            HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                                            TextWrapping="Wrap" />
+                          <ContentPresenter x:Name="PART_MainContent" Content="{TemplateBinding Content}"
+                                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                                            Foreground="{TemplateBinding AnimatedContentColor, Converter={x:Static m3:ListItemThemeConverters.Brush}}"
+                                            HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                                            TextWrapping="Wrap" />
+                      </m3:ListItemLayout>
+                  </m3:MaterialSurface>
+              </m3:ButtonLayout>
+          </ControlTemplate>
+      </Setter>
+      <Style Selector="^:interactive"><Setter Property="Focusable" Value="True" /></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:SegmentedListItem}" TargetType="m3:SegmentedListItem" BasedOn="{StaticResource {x:Type m3:ListItem}}">
+      <Setter Property="ContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SegmentedContainerColor}}" />
+      <Setter Property="DisabledContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ListItem.SegmentedContainerColor}}" />
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

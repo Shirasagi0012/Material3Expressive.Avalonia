@@ -35,7 +35,7 @@ namespace Material3Expressive.Foundation.Interaction;
 /// before the controller's quantized opacity is applied.
 /// </para>
 /// </remarks>
-internal sealed class MaterialInteractionController
+internal sealed partial class MaterialInteractionController
 {
     private readonly Control _owner;
     private AnimationChildScope? _motion;
@@ -98,12 +98,13 @@ internal sealed class MaterialInteractionController
             OnKeyUp,
             RoutingStrategies.Tunnel,
             handledEventsToo: true);
-        _owner.PointerCaptureLost += (_, _) => { _pressedPointer = null; EndPress(); };
+        _owner.PointerCaptureLost += (_, _) => { _pressedPointer = null; EndPress(cancelled: true); };
         _owner.GotFocus += OnGotFocus;
         _owner.AttachedToVisualTree += (_, _) => MaterialInputMode.For(_owner);
         _owner.LostFocus += (_, _) =>
         {
-            EndPress();
+            CancelSourceKeyPresses();
+            EndPress(cancelled: true);
             Set(InteractionState.Focused, false);
         };
         _owner.DetachedFromLogicalTree += OnDetachedFromLogicalTree;
@@ -264,7 +265,12 @@ internal sealed class MaterialInteractionController
     /// <summary>Sets or clears one interaction flag.</summary>
     internal void Set(InteractionState flag, bool active)
     {
-        if (active && !IsEnabled)
+        if (_source is not null && !_receivingSource)
+        {
+            EmitNative(flag, active);
+            return;
+        }
+        if (active && !IsEnabled && !_receivingSource)
             return;
         var updated = active ? _interaction | flag : _interaction & ~flag;
         if (updated == _interaction)
@@ -279,7 +285,16 @@ internal sealed class MaterialInteractionController
     /// <summary>Begins the pressed state, raising a ripple at <paramref name="origin" />.</summary>
     internal void StartPress(Point origin)
     {
-        if (!IsEnabled || _interaction.HasFlag(InteractionState.Pressed))
+        if (_source is not null && !_receivingSource)
+        {
+            if (IsEnabled && _nativePress is null)
+            {
+                _nativePress = new MaterialInteractionEvent.Press(origin);
+                _source.Emit(_nativePress);
+            }
+            return;
+        }
+        if (!_receivingSource && (!IsEnabled || _interaction.HasFlag(InteractionState.Pressed)))
             return;
 
         Set(InteractionState.Pressed, true);
@@ -321,8 +336,17 @@ internal sealed class MaterialInteractionController
     }
 
     /// <summary>Ends the pressed state and lets any live ripple fade out.</summary>
-    internal void EndPress()
+    internal void EndPress(bool cancelled = false)
     {
+        if (_source is not null && !_receivingSource)
+        {
+            if (_nativePress is { } press)
+            {
+                _nativePress = null;
+                _source.Emit(cancelled ? new MaterialInteractionEvent.CancelPress(press) : new MaterialInteractionEvent.Release(press));
+            }
+            return;
+        }
         if (!_interaction.HasFlag(InteractionState.Pressed))
             return;
 
@@ -368,7 +392,7 @@ internal sealed class MaterialInteractionController
         // Releasing Avalonia's owned capture also clears Button.IsPressed and its pending click.
         Set(InteractionState.Hovered, false);
         _pressedPointer = null;
-        EndPress();
+        EndPress(cancelled: true);
         if (e.Pointer.Captured is Visual captured
             && (ReferenceEquals(captured, _owner) || _owner.IsVisualAncestorOf(captured)))
             e.Pointer.Capture(null);
@@ -399,13 +423,28 @@ internal sealed class MaterialInteractionController
         // Pointer input replaces this zero with the last observed clickable bounds' centre.
         var origin = _keyboardPressCenter ?? (PressPositionMapper is null && _presenter is { } surface
             ? surface.TranslatePoint(default, _owner) ?? default : default);
-        StartPress(origin);
+        if (_source is not null)
+        {
+            if (IsEnabled && !_nativeKeyPresses.ContainsKey(e.Key))
+            {
+                var press = new MaterialInteractionEvent.Press(origin);
+                _nativeKeyPresses.Add(e.Key, press);
+                _source.Emit(press);
+            }
+        }
+        else StartPress(origin);
     }
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
         if (_owner is Button && ReferenceEquals(e.Source, _owner) && e.Key is (Key.Space or Key.Enter))
-            EndPress();
+        {
+            if (_source is not null)
+            {
+                if (_nativeKeyPresses.Remove(e.Key, out var press)) _source.Emit(new MaterialInteractionEvent.Release(press));
+            }
+            else EndPress();
+        }
     }
 
     private void OnGotFocus(object? sender, FocusChangedEventArgs e)
@@ -427,11 +466,26 @@ internal sealed class MaterialInteractionController
 
     private void ClearInputInteractions(bool finishRipples = false, bool deferStateLayer = false)
     {
+        _deferSourceStateLayer = deferStateLayer;
+        try { CancelSourceInput(); }
+        finally { _deferSourceStateLayer = false; }
         _pressedPointer = null;
         // A new hoverable node waits for pointer input. The native owner can remain
         // pointer-over while its feedback template is replaced, so no new Enter is
         // guaranteed; the next Move must be able to restore hover as well.
         _hoverNeedsMove = true;
+        // A hoisted source owns externally emitted interactions. Disabling native input only
+        // cancels the native starts above, not an external drag/focus/press in the same source.
+        if (_source is not null)
+        {
+            if (deferStateLayer && Motion is { } sourceMotion && !sourceMotion.Lifetime.IsCancellationRequested)
+                _ = sourceMotion.Launch(async ct =>
+                {
+                    await sourceMotion.NextFrameAsync(ct);
+                    UpdateStateLayer();
+                }, "Disabled source state layer exit");
+            return;
+        }
         var hadInputInteraction = _interaction != InteractionState.None;
         var hadRipples = _ripples.Count != 0;
 
@@ -544,7 +598,9 @@ internal sealed class MaterialInteractionController
         // AndroidX stores entry interactions in arrival order and shows lastOrNull(). A fixed
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
-        var topmost = _interactions.LastOrDefault(state => state != InteractionState.Pressed
+        var indicationInteractions = _source is null ? _interactions
+            : _sourceInteractions.Where(e => !_previousIndicationStarts.Contains(e)).Select(StateOf);
+        var topmost = indicationInteractions.LastOrDefault(state => state != InteractionState.Pressed
             && (state != InteractionState.Focused || _indicationFocused));
 
         // Ripple.StateLayer stores and animates alpha as Float, including token values.

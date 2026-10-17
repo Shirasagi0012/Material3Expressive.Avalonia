@@ -254,6 +254,18 @@ Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪�
 
 ## 当前覆盖与待确认项
 
+ListItem 引入的共享交互入口位于 `Foundation/Interaction`：`MaterialInteractionSource` 是 UI 线程上的配对事件流，
+结束/取消事件引用原始开始对象，不缓存或重放状态。当前 ListItem 暴露此入口；既有控件未因此新增公开 InteractionSource API。
+controller 将原生输入接入同一流，按存活顺序管理状态层，并与组件的聚合状态观察保持区分；indication 重建不重放旧事件。
+
+`MaterialInteractiveSize.Minimum` 是可继承的可空最小交互布局尺寸；null 保留各组件已有默认 Token，显式值覆盖布局环境。
+Button/IconButton/ToggleButton/SplitButton/SegmentedButton 等 ButtonLayout 消费者，以及 CheckBox、RadioButton、Switch、
+Chip、FAB、Slider/RangeSlider 和 ListItem 接入此环境。它只预留布局空间，不扩大命中范围，不替代各组件的绘制盒或容器最小尺寸。
+ListItem 在侧槽提供扣除自身 padding 与间隔的局部值。未使用该共享机制的现有导航布局和原生控件不自动改变尺寸。
+
+MaterialSurface 的内部 `ApplyTonalElevation` 开关默认为 true；ListItem 关闭它，以复用表面裁剪/阴影而保持上游独立颜色 Transition，
+不向消费端新增 Surface API。确认范围见 [DECISIONS](DECISIONS.md#列表项的交互源与最小交互环境)。
+
 原生 ScrollBar 使用 CMP Foundation 的交互式滚动条外观，固定厚度与 hover / drag 颜色动画。
 颜色映射至 OnSurface，位置、长度、输入、Visibility、菜单和 ScrollViewer 布局保留原生行为。
 外观入口、已确认适配及本组件不做 Compose parity 的范围见

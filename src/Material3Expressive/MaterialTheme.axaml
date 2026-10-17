@@ -49,6 +49,7 @@
                     <m3:TabRowTokenSource />
                     <m3:DialogTokenSource />
                     <m3:CardTokenSource />
+                    <m3:ListItemTokenSource />
                     <m3:SegmentedButtonTokenSource />
                     <m3:ProgressIndicatorTokenSource />
                     <m3:AppBarTokenSource />
@@ -67,6 +68,7 @@
     </Styles.Resources>
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
+    <StyleInclude Source="/Components/ListItem/ListItem.axaml" />
     <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />
     <StyleInclude Source="/Components/AppBar/AppBar.axaml" />
     <StyleInclude Source="/Foundation/Typography/Typography.axaml" />
@@ -120,10 +122,10 @@
     <StyleInclude Source="/Components/DatePicker/DatePicker.axaml" />
     <StyleInclude Source="/Components/TimePicker/TimePicker.axaml" />
     <StyleInclude Source="/Components/ComboBox/ComboBox.axaml" />
-    <StyleInclude Source="/Components/Others/Layout.axaml" />
-    <StyleInclude Source="/Components/Others/Infrastructure.axaml" />
-    <StyleInclude Source="/Components/Others/Window.axaml" />
-    <StyleInclude Source="/Components/Others/TextSelection.axaml" />
-    <StyleInclude Source="/Components/Others/Splitter.axaml" />
-    <StyleInclude Source="/Components/Others/TableView.axaml" />
+    <StyleInclude Source="/Components/Primitives/Layout.axaml" />
+    <StyleInclude Source="/Components/Primitives/Infrastructure.axaml" />
+    <StyleInclude Source="/Components/Primitives/Window.axaml" />
+    <StyleInclude Source="/Components/Primitives/TextSelection.axaml" />
+    <StyleInclude Source="/Components/Primitives/Splitter.axaml" />
+    <StyleInclude Source="/Components/Primitives/TableView.axaml" />
 </Styles>

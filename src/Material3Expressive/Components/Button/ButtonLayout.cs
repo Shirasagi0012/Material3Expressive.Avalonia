@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -11,6 +12,9 @@ namespace Material3Expressive.Components;
 // owner's explicit dimensions/minima separately from the default container size.
 internal sealed class ButtonLayout : Decorator, IMinimumInteractiveLayout
 {
+    public static readonly StyledProperty<bool> IsMinimumInteractiveSizeEnabledProperty =
+        AvaloniaProperty.Register<ButtonLayout, bool>(nameof(IsMinimumInteractiveSizeEnabled), true);
+    public bool IsMinimumInteractiveSizeEnabled { get => GetValue(IsMinimumInteractiveSizeEnabledProperty); set => SetValue(IsMinimumInteractiveSizeEnabledProperty, value); }
     public static readonly StyledProperty<double> ContainerMinHeightProperty =
         AvaloniaProperty.Register<ButtonLayout, double>(nameof(ContainerMinHeight));
     public static readonly StyledProperty<double> ContainerMinWidthProperty =
@@ -34,7 +38,7 @@ internal sealed class ButtonLayout : Decorator, IMinimumInteractiveLayout
         }
     }
 
-    static ButtonLayout() => AffectsMeasure<ButtonLayout>(ContainerMinHeightProperty, ContainerMinWidthProperty, MinimumInteractiveSizeProperty);
+    static ButtonLayout() => AffectsMeasure<ButtonLayout>(ContainerMinHeightProperty, ContainerMinWidthProperty, MinimumInteractiveSizeProperty, MaterialInteractiveSize.MinimumProperty, IsMinimumInteractiveSizeEnabledProperty);
 
     public double ContainerMinHeight
     {
@@ -55,7 +59,7 @@ internal sealed class ButtonLayout : Decorator, IMinimumInteractiveLayout
 
         // Disabled components retain this spacing too. This reserves layout space;
         // touch target expansion is a separate input-layer responsibility upstream.
-        _interactiveSize = this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(MinimumInteractiveSize, scale), scale) : 0;
+        _interactiveSize = IsMinimumInteractiveSizeEnabled && this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(MaterialInteractiveSize.Resolve(this, MinimumInteractiveSize), scale), scale) : 0;
         return new Size(Math.Max(_containerSize.Width, _interactiveSize), Math.Max(_containerSize.Height, _interactiveSize));
     }
 

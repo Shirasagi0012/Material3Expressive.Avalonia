@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -9,32 +10,35 @@ namespace Material3Expressive.Components;
 // The optional native Content is a local composition alongside the indicator, not part of its canvas.
 internal sealed class RadioButtonLayout : Panel
 {
+    static RadioButtonLayout() => AffectsMeasure<RadioButtonLayout>(MaterialInteractiveSize.MinimumProperty);
     protected override Size MeasureOverride(Size availableSize)
     {
         if (Children.Count != 2) return default;
         Children[0].Measure(new Size(24, 24));
+        var minimum = Math.Max(24, MaterialInteractiveSize.Resolve(this));
         var owner = (RadioButton)TemplatedParent!;
         var padding = owner.Content is null ? default : owner.Padding;
-        Children[1].Measure(new Size(Math.Max(0, availableSize.Width - 48 - padding.Left - padding.Right), availableSize.Height));
+        Children[1].Measure(new Size(Math.Max(0, availableSize.Width - minimum - padding.Left - padding.Right), availableSize.Height));
         var content = owner.Content is null ? default : Children[1].DesiredSize;
-        return new Size(48 + content.Width + padding.Left + padding.Right,
-            Math.Max(48, content.Height + padding.Top + padding.Bottom));
+        return new Size(minimum + content.Width + padding.Left + padding.Right,
+            Math.Max(minimum, content.Height + padding.Top + padding.Bottom));
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
         if (Children.Count != 2) return finalSize;
+        var minimum = Math.Max(24, MaterialInteractiveSize.Resolve(this));
         var owner = (RadioButton)TemplatedParent!;
         var scale = LayoutHelper.GetLayoutScale(this);
         double Center(double slot, double child) =>
-            (MathUtils.RoundToInt((Math.Max(slot, 48) - child) * scale / 2)
-             + Math.Truncate((slot - Math.Max(slot, 48)) * scale / 2)) / scale;
-        var slotWidth = owner.Content is null ? finalSize.Width : Math.Min(48, finalSize.Width);
+            (MathUtils.RoundToInt((Math.Max(slot, minimum) - child) * scale / 2)
+             + Math.Truncate((slot - Math.Max(slot, minimum)) * scale / 2)) / scale;
+        var slotWidth = owner.Content is null ? finalSize.Width : Math.Min(minimum, finalSize.Width);
         // Avalonia mirrors the content row in RTL; the circular indicator is symmetric.
         Children[0].Arrange(new Rect(Center(slotWidth, 24), Center(finalSize.Height, 24), 24, 24));
         var padding = owner.Content is null ? default : owner.Padding;
-        Children[1].Arrange(new Rect(Math.Min(48, finalSize.Width) + padding.Left, padding.Top,
-            Math.Max(0, finalSize.Width - 48 - padding.Left - padding.Right),
+        Children[1].Arrange(new Rect(Math.Min(minimum, finalSize.Width) + padding.Left, padding.Top,
+            Math.Max(0, finalSize.Width - minimum - padding.Left - padding.Right),
             Math.Max(0, finalSize.Height - padding.Top - padding.Bottom)));
         return finalSize;
     }

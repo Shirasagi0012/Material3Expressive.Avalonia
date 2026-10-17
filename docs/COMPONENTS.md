@@ -42,6 +42,7 @@
 
 ## 容器与布局
 
+- [ListItem / SegmentedListItem](../src/Material3Expressive/Components/ListItem/README.md)：五槽列表行、受控选择与分组圆角
 - [Surface](../src/Material3Expressive/Components/Surface/README.md)：表面、圆角、描边与高度
 - [Card](../src/Material3Expressive/Components/Card/README.md)：填充、阴影与描边卡片
 - [Scaffold](../src/Material3Expressive/Components/Scaffold/README.md)：屏幕槽位、Padding 与 Insets

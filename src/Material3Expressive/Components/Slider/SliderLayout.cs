@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Material3Expressive.Foundation.Interaction;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -27,6 +28,7 @@ namespace Material3Expressive.Components;
 internal sealed class SliderLayout : Panel
 {
     protected override bool BypassFlowDirectionPolicies => true;
+    static SliderLayout() => AffectsMeasure<SliderLayout>(MaterialInteractiveSize.MinimumProperty);
     private float Scale => (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
     private int Pixels(double dip) => SliderMath.Round((float)dip * Scale);
     protected override Size MeasureOverride(Size available)
@@ -39,7 +41,7 @@ internal sealed class SliderLayout : Panel
         track.Measure(new Size(Math.Max(0, contentSpace.Width - offset / Scale), contentSpace.Height));
         var width = track.DesiredSize.Width + offset / Scale;
         var height = Math.Max(track.DesiredSize.Height, Math.Max(start.DesiredSize.Height, end.DesiredSize.Height));
-        return new(Math.Min(available.Width, Math.Max(48, width)), Math.Min(available.Height, Math.Max(48, height)));
+        return new(Math.Min(available.Width, Math.Max(MaterialInteractiveSize.Resolve(this), width)), Math.Min(available.Height, Math.Max(MaterialInteractiveSize.Resolve(this), height)));
     }
     protected override Size ArrangeOverride(Size finalSize)
     {

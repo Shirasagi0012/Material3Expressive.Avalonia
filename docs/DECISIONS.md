@@ -3,6 +3,17 @@
 本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件维护文档保存（已拆分时为 INTERNALS.md，否则为 README）；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
+## 列表项的交互源与最小交互环境
+
+决定：提供公共 `MaterialInteractionSource`，使用 press/focus/hover/drag 开始对象与配对结束/取消事件；
+通过可继承的 `MaterialInteractiveSize.Minimum` 提供布局尺寸环境；Surface 增加内部关闭 tonal 着色入口。
+原因：ListItem 的外部拖拽、侧槽最小交互尺寸及自身颜色 Transition 需要这三项共享能力，组件内重复实现会割裂已有输入和绘制机制。
+范围：ListItem 首先公开 InteractionSource，其他控件不自动增加新 API；最小尺寸接入已有相关布局机制，未设置时维持组件默认值。
+源不缓存状态，消费者维护自己的存活事件；指示层重建只接收新事件，不影响独立形状状态。
+最小尺寸仅为布局环境；不增加自动触摸命中扩张，不改写组件绘制盒。关闭 tonal 的入口保持 internal。
+确认：2026-10-17，维护者在 ListItem 移植任务中选择包含以上共享能力的建议范围，并明确暂缺任意 Shape 与 inset focus ring。
+组件 API、基线与长按适配见 [ListItem INTERNALS](../src/Material3Expressive/Components/ListItem/INTERNALS.md)。
+
 ## 图标槽与默认尺寸
 
 决定：一般图标槽统一采用 object 与 IDataTemplate 成对入口，保留槽的语义前缀；IconButton 保留专门的 Symbol API。

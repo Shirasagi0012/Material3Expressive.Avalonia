@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Interaction;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -17,7 +18,7 @@ internal sealed class ChipLayout : Decorator
     public double MinimumInteractiveSize { get => GetValue(MinimumInteractiveSizeProperty); set => SetValue(MinimumInteractiveSizeProperty, value); }
     private Size _container;
     private double _interactive;
-    static ChipLayout() => AffectsMeasure<ChipLayout>(ContainerMinHeightProperty, MaximumSelectableWidthProperty, MinimumInteractiveSizeProperty);
+    static ChipLayout() => AffectsMeasure<ChipLayout>(ContainerMinHeightProperty, MaximumSelectableWidthProperty, MinimumInteractiveSizeProperty, MaterialInteractiveSize.MinimumProperty);
     protected override Size MeasureOverride(Size availableSize)
     {
         // Chip.kt limits selectable content to 1000dp. An explicit width/minimum is an
@@ -30,7 +31,7 @@ internal sealed class ChipLayout : Decorator
         var minimumHeight = MinHeight > 0 ? MinHeight : Math.Min(MathUtils.PxToDip(MathUtils.DipToPx(ContainerMinHeight, scale), scale), availableSize.Height);
         _container = new Size(double.IsNaN(Width) ? Math.Max(desired.Width, MinWidth) : availableSize.Width,
             double.IsNaN(Height) ? Math.Max(desired.Height, minimumHeight) : availableSize.Height);
-        _interactive = this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(MinimumInteractiveSize, scale), scale) : 0;
+        _interactive = this.IsAttachedToVisualTree() ? MathUtils.PxToDip(MathUtils.DipToPx(MaterialInteractiveSize.Resolve(this, MinimumInteractiveSize), scale), scale) : 0;
         return new Size(Math.Max(_container.Width, _interactive), Math.Max(_container.Height, _interactive));
     }
     protected override Size ArrangeOverride(Size finalSize)

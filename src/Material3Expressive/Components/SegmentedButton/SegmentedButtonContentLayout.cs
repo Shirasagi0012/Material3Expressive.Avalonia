@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Interaction;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -23,12 +24,12 @@ internal sealed class SegmentedButtonContentLayout : Panel
     public double MinimumInteractiveSize { get => GetValue(MinimumInteractiveSizeProperty); set => SetValue(MinimumInteractiveSizeProperty, value); }
     public static readonly StyledProperty<MaterialSpring?> OffsetAnimationProperty = AvaloniaProperty.Register<SegmentedButtonContentLayout, MaterialSpring?>(nameof(OffsetAnimation));
     public MaterialSpring? OffsetAnimation { get => GetValue(OffsetAnimationProperty); set => SetValue(OffsetAnimationProperty, value); }
-    static SegmentedButtonContentLayout() => AffectsMeasure<SegmentedButtonContentLayout>(IconSizeProperty, IconSpacingProperty, ContentMinWidthProperty, MinimumInteractiveSizeProperty, OffsetAnimationProperty);
+    static SegmentedButtonContentLayout() => AffectsMeasure<SegmentedButtonContentLayout>(IconSizeProperty, IconSpacingProperty, ContentMinWidthProperty, MinimumInteractiveSizeProperty, OffsetAnimationProperty, MaterialInteractiveSize.MinimumProperty);
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == IconSizeProperty || change.Property == IconSpacingProperty
-            || change.Property == ContentMinWidthProperty || change.Property == MinimumInteractiveSizeProperty)
+            || change.Property == ContentMinWidthProperty || change.Property == MinimumInteractiveSizeProperty || change.Property == MaterialInteractiveSize.MinimumProperty)
             (TemplatedParent as SegmentedButton)?.Row?.InvalidateItemsLayout();
     }
 
@@ -61,7 +62,7 @@ internal sealed class SegmentedButtonContentLayout : Panel
         // and interactive modifiers supply minima independently of the icon's visibility.
         Children[0].Measure(new Size(double.PositiveInfinity, Children[1].DesiredSize.Height));
         return new Size(Math.Max(ContentMinWidth, Math.Max(IconSize, Children[0].DesiredSize.Width) + IconSpacing + Children[1].DesiredSize.Width + padding.Left + padding.Right),
-            Math.Max(MinimumInteractiveSize, Children[1].DesiredSize.Height + padding.Top + padding.Bottom));
+            Math.Max(MaterialInteractiveSize.Resolve(this, MinimumInteractiveSize), Children[1].DesiredSize.Height + padding.Top + padding.Bottom));
     }
     protected override Size MeasureOverride(Size availableSize)
     {

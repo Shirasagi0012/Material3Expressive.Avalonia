@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.ListItemDemo" Title="List items" Width="560" Height="640">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="16">
+      <TextBlock Text="ListItem" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <m3:ListItem Content="Account" OverlineContent="Personal" SupportingContent="Manage your profile" LeadingContent="{m3:Symbol Person}" />
+      <m3:ListItem Content="Downloads" SupportingContent="Click or hold for more actions" InteractionMode="Click"
+                   Click="OnClick" LongClick="OnLongClick" LeadingContent="{m3:Symbol Download}" />
+      <TextBlock Text="SegmentedListItem · controlled selection" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <StackPanel Spacing="2">
+        <m3:SegmentedListItem Content="Sync photos" GroupIndex="0" GroupCount="3" InteractionMode="MultipleSelection"
+            IsChecked="True" CheckedChangeRequested="OnCheckedChange">
+          <m3:SegmentedListItem.TrailingContent><CheckBox IsChecked="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=m3:ListItem}}" IsHitTestVisible="False" Focusable="False" /></m3:SegmentedListItem.TrailingContent>
+        </m3:SegmentedListItem>
+        <m3:SegmentedListItem Content="Sync documents" GroupIndex="1" GroupCount="3" InteractionMode="MultipleSelection" CheckedChangeRequested="OnCheckedChange" />
+        <m3:SegmentedListItem Content="Sync music" GroupIndex="2" GroupCount="3" InteractionMode="MultipleSelection" CheckedChangeRequested="OnCheckedChange" />
+      </StackPanel>
+      <m3:ListItem Content="Unavailable action" InteractionMode="Click" IsInteractionEnabled="False">
+        <m3:ListItem.TrailingContent><Button Content="Help" Click="OnHelp" /></m3:ListItem.TrailingContent>
+      </m3:ListItem>
+      <m3:ListItem Content="Custom rounded shapes" InteractionMode="Click" Click="OnClick">
+        <m3:ListItem.Shapes><m3:ListItemShapes Shape="2" HoveredShape="8" PressedShape="24" SelectedShape="16" FocusedShape="16" DraggedShape="16" /></m3:ListItem.Shapes>
+      </m3:ListItem>
+      <TextBlock x:Name="Status" Text="Ready" />
+    </StackPanel>
+  </ScrollViewer>
+</Window>

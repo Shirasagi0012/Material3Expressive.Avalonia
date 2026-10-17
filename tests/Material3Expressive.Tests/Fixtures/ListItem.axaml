@@ -1,0 +1,15 @@
+<StackPanel xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia" Spacing="2">
+  <m3:ListItem Content="Main" LeadingContent="Leading" TrailingContent="Trailing"
+               OverlineContent="Overline" SupportingContent="Supporting" InteractionMode="Click" LongClickLabel="More actions">
+    <m3:ListItem.ContentTemplate><DataTemplate><Border Width="60" Height="24" /></DataTemplate></m3:ListItem.ContentTemplate>
+    <m3:ListItem.LeadingContentTemplate><DataTemplate><Border Width="24" Height="24" /></DataTemplate></m3:ListItem.LeadingContentTemplate>
+    <m3:ListItem.TrailingContentTemplate><DataTemplate><Border Width="16" Height="16" /></DataTemplate></m3:ListItem.TrailingContentTemplate>
+    <m3:ListItem.OverlineContentTemplate><DataTemplate><Border Width="40" Height="16" /></DataTemplate></m3:ListItem.OverlineContentTemplate>
+    <m3:ListItem.SupportingContentTemplate><DataTemplate><Border Width="80" Height="20" /></DataTemplate></m3:ListItem.SupportingContentTemplate>
+    <m3:ListItem.Shapes><m3:ListItemShapes Shape="2" SelectedShape="8" PressedShape="24" FocusedShape="8" HoveredShape="6" DraggedShape="8" /></m3:ListItem.Shapes>
+  </m3:ListItem>
+  <m3:SegmentedListItem GroupIndex="1" GroupCount="2" Content="Second" InteractionMode="MultipleSelection"
+                        IsChecked="{Binding IsChecked, ElementName=SelectionState, Mode=OneWay}" />
+  <CheckBox x:Name="SelectionState" IsChecked="True" />
+</StackPanel>

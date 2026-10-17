@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     private void OnTabRowDemo(object? sender, RoutedEventArgs e) => new TabRowDemo().Show(this);
     private void OnProgressIndicatorDemo(object? sender, RoutedEventArgs e) => new ProgressIndicatorDemo().Show(this);
     private void OnLoadingIndicatorDemo(object? sender, RoutedEventArgs e) => new LoadingIndicatorDemo().Show(this);
+    private void OnListItemDemo(object? sender, RoutedEventArgs e) => new ListItemDemo().Show(this);
 
     private void OnFloatingToolbarDemo(object? sender, RoutedEventArgs e) => new FloatingToolbarDemo().Show(this);
     private void OnScrollBarDemo(object? sender, RoutedEventArgs e) => new ScrollBarDemo().Show(this);

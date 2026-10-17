@@ -32,6 +32,9 @@ namespace Material3Expressive.Components;
 /// </remarks>
 public sealed class MaterialSurface : Control
 {
+    internal static readonly StyledProperty<bool> ApplyTonalElevationProperty =
+        AvaloniaProperty.Register<MaterialSurface, bool>(nameof(ApplyTonalElevation), true);
+    internal bool ApplyTonalElevation { get => GetValue(ApplyTonalElevationProperty); set => SetValue(ApplyTonalElevationProperty, value); }
     private const double ElevationEpsilon = 0.000001;
 
     /// <summary>Physical elevation in DIPs; drives the Skia shadow. 0 (the default) draws none.</summary>
@@ -312,7 +315,7 @@ public sealed class MaterialSurface : Control
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == BackgroundProperty || change.Property == TonalSurfaceColorProperty
+        if (change.Property == ApplyTonalElevationProperty || change.Property == BackgroundProperty || change.Property == TonalSurfaceColorProperty
             || change.Property == TonalSurfaceTintColorProperty)
         {
             UpdateEffectiveBackground();
@@ -644,7 +647,7 @@ public sealed class MaterialSurface : Control
     // the same solid fill as an untinted surface.
     private IBrush? ResolveEffectiveBackground()
     {
-        if (Background is not ISolidColorBrush solid || _absoluteTonalElevation <= 0)
+        if (!ApplyTonalElevation || Background is not ISolidColorBrush solid || _absoluteTonalElevation <= 0)
             return Background;
 
         if (TonalSurfaceColor is not { } surface || solid.Color != surface ||
