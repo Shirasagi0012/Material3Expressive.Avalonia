@@ -96,5 +96,6 @@ Enter 按下激活，`Space` 默认松开激活。
 
 不提供完全等价的 Compose `onCheckedChange=null` 模式；关闭普通输入仍保留原生 `ToggleProvider`。
 默认原生自动化 peer 的 ControlType 为 Button 并提供 TogglePattern，不另外映射为 Compose Role.Switch。
-可配置 inset focus ring 和外部 MutableInteractionSource 尚未实现；文字、实际屏幕阅读器和真实桌面
+可通过 `m3:MaterialInteraction.FocusFeedback="InsetRing"` 启用轨道上的内缩焦点环，配置见
+[交互反馈](../../Foundation/Interaction/README.md)。外部 MutableInteractionSource 尚未实现；文字、实际屏幕阅读器和真实桌面
 双端体验未经完整验收。示例见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

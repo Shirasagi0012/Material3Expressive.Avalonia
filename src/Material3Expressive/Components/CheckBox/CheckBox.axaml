@@ -17,7 +17,7 @@
         <ControlTemplate>
           <m3:CheckBoxLayout>
             <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
-                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" Padding="2">
+                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" FocusRingCornerRadius="6" Padding="2">
               <m3:CheckBoxIndicator ShapeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ShapeAnimation}}"
                   ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ColorAnimation}}"
                   UncheckColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckColorAnimation}}"

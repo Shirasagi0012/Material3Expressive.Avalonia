@@ -72,6 +72,12 @@ ToggleProvider 的开关，因此本阶段不增加独立只显示指示器，�
 
 ## 一致性边界
 
+可选 InsetRing 通过共享呈现部件接入，FocusRingCornerRadius=6 对应固定 24 DIP 反馈区域的
+RoundedCornerShape(25%)；背景与无界 ripple 形状保持原有输入，不将焦点形状当成背景裁剪。
+配置与生命周期规则见 [Interaction](../../Foundation/Interaction/README.md)。
+固定 Checkbox.kt 使用同一个 ripple node；切换 Opacity / InsetRing 仅更新配置，
+不清空按压波纹、状态层或焦点交互。共享呈现部件在两种模式下均维持同一次订阅。
+
 尚未实现任意 PathEffect 的跨框架映射、完全等价的 null 回调模式与外部 MutableInteractionSource。
 关闭 `IsHitTestVisible`、`Focusable`、`MaterialInteraction.IsInteractive` 只阻止相应输入与反馈，
 不会移除原生 ToggleProvider。

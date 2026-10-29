@@ -109,6 +109,14 @@ public sealed class MaterialSurface : Control
     private readonly Border _chrome;
     private readonly InteractionOverlay _interactionOverlay;
     private readonly SurfaceOutline _outline;
+    private InsetFocusRingPresenter? _focusRing;
+    // Components such as Switch render focus at a different location from their ripple.
+    internal static readonly StyledProperty<bool> PresentsFocusRingProperty =
+        AvaloniaProperty.Register<MaterialSurface, bool>(nameof(PresentsFocusRing), true);
+    internal bool PresentsFocusRing { get => GetValue(PresentsFocusRingProperty); set => SetValue(PresentsFocusRingProperty, value); }
+    internal static readonly StyledProperty<CornerRadius?> FocusRingCornerRadiusProperty =
+        AvaloniaProperty.Register<MaterialSurface, CornerRadius?>(nameof(FocusRingCornerRadius));
+    internal CornerRadius? FocusRingCornerRadius { get => GetValue(FocusRingCornerRadiusProperty); set => SetValue(FocusRingCornerRadiusProperty, value); }
     private MaterialInteractionController? _interactionController;
     private IDisposable? _interactionAttachment;
     private AnimatedCornerRadius? _shapeMorph;
@@ -292,6 +300,7 @@ public sealed class MaterialSurface : Control
         var desired = _chrome.DesiredSize;
         _interactionOverlay.Measure(desired);
         _outline.Measure(desired);
+        _focusRing?.Measure(desired);
         return desired;
     }
 
@@ -307,6 +316,11 @@ public sealed class MaterialSurface : Control
         _interactionOverlay.Arrange(rect);
         _outline.Arrange(rect);
         _checkedOverlay?.Arrange(rect);
+        if (_focusRing is { } focusRing)
+        {
+            focusRing.Corners = FocusRingCornerRadius ?? EffectiveCornerRadius;
+            focusRing.Arrange(rect);
+        }
 
         return finalSize;
     }
@@ -369,6 +383,8 @@ public sealed class MaterialSurface : Control
             && !IsInTemplatePopup(host))
         {
             _interactionController = MaterialInteraction.GetOrCreate(host);
+            host.PropertyChanged += FocusConfigurationChanged;
+            UpdateFocusRing(host);
             _interactionAttachment = _interactionController.Attach(this);
         }
     }
@@ -386,6 +402,8 @@ public sealed class MaterialSurface : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        if (TemplatedParent is Control host) host.PropertyChanged -= FocusConfigurationChanged;
+        _focusRing?.Disconnect();
         base.OnDetachedFromVisualTree(e);
 
         // The controller resets this presenter's motion when its attachment is released.
@@ -496,6 +514,26 @@ public sealed class MaterialSurface : Control
     {
         UpdateCornerRadius();
         _interactionOverlay.InvalidateVisual();
+        if (_focusRing is { } focusRing) focusRing.Corners = FocusRingCornerRadius ?? EffectiveCornerRadius;
+    }
+
+    private void FocusConfigurationChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == MaterialInteraction.FocusFeedbackProperty && sender is Control host)
+            UpdateFocusRing(host);
+    }
+
+    private void UpdateFocusRing(Control host)
+    {
+        if (!PresentsFocusRing || MaterialInteraction.GetFocusFeedback(host) != FocusFeedback.InsetRing
+            && _interactionController?.HasSeparateFocusIndication != false) return;
+        if (_focusRing is null)
+        {
+            _focusRing = new InsetFocusRingPresenter { ZIndex = 2, Corners = FocusRingCornerRadius ?? EffectiveCornerRadius };
+            VisualChildren.Add(_focusRing);
+            InvalidateMeasure();
+        }
+        _focusRing.Connect(host);
     }
 
     private bool UpdateCornerRadius()

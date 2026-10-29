@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.InsetFocusRingDemo"
+        Title="Inset focus ring" Width="620" Height="560">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24" Spacing="24">
+      <TextBlock Text="Inset focus ring" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+
+      <StackPanel Spacing="12" m3:MaterialInteraction.FocusFeedback="InsetRing">
+        <TextBlock Text="Buttons" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <WrapPanel>
+          <Button Content="Filled" Margin="0,0,12,8" />
+          <Button Content="Outlined" Margin="0,0,12,8" Theme="{StaticResource MaterialOutlinedButtonTheme}" />
+          <Button Content="Asymmetric" Margin="0,0,12,8" CornerRadius="24,8,0,16" />
+          <m3:IconButton Symbol="Favorite" Margin="0,0,12,8" />
+        </WrapPanel>
+
+        <TextBlock Text="Selection controls" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <WrapPanel>
+          <CheckBox Content="Check box" Margin="0,0,24,8" />
+          <RadioButton Content="First" GroupName="FocusRingDemo" IsChecked="True" Margin="0,0,16,8" />
+          <RadioButton Content="Second" GroupName="FocusRingDemo" Margin="0,0,24,8" />
+          <ToggleSwitch OnContent="Switch on" OffContent="Switch off" Margin="0,0,0,8" />
+        </WrapPanel>
+      </StackPanel>
+
+      <StackPanel Spacing="12">
+        <TextBlock Text="Custom colors" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <Button Content="Custom ring" HorizontalAlignment="Left" CornerRadius="24,8,0,16"
+                m3:MaterialInteraction.FocusFeedback="InsetRing"
+                m3:MaterialInteraction.FocusRingOuterColor="#006A6A"
+                m3:MaterialInteraction.FocusRingInnerColor="#FFFFFF" />
+      </StackPanel>
+
+      <StackPanel Spacing="12">
+        <TextBlock Text="Default opacity" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <Button Content="Default focus feedback" HorizontalAlignment="Left" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

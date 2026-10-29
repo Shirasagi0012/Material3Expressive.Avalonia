@@ -4,6 +4,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -11,6 +12,7 @@ namespace Material3Expressive.Components;
 internal sealed class SwitchTrack : Decorator
 {
     private readonly Outline _outline;
+    private InsetFocusRingPresenter? _focusRing;
 
     public SwitchTrack()
     {
@@ -67,6 +69,7 @@ internal sealed class SwitchTrack : Decorator
         UpdatePaint();
         Child?.Measure(new Size(20, 32));
         _outline.Measure(new Size(52, 32));
+        _focusRing?.Measure(new Size(52, 32));
         return new Size(52, 32);
     }
 
@@ -79,6 +82,7 @@ internal sealed class SwitchTrack : Decorator
             child.Arrange(new Rect(0, 0, 20, 32));
         }
         _outline.Arrange(new Rect(0, 0, 52, 32));
+        _focusRing?.Arrange(new Rect(0, 0, 52, 32));
         return finalSize;
     }
 
@@ -94,6 +98,36 @@ internal sealed class SwitchTrack : Decorator
     {
         base.OnAttachedToVisualTree(e);
         UpdatePaint();
+        if (TemplatedParent is Control owner)
+        {
+            owner.PropertyChanged += FocusConfigurationChanged;
+            UpdateFocusRing(owner);
+        }
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (TemplatedParent is Control owner) owner.PropertyChanged -= FocusConfigurationChanged;
+        _focusRing?.Disconnect();
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void FocusConfigurationChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == MaterialInteraction.FocusFeedbackProperty && sender is Control owner) UpdateFocusRing(owner);
+    }
+
+    private void UpdateFocusRing(Control owner)
+    {
+        if (MaterialInteraction.GetFocusFeedback(owner) != FocusFeedback.InsetRing) return;
+        if (_focusRing is null)
+        {
+            _focusRing = new InsetFocusRingPresenter { Corners = new CornerRadius(16) };
+            // SwitchImpl places its border outside the focus-only indication.
+            VisualChildren.Add(_focusRing);
+            InvalidateMeasure();
+        }
+        _focusRing.Connect(owner);
     }
 
     private void UpdatePaint()

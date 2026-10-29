@@ -48,6 +48,7 @@
                     <m3:FloatingActionButtonMenuItem Content="Create" Click="OnFabMenuItem" Icon="{m3:Symbol Add}" />
                     <m3:FloatingActionButtonMenuItem Content="Edit" Click="OnFabMenuItem" Icon="{m3:Symbol Edit}" />
                 </m3:FloatingActionButtonMenu>
+                <Button Content="Inset focus ring demo" Click="OnInsetFocusRingDemo" HorizontalAlignment="Left" />
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="Date / time pickers" Click="OnDateTimePickerDemo" HorizontalAlignment="Left" />
                 <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />

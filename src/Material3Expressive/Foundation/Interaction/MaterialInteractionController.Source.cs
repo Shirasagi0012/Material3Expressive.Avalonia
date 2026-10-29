@@ -22,6 +22,7 @@ internal sealed partial class MaterialInteractionController
         _sourceRipples.Clear();
         _previousIndicationStarts.Clear();
         _previousIndicationStarts.UnionWith(_sourceInteractions);
+        ResetIndicationObservers();
         _motion = ComposeAnimation.AnimationScope.Get(_owner).CreateChild("Interaction motion");
         _presenter?.OnInteractionFrame();
     }
@@ -44,6 +45,7 @@ internal sealed partial class MaterialInteractionController
         _sourceInteractions.Clear();
         _sourceRipples.Clear();
         _previousIndicationStarts.Clear();
+        ResetIndicationObservers(sourceChanged: true);
         _receivingSource = true;
         try
         {
@@ -140,6 +142,14 @@ internal sealed partial class MaterialInteractionController
             _interactions.Clear();
             _interactions.AddRange(_sourceInteractions.Select(StateOf));
             _interaction = _interactions.Aggregate(InteractionState.None, (flags, next) => flags | next);
+            var indicationGeneration = _indicationGeneration;
+            if (_deferSourceStateLayer && Motion is { } motion)
+                _ = motion.Launch(async ct =>
+                {
+                    await motion.NextFrameAsync(ct);
+                    if (indicationGeneration == _indicationGeneration) PublishIndication(interaction);
+                }, "Disabled source focus indication exit");
+            else PublishIndication(interaction);
             if (!_deferSourceStateLayer) UpdateStateLayer();
             NotifyInteractionChanged();
         }

@@ -12,6 +12,12 @@
     inherited content color: child text and MaterialSymbol icons pick it up by inheritance.
   -->
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:InsetFocusRingPresenter}" TargetType="m3:InsetFocusRingPresenter">
+      <Setter Property="DefaultOuterColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Secondary}}" />
+      <Setter Property="DefaultInnerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSecondary}}" />
+      <Setter Property="FocusingAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialFast}}" />
+      <Setter Property="UnfocusingAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.EffectsFast}}" />
+    </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:MaterialSurface}" TargetType="m3:MaterialSurface">
       <Setter Property="DefaultShadowColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Shadow}}" />
       <Setter Property="TonalSurfaceColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}" />

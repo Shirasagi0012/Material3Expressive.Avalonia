@@ -175,14 +175,18 @@ Button 主题本身也无需知道这个子类。自定义模板若没有该部�
 
 ## 一致性边界与验证
 
+可选 InsetRing 已由 Surface 的独立视觉部件接入；配置与通用维护规则见
+[Interaction](../../Foundation/Interaction/README.md)。默认仍为 Opacity，原生 FocusAdorner 保持关闭。
+
 ### 尚未实现
 
-- Material 焦点环；主题当前将原生 FocusAdorner 置空，状态层不能当作完整焦点环实现
 - `shouldUsePrecisionPointerComponentSizing=true` 的尺寸/Padding 基线分支；固定 `Button.kt` 在此分支
   将 Small MinHeight 设为 36 DIP、垂直 Padding 设为 8 DIP、图标侧水平 Padding 设为 12 DIP，
   当前不可变 TokenSource 未表达这些选择
 
 ### 未决差异与未经验证项
+
+- Button 全部样式/尺寸/形变组合的焦点环尚未全部进行双端验证
 
 - 既有记录中的属性变更当帧即时更新、替换 pressed shape 后状态层像素差异仍未解决，不能列为已接受偏离
 - `dynamic.repress` 的 Compose 普通重复采集曾出现至多 1 个通道值的像素不稳定；保留为参考采集问题，

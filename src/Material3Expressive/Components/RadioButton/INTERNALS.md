@@ -41,7 +41,8 @@ animateDpAsState 默认 dpDefaultSpring 的 0.1。禁用颜色直接到目标；
 
 默认色保留动态引用：Primary、OnSurfaceVariant、OnSurface×0.38、OnSurface×0.38。
 Skia 使用 Float 物理像素运算；Surface 与共享控制器提供无界、固定半径 20 DIP ripple。
-默认焦点使用 opacity indication，不能据此声明 inset focus-ring 分支已经实现。
+默认焦点使用 opacity indication；可选 inset focus-ring 已通过共享部件接入，
+FocusRingCornerRadius=12 对应 24 DIP 反馈区域上的 CircleShape，不改变原有无界 ripple。
 
 ## 已确认的组件选择
 
@@ -65,8 +66,12 @@ Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，�
 
 ## 一致性边界与历史观测
 
-尚未实现 null 回调完全等价模式、外部 MutableInteractionSource、独立最小交互尺寸环境覆盖及
-可选 inset focus-ring ripple 配置。文字视觉、实际 OS 无障碍客户端、真实桌面手工交互和非 Windows
+可选 InsetRing 使用 24 DIP 反馈区域的圆形轮廓。固定 RadioButton.kt 使用同一个 ripple node；
+切换 Opacity / InsetRing 仅更新配置，不清空按压波纹、状态层或焦点交互。
+共享呈现部件在两种模式下均维持同一次订阅，见 [Interaction](../../Foundation/Interaction/README.md)。
+
+尚未实现 null 回调完全等价模式、外部 MutableInteractionSource、独立最小交互尺寸环境覆盖。
+文字视觉、实际 OS 无障碍客户端、真实桌面手工交互和非 Windows
 平台未作双端验收。
 
 双端 `dynamic.input.enter`、`dynamic.input.request-only` 保留已接受的原生差异。

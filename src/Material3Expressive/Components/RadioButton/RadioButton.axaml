@@ -17,7 +17,7 @@
         <ControlTemplate>
           <m3:RadioButtonLayout>
             <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
-                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" Padding="2">
+                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" FocusRingCornerRadius="12" Padding="2">
               <m3:RadioButtonIndicator DotAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.DotAnimation}}"
                   ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.ColorAnimation}}"
                   x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"

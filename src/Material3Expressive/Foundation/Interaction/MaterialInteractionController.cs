@@ -44,6 +44,7 @@ internal sealed partial class MaterialInteractionController
     private readonly SolidColorBrush _alphaReplacedBrush = new();
 
     private Animatable<float>? _stateLayerAlpha;
+    private IDisposable? _stateLayerSubscription;
     private ButtonElevationController? _buttonElevation;
     private FloatingActionButtonElevationController? _fabElevation;
     private MaterialSurface? _presenter;
@@ -122,6 +123,8 @@ internal sealed partial class MaterialInteractionController
             }
             else if (change.Property == MaterialButton.ElevationProperty || change.Property == FloatingActionButton.ElevationProperty)
                 UpdateButtonElevation();
+            else if (change.Property == MaterialInteraction.FocusFeedbackProperty)
+                ResetRippleForFocusFeedback();
         };
     }
 
@@ -204,6 +207,7 @@ internal sealed partial class MaterialInteractionController
         _motion = null;
         motion?.Dispose();
         _stateLayerAlpha = null;
+        _stateLayerSubscription = null;
         _shownInteraction = InteractionState.None;
         foreach (var ripple in _ripples.ToArray())
             ripple.Dispose();
@@ -278,6 +282,7 @@ internal sealed partial class MaterialInteractionController
 
         _interaction = updated;
         UpdateInteractionStack(flag, active);
+        if (!_receivingSource) PublishNativeIndication(flag, active);
         UpdateStateLayer();
         NotifyInteractionChanged();
     }
@@ -493,6 +498,19 @@ internal sealed partial class MaterialInteractionController
         _interactions.Clear();
         _indicationFocused = true;
 
+        var endingIndications = _indicationNativeStarts.Values.Select(End).ToArray();
+        _indicationNativeStarts.Clear();
+        var indicationGeneration = _indicationGeneration;
+        if (deferStateLayer && Motion is { } indicationMotion && !indicationMotion.Lifetime.IsCancellationRequested)
+            _ = indicationMotion.Launch(async ct =>
+            {
+                await indicationMotion.NextFrameAsync(ct);
+                if (indicationGeneration == _indicationGeneration)
+                    foreach (var ending in endingIndications) PublishIndication(ending);
+            }, "Disabled focus indication exit");
+        else
+            foreach (var ending in endingIndications) PublishIndication(ending);
+
         foreach (var ripple in _ripples.ToArray())
         {
             if (finishRipples) ripple.Finish();
@@ -587,7 +605,8 @@ internal sealed partial class MaterialInteractionController
     private double OpacityFor(InteractionState interaction) => interaction switch
     {
         InteractionState.Hovered => _presenter?.HoverStateLayerOpacity ?? 0,
-        InteractionState.Focused => _presenter?.FocusStateLayerOpacity ?? 0,
+        InteractionState.Focused => MaterialInteraction.GetFocusFeedback(_owner) == FocusFeedback.InsetRing
+            ? 0 : _presenter?.FocusStateLayerOpacity ?? 0,
         InteractionState.Pressed => _presenter?.PressedStateLayerOpacity ?? 0,
         InteractionState.Dragged => _presenter?.DraggedStateLayerOpacity ?? 0,
         _ => 0
@@ -598,7 +617,7 @@ internal sealed partial class MaterialInteractionController
         // AndroidX stores entry interactions in arrival order and shows lastOrNull(). A fixed
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
-        var indicationInteractions = _source is null ? _interactions
+        var indicationInteractions = _source is null ? _interactions.Where(state => !_previousNativeIndicationStates.Contains(state))
             : _sourceInteractions.Where(e => !_previousIndicationStarts.Contains(e)).Select(StateOf);
         var topmost = indicationInteractions.LastOrDefault(state => state != InteractionState.Pressed
             && (state != InteractionState.Focused || _indicationFocused));
@@ -626,7 +645,7 @@ internal sealed partial class MaterialInteractionController
         if (_stateLayerAlpha is null)
         {
             _stateLayerAlpha = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
-            motion.SubscribeValue(_stateLayerAlpha, _ => surface?.OnInteractionFrame());
+            _stateLayerSubscription = motion.SubscribeValue(_stateLayerAlpha, _ => surface?.OnInteractionFrame());
         }
         var alpha = _stateLayerAlpha;
         _ = motion.Launch(ct => alpha.AnimateToAsync(motion, targetOpacity,
@@ -635,6 +654,7 @@ internal sealed partial class MaterialInteractionController
 
     private void UpdateInteractionStack(InteractionState flag, bool active)
     {
+        _previousNativeIndicationStates.Remove(flag);
         _interactions.Remove(flag);
         if (active)
             _interactions.Add(flag);

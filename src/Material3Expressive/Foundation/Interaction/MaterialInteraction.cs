@@ -17,7 +17,7 @@ namespace Material3Expressive.Foundation.Interaction;
 /// Themes that leave the property unset keep the static styled state layer — and since the stock
 /// Avalonia Button cannot grow a constructor, an attached property is also the only way to opt it in.
 /// </remarks>
-public static class MaterialInteraction
+public static partial class MaterialInteraction
 {
     /// <summary>Whether the control produces Material interaction feedback for its template.</summary>
     public static readonly AttachedProperty<bool> IsInteractiveProperty =

@@ -71,7 +71,8 @@ IconToggleButtonColors.rememberUpdatedState，不添加颜色过渡。独立 pee
 AppBar 项目的一般图标槽使用 Icon / IconTemplate，不扩展独立 IconButton 的 Symbol 合约。
 此项不修订下方原有四主题的未解决问题。验证见 AppBarOverflowTests 和 icon-toggle-button suite。
 
-**尚未实现：** narrow/wide 宽度选项、非 Standard toggle 配色及 shapes 重载、Material 焦点环。
+**尚未实现：** narrow/wide 宽度选项、非 Standard toggle 配色及 shapes 重载。
+可选 InsetRing 通过 Surface 自动接入，IconButton 各尺寸/变体的独立双端验证尚未完成。
 对应原始 Token 可以存在，不意味着模板已经消费或有公开入口。
 
 **已观察到、尚未解决：**

@@ -72,7 +72,10 @@ nullable IsChecked / IsThreeState 和原生 Toggle 自动化身份保留，null 
 
 ## 一致性边界与历史观测
 
-尚未实现完全等价的 `onCheckedChange=null`、可配置 `Focus.InsetRing` 与外部 MutableInteractionSource。
+可选 `Focus.InsetRing` 由 SwitchTrack 的独立视觉部件承载，位于轨道普通 outline 之下；
+thumb Surface 的 PresentsFocusRing=False，仍承担原有 ripple/hover。两者订阅同一个 owner，
+焦点环不替换 thumb 的 Surface attachment；默认 Opacity 行为保留。
+尚未实现完全等价的 `onCheckedChange=null` 与外部 MutableInteractionSource。
 真实 OS 无障碍客户端、手工桌面输入和文字视觉未经双端验收。
 
 双端场景读实际 ThumbNode 布局，不复制拇指算法生成期望值；覆盖图标/空内容、preferred/required

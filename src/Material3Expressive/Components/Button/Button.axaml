@@ -19,7 +19,7 @@
     control in, and the owner's interaction controller drives the overlay — the pseudo-class
     styles here only switch StateLayerBrush (which doubles as the ripple ink color, matching
     upstream where both come from the content color), while opacity timing, press ripples and the
-    optional press shape-morph are the controller's job. The focus ring is still deferred.
+    optional press shape-morph are the controller's job. Surface hosts the optional inset focus ring.
     Nested facade types are referenced with the XAML '+' syntax — '{x:Static}' splits the
     argument at the first dot, so 'MaterialTokens.Comp.FilledButton.X' would not resolve.
   -->

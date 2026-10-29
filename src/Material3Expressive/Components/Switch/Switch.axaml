@@ -45,7 +45,7 @@
                         ContentTemplate="{TemplateBinding m3:SwitchAppearance.ThumbIconTemplate}"
                         m3:MaterialIcon.DefaultSize="16"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
-                  <m3:MaterialSurface x:Name="PART_ThumbSurface" Background="Transparent" CornerRadius="0"
+                  <m3:MaterialSurface x:Name="PART_ThumbSurface" Background="Transparent" CornerRadius="0" PresentsFocusRing="False"
                                       StateLayerBrush="{TemplateBinding Foreground}" />
                 </Panel>
               </m3:SwitchThumbLayout>

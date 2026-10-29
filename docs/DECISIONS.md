@@ -3,6 +3,20 @@
 本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件维护文档保存（已拆分时为 INTERNALS.md，否则为 README）；
 通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
+## 内缩焦点环的呈现与生命周期
+
+决定：通过可继承 MaterialInteraction.FocusFeedback 选择 Opacity / InsetRing，默认维持 Opacity；
+尺寸使用不可变 InsetFocusRingMetrics，颜色可继承覆盖并在 null 时消费实时 Secondary / OnSecondary。
+独立内部呈现部件持有 Animatable<float>、动画子作用域、交互订阅与圆角环缓存。
+共享控制器提供配对 indication 事件，订阅者各自按固定 Core Desktop 过滤焦点，原始交互仍驱动 shape/elevation。
+焦点环不复用唯一的 Surface ripple attachment；Surface 内置视觉子节点，Switch 在 track 单独承载。
+原因：Switch 的焦点环与 thumb ripple 分属不同区域；原生 FocusAdorner 的显示与即时移除规则不能
+保留固定上游的输入模式过滤及退出 spring。四角不等圆角由 DrawingContext 的轮廓相减支持。
+纯视觉部件显式桥接 inheritance context 和资源通知，以保留主题与局部 Token 的动态更新。
+范围：圆角矩形反馈，含矩形与圆形；任意 Path、Slider 专用 padding/轨道间距仍在范围之外。
+确认：2026-10-17，维护者讨论部件持有关系、树结构与分阶段方案后要求开始实施。
+使用与覆盖边界见 [Interaction](../src/Material3Expressive/Foundation/Interaction/README.md)。
+
 ## 列表项的交互源与最小交互环境
 
 决定：提供公共 `MaterialInteractionSource`，使用 press/focus/hover/drag 开始对象与配对结束/取消事件；

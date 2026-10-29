@@ -53,6 +53,10 @@
 `StateLayerBrush` / `PressedCornerRadius` 自动成为交互控件。这两个属性服务于组件模板中的
 共享反馈接入；应用无需为普通面板设置它们。
 
+用于交互模板时，可继承 `MaterialInteraction.FocusFeedback="InsetRing"` 启用内缩焦点环；
+支持四角不等圆角并跟随当前形变，不增加 Padding 或期望尺寸。默认仍为 Opacity。
+配置与组件接入边界见 [交互反馈](../../Foundation/Interaction/README.md)。
+
 当前形状入口为圆角矩形，没有任意 Shape API。普通圆角数值按 DIP 表达，超过可绘尺寸时按
 Compose 规则归一化。现有 Full Token 的 1000 值是
 兼容约定，按当前短边的 50% 解析；它不能同时用于表达真正的 1000 DIP 圆角。

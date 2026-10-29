@@ -131,6 +131,25 @@ Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefau
 决定依据与适用范围见[共享交互反馈与键盘激活职责](DECISIONS.md#共享交互反馈与键盘激活职责)。
 颜色、交互事实、反馈动画和绘制结果需要保持各自归属，不要仅用最终伪类状态替代具有顺序意义的交互记录。
 
+`MaterialInteraction.FocusFeedback` 是可继承的 Opacity / InsetRing 选择，默认 Opacity。
+尺寸集中在不可变 `InsetFocusRingMetrics`，颜色覆盖独立可继承，null 使用实时 Secondary / OnSecondary。
+配置用法见 [Interaction](../src/Material3Expressive/Foundation/Interaction/README.md)。
+控制器额外提供保留身份与顺序的 indication 事件；原始 Interaction / Changed
+仍供 shape / elevation 消费。独立 InsetFocusRingPresenter 持有进度、订阅和动画子作用域，
+按固定 Core Desktop 在每次订阅内过滤焦点，计数随重建或卸载清除，不保存在 owner 控制器上。
+呈现部件不占用唯一的 Surface ripple attachment；父部件负责位置和当前四角圆角。
+Surface / Switch 的焦点模式变化重建 indication；CheckBox / RadioButton 的单一 ripple
+只更新配置，保留波纹、状态层和焦点进度，呈现部件在 Opacity 下也持续收集交互。
+纯视觉节点显式取得父部件的 inheritance context、主题及资源变更通知，不加入 LogicalChildren。
+Surface 将环置于内容、状态层与普通描边之后；Switch 放在 track 内、轨道 outline 之前。
+圆角环的绘制保留 material3-ripple Border.kt 的物理像素 ceil、hairline、小圆角和尺寸限制；
+非对称圆角使用外轮廓减内轮廓，共享路径构造位于 Foundation/Rendering/RoundedRectangleGeometry。
+进度不钳制到 [0,1]，两条描边独立缓存尺寸、圆角、scale、实际线宽和 inset。
+仅主题 palette 变化时保留固定上游的静止 draw cache：Token 有效值已更新，但等下一次
+动画/几何等绘制失效才读入画面；显式颜色覆盖、尺寸或 motion 配置变化会使绘制失效。
+呈现部件保留上次绘制采用的默认颜色，以免 Avalonia 父节点重绘提前刷新该缓存；
+动画仅在进度值实际改变时触发重绘，对应 Compose mutableStateOf 的结构相等判断。
+
 Button / IconButton 的主题将 owner `CornerRadius` 传给 Surface，默认按压保持该形状。
 可空附加属性 `MaterialButton.PressedCornerRadius` 显式启用按压变形，null 关闭；模板直接绑定该属性，
 复用 Surface 的圆角状态和动画，不另建按钮形状控制器。尺寸 class 提供 owner 圆角的默认值，
@@ -274,7 +293,7 @@ MaterialSurface 的内部 `ApplyTonalElevation` 开关默认为 true；ListItem 
 现有源码是后续工作的起点，不是批准所有既有取舍的依据。涉及相应代码时核对真实行为与固定上游。
 
 - 已有 Button、IconButton 和 Surface，但仍需逐项检查其 API、交互及视觉覆盖。
-  Button 的焦点环尚未实现；阴影绘制差异留待后续核对，不能据此修改上游默认 elevation。
+  Button 的可选内缩焦点环复用共享呈现；阴影绘制差异留待后续核对，不能据此修改上游默认 elevation。
 - [CheckBox](../src/Material3Expressive/Components/CheckBox/README.md) 使用原生 Avalonia CheckBox 的模板，
   合并两态与三态外观；CheckBoxAppearance 提供颜色与描边，内部模板部件负责布局和 Skia 绘制。
   原生状态切换与键盘差异已确认保留，具体覆盖与未实现分支见组件说明。
@@ -283,7 +302,7 @@ MaterialSurface 的内部 `ApplyTonalElevation` 开关默认为 true；ListItem 
   默认 ripple/focus 复用共享交互能力，具体边界见组件说明。
 - [Switch](../src/Material3Expressive/Components/Switch/README.md) 使用原生 ToggleSwitch 的模板和
   SwitchAppearance 附加属性，保留原生状态写回、键盘、拖动与自动化；模板部件移植 ThumbNode 布局与动画。
-  默认 ripple/focus 配置已实现，null 回调模式、可配置 inset focus ring 和外部 InteractionSource 映射未实现。
+  默认 ripple/focus 与 track inset focus ring 已接入，null 回调模式和外部 InteractionSource 映射未实现。
 - [Divider](../src/Material3Expressive/Components/Divider/README.md) 使用原生 Separator 的主题，
   通过附加属性选择 Horizontal / Vertical 方向、厚度与颜色；内部 Canvas 保留布局取整、
   原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。

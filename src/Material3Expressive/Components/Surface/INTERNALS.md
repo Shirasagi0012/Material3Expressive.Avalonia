@@ -75,6 +75,12 @@ Chip/Menu 的外部形状动画通过 SetAnimatedCorners 提供已解析的 DIP 
 
 ## 边界与验证
 
+可选 InsetRing 通过独立视觉子节点置于普通 outline 与 checked overlay 之上，
+跟随 EffectiveCornerRadius；内部 FocusRingCornerRadius 可用于上游焦点形状与背景不同的组件。
+该部件持有自己的动画与订阅，默认延迟到启用环后创建，不占内容尺寸；CheckBox / RadioButton
+的单一 ripple 跨焦点模式保留订阅，因此挂载时即创建呈现部件，在 Opacity 下只收集交互。详情见
+[Interaction](../../Foundation/Interaction/README.md)。静态 Surface 不注册输入或显示焦点环。
+
 - 尚未实现：任意 Shape、独立 Surface 的点击/选择/切换 API，以及完整 Compose semantics
 - 非均匀描边沿用原生绘制，不把它当成 Compose 单一 border width 的等价证明
 - 阴影的既有坐标/栅格差异只在[共享决定](../../../../docs/DECISIONS.md#本次保留阴影坐标接入差异)的特定范围保留，不据此接受其他颜色或布局偏离
