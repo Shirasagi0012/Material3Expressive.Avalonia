@@ -488,3 +488,5 @@ opencode.json
 tests/VisualParity/reference/.gradle/
 tests/VisualParity/reference/.kotlin/
 tests/VisualParity/reference/build/
+
+/.codex
