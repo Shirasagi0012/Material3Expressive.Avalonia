@@ -1,337 +1,233 @@
-# 共享能力的已确认决定
+# 跨组件共享能力已确认决定
 
-本文件只记录跨组件的共享能力决定。组件行为、适配与确认依据随各组件维护文档保存（已拆分时为 INTERNALS.md，否则为 README）；
-通用职责与接入规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，VisualParity 决定见其[测试目录文档](../tests/VisualParity/DECISIONS.md)。
+本文记录跨组件共享能力的已确认技术决定。组件私有机制、专属适配与确认依据严格随各组件的 `INTERNALS.md` 保存；架构基石见 [ARCHITECTURE.md](ARCHITECTURE.md)，测试端决定见 [VisualParity 测试目录文档](../tests/VisualParity/DECISIONS.md)。
 
-## 内缩焦点环的呈现与生命周期
+---
 
-决定：通过可继承 MaterialInteraction.FocusFeedback 选择 Opacity / InsetRing，默认维持 Opacity；
-尺寸使用不可变 InsetFocusRingMetrics，颜色可继承覆盖并在 null 时消费实时 Secondary / OnSecondary。
-独立内部呈现部件持有 Animatable<float>、动画子作用域、交互订阅与圆角环缓存。
-共享控制器提供配对 indication 事件，订阅者各自按固定 Core Desktop 过滤焦点，原始交互仍驱动 shape/elevation。
-焦点环不复用唯一的 Surface ripple attachment；Surface 内置视觉子节点，Switch 在 track 单独承载。
-原因：Switch 的焦点环与 thumb ripple 分属不同区域；原生 FocusAdorner 的显示与即时移除规则不能
-保留固定上游的输入模式过滤及退出 spring。四角不等圆角由 DrawingContext 的轮廓相减支持。
-纯视觉部件显式桥接 inheritance context 和资源通知，以保留主题与局部 Token 的动态更新。
-范围：圆角矩形反馈，含矩形与圆形；任意 Path、Slider 专用 padding/轨道间距仍在范围之外。
-确认：2026-10-17，维护者讨论部件持有关系、树结构与分阶段方案后要求开始实施。
-使用与覆盖边界见 [Interaction](../src/Material3Expressive/Foundation/Interaction/README.md)。
+## 1. 内缩焦点环的呈现与生命周期
 
-## 列表项的交互源与最小交互环境
+- **状态**：生效中
+- **决定方案**：通过可继承 `MaterialInteraction.FocusFeedback` 选择透明度或内缩焦点环模式，默认维持透明度；尺寸集中在不可变 `InsetFocusRingMetrics`，颜色可继承覆盖并在空值时消费实时次要色。独立内部呈现部件持有浮点动画器、子动画作用域、交互订阅与圆角环缓存。共享控制器提供配对指示事件，订阅者各自按桌面平台规则过滤焦点，原始交互仍驱动形状与高度。焦点环不占用唯一的 Surface 波纹挂载点；Surface 内置视觉子节点，Switch 在轨道单独承载。
+- **原因与动机**：Switch 的焦点环与滑块波纹分属不同区域；原生焦点装饰层的显示与即时移除规则无法保留上游的输入模式过滤及退出弹簧。四角不等圆角由绘图上下文轮廓相减支持。纯视觉部件显式桥接继承上下文与资源通知，保留动态主题更新。
+- **适用范围与影响**：圆角矩形反馈（含矩形与圆形）。任意路径、Slider 专用间距在范围之外。
+- **确认依据**：2026-10-17 维护者确认方案并要求实施。使用与覆盖边界见 [Interaction 说明](../src/Material3Expressive/Foundation/Interaction/README.md)。
 
-决定：提供公共 `MaterialInteractionSource`，使用 press/focus/hover/drag 开始对象与配对结束/取消事件；
-通过可继承的 `MaterialInteractiveSize.Minimum` 提供布局尺寸环境；Surface 增加内部关闭 tonal 着色入口。
-原因：ListItem 的外部拖拽、侧槽最小交互尺寸及自身颜色 Transition 需要这三项共享能力，组件内重复实现会割裂已有输入和绘制机制。
-范围：ListItem 首先公开 InteractionSource，其他控件不自动增加新 API；最小尺寸接入已有相关布局机制，未设置时维持组件默认值。
-源不缓存状态，消费者维护自己的存活事件；指示层重建只接收新事件，不影响独立形状状态。
-最小尺寸仅为布局环境；不增加自动触摸命中扩张，不改写组件绘制盒。关闭 tonal 的入口保持 internal。
-确认：2026-10-17，维护者在 ListItem 移植任务中选择包含以上共享能力的建议范围，并明确暂缺任意 Shape 与 inset focus ring。
-组件 API、基线与长按适配见 [ListItem INTERNALS](../src/Material3Expressive/Components/ListItem/INTERNALS.md)。
+---
 
-## 图标槽与默认尺寸
+## 2. 列表项的交互源与最小交互环境
 
-决定：一般图标槽统一采用 object 与 IDataTemplate 成对入口，保留槽的语义前缀；IconButton 保留专门的 Symbol API。
-`SymbolExtension` 创建 MaterialSymbol，`MaterialSymbol.DefaultSize` 作为可继承的默认尺寸提示，由组件在图标呈现位置提供。
-原因：原有枚举、手动构建控件和缺少模板的入口难以一致使用；单一尺寸提示避免额外 IconSource 或呈现框架。
-影响：默认尺寸只被 MaterialSymbol 的测量消费，显式 Width / Height 优先；保留各组件的布局约束、交互区域及动画。
-IconTemplate 为 null 内容也能创建图标，控件模板可复用而控件实例不可共享。完整按钮等交互槽继续组合实际控件。
-旧 ToggleButtonAppearance.Icon 与 SwitchAppearance.ThumbContent 字段、访问器保留为同一属性的兼容入口。
-Switch 注册名称改为 ThumbIcon，旧反射绑定路径需要迁移；普通 XAML 属性赋值和 C# 访问器仍可使用旧名。
-TextField 的 Icon / IconTemplate 任一个有值则使用新槽，两者均为 null 则回退到原生 InnerLeftContent / InnerRightContent。
-不以 IsSet 区分显式 null，避免 Avalonia 对相同有效值不发送通知造成回退状态过期。
-确认：2026-10-06，维护者认可统一槽、markup extension 和可继承默认尺寸设计，批准实施规划并要求落地。
-2026-11-03，维护者确认将原 MaterialIcon 合并到 MaterialSymbol：默认尺寸仅由 MaterialSymbol 及其派生控件消费，
-因此附加属性与静态访问器归入 MaterialSymbol，移除 MaterialIcon 类型；旧调用迁移到 MaterialSymbol，尺寸继承与测量语义不变。
-具体默认尺寸和迁移入口见组件 README，共享规则见 [架构说明](ARCHITECTURE.md#颜色图标与阴影)。
+- **状态**：生效中
+- **决定方案**：提供公共 `MaterialInteractionSource`，使用按下、焦点、悬浮、拖拽开始对象与配对结束或取消事件；通过可继承的 `MaterialInteractiveSize.Minimum` 提供布局尺寸环境；Surface 增加内部关闭色调着色入口。
+- **原因与动机**：ListItem 的外部拖拽、侧槽最小交互尺寸及自身颜色过渡需要这三项共享能力，组件内重复实现会割裂已有输入和绘制机制。
+- **适用范围与影响**：ListItem 率先公开交互源，其他控件不自动增加新 API；最小尺寸接入已有相关布局机制，未设置时维持组件默认值。源不缓存状态，消费者维护自身存活事件；指示层重建只接收新事件，不影响独立形状状态。最小尺寸仅为布局环境，不增加自动触摸命中扩张，不改写组件绘制盒。关闭色调着色的入口保持内部可见。
+- **确认依据**：2026-10-17 维护者在 ListItem 移植任务中确认包含以上共享能力的建议范围，并明确暂缺任意形状与内缩焦点环。组件详细契约见 [ListItem 内部说明](../src/Material3Expressive/Components/ListItem/INTERNALS.md)。
 
-## Padding 消费向嵌套 Scaffold 传播
+---
 
-决定：`MaterialWindowInsets.ConsumePadding` 为 Control 提供逻辑 start/top/end/bottom 的已应用 Padding 输入，
-按固定 Compose `consumeWindowInsets(PaddingValues)` 逐层累加，转换为物理边并向后代传播。
-输入不自动应用 Padding；Scaffold 按物理边扣除祖先消费量并钳制到零。
-原因：现有物理 Thickness 转换不包含祖先消费环境，不能独自保留 Scaffold 的嵌套 Insets 语义。
-做法：独立输入与内部继承的物理总量；提供者跟踪父环境、FlowDirection 与重挂载，非提供者直接继承。
-组件仍负责选择 Insets 和布局，宿主仍负责提供实际系统 Insets。
-范围：本次 Scaffold 及 PaddingValues 消费的共享入口，不扩展为 WindowInsets union、自动系统栏/IME
-或完整 Insets 框架，不改变既有 rail/bar 的行为。Scaffold 槽 API 与应用 Padding 的示例见
-[组件说明](../src/Material3Expressive/Components/Scaffold/README.md)。
-确认：2026-10-03，维护者对具体 API 和 C#/XAML 示例选择“采用推荐 API 和共享 ConsumePadding”。
+## 3. 图标槽与默认尺寸
 
-## 普通协程延时与动画帧时钟
+- **状态**：生效中
+- **决定方案**：图标槽统一采用对象与数据模板成对入口，保留槽的语义前缀；IconButton 保留专门的 Symbol API。`SymbolExtension` 创建 `MaterialSymbol`，`MaterialSymbol.DefaultSize` 作为可继承的默认尺寸提示，由组件在图标呈现位置提供。
+- **原因与动机**：原有枚举、手动构建控件和缺少模板的入口难以一致使用；单一尺寸提示避免额外图标准备层或复杂呈现框架。
+- **适用范围与影响**：默认尺寸只被 `MaterialSymbol` 的测量消费，显式宽高优先；保留各组件的布局约束、交互区域及动画。数据模板在内容为空时亦能创建图标，控件模板可复用而控件实例不可共享。完整按钮等交互槽继续组合实际控件。2026-11-03 维护者确认将原 MaterialIcon 合并到 MaterialSymbol：默认尺寸仅由 MaterialSymbol 及其派生控件消费，因此附加属性与静态访问器归入 MaterialSymbol，移除 MaterialIcon 类型；旧调用迁移到 MaterialSymbol，尺寸继承与测量语义不变。
+- **确认依据**：2026-10-06 维护者批准统一槽与可继承默认尺寸设计；2026-11-03 维护者批准合并 MaterialIcon 到 MaterialSymbol。共享规则见 [架构说明](ARCHITECTURE.md#颜色图标与阴影)。
 
-决定：ComposeAnimation 的根 VisualAnimationScope 接入 .NET TimeProvider，子作用域和 Popup 继承；
-DelayAsync 使用同一时间源，并连接调用方及作用域取消。保留旧 Initialize 重载默认使用系统时间。
-原因：LoadingIndicator.kt 并发运行 spring 与 kotlinx.coroutines.delay(650)，后者不是 animation-core
-求解器，也不受动画帧或 DurationScale 控制。用 Tween 或下一帧计时替代会改变循环及稀疏帧行为。
-接入：本地 NuGet Runtime/Avalonia/TestSupport 统一使用 0.2.7-alpha。测试使用 ManualTimeProvider，
-AvaloniaHost 可显式接入，在送帧前推进延时；未接入的旧用例保持原有时间环境，Draw/Snapshot 仍被动。
-范围：普通协程等待与确定的测试时间源；不改写 animation-core 算法，不引入 Compose Runtime。
-确认：2026-10-04 维护者在说明协程与 animation-core 职责后明确授权修改 ComposeAnimation。
+---
 
-## 最小交互布局与工具栏对齐读数
+## 4. Padding 消费向嵌套 Scaffold 传播
 
-决定：IconButton 和 Button 共用已有 ButtonLayout，尺寸 Token 提供可见容器的默认尺寸，
-外层默认分配至少 48 DIP；显式 Width/Height、MinWidth/MinHeight 保留调用方约束。
-XS class 对应上游显式 size(32dp)，继续以 32 DIP 约束外层；Small 默认容器 40 DIP、外层 48 DIP。
-ButtonLayout / FabLayout 提供内部最小交互 top/left 对齐读数，Foundation 合并后代读数，
-FloatingToolbar 按固定上游 minimumInteractiveBalancedPadding 动画补齐两轴留白差。
-原因：原有 Small IconButton 的 40 DIP 外层尺寸缺少上游的 48 DIP 布局分配，
-工具栏也无法读取可见容器和交互分配的差值。这里只预留布局空间，不实现 Android 的额外触屏目标扩展。
-范围：Button / IconButton / FAB 的内部读数与 IconButton 布局；其他颜色、描边及选择语义不随之改变。
-确认：2026-10-04，维护者接受 FloatingToolbar API 方案第 3 项，并要求完成相关回归。
+- **状态**：生效中
+- **决定方案**：`MaterialWindowInsets.ConsumePadding` 为控件提供逻辑方向的已应用内边距输入，按固定上游规则逐层累加，转换为物理边并向后代传播。输入本身不自动应用内边距；Scaffold 按物理边扣除祖先消费量并钳制到零。
+- **原因与动机**：原有物理厚度转换不包含祖先消费环境，无法独自保留 Scaffold 的嵌套窗口插桩语义。
+- **适用范围与影响**：Scaffold 槽与内边距消费的共享入口，不扩展为通用系统栏或输入法框架，不改变既有导航栏或导轨的行为。
+- **确认依据**：2026-10-03 维护者确认采用推荐 API 和共享 ConsumePadding。具体示例见 [Scaffold 说明](../src/Material3Expressive/Components/Scaffold/README.md)。
 
-## Dialog / Popup 的窗口内宿主与模态职责
+---
 
-决定：组件各自持有 Avalonia Popup，显式使用 `ShouldUseOverlayLayer = true`，由原生 Popup 接入
-当前 TopLevel 的 PopupOverlayLayer，不创建独立 Window，不引入中央管理器。
-内部 ModalPresenter 复用客户区覆盖、焦点约束/还原、Escape/Back 和清理；组件保留自己的状态与动画。
-最上层模态按实际宿主顺序判定，子 overlay Popup 通过 PlacementTarget 链判定焦点归属。
-基础 Dialog 区分 IsOpen 目标与 IsPresented 实际呈现，DismissRequested 交给调用方决定是否关闭，
-退出动画期间保留模态层。普通 Popup 继续直接组合原生能力。
-原因：复用 Avalonia 弹层定位与承载，同时支持嵌套菜单和模态组件共享输入语义；普通 OverlayLayer
-继续供 ConnectedAnimation 等视觉覆盖能力消费。
-范围：基础 Dialog 与 ModalWideNavigationRail 迁移；不替代 Rail 的拖动、遮罩和运动，不包含 TextField。
-此项取代 Rail 2026-10-03 决定中的普通 OverlayLayer 宿主选择，其余 Header/State 等决定保持原范围。
-确认：2026-10-04，维护者明确选择 PopupOverlayLayer、拒绝独立窗口、认可组件独立持有 Popup，
-并授权基础 Dialog 和 Rail 迁移。接口、桌面动画来源及未实现/未经验证项见
-[Overlays 说明](../src/Material3Expressive/Foundation/Overlays/README.md)。
+## 5. 普通协程延时与动画帧时钟
 
-## Dialog 的平台宽度和 Escape 时机
+- **状态**：生效中
+- **决定方案**：ComposeAnimation 的根 `AnimationScope` 接入 .NET `TimeProvider`，子作用域和 Popup 继承；`DelayAsync` 使用同一时间源，并连接调用方及作用域取消。保留旧初始化重载默认使用系统时间。
+- **原因与动机**：加载指示器并发运行弹簧与固定毫秒协程延时，延时并非底层动画核心求解器，不受动画帧或时长缩放控制。用补间动画或下一帧计时替代会改变循环及稀疏帧行为。
+- **适用范围与影响**：普通协程等待与确定的测试时间源；不改写动画引擎算法，不引入完整 Compose 运行时。
+- **确认依据**：2026-10-04 维护者在说明协程与动画职责后明确授权修改。
 
-决定：Foundation Dialog 新增默认启用的 UsePlatformDefaultWidth，按固定 Core 的客户区短边选择
-320 / 440 / 580 DIP 平台上限；显式关闭该属性可保留此前的宽内容行为。
-Dialog 系列对未处理的 Escape KeyDown 发送关闭请求，内部控件处理该按键时不发送；
-ModalWideNavigationRail 保留现有 KeyDown/KeyUp 配对策略。
-原因：固定 Core `ComposeSceneLayerMeasurePolicy.kt` 提供平台宽度限制，Desktop 的
-`ComposeSceneMediator` / `BackNavigationEventInput` 在 KeyDown 处理未消费的 Escape。
-范围：Dialog、BasicAlertDialog、AlertDialog；不改变 Rail 的动画和关闭时机。
-确认：2026-10-04 维护者分别批准默认平台宽度属性及 Dialog 对齐固定 Core 的 KeyDown。
-组件继承、内容槽和默认桌面分支的确认见 [AlertDialog](../src/Material3Expressive/Components/AlertDialog/INTERNALS.md)。
+---
 
-## Dialog 的首帧与退出中重开
+## 6. 最小交互布局与工具栏对齐读数
 
-决定：Dialog 按固定 Core 的 composition / LaunchedEffect 帧顺序启动动画；
-退出保留冻结内容和独立动画作用域，重开创建新入场，旧冻结层继续退出。
-入场中关闭时保留关闭重组帧的最终入场进度，退出时长使用该 progress × 100ms。
-原因：AlertDialog 双端用例确认，提前启动、取消旧退出层及提前取消入场会改变时序与叠层画面。
-范围：Foundation Dialog、BasicAlertDialog、AlertDialog；Rail 继续使用自己的动画。
-适配：Avalonia 使用实际 RenderScaling 的 RenderTargetBitmap 冻结内容，源矩形使用像素、布局与变换使用 DIP；
-局部启用整层透明度合成，保持 Core GraphicsLayer 的背景与内容一起淡入淡出语义。
-确认：2026-10-04 维护者批准首帧对齐与保留旧退出层，并要求检查 Foundation 退出缩放异常。
+- **状态**：生效中
+- **决定方案**：IconButton 和 Button 共用已有 `ButtonLayout`，尺寸 Token 提供可见容器的默认尺寸，外层默认分配至少 48 DIP；显式宽高与最小宽高保留调用方约束。`ButtonLayout` 与 `FabLayout` 提供内部最小交互对齐读数，Foundation 合并后代读数，浮动工具栏按上游平衡内边距规则动画补齐两轴留白差。
+- **原因与动机**：原有小型图标按钮缺少外层布局分配，工具栏也无法读取可见容器和交互分配的差值。此处仅预留布局空间，不实现额外的触屏目标扩张。
+- **适用范围与影响**：Button、IconButton、FAB 的内部读数与布局；颜色、描边及选择语义不随之改变。
+- **确认依据**：2026-10-04 维护者接受浮动工具栏方案并要求完成相关回归。
 
-## 聚合 TextStyle 与 Token 层文字单位换算
+---
 
-决定：通过不可变 TextStyle、MaterialText.Style/DefaultStyle、Typography 角色绑定及派生 XAML 扩展，
-让普通 TextBlock 消费聚合排版；不要求公开 MaterialTextBlock。DefaultStyle 合并环境，Style 显式选择。
-角色保留标量来源并增加聚合 Style Token；Button/Rail 的标签接入同一默认值机制。
-sp/em 在 Token 消费位置换算为 DIP，保持资源覆盖与字体缩放的动态性，TextStyle 本身只保存 DIP。
-原因：保持 Compose 的样式选择、合并与提供默认值语义，同时通过 Avalonia 属性优先级保留原生覆盖。
-范围：聚合 API 与当前可投影字段；未授权用近似行为补齐 LineHeightStyle 等底层排版缺口。
-具体使用方式、原生样式就近规则、旧 Button Component 标量槽迁移及未实现项见
-[Typography 说明](../src/Material3Expressive/Foundation/Typography/README.md)。
-确认：2026-10-03，维护者认可 API 方案并要求落地，同时提出在 Token 层完成 sp/em → DIP 换算。
+## 7. Dialog 与 Popup 的窗口内宿主与模态职责
 
-## ComposeAnimation 颜色转换与原始动画终值
+- **状态**：生效中
+- **决定方案**：组件各自持有原生 Popup，显式启用图层覆盖选项，接入当前顶层窗口的覆盖图层，不创建独立操作系统窗口，不引入中央管理器。内部模态呈现器复用客户区覆盖、焦点约束与还原、退出按键与清理；组件保留各自的状态与动画。基础 Dialog 区分打开目标与实际呈现状态，请求关闭事件交给调用方决定，退出动画期间保留模态层。
+- **原因与动机**：复用弹层定位与承载，同时支持嵌套菜单和模态组件共享输入语义。
+- **适用范围与影响**：基础对话框与模态宽导航轨；不替代导航轨的拖动与遮罩，不包含文本输入框。
+- **确认依据**：2026-10-04 维护者明确选择覆盖图层宿主、拒绝独立窗口、认可组件独立持有弹层。接口与细节见 [Overlays 说明](../src/Material3Expressive/Foundation/Overlays/README.md)。
 
-决定：在相邻 ComposeAnimation 修正现有 ColorConverter，保留公开 API 与 double 向量接口，
-按固定 Compose 的 sRGB / XYZ / Oklab 路径保留矩阵、Float 边界、两次 Half / 10 位 alpha 存储及舍入。
-TargetBasedAnimation 保留原始起点和目标，结束时返回原目标，避免有损颜色往返改变终值。
-原因：固定上游 Color.VectorConverter 调用 ui-graphics Color.convert，其中间存储会改变动画颜色；
-Rail 反向 65ms 的 R=46/47 已由独立数值复现定位。范围为现有 byte sRGB 颜色 API，未决定扩展 ColorSpace API，
-也未授权全局改变 core 的 double 精度或亚毫秒处理；若仍有相关差异，另行提出具体方案。
-接入：依照现有本地 NuGet 流程打包 Runtime / Avalonia / TestSupport，版本统一为 `0.2.1-alpha`。
-确认：2026-10-03，维护者批准修复方案，并指定“打包版本用0.2.1-alpha”。
+---
 
-## 共享交互反馈与键盘激活职责
+## 8. Dialog 的平台宽度和 Escape 时机
 
-决定：`MaterialInteractionController` 的键盘输入处理只维护交互反馈，激活由控件自身负责。
-共享控制器不拦截 Enter，不通过 automation Invoke 或其他路径代为点击，也不维护组件类型排除名单。
-原因：反馈接入不应改变应用命令的执行时机；接管 Enter 会与原生 Space 和导航项的键盘处理形成多套激活路径。
-做法：移除专用 Enter 激活状态和 KeyUp 点击分支，保留 Space / Enter 的按压反馈，
-并在释放、失焦或禁用时清理反馈。真实 Compose 参考、采样与比较规则保留，激活时机差异如实报告。
-影响与范围：共享控制器的键盘反馈接入遵循上述职责；普通 Button / IconButton 保留 Avalonia 原生激活，
-Enter 按下激活与固定 Compose 的松开激活不同，已作为框架适配接受，Space 遵循原生 ClickMode。
-导航项已有的释放激活保留；该决定不统一各组件的键盘行为。具体行为见
-[Button](../src/Material3Expressive/Components/Button/README.md#默认值与接入)与
-[IconButton](../src/Material3Expressive/Components/IconButton/README.md#形状与接入)说明。
-确认：2026-10-03，维护者要求“不需要Enter拦截了。然后将决策记录在案”，
-并进一步要求移除共享控制器中非必要的 Enter 特殊处理；此决定替代此前在 KeyUp 经 automation Invoke 激活的决定。
+- **状态**：生效中
+- **决定方案**：对话框默认启用平台默认宽度属性，按客户区短边自适应选择 320、440 或 580 DIP 平台上限；显式关闭该属性可保留宽内容行为。对话框系列对未处理的 Escape 按下事件发送关闭请求；内部控件已处理该按键时不重复发送。
+- **原因与动机**：上游基线提供平台宽度限制，桌面端在按键按下阶段处理未消费的退出指令。
+- **适用范围与影响**：各类对话框组件；不改变导航轨的动画和关闭时机。
+- **确认依据**：2026-10-04 维护者批准默认平台宽度属性及对话框对齐按键按下时机。细节见 [AlertDialog 内部说明](../src/Material3Expressive/Components/AlertDialog/INTERNALS.md)。
 
-## Ripple 首次绘制几何与尺寸动画衔接
+---
 
-决定：RippleAnimation 按固定 Core material3-ripple 在首次绘制（包含零 alpha）锁定起始半径、
-无界原点和目标中心；目标半径仍在添加 press 时解析。通常从 Surface 的实际绘制尺寸初始化。
-共享控制器增加内部 `InitializeRippleDrawGeometry(Size)`，允许 Switch 在按压测量中提前锁定
-这一几何，波纹动画、绘制和取消仍归共享层。
-原因：Switch ThumbNode 先测量当前 sizeAnim 值，再启动 pressed SnapSpec；固定 Compose 的
-首个 draw 使用该次测量尺寸。Avalonia 可能在首次 render 前已完成多轮布局，用扩张后的尺寸
-初始化会使动画后按压的波纹中心偏移约 2 DIP。
-范围：只处理有上游首绘测量依据的布局与绘制衔接，不提供新的公开交互 API，不建立组件内 ripple。
-其他组件仍在首次 render 初始化，不能未经核验推广 Switch 的提前初始化时机。
-确认：2026-10-03，维护者选择“增加内部衔接方法，修复该波纹差异（推荐）”。
+## 9. Dialog 的首帧与退出中重开
 
-2026-10-04 补充，替代上述决定中 Switch 锁定绘制中心的部分：Switch 的无界按压波纹
-每次绘制都跟随 Surface 当前中心，与放大、收缩、拖动中的 thumb 及 hover/focus 圈保持同心。
-原因：首绘锁定的小尺寸中心会在 thumb 放大后向左上错位，收缩时又向右下错位。
-做法：共享控制器增加内部 `RippleFollowsPresenterCenter`，默认 false，仅 Switch 启用；
-RippleAnimation 的内部 Draw 接收这一选择，只调整无界波纹的实际绘制中心。
-首绘测量仍决定起始半径，目标半径、扩散、透明度、取消与生命周期保持原实现。
-其他调用方保留固定 Core 的中心锁定和有界中心漂移，不增加公开 C#/XAML API。
-确认：维护者在先前提出的同心优化方案后要求“继续修复波纹的问题”，并提供新的错位截图。
+- **状态**：生效中
+- **决定方案**：对话框按上游基线帧顺序启动动画；退出保留冻结内容和独立动画作用域，重开创建新入场，旧冻结层继续退出。入场中关闭时保留关闭重组帧的最终入场进度，退出时长按该进度比例缩减。
+- **原因与动机**：双端用例确认，提前启动、取消旧退出层或提前截断入场会改变时序与叠层画面。
+- **适用范围与影响**：通过位图冻结内容并启用整层透明度合成，保持背景与内容一起淡入淡出语义。
+- **确认依据**：2026-10-04 维护者批准首帧对齐与保留旧退出层。
 
-## Surface 圆角描边
+---
 
-决定：内部 SurfaceOutline 对均匀 Thickness 直接移植固定 Compose Border.kt 的物理像素 ceil
-与内缩 stroke；描边作为内容上方的视觉层，不消耗内容尺寸。
-均匀圆角保留中心线内缩、小圆角减内矩形和大宽度填充；非对称圆角以外轮廓减去完整线宽内缩的
-轮廓，各角独立缩减并限制为非负。非均匀 Thickness 保留 Avalonia 原生 Border 路径。
-普通 Surface 的零 Thickness 保留无描边语义，Toggle/Split 描边动画的零宽按 Compose 绘制 hairline。
-动画层只提供连续线宽、颜色与原始外圆角；物理取整、线宽限制及圆角内缩统一在绘制层执行一次。
-公共 API 不变。
-原因：Chip 深色静态用例暴露角部差异，已有原生 Border 不符合固定上游的像素取整。
-范围：所有 MaterialSurface 调用方；Surface / Button / Chip / ToggleButton / SplitButton 的相关渲染
-和回归需要共同检查。
-确认：2026-10-03，维护者明确批准共享 Surface 描边修正及 Surface / Button 回归。
-2026-10-04 合并 Toggle/Split 时，维护者批准保留共享 SurfaceOutline、接入新描边动画并补齐
-非对称圆角算法，避免分支的原生 Border 半线宽处理与共享绘制内缩叠加。
+## 10. 聚合 TextStyle 与 Token 层文字单位换算
 
-## Surface 圆角求值与背景裁剪
+- **状态**：生效中
+- **决定方案**：通过不可变文字样式、文字角色绑定及派生标记扩展，让普通文本控件消费聚合排版，不引入公开的专用文本控件。默认样式合并环境，显式样式直接生效。相对单位在 Token 消费位置换算为像素，保持资源覆盖与字体缩放的动态性，样式对象本身仅保存像素值。
+- **原因与动机**：保持样式选择、合并与提供默认值语义，同时通过属性优先级保留原生覆盖。
+- **适用范围与影响**：聚合排版接口与当前可投影字段。使用方式见 [Typography 说明](../src/Material3Expressive/Foundation/Typography/README.md)。
+- **确认依据**：2026-10-03 维护者认可接口方案并要求落地。
 
-决定：保留公开 CornerRadius/Token 类型，内部以 CornerShape 表达 DIP、Full 百分比及中断插值。
-Full=1000 的兼容解释仅在定义入口执行；Split 外侧 100% 与选中 Circle 50% 显式区分。
-普通 DIP 不提前截断，静态与动态轮廓都在求值/插值后按固定 CornerBasedShape 归一化。
-第三目标保留百分比随尺寸重新求值的能力，光学偏移消费归一化前的角值。
-Surface 绘制阴影和背景，内部 Border 只裁剪内容；独立描边、交互层及 tonal 继承职责保持原顺序。
-原因：提前截断使大 DIP 圆角动画偏离上游；背景置于自身圆角 clip 内使边缘覆盖重复相乘。
-范围：Surface 及其动画调用方 Button/Toggle/Split、Chip、Menu；不扩大为任意 Shape API，
-不调整 Compose Desktop 光源位置或此前保留的透明阴影差异。
-确认：2026-10-11 维护者在审阅上述修复方案后要求实施。
+---
 
-## Core Desktop 原生焦点反馈
+## 11. ComposeAnimation 颜色转换与原始动画终值
 
-决定：共享控制器 Focused 跟随所有原生焦点，包括鼠标和程序化焦点；控件继续负责激活。
-指针按下反馈在 Button 原生类处理之后观察，保留 Focus → Press 的交互顺序。
-原因：固定 AndroidX 的 RequestFocusOnClick 返回 false，固定 Core Desktop 返回 true；
-仅接受 Tab / Directional 焦点会让 Chip 点击释放后错误地恢复 hover elevation。
-范围：共享控制器调用方，不改变公开 API 或已确认的键盘激活职责。
-确认：2026-10-04，维护者批准按 Core Desktop 修正共享焦点反馈并回归 Button / IconButton / 导航项。
-实现同时按固定 Core `Indication.skiko.kt` 过滤 indication 的焦点源：首次鼠标聚焦不进入
-状态层，已经显示的键盘焦点层保留到失焦；输入模式改变不合成 Focus / Unfocus。
-内部 MaterialInputMode 按 TopLevel 保存输入模式，初始为 Keyboard；Tab 按键及原生 Tab / Directional
-导航接入 Keyboard，指针按下/释放或 Pointer 焦点导航接入 Touch，程序化聚焦沿用当前窗口模式。
-`button.Focus()` 驱动实际焦点与 elevation，其视觉焦点反馈取决于当时的输入模式；
-`button.Focus(NavigationMethod.Tab)` 表达 Avalonia 的键盘焦点导航。elevation 的原始交互源仍保留所有焦点。
-子控件冒泡的焦点事件不视为父控件获得焦点；对外 API 不变，没有增加 FocusRing 或 InteractionSource API。
-核验 Core 桌面过滤分支后，维护者进一步选择“按 Core 桌面过滤 indication，保留真实焦点/elevation（推荐）”。
+- **状态**：生效中
+- **决定方案**：在动画引擎中修正颜色转换器，保留公开接口，按上游转换路径保留矩阵计算、精度边界与通道存储。基于目标的动画保留原始起点和目标，结束时严格返回原目标，避免有损颜色往返改变终值。
+- **原因与动机**：上游中间色彩空间转换可能微幅改变动画颜色，反向插值时暴露色值偏移。
+- **适用范围与影响**：基础色彩动画接口，统一引擎依赖版本。
+- **确认依据**：2026-10-03 维护者批准修复方案。
 
-## AppBar 与原生滚动接入
+---
 
-决定：标准 Scaffold 模板内置 AppBarScrollScope，自动引用实际呈现栏的 ScrollBehavior；公开 Scope 暂时保留用于显式组合。
-公开 AppBar 状态以物理像素表达，真实正文滚动使用下述 SmoothScroll 合成接入。
-Scope 只连接其 Scaffold 正文槽内唯一的主 ScrollViewer；内层独立，不建立多个正文连接。
-移出、detach、行为或模板替换及新输入取消旧惯性/吸附并释放连接。接入按实际 SmoothScroll presenter
-及物理滚动/布局能力判断；Scope 不改写 Template/ControlTheme/Style，不订阅内层 viewer 的模板变化。
+## 12. 共享交互反馈与键盘激活职责
 
-正文 touch/pen、捕获接力和惯性由 SmoothScroll 接入；直接拖动栏及其 settle 保留 ComposeAnimation。
-原 Rail 的 Lsq2 VelocityTracker 原样移入内部 Foundation/Input，由 Rail 与 AppBar 共用。
-没有新增通用输入框架或完整系统 insets 框架；标题和 Bottom 自定义内容的槽规则留在组件 README。
-确认：2026-10-04，维护者采用修订后的 AppBarScrollScope 及槽规则，要求保留自定义模板、嵌套和生命周期，
-并分别验证组件 parity 与真实桌面输入集成。
+- **状态**：生效中
+- **决定方案**：`MaterialInteractionController` 的键盘输入处理只维护交互反馈，激活由控件自身负责。共享控制器不拦截 Enter，不通过自动化接口代为执行点击，亦不维护组件类型排除名单。
+- **原因与动机**：反馈接入不应改变应用命令的执行时机；接管按键会与原生空格键和导航项的键盘处理产生冲突。
+- **适用范围与影响**：共享控制器的按键反馈接入遵循上述职责；普通按钮保留原生激活时机，空格键遵循原生点击模式。
+- **确认依据**：2026-10-03 维护者要求移除共享控制器中非必要的按键拦截处理。
 
-2026-10-06 维护者确认 XAML behavior 与 Scaffold 内部 Scope：两个 sealed StyledElement 类型支持对象元素和 markup extension，
-栏负责逻辑父关系，Scope 只持引用；按最近 Scope 判断正文所有权。Scaffold 读取实际 ContentPresenter 的根 AppBar，
-支持直接栏及数据模板栏。布局合约和 SmoothScroll 消费算法保持原有范围，任意外部布局连接仍未实现。
+---
 
-## 普通物理滚动与 AppBar 的合成接入
+## 13. Ripple 首次绘制几何与尺寸动画衔接
 
-决定：普通 ScrollViewer 使用 Material 自有主题与 SmoothScroll presenter，保留 Avalonia 的公开控件和
-Offset。标准 Scaffold 的真实 AppBar 与物理正文共享 compositor 上的滚动事务、动态范围和视觉输出；
-Material 消费规则及布局知识保留在本库，依赖中只增加通用参与者、数值回读与合成属性支持。
-参与者协议位于 Interaction 命名空间，数值输出及合成适配工具位于 Composition 命名空间，仍属于同一个程序集。
+- **状态**：生效中
+- **决定方案**：波纹动画在首次绘制时锁定起始半径、原点与目标中心。Switch 启用内部跟随中心开关，其无界按压波纹每次绘制都跟随表面当前中心，与变化中的滑块及光圈保持同心；其他组件保留基线的中心锁定和有界漂移。
+- **原因与动机**：首绘锁定的小尺寸中心会在滑块放大或移动后产生错位。
+- **适用范围与影响**：波纹绘制计算与中心微调，不向外部暴露多余接口。
+- **确认依据**：2026-10-03 维护者选择修复波纹差异；2026-10-04 维护者进一步确认滑块同心优化方案。
 
-此路径使用 SmoothScroll 的惯性，不要求与 Compose 物理曲线一致。顶栏只返回实际消费的位移，边界剩余量
-在同一帧交给正文；底栏观察正文消费，正文结束后独立 spring 吸附。直接拖动栏保留已有 UI 输入/settle。
-公开 AppBar 状态仍以物理像素表示，内部滚动事务用 DIP；spring 规格在物理像素中求值。
+---
 
-范围：连接物理主视口、内置 behavior、标准栏模板及 Scaffold.ContentPadding 布局。
-外层 Scope 不重复接管标准 Scaffold 的正文；逻辑主正文、主正文原生 snap points 和其他布局暂不自动联动 AppBar。
-不回退旧正文引擎；使用 SmoothScroll presenter 的自定义模板可在满足相同布局条件时接入。
-绑定配置在 UI 线程捕获，compositor 消费快照。公开 Offset 与状态是 UI 回读值，不是跨线程实时接口。
-确认：维护者明确选择基于 SmoothScroll、接受小型通用扩展，并授权实现普通物理滚动与真实 AppBar、验证布局衔接。
-本阶段未承诺完整通用嵌套滚动引擎、逻辑虚拟化抗阻塞、统一手势框架或新的公开滚动控制器 API。
+## 14. Surface 圆角描边
 
-补充决定（2026-10-04）：保留 SmoothScroll 的原生边界冒泡和触摸捕获接力。主正文内的滚动器独立滚动，
-不驱动外层 AppBar；内层到边界后下一笔输入交给主正文，才驱动正文与栏。不增加部分余量或惯性跨层分配。
-维护者明确选择了该行为，并审阅同意 ConfigureVerticalScroll 的可选
-Func<double, bool>? canConsumeAtBoundary 参数：仅在 UI 线程根据快照查询额外参与者能否消费方向位移，
-正 DIP 增加 Offset，查询不改变状态，null/false 沿用原生判界；清除参与者时清除回调。
-该参数不传递滚动量、不跨线程读取控件，也不建立共享栏状态或多 tracker 惯性会话。
+- **状态**：生效中
+- **决定方案**：内部表面轮廓部件对均匀边框厚度直接移植基线的像素取整与内缩描边；描边作为内容上方的视觉层，不挤占内容布局尺寸。均匀圆角采用内缩算法，非对称圆角以外轮廓减去内缩轮廓进行绘制。非均匀厚度保留原生边框路径。
+- **原因与动机**：深色静态用例表明原生边框不符合固定上游的像素取整与角部渲染。
+- **适用范围与影响**：所有使用 Surface 描边的组件与动画过渡。
+- **确认依据**：2026-10-03 维护者批准表面描边修正；2026-10-04 维护者批准补齐非对称圆角算法。
 
-2026-10-04 补充：维护者批准将已验证的参与者消费接入 SmoothScroll 主路径。
-普通指针、直接滚轮和惯性帧共用增量事务，状态不再按参与者存在与否选择两套移动方法；
-tracker 统一计算有效范围并提交横纵向位置。普通弹性回弹、参与者纵向夹取与现有 zoom/snap
-限制保留；绝对定位及定位动画不进入 pre/post。UI 冒泡查询仍使用只读快照。
-2026-10-05 维护者批准完成公开协议和辅助入口的命名迁移：去除实验前缀，使用 AttachVerticalScroll、
-ConfigureVerticalScroll、RunOnScrollParticipant、DispatchToUI、ApplyVerticalScrollDelta、
-CompleteVerticalScroll 和 CancelScroll。挂载生命周期移入 ScrollPresenter 主文件，删除无调用的
-额外正文位移入口及其表达式分支；原型公开惯性启动入口已删除，固定初速度检查由子模块测试调用内部
-StartInertia。验证阶段的桌面探针通过路由输入启动惯性，并通过 ProjectReference 消费当前源码；
-临时探针及其专用采样钩子现已移除，保留正式回归测试、VisualParity 与 Catalog 使用示例。
+---
 
-本次替代此前暂留实验命名和原型入口的规则；消费顺序、单位、边界冒泡、取消语义及现有 zoom/snap 限制不变。
+## 15. Surface 圆角求值与背景裁剪
 
-## 本次保留 Tween / Bezier 精度差异
+- **状态**：生效中
+- **决定方案**：内部以形状对象表达绝对像素与百分比圆角。普通像素值不提前截断，静态与动态轮廓都在求值插值后统一归一化。表面负责绘制阴影和背景，内部容器只裁剪内容，独立描边、交互层与色调继承保持原有层级。
+- **原因与动机**：提前截断会导致大圆角动画偏离上游；背景置于自身圆角裁剪内会使边缘半透明混合产生重复叠加伪影。
+- **适用范围与影响**：Surface 及其形状动画调用方。
+- **确认依据**：2026-10-11 维护者审阅方案后要求实施。
 
-决定：Chip 移植继续消费 ComposeAnimation 0.2.1-alpha，不修改其 FloatTweenSpec /
-CubicBezierEasing 的 double 运算。固定 Compose 的 Float 运算和不同求根路径可造成约
-0.0000006 DIP 的 elevation 差异。原始 motion 事实继续精确比较并报告不同。
-范围：本次 Chip 及共享回归所观察的数值差异，不接受时序、布局或可见效果的其他偏离。
-确认：2026-10-04，维护者在依赖修正与保留差异的具体方案中选择“本次保留并记录该精度差异”。
+---
 
-## 本次保留阴影坐标接入差异
+## 16. Core Desktop 原生焦点反馈
 
-决定：本次不改变 MaterialSkiaShadow 的 DIP 路径及 density CTM，保留其与 Compose Desktop
-物理像素路径 / 相应 CTM 的 raster 差异。公共 DIP elevation、光照和布局不变。
-原因：透明 AssistChip 的 6 DIP elevation 暴露内部阴影差异；独立 Skiko 原生探针使用同一
-轮廓、光照及标志，分别以 DIP 路径 + 4× CTM 和物理像素路径 + 1× CTM 绘制，复现两端结果。
-原生 tessellator 对路径坐标的敏感性使这两种坐标接入不等价。
-范围：本次观察到的阴影 raster，不接受其他布局、颜色或时序偏离；保留原始 PNG 和比较失败。
-确认：2026-10-04，维护者在坐标适配方案与保留差异中选择“本次保留并记录阴影差异”。
+- **状态**：生效中
+- **决定方案**：共享控制器观察所有原生焦点事件；指针按下反馈在原生处理之后观察，保留焦点到按下的交互顺序。同时按桌面端规则过滤指示层的焦点源：首次鼠标聚焦不进入状态层，已经显示的键盘焦点层保留到失焦；输入模式改变不合成虚拟焦点事件。
+- **原因与动机**：上游移动端与桌面端对点击时获取焦点的默认行为不同，需对齐桌面端行为避免点击后错误恢复悬浮高度。
+- **适用范围与影响**：所有接入共享控制器的组件交互反馈。
+- **确认依据**：2026-10-04 维护者批准按桌面端基线修正共享焦点反馈。
 
-## 文字样式基于原生继承
+---
 
-状态：已获维护者批准方案（text-style-redesign），公共 API 变化待维护者最终确认。
-决定：`MaterialText.Style` 把已指定字段以 Style 优先级写成元素自身的 Avalonia 原生继承属性（含 FontFeatures），
-由原生继承传给子孙；删除 `TextStyleHost`、`PresenterTextStyle`、Typography.axaml 的作用域样式、TabHeader/AppBar 标题
-的 `Styles[0]` 插入以及 Button 的原生属性转发。`DefaultStyle` 保留为过时别名。MaterialTheme 在 TopLevel 上设置 BodyLarge 基线。
-部分 Style：采用合并语义（未指定字段继续继承）；需要替换时传完整角色样式。`TextStyle.Empty` 不再退出继承。
-原因：ContentPresenter 是子元素的继承父级，原生继承天然覆盖 presenter 标题问题（取代原“Presenter 子元素的默认文字样式”提议）；
-旧实现在每个 TextBlock 上投影样式，阻断了原生继承，并需要多处变通。
-影响：本地值、模板值与触发样式按 Avalonia 优先级覆盖；已附着元素上字段由未指定变为指定时，新绑定排在已有同级样式之后。
-范围：Foundation/Typography 与所有排版使用者。
+## 17. AppBar 与原生滚动接入
 
-## ComposeAnimation 的动画属性贡献
+- **状态**：生效中
+- **决定方案**：标准 Scaffold 模板内置滚动作用域，自动引用实际呈现栏目的滚动行为。公开栏目状态以物理像素表达，正文输入接力和惯性由平滑滚动引擎接入，直接拖动栏目及其定位保留动画引擎驱动。作用域仅连接正文槽内唯一的主滚动视口，移出或替换时释放连接。
+- **原因与动机**：保证标准栏目与正文滚动的紧密联动，同时支持模板自定义与生命周期管理。
+- **适用范围与影响**：标准 Scaffold 与应用栏组件联动。
+- **确认依据**：2026-10-04 维护者批准接入方案；2026-10-06 维护者确认行为与内部作用域的接口形式。
 
-决定：ComposeAnimation 驱动 Avalonia 属性时，采样必须以 `BindingPriority.Animation` 贡献；
-不采用普通属性 setter 或未指定动画优先级的值绑定。沿用 `BindAnimatedValue` 的单向采样绑定与独立撤销形式，
-释放后恢复底层绑定、样式或本地值，不覆盖或删除这些目标来源。
-原因：动画状态本身没有属性优先级；属性系统中的动画贡献需要单独建立，普通赋值无法保留对应的覆盖与恢复语义。
-范围：已有及后续组件的 ComposeAnimation 属性动画；内部字段和直接消费的布局/绘制数值不属于属性贡献。
-DirectProperty 的能力限制应明确说明，不以普通赋值降级。现有普通赋值路径（如 ChipIconSlot 的 Opacity 动画）留待后续迁移。
-接入：采用 `AnimatedState<T>` 与 `AnimatedStateConnection<T>` 两类职责：前者管理唯一动画及 owner Scope 恢复，
-后者管理目标 Visual、StyledProperty、物理绑定和目标附着状态；连接不创建自己的 Animatable 或子动画。
-模板替换显式 Dispose 旧连接并建立新连接，保留稳定 owner 的 AnimatedState；Scope 重建先恢复当前值的属性贡献，再恢复动画。
-不改变现有 Scope 绑定结束即撤销的契约，也不以 `Animated.Properties` 的重设计为前提。
-Bind 的公开返回建议为 IDisposable，连接类的公开可见性尚属于设计建议。当前只记录决定，不迁移组件。
-确认：2026-10-14，维护者明确拒绝属性动画使用普通赋值，并确认 `BindAnimatedValue` 的 Animation 优先级形式。
+---
 
-## AnimatedVisibility 的协作式布局与状态所有权
+## 18. 普通物理滚动与 AppBar 的合成接入
 
-决定：进出效果状态由各效果宿主的一轮呈现持有，模板 Layout 只连接并应用；模板替换保留 Motion。
-可见性节点加入祖先 Lookahead 域，不自动创建局部域。模板准备在纯目标构建前完成；目标隐藏时外层
-零占位，内部退出内容的完整目标几何仍保留。零占位包含宿主自身 Margin/尺寸偏好，父容器保留的空间不变。
-原因：避免实际收缩尺寸污染共享元素的最终目标，同时保留已有隐藏测量合同及动画中断状态。
-接入：现有协议增加内部准备、无占位结果及 inherited-only 注册；普通节点的约束规则与自动入口不变。
-活动效果、转换段规格、对齐补偿与裁剪按固定基线移植；效果内部 RTL 采用基线的物理坐标公式。
-范围及剩余缺口见 [AnimatedVisibility INTERNALS](../modules/ComposeAnimation/ComposeAnimation.Avalonia/AnimatedVisibility/INTERNALS.md)。
-确认：2026-10-16，维护者确认最终类型/文件/调用顺序方案并明确要求实施。
+- **状态**：生效中
+- **决定方案**：普通滚动容器使用自有主题与平滑滚动呈现器，顶栏与物理正文共享滚动事务、动态范围和视觉输出。顶栏只返回实际消费的位移，剩余量在同一帧交给正文；底栏观察正文消费并执行弹簧吸附。主正文内的嵌套滚动器独立滚动，到边界后下一笔输入才驱动正文与栏目。
+- **原因与动机**：在保持原生控件契约的同时，提供物理惯性与无缝折叠联动。
+- **适用范围与影响**：物理主视口、内置滚动行为与标准栏目模板。
+- **确认依据**：2026-10-04 维护者明确授权实现；2026-10-05 维护者批准完成公开协议与辅助接口的命名规范化。
+
+---
+
+## 19. 本次保留 Tween / Bezier 精度差异
+
+- **状态**：生效中
+- **决定方案**：保留动画引擎单精度浮点运算与特定求根路径引起的极微小数值差异（约 0.0000006 DIP 的高度微差）。原始动效事实继续精确比较并如实记录差异。
+- **原因与动机**：底层数学库的浮点实现与上游存在极微小舍入差别，不影响可见视觉效果与时序。
+- **适用范围与影响**：微小数值精度记录，不接受时序、布局或可见效果的其他偏离。
+- **确认依据**：2026-10-04 维护者确认保留该精度差异记录。
+
+---
+
+## 20. 本次保留阴影坐标接入差异
+
+- **状态**：生效中
+- **决定方案**：保留阴影库设备独立像素路径及变换矩阵与上游物理像素路径的光栅化渲染差异。公开高度数值、光照与布局保持一致。
+- **原因与动机**：原生路径细分器对路径坐标的离散敏感性导致两端存在细微光栅差异。
+- **适用范围与影响**：阴影光栅比对差异记录，不影响其他属性。
+- **确认依据**：2026-10-04 维护者确认保留并记录阴影光栅差异。
+
+---
+
+## 21. 文字样式基于原生继承
+
+- **状态**：已批准方案
+- **决定方案**：`MaterialText.Style` 把已指定字段以样式优先级写入元素自身的原生继承属性，由原生属性继承机制传递给子孙元素；废除作用域内层层投影样式的做法。部分样式采用合并语义，未指定字段继续继承；需要替换时传入完整角色样式。
+- **原因与动机**：原生继承天然覆盖内容呈现器的多层嵌套，旧实现逐层投影样式阻断了原生继承链并带来诸多变通补丁。
+- **适用范围与影响**：Foundation 排版模块与所有文字排版使用者。
+- **确认依据**：维护者批准重构方案，待全量迁移后标记为生效中。
+
+---
+
+## 22. ComposeAnimation 的动画属性贡献
+
+- **状态**：生效中
+- **决定方案**：动效引擎驱动 Avalonia 属性时，采样必须以动画优先级贡献，严禁使用普通属性赋值。沿用单向采样绑定与独立撤销机制，释放后恢复底层绑定、样式或本地值，不覆盖原有属性源。
+- **原因与动机**：普通赋值无法在动画结束后正确恢复控件先前的样式或绑定值，破坏了 Avalonia 属性系统的优先级覆盖契约。
+- **适用范围与影响**：所有依赖动效引擎驱动属性的组件动画。
+- **确认依据**：2026-10-14 维护者明确拒绝使用普通赋值，并确认必须采用动画优先级贡献形式。
+
+---
+
+## 23. AnimatedVisibility 的协作式布局与状态所有权
+
+- **状态**：生效中
+- **决定方案**：显隐过渡状态由各效果宿主持有，模板布局仅负责连接并应用；模板替换时保留动效。可见性节点直接加入祖先作用域，目标隐藏时外层保持零占位，内部退出内容的完整几何予以保留。
+- **原因与动机**：避免退出期间的实际收缩尺寸污染共享元素的最终目标，同时保留已有隐藏测量契约与动画中断连续性。
+- **适用范围与影响**：可见性容器与相关过渡效果。
+- **确认依据**：2026-10-16 维护者确认类型与调用顺序方案并要求实施。

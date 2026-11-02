@@ -1,354 +1,94 @@
-# 架构与已有能力
+# 架构与共享能力
 
-本文描述当前源码中的结构、可复用能力与接入约束，不代表所有既有设计均已作为长期方案获批，
-也不代表已经完成上游一致性验证。开发流程见[移植指南](PORTING.md)，参考仓库与读取方式见 [AGENTS.md](../AGENTS.md#上游源码)。
-组件决定随各组件 README 保存，跨组件的共享能力决定见 [DECISIONS.md](DECISIONS.md)。
+本文描述系统核心分层、共享引擎与基础技术契约，为全库的只读技术规范。具体控件的实现、上游基线映射与内部差异，严格保存在各组件目录下的 `INTERNALS.md` 中；跨组件的共享能力已确认决定见 [DECISIONS.md](DECISIONS.md)。
 
-## 结构与职责
+---
 
-| 位置 | 当前职责 |
+## 整体分层与目录职责
+
+系统采用单向依赖结构，职责划分如下：
+
+| 位置 | 核心职责 |
 | --- | --- |
-| [Components/](../src/Material3Expressive/Components) | Button、IconButton、CommandBar、Surface、Scaffold、Badge、BadgedBox、Chip、SegmentedButton、NavigationRail、WideNavigationRail、ModalWideNavigationRail、NavigationBar、ShortNavigationBar、Slider、CheckBox、RadioButton、Switch、Divider 的实现与主题，按组件组织。组件可以组合其他组件，例如 Scaffold / Chip / SegmentedButton / rail / bar / CheckBox / RadioButton / Switch 的模板使用 Surface。Others 提供 Avalonia 通用控件（ItemsControl、Label、Window、PopupRoot、GridSplitter、TableViewCell 等）的结构默认主题。 |
-| [Foundation/Tokens/](../src/Material3Expressive/Foundation/Tokens) | Token 身份、资源组合、引用解析与绑定。 |
-| [Foundation/Typography/](../src/Material3Expressive/Foundation/Typography/README.md) | 聚合 TextStyle、角色绑定、默认值作用域与原生文字属性投影。 |
-| [Foundation/Interaction/](../src/Material3Expressive/Foundation/Interaction) | 输入与交互反馈的接入、状态层、ripple 和圆角动画。 |
-| [Foundation/Motion/](../src/Material3Expressive/Foundation/Motion) | Material 动画描述及其到 ComposeAnimation 的转换。 |
-| [Foundation/Overlays/](../src/Material3Expressive/Foundation/Overlays/README.md) | 窗口内 Dialog 与共享 ModalPresenter；组件独立持有原生 Popup，使用 PopupOverlayLayer。 |
-| [Foundation/Rendering/](../src/Material3Expressive/Foundation/Rendering) | 图标接入与颜色合成等辅助能力。 |
-| [Tokens/](../src/Material3Expressive/Tokens) | `MaterialTokens` 的 Reference、System、Component 键；组件 Token 目前仍集中在这里。 |
-| [Baseline/](../src/Material3Expressive/Baseline) | 颜色、形状、字体、状态、elevation、motion 的默认 Token 来源。 |
-| [MaterialTheme.axaml](../src/Material3Expressive/MaterialTheme.axaml) | 装配默认 Token 来源并引入组件主题。 |
+| [Baseline/](../src/Material3Expressive/Baseline) | 颜色调色板、形状、字体、状态、高度与动效的初始默认资源定义。 |
+| [Tokens/](../src/Material3Expressive/Tokens) | 强类型 Token 键定义，分为参考级、系统级与组件级三层键。 |
+| [Foundation/](../src/Material3Expressive/Foundation) | 跨组件复用的核心支撑能力，包含输入、交互、动效、排版、渲染、弹层与 Token 解析器。 |
+| [Components/](../src/Material3Expressive/Components) | 具体控件的实现、主题样式与模板。由各组件目录下的 `README.md` 与 `INTERNALS.md` 自行维护。 |
+| [Primitives/](../src/Material3Expressive/Components/Primitives) | 常见原生基础控件（如文本标签、窗口、网格分割条等）的 Material 默认样式。 |
+| [MaterialTheme.axaml](../src/Material3Expressive/MaterialTheme.axaml) | 主题总装配入口，合并基础资源并引入各组件样式。 |
 
-`MathUtils` 提供最近整数舍入、DIP 与物理像素转换和线性插值。`Components` 需要这些操作时优先使用对应方法。详见 [Foundation/MathUtils.cs](../src/Material3Expressive/Foundation/MathUtils.cs)。
+### Foundation 子系统职责
 
-这是目录职责，不是已经由程序集隔离的严格分层。目前 `MaterialInteractionController` 仍直接引用
-`MaterialSurface` 和 `ButtonElevationController`；修改相关能力时需要检查组件调用方，不能假定 Foundation 与组件无关。
-是否调整这些关系属于单独的设计问题。
+- **Input**：内部手势与速度追踪等底层指针支持。
+- **Tokens**：Token 身份模型、资源树级联组合、引用链路解析与多重绑定转换。
+- **Typography**：文字角色聚合、动态继承合并与文字度量换算。
+- **Interaction**：指针与按键事件接入、状态层驱动、波纹动画编排与内缩焦点环呈现。
+- **Motion**：Material 动效参数转换与过渡规格桥接。
+- **Rendering**：可变字体图标渲染、几何路径生成与颜色算法桥接。
+- **Overlays**：窗口内对话框宿主、模态遮罩与弹层管理。
 
-## Token 与主题
+---
 
-当前 Token 由手工定义的 `MaterialTokenKey<T>`、`ITokenSource`、`MaterialResource` 和 `{m3:Token}` 组成，
-没有接入 Token 生成器或 JSONC 目录。
+## Token 与主题资源系统
 
-- 键以对象引用为身份；名称用于诊断，不能通过重新构造同名键访问已有 Token。
-- `MaterialResource` 组合多个来源，后加入的来源优先；来源的变更通知传入 Avalonia 资源系统。
-- `{m3:Token}` 在消费元素处解析值。每次跟随 `TokenRef` 都从同一消费位置重新查找，
-  因而局部覆盖中间的 System Token 也能影响 Component Token。
-- 当前派生形式包括 `WithAlpha`、`SpringSpecRef`、`TextStyleRef` 和 `TextUnit`。解析有跳数限制；缺失、循环或超过限制时失败，
-  绑定通过 `UnsetValue` 交给 Avalonia 处理，不改用外层同名定义掩盖无效的最近条目。
-  当前 Avalonia 12.1.2 的活动 `MultiBinding` 仍占原优先级，并提供目标属性的元数据默认值，
-  不会自动让出到低优先级 Style；显式解除绑定后才恢复低优先级值。资源修复后，原绑定继续更新。
-  这是[固定版本绑定实现](https://github.com/AvaloniaUI/Avalonia/blob/d3c867a9e2de379249b03dbeb3495bd7f076a81a/src/Avalonia.Base/Data/Core/UntypedBindingExpressionBase.cs)的行为，Token 层未建立另一个回退优先级系统。
-- 资源和主题变化触发消费值更新。保留引用关系，不要在组件初始化时把动态 Token 提前展开为永久常量。
-- 模板中直接使用 `{m3:Token}` 时，由扩展设置 Template 优先级。若将 Token 嵌入手写 `MultiBinding`，
-  应在模板的最外层 `MultiBinding` 显式设置 `Priority="Template"`；子绑定的优先级不能替代外层配置。
-  Setter 中的绑定优先级仍由样式实例决定。
+Token 系统采用对象引用作为唯一身份标识，支持动态解析与局部覆盖：
 
-组件主题可以参考现有 [Button 主题](../src/Material3Expressive/Components/Button/Button.axaml) 的消费方式：
+- **键模型**：`MaterialTokenKey<T>` 采用实例引用作为键身份，名称仅作诊断用途。
+- **资源组合与通知**：`MaterialResource` 支持多源合并，后注入的源优先级更高，源变化时向 Avalonia 资源系统广播失效通知。
+- **解析机制与跳数限制**：`{m3:Token}` 标记扩展在消费元素处执行上下文解析，沿引用链路动态向上回溯，支持派生转换（如透明度叠加、弹簧规格派生等）。解析器设有最大跳数限制以阻断循环引用。
+- **绑定优先级合约**：模板内使用 `{m3:Token}` 时默认赋予模板级优先级；手写多重绑定时，外层必须显式声明优先级，避免中间态覆盖低优先级样式。
 
-```xml
-<Setter Property="Background"
-        Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContainerColor}}" />
-```
+---
 
-这里的 `m3` 对应 `https://github.com/Shirasagi0012/Material3Expressive.Avalonia`。
-嵌套类型在 XAML 中用 `+` 表达。示例展示当前接入方式，不替代新组件对上游 Token 的调查。
+## 排版系统
 
-## 排版
+排版层通过角色聚合与就近合并提供统一的文字规格：
 
-普通 TextBlock 使用 `MaterialText.Style="{m3:Typography TitleLarge}"` 选择聚合角色；
-容器通过 `MaterialText.DefaultStyle` 逐字段合并默认值。明确指定的 Style 不隐式合并环境，
-未指定字段不产生原生 Setter。原生局部值与绑定保留，由 Avalonia 属性系统决定最终值。
-投影样式位于控件自身 Styles 开头，具体就近规则与迁移影响见 [Typography](../src/Material3Expressive/Foundation/Typography/README.md)。
+- **角色聚合**：使用 `MaterialText.Style` 指定文字排版角色，按需将字体族、粗细、行高与字号批量投影到目标控件。
+- **默认值级联**：容器通过 `MaterialText.DefaultStyle` 逐字段向下游提供环境继承，已显式声明的字段优先，未声明字段保留原生继承。
+- **单位换算**：排版配置统一以设备独立像素存储，比例缩放与相对单位在解析消费点执行换算，不替换原生文本排版引擎。
 
-TextStyle 只保存 DIP；sp/em 在 TokenResolver 消费位置换算。角色基线派生自现有五个标量键，
-覆盖整套角色后不再读取这些标量。Button 消费各尺寸 LabelTextStyle 并向内容提供默认值；
-NavigationRail 标签消费 LabelMedium；WideNavigationRailItem 按目标位置和动画进度切换 LabelMedium / LabelLarge。
-没有引入公开 MaterialTextBlock，也未替换 Avalonia 排版器。
+---
 
 ## 颜色、图标与阴影
 
-| 能力 | 本地入口与边界 |
-| --- | --- |
-| 颜色计算 | [MaterialColorUtilities](https://github.com/Shirasagi0012/MaterialColorUtilities) 提供颜色算法；[ColorScheme](../src/Material3Expressive/Baseline/ColorScheme.cs) 将其结果接入本项目 Token。颜色角色是算法计算结果，局部覆盖输出的 reference palette 不会反向重新生成角色。 |
-| 可变字体图标 | [MaterialSymbols.Avalonia](https://github.com/Shirasagi0012/MaterialSymbols) 提供 fill、weight、grade、optical size 等轴；[MaterialSymbol](../src/Material3Expressive/Foundation/Rendering/MaterialSymbol.cs) 是本项目入口，当前使用 Rounded 字体包。组件消费已有渲染器，不另行实现字体轮廓绘制。 |
-| 阴影 | [MaterialSkiaShadow](../modules/MaterialSkiaShadow/README.md) 提供与 Compose Desktop/Skiko 对应的 Skia 阴影绘制；Surface 负责接入实际几何、缩放及绘制环境。模块目前支持单个平面简单轮廓的线段、二次曲线与 conic，不支持 cubic、透视、倾斜 Z 平面、方向光和非 Skia 后端。 |
+- **颜色算法**：通过接入颜色工具算法生成调色板，`ColorScheme` 将算法计算结果桥接到系统 Token。
+- **可变字体图标**：由底层图标库提供字体轴支持，`MaterialSymbol` 作为统一控件入口。`MaterialSymbol.DefaultSize` 作为可继承的尺寸提示属性，由各组件在呈现位置提供默认值，显式宽高优先。
+- **阴影绘制**：基于 Skia 图元绘制阴影，支持平面的线段、二次曲线与局部轮廓；Surface 容器负责传入实际几何并处理物理像素换算。
 
-颜色算法和 MaterialSymbols Rounded 字体通过 NuGet 接入，版本由根中央包版本文件指定。
-MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一。具体依赖来源以项目文件和 NuGet 配置为准。
-配套模块有各自的上游版本与限制；模块级的移植或渲染验证不自动证明本项目的组件集成正确。
-遇到能力缺口时说明缺少的语义，不在组件中悄悄替换为近似算法。
+---
 
-图标槽统一使用 `object? Icon` / `IDataTemplate? IconTemplate`（保留 Leading、Trailing、Active、Thumb 等语义前缀）。
-直接传入 Control 时，没有模板则继承外层 DataContext；传入数据时，模板的 DataContext 是 Icon。
-显式模板也支持 Icon 为 null，可用于固定图标；是否占用槽空间应同时检查内容与模板。
-`IconTemplate` 是创建控件的蓝图，可以复用；一个图标 Control 不能同时挂到多个槽。
+## 表面容器与轮廓几何
 
-`MaterialSymbol.DefaultSize` 是可继承的尺寸提示，默认 24 DIP；组件只在实际图标呈现位置提供自身默认值。
-`MaterialSymbol` 测量时读取它并受可用布局尺寸约束，显式 Width / Height 优先于提示，仍遵守槽的布局约束。
-它不写入 Width / Height，不缩放任意控件，也不把整个组件的交互区域变成图标尺寸。
-例如 TextField 的 48 DIP 装饰区域提供 24 DIP 图标默认值，Switch 的 thumb 图标默认 16 DIP。
-导航项继续按图标实际 DesiredSize 测量，允许大于默认值的自定义图标。
-OpticalSize 仍由外部渲染器根据实际 Bounds 推导，不使用默认尺寸代替绘制尺寸。
+`MaterialSurface` 是全库统一的承载容器，承担背景、边框、阴影与圆角过渡：
 
-`{m3:Symbol Home}` 每次求值创建一个 MaterialSymbol；Size 显式设置两轴尺寸，其余可选参数只在提供时赋值，
-因此颜色继承、自动 grade 和 optical size 保留。复杂绑定继续使用 MaterialSymbol 对象元素。
-不要把返回的 Control 放进多个控件共用的 Setter 或 StaticResource；需共享时使用 DataTemplate。
-IconButton 继续使用专门的 Symbol 枚举入口和自身尺寸模板；完整交互控件槽仍直接组合原有控件。
+- **绘制管线**：底层先绘制阴影与背景几何，中间层处理内容与裁剪，顶层叠加交互反馈与内缩描边，避免内容圆角与阴影产生重叠伪影。
+- **几何与形状插值**：形状支持绝对像素与百分比混合定义，在动画过渡中按比例归一化，各绘制层共享同一轮廓。
+- **描边处理**：均匀圆角采用内缩算法计算外框，非对称圆角通过内外轮廓布尔相减绘制，保证高精度对齐。
 
-## Surface 与交互组合
+---
 
-[MaterialSurface](../src/Material3Expressive/Components/Surface/MaterialSurface.cs) 是可被其他组件组合的容器组件，
-承担背景、边框、裁剪、阴影和累积 tonal elevation。Surface 先绘制阴影和背景，内部 Border 只承载内容和裁剪，
-独立覆盖层绘制交互反馈。背景不重复经过内容的圆角裁剪。
-几何使用 Avalonia DIP；内部 CornerShape 区分普通 DIP 与 Full 百分比，保留中断动画的尺寸依赖。
-静态与动画结果都在插值后按 Compose CornerBasedShape 归一化，各绘制层共用该外轮廓。
-描边由末层 SurfaceOutline 绘制，不参与内容尺寸计算；均匀线宽保留 Compose 的物理像素 ceil，
-均匀圆角使用内缩 stroke，非对称圆角使用外轮廓减内缩轮廓。非均匀 Thickness 沿用原生 Border。
-描边动画提供连续线宽与原始外圆角，取整和内缩只由 SurfaceOutline 执行；普通零宽无描边，
-动画零宽使用 hairline。Padding 仍由内容 Border 处理。
+## 交互反馈与状态驱动
 
-Button 模板内的局部 `ButtonLayout` 区分背景默认尺寸与外层交互留白：背景默认最小宽度为 58 DIP，
-高度由 size Token 提供，外层默认预留至少 48 DIP 并居中放置背景。默认背景高度不再写入
-`Button.MinHeight`；显式 Width/Height 或 MinWidth/MinHeight 仍由调用方设置，并覆盖相应默认值。
-它移植 `defaultMinSize` 与 `minimumInteractiveComponentSize` 的布局职责，不实现触屏目标扩展。
-IconButton 复用 ButtonLayout，将 size class 的默认容器尺寸留在模板层，默认外层分配 48 DIP。
-ButtonLayout / FabLayout 的内部 MinimumInteractivePadding 对应上游 top/left 对齐线；
-Foundation.MinimumInteractiveAlignment 将后代读数换算到查询布局并按 min 合并，
-FloatingToolbar 用它实现最小交互留白的两轴平衡，未增加公共布局 API。
-自动字符串标签保持 Compose 的受约束段落宽度；普通裁剪保留完整文本布局，再在有限标签边界内绘制。
-省略号仍使用有限高度格式化。显式内容控件、ContentTemplate 和匹配的 DataTemplate 保留优先级。
+- **事件流模型**：`MaterialInteractionSource` 提供 UI 线程上的配对事件流，结束事件引用开始对象，订阅从后续事件开始。`MaterialInteractionController` 将原生输入接入该流；组件独立维护形状、高度等收集状态，源替换和模板重建的生命周期见各组件内部契约。
+- **状态层与波纹**：状态层按存活顺序选择交互，并以开始对象身份判断动画重启，同类型的新交互也会重新启动动画。波纹动画独立持有子生命周期，按压释放与取消时执行平滑淡出。
+- **焦点环机制**：`MaterialInteraction.FocusFeedback` 提供透明度与内缩焦点环两种模式，独立呈现器负责动画与四角不等圆角绘制。Surface / Switch 切换模式时重建 indication；CheckBox / RadioButton / ListItem 更新同一 ripple 配置，保留活动反馈。配置与缓存契约见 [Interaction](../src/Material3Expressive/Foundation/Interaction/README.md)。
+- **最小交互留白**：通过 `MaterialInteractiveSize.Minimum` 建立可继承的布局环境，为触摸与无障碍操作预留外层空间，不强行扩张绘制边界。
 
-Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefaults.contentPaddingFor` 的默认参数，
-并非原始 Token：XS/S/M/L/XL 的水平/垂直值分别为 12/6、16/10、24/16、48/32、64/48 DIP。
-基线使用上游默认的 `shouldUsePrecisionPointerComponentSizing=false`；启用该分支时 Small 垂直值为 8，
-图标侧水平值为 12，当前不可变基线未实现这一分支。调用方可显式覆盖 Padding 或对应复合槽。
+---
 
-目前交互组件通过 `MaterialInteraction.IsInteractive` 接入共享控制器，Surface 作为模板中的反馈呈现者。
-控制器处理输入、交互顺序、状态层和 ripple；主题提供颜色和形状等参数。
-键盘输入只用于维护交互反馈，不由共享控制器拦截 Enter 或执行点击。
-激活由控件自身负责，具体语义见各组件 README，已有导航项的键盘处理保留。
-决定依据与适用范围见[共享交互反馈与键盘激活职责](DECISIONS.md#共享交互反馈与键盘激活职责)。
-颜色、交互事实、反馈动画和绘制结果需要保持各自归属，不要仅用最终伪类状态替代具有顺序意义的交互记录。
+## 动效运行时接入
 
-`MaterialInteraction.FocusFeedback` 是可继承的 Opacity / InsetRing 选择，默认 Opacity。
-尺寸集中在不可变 `InsetFocusRingMetrics`，颜色覆盖独立可继承，null 使用实时 Secondary / OnSecondary。
-配置用法见 [Interaction](../src/Material3Expressive/Foundation/Interaction/README.md)。
-控制器额外提供保留身份与顺序的 indication 事件；原始 Interaction / Changed
-仍供 shape / elevation 消费。独立 InsetFocusRingPresenter 持有进度、订阅和动画子作用域，
-按固定 Core Desktop 在每次订阅内过滤焦点，计数随重建或卸载清除，不保存在 owner 控制器上。
-呈现部件不占用唯一的 Surface ripple attachment；父部件负责位置和当前四角圆角。
-Surface / Switch 的焦点模式变化重建 indication；CheckBox / RadioButton / ListItem 的单一 ripple
-只更新配置，保留波纹、状态层和焦点进度，呈现部件在 Opacity 下也持续收集交互。
-纯视觉节点显式取得父部件的 inheritance context、主题及资源变更通知，不加入 LogicalChildren。
-Surface 将环置于内容、状态层与普通描边之后；Switch 放在 track 内、轨道 outline 之前。
-圆角环的绘制保留 material3-ripple Border.kt 的物理像素 ceil、hairline、小圆角和尺寸限制；
-非对称圆角使用外轮廓减内轮廓，共享路径构造位于 Foundation/Rendering/RoundedRectangleGeometry。
-进度不钳制到 [0,1]，两条描边独立缓存尺寸、圆角、scale、实际线宽和 inset。
-仅主题 palette 变化时保留固定上游的静止 draw cache：Token 有效值已更新，但等下一次
-动画/几何等绘制失效才读入画面；显式颜色覆盖、尺寸或 motion 配置变化会使绘制失效。
-呈现部件保留上次绘制采用的默认颜色，以免 Avalonia 父节点重绘提前刷新该缓存；
-动画仅在进度值实际改变时触发重绘，对应 Compose mutableStateOf 的结构相等判断。
+动画系统统一接入底层动画引擎：
 
-Button / IconButton 的主题将 owner `CornerRadius` 传给 Surface，默认按压保持该形状。
-可空附加属性 `MaterialButton.PressedCornerRadius` 显式启用按压变形，null 关闭；模板直接绑定该属性，
-复用 Surface 的圆角状态和动画，不另建按钮形状控制器。尺寸 class 提供 owner 圆角的默认值，
-局部 CornerRadius 和按压目标不被尺寸 class 覆盖。
+- **作用域生命周期**：每个顶层窗口在初始化时调用 `AnimationScope.Initialize(topLevel)` 建立根时钟；控件通过 `AnimationScope.Get(owner)` 接入，并通过 `CreateChild(...)` 为独立动效派生子作用域。
+- **规格转换**：Token 中的弹簧参数通过规格引用在消费点转换为求值器，支持平滑中断与重定向。
+- **释放保证**：控件从视觉树断开或模板重建时，必须释放关联的子作用域，避免后台时钟泄漏。
 
-[ToggleButton](../src/Material3Expressive/Components/ToggleButton/README.md) 使用原生状态及独立的四种主题，
-在 Surface 内部增加选中形状输入，复用共享变形、描边动画、elevation、状态层和 ripple。
-[SplitButton](../src/Material3Expressive/Components/SplitButton/README.md) 使用独立双槽容器，组合实际子控件；
-内部 ButtonLayout 的最小宽度及交互留白可配置，普通 Button 的默认值不变。
-这两个组件的公开 API、尺寸规则、配置重建差别与原生语义决定随组件记录。
+---
 
-NavigationRailItem 复用这一控制器，通过内部 `PressPositionMapper` 翻译固定上游的
-`MappedInteractionSource` 坐标；状态层和 ripple 不另建实现。键盘原点与当前固定 Desktop
-`AbstractClickableNode` 一致：初始为零，收到指针事件后缓存控件中心。禁用会取消交互并让既有
-ripple 完成进入与退出；禁用引起的状态层退出在重组对应帧之后启动。
-Rail 的布局、内容色匹配与 item 的四条动画轨迹保留在[组件目录](../src/Material3Expressive/Components/NavigationRail/README.md)。
-NavigationBarItem 使用同一按压映射入口，按实际 Item 宽度和固定上游偏移映射至胶囊。
-Rail / Wide / Modal / Bar 的动态 contentColorFor 绑定及物理 Insets 转换位于 Foundation/Rendering，
-各组件仍负责选择背景属性、内容环境和布局。ShortNavigationBar 使用独立的 intrinsic 查询与 EqualWeight / Centered 布局；其 NavigationItem 只有指示器动画，
-不扩展 Wide 的位置动画和平滑适配。见 [组件说明](../src/Material3Expressive/Components/ShortNavigationBar/README.md)。
-NavigationBar 的等权布局与动画见
-[组件说明](../src/Material3Expressive/Components/NavigationBar/README.md)。
-contentColorFor 绑定及物理 Insets 的共享迁移于 2026-10-03 随 NavigationBar 方案确认，原有公共入口与行为不变。
+## 弹层与滚动体系
 
-[Scaffold](../src/Material3Expressive/Components/Scaffold/README.md) 组合五个内容槽，发布逻辑 ContentPadding，
-由调用方应用。Foundation/Rendering 的 `MaterialWindowInsets.ConsumePadding` 记录已应用的逻辑
-Padding，逐层累加并传播物理消费量；Scaffold 从宿主的 ContentWindowInsets 逐边扣除祖先消费。
-该附加属性不应用布局 Padding，不是完整系统 Insets API，也没有改变既有 rail/bar 的 Insets 行为。
-细节和适用范围见[共享决定](DECISIONS.md#padding-消费向嵌套-scaffold-传播)。
-
-Button elevation 的当前实现可作为职责示例：`ButtonElevation` 保存状态高度，
-每个按钮自己的 `ButtonElevationController` 选择并动画化目标；Surface 的 `ShadowElevation` 消费当前绘制高度。
-可共享配置，但不能共享按钮的运行状态。动画优先级绑定在清理后恢复原属性值，不能破坏原有样式与绑定。
-Filled/Tonal 默认在 hover 升到 1 DIP；Outlined/Text 默认无 elevation 配置。
-圆角与 elevation 的交互目标在下一共享时钟帧合并提交，对应 Compose 重组后的 effect；
-状态层和 ripple 仍遵循各自的事件时序。圆角配置或 effects spring 改变时重建形状状态，
-更换目标先取消旧 effect，再沿用状态。待提交目标和 effect 都受呈现者的取消生命周期约束。
-这一示例不意味着其他组件都应采用 Button 的状态选择规则。
-
-FAB 使用自己的 `FloatingActionButtonElevationController`：保留最后一个实际交互，
-即使 press/focus/default 高度相同也不丢失状态身份；配置变更先 snap 当前目标。
-它通过同一 `MaterialInteractionController` 和呈现者作用域接入，Surface 分别消费固定 tonal elevation
-与动画 shadow elevation。尺寸入口、受控 Toggle 与菜单布局见 [FAB 说明](../src/Material3Expressive/Components/FloatingActionButton/README.md)。
-
-Chip 使用自己的六状态 elevation 配置，消费共享控制器的最后活跃交互；形状和槽动画留在
-[组件目录](../src/Material3Expressive/Components/Chip/README.md)，不使用 Button 的 elevation 配置。
-共享控制器观察 Core Desktop 的所有原生焦点，指针按下位于原生焦点处理之后。
-状态层的焦点源按 Desktop 输入模式单独过滤，elevation 保留完整焦点事实。
-无指针历史的键盘 ripple 从 clickable 局部零点开始；导航项保留其源坐标映射。
-ContentColorFor 的可选内部 ambient 绑定用于 Chip 在标签 provider 外选择墨色，仍消费同一套
-实时背景 / Token / 环境绑定；内部 Resolve 入口供 Card 在选择禁用内容色前解析启用容器，
-复用相同角色顺序与环境回退。相关确认依据见 [DECISIONS](DECISIONS.md)。
-内部 BackgroundColor 绑定可直接提供颜色候选（如 Outlined IconToggleButton 的选中容器 Token），
-未提供时仍按 BackgroundProperty 读取属性；两种入口共用同一角色匹配逻辑。
-反馈未启用的 owner 不产生输入交互；呈现者解绑会清理交互，新呈现者的 hover 等待后续指针输入，
-包括 native owner 仍 pointer-over、没有重新 Enter 时的 Move。
-Button 的指针反馈观察其原生 IsPressed，键盘反馈只消费自身为 Source 的事件，避免可点击容器
-再次响应已由嵌套按钮消费的输入。
-Card 的普通 / 可点击入口、默认 Column 测量和独立的 elevation effect 见
-[组件说明](../src/Material3Expressive/Components/Card/README.md)。
-
-SecureTextField 的原生 Filled / Outlined 主题复用 TextField 装饰，
-`MaterialSecureTextField.IsSecure` 负责单行、IME 提示和复制/剪切限制，显示仍由原生
-PasswordChar / RevealPassword 控制。该原生方案未替换 automation peer 或 IME 客户端；
-安全语义缺口和已确认的 RevealLastTyped 暂缺见[组件说明](../src/Material3Expressive/Components/SecureTextField/README.md)。
-
-ComboBox 使用原生 `ComboBox` 的 Filled / Outlined `ControlTheme`。关闭态是单行 TextField 装饰；
-弹出层留在模板的 `PART_Popup` 中，外观取官方只读 Exposed Dropdown 样例的单组 Standard 菜单。
-选择、文本匹配、键盘和自动化仍由 Avalonia 负责。见[组件说明](../src/Material3Expressive/Components/ComboBox/README.md)。
-
-## 动画接入
-
-动画执行通过仓内 ProjectReference 依赖 `modules/ComposeAnimation`，与主库共同构建和调试。
-Runtime、Avalonia 与 TestSupport 仍分别产出 NuGet 包，版本与发布方式见 [README](../README.md#版本与发布)。
-Material 层仍负责 Token、目标选择、时序规则及绘制；不要在组件中另建动画求解器或逐帧驱动循环。
-
-每个应用 TopLevel 在加载 XAML 或内容前调用 `VisualAnimationScope.Initialize(topLevel)`。
-`VisualAnimationScope.Create(owner)` 为已附着的控件建立作用域；Ripple、Shape 等效果拥有各自的子作用域。
-使用作用域的任务、订阅和动画值绑定来管理执行与清理。停止单个效果不应结束父作用域或兄弟效果；
-detach、模板替换与重新附着需要处理旧作用域及绑定的生命周期。根帧源固定，运行中不切换时钟；根的
-`AnimationFailed` / `LastError` 用于诊断。
-
-ComposeAnimation 0.2.7-alpha 的 `DelayAsync` 等待普通协程时间，不请求动画帧，也不受 DurationScale 影响。
-生产初始化默认使用 `TimeProvider.System`；测试可通过 `Initialize(topLevel, clock, timeProvider)` 显式
-注入延时时间源，子作用域与 Popup 继承它。动画时钟和延时时间轴分别推进，Draw/Snapshot 不推进二者。
-
-现有 Material 动画入口：
-
-- `SpringSpecRef` 在消费处解析 damping/stiffness，`SpringSpec.ToAnimationSpec()` 转换为运行时 spring。
-  阈值属于所动画化标量的单位，例如圆角进度使用 0.01，不能把它当作所有几何的通用阈值。
-- `AnimatedCornerRadius` 接受父作用域，拥有子作用域，实现 `IDisposable`；通过 `AnimateToAsync` 改变目标。
-  一段运行中的形变保留捕获的 spec，下次目标变化再解析当前 Token。回调必须在端点与进度一致后发布，
-  反向或第三目标切换也不能暴露暂时不一致的形状。
-- `RippleAnimation` 同样拥有子作用域并可释放；启动 `AnimateAsync`，释放按压时调用 `Finish`。
-  调用方需要观察任务并处理正常中断取消，取消和释放应清除等待。两类效果都不暴露手工 `Tick`。
-
-## 滚动与 AppBar 接入
-
-MaterialTheme 为原生 ScrollViewer 提供独立主题，以 SmoothScroll 的 ScrollViewerPresenter 实现普通物理
-滚动和惯性。滚动条、键盘、BringIntoView 与公开 Offset 仍经 Avalonia；逻辑内容保留逻辑单位。
-
-SmoothScroll 内部以常规 tracker 增量入口执行指针、直接滚轮和惯性帧的 pre/content/post；
-未安装参与者时 pre/post 消费为零。状态负责输入时序和物理积分，tracker 负责统一正文消费、
-有效范围与横纵向位置提交。绝对 Offset、BringIntoView、定位动画及缩放位置调整共用范围和
-提交逻辑，保留目标定位语义，不进入位移消费协议。参与者协议位于 SmoothScroll.Avalonia.Interaction，
-数值输出与合成适配工具位于 SmoothScroll.Avalonia.Composition，仍属于同一个程序集。
-
-标准 Scaffold 模板内置 AppBarScrollScope，自动引用实际呈现栏的 behavior，管理主正文与栏的滚动连接。
-标准 Scaffold、物理主 ScrollViewer、
-内置 AppBar behavior 和 ContentPadding 布局可以连接同一 compositor：每帧先分配栏/正文位移，再同步
-标题、栏高、正文位置与裁剪视口。UI 线程回读数值状态并完成真实布局；回读不是下一帧运动的前提。
-Material 的规则、状态和布局桥接在 AppBar 目录，SmoothScroll 只提供通用参与者、动态边界和合成输出。
-
-主正文内的嵌套滚动器保留原生 SmoothScroll；内层滚动不驱动外层栏，到边界后按 chaining 设置
-自然冒泡，主正文接收输入时才驱动栏。不增加跨 tracker 位移/惯性分配。
-Scope 只持有一个主正文连接，以实际 SmoothScroll presenter 的物理滚动能力识别接入，不改写 Template/Theme。
-显式 SmoothScroll 模板也可在满足相同布局条件时接入；Scaffold 的栏/覆盖槽及正文内部滚动器不登记为主正文。
-外层 Scope 不重复接管内部 Scope 的正文；逻辑主正文、主正文原生 snap points 或不支持的布局暂不自动联动 AppBar。
-切换、迁移与 detach 释放连接，旧状态回读通过 generation/sequence 过滤。具体边界及使用示例见
-[AppBar](../src/Material3Expressive/Components/AppBar/README.md) 和 [ScrollViewer](../src/Material3Expressive/Components/ScrollViewer/README.md)。
-Foundation/Input/VelocityTracker 是从 Rail 原样提取的内部 Lsq2 追踪器，供 Rail、NavigationDrawer、AppBar 与 FloatingToolbar 使用，
-不增加公开手势框架。普通物理惯性使用 SmoothScroll；Material 栏的 spring 吸附使用 ComposeAnimation 求值器。
-
-## 当前覆盖与待确认项
-
-ListItem 引入的共享交互入口位于 `Foundation/Interaction`：`MaterialInteractionSource` 是 UI 线程上的配对事件流，
-结束/取消事件引用原始开始对象，不缓存或重放状态。ListItem、Card、Chip 和 VerticalDragHandle 暴露此入口；各组件的独立 collector 生命周期见对应 INTERNALS。
-controller 将原生输入接入同一流，按存活顺序及开始对象身份管理状态层，并与组件的聚合状态观察保持区分；
-同类型的新开始对象也会重新启动状态层动画，不能仅比较 flags。indication 重建不重放旧事件。
-
-`MaterialInteractiveSize.Minimum` 是可继承的可空最小交互布局尺寸；null 保留各组件已有默认 Token，显式值覆盖布局环境。
-Button/IconButton/ToggleButton/SplitButton/SegmentedButton 等 ButtonLayout 消费者，以及 CheckBox、RadioButton、Switch、
-Chip、FAB、Slider/RangeSlider、ListItem 和 VerticalDragHandle 接入此环境。它只预留布局空间，不扩大命中范围，不替代各组件的绘制盒或容器最小尺寸。
-ListItem 在侧槽提供扣除自身 padding 与间隔的局部值。未使用该共享机制的现有导航布局和原生控件不自动改变尺寸。
-
-MaterialSurface 的内部 `ApplyTonalElevation` 开关默认为 true；ListItem 关闭它，以复用表面裁剪/阴影而保持上游独立颜色 Transition，
-不向消费端新增 Surface API。确认范围见 [DECISIONS](DECISIONS.md#列表项的交互源与最小交互环境)。
-
-原生 ScrollBar 使用 CMP Foundation 的交互式滚动条外观，固定厚度与 hover / drag 颜色动画。
-颜色映射至 OnSurface，位置、长度、输入、Visibility、菜单和 ScrollViewer 布局保留原生行为。
-外观入口、已确认适配及本组件不做 Compose parity 的范围见
-[ScrollBar](../src/Material3Expressive/Components/ScrollBar/README.md)。
-
-现有源码是后续工作的起点，不是批准所有既有取舍的依据。涉及相应代码时核对真实行为与固定上游。
-
-- 已有 Button、IconButton 和 Surface，但仍需逐项检查其 API、交互及视觉覆盖。
-  Button 的可选内缩焦点环复用共享呈现；阴影绘制差异留待后续核对，不能据此修改上游默认 elevation。
-- [CheckBox](../src/Material3Expressive/Components/CheckBox/README.md) 使用原生 Avalonia CheckBox 的模板，
-  合并两态与三态外观；CheckBoxAppearance 提供颜色与描边，内部模板部件负责布局和 Skia 绘制。
-  原生状态切换与键盘差异已确认保留，具体覆盖与未实现分支见组件说明。
-- [RadioButton](../src/Material3Expressive/Components/RadioButton/README.md) 使用原生 Avalonia RadioButton 的模板，
-  保留已确认的原生状态/组互斥、键盘与内容组合；四槽颜色、圆点动画、布局与绘制由模板部件负责。
-  默认 ripple/focus 复用共享交互能力，具体边界见组件说明。
-- [Switch](../src/Material3Expressive/Components/Switch/README.md) 使用原生 ToggleSwitch 的模板和
-  SwitchAppearance 附加属性，保留原生状态写回、键盘、拖动与自动化；模板部件移植 ThumbNode 布局与动画。
-  默认 ripple/focus 与 track inset focus ring 已接入，null 回调模式和外部 InteractionSource 映射未实现。
-- [Divider](../src/Material3Expressive/Components/Divider/README.md) 使用原生 Separator 的主题，
-  通过附加属性选择 Horizontal / Vertical 方向、厚度与颜色；内部 Canvas 保留布局取整、
-  原始描边厚度、零布局 hairline 和约束行为，不提供已废弃的 Divider 入口。
-- [TabRow / Tab](../src/Material3Expressive/Components/TabRow/README.md) 提供受控的独立标签栏及原生 TabControl 顶部水平主题，
-  共用 intrinsic / 基线布局、内容颜色 Transition 和指示器 Animatable。原生页面呈现和选择仍由 TabControl 负责。
-- 原生 [RepeatButton / HyperlinkButton / DropDownButton](../src/Material3Expressive/Components/Button/README.md) 的默认主题基于 Button 主题；
-  DropDownButton 的尾部箭头由全局 DropDownButton 样式填入共享模板的空尾部图标盒，打开 Flyout 时以弹簧旋转。
-- [GroupBox](../src/Material3Expressive/Components/GroupBox/README.md) 的默认主题以 OutlinedCard 的容器 Token 组合描边表面，
-  标题位于表面内部顶部（TitleSmall、OnSurfaceVariant），非交互。
-- [Expander](../src/Material3Expressive/Components/Expander/README.md) 的默认主题是列表风格：单行列表项标题（ToggleButton，BodyLarge、56 DIP、尾部箭头随展开旋转）加 AnimatedVisibility 内容区，无容器。
-- [NumericUpDown / ButtonSpinner](../src/Material3Expressive/Components/NumericUpDown/README.md) 的默认主题以 Material TextField 作为 PART_TextBox，
-  PART_Spinner 位于其图标槽，步进器为标准图标按钮样式的 RepeatButton；独立 ButtonSpinner 使用 Outlined 表面。
-- [Progress Indicator](../src/Material3Expressive/Components/ProgressIndicator/README.md) 提供四个独立控件的确定与不确定模式；原生 ProgressBar 的默认主题在模板中承载 LinearProgressIndicator。
-  ComposeAnimation 管理动画，Skia 保留 Canvas/PathMeasure 绘制；圆形波浪的 Polygon/Morph 消费仓内 `modules/MaterialShapes` 源码模块。
-- 已有常规 [NavigationRail / NavigationRailItem](../src/Material3Expressive/Components/NavigationRail/README.md) 和
-  [WideNavigationRail / ModalWideNavigationRail / WideNavigationRailItem](../src/Material3Expressive/Components/WideNavigationRail/README.md)。
-  Modal 使用当前 TopLevel 的 PopupOverlayLayer，通过组件自己的 Popup 和共享 ModalPresenter 接入。
-  自定义 Window 模板需包含 `PART_VisualLayerManager`；普通 Content 内的 OverlayLayer 不满足该条件。
-  Dialog 的关闭请求、退出保留和焦点约束见 [Overlays](../src/Material3Expressive/Foundation/Overlays/README.md)。
-  [BasicAlertDialog / AlertDialog](../src/Material3Expressive/Components/AlertDialog/README.md) 继承 Dialog 的宿主，
-  组件提供 Material 尺寸、Surface、内容环境和按钮排列；默认平台宽度由 Foundation 限制。
-  组件负责输入阻挡、焦点限制/恢复及展开内容迁移；各组件的验证范围与保留问题见对应说明。
-- [NavigationDrawer](../src/Material3Expressive/Components/NavigationDrawer/README.md) 的三种容器保留上游本地组合：
-  Modal 覆盖页面，Dismissible 推动原宽度页面，Permanent 分配剩余宽度。
-  Hoisted DrawerState 承担锚点、拖动和开关；可选 Sheet.State 接入过冲与离散 BackRequested。
-  它不接入 Rail/Dialog 的 Popup 模态宿主；内容、排版、物理 Insets 和 Surface 消费现有共享能力。
-- 原有 Material 动画规则的源码核对基于 AndroidX `ff0a0a99c4f0cfe95d75d5df615e51d399575922`。
-  当时记录了状态层 15/45/150ms 淡入淡出、ripple 75ms 进入透明度与 225ms 扩张/中心移动、
-  释放后的 150ms 淡出；快速点击仍完成扩张。按压圆角使用 DefaultEffects（damping 1、stiffness 1600）。
-  Elevation 进入为 120ms FastOutSlowIn，退出为 150ms（hover 120ms）Bezier(0.4, 0, 0.6, 1)，
-  初始和禁用状态直接到目标。这些是原基线记录，不能据此宣称已完成对当前目标的全面对齐。
-- [基线核验记录](UPSTREAM_BASELINE.md)保存了版本间的部分源码差异，协调版本时可查阅；ComposeAnimation 的新基线协调仍待完成。
-  ripple 使用 common/desktop 路径，Android 原生 RippleDrawable 是另一个参考路径。
-- 当前有 Token、主题、交互、生命周期与渲染等测试；[动画生命周期测试](../tests/Material3Expressive.Tests/AnimationLifetimeTests.cs)
-  和 [motion 测试](../tests/Material3Expressive.Tests/MotionTests.cs)可作为已有检查入口。
-  TestSupport 的 `AdvanceBy` 每次发送一个帧，不插入起始帧；跟踪任务的异常应在推进和释放时暴露。
-  测试存在不代表本轮已运行，也不代表 Compose 视觉对比或真实桌面交互已经验收。
-- [视觉一致性系统](../tests/VisualParity/README.md)使用独立的双端用例入口，作者显式构建场景、推进时钟和提交测量快照。
-  每个组件通过独立测试类与 suite/scenario 标记自动发现，C# 数据源定义具体用例。
-  prepare-reference 在单 JVM 中批量准备并发布参考清单；run 固定参考身份、重新顺序采集 Avalonia，不启动 JVM。
-  身份和具体 config 冻结为 JSON，构建二进制按内容固定；每次捕获使用新测试类实例和宿主。
-  采集证据与比较分离，recompare 可只重算既有结果。运行进度追加记录，结束时一次性生成完整索引。
-  不维护手写用例 JSON，不定义通用场景或输入语言。Agent 读取用例概览和逐采样点详情，开发者可使用 HTML 报告。
-  可选宿主将动画帧、框架绘制和被动捕获分开；系统重复性与组件一致性分别验证，不使用容差或文字遮罩消除差异。
-  [用例编写](../tests/VisualParity/AUTHORING.md)说明接入与执行边界；[测量语义](../tests/VisualParity/MEASUREMENTS.md)说明事实与比较含义。
-  全新克隆与 CI 的依赖限制见 [README](../README.md#本地开发)。
+- **弹层宿主**：模态弹窗通过顶层窗口的 `PART_VisualLayerManager` 接入统一的覆盖图层，共享遮罩与输入阻挡行为。
+- **平滑滚动**：为滚动容器提供物理惯性支持，滚动条与视口测量保留原生行为，通过统一的增量接入点处理位移积分。
+- **视口联动**：应用栏等顶部栏目通过滚动作用域与主滚动视口建立协同，在统一帧周期内分配栏目收起位移与正文位移，实现无缝折叠联动。

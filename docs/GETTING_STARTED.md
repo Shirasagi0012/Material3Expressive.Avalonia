@@ -48,8 +48,8 @@ MaterialShapes、Shadow、Roboto 与主库，再按依赖顺序推送至 GitHub 
 
 ## 最小桌面应用
 
-以下示例放在本仓库 `examples/HelloMaterial/`，因此继承根目录的中央包版本与包源配置。
-复制到仓库外时，需要按实际位置调整项目路径，并为应用配置同一组中央版本与 NuGet 包源；
+以下为最小桌面应用的工程文件结构示例。
+复制到独立项目时，需要按实际位置调整项目路径，并为应用配置同一组中央版本与 NuGet 包源；
 不要把省略 `Version` 的 PackageReference 单独复制到没有中央版本管理的项目。
 
 ### HelloMaterial.csproj
@@ -159,7 +159,7 @@ internal static class Program
 
 ### MainWindow.axaml.cs
 
-每个窗口（TopLevel）在加载 XAML/内容前初始化动画作用域。不要把下面的调用遗漏为纯主题配置，
+每个 TopLevel 窗口在加载 XAML 或内容前初始化动画作用域。不要把下面的调用遗漏为纯主题配置，
 也不要为每个 Button / TextBox 各建根作用域。
 
 ```csharp
@@ -172,7 +172,7 @@ public partial class MainWindow : Window
 {
     public MainWindow()
     {
-        VisualAnimationScope.Initialize(this);
+        AnimationScope.Initialize(this);
         InitializeComponent();
     }
 }
