@@ -36,6 +36,6 @@
     
     <PackageVersion Include="Shirasagi0012.MaterialColorUtilities" Version="0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c" />
     <PackageVersion Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" Version="0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81" />
-    <PackageVersion Include="Shirasagi0012.SmoothScroll.Avalonia" Version="12.0.0" />
+    <PackageVersion Include="Shirasagi0012.SmoothScroll.Avalonia" Version="12.0.0.1" />
   </ItemGroup>
 </Project>

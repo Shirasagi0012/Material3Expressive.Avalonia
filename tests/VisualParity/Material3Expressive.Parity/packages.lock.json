@@ -132,8 +132,8 @@
       },
       "Shirasagi0012.SmoothScroll.Avalonia.Interaction": {
         "type": "Transitive",
-        "resolved": "12.0.0",
-        "contentHash": "eoOxYJznVAw5u+8xOOQsoPwCQlmjx2/65xgbp8CW/3g/Ys1wWJTWDFVJ0oDi3nQIIgItMxU+oo5UxpxWhhfQJA==",
+        "resolved": "12.0.0.1",
+        "contentHash": "ch7R27aVSIArgi17K31HqUa2zf+KrQQXeUMplTNN5rdyyVhSHjAdtMw6EaIDYWTBfg1VKqOIxW26cx/cBrCTCA==",
         "dependencies": {
           "Avalonia": "12.0.0"
         }
@@ -142,7 +142,7 @@
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.2, )",
-          "Shirasagi0012.ComposeAnimation.Runtime": "[0.2.9-alpha, )"
+          "Shirasagi0012.ComposeAnimation.Runtime": "[0.3.1-alpha, )"
         }
       },
       "Shirasagi0012.ComposeAnimation.Runtime": {
@@ -155,7 +155,7 @@
       "Shirasagi0012.ComposeAnimation.TestSupport": {
         "type": "Project",
         "dependencies": {
-          "Shirasagi0012.ComposeAnimation.Avalonia": "[0.2.9-alpha, )"
+          "Shirasagi0012.ComposeAnimation.Avalonia": "[0.3.1-alpha, )"
         }
       },
       "Shirasagi0012.Material3Expressive.Avalonia": {
@@ -163,12 +163,12 @@
         "dependencies": {
           "Avalonia": "[12.1.2, )",
           "PropertyGenerator.Avalonia": "[1.3.1, )",
-          "Shirasagi0012.ComposeAnimation.Avalonia": "[0.2.9-alpha, )",
+          "Shirasagi0012.ComposeAnimation.Avalonia": "[0.3.1-alpha, )",
           "Shirasagi0012.Material3Expressive.Avalonia.Shadow": "[0.0.2, )",
           "Shirasagi0012.MaterialColorUtilities": "[0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c, )",
           "Shirasagi0012.MaterialShapes": "[0.1.3-alpha, )",
           "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": "[0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81, )",
-          "Shirasagi0012.SmoothScroll.Avalonia": "[12.0.0, )"
+          "Shirasagi0012.SmoothScroll.Avalonia": "[12.0.0.1, )"
         }
       },
       "Shirasagi0012.Material3Expressive.Avalonia.Shadow": {
@@ -247,12 +247,12 @@
       },
       "Shirasagi0012.SmoothScroll.Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.0.0, )",
-        "resolved": "12.0.0",
-        "contentHash": "im6ITcg1cECQBT/OkiulJAwqqS1atahZ9QNN/ENbdUFNc+QRpP4mM2S2cJUBY4Xq+fRpZ7IrCsLf57QPgez50g==",
+        "requested": "[12.0.0.1, )",
+        "resolved": "12.0.0.1",
+        "contentHash": "4czo3LGWL0gSFfalkVvJT/PU9pLeP8rlLknvyh2PXLPdTSC1/yXI7v5Atdxq6Z3H9aAV7QHWrlWrqlQBQP7O4Q==",
         "dependencies": {
           "Avalonia": "12.0.0",
-          "Shirasagi0012.SmoothScroll.Avalonia.Interaction": "12.0.0"
+          "Shirasagi0012.SmoothScroll.Avalonia.Interaction": "12.0.0.1"
         }
       },
       "SkiaSharp": {
