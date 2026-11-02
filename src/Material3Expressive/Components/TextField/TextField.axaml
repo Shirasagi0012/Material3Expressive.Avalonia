@@ -43,9 +43,9 @@
                               m3:MaterialText.Style="{Binding LargeTextStyle, ElementName=PART_Decoration}" />
             <ContentPresenter Name="FloatingLabelStyle" IsVisible="False" IsHitTestVisible="False"
                               m3:MaterialText.Style="{Binding SmallTextStyle, ElementName=PART_Decoration}" />
-            <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
+            <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialSymbol.DefaultSize="24"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
-            <m3:TextFieldIconPresenter Name="Trailing" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
+            <m3:TextFieldIconPresenter Name="Trailing" MinWidth="48" MinHeight="48" m3:MaterialSymbol.DefaultSize="24"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
             <ContentPresenter Name="Prefix" Content="{TemplateBinding m3:MaterialTextField.Prefix}" ContentTemplate="{TemplateBinding m3:MaterialTextField.PrefixTemplate}"
                               MinHeight="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" TextWrapping="Wrap" />

@@ -84,7 +84,7 @@ MaterialSymbols 需要的 SkiaSharp 托管与原生包由中央包版本统一�
 显式模板也支持 Icon 为 null，可用于固定图标；是否占用槽空间应同时检查内容与模板。
 `IconTemplate` 是创建控件的蓝图，可以复用；一个图标 Control 不能同时挂到多个槽。
 
-`MaterialIcon.DefaultSize` 是可继承的尺寸提示，默认 24 DIP；组件只在实际图标呈现位置提供自身默认值。
+`MaterialSymbol.DefaultSize` 是可继承的尺寸提示，默认 24 DIP；组件只在实际图标呈现位置提供自身默认值。
 `MaterialSymbol` 测量时读取它并受可用布局尺寸约束，显式 Width / Height 优先于提示，仍遵守槽的布局约束。
 它不写入 Width / Height，不缩放任意控件，也不把整个组件的交互区域变成图标尺寸。
 例如 TextField 的 48 DIP 装饰区域提供 24 DIP 图标默认值，Switch 的 thumb 图标默认 16 DIP。

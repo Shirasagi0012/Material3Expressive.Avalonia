@@ -317,24 +317,24 @@ public class FloatingActionButtonTokenConfigurationTests
         using var clock = new MotionTestClockScope(); var window = Show(new StackPanel { Children = { fab, toggle } });
         try
         {
-            Assert.Equal(36, MaterialIcon.GetDefaultSize(icon));
-            Assert.Equal(36, MaterialIcon.GetDefaultSize(toggleIcon));
+            Assert.Equal(36, MaterialSymbol.GetDefaultSize(icon));
+            Assert.Equal(36, MaterialSymbol.GetDefaultSize(toggleIcon));
             Assert.Equal(16, Part<ExtendedFabLayout>(fab).IconLabelSpace);
             window.Resources[Comp.FabLarge.IconSize] = 42d;
             window.Resources[Comp.ExtendedFabLarge.IconLabelSpace] = 25d;
             Flush(window);
-            Assert.Equal(36, MaterialIcon.GetDefaultSize(icon));
+            Assert.Equal(36, MaterialSymbol.GetDefaultSize(icon));
             Assert.Equal(16, Part<ExtendedFabLayout>(fab).IconLabelSpace);
             window.Resources[Comp.FabLarge.ContentIconSize] = 38d;
             window.Resources[Comp.ExtendedFabLarge.ContentIconLabelSpace] = 18d;
             Flush(window);
-            Assert.Equal(38, MaterialIcon.GetDefaultSize(icon));
+            Assert.Equal(38, MaterialSymbol.GetDefaultSize(icon));
             Assert.Equal(38, toggle.IconSize);
             Assert.Equal(18, Part<ExtendedFabLayout>(fab).IconLabelSpace);
             toggle.IsChecked = true;
             Frames(clock, window, 70);
             Assert.Equal(20, toggle.IconSize);
-            Assert.Equal(38, MaterialIcon.GetDefaultSize(toggleIcon));
+            Assert.Equal(38, MaterialSymbol.GetDefaultSize(toggleIcon));
             Assert.Equal(new Size(11, 13), toggleIcon.Bounds.Size);
             Assert.Equal(new Size(11, 13), icon.Bounds.Size);
         }
@@ -365,7 +365,7 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.Equal(22, layout.TrailingSpace);
             Assert.Equal(new Thickness(30, 0), Part<FabMenuItemLayout>(item).ContentPadding);
             Assert.Equal(20, Part<FabMenuLayout>(menu).HorizontalPadding);
-            Assert.Equal(26, MaterialIcon.GetDefaultSize((Control)item.Icon!));
+            Assert.Equal(26, MaterialSymbol.GetDefaultSize((Control)item.Icon!));
         }
         finally { window.Close(); }
     }
@@ -674,7 +674,7 @@ public class FloatingActionButtonTokenConfigurationTests
             layout.LeadingSpace = 39;
             var localMotion = new MotionSpring(.8, 654);
             layout.ExpandWidthMotion = localMotion;
-            MaterialIcon.SetDefaultSize(iconPresenter, 41);
+            MaterialSymbol.SetDefaultSize(iconPresenter, 41);
             extended.Resources[Comp.ExtendedFabMedium.LeadingSpace] = 31d;
             extended.Resources[Comp.ExtendedFab.WidthMotion] = new MotionSpring(1, 444);
             extended.Resources[Comp.FabMedium.IconSize] = 35d;
@@ -683,16 +683,16 @@ public class FloatingActionButtonTokenConfigurationTests
             Assert.Equal(73, ordinaryLayout.ContainerMinSize);
             Assert.Equal(39, layout.LeadingSpace);
             Assert.Equal(localMotion, layout.ExpandWidthMotion);
-            Assert.Equal(41, MaterialIcon.GetDefaultSize(iconPresenter));
+            Assert.Equal(41, MaterialSymbol.GetDefaultSize(iconPresenter));
             ordinaryLayout.ClearValue(FabLayout.ContainerMinSizeProperty);
             layout.ClearValue(ExtendedFabLayout.LeadingSpaceProperty);
             layout.ClearValue(ExtendedFabLayout.ExpandWidthMotionProperty);
-            iconPresenter.ClearValue(MaterialIcon.DefaultSizeProperty);
+            iconPresenter.ClearValue(MaterialSymbol.DefaultSizeProperty);
             Flush(window);
             Assert.Equal(61, ordinaryLayout.ContainerMinSize);
             Assert.Equal(31, layout.LeadingSpace);
             Assert.Equal(new MotionSpring(1, 444), layout.ExpandWidthMotion);
-            Assert.Equal(35, MaterialIcon.GetDefaultSize(iconPresenter));
+            Assert.Equal(35, MaterialSymbol.GetDefaultSize(iconPresenter));
         }
         finally { window.Close(); }
     }

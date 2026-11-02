@@ -107,7 +107,7 @@ public class IconSlotTests
     {
         var fallback = new Border { Width = 12, Height = 12 };
         var box = new TextBox { InnerLeftContent = fallback };
-        MaterialIcon.SetDefaultSize(box, 64);
+        MaterialSymbol.SetDefaultSize(box, 64);
         var window = Show(box);
         try
         {
@@ -279,7 +279,7 @@ public class IconSlotTests
     public void IconButton_SpecialSymbolApiIgnoresAmbientSizeHint()
     {
         var button = new IconButton { Symbol = MaterialSymbolCodepoint.Home };
-        MaterialIcon.SetDefaultSize(button, 64);
+        MaterialSymbol.SetDefaultSize(button, 64);
         var window = Show(button);
         try { Assert.Equal(new Size(24, 24), button.GetVisualDescendants().OfType<MaterialSymbol>().Single().Bounds.Size); }
         finally { window.Close(); }
@@ -290,7 +290,7 @@ public class IconSlotTests
     {
         var item = new FloatingActionButtonMenuItem { Content = "Create", IconTemplate = SymbolTemplate() };
         var menu = new FloatingActionButtonMenu { Expanded = true, Items = { item } };
-        MaterialIcon.SetDefaultSize(menu, 64);
+        MaterialSymbol.SetDefaultSize(menu, 64);
         var window = Show(menu);
         try { Assert.Equal(new Size(24, 24), item.GetVisualDescendants().OfType<MaterialSymbol>().Single().Bounds.Size); }
         finally { window.Close(); }

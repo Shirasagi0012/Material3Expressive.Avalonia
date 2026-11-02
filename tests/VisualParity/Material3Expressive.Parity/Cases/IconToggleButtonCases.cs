@@ -93,7 +93,7 @@ public sealed class IconToggleButtonCases
         var symbol = button.GetVisualDescendants().OfType<MaterialSymbol>().Single();
         var vector = new VectorSymbol { Symbol = symbol.Symbol, HorizontalAlignment = symbol.HorizontalAlignment, VerticalAlignment = symbol.VerticalAlignment };
         typeof(StyledElement).GetProperty(nameof(StyledElement.TemplatedParent))!.SetValue(vector, symbol.TemplatedParent);
-        vector.SetValue(MaterialIcon.DefaultSizeProperty, MaterialIcon.GetDefaultSize(symbol), BindingPriority.Template);
+        vector.SetValue(MaterialSymbol.DefaultSizeProperty, MaterialSymbol.GetDefaultSize(symbol), BindingPriority.Template);
         surface.Child = vector; host.Draw();
         void Sample(string id) => writer.Submit(host.Snapshot(id, id,
             [new("button", "container", null, AvaloniaMeasurements.Geometry(button, host.Window).Where(m => m.Name is "box" or "size").ToArray()),

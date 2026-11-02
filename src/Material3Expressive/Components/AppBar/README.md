@@ -42,7 +42,7 @@ private void CustomClick(object? sender, RoutedEventArgs e)
 
 Icon / IconTemplate 遵循统一图标槽：`Icon="{m3:Symbol Save}"`、直接 Control、数据模板均可；
 模板非 null 时即使 Icon 为 null 也创建内容。直接 Control 继承外部 DataContext，数据模板
-使用 Icon 数据。默认图标尺寸通过 MaterialIcon.DefaultSize 提供 24 DIP 提示，不缩放自定义控件。
+使用 Icon 数据。默认图标尺寸通过 MaterialSymbol.DefaultSize 提供 24 DIP 提示，不缩放自定义控件。
 
 ItemsSource / ItemTemplate 支持数据集合，模板根须是 AppBarAction、AppBarToggleAction 或
 AppBarCustomItem。自定义项的 Content / ContentTemplate 与 MenuContent / MenuContentTemplate

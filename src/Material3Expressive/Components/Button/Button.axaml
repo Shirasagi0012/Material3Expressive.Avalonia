@@ -97,7 +97,7 @@
                                   ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}"
                                   HorizontalContentAlignment="Center"
                                   VerticalContentAlignment="Center"
-                                  m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
+                                  m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
                 <!-- Internal trailing icon box, bare on purpose: no bindings or token values, so
                      buttons other than DropDownButton only carry an empty zero-size presenter.
                      The global DropDownButton styles at the end of this file fill it. -->
@@ -144,7 +144,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ExtraSmallIconSpacing}}" />
       </Style>
-      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
+      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
 
       <Style Selector="^.medium">
         <Setter Property="m3:ButtonThemeProperties.CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeRound}}" />
@@ -158,7 +158,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
+      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
 
       <Style Selector="^.large">
         <Setter Property="m3:ButtonThemeProperties.CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeRound}}" />
@@ -172,7 +172,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
+      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
 
       <Style Selector="^.xlarge">
         <Setter Property="m3:ButtonThemeProperties.CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeRound}}" />
@@ -186,7 +186,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" /></Style>
+      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" /></Style>
     </ControlTheme>
 
     <!-- Resolve the five heights at the button. Its controller animates the Surface's value. -->
@@ -366,7 +366,7 @@
   <Style Selector="DropDownButton /template/ ContentPresenter#PART_TrailingIconPresenter">
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
+    <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
     <Setter Property="ContentTemplate">
       <DataTemplate>
         <m3:MaterialSymbol Symbol="KeyboardArrowDown" />
@@ -383,15 +383,15 @@
     <Setter Property="m3:ChevronRotation.Angle" Value="180" />
   </Style>
   <Style Selector="DropDownButton.xsmall /template/ ContentPresenter#PART_TrailingIconPresenter">
-    <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
+    <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
   </Style>
   <Style Selector="DropDownButton.medium /template/ ContentPresenter#PART_TrailingIconPresenter">
-    <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
+    <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
   </Style>
   <Style Selector="DropDownButton.large /template/ ContentPresenter#PART_TrailingIconPresenter">
-    <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
+    <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
   </Style>
   <Style Selector="DropDownButton.xlarge /template/ ContentPresenter#PART_TrailingIconPresenter">
-    <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />
+    <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />
   </Style>
 </Styles>

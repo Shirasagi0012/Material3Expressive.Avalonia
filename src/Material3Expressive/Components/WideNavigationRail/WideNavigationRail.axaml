@@ -109,7 +109,7 @@
             <Border RenderOptions.RequiresFullOpacityHandling="True"><Border x:Name="PART_Indicator" /></Border>
             <Border>
               <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
-                                m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.IconSize}}"
+                                m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.IconSize}}"
                                 UseLayoutRounding="True" />
             </Border>
             <Border RenderOptions.RequiresFullOpacityHandling="True">

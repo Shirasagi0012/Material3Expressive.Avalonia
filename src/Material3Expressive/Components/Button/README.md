@@ -162,7 +162,7 @@ M3 没有下拉按钮。原生 `DropDownButton` 未指定 `Theme` 时是 Filled 
 ```
 
 图标默认尺寸随按钮档位为 20/20/24/32/40 DIP，XS 与 Small 的标签间距为 4 DIP，其余档位沿用对应 Button Token。
-`MaterialIcon.DefaultSize` 是可由图标实现消费的尺寸提示；显式 `Width` / `Height` 优先，任意控件内容不会被强制缩放。
+`MaterialSymbol.DefaultSize` 是可由图标实现消费的尺寸提示；显式 `Width` / `Height` 优先，任意控件内容不会被强制缩放。
 只设置图标时不会额外加入标签间距。图标槽不改变默认 `Padding`，也不从任意 `Content` 推断图标。
 需要完全自定义省略号或排列时，仍可把图标和文字组合为普通 `Content`。文字默认值通过
 `MaterialText.DefaultStyle` 传给内容，显式文字设置仍可覆盖；

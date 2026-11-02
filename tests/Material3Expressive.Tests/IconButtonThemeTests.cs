@@ -58,7 +58,7 @@ public class IconButtonThemeTests
         // content color through TextElement.Foreground.
         var symbol = Symbol(button);
         Assert.Equal(MaterialSymbolCodepoint.Home, symbol.Symbol);
-        Assert.Equal(24d, MaterialIcon.GetDefaultSize(symbol));
+        Assert.Equal(24d, MaterialSymbol.GetDefaultSize(symbol));
         Assert.Equal(new Size(24, 24), symbol.Bounds.Size);
         Assert.Equal(button.Foreground, symbol.Foreground);
     }
@@ -134,18 +134,18 @@ public class IconButtonThemeTests
     {
         IconButtonThemeFixture.ShowWindow(out var button);
         Assert.Equal(40d, Layout(button).ContainerMinHeight);
-        Assert.Equal(24d, MaterialIcon.GetDefaultSize(Symbol(button)));
+        Assert.Equal(24d, MaterialSymbol.GetDefaultSize(Symbol(button)));
 
         button.Classes.Add("large");
 
         Assert.Equal(96d, Layout(button).ContainerMinHeight);
         Assert.Equal(96d, Layout(button).ContainerMinWidth);
         Assert.Equal(new CornerRadius(1000), Container(button).CornerRadius);
-        Assert.Equal(32d, MaterialIcon.GetDefaultSize(Symbol(button)));
+        Assert.Equal(32d, MaterialSymbol.GetDefaultSize(Symbol(button)));
 
         button.Classes.Remove("large");
         Assert.Equal(40d, Layout(button).ContainerMinHeight);
-        Assert.Equal(24d, MaterialIcon.GetDefaultSize(Symbol(button)));
+        Assert.Equal(24d, MaterialSymbol.GetDefaultSize(Symbol(button)));
     }
 
     [AvaloniaFact]

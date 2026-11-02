@@ -41,7 +41,7 @@ Vibrant Standard 持有完整模板和原有颜色 Token 配置，普通 Standar
 Filled/Tonal 及两种 Outlined 入口以 BasedOn 修改颜色/描边，隐式主题为普通 Standard。
 模板为 ButtonLayout → MaterialSurface#PART_Container → IconButtonSymbol，没有 ContentPresenter。
 内部 IconButtonSymbol 继承 MaterialSymbol 的绘制及 StyleKey；它局部对应 Compose `size(iconSize)` 的两轴独立约束，
-使用 MaterialIcon.DefaultSize 而不是会溢出父约束的原生 Width/Height，不改变通用 MaterialSymbol 的正方形测量约定。
+使用 MaterialSymbol.DefaultSize 而不是会溢出父约束的原生 Width/Height，不改变通用 MaterialSymbol 的正方形测量约定。
 Symbol=None 保留真实模板与测量，不应通过删除部件模拟空图标。
 Surface 通过 TextElement.Foreground 重新接入 owner 内容色，防止自身隐式主题遮蔽图标色。
 状态选择器顺序 hover < focus-visible < pressed，只选墨色，透明度/ripple 时序仍归共享控制器。

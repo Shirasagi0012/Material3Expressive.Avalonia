@@ -30,7 +30,7 @@ IsChecked/CheckedProgress/CheckedChangeRequested 与 AnimatedVisible。
 - 基类 `Icon` / `IconTemplate` 使用同一 presence 条件（Icon 或模板非空），模板-only 也进入图标路径；Extended FAB
   通过继承复用属性。标准 FAB 无图标时保持 Content/ContentTemplate 的原自定义内容路径，不把普通 Button 的附加属性搬入 FAB
 - 图标 Default/Small、Medium、Large 提示尺寸为 24/28/36 DIP；Large 的 36 是 `FloatingActionButton.kt` 的修正，
-  不回退到 FabLarge 原始 Token 32。显式 Width/Height 优先，`MaterialIcon.DefaultSize` 不强制缩放任意 Control
+  不回退到 FabLarge 原始 Token 32。显式 Width/Height 优先，`MaterialSymbol.DefaultSize` 不强制缩放任意 Control
 - Large 图标 36 DIP、Medium/Large Extended 的 12/16 DIP 间距保留 Composable 修正；不把原 Token 32 与 16/20 改掉
 - Default Extended 使用整数宽度、分开的展开/收起 spring 与 alpha，返回 Visible 的中断默认 spring；Expressive 分支保留浮点宽度进度、FastSpatial/FastEffects，完全收起才移除文字槽
 - 最小交互空间及内部对齐读数遵循[共享决定](../../../../docs/DECISIONS.md#最小交互布局与工具栏对齐读数)，只预留布局空间

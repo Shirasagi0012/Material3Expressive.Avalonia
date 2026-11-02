@@ -33,7 +33,7 @@
               IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
               Content="{TemplateBinding Icon}"
               Foreground="{Binding AnimatedIconColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
-              m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconSize}}" />
+              m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconSize}}" />
           <ContentPresenter x:Name="PART_Label" IsHitTestVisible="False"
               Content="{TemplateBinding Label}"
               Foreground="{Binding AnimatedTextColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
@@ -75,7 +75,7 @@
               IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
               Content="{TemplateBinding Icon}"
               Foreground="{Binding AnimatedIconColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
-              m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconSize}}" />
+              m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconSize}}" />
           <ContentPresenter x:Name="PART_Label" IsHitTestVisible="False"
               Content="{TemplateBinding Label}"
               Foreground="{Binding AnimatedTextColor, ElementName=CommandLayout, Converter={x:Static m3:CommandBarItemLayout.ContentBrushConverter}}"
@@ -112,7 +112,7 @@
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Icon">
           <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
-          <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+          <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Label">
           <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
@@ -135,7 +135,7 @@
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Icon">
           <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
-          <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+          <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Label">
           <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />

@@ -62,7 +62,7 @@
                     m3:MaterialText.Style="{Binding LargeTextStyle, ElementName=Background}" />
                 <ContentPresenter Name="FloatingLabelStyle" IsVisible="False" IsHitTestVisible="False"
                     m3:MaterialText.Style="{Binding SmallTextStyle, ElementName=Background}" />
-                <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialIcon.DefaultSize="24"
+                <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialSymbol.DefaultSize="24"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
                 <m3:ComboBoxInputHost Name="Editor" MinHeight="24">
                   <ContentControl Content="{TemplateBinding SelectionBoxItem}"

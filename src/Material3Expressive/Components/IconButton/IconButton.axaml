@@ -66,7 +66,7 @@
                               CornerRadius="{TemplateBinding CornerRadius}"
                               PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
             <m3:IconButtonSymbol Symbol="{TemplateBinding Symbol}"
-                               m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
+                               m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
           </m3:MaterialSurface>
@@ -120,7 +120,7 @@
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.ContainerHeight}}" />
       </Style>
       <Style Selector="^.xsmall /template/ m3|MaterialSymbol">
-        <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.IconSize}}" />
+        <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXSmall.IconSize}}" />
       </Style>
 
       <Style Selector="^.medium">
@@ -141,7 +141,7 @@
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.ContainerHeight}}" />
       </Style>
       <Style Selector="^.medium /template/ m3|MaterialSymbol">
-        <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.IconSize}}" />
+        <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonMedium.IconSize}}" />
       </Style>
 
       <Style Selector="^.large">
@@ -162,7 +162,7 @@
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.ContainerHeight}}" />
       </Style>
       <Style Selector="^.large /template/ m3|MaterialSymbol">
-        <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.IconSize}}" />
+        <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonLarge.IconSize}}" />
       </Style>
 
       <Style Selector="^.xlarge">
@@ -183,7 +183,7 @@
         <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.ContainerHeight}}" />
       </Style>
       <Style Selector="^.xlarge /template/ m3|MaterialSymbol">
-        <Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.IconSize}}" />
+        <Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonXLarge.IconSize}}" />
       </Style>
 
       <!-- Explicit shape presets leave the fixed default and user configuration intact. -->

@@ -31,7 +31,7 @@
                                 TextElement.Foreground="{TemplateBinding Foreground}"
                                 CornerRadius="{TemplateBinding CornerRadius}">
               <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                                m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
+                                m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
             </m3:MaterialSurface>
           </m3:ButtonLayout>

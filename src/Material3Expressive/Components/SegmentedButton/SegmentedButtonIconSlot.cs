@@ -109,7 +109,7 @@ internal sealed class SegmentedButtonIconSlot : Decorator
             foreach (var presenter in _icons.OfType<ContentPresenter>())
             {
                 presenter.FlowDirection = owner.FlowDirection;
-                MaterialIcon.SetDefaultSize(presenter, IconSize);
+                MaterialSymbol.SetDefaultSize(presenter, IconSize);
             }
             if (_selection!.TargetState != owner.IsSelected)
             {
@@ -151,7 +151,7 @@ internal sealed class SegmentedButtonIconSlot : Decorator
         }
         var presenter = new ContentPresenter { FlowDirection = owner.FlowDirection, Content = active ? owner.ActiveIcon : owner.InactiveIcon,
             ContentTemplate = active ? owner.ActiveIconTemplate : owner.InactiveIconTemplate };
-        MaterialIcon.SetDefaultSize(presenter, IconSize);
+        MaterialSymbol.SetDefaultSize(presenter, IconSize);
         return _icons[index] = presenter;
     }
     private sealed class Checkmark(double size) : Control

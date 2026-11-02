@@ -53,7 +53,7 @@ Enter 按下激活，`Space` 默认松开激活。
               m3:SwitchAppearance.ThumbIcon="{m3:Symbol Check}" />
 ```
 
-`MaterialSymbol` 和文字继承当前 iconColor。拇指槽的 `MaterialIcon.DefaultSize` 提示值为 16 DIP；
+`MaterialSymbol` 和文字继承当前 iconColor。拇指槽的 `MaterialSymbol.DefaultSize` 提示值为 16 DIP；
 它只决定支持该上下文的图标默认尺寸，不固定拇指背景尺寸。测量仍按内容的实际 `DesiredSize`
 判断是否有内容：有非零宽高时拇指目标为 24 DIP；空模板保持零尺寸时仍按无内容处理。
 自定义 Path 可绑定同一内容环境：

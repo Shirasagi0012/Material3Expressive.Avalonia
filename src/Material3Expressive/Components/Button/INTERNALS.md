@@ -102,7 +102,7 @@ ButtonLayout 分开处理可见容器的默认最小值与外层 48 DIP 留白�
 或非空 IconTemplate；Icon-only 不占标签间距。图标提示尺寸为 XS/S/M/L/XL 20/20/24/32/40 DIP，
 标签间距沿用 `iconSpacingFor`：XS 为 4 DIP，其余取各档 Button Token。图标按逻辑 leading 排列，
 其与标签间距从标签 Padding 的内容边缘计算；无图标时沿用原 presenter 测量、分配、约束与 access key 流程。
-显式图标尺寸优先于 `MaterialIcon.DefaultSize`，任意 Control 不会因此被缩放。
+显式图标尺寸优先于 `MaterialSymbol.DefaultSize`，任意 Control 不会因此被缩放。
 
 ### DropDownButton 尾部箭头
 

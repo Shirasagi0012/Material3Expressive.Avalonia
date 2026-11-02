@@ -83,19 +83,19 @@ public class MaterialSymbolTests
         var symbol = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Home,
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         var host = new Border { Child = symbol };
-        MaterialIcon.SetDefaultSize(host, 32);
+        MaterialSymbol.SetDefaultSize(host, 32);
         var window = Show(host);
         Assert.Equal(new Size(32, 32), symbol.Bounds.Size);
         Assert.Equal(32, symbol.ResolvedVariation.OpticalSize);
         Assert.True(double.IsNaN(symbol.Width));
         Assert.True(double.IsNaN(symbol.Height));
 
-        MaterialIcon.SetDefaultSize(host, 18);
+        MaterialSymbol.SetDefaultSize(host, 18);
         window.UpdateLayout();
         Assert.Equal(new Size(18, 18), symbol.Bounds.Size);
         host.Child = null;
         var other = new Border { Child = symbol };
-        MaterialIcon.SetDefaultSize(other, 40);
+        MaterialSymbol.SetDefaultSize(other, 40);
         window.Content = other;
         window.UpdateLayout();
         Assert.Equal(new Size(40, 40), symbol.Bounds.Size);
@@ -106,7 +106,7 @@ public class MaterialSymbolTests
     public void SlotDefaultSize_RespectsConstraintsAndExplicitDimensions()
     {
         var symbol = new MaterialSymbol();
-        MaterialIcon.SetDefaultSize(symbol, 40);
+        MaterialSymbol.SetDefaultSize(symbol, 40);
         symbol.Measure(new Size(16, 30));
         Assert.Equal(new Size(16, 16), symbol.DesiredSize);
         symbol.Width = 50;
@@ -121,7 +121,7 @@ public class MaterialSymbolTests
     public void StretchLayout_FillsAllocationAndAutoOpticalSizeUsesActualBounds()
     {
         var symbol = new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Home };
-        MaterialIcon.SetDefaultSize(symbol, 18);
+        MaterialSymbol.SetDefaultSize(symbol, 18);
         symbol.Measure(new Size(32, 40));
         Assert.Equal(new Size(18, 18), symbol.DesiredSize);
         symbol.Arrange(new Rect(0, 0, 32, 40));
@@ -153,7 +153,7 @@ public class MaterialSymbolTests
 
         var template = ((ContentControl)panel.Children[2]).ContentTemplate!;
         var templateSymbol = panel.Children[2].GetVisualDescendants().OfType<MaterialSymbol>().Single();
-        Assert.Equal(32, MaterialIcon.GetDefaultSize(templateSymbol));
+        Assert.Equal(32, MaterialSymbol.GetDefaultSize(templateSymbol));
         var first = Assert.IsType<ContentControl>(template.Build(null));
         var second = Assert.IsType<ContentControl>(template.Build(null));
         Assert.NotSame(first.Content, second.Content);

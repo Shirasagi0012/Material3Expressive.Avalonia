@@ -65,7 +65,7 @@ Wide 和 Modal 共用这一 Item 模板，展开、收起及位置动画期间�
   真正脱离或 hidden 内容重新挂载时 Dispose，下一次挂载按当前目标新建身份，不播放收起到展开的进入动画。
   标签透明度为 `4 * (progress - .5)^2`；padding 插值裁到 0..1，布局保留空间 spring 过冲。
   Top 标签样式在目标 Top 且进度小于 .5 时为 LabelMedium，其余为 LabelLarge。
-- Icon presenter 将 WideNavigationRail.IconSize Token 24 DIP 作为 MaterialIcon.DefaultSize 传给无显式尺寸的
+- Icon presenter 将 WideNavigationRail.IconSize Token 24 DIP 作为 MaterialSymbol.DefaultSize 传给无显式尺寸的
   MaterialSymbol；组件不为用户图标施加固定宽高约束。
 - Item 复用共享交互控制器和 Surface ripple。目标 Top 时按实际 item 宽、56 DIP 指示器宽和固定 12 DIP 纵向偏移映射按压；
   目标 Start 时不映射。默认焦点呈现使用固定 Compose 的 opacity 状态层。

@@ -34,7 +34,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 颜色按状态即时选取；默认禁用色预合成 Surface，显式 SwitchColors 已是最终色。
 
 `ThumbIcon` / `ThumbIconTemplate` 保留 Compose 的内容数据模板语义；模板可在 `ThumbIcon` 为 null 时创建固定图形。
-`MaterialIcon.DefaultSize=16` 仅为 MaterialSymbol 提供继承尺寸提示。布局仍使用真实内容的 `DesiredSize`
+`MaterialSymbol.DefaultSize=16` 仅为 MaterialSymbol 提供继承尺寸提示。布局仍使用真实内容的 `DesiredSize`
 判定 `hasContent`，因此空模板没有非零首选尺寸时不会把拇指扩展到 24 DIP。
 旧 `ThumbContent` 字段 / C# 访问器别名指向相同 Avalonia 属性，但注册名称是规范的 `ThumbIcon`；
 反射绑定按名称解析时应使用新名称，不能据属性身份相同推断旧反射路径继续有效。

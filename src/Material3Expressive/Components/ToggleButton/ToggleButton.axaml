@@ -55,7 +55,7 @@
           <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}" ContainerMinWidth="0" ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}">
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" m3:ButtonSurfaceState.IsChecked="{TemplateBinding IsChecked}" m3:ButtonSurfaceState.CheckedCornerRadius="{TemplateBinding m3:ToggleButtonAppearance.CheckedCornerRadius}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ShapeAnimation}}" m3:ButtonSurfaceState.BorderWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.BorderWidthAnimation}}" m3:ButtonSurfaceState.BorderColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.BorderColorAnimation}}" m3:ButtonSurfaceState.AnimateBorder="True">
               <m3:ButtonContentRow IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
-                <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
+                <ContentPresenter x:Name="PART_IconPresenter" Content="{TemplateBinding m3:MaterialButton.Icon}" ContentTemplate="{TemplateBinding m3:MaterialButton.IconTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}" />
                 <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" TextWrapping="{TemplateBinding TextBlock.TextWrapping}" />
               </m3:ButtonContentRow>
             </m3:MaterialSurface>
@@ -75,7 +75,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.ExtraSmallIconSpacing}}" />
       </Style>
-      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
+      <Style Selector="^.xsmall /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" /></Style>
       <Style Selector="^.medium">
         <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContentPadding}}" />
         <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerShapeSquare}}" />
@@ -89,7 +89,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
+      <Style Selector="^.medium /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" /></Style>
       <Style Selector="^.large">
         <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContentPadding}}" />
         <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerShapeSquare}}" />
@@ -103,7 +103,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
+      <Style Selector="^.large /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" /></Style>
       <Style Selector="^.xlarge">
         <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContentPadding}}" />
         <Setter Property="m3:ButtonThemeProperties.CheckedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerShapeSquare}}" />
@@ -117,7 +117,7 @@
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />
         <Setter Property="IconSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconLabelSpace}}" />
       </Style>
-      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialIcon.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" /></Style>
+      <Style Selector="^.xlarge /template/ ContentPresenter#PART_IconPresenter"><Setter Property="m3:MaterialSymbol.DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" /></Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialTonalToggleButtonTheme" TargetType="ToggleButton" BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
       <Setter Property="Background">

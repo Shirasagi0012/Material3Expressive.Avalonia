@@ -13,7 +13,7 @@ internal class IconButtonSymbol : MaterialSymbol
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var size = MaterialIcon.GetDefaultSize(this);
+        var size = MaterialSymbol.GetDefaultSize(this);
         return new Size(Math.Min(availableSize.Width, size), Math.Min(availableSize.Height, size));
     }
 }

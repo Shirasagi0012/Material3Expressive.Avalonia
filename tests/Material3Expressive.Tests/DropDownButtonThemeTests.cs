@@ -112,7 +112,7 @@ public sealed class DropDownButtonThemeTests
             Assert.Equal(default, trailing.Bounds.Size);
             Assert.Equal(0, TokenBindingCounter.Count(trailing));
             Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(ContentPresenter.ContentTemplateProperty).Priority);
-            Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(MaterialIcon.DefaultSizeProperty).Priority);
+            Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(MaterialSymbol.DefaultSizeProperty).Priority);
             Assert.Null(Animated.GetProperties(trailing));
         }
         // A plain Button and a RepeatButton carry the same {m3:Token} bindings.

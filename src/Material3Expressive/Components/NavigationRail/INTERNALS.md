@@ -34,7 +34,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 - `NavigationRailItemLayout` 翻译 placeIcon / placeLabelAndIcon：独立测量 icon、label、
   动画指示器与完整 ripple 区域；保留实际 icon 尺寸推导 pill、至少 4 DIP 垂直留白、
   受约束布局和按物理像素舍入。selected-only label 在 sizeProgress 为零时不绘制。
-- Icon presenter 将 NavigationRail.IconSize Token 24 DIP 作为 MaterialIcon.DefaultSize 传给无显式尺寸的
+- Icon presenter 将 NavigationRail.IconSize Token 24 DIP 作为 MaterialSymbol.DefaultSize 传给无显式尺寸的
   MaterialSymbol；自定义图标仍按实际测量值布局，不通过外层尺寸属性裁限。
 - Item 的 icon/text 颜色、指示器透明度和尺寸通过共享 `SelectionIndicatorAnimation` 使用四条 `AnimatedState`。
   EffectsDefault 控制颜色与透明度，SpatialFast 控制尺寸；尺寸只下限裁到零，保留过冲。

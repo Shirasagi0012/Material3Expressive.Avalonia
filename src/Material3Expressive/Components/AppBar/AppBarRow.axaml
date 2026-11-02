@@ -14,7 +14,7 @@
                             PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
           <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
-                            m3:MaterialIcon.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}" />
+                            m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}" />
         </m3:MaterialSurface>
       </m3:ButtonLayout>
     </ControlTemplate>

@@ -20,7 +20,7 @@
 
 后续片段使用相同命名空间。`Icon` / `IconTemplate` 是 FAB 的独立图标槽；未设置二者时继续显示普通
 `Content` / `ContentTemplate`，设置任一图标属性后显示图标槽。图标默认尺寸为 Default/Small 24、Medium 28、
-Large 36 DIP，`MaterialIcon.DefaultSize` 提示由图标实现消费，显式 `Width` / `Height` 优先。
+Large 36 DIP，`MaterialSymbol.DefaultSize` 提示由图标实现消费，显式 `Width` / `Height` 优先。
 
 ## 尺寸与 Extended 内容
 
@@ -32,7 +32,7 @@ Large 36 DIP，`MaterialIcon.DefaultSize` 提示由图标实现消费，显式 `
 | Large | 96 × 96 DIP | 96 DIP | 36 DIP |
 
 尺寸用 `Size`，不是普通 Button 的尺寸 class。图标槽的默认尺寸由主题绑定到
-`MaterialIcon.DefaultSize`；Large 使用独立的 `MaterialTokens.Comp.FabLarge.ContentIconSize`，
+`MaterialSymbol.DefaultSize`；Large 使用独立的 `MaterialTokens.Comp.FabLarge.ContentIconSize`，
 保留 Composable 的 36 DIP 修正，原始 `IconSize` Token 仍为 32 DIP。
 
 ```xml

@@ -133,7 +133,7 @@ internal sealed class ChipIconSlot : Decorator
             presenter.Content = content; presenter.ContentTemplate = template;
             presenter.UpdateChild();
             presenter.InvalidateMeasure(); border.InvalidateMeasure();
-            MaterialIcon.SetDefaultSize(presenter, avatar ? AvatarSize : IconSize);
+            MaterialSymbol.SetDefaultSize(presenter, avatar ? AvatarSize : IconSize);
             border.Measure(Size.Infinity);
             _fullWidth = MathUtils.DipToPx(border.DesiredSize.Width, LayoutHelper.GetLayoutScale(this));
             // Retain the provider and avatar wrapper as well as the content on exit.

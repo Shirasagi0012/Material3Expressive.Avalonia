@@ -40,7 +40,7 @@
                                  Margin="12,0,0,0"
                                  VerticalAlignment="Center"
                                  Symbol="KeyboardArrowDown"
-                                 m3:MaterialIcon.DefaultSize="24"
+                                 m3:MaterialSymbol.DefaultSize="24"
                                  Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
               <ContentPresenter x:Name="PART_ContentPresenter"
                                 Content="{TemplateBinding Content}"
