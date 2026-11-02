@@ -92,7 +92,9 @@ AppBar 自己不发出导航或动作事件。绑定命令时由 DataContext 提
 
 普通 Medium/Large 的上游入口没有副标题；带副标题时使用 Small、Flexible 或 TwoRows。
 TitleHorizontalAlignment 的 Left / Right 表示逻辑 Start / End；Center 相对整栏居中并避让两侧。
-双行 ExpandedHeight / CollapsedHeight 应有限且展开高度不小于折叠高度；ExpandedHeight 的 NaN / 正无穷使用默认值。
+双行 ExpandedHeight / CollapsedHeight 的 NaN / 正无穷都使用当前变体的默认值；归一化后应有限且展开高度不小于折叠高度。
+例如 `bar.CollapsedHeight = double.NaN` 会跟随 `Comp.AppBar.CollapsedHeight` 的实时资源值，
+不会把 NaN 写回为常量；`bar.ClearValue(TopAppBar.CollapsedHeightProperty)` 则恢复主题绑定。
 双行控件不以 ContentPadding 改写固定的双行布局。
 
 `Title`、`Subtitle`、`NavigationIcon` 各有对应的 `...Template`；`Items` / `ItemsSource` /

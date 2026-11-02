@@ -258,6 +258,16 @@ public class TopAppBar : ItemsControl
 
     internal double EffectiveExpandedHeight =>
         double.IsNaN(ExpandedHeight) || double.IsPositiveInfinity(ExpandedHeight) ? DefaultExpandedHeight : ExpandedHeight;
+
+    internal static readonly StyledProperty<double> DefaultCollapsedHeightProperty =
+        AvaloniaProperty.Register<TopAppBar, double>(nameof(DefaultCollapsedHeight));
+    internal double DefaultCollapsedHeight
+    {
+        get => GetValue(DefaultCollapsedHeightProperty);
+        set => SetValue(DefaultCollapsedHeightProperty, value);
+    }
+    internal double EffectiveCollapsedHeight =>
+        double.IsNaN(CollapsedHeight) || double.IsPositiveInfinity(CollapsedHeight) ? DefaultCollapsedHeight : CollapsedHeight;
     internal double TitleBottomPadding =>
         Variant is TopAppBarVariant.Medium or TopAppBarVariant.MediumFlexible
             ? 24

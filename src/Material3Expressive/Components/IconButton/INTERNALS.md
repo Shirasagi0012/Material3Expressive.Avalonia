@@ -1,6 +1,6 @@
 # IconButton 实现说明
 
-使用方法见 [README](README.md)。四种主题共享 IconButton 类与 ButtonLayout/Surface，Symbol 是默认模板的内容入口。
+使用方法见 [README](README.md)。普通四种外观及两个 Vibrant 入口共享 IconButton 类与 ButtonLayout/Surface，Symbol 是默认模板的内容入口。
 
 ## 固定上游与本地入口
 
@@ -33,23 +33,35 @@ XS 的 32 DIP 是主题选出的 Width/Height 默认值；普通 Style 可以改
 class 和资源恢复。ButtonLayout 的共享 48 DIP 留白来自 `Comp.Button.MinimumInteractiveSize`，
 容器宽高仍由 IconButton 自己的尺寸 Token 提供，不能误用普通 Button 的 58 DIP 容器最小宽。
 资源、主题或挂载作用域改变时保留实时 Token 绑定；形状动画的当前呈现不写回配置属性。
-此组织按维护者 2026-10-05 的配置迁移确认实施，不解决或追认下文的 ambient 颜色、描边和受限图标差异。
+此组织沿用维护者 2026-10-05 的配置迁移确认；ambient 颜色迁移另见下方 2026-11-03 决定。
 
 ## 模板与布局不变量
 
-Standard 主题持有完整模板，Filled/Tonal/Outlined 以 BasedOn 修改颜色/描边；隐式主题为 Standard。
-模板为 ButtonLayout → MaterialSurface#PART_Container → MaterialSymbol，没有 ContentPresenter。
+Vibrant Standard 持有完整模板和原有颜色 Token 配置，普通 Standard 派生后改用 ambient；
+Filled/Tonal 及两种 Outlined 入口以 BasedOn 修改颜色/描边，隐式主题为普通 Standard。
+模板为 ButtonLayout → MaterialSurface#PART_Container → IconButtonSymbol，没有 ContentPresenter。
+内部 IconButtonSymbol 继承 MaterialSymbol 的绘制及 StyleKey；它局部对应 Compose `size(iconSize)` 的两轴独立约束，
+使用 MaterialIcon.DefaultSize 而不是会溢出父约束的原生 Width/Height，不改变通用 MaterialSymbol 的正方形测量约定。
 Symbol=None 保留真实模板与测量，不应通过删除部件模拟空图标。
 Surface 通过 TextElement.Foreground 重新接入 owner 内容色，防止自身隐式主题遮蔽图标色。
 状态选择器顺序 hover < focus-visible < pressed，只选墨色，透明度/ripple 时序仍归共享控制器。
 
-尺寸采用 32/40/56/96/136 DIP 容器、20/24/24/32/40 DIP 图标。
+尺寸采用 32/40/56/96/136 DIP 容器高度、20/24/24/32/40 DIP 图标。
+WidthOption 的宽度由图标尺寸加所选两侧间距组成；Uniform 保留固定上游把 LeadingSpace 相加两次的表达。
+IconButtonThemeProperties.ContainerWidth 是主题内部候选，ButtonLayout 与 XS 外层 Width 消费同一值。
+Small 保留已确认的最小 48 DIP 外层；其非 Uniform 的 Compose 对应调用为
+`Modifier.minimumInteractiveComponentSize().size(IconButtonDefaults.smallContainerSize(widthOption))`，
+与上游窄按钮样例的布局组合一致。其余尺寸沿用原来的 size helper 约束。
 Small 默认容器 40、外层 48；XS 通过 owner Width/Height 的主题默认 32 约束，对应上游 size(32dp)。
 ButtonLayout 持有默认容器尺寸而非写 owner MinWidth/MinHeight，不能用公开最小值重建布局。
 受限布局要保留正常容器与外层的分别取整；说明与确认范围见
 [最小交互布局](../../../../docs/DECISIONS.md#最小交互布局与工具栏对齐读数)。
 
-默认固定形状，显式 PressedCornerRadius 才形变；尺寸 class 只改变默认静止形状，不覆盖用户局部值。
+默认固定形状；显式 PressedCornerRadius 或 opt-in morph class 才启用按压目标。
+square / morph 与尺寸 class 组合后分别选择 ContainerShapeSquare、PressedContainerShape 和
+SelectedContainerShapeRound/Square，选中形状保留上游 round/square 互换关系。
+条件样式只修改内部候选，公开配置通过主题 Setter 绑定消费，所以普通用户 Style、局部值、
+可空目标的显式 null 都能覆盖；移除 class 后恢复默认。所有配置仍实时跟随 Token。
 共享形状的反向、第三目标和生命周期细节见 [Button 维护说明](../Button/INTERNALS.md#交互与动画职责)，
 替换模板时不得留下旧 Surface 交互或动画绑定。
 
@@ -69,18 +81,28 @@ Symbol + 受控 IsChecked / CheckedChangeRequested。继承 IconButton 模板与
 状态请求不自动写回；普通颜色沿用 ambient，选中 Primary，禁用替换 alpha，遵循上游
 IconToggleButtonColors.rememberUpdatedState，不添加颜色过渡。独立 peer 暴露 Checkbox / Toggle。
 AppBar 项目的一般图标槽使用 Icon / IconTemplate，不扩展独立 IconButton 的 Symbol 合约。
-此项不修订下方原有四主题的未解决问题。验证见 AppBarOverflowTests 和 icon-toggle-button suite。
+后续普通 IconButton 的 ambient 迁移见下方决定。验证见 AppBarOverflowTests 和 icon-toggle-button suite。
 
-**尚未实现：** narrow/wide 宽度选项、非 Standard toggle 配色及 shapes 重载。
-可选 InsetRing 通过 Surface 自动接入，IconButton 各尺寸/变体的独立双端验证尚未完成。
+Filled / Tonal toggle 的六槽颜色定义在独立 IconToggleButton TokenSource，避免误用普通 ToggleButton
+的禁用内容色（后者是 OnSurfaceVariant）。选择顺序为 disabled → checked → unchecked，匹配
+IconToggleButtonColors 的 rememberUpdatedState；颜色没有动画。两者的状态层取实际 Foreground；
+Standard 继续取 provider 外的 ambient 内容色。无伪类与有伪类的样式分开，避免普通匹配遮盖触发优先级。
+`CheckedCornerRadius` 是可空组件属性；模板向已有 ButtonSurfaceState 提供选中状态和形状，
+仍由 Surface 处理 pressed > checked > resting、DefaultEffects、目标中断及模板/挂载清理。
+这些新增组件 API 在 2026-11-02 的剩余移植批次授权内实施，不改变已有固定形状默认值。
+
+**尚未实现：** 任意 Shape 及独立 IconButton 的外部 InteractionSource。
+可选 InsetRing 通过 Surface 自动接入，IconButton 各尺寸/变体的独立双端焦点环验证尚未完成。
 对应原始 Token 可以存在，不意味着模板已经消费或有公开入口。
+
+普通 Standard/Outlined 内容色、禁用色及描边已按下方决定迁移到 ambient；所有尺寸仍使用
+Small.OutlinedOutlineWidth，原始 Large/XLarge 2/3 DIP Token 保留供显式配置。
 
 **已观察到、尚未解决：**
 
-- Standard/Outlined 普通 colors helper 读取 LocalContentColor；本地使用 OnSurfaceVariant，禁用色也未随 ambient 变化
-- Outlined 默认 border 从 LocalContentColor 取色且固定 Small 的 1 DIP；本地 OutlineVariant，大尺寸仍消费原始 2/3 DIP
+- Vibrant Standard 保留既有状态层颜色 Token 消费；固定上游 Standard 的 ripple 在外层 ambient provider 读取墨色，该路径与本地 Token 墨色的视觉差异仍单独报告，不能从普通配色修正推断它已一致
 - 属性变更当帧的即时更新、更换按压目标后部分状态层像素仍有差异
-- 受限 20 DIP 用例的容器已对齐，但本地 MaterialSymbol 仍可 24 DIP 而 Compose 为 20 DIP，默认图标可能溢出
+- 受限图标盒已改为两轴分别约束；文字字体图标绘制仍不由向量用例证明
 
 这些事实未认定为已接受适配。IconButton.cs 中的历史“recorded deviation”注释只能说明实现，
 不能代替维护者批准。FloatingToolbar 接入修正也未授权改变颜色、描边或阴影算法。
@@ -120,3 +142,67 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 [IconButtonTokenTests.cs](../../../../tests/Material3Expressive.Tests/IconButtonTokenTests.cs) 检查尺寸/颜色/描边 Token；
 形状和 ButtonLayout 共享回归见 [Button 维护入口](../Button/INTERNALS.md#一致性边界与验证)。
+
+## 2026-11-03 颜色与缓存决定
+
+维护者在本次对话明确回复“两项都按推荐方案”，批准以下两个范围：
+
+1. Outlined IconToggleButton 按固定 helper 的六槽构造逻辑实现，消除缓存调用顺序依赖。
+   固定 AndroidX / Core 都读取 `defaultIconToggleButtonColorsCached`，却写入
+   `defaultOutlinedIconToggleButtonColorsCached`；先调用 Standard 时可能得到透明选中容器 / Primary。
+   本地明确不复制该缓存问题：未选中和禁用容器透明，未选中内容色为 ambient，禁用内容色替换 alpha，
+   选中容器为 InverseSurface，选中内容色由 `contentColorFor(InverseSurface)` 决定。
+   使用 `MaterialOutlinedIconToggleButtonTheme`；选中时默认无描边，禁用选中态同样无描边。
+   这是已接受的固定上游语义修正，不是升级基线。双端新增用例显式传六槽颜色到真实上游组件，
+   注明该修正边界，参考库及既有用例不改写。单元测试覆盖 Standard 先/后创建以及动态资源覆盖。
+2. 普通 Standard（含隐式）/ Outlined 改用父级内容色；禁用时替换 alpha，Outlined 描边独立取父级色。
+   原颜色 Token 契约迁移到 `MaterialVibrantIconButtonTheme` / `MaterialOutlinedVibrantIconButtonTheme`。
+   依赖原 `Comp.StandardIconButton.*` / `Comp.OutlinedIconButton.*` 颜色覆盖的调用方需显式选择 Vibrant。
+   普通用户 Foreground / BorderBrush / Background Style、Binding、LocalValue 仍优先。
+   普通 Standard 状态层取 provider 外的 ambient；Outlined 与 Filled/Tonal/Outlined toggle 取有效 Foreground。
+   颜色迁移不改变尺寸/形状 Token 或共享交互生命周期，也不替用户批准尚存的其他像素差异。
+
+Outlined 选中内容色复用内部 `ContentColorFor` 的角色匹配顺序和 fallback；新增可选 BackgroundColor
+绑定输入以直接消费 InverseSurface Token，避免用 disabled/用户覆盖后的实际 Background 推导默认选中内容色。
+旧 BackgroundProperty 与 ambient 入口保持不变，未增加公共颜色框架。
+内部 CheckedContentColor 候选经主题绑定使用，公开配置仍遵循 Avalonia 覆盖优先级。
+ambient 颜色绑定显式观察 ISolidColorBrush.Color，父级替换画刷或修改可变画刷的 Color 都会更新；
+转换器保留原有画刷输入支持，并接受颜色值，禁用 alpha 始终替换而非相乘。
+仓内 Snackbar 的关闭按钮显式迁移到 Vibrant 基主题，保留原有候选与禁用 Token 契约；AppBar 的显式
+Foreground 配置不受默认迁移影响。用法和调用方迁移示例见 [README](README.md#普通与-vibrant-颜色)。
+
+双端普通图标夹具显式统一外层内容色：裸 Compose MaterialTheme/Box 的 LocalContentColor 默认黑色，
+Avalonia Window 默认提供 OnSurface；用例在未指定 AmbientColor 时给 Avalonia 宿主黑色，防止比较不同输入。
+带形变的 Outlined toggle 参考重载默认 vibrant border，因此显式传普通 outlinedIconToggleButtonBorder，
+与本地普通颜色主题加 opt-in 形变的输入一致。未修改参考库、基线或容差。
+
+## 当前验证
+
+2026-11-03，固定参考与最终代码重新运行 self-test：
+
+- icon-toggle-button：226 例，218 equal、8 withinTolerance、0 different；其中 5 例快速反向按压
+  出现 Compose repeat / extraImages 差异，Avalonia 两类重复检查全部稳定。唯一静态微差为
+  Outlined XS Narrow 未选中描边的栅格化，其余微差来自快速反向按压。
+  运行身份 `20261102-165137-72b451c3`（产物目录按 UTC 命名）。
+- icon-button：279 例，253 equal、6 withinTolerance、20 different；静态用例无 different。
+  20 例分别涉及 ambient/主题/禁用/尺寸修改当帧、清除/更换按压目标、原生 Enter 和
+  Vibrant Standard 的状态层墨色。ambient 变更后的下一帧及后续采样一致，变更当帧本地已经更新、
+  Compose 仍呈现前一值；保留该事实，不推迟本地属性更新来迁就截图。
+  `dynamic.reverse` 出现 Compose extraImages 不稳定，Avalonia 两类重复检查全部稳定。
+  运行身份 `20261102-165137-eabce136`。
+
+两套均无捕获执行错误；self-test 因重复性不稳定返回 2，不能报告为全通过。容差和参考库未修改。
+非文字向量夹具继承实际 IconButtonSymbol 测量、尺寸 class 与前景配置。几何一致不证明字体一致。
+
+行为测试覆盖宽度、约束、样式优先级、画刷对象/Color 更新、重挂载、两种主题入口间迁移、
+Outlined 的六槽颜色与描边、contentColorFor 角色优先级、真实指针/automation 请求和形变中断。
+Catalog 提供四种切换外观及普通/Vibrant 颜色对照，Windows 桌面已实际检查环境色和 Outlined
+鼠标选中/恢复；这不替代跨平台、辅助技术或字体像素验收。
+完整解决方案已在 .NET 10.0.114 构建通过。全量测试遇到的 ElevatedButton hover 像素测试未推进动画
+时钟问题已改用现有手动时钟与真实输入，保留原像素断言；Headless 清理阶段仍曾出现渲染线程归属异常。
+合并远端最新组件改动、双端采集进程退出后，最终单独执行控件全量测试 1587/1587 通过；该次通过不消除前述环境稳定性记录。
+
+验证环境的原始 GitHub Packages restore 被 401/403 阻塞。颜色和 SmoothScroll 使用 SHA512 与锁文件
+一致的原 CI nupkg；MaterialSymbols 使用版本所标注的 e577ac071623f74411e19e28e440eaca73a33d81 源码重建，
+放在独立临时包缓存，恢复锁文件也放在 obj；仓库包版本、正式 packages.lock.json、参考提交和比较容差未改。
+上述运行证据属于该临时环境，原始 MaterialSymbols 锁定制品与字体双端像素验收仍缺失。

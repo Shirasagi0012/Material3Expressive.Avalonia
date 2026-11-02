@@ -2,6 +2,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
+    <!-- ButtonGroup's built-in labels use maxLines=1, softWrap=false and
+         overflow=Visible. Keep the full label as data (including menu/automation),
+         while the text node controls its own paragraph layout and clipping. -->
+    <DataTemplate x:Key="ButtonGroupLabelTemplate">
+      <TextBlock Text="{Binding}" MaxLines="1" TextWrapping="NoWrap" ClipToBounds="False" />
+    </DataTemplate>
     <ControlTheme x:Key="{x:Type m3:ButtonGroup}" TargetType="m3:ButtonGroup">
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -47,11 +53,13 @@
     <ControlTheme x:Key="ButtonGroupButtonTheme" TargetType="Button"
                   BasedOn="{StaticResource MaterialFilledButtonTheme}">
       <Setter Property="TextBlock.TextWrapping" Value="NoWrap" />
+      <Setter Property="ContentTemplate" Value="{StaticResource ButtonGroupLabelTemplate}" />
     </ControlTheme>
 
     <ControlTheme x:Key="ButtonGroupToggleButtonTheme" TargetType="ToggleButton"
                   BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
       <Setter Property="TextBlock.TextWrapping" Value="NoWrap" />
+      <Setter Property="ContentTemplate" Value="{StaticResource ButtonGroupLabelTemplate}" />
     </ControlTheme>
 
     <ControlTheme x:Key="{x:Type m3:ButtonGroupAction}" TargetType="m3:ButtonGroupAction"

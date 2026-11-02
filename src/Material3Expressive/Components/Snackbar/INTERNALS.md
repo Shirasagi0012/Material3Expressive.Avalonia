@@ -51,6 +51,9 @@ ContentFirstBaseline、ContentLastBaseline、ActionFirstBaseline，也不新增�
 自定义复杂内容宜使用相应模板或不依赖该对齐关系的布局。
 
 各槽通过 presenter 建立独立逻辑/继承关系，不能让正文直接继承声明处的文字角色。
+IconButton 普通颜色入口于 2026-11-03 迁移到 ambient 后，内部关闭按钮主题改为继承
+MaterialVibrantIconButtonTheme，保留既有 DismissActionForeground 候选与禁用颜色 Token 契约。
+它仍自行绑定状态层墨色，不把通用图标按钮的主题迁移扩展为 Snackbar 颜色行为变更。
 模板 `PART_Layout` 的三个子项依次为消息、动作、关闭；布局算法依赖这一合约。
 默认 `PART_DataAction` / `PART_DataDismiss` 才连接 Data 结果，更换模板先解绑旧按钮。
 关闭提示在独立 Popup 树里，必须显式绑定当前 Snackbar 的 DismissActionText。

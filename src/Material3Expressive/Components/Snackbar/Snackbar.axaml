@@ -86,7 +86,7 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialSnackbarDismissButtonTheme" TargetType="m3:IconButton"
-                  BasedOn="{StaticResource MaterialStandardIconButtonTheme}">
+                  BasedOn="{StaticResource MaterialVibrantIconButtonTheme}">
       <Setter Property="Template">
         <ControlTemplate>
           <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"

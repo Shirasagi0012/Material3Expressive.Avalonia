@@ -12,7 +12,7 @@
       <StackPanel Spacing="8">
         <TextBlock Text="ButtonGroup" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock TextWrapping="Wrap"
-                   Text="Five sections from the pinned ButtonGroupSamples.kt. The slider limits only the two ButtonGroup sections, standing in for the catalog's available width. Resize this window to wrap the connected rows. Icons use Rounded Material Symbols: Fill 0 unchecked, Fill 1 checked." />
+                   Text="Use the slider to change the available width of the three button groups. Resize this window to wrap the connected rows. The single-line example shows how explicit line breaks differ between buttons and their overflow menu." />
         <TextBlock Text="{Binding #AvailableWidth.Value, StringFormat=Available width \{0:0\} DIP}" />
         <Slider x:Name="AvailableWidth" Minimum="200" Maximum="860" Value="420" />
       </StackPanel>
@@ -32,6 +32,16 @@
           <m3:ButtonGroupAction Label="7" />
           <m3:ButtonGroupAction Label="8" />
           <m3:ButtonGroupAction Label="9" />
+        </m3:ButtonGroup>
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="Single-line labels" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock Text="Explicit line breaks stop the button label after its first line. The overflow menu keeps the complete label." TextWrapping="Wrap" />
+        <m3:ButtonGroup MaxWidth="{Binding #AvailableWidth.Value}">
+          <m3:ButtonGroupAction Label="Save&#10;to this project" />
+          <m3:ButtonGroupAction Label="Share&#10;with your team" />
+          <m3:ButtonGroupAction Label="Archive&#10;completed work" />
         </m3:ButtonGroup>
       </StackPanel>
 

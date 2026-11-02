@@ -12,6 +12,8 @@ namespace Material3Expressive.Catalog;
 
 public partial class MainWindow : Window
 {
+    private void OnIconCheckedChange(object? sender, IconCheckedChangeEventArgs e) => ((IconToggleButton)sender!).IsChecked = e.Value;
+
     private void OnDateTimePickerDemo(object? sender, RoutedEventArgs e) => new DateTimePickerDemo().Show(this);
     private void OnCommandBarDemo(object? sender, RoutedEventArgs e) => new CommandBarDemo().Show(this);
     private void OnMenuDemo(object? sender, RoutedEventArgs e) => new MenuDemo().Show(this);

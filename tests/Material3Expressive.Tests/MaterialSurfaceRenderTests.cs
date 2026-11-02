@@ -311,6 +311,7 @@ public class MaterialSurfaceRenderTests
     [AvaloniaFact]
     public void ElevatedButton_HoverPaintsStateLayer()
     {
+        using var clock = new MotionTestClockScope();
         var styles = Assert.IsAssignableFrom<Avalonia.Styling.Styles>(
             AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
         // The variant themes live in Button.axaml's own Styles.Resources, not in MaterialTheme's.
@@ -334,15 +335,22 @@ public class MaterialSurfaceRenderTests
         };
         window.Content = button;
         window.Show();
+        clock.SendFrame(TimeSpan.Zero);
+
+        using var rest = window.CaptureRenderedFrame()!;
 
         var origin = button.TranslatePoint(default, window)!.Value;
         var cx = (int)(origin.X + button.Bounds.Width / 2);
         var cy = (int)(origin.Y + button.Bounds.Height / 2);
 
-        using var rest = window.CaptureRenderedFrame()!;
         var restCenter = PixelAt(rest, cx, cy);
 
         window.MouseMove(new Point(cx, cy), RawInputModifiers.None);
+        Assert.True(button.IsPointerOver);
+        // Drawing does not advance animation time. Give hover its first frame and let the
+        // state-layer tween finish, instead of depending on wall time during a full test run.
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
         using var hover = window.CaptureRenderedFrame()!;
         var hoverCenter = PixelAt(hover, cx, cy);
 

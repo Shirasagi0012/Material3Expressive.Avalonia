@@ -17,7 +17,7 @@ namespace Material3Expressive.Parity;
 public sealed record IconButtonConfig(string Style = "filled", string Size = "small", string Shape = "round",
     bool Enabled = true, bool Dark = false, bool Rtl = false, double? Width = null, double? Height = null,
     double? PressedRadius = null, string Action = "none", string Custom = "none", bool Empty = false,
-    string? AmbientColor = null);
+    string? AmbientColor = null, string WidthOption = "uniform", bool Vibrant = false);
 
 [ParitySuite("icon-button")]
 public sealed class IconButtonCases
@@ -27,12 +27,24 @@ public sealed class IconButtonCases
 
     public static IEnumerable<CaseData<IconButtonConfig>> StaticConfigurations()
     {
-        // The current local API implements uniform width; narrow/wide and toggle are not exposed.
+        // Appearance dimensions are independent: style × size × shape × width option.
         foreach (var style in Styles)
         foreach (var size in Sizes)
         foreach (var shape in new[] { "round", "square" })
-            yield return Data($"static.appearance.{style}.{size}.{shape}", new(style, size, shape));
-        // Colors branch by style/state, while outlined stroke width also branches by size.
+        foreach (var widthOption in new[] { "uniform", "narrow", "wide" })
+            yield return Data($"static.appearance.{style}.{size}.{shape}" + (widthOption == "uniform" ? "" : $".{widthOption}"),
+                new(style, size, shape, WidthOption: widthOption));
+        foreach (var style in new[] { "standard", "outlined" })
+        {
+            foreach (var size in Sizes)
+            foreach (var shape in new[] { "round", "square" })
+            foreach (var width in new[] { "uniform", "narrow", "wide" })
+                yield return Data($"static.vibrant.{style}.{size}.{shape}.{width}", new(style, size, shape, WidthOption: width, Vibrant: true));
+            foreach (var dark in new[] { false, true })
+            foreach (var enabled in new[] { false, true })
+                yield return Data($"static.vibrant.ambient.{style}.{(dark ? "dark" : "light")}.{(enabled ? "enabled" : "disabled")}", new(style, Dark: dark, Enabled: enabled, AmbientColor: "#208070", Vibrant: true));
+        }
+        // Color branches are independent of geometry; default outline width is size-independent.
         foreach (var style in Styles)
         {
             yield return Data($"static.disabled.{style}", new(style, Enabled: false));
@@ -46,6 +58,10 @@ public sealed class IconButtonCases
         foreach (var enabled in new[] { true, false })
             yield return Data($"static.ambient.{style}.{(enabled ? "enabled" : "disabled")}",
                 new(style, Enabled: enabled, AmbientColor: "#208070"));
+        foreach (var style in new[] { "standard", "outlined" })
+        foreach (var enabled in new[] { false, true })
+            yield return Data($"static.ambient-alpha.{style}.{(enabled ? "enabled" : "disabled")}",
+                new(style, Enabled: enabled, AmbientColor: "#40208070"));
         foreach (var size in Sizes)
             yield return Data($"static.layout.empty.{size}", new(Size: size, Empty: true));
         yield return Data("static.layout.constrained-width", new(Width: 20));
@@ -66,6 +82,12 @@ public sealed class IconButtonCases
             foreach (var action in new[] { "hover", "focus", "disable", "theme", "disabled" })
                 yield return Data($"dynamic.{action}.{style}", new(style, Enabled: action != "disabled", Action: action));
         }
+        foreach (var style in new[] { "standard", "outlined" })
+        foreach (var action in new[] { "press", "hover", "disable", "theme" })
+            yield return Data($"dynamic.vibrant.{style}.{action}", new(style, Action: action, Vibrant: true));
+        foreach (var style in new[] { "standard", "outlined" })
+        foreach (var enabled in new[] { false, true })
+            yield return Data($"dynamic.ambient.{style}.{(enabled ? "enabled" : "disabled")}", new(style, Action: "ambient", Enabled: enabled, AmbientColor: "#40208070"));
         // Shape clamping and content dimensions have independent size branches.
         foreach (var size in Sizes.Where(s => s != "small"))
             yield return Data($"dynamic.morph-press.filled.{size}", new(Size: size, PressedRadius: 8, Action: "press"));
@@ -141,6 +163,11 @@ public sealed class IconButtonCases
                 Focus(1000, true); SamplesAt(16000, 121000);
                 Key(122000, true); Sample("key-down"); SamplesAt(138000, 197000, 347000);
                 Key(348000, false); Sample("key-up"); SamplesAt(364000, 498000, 700000); break;
+            case "ambient":
+                AdvanceTo(1000); TextElement.SetForeground(host.Window, Brushes.Purple);
+                writer.Record(1000, "mutation", "ambient changed"); host.Draw(); Sample("mutation"); SamplesAt(16000, 400000);
+                AdvanceTo(401000); TextElement.SetForeground(host.Window, new SolidColorBrush(Color.Parse(config.AmbientColor!)));
+                writer.Record(401000, "mutation", "ambient restored"); host.Draw(); Sample("restored"); SamplesAt(416000, 800000); break;
             case "theme": case "size":
                 AdvanceTo(1000);
                 if (config.Action == "theme") CaseDefaults.SetThemeColors(host, true); else scene.SetSize("large");
@@ -199,10 +226,16 @@ public sealed class IconButtonCases
         {
             this.host = host; this.config = config;
             CaseDefaults.SetThemeColors(host, config.Dark);
-            if (config.AmbientColor is { } ambient) TextElement.SetForeground(host.Window, new SolidColorBrush(Color.Parse(ambient)));
+            // Compose's bare MaterialTheme/Box leaves LocalContentColor at Black. The Avalonia
+            // Window theme supplies OnSurface, so explicitly provide the same environment here;
+            // otherwise an ambient helper compares different inputs, especially in dark mode.
+            TextElement.SetForeground(host.Window, new SolidColorBrush(Color.Parse(config.AmbientColor ?? "#000000")));
             Button = new IconButton { IsEnabled = config.Enabled, FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
+                WidthOption = Enum.Parse<IconButtonWidthOption>(config.WidthOption, true),
                 Symbol = config.Empty ? MaterialSymbols.MaterialSymbolCodepoint.None : MaterialSymbols.MaterialSymbolCodepoint.Home };
-            Button.Theme = (ControlTheme)host.Window.FindResource(config.Style switch
+            Button.Theme = (ControlTheme)host.Window.FindResource(config.Vibrant
+                ? config.Style == "outlined" ? "MaterialOutlinedVibrantIconButtonTheme" : "MaterialVibrantIconButtonTheme"
+                : config.Style switch
             {
                 "standard" => "MaterialStandardIconButtonTheme", "tonal" => "MaterialTonalIconButtonTheme",
                 "outlined" => "MaterialOutlinedIconButtonTheme", _ => "MaterialFilledIconButtonTheme"
@@ -226,8 +259,7 @@ public sealed class IconButtonCases
             // Retain the original template association so /template/ selectors keep applying
             // to the replacement painter. Avalonia 12.1.2 exposes an internal setter here.
             typeof(StyledElement).GetProperty(nameof(StyledElement.TemplatedParent))!.SetValue(vector, symbol.TemplatedParent);
-            vector.SetValue(Control.WidthProperty, symbol.Width, BindingPriority.Template);
-            vector.SetValue(Control.HeightProperty, symbol.Height, BindingPriority.Template);
+            vector.SetValue(MaterialIcon.DefaultSizeProperty, MaterialIcon.GetDefaultSize(symbol), BindingPriority.Template);
             Surface.Child = vector;
             SetSize(config.Size);
         }
@@ -236,9 +268,8 @@ public sealed class IconButtonCases
         {
             foreach (var value in Sizes) Button.Classes.Remove(value);
             if (size != "small") Button.Classes.Add(size);
-            if (config.Shape != "round") Button.CornerRadius = config.Shape == "asymmetric"
-                ? new CornerRadius(4, 16, 10, 2)
-                : new CornerRadius(size switch { "xsmall" or "small" => 12, "medium" => 16, _ => 28 });
+            if (config.Shape == "asymmetric") Button.CornerRadius = new CornerRadius(4, 16, 10, 2);
+            if (config.Shape == "square") Button.Classes.Add("square");
         }
 
         public ProbePoint[] Measure()
@@ -287,7 +318,7 @@ public sealed class IconButtonCases
         }
     }
 
-    sealed class VectorSymbol : MaterialSymbol
+    sealed class VectorSymbol : IconButtonSymbol
     {
         protected override Type StyleKeyOverride => typeof(MaterialSymbol);
         protected override bool BypassFlowDirectionPolicies => true;

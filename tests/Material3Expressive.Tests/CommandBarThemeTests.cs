@@ -50,6 +50,9 @@ public class CommandBarThemeTests
             window.Content = new StackPanel { Children = { bar, reference } };
             window.UpdateLayout();
             bar.IsOpen = true;
+            // Overlay popup placement is queued. Drain it before reading the pointer
+            // target; otherwise the first rendered frame moves the menu after that read.
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
             window.UpdateLayout();
 
             var layout = Part<CommandBarItemLayout>(overflow, "CommandLayout");
@@ -96,7 +99,7 @@ public class CommandBarThemeTests
             overflow.Focus(NavigationMethod.Pointer);
             using var beforePress = window.CaptureRenderedFrame()!;
             window.MouseDown(pointer, MouseButton.Left);
-            Assert.True(overflow.IsPressed);
+            Assert.True(overflow.IsPressed, $"pointer={pointer}; window={window.Bounds}; overflow={overflow.Bounds}; hit={window.InputHitTest(pointer)}; open={bar.IsOpen}");
             for (var frame = 0; frame < 5; frame++)
                 clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
             using var duringPress = window.CaptureRenderedFrame()!;

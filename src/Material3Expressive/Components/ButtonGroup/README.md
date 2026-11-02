@@ -25,8 +25,11 @@
 DataContext 需提供对应 `ICommand`；例如 `Command="{Binding EditCommand}"`。
 
 `ItemsSource` 与 `ItemTemplate` 也可使用，模板的根必须是 `ButtonGroupItem` 的具体子类。
-内置 Action / ToggleAction 的按钮标签关闭自动换行，宽度压缩不会触发换行；文本中的显式换行符仍会保留。
+内置 Action / ToggleAction 的按钮标签只显示第一行，宽度压缩不会触发换行，也不会添加省略号；
+显式换行后的内容不参与按钮标签布局，原始 Label 仍完整提供给菜单。
 CustomItem 的内容自行配置；原生按钮可用 `TextBlock.TextWrapping="NoWrap"` 关闭自动换行。
+
+例如 `<m3:ButtonGroupAction Label="保存&#10;到当前项目" />` 在组内显示“保存”，溢出菜单仍获得完整文字。
 
 ## 图标与切换状态
 
@@ -108,5 +111,5 @@ connected 使用原生 ToggleButton，首、中、尾主题只配置圆角；选
 普通 Style、局部值、绑定及 ClearValue 保留 Avalonia 的优先级。
 
 完整可交互示例见 [Catalog ButtonGroupDemo](../../../Material3Expressive.Catalog/ButtonGroupDemo.axaml)。
-该页面按固定版本 `ButtonGroupSamples.kt` 的五个 catalog 示例排列；顶部宽度只约束两个 `ButtonGroup`，connected 行随窗口换行。
+该页面包含固定版本 `ButtonGroupSamples.kt` 的五个 catalog 示例和显式换行示例；顶部宽度约束三个 `ButtonGroup`，connected 行随窗口换行。
 当前双端用例使用非文字内容，不证明文字栅格、屏幕阅读器或真实桌面体验一致；其他边界见维护说明。

@@ -244,9 +244,13 @@ CanScroll 和起点覆盖不打断正文惯性或直接拖动。
 [AppBar 接入决定](../../../../docs/DECISIONS.md#appbar-与原生滚动接入)与
 [合成决定](../../../../docs/DECISIONS.md#普通物理滚动与-appbar-的合成接入)，不能把旧 Fluent 自动模板替换方案恢复为当前能力。
 
-本轮另查见已有未实现差异：固定 AppBar.kt 的双行入口也对 CollapsedHeight 的 NaN / 正无穷使用默认折叠高度，
-当前本地仍在布局时抛出有限值检查异常。本轮尚未修改这一输入契约，是否在本次补齐另向维护者提出；
-不能将现有异常行为视作已批准的上游偏离。
+双行入口的 CollapsedHeight 与 ExpandedHeight 都保留固定 AppBar.kt 的 NaN / 正无穷默认值语义。
+主题分别提供 DefaultCollapsedHeight / DefaultExpandedHeight，布局只消费归一化值，不写回公开配置。
+资源覆盖继续更新默认值，有限性与展开不小于折叠的检查在归一化后进行；负无穷不作为默认值。
+该缺口在 2026-11-02 的已授权上游对齐批次补齐，不扩大滚动连接或改变已确认布局规则。
+本批次 appbar 双端 152 例为 150 equal、2 withinTolerance，重复检查均稳定；新增 40 个
+height-defaults 用例全为 equal。容差内两例是既有 dynamic.scroll.exit 与 dynamic.snap.medium.0.25，
+不是全部截图精确一致。测试使用临时恢复的依赖环境，具体边界见 [IconButton 验证环境](../IconButton/INTERNALS.md#当前验证)。
 
 已观察到的未解决差异是合成路径极小非零标题 opacity 仍被 Avalonia 剔除；UI 路径的 opacity mask 处理
 不等于合成路径已修复，也不是授权改写上游曲线。当前合成能力不支持 zoom/overscroll，

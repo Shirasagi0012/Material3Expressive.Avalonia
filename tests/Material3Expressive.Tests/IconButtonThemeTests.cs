@@ -31,17 +31,16 @@ public class IconButtonThemeTests
     private static ButtonLayout Layout(IconButton button) =>
         button.GetVisualDescendants().OfType<ButtonLayout>().Single();
 
-    private static Color BrushColor(IBrush? brush) => Assert.IsType<ImmutableSolidColorBrush>(brush).Color;
+    private static Color BrushColor(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
 
     [AvaloniaFact]
     public void ImplicitTheme_AppliesStandardDefaults()
     {
-        IconButtonThemeFixture.ShowWindow(out var button);
+        var window = IconButtonThemeFixture.ShowWindow(out var button);
 
-        // Standard: transparent container, on-surface-variant content (the token-table color —
-        // the plain upstream composable's LocalContentColor default is a recorded deviation).
+        // Ordinary standard uses the outer content environment.
         Assert.Equal(Colors.Transparent, BrushColor(button.Background));
-        Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSurfaceVariant),
+        Assert.Equal(BrushColor(window.Foreground),
             BrushColor(button.Foreground));
 
         // Default container metrics are separate from public minima and 48dp allocation.
@@ -52,15 +51,15 @@ public class IconButtonThemeTests
 
         var container = Container(button);
         Assert.Equal(new CornerRadius(1000), container.CornerRadius); // CornerFull
-        Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSurfaceVariant),
+        Assert.Equal(BrushColor(window.Foreground),
             BrushColor(container.StateLayerBrush));
 
         // The icon part renders the owner's symbol at the size table's icon size, inheriting the
         // content color through TextElement.Foreground.
         var symbol = Symbol(button);
         Assert.Equal(MaterialSymbolCodepoint.Home, symbol.Symbol);
-        Assert.Equal(24d, symbol.Width);
-        Assert.Equal(24d, symbol.Height);
+        Assert.Equal(24d, MaterialIcon.GetDefaultSize(symbol));
+        Assert.Equal(new Size(24, 24), symbol.Bounds.Size);
         Assert.Equal(button.Foreground, symbol.Foreground);
     }
 
@@ -93,21 +92,21 @@ public class IconButtonThemeTests
     [AvaloniaFact]
     public void OutlinedTheme_AppliesTransparentContainerAndOutline()
     {
-        IconButtonThemeFixture.ShowWindow(out var button, themeKey: "MaterialOutlinedIconButtonTheme");
+        var window = IconButtonThemeFixture.ShowWindow(out var button, themeKey: "MaterialOutlinedIconButtonTheme");
 
         Assert.Equal(Colors.Transparent, BrushColor(button.Background));
-        Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OnSurfaceVariant),
+        Assert.Equal(BrushColor(window.Foreground),
             BrushColor(button.Foreground));
-        Assert.Equal(ButtonThemeFixture.SchemeColor(false, static s => s.OutlineVariant),
+        Assert.Equal(BrushColor(window.Foreground),
             BrushColor(button.BorderBrush));
         Assert.Equal(1d, button.BorderThickness.Left);
     }
 
     [AvaloniaFact]
-    public void OutlinedTheme_SizeClass_ThickensOutline()
+    public void OutlinedTheme_SizeClass_RetainsUpstreamDefaultBorderWidth()
     {
         IconButtonThemeFixture.ShowWindow(out var button, themeKey: "MaterialOutlinedIconButtonTheme", sizeClass: "xlarge");
-        Assert.Equal(3d, button.BorderThickness.Left);
+        Assert.Equal(1d, button.BorderThickness.Left);
         Assert.Equal(136d, Layout(button).ContainerMinHeight);
     }
 
@@ -135,19 +134,18 @@ public class IconButtonThemeTests
     {
         IconButtonThemeFixture.ShowWindow(out var button);
         Assert.Equal(40d, Layout(button).ContainerMinHeight);
-        Assert.Equal(24d, Symbol(button).Width);
+        Assert.Equal(24d, MaterialIcon.GetDefaultSize(Symbol(button)));
 
         button.Classes.Add("large");
 
         Assert.Equal(96d, Layout(button).ContainerMinHeight);
         Assert.Equal(96d, Layout(button).ContainerMinWidth);
         Assert.Equal(new CornerRadius(1000), Container(button).CornerRadius);
-        Assert.Equal(32d, Symbol(button).Width);
-        Assert.Equal(32d, Symbol(button).Height);
+        Assert.Equal(32d, MaterialIcon.GetDefaultSize(Symbol(button)));
 
         button.Classes.Remove("large");
         Assert.Equal(40d, Layout(button).ContainerMinHeight);
-        Assert.Equal(24d, Symbol(button).Width);
+        Assert.Equal(24d, MaterialIcon.GetDefaultSize(Symbol(button)));
     }
 
     [AvaloniaFact]

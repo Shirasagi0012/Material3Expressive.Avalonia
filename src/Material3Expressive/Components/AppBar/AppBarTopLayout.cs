@@ -320,8 +320,8 @@ internal sealed class AppBarTopChrome : Panel
             throw new ArgumentException(
                 "TopAppBar.Background must be a solid color brush or null for container color interpolation.");
         if (!double.IsFinite(owner.EffectiveExpandedHeight) ||
-            owner.HasTwoRows && (!double.IsFinite(owner.CollapsedHeight) ||
-                                owner.EffectiveExpandedHeight < owner.CollapsedHeight))
+            owner.HasTwoRows && (!double.IsFinite(owner.EffectiveCollapsedHeight) ||
+                                owner.EffectiveExpandedHeight < owner.EffectiveCollapsedHeight))
             throw new ArgumentException("AppBar heights must be finite and ExpandedHeight must be at least CollapsedHeight.");
 
         var scale = LayoutHelper.GetLayoutScale(this);
@@ -538,9 +538,9 @@ internal sealed class AppBarTopRow : Panel
         _titleWidth = Px(Title.DesiredSize.Width);
         _titleHeight = Px(Title.DesiredSize.Height);
         var height = Lower
-            ? owner.EffectiveExpandedHeight - owner.CollapsedHeight
+            ? owner.EffectiveExpandedHeight - owner.EffectiveCollapsedHeight
             : owner.HasTwoRows
-                ? owner.CollapsedHeight
+                ? owner.EffectiveCollapsedHeight
                 : owner.EffectiveExpandedHeight;
         _maxHeight = Math.Max(Px(height), _titleHeight) + Px(Padding.Top) + Px(Padding.Bottom);
         var offset = Lower || !owner.HasTwoRows ? owner.ScrollBehavior?.State.HeightOffset ?? 0 : 0;

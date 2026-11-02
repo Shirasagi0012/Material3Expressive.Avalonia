@@ -20,7 +20,7 @@ public sealed record AppBarConfig(string Variant = "small", string Alignment = "
     double? ExpandedHeight = null, double? CollapsedHeight = null, double[]? Insets = null, double[]? Padding = null,
     double[]? Consumed = null, double Fraction = 0, int Actions = 2, bool Navigation = true, bool Fab = false,
     bool Custom = false, string Arrangement = "start", double Spacing = 8, bool Dark = false,
-    double Elevation = 0, string Behavior = "exit", string Action = "none", double Velocity = 0, bool NoSpecs = false);
+    double Elevation = 0, string Behavior = "exit", string Action = "none", double Velocity = 0, bool NoSpecs = false, string HeightDefaults = "none");
 
 [ParitySuite("appbar")]
 public sealed class AppBarCases
@@ -63,6 +63,16 @@ public sealed class AppBarCases
             yield return Data($"static.bottom.{variant}.tonal", new(variant, Elevation: variant == "bottom" ? 6 : 0, Dark: true));
         }
     }
+    public static IEnumerable<CaseData<AppBarConfig>> HeightDefaultConfigurations()
+    {
+        foreach (var variant in new[] { "medium", "large", "mediumFlexible", "largeFlexible", "twoRows" })
+        foreach (var mode in new[] { "collapsed-nan", "collapsed-infinity", "both-nan", "both-infinity" })
+        foreach (var fraction in new[] { .5, 1.0 })
+            yield return Data($"static.height-defaults.{variant}.{mode}.{fraction}", new(variant, Fraction: fraction, HeightDefaults: mode));
+    }
+    [ParityScenario("height-defaults", Data = nameof(HeightDefaultConfigurations))]
+    public Task HeightDefaults(CaptureWriter writer) => Static(writer);
+
     private static CaseData<AppBarConfig> Data(string id, AppBarConfig config) => new(id.ToLowerInvariant(), id, config);
     public static IEnumerable<CaseData<AppBarConfig>> DynamicConfigurations()
     {
@@ -234,6 +244,11 @@ public sealed class AppBarCases
                 bar.WindowInsets = Thickness(config.Insets); bar.ContentPadding = Thickness(config.Padding);
                 if (config.ExpandedHeight is { } height) bar.ExpandedHeight = height;
                 if (config.CollapsedHeight is { } collapsed) bar.CollapsedHeight = collapsed;
+                if (config.HeightDefaults != "none")
+                {
+                    bar.CollapsedHeight = config.HeightDefaults.EndsWith("nan") ? double.NaN : double.PositiveInfinity;
+                    if (config.HeightDefaults.StartsWith("both")) bar.ExpandedHeight = bar.CollapsedHeight;
+                }
                 var twoRows = config.Variant is not ("small" or "center");
                 bar.Title = "data";
                 bar.TitleTemplate = new FuncDataTemplate<string>((_, _) => Make("title", config.TitleWidth, config.TitleHeight));

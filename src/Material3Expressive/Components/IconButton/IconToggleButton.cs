@@ -8,22 +8,40 @@ using Avalonia.Media;
 
 namespace Material3Expressive.Components;
 
-/// <summary>A standard icon toggle. The application owns the checked state.</summary>
+/// <summary>An icon toggle with standard, filled, tonal, and outlined themes. The application owns the checked state.</summary>
 public class IconToggleButton : IconButton
 {
     public static readonly StyledProperty<bool> IsCheckedProperty =
         AvaloniaProperty.Register<IconToggleButton, bool>(nameof(IsChecked));
 
-    // IconButtonDefaults.iconToggleButtonColors: ambient, Primary when checked, ambient with
-    // replaced alpha when disabled. Standard icon toggle colors use rememberUpdatedState.
+    /// <summary>Defines the optional selected shape; null retains CornerRadius.</summary>
+    public static readonly StyledProperty<CornerRadius?> CheckedCornerRadiusProperty =
+        AvaloniaProperty.Register<IconToggleButton, CornerRadius?>(nameof(CheckedCornerRadius));
+
+    /// <summary>The checked shape. The pressed shape, when supplied, takes precedence while pressed.</summary>
+    public CornerRadius? CheckedCornerRadius
+    {
+        get => GetValue(CheckedCornerRadiusProperty);
+        set => SetValue(CheckedCornerRadiusProperty, value);
+    }
+
+    // Ordinary IconButton/Toggle colors: ambient, supplied checked color when selected, ambient
+    // with replaced alpha when disabled. The outlined checked color comes from contentColorFor.
     public static readonly FuncMultiValueConverter<object, object> AmbientColorConverter = new((IReadOnlyList<object?> values) =>
     {
-        if (values.Count < 4 || values[0] is not bool enabled || values[1] is not ISolidColorBrush ambient ||
-            values[2] is not Color selectedColor || values[3] is not double disabledOpacity)
+        if (values.Count < 4 || values[0] is not bool enabled || values[1] is not (Color or ISolidColorBrush) ||
+            values[2] is not (Color or ISolidColorBrush) || values[3] is not double disabledOpacity)
             return AvaloniaProperty.UnsetValue;
+        var ambient = values[1] is Color ambientColor ? ambientColor : ((ISolidColorBrush)values[1]!).Color;
+        var selectedColor = values[2] switch
+        {
+            Color color => color,
+            ISolidColorBrush brush => brush.Color,
+            _ => ambient,
+        };
         var selected = values.Count > 4 && values[4] is true;
-        return new SolidColorBrush(!enabled ? Color.FromArgb((byte)Math.Round(Math.Clamp(disabledOpacity, 0, 1) * 255), ambient.Color.R, ambient.Color.G, ambient.Color.B)
-            : selected ? selectedColor : ambient.Color);
+        return new SolidColorBrush(!enabled ? Color.FromArgb((byte)Math.Round(Math.Clamp(disabledOpacity, 0, 1) * 255), ambient.R, ambient.G, ambient.B)
+            : selected ? selectedColor : ambient);
     });
 
     public bool IsChecked { get => GetValue(IsCheckedProperty); set => SetValue(IsCheckedProperty, value); }

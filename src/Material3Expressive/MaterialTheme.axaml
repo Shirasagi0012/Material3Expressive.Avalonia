@@ -29,6 +29,7 @@
                     <m3:FilledIconButtonTokenSource />
                     <m3:TonalIconButtonTokenSource />
                     <m3:OutlinedIconButtonTokenSource />
+                    <m3:IconToggleButtonTokenSource />
                     <m3:NavigationRailTokenSource />
                     <m3:NavigationDrawerTokenSource />
                     <m3:NavigationBarTokenSource />

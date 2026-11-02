@@ -202,6 +202,8 @@ Chip 使用自己的六状态 elevation 配置，消费共享控制器的最后�
 ContentColorFor 的可选内部 ambient 绑定用于 Chip 在标签 provider 外选择墨色，仍消费同一套
 实时背景 / Token / 环境绑定；内部 Resolve 入口供 Card 在选择禁用内容色前解析启用容器，
 复用相同角色顺序与环境回退。相关确认依据见 [DECISIONS](DECISIONS.md)。
+内部 BackgroundColor 绑定可直接提供颜色候选（如 Outlined IconToggleButton 的选中容器 Token），
+未提供时仍按 BackgroundProperty 读取属性；两种入口共用同一角色匹配逻辑。
 反馈未启用的 owner 不产生输入交互；呈现者解绑会清理交互，新呈现者的 hover 等待后续指针输入，
 包括 native owner 仍 pointer-over、没有重新 Enter 时的 Move。
 Button 的指针反馈观察其原生 IsPressed，键盘反馈只消费自身为 Source 的事件，避免可点击容器

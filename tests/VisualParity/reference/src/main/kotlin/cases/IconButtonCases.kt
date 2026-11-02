@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 data class IconButtonConfig(val style:String="filled", val size:String="small", val shape:String="round",
     val enabled:Boolean=true, val dark:Boolean=false, val rtl:Boolean=false, val width:Double?=null,
     val height:Double?=null, val pressedRadius:Double?=null, val action:String="none", val custom:String="none",
-    val empty:Boolean=false, val ambientColor:String?=null)
+    val empty:Boolean=false, val ambientColor:String?=null, val widthOption:String="uniform", val vibrant:Boolean=false)
 
 @ParitySuite("icon-button")
 class IconButtonCases {
@@ -86,6 +86,12 @@ class IconButtonCases {
                     key(122000,true); sample("key-down"); samplesAt(138000,197000,347000)
                     key(348000,false); sample("key-up"); samplesAt(364000,498000,700000)
                 }
+                "ambient" -> {
+                    advanceTo(1000); scene.ambientColor="#800080"
+                    writer.record(1000,"mutation","ambient changed"); host.draw(); sample("mutation"); samplesAt(16000,400000)
+                    advanceTo(401000); scene.ambientColor=config.ambientColor
+                    writer.record(401000,"mutation","ambient restored"); host.draw(); sample("restored"); samplesAt(416000,800000)
+                }
                 "theme", "size" -> {
                     advanceTo(1000)
                     if(config.action=="theme") scene.dark=true else scene.size="large"
@@ -138,6 +144,7 @@ class IconButtonCases {
     }
 
     private class IconScene(val config:IconButtonConfig) {
+        var ambientColor by mutableStateOf(config.ambientColor)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
         var size by mutableStateOf(config.size)
@@ -153,8 +160,9 @@ class IconButtonCases {
             MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme()) {
                 CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                     @Composable fun Scene() { Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) { ButtonContent() } }
-                    if(config.ambientColor!=null) {
-                        val ambient=Color((0xff000000L or config.ambientColor.removePrefix("#").toLong(16)).toInt())
+                    val ambientHex=ambientColor?.removePrefix("#")
+                    if(ambientHex!=null) {
+                        val ambient=Color(((if(ambientHex.length==6)0xff000000L else 0L) or ambientHex.toLong(16)).toInt())
                         CompositionLocalProvider(LocalContentColor provides ambient) { Scene() }
                     } else Scene()
                 }
@@ -176,12 +184,17 @@ class IconButtonCases {
                     pressed=presses.isNotEmpty(); hovered=hovers.isNotEmpty()
                 }
             }
+            val widthOption=when(config.widthOption) {
+                "narrow" -> IconButtonDefaults.IconButtonWidthOption.Narrow
+                "wide" -> IconButtonDefaults.IconButtonWidthOption.Wide
+                else -> IconButtonDefaults.IconButtonWidthOption.Uniform
+            }
             val dimensions=when(size) {
-                "xsmall" -> IconButtonDefaults.extraSmallContainerSize()
-                "medium" -> IconButtonDefaults.mediumContainerSize()
-                "large" -> IconButtonDefaults.largeContainerSize()
-                "xlarge" -> IconButtonDefaults.extraLargeContainerSize()
-                else -> IconButtonDefaults.smallContainerSize()
+                "xsmall" -> IconButtonDefaults.extraSmallContainerSize(widthOption)
+                "medium" -> IconButtonDefaults.mediumContainerSize(widthOption)
+                "large" -> IconButtonDefaults.largeContainerSize(widthOption)
+                "xlarge" -> IconButtonDefaults.extraLargeContainerSize(widthOption)
+                else -> IconButtonDefaults.smallContainerSize(widthOption)
             }
             val iconSize=when(size) {
                 "xsmall" -> IconButtonDefaults.extraSmallIconSize; "medium" -> IconButtonDefaults.mediumIconSize
@@ -194,10 +207,10 @@ class IconButtonCases {
                 else -> IconButtonDefaults.standardShape
             }
             val colors=when(config.style) {
-                "standard" -> IconButtonDefaults.iconButtonColors(); "tonal" -> IconButtonDefaults.filledTonalIconButtonColors()
-                "outlined" -> IconButtonDefaults.outlinedIconButtonColors(); else -> IconButtonDefaults.filledIconButtonColors()
+                "standard" -> if(config.vibrant) IconButtonDefaults.iconButtonVibrantColors() else IconButtonDefaults.iconButtonColors(); "tonal" -> IconButtonDefaults.filledTonalIconButtonColors()
+                "outlined" -> if(config.vibrant) IconButtonDefaults.outlinedIconButtonVibrantColors() else IconButtonDefaults.outlinedIconButtonColors(); else -> IconButtonDefaults.filledIconButtonColors()
             }
-            val border=if(config.custom=="border") BorderStroke(3.dp,Color.Red) else IconButtonDefaults.outlinedIconButtonBorder(enabled)
+            val border=if(config.custom=="border") BorderStroke(3.dp,Color.Red) else if(config.vibrant) IconButtonDefaults.outlinedIconButtonVibrantBorder(enabled) else IconButtonDefaults.outlinedIconButtonBorder(enabled)
             var modifier=container.modifier().focusRequester(requester).onFocusChanged { focused=it.isFocused }
             if(config.width!=null) modifier=modifier.width(config.width.toFloat().dp)
             if(config.height!=null) modifier=modifier.height(config.height.toFloat().dp)
@@ -205,6 +218,7 @@ class IconButtonCases {
             // Other sizes use the explicit size helper as in upstream samples; do not constrain
             // default small to 40dp merely to match the current local allocation.
             if(size!="small") modifier=modifier.size(dimensions)
+            else if(config.widthOption!="uniform") modifier=modifier.minimumInteractiveComponentSize().size(dimensions)
             val content:@Composable ()->Unit = {
                 if(!config.empty) {
                     val paint=LocalContentColor.current

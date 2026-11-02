@@ -18,7 +18,8 @@
       <Setter Property="ActionIconContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ActionIconColor}}" />
       <Setter Property="DefaultExpandedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SmallExpandedHeight}}" />
       <Setter Property="ExpandedHeight" Value="{Binding DefaultExpandedHeight, RelativeSource={RelativeSource Self}}" />
-      <Setter Property="CollapsedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.CollapsedHeight}}" />
+      <Setter Property="DefaultCollapsedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.CollapsedHeight}}" />
+      <Setter Property="CollapsedHeight" Value="{Binding DefaultCollapsedHeight, RelativeSource={RelativeSource Self}}" />
       <Setter Property="ContentPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContentPadding}}" />
       <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.WindowInsets}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />

@@ -16,6 +16,7 @@ namespace Material3Expressive.Foundation.Rendering;
 internal sealed class ContentColorForExtension : MarkupExtension, IMultiValueConverter
 {
     public string BackgroundProperty { get; set; } = "Background";
+    public BindingBase? BackgroundColor { get; set; }
     public BindingBase? AmbientContentColor { get; set; }
     private static readonly (MaterialTokenKey<Avalonia.Media.Color> Background, MaterialTokenKey<Avalonia.Media.Color> Content)[] Roles =
     [
@@ -42,7 +43,7 @@ internal sealed class ContentColorForExtension : MarkupExtension, IMultiValueCon
             Priority = serviceProvider.GetService(typeof(IAvaloniaXamlIlControlTemplateProvider)) is null
                 ? BindingPriority.LocalValue : BindingPriority.Template,
         };
-        binding.Bindings.Add(new Binding(BackgroundProperty) { RelativeSource = new RelativeSource(RelativeSourceMode.Self) });
+        binding.Bindings.Add(BackgroundColor ?? new Binding(BackgroundProperty) { RelativeSource = new RelativeSource(RelativeSourceMode.Self) });
         binding.Bindings.Add(AmbientContentColor ?? new Binding("(TextElement.Foreground)")
         {
             RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) { AncestorType = typeof(Control) },

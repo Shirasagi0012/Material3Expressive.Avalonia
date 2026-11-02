@@ -64,14 +64,19 @@ Material3 路径前缀为 `compose/material3/material3/src/commonMain/kotlin/and
 菜单状态本身、命令执行、布局算法、动画持有者不放进 TokenSource。现有 Button、ToggleButton、IconButton、
 Surface、Tooltip 和 DropdownMenu 的基础实现继续按各自维护说明与共享决定执行。
 
-内置 Action / ToggleAction 通过按钮主题的 `TextBlock.TextWrapping=NoWrap` 对齐上游 `softWrap=false`。
-Button / ToggleButton 模板读取原生附加属性，详见[共享决定](../../../../docs/DECISIONS.md#按钮标签换行使用原生附加属性)。
-没有为此另建标签模板；CustomItem 继续由调用方配置。上游同时设置的 `maxLines=1` 对显式换行的截断尚未对齐，
-本次只修正自动换行，不将两者视为同一行为。
+内置 Action / ToggleAction 对齐固定上游 `Text(maxLines=1, softWrap=false, overflow=Visible)`。
+两者共用组件内 ButtonGroupLabelTemplate：原生 TextBlock 的 MaxLines=1 / NoWrap / 无省略，
+且不在文字节点裁剪；保留父 Button Surface 的裁剪。不能截断 Label 数据，否则菜单会丢失原文。
+这次模板补齐单行与 Visible 语义，不修改通用 ButtonContentPresenter，也不改变
+[共享换行配置](../../../../docs/DECISIONS.md#按钮标签换行使用原生附加属性)；CustomItem 仍由调用方配置。
 
 ## 验证与边界
 
 单元/headless 入口：[ButtonGroupTests](../../../../tests/Material3Expressive.Tests/ButtonGroupTests.cs)。
+其中显式换行覆盖 LF、CRLF、Unicode 行分隔符、动态 Label 和菜单原文；文字像素按当前
+VisualParity AUTHORING 的范围暂不纳入，不能从这些行为测试推断双端文字绘制一致。
+本批次另启动 Windows Catalog，检查三项标签在组内仅显示首行，并在收窄后实际打开菜单，
+确认 Share / Archive 的完整换行文字仍显示；这只是本地桌面冒烟检查。
 双端入口：[Avalonia cases](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ButtonGroupCases.cs) /
 [Compose cases](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ButtonGroupCases.kt)。
 

@@ -17,6 +17,17 @@ namespace Material3Expressive.Components;
 /// </summary>
 public class IconButton : Button
 {
+    /// <summary>Defines the <see cref="WidthOption"/> property.</summary>
+    public static readonly StyledProperty<IconButtonWidthOption> WidthOptionProperty =
+        AvaloniaProperty.Register<IconButton, IconButtonWidthOption>(nameof(WidthOption), IconButtonWidthOption.Uniform);
+
+    /// <summary>Selects the size table's narrow, uniform, or wide container. Explicit Width still takes precedence.</summary>
+    public IconButtonWidthOption WidthOption
+    {
+        get => GetValue(WidthOptionProperty);
+        set => SetValue(WidthOptionProperty, value);
+    }
+
     /// <summary>Defines the <see cref="Symbol"/> property.</summary>
     public static readonly StyledProperty<MaterialSymbolCodepoint> SymbolProperty =
         AvaloniaProperty.Register<IconButton, MaterialSymbolCodepoint>(
@@ -31,13 +42,14 @@ public class IconButton : Button
     }
 }
 
+/// <summary>The container width choices in IconButtonDefaults.</summary>
+public enum IconButtonWidthOption { Narrow, Uniform, Wide }
+
 /// <summary>
 /// Baseline defaults for the five IconButton size tables (upstream XSmall/Small/Medium/Large/
 /// XLargeIconButtonTokens 14_1_0, except the Large table which still ships as v0_11_0), shared by
 /// every icon button style. Shapes hop into the sys corner scale. The three width options are
-/// recorded as space pairs (container width = space + icon + space) but only the default option is
-/// consumed for now — it is square at every size, so themes bind MinWidth to ContainerHeight and
-/// the narrow/wide XAML expression is deferred with the width-option slice. The older Large
+/// consumed as space pairs (container width = space + icon + space). The older Large
 /// revision names the default pair Uniform*; the 14_1_0 Default* naming is kept across all five
 /// tables. Immutable baseline: <see cref="Changed"/> is a documented no-op.
 /// </summary>
@@ -48,6 +60,8 @@ public class IconButtonSizesTokenSource : ITokenSource
         [Comp.IconButtonXSmall.ContainerHeight] = 32d,
         [Comp.IconButtonXSmall.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonXSmall.ContainerShapeSquare] = new TokenRef(Sys.Shape.Medium),
+        [Comp.IconButtonXSmall.SelectedContainerShapeRound] = new TokenRef(Sys.Shape.Medium),
+        [Comp.IconButtonXSmall.SelectedContainerShapeSquare] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonXSmall.PressedContainerShape] = new TokenRef(Sys.Shape.Small),
         [Comp.IconButtonXSmall.IconSize] = 20d,
         [Comp.IconButtonXSmall.DefaultLeadingSpace] = 6d,
@@ -61,6 +75,8 @@ public class IconButtonSizesTokenSource : ITokenSource
         [Comp.IconButtonSmall.ContainerHeight] = 40d,
         [Comp.IconButtonSmall.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonSmall.ContainerShapeSquare] = new TokenRef(Sys.Shape.Medium),
+        [Comp.IconButtonSmall.SelectedContainerShapeRound] = new TokenRef(Sys.Shape.Medium),
+        [Comp.IconButtonSmall.SelectedContainerShapeSquare] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonSmall.PressedContainerShape] = new TokenRef(Sys.Shape.Small),
         [Comp.IconButtonSmall.IconSize] = 24d,
         [Comp.IconButtonSmall.DefaultLeadingSpace] = 8d,
@@ -74,6 +90,8 @@ public class IconButtonSizesTokenSource : ITokenSource
         [Comp.IconButtonMedium.ContainerHeight] = 56d,
         [Comp.IconButtonMedium.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonMedium.ContainerShapeSquare] = new TokenRef(Sys.Shape.Large),
+        [Comp.IconButtonMedium.SelectedContainerShapeRound] = new TokenRef(Sys.Shape.Large),
+        [Comp.IconButtonMedium.SelectedContainerShapeSquare] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonMedium.PressedContainerShape] = new TokenRef(Sys.Shape.Medium),
         [Comp.IconButtonMedium.IconSize] = 24d,
         [Comp.IconButtonMedium.DefaultLeadingSpace] = 16d,
@@ -87,6 +105,8 @@ public class IconButtonSizesTokenSource : ITokenSource
         [Comp.IconButtonLarge.ContainerHeight] = 96d,
         [Comp.IconButtonLarge.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonLarge.ContainerShapeSquare] = new TokenRef(Sys.Shape.ExtraLarge),
+        [Comp.IconButtonLarge.SelectedContainerShapeRound] = new TokenRef(Sys.Shape.ExtraLarge),
+        [Comp.IconButtonLarge.SelectedContainerShapeSquare] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonLarge.PressedContainerShape] = new TokenRef(Sys.Shape.Large),
         [Comp.IconButtonLarge.IconSize] = 32d,
         [Comp.IconButtonLarge.DefaultLeadingSpace] = 32d,
@@ -100,6 +120,8 @@ public class IconButtonSizesTokenSource : ITokenSource
         [Comp.IconButtonXLarge.ContainerHeight] = 136d,
         [Comp.IconButtonXLarge.ContainerShapeRound] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonXLarge.ContainerShapeSquare] = new TokenRef(Sys.Shape.ExtraLarge),
+        [Comp.IconButtonXLarge.SelectedContainerShapeRound] = new TokenRef(Sys.Shape.ExtraLarge),
+        [Comp.IconButtonXLarge.SelectedContainerShapeSquare] = new TokenRef(Sys.Shape.Full),
         [Comp.IconButtonXLarge.PressedContainerShape] = new TokenRef(Sys.Shape.Large),
         [Comp.IconButtonXLarge.IconSize] = 40d,
         [Comp.IconButtonXLarge.DefaultLeadingSpace] = 48d,
@@ -121,10 +143,8 @@ public class IconButtonSizesTokenSource : ITokenSource
 /// <summary>
 /// Baseline defaults for the standard IconButton slots (upstream StandardIconButtonTokens 14_1_0).
 /// The container is transparent at rest and when disabled (upstream composable, not a token).
-/// Recorded deviation: the plain upstream composable defaults the content color to the ambient
-/// LocalContentColor and only the vibrant variant uses the token table (OnSurfaceVariant); the
-/// table value is taken here because the state-layer and disabled derivations need a concrete
-/// color to hang off. Immutable baseline: <see cref="Changed"/> is a documented no-op.
+/// MaterialVibrantIconButtonTheme consumes these color slots; the ordinary standard theme uses
+/// the ambient content color. Immutable baseline: <see cref="Changed"/> is a documented no-op.
 /// </summary>
 public class StandardIconButtonTokenSource : ITokenSource
 {
@@ -201,7 +221,7 @@ public class TonalIconButtonTokenSource : ITokenSource
 
 /// <summary>
 /// Baseline defaults for the outlined IconButton slots (upstream OutlinedIconButtonTokens 14_1_0).
-/// Same LocalContentColor deviation as the standard style. The disabled outline is the outline
+/// MaterialOutlinedVibrantIconButtonTheme consumes these slots. The disabled outline is the outline
 /// color at the disabled-content opacity (0.38): the raw token table lists plain OutlineVariant,
 /// but both upstream border paths (plain and vibrant) derive it that way — the composable is the
 /// source of truth, as with the Button family. Immutable baseline: <see cref="Changed"/> is a

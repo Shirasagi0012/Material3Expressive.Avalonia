@@ -1,7 +1,7 @@
 # IconButton
 
 `m3:IconButton` 是以 Material `Symbol` 显示单个动作的 Button 派生控件，提供 Standard、Filled、Tonal、Outlined
-四种主题和五档尺寸。先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
+四种主题、五档尺寸与三档宽度。先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
 实现映射及尚未解决的默认值差异见 [INTERNALS](INTERNALS.md)。
 
 ## 最小示例
@@ -28,6 +28,8 @@
 | Filled | `MaterialFilledIconButtonTheme` |
 | Tonal | `MaterialTonalIconButtonTheme` |
 | Outlined | `MaterialOutlinedIconButtonTheme` |
+| Vibrant Standard | `MaterialVibrantIconButtonTheme` |
+| Vibrant Outlined | `MaterialOutlinedVibrantIconButtonTheme` |
 
 ```xml
 <m3:IconButton Symbol="Add" Classes="medium"
@@ -41,9 +43,29 @@
 禁用使用 `IsEnabled=false`；Enter 沿用原生按下激活，`Space` 遵循原生 ClickMode。
 普通 IconButton 没有 IsChecked；受控切换使用下面的 IconToggleButton。
 
+### 普通与 Vibrant 颜色
+
+普通 Standard（包括隐式主题）和 Outlined 使用父级 `TextElement.Foreground` 作为默认内容色；
+禁用时将 alpha 替换为 DisabledContentOpacity，而不是乘以原 alpha。Outlined 默认描边也取父级内容色。
+
+```xml
+<StackPanel Orientation="Horizontal" TextElement.Foreground="#245A80">
+  <m3:IconButton Symbol="Home" AutomationProperties.Name="主页" />
+  <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialOutlinedIconButtonTheme}"
+                 AutomationProperties.Name="主页（描边）" />
+  <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialVibrantIconButtonTheme}"
+                 AutomationProperties.Name="主页（Vibrant）" />
+</StackPanel>
+```
+
+**从旧主题迁移：** 依赖 `Comp.StandardIconButton.*` / `Comp.OutlinedIconButton.*` 颜色 Token 的调用方，
+分别改用 `MaterialVibrantIconButtonTheme` / `MaterialOutlinedVibrantIconButtonTheme`。
+这两个主题保留原有容器、内容、状态层和描边颜色 Token 的消费方式；普通主题不再消费这些颜色槽。
+尺寸和形状 Token 的用法不变。此行为迁移已于 2026-11-03 获维护者确认。
+
 ## IconToggleButton
 
-`IconToggleButton` 提供固定上游 Standard 的受控切换入口，沿用 Symbol 和尺寸模板。
+`IconToggleButton` 提供 Standard（默认）、Filled、Tonal、Outlined 的受控切换入口，沿用 Symbol、尺寸和宽度模板。
 
 ```xml
 <m3:IconToggleButton Symbol="Favorite" IsChecked="{Binding IsFavorite}"
@@ -54,7 +76,35 @@
 支持继承的 Click / Command，但它们也不隐式写回状态。无障碍采用 Checkbox / Toggle 模式。
 默认未选中颜色来自父级内容色，选中使用 Primary，禁用替换 ambient 色的 alpha；
 Foreground、CornerRadius 等仍可由用户 Style / Binding / LocalValue 覆盖。
-本次提供 Standard 固定形状入口；不包含 Filled/Tonal/Outlined toggle 专用配色与上游 shapes 重载。
+切换主题分别使用 `MaterialStandardIconToggleButtonTheme`、`MaterialFilledIconToggleButtonTheme`、
+`MaterialTonalIconToggleButtonTheme`、`MaterialOutlinedIconToggleButtonTheme`。Filled 未选中使用 SurfaceContainer / OnSurfaceVariant，选中使用
+Primary / OnPrimary；Tonal 未选中使用 SecondaryContainer / OnSecondaryContainer，选中使用
+Secondary / OnSecondary。Outlined 未选中时使用透明容器与父级内容色，选中使用 InverseSurface 及其
+`contentColorFor` 内容色；选中时移除默认描边（禁用的选中态也无描边）。禁用优先于选中配色，颜色立即更新，没有颜色过渡。
+
+```xml
+<m3:IconToggleButton Symbol="Favorite" Classes="morph"
+                     Theme="{StaticResource MaterialOutlinedIconToggleButtonTheme}"
+                     CheckedChangeRequested="ChangeFavorite" AutomationProperties.Name="收藏" />
+```
+
+```xml
+<m3:IconToggleButton Symbol="Favorite" IsChecked="{Binding IsFavorite}"
+                     Theme="{StaticResource MaterialFilledIconToggleButtonTheme}"
+                     CheckedCornerRadius="12" m3:MaterialButton.PressedCornerRadius="8"
+                     CheckedChangeRequested="ChangeFavorite" AutomationProperties.Name="收藏" />
+```
+
+`CheckedCornerRadius` 默认 null，保留静止 `CornerRadius`。显式设置后按 DefaultEffects 动画切换；
+按压目标优先于选中目标，反向和重挂载沿用共享 Surface 生命周期。示例处理器：
+
+```csharp
+private void ChangeFavorite(object? sender, IconCheckedChangeEventArgs e) =>
+    ((IconToggleButton)sender!).IsChecked = e.Value;
+```
+
+使用 ViewModel 绑定时在处理器写回 ViewModel 属性。Outlined toggle 已按获批的颜色构造逻辑实现，
+不复制上游依赖调用顺序的缓存问题，见 [INTERNALS](INTERNALS.md#2026-11-03-颜色与缓存决定)。
 
 默认 Small 不设置 class；一次只选择一档尺寸：
 
@@ -66,12 +116,42 @@ Foreground、CornerRadius 等仍可由用户 Style / Binding / LocalValue 覆盖
 | `large` | 96 / 32 |
 | `xlarge` | 136 / 40 |
 
-Small 的外层默认布局为 48×48，容器 40×40；XS 的主题默认 Width/Height 为 32，外层与容器均为 32×32。
+`WidthOption` 默认 Uniform；Narrow / Wide 只改变容器宽度，不改变图标尺寸或高度：
+
+| 尺寸 | Narrow / Uniform / Wide 容器宽度（DIP） |
+| --- | --- |
+| XS | 28 / 32 / 40 |
+| Small | 32 / 40 / 52 |
+| Medium | 48 / 56 / 72 |
+| Large | 64 / 96 / 128 |
+| XL | 104 / 136 / 184 |
+
+```xml
+<m3:IconButton Symbol="Add" Classes="medium" WidthOption="Wide"
+               Theme="{StaticResource MaterialTonalIconButtonTheme}" AutomationProperties.Name="添加" />
+```
+
+Small 的外层默认至少 48×48，Uniform 容器 40×40；XS 的主题默认 Width 使用所选宽度、Height 为 32。
 其他尺寸按各自容器边长布局；留白不扩大鼠标点击区域。
 `Width`/`Height`、`MinWidth`/`MinHeight` 保留显式约束；未设置的公开 `MinWidth`/`MinHeight` 为 0，
 不要据其推断默认容器尺寸，需要布局读数时看实际 `Bounds`。
 
 ## 形状与接入
+
+`Classes="square"` 选择当前尺寸的方形圆角；`Classes="morph"` 显式启用按压形变。
+两者可以与尺寸 class 组合，切换按钮还会采用对应的选中形状：圆形静止 → 方形选中，
+方形静止 → 圆形选中。默认不含 morph，仍保持固定形状。
+
+```xml
+<m3:IconButton Symbol="Add" Classes="medium square morph" />
+<m3:IconToggleButton Symbol="Favorite" Classes="large morph"
+                     Theme="{StaticResource MaterialFilledIconToggleButtonTheme}"
+                     CheckedChangeRequested="ChangeFavorite" />
+```
+
+预设保持动态 Token 引用；普通 Style 或显式 CornerRadius、PressedCornerRadius、CheckedCornerRadius
+仍优先，显式设置可空目标为 null 可关闭对应形变。移除 morph 会恢复无目标的默认配置。
+
 
 默认按压不变形，`CornerRadius` 配置静止形状，`MaterialButton.PressedCornerRadius` 显式配置按压目标：
 
@@ -90,10 +170,11 @@ Small 的外层默认布局为 48×48，容器 40×40；XS 的主题默认 Width
 
 尺寸 class 提供默认值，普通用户 Style、局部值或绑定均可覆盖静止圆角、按压目标和 Width/Height；
 XS 的 32 DIP 也不是强制尺寸。形状变化不改变内容/尺寸布局。
-圆角方形通过 `CornerRadius` 或 `ContainerShapeSquare` Token 表达，没有独立 square class。
+圆角方形可用 `square` class，或通过 `CornerRadius` / `ContainerShapeSquare` Token 显式配置。
 `Background`/`Foreground` 调整背景/图标，`BorderBrush`/`BorderThickness` 调整描边。
-状态层/ripple 颜色来自主题 Token，不保证随局部 `Foreground` 同步；需要各状态一致时优先
-[Token 覆盖](../../../../docs/GETTING_STARTED.md)，并检查禁用状态。
+普通 Standard 按上游从外层内容环境选状态层/ripple 墨色；普通 Outlined 和 Filled/Tonal/Outlined toggle
+使用有效 Foreground。Vibrant 兼容主题保留状态层颜色 Token，不保证随局部 Foreground 同步。
+配置后应同时检查禁用状态和交互反馈。
 
 主题默认颜色和描边同样可被普通 Style、局部值或绑定覆盖，禁用不会强制替换这些设置；
 需要禁用差异时用自己的状态样式或对应 Token。清除局部值后恢复剩余样式或当前尺寸/状态的主题默认值，
@@ -102,10 +183,11 @@ XS 的 32 DIP 也不是强制尺寸。形状变化不改变内容/尺寸布局�
 
 ## 使用边界
 
-- 当前只提供 uniform 宽度；narrow/wide 和非 Standard toggle 入口尚未实现
-- Standard/Outlined 当前默认图标色为 OnSurfaceVariant，不自动采用上游 ambient 内容色；Outlined 描边用 OutlineVariant，大尺寸仍为 2/3 DIP。这些是未解决差异，不是已接受适配
-- 强制 `Width`/`Height` 小于默认图标尺寸时，`MaterialSymbol` 可能溢出；替换模板需自行维护尺寸、形状和反馈接入
-- Material 焦点环尚未实现，当前使用状态层；Material Symbols 字形、镜像策略和真实桌面显示不由向量 parity 用例证明
+- 尚未提供任意路径 Shape、外部 MutableInteractionSource；详见维护说明
+- Outlined 默认描边按上游 helper 对所有尺寸使用 Small 的 1 DIP；显式 BorderBrush / BorderThickness 仍可覆盖默认值
+- 模板内部图标按两轴约束分别缩小（例如 20×40 容器获得 20×24 图标盒）；替换模板需自行维护尺寸、形状和反馈接入
+- 默认焦点反馈为状态层；可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用共享内缩焦点环，各尺寸/变体尚未独立完成双端焦点环验收
+- Material Symbols 字形、镜像策略和真实桌面显示不由向量 parity 用例证明
 
 主题示例见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)，工具栏组合见
 [FloatingToolbarDemo](../../../Material3Expressive.Catalog/FloatingToolbarDemo.axaml)。

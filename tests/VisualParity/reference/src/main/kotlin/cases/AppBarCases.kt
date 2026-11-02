@@ -25,10 +25,11 @@ data class AppBarConfig(val variant:String="small", val alignment:String="start"
     val expandedHeight:Double?=null, val collapsedHeight:Double?=null, val insets:List<Double>?=null, val padding:List<Double>?=null,
     val consumed:List<Double>?=null, val fraction:Double=0.0, val actions:Int=2, val navigation:Boolean=true, val fab:Boolean=false,
     val custom:Boolean=false, val arrangement:String="start", val spacing:Double=8.0, val dark:Boolean=false,
-    val elevation:Double=0.0, val behavior:String="exit", val action:String="none", val velocity:Double=0.0, val noSpecs:Boolean=false)
+    val elevation:Double=0.0, val behavior:String="exit", val action:String="none", val velocity:Double=0.0, val noSpecs:Boolean=false, val heightDefaults:String="none")
 
 @ParitySuite("appbar")
 class AppBarCases {
+    @ParityScenario("height-defaults") suspend fun heightDefaults(writer:CaptureWriter) = static(writer)
     @ParityScenario("static")
     suspend fun static(writer:CaptureWriter) {
         ComposeHost(writer,420,300,desktopContext()).use { host ->
@@ -147,8 +148,16 @@ class AppBarCases {
             val nav:@Composable ()->Unit={ if(c.navigation) Marker("navigation",48.0,48.0) }
             val actions:@Composable RowScope.()->Unit={ repeat(c.actions) { Marker("action-$it",48.0,48.0) } }
             val align=when(c.alignment) { "center"->Alignment.CenterHorizontally; "end"->Alignment.End; else->Alignment.Start }
-            val expanded=height?.toFloat()?.dp
-            val collapsed=c.collapsedHeight?.toFloat()?.dp ?: 64.dp
+            val expanded=when {
+                c.heightDefaults=="both-nan" -> Dp.Unspecified
+                c.heightDefaults=="both-infinity" -> Dp.Infinity
+                else -> height?.toFloat()?.dp
+            }
+            val collapsed=when {
+                c.heightDefaults.endsWith("nan") -> Dp.Unspecified
+                c.heightDefaults.endsWith("infinity") -> Dp.Infinity
+                else -> c.collapsedHeight?.toFloat()?.dp ?: 64.dp
+            }
             val behavior=topBehavior
             val colors=if(customColors) TopAppBarDefaults.topAppBarColors(containerColor=Color(0xFF336699),scrolledContainerColor=Color(0xFF228866),navigationIconContentColor=Color(0xFFDD7722),titleContentColor=Color(0xFF8866AA),actionIconContentColor=Color(0xFF008877),subtitleContentColor=Color(0xFF223344)) else TopAppBarDefaults.topAppBarColors()
             when(c.variant) {

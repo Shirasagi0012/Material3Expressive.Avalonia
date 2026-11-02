@@ -135,6 +135,35 @@
                     </m3:InputChip>
                     <m3:InputChip Content="Disabled contact" IsSelected="True" IsEnabled="False" />
                 </WrapPanel>
+                <TextBlock Text="Icon button widths" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <m3:IconButton Symbol="Remove" WidthOption="Narrow" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Narrow" />
+                    <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Uniform" />
+                    <m3:IconButton Symbol="Add" WidthOption="Wide" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Wide" />
+                    <m3:IconButton Symbol="Favorite" WidthOption="Wide" Classes="medium" Theme="{StaticResource MaterialTonalIconButtonTheme}" AutomationProperties.Name="Medium wide" />
+                </StackPanel>
+                <TextBlock Text="Ambient and vibrant icon colors" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12" TextElement.Foreground="#245A80">
+                    <m3:IconButton Symbol="Home" AutomationProperties.Name="Ambient standard" />
+                    <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialVibrantIconButtonTheme}" AutomationProperties.Name="Vibrant standard" />
+                    <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialOutlinedIconButtonTheme}" AutomationProperties.Name="Ambient outlined" />
+                    <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialOutlinedVibrantIconButtonTheme}" AutomationProperties.Name="Vibrant outlined" />
+                </StackPanel>
+                <TextBlock Text="Controlled icon toggles" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <m3:IconToggleButton Symbol="Favorite" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialFilledIconToggleButtonTheme}" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Filled favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialOutlinedIconToggleButtonTheme}" Classes="morph" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Outlined favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialTonalIconToggleButtonTheme}" IsChecked="True" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Tonal favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialFilledIconToggleButtonTheme}" WidthOption="Wide" CheckedCornerRadius="12" m3:MaterialButton.PressedCornerRadius="8" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Shape-changing favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialTonalIconToggleButtonTheme}" IsChecked="True" IsEnabled="False" AutomationProperties.Name="Disabled favorite" />
+                </StackPanel>
+                <TextBlock Text="Size-aware shape presets" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <m3:IconButton Symbol="Add" Classes="square morph" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Square morph" />
+                    <m3:IconToggleButton Symbol="Favorite" Classes="medium morph" Theme="{StaticResource MaterialFilledIconToggleButtonTheme}" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Round morph favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Classes="medium square morph" Theme="{StaticResource MaterialTonalIconToggleButtonTheme}" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Square morph favorite" />
+                  </StackPanel>
                 <TextBlock Text="ToggleButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <ToggleButton Content="Filled" />

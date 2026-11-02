@@ -16,6 +16,52 @@ namespace Material3Expressive.Tests;
 public class AppBarTests
 {
     [AvaloniaTheory]
+    [InlineData("medium", double.NaN, 112)]
+    [InlineData("medium", double.PositiveInfinity, 112)]
+    [InlineData("large", double.NaN, 152)]
+    [InlineData("large", double.PositiveInfinity, 152)]
+    [InlineData("mediumFlexible", double.NaN, 112)]
+    [InlineData("mediumFlexible", double.PositiveInfinity, 112)]
+    [InlineData("largeFlexible", double.NaN, 120)]
+    [InlineData("largeFlexible", double.PositiveInfinity, 120)]
+    [InlineData("twoRows", double.NaN, 112)]
+    [InlineData("twoRows", double.PositiveInfinity, 112)]
+    public void UnspecifiedCollapsedHeight_UsesLiveDefaultAndKeepsExplicitInput(string variant, double requested, double expanded)
+    {
+        using var clock = new MotionTestClockScope();
+        TopAppBar bar = variant switch
+        {
+            "medium" => new MediumTopAppBar(), "large" => new LargeTopAppBar(),
+            "mediumFlexible" => new MediumFlexibleTopAppBar(), "largeFlexible" => new LargeFlexibleTopAppBar(),
+            _ => new TwoRowsTopAppBar()
+        };
+        bar.CollapsedHeight = requested;
+        var state = new TopAppBarState();
+        bar.ScrollBehavior = new TopAppBarScrollBehavior(TopAppBarScrollMode.ExitUntilCollapsed) { State = state };
+        var window = Show(bar);
+        try
+        {
+            Assert.Equal(requested, bar.CollapsedHeight);
+            Assert.Equal(64, bar.EffectiveCollapsedHeight);
+            Assert.Equal(expanded, bar.Bounds.Height);
+            Assert.Equal(64 - expanded, state.HeightOffsetLimit);
+            state.HeightOffset = state.HeightOffsetLimit; window.UpdateLayout();
+            Assert.Equal(64, bar.Bounds.Height);
+            bar.Resources[Material3Expressive.Tokens.MaterialTokens.Comp.AppBar.CollapsedHeight] = 72d;
+            window.UpdateLayout();
+            Assert.Equal(72, bar.EffectiveCollapsedHeight);
+            Assert.Equal(requested, bar.CollapsedHeight);
+            state.HeightOffset = state.HeightOffsetLimit; window.UpdateLayout();
+            Assert.Equal(72, bar.Bounds.Height);
+            bar.CollapsedHeight = 80; window.UpdateLayout();
+            Assert.Equal(80, bar.EffectiveCollapsedHeight);
+            bar.ClearValue(TopAppBar.CollapsedHeightProperty); window.UpdateLayout();
+            Assert.Equal(72, bar.CollapsedHeight);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData("small", 64)] [InlineData("center", 64)] [InlineData("medium", 112)]
     [InlineData("large", 152)] [InlineData("mediumFlexible", 112)] [InlineData("largeFlexible", 120)]
     [InlineData("twoRows", 112)]

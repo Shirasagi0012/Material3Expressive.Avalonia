@@ -11,8 +11,7 @@ public static partial class MaterialTokens
         // IconButton family, split along upstream's two orthogonal axes like the Button family:
         // style tables (colors/outline, per style) and size tables (metrics/shape, shared by every
         // style). The style tables follow the §7.4 state-layer model with a shared StateLayerColor
-        // aliased per state. Toggle-only tokens (Selected*/Unselected* colors and
-        // SelectedContainerShape*) are not transcribed — the icon toggle button is its own slice.
+        // aliased per state. Toggle colors are defined separately; selected shapes share the size tables.
         // No elevation slots: every icon button style is flat upstream.
 
         /// <summary>
@@ -95,12 +94,9 @@ public static partial class MaterialTokens
         // Size tables (upstream XSmall/Small/Medium/Large/XLargeIconButtonTokens 14_1_0, except the
         // Large table which still ships as v0_11_0). ContainerShapeRound is the resting shape;
         // ContainerShapeSquare is the opt-in square variant and PressedContainerShape the press
-        // morph target — transcribed now, consumed later (square opt-in and the motion slice).
-        // The three width options are recorded as their leading/trailing space pairs (container
-        // width = space + icon size + space); the default option is square, so it is consumed as
-        // MinWidth = ContainerHeight, and the narrow/wide XAML expression is deferred with the
-        // width-option slice. The older Large revision names the default pair Uniform* — the
-        // facade keeps the 14_1_0 Default* naming across all five tables.
+        // morph target. WidthOption consumes the three leading/trailing space pairs.
+        // The older Large revision names the default pair Uniform*; the facade retains
+        // Default* consistently. Selected shapes preserve the round/square inverse relation.
 
         /// <summary><c>md.comp.icon-button-xsmall.*</c> — extra small icon button metrics (32dp, 20dp icon).</summary>
         public static class IconButtonXSmall
@@ -109,6 +105,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.icon-button-xsmall.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.icon-button-xsmall.container.shape-square");
             public static readonly MaterialTokenKey<CornerRadius> PressedContainerShape = new("md.comp.icon-button-xsmall.pressed.container.shape");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeRound = new("md.comp.icon-button-xsmall.selected.container.shape-round");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeSquare = new("md.comp.icon-button-xsmall.selected.container.shape-square");
             public static readonly MaterialTokenKey<double> IconSize = new("md.comp.icon-button-xsmall.icon.size");
             public static readonly MaterialTokenKey<double> DefaultLeadingSpace = new("md.comp.icon-button-xsmall.default-leading-space");
             public static readonly MaterialTokenKey<double> DefaultTrailingSpace = new("md.comp.icon-button-xsmall.default-trailing-space");
@@ -126,6 +124,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.icon-button-small.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.icon-button-small.container.shape-square");
             public static readonly MaterialTokenKey<CornerRadius> PressedContainerShape = new("md.comp.icon-button-small.pressed.container.shape");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeRound = new("md.comp.icon-button-small.selected.container.shape-round");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeSquare = new("md.comp.icon-button-small.selected.container.shape-square");
             public static readonly MaterialTokenKey<double> IconSize = new("md.comp.icon-button-small.icon.size");
             public static readonly MaterialTokenKey<double> DefaultLeadingSpace = new("md.comp.icon-button-small.default-leading-space");
             public static readonly MaterialTokenKey<double> DefaultTrailingSpace = new("md.comp.icon-button-small.default-trailing-space");
@@ -143,6 +143,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.icon-button-medium.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.icon-button-medium.container.shape-square");
             public static readonly MaterialTokenKey<CornerRadius> PressedContainerShape = new("md.comp.icon-button-medium.pressed.container.shape");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeRound = new("md.comp.icon-button-medium.selected.container.shape-round");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeSquare = new("md.comp.icon-button-medium.selected.container.shape-square");
             public static readonly MaterialTokenKey<double> IconSize = new("md.comp.icon-button-medium.icon.size");
             public static readonly MaterialTokenKey<double> DefaultLeadingSpace = new("md.comp.icon-button-medium.default-leading-space");
             public static readonly MaterialTokenKey<double> DefaultTrailingSpace = new("md.comp.icon-button-medium.default-trailing-space");
@@ -160,6 +162,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.icon-button-large.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.icon-button-large.container.shape-square");
             public static readonly MaterialTokenKey<CornerRadius> PressedContainerShape = new("md.comp.icon-button-large.pressed.container.shape");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeRound = new("md.comp.icon-button-large.selected.container.shape-round");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeSquare = new("md.comp.icon-button-large.selected.container.shape-square");
             public static readonly MaterialTokenKey<double> IconSize = new("md.comp.icon-button-large.icon.size");
             public static readonly MaterialTokenKey<double> DefaultLeadingSpace = new("md.comp.icon-button-large.default-leading-space");
             public static readonly MaterialTokenKey<double> DefaultTrailingSpace = new("md.comp.icon-button-large.default-trailing-space");
@@ -177,6 +181,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeRound = new("md.comp.icon-button-xlarge.container.shape-round");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.icon-button-xlarge.container.shape-square");
             public static readonly MaterialTokenKey<CornerRadius> PressedContainerShape = new("md.comp.icon-button-xlarge.pressed.container.shape");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeRound = new("md.comp.icon-button-xlarge.selected.container.shape-round");
+            public static readonly MaterialTokenKey<CornerRadius> SelectedContainerShapeSquare = new("md.comp.icon-button-xlarge.selected.container.shape-square");
             public static readonly MaterialTokenKey<double> IconSize = new("md.comp.icon-button-xlarge.icon.size");
             public static readonly MaterialTokenKey<double> DefaultLeadingSpace = new("md.comp.icon-button-xlarge.default-leading-space");
             public static readonly MaterialTokenKey<double> DefaultTrailingSpace = new("md.comp.icon-button-xlarge.default-trailing-space");

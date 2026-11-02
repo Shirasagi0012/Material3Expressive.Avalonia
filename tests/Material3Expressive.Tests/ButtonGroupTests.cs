@@ -19,6 +19,66 @@ namespace Material3Expressive.Tests;
 
 public class ButtonGroupTests
 {
+    [AvaloniaTheory]
+    [InlineData("First\nSecond")]
+    [InlineData("First\r\nSecond")]
+    [InlineData("First\u2028Second")]
+    public void BuiltInLabelsLimitHardBreaksWithoutChangingSourceOrMenuText(string text)
+    {
+        using var clock = new MotionTestClockScope();
+        ButtonGroupAction[] actions = [new() { Label = text }, new ButtonGroupToggleAction { Label = text }];
+        var group = new ButtonGroup();
+        foreach (var action in actions)
+            group.Items.Add(action);
+        var window = DialogTests.Show(group);
+        try
+        {
+            Flush(window);
+            foreach (var action in actions)
+            {
+                var label = Assert.Single(action.ActionButton!.GetVisualDescendants().OfType<TextBlock>());
+                Assert.Equal(text, label.Text);
+                Assert.Single(label.TextLayout.TextLines);
+                Assert.Equal(1, label.MaxLines);
+                Assert.False(label.ClipToBounds);
+                Assert.Equal(TextTrimming.None, label.TextTrimming);
+                action.Label = "Updated\nStill hidden";
+                Flush(window);
+                Assert.Equal(action.Label, label.Text);
+                Assert.Single(label.TextLayout.TextLines);
+            }
+
+            group.MaxWidth = 20;
+            Flush(window);
+            Assert.Equal(actions.Select(action => action.Label),
+                group.Layout!.Menu.Items.OfType<DropdownMenuItem>().Select(item => item.Content));
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void HiddenLinesDoNotIncreaseIntrinsicWidthOrOverflowEarlier()
+    {
+        using var clock = new MotionTestClockScope();
+        var multiline = new ButtonGroupAction { Label = "First\nA much longer hidden second line" };
+        var singleLine = new ButtonGroupAction { Label = "First" };
+        var group = new ButtonGroup { Items = { multiline, singleLine } };
+        var window = DialogTests.Show(group);
+        try
+        {
+            Flush(window);
+            Assert.Equal(singleLine.Bounds.Size, multiline.Bounds.Size);
+            var width = group.Bounds.Width;
+            group.MaxWidth = width; Flush(window);
+            Assert.Equal(2, group.Layout!.VisibleCount);
+            multiline.Label = "First\nAnother still longer hidden line that must not affect intrinsic width";
+            Flush(window);
+            Assert.Equal(width, group.Bounds.Width);
+            Assert.Equal(2, group.Layout.VisibleCount);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaFact]
     public void CompressedActionAndToggleLabelsRemainOnOneLine()
     {
