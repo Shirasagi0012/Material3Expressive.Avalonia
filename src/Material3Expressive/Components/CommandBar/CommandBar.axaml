@@ -10,6 +10,13 @@
             SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorSizeAnimation}}"
             IndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorWidth}}"
             IndicatorHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorHeight}}"
+            ItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemMinHeight}}"
+            ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemMinWidth}}"
+            ItemContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemContentPadding}}"
+            InlineItemOuterPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.InlineItemOuterPadding}}"
+            IndicatorHorizontalInset="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorHorizontalInset}}"
+            StackedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.StackedContainerHeight}}"
+            IconLabelSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconLabelSpace}}"
             InlineContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.InlineContentPadding}}"
             MenuContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}"
             MenuMinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}"
@@ -52,6 +59,13 @@
             SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorSizeAnimation}}"
             IndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorWidth}}"
             IndicatorHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ActiveIndicatorHeight}}"
+            ItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemMinHeight}}"
+            ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemMinWidth}}"
+            ItemContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemContentPadding}}"
+            InlineItemOuterPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.InlineItemOuterPadding}}"
+            IndicatorHorizontalInset="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IndicatorHorizontalInset}}"
+            StackedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.StackedContainerHeight}}"
+            IconLabelSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.IconLabelSpace}}"
             InlineContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.InlineContentPadding}}"
             MenuContentPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}"
             MenuMinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}"
@@ -90,7 +104,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemMinHeight}}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
         <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.UnselectedIconColor}}" />
@@ -108,7 +122,7 @@
           <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" />
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ m3|CommandBarItemLayout#CommandLayout">
-          <Setter Property="IconLabelSpacing" Value="8" />
+          <Setter Property="IconLabelSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.OverflowIconLabelSpace}}" />
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Icon">
           <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
@@ -131,7 +145,7 @@
           <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" />
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ m3|CommandBarItemLayout#CommandLayout">
-          <Setter Property="IconLabelSpacing" Value="8" />
+          <Setter Property="IconLabelSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.OverflowIconLabelSpace}}" />
         </Style>
         <Style Selector="^[IsInOverflow=True] /template/ ContentPresenter#PART_Icon">
           <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
@@ -142,29 +156,29 @@
         </Style>
       </ControlTheme>
       <ControlTheme x:Key="{x:Type CommandBarSeparator}" TargetType="CommandBarSeparator">
-        <Setter Property="Margin" Value="8,8" />
+        <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.SeparatorMargin}}" />
         <Setter Property="Width" Value="1" />
-        <Setter Property="Height" Value="24" />
+        <Setter Property="Height" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.SeparatorHeight}}" />
         <Setter Property="Template">
           <ControlTemplate><Border Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" /></ControlTemplate>
         </Setter>
         <Style Selector="^[IsInOverflow=True]">
           <Setter Property="Width" Value="NaN" />
           <Setter Property="Height" Value="1" />
-          <Setter Property="Margin" Value="8,4" />
+          <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.OverflowSeparatorMargin}}" />
         </Style>
       </ControlTheme>
       <ControlTheme x:Key="MaterialCommandBarBaseTheme" TargetType="CommandBar">
         <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ContainerColor}}" />
         <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
         <Setter Property="CornerRadius" Value="0" />
-        <Setter Property="Padding" Value="4,0" />
+        <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ContainerPadding}}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="IsDynamicOverflowEnabled" Value="True" />
-        <Setter Property="ItemWidthBottom" Value="76" />
-        <Setter Property="ItemWidthRight" Value="104" />
-        <Setter Property="ItemWidthCollapsed" Value="48" />
+        <Setter Property="ItemWidthBottom" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemWidthBottom}}" />
+        <Setter Property="ItemWidthRight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemWidthRight}}" />
+        <Setter Property="ItemWidthCollapsed" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ItemWidthCollapsed}}" />
         <Setter Property="Template">
           <ControlTemplate>
             <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}"
@@ -223,11 +237,11 @@
       </ControlTheme>
       <ControlTheme x:Key="MaterialCommandBarInlineTheme" TargetType="CommandBar" BasedOn="{StaticResource MaterialCommandBarBaseTheme}">
         <Setter Property="DefaultLabelPosition" Value="Right" />
-        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ContainerHeight}}" />
       </ControlTheme>
       <ControlTheme x:Key="MaterialCommandBarIconTheme" TargetType="CommandBar" BasedOn="{StaticResource MaterialCommandBarBaseTheme}">
         <Setter Property="DefaultLabelPosition" Value="Collapsed" />
-        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+CommandBar.ContainerHeight}}" />
       </ControlTheme>
       <ControlTheme x:Key="{x:Type CommandBar}" TargetType="CommandBar" BasedOn="{StaticResource MaterialCommandBarStackedTheme}" />
       </ResourceDictionary>

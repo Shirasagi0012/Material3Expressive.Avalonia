@@ -2,6 +2,7 @@
 // Copyright 2023 The Android Open Source Project. Licensed under Apache-2.0 (LICENSE.txt).
 
 using System.Collections.Frozen;
+using Avalonia;
 using Avalonia.Styling;
 using Material3Expressive.Foundation.Tokens;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -11,6 +12,30 @@ namespace Material3Expressive.Components;
 public sealed class DatePickerModalTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object> {
+        [Comp.DatePickerModal.TitlePadding] = new Thickness(24, 16, 12, 0),
+        [Comp.DatePickerModal.HeadlinePadding] = new Thickness(24, 0, 12, 12),
+        [Comp.DatePickerModal.ModeToggleSize] = 48.0d,
+        [Comp.DatePickerModal.MonthNavigationHeight] = 56.0d,
+        [Comp.DatePickerModal.CalendarHorizontalPadding] = new Thickness(12, 0),
+        [Comp.DatePickerModal.NavigationButtonSize] = 48.0d,
+        [Comp.DatePickerModal.MonthButtonMinWidth] = 48.0d,
+        [Comp.DatePickerModal.MonthButtonHeight] = 48.0d,
+        [Comp.DatePickerModal.MonthButtonHorizontalPadding] = new Thickness(8, 0),
+        [Comp.DatePickerModal.WeekdayRowHeight] = 48.0d,
+        [Comp.DatePickerModal.DayCellWidth] = 48.0d,
+        [Comp.DatePickerModal.DayCellHeight] = 48.0d,
+        [Comp.DatePickerModal.RangeIndicatorTopOffset] = 4.0d,
+        [Comp.DatePickerModal.YearGridWidth] = 336.0d,
+        [Comp.DatePickerModal.YearGridVerticalMargin] = new Thickness(0, 16),
+        [Comp.DatePickerModal.YearCellWidth] = 112.0d,
+        [Comp.DatePickerModal.YearCellHeight] = 52.0d,
+        [Comp.DatePickerModal.YearScrollHeight] = 335.0d,
+        [Comp.DatePickerModal.RangeMonthListHeight] = 400.0d,
+        [Comp.DatePickerModal.RangeMonthTitleMargin] = new Thickness(24, 20, 0, 8),
+        [Comp.DatePickerModal.InputMargin] = new Thickness(24, 24, 24, 16),
+        [Comp.DatePickerModal.InputSpacing] = 8.0d,
+        [Comp.DatePickerModal.SingleInputWidth] = 312.0d,
+        [Comp.DatePickerModal.RangeInputWidth] = 152.0d,
         [Comp.DatePickerModal.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainerHigh),
         [Comp.DatePickerModal.ContainerElevation] = new TokenRef(Sys.Elevation.Level3),
         [Comp.DatePickerModal.ContainerHeight] = 568.0d,

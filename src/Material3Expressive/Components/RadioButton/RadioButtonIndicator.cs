@@ -25,6 +25,16 @@ internal sealed class RadioButtonIndicator : Control
     private readonly MaterialInteractionSource _localSource = new();
     private MaterialInteractionController? _interaction;
 
+    public static readonly StyledProperty<double> IndicatorSizeProperty =
+        AvaloniaProperty.Register<RadioButtonIndicator, double>(nameof(IndicatorSize), 20);
+    public double IndicatorSize { get => GetValue(IndicatorSizeProperty); set => SetValue(IndicatorSizeProperty, value); }
+
+    static RadioButtonIndicator()
+    {
+        AffectsMeasure<RadioButtonIndicator>(IndicatorSizeProperty);
+        AffectsRender<RadioButtonIndicator>(IndicatorSizeProperty);
+    }
+
     public static readonly StyledProperty<Foundation.Motion.SpringSpec?> DotAnimationProperty =
         AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec?>(nameof(DotAnimation));
     public Foundation.Motion.SpringSpec? DotAnimation { get => GetValue(DotAnimationProperty); set => SetValue(DotAnimationProperty, value); }
@@ -60,7 +70,7 @@ internal sealed class RadioButtonIndicator : Control
         _ => Colors?.DisabledUnselectedColor ?? DisabledUnselectedColor,
     };
 
-    protected override Size MeasureOverride(Size availableSize) => new(20, 20);
+    protected override Size MeasureOverride(Size availableSize) => new(IndicatorSize, IndicatorSize);
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -149,10 +159,10 @@ internal sealed class RadioButtonIndicator : Control
     public override void Render(DrawingContext context)
     {
         var scale = (float)Avalonia.Layout.LayoutHelper.GetLayoutScale(this);
-        context.Custom(new RadioDrawOperation(new Rect(Bounds.Size), scale, PaintedColor, DotRadius));
+        context.Custom(new RadioDrawOperation(new Rect(Bounds.Size), scale, (float)IndicatorSize, PaintedColor, DotRadius));
     }
 
-    private sealed class RadioDrawOperation(Rect bounds, float scale, Color color, float dotRadius) : ICustomDrawOperation
+    private sealed class RadioDrawOperation(Rect bounds, float scale, float indicatorSize, Color color, float dotRadius) : ICustomDrawOperation
     {
         public Rect Bounds { get; } = bounds;
         public bool HitTest(Point point) => false;
@@ -170,7 +180,7 @@ internal sealed class RadioButtonIndicator : Control
                 // Preserve Compose's Float physical-pixel arithmetic before the DIP transform.
                 canvas.Scale(1 / scale);
                 var strokeWidth = 2 * scale;
-                var center = 20 * scale / 2;
+                var center = indicatorSize * scale / 2;
                 using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = strokeWidth,
                     Color = new SKColor(color.R, color.G, color.B,
                         (byte)Math.Clamp(Math.Round(color.A * lease.CurrentOpacity, MidpointRounding.AwayFromZero), 0, 255)) };

@@ -13,15 +13,17 @@ internal sealed class NavigationBarItemsPanel : Panel
     public static readonly StyledProperty<double> ContainerMinHeightProperty =
         AvaloniaProperty.Register<NavigationBarItemsPanel, double>(nameof(ContainerMinHeight));
     public double ContainerMinHeight { get => GetValue(ContainerMinHeightProperty); set => SetValue(ContainerMinHeightProperty, value); }
+    public static readonly StyledProperty<double> ItemSpacingProperty = AvaloniaProperty.Register<NavigationBarItemsPanel, double>(nameof(ItemSpacing), 8d);
+    public double ItemSpacing { get => GetValue(ItemSpacingProperty); set => SetValue(ItemSpacingProperty, value); }
     private int[] _widths = [];
     private int _height;
 
-    static NavigationBarItemsPanel() => AffectsMeasure<NavigationBarItemsPanel>(ContainerMinHeightProperty);
+    static NavigationBarItemsPanel() => AffectsMeasure<NavigationBarItemsPanel>(ContainerMinHeightProperty, ItemSpacingProperty);
 
     protected override Size MeasureOverride(Size availableSize)
     {
         var scale = LayoutHelper.GetLayoutScale(this);
-        var spacing = MathUtils.DipToPx(8f, (float)scale);
+        var spacing = MathUtils.DipToPx((float)ItemSpacing, (float)scale);
         var maximumWidth = double.IsFinite(availableSize.Width) ? MathUtils.DipToPx(availableSize.Width, scale) : int.MaxValue;
         var maximumHeight = double.IsFinite(availableSize.Height) ? MathUtils.DipToPx(availableSize.Height, scale) : int.MaxValue;
         _widths = new int[Children.Count];
@@ -74,7 +76,7 @@ internal sealed class NavigationBarItemsPanel : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var width = MathUtils.DipToPx(finalSize.Width, scale);
         var height = MathUtils.DipToPx(finalSize.Height, scale);
-        var spacing = MathUtils.DipToPx(8f, (float)scale);
+        var spacing = MathUtils.DipToPx((float)ItemSpacing, (float)scale);
         var occupied = 0;
         for (var index = 0; index < Children.Count; index++)
         {

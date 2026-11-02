@@ -13,6 +13,7 @@ public sealed class SplitButtonTokenSource : ITokenSource
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
         [Comp.SplitButton.Spacing] = 2d,
+        [Comp.SplitButton.ItemMinWidth] = 48d,
         [Comp.SplitButtonXSmall.ContainerHeight] = 32d,
         [Comp.SplitButtonXSmall.LeadingPadding] = new Thickness(12, 0, 10, 0),
         [Comp.SplitButtonXSmall.TrailingPadding] = new Thickness(13, 0),

@@ -2,6 +2,10 @@
 // Copyright 2023 The Android Open Source Project. Licensed under Apache-2.0 (LICENSE.txt).
 
 using System.Globalization;
+using Avalonia.Data;
+using Avalonia.Data.Converters;
+using Material3Expressive.Foundation.Tokens;
+using static Material3Expressive.Tokens.MaterialTokens;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -116,16 +120,8 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     : Orientation.Vertical,
 
                 HorizontalAlignment = HorizontalAlignment.Center,
-
-                Spacing = kind == TimeEntryKind.Dial
-                    ? Vibrant && _horizontal
-                        ? 52
-                        : 36
-                    : 0,
-
-                Margin = Vibrant
-                    ? new Thickness(_horizontal ? 24 : 12)
-                    : default
+                Spacing = 0,
+                Margin = default
             };
 
             var display = new StackPanel {
@@ -133,30 +129,43 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     ? Orientation.Vertical
                     : Orientation.Horizontal,
 
-                Spacing = _horizontal
-                    ? 16
-                    : Vibrant
-                        ? 16
-                        : 4,
-
                 VerticalAlignment = VerticalAlignment.Center
             };
             var numbers = new StackPanel { Orientation = Orientation.Horizontal, FlowDirection = FlowDirection.LeftToRight };
             bool hasToggle = owner.GetValue(TimePicker.ToggleProperty) is { };
-            int fieldHeight = Vibrant ? hasToggle ? 140 : 120 : kind == TimeEntryKind.Dial ? 80 : 72;
+            MaterialTokenKey<double> fieldHeight = kind switch {
+                TimeEntryKind.Scroll => hasToggle ? Comp.TimeScroll.TimeFieldWithToggleContainerHeight : Comp.TimeScroll.TimeFieldContainerHeight,
+                TimeEntryKind.Input => Vibrant
+                    ? hasToggle ? Comp.TimeInput.VibrantTimeFieldWithToggleContainerHeight : Comp.TimeInput.VibrantTimeFieldContainerHeight
+                    : Comp.TimeInput.TimeFieldContainerHeight,
+                _ => Vibrant
+                    ? hasToggle ? Comp.TimePicker.VibrantTimeSelectorWithToggleContainerHeight : Comp.TimePicker.VibrantTimeSelectorContainerHeight
+                    : Comp.TimePicker.TimeSelectorContainerHeight
+            };
+            MaterialTokenKey<double> width = kind switch {
+                TimeEntryKind.Scroll => Comp.TimeScroll.TimeFieldContainerWidth,
+                TimeEntryKind.Input => Vibrant ? Comp.TimeInput.VibrantTimeFieldContainerWidth : Comp.TimeInput.TimeFieldContainerWidth,
+                _ => Vibrant
+                    ? Is24Hour && !_horizontal ? Comp.TimePicker.VibrantTimeSelector24HVerticalContainerWidth : Comp.TimePicker.VibrantTimeSelectorContainerWidth
+                    : Is24Hour && !_horizontal ? Comp.TimePicker.TimeSelector24HVerticalContainerWidth : Comp.TimePicker.TimeSelectorContainerWidth
+            };
+            if (kind == TimeEntryKind.Dial)
+                BindDimension(main, StackPanel.SpacingProperty, Vibrant && _horizontal ? Comp.TimePicker.VibrantHorizontalLayoutSpacing : Comp.TimePicker.LayoutSpacing);
+            if (Vibrant)
+                BindDimension(main, Control.MarginProperty, x => new Thickness(x[0]), kind switch {
+                    TimeEntryKind.Scroll => Comp.TimeScroll.Margin,
+                    TimeEntryKind.Input => Comp.TimeInput.VibrantMargin,
+                    _ => _horizontal ? Comp.TimePicker.VibrantHorizontalMargin : Comp.TimePicker.VibrantVerticalMargin
+                });
+            BindDimension(display, StackPanel.SpacingProperty, kind switch {
+                TimeEntryKind.Scroll => Comp.TimeScroll.DisplaySpacing,
+                TimeEntryKind.Input => Vibrant ? Comp.TimeInput.VibrantDisplaySpacing : Comp.TimeInput.DisplaySpacing,
+                _ => _horizontal ? Comp.TimePicker.HorizontalDisplaySpacing : Vibrant ? Comp.TimePicker.VibrantDisplaySpacing : Comp.TimePicker.DisplaySpacing
+            });
             for (int i = 0; i < 2; i++)
             {
                 int index = i;
                 var column = new StackPanel();
-
-                int width = kind == TimeEntryKind.Scroll
-                    ? 100
-                    : Vibrant
-                        ? Is24Hour && kind == TimeEntryKind.Dial && !_horizontal
-                            ? 132
-                            : 100
-                        : kind == TimeEntryKind.Dial && Is24Hour && !_horizontal ? 114 : 96;
-
                 switch (kind)
                 {
                     case TimeEntryKind.Input:
@@ -164,10 +173,12 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                         // Fill the editor viewport and center the text within it. Centering a narrow
                         // presenter instead loses its layout offset to SmoothScroll's composition translation.
                         var field = new TextBox {
-                            Name = i == 0 ? "PART_HourInput" : "PART_MinuteInput", Width = width, Height = fieldHeight, MinWidth = 0,
+                            Name = i == 0 ? "PART_HourInput" : "PART_MinuteInput", MinWidth = 0,
                             Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Stretch,
                             VerticalContentAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center, MaxLength = 3
                         };
+                        BindDimension(field, Control.WidthProperty, width);
+                        BindDimension(field, Control.HeightProperty, fieldHeight);
                         field.Classes.Add("time-field");
                         field.Classes.Set("vibrant", Vibrant);
                         field.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimeInputFieldTheme"));
@@ -205,8 +216,9 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                         var field = new DateTimePickerPanel {
                             Name = i == 0 ? "PART_HourScroll" : "PART_MinuteScroll", PanelType = DateTimePickerPanelType.Minute,
                             MinimumValue = i == 0 && !Is24Hour ? 1 : 0, MaximumValue = i == 0 ? Is24Hour ? 23 : 12 : 59,
-                            ShouldLoop = true, ItemHeight = 40, ItemFormat = "mm"
+                            ShouldLoop = true, ItemFormat = "mm"
                         };
+                        BindDimension(field, DateTimePickerPanel.ItemHeightProperty, Comp.TimeScroll.ItemHeight);
                         field.Classes.Add("time-scroll");
                         field.SelectionChanged += (_, _) => {
                             if (_updating) return;
@@ -214,10 +226,12 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                             else SetMinute(field.SelectedValue);
                         };
                         var scroll = new ScrollViewer {
-                            Content = field, Width = width, Height = fieldHeight,
+                            Content = field,
                             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                             VerticalScrollBarVisibility = ScrollBarVisibility.Hidden
                         };
+                        BindDimension(scroll, Control.WidthProperty, width);
+                        BindDimension(scroll, Control.HeightProperty, fieldHeight);
                         var surface = new MaterialSurface { Child = scroll, CornerRadius = new CornerRadius(16) };
                         surface.Classes.Add("time-scroll-surface");
                         _fields[i] = field;
@@ -230,8 +244,10 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     default:
                     {
                         var button = new Button {
-                            Name = i == 0 ? "PART_HourSelector" : "PART_MinuteSelector", Width = width, Height = fieldHeight
+                            Name = i == 0 ? "PART_HourSelector" : "PART_MinuteSelector"
                         };
+                        BindDimension(button, Control.WidthProperty, width);
+                        BindDimension(button, Control.HeightProperty, fieldHeight);
                         button.Classes.Set("vibrant", Vibrant);
                         button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimeSelectorTheme"));
                         button.Click += (_, _) => Select((TimeSelection)index);
@@ -247,8 +263,9 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 {
                     var label = new TextBlock {
                         Text = DateTimeStrings.Get(i == 0 ? "TimePickerHour" : "TimePickerMinute"),
-                        Margin = new Thickness(0, 7, 0, 0), HorizontalAlignment = HorizontalAlignment.Center
+                        HorizontalAlignment = HorizontalAlignment.Center
                     };
+                    BindDimension(label, Control.MarginProperty, x => new Thickness(0, x[0], 0, 0), Comp.TimeInput.SupportingTextTopSpacing);
                     label.Classes.Add("time-support");
                     column.Children.Add(label);
                 }
@@ -257,9 +274,17 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 if (i == 0)
                 {
                     var separator = new TextBlock {
-                        Text = ":", Width = Vibrant ? 16 : 24, Height = fieldHeight, TextAlignment = TextAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Top, Padding = new Thickness(0, (fieldHeight - 64) / 2, 0, 0)
+                        Text = ":", TextAlignment = TextAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Top
                     };
+                    BindDimension(separator, Control.WidthProperty, kind switch {
+                        TimeEntryKind.Scroll => Comp.TimeScroll.SeparatorWidth,
+                        TimeEntryKind.Input => Vibrant ? Comp.TimeInput.VibrantSeparatorWidth : Comp.TimeInput.SeparatorWidth,
+                        _ => Vibrant ? Comp.TimePicker.VibrantSeparatorWidth : Comp.TimePicker.SeparatorWidth
+                    });
+                    BindDimension(separator, Control.HeightProperty, fieldHeight);
+                    // Preserve the original integer division for the baseline and odd heights.
+                    BindDimension(separator, TextBlock.PaddingProperty, x => new Thickness(0, Math.Truncate((x[0] - 64) / 2), 0, 0), fieldHeight);
                     separator.Classes.Add("time-separator");
                     numbers.Children.Add(separator);
                 }
@@ -270,17 +295,32 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
             {
                 var periods = new StackPanel {
                     Orientation = _horizontal ? Orientation.Horizontal : Orientation.Vertical,
-                    Width = _horizontal ? 216 : Vibrant ? 56 : 52, Height = _horizontal ? Vibrant ? 48 : 38 : fieldHeight,
-                    Spacing = 4
                 };
+                MaterialTokenKey<double> periodWidth = _horizontal ? Comp.TimePicker.PeriodSelectorHorizontalContainerWidth : kind switch {
+                    TimeEntryKind.Scroll => Comp.TimeScroll.PeriodSelectorContainerWidth,
+                    TimeEntryKind.Input => Vibrant ? Comp.TimeInput.VibrantPeriodSelectorContainerWidth : Comp.TimeInput.PeriodSelectorContainerWidth,
+                    _ => Vibrant ? Comp.TimePicker.VibrantPeriodSelectorVerticalContainerWidth : Comp.TimePicker.PeriodSelectorVerticalContainerWidth
+                };
+                MaterialTokenKey<double> periodHeight = _horizontal
+                    ? Vibrant ? Comp.TimePicker.VibrantPeriodSelectorHorizontalContainerHeight : Comp.TimePicker.PeriodSelectorHorizontalContainerHeight
+                    : fieldHeight;
+                MaterialTokenKey<double> periodSpacing = kind switch {
+                    TimeEntryKind.Scroll => Comp.TimeScroll.PeriodSelectorSpacing,
+                    TimeEntryKind.Input => Comp.TimeInput.PeriodSelectorSpacing,
+                    _ => Comp.TimePicker.PeriodSelectorSpacing
+                };
+                BindDimension(periods, Control.WidthProperty, periodWidth);
+                BindDimension(periods, Control.HeightProperty, periodHeight);
+                BindDimension(periods, StackPanel.SpacingProperty, periodSpacing);
                 for (int i = 0; i < 2; i++)
                 {
                     int period = i;
                     var button = new Button {
                         Content = DateTimeStrings.Get(i == 0 ? "TimePickerAM" : "TimePickerPM"),
-                        Height = _horizontal ? periods.Height : (periods.Height - 4) / 2,
-                        Width = _horizontal ? (periods.Width - 4) / 2 : periods.Width, Padding = new Thickness(0), MinWidth = 0
+                        Padding = new Thickness(0), MinWidth = 0
                     };
+                    BindDimension(button, Control.HeightProperty, x => _horizontal ? x[0] : (x[0] - x[1]) / 2, periodHeight, periodSpacing);
+                    BindDimension(button, Control.WidthProperty, x => _horizontal ? (x[0] - x[1]) / 2 : x[0], periodWidth, periodSpacing);
                     button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimePeriodTheme"));
                     button.Click += (_, _) => SetHour(Value.Hour % 12 + period * 12);
                     _periods[i] = button;
@@ -298,9 +338,11 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
             main.Children.Add(display);
             if (kind == TimeEntryKind.Dial)
             {
-                _clock = new ClockFace(this) {
-                    Width = 256, Height = 256, Margin = _horizontal ? default : new Thickness(0, 0, 0, 24)
-                };
+                _clock = new ClockFace(this) { Margin = default };
+                BindDimension(_clock, Control.WidthProperty, Comp.TimePicker.ClockDialContainerSize);
+                BindDimension(_clock, Control.HeightProperty, Comp.TimePicker.ClockDialContainerSize);
+                if (!_horizontal)
+                    BindDimension(_clock, Control.MarginProperty, x => new Thickness(0, 0, 0, x[0]), Comp.TimePicker.ClockDialBottomSpacing);
                 _clock.Classes.Set("vibrant", Vibrant);
                 main.Children.Add(_clock);
             }
@@ -313,6 +355,36 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         }
 
         Update();
+    }
+
+    internal static void BindDimension(Control target, AvaloniaProperty property, MaterialTokenKey<double> key) =>
+        BindDimension(target, property, x => x[0], key);
+
+    internal static void BindDimension(Control target, AvaloniaProperty property,
+        Func<double[], object> project, params MaterialTokenKey<double>[] keys)
+    {
+        var binding = new MultiBinding {
+            Priority = BindingPriority.LocalValue,
+            Converter = new DimensionConverter(keys, project)
+        };
+        binding.Bindings.Add(new Binding { RelativeSource = new RelativeSource(RelativeSourceMode.Self) });
+        foreach (var key in keys) binding.Bindings.Add(new DynamicResourceExtension(key));
+        target.Bind(property, binding);
+    }
+
+    private sealed class DimensionConverter(MaterialTokenKey<double>[] keys, Func<double[], object> project) : IMultiValueConverter
+    {
+        public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+        {
+            var resolved = new double[keys.Length];
+            for (int i = 0; i < keys.Length; i++)
+            {
+                var value = new TokenBindingConverter(keys[i], null, null).Convert(values, typeof(double), null, culture);
+                if (value is not double number) return AvaloniaProperty.UnsetValue;
+                resolved[i] = number;
+            }
+            return project(resolved);
+        }
     }
 
     private void Update(bool syncInputs = false)

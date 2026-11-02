@@ -9,6 +9,10 @@ namespace Material3Expressive.Components;
 // icon-only branch of TopIconOrIconOnlyMeasurePolicy. Coordinates stay in px.
 internal sealed class WideNavigationRailItemLayout : Panel
 {
+    public static readonly StyledProperty<double> ItemMinWidthProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(ItemMinWidth));
+    public double ItemMinWidth { get => GetValue(ItemMinWidthProperty); set => SetValue(ItemMinWidthProperty, value); }
+    public static readonly StyledProperty<double> ItemMinHeightProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(ItemMinHeight));
+    public double ItemMinHeight { get => GetValue(ItemMinHeightProperty); set => SetValue(ItemMinHeightProperty, value); }
     public static readonly StyledProperty<double> ItemHorizontalPaddingProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(ItemHorizontalPadding));
     public double ItemHorizontalPadding { get => GetValue(ItemHorizontalPaddingProperty); set => SetValue(ItemHorizontalPaddingProperty, value); }
     public static readonly StyledProperty<double> ActiveIndicatorWidthProperty = AvaloniaProperty.Register<WideNavigationRailItemLayout, double>(nameof(ActiveIndicatorWidth));
@@ -56,7 +60,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
     {
         AffectsMeasure<WideNavigationRailItemLayout>(HasLabelProperty, IconPositionProperty, SelectionProgressProperty, IconPositionProgressProperty,
             IndicatorPaddingProperty, CollapsedIndicatorPaddingProperty, ExpandedIndicatorPaddingProperty,
-            WideNavigationRailLayout.MinimumItemHeightProperty, WideNavigationRailLayout.ItemHeightMotionProperty, ItemHorizontalPaddingProperty, ActiveIndicatorWidthProperty, IconSizeProperty, StartIconLabelSpaceProperty, TopIconLabelSpaceProperty);
+            WideNavigationRailLayout.MinimumItemHeightProperty, WideNavigationRailLayout.ItemHeightMotionProperty, ItemHorizontalPaddingProperty, ActiveIndicatorWidthProperty, IconSizeProperty, StartIconLabelSpaceProperty, TopIconLabelSpaceProperty, ItemMinWidthProperty, ItemMinHeightProperty);
         AffectsArrange<WideNavigationRailItemLayout>(IndicatorShapeProperty);
     }
     public WideNavigationRailItemLayout()
@@ -102,7 +106,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
             var rippleHeight = Math.Min(totalHeight, maxHeight);
             var indicatorWidth = Math.Min(MathUtils.RoundToInt(totalWidth * selection), maxWidth);
             innerWidth = Math.Min(rippleWidth + horizontalPadding * 2, maxWidth);
-            innerHeight = Math.Min(Math.Max(rippleHeight, Math.Min(Px(48), maxHeight)), maxHeight);
+            innerHeight = Math.Min(Math.Max(rippleHeight, Math.Min(Px(ItemMinHeight), maxHeight)), maxHeight);
             // This branch has no internal position animation; its original half-pixel
             // truncation remains constant while the outer minimum height animates.
             _indicatorBox = new Rect((innerWidth - indicatorWidth) / 2, Math.Truncate((innerHeight - rippleHeight) / 2), indicatorWidth, rippleHeight);
@@ -183,7 +187,7 @@ internal sealed class WideNavigationRailItemLayout : Panel
         // Convert physical pixels back to Avalonia's double DIP without a float
         // division: at 125%, 63px / 1.25f becomes 50.4000015 DIP and the default
         // layout rounding then grows it to 64px, disturbing animated centering.
-        return new Size(Math.Max(Math.Min(48, availableSize.Width), innerWidth / layoutScale),
+        return new Size(Math.Max(Math.Min(ItemMinWidth, availableSize.Width), innerWidth / layoutScale),
             Math.Max(Math.Min(_heightMotion.Value / layoutScale, availableSize.Height), innerHeight / layoutScale));
     }
 

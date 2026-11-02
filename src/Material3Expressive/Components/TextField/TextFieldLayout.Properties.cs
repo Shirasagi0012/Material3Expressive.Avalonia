@@ -5,6 +5,19 @@ using Material3Expressive.Foundation.Motion;
 namespace Material3Expressive.Components;
 internal sealed partial class TextFieldLayout
 {
+    public static readonly StyledProperty<Thickness> SupportingPaddingProperty = AvaloniaProperty.Register<TextFieldLayout, Thickness>(nameof(SupportingPadding), new Thickness(16, 4, 16, 0));
+    public Thickness SupportingPadding { get => GetValue(SupportingPaddingProperty); set => SetValue(SupportingPaddingProperty, value); }
+    public static readonly StyledProperty<double> IconAdjacentPaddingReductionProperty = AvaloniaProperty.Register<TextFieldLayout, double>(nameof(IconAdjacentPaddingReduction), 12d);
+    public double IconAdjacentPaddingReduction { get => GetValue(IconAdjacentPaddingReductionProperty); set => SetValue(IconAdjacentPaddingReductionProperty, value); }
+    public static readonly StyledProperty<double> AffixSpacingProperty = AvaloniaProperty.Register<TextFieldLayout, double>(nameof(AffixSpacing), 2d);
+    public double AffixSpacing { get => GetValue(AffixSpacingProperty); set => SetValue(AffixSpacingProperty, value); }
+    public static readonly StyledProperty<Thickness> AboveLabelPaddingProperty = AvaloniaProperty.Register<TextFieldLayout, Thickness>(nameof(AboveLabelPadding), new Thickness(4, 0, 4, 4));
+    public Thickness AboveLabelPadding { get => GetValue(AboveLabelPaddingProperty); set => SetValue(AboveLabelPaddingProperty, value); }
+    public static readonly StyledProperty<double> ExpandedLabelMinHeightProperty = AvaloniaProperty.Register<TextFieldLayout, double>(nameof(ExpandedLabelMinHeight), 24d);
+    public double ExpandedLabelMinHeight { get => GetValue(ExpandedLabelMinHeightProperty); set => SetValue(ExpandedLabelMinHeightProperty, value); }
+    public static readonly StyledProperty<double> CollapsedLabelMinHeightProperty = AvaloniaProperty.Register<TextFieldLayout, double>(nameof(CollapsedLabelMinHeight), 16d);
+    public double CollapsedLabelMinHeight { get => GetValue(CollapsedLabelMinHeightProperty); set => SetValue(CollapsedLabelMinHeightProperty, value); }
+
     public static readonly StyledProperty<double> DefaultMinimumWidthProperty = AvaloniaProperty.Register<TextFieldLayout, double>(nameof(DefaultMinimumWidth));
     public double DefaultMinimumWidth { get => GetValue(DefaultMinimumWidthProperty); set => SetValue(DefaultMinimumWidthProperty, value); }
     public static readonly StyledProperty<double> DefaultMinimumHeightProperty = AvaloniaProperty.Register<TextFieldLayout, double>(nameof(DefaultMinimumHeight));

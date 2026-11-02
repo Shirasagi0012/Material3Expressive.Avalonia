@@ -25,7 +25,7 @@ M3 没有展开面板。原生 `Expander` 加载本主题后由单行列表项�
 
 - 标题行是单行列表项：最小高度 56 DIP，起止边距 16 DIP、上下 10 DIP，标签 BodyLarge、OnSurface，
   尾部 24 DIP 的 `keyboard_arrow_down` 箭头为 OnSurfaceVariant，与标签间距 12 DIP。
-  MaterialTokens 尚无 List Token，这些是取自上游 ListTokens（md.comp.list.list-item.*）的本地值，未新增 Token 键
+  这些默认值取自上游 ListTokens（md.comp.list.list-item.*），由 Expander 自己的组件 Token 提供
 - 字符串标题、`HeaderTemplate` 的根元素或作为标题的控件都会得到 BodyLarge；应用设置在标题元素上的
   `MaterialText.Style` / `DefaultStyle` 优先，标题排版不影响内容。多行标题（如标题加 BodyMedium 说明）可直接放控件
 - 悬停、按下、焦点由 MaterialInteraction 状态层表示（标签色）

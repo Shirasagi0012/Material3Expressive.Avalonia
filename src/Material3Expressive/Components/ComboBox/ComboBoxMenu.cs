@@ -17,15 +17,19 @@ namespace Material3Expressive.Components;
 
 internal sealed class ComboBoxItemLayout : Panel
 {
-    private const double Gap = 8;
+    public static readonly StyledProperty<double> LeadingSpacingProperty =
+        AvaloniaProperty.Register<ComboBoxItemLayout, double>(nameof(LeadingSpacing), 8d);
+    public double LeadingSpacing { get => GetValue(LeadingSpacingProperty); set => SetValue(LeadingSpacingProperty, value); }
+
+    static ComboBoxItemLayout() => AffectsMeasure<ComboBoxItemLayout>(LeadingSpacingProperty);
     protected override Size MeasureOverride(Size availableSize)
     {
         if (Children.Count != 2) return default;
         var icon = Children[0];
         var text = Children[1];
         icon.Measure(availableSize);
-        text.Measure(new Size(Math.Max(0, availableSize.Width - icon.DesiredSize.Width - Gap), availableSize.Height));
-        return new Size(icon.DesiredSize.Width + Gap + text.DesiredSize.Width,
+        text.Measure(new Size(Math.Max(0, availableSize.Width - icon.DesiredSize.Width - LeadingSpacing), availableSize.Height));
+        return new Size(icon.DesiredSize.Width + LeadingSpacing + text.DesiredSize.Width,
             Math.Max(icon.DesiredSize.Height, text.DesiredSize.Height));
     }
 
@@ -35,7 +39,7 @@ internal sealed class ComboBoxItemLayout : Panel
         var icon = Children[0];
         var text = Children[1];
         icon.Arrange(new Rect(0, (finalSize.Height - icon.DesiredSize.Height) / 2, icon.DesiredSize.Width, icon.DesiredSize.Height));
-        var x = icon.DesiredSize.Width + Gap;
+        var x = icon.DesiredSize.Width + LeadingSpacing;
         text.Arrange(new Rect(x, (finalSize.Height - text.DesiredSize.Height) / 2, Math.Max(0, finalSize.Width - x), text.DesiredSize.Height));
         return finalSize;
     }

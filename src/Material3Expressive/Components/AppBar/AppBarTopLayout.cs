@@ -460,6 +460,16 @@ internal sealed class AppBarTopChrome : Panel
 
 internal sealed class AppBarTopRow : Panel
 {
+    public static readonly StyledProperty<double> TitleStartInsetProperty =
+        AvaloniaProperty.Register<AppBarTopRow, double>(nameof(TitleStartInset));
+    public double TitleStartInset
+    {
+        get => GetValue(TitleStartInsetProperty);
+        set => SetValue(TitleStartInsetProperty, value);
+    }
+
+    static AppBarTopRow() => AffectsMeasure<AppBarTopRow>(TitleStartInsetProperty);
+
     // Avalonia pushes a visual's opacity before its own RenderOptions. The policy must
     // therefore live on the parent of the title, matching Compose's graphicsLayer alpha.
     public AppBarTopRow() => RenderOptions.SetRequiresFullOpacityHandling(this, true);
@@ -533,7 +543,7 @@ internal sealed class AppBarTopRow : Panel
         _actionsHeight = Px(Children[2].DesiredSize.Height);
         var titleWidth = Math.Max(
             0,
-            _width - Math.Max(Px(12), _navWidth) - _actionsWidth - Px(Padding.Left) - Px(Padding.Right));
+            _width - Math.Max(Px(TitleStartInset), _navWidth) - _actionsWidth - Px(Padding.Left) - Px(Padding.Right));
         Title.Measure(new Size(titleWidth / scale, availableSize.Height));
         _titleWidth = Px(Title.DesiredSize.Width);
         _titleHeight = Px(Title.DesiredSize.Height);
@@ -562,7 +572,7 @@ internal sealed class AppBarTopRow : Panel
                 (contentHeight - _navHeight) / 2 / scale,
                 _navWidth / scale,
                 _navHeight / scale));
-        var start = Math.Max(Px(12), _navWidth);
+        var start = Math.Max(Px(TitleStartInset), _navWidth);
         var x = owner.TitleHorizontalAlignment switch
         {
             HorizontalAlignment.Center => MathUtils.RoundToInt((_width - _titleWidth) / 2f),
@@ -596,6 +606,16 @@ internal sealed class AppBarTopRow : Panel
 
 internal sealed class AppBarTitle : Panel
 {
+    public static readonly StyledProperty<double> HorizontalPaddingProperty =
+        AvaloniaProperty.Register<AppBarTitle, double>(nameof(HorizontalPadding));
+    public double HorizontalPadding
+    {
+        get => GetValue(HorizontalPaddingProperty);
+        set => SetValue(HorizontalPaddingProperty, value);
+    }
+
+    static AppBarTitle() => AffectsMeasure<AppBarTitle>(HorizontalPaddingProperty);
+
     internal void SetLayerAlpha(float alpha)
     {
         // Avalonia 12.1.2 culls composition visuals at effective opacity <= .003.
@@ -717,7 +737,7 @@ internal sealed class AppBarTitle : Panel
     protected override Size MeasureOverride(Size availableSize)
     {
         var scale = LayoutHelper.GetLayoutScale(this);
-        var padding = MathUtils.DipToPx(4, scale);
+        var padding = MathUtils.DipToPx(HorizontalPadding, scale);
         var innerWidth = Math.Max(0, availableSize.Width - 2 * padding / scale);
         if (_dirty)
         {
@@ -748,7 +768,7 @@ internal sealed class AppBarTitle : Panel
     protected override Size ArrangeOverride(Size finalSize)
     {
         var scale = LayoutHelper.GetLayoutScale(this);
-        var pad = MathUtils.DipToPx(4, scale);
+        var pad = MathUtils.DipToPx(HorizontalPadding, scale);
         var width = Math.Max(0, MathUtils.DipToPx(finalSize.Width, scale) - 2 * pad);
         var y = 0;
         foreach (var child in Children)

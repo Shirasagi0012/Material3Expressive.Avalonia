@@ -20,7 +20,31 @@ internal sealed class FloatingToolbarLayout : Panel
     public static readonly StyledProperty<Foundation.Motion.SpringSpec> ElevationAnimationProperty = AvaloniaProperty.Register<FloatingToolbarLayout, Foundation.Motion.SpringSpec>(nameof(ElevationAnimation));
     public Foundation.Motion.SpringSpec ElevationAnimation { get => GetValue(ElevationAnimationProperty); set => SetValue(ElevationAnimationProperty, value); }
     public static readonly StyledProperty<double> ContainerSizeProperty = AvaloniaProperty.Register<FloatingToolbarLayout, double>(nameof(ContainerSize));
-    static FloatingToolbarLayout() => AffectsMeasure<FloatingToolbarLayout>(ContainerSizeProperty);
+    public static readonly StyledProperty<double> ExpandedFabSizeProperty =
+        AvaloniaProperty.Register<FloatingToolbarLayout, double>(nameof(ExpandedFabSize));
+    public double ExpandedFabSize
+    {
+        get => GetValue(ExpandedFabSizeProperty);
+        set => SetValue(ExpandedFabSizeProperty, value);
+    }
+
+    public static readonly StyledProperty<double> CollapsedFabSizeProperty =
+        AvaloniaProperty.Register<FloatingToolbarLayout, double>(nameof(CollapsedFabSize));
+    public double CollapsedFabSize
+    {
+        get => GetValue(CollapsedFabSizeProperty);
+        set => SetValue(CollapsedFabSizeProperty, value);
+    }
+
+    public static readonly StyledProperty<double> FabBetweenSpaceProperty =
+        AvaloniaProperty.Register<FloatingToolbarLayout, double>(nameof(FabBetweenSpace));
+    public double FabBetweenSpace
+    {
+        get => GetValue(FabBetweenSpaceProperty);
+        set => SetValue(FabBetweenSpaceProperty, value);
+    }
+
+    static FloatingToolbarLayout() => AffectsMeasure<FloatingToolbarLayout>(ContainerSizeProperty, ExpandedFabSizeProperty, CollapsedFabSizeProperty, FabBetweenSpaceProperty);
     public double ContainerSize { get => GetValue(ContainerSizeProperty); set => SetValue(ContainerSizeProperty, value); }
     private FloatingToolbar? _owner;
     private AnimationChildScope? _attachScope;
@@ -195,13 +219,13 @@ internal sealed class FloatingToolbarLayout : Panel
         else Surface.MinWidth = Math.Min(Px(ContainerSize), available.Width);
         Surface.Measure(_owner.Horizontal ? new Size(double.PositiveInfinity, Px(ContainerSize)) : new Size(Px(ContainerSize), double.PositiveInfinity));
         _naturalToolbar = Surface.DesiredSize;
-        _fabSize = Px(MathUtils.Lerp(56f, 80f, 1f - ExpandedProgress));
+        _fabSize = Px(MathUtils.Lerp((float)ExpandedFabSize, (float)CollapsedFabSize, 1f - ExpandedProgress));
         Children[1].Measure(new Size(_fabSize, _fabSize));
         var target = Math.Max(0, Math.Truncate((_owner.Horizontal ? _naturalToolbar.Width : _naturalToolbar.Height) * scale * ExpandedProgress)) / scale;
         Surface.Measure(_owner.Horizontal ? new Size(Math.Min(target, available.Width), available.Height) : new Size(available.Width, Math.Min(target, available.Height)));
         _toolbarSize = Surface.DesiredSize;
-        return _owner.Horizontal ? new Size(_naturalToolbar.Width + Px(8) + Px(56), Math.Min(Px(80), available.Height))
-            : new Size(Math.Min(Px(80), available.Width), _naturalToolbar.Height + Px(8) + Px(56));
+        return _owner.Horizontal ? new Size(_naturalToolbar.Width + Px(FabBetweenSpace) + Px(ExpandedFabSize), Math.Min(Px(CollapsedFabSize), available.Height))
+            : new Size(Math.Min(Px(CollapsedFabSize), available.Width), _naturalToolbar.Height + Px(FabBetweenSpace) + Px(ExpandedFabSize));
     }
     protected override Size ArrangeOverride(Size final)
     {
@@ -213,7 +237,7 @@ internal sealed class FloatingToolbarLayout : Panel
         {
             var horizontal = _owner.Horizontal;
             var natural = horizontal ? _naturalToolbar.Width : _naturalToolbar.Height;
-            var length = natural + MathUtils.DipToPx(8, scale) / scale + MathUtils.DipToPx(56, scale) / scale;
+            var length = natural + MathUtils.DipToPx(FabBetweenSpace, scale) / scale + MathUtils.DipToPx(ExpandedFabSize, scale) / scale;
             // Compose Layout may report a size outside its constraints. Placeable then
             // centers that real allocation inside the parent's coerced apparent size.
             var apparentOffset = Math.Truncate(((horizontal ? final.Width : final.Height) - length) * scale / 2) / scale;

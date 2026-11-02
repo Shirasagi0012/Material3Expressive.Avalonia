@@ -10,6 +10,14 @@ public sealed class TabRowTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.TabRow.TabHorizontalPadding] = 16d,
+        [Comp.TabRow.LeadingIconLabelSpace] = 8d,
+        [Comp.TabRow.StackedIconLabelSpace] = 20d,
+        [Comp.TabRow.SingleLineBaselineOffset] = 14d,
+        [Comp.TabRow.MultiLineBaselineOffset] = 6d,
+        [Comp.TabRow.BaselineExtraOffset] = 3d,
+        [Comp.TabRow.PrimaryIndicatorMinWidth] = 24d,
+        [Comp.TabRow.IconSize] = 24d,
         [Comp.TabRow.EdgePadding] = 52d,
         [Comp.TabRow.MinTabWidth] = 90d,
         [Comp.TabRow.SelectedContentAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),

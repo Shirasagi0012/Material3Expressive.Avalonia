@@ -42,17 +42,37 @@
                 <Border x:Name="PART_DialogContent">
                   <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                       CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{TemplateBinding TonalElevation}">
-                    <m3:AlertDialogColumn Margin="24">
+                    <m3:AlertDialogColumn Margin="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ContentPadding}}">
                       <ContentPresenter x:Name="PART_Icon" IsVisible="False" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
-                          Foreground="{TemplateBinding IconForeground}" HorizontalAlignment="Center" Margin="0,0,0,16"
-                          m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.IconSize}}" />
+                          Foreground="{TemplateBinding IconForeground}" HorizontalAlignment="Center"
+                          m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.IconSize}}">
+                        <ContentPresenter.Margin>
+                          <MultiBinding Priority="Template" Converter="{x:Static m3:AlertDialogThemeConverters.BottomSpacing}">
+                            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Dialog.IconBottomSpacing}" />
+                          </MultiBinding>
+                        </ContentPresenter.Margin>
+                      </ContentPresenter>
                       <ContentPresenter x:Name="PART_Title" IsVisible="False" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}"
-                          Foreground="{TemplateBinding TitleForeground}" HorizontalAlignment="Left" Margin="0,0,0,16"
-                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.HeadlineFont}}" TextWrapping="Wrap" />
+                          Foreground="{TemplateBinding TitleForeground}" HorizontalAlignment="Left"
+                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.HeadlineFont}}" TextWrapping="Wrap">
+                        <ContentPresenter.Margin>
+                          <MultiBinding Priority="Template" Converter="{x:Static m3:AlertDialogThemeConverters.BottomSpacing}">
+                            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Dialog.HeadlineBottomSpacing}" />
+                          </MultiBinding>
+                        </ContentPresenter.Margin>
+                      </ContentPresenter>
                       <ContentPresenter x:Name="PART_Text" IsVisible="False" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                          Foreground="{TemplateBinding TextForeground}" HorizontalAlignment="Left" Margin="0,0,0,24"
-                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.SupportingTextFont}}" TextWrapping="Wrap" />
+                          Foreground="{TemplateBinding TextForeground}" HorizontalAlignment="Left"
+                          m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.SupportingTextFont}}" TextWrapping="Wrap">
+                        <ContentPresenter.Margin>
+                          <MultiBinding Priority="Template" Converter="{x:Static m3:AlertDialogThemeConverters.BottomSpacing}">
+                            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Dialog.SupportingTextBottomSpacing}" />
+                          </MultiBinding>
+                        </ContentPresenter.Margin>
+                      </ContentPresenter>
                       <m3:AlertDialogButtons x:Name="PART_Buttons" HorizontalAlignment="Right"
+                          HorizontalSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionHorizontalSpacing}}"
+                          CrossAxisSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionVerticalSpacing}}"
                           m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}">
                         <ContentPresenter x:Name="PART_Confirm" Content="{TemplateBinding ConfirmButton}" ContentTemplate="{TemplateBinding ConfirmButtonTemplate}"
                             Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextColor}}" />

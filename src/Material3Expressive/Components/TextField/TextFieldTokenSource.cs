@@ -11,6 +11,16 @@ public sealed class TextFieldTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.TextField.IconSlotSize] = 48d,
+        [Comp.TextField.IconSize] = 24d,
+        [Comp.TextField.ContentMinHeight] = 24d,
+        [Comp.TextField.SupportingMinHeight] = 16d,
+        [Comp.TextField.SupportingPadding] = new Thickness(16, 4, 16, 0),
+        [Comp.TextField.IconAdjacentPaddingReduction] = 12d,
+        [Comp.TextField.AffixSpacing] = 2d,
+        [Comp.TextField.AboveLabelPadding] = new Thickness(4, 0, 4, 4),
+        [Comp.TextField.ExpandedLabelMinHeight] = 24d,
+        [Comp.TextField.CollapsedLabelMinHeight] = 16d,
         [Comp.TextField.MinimumWidth] = 280d,
         [Comp.TextField.MinimumHeight] = 56d,
         [Comp.TextField.ContentPadding] = new Thickness(16),

@@ -10,7 +10,7 @@
                     Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateLabelTextFont}}" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <m3:MaterialSurface Width="40" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    <m3:MaterialSurface Width="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateContainerWidth}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateContainerHeight}}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Background="{TemplateBinding Background}"
                                         CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DateContainerShape}}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
@@ -44,13 +44,17 @@
             </Style>
         </ControlTheme>
         <ControlTheme x:Key="{x:Type m3:DateMonthPanel}" TargetType="m3:DateMonthPanel">
+            <Setter Property="DayCellWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DayCellWidth}}" />
+            <Setter Property="DayCellHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.DayCellHeight}}" />
+            <Setter Property="RangeIndicatorHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.RangeSelectionActiveIndicatorContainerHeight}}" />
+            <Setter Property="RangeIndicatorTopOffset" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.RangeIndicatorTopOffset}}" />
             <Setter Property="RangeBrush"
                     Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.RangeSelectionActiveIndicatorContainerColor}}" />
         </ControlTheme>
         <ControlTheme x:Key="MaterialDateYearTheme" TargetType="Button" BasedOn="{StaticResource MaterialDateDayTheme}">
             <Setter Property="Template">
                 <ControlTemplate>
-                    <m3:MaterialSurface Width="72" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    <m3:MaterialSurface Width="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.SelectionYearContainerWidth}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.SelectionYearContainerHeight}}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Background="{TemplateBinding Background}" CornerRadius="18"
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="{TemplateBinding BorderThickness}">
@@ -63,17 +67,27 @@
         <ControlTemplate x:Key="MaterialDateEntryTemplate" TargetType="TemplatedControl">
             <Border Background="{TemplateBinding Background}">
                 <StackPanel>
-                    <Grid MinHeight="120" RowDefinitions="Auto,*">
-                        <ContentPresenter Name="PART_Title" Margin="24,16,12,0"
+                    <Grid MinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderContainerHeight}}" RowDefinitions="Auto,*">
+                        <ContentPresenter Name="PART_Title" Margin="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.TitlePadding}}"
                                           Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderSupportingTextColor}}"
                                           m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderSupportingTextFont}}" />
-                        <Grid Grid.Row="1" ColumnDefinitions="*,48" Margin="24,0,12,12">
+                        <Grid Grid.Row="1" Margin="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeadlinePadding}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition>
+                                    <ColumnDefinition.Width>
+                                        <MultiBinding Priority="Template" Converter="{x:Static m3:DateEntryController.GridLengthConverter}">
+                                            <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DatePickerModal.ModeToggleSize}" />
+                                        </MultiBinding>
+                                    </ColumnDefinition.Width>
+                                </ColumnDefinition>
+                            </Grid.ColumnDefinitions>
                             <ContentPresenter Name="PART_Headline" VerticalAlignment="Center"
                                               Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderHeadlineColor}}"
                                               m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderHeadlineFont}}" />
                             <Button Name="PART_ModeToggle" Grid.Column="1"
-                                    Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0"
-                                    Height="48" />
+                                    Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ModeToggleSize}}" Padding="0"
+                                    Height="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ModeToggleSize}}" />
                         </Grid>
                     </Grid>
                     <Separator />

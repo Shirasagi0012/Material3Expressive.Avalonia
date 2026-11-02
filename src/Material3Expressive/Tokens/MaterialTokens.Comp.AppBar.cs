@@ -12,6 +12,14 @@ public static partial class MaterialTokens
     {
         public static class AppBar
         {
+            public static readonly MaterialTokenKey<Thickness> NavigationIconPadding = new("md.comp.app-bar.navigation-icon-padding");
+            public static readonly MaterialTokenKey<Thickness> ActionPadding = new("md.comp.app-bar.action-padding");
+            public static readonly MaterialTokenKey<double> TitleStartInset = new("md.comp.app-bar.title-start-inset");
+            public static readonly MaterialTokenKey<double> TitleHorizontalPadding = new("md.comp.app-bar.title-horizontal-padding");
+            public static readonly MaterialTokenKey<double> MediumTitleBottomPadding = new("md.comp.app-bar.medium-title-bottom-padding");
+            public static readonly MaterialTokenKey<double> LargeTitleBottomPadding = new("md.comp.app-bar.large-title-bottom-padding");
+            public static readonly MaterialTokenKey<double> BottomFabHorizontalSpacing = new("md.comp.app-bar.bottom-fab-horizontal-spacing");
+            public static readonly MaterialTokenKey<double> BottomFabVerticalOffset = new("md.comp.app-bar.bottom-fab-vertical-offset");
             public static readonly MaterialTokenKey<HorizontalAlignment> TitleAlignment = new("md.comp.app-bar.title.alignment");
             public static readonly MaterialTokenKey<HorizontalAlignment> CenterTitleAlignment = new("md.comp.app-bar.center.title.alignment");
             public static readonly MaterialTokenKey<double> SmallExpandedHeight = new("md.comp.app-bar.small.expanded-height");

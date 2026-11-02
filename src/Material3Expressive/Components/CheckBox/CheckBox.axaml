@@ -15,10 +15,12 @@
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:CheckBoxLayout>
+          <m3:CheckBoxLayout IndicatorSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.IndicatorSize}}"
+                              IndicatorPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.IndicatorPadding}}">
             <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
-                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" FocusRingCornerRadius="6" Padding="2">
-              <m3:CheckBoxIndicator ShapeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ShapeAnimation}}"
+                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" FocusRingCornerRadius="6" Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.IndicatorPadding}}">
+              <m3:CheckBoxIndicator IndicatorSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.IndicatorSize}}"
+                  ShapeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ShapeAnimation}}"
                   ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ColorAnimation}}"
                   UncheckColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckColorAnimation}}"
                   x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"

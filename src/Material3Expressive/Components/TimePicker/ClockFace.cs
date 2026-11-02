@@ -1,6 +1,7 @@
 // Portions translated from AndroidX TimePicker.kt / AnalogTimePickerState / ClockDialNode.
 // Copyright 2023 The Android Open Source Project. Licensed under Apache-2.0 (LICENSE.txt).
 using Avalonia;
+using static Material3Expressive.Tokens.MaterialTokens;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -16,6 +17,14 @@ namespace Material3Expressive.Components;
 
 internal sealed class ClockFace : Control
 {
+    public static readonly StyledProperty<double> DialSizeProperty = AvaloniaProperty.Register<ClockFace, double>(nameof(DialSize), 256d);
+    public double DialSize { get => GetValue(DialSizeProperty); set => SetValue(DialSizeProperty, value); }
+    public static readonly StyledProperty<double> LabelSizeProperty = AvaloniaProperty.Register<ClockFace, double>(nameof(LabelSize), 48d);
+    public double LabelSize { get => GetValue(LabelSizeProperty); set => SetValue(LabelSizeProperty, value); }
+    public static readonly StyledProperty<double> CenterSizeProperty = AvaloniaProperty.Register<ClockFace, double>(nameof(CenterSize), 8d);
+    public double CenterSize { get => GetValue(CenterSizeProperty); set => SetValue(CenterSizeProperty, value); }
+    public static readonly StyledProperty<double> HandleSizeProperty = AvaloniaProperty.Register<ClockFace, double>(nameof(HandleSize), 48d);
+    public double HandleSize { get => GetValue(HandleSizeProperty); set => SetValue(HandleSizeProperty, value); }
     public static readonly StyledProperty<IBrush?> DialBrushProperty=AvaloniaProperty.Register<ClockFace,IBrush?>(nameof(DialBrush));
     public static readonly StyledProperty<IBrush?> SelectorBrushProperty=AvaloniaProperty.Register<ClockFace,IBrush?>(nameof(SelectorBrush));
     public static readonly StyledProperty<Spring> MotionProperty=AvaloniaProperty.Register<ClockFace,Spring>(nameof(Motion),new(0.9,700));
@@ -31,10 +40,14 @@ internal sealed class ClockFace : Control
     private Point _start;
     private TimeSelection? _lastSelection;
     private bool _last24;
-    static ClockFace(){FocusableProperty.OverrideDefaultValue<ClockFace>(true);AffectsRender<ClockFace>(DialBrushProperty,SelectorBrushProperty);}
+    static ClockFace(){FocusableProperty.OverrideDefaultValue<ClockFace>(true);AffectsRender<ClockFace>(DialBrushProperty,SelectorBrushProperty,CenterSizeProperty,HandleSizeProperty);AffectsMeasure<ClockFace>(DialSizeProperty,LabelSizeProperty);}
     internal ClockFace(TimeEntryController controller)
     {
         _controller=controller;FlowDirection=FlowDirection.LeftToRight;
+        TimeEntryController.BindDimension(this, DialSizeProperty, Comp.TimePicker.ClockDialContainerSize);
+        TimeEntryController.BindDimension(this, LabelSizeProperty, Comp.TimePicker.ClockDialLabelContainerSize);
+        TimeEntryController.BindDimension(this, CenterSizeProperty, Comp.TimePicker.ClockDialSelectorCenterContainerSize);
+        TimeEntryController.BindDimension(this, HandleSizeProperty, Comp.TimePicker.ClockDialSelectorHandleContainerSize);
         AutomationProperties.SetName(this,"Time selection dial");
         AddHandler(PointerPressedEvent,Pressed,RoutingStrategies.Tunnel);
         AddHandler(PointerMovedEvent,Moved,RoutingStrategies.Tunnel);
@@ -93,7 +106,9 @@ internal sealed class ClockFace : Control
             {
                 var index=i;
                 var value=ClockValue(i);
-                var button=new Button {Content=value.ToString(),Width=48,Height=48,Padding=new(0)};
+                var button=new Button {Content=value.ToString(),Padding=new(0)};
+                TimeEntryController.BindDimension(button, WidthProperty, Comp.TimePicker.ClockDialLabelContainerSize);
+                TimeEntryController.BindDimension(button, HeightProperty, Comp.TimePicker.ClockDialLabelContainerSize);
                 button.Bind(StyledElement.ThemeProperty,new DynamicResourceExtension("MaterialClockLabelTheme"));
                 AutomationProperties.SetName(button,$"{value} {(_controller.Selection==TimeSelection.Hour?"hours":"minutes")}");
                 button.Click+=(_,_)=>
@@ -173,13 +188,13 @@ internal sealed class ClockFace : Control
         }
         else if(e.Key is Key.Enter or Key.Space){_controller.Select(_controller.Selection==TimeSelection.Hour?TimeSelection.Minute:TimeSelection.Hour);e.Handled=true;}
     }
-    protected override Size MeasureOverride(Size available){foreach(var b in _labels)b.Measure(new(48,48));return new(256,256);}
+    protected override Size MeasureOverride(Size available){foreach(var b in _labels)b.Measure(new(LabelSize,LabelSize));return new(DialSize,DialSize);}
     protected override Size ArrangeOverride(Size size)
     {
         for(var i=0;i<_labels.Count;i++)
         {
             var angle=(i%12)*Math.PI/6-Math.PI/2;var radius=(i>=12?69:101)*size.Width/256;
-            _labels[i].Arrange(new(size.Width/2+Math.Cos(angle)*radius-24,size.Height/2+Math.Sin(angle)*radius-24,48,48));
+            _labels[i].Arrange(new(size.Width/2+Math.Cos(angle)*radius-LabelSize/2,size.Height/2+Math.Sin(angle)*radius-LabelSize/2,LabelSize,LabelSize));
         }
         return size;
     }
@@ -190,8 +205,8 @@ internal sealed class ClockFace : Control
         context.DrawEllipse(DialBrush,null,center,Bounds.Width/2,Bounds.Height/2);
         var handle=center+new Vector(Math.Cos(_position)*Radius,Math.Sin(_position)*Radius);
         context.DrawLine(new Pen(SelectorBrush,2),center,handle);
-        context.DrawEllipse(SelectorBrush,null,center,4,4);
-        context.DrawEllipse(SelectorBrush,null,handle,24*Bounds.Width/256,24*Bounds.Width/256);
+        context.DrawEllipse(SelectorBrush,null,center,CenterSize/2,CenterSize/2);
+        context.DrawEllipse(SelectorBrush,null,handle,HandleSize/2*Bounds.Width/256,HandleSize/2*Bounds.Width/256);
     }
 }
 

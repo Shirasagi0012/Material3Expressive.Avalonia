@@ -16,6 +16,12 @@ namespace Material3Expressive.Components;
 // starts at the current targets instead of resuming a token fallback.
 internal sealed class WideNavigationRailLayout : Panel
 {
+    public static readonly StyledProperty<double> ExpandedItemMinHeightProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(ExpandedItemMinHeight));
+    public double ExpandedItemMinHeight { get => GetValue(ExpandedItemMinHeightProperty); set => SetValue(ExpandedItemMinHeightProperty, value); }
+    public static readonly StyledProperty<double> ExpandedItemVerticalSpaceProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(ExpandedItemVerticalSpace));
+    public double ExpandedItemVerticalSpace { get => GetValue(ExpandedItemVerticalSpaceProperty); set => SetValue(ExpandedItemVerticalSpaceProperty, value); }
+    public static readonly StyledProperty<double> ItemMinWidthProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(ItemMinWidth));
+    public double ItemMinWidth { get => GetValue(ItemMinWidthProperty); set => SetValue(ItemMinWidthProperty, value); }
     public static readonly StyledProperty<double> CollapsedContainerWidthProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(CollapsedContainerWidth));
     public double CollapsedContainerWidth { get => GetValue(CollapsedContainerWidthProperty); set => SetValue(CollapsedContainerWidthProperty, value); }
     public static readonly StyledProperty<double> ExpandedContainerMinWidthProperty = AvaloniaProperty.Register<WideNavigationRailLayout, double>(nameof(ExpandedContainerMinWidth));
@@ -54,7 +60,7 @@ internal sealed class WideNavigationRailLayout : Panel
     private int _currentWidth, _actualMaxExpandedWidth;
     private WideNavigationRailItemsPanel? _items;
 
-    static WideNavigationRailLayout() => AffectsMeasure<WideNavigationRailLayout>(ExpandedProperty, IsModalProperty, ArrangementProperty, ContentPaddingProperty, CollapsedContainerWidthProperty, ExpandedContainerMinWidthProperty, ExpandedContainerMaxWidthProperty, CollapsedItemVerticalSpaceProperty, CollapsedItemMinHeightProperty, HeaderSpaceProperty, ItemHorizontalPaddingProperty);
+    static WideNavigationRailLayout() => AffectsMeasure<WideNavigationRailLayout>(ExpandedProperty, IsModalProperty, ArrangementProperty, ContentPaddingProperty, CollapsedContainerWidthProperty, ExpandedContainerMinWidthProperty, ExpandedContainerMaxWidthProperty, CollapsedItemVerticalSpaceProperty, CollapsedItemMinHeightProperty, HeaderSpaceProperty, ItemHorizontalPaddingProperty, ExpandedItemMinHeightProperty, ExpandedItemVerticalSpaceProperty, ItemMinWidthProperty);
     public WideNavigationRailLayout()
     {
         UseLayoutRounding = false;
@@ -65,8 +71,8 @@ internal sealed class WideNavigationRailLayout : Panel
         if (_minWidth is not null) return;
         _minimumWidth = (float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth);
         _fullWidth = (float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth);
-        _spacing = (float)(Expanded ? 0 : CollapsedItemVerticalSpace);
-        _minimumHeight = (float)(Expanded ? 48 : CollapsedItemMinHeight);
+        _spacing = (float)(Expanded ? ExpandedItemVerticalSpace : CollapsedItemVerticalSpace);
+        _minimumHeight = (float)(Expanded ? ExpandedItemMinHeight : CollapsedItemMinHeight);
         _minWidth = Track("Wide rail minimum width", _minimumWidth);
         _widthFullRange = Track("Wide rail width range", _fullWidth);
         _itemSpacing = Track("Wide rail item spacing", _spacing);
@@ -92,7 +98,7 @@ internal sealed class WideNavigationRailLayout : Panel
         base.OnPropertyChanged(change);
         if (change.Property == LayoutAnimationProperty || change.Property == ModalWidthAnimationProperty
             || change.Property == ExpandedProperty || change.Property == IsModalProperty
-            || change.Property == CollapsedContainerWidthProperty || change.Property == ExpandedContainerMinWidthProperty || change.Property == ExpandedContainerMaxWidthProperty || change.Property == CollapsedItemVerticalSpaceProperty || change.Property == CollapsedItemMinHeightProperty || change.Property == HeaderSpaceProperty || change.Property == ItemHorizontalPaddingProperty) UpdateTargets();
+            || change.Property == CollapsedContainerWidthProperty || change.Property == ExpandedContainerMinWidthProperty || change.Property == ExpandedContainerMaxWidthProperty || change.Property == CollapsedItemVerticalSpaceProperty || change.Property == CollapsedItemMinHeightProperty || change.Property == HeaderSpaceProperty || change.Property == ItemHorizontalPaddingProperty || change.Property == ExpandedItemMinHeightProperty || change.Property == ExpandedItemVerticalSpaceProperty) UpdateTargets();
     }
     private void UpdateTargets()
     {
@@ -108,8 +114,8 @@ internal sealed class WideNavigationRailLayout : Panel
         var widthSpec = IsModal ? new SpringSpec<float>(widthSource.DampingRatio, widthSource.Stiffness, threshold) : spatialSpec;
         _minWidth.UpdateTarget((float)(Expanded ? ExpandedContainerMinWidth : CollapsedContainerWidth), widthSpec);
         _widthFullRange.UpdateTarget((float)(Expanded ? ExpandedContainerMaxWidth : CollapsedContainerWidth), widthSpec);
-        _itemSpacing.UpdateTarget((float)(Expanded ? 0 : CollapsedItemVerticalSpace), spatialSpec);
-        _itemHeight.UpdateTarget((float)(Expanded ? 48 : CollapsedItemMinHeight), spatialSpec);
+        _itemSpacing.UpdateTarget((float)(Expanded ? ExpandedItemVerticalSpace : CollapsedItemVerticalSpace), spatialSpec);
+        _itemHeight.UpdateTarget((float)(Expanded ? ExpandedItemMinHeight : CollapsedItemMinHeight), spatialSpec);
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -122,7 +128,7 @@ internal sealed class WideNavigationRailLayout : Panel
         // ItemsControl owns the item logical parents; inheritance from ItemsPanel
         // would skip these controls even though they are its visual children.
         var itemHeight = WideNavigationRailVerticalValue.FromDp(_minimumHeight,
-            CollapsedItemMinHeight, 48, layoutScale);
+            CollapsedItemMinHeight, ExpandedItemMinHeight, layoutScale);
         if (Children[1] is ItemsPresenter && owner is not null)
         {
             owner.SetValue(MinimumItemHeightProperty, itemHeight.Value / layoutScale);
@@ -142,9 +148,9 @@ internal sealed class WideNavigationRailLayout : Panel
         _items.HeaderHeight = hasHeader ? Px(header.DesiredSize.Height) : 0;
         _items.HeaderOffset = hasHeader && header.DesiredSize.Height > 0 ? _items.HeaderHeight + Px(HeaderSpace) : 0;
         _items.GapMotion = WideNavigationRailVerticalValue.FromDp(_spacing,
-            CollapsedItemVerticalSpace, 0, layoutScale);
+            CollapsedItemVerticalSpace, ExpandedItemVerticalSpace, layoutScale);
         _items.HeightMotion = itemHeight;
-        _items.ItemMaxWidth = Math.Max(Px(48), Expanded ? maxWidth - Px(ItemHorizontalPadding) : actualMin);
+        _items.ItemMaxWidth = Math.Max(Px(ItemMinWidth), Expanded ? maxWidth - Px(ItemHorizontalPadding) : actualMin);
         _items.Arrangement = Arrangement;
         _items.TopPadding = Px(ContentPadding.Top);
         _items.BottomPadding = Px(ContentPadding.Bottom);

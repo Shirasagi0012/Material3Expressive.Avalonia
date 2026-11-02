@@ -1,4 +1,5 @@
 using System.Globalization;
+using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 
@@ -20,4 +21,13 @@ internal sealed class MenuColorConverter : IMultiValueConverter
         else return Avalonia.AvaloniaProperty.UnsetValue;
         return result is Color color && typeof(IBrush).IsAssignableFrom(targetType) ? new SolidColorBrush(color) : result;
     }
+}
+
+internal static class MenuSpacingConverters
+{
+    public static IMultiValueConverter LeadingMargin { get; } = new FuncMultiValueConverter<object?, Thickness>(values =>
+        values.ToArray() is [double spacing] ? new Thickness(0, 0, spacing, 0) : default);
+
+    public static IMultiValueConverter TrailingMargin { get; } = new FuncMultiValueConverter<object?, Thickness>(values =>
+        values.ToArray() is [double spacing] ? new Thickness(spacing, 0, 0, 0) : default);
 }

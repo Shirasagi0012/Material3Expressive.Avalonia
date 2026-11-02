@@ -15,7 +15,7 @@
                        DockPanel.Dock="Right"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Center"
-                       Margin="8,0,0,0"
+                       Margin="{m3:Token {x:Static m3:MaterialTokens+Comp+ProgressIndicator.ProgressTextHorizontalMargin}}"
                        m3:MaterialText.Style="{m3:Typography LabelMedium}"
                        Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}">
               <TextBlock.IsVisible>
@@ -74,7 +74,7 @@
       </Style>
       <Style Selector="^:vertical /template/ TextBlock#PART_ProgressText">
         <Setter Property="DockPanel.Dock" Value="Top" />
-        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ProgressIndicator.ProgressTextVerticalMargin}}" />
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type ProgressBar}" TargetType="ProgressBar" BasedOn="{StaticResource MaterialProgressBarTheme}" />

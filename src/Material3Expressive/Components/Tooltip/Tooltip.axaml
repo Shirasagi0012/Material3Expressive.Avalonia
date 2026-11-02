@@ -122,7 +122,7 @@
   <!-- ToolTip reads placement from its anchor, rather than its own ControlTheme. -->
   <Style Selector=":is(Control)">
     <Setter Property="ToolTip.Placement" Value="Top" />
-    <Setter Property="ToolTip.VerticalOffset" Value="-4" />
+    <Setter Property="ToolTip.VerticalOffset" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.NativeVerticalOffset}}" />
     <Setter Property="ToolTip.ShouldUseOverlayLayer" Value="True" />
   </Style>
 </Styles>

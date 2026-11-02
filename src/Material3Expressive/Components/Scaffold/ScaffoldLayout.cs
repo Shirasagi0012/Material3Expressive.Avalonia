@@ -12,6 +12,16 @@ namespace Material3Expressive.Components;
 // converted to Avalonia's mirrored local coordinates only when placing a slot.
 internal sealed class ScaffoldLayout : Panel
 {
+    public static readonly StyledProperty<double> FabSpacingProperty =
+        AvaloniaProperty.Register<ScaffoldLayout, double>(nameof(FabSpacing));
+    public double FabSpacing
+    {
+        get => GetValue(FabSpacingProperty);
+        set => SetValue(FabSpacingProperty, value);
+    }
+
+    static ScaffoldLayout() => AffectsMeasure<ScaffoldLayout>(FabSpacingProperty);
+
     private int _leftInset, _rightInset, _fabLeft, _fabOffset, _snackbarOffset;
     private bool _hasFab;
 
@@ -46,7 +56,7 @@ internal sealed class ScaffoldLayout : Panel
         var fabWidth = Px(fab.DesiredSize.Width);
         var fabHeight = Px(fab.DesiredSize.Height);
         _hasFab = fabWidth != 0 && fabHeight != 0;
-        var spacing = Px(16);
+        var spacing = Px(FabSpacing);
         var rtl = owner.FlowDirection == FlowDirection.RightToLeft;
         _fabLeft = owner.FloatingActionButtonPosition switch
         {

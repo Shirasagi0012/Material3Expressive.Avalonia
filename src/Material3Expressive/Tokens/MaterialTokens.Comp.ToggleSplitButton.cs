@@ -56,6 +56,7 @@ public static partial class MaterialTokens
         public static class SplitButton
         {
             public static readonly MaterialTokenKey<double> Spacing = new("md.comp.split-button.spacing");
+            public static readonly MaterialTokenKey<double> ItemMinWidth = new("md.comp.split-button.item-min-width");
         }
         public static class SplitButtonXSmall
         {

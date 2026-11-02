@@ -70,14 +70,16 @@ internal sealed class AlertDialogButtons : Panel
 {
     public static readonly StyledProperty<double> CrossAxisSpacingProperty = AvaloniaProperty.Register<AlertDialogButtons, double>(nameof(CrossAxisSpacing));
     public double CrossAxisSpacing { get => GetValue(CrossAxisSpacingProperty); set => SetValue(CrossAxisSpacingProperty, value); }
-    static AlertDialogButtons() => AffectsMeasure<AlertDialogButtons>(CrossAxisSpacingProperty);
+    public static readonly StyledProperty<double> HorizontalSpacingProperty = AvaloniaProperty.Register<AlertDialogButtons, double>(nameof(HorizontalSpacing), 8d);
+    public double HorizontalSpacing { get => GetValue(HorizontalSpacingProperty); set => SetValue(HorizontalSpacingProperty, value); }
+    static AlertDialogButtons() => AffectsMeasure<AlertDialogButtons>(CrossAxisSpacingProperty, HorizontalSpacingProperty);
     protected override bool BypassFlowDirectionPolicies => true;
     private bool _stacked;
     protected override Size MeasureOverride(Size availableSize)
     {
         foreach (var child in Children) child.Measure(availableSize);
         var children = Children.Where(c => c.IsVisible).ToArray();
-        var width = children.Sum(c => c.DesiredSize.Width) + Math.Max(0, children.Length - 1) * 8;
+        var width = children.Sum(c => c.DesiredSize.Width) + Math.Max(0, children.Length - 1) * HorizontalSpacing;
         _stacked = width > availableSize.Width;
         // Default LocalMinimumInteractiveComponentSize (48) - ButtonDefaults.MinHeight
         // (40) consumes the full 8 DIP cross-axis spacing, leaving zero.
@@ -96,7 +98,7 @@ internal sealed class AlertDialogButtons : Panel
             var left = _stacked ? (rtl ? 0 : finalSize.Width - size.Width) : (rtl ? x : x - size.Width);
             child.Arrange(new Rect(left, y, size.Width, size.Height));
             if (_stacked) y += size.Height + CrossAxisSpacing;
-            else x += (rtl ? 1 : -1) * (size.Width + 8);
+            else x += (rtl ? 1 : -1) * (size.Width + HorizontalSpacing);
         }
         return finalSize;
     }

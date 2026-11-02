@@ -11,6 +11,9 @@ public static partial class MaterialTokens
         // NavigationBar.kt consumes NavigationBarTokens and NavigationBarVerticalItemTokens.
         public static class NavigationBar
         {
+            public static readonly MaterialTokenKey<double> ItemSpacing = new("md.comp.navigation-bar.item-spacing");
+            public static readonly MaterialTokenKey<double> IndicatorLabelSpacing = new("md.comp.navigation-bar.indicator-label-spacing");
+            public static readonly MaterialTokenKey<double> UnboundedItemHorizontalPadding = new("md.comp.navigation-bar.unbounded-item.horizontal-padding");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> EffectsAnimation = new("md.comp.navigation-bar.effects-animation");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> IndicatorSizeAnimation = new("md.comp.navigation-bar.indicator-size-animation");
             public static readonly MaterialTokenKey<Thickness> WindowInsets = new("md.comp.navigation-bar.window-insets");

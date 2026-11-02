@@ -11,6 +11,13 @@ public static partial class MaterialTokens
     {
         public static class Dialog
         {
+            public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.dialog.content-padding");
+            public static readonly MaterialTokenKey<double> IconBottomSpacing = new("md.comp.dialog.icon-bottom-spacing");
+            public static readonly MaterialTokenKey<double> HeadlineBottomSpacing = new("md.comp.dialog.headline-bottom-spacing");
+            public static readonly MaterialTokenKey<double> SupportingTextBottomSpacing = new("md.comp.dialog.supporting-text-bottom-spacing");
+            public static readonly MaterialTokenKey<double> ActionHorizontalSpacing = new("md.comp.dialog.action-horizontal-spacing");
+            public static readonly MaterialTokenKey<double> ActionVerticalSpacing = new("md.comp.dialog.action-vertical-spacing");
+
             public static readonly MaterialTokenKey<double> MaxWidth = new("md.comp.dialog.maxwidth");
             public static readonly MaterialTokenKey<double> MinWidth = new("md.comp.dialog.minwidth");
             public static readonly MaterialTokenKey<Color> ActionLabelTextColor = new("md.comp.dialog.action-label-text-color");

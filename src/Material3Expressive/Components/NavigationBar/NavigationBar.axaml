@@ -10,7 +10,7 @@
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="ItemsPanel">
-        <ItemsPanelTemplate><m3:NavigationBarItemsPanel ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.TallContainerHeight}}" /></ItemsPanelTemplate>
+        <ItemsPanelTemplate><m3:NavigationBarItemsPanel ItemSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.ItemSpacing}}" ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.TallContainerHeight}}" /></ItemsPanelTemplate>
       </Setter>
       <Setter Property="ItemContainerTheme">
         <ControlTheme TargetType="ContentPresenter">
@@ -60,6 +60,8 @@
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
               HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
               AlwaysShowLabel="{TemplateBinding AlwaysShowLabel}"
+              IndicatorLabelSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.IndicatorLabelSpacing}}"
+              UnboundedItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.UnboundedItemHorizontalPadding}}"
               ItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.TallContainerHeight}}"
               IndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.ActiveIndicatorWidth}}"
               IndicatorHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationBar.ActiveIndicatorHeight}}"

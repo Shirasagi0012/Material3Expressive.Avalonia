@@ -11,6 +11,21 @@ public static partial class MaterialTokens
         // Local native CommandBar themes use navigation indicator colors and motion.
         public static class CommandBar
         {
+            public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.command-bar.container-height");
+            public static readonly MaterialTokenKey<double> ItemMinHeight = new("md.comp.command-bar.item-min-height");
+            public static readonly MaterialTokenKey<double> ItemMinWidth = new("md.comp.command-bar.item-min-width");
+            public static readonly MaterialTokenKey<Thickness> ItemContentPadding = new("md.comp.command-bar.item-content-padding");
+            public static readonly MaterialTokenKey<double> InlineItemOuterPadding = new("md.comp.command-bar.inline-item-outer-padding");
+            public static readonly MaterialTokenKey<double> IndicatorHorizontalInset = new("md.comp.command-bar.indicator-horizontal-inset");
+            public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.command-bar.icon-label-space");
+            public static readonly MaterialTokenKey<double> OverflowIconLabelSpace = new("md.comp.command-bar.overflow-icon-label-space");
+            public static readonly MaterialTokenKey<Thickness> ContainerPadding = new("md.comp.command-bar.container-padding");
+            public static readonly MaterialTokenKey<double> ItemWidthBottom = new("md.comp.command-bar.item-width-bottom");
+            public static readonly MaterialTokenKey<double> ItemWidthRight = new("md.comp.command-bar.item-width-right");
+            public static readonly MaterialTokenKey<double> ItemWidthCollapsed = new("md.comp.command-bar.item-width-collapsed");
+            public static readonly MaterialTokenKey<double> SeparatorHeight = new("md.comp.command-bar.separator-height");
+            public static readonly MaterialTokenKey<Thickness> SeparatorMargin = new("md.comp.command-bar.separator-margin");
+            public static readonly MaterialTokenKey<Thickness> OverflowSeparatorMargin = new("md.comp.command-bar.overflow-separator-margin");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> EffectsAnimation = new("md.comp.command-bar.effects-animation");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> IndicatorSizeAnimation = new("md.comp.command-bar.indicator-size-animation");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.command-bar.container.color");

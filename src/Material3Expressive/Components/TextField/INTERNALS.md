@@ -45,7 +45,7 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`；Core
 ## 默认配置的数据流
 
 TextFieldTokenSource 保存 Filled / Outlined 的颜色与形状基线，以及共享 TextField 的软最小尺寸、
-两种 Padding 和运动引用。主题将它们绑定到原生 TextBox 或内部 TextFieldLayout 的配置属性；
+两种 Padding、装饰槽位尺寸与间距和运动引用。主题将它们绑定到原生 TextBox 或内部 TextFieldLayout 的配置属性；
 布局与动画只消费这些有效属性，不重新查询 motion Token 或使用 Expressive 备用规格。
 运行中的动画值仍由模板局部 Animatable 持有，不写回公开颜色、Padding 或运动配置。
 
@@ -57,7 +57,8 @@ TextFieldTokenSource 保存 Filled / Outlined 的颜色与形状基线，以及�
 Padding 的主题 MultiBinding 按 Label 非 null 且位置为 Inside 选择 WithLabelContentPadding，
 其他情况使用 ContentPadding；布局不再用 IsSet 自建默认值。软最小宽高仍是模板部件配置，
 不是原生 MinWidth / MinHeight 的强约束；显式原生约束与受限父空间的原有处理不变。
-48 DIP 图标交互槽、12 DIP 图标 Padding 补偿、2 DIP affix 留白等保留在对应布局算法中。
+图标槽、图标默认尺寸、内容和辅助区最小高度、辅助区/Above 标签 Padding、标签最小高度端点及图标旁/affix 间距均由共享 TextField Token 传入模板或内部布局属性；测量、排列继续使用原有补偿和插值公式。
+ComboBox 的独立字段模板消费同一组适用的尺寸与间距，NumericUpDown 和 SecureTextField 继续继承 TextField 主题。
 
 SecureTextField 通过 BasedOn 继承同一数据流，其编辑安全策略不参与外观配置迁移。
 

@@ -46,10 +46,16 @@
                     <m3:FloatingActionButtonTokenSource />
                     <m3:FloatingToolbarTokenSource />
                     <m3:TextFieldTokenSource />
+                    <m3:ComboBoxTokenSource />
+                    <m3:ButtonSpinnerTokenSource />
                     <m3:ChipTokenSource />
                     <m3:TabRowTokenSource />
                     <m3:DialogTokenSource />
                     <m3:CardTokenSource />
+                    <m3:GroupBoxTokenSource />
+                    <m3:ExpanderTokenSource />
+                    <m3:GridSplitterTokenSource />
+                    <m3:TableViewCellTokenSource />
                     <m3:ListItemTokenSource />
                     <m3:SegmentedButtonTokenSource />
                     <m3:ProgressIndicatorTokenSource />
@@ -63,8 +69,12 @@
                     <m3:MenuTokenSource />
                     <m3:DatePickerModalTokenSource />
                     <m3:DateInputModalTokenSource />
+                    <m3:DatePickerDialogTokenSource />
+                    <m3:NativePickerTokenSource />
                     <m3:TimePickerTokenSource />
                     <m3:TimeInputTokenSource />
+                    <m3:TimeScrollTokenSource />
+                    <m3:TimePickerDialogTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

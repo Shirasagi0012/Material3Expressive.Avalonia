@@ -10,9 +10,9 @@
 
     Header: TitleSmall in OnSurfaceVariant, inside the surface above the content. This is a local
     choice, not an M3 spec value: a quiet label names the group without competing with the
-    content, and Primary would read like a link or text button. Spacing is local too, since no
-    spacing token fits: 16 DIP Padding (the inset Card examples use) around header and content,
-    and an 8 DIP header-to-content gap, both collapsed with a null or empty Header.
+    content, and Primary would read like a link or text button. Component spacing tokens default
+    to 16 DIP Padding (the inset Card examples use) around header and content and an 8 DIP
+    header-to-content gap. The header and its gap collapse with a null or empty Header.
   -->
   <Styles.Resources>
     <ControlTheme x:Key="{x:Type GroupBox}" TargetType="GroupBox">
@@ -25,7 +25,7 @@
         </MultiBinding>
       </Setter>
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedCard.ContainerShape}}" />
-      <Setter Property="Padding" Value="16" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+GroupBox.ContentPadding}}" />
       <Setter Property="Focusable" Value="False" />
       <Setter Property="Template">
         <ControlTemplate>
@@ -38,14 +38,19 @@
             <DockPanel Margin="{TemplateBinding Padding}">
               <ContentPresenter x:Name="PART_HeaderPresenter"
                                 DockPanel.Dock="Top"
-                                Margin="0,0,0,8"
                                 Content="{TemplateBinding Header}"
                                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                                 IsVisible="{TemplateBinding Header, Converter={x:Static m3:GroupBoxConverters.HasHeader}}"
                                 HorizontalContentAlignment="Stretch"
                                 RecognizesAccessKey="True"
                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}"
-                                m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleSmall.Style}}" />
+                                m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+TitleSmall.Style}}">
+                <ContentPresenter.Margin>
+                  <MultiBinding Priority="Template" Converter="{x:Static m3:GroupBoxConverters.HeaderMargin}">
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+GroupBox.HeaderBottomSpacing}" />
+                  </MultiBinding>
+                </ContentPresenter.Margin>
+              </ContentPresenter>
               <ContentPresenter x:Name="PART_ContentPresenter"
                                 Content="{TemplateBinding Content}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"

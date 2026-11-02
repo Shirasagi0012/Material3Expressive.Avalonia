@@ -11,6 +11,17 @@ public sealed class TimeInputTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.TimeInput.VibrantMargin] = 12.0d,
+        [Comp.TimeInput.DisplaySpacing] = 4.0d,
+        [Comp.TimeInput.VibrantDisplaySpacing] = 16.0d,
+        [Comp.TimeInput.VibrantTimeFieldContainerHeight] = 120.0d,
+        [Comp.TimeInput.VibrantTimeFieldWithToggleContainerHeight] = 140.0d,
+        [Comp.TimeInput.VibrantTimeFieldContainerWidth] = 100.0d,
+        [Comp.TimeInput.SeparatorWidth] = 24.0d,
+        [Comp.TimeInput.VibrantSeparatorWidth] = 16.0d,
+        [Comp.TimeInput.SupportingTextTopSpacing] = 7.0d,
+        [Comp.TimeInput.VibrantPeriodSelectorContainerWidth] = 56.0d,
+        [Comp.TimeInput.PeriodSelectorSpacing] = 4.0d,
         [Comp.TimeInput.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainerHigh),
         [Comp.TimeInput.ContainerElevation] = new TokenRef(Sys.Elevation.Level3),
         [Comp.TimeInput.ContainerShape] = new TokenRef(Sys.Shape.ExtraLarge),

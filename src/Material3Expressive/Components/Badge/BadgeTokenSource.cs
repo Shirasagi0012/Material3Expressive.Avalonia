@@ -21,6 +21,10 @@ public sealed class BadgeTokenSource : ITokenSource
         [Comp.Badge.LargeSize] = 16d,
         [Comp.Badge.Shape] = new TokenRef(Sys.Shape.Full),
         [Comp.Badge.Size] = 6d,
+        [Comp.Badge.SmallHorizontalOffset] = 6d,
+        [Comp.Badge.SmallVerticalOffset] = 6d,
+        [Comp.Badge.LargeHorizontalOffset] = 12d,
+        [Comp.Badge.LargeVerticalOffset] = 14d,
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) => Values.TryGetValue(key, out value!);

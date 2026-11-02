@@ -9,6 +9,10 @@ public sealed class NavigationDrawerTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.NavigationDrawer.ItemHorizontalPadding] = new Avalonia.Thickness(16, 0, 24, 0),
+        [Comp.NavigationDrawer.ItemIconLabelSpace] = 12d,
+        [Comp.NavigationDrawer.ItemLabelBadgeSpace] = 12d,
+        [Comp.NavigationDrawer.IconSize] = 24d,
         [Comp.NavigationDrawer.OpenAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
         [Comp.NavigationDrawer.CloseAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
         [Comp.NavigationDrawer.MinimumContainerWidth] = 240d,

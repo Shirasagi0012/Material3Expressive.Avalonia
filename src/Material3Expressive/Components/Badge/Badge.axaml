@@ -44,6 +44,10 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:BadgedBoxLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+              SmallHorizontalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.SmallHorizontalOffset}}"
+              SmallVerticalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.SmallVerticalOffset}}"
+              LargeHorizontalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeHorizontalOffset}}"
+              LargeVerticalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeVerticalOffset}}"
               MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}">
             <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />

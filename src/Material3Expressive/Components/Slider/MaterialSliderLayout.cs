@@ -29,14 +29,22 @@ namespace Material3Expressive.Components;
 internal sealed class MaterialSliderLayout : Panel
 {
     private bool Vertical => TemplatedParent is Slider { Orientation: Orientation.Vertical };
-    static MaterialSliderLayout() => AffectsMeasure<MaterialSliderLayout>(MaterialInteractiveSize.MinimumProperty);
+    public static readonly StyledProperty<double> MinimumMeasureLengthProperty =
+        AvaloniaProperty.Register<MaterialSliderLayout, double>(nameof(MinimumMeasureLength), 4);
+    public double MinimumMeasureLength { get => GetValue(MinimumMeasureLengthProperty); set => SetValue(MinimumMeasureLengthProperty, value); }
+    public static readonly StyledProperty<double> MinimumMeasureThicknessProperty =
+        AvaloniaProperty.Register<MaterialSliderLayout, double>(nameof(MinimumMeasureThickness), 16);
+    public double MinimumMeasureThickness { get => GetValue(MinimumMeasureThicknessProperty); set => SetValue(MinimumMeasureThicknessProperty, value); }
+
+    static MaterialSliderLayout() => AffectsMeasure<MaterialSliderLayout>(MaterialInteractiveSize.MinimumProperty,
+        MinimumMeasureLengthProperty, MinimumMeasureThicknessProperty);
     private float Scale => (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
     private int Pixels(double dip) => SliderMath.Round((float)dip * Scale);
     protected override Size MeasureOverride(Size available)
     {
         if (Children.Count != 2) return default;
         var painter = Children[0]; var track = Children[1];
-        var space = new Size(Math.Max(available.Width, Vertical ? 16 : 4), Math.Max(available.Height, Vertical ? 4 : 16));
+        var space = new Size(Math.Max(available.Width, Vertical ? MinimumMeasureThickness : MinimumMeasureLength), Math.Max(available.Height, Vertical ? MinimumMeasureLength : MinimumMeasureThickness));
         track.Measure(space);
         var offset = Pixels(Vertical ? track.DesiredSize.Height : track.DesiredSize.Width) / Scale;
         painter.Measure(Vertical ? new Size(space.Width, Math.Max(0, space.Height - offset))

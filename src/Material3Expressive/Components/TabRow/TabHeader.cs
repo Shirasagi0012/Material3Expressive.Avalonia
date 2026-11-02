@@ -18,6 +18,18 @@ namespace Material3Expressive.Components;
 // Both Tab and native TabItem templates use this content/transition part. Selection stays with the owner.
 internal sealed class TabHeader : Panel
 {
+    public static readonly StyledProperty<double> TabHorizontalPaddingProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(TabHorizontalPadding));
+    public double TabHorizontalPadding { get => GetValue(TabHorizontalPaddingProperty); set => SetValue(TabHorizontalPaddingProperty, value); }
+    public static readonly StyledProperty<double> LeadingIconLabelSpaceProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(LeadingIconLabelSpace));
+    public double LeadingIconLabelSpace { get => GetValue(LeadingIconLabelSpaceProperty); set => SetValue(LeadingIconLabelSpaceProperty, value); }
+    public static readonly StyledProperty<double> StackedIconLabelSpaceProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(StackedIconLabelSpace));
+    public double StackedIconLabelSpace { get => GetValue(StackedIconLabelSpaceProperty); set => SetValue(StackedIconLabelSpaceProperty, value); }
+    public static readonly StyledProperty<double> SingleLineBaselineOffsetProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(SingleLineBaselineOffset));
+    public double SingleLineBaselineOffset { get => GetValue(SingleLineBaselineOffsetProperty); set => SetValue(SingleLineBaselineOffsetProperty, value); }
+    public static readonly StyledProperty<double> MultiLineBaselineOffsetProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(MultiLineBaselineOffset));
+    public double MultiLineBaselineOffset { get => GetValue(MultiLineBaselineOffsetProperty); set => SetValue(MultiLineBaselineOffsetProperty, value); }
+    public static readonly StyledProperty<double> BaselineExtraOffsetProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(BaselineExtraOffset));
+    public double BaselineExtraOffset { get => GetValue(BaselineExtraOffsetProperty); set => SetValue(BaselineExtraOffsetProperty, value); }
     public static readonly StyledProperty<double> LargeContainerHeightProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(LargeContainerHeight));
     public double LargeContainerHeight { get => GetValue(LargeContainerHeightProperty); set => SetValue(LargeContainerHeightProperty, value); }
     public static readonly StyledProperty<double> ContainerHeightProperty = AvaloniaProperty.Register<TabHeader, double>(nameof(ContainerHeight));
@@ -55,7 +67,7 @@ internal sealed class TabHeader : Panel
     private bool HasLabel => Label.Content is not null;
     private bool HasIcon => ContentLayout != TabContentLayout.Custom && (Icon.Content is not null || Icon.ContentTemplate is not null);
 
-    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty, ContainerHeightProperty, LargeContainerHeightProperty);
+    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty, ContainerHeightProperty, LargeContainerHeightProperty, TabHorizontalPaddingProperty, LeadingIconLabelSpaceProperty, StackedIconLabelSpaceProperty, SingleLineBaselineOffsetProperty, MultiLineBaselineOffsetProperty, BaselineExtraOffsetProperty);
     protected override void OnMeasureInvalidated()
     {
         base.OnMeasureInvalidated();
@@ -187,21 +199,21 @@ internal sealed class TabHeader : Panel
         var icon = HasIcon ? MathUtils.DipToPx(Icon.DesiredSize.Width, scale) : 0;
         if (ContentLayout == TabContentLayout.Custom) return label;
         return ContentLayout == TabContentLayout.Leading
-            ? label + icon + MathUtils.DipToPx(40, scale)
-            : Math.Max(HasLabel ? label + MathUtils.DipToPx(32, scale) : 0, icon);
+            ? label + icon + MathUtils.DipToPx(TabHorizontalPadding * 2 + LeadingIconLabelSpace, scale)
+            : Math.Max(HasLabel ? label + MathUtils.DipToPx(TabHorizontalPadding * 2, scale) : 0, icon);
     }
     internal int IntrinsicHeight(int width, double scale)
     {
         Label.UpdateChild(); Icon.UpdateChild();
         var maximum = width == int.MaxValue ? double.PositiveInfinity : width / scale;
         Icon.Measure(new Size(maximum, double.PositiveInfinity));
-        Label.Measure(new Size(Math.Max(0, maximum - (ContentLayout == TabContentLayout.Custom ? 0 : 32)
-            - (ContentLayout == TabContentLayout.Leading ? Icon.DesiredSize.Width + 8 : 0)), double.PositiveInfinity));
+        Label.Measure(new Size(Math.Max(0, maximum - (ContentLayout == TabContentLayout.Custom ? 0 : TabHorizontalPadding * 2)
+            - (ContentLayout == TabContentLayout.Leading ? Icon.DesiredSize.Width + LeadingIconLabelSpace : 0)), double.PositiveInfinity));
         var label = HasLabel ? MathUtils.DipToPx(Label.DesiredSize.Height, scale) : 0;
         var icon = HasIcon ? MathUtils.DipToPx(Icon.DesiredSize.Height, scale) : 0;
         if (ContentLayout == TabContentLayout.Custom) return label;
         if (ContentLayout == TabContentLayout.Leading) return MathUtils.DipToPx(ContainerHeight, scale);
-        return Math.Max(MathUtils.DipToPx(HasLabel && HasIcon ? LargeContainerHeight : ContainerHeight, scale), label + icon + MathUtils.DipToPx(20, scale));
+        return Math.Max(MathUtils.DipToPx(HasLabel && HasIcon ? LargeContainerHeight : ContainerHeight, scale), label + icon + MathUtils.DipToPx(StackedIconLabelSpace, scale));
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -216,29 +228,29 @@ internal sealed class TabHeader : Panel
         Icon.IsVisible = HasIcon; Label.IsVisible = HasLabel;
         var leading = ContentLayout == TabContentLayout.Leading;
         var custom = ContentLayout == TabContentLayout.Custom;
-        Icon.Measure(new Size(Math.Max(0, maxWidth - (leading ? Px(32) : 0)) / scale, maxHeight / scale));
+        Icon.Measure(new Size(Math.Max(0, maxWidth - (leading ? Px(TabHorizontalPadding * 2) : 0)) / scale, maxHeight / scale));
         var iw = HasIcon ? Px(Icon.DesiredSize.Width) : 0; var ih = HasIcon ? Px(Icon.DesiredSize.Height) : 0;
-        var pad = custom ? 0 : Px(32);
+        var pad = custom ? 0 : Px(TabHorizontalPadding * 2);
         // requiredWidth(8.dp) retains its drawing size, but its apparent measured width
         // is constrained to the Row's remaining width and determines sibling placement.
-        var gap = leading ? Math.Min(Px(8), Math.Max(0, maxWidth - pad - iw)) : 0;
+        var gap = leading ? Math.Min(Px(LeadingIconLabelSpace), Math.Max(0, maxWidth - pad - iw)) : 0;
         Label.Measure(new Size(Math.Max(0, maxWidth - pad - (leading ? iw + gap : 0)) / scale,
             (leading ? Math.Min(maxHeight, Px(ContainerHeight)) : maxHeight) / scale));
         var lw = HasLabel ? Px(Label.DesiredSize.Width) : 0; var lh = HasLabel ? Px(Label.DesiredSize.Height) : 0;
         var width = maxWidth == int.MaxValue ? custom ? lw : leading ? iw + gap + lw + pad : Math.Max(HasLabel ? lw + pad : 0, iw) : maxWidth;
-        var intrinsicHeight = custom ? lh : leading ? Px(ContainerHeight) : Math.Max(Px(HasIcon && HasLabel ? LargeContainerHeight : ContainerHeight), ih + lh + Px(20));
+        var intrinsicHeight = custom ? lh : leading ? Px(ContainerHeight) : Math.Max(Px(HasIcon && HasLabel ? LargeContainerHeight : ContainerHeight), ih + lh + Px(StackedIconLabelSpace));
         var height = Math.Min(maxHeight, intrinsicHeight);
         _inner = new Size(width, height);
         if (!custom && !leading && HasIcon && HasLabel)
         {
             var (first, last) = Baselines(Label, scale);
-            var textOffset = Px(first == last ? 14 : 6) + Px(3);
+            var textOffset = Px(first == last ? SingleLineBaselineOffset : MultiLineBaselineOffset) + Px(BaselineExtraOffset);
             var textY = unchecked(height - last - textOffset);
             var textWidth = Math.Min(width, lw + pad);
             var baselineWidth = Math.Max(textWidth, iw);
             var columnX = Center(width - baselineWidth);
             _labelBox = new Rect(columnX + (baselineWidth - textWidth) / 2 + pad / 2, textY, lw, lh);
-            _iconBox = new Rect(columnX + (baselineWidth - iw) / 2, unchecked(textY - (ih + Px(20) - first)), iw, ih);
+            _iconBox = new Rect(columnX + (baselineWidth - iw) / 2, unchecked(textY - (ih + Px(StackedIconLabelSpace) - first)), iw, ih);
         }
         else if (leading)
         {

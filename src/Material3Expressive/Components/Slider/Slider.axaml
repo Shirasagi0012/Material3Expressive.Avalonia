@@ -60,7 +60,8 @@
             <Setter Property="m3:SliderAppearance.StopIndicatorSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.StopIndicatorSize}}" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <m3:MaterialSliderLayout>
+                    <m3:MaterialSliderLayout MinimumMeasureLength="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.MinimumMeasureLength}}"
+                                     MinimumMeasureThickness="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.MinimumMeasureThickness}}">
                         <m3:SliderTrack Name="PART_TrackVisual" IsHitTestVisible="False"
                             Colors="{TemplateBinding m3:SliderAppearance.Colors}"
                             IsCentered="{TemplateBinding m3:SliderAppearance.IsCentered}"
@@ -91,7 +92,8 @@
             <Setter Property="ThumbHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <m3:SliderLayout Background="Transparent">
+                    <m3:SliderLayout MinimumMeasureLength="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.MinimumMeasureLength}}"
+                                     MinimumMeasureThickness="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.MinimumMeasureThickness}}" Background="Transparent">
                         <ContentPresenter Name="PART_Track" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
                             <m3:SliderTrack State="{Binding ActualState, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" Colors="{Binding Colors, RelativeSource={RelativeSource AncestorType=m3:RangeSlider}}" />
                         </ContentPresenter>

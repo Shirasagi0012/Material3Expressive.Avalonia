@@ -21,6 +21,8 @@
 字段的 `HorizontalContentAlignment` 使用 `Stretch`，由 `TextAlignment.Center` 在完整编辑视口内居中文字。若把窄 TextPresenter 本身设为 `Center`，SmoothScroll 12.0.0 的合成平移会抵消其布局居中位移，出现布局坐标居中但实际数字靠左的情况；回归检查同时读取实际渲染像素。
 维护者于 2026-10-11 确认这种直接绑定。`SelectedTime` 会被收成整分。无效草稿留在文本里，并用 `IsInputValid` 表示；AM/PM 在小时无效时禁用。
 
+程序构造的字段、时段和间距通过组件局部动态绑定消费尺寸 Token；使用既有 TokenBindingConverter 解析引用链，资源变化原位更新布局，不重建输入字段。纵向时段高度仍跟随字段高度，时段按钮扣除的间距与容器 Spacing 使用同一 Token。钟面标签、中心和手柄尺寸可配置，半径、命中区域及 256 归一化基准保留原算法。
+
 ## 钟面与滚动
 
 角度以 12 点为 0，顺时针增加。24 小时根据触点是否落在内圈决定加 12。

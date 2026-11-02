@@ -9,6 +9,10 @@ public sealed class WideNavigationRailTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.WideNavigationRail.ExpandedItemMinHeight] = 48d,
+        [Comp.WideNavigationRail.ExpandedItemVerticalSpace] = 0d,
+        [Comp.WideNavigationRail.ItemMinWidth] = 48d,
+        [Comp.WideNavigationRail.ItemMinHeight] = 48d,
         [Comp.WideNavigationRail.LayoutAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
         [Comp.WideNavigationRail.ModalWidthAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.WideNavigationRail.StateAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),

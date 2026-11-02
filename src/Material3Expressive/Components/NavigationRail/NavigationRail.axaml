@@ -8,7 +8,7 @@
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
-      <Setter Property="ItemsPanel"><ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate></Setter>
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><StackPanel Spacing="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ItemSpacing}}" /></ItemsPanelTemplate></Setter>
       <Setter Property="ItemContainerTheme">
         <ControlTheme TargetType="ContentPresenter"><Setter Property="HorizontalAlignment" Value="Center" /></ControlTheme>
       </Setter>
@@ -22,7 +22,9 @@
                   <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
                 </MultiBinding>
               </Border.Padding>
-              <m3:NavigationRailLayout ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.NarrowContainerWidth}}">
+              <m3:NavigationRailLayout VerticalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.VerticalPadding}}"
+                  HeaderItemSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.HeaderItemSpacing}}"
+                  ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.NarrowContainerWidth}}">
                 <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" />
                 <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
               </m3:NavigationRailLayout>
@@ -56,6 +58,7 @@
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinHeight="{TemplateBinding MinHeight}"
               HasLabel="{TemplateBinding Label, Converter={x:Static ObjectConverters.IsNotNull}}"
               AlwaysShowLabel="{TemplateBinding AlwaysShowLabel}"
+              IndicatorLabelSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.IndicatorLabelSpacing}}"
               ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.NarrowContainerWidth}}"
               IndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ActiveIndicatorWidth}}"
               IndicatorHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.ActiveIndicatorHeight}}"

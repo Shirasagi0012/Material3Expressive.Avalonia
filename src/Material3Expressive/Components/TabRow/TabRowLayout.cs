@@ -17,6 +17,21 @@ namespace Material3Expressive.Components;
 
 internal sealed class TabRowChrome : Panel
 {
+    public static readonly StyledProperty<double> TabHorizontalPaddingProperty = AvaloniaProperty.Register<TabRowChrome, double>(nameof(TabHorizontalPadding));
+    public double TabHorizontalPadding { get => GetValue(TabHorizontalPaddingProperty); set => SetValue(TabHorizontalPaddingProperty, value); }
+    public static readonly StyledProperty<double> PrimaryIndicatorMinWidthProperty = AvaloniaProperty.Register<TabRowChrome, double>(nameof(PrimaryIndicatorMinWidth));
+    public double PrimaryIndicatorMinWidth { get => GetValue(PrimaryIndicatorMinWidthProperty); set => SetValue(PrimaryIndicatorMinWidthProperty, value); }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if ((change.Property == TabHorizontalPaddingProperty || change.Property == PrimaryIndicatorMinWidthProperty) && Children.Count == 3)
+        {
+            Content.InvalidateMeasure();
+            if (Content.GetVisualDescendants().OfType<TabRowItemsPanel>().FirstOrDefault() is { } items)
+                items.HeaderMeasureInvalidated();
+            InvalidateMeasure();
+        }
+    }
     public TabRowChrome()
     {
         AddHandler(PointerWheelChangedEvent, (_, e) =>
@@ -147,7 +162,7 @@ internal sealed class TabRowItemsPanel : StackPanel
             {
                 var intrinsic = headers[index]?.IntrinsicWidth(chrome.Scrollable ? int.MaxValue : _height, scale) ?? Px(Children[index].DesiredSize.Width);
                 var itemWidth = chrome.Scrollable ? Math.Max(Px(chrome.MinTabWidth), intrinsic) : width;
-                var contentWidth = Math.Max((chrome.Scrollable ? intrinsic : Math.Min(intrinsic, width)) / (float)scale - 32f, 24f);
+                var contentWidth = Math.Max((chrome.Scrollable ? intrinsic : Math.Min(intrinsic, width)) / (float)scale - (float)(chrome.TabHorizontalPadding * 2), (float)chrome.PrimaryIndicatorMinWidth);
                 _widths[index] = itemWidth;
                 // Intrinsic probes measure the presenters with different constraints. Replay
                 // the real measure through every template wrapper, including Surface's Border,

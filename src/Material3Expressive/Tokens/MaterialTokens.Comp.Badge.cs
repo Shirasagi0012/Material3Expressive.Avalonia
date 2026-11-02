@@ -11,6 +11,11 @@ public static partial class MaterialTokens
     {
         public static class Badge
         {
+            public static readonly MaterialTokenKey<double> SmallHorizontalOffset = new("md.comp.badge.small-horizontal-offset");
+            public static readonly MaterialTokenKey<double> SmallVerticalOffset = new("md.comp.badge.small-vertical-offset");
+            public static readonly MaterialTokenKey<double> LargeHorizontalOffset = new("md.comp.badge.large-horizontal-offset");
+            public static readonly MaterialTokenKey<double> LargeVerticalOffset = new("md.comp.badge.large-vertical-offset");
+
             public static readonly MaterialTokenKey<Thickness> LargeContentPadding = new("md.comp.badge.large-content-padding");
             public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.badge.content-padding");
             public static readonly MaterialTokenKey<Color> Color = new("md.comp.badge.color");

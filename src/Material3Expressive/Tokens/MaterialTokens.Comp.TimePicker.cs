@@ -13,6 +13,24 @@ public static partial class MaterialTokens
     {
         public static class TimePicker
         {
+            public static readonly MaterialTokenKey<double> LayoutSpacing = new("md.comp.timepicker.layout-spacing");
+            public static readonly MaterialTokenKey<double> VibrantHorizontalLayoutSpacing = new("md.comp.timepicker.vibrant-horizontal-layout-spacing");
+            public static readonly MaterialTokenKey<double> VibrantHorizontalMargin = new("md.comp.timepicker.vibrant-horizontal-margin");
+            public static readonly MaterialTokenKey<double> VibrantVerticalMargin = new("md.comp.timepicker.vibrant-vertical-margin");
+            public static readonly MaterialTokenKey<double> HorizontalDisplaySpacing = new("md.comp.timepicker.horizontal-display-spacing");
+            public static readonly MaterialTokenKey<double> VibrantDisplaySpacing = new("md.comp.timepicker.vibrant-display-spacing");
+            public static readonly MaterialTokenKey<double> DisplaySpacing = new("md.comp.timepicker.display-spacing");
+            public static readonly MaterialTokenKey<double> VibrantTimeSelectorContainerHeight = new("md.comp.timepicker.vibrant-time-selector-container-height");
+            public static readonly MaterialTokenKey<double> VibrantTimeSelectorWithToggleContainerHeight = new("md.comp.timepicker.vibrant-time-selector-with-toggle-container-height");
+            public static readonly MaterialTokenKey<double> VibrantTimeSelectorContainerWidth = new("md.comp.timepicker.vibrant-time-selector-container-width");
+            public static readonly MaterialTokenKey<double> VibrantTimeSelector24HVerticalContainerWidth = new("md.comp.timepicker.vibrant-time-selector24-h-vertical-container-width");
+            public static readonly MaterialTokenKey<double> SeparatorWidth = new("md.comp.timepicker.separator-width");
+            public static readonly MaterialTokenKey<double> VibrantSeparatorWidth = new("md.comp.timepicker.vibrant-separator-width");
+            public static readonly MaterialTokenKey<double> VibrantPeriodSelectorHorizontalContainerHeight = new("md.comp.timepicker.vibrant-period-selector-horizontal-container-height");
+            public static readonly MaterialTokenKey<double> VibrantPeriodSelectorVerticalContainerWidth = new("md.comp.timepicker.vibrant-period-selector-vertical-container-width");
+            public static readonly MaterialTokenKey<double> PeriodSelectorSpacing = new("md.comp.timepicker.period-selector-spacing");
+            public static readonly MaterialTokenKey<double> ClockDialBottomSpacing = new("md.comp.timepicker.clock-dial-bottom-spacing");
+            public static readonly MaterialTokenKey<double> ClockDialLabelContainerSize = new("md.comp.timepicker.clock-dial-label-container-size");
             public static readonly MaterialTokenKey<Color> ClockDialColor = new("md.comp.timepicker.clock-dial-color");
             public static readonly MaterialTokenKey<double> ClockDialContainerSize = new("md.comp.timepicker.clock-dial-container-size");
             public static readonly MaterialTokenKey<TextStyle> ClockDialLabelTextFont = new("md.comp.timepicker.clock-dial-label-text-font");

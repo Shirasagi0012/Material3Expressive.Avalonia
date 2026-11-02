@@ -11,6 +11,15 @@ public static partial class MaterialTokens
     {
         public static class TabRow
         {
+            public static readonly MaterialTokenKey<double> TabHorizontalPadding = new("md.comp.tab-row.tab-horizontal-padding");
+            public static readonly MaterialTokenKey<double> LeadingIconLabelSpace = new("md.comp.tab-row.leading-icon-label-space");
+            public static readonly MaterialTokenKey<double> StackedIconLabelSpace = new("md.comp.tab-row.stacked-icon-label-space");
+            public static readonly MaterialTokenKey<double> SingleLineBaselineOffset = new("md.comp.tab-row.single-line-baseline-offset");
+            public static readonly MaterialTokenKey<double> MultiLineBaselineOffset = new("md.comp.tab-row.multi-line-baseline-offset");
+            public static readonly MaterialTokenKey<double> BaselineExtraOffset = new("md.comp.tab-row.baseline-extra-offset");
+            public static readonly MaterialTokenKey<double> PrimaryIndicatorMinWidth = new("md.comp.tab-row.primary-indicator-min-width");
+            public static readonly MaterialTokenKey<double> IconSize = new("md.comp.tab-row.icon-size");
+
             public static readonly MaterialTokenKey<double> EdgePadding = new("md.comp.tab-row.edge-padding");
             public static readonly MaterialTokenKey<double> MinTabWidth = new("md.comp.tab-row.min-tab-width");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> SelectedContentAnimation = new("md.comp.tab-row.selected-content-animation");

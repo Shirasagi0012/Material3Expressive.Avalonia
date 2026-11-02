@@ -21,6 +21,10 @@ internal sealed class NavigationBarItemLayout : Panel
     public static readonly StyledProperty<double> IndicatorHeightProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IndicatorHeight));
     public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IconSize));
     public static readonly StyledProperty<CornerRadius> IndicatorShapeProperty = AvaloniaProperty.Register<NavigationBarItemLayout, CornerRadius>(nameof(IndicatorShape));
+    public static readonly StyledProperty<double> IndicatorLabelSpacingProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(IndicatorLabelSpacing), 4d);
+    public double IndicatorLabelSpacing { get => GetValue(IndicatorLabelSpacingProperty); set => SetValue(IndicatorLabelSpacingProperty, value); }
+    public static readonly StyledProperty<double> UnboundedItemHorizontalPaddingProperty = AvaloniaProperty.Register<NavigationBarItemLayout, double>(nameof(UnboundedItemHorizontalPadding), 44d);
+    public double UnboundedItemHorizontalPadding { get => GetValue(UnboundedItemHorizontalPaddingProperty); set => SetValue(UnboundedItemHorizontalPaddingProperty, value); }
     private int _layoutHeight;
 
     public bool HasLabel { get => GetValue(HasLabelProperty); set => SetValue(HasLabelProperty, value); }
@@ -35,7 +39,7 @@ internal sealed class NavigationBarItemLayout : Panel
 
     static NavigationBarItemLayout()
     {
-        AffectsMeasure<NavigationBarItemLayout>(HasLabelProperty, ItemMinHeightProperty, IndicatorWidthProperty, IndicatorHeightProperty, IconSizeProperty, SizeProgressProperty);
+        AffectsMeasure<NavigationBarItemLayout>(HasLabelProperty, IndicatorLabelSpacingProperty, UnboundedItemHorizontalPaddingProperty, ItemMinHeightProperty, IndicatorWidthProperty, IndicatorHeightProperty, IconSizeProperty, SizeProgressProperty);
         AffectsArrange<NavigationBarItemLayout>(AlwaysShowLabelProperty, AlphaProgressProperty, IndicatorShapeProperty);
     }
 
@@ -59,11 +63,11 @@ internal sealed class NavigationBarItemLayout : Panel
         if (HasLabel)
         {
             var padding = (float)(IndicatorHeight - IconSize) / 2 * scale;
-            var contentHeight = iconHeight + padding + 4f * scale + MathUtils.DipToPx(label.DesiredSize.Height, scale);
+            var contentHeight = iconHeight + padding + (float)IndicatorLabelSpacing * scale + MathUtils.DipToPx(label.DesiredSize.Height, scale);
             _layoutHeight = MathUtils.RoundToInt(contentHeight + Math.Max((minimumHeight - contentHeight) / 2, padding) * 2);
         }
         else _layoutHeight = Math.Clamp(MathUtils.DipToPx((float)ItemMinHeight, scale), minimumHeight, maximumHeight);
-        var width = double.IsFinite(availableSize.Width) ? MathUtils.DipToPx(availableSize.Width, scale) : iconWidth + MathUtils.DipToPx(44f, scale) * 2;
+        var width = double.IsFinite(availableSize.Width) ? MathUtils.DipToPx(availableSize.Width, scale) : iconWidth + MathUtils.DipToPx((float)UnboundedItemHorizontalPadding, scale) * 2;
         return new Size(width / (double)scale, _layoutHeight / (double)scale);
     }
 
@@ -92,14 +96,14 @@ internal sealed class NavigationBarItemLayout : Panel
         else
         {
             var padding = (float)(IndicatorHeight - IconSize) / 2 * scale;
-            var contentHeight = iconHeight + padding + 4f * scale + labelHeight;
+            var contentHeight = iconHeight + padding + (float)IndicatorLabelSpacing * scale + labelHeight;
             var selectedIconY = Math.Max((height - contentHeight) / 2, padding);
             var unselectedIconY = AlwaysShowLabel ? selectedIconY : (height - iconHeight) / 2f;
             var offset = (unselectedIconY - selectedIconY) * (1 - progress);
             iconY = MathUtils.RoundToInt(selectedIconY + offset);
             indicatorY = MathUtils.RoundToInt(selectedIconY - MathUtils.DipToPx((float)(IndicatorHeight - IconSize) / 2, scale) + offset);
             rippleY = MathUtils.RoundToInt(selectedIconY - padding + offset);
-            labelY = MathUtils.RoundToInt(selectedIconY + iconHeight + padding + 4f * scale + offset);
+            labelY = MathUtils.RoundToInt(selectedIconY + iconHeight + padding + (float)IndicatorLabelSpacing * scale + offset);
         }
         void Place(Control child, int childWidth, int childHeight, int y) =>
             child.Arrange(new Rect((width - childWidth) / 2 / (double)scale, (y + apparentOffsetY) / (double)scale, childWidth / (double)scale, childHeight / (double)scale));

@@ -10,6 +10,9 @@ public sealed class NavigationBarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.NavigationBar.ItemSpacing] = 8d,
+        [Comp.NavigationBar.IndicatorLabelSpacing] = 4d,
+        [Comp.NavigationBar.UnboundedItemHorizontalPadding] = 44d,
         [Comp.NavigationBar.EffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.NavigationBar.IndicatorSizeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.NavigationBar.WindowInsets] = default(Avalonia.Thickness),

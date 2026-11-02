@@ -19,6 +19,7 @@ public static partial class MaterialTokens
 
         public static class PlainTooltip
         {
+            public static readonly MaterialTokenKey<double> NativeVerticalOffset = new("md.comp.plain-tooltip.native-vertical-offset");
             public static readonly MaterialTokenKey<Avalonia.Thickness> ContentPadding = new("md.comp.plain-tooltip.contentpadding");
             public static readonly MaterialTokenKey<double> MaxWidth = new("md.comp.plain-tooltip.maxwidth");
             public static readonly MaterialTokenKey<double> MinHeight = new("md.comp.plain-tooltip.minheight");

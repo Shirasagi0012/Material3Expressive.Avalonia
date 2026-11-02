@@ -4,6 +4,8 @@
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
 以下 Material3 路径相对 `compose/material3/material3/src/`。
 
+动作留白及横向/换行间距由专属 DatePickerDialog Token 绑定到内部布局属性，测量和排列共用输入并随资源更新。现有 DatePickerModal 容器 Token 保持独立。
+
 ## 布局与来源
 
 - 桌面入口为 Core `skikoMain/kotlin/androidx/compose/material3/DatePickerDialog.skiko.kt`；
@@ -14,7 +16,7 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，Core `a9e47e8aa04c95cfe572
 - DatePickerDialogColumn 先测动作，再把剩余高度分配给内容，保留 weight(fill=false) 与 SpaceBetween。
 - AlertDialogButtons 对应共享 AlertDialogFlowRow；内部 CrossAxisSpacing 默认 0 保留 AlertDialog 行为，
   日期模板传入 12。确认先测量，横排在 end，换行在上。
-- Surface、内容环境和动作文字角色由 XAML 提供。颜色、圆角和尺寸使用 DatePickerModalTokenSource。
+- Surface、内容环境和动作文字角色由 XAML 提供。颜色、圆角和容器尺寸使用 DatePickerModalTokenSource。
   DatePickerDefaults.TonalElevation 是 Level0，不是 DatePickerModalTokens.ContainerElevation 的 Level3。
 
 ## 已确认决定

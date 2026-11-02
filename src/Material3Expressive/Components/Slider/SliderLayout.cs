@@ -28,13 +28,21 @@ namespace Material3Expressive.Components;
 internal sealed class SliderLayout : Panel
 {
     protected override bool BypassFlowDirectionPolicies => true;
-    static SliderLayout() => AffectsMeasure<SliderLayout>(MaterialInteractiveSize.MinimumProperty);
+    public static readonly StyledProperty<double> MinimumMeasureLengthProperty =
+        AvaloniaProperty.Register<SliderLayout, double>(nameof(MinimumMeasureLength), 4);
+    public double MinimumMeasureLength { get => GetValue(MinimumMeasureLengthProperty); set => SetValue(MinimumMeasureLengthProperty, value); }
+    public static readonly StyledProperty<double> MinimumMeasureThicknessProperty =
+        AvaloniaProperty.Register<SliderLayout, double>(nameof(MinimumMeasureThickness), 16);
+    public double MinimumMeasureThickness { get => GetValue(MinimumMeasureThicknessProperty); set => SetValue(MinimumMeasureThicknessProperty, value); }
+
+    static SliderLayout() => AffectsMeasure<SliderLayout>(MaterialInteractiveSize.MinimumProperty,
+        MinimumMeasureLengthProperty, MinimumMeasureThicknessProperty);
     private float Scale => (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
     private int Pixels(double dip) => SliderMath.Round((float)dip * Scale);
     protected override Size MeasureOverride(Size available)
     {
         if (Children.Count != 3) return default;
-        var contentSpace = new Size(Math.Max(available.Width, 4), Math.Max(available.Height, 16));
+        var contentSpace = new Size(Math.Max(available.Width, MinimumMeasureLength), Math.Max(available.Height, MinimumMeasureThickness));
         var track = Children[0]; var start = Children[1]; var end = Children[2];
         start.Measure(contentSpace); end.Measure(contentSpace);
         var offset = (Pixels(start.DesiredSize.Width) + Pixels(end.DesiredSize.Width)) / 2;

@@ -12,6 +12,7 @@ public static partial class MaterialTokens
         public static class Switch
         {
             public static readonly MaterialTokenKey<Avalonia.Thickness> ContentPadding = new("md.comp.switch.content-padding");
+            public static readonly MaterialTokenKey<double> IconSize = new("md.comp.switch.icon-size");
             public static readonly MaterialTokenKey<SpringSpec> ThumbAnimation = new("md.comp.switch.thumb-animation");
 
             public static readonly MaterialTokenKey<Color> CheckedThumbColor = new("md.comp.switch.checked-thumb-color");

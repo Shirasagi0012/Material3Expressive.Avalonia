@@ -10,6 +10,21 @@ public sealed class CommandBarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.CommandBar.ContainerHeight] = 48d,
+        [Comp.CommandBar.ItemMinHeight] = 48d,
+        [Comp.CommandBar.ItemMinWidth] = 48d,
+        [Comp.CommandBar.ItemContentPadding] = new Thickness(8, 4),
+        [Comp.CommandBar.InlineItemOuterPadding] = 8d,
+        [Comp.CommandBar.IndicatorHorizontalInset] = 8d,
+        [Comp.CommandBar.IconLabelSpace] = 4d,
+        [Comp.CommandBar.OverflowIconLabelSpace] = 8d,
+        [Comp.CommandBar.ContainerPadding] = new Thickness(4, 0),
+        [Comp.CommandBar.ItemWidthBottom] = 76d,
+        [Comp.CommandBar.ItemWidthRight] = 104d,
+        [Comp.CommandBar.ItemWidthCollapsed] = 48d,
+        [Comp.CommandBar.SeparatorHeight] = 24d,
+        [Comp.CommandBar.SeparatorMargin] = new Thickness(8),
+        [Comp.CommandBar.OverflowSeparatorMargin] = new Thickness(8, 4),
         [Comp.CommandBar.EffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.CommandBar.IndicatorSizeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.CommandBar.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainer),

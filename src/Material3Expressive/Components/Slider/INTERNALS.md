@@ -4,6 +4,8 @@
 
 ## 默认配置数据流
 
+两种布局的子项测量空间下限由 `MinimumMeasureLength` / `MinimumMeasureThickness` Token 提供，默认分别为 4 / 16 DIP；单值垂直模式交换轴，最终尺寸仍按原顺序约束到调用者的可用空间。
+
 Track 的尺寸、间隙、内部圆角与 Range thumb 默认尺寸由 TokenSource 经主题接到有效属性；不在属性元数据重复基线。垂直圆角收缩默认由主题 MultiBinding 选择，保持普通主题优先级，因此用户普通 Style、Binding 与局部值可覆盖；NaN 圆角、完整 Colors 及 State 的语义不变。
 
 ## 固定上游与本地入口

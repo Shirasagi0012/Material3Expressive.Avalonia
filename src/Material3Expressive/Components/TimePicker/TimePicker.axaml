@@ -47,7 +47,7 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialClockLabelTheme" TargetType="Button" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
-      <Setter Property="MinHeight" Value="48" /><Setter Property="MinWidth" Value="48" />
+      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialLabelContainerSize}}" /><Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialLabelContainerSize}}" />
       <Setter Property="Padding" Value="0" /><Setter Property="BorderThickness" Value="0" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />

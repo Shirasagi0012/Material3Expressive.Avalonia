@@ -22,7 +22,11 @@
                   </MultiBinding>
                 </Border.Padding>
                 <Border Padding="{TemplateBinding ContentPadding}">
-                  <m3:WideNavigationRailLayout CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
+                  <m3:WideNavigationRailLayout
+                      ExpandedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemMinHeight}}"
+                      ExpandedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemVerticalSpace}}"
+                      ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemMinWidth}}"
+                      CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
                       ExpandedContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMinWidth}}"
                       ExpandedContainerMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
                       CollapsedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemVerticalSpace}}"
@@ -51,16 +55,20 @@
                       </MultiBinding>
                     </Border.Padding>
                     <Border Padding="{TemplateBinding ContentPadding}">
-                      <m3:WideNavigationRailLayout CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
-                      ExpandedContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMinWidth}}"
-                      ExpandedContainerMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
-                      CollapsedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemVerticalSpace}}"
-                      CollapsedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemMinHeight}}"
-                      HeaderSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.HeaderSpace}}"
-                      ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
-                      LayoutAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.LayoutAnimation}}"
-                      ModalWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalWidthAnimation}}"
-                      x:Name="PART_ModalLayout" IsModal="True" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
+                      <m3:WideNavigationRailLayout
+                          ExpandedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemMinHeight}}"
+                          ExpandedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemVerticalSpace}}"
+                          ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemMinWidth}}"
+                          CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
+                          ExpandedContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMinWidth}}"
+                          ExpandedContainerMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
+                          CollapsedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemVerticalSpace}}"
+                          CollapsedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemMinHeight}}"
+                          HeaderSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.HeaderSpace}}"
+                          ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
+                          LayoutAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.LayoutAnimation}}"
+                          ModalWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalWidthAnimation}}"
+                          x:Name="PART_ModalLayout" IsModal="True" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
                         <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Top">
                           <Border x:Name="PART_ExpandedHeaderPadding">
                             <ContentPresenter x:Name="PART_ExpandedHeader" HorizontalAlignment="Left" VerticalAlignment="Top" />

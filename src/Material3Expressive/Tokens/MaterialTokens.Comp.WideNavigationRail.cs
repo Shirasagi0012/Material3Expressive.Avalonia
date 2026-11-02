@@ -13,6 +13,11 @@ public static partial class MaterialTokens
         // VerticalItem,BaselineItem,Color}Tokens. Default derivations keep live system references.
         public static class WideNavigationRail
         {
+            public static readonly MaterialTokenKey<double> ExpandedItemMinHeight = new("md.comp.wide-navigation-rail.expanded-item-min-height");
+            public static readonly MaterialTokenKey<double> ExpandedItemVerticalSpace = new("md.comp.wide-navigation-rail.expanded-item-vertical-space");
+            public static readonly MaterialTokenKey<double> ItemMinWidth = new("md.comp.wide-navigation-rail.item-min-width");
+            public static readonly MaterialTokenKey<double> ItemMinHeight = new("md.comp.wide-navigation-rail.item-min-height");
+
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> LayoutAnimation = new("md.comp.wide-navigation-rail.layout-animation");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ModalWidthAnimation = new("md.comp.wide-navigation-rail.modal-width-animation");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> StateAnimation = new("md.comp.wide-navigation-rail.state-animation");

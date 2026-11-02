@@ -19,13 +19,19 @@
                 <Border x:Name="PART_DialogContent">
                   <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                       TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ContainerElevation}}">
-                    <m3:TimePickerDialogLayout>
+                    <m3:TimePickerDialogLayout
+                        HorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePickerDialog.HorizontalPadding}}"
+                        VerticalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePickerDialog.VerticalPadding}}"
+                        LandscapeAdditionalHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePickerDialog.LandscapeAdditionalHeight}}"
+                        LandscapeContentTopOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePickerDialog.LandscapeContentTopOffset}}"
+                        LandscapeActionsSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePickerDialog.LandscapeActionsSpacing}}"
+                        LandscapeTallActionsOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePickerDialog.LandscapeTallActionsOffset}}">
                       <ContentPresenter x:Name="PART_Title" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}" HorizontalContentAlignment="Left" />
                       <Grid>
                         <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                             HorizontalAlignment="Left" VerticalAlignment="Top" />
                       </Grid>
-                      <m3:TimePickerDialogActions x:Name="PART_Buttons">
+                      <m3:TimePickerDialogActions x:Name="PART_Buttons" Spacing="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePickerDialog.ActionsSpacing}}">
                         <ContentPresenter x:Name="PART_ModeToggle" IsVisible="False" Content="{TemplateBinding ModeToggleButton}" ContentTemplate="{TemplateBinding ModeToggleButtonTemplate}" />
                         <Control x:Name="PART_Spacer" />
                         <ContentPresenter x:Name="PART_Dismiss" IsVisible="False" Content="{TemplateBinding DismissButton}" ContentTemplate="{TemplateBinding DismissButtonTemplate}" />

@@ -20,7 +20,17 @@
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                   CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
                   ShadowElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerElevation}}">
-                <m3:SnackbarLayout SingleLineContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SingleLineContainerHeight}}"
+                <m3:SnackbarLayout ContentMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.MaxWidth}}"
+                    ContentStartPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContentStartPadding}}"
+                    ContentEndPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContentEndPadding}}"
+                    TextVerticalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.TextVerticalPadding}}"
+                    TextEndSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.TextEndSpacing}}"
+                    FirstBaselineOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.FirstBaselineOffset}}"
+                    NewLineTextEndSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.NewLineTextEndSpacing}}"
+                    NewLineLastBaselineOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.NewLineLastBaselineOffset}}"
+                    NewLineBottomPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.NewLineBottomPadding}}"
+                    DataMargin="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.DataMargin}}"
+                    SingleLineContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SingleLineContainerHeight}}"
                     TwoLinesContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.TwoLinesContainerHeight}}" x:Name="PART_Layout" ActionOnNewLine="{TemplateBinding ActionOnNewLine}"
                     m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.SupportingTextFont}}">
                   <!-- Reuse the paragraph-width/overflow handling already used by default labels. -->
@@ -53,7 +63,7 @@
           </Border>
         </ControlTemplate>
       </Setter>
-      <Style Selector="^:has-data /template/ Border#PART_DataInset"><Setter Property="Margin" Value="12" /></Style>
+      <Style Selector="^:has-data /template/ Border#PART_DataInset"><Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.DataMargin}}" /></Style>
       <Style Selector="^:data-content /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Content" Value="{Binding Data.Visuals.Message, RelativeSource={RelativeSource TemplatedParent}}" />
       </Style>
@@ -92,7 +102,8 @@
           <m3:ButtonLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
               MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
               HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}"
-              ContainerMinWidth="40" ContainerMinHeight="40">
+              ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.DismissContainerSize}}"
+              ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.DismissContainerSize}}">
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                 TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}">
               <!-- Fixed Core's internal Filled.Close vector, independent of the symbol font. -->

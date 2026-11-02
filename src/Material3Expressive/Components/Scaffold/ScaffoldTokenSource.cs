@@ -12,6 +12,7 @@ public sealed class ScaffoldTokenSource : ITokenSource
     {
         if (ReferenceEquals(key, Comp.Scaffold.FloatingActionButtonPosition)) { value = FabPosition.End; return true; }
         if (ReferenceEquals(key, Comp.Scaffold.ContentWindowInsets)) { value = default(Thickness); return true; }
+        if (ReferenceEquals(key, Comp.Scaffold.FabSpacing)) { value = 16d; return true; }
         value = null!;
         return false;
     }

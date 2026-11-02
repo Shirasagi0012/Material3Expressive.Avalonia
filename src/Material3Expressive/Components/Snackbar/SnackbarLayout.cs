@@ -11,6 +11,27 @@ namespace Material3Expressive.Components;
 
 internal sealed class SnackbarLayout : Panel
 {
+    public static readonly StyledProperty<double> ContentMaxWidthProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(ContentMaxWidth), 600d);
+    public double ContentMaxWidth { get => GetValue(ContentMaxWidthProperty); set => SetValue(ContentMaxWidthProperty, value); }
+    public static readonly StyledProperty<double> ContentStartPaddingProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(ContentStartPadding), 16d);
+    public double ContentStartPadding { get => GetValue(ContentStartPaddingProperty); set => SetValue(ContentStartPaddingProperty, value); }
+    public static readonly StyledProperty<double> ContentEndPaddingProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(ContentEndPadding), 8d);
+    public double ContentEndPadding { get => GetValue(ContentEndPaddingProperty); set => SetValue(ContentEndPaddingProperty, value); }
+    public static readonly StyledProperty<double> TextVerticalPaddingProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(TextVerticalPadding), 6d);
+    public double TextVerticalPadding { get => GetValue(TextVerticalPaddingProperty); set => SetValue(TextVerticalPaddingProperty, value); }
+    public static readonly StyledProperty<double> TextEndSpacingProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(TextEndSpacing), 8d);
+    public double TextEndSpacing { get => GetValue(TextEndSpacingProperty); set => SetValue(TextEndSpacingProperty, value); }
+    public static readonly StyledProperty<double> FirstBaselineOffsetProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(FirstBaselineOffset), 30d);
+    public double FirstBaselineOffset { get => GetValue(FirstBaselineOffsetProperty); set => SetValue(FirstBaselineOffsetProperty, value); }
+    public static readonly StyledProperty<double> NewLineTextEndSpacingProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(NewLineTextEndSpacing), 8d);
+    public double NewLineTextEndSpacing { get => GetValue(NewLineTextEndSpacingProperty); set => SetValue(NewLineTextEndSpacingProperty, value); }
+    public static readonly StyledProperty<double> NewLineLastBaselineOffsetProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(NewLineLastBaselineOffset), 12d);
+    public double NewLineLastBaselineOffset { get => GetValue(NewLineLastBaselineOffsetProperty); set => SetValue(NewLineLastBaselineOffsetProperty, value); }
+    public static readonly StyledProperty<double> NewLineBottomPaddingProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(NewLineBottomPadding), 2d);
+    public double NewLineBottomPadding { get => GetValue(NewLineBottomPaddingProperty); set => SetValue(NewLineBottomPaddingProperty, value); }
+    public static readonly StyledProperty<Thickness> DataMarginProperty = AvaloniaProperty.Register<SnackbarLayout, Thickness>(nameof(DataMargin), new Thickness(12));
+    public Thickness DataMargin { get => GetValue(DataMarginProperty); set => SetValue(DataMarginProperty, value); }
+
     public static readonly StyledProperty<double> SingleLineContainerHeightProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(SingleLineContainerHeight));
     public double SingleLineContainerHeight { get => GetValue(SingleLineContainerHeightProperty); set => SetValue(SingleLineContainerHeightProperty, value); }
     public static readonly StyledProperty<double> TwoLinesContainerHeightProperty = AvaloniaProperty.Register<SnackbarLayout, double>(nameof(TwoLinesContainerHeight));
@@ -24,7 +45,7 @@ internal sealed class SnackbarLayout : Panel
     private Control Message => Children[0];
     private Control Action => Children[1];
     private Control Dismiss => Children[2];
-    static SnackbarLayout() => AffectsMeasure<SnackbarLayout>(ActionOnNewLineProperty, SingleLineContainerHeightProperty, TwoLinesContainerHeightProperty);
+    static SnackbarLayout() => AffectsMeasure<SnackbarLayout>(ActionOnNewLineProperty, SingleLineContainerHeightProperty, TwoLinesContainerHeightProperty, ContentMaxWidthProperty, ContentStartPaddingProperty, ContentEndPaddingProperty, TextVerticalPaddingProperty, TextEndSpacingProperty, FirstBaselineOffsetProperty, NewLineTextEndSpacingProperty, NewLineLastBaselineOffsetProperty, NewLineBottomPaddingProperty, DataMarginProperty);
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -34,22 +55,22 @@ internal sealed class SnackbarLayout : Panel
         int Max(double value) => double.IsFinite(value) ? Px(value) : int.MaxValue;
         var maxWidth = Max(availableSize.Width); var maxHeight = Max(availableSize.Height);
         var owner = TemplatedParent as Snackbar;
-        var inset = owner is null ? default : owner.Padding + new Thickness(owner.Data is null ? 0 : 12);
+        var inset = owner is null ? default : owner.Padding + (owner.Data is null ? default : DataMargin);
         var minWidth = owner is null ? 0 : double.IsNaN(owner.Width) ? Math.Min(maxWidth, Px(Math.Max(0, owner.MinWidth - inset.Left - inset.Right))) : maxWidth;
         var minHeight = owner is null ? 0 : double.IsNaN(owner.Height) ? Math.Min(maxHeight, Px(Math.Max(0, owner.MinHeight - inset.Top - inset.Bottom))) : maxHeight;
-        var start = Px(16); var end = Dismiss.IsVisible ? 0 : Px(8);
+        var start = Px(ContentStartPadding); var end = Dismiss.IsVisible ? 0 : Px(ContentEndPadding);
 
         if (ActionOnNewLine && Action.IsVisible)
         {
             // widthIn(max=600).fillMaxWidth(): incoming minimums precede widthIn.
-            var width = Math.Max(minWidth, Math.Min(maxWidth, Px(600)));
-            var innerWidth = Math.Max(0, width - start); var innerHeight = Math.Max(0, maxHeight - Px(2));
-            Message.Measure(new Size(Math.Max(0, innerWidth - Px(8)) / scale, innerHeight / scale));
+            var width = Math.Max(minWidth, Math.Min(maxWidth, Px(ContentMaxWidth)));
+            var innerWidth = Math.Max(0, width - start); var innerHeight = Math.Max(0, maxHeight - Px(NewLineBottomPadding));
+            Message.Measure(new Size(Math.Max(0, innerWidth - Px(NewLineTextEndSpacing)) / scale, innerHeight / scale));
             var mw = Px(Message.DesiredSize.Width); var mh = Px(Message.DesiredSize.Height);
             var (first, last) = Baselines(Message, scale);
             // paddingFromBaseline applies the inner LastBaseline modifier, then FirstBaseline.
-            var bottom = Math.Clamp(Px(12) - mh + (last == int.MinValue ? 0 : last), 0, innerHeight - mh);
-            var top = Math.Clamp(Px(30) - (first == int.MinValue ? 0 : first), 0, innerHeight - mh - bottom);
+            var bottom = Math.Clamp(Px(NewLineLastBaselineOffset) - mh + (last == int.MinValue ? 0 : last), 0, innerHeight - mh);
+            var top = Math.Clamp(Px(FirstBaselineOffset) - (first == int.MinValue ? 0 : first), 0, innerHeight - mh - bottom);
             var textHeight = top + mh + bottom;
             var rowWidth = Math.Max(0, innerWidth - end); var rowHeight = Math.Max(0, innerHeight - textHeight);
             Action.Measure(new Size(rowWidth / scale, rowHeight / scale));
@@ -60,22 +81,22 @@ internal sealed class SnackbarLayout : Panel
             _messageBox = new(start, top, mw, mh);
             _actionBox = new(x, textHeight, aw, ah);
             _dismissBox = new(x + aw, textHeight, dw, dh); // Legacy Row uses Top, not CenterVertically.
-            _layoutSize = new(width, Math.Max(minHeight, textHeight + Math.Max(ah, dh) + Px(2)));
+            _layoutSize = new(width, Math.Max(minHeight, textHeight + Math.Max(ah, dh) + Px(NewLineBottomPadding)));
         }
         else
         {
             // The padding modifier is outside Layout, so its maximum is capped after padding.
             var innerMax = Math.Max(0, maxWidth - start - end);
             var innerMin = Math.Max(0, minWidth - start - end);
-            var width = Math.Min(innerMax, Px(600));
+            var width = Math.Min(innerMax, Px(ContentMaxWidth));
             Action.Measure(new Size(innerMax / scale, maxHeight / scale));
             Dismiss.Measure(new Size(innerMax / scale, maxHeight / scale));
             var aw = Action.IsVisible ? Math.Max(innerMin, Px(Action.DesiredSize.Width)) : 0;
             var ah = Action.IsVisible ? Math.Max(minHeight, Px(Action.DesiredSize.Height)) : 0;
             var dw = Dismiss.IsVisible ? Math.Max(innerMin, Px(Dismiss.DesiredSize.Width)) : 0;
             var dh = Dismiss.IsVisible ? Math.Max(minHeight, Px(Dismiss.DesiredSize.Height)) : 0;
-            var textMax = Math.Max(innerMin, width - aw - dw - (dw == 0 ? Px(8) : 0));
-            var padding = Px(6);
+            var textMax = Math.Max(innerMin, width - aw - dw - (dw == 0 ? Px(TextEndSpacing) : 0));
+            var padding = Px(TextVerticalPadding);
             Message.Measure(new Size(textMax / scale, Math.Max(0, maxHeight - 2 * padding) / scale));
             var mw = Math.Max(innerMin, Px(Message.DesiredSize.Width));
             var mh = Px(Message.DesiredSize.Height);
@@ -94,7 +115,7 @@ internal sealed class SnackbarLayout : Panel
             }
             else
             {
-                textY = Px(30) - first;
+                textY = Px(FirstBaselineOffset) - first;
                 height = Math.Max(Px(TwoLinesContainerHeight), textY + textHeight);
                 actionY = (height - ah) / 2;
             }

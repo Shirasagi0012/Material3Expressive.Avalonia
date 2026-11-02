@@ -11,6 +11,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
+using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -20,12 +21,44 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.Foundation.Tokens;
 using MaterialSymbols;
+using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Components;
 
 internal sealed class DateEntryController(TemplatedControl owner, bool range)
 {
+    public static readonly FuncMultiValueConverter<object?, object> GridLengthConverter = new(values =>
+        values.FirstOrDefault() is double size ? new GridLength(size) : AvaloniaProperty.UnsetValue);
+
+    // Definitions have no resource tree; resolve from their grid rather than a sibling's
+    // effective Width/Height, which applications may independently override.
+    private static void BindGridLengthToken(AvaloniaObject target, AvaloniaProperty property, Control host, MaterialTokenKey key)
+    {
+        target.Bind(property, new MultiBinding {
+            Priority = BindingPriority.LocalValue,
+            Converter = new FuncMultiValueConverter<object?, object>(_ =>
+                TokenResolver.TryResolve(host, key, host.ActualThemeVariant, out var value) && value is double size
+                    ? new GridLength(size) : AvaloniaProperty.UnsetValue),
+            Bindings = { host.GetResourceObservable(key).ToBinding() }
+        });
+    }
+
+    // Resolve at each consuming element; the resource binding only signals invalidation.
+    private static void BindToken(StyledElement target, AvaloniaProperty property, MaterialTokenKey key)
+    {
+        var binding = new MultiBinding {
+            Priority = BindingPriority.LocalValue,
+            Converter = new TokenBindingConverter(key, null, null),
+            Bindings = {
+                new Binding { RelativeSource = new RelativeSource(RelativeSourceMode.Self) },
+                new DynamicResourceExtension(key)
+            }
+        };
+        target.Bind(property, binding);
+    }
+
     private Panel? _body;
     private DateEntryContent? _switcher;
     private ItemsControl? _rangeList;
@@ -230,12 +263,20 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     {
         var content = new StackPanel();
         var navigation = new Grid {
-            ColumnDefinitions = new ColumnDefinitions("*,48,48"), Height = 56, Margin = new Thickness(12, 0)
+            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto")
         };
+        BindToken(navigation, Layoutable.HeightProperty, Comp.DatePickerModal.MonthNavigationHeight);
+        BindToken(navigation, Layoutable.MarginProperty, Comp.DatePickerModal.CalendarHorizontalPadding);
         Button previous = MonthArrow(MaterialSymbolCodepoint.KeyboardArrowLeft, () => MoveMonth(-1));
         Button next = MonthArrow(MaterialSymbolCodepoint.KeyboardArrowRight, () => MoveMonth(1));
+        BindGridLengthToken(navigation.ColumnDefinitions[1], ColumnDefinition.WidthProperty,
+            navigation, Comp.DatePickerModal.NavigationButtonSize);
+        BindGridLengthToken(navigation.ColumnDefinitions[2], ColumnDefinition.WidthProperty,
+            navigation, Comp.DatePickerModal.NavigationButtonSize);
         var calendar = new StackPanel();
-        var years = new WrapPanel { Orientation = Orientation.Horizontal, Width = 336, Margin = new Thickness(0, 16) };
+        var years = new WrapPanel { Orientation = Orientation.Horizontal };
+        BindToken(years, Layoutable.WidthProperty, Comp.DatePickerModal.YearGridWidth);
+        BindToken(years, Layoutable.MarginProperty, Comp.DatePickerModal.YearGridVerticalMargin);
         for (int year = FirstYear; year <= LastYear; year++)
         {
             int selected = year;
@@ -248,8 +289,8 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             });
             button.Tag = year;
             button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialDateYearTheme"));
-            button.Width = 112;
-            button.Height = 52;
+            BindToken(button, Layoutable.WidthProperty, Comp.DatePickerModal.YearCellWidth);
+            BindToken(button, Layoutable.HeightProperty, Comp.DatePickerModal.YearCellHeight);
             button.Classes.Set("selected", year == _month.Year);
             button.Classes.Set("today", year == DateTime.Today.Year);
             button.IsEnabled = owner.GetValue(DatePicker.IsYearSelectableProperty)?.Invoke(year) ?? true;
@@ -258,8 +299,9 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         }
 
         var scroll = new ScrollViewer {
-            Content = years, Height = 335, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+            Content = years, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
+        BindToken(scroll, Layoutable.HeightProperty, Comp.DatePickerModal.YearScrollHeight);
         var yearContent = new StackPanel { Children = { scroll, new Separator() } };
         yearContent.Bind(Panel.BackgroundProperty, new Binding(nameof(TemplatedControl.Background)) { Source = owner });
         var yearVisibility = new AnimatedVisibility {
@@ -275,7 +317,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             if (_years)
             {
                 Dispatcher.UIThread.Post(() =>
-                    scroll.Offset = new Vector(0, Math.Max(0, ((_month.Year - FirstYear) / 3 - 3) * 52)));
+                    scroll.Offset = new Vector(0, Math.Max(0, ((_month.Year - FirstYear) / 3 - 3) * years.Children.OfType<Button>().First().Height)));
             }
         });
         month.HorizontalAlignment = HorizontalAlignment.Left;
@@ -363,7 +405,9 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private Button MonthArrow(MaterialSymbolCodepoint symbol, Action click)
     {
-        var button = new IconButton { Symbol = symbol, Width = 48, Height = 48, Padding = new Thickness(0) };
+        var button = new IconButton { Symbol = symbol, Padding = new Thickness(0) };
+        BindToken(button, Layoutable.WidthProperty, Comp.DatePickerModal.NavigationButtonSize);
+        BindToken(button, Layoutable.HeightProperty, Comp.DatePickerModal.NavigationButtonSize);
         button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialStandardIconButtonTheme"));
         button.Click += (_, _) => click();
         return button;
@@ -371,8 +415,11 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private void BuildRange()
     {
-        var content = new Grid { RowDefinitions = new RowDefinitions("48,*") };
-        content.Children.Add(WeekDays());
+        var content = new Grid { RowDefinitions = new RowDefinitions("Auto,*") };
+        Control weekdays = WeekDays();
+        content.Children.Add(weekdays);
+        BindGridLengthToken(content.RowDefinitions[0], RowDefinition.HeightProperty,
+            content, Comp.DatePickerModal.WeekdayRowHeight);
         DateOnly[] items = Enumerable.Range(0, (LastYear - FirstYear + 1) * 12)
            .Select(i => new DateOnly(FirstYear + i / 12, i % 12 + 1, 1))
            .ToArray();
@@ -381,15 +428,17 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         list.ItemsPanel = new FuncTemplate<Panel?>(() => new VirtualizingStackPanel());
         list.ItemTemplate = new FuncDataTemplate<DateOnly>((date, _) => {
             var panel = new StackPanel();
-            var label = new TextBlock { Text = date.ToString("Y", Culture), Margin = new Thickness(24, 20, 0, 8) };
+            var label = new TextBlock { Text = date.ToString("Y", Culture) };
+            BindToken(label, Layoutable.MarginProperty, Comp.DatePickerModal.RangeMonthTitleMargin);
             label.Classes.Add("date-month-title");
             panel.Children.Add(label);
             panel.Children.Add(Month(date));
             return panel;
         });
         var scroll = new ScrollViewer {
-            Content = list, Height = 400, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+            Content = list, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
+        BindToken(scroll, Layoutable.HeightProperty, Comp.DatePickerModal.RangeMonthListHeight);
         Grid.SetRow(scroll, 1);
         content.Children.Add(scroll);
         _body!.Children.Add(content);
@@ -421,7 +470,9 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private Control WeekDays()
     {
-        var row = new UniformGrid { Rows = 1, Columns = 7, Height = 48, Margin = new Thickness(12, 0) };
+        var row = new UniformGrid { Rows = 1, Columns = 7 };
+        BindToken(row, Layoutable.HeightProperty, Comp.DatePickerModal.WeekdayRowHeight);
+        BindToken(row, Layoutable.MarginProperty, Comp.DatePickerModal.CalendarHorizontalPadding);
         int first = (int)Culture.DateTimeFormat.FirstDayOfWeek;
         for (int day = 0; day < 7; day++)
         {
@@ -438,7 +489,8 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private DateMonthPanel Month(DateOnly month)
     {
-        var panel = new DateMonthPanel(month, Culture, Selectable, Select, FocusDate) { Margin = new Thickness(12, 0) };
+        var panel = new DateMonthPanel(month, Culture, Selectable, Select, FocusDate);
+        BindToken(panel, Layoutable.MarginProperty, Comp.DatePickerModal.CalendarHorizontalPadding);
         panel.UpdateSelection(Selection);
         _months.RemoveAll(reference => !reference.TryGetTarget(out _));
         _months.Add(new WeakReference<DateMonthPanel>(panel));
@@ -472,18 +524,20 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     private void BuildInputs()
     {
         var row = new StackPanel {
-            Orientation = range ? Orientation.Horizontal : Orientation.Vertical, Spacing = 8,
-            Margin = new Thickness(24, 24, 24, 16)
+            Orientation = range ? Orientation.Horizontal : Orientation.Vertical
         };
+        BindToken(row, StackPanel.SpacingProperty, Comp.DatePickerModal.InputSpacing);
+        BindToken(row, Layoutable.MarginProperty, Comp.DatePickerModal.InputMargin);
         string pattern = InputPattern(Culture);
         string digits = DigitPattern(pattern);
         for (int index = 0; index < (range ? 2 : 1); index++)
         {
             int fieldIndex = index;
             var box = new DateInputTextBox(pattern) {
-                Name = range ? index == 0 ? "PART_StartInput" : "PART_EndInput" : "PART_DateInput", Width = range ? 152 : 312,
+                Name = range ? index == 0 ? "PART_StartInput" : "PART_EndInput" : "PART_DateInput",
                 MinWidth = 0, MaxLength = pattern.Length, VerticalAlignment = VerticalAlignment.Top
             };
+            BindToken(box, Layoutable.WidthProperty, range ? Comp.DatePickerModal.RangeInputWidth : Comp.DatePickerModal.SingleInputWidth);
             box.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialOutlinedTextFieldTheme"));
             MaterialTextField.SetLabel(box,
                 Text(range ? index == 0 ? "DateRangePickerStartHeadline" : "DateRangePickerEndHeadline" : "DateInputLabel"));
@@ -601,7 +655,10 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private static Button Button(object text, Action click)
     {
-        var button = new Button { Content = text, MinWidth = 48, Padding = new Thickness(8, 0), Height = 48 };
+        var button = new Button { Content = text };
+        BindToken(button, Layoutable.MinWidthProperty, Comp.DatePickerModal.MonthButtonMinWidth);
+        BindToken(button, TemplatedControl.PaddingProperty, Comp.DatePickerModal.MonthButtonHorizontalPadding);
+        BindToken(button, Layoutable.HeightProperty, Comp.DatePickerModal.MonthButtonHeight);
         button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTextButtonTheme"));
         button.Click += (_, _) => click();
         return button;
@@ -656,6 +713,28 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
 internal sealed class DateMonthPanel : Control
 {
+    public static readonly StyledProperty<double> DayCellWidthProperty =
+        AvaloniaProperty.Register<DateMonthPanel, double>(nameof(DayCellWidth), 48);
+    public static readonly StyledProperty<double> DayCellHeightProperty =
+        AvaloniaProperty.Register<DateMonthPanel, double>(nameof(DayCellHeight), 48);
+    public static readonly StyledProperty<double> RangeIndicatorHeightProperty =
+        AvaloniaProperty.Register<DateMonthPanel, double>(nameof(RangeIndicatorHeight), 40);
+    public static readonly StyledProperty<double> RangeIndicatorTopOffsetProperty =
+        AvaloniaProperty.Register<DateMonthPanel, double>(nameof(RangeIndicatorTopOffset), 4);
+
+    public double DayCellWidth { get => GetValue(DayCellWidthProperty); set => SetValue(DayCellWidthProperty, value); }
+    public double DayCellHeight { get => GetValue(DayCellHeightProperty); set => SetValue(DayCellHeightProperty, value); }
+    public double RangeIndicatorHeight { get => GetValue(RangeIndicatorHeightProperty); set => SetValue(RangeIndicatorHeightProperty, value); }
+    public double RangeIndicatorTopOffset { get => GetValue(RangeIndicatorTopOffsetProperty); set => SetValue(RangeIndicatorTopOffsetProperty, value); }
+
+    static DateMonthPanel()
+    {
+        AffectsMeasure<DateMonthPanel>(DayCellWidthProperty, DayCellHeightProperty);
+        AffectsArrange<DateMonthPanel>(DayCellWidthProperty, DayCellHeightProperty);
+        AffectsRender<DateMonthPanel>(DayCellWidthProperty, DayCellHeightProperty,
+            RangeIndicatorHeightProperty, RangeIndicatorTopOffsetProperty, RangeBrushProperty);
+    }
+
     private readonly List<Button> Children = [];
 
     public static readonly StyledProperty<IBrush?> RangeBrushProperty =
@@ -736,18 +815,18 @@ internal sealed class DateMonthPanel : Control
 
     protected override Size MeasureOverride(Size available)
     {
-        foreach (Button child in Children) child.Measure(new Size(48, 48));
-        return new Size(Double.IsInfinity(available.Width) ? 336 : available.Width, 288);
+        foreach (Button child in Children) child.Measure(new Size(DayCellWidth, DayCellHeight));
+        return new Size(Double.IsInfinity(available.Width) ? 7 * DayCellWidth : available.Width, 6 * DayCellHeight);
     }
 
     protected override Size ArrangeOverride(Size size)
     {
-        double gap = (size.Width - 7 * 48) / 8;
+        double gap = (size.Width - 7 * DayCellWidth) / 8;
         for (int i = 0; i < Children.Count; i++)
         {
             int cell = i + _offset;
-            double x = gap + cell % 7 * (48 + gap);
-            Children[i].Arrange(new Rect(x, cell / 7 * 48, 48, 48));
+            double x = gap + cell % 7 * (DayCellWidth + gap);
+            Children[i].Arrange(new Rect(x, cell / 7 * DayCellHeight, DayCellWidth, DayCellHeight));
         }
 
         return size;
@@ -760,7 +839,7 @@ internal sealed class DateMonthPanel : Control
         context.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
         if (_selection.Start is not { } start || _selection.End is not { } end || end < _month ||
             start > _month.AddDays(Children.Count - 1)) return;
-        double gap = (Bounds.Width - 336) / 8;
+        double gap = (Bounds.Width - 7 * DayCellWidth) / 8;
         for (int row = 0; row < 6; row++)
         {
             int first = Math.Max(0, row * 7 - _offset);
@@ -769,9 +848,9 @@ internal sealed class DateMonthPanel : Control
             int lo = Math.Max(first, start.DayNumber - _month.DayNumber);
             int hi = Math.Min(last, end.DayNumber - _month.DayNumber);
             if (lo > hi) continue;
-            double x1 = gap + (lo + _offset) % 7 * (48 + gap) + (lo == start.DayNumber - _month.DayNumber ? 24 : 0);
-            double x2 = gap + (hi + _offset) % 7 * (48 + gap) + (hi == end.DayNumber - _month.DayNumber ? 24 : 48 + gap);
-            context.DrawRectangle(RangeBrush, null, new Rect(x1, row * 48 + 4, Math.Max(0, x2 - x1), 40));
+            double x1 = gap + (lo + _offset) % 7 * (DayCellWidth + gap) + (lo == start.DayNumber - _month.DayNumber ? DayCellWidth / 2 : 0);
+            double x2 = gap + (hi + _offset) % 7 * (DayCellWidth + gap) + (hi == end.DayNumber - _month.DayNumber ? DayCellWidth / 2 : DayCellWidth + gap);
+            context.DrawRectangle(RangeBrush, null, new Rect(x1, row * DayCellHeight + RangeIndicatorTopOffset, Math.Max(0, x2 - x1), RangeIndicatorHeight));
         }
     }
 }

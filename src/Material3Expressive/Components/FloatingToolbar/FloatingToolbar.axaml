@@ -68,7 +68,11 @@
         <Setter Property="DefaultExpandedShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ExpandedShadowElevationWithFab}}" />
         <Setter Property="DefaultTemplate">
           <ControlTemplate>
-            <m3:FloatingToolbarLayout ElevationAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ElevationAnimation}}" x:Name="PART_Layout" ContainerSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerHeight}}">
+            <m3:FloatingToolbarLayout ElevationAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ElevationAnimation}}" x:Name="PART_Layout"
+                ExpandedFabSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ExpandedFabSize}}"
+                CollapsedFabSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.CollapsedFabSize}}"
+                FabBetweenSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.FabBetweenSpace}}"
+                ContainerSize="{m3:Token {x:Static m3:MaterialTokens+Comp+FloatingToolbar.ContainerHeight}}">
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
                                   TextElement.Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}">
                 <ScrollViewer x:Name="PART_ScrollViewer" Theme="{StaticResource MaterialFloatingToolbarScroller}" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">

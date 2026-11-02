@@ -3,8 +3,8 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
     <ControlTheme x:Key="MaterialNativeCalendarDayTheme" TargetType="CalendarDayButton" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
-      <Setter Property="MinWidth" Value="40" /><Setter Property="MinHeight" Value="40" />
-      <Setter Property="Padding" Value="0" /><Setter Property="Margin" Value="2" />
+      <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.DayMinimumWidth}}" /><Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.DayMinimumHeight}}" />
+      <Setter Property="Padding" Value="0" /><Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.DayMargin}}" />
       <Setter Property="BorderThickness" Value="0" /><Setter Property="Background" Value="Transparent" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Full}}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -25,8 +25,8 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialNativeCalendarYearTheme" TargetType="CalendarButton" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
-      <Setter Property="MinWidth" Value="64" /><Setter Property="MinHeight" Value="48" />
-      <Setter Property="Padding" Value="8" /><Setter Property="BorderThickness" Value="0" />
+      <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.YearMinimumWidth}}" /><Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.YearMinimumHeight}}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.YearPadding}}" /><Setter Property="BorderThickness" Value="0" />
       <Setter Property="Background" Value="Transparent" /><Setter Property="HorizontalContentAlignment" Value="Center" />
       <Style Selector="^:selected">
         <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
@@ -42,23 +42,23 @@
       <Setter Property="DayTitleTemplate"><Template x:DataType="x:String"><TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Template></Setter>
       <Setter Property="Template">
         <ControlTemplate>
-          <Grid RowDefinitions="48,*" Width="336" Margin="12">
+          <m3:NativeCalendarItemGrid HeaderHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.HeaderHeight}}" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.ContentWidth}}" Margin="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.ContentMargin}}">
             <Grid.Styles>
               <Style Selector="CalendarDayButton"><Setter Property="Theme" Value="{StaticResource MaterialNativeCalendarDayTheme}" /></Style>
               <Style Selector="CalendarButton"><Setter Property="Theme" Value="{StaticResource MaterialNativeCalendarYearTheme}" /></Style>
             </Grid.Styles>
-            <Grid ColumnDefinitions="48,*,48">
-              <Button Name="PART_PreviousButton" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0" AutomationProperties.Name="Previous">
+            <m3:NativeCalendarHeaderGrid NavigationColumnWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.NavigationColumnWidth}}">
+              <Button Name="PART_PreviousButton" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.NavigationButtonMinimumWidth}}" Padding="0" AutomationProperties.Name="Previous">
                 <Path Width="6" Height="12" Stretch="Fill" Data="M 6,0 L 0,6 L 6,12" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" />
               </Button>
               <Button Name="PART_HeaderButton" Grid.Column="1" Theme="{StaticResource MaterialTextButtonTheme}" HorizontalAlignment="Stretch" />
-              <Button Name="PART_NextButton" Grid.Column="2" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0" AutomationProperties.Name="Next">
+              <Button Name="PART_NextButton" Grid.Column="2" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.NavigationButtonMinimumWidth}}" Padding="0" AutomationProperties.Name="Next">
                 <Path Width="6" Height="12" Stretch="Fill" Data="M 0,0 L 6,6 L 0,12" Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" StrokeThickness="2" />
               </Button>
-            </Grid>
-            <Grid Name="PART_MonthView" Grid.Row="1" ColumnDefinitions="*,*,*,*,*,*,*" RowDefinitions="40,48,48,48,48,48,48" />
+            </m3:NativeCalendarHeaderGrid>
+            <m3:NativeCalendarMonthGrid Name="PART_MonthView" Grid.Row="1" WeekdayRowHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.WeekdayRowHeight}}" DayRowHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendar.DayRowHeight}}" />
             <Grid Name="PART_YearView" Grid.Row="1" ColumnDefinitions="*,*,*,*" RowDefinitions="*,*,*" IsVisible="False" />
-          </Grid>
+          </m3:NativeCalendarItemGrid>
         </ControlTemplate>
       </Setter>
     </ControlTheme>
@@ -77,7 +77,7 @@
       </Setter>
     </ControlTheme>
     <ControlTheme x:Key="MaterialCalendarDatePickerTheme" TargetType="CalendarDatePicker">
-      <Setter Property="MinWidth" Value="280" />
+      <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendarDatePicker.MinimumWidth}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="Template">
         <ControlTemplate>
@@ -86,7 +86,7 @@
                      PlaceholderText="{TemplateBinding PlaceholderText}"
                      DataValidationErrors.Errors="{TemplateBinding (DataValidationErrors.Errors)}">
               <m3:MaterialTextField.TrailingIcon>
-                <Button Name="PART_Button" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="48" Padding="0" Focusable="False" AutomationProperties.Name="Choose date">
+                <Button Name="PART_Button" Theme="{StaticResource MaterialTextButtonTheme}" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NativeCalendarDatePicker.OpenButtonMinimumWidth}}" Padding="0" Focusable="False" AutomationProperties.Name="Choose date">
                   <Path Width="20" Height="20" Stretch="Fill" Data="M 2,4 L 18,4 L 18,18 L 2,18 Z M 2,8 L 18,8 M 6,1 L 6,6 M 14,1 L 14,6"
                         Stroke="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" StrokeThickness="1.5" />
                 </Button>

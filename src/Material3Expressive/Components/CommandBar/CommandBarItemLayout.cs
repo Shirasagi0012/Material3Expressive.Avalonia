@@ -127,15 +127,16 @@ internal sealed partial class CommandBarItemLayout : Panel
         double contentHeight = IsStacked
             ? IndicatorHeight + (labelSize.Height > 0 ? IconLabelSpacing + labelSize.Height : 0)
             : Math.Max(IndicatorHeight, labelSize.Height);
-        double width = contentWidth + 16;
+        double width = contentWidth + (ItemContentPadding.Left + ItemContentPadding.Right);
         if (HasInlineLabel)
         {
-            width = contentWidth + InlineContentPadding.Left + InlineContentPadding.Right + 8;
+            width = contentWidth + InlineContentPadding.Left + InlineContentPadding.Right + InlineItemOuterPadding;
             contentHeight = Math.Max(iconSize.Height, labelSize.Height)
               + InlineContentPadding.Top + InlineContentPadding.Bottom;
         }
 
-        var size = new Size(Math.Max(width, 48), Math.Max(contentHeight + 8, IsStacked ? 60 : 48));
+        var size = new Size(Math.Max(width, ItemMinWidth), Math.Max(contentHeight + (ItemContentPadding.Top + ItemContentPadding.Bottom),
+            IsStacked ? StackedItemMinHeight : ItemMinHeight));
         Children[0].Measure(size);
         Children[3].Measure(size);
         return size;
@@ -172,7 +173,7 @@ internal sealed partial class CommandBarItemLayout : Panel
         {
             double totalHeight = IndicatorHeight + (labelSize.Height > 0 ? IconLabelSpacing + labelSize.Height : 0);
             double top = (finalSize.Height - totalHeight) / 2;
-            double rippleWidth = Math.Min(IndicatorWidth, Math.Max(0, finalSize.Width - 8));
+            double rippleWidth = Math.Min(IndicatorWidth, Math.Max(0, finalSize.Width - IndicatorHorizontalInset));
             rippleBounds = new Rect((finalSize.Width - rippleWidth) / 2, top, rippleWidth, IndicatorHeight);
             icon.Arrange(new Rect((finalSize.Width - iconSize.Width) / 2,
                 top + (IndicatorHeight - iconSize.Height) / 2, iconSize.Width, iconSize.Height));
@@ -186,8 +187,8 @@ internal sealed partial class CommandBarItemLayout : Panel
             double rippleHeight = HasInlineLabel
                 ? Math.Max(iconSize.Height, labelSize.Height) + InlineContentPadding.Top + InlineContentPadding.Bottom
                 : IndicatorHeight;
-            rippleBounds = new Rect(4, (finalSize.Height - rippleHeight) / 2,
-                Math.Max(0, finalSize.Width - 8), rippleHeight);
+            rippleBounds = new Rect(IndicatorHorizontalInset / 2, (finalSize.Height - rippleHeight) / 2,
+                Math.Max(0, finalSize.Width - IndicatorHorizontalInset), rippleHeight);
             double left = HasInlineLabel
                 ? rippleBounds.X + InlineContentPadding.Left : (finalSize.Width - contentWidth) / 2;
             double contentTop = HasInlineLabel ? rippleBounds.Y + InlineContentPadding.Top : 0;

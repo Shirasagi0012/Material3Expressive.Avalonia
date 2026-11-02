@@ -92,6 +92,24 @@ internal sealed class AppBarBottomChrome : Decorator
 
 internal sealed class AppBarBottomRow : Panel
 {
+    public static readonly StyledProperty<double> FabHorizontalSpacingProperty =
+        AvaloniaProperty.Register<AppBarBottomRow, double>(nameof(FabHorizontalSpacing));
+    public double FabHorizontalSpacing
+    {
+        get => GetValue(FabHorizontalSpacingProperty);
+        set => SetValue(FabHorizontalSpacingProperty, value);
+    }
+
+    public static readonly StyledProperty<double> FabVerticalOffsetProperty =
+        AvaloniaProperty.Register<AppBarBottomRow, double>(nameof(FabVerticalOffset));
+    public double FabVerticalOffset
+    {
+        get => GetValue(FabVerticalOffsetProperty);
+        set => SetValue(FabVerticalOffsetProperty, value);
+    }
+
+    static AppBarBottomRow() => AffectsMeasure<AppBarBottomRow>(FabHorizontalSpacingProperty, FabVerticalOffsetProperty);
+
     private BottomAppBar Owner => (BottomAppBar)TemplatedParent!;
     private Control Actions => Children[0];
 
@@ -136,15 +154,15 @@ internal sealed class AppBarBottomRow : Panel
         else
         {
             Fab.Measure(new Size(
-                Math.Max(0, _contentWidth - Px(12)) / scale,
-                Math.Max(0, _contentHeight - Px(8)) / scale));
+                Math.Max(0, _contentWidth - Px(FabHorizontalSpacing)) / scale,
+                Math.Max(0, _contentHeight - Px(FabVerticalOffset)) / scale));
             _fabWidth = Px(Fab.DesiredSize.Width);
             _fabHeight = Px(Fab.DesiredSize.Height);
             var hasFab = Fab.Content is { } || Fab.ContentTemplate is { };
             if (!hasFab)
                 _fabWidth = _fabHeight = 0;
             Actions.Measure(
-                new Size(Math.Max(0, _contentWidth - (hasFab ? _fabWidth + Px(12) : 0)) / scale, _contentHeight / scale));
+                new Size(Math.Max(0, _contentWidth - (hasFab ? _fabWidth + Px(FabHorizontalSpacing) : 0)) / scale, _contentHeight / scale));
         }
 
         return new Size(availableSize.Width, (_top + fullContentHeight + _bottom) / scale);
@@ -162,10 +180,10 @@ internal sealed class AppBarBottomRow : Panel
         else
         {
             var hasFab = Fab.Content is { } || Fab.ContentTemplate is { };
-            var actionWidth = Math.Max(0, _contentWidth - (hasFab ? _fabWidth + Px(12) : 0));
+            var actionWidth = Math.Max(0, _contentWidth - (hasFab ? _fabWidth + Px(FabHorizontalSpacing) : 0));
             Actions.Arrange(new Rect(x / scale, y / scale, actionWidth / scale, _contentHeight / scale));
             if (hasFab)
-                Fab.Arrange(new Rect((x + actionWidth) / scale, (y + Px(8)) / scale, _fabWidth / scale, _fabHeight / scale));
+                Fab.Arrange(new Rect((x + actionWidth) / scale, (y + Px(FabVerticalOffset)) / scale, _fabWidth / scale, _fabHeight / scale));
         }
 
         return finalSize;

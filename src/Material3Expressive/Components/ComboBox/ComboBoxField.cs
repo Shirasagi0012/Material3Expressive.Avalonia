@@ -59,6 +59,17 @@ internal sealed class ComboBoxInputHost : Panel
 
 internal sealed class ComboBoxField : Panel
 {
+    public static readonly StyledProperty<Thickness> SupportingPaddingProperty = AvaloniaProperty.Register<ComboBoxField, Thickness>(nameof(SupportingPadding), new Thickness(16, 4, 16, 0));
+    public Thickness SupportingPadding { get => GetValue(SupportingPaddingProperty); set => SetValue(SupportingPaddingProperty, value); }
+    public static readonly StyledProperty<double> IconAdjacentPaddingReductionProperty = AvaloniaProperty.Register<ComboBoxField, double>(nameof(IconAdjacentPaddingReduction), 12d);
+    public double IconAdjacentPaddingReduction { get => GetValue(IconAdjacentPaddingReductionProperty); set => SetValue(IconAdjacentPaddingReductionProperty, value); }
+    public static readonly StyledProperty<Thickness> AboveLabelPaddingProperty = AvaloniaProperty.Register<ComboBoxField, Thickness>(nameof(AboveLabelPadding), new Thickness(4, 0, 4, 4));
+    public Thickness AboveLabelPadding { get => GetValue(AboveLabelPaddingProperty); set => SetValue(AboveLabelPaddingProperty, value); }
+    public static readonly StyledProperty<double> ExpandedLabelMinHeightProperty = AvaloniaProperty.Register<ComboBoxField, double>(nameof(ExpandedLabelMinHeight), 24d);
+    public double ExpandedLabelMinHeight { get => GetValue(ExpandedLabelMinHeightProperty); set => SetValue(ExpandedLabelMinHeightProperty, value); }
+    public static readonly StyledProperty<double> CollapsedLabelMinHeightProperty = AvaloniaProperty.Register<ComboBoxField, double>(nameof(CollapsedLabelMinHeight), 16d);
+    public double CollapsedLabelMinHeight { get => GetValue(CollapsedLabelMinHeightProperty); set => SetValue(CollapsedLabelMinHeightProperty, value); }
+
     public static readonly StyledProperty<double> DefaultMinimumWidthProperty = AvaloniaProperty.Register<ComboBoxField, double>(nameof(DefaultMinimumWidth));
     public double DefaultMinimumWidth { get => GetValue(DefaultMinimumWidthProperty); set => SetValue(DefaultMinimumWidthProperty, value); }
     public static readonly StyledProperty<double> DefaultMinimumHeightProperty = AvaloniaProperty.Register<ComboBoxField, double>(nameof(DefaultMinimumHeight));
@@ -348,12 +359,12 @@ internal sealed class ComboBoxField : Panel
         _padding = _owner.Padding;
         var top = Round(_padding.Top); var bottom = Round(_padding.Bottom);
         var start = Round(_padding.Left); var end = Round(_padding.Right);
-        var startPad = _leading.IsVisible ? Math.Max(0, start - 12) : start;
-        var endPad = _trailing.IsVisible ? Math.Max(0, end - 12) : end;
+        var startPad = _leading.IsVisible ? Math.Max(0, start - IconAdjacentPaddingReduction) : start;
+        var endPad = _trailing.IsVisible ? Math.Max(0, end - IconAdjacentPaddingReduction) : end;
         _editor.Padding = _placeholder.Padding = new Thickness(startPad, 0, endPad, 0);
-        _label.Padding = Above ? new Thickness(4, 0, 4, 4) : Cutout ? default : new Thickness(startPad, 0, endPad, 0);
-        _supporting.Padding = new Thickness(16, 4, 16, 0);
-        _label.MinHeight = Lerp(24, 16, p);
+        _label.Padding = Above ? AboveLabelPadding : Cutout ? default : new Thickness(startPad, 0, endPad, 0);
+        _supporting.Padding = SupportingPadding;
+        _label.MinHeight = Lerp(ExpandedLabelMinHeight, CollapsedLabelMinHeight, p);
         var occupied = 0d; var occupiedY = 0d;
         void Measure(Control child, double width, double height) => child.Measure(new Size(Math.Max(0, width), Math.Max(0, height)));
         foreach (var child in new Control[] { _leading, _trailing })
@@ -422,8 +433,8 @@ internal sealed class ComboBoxField : Panel
         if (Above) startX = endX = Align(TextFieldLabelAlignment.Start, labelWidth, width);
         if (Cutout)
         {
-            var lp = _leading.IsVisible ? leading + Math.Max(0, startPad - 12) : startPad;
-            var tp = _trailing.IsVisible ? trailing + Math.Max(0, endPad - 12) : endPad;
+            var lp = _leading.IsVisible ? leading + Math.Max(0, startPad - IconAdjacentPaddingReduction) : startPad;
+            var tp = _trailing.IsVisible ? trailing + Math.Max(0, endPad - IconAdjacentPaddingReduction) : endPad;
             startX = Align(TextFieldLabelAlignment.Start, labelWidth, width - lp - tp) + lp;
             endX = Align(TextFieldLabelAlignment.Start, labelWidth, width - startPad - endPad) + startPad;
         }

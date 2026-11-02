@@ -20,6 +20,8 @@
       <Setter Property="ExpandedHeight" Value="{Binding DefaultExpandedHeight, RelativeSource={RelativeSource Self}}" />
       <Setter Property="DefaultCollapsedHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.CollapsedHeight}}" />
       <Setter Property="CollapsedHeight" Value="{Binding DefaultCollapsedHeight, RelativeSource={RelativeSource Self}}" />
+      <Setter Property="MediumTitleBottomPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumTitleBottomPadding}}" />
+      <Setter Property="LargeTitleBottomPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.LargeTitleBottomPadding}}" />
       <Setter Property="ContentPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContentPadding}}" />
       <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.WindowInsets}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -39,29 +41,29 @@
         <ControlTemplate>
           <m3:AppBarTopChrome x:Name="PART_Chrome"
               ContainerColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ContainerColorAnimation}}">
-            <m3:AppBarTopRow ClipToBounds="True">
-              <Border Padding="4,0,0,0">
+            <m3:AppBarTopRow ClipToBounds="True" TitleStartInset="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.TitleStartInset}}">
+              <Border Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.NavigationIconPadding}}">
                 <ContentPresenter Content="{TemplateBinding NavigationIcon}" ContentTemplate="{TemplateBinding NavigationIconTemplate}" />
               </Border>
-              <m3:AppBarTitle x:Name="PART_CollapsedTitle"
+              <m3:AppBarTitle HorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.TitleHorizontalPadding}}" x:Name="PART_CollapsedTitle"
                   TitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SmallTitleStyle}}"
                   SubtitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.SmallSubtitleStyle}}">
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
               </m3:AppBarTitle>
-              <Border Padding="0,0,4,0">
+              <Border Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ActionPadding}}">
                 <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
               </Border>
             </m3:AppBarTopRow>
-            <m3:AppBarTopRow ClipToBounds="True">
-              <Border Padding="4,0,0,0" />
-              <m3:AppBarTitle x:Name="PART_ExpandedTitle"
+            <m3:AppBarTopRow ClipToBounds="True" TitleStartInset="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.TitleStartInset}}">
+              <Border Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.NavigationIconPadding}}" />
+              <m3:AppBarTitle HorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.TitleHorizontalPadding}}" x:Name="PART_ExpandedTitle"
                   TitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleTitleStyle}}"
                   SubtitleStyle="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.MediumFlexibleSubtitleStyle}}">
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
               </m3:AppBarTitle>
-              <Border Padding="0,0,4,0" />
+              <Border Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.ActionPadding}}" />
             </m3:AppBarTopRow>
           </m3:AppBarTopChrome>
         </ControlTemplate>
@@ -153,7 +155,8 @@
           <m3:AppBarBottomChrome x:Name="PART_Chrome" ClipToBounds="False">
             <m3:MaterialSurface Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}"
                                 TonalElevation="{TemplateBinding TonalElevation}">
-              <m3:AppBarBottomRow>
+              <m3:AppBarBottomRow FabHorizontalSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.BottomFabHorizontalSpacing}}"
+                  FabVerticalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+AppBar.BottomFabVerticalOffset}}">
                 <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <ContentPresenter HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />

@@ -6,7 +6,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="0" />
-      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.ContentMinHeight}}" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="ContextFlyout" Value="{x:Null}" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -51,6 +51,11 @@
             <Grid>
               <m3:ComboBoxField Name="Background" Background="Transparent" ContainerBrush="{TemplateBinding Background}" IndicatorBrush="{TemplateBinding BorderBrush}"
                   LargeTextStyle="{m3:Typography BodyLarge}" SmallTextStyle="{m3:Typography BodySmall}"
+                  SupportingPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.SupportingPadding}}"
+                  IconAdjacentPaddingReduction="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconAdjacentPaddingReduction}}"
+                  AboveLabelPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.AboveLabelPadding}}"
+                  ExpandedLabelMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.ExpandedLabelMinHeight}}"
+                  CollapsedLabelMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.CollapsedLabelMinHeight}}"
                   DefaultMinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.MinimumWidth}}"
                   DefaultMinimumHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.MinimumHeight}}"
                   DefaultMinimizedLabelLineHeight="{m3:Token {x:Static m3:MaterialTokens+Sys+TypeScale+BodySmall.LineHeight}}"
@@ -62,9 +67,9 @@
                     m3:MaterialText.Style="{Binding LargeTextStyle, ElementName=Background}" />
                 <ContentPresenter Name="FloatingLabelStyle" IsVisible="False" IsHitTestVisible="False"
                     m3:MaterialText.Style="{Binding SmallTextStyle, ElementName=Background}" />
-                <m3:TextFieldIconPresenter Name="Leading" MinWidth="48" MinHeight="48" m3:MaterialSymbol.DefaultSize="24"
+                <m3:TextFieldIconPresenter Name="Leading" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSlotSize}}" MinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSlotSize}}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSize}}"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
-                <m3:ComboBoxInputHost Name="Editor" MinHeight="24">
+                <m3:ComboBoxInputHost Name="Editor" MinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.ContentMinHeight}}">
                   <ContentControl Content="{TemplateBinding SelectionBoxItem}"
                       Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" HorizontalAlignment="Stretch"
                       IsVisible="{TemplateBinding IsEditable, Converter={x:Static BoolConverters.Not}}"
@@ -81,15 +86,15 @@
                       VerticalAlignment="Stretch" HorizontalAlignment="Stretch" IsVisible="{TemplateBinding IsEditable}" />
                 </m3:ComboBoxInputHost>
                 <ContentPresenter Name="Placeholder" Content="{TemplateBinding PlaceholderText}" Foreground="{TemplateBinding PlaceholderForeground}"
-                    MinHeight="24" VerticalContentAlignment="Center" IsHitTestVisible="False"
+                    MinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.ContentMinHeight}}" VerticalContentAlignment="Center" IsHitTestVisible="False"
                     m3:MaterialText.Style="{m3:Typography BodyLarge}" />
-                <Panel Name="Trailing" Width="48" Height="48">
-                  <m3:MaterialSymbol Name="DropDownArrow" Symbol="ArrowDropDown" Width="24" Height="24"
+                <Panel Name="Trailing" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSlotSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSlotSize}}">
+                  <m3:MaterialSymbol Name="DropDownArrow" Symbol="ArrowDropDown" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSize}}"
                       HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
                 </Panel>
                 <ContentPresenter Name="Supporting" Content="{TemplateBinding m3:MaterialComboBox.SupportingText}"
                     ContentTemplate="{TemplateBinding m3:MaterialComboBox.SupportingTextTemplate}"
-                    MinHeight="16" VerticalContentAlignment="Center" TextWrapping="Wrap"
+                    MinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.SupportingMinHeight}}" VerticalContentAlignment="Center" TextWrapping="Wrap"
                     m3:MaterialText.Style="{m3:Typography BodySmall}" />
                 <m3:TextFieldLabelPresenter Name="Label" Content="{TemplateBinding m3:MaterialComboBox.Label}"
                     ContentTemplate="{TemplateBinding m3:MaterialComboBox.LabelTemplate}"
@@ -222,7 +227,7 @@
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.Text}}" />
-      <Setter Property="Padding" Value="16,0" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ComboBox.ItemPadding}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
@@ -234,7 +239,7 @@
       </Setter>
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:MenuItemChrome Margin="4,0" MinimumContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}"
+          <m3:MenuItemChrome Margin="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemMargin}}" MinimumContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}"
               MinimumContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemHeight}}"
               MinimumInteractiveHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}"
               TargetBrush="{TemplateBinding Background}" ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
@@ -249,7 +254,7 @@
                   <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.SelectedItemShape}" />
                 </MultiBinding>
               </m3:ButtonSurfaceState.CheckedCornerRadius>
-              <m3:ComboBoxItemLayout>
+              <m3:ComboBoxItemLayout LeadingSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ComboBox.ItemLeadingSpacing}}">
                 <m3:ComboBoxSelectionIcon ClipToBounds="True"
                     SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}"
                     AlphaAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">

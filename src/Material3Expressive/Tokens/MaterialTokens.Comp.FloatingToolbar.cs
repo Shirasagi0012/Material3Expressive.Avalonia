@@ -10,6 +10,9 @@ public static partial class MaterialTokens
     {
         public static class FloatingToolbar
         {
+            public static readonly MaterialTokenKey<double> ExpandedFabSize = new("md.comp.floating-toolbar.expanded-fab-size");
+            public static readonly MaterialTokenKey<double> CollapsedFabSize = new("md.comp.floating-toolbar.collapsed-fab-size");
+            public static readonly MaterialTokenKey<double> FabBetweenSpace = new("md.comp.floating-toolbar.fab-between-space");
             public static readonly MaterialTokenKey<double> ExpandedShadowElevation = new("md.comp.floating-toolbar.expanded-shadow-elevation");
             public static readonly MaterialTokenKey<double> ExpandedShadowElevationWithFab = new("md.comp.floating-toolbar.expanded-shadow-elevation-with-fab");
             public static readonly MaterialTokenKey<double> CollapsedShadowElevation = new("md.comp.floating-toolbar.collapsed-shadow-elevation");

@@ -11,6 +11,12 @@ public sealed class DialogTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Dialog.ContentPadding] = new Avalonia.Thickness(24),
+        [Comp.Dialog.IconBottomSpacing] = 16d,
+        [Comp.Dialog.HeadlineBottomSpacing] = 16d,
+        [Comp.Dialog.SupportingTextBottomSpacing] = 24d,
+        [Comp.Dialog.ActionHorizontalSpacing] = 8d,
+        [Comp.Dialog.ActionVerticalSpacing] = 0d,
         [Comp.Dialog.MaxWidth] = 560d,
         [Comp.Dialog.MinWidth] = 280d,
         [Comp.Dialog.ActionLabelTextColor] = new TokenRef(Sys.Color.Primary),

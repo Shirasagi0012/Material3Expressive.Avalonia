@@ -104,13 +104,17 @@ public sealed class DropDownButtonThemeTests
         var link = new HyperlinkButton { Content = "Link" };
         var tonal = new Button { Content = "Tonal", Tag = "MaterialTonalButtonTheme" };
         var xlarge = new Button { Content = "XL", Classes = { "xlarge" } };
-        var (window, _) = Show(button, repeat, link, tonal, xlarge);
+        var baseline = new ContentPresenter();
+        var (window, _) = Show(button, repeat, link, tonal, xlarge, baseline);
+        // Shared Control styles (such as native tooltip defaults) also bind empty presenters.
+        // Only bindings introduced specifically for the trailing slot count as its cost.
+        var presenterBindings = TokenBindingCounter.Count(baseline);
         foreach (var b in new Button[] { button, repeat, link, tonal, xlarge })
         {
             var trailing = Trailing(b);
             Assert.Null(trailing.Child);
             Assert.Equal(default, trailing.Bounds.Size);
-            Assert.Equal(0, TokenBindingCounter.Count(trailing));
+            Assert.Equal(0, TokenBindingCounter.Count(trailing) - presenterBindings);
             Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(ContentPresenter.ContentTemplateProperty).Priority);
             Assert.Equal(BindingPriority.Unset, trailing.GetDiagnostic(MaterialSymbol.DefaultSizeProperty).Priority);
             Assert.Null(Animated.GetProperties(trailing));
@@ -126,11 +130,13 @@ public sealed class DropDownButtonThemeTests
             var dropDown = new DropDownButton { Content = "Same", Tag = theme };
             var reference = new Button { Content = "Same", Tag = theme };
             if (size is not null) { dropDown.Classes.Add(size); reference.Classes.Add(size); }
-            (window, _) = Show(dropDown, reference);
-            var chevronBindings = TokenBindingCounter.CountTree(Trailing(dropDown));
+            baseline = new ContentPresenter();
+            (window, _) = Show(dropDown, reference, baseline);
+            presenterBindings = TokenBindingCounter.Count(baseline);
+            var chevronBindings = TokenBindingCounter.CountTree(Trailing(dropDown)) - presenterBindings;
             Assert.True(chevronBindings > 0);
             Assert.Equal(chevronBindings, TokenBindingCounter.CountTree(dropDown) - TokenBindingCounter.CountTree(reference));
-            Assert.Equal(0, TokenBindingCounter.CountTree(Trailing(reference)));
+            Assert.Equal(0, TokenBindingCounter.CountTree(Trailing(reference)) - presenterBindings);
             window.Close();
         }
     }

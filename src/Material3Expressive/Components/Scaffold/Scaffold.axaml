@@ -16,7 +16,7 @@
                                 TextElement.Foreground="{TemplateBinding Foreground}">
               <!-- Tree order preserves top bar -> body -> snackbar -> FAB -> bottom bar traversal;
                    ZIndex independently follows Scaffold.kt's painting order. -->
-              <m3:ScaffoldLayout x:Name="PART_Layout">
+              <m3:ScaffoldLayout x:Name="PART_Layout" FabSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+Scaffold.FabSpacing}}">
                 <ContentPresenter x:Name="PART_TopBar" ZIndex="1" Content="{TemplateBinding TopBar}" ContentTemplate="{TemplateBinding TopBarTemplate}"
                                   HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <ContentPresenter x:Name="PART_ContentPresenter" ZIndex="0" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"

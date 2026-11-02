@@ -13,6 +13,9 @@ public sealed class FloatingToolbarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.FloatingToolbar.ExpandedFabSize] = 56d,
+        [Comp.FloatingToolbar.CollapsedFabSize] = 80d,
+        [Comp.FloatingToolbar.FabBetweenSpace] = 8d,
         [Comp.FloatingToolbar.ExpandedShadowElevation] = new TokenRef(Sys.Elevation.Level0),
         [Comp.FloatingToolbar.ExpandedShadowElevationWithFab] = new TokenRef(Sys.Elevation.Level1),
         [Comp.FloatingToolbar.CollapsedShadowElevation] = new TokenRef(Sys.Elevation.Level0),

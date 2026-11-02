@@ -11,6 +11,9 @@ namespace Material3Expressive.Components;
 // Expander header helpers.
 internal static class ExpanderHeader
 {
+    public static IMultiValueConverter IconMargin { get; } = new FuncMultiValueConverter<object?, Thickness>(values =>
+        values.ToArray() is [double spacing] ? new Thickness(spacing, 0, 0, 0) : default);
+
     // The owning Expander's ExpandDirection, forwarded onto the header ToggleButton so the header
     // theme can state the chevron's resting angles without reaching into the Expander.
     public static readonly AttachedProperty<ExpandDirection> DirectionProperty =

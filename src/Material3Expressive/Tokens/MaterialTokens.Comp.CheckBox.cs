@@ -11,6 +11,8 @@ public static partial class MaterialTokens
         // CheckboxDefaults.defaultCheckboxColors, fixed CheckboxTokens 14_1_0.
         public static class CheckBox
         {
+            public static readonly MaterialTokenKey<double> IndicatorSize = new("md.comp.checkbox.indicator-size");
+            public static readonly MaterialTokenKey<Avalonia.Thickness> IndicatorPadding = new("md.comp.checkbox.indicator-padding");
             public static readonly MaterialTokenKey<Avalonia.Thickness> ContentPadding = new("md.comp.checkbox.content-padding");
             public static readonly MaterialTokenKey<SpringSpec> ShapeAnimation = new("md.comp.checkbox.shape-animation");
             public static readonly MaterialTokenKey<SpringSpec> ColorAnimation = new("md.comp.checkbox.color-animation");

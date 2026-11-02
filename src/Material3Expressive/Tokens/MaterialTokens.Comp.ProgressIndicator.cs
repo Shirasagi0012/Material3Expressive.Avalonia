@@ -9,6 +9,8 @@ public static partial class MaterialTokens
     {
         public static class ProgressIndicator
         {
+            public static readonly MaterialTokenKey<Avalonia.Thickness> ProgressTextHorizontalMargin = new("md.comp.progress-indicator.progress-text-horizontal-margin");
+            public static readonly MaterialTokenKey<Avalonia.Thickness> ProgressTextVerticalMargin = new("md.comp.progress-indicator.progress-text-vertical-margin");
             public static readonly MaterialTokenKey<PenLineCap> StrokeCap = new("md.comp.progress-indicator.stroke-cap");
             public static readonly MaterialTokenKey<Color> ActiveIndicatorColor = new("md.comp.progress-indicator.active-indicator.color");
             public static readonly MaterialTokenKey<Color> TrackColor = new("md.comp.progress-indicator.track.color");

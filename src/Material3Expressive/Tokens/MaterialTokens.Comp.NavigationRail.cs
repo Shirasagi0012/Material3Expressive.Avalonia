@@ -12,6 +12,10 @@ public static partial class MaterialTokens
         // VerticalItem and ColorTokens; WideNavigationRail tokens are intentionally separate.
         public static class NavigationRail
         {
+            public static readonly MaterialTokenKey<double> VerticalPadding = new("md.comp.navigation-rail.vertical-padding");
+            public static readonly MaterialTokenKey<double> ItemSpacing = new("md.comp.navigation-rail.item-spacing");
+            public static readonly MaterialTokenKey<double> HeaderItemSpacing = new("md.comp.navigation-rail.header-item-spacing");
+            public static readonly MaterialTokenKey<double> IndicatorLabelSpacing = new("md.comp.navigation-rail.indicator-label-spacing");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> EffectsAnimation = new("md.comp.navigation-rail.effects-animation");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> IndicatorSizeAnimation = new("md.comp.navigation-rail.indicator-size-animation");
             public static readonly MaterialTokenKey<Thickness> WindowInsets = new("md.comp.navigation-rail.window-insets");

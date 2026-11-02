@@ -25,6 +25,16 @@ internal sealed class CheckBoxIndicator : Control
     private readonly MaterialInteractionSource _localSource = new();
     private MaterialInteractionController? _interaction;
 
+    public static readonly StyledProperty<double> IndicatorSizeProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, double>(nameof(IndicatorSize), 20);
+    public double IndicatorSize { get => GetValue(IndicatorSizeProperty); set => SetValue(IndicatorSizeProperty, value); }
+
+    static CheckBoxIndicator()
+    {
+        AffectsMeasure<CheckBoxIndicator>(IndicatorSizeProperty);
+        AffectsRender<CheckBoxIndicator>(IndicatorSizeProperty);
+    }
+
     public static readonly StyledProperty<Foundation.Motion.SpringSpec?> ShapeAnimationProperty =
         AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec?>(nameof(ShapeAnimation));
     public Foundation.Motion.SpringSpec? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
@@ -96,7 +106,7 @@ internal sealed class CheckBoxIndicator : Control
         ? IsChecked == false ? Palette.UncheckedBorderColor : Palette.CheckedBorderColor
         : IsChecked switch { true => Palette.DisabledBorderColor, false => Palette.DisabledUncheckedBorderColor, null => Palette.DisabledIndeterminateBorderColor };
 
-    protected override Size MeasureOverride(Size availableSize) => new(20, 20);
+    protected override Size MeasureOverride(Size availableSize) => new(IndicatorSize, IndicatorSize);
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -230,13 +240,13 @@ internal sealed class CheckBoxIndicator : Control
     {
         var scale = (float)Avalonia.Layout.LayoutHelper.GetLayoutScale(this);
         var width = MathF.Floor(2 * scale) / scale;
-        context.Custom(new CheckDrawOperation(new Rect(Bounds.Size), scale, PaintedBox, PaintedBorder,
+        context.Custom(new CheckDrawOperation(new Rect(Bounds.Size), scale, (float)IndicatorSize, PaintedBox, PaintedBorder,
             PaintedCheckmark, DrawFraction, CenterGravitation,
             OutlineStroke ?? new CheckBoxStroke { Width = width, Cap = PenLineCap.Flat },
             CheckmarkStroke ?? new CheckBoxStroke { Width = width }));
     }
 
-    private sealed class CheckDrawOperation(Rect bounds, float scale, Color box, Color border, Color check,
+    private sealed class CheckDrawOperation(Rect bounds, float scale, float indicatorSize, Color box, Color border, Color check,
         float fraction, float gravitation, CheckBoxStroke outline, CheckBoxStroke checkmark) : ICustomDrawOperation
     {
         public Rect Bounds { get; } = bounds.Inflate(Math.Max(outline.Width, checkmark.Width));
@@ -254,7 +264,7 @@ internal sealed class CheckBoxIndicator : Control
             {
                 // Compose draws in Float physical pixels; preserve that order before the DIP transform.
                 canvas.Scale(1 / scale);
-                var size = 20 * scale;
+                var size = indicatorSize * scale;
                 var radius = 2 * scale;
                 using var fill = new SKPaint { IsAntialias = true, Color = Ink(box) };
                 using var stroke = Paint(border, outline);

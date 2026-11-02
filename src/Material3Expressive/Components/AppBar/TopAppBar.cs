@@ -268,11 +268,27 @@ public class TopAppBar : ItemsControl
     }
     internal double EffectiveCollapsedHeight =>
         double.IsNaN(CollapsedHeight) || double.IsPositiveInfinity(CollapsedHeight) ? DefaultCollapsedHeight : CollapsedHeight;
+    internal static readonly StyledProperty<double> MediumTitleBottomPaddingProperty =
+        AvaloniaProperty.Register<TopAppBar, double>(nameof(MediumTitleBottomPadding));
+    internal double MediumTitleBottomPadding
+    {
+        get => GetValue(MediumTitleBottomPaddingProperty);
+        set => SetValue(MediumTitleBottomPaddingProperty, value);
+    }
+
+    internal static readonly StyledProperty<double> LargeTitleBottomPaddingProperty =
+        AvaloniaProperty.Register<TopAppBar, double>(nameof(LargeTitleBottomPadding));
+    internal double LargeTitleBottomPadding
+    {
+        get => GetValue(LargeTitleBottomPaddingProperty);
+        set => SetValue(LargeTitleBottomPaddingProperty, value);
+    }
+
     internal double TitleBottomPadding =>
         Variant is TopAppBarVariant.Medium or TopAppBarVariant.MediumFlexible
-            ? 24
+            ? MediumTitleBottomPadding
             : Variant is TopAppBarVariant.Large or TopAppBarVariant.LargeFlexible
-                ? 28
+                ? LargeTitleBottomPadding
                 : 0;
 
     protected override Type StyleKeyOverride => typeof(TopAppBar);

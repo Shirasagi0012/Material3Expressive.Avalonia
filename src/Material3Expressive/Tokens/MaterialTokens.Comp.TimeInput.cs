@@ -13,6 +13,17 @@ public static partial class MaterialTokens
     {
         public static class TimeInput
         {
+            public static readonly MaterialTokenKey<double> VibrantMargin = new("md.comp.timeinput.vibrant-margin");
+            public static readonly MaterialTokenKey<double> DisplaySpacing = new("md.comp.timeinput.display-spacing");
+            public static readonly MaterialTokenKey<double> VibrantDisplaySpacing = new("md.comp.timeinput.vibrant-display-spacing");
+            public static readonly MaterialTokenKey<double> VibrantTimeFieldContainerHeight = new("md.comp.timeinput.vibrant-time-field-container-height");
+            public static readonly MaterialTokenKey<double> VibrantTimeFieldWithToggleContainerHeight = new("md.comp.timeinput.vibrant-time-field-with-toggle-container-height");
+            public static readonly MaterialTokenKey<double> VibrantTimeFieldContainerWidth = new("md.comp.timeinput.vibrant-time-field-container-width");
+            public static readonly MaterialTokenKey<double> SeparatorWidth = new("md.comp.timeinput.separator-width");
+            public static readonly MaterialTokenKey<double> VibrantSeparatorWidth = new("md.comp.timeinput.vibrant-separator-width");
+            public static readonly MaterialTokenKey<double> SupportingTextTopSpacing = new("md.comp.timeinput.supporting-text-top-spacing");
+            public static readonly MaterialTokenKey<double> VibrantPeriodSelectorContainerWidth = new("md.comp.timeinput.vibrant-period-selector-container-width");
+            public static readonly MaterialTokenKey<double> PeriodSelectorSpacing = new("md.comp.timeinput.period-selector-spacing");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.timeinput.container-color");
             public static readonly MaterialTokenKey<double> ContainerElevation = new("md.comp.timeinput.container-elevation");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShape = new("md.comp.timeinput.container-shape");

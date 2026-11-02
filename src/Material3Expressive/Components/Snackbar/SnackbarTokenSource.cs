@@ -10,6 +10,17 @@ public sealed class SnackbarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Snackbar.MaxWidth] = 600d,
+        [Comp.Snackbar.ContentStartPadding] = 16d,
+        [Comp.Snackbar.ContentEndPadding] = 8d,
+        [Comp.Snackbar.TextVerticalPadding] = 6d,
+        [Comp.Snackbar.TextEndSpacing] = 8d,
+        [Comp.Snackbar.FirstBaselineOffset] = 30d,
+        [Comp.Snackbar.NewLineTextEndSpacing] = 8d,
+        [Comp.Snackbar.NewLineLastBaselineOffset] = 12d,
+        [Comp.Snackbar.NewLineBottomPadding] = 2d,
+        [Comp.Snackbar.DataMargin] = new Avalonia.Thickness(12),
+        [Comp.Snackbar.DismissContainerSize] = 40d,
         [Comp.Snackbar.ActionContentPadding] = new Avalonia.Thickness(12, 8),
         [Comp.Snackbar.ScaleAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.Snackbar.OpacityAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),

@@ -18,6 +18,21 @@ internal sealed class BadgeBounds : AvaloniaObject
 
 internal sealed class BadgedBoxLayout : Panel
 {
+    public static readonly StyledProperty<double> SmallHorizontalOffsetProperty = AvaloniaProperty.Register<BadgedBoxLayout, double>(nameof(SmallHorizontalOffset));
+    public static readonly StyledProperty<double> SmallVerticalOffsetProperty = AvaloniaProperty.Register<BadgedBoxLayout, double>(nameof(SmallVerticalOffset));
+    public static readonly StyledProperty<double> LargeHorizontalOffsetProperty = AvaloniaProperty.Register<BadgedBoxLayout, double>(nameof(LargeHorizontalOffset));
+    public static readonly StyledProperty<double> LargeVerticalOffsetProperty = AvaloniaProperty.Register<BadgedBoxLayout, double>(nameof(LargeVerticalOffset));
+
+    public double SmallHorizontalOffset { get => GetValue(SmallHorizontalOffsetProperty); set => SetValue(SmallHorizontalOffsetProperty, value); }
+    public double SmallVerticalOffset { get => GetValue(SmallVerticalOffsetProperty); set => SetValue(SmallVerticalOffsetProperty, value); }
+    public double LargeHorizontalOffset { get => GetValue(LargeHorizontalOffsetProperty); set => SetValue(LargeHorizontalOffsetProperty, value); }
+    public double LargeVerticalOffset { get => GetValue(LargeVerticalOffsetProperty); set => SetValue(LargeVerticalOffsetProperty, value); }
+
+    static BadgedBoxLayout()
+    {
+        AffectsArrange<BadgedBoxLayout>(SmallHorizontalOffsetProperty, SmallVerticalOffsetProperty, LargeHorizontalOffsetProperty, LargeVerticalOffsetProperty);
+    }
+
     private double _end = double.PositiveInfinity;
     private double _top = double.NegativeInfinity;
     private Size _badgeSize;
@@ -64,12 +79,13 @@ internal sealed class BadgedBoxLayout : Panel
         var badge = Children[1];
         var badgeWidth = MathUtils.DipToPx(_badgeSize.Width, scale);
         var badgeHeight = MathUtils.DipToPx(_badgeSize.Height, scale);
+        // Keep the existing width classification independent of configurable size/offset tokens.
         var hasContent = badgeWidth > MathUtils.DipToPx(6, scale);
         // No explicit RTL flip: Avalonia mirrors this panel's local coordinates,
         // the equivalent of Compose placeRelative, without mirroring text glyphs.
-        var x = width - MathUtils.DipToPx(hasContent ? 12 : 6, scale);
+        var x = width - MathUtils.DipToPx(hasContent ? LargeHorizontalOffset : SmallHorizontalOffset, scale);
         if (double.IsFinite(_end)) x = Math.Min(x, (int)(_end * scale) - badgeWidth);
-        var y = -badgeHeight + MathUtils.DipToPx(hasContent ? 14 : 6, scale);
+        var y = -badgeHeight + MathUtils.DipToPx(hasContent ? LargeVerticalOffset : SmallVerticalOffset, scale);
         if (double.IsFinite(_top)) y = Math.Max(y, (int)(_top * scale));
         Children[0].Arrange(new Rect(finalSize));
         badge.Arrange(new Rect(x / scale, y / scale, badgeWidth / scale, badgeHeight / scale));

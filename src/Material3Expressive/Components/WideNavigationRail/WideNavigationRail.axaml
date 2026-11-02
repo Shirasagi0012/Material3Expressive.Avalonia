@@ -37,16 +37,20 @@
                 </MultiBinding>
               </Border.Padding>
               <Border Padding="{TemplateBinding ContentPadding}">
-                <m3:WideNavigationRailLayout CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
-                      ExpandedContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMinWidth}}"
-                      ExpandedContainerMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
-                      CollapsedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemVerticalSpace}}"
-                      CollapsedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemMinHeight}}"
-                      HeaderSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.HeaderSpace}}"
-                      ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
-                      LayoutAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.LayoutAnimation}}"
-                      ModalWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalWidthAnimation}}"
-                      x:Name="PART_Layout" Expanded="{TemplateBinding LayoutExpanded}" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
+                <m3:WideNavigationRailLayout
+                    ExpandedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemMinHeight}}"
+                    ExpandedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemVerticalSpace}}"
+                    ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemMinWidth}}"
+                    CollapsedContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedContainerWidth}}"
+                    ExpandedContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMinWidth}}"
+                    ExpandedContainerMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
+                    CollapsedItemVerticalSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemVerticalSpace}}"
+                    CollapsedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.CollapsedItemMinHeight}}"
+                    HeaderSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.HeaderSpace}}"
+                    ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
+                    LayoutAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.LayoutAnimation}}"
+                    ModalWidthAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ModalWidthAnimation}}"
+                    x:Name="PART_Layout" Expanded="{TemplateBinding LayoutExpanded}" Arrangement="{TemplateBinding Arrangement}" ContentPadding="{TemplateBinding ContentPadding}">
                   <ContentPresenter x:Name="PART_Header" Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"
                                     HorizontalAlignment="Left" VerticalAlignment="Top" />
                   <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" UseLayoutRounding="False" />
@@ -98,7 +102,10 @@
       <Setter Property="Template">
         <ControlTemplate>
           <!-- Compose selectable covers the whole item, including unpainted gaps. -->
-          <m3:WideNavigationRailItemLayout ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
+          <m3:WideNavigationRailItemLayout
+              ItemMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemMinWidth}}"
+              ItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemMinHeight}}"
+              ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ItemHorizontalPadding}}"
               ActiveIndicatorWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ActiveIndicatorWidth}}"
               IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.IconSize}}"
               StartIconLabelSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.StartIconLabelSpace}}"

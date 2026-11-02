@@ -11,6 +11,11 @@ public static partial class MaterialTokens
     {
         public static class NavigationDrawer
         {
+            public static readonly MaterialTokenKey<Thickness> ItemHorizontalPadding = new("md.comp.navigation-drawer.item-horizontal-padding");
+            public static readonly MaterialTokenKey<double> ItemIconLabelSpace = new("md.comp.navigation-drawer.item-icon-label-space");
+            public static readonly MaterialTokenKey<double> ItemLabelBadgeSpace = new("md.comp.navigation-drawer.item-label-badge-space");
+            public static readonly MaterialTokenKey<double> IconSize = new("md.comp.navigation-drawer.icon-size");
+
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> OpenAnimation = new("md.comp.navigation-drawer.open-animation");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> CloseAnimation = new("md.comp.navigation-drawer.close-animation");
             public static readonly MaterialTokenKey<double> MinimumContainerWidth = new("md.comp.navigation-drawer.minimum-container-width");

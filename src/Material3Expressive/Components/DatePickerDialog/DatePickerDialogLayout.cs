@@ -31,14 +31,20 @@ internal sealed class DatePickerDialogContent : Decorator
 
 internal sealed class DatePickerDialogColumn : Panel
 {
+    public static readonly StyledProperty<double> ActionEndPaddingProperty = AvaloniaProperty.Register<DatePickerDialogColumn, double>(nameof(ActionEndPadding), 6d);
+    public double ActionEndPadding { get => GetValue(ActionEndPaddingProperty); set => SetValue(ActionEndPaddingProperty, value); }
+    public static readonly StyledProperty<double> ActionBottomPaddingProperty = AvaloniaProperty.Register<DatePickerDialogColumn, double>(nameof(ActionBottomPadding), 8d);
+    public double ActionBottomPadding { get => GetValue(ActionBottomPaddingProperty); set => SetValue(ActionBottomPaddingProperty, value); }
+    static DatePickerDialogColumn() => AffectsMeasure<DatePickerDialogColumn>(ActionEndPaddingProperty, ActionBottomPaddingProperty);
+
     protected override bool BypassFlowDirectionPolicies => true;
     protected override Size MeasureOverride(Size availableSize)
     {
         var content = Children[0];
         var actions = Children[1];
-        actions.Measure(new Size(Math.Max(0, availableSize.Width - 6), Math.Max(0, availableSize.Height - 8)));
-        content.Measure(new Size(availableSize.Width, Math.Max(0, availableSize.Height - actions.DesiredSize.Height - 8)));
-        return new Size(availableSize.Width, content.DesiredSize.Height + actions.DesiredSize.Height + 8);
+        actions.Measure(new Size(Math.Max(0, availableSize.Width - ActionEndPadding), Math.Max(0, availableSize.Height - ActionBottomPadding)));
+        content.Measure(new Size(availableSize.Width, Math.Max(0, availableSize.Height - actions.DesiredSize.Height - ActionBottomPadding)));
+        return new Size(availableSize.Width, content.DesiredSize.Height + actions.DesiredSize.Height + ActionBottomPadding);
     }
     protected override Size ArrangeOverride(Size finalSize)
     {
@@ -47,8 +53,8 @@ internal sealed class DatePickerDialogColumn : Panel
         content.Arrange(new Rect(0, 0, finalSize.Width, content.DesiredSize.Height));
         // Resolve Alignment.End and PaddingValues(end=6,bottom=8) physically,
         // without putting the already direction-aware FlowRow inside a mirrored Border.
-        var x = FlowDirection == FlowDirection.RightToLeft ? 6 : finalSize.Width - 6 - actions.DesiredSize.Width;
-        actions.Arrange(new Rect(x, finalSize.Height - actions.DesiredSize.Height - 8, actions.DesiredSize.Width, actions.DesiredSize.Height));
+        var x = FlowDirection == FlowDirection.RightToLeft ? ActionEndPadding : finalSize.Width - ActionEndPadding - actions.DesiredSize.Width;
+        actions.Arrange(new Rect(x, finalSize.Height - actions.DesiredSize.Height - ActionBottomPadding, actions.DesiredSize.Width, actions.DesiredSize.Height));
         return finalSize;
     }
 }

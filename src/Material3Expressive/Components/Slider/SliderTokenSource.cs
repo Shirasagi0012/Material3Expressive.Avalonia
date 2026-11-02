@@ -10,6 +10,8 @@ public sealed class SliderTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Slider.MinimumMeasureLength] = 4.0,
+        [Comp.Slider.MinimumMeasureThickness] = 16.0,
         [Comp.Slider.VerticalEnableCornerShrinking] = true,
         [Comp.Slider.EnableCornerShrinking] = false,
         [Comp.Slider.TrackInsideCornerSize] = 2d,

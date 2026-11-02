@@ -207,10 +207,59 @@ internal sealed partial class CommandBarItemLayout
         set => SetValue(MenuSelectedItemShapeProperty, value);
     }
 
+    public static readonly StyledProperty<double> ItemMinHeightProperty =
+        AvaloniaProperty.Register<CommandBarItemLayout, double>(nameof(ItemMinHeight), 48);
+    public double ItemMinHeight
+    {
+        get => GetValue(ItemMinHeightProperty);
+        set => SetValue(ItemMinHeightProperty, value);
+    }
+
+    public static readonly StyledProperty<double> StackedItemMinHeightProperty =
+        AvaloniaProperty.Register<CommandBarItemLayout, double>(nameof(StackedItemMinHeight), 60);
+    public double StackedItemMinHeight
+    {
+        get => GetValue(StackedItemMinHeightProperty);
+        set => SetValue(StackedItemMinHeightProperty, value);
+    }
+
+    public static readonly StyledProperty<double> ItemMinWidthProperty =
+        AvaloniaProperty.Register<CommandBarItemLayout, double>(nameof(ItemMinWidth), 48);
+    public double ItemMinWidth
+    {
+        get => GetValue(ItemMinWidthProperty);
+        set => SetValue(ItemMinWidthProperty, value);
+    }
+
+    public static readonly StyledProperty<Thickness> ItemContentPaddingProperty =
+        AvaloniaProperty.Register<CommandBarItemLayout, Thickness>(nameof(ItemContentPadding), new Thickness(8, 4));
+    public Thickness ItemContentPadding
+    {
+        get => GetValue(ItemContentPaddingProperty);
+        set => SetValue(ItemContentPaddingProperty, value);
+    }
+
+    public static readonly StyledProperty<double> InlineItemOuterPaddingProperty =
+        AvaloniaProperty.Register<CommandBarItemLayout, double>(nameof(InlineItemOuterPadding), 8);
+    public double InlineItemOuterPadding
+    {
+        get => GetValue(InlineItemOuterPaddingProperty);
+        set => SetValue(InlineItemOuterPaddingProperty, value);
+    }
+
+    public static readonly StyledProperty<double> IndicatorHorizontalInsetProperty =
+        AvaloniaProperty.Register<CommandBarItemLayout, double>(nameof(IndicatorHorizontalInset), 8);
+    public double IndicatorHorizontalInset
+    {
+        get => GetValue(IndicatorHorizontalInsetProperty);
+        set => SetValue(IndicatorHorizontalInsetProperty, value);
+    }
+
     static CommandBarItemLayout()
     {
         AffectsMeasure<CommandBarItemLayout>(LabelPositionProperty, IndicatorWidthProperty, IndicatorHeightProperty,
             IconLabelSpacingProperty, InlineContentPaddingProperty, IsInOverflowProperty,
+            ItemMinHeightProperty, StackedItemMinHeightProperty, ItemMinWidthProperty, ItemContentPaddingProperty, InlineItemOuterPaddingProperty, IndicatorHorizontalInsetProperty,
             MenuContentPaddingProperty, MenuMinimumWidthProperty, MenuMaximumWidthProperty,
             MenuContainerHeightProperty, MenuMinimumInteractiveHeightProperty);
         AffectsArrange<CommandBarItemLayout>(IndicatorSizeProperty, MenuItemShapeProperty, MenuSelectedItemShapeProperty);

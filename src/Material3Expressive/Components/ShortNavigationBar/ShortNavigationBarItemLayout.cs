@@ -34,6 +34,12 @@ internal sealed class ShortNavigationBarItemLayout : Panel
     public double TopItemVerticalPadding { get => GetValue(TopItemVerticalPaddingProperty); set => SetValue(TopItemVerticalPaddingProperty, value); }
     public double IconLabelSpace { get => GetValue(IconLabelSpaceProperty); set => SetValue(IconLabelSpaceProperty, value); }
     public CornerRadius IndicatorShape { get => GetValue(IndicatorShapeProperty); set => SetValue(IndicatorShapeProperty, value); }
+    public static readonly StyledProperty<double> ItemMinWidthProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(ItemMinWidth), 48d);
+    public double ItemMinWidth { get => GetValue(ItemMinWidthProperty); set => SetValue(ItemMinWidthProperty, value); }
+    public static readonly StyledProperty<double> ItemMinHeightProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(ItemMinHeight), 48d);
+    public double ItemMinHeight { get => GetValue(ItemMinHeightProperty); set => SetValue(ItemMinHeightProperty, value); }
+    public static readonly StyledProperty<double> TopIndicatorLabelSpacingProperty = AvaloniaProperty.Register<ShortNavigationBarItemLayout, double>(nameof(TopIndicatorLabelSpacing), 4d);
+    public double TopIndicatorLabelSpacing { get => GetValue(TopIndicatorLabelSpacingProperty); set => SetValue(TopIndicatorLabelSpacingProperty, value); }
     internal Size MinimumSize { get; set; }
     private Rect _icon, _label, _indicator, _ripple;
     private Size _inner;
@@ -42,7 +48,7 @@ internal sealed class ShortNavigationBarItemLayout : Panel
 
     static ShortNavigationBarItemLayout()
     {
-        AffectsMeasure<ShortNavigationBarItemLayout>(HasLabelProperty, IconPositionProperty, SelectionProgressProperty, IndicatorWidthProperty,
+        AffectsMeasure<ShortNavigationBarItemLayout>(HasLabelProperty, ItemMinWidthProperty, ItemMinHeightProperty, TopIndicatorLabelSpacingProperty, IconPositionProperty, SelectionProgressProperty, IndicatorWidthProperty,
             IndicatorHeightProperty, IconSizeProperty, StartIndicatorHeightProperty, StartIndicatorHorizontalPaddingProperty, TopItemVerticalPaddingProperty, IconLabelSpaceProperty);
         AffectsArrange<ShortNavigationBarItemLayout>(IndicatorShapeProperty);
     }
@@ -65,8 +71,8 @@ internal sealed class ShortNavigationBarItemLayout : Panel
         // The top policy includes these paddings even without a label.
         var content = IconPosition == NavigationItemIconPosition.Start && HasLabel
             ? Math.Max(iconHeight, labelHeight) + MathUtils.DipToPx((float)(VerticalPadding * 2), (float)scale)
-            : iconHeight + labelHeight + MathUtils.DipToPx((float)(TopItemVerticalPadding * 2 + VerticalPadding * 2 + 4), (float)scale);
-        return Math.Max(MathUtils.DipToPx(48f, (float)scale), content);
+            : iconHeight + labelHeight + MathUtils.DipToPx((float)(TopItemVerticalPadding * 2 + VerticalPadding * 2 + TopIndicatorLabelSpacing), (float)scale);
+        return Math.Max(MathUtils.DipToPx((float)ItemMinHeight, (float)scale), content);
     }
 
     internal int IntrinsicWidth(int height, double scale)
@@ -82,7 +88,7 @@ internal sealed class ShortNavigationBarItemLayout : Panel
         var content = IconPosition == NavigationItemIconPosition.Start && HasLabel
             ? iconWidth + labelWidth + MathUtils.DipToPx((float)(HorizontalPadding * 2 + IconLabelSpace), (float)scale)
             : labelWidth;
-        return Math.Max(MathUtils.DipToPx(48f, (float)scale), content);
+        return Math.Max(MathUtils.DipToPx((float)ItemMinWidth, (float)scale), content);
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -91,8 +97,8 @@ internal sealed class ShortNavigationBarItemLayout : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var maximumWidth = double.IsFinite(availableSize.Width) ? MathUtils.DipToPx(availableSize.Width, scale) : int.MaxValue;
         var maximumHeight = double.IsFinite(availableSize.Height) ? MathUtils.DipToPx(availableSize.Height, scale) : int.MaxValue;
-        var minimumWidth = Math.Min(maximumWidth, MathUtils.DipToPx(!double.IsNaN(Width) ? availableSize.Width : Math.Max(48, MinimumSize.Width), scale));
-        var minimumHeight = Math.Min(maximumHeight, MathUtils.DipToPx(!double.IsNaN(Height) ? availableSize.Height : Math.Max(48, MinimumSize.Height), scale));
+        var minimumWidth = Math.Min(maximumWidth, MathUtils.DipToPx(!double.IsNaN(Width) ? availableSize.Width : Math.Max(ItemMinWidth, MinimumSize.Width), scale));
+        var minimumHeight = Math.Min(maximumHeight, MathUtils.DipToPx(!double.IsNaN(Height) ? availableSize.Height : Math.Max(ItemMinHeight, MinimumSize.Height), scale));
         int Px(double value) => MathUtils.DipToPx((float)value, (float)scale);
         var horizontal = Px(HorizontalPadding * 2); var vertical = Px(VerticalPadding * 2);
         var start = HasLabel && IconPosition == NavigationItemIconPosition.Start;
@@ -102,7 +108,7 @@ internal sealed class ShortNavigationBarItemLayout : Panel
         var ih = MathUtils.DipToPx(Children[1].DesiredSize.Height, scale);
         if (HasLabel)
             Children[2].Measure(new Size((start ? Math.Max(0, maximumWidth - iw - Px(IconLabelSpace)) : maximumWidth) / scale,
-                (start ? maximumHeight : Math.Max(0, maximumHeight - Math.Min(ih + vertical, maximumHeight) - Px(4))) / scale));
+                (start ? maximumHeight : Math.Max(0, maximumHeight - Math.Min(ih + vertical, maximumHeight) - Px(TopIndicatorLabelSpacing))) / scale));
         var lw = HasLabel ? MathUtils.DipToPx(Children[2].DesiredSize.Width, scale) : 0;
         var lh = HasLabel ? MathUtils.DipToPx(Children[2].DesiredSize.Height, scale) : 0;
         var totalWidth = start ? iw + lw + Px(IconLabelSpace + HorizontalPadding * 2) : iw + horizontal;
@@ -110,12 +116,12 @@ internal sealed class ShortNavigationBarItemLayout : Panel
         var rw = Math.Min(totalWidth, maximumWidth); var rh = Math.Min(totalHeight, maximumHeight);
         var aw = Math.Min(MathUtils.RoundToInt(totalWidth * Math.Max(0, SelectionProgress)), maximumWidth);
         var width = Math.Clamp(HasLabel && !start ? Math.Max(lw, rw) : rw, minimumWidth, maximumWidth);
-        var height = Math.Clamp(HasLabel && !start ? MathUtils.RoundToInt(rh + 4f * (float)scale + lh + (float)TopItemVerticalPadding * (float)scale * 2) : rh, minimumHeight, maximumHeight);
+        var height = Math.Clamp(HasLabel && !start ? MathUtils.RoundToInt(rh + (float)TopIndicatorLabelSpacing * (float)scale + lh + (float)TopItemVerticalPadding * (float)scale * 2) : rh, minimumHeight, maximumHeight);
         if (HasLabel && !start)
         {
             var iconY = Px(TopItemVerticalPadding + VerticalPadding);
             _icon = new Rect((width - iw) / 2, iconY, iw, ih);
-            _label = new Rect((width - lw) / 2, iconY + ih + Px(VerticalPadding + 4), lw, lh);
+            _label = new Rect((width - lw) / 2, iconY + ih + Px(VerticalPadding + TopIndicatorLabelSpacing), lw, lh);
             _indicator = new Rect((width - aw) / 2, iconY - Px(VerticalPadding), aw, rh);
             _ripple = new Rect((width - rw) / 2, _indicator.Y, rw, rh);
         }

@@ -22,6 +22,8 @@ internal sealed class NavigationRailItemLayout : Panel
     public static readonly StyledProperty<double> IndicatorHeightProperty = AvaloniaProperty.Register<NavigationRailItemLayout, double>(nameof(IndicatorHeight));
     public static readonly StyledProperty<double> IconSizeProperty = AvaloniaProperty.Register<NavigationRailItemLayout, double>(nameof(IconSize));
     public static readonly StyledProperty<CornerRadius> IndicatorShapeProperty = AvaloniaProperty.Register<NavigationRailItemLayout, CornerRadius>(nameof(IndicatorShape));
+    public static readonly StyledProperty<double> IndicatorLabelSpacingProperty = AvaloniaProperty.Register<NavigationRailItemLayout, double>(nameof(IndicatorLabelSpacing), 4d);
+    public double IndicatorLabelSpacing { get => GetValue(IndicatorLabelSpacingProperty); set => SetValue(IndicatorLabelSpacingProperty, value); }
     private double _layoutHeight;
 
     public bool HasLabel { get => GetValue(HasLabelProperty); set => SetValue(HasLabelProperty, value); }
@@ -36,7 +38,7 @@ internal sealed class NavigationRailItemLayout : Panel
 
     static NavigationRailItemLayout()
     {
-        AffectsMeasure<NavigationRailItemLayout>(HasLabelProperty, ItemMinWidthProperty, IndicatorWidthProperty, IndicatorHeightProperty, IconSizeProperty, SizeProgressProperty);
+        AffectsMeasure<NavigationRailItemLayout>(HasLabelProperty, IndicatorLabelSpacingProperty, ItemMinWidthProperty, IndicatorWidthProperty, IndicatorHeightProperty, IconSizeProperty, SizeProgressProperty);
         AffectsArrange<NavigationRailItemLayout>(AlwaysShowLabelProperty, AlphaProgressProperty, IndicatorShapeProperty);
     }
 
@@ -65,7 +67,7 @@ internal sealed class NavigationRailItemLayout : Panel
         if (HasLabel)
         {
             var padding = (float)((IndicatorHeight - IconSize) * scale / 2);
-            var contentHeight = (float)iconHeight + padding + (float)(4 * scale) + (float)Px(label.DesiredSize.Height);
+            var contentHeight = (float)iconHeight + padding + (float)(IndicatorLabelSpacing * scale) + (float)Px(label.DesiredSize.Height);
             _layoutHeight = MathUtils.RoundToInt(contentHeight + Math.Max((minimumHeight - contentHeight) / 2, padding) * 2);
         }
         else
@@ -103,14 +105,14 @@ internal sealed class NavigationRailItemLayout : Panel
         else
         {
             var padding = (float)((IndicatorHeight - IconSize) * scale / 2);
-            var contentHeight = (float)iconHeight + padding + (float)(4 * scale) + (float)labelHeight;
+            var contentHeight = (float)iconHeight + padding + (float)(IndicatorLabelSpacing * scale) + (float)labelHeight;
             var contentPadding = Math.Max(((float)height - contentHeight) / 2, padding);
             var selectedIconY = contentPadding;
             var unselectedIconY = AlwaysShowLabel ? selectedIconY : ((float)height - (float)iconHeight) / 2;
             var offset = MathUtils.Lerp(0f, unselectedIconY - selectedIconY, 1 - progress);
             iconY = MathUtils.RoundToInt(selectedIconY + offset);
             rippleY = MathUtils.RoundToInt(selectedIconY - padding + offset);
-            labelY = MathUtils.RoundToInt(selectedIconY + (float)iconHeight + padding + (float)(4 * scale) + offset);
+            labelY = MathUtils.RoundToInt(selectedIconY + (float)iconHeight + padding + (float)(IndicatorLabelSpacing * scale) + offset);
         }
         void Place(Control child, double childWidth, double childHeight, double y) =>
             child.Arrange(new Rect(Math.Truncate((width - childWidth) / 2) / scale, (y + apparentOffsetY) / scale, childWidth / scale, childHeight / scale));

@@ -4,6 +4,8 @@
 
 ## 默认配置数据流
 
+指示器画布尺寸与外留白由组件 `IndicatorSize` / `IndicatorPadding` Token 同步传入内部布局、Surface 和绘制；布局槽取画布加两侧留白，并分别与最小交互宽高比较。默认值仍为 20 DIP 与四边 2 DIP，描边、波纹和焦点配置独立保留。
+
 内部 motion 输入以 null 表示尚未绑定；挂载、重挂或资源临时失效时不构造无效弹簧，恢复后提交当前目标。已有动画保留其已捕获规格，不以 Expressive 常量补齐配置。
 
 圆点及颜色动画规格由组件 Token 引用系统 motion，经主题传入 Indicator 配置属性；状态切换捕获当前有效规格，不在内部解析 Token 或补 Expressive 默认。完整 RadioButtonColors 的整组替换语义保持不变。

@@ -15,10 +15,12 @@
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:RadioButtonLayout>
+          <m3:RadioButtonLayout IndicatorSize="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.IndicatorSize}}"
+                              IndicatorPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.IndicatorPadding}}">
             <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="Transparent"
-                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" FocusRingCornerRadius="12" Padding="2">
-              <m3:RadioButtonIndicator DotAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.DotAnimation}}"
+                                StateLayerBrush="{TemplateBinding Foreground}" CornerRadius="0" FocusRingCornerRadius="12" Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.IndicatorPadding}}">
+              <m3:RadioButtonIndicator IndicatorSize="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.IndicatorSize}}"
+                  DotAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.DotAnimation}}"
                   ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.ColorAnimation}}"
                   x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
                   Colors="{TemplateBinding m3:RadioButtonAppearance.Colors}"

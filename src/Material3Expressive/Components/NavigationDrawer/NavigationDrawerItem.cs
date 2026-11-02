@@ -115,37 +115,43 @@ public class NavigationDrawerItem : Button
 
 internal sealed class NavigationDrawerItemLayout : Panel
 {
+    public static readonly StyledProperty<Thickness> ItemHorizontalPaddingProperty = AvaloniaProperty.Register<NavigationDrawerItemLayout, Thickness>(nameof(ItemHorizontalPadding));
+    public Thickness ItemHorizontalPadding { get => GetValue(ItemHorizontalPaddingProperty); set => SetValue(ItemHorizontalPaddingProperty, value); }
+    public static readonly StyledProperty<double> ItemIconLabelSpaceProperty = AvaloniaProperty.Register<NavigationDrawerItemLayout, double>(nameof(ItemIconLabelSpace));
+    public double ItemIconLabelSpace { get => GetValue(ItemIconLabelSpaceProperty); set => SetValue(ItemIconLabelSpaceProperty, value); }
+    public static readonly StyledProperty<double> ItemLabelBadgeSpaceProperty = AvaloniaProperty.Register<NavigationDrawerItemLayout, double>(nameof(ItemLabelBadgeSpace));
+    public double ItemLabelBadgeSpace { get => GetValue(ItemLabelBadgeSpaceProperty); set => SetValue(ItemLabelBadgeSpaceProperty, value); }
     private double _iconGap, _badgeGap;
     public static readonly StyledProperty<double> ContainerMinHeightProperty = AvaloniaProperty.Register<NavigationDrawerItemLayout, double>(nameof(ContainerMinHeight));
     public double ContainerMinHeight { get => GetValue(ContainerMinHeightProperty); set => SetValue(ContainerMinHeightProperty, value); }
-    static NavigationDrawerItemLayout() => AffectsMeasure<NavigationDrawerItemLayout>(ContainerMinHeightProperty);
+    static NavigationDrawerItemLayout() => AffectsMeasure<NavigationDrawerItemLayout>(ContainerMinHeightProperty, ItemHorizontalPaddingProperty, ItemIconLabelSpaceProperty, ItemLabelBadgeSpaceProperty);
     protected override Size MeasureOverride(Size availableSize)
     {
         var width = availableSize.Width;
         if (Children.Count != 3) return default;
         var icon = Children[0]; var label = Children[1]; var badge = Children[2];
-        var remaining = Math.Max(0, width - 40);
+        var remaining = Math.Max(0, width - (ItemHorizontalPadding.Left + ItemHorizontalPadding.Right));
         icon.Measure(new Size(remaining, availableSize.Height));
         remaining = Math.Max(0, remaining - icon.DesiredSize.Width);
-        _iconGap = icon.IsVisible ? Math.Min(12, remaining) : 0; remaining -= _iconGap;
+        _iconGap = icon.IsVisible ? Math.Min(ItemIconLabelSpace, remaining) : 0; remaining -= _iconGap;
         // Row measures unweighted children in source order: icon, its spacer, badge spacer,
         // badge. The weighted label gets the remainder, including zero under tight constraints.
-        _badgeGap = badge.IsVisible ? Math.Min(12, remaining) : 0; remaining -= _badgeGap;
+        _badgeGap = badge.IsVisible ? Math.Min(ItemLabelBadgeSpace, remaining) : 0; remaining -= _badgeGap;
         badge.Measure(new Size(remaining, availableSize.Height));
         label.Measure(new Size(Math.Max(0, remaining - badge.DesiredSize.Width), availableSize.Height));
-        return new Size(double.IsFinite(width) ? width : 40 + icon.DesiredSize.Width + label.DesiredSize.Width + badge.DesiredSize.Width + _iconGap + _badgeGap,
+        return new Size(double.IsFinite(width) ? width : ItemHorizontalPadding.Left + ItemHorizontalPadding.Right + icon.DesiredSize.Width + label.DesiredSize.Width + badge.DesiredSize.Width + _iconGap + _badgeGap,
             Math.Min(availableSize.Height, Math.Max(ContainerMinHeight, Children.Max(c => c.DesiredSize.Height))));
     }
     protected override Size ArrangeOverride(Size finalSize)
     {
         if (Children.Count != 3) return finalSize;
         var icon = Children[0]; var label = Children[1]; var badge = Children[2];
-        var x = 16d;
+        var x = ItemHorizontalPadding.Left;
         icon.Arrange(new Rect(x, (finalSize.Height - icon.DesiredSize.Height) / 2, icon.DesiredSize.Width, icon.DesiredSize.Height));
         if (icon.IsVisible) x += icon.DesiredSize.Width + _iconGap;
         var badgeWidth = badge.IsVisible ? badge.DesiredSize.Width + _badgeGap : 0;
-        label.Arrange(new Rect(x, (finalSize.Height - label.DesiredSize.Height) / 2, Math.Max(0, finalSize.Width - x - 24 - badgeWidth), label.DesiredSize.Height));
-        badge.Arrange(new Rect(finalSize.Width - 24 - badge.DesiredSize.Width, (finalSize.Height - badge.DesiredSize.Height) / 2, badge.DesiredSize.Width, badge.DesiredSize.Height));
+        label.Arrange(new Rect(x, (finalSize.Height - label.DesiredSize.Height) / 2, Math.Max(0, finalSize.Width - x - ItemHorizontalPadding.Right - badgeWidth), label.DesiredSize.Height));
+        badge.Arrange(new Rect(finalSize.Width - ItemHorizontalPadding.Right - badge.DesiredSize.Width, (finalSize.Height - badge.DesiredSize.Height) / 2, badge.DesiredSize.Width, badge.DesiredSize.Height));
         return finalSize;
     }
 }

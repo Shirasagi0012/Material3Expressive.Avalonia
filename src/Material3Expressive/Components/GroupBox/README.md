@@ -19,8 +19,8 @@ OutlinedCard 的容器色、描边色/宽度与形状 Token 绘制在 MaterialSu
 
 - 标题位于表面内部顶部，使用 TitleSmall、OnSurfaceVariant。这是本库的组合选择，并非 M3 规范值：
   安静的标签能命名分组而不与内容争夺注意力，Primary 色则容易被读成链接或文字按钮
-- `Padding` 默认 16 DIP，作用于表面内侧（标题与内容一起），标题与内容间距 8 DIP。没有合适的间距 Token，
-  这两个值是本地值，16 DIP 与 Card 示例的内容留白一致
+- `Padding` 默认 16 DIP，作用于表面内侧（标题与内容一起），标题与内容间距默认 8 DIP。两者由 GroupBox 自己的组件 Token 提供，
+  16 DIP 与 Card 示例的内容留白一致
 - `Header` 为 null 或空字符串时不显示标题行，也不保留间距
 - `HeaderTemplate` 照常使用；字符串标题、模板根元素或作为标题的控件都会得到 TitleSmall，
   应用自己设置在标题元素上的 `MaterialText.Style` / `DefaultStyle` 优先。标题排版不会影响内容

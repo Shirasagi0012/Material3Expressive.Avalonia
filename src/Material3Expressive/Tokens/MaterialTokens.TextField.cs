@@ -10,6 +10,17 @@ public static partial class MaterialTokens
         // Shared decoration defaults for Filled, Outlined and their secure themes.
         public static class TextField
         {
+            public static readonly MaterialTokenKey<double> IconSlotSize = new("md.comp.text-field.icon-slot-size");
+            public static readonly MaterialTokenKey<double> IconSize = new("md.comp.text-field.icon-size");
+            public static readonly MaterialTokenKey<double> ContentMinHeight = new("md.comp.text-field.content-min-height");
+            public static readonly MaterialTokenKey<double> SupportingMinHeight = new("md.comp.text-field.supporting-min-height");
+            public static readonly MaterialTokenKey<Thickness> SupportingPadding = new("md.comp.text-field.supporting-padding");
+            public static readonly MaterialTokenKey<double> IconAdjacentPaddingReduction = new("md.comp.text-field.icon-adjacent-padding-reduction");
+            public static readonly MaterialTokenKey<double> AffixSpacing = new("md.comp.text-field.affix-spacing");
+            public static readonly MaterialTokenKey<Thickness> AboveLabelPadding = new("md.comp.text-field.above-label-padding");
+            public static readonly MaterialTokenKey<double> ExpandedLabelMinHeight = new("md.comp.text-field.expanded-label-min-height");
+            public static readonly MaterialTokenKey<double> CollapsedLabelMinHeight = new("md.comp.text-field.collapsed-label-min-height");
+
             public static readonly MaterialTokenKey<double> MinimumWidth = new("md.comp.text-field.minimum-width");
             public static readonly MaterialTokenKey<double> MinimumHeight = new("md.comp.text-field.minimum-height");
             public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.text-field.content-padding");

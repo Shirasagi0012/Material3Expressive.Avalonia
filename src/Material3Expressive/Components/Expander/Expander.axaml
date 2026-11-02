@@ -6,8 +6,8 @@
     Expander: M3 has no expansion panel, so it is composed from a one-line list item header and an
     AnimatedVisibility content region, in list style (no container, transparent background).
 
-    MaterialTokens has no List tokens, so the header uses local values taken from upstream
-    ListTokens (md.comp.list.list-item.*), not new token keys:
+    Expander has its own component tokens; the header defaults are taken from upstream
+    ListTokens (md.comp.list.list-item.*):
       one-line container height 56, leading/trailing space 16, top/bottom space 10,
       label-to-trailing gap 12, trailing icon 24 in OnSurfaceVariant, label BodyLarge in OnSurface,
       disabled label and trailing icon OnSurface at the disabled content opacity.
@@ -25,8 +25,8 @@
       <Setter Property="VerticalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="MinHeight" Value="56" />
-      <Setter Property="Padding" Value="16,10" />
+      <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Expander.HeaderMinHeight}}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Expander.HeaderPadding}}" />
       <Setter Property="Template">
         <ControlTemplate>
           <m3:MaterialSurface x:Name="PART_Container"
@@ -37,11 +37,16 @@
             <DockPanel Margin="{TemplateBinding Padding}">
               <m3:MaterialSymbol x:Name="PART_Chevron"
                                  DockPanel.Dock="Right"
-                                 Margin="12,0,0,0"
                                  VerticalAlignment="Center"
                                  Symbol="KeyboardArrowDown"
-                                 m3:MaterialSymbol.DefaultSize="24"
-                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
+                                 m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Expander.HeaderIconSize}}"
+                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}">
+                <m3:MaterialSymbol.Margin>
+                  <MultiBinding Priority="Template" Converter="{x:Static m3:ExpanderHeader.IconMargin}">
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Expander.HeaderIconSpacing}" />
+                  </MultiBinding>
+                </m3:MaterialSymbol.Margin>
+              </m3:MaterialSymbol>
               <ContentPresenter x:Name="PART_ContentPresenter"
                                 Content="{TemplateBinding Content}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -103,7 +108,7 @@
     <ControlTheme x:Key="{x:Type Expander}" TargetType="Expander">
       <Setter Property="IsTabStop" Value="False" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Padding" Value="16,0" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Expander.ContentPadding}}" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="VerticalContentAlignment" Value="Stretch" />
       <Setter Property="Template">

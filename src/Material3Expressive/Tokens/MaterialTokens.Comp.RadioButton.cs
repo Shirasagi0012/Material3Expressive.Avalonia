@@ -11,6 +11,8 @@ public static partial class MaterialTokens
         // RadioButtonDefaults.defaultRadioButtonColors, fixed RadioButtonTokens v0_117.
         public static class RadioButton
         {
+            public static readonly MaterialTokenKey<double> IndicatorSize = new("md.comp.radiobutton.indicator-size");
+            public static readonly MaterialTokenKey<Avalonia.Thickness> IndicatorPadding = new("md.comp.radiobutton.indicator-padding");
             public static readonly MaterialTokenKey<Avalonia.Thickness> ContentPadding = new("md.comp.radiobutton.content-padding");
             public static readonly MaterialTokenKey<SpringSpec> DotAnimation = new("md.comp.radiobutton.dot-animation");
             public static readonly MaterialTokenKey<SpringSpec> ColorAnimation = new("md.comp.radiobutton.color-animation");

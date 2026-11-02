@@ -22,9 +22,11 @@
                     ContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerHeight}}">
                   <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                       TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{TemplateBinding TonalElevation}">
-                    <m3:DatePickerDialogColumn>
+                    <m3:DatePickerDialogColumn ActionEndPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerDialog.ActionEndPadding}}"
+                        ActionBottomPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerDialog.ActionBottomPadding}}">
                       <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />
-                        <m3:AlertDialogButtons x:Name="PART_Buttons" CrossAxisSpacing="12"
+                        <m3:AlertDialogButtons x:Name="PART_Buttons" HorizontalSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerDialog.ActionHorizontalSpacing}}"
+                            CrossAxisSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerDialog.ActionVerticalSpacing}}"
                             m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextFont}}"
                             TextElement.Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Dialog.ActionLabelTextColor}}">
                         <ContentPresenter x:Name="PART_Confirm" Content="{TemplateBinding ConfirmButton}" ContentTemplate="{TemplateBinding ConfirmButtonTemplate}" />

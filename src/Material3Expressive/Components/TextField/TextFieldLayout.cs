@@ -161,6 +161,9 @@ internal sealed partial class TextFieldLayout : Panel
             e.Property != LabelBrushProperty && e.Property != LargeTextStyleProperty && e.Property != SmallTextStyleProperty &&
             e.Property != DefaultMinimumWidthProperty && e.Property != DefaultMinimumHeightProperty &&
             e.Property != DefaultMinimizedLabelLineHeightProperty &&
+            e.Property != SupportingPaddingProperty && e.Property != IconAdjacentPaddingReductionProperty &&
+            e.Property != AffixSpacingProperty && e.Property != AboveLabelPaddingProperty &&
+            e.Property != ExpandedLabelMinHeightProperty && e.Property != CollapsedLabelMinHeightProperty &&
             e.Property != SpatialAnimationProperty && e.Property != FastEffectsAnimationProperty &&
             e.Property != SlowEffectsAnimationProperty && e.Property != FlowDirectionProperty)) return;
         UpdateSlots(); Retarget(); InvalidateMeasure(); InvalidateDecoration();
@@ -323,17 +326,17 @@ internal sealed partial class TextFieldLayout : Panel
         var top = Round(_padding.Top); var bottom = Round(_padding.Bottom);
         var start = Round(_padding.Left); var end = Round(_padding.Right);
         // Logical start/end padding; icons include their 48-DIP minimum interactive slot.
-        var startPad = _leading.IsVisible ? Math.Max(0, start - 12) : start;
-        var endPad = _trailing.IsVisible ? Math.Max(0, end - 12) : end;
+        var startPad = _leading.IsVisible ? Math.Max(0, start - IconAdjacentPaddingReduction) : start;
+        var endPad = _trailing.IsVisible ? Math.Max(0, end - IconAdjacentPaddingReduction) : end;
         // Avalonia mirrors the visual subtree for RTL; all coordinates here remain logical.
         Thickness Insets(double s, double t, double e, double b) => new(s, t, e, b);
-        _prefix.Padding = Insets(startPad, 0, 2, 0); _suffix.Padding = Insets(2, 0, endPad, 0);
+        _prefix.Padding = Insets(startPad, 0, AffixSpacing, 0); _suffix.Padding = Insets(AffixSpacing, 0, endPad, 0);
         _editor.Padding = _placeholder.Padding = Insets(_prefix.IsVisible ? 0 : startPad, 0, _suffix.IsVisible ? 0 : endPad, 0);
-        _label.Padding = Above ? new Thickness(4, 0, 4, 4) : Cutout ? default : Insets(startPad, 0, endPad, 0);
-        _supporting.Padding = new Thickness(16, 4, 16, 0);
+        _label.Padding = Above ? AboveLabelPadding : Cutout ? default : Insets(startPad, 0, endPad, 0);
+        _supporting.Padding = SupportingPadding;
         // TextFieldImpl.textFieldLabelMinHeight: fixed MinTextLineHeight / MinFocusedLabelLineHeight,
         // distinct from the effective text line height and minimized-label geometry reservation.
-        _label.MinHeight = Lerp(24, 16, p);
+        _label.MinHeight = Lerp(ExpandedLabelMinHeight, CollapsedLabelMinHeight, p);
         var occupied = 0d; var occupiedY = 0d;
         void Measure(Control child, double width, double height)
         {
@@ -409,8 +412,8 @@ internal sealed partial class TextFieldLayout : Panel
         if (Above) startX = endX = Align(MaterialTextField.GetMinimizedLabelAlignment(_owner), labelWidth, width);
         if (Cutout)
         {
-            var lp = _leading.IsVisible ? leading + Math.Max(0, startPad - 12) : startPad;
-            var tp = _trailing.IsVisible ? trailing + Math.Max(0, endPad - 12) : endPad;
+            var lp = _leading.IsVisible ? leading + Math.Max(0, startPad - IconAdjacentPaddingReduction) : startPad;
+            var tp = _trailing.IsVisible ? trailing + Math.Max(0, endPad - IconAdjacentPaddingReduction) : endPad;
             startX = Align(MaterialTextField.GetExpandedLabelAlignment(_owner), labelWidth, width - lp - tp) + lp;
             endX = Align(MaterialTextField.GetMinimizedLabelAlignment(_owner), labelWidth, width - startPad - endPad) + startPad;
         }

@@ -12,6 +12,18 @@ public static partial class MaterialTokens
     {
         public static class Snackbar
         {
+            public static readonly MaterialTokenKey<double> MaxWidth = new("md.comp.snackbar.max-width");
+            public static readonly MaterialTokenKey<double> ContentStartPadding = new("md.comp.snackbar.content-start-padding");
+            public static readonly MaterialTokenKey<double> ContentEndPadding = new("md.comp.snackbar.content-end-padding");
+            public static readonly MaterialTokenKey<double> TextVerticalPadding = new("md.comp.snackbar.text-vertical-padding");
+            public static readonly MaterialTokenKey<double> TextEndSpacing = new("md.comp.snackbar.text-end-spacing");
+            public static readonly MaterialTokenKey<double> FirstBaselineOffset = new("md.comp.snackbar.first-baseline-offset");
+            public static readonly MaterialTokenKey<double> NewLineTextEndSpacing = new("md.comp.snackbar.new-line-text-end-spacing");
+            public static readonly MaterialTokenKey<double> NewLineLastBaselineOffset = new("md.comp.snackbar.new-line-last-baseline-offset");
+            public static readonly MaterialTokenKey<double> NewLineBottomPadding = new("md.comp.snackbar.new-line-bottom-padding");
+            public static readonly MaterialTokenKey<Thickness> DataMargin = new("md.comp.snackbar.data-margin");
+            public static readonly MaterialTokenKey<double> DismissContainerSize = new("md.comp.snackbar.dismiss-container-size");
+
             public static readonly MaterialTokenKey<Thickness> ActionContentPadding = new("md.comp.snackbar.action-content-padding");
             public static readonly MaterialTokenKey<SpringSpec> ScaleAnimation = new("md.comp.snackbar.scale-animation");
             public static readonly MaterialTokenKey<SpringSpec> OpacityAnimation = new("md.comp.snackbar.opacity-animation");

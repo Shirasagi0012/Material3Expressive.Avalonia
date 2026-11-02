@@ -10,6 +10,10 @@ public sealed class NavigationRailTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.NavigationRail.VerticalPadding] = 4d,
+        [Comp.NavigationRail.ItemSpacing] = 4d,
+        [Comp.NavigationRail.HeaderItemSpacing] = 16d,
+        [Comp.NavigationRail.IndicatorLabelSpacing] = 4d,
         [Comp.NavigationRail.EffectsAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.NavigationRail.IndicatorSizeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.NavigationRail.WindowInsets] = default(Avalonia.Thickness),

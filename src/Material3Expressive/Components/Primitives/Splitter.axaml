@@ -5,8 +5,8 @@
     <Styles.Resources>
         <ControlTheme x:Key="{x:Type GridSplitter}" TargetType="GridSplitter">
             <Setter Property="Focusable" Value="True" />
-            <Setter Property="MinWidth" Value="6" />
-            <Setter Property="MinHeight" Value="6" />
+            <Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+GridSplitter.MinimumWidth}}" />
+            <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+GridSplitter.MinimumHeight}}" />
             <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" />
             <Setter Property="PreviewContent">
                 <Template>

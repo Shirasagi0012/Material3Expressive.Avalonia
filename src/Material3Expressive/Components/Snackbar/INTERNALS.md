@@ -11,6 +11,8 @@
 
 默认数据动作/关闭按钮的父级前景输入绑定 ButtonThemeProperties 候选，由按钮主题转发到原生有效 Foreground；禁用默认、用户普通 Style 和局部值仍按正常优先级工作。Snackbar 动作主题的 12/8 Padding 与 LabelLarge 同样作为候选进入现有 size-class 路径，`.medium` 等尺寸配置不会被派生主题截断。Padding 基线保存在 ActionContentPadding Token。
 
+内容宽度上限、留白、文字与基线间距由组件 Token 传入内部布局属性，保持原像素取整和分支约束顺序。DataMargin 同时驱动模板外边距与最小约束扣除；关闭按钮可见容器尺寸与最小交互占位独立。
+
 ## 固定上游与本地入口
 
 固定版本见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX

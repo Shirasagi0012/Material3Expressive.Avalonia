@@ -13,6 +13,30 @@ public static partial class MaterialTokens
     {
         public static class DatePickerModal
         {
+            public static readonly MaterialTokenKey<Thickness> TitlePadding = new("md.comp.datepickermodal.title-padding");
+            public static readonly MaterialTokenKey<Thickness> HeadlinePadding = new("md.comp.datepickermodal.headline-padding");
+            public static readonly MaterialTokenKey<double> ModeToggleSize = new("md.comp.datepickermodal.mode-toggle-size");
+            public static readonly MaterialTokenKey<double> MonthNavigationHeight = new("md.comp.datepickermodal.month-navigation-height");
+            public static readonly MaterialTokenKey<Thickness> CalendarHorizontalPadding = new("md.comp.datepickermodal.calendar-horizontal-padding");
+            public static readonly MaterialTokenKey<double> NavigationButtonSize = new("md.comp.datepickermodal.navigation-button-size");
+            public static readonly MaterialTokenKey<double> MonthButtonMinWidth = new("md.comp.datepickermodal.month-button-min-width");
+            public static readonly MaterialTokenKey<double> MonthButtonHeight = new("md.comp.datepickermodal.month-button-height");
+            public static readonly MaterialTokenKey<Thickness> MonthButtonHorizontalPadding = new("md.comp.datepickermodal.month-button-horizontal-padding");
+            public static readonly MaterialTokenKey<double> WeekdayRowHeight = new("md.comp.datepickermodal.weekday-row-height");
+            public static readonly MaterialTokenKey<double> DayCellWidth = new("md.comp.datepickermodal.day-cell-width");
+            public static readonly MaterialTokenKey<double> DayCellHeight = new("md.comp.datepickermodal.day-cell-height");
+            public static readonly MaterialTokenKey<double> RangeIndicatorTopOffset = new("md.comp.datepickermodal.range-indicator-top-offset");
+            public static readonly MaterialTokenKey<double> YearGridWidth = new("md.comp.datepickermodal.year-grid-width");
+            public static readonly MaterialTokenKey<Thickness> YearGridVerticalMargin = new("md.comp.datepickermodal.year-grid-vertical-margin");
+            public static readonly MaterialTokenKey<double> YearCellWidth = new("md.comp.datepickermodal.year-cell-width");
+            public static readonly MaterialTokenKey<double> YearCellHeight = new("md.comp.datepickermodal.year-cell-height");
+            public static readonly MaterialTokenKey<double> YearScrollHeight = new("md.comp.datepickermodal.year-scroll-height");
+            public static readonly MaterialTokenKey<double> RangeMonthListHeight = new("md.comp.datepickermodal.range-month-list-height");
+            public static readonly MaterialTokenKey<Thickness> RangeMonthTitleMargin = new("md.comp.datepickermodal.range-month-title-margin");
+            public static readonly MaterialTokenKey<Thickness> InputMargin = new("md.comp.datepickermodal.input-margin");
+            public static readonly MaterialTokenKey<double> InputSpacing = new("md.comp.datepickermodal.input-spacing");
+            public static readonly MaterialTokenKey<double> SingleInputWidth = new("md.comp.datepickermodal.single-input-width");
+            public static readonly MaterialTokenKey<double> RangeInputWidth = new("md.comp.datepickermodal.range-input-width");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.datepickermodal.container-color");
             public static readonly MaterialTokenKey<double> ContainerElevation = new("md.comp.datepickermodal.container-elevation");
             public static readonly MaterialTokenKey<double> ContainerHeight = new("md.comp.datepickermodal.container-height");

@@ -11,6 +11,7 @@ public sealed class PlainTooltipTokenSource : ITokenSource
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
         [Comp.TooltipBox.Spacing] = 4d,
+        [Comp.PlainTooltip.NativeVerticalOffset] = -4d,
         [Comp.PlainTooltip.ContentPadding] = new Avalonia.Thickness(8, 4),
         [Comp.PlainTooltip.MaxWidth] = 200d,
         [Comp.PlainTooltip.MinHeight] = 24d,

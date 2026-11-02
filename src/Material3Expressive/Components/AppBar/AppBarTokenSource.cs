@@ -11,6 +11,14 @@ public sealed class AppBarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.AppBar.NavigationIconPadding] = new Thickness(4, 0, 0, 0),
+        [Comp.AppBar.ActionPadding] = new Thickness(0, 0, 4, 0),
+        [Comp.AppBar.TitleStartInset] = 12d,
+        [Comp.AppBar.TitleHorizontalPadding] = 4d,
+        [Comp.AppBar.MediumTitleBottomPadding] = 24d,
+        [Comp.AppBar.LargeTitleBottomPadding] = 28d,
+        [Comp.AppBar.BottomFabHorizontalSpacing] = 12d,
+        [Comp.AppBar.BottomFabVerticalOffset] = 8d,
         [Comp.AppBar.TitleAlignment] = HorizontalAlignment.Left,
         [Comp.AppBar.CenterTitleAlignment] = HorizontalAlignment.Center,
         [Comp.AppBar.SmallExpandedHeight] = 64d,

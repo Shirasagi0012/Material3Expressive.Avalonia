@@ -73,7 +73,7 @@
        MenuThemeProperties.ItemTheme set on the Menu (same mechanism as MenuFlyoutPresenter); an
        ItemContainerTheme on the owning item still wins. -->
   <Style Selector="Menu MenuItem Separator">
-    <Setter Property="Margin" Value="12,2" />
+    <Setter Property="Margin" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.SeparatorMargin}}" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
   </Style>
 </Styles>
