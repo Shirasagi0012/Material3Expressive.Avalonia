@@ -22,6 +22,7 @@ public sealed class TimeInputTokenSource : ITokenSource
         [Comp.TimeInput.SupportingTextTopSpacing] = 7.0d,
         [Comp.TimeInput.VibrantPeriodSelectorContainerWidth] = 56.0d,
         [Comp.TimeInput.PeriodSelectorSpacing] = 4.0d,
+        [Comp.TimeInput.VibrantPeriodSelectorSpacing] = 8.0d,
         [Comp.TimeInput.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainerHigh),
         [Comp.TimeInput.ContainerElevation] = new TokenRef(Sys.Elevation.Level3),
         [Comp.TimeInput.ContainerShape] = new TokenRef(Sys.Shape.ExtraLarge),

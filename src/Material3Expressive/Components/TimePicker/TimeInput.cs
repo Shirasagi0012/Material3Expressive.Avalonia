@@ -8,6 +8,9 @@ namespace Material3Expressive.Components;
 /// <summary>Material time entry content with application-bound minute-precision values.</summary>
 public class TimeInput : TemplatedControl
 {
+    /// <summary>Host-provided touch exploration state; prevents automatic advancement after hour digits.</summary>
+    public static readonly StyledProperty<bool> TouchExplorationEnabledProperty = TimePicker.TouchExplorationEnabledProperty.AddOwner<TimeInput>();
+    public bool TouchExplorationEnabled { get => GetValue(TouchExplorationEnabledProperty); set => SetValue(TouchExplorationEnabledProperty, value); }
     public static readonly StyledProperty<TimeOnly> SelectedTimeProperty = TimePicker.SelectedTimeProperty.AddOwner<TimeInput>();
     public static readonly StyledProperty<bool> Is24HourProperty = TimePicker.Is24HourProperty.AddOwner<TimeInput>();
     public static readonly StyledProperty<TimePickerLayout> LayoutProperty = TimePicker.LayoutProperty.AddOwner<TimeInput>();

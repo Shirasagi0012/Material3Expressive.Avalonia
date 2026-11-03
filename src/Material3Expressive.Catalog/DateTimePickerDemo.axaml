@@ -18,11 +18,11 @@
         <TextBlock Text="TimePicker · TimeInput · TimeScroll — shared valid value" FontSize="20" />
         <TextBlock Text="Keyboard: activate an hour/minute selector, use arrows to move around the dial, Enter/Space to choose, and Tab or Shift+Tab to leave. In 24-hour mode, arrows connect both rings." TextWrapping="Wrap" />
         <TextBlock Text="Pointer: tap a five-minute mark or drag to any minute. Choosing an hour advances after the selector animation; drag release advances immediately. Switch fields during the transition to try interruption." TextWrapping="Wrap" />
-        <CheckBox Name="TouchExploration" Content="Touch exploration enabled — keep the hour dial after selection" />
+        <CheckBox Name="TouchExploration" Content="Touch exploration enabled — keep the hour selected on the dial and during text entry" />
         <WrapPanel>
           <m3:TimePicker TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" Name="Dial" Layout="Vertical" Margin="0,0,32,0" />
           <StackPanel Spacing="24">
-            <m3:TimeInput Name="Input" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
+            <m3:TimeInput Name="Input" TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
             <m3:TimeScroll Name="Scroll" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
             <TextBlock Text="{Binding #Dial.SelectedTime}" />
             <TextBlock Text="{Binding #Input.IsInputValid, StringFormat='Input valid: {0}'}" />
@@ -30,9 +30,17 @@
         </WrapPanel>
         <TextBlock Text="Vibrant / horizontal / uncontained" FontSize="20" />
         <m3:TimePicker TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" Name="Vibrant" Variant="Vibrant" Layout="Horizontal" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
-        <m3:TimeInput Name="Uncontained" Variant="Vibrant" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}">
-          <m3:TimeInput.Toggle><Button Content="Input" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimeInput.Toggle>
+        <TextBlock Text="Use the side button to switch text / scroll entry. Only the selected text field is editable. Try an invalid value (99), then select the other field to inspect the retained draft." TextWrapping="Wrap" />
+        <m3:TimeInput Name="Uncontained" Variant="Vibrant" TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}">
+          <m3:TimeInput.ToggleTemplate><DataTemplate>
+            <m3:IconButton Symbol="Schedule" AutomationProperties.Name="Switch to scroll entry" ToolTip.Tip="Scroll entry" Click="ToggleEntryMode" />
+          </DataTemplate></m3:TimeInput.ToggleTemplate>
         </m3:TimeInput>
+        <m3:TimeScroll Name="UncontainedScroll" IsVisible="False" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}">
+          <m3:TimeScroll.ToggleTemplate><DataTemplate>
+            <m3:IconButton Symbol="Keyboard" AutomationProperties.Name="Switch to text entry" ToolTip.Tip="Text entry" Click="ToggleEntryMode" />
+          </DataTemplate></m3:TimeScroll.ToggleTemplate>
+        </m3:TimeScroll>
         <TextBlock Text="Avalonia native controls — original API and flyout behavior" FontSize="20" />
         <WrapPanel>
           <DatePicker Margin="0,0,24,0" />

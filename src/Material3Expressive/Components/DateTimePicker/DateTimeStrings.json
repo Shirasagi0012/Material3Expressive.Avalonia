@@ -49,7 +49,8 @@
     "TimeScrollDialogTitle": "Kies tyd",
     "TimeInputDialogTitle": "Voer tyd in",
     "TimePickerMinuteError": "Minuut moet 0-59 wees",
-    "TimePickerHourError": "Uur moet 1-12 wees"
+    "TimePickerHourError": "Uur moet 1-12 wees",
+    "TimePicker24HourError": "Uur moet 0-23 wees"
   },
   "am": {
     "DatePickerTitle": "ቀን ይምረጡ",
@@ -101,7 +102,8 @@
     "TimeScrollDialogTitle": "ጊዜ ምረጥ",
     "TimeInputDialogTitle": "ጊዜ ያስገቡ",
     "TimePickerMinuteError": "ደቂቃ ከ0–59 መሆን አለበት",
-    "TimePickerHourError": "ሰዓት ከ1–12 መሆን አለበት"
+    "TimePickerHourError": "ሰዓት ከ1–12 መሆን አለበት",
+    "TimePicker24HourError": "ሰዓት ከ0–23 መሆን አለበት"
   },
   "ar": {
     "DatePickerTitle": "اختيار تاريخ",
@@ -153,7 +155,8 @@
     "TimeScrollDialogTitle": "اختيار الوقت",
     "TimeInputDialogTitle": "إدخال الوقت",
     "TimePickerMinuteError": "الدقيقة: بين 0 و59",
-    "TimePickerHourError": "الساعة: بين 1 و12"
+    "TimePickerHourError": "الساعة: بين 1 و12",
+    "TimePicker24HourError": "الساعة: بين 0 و23"
   },
   "az": {
     "DatePickerTitle": "Tarix seçin",
@@ -205,7 +208,8 @@
     "TimeScrollDialogTitle": "Vaxt seçin",
     "TimeInputDialogTitle": "Vaxt daxil edin",
     "TimePickerMinuteError": "Dəqiqə 0-59 aralığında olmalıdır",
-    "TimePickerHourError": "Saat 1-12 aralığında olmalıdır"
+    "TimePickerHourError": "Saat 1-12 aralığında olmalıdır",
+    "TimePicker24HourError": "Saat 0-23 aralığında olmalıdır"
   },
   "be": {
     "DatePickerTitle": "Выберыце дату",
@@ -257,7 +261,8 @@
     "TimeScrollDialogTitle": "Выбар часу",
     "TimeInputDialogTitle": "Увядзіце час",
     "TimePickerMinuteError": "Укажыце ад 0 да 59 хв",
-    "TimePickerHourError": "Укажыце ад 1 да 12 гадз"
+    "TimePickerHourError": "Укажыце ад 1 да 12 гадз",
+    "TimePicker24HourError": "Укажыце ад 0 да 23 гадз"
   },
   "bg": {
     "DatePickerTitle": "Избиране на дата",
@@ -309,7 +314,8 @@
     "TimeScrollDialogTitle": "Избиране на час",
     "TimeInputDialogTitle": "Въвеждане на час",
     "TimePickerMinuteError": "Минута: От 0 до 59",
-    "TimePickerHourError": "Час: От 1 до 12"
+    "TimePickerHourError": "Час: От 1 до 12",
+    "TimePicker24HourError": "Час: От 0 до 23"
   },
   "bn": {
     "DatePickerTitle": "তারিখ বেছে নিন",
@@ -361,7 +367,8 @@
     "TimeScrollDialogTitle": "সময় বেছে নিন",
     "TimeInputDialogTitle": "সময় লিখুন",
     "TimePickerMinuteError": "মিনিট ০–৫৯-এর মধ্যে হতে হবে",
-    "TimePickerHourError": "ঘণ্টা ১–১২-এর মধ্যে হতে হবে"
+    "TimePickerHourError": "ঘণ্টা ১–১২-এর মধ্যে হতে হবে",
+    "TimePicker24HourError": "ঘণ্টা ০–২৩-এর মধ্যে হতে হবে"
   },
   "bs": {
     "DatePickerTitle": "Odabir datuma",
@@ -413,7 +420,8 @@
     "TimeScrollDialogTitle": "Odaberite vrijeme",
     "TimeInputDialogTitle": "Unesite vrijeme",
     "TimePickerMinuteError": "Minuta mora biti 0–59",
-    "TimePickerHourError": "Sat mora biti 1–12"
+    "TimePickerHourError": "Sat mora biti 1–12",
+    "TimePicker24HourError": "Sat mora biti 0–23"
   },
   "ca": {
     "DatePickerTitle": "Selecciona la data",
@@ -465,7 +473,8 @@
     "TimeScrollDialogTitle": "Selecciona l'hora",
     "TimeInputDialogTitle": "Introdueix l'hora",
     "TimePickerMinuteError": "El minut ha de ser 0-59",
-    "TimePickerHourError": "L'hora ha de ser 1-12"
+    "TimePickerHourError": "L'hora ha de ser 1-12",
+    "TimePicker24HourError": "L'hora ha de ser 0-23"
   },
   "cs": {
     "DatePickerTitle": "Výběr data",
@@ -517,7 +526,8 @@
     "TimeScrollDialogTitle": "Vyberte čas",
     "TimeInputDialogTitle": "Zadejte čas",
     "TimePickerMinuteError": "Minuta musí být 0–59",
-    "TimePickerHourError": "Hodina musí být 1–12"
+    "TimePickerHourError": "Hodina musí být 1–12",
+    "TimePicker24HourError": "Hodina musí být 0–23"
   },
   "da": {
     "DatePickerTitle": "Vælg dato",
@@ -569,7 +579,8 @@
     "TimeScrollDialogTitle": "Vælg tidspunkt",
     "TimeInputDialogTitle": "Angiv tidspunkt",
     "TimePickerMinuteError": "Minuttal skal være 0-59",
-    "TimePickerHourError": "Timetal skal være 1-12"
+    "TimePickerHourError": "Timetal skal være 1-12",
+    "TimePicker24HourError": "Timetal skal være 0-23"
   },
   "de": {
     "DatePickerTitle": "Datum auswählen",
@@ -621,7 +632,8 @@
     "TimeScrollDialogTitle": "Uhrzeit auswählen",
     "TimeInputDialogTitle": "Uhrzeit eingeben",
     "TimePickerMinuteError": "Zulässige Werte: 0–59",
-    "TimePickerHourError": "Zulässige Werte: 1–12"
+    "TimePickerHourError": "Zulässige Werte: 1–12",
+    "TimePicker24HourError": "Zulässige Werte: 0–23"
   },
   "el": {
     "DatePickerTitle": "Επιλογή ημερομηνίας",
@@ -673,7 +685,8 @@
     "TimeScrollDialogTitle": "Επιλογή ώρας",
     "TimeInputDialogTitle": "Εισαγωγή ώρας",
     "TimePickerMinuteError": "Τα λεπτά πρέπει να είναι μεταξύ 0–59",
-    "TimePickerHourError": "Η ώρα πρέπει να είναι μεταξύ 1–12"
+    "TimePickerHourError": "Η ώρα πρέπει να είναι μεταξύ 1–12",
+    "TimePicker24HourError": "Η ώρα πρέπει να είναι μεταξύ 0–23"
   },
   "en": {
     "DatePickerTitle": "Select date",
@@ -725,7 +738,8 @@
     "TimeScrollDialogTitle": "Select Time",
     "TimeInputDialogTitle": "Enter Time",
     "TimePickerMinuteError": "Minute must be 0–59",
-    "TimePickerHourError": "Hour must be 1–12"
+    "TimePickerHourError": "Hour must be 1–12",
+    "TimePicker24HourError": "Hour must be 0–23"
   },
   "enau": {
     "DatePickerTitle": "Select date",
@@ -777,7 +791,8 @@
     "TimeScrollDialogTitle": "Select time",
     "TimeInputDialogTitle": "Enter time",
     "TimePickerMinuteError": "Minute must be 0–59",
-    "TimePickerHourError": "Hour must be 1–12"
+    "TimePickerHourError": "Hour must be 1–12",
+    "TimePicker24HourError": "Hour must be 0–23"
   },
   "enca": {
     "DatePickerTitle": "Select date",
@@ -829,7 +844,8 @@
     "TimeScrollDialogTitle": "Select Time",
     "TimeInputDialogTitle": "Enter Time",
     "TimePickerMinuteError": "Minute must be 0–59",
-    "TimePickerHourError": "Hour must be 1–12"
+    "TimePickerHourError": "Hour must be 1–12",
+    "TimePicker24HourError": "Hour must be 0–23"
   },
   "engb": {
     "DatePickerTitle": "Select date",
@@ -881,7 +897,8 @@
     "TimeScrollDialogTitle": "Select time",
     "TimeInputDialogTitle": "Enter time",
     "TimePickerMinuteError": "Minute must be 0–59",
-    "TimePickerHourError": "Hour must be 1–12"
+    "TimePickerHourError": "Hour must be 1–12",
+    "TimePicker24HourError": "Hour must be 0–23"
   },
   "enin": {
     "DatePickerTitle": "Select date",
@@ -933,7 +950,8 @@
     "TimeScrollDialogTitle": "Select time",
     "TimeInputDialogTitle": "Enter time",
     "TimePickerMinuteError": "Minute must be 0–59",
-    "TimePickerHourError": "Hour must be 1–12"
+    "TimePickerHourError": "Hour must be 1–12",
+    "TimePicker24HourError": "Hour must be 0–23"
   },
   "es": {
     "DatePickerTitle": "Seleccionar fecha",
@@ -985,7 +1003,8 @@
     "TimeScrollDialogTitle": "Selecciona la hora",
     "TimeInputDialogTitle": "Introduce la hora",
     "TimePickerMinuteError": "Los minutos deben estar entre 0 y 59",
-    "TimePickerHourError": "La hora debe estar entre 1 y 12"
+    "TimePickerHourError": "La hora debe estar entre 1 y 12",
+    "TimePicker24HourError": "La hora debe estar entre 0 y 23"
   },
   "esus": {
     "DatePickerTitle": "Seleccionar fecha",
@@ -1037,7 +1056,8 @@
     "TimeScrollDialogTitle": "Selecciona la hora",
     "TimeInputDialogTitle": "Ingresa la hora",
     "TimePickerMinuteError": "Valor min.: entre 0 y 59",
-    "TimePickerHourError": "Valor hora: entre 1 y 12"
+    "TimePickerHourError": "Valor hora: entre 1 y 12",
+    "TimePicker24HourError": "Valor hora: entre 0 y 23"
   },
   "et": {
     "DatePickerTitle": "Valige kuupäev",
@@ -1089,7 +1109,8 @@
     "TimeScrollDialogTitle": "Valige aeg",
     "TimeInputDialogTitle": "Sisestage aeg",
     "TimePickerMinuteError": "Minutite vahemik on 0–59",
-    "TimePickerHourError": "Tundide vahemik on 1–12"
+    "TimePickerHourError": "Tundide vahemik on 1–12",
+    "TimePicker24HourError": "Tundide vahemik on 0–23"
   },
   "eu": {
     "DatePickerTitle": "Hautatu data bat",
@@ -1141,7 +1162,8 @@
     "TimeScrollDialogTitle": "Hautatu ordua",
     "TimeInputDialogTitle": "Idatzi ordua",
     "TimePickerMinuteError": "0-59 izan behar du",
-    "TimePickerHourError": "1-12 izan behar du"
+    "TimePickerHourError": "1-12 izan behar du",
+    "TimePicker24HourError": "0-23 izan behar du"
   },
   "fa": {
     "DatePickerTitle": "انتخاب تاریخ",
@@ -1193,7 +1215,8 @@
     "TimeScrollDialogTitle": "انتخاب کردن زمان",
     "TimeInputDialogTitle": "وارد کردن زمان",
     "TimePickerMinuteError": "‏مقدار مجاز دقیقه: ۰‎–۵۹",
-    "TimePickerHourError": "‏مقدار مجاز ساعت: ۱‎–۱۲"
+    "TimePickerHourError": "‏مقدار مجاز ساعت: ۱‎–۱۲",
+    "TimePicker24HourError": "‏مقدار مجاز ساعت: ۰‎–۲۳"
   },
   "fi": {
     "DatePickerTitle": "Valitse päivämäärä",
@@ -1245,7 +1268,8 @@
     "TimeScrollDialogTitle": "Valitse aika",
     "TimeInputDialogTitle": "Lisää aika",
     "TimePickerMinuteError": "Minuutin on oltava 0–59",
-    "TimePickerHourError": "Tunnin on oltava 1–12"
+    "TimePickerHourError": "Tunnin on oltava 1–12",
+    "TimePicker24HourError": "Tunnin on oltava 0–23"
   },
   "fr": {
     "DatePickerTitle": "Sélectionner une date",
@@ -1297,7 +1321,8 @@
     "TimeScrollDialogTitle": "Sélectionner une heure",
     "TimeInputDialogTitle": "Saisir l'heure",
     "TimePickerMinuteError": "Minute : entre 0 et 59",
-    "TimePickerHourError": "Heure : entre 1 et 12"
+    "TimePickerHourError": "Heure : entre 1 et 12",
+    "TimePicker24HourError": "Heure : entre 0 et 23"
   },
   "frca": {
     "DatePickerTitle": "Sélectionner une date",
@@ -1349,7 +1374,8 @@
     "TimeScrollDialogTitle": "Sélectionner l'heure",
     "TimeInputDialogTitle": "Saisir l'heure",
     "TimePickerMinuteError": "Minute entre 0 et 59",
-    "TimePickerHourError": "Heure entre 1 et 12"
+    "TimePickerHourError": "Heure entre 1 et 12",
+    "TimePicker24HourError": "Heure entre 0 et 23"
   },
   "gl": {
     "DatePickerTitle": "Selecciona a data",
@@ -1401,7 +1427,8 @@
     "TimeScrollDialogTitle": "Selecciona unha hora",
     "TimeInputDialogTitle": "Indicar a hora",
     "TimePickerMinuteError": "Valor dos minutos: 0-59",
-    "TimePickerHourError": "Valor da hora: 1-12"
+    "TimePickerHourError": "Valor da hora: 1-12",
+    "TimePicker24HourError": "Valor da hora: 0-23"
   },
   "gu": {
     "DatePickerTitle": "તારીખ પસંદ કરો",
@@ -1453,7 +1480,8 @@
     "TimeScrollDialogTitle": "સમય પસંદ કરો",
     "TimeInputDialogTitle": "સમય દાખલ કરો",
     "TimePickerMinuteError": "0–59 મિનિટ હોવી જરૂરી છે",
-    "TimePickerHourError": "1–12 કલાક હોવા જરૂરી છે"
+    "TimePickerHourError": "1–12 કલાક હોવા જરૂરી છે",
+    "TimePicker24HourError": "0–23 કલાક હોવા જરૂરી છે"
   },
   "hi": {
     "DatePickerTitle": "तारीख चुनें",
@@ -1505,7 +1533,8 @@
     "TimeScrollDialogTitle": "समय चुनें",
     "TimeInputDialogTitle": "समय डालें",
     "TimePickerMinuteError": "यह 0-59 मिनट के बीच हो",
-    "TimePickerHourError": "यह 1-12 घंटे के बीच हो"
+    "TimePickerHourError": "यह 1-12 घंटे के बीच हो",
+    "TimePicker24HourError": "यह 0-23 घंटे के बीच हो"
   },
   "hr": {
     "DatePickerTitle": "Odaberite datum",
@@ -1557,7 +1586,8 @@
     "TimeScrollDialogTitle": "Odaberite vrijeme",
     "TimeInputDialogTitle": "Unesite vrijeme",
     "TimePickerMinuteError": "Minuta mora biti 0 – 59",
-    "TimePickerHourError": "Sat mora biti 1 – 12"
+    "TimePickerHourError": "Sat mora biti 1 – 12",
+    "TimePicker24HourError": "Sat mora biti 0 – 23"
   },
   "hu": {
     "DatePickerTitle": "Dátum kiválasztása",
@@ -1609,7 +1639,8 @@
     "TimeScrollDialogTitle": "Időpont kiválasztása",
     "TimeInputDialogTitle": "Időpont megadása",
     "TimePickerMinuteError": "A perc 0–59 lehet",
-    "TimePickerHourError": "Az óra 1–12 lehet"
+    "TimePickerHourError": "Az óra 1–12 lehet",
+    "TimePicker24HourError": "Az óra 0–23 lehet"
   },
   "hy": {
     "DatePickerTitle": "Ընտրեք ամսաթիվը",
@@ -1661,7 +1692,8 @@
     "TimeScrollDialogTitle": "Ընտրեք ժամը",
     "TimeInputDialogTitle": "Մուտքագրեք ժամը",
     "TimePickerMinuteError": "Րոպեն պետք է լինի 0–59",
-    "TimePickerHourError": "Ժամը պետք է լինի 1–12"
+    "TimePickerHourError": "Ժամը պետք է լինի 1–12",
+    "TimePicker24HourError": "Ժամը պետք է լինի 0–23"
   },
   "it": {
     "DatePickerTitle": "Seleziona data",
@@ -1713,7 +1745,8 @@
     "TimeScrollDialogTitle": "Seleziona l'ora",
     "TimeInputDialogTitle": "Inserisci l'ora",
     "TimePickerMinuteError": "Il minuto deve essere 0-59",
-    "TimePickerHourError": "L'ora deve essere 1-12"
+    "TimePickerHourError": "L'ora deve essere 1-12",
+    "TimePicker24HourError": "L'ora deve essere 0-23"
   },
   "iw": {
     "DatePickerTitle": "בחירת תאריך",
@@ -1765,7 +1798,8 @@
     "TimeScrollDialogTitle": "בחירת שעה",
     "TimeInputDialogTitle": "הזנת שעה",
     "TimePickerMinuteError": "הדקה חייבת להיות 0 עד 59",
-    "TimePickerHourError": "השעה חייבת להיות 1 עד 12"
+    "TimePickerHourError": "השעה חייבת להיות 1 עד 12",
+    "TimePicker24HourError": "השעה חייבת להיות 0 עד 23"
   },
   "ja": {
     "DatePickerTitle": "日付の選択",
@@ -1817,7 +1851,8 @@
     "TimeScrollDialogTitle": "時間の選択",
     "TimeInputDialogTitle": "時刻の入力",
     "TimePickerMinuteError": "分は 0～59 の範囲で指定してください",
-    "TimePickerHourError": "時間は 1～12 の範囲で指定してください"
+    "TimePickerHourError": "時間は 1～12 の範囲で指定してください",
+    "TimePicker24HourError": "時間は 0～23 の範囲で指定してください"
   },
   "ka": {
     "DatePickerTitle": "თარიღის არჩევა",
@@ -1869,7 +1904,8 @@
     "TimeScrollDialogTitle": "აირჩიეთ დრო",
     "TimeInputDialogTitle": "შეიყვანეთ დრო",
     "TimePickerMinuteError": "წუთი უნდა იყოს 0-59",
-    "TimePickerHourError": "საათი უნდა იყოს 1-12"
+    "TimePickerHourError": "საათი უნდა იყოს 1-12",
+    "TimePicker24HourError": "საათი უნდა იყოს 0-23"
   },
   "kk": {
     "DatePickerTitle": "Күн таңдау",
@@ -1921,7 +1957,8 @@
     "TimeScrollDialogTitle": "Уақытты таңдаңыз",
     "TimeInputDialogTitle": "Уақытты енгізіңіз",
     "TimePickerMinuteError": "Минут 0–59 болуы керек.",
-    "TimePickerHourError": "Сағат 1–12 болуы керек."
+    "TimePickerHourError": "Сағат 1–12 болуы керек.",
+    "TimePicker24HourError": "Сағат 0–23 болуы керек."
   },
   "km": {
     "DatePickerTitle": "ជ្រើសរើស​កាលបរិច្ឆេទ",
@@ -1973,7 +2010,8 @@
     "TimeScrollDialogTitle": "ជ្រើសរើស​ពេលវេលា",
     "TimeInputDialogTitle": "បញ្ចូលម៉ោង",
     "TimePickerMinuteError": "នាទីត្រូវតែពី 0–59",
-    "TimePickerHourError": "ម៉ោងត្រូវតែពី 1–12"
+    "TimePickerHourError": "ម៉ោងត្រូវតែពី 1–12",
+    "TimePicker24HourError": "ម៉ោងត្រូវតែពី 0–23"
   },
   "kn": {
     "DatePickerTitle": "ದಿನಾಂಕ ಆಯ್ಕೆಮಾಡಿ",
@@ -2025,7 +2063,8 @@
     "TimeScrollDialogTitle": "ಸಮಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ",
     "TimeInputDialogTitle": "ಸಮಯವನ್ನು ನಮೂದಿಸಿ",
     "TimePickerMinuteError": "ನಿಮಿಷವು 0–59 ಆಗಿರಬೇಕು",
-    "TimePickerHourError": "ಗಂಟೆಯು 1–12 ಆಗಿರಬೇಕು"
+    "TimePickerHourError": "ಗಂಟೆಯು 1–12 ಆಗಿರಬೇಕು",
+    "TimePicker24HourError": "ಗಂಟೆಯು 0–23 ಆಗಿರಬೇಕು"
   },
   "ko": {
     "DatePickerTitle": "날짜 선택",
@@ -2077,7 +2116,8 @@
     "TimeScrollDialogTitle": "시간 선택",
     "TimeInputDialogTitle": "시간 입력",
     "TimePickerMinuteError": "분은 0~59여야 함",
-    "TimePickerHourError": "시간은 1~12여야 함"
+    "TimePickerHourError": "시간은 1~12여야 함",
+    "TimePicker24HourError": "시간은 0~23이어야 함"
   },
   "ky": {
     "DatePickerTitle": "Күндү тандоо",
@@ -2129,7 +2169,8 @@
     "TimeScrollDialogTitle": "Убакыт тандаңыз",
     "TimeInputDialogTitle": "Убакытты киргизиңиз",
     "TimePickerMinuteError": "Мүнөт 0–59 болушу керек",
-    "TimePickerHourError": "Саат 1–12 болушу керек"
+    "TimePickerHourError": "Саат 1–12 болушу керек",
+    "TimePicker24HourError": "Саат 0–23 болушу керек"
   },
   "lo": {
     "DatePickerTitle": "ເລືອກວັນທີ",
@@ -2181,7 +2222,8 @@
     "TimeScrollDialogTitle": "ເລືອກເວລາ",
     "TimeInputDialogTitle": "ໃສ່ເວລາ",
     "TimePickerMinuteError": "ນາທີຕ້ອງເປັນ 0–59",
-    "TimePickerHourError": "ຊົ່ວໂມງຕ້ອງເປັນ 1–12"
+    "TimePickerHourError": "ຊົ່ວໂມງຕ້ອງເປັນ 1–12",
+    "TimePicker24HourError": "ຊົ່ວໂມງຕ້ອງເປັນ 0–23"
   },
   "lt": {
     "DatePickerTitle": "Pasirinkite datą",
@@ -2233,7 +2275,8 @@
     "TimeScrollDialogTitle": "Pasirinkite laiką",
     "TimeInputDialogTitle": "Įveskite laiką",
     "TimePickerMinuteError": "Minutė turi būti 0–59",
-    "TimePickerHourError": "Valanda turi būti 1–12"
+    "TimePickerHourError": "Valanda turi būti 1–12",
+    "TimePicker24HourError": "Valanda turi būti 0–23"
   },
   "lv": {
     "DatePickerTitle": "Atlasīt datumu",
@@ -2285,7 +2328,8 @@
     "TimeScrollDialogTitle": "Laika atlase",
     "TimeInputDialogTitle": "Laika ievade",
     "TimePickerMinuteError": "Minūtes vērtība: 0–59",
-    "TimePickerHourError": "Stundas vērtība: 1–12"
+    "TimePickerHourError": "Stundas vērtība: 1–12",
+    "TimePicker24HourError": "Stundas vērtība: 0–23"
   },
   "mk": {
     "DatePickerTitle": "Изберете датум",
@@ -2337,7 +2381,8 @@
     "TimeScrollDialogTitle": "Изберете време",
     "TimeInputDialogTitle": "Внесете време",
     "TimePickerMinuteError": "Опсег на мин.: 0 – 59",
-    "TimePickerHourError": "Опсег на часот: 1 – 12"
+    "TimePickerHourError": "Опсег на часот: 1 – 12",
+    "TimePicker24HourError": "Опсег на часот: 0 – 23"
   },
   "ml": {
     "DatePickerTitle": "തീയതി തിരഞ്ഞെടുക്കുക",
@@ -2389,7 +2434,8 @@
     "TimeScrollDialogTitle": "സമയം തിരഞ്ഞെടുക്കുക",
     "TimeInputDialogTitle": "സമയം നൽകുക",
     "TimePickerMinuteError": "മിനിറ്റ് 0–59 ആയിരിക്കണം",
-    "TimePickerHourError": "മണിക്കൂർ 1–12 ആയിരിക്കണം"
+    "TimePickerHourError": "മണിക്കൂർ 1–12 ആയിരിക്കണം",
+    "TimePicker24HourError": "മണിക്കൂർ 0–23 ആയിരിക്കണം"
   },
   "mn": {
     "DatePickerTitle": "Огноо сонгох",
@@ -2441,7 +2487,8 @@
     "TimeScrollDialogTitle": "Цаг сонгох",
     "TimeInputDialogTitle": "Цаг оруулах",
     "TimePickerMinuteError": "Минут нь 0–59 байх ёстой",
-    "TimePickerHourError": "Цаг нь 1–12 байх ёстой"
+    "TimePickerHourError": "Цаг нь 1–12 байх ёстой",
+    "TimePicker24HourError": "Цаг нь 0–23 байх ёстой"
   },
   "mr": {
     "DatePickerTitle": "तारीख निवडा",
@@ -2493,7 +2540,8 @@
     "TimeScrollDialogTitle": "वेळ निवडा",
     "TimeInputDialogTitle": "वेळ एंटर करा",
     "TimePickerMinuteError": "मिनिट ० ते ५९ मधील असावे",
-    "TimePickerHourError": "तास १ ते १२ मधील असावा"
+    "TimePickerHourError": "तास १ ते १२ मधील असावा",
+    "TimePicker24HourError": "तास ० ते २३ मधील असावा"
   },
   "ms": {
     "DatePickerTitle": "Pilih tarikh",
@@ -2545,7 +2593,8 @@
     "TimeScrollDialogTitle": "Pilih Masa",
     "TimeInputDialogTitle": "Masukkan Masa",
     "TimePickerMinuteError": "Minit harus antara 0–59",
-    "TimePickerHourError": "Jam mestilah antara 1–12"
+    "TimePickerHourError": "Jam mestilah antara 1–12",
+    "TimePicker24HourError": "Jam mestilah antara 0–23"
   },
   "my": {
     "DatePickerTitle": "ရက်စွဲရွေးရန်",
@@ -2597,7 +2646,8 @@
     "TimeScrollDialogTitle": "အချိန်ရွေးရန်",
     "TimeInputDialogTitle": "အချိန်ထည့်ပါ",
     "TimePickerMinuteError": "မိနစ်သည် ၀–၅၉ ဖြစ်ရမည်",
-    "TimePickerHourError": "နာရီသည် ၁–၁၂ ဖြစ်ရမည်"
+    "TimePickerHourError": "နာရီသည် ၁–၁၂ ဖြစ်ရမည်",
+    "TimePicker24HourError": "နာရီသည် ၀–၂၃ ဖြစ်ရမည်"
   },
   "nb": {
     "DatePickerTitle": "Velg dato",
@@ -2649,7 +2699,8 @@
     "TimeScrollDialogTitle": "Velg et klokkeslett",
     "TimeInputDialogTitle": "Angi et klokkeslett",
     "TimePickerMinuteError": "Minuttet må være 0–59",
-    "TimePickerHourError": "Timen må være 1–12"
+    "TimePickerHourError": "Timen må være 1–12",
+    "TimePicker24HourError": "Timen må være 0–23"
   },
   "ne": {
     "DatePickerTitle": "मिति चयन गर्नुहोस्",
@@ -2701,7 +2752,8 @@
     "TimeScrollDialogTitle": "समय चयन गर्नुहोस्",
     "TimeInputDialogTitle": "समय हाल्नुहोस्",
     "TimePickerMinuteError": "मिनेट ० र ५९ का बिचमा हुनु पर्छ",
-    "TimePickerHourError": "घण्टा १ र १२ का बिचमा हुनु पर्छ"
+    "TimePickerHourError": "घण्टा १ र १२ का बिचमा हुनु पर्छ",
+    "TimePicker24HourError": "घण्टा ० र २३ का बिचमा हुनु पर्छ"
   },
   "nl": {
     "DatePickerTitle": "Datum selecteren",
@@ -2753,7 +2805,8 @@
     "TimeScrollDialogTitle": "Tijd selecteren",
     "TimeInputDialogTitle": "Tijd invoeren",
     "TimePickerMinuteError": "Minuut moet 0 - 59 zijn",
-    "TimePickerHourError": "Uur moet 1 - 12 zijn"
+    "TimePickerHourError": "Uur moet 1 - 12 zijn",
+    "TimePicker24HourError": "Uur moet 0 - 23 zijn"
   },
   "or": {
     "DatePickerTitle": "ତାରିଖ ଚୟନ କରନ୍ତୁ",
@@ -2805,7 +2858,8 @@
     "TimeScrollDialogTitle": "ସବୁ ଚୟନ କରନ୍ତୁ",
     "TimeInputDialogTitle": "ସମୟ ଲେଖନ୍ତୁ",
     "TimePickerMinuteError": "ମିନିଟ 0–59 ହେବା ଆବଶ୍ୟକ",
-    "TimePickerHourError": "ଘଣ୍ଟା 1–12 ହେବା ଆବଶ୍ୟକ"
+    "TimePickerHourError": "ଘଣ୍ଟା 1–12 ହେବା ଆବଶ୍ୟକ",
+    "TimePicker24HourError": "ଘଣ୍ଟା 0–23 ହେବା ଆବଶ୍ୟକ"
   },
   "pa": {
     "DatePickerTitle": "ਤਾਰੀਖ ਚੁਣੋ",
@@ -2857,7 +2911,8 @@
     "TimeScrollDialogTitle": "ਸਮਾਂ ਚੁਣੋ",
     "TimeInputDialogTitle": "ਸਮਾਂ ਦਾਖਲ ਕਰੋ",
     "TimePickerMinuteError": "ਮਿੰਟ 0–59 ਹੋਣੇ ਲਾਜ਼ਮੀ ਹਨ",
-    "TimePickerHourError": "ਘੰਟੇ 1–12 ਹੋਣੇ ਲਾਜ਼ਮੀ ਹਨ"
+    "TimePickerHourError": "ਘੰਟੇ 1–12 ਹੋਣੇ ਲਾਜ਼ਮੀ ਹਨ",
+    "TimePicker24HourError": "ਘੰਟੇ 0–23 ਹੋਣੇ ਲਾਜ਼ਮੀ ਹਨ"
   },
   "pl": {
     "DatePickerTitle": "Wybierz datę",
@@ -2909,7 +2964,8 @@
     "TimeScrollDialogTitle": "Wybierz godzinę",
     "TimeInputDialogTitle": "Wpisz godzinę",
     "TimePickerMinuteError": "Zakres minut to 0–59",
-    "TimePickerHourError": "Zakres godzin to 1–12"
+    "TimePickerHourError": "Zakres godzin to 1–12",
+    "TimePicker24HourError": "Zakres godzin to 0–23"
   },
   "pt": {
     "DatePickerTitle": "Selecionar data",
@@ -2961,7 +3017,8 @@
     "TimeScrollDialogTitle": "Selecionar horário",
     "TimeInputDialogTitle": "Insira a hora",
     "TimePickerMinuteError": "Selecione de 0 a 59min",
-    "TimePickerHourError": "Selecione de 1 a 12h"
+    "TimePickerHourError": "Selecione de 1 a 12h",
+    "TimePicker24HourError": "Selecione de 0 a 23h"
   },
   "ptbr": {
     "DatePickerTitle": "Selecionar data",
@@ -3013,7 +3070,8 @@
     "TimeScrollDialogTitle": "Selecionar horário",
     "TimeInputDialogTitle": "Insira a hora",
     "TimePickerMinuteError": "Selecione de 0 a 59min",
-    "TimePickerHourError": "Selecione de 1 a 12h"
+    "TimePickerHourError": "Selecione de 1 a 12h",
+    "TimePicker24HourError": "Selecione de 0 a 23h"
   },
   "ptpt": {
     "DatePickerTitle": "Selecione uma data",
@@ -3065,7 +3123,8 @@
     "TimeScrollDialogTitle": "Selecione uma hora",
     "TimeInputDialogTitle": "Introduza uma hora",
     "TimePickerMinuteError": "O minuto tem de ser 0-59",
-    "TimePickerHourError": "A hora tem de ser 1-12"
+    "TimePickerHourError": "A hora tem de ser 1-12",
+    "TimePicker24HourError": "A hora tem de ser 0-23"
   },
   "ro": {
     "DatePickerTitle": "Selectează data",
@@ -3117,7 +3176,8 @@
     "TimeScrollDialogTitle": "Selectează ora",
     "TimeInputDialogTitle": "Introdu ora",
     "TimePickerMinuteError": "Minut: între 0 și 59",
-    "TimePickerHourError": "Oră: între 1 și 12"
+    "TimePickerHourError": "Oră: între 1 și 12",
+    "TimePicker24HourError": "Oră: între 0 și 23"
   },
   "ru": {
     "DatePickerTitle": "Выберите дату",
@@ -3169,7 +3229,8 @@
     "TimeScrollDialogTitle": "Выберите время",
     "TimeInputDialogTitle": "Укажите время",
     "TimePickerMinuteError": "Укажите от 0 до 59 мин.",
-    "TimePickerHourError": "Укажите от 1 до 12 ч."
+    "TimePickerHourError": "Укажите от 1 до 12 ч.",
+    "TimePicker24HourError": "Укажите от 0 до 23 ч."
   },
   "si": {
     "DatePickerTitle": "දිනය තෝරන්න",
@@ -3221,7 +3282,8 @@
     "TimeScrollDialogTitle": "වේලාව තෝරන්න",
     "TimeInputDialogTitle": "වේලාව ඇතුළු කරන්න",
     "TimePickerMinuteError": "මිනිත්තුව 0–59 විය යුතු යි",
-    "TimePickerHourError": "පැය 1–12 විය යුතු යි"
+    "TimePickerHourError": "පැය 1–12 විය යුතු යි",
+    "TimePicker24HourError": "පැය 0–23 විය යුතු යි"
   },
   "sk": {
     "DatePickerTitle": "Vybrať dátum",
@@ -3273,7 +3335,8 @@
     "TimeScrollDialogTitle": "Výber času",
     "TimeInputDialogTitle": "Zadajte čas",
     "TimePickerMinuteError": "Povinný rozsah min: 0–59",
-    "TimePickerHourError": "Povinný rozsah h: 1 – 12"
+    "TimePickerHourError": "Povinný rozsah h: 1 – 12",
+    "TimePicker24HourError": "Povinný rozsah h: 0 – 23"
   },
   "sl": {
     "DatePickerTitle": "Izbira datuma",
@@ -3325,7 +3388,8 @@
     "TimeScrollDialogTitle": "Izbira ure",
     "TimeInputDialogTitle": "Vnesite uro",
     "TimePickerMinuteError": "Minuta mora biti 0–59",
-    "TimePickerHourError": "Ura mora biti 1–12"
+    "TimePickerHourError": "Ura mora biti 1–12",
+    "TimePicker24HourError": "Ura mora biti 0–23"
   },
   "sq": {
     "DatePickerTitle": "Zgjidh datën",
@@ -3377,7 +3441,8 @@
     "TimeScrollDialogTitle": "Zgjidh orën",
     "TimeInputDialogTitle": "Fut orën",
     "TimePickerMinuteError": "Min. duhet të jetë 0-59",
-    "TimePickerHourError": "Ora duhet të jetë 1-12"
+    "TimePickerHourError": "Ora duhet të jetë 1-12",
+    "TimePicker24HourError": "Ora duhet të jetë 0-23"
   },
   "sr": {
     "DatePickerTitle": "Изаберите датум",
@@ -3429,7 +3494,8 @@
     "TimeScrollDialogTitle": "Изаберите време",
     "TimeInputDialogTitle": "Унесите време",
     "TimePickerMinuteError": "Минут мора да буде 0–59",
-    "TimePickerHourError": "Сат мора да буде 1–12"
+    "TimePickerHourError": "Сат мора да буде 1–12",
+    "TimePicker24HourError": "Сат мора да буде 0–23"
   },
   "sv": {
     "DatePickerTitle": "Välj datum",
@@ -3481,7 +3547,8 @@
     "TimeScrollDialogTitle": "Välj tid",
     "TimeInputDialogTitle": "Ange tid",
     "TimePickerMinuteError": "Minuten måste vara 0–59",
-    "TimePickerHourError": "Timmen måste vara 1–12"
+    "TimePickerHourError": "Timmen måste vara 1–12",
+    "TimePicker24HourError": "Timmen måste vara 0–23"
   },
   "sw": {
     "DatePickerTitle": "Chagua tarehe",
@@ -3533,7 +3600,8 @@
     "TimeScrollDialogTitle": "Teua Muda",
     "TimeInputDialogTitle": "Weka Muda",
     "TimePickerMinuteError": "Sharti iwe dakika 0–59",
-    "TimePickerHourError": "Ni sharti iwe saa 1–12"
+    "TimePickerHourError": "Ni sharti iwe saa 1–12",
+    "TimePicker24HourError": "Ni sharti iwe saa 0–23"
   },
   "ta": {
     "DatePickerTitle": "தேதியைத் தேர்வுசெய்க",
@@ -3585,7 +3653,8 @@
     "TimeScrollDialogTitle": "நேரத்தைத் தேர்ந்தெடுங்கள்",
     "TimeInputDialogTitle": "நேரத்தை டைப் செய்யுங்கள்",
     "TimePickerMinuteError": "0–59 நிமிடங்கள்",
-    "TimePickerHourError": "1–12 மணிநேரம்"
+    "TimePickerHourError": "1–12 மணிநேரம்",
+    "TimePicker24HourError": "0–23 மணிநேரம்"
   },
   "te": {
     "DatePickerTitle": "తేదీని ఎంచుకోండి",
@@ -3637,7 +3706,8 @@
     "TimeScrollDialogTitle": "టైమ్‌ను సెలెక్ట్ చేయండి",
     "TimeInputDialogTitle": "సమయాన్ని ఎంటర్ చేయండి",
     "TimePickerMinuteError": "నిమి. 0–59 మధ్య ఉండాలి",
-    "TimePickerHourError": "గంటలు 1–12 మధ్య ఉండాలి"
+    "TimePickerHourError": "గంటలు 1–12 మధ్య ఉండాలి",
+    "TimePicker24HourError": "గంటలు 0–23 మధ్య ఉండాలి"
   },
   "th": {
     "DatePickerTitle": "เลือกวันที่",
@@ -3689,7 +3759,8 @@
     "TimeScrollDialogTitle": "เลือกเวลา",
     "TimeInputDialogTitle": "ป้อนเวลา",
     "TimePickerMinuteError": "นาทีต้องเป็น 0-59",
-    "TimePickerHourError": "ชั่วโมงต้องเป็น 1-12"
+    "TimePickerHourError": "ชั่วโมงต้องเป็น 1-12",
+    "TimePicker24HourError": "ชั่วโมงต้องเป็น 0-23"
   },
   "tl": {
     "DatePickerTitle": "Pumili ng petsa",
@@ -3741,7 +3812,8 @@
     "TimeScrollDialogTitle": "Pumili ng Oras",
     "TimeInputDialogTitle": "Maglagay ng Oras",
     "TimePickerMinuteError": "Dapat 0–59 ang minuto",
-    "TimePickerHourError": "Dapat 1–12 ang oras"
+    "TimePickerHourError": "Dapat 1–12 ang oras",
+    "TimePicker24HourError": "Dapat 0–23 ang oras"
   },
   "tr": {
     "DatePickerTitle": "Tarih seç",
@@ -3793,7 +3865,8 @@
     "TimeScrollDialogTitle": "Saat Seçin",
     "TimeInputDialogTitle": "Saat Girin",
     "TimePickerMinuteError": "Dakika 0-59 arasında olmalıdır",
-    "TimePickerHourError": "Saat 1-12 arasında olmalıdır"
+    "TimePickerHourError": "Saat 1-12 arasında olmalıdır",
+    "TimePicker24HourError": "Saat 0-23 arasında olmalıdır"
   },
   "uk": {
     "DatePickerTitle": "Виберіть дату",
@@ -3845,7 +3918,8 @@
     "TimeScrollDialogTitle": "Виберіть час",
     "TimeInputDialogTitle": "Введіть час",
     "TimePickerMinuteError": "Укажіть від 0 до 59 хв",
-    "TimePickerHourError": "Укажіть від 1 до 12 год"
+    "TimePickerHourError": "Укажіть від 1 до 12 год",
+    "TimePicker24HourError": "Укажіть від 0 до 23 год"
   },
   "ur": {
     "DatePickerTitle": "تاریخ منتخب کریں",
@@ -3897,7 +3971,8 @@
     "TimeScrollDialogTitle": "وقت منتخب کریں",
     "TimeInputDialogTitle": "وقت درج کریں",
     "TimePickerMinuteError": "‏منٹ ‎0-59 ہونا چاہیے",
-    "TimePickerHourError": "‏گھنٹہ ‎1-12 ہونا چاہیے"
+    "TimePickerHourError": "‏گھنٹہ ‎1-12 ہونا چاہیے",
+    "TimePicker24HourError": "‏گھنٹہ ‎0-23 ہونا چاہیے"
   },
   "uz": {
     "DatePickerTitle": "Sanani tanlang",
@@ -3949,7 +4024,8 @@
     "TimeScrollDialogTitle": "Vaqtni tanlang",
     "TimeInputDialogTitle": "Vaqtni kiriting",
     "TimePickerMinuteError": "Daqiqa 0–59 boʻlsin",
-    "TimePickerHourError": "Soat 1–12 boʻlsin"
+    "TimePickerHourError": "Soat 1–12 boʻlsin",
+    "TimePicker24HourError": "Soat 0–23 boʻlsin"
   },
   "vi": {
     "DatePickerTitle": "Chọn ngày",
@@ -4001,7 +4077,8 @@
     "TimeScrollDialogTitle": "Chọn thời gian",
     "TimeInputDialogTitle": "Nhập thời gian",
     "TimePickerMinuteError": "Số phút phải từ 0 đến 59",
-    "TimePickerHourError": "Số giờ phải từ 1 đến 12"
+    "TimePickerHourError": "Số giờ phải từ 1 đến 12",
+    "TimePicker24HourError": "Số giờ phải từ 0 đến 23"
   },
   "zhcn": {
     "DatePickerTitle": "选择日期",
@@ -4053,7 +4130,8 @@
     "TimeScrollDialogTitle": "选择时间",
     "TimeInputDialogTitle": "输入时间",
     "TimePickerMinuteError": "分钟值必须介于 0 到 59 间",
-    "TimePickerHourError": "小时值必须介于 1 到 12 间"
+    "TimePickerHourError": "小时值必须介于 1 到 12 间",
+    "TimePicker24HourError": "小时值必须介于 0 到 23 间"
   },
   "zhhk": {
     "DatePickerTitle": "選取日期",
@@ -4105,7 +4183,8 @@
     "TimeScrollDialogTitle": "選取時間",
     "TimeInputDialogTitle": "輸入時間",
     "TimePickerMinuteError": "分鐘必須介乎 0 至 59",
-    "TimePickerHourError": "小時必須介乎 1 至 12"
+    "TimePickerHourError": "小時必須介乎 1 至 12",
+    "TimePicker24HourError": "小時必須介乎 0 至 23"
   },
   "zhtw": {
     "DatePickerTitle": "選取日期",
@@ -4157,7 +4236,8 @@
     "TimeScrollDialogTitle": "選取時間",
     "TimeInputDialogTitle": "輸入時間",
     "TimePickerMinuteError": "分鐘值須介於 0 至 59 之間",
-    "TimePickerHourError": "小時值須介於 1 至 12 之間"
+    "TimePickerHourError": "小時值須介於 1 至 12 之間",
+    "TimePicker24HourError": "小時值須介於 0 至 23 之間"
   },
   "zu": {
     "DatePickerTitle": "Khetha usuku",
@@ -4209,6 +4289,7 @@
     "TimeScrollDialogTitle": "Khetha Isikhathi",
     "TimeInputDialogTitle": "Faka Isikhathi",
     "TimePickerMinuteError": "Umzuzu ube ngu-0–59",
-    "TimePickerHourError": "Ihora libe ngu-1–12"
+    "TimePickerHourError": "Ihora libe ngu-1–12",
+    "TimePicker24HourError": "Ihora libe ngu-0–23"
   }
 }

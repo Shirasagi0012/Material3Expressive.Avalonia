@@ -15,6 +15,7 @@
 | `TimeScroll` | [TimeScroll.cs](TimeScroll.cs)，列用 Avalonia `DateTimePickerPanel` |
 | `TimePickerTokens`、`TimeInputTokens` | [TimePickerTokenSource.cs](TimePickerTokenSource.cs)、[TimeInputTokenSource.cs](TimeInputTokenSource.cs) |
 | 布局、变体、当前字段 | [TimePickerOptions.cs](TimePickerOptions.cs) |
+| `SideControlColumn` / `SideControlItem` | [TimeSideControlLayout.cs](TimeSideControlLayout.cs)、`MaterialTimePeriodTheme.side-control` |
 
 三个控件共用 `TimeEntryController`，但各自持有一份。公开值是 `TimeOnly` 和 `Is24Hour`，没有可在控件之间传递的 `TimePickerState`。
 时间输入字段在派生 TextField 主题中设置 `MaterialText.Style`：Standard 使用 TimeInput 的 DisplayMedium，Vibrant 使用 DisplayLarge，并由原生继承传给 TextPresenter。旧 `DefaultStyle` 会被基础 TextField 的 BodyLarge `Style` 覆盖，不用于这两个字段。
@@ -64,6 +65,16 @@ Vibrant 使用宿主竖向且 24 小时的 132dp 分支，否则 100dp；这是 
 
 `TimeScroll` 的小时列在 12 小时模式是 1 到 12 且循环，24 小时模式是 0 到 23。分钟列是 0 到 59。
 12 小时的 12 写回 0 或 12，取决于当前是 AM 还是 PM。
+初始化原生滚动承载前同时设置面板的 SelectedValue 和 ScrollViewer.Offset；否则 ScrollContentPresenter 的零偏移会覆盖初始有效时间。原生滚动适配的范围不变。
+
+`TimePickerTextField` 保留编辑器实例与草稿，只显示当前字段；另一字段使用 TimeSelector 按钮。选择变更在视觉树附着后请求焦点，分离后的延迟请求不再抢占焦点。
+输入路径保留 `timeInputOnChange` 的解析顺序、三字符且光标位于 1 时的覆盖分支、前导零、无效草稿、拒绝替换时的旧选区和有效小时自动推进。
+Kotlin/JVM 接受的 Unicode 十进制数字先按数字值解析，编辑器仍保留原文；负数选择器按包含符号的最小两字符宽度格式化。
+小时末尾数字键沿用 `shouldSwitchFocusToMinute`；触摸探索只抑制输入值变化触发的自动推进，不拦截显式选择、Enter 或该末尾数字键分支。
+`SupportingText` 按 Standard / Vibrant 与合法性显示，保留 7dp 上间距和至少两行；有效提示排除内容自动化，错误为 polite live region。
+24 小时错误文案补入现有本地化表，逐语言取自固定 Core 提交；不改既有翻译。原生 TextBox 的 IME、撤销栈及光标绘制仍由 Avalonia 承载。
+光标画笔按上游保留 Primary 色（包括错误态）及上下各 10% 的透明区，动态跟随消费位置的颜色资源；原生文本布局和闪烁时钟没有替换。
+普通/输入数字选择器通过内部 `TimeSelectorButton` 提供 RadioButton role 与受控 SelectionItem，Select 走同一个原生 Invoke 路径，不另写时间值。
 
 ## 已确认的适配
 
@@ -75,9 +86,26 @@ Vibrant 使用宿主竖向且 24 小时的 132dp 分支，否则 100dp；这是 
 主题基于现有 FilledToggleButton，静止 Circle、按压/选中 12dp，复用 FastSpatial 形变、反馈与按压 collector；
 选中标签使用 Bold。保留 Invoke，同时提供 Toggle/selected 自动化状态，未新增公共交互框架。
 标准间距 4dp；Vibrant 横向 16dp、纵向 8dp 独立消费组件 Token。原生 Enter/Space 激活沿用既有按钮约定。横向时段使用 LeftToRight 放置，保留上游 absolute place 的 RTL 顺序。
-上游无容器 SideControlColumn 的 40dp 视觉/48dp 命中布局尚未补齐，此处不将它记作普通 contained toggle 的同一布局。
+无容器 SideControlColumn 由内部 Panel 保留固定 48dp 子项分配、整数物理像素居中和三个子项时额外 3dp 偏移。AM/PM 实际视觉为 40dp，鼠标命中不扩展到外侧空白；24 小时仅居中模式内容。
+Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140dp Token 保持动态绑定，普通 contained toggle 的布局独立保留。
+输入 Standard 的 `PeriodSelectorSpacing` 为 4dp；Vibrant 使用新增 `VibrantPeriodSelectorSpacing`（8dp），滚动列的 `PeriodSelectorSpacing` 也为 8dp。对应 120dp 字段的两个普通时段按钮各 56dp；修改资源仍原位更新，不清除草稿。
 
 ## 尚未实现或未验证
+
+- 新增 `time-picker-side-control` 双端场景覆盖 12/24 小时、RTL、明暗、模板模式内容、按压、外缘鼠标命中及移除/恢复。
+  `time-input-presentation` 覆盖 Standard/Vibrant、错误提示、焦点切换、无效草稿和解析边界；动态编辑用例只比较真实状态与布局，因原生光标时钟未虚拟化不采动态图像，静态有效/错误状态保留完整图像。
+  28 个输入用例覆盖包括 Unicode 数字的解析与外部字段更新。除下述外部同步细节外，选择/焦点/文本/有效时间/合法性/错误 live region 数量一致；错误提示的整体高度仍有 1 DIP 差异，未改容差或补偿高度。
+- 连续在小时、分钟输入无效的 `99`、`75` 后设置 `SelectedTime = new(5, 30)`：Core 的 `userOverride` 为 false，会跳过该次 hourValue 同步；回到小时仍显示 `99`，但有效时间已为 05:30。本地原有绑定行为显示 `05`，本次仅让未变更的分钟继续保留 `75` 与选区。
+  推荐维护者保留按实际变化字段同步外部绑定的行为；严格复现上游会使有效值、合法性与编辑文本脱节。这个具体差异尚未批准，不能由既有 TimeOnly API 决定推断已接受。
+- 真实触摸外缘用例保留了 Core 命中、本地不命中的差异。现有共享决定只允许 `MaterialInteractiveSize.Minimum` 预留布局，未提供触摸命中扩张。
+  推荐在共享输入层支持触摸专用的最小目标搜索，保留鼠标的 40dp 视觉边界、重叠候选的距离与绘制顺序；调用方继续使用 `MaterialInteractiveSize.Minimum="48"`，不在每个按钮内补发点击。
+  这会改变现有共享决定的能力范围并影响所有小按钮，需要维护者决定，本组件没有自行接管。侧栏图像自检中仍保留部分 Avalonia 光标闪烁造成的不稳定证据。
+- RTL 侧栏的实际包围盒与尺寸一致，但原生镜像变换使四角顺序与 Core 不同；模式内容移除/恢复及按压提交存在帧前即时更新和 Compose 帧提交的时序差异，原始读数保留。
+- `TimeScroll` 仍未移植 `ScrollField.Item` 的 DisplayMedium → DisplayLargeEmphasized、FastSpatial 字号/颜色过渡及 `200dp / 3` 页面高度。原生循环面板复用位置容器，动画需要保留数字项身份，不能只对固定的中间容器加动画；本次不以静态大字替代它。
+- 本批次在隔离 worktree 使用本机临时依赖缓存完成补充验证。伙伴更新 NuGet 源后再次执行正式 `--locked-mode` 还原仍失败：公开源缺少锁定 MaterialColorUtilities CI 版本和 MaterialSymbols.Avalonia.Rounded 包。
+  临时缓存的两个 MaterialSymbols 包内容哈希又与仓库锁文件不符，故补充构建/测试不能替代固定 NuGet 身份的最终验收；仓库锁、版本及参考基线均未修改。
+  补充构建包含 Catalog；全库行为/渲染测试 1902 项通过，VisualParity 系统测试 124 项通过。定向双端输入/侧栏/键盘用例分别为 28/38/4，均无执行错误；输入用例重复稳定，4 个侧栏用例和 4 个既有键盘用例仍有图像重复性问题，键盘结构化状态一致。
+  双端执行成功不代表像素已验收；字体、本地化、颜色与上述差异仍未全部消除。
 
 - 已实现指针 slop、连续角度、优先级、标签 Crossfade 与 selector 混合绘制；双端尚未全部相等，不能由行为测试通过推断像素验收。
 - Core 的 `SyntheticEventSender.skiko.kt` 在坐标改变的鼠标 release 前合成 move，Avalonia Headless 的同一次 release 不合成。`release-jump` 用例保留不同时间结果，尚未批准合成额外输入的适配。

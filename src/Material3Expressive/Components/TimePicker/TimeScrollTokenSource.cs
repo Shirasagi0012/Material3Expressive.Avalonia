@@ -16,7 +16,7 @@ public sealed class TimeScrollTokenSource : ITokenSource
         [Comp.TimeScroll.TimeFieldWithToggleContainerHeight] = 140.0d,
         [Comp.TimeScroll.SeparatorWidth] = 16.0d,
         [Comp.TimeScroll.PeriodSelectorContainerWidth] = 56.0d,
-        [Comp.TimeScroll.PeriodSelectorSpacing] = 4.0d,
+        [Comp.TimeScroll.PeriodSelectorSpacing] = 8.0d,
         [Comp.TimeScroll.ItemHeight] = 40.0d,
     }.ToFrozenDictionary();
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) => Values.TryGetValue(key, out value!);

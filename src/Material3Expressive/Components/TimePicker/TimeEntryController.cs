@@ -16,6 +16,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace Material3Expressive.Components;
 
@@ -23,12 +24,17 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
 {
     private Panel? _body;
     private readonly Control?[] _fields = new Control?[2];
+    private readonly TimeSelectorButton?[] _inputSelectors = new TimeSelectorButton?[2];
+    private readonly TextBlock?[] _supportingLabels = new TextBlock?[2];
     private readonly string[] _text = new string[2];
+    private readonly int[] _inputValues = new int[2];
+    private readonly (int Start, int End)[] _inputSelections = new (int, int)[2];
     private readonly bool[] _valid = [true, true];
     private readonly TimePeriodButton?[] _periods = new TimePeriodButton?[2];
     private ClockFace? _clock;
     private TopLevel? _window;
     private bool _horizontal, _portrait, _updating, _input, _watchingWindow;
+    private TimeOnly? _lastValue;
     internal TimeOnly Value => owner.GetValue(TimePicker.SelectedTimeProperty);
     internal bool Is24Hour => owner.GetValue(TimePicker.Is24HourProperty);
     internal bool IsPm => Value.Hour >= 12;
@@ -92,7 +98,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         else if (property == TimePicker.SelectionProperty)
         {
             Update();
-            if (kind == TimeEntryKind.Input && _input) _fields[(int)Selection]?.Focus();
+            if (kind == TimeEntryKind.Input) FocusSelectedInput();
         }
         else if (property == TimePicker.VariantProperty
               || property == TimePicker.LayoutProperty
@@ -128,6 +134,8 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
             _body.Children.Clear();
             _clock = null;
             Array.Clear(_fields);
+            Array.Clear(_inputSelectors);
+            Array.Clear(_supportingLabels);
             Array.Clear(_periods);
             _horizontal = UsesHorizontalLayout();
             _portrait = UsesPortraitWidth();
@@ -151,7 +159,9 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 HorizontalAlignment = HorizontalAlignment.Center
             };
             var numbers = new StackPanel { Orientation = Orientation.Horizontal, FlowDirection = FlowDirection.LeftToRight };
-            bool hasToggle = owner.GetValue(TimePicker.ToggleProperty) is { };
+            bool hasToggle = owner.GetValue(TimePicker.ToggleProperty) is { }
+                || owner.GetValue(TimePicker.ToggleTemplateProperty) is { };
+            bool sideControls = hasToggle && Vibrant && kind != TimeEntryKind.Dial;
             MaterialTokenKey<double> fieldHeight = kind switch {
                 TimeEntryKind.Scroll => hasToggle ? Comp.TimeScroll.TimeFieldWithToggleContainerHeight : Comp.TimeScroll.TimeFieldContainerHeight,
                 TimeEntryKind.Input => Vibrant
@@ -194,22 +204,42 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                         var field = new TextBox {
                             Name = i == 0 ? "PART_HourInput" : "PART_MinuteInput", MinWidth = 0,
                             Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Stretch,
-                            VerticalContentAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center, MaxLength = 3
+                            VerticalContentAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center
                         };
                         BindDimension(field, Control.WidthProperty, width);
                         BindDimension(field, Control.HeightProperty, fieldHeight);
                         field.Classes.Add("time-field");
                         field.Classes.Set("vibrant", Vibrant);
                         field.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimeInputFieldTheme"));
+                        field.Bind(TextBox.CaretBrushProperty, new MultiBinding {
+                            Bindings = { new Binding { Source = field }, new DynamicResourceExtension(Sys.Color.Primary) },
+                            Converter = new TimeInputCaretBrushConverter()
+                        });
                         field.GotFocus += (_, _) => {
                             Select((TimeSelection)index);
-                            field.SelectAll();
                         };
                         field.TextChanged += (_, _) => InputChanged(field, index);
+                        field.PropertyChanged += (_, e) => {
+                            // Selection-only changes are accepted by timeInputOnChange too.
+                            // Keep the previous range until a replacement is accepted.
+                            if (!_updating && field.Text == _text[index]
+                                && (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty))
+                                _inputSelections[index] = (field.SelectionStart, field.SelectionEnd);
+                        };
                         field.KeyDown += (_, e) => {
+                            // shouldSwitchFocusToMinute: a further digit at the end of a
+                            // complete, valid hour belongs to the minute editor.
+                            if (index == 0 && _valid[0] && field.SelectionStart == 2 && field.Text?.Length == 2
+                                && e.KeySymbol is { Length: 1 } symbol && symbol[0] is >= '0' and <= '9'
+                                && TryParseInputNumber(field.Text, out var hour)
+                                && (Is24Hour ? hour is >= 0 and <= 23 : hour is >= 1 and <= 12))
+                            {
+                                Select(TimeSelection.Minute);
+                                _fields[1]?.Focus();
+                            }
                             if (e.Key == Key.Enter)
                             {
-                                if (index == 0)
+                                if (index == 0 && _valid[0])
                                 {
                                     Select(TimeSelection.Minute);
                                     _fields[1]?.Focus();
@@ -218,16 +248,20 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                                 e.Handled = true;
                             }
 
-                            if (index == 1 && e.Key == Key.Back && field.CaretIndex == 0)
-                            {
-                                Select(TimeSelection.Hour);
-                                _fields[0]?.Focus();
-                                e.Handled = true;
-                            }
                         };
-                        AutomationProperties.SetName(field, DateTimeStrings.Get(i == 0 ? "TimePickerHour" : "TimePickerMinute"));
+                        AutomationProperties.SetName(field, DateTimeStrings.Get(i == 0 ? "TimePickerHourTextField" : "TimePickerMinuteTextField"));
                         _fields[i] = field;
-                        column.Children.Add(field);
+                        // TimePickerTextField retains its editor but only exposes it for the
+                        // selected field. The other field is a clickable TimeSelector.
+                        var selector = new TimeSelectorButton { Name = i == 0 ? "PART_HourInputSelector" : "PART_MinuteInputSelector" };
+                        BindDimension(selector, Control.WidthProperty, width);
+                        BindDimension(selector, Control.HeightProperty, fieldHeight);
+                        selector.Classes.Set("vibrant", Vibrant);
+                        selector.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimeInputSelectorTheme"));
+                        AutomationProperties.SetName(selector, DateTimeStrings.Get(i == 0 ? "TimePickerHourSelection" : "TimePickerMinuteSelection"));
+                        selector.Click += (_, _) => Select((TimeSelection)index);
+                        _inputSelectors[i] = selector;
+                        column.Children.Add(new Grid { Children = { field, selector } });
                         break;
                     }
                     case TimeEntryKind.Scroll:
@@ -244,8 +278,13 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                             if (index == 0) SetHour(Is24Hour ? field.SelectedValue : field.SelectedValue % 12 + (IsPm ? 12 : 0));
                             else SetMinute(field.SelectedValue);
                         };
+                        // ScrollContentPresenter initializes ILogicalScrollable.Offset from its
+                        // owner's offset. Seed both sides before attachment, otherwise its initial
+                        // zero offset is interpreted as a user selection and overwrites the time.
+                        field.SelectedValue = i == 0 ? HourForDisplay : Value.Minute;
                         var scroll = new ScrollViewer {
                             Content = field,
+                            Offset = field.Offset,
                             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                             VerticalScrollBarVisibility = ScrollBarVisibility.Hidden
                         };
@@ -262,7 +301,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     case TimeEntryKind.Dial:
                     default:
                     {
-                        var button = new Button {
+                        var button = new TimeSelectorButton {
                             Name = i == 0 ? "PART_HourSelector" : "PART_MinuteSelector"
                         };
                         BindDimension(button, Control.WidthProperty, width);
@@ -292,12 +331,16 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
 
                 if (kind == TimeEntryKind.Input)
                 {
-                    var label = new TextBlock {
+                    var label = new TimeSupportingText {
                         Text = DateTimeStrings.Get(i == 0 ? "TimePickerHour" : "TimePickerMinute"),
-                        HorizontalAlignment = HorizontalAlignment.Center
+                        Name = i == 0 ? "PART_HourSupportingText" : "PART_MinuteSupportingText",
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        TextWrapping = TextWrapping.Wrap
                     };
+                    BindDimension(label, Control.WidthProperty, width);
                     BindDimension(label, Control.MarginProperty, x => new Thickness(0, x[0], 0, 0), Comp.TimeInput.SupportingTextTopSpacing);
                     label.Classes.Add("time-support");
+                    _supportingLabels[i] = label;
                     column.Children.Add(label);
                 }
 
@@ -323,7 +366,33 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
             }
 
             display.Children.Add(numbers);
-            if (!Is24Hour)
+            if (sideControls)
+            {
+                var side = new TimeSideControlLayout { VerticalAlignment = VerticalAlignment.Top };
+                BindDimension(side, Control.HeightProperty, fieldHeight);
+                if (!Is24Hour)
+                    for (int i = 0; i < 2; i++)
+                    {
+                        int period = i;
+                        var button = new TimePeriodButton {
+                            Content = DateTimeStrings.Get(i == 0 ? "TimePickerAM" : "TimePickerPM"),
+                            MinWidth = 0
+                        };
+                        button.Classes.Add("side-control");
+                        button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimePeriodTheme"));
+                        button.Click += (_, _) => SetHour(Value.Hour % 12 + period * 12);
+                        _periods[i] = button;
+                        side.Children.Add(button);
+                    }
+                side.Children.Add(new ContentPresenter {
+                    Content = owner.GetValue(TimePicker.ToggleProperty),
+                    ContentTemplate = owner.GetValue(TimePicker.ToggleTemplateProperty),
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    VerticalContentAlignment = VerticalAlignment.Center
+                });
+                display.Children.Add(side);
+            }
+            else if (!Is24Hour)
             {
                 var periods = new StackPanel {
                     Orientation = _horizontal ? Orientation.Horizontal : Orientation.Vertical,
@@ -339,7 +408,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     : fieldHeight;
                 MaterialTokenKey<double> periodSpacing = kind switch {
                     TimeEntryKind.Scroll => Comp.TimeScroll.PeriodSelectorSpacing,
-                    TimeEntryKind.Input => Comp.TimeInput.PeriodSelectorSpacing,
+                    TimeEntryKind.Input => Vibrant ? Comp.TimeInput.VibrantPeriodSelectorSpacing : Comp.TimeInput.PeriodSelectorSpacing,
                     _ => Vibrant ? _horizontal ? Comp.TimePicker.VibrantPeriodSelectorHorizontalSpacing : Comp.TimePicker.VibrantPeriodSelectorVerticalSpacing : Comp.TimePicker.PeriodSelectorSpacing
                 };
                 BindDimension(periods, Control.WidthProperty, periodWidth);
@@ -364,7 +433,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 display.Children.Add(periods);
             }
 
-            if (hasToggle)
+            if (hasToggle && !sideControls)
                 display.Children.Add(new ContentPresenter {
                     Content = owner.GetValue(TimePicker.ToggleProperty),
                     ContentTemplate = owner.GetValue(TimePicker.ToggleTemplateProperty)
@@ -389,6 +458,18 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         }
 
         Update();
+        if (kind == TimeEntryKind.Input) FocusSelectedInput();
+    }
+
+    private void FocusSelectedInput()
+    {
+        var field = _fields[(int)Selection];
+        // LaunchedEffect(selection) runs once the selected editor is composed. The
+        // corresponding native focus request must wait until it is in the visual tree.
+        Dispatcher.UIThread.Post(() => {
+            if (field == _fields[(int)Selection] && field is { IsEffectivelyVisible: true }
+                && field.IsAttachedToVisualTree()) field.Focus();
+        }, DispatcherPriority.Loaded);
     }
 
     internal static void BindDimension(Control target, AvaloniaProperty property, MaterialTokenKey<double> key) =>
@@ -421,6 +502,25 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         }
     }
 
+    private sealed class TimeInputCaretBrushConverter : IMultiValueConverter
+    {
+        public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+        {
+            var value = new TokenBindingConverter(Sys.Color.Primary, null, null).Convert(values, typeof(Color), null, culture);
+            if (value is not Color color) return AvaloniaProperty.UnsetValue;
+            // TimePickerTextField uses primary even in the error state, with the
+            // first and last 10% of the native caret painted transparently.
+            return new LinearGradientBrush {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+                GradientStops = new GradientStops {
+                    new(Colors.Transparent, 0), new(Colors.Transparent, .1), new(color, .1),
+                    new(color, .9), new(Colors.Transparent, .9), new(Colors.Transparent, 1)
+                }
+            };
+        }
+    }
+
     private void Update(bool syncInputs = false)
     {
         if (_updating) return;
@@ -433,17 +533,24 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 switch (_fields[i])
                 {
                     case TextBox box when !_input:
-                        if (syncInputs || _text[i] is null)
+                        var valueChanged = _lastValue is not { } previous
+                            || (i == 0 ? previous.Hour != Value.Hour : previous.Minute != Value.Minute);
+                        if (syncInputs && valueChanged || _text[i] is null)
                         {
                             _text[i] = n.ToString("00", CultureInfo.CurrentCulture);
+                            _inputValues[i] = i == 0 ? Value.Hour : Value.Minute;
+                            _inputSelections[i] = default;
                             _valid[i] = true;
                         }
 
                         box.Text = _text[i];
+                        box.SelectionStart = Math.Min(_inputSelections[i].Start, box.Text?.Length ?? 0);
+                        box.SelectionEnd = Math.Min(_inputSelections[i].End, box.Text?.Length ?? 0);
                         MaterialTextField.SetIsError(box, !_valid[i]);
                         break;
-                    case Button button:
+                    case TimeSelectorButton button:
                         button.Content = n.ToString("00", CultureInfo.CurrentCulture);
+                        button.IsSelected = (int)Selection == i;
                         button.Classes.Set("selected", (int)Selection == i);
                         break;
                     case DateTimePickerPanel panel: panel.SelectedValue = n; break;
@@ -458,6 +565,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     period.ZIndex = IsPm == (i == 1) ? 0 : 1;
                 }
             _clock?.Update();
+            _lastValue = Value;
         }
         finally
         {
@@ -467,35 +575,49 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         SetValidity();
     }
 
+    private static bool TryParseInputNumber(string text, out int number)
+    {
+        // Kotlin/JVM digitOf accepts Unicode decimal digits; .NET Int32.TryParse
+        // accepts ASCII digits only, even when the culture advertises native digits.
+        var digits = new string(text.Select(c => {
+            var digit = CharUnicodeInfo.GetDecimalDigitValue(c);
+            return digit >= 0 ? (char)('0' + digit) : c;
+        }).ToArray());
+        return Int32.TryParse(digits, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out number);
+    }
+
     private void InputChanged(TextBox field, int index)
     {
         if (_updating) return;
         string text = field.Text ?? "";
         string old = _text[index] ?? "";
         if (text == old) return;
-        string candidate = text;
-        if (text.Length == 3 && field.CaretIndex == 1) candidate = text[..1];
-        if (candidate.Length > 2 || candidate.Any(c => !Char.IsDigit(c))
-         || (candidate.Length > 0 && !Int32.TryParse(candidate, out _)))
+        // Preserve timeInputOnChange's overwrite-at-start branch before parsing.
+        // The value is parsed before the text is reduced; leading zeros and a sign
+        // are therefore not interchangeable with a blanket two-character limit.
+        string parsedText = text.Length == 3 && field.SelectionStart == 1 ? text[..1] : text;
+        int number = 0;
+        if (parsedText.Length > 0 && (!TryParseInputNumber(parsedText, out number) || number > 99))
         {
+            var selection = _inputSelections[index];
             _updating = true;
-            field.Text = old;
-            _updating = false;
+            try { field.Text = old; field.SelectionStart = selection.Start; field.SelectionEnd = selection.End; }
+            finally { _updating = false; }
             return;
         }
 
-        int number = candidate.Length == 0 ? 0 : Int32.Parse(candidate, CultureInfo.CurrentCulture);
-        _text[index] = candidate;
+        _text[index] = text.Length <= 2 ? text : text[..1];
         _input = true;
         try
         {
             if (index == 0)
             {
                 int hour = number == 12 && IsPm ? 12 : number == 12 && !Is24Hour ? 0 : number + (!Is24Hour && IsPm ? 12 : 0);
+                _inputValues[0] = hour;
                 _valid[0] = Is24Hour ? hour is >= 0 and <= 23 : IsPm ? hour is >= 12 and <= 23 : hour is >= 0 and <= 11;
                 if (_valid[0]) SetHour(hour);
-                if (_valid[0] && (candidate.Length == 2
-                     || (!Is24Hour && number is >= 2 and <= 9 && candidate.Length >= old.Length)))
+                if (_valid[0] && owner is not TimeInput { TouchExplorationEnabled: true } && (text.Length == 2
+                     || (!Is24Hour && number is >= 2 and <= 9 && text.Length >= old.Length)))
                 {
                     Select(TimeSelection.Minute);
                     _fields[1]?.Focus();
@@ -503,14 +625,21 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
             }
             else
             {
-                _valid[1] = number <= 59;
+                _inputValues[1] = number;
+                _valid[1] = number is >= 0 and <= 59;
                 if (_valid[1]) SetMinute(number);
             }
 
-            MaterialTextField.SetIsError(field, !_valid[index]);
-            MaterialTextField.SetErrorMessage(field,
-                _valid[index] ? "" : DateTimeStrings.Get(index == 0 ? "TimePickerHourError" : "TimePickerMinuteError"));
             SetValidity();
+            if (field.Text != _text[index])
+            {
+                var start = Math.Min(field.SelectionStart, _text[index].Length);
+                var end = Math.Min(field.SelectionEnd, _text[index].Length);
+                _updating = true;
+                try { field.Text = _text[index]; field.SelectionStart = start; field.SelectionEnd = end; }
+                finally { _updating = false; }
+            }
+            _inputSelections[index] = (field.SelectionStart, field.SelectionEnd);
         }
         finally
         {
@@ -520,6 +649,33 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
 
     private void SetValidity()
     {
+        for (var i = 0; i < 2; i++)
+        {
+            if (_inputSelectors[i] is { } selector && _fields[i] is TextBox field)
+            {
+                MaterialTextField.SetIsError(field, !_valid[i]);
+                MaterialTextField.SetErrorMessage(field, _valid[i] ? "" : DateTimeStrings.Get(i == 0
+                    ? Is24Hour ? "TimePicker24HourError" : "TimePickerHourError" : "TimePickerMinuteError"));
+                field.IsVisible = (int)Selection == i;
+                selector.IsSelected = field.IsVisible;
+                selector.IsVisible = !field.IsVisible;
+                selector.Classes.Set("invalid", !_valid[i]);
+                var value = i == 0 ? HourForDisplay : Value.Minute;
+                if (!_valid[i]) value = _inputValues[i];
+                // Kotlin's %02d minimum width includes the sign; .NET's "00"
+                // counts digit placeholders only (and would render -1 as -01).
+                selector.Content = value.ToString(value < 0 ? "0" : "00", CultureInfo.CurrentCulture);
+            }
+            if (_supportingLabels[i] is { } label)
+            {
+                label.IsVisible = !Vibrant || !_valid[i];
+                label.Classes.Set("invalid", !_valid[i]);
+                label.Text = DateTimeStrings.Get(_valid[i] ? i == 0 ? "TimePickerHour" : "TimePickerMinute"
+                    : i == 0 ? Is24Hour ? "TimePicker24HourError" : "TimePickerHourError" : "TimePickerMinuteError");
+                AutomationProperties.SetAccessibilityView(label, _valid[i] ? AccessibilityView.Raw : AccessibilityView.Content);
+                AutomationProperties.SetLiveSetting(label, _valid[i] ? AutomationLiveSetting.Off : AutomationLiveSetting.Polite);
+            }
+        }
         bool valid = _valid[0] && _valid[1];
         foreach (Button? period in _periods)
             if (period is { })

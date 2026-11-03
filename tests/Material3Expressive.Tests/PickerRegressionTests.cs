@@ -43,11 +43,14 @@ public class PickerRegressionTests
             window.RequestedThemeVariant = ThemeVariant.Dark;
             foreach (var field in picker.GetVisualDescendants().OfType<TextBox>())
             {
+                picker.Selection = field.Name == "PART_HourInput" ? TimeSelection.Hour : TimeSelection.Minute;
+                Draw(window);
                 // Isolate text ink from selection, caret and outline pixels.
                 field.Foreground = Brushes.White;
                 field.BorderBrush = field.CaretBrush = field.SelectionBrush = Brushes.Transparent;
                 foreach (var focused in new[] { false, true })
                 {
+                    window.FocusManager?.Focus(null);
                     if (focused)
                     {
                         field.Focus();
@@ -55,6 +58,8 @@ public class PickerRegressionTests
                         window.KeyPress(Key.Left, RawInputModifiers.None, PhysicalKey.None, null);
                     }
                     Draw(window);
+                    Assert.True(field.IsEffectivelyVisible);
+                    Assert.Equal(focused, field.IsFocused);
                     using var frame = window.CaptureRenderedFrame()!;
                     var origin = field.TranslatePoint(default, window)!.Value;
                     var left = double.PositiveInfinity;
