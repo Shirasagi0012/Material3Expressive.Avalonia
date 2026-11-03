@@ -1,0 +1,267 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:local="using:Reply"
+        x:Class="Reply.MainWindow" x:DataType="local:ReplyViewModel"
+        Title="Reply" Width="1440" Height="900" MinWidth="360" MinHeight="480"
+        Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}">
+  <Window.Styles>
+    <Style Selector="m3|PermanentDrawerSheet#DesktopDrawer, m3|NavigationRail#Rail">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border#ListPane, Border#DetailPane">
+      <Setter Property="Grid.ColumnSpan" Value="2" />
+    </Style>
+    <Style Selector="Border#DetailPane">
+      <Setter Property="Grid.Column" Value="0" />
+    </Style>
+    <Style Selector="Border#DetailPane, m3|IconButton#BackButton">
+      <Setter Property="IsVisible" Value="{Binding DetailOpen}" />
+    </Style>
+    <Style Selector="Border#ListPane, m3|ExtendedFloatingActionButton#MobileCompose">
+      <Setter Property="IsVisible" Value="{Binding !DetailOpen}" />
+    </Style>
+    <Style Selector="m3|TopAppBar#DetailAppBar">
+      <Setter Property="TitleHorizontalAlignment" Value="Center" />
+    </Style>
+    <ContainerQuery Name="ReplyWindow" Query="min-width:600">
+      <Style Selector="m3|NavigationRail#Rail">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="m3|NavigationBar#BottomNavigation, m3|ExtendedFloatingActionButton#MobileCompose">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+    </ContainerQuery>
+    <ContainerQuery Name="ReplyWindow" Query="min-width:840">
+      <Style Selector="m3|TopAppBar#DetailAppBar">
+        <Setter Property="TitleHorizontalAlignment" Value="Left" />
+      </Style>
+      <Style Selector="Border#ListPane">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="m3|IconButton#BackButton">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="Border#ListPane, Border#DetailPane">
+        <Setter Property="Grid.ColumnSpan" Value="1" />
+      </Style>
+      <Style Selector="Border#DetailPane">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="Grid.Column" Value="1" />
+        <Setter Property="Margin" Value="8,0,0,0" />
+      </Style>
+      <Style Selector="Border#ListPane">
+        <Setter Property="Margin" Value="0,0,8,0" />
+      </Style>
+    </ContainerQuery>
+    <ContainerQuery Name="ReplyWindow" Query="min-width:1200">
+      <Style Selector="m3|PermanentDrawerSheet#DesktopDrawer">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="m3|NavigationRail#Rail">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+    </ContainerQuery>
+  </Window.Styles>
+
+  <Window.Resources>
+    <DataTemplate x:Key="EmailTemplate" x:DataType="local:Email">
+      <m3:Card Classes="email" Classes.opened="{Binding IsOpened}" Classes.selected="{Binding IsSelected}"
+               IsClickable="True" Click="OpenEmail" AutomationProperties.Name="{Binding Subject}">
+        <StackPanel>
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Button Theme="{StaticResource AvatarButton}" Click="SelectEmail" AutomationProperties.Name="{Binding FullName}">
+              <Grid>
+                <Image Source="{Binding Avatar}" Stretch="UniformToFill" IsVisible="{Binding !IsSelected}" />
+                <Border IsVisible="{Binding IsSelected}" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}">
+                  <m3:MaterialSymbol Symbol="Check" Width="24" Height="24"
+                                     Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnPrimary}}" />
+                </Border>
+              </Grid>
+            </Button>
+            <StackPanel Grid.Column="1" Margin="12,4" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Sender}" Classes="caption" />
+              <TextBlock Text="{Binding CreatedAt}" Classes="caption" />
+            </StackPanel>
+            <m3:IconButton Grid.Column="2" Symbol="Star" Classes="star" Classes.starred="{Binding IsStarred}"
+                           Click="ToggleStar" ToolTip.Tip="Favorite" AutomationProperties.Name="Favorite" />
+          </Grid>
+          <TextBlock Text="{Binding Subject}" Classes="subject" />
+          <TextBlock Text="{Binding Body}" Classes="preview" />
+        </StackPanel>
+      </m3:Card>
+    </DataTemplate>
+    <DataTemplate x:Key="ThreadTemplate" x:DataType="local:Email">
+      <m3:Card Classes="thread">
+        <StackPanel>
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Width="40" Height="40" CornerRadius="20" ClipToBounds="True">
+              <Image Source="{Binding Avatar}" Stretch="UniformToFill" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="12,4" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Sender}" Classes="caption" />
+              <TextBlock Text="20 mins ago" Classes="caption"
+                         Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+            </StackPanel>
+            <m3:IconButton Grid.Column="2" Symbol="Star" Classes="star" Classes.starred="{Binding IsStarred}"
+                           Click="ToggleStar" ToolTip.Tip="Favorite" AutomationProperties.Name="Favorite" />
+          </Grid>
+          <TextBlock Text="{Binding Subject}" Margin="0,12,0,8" TextWrapping="Wrap"
+                     m3:MaterialText.Style="{m3:Typography BodyMedium}" FontWeight="Medium"
+                     Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+          <SelectableTextBlock Text="{Binding Body}" TextWrapping="Wrap"
+                               m3:MaterialText.Style="{m3:Typography BodyLarge}"
+                               Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,20,0,8">
+            <Button Content="Reply" Classes="reply-action" IsEnabled="False" />
+            <Button Grid.Column="1" Content="Reply All" Classes="reply-action" IsEnabled="False" />
+          </Grid>
+        </StackPanel>
+      </m3:Card>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Border Container.Name="ReplyWindow" Container.Sizing="Width">
+    <m3:ModalNavigationDrawer x:Name="ModalDrawer">
+      <m3:ModalNavigationDrawer.DrawerContent>
+        <m3:ModalDrawerSheet State="{Binding #ModalDrawer.State}">
+          <StackPanel Margin="16">
+            <Grid ColumnDefinitions="*,Auto" Margin="16,8">
+              <TextBlock Text="REPLY" VerticalAlignment="Center" m3:MaterialText.Style="{m3:Typography TitleMedium}"
+                         Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+              <m3:IconButton Grid.Column="1" Symbol="MenuOpen" Click="CloseDrawer" AutomationProperties.Name="Close drawer" />
+            </Grid>
+            <m3:ExtendedFloatingActionButton Content="Compose" Icon="{m3:Symbol Edit}" Classes="compose"
+                                            HorizontalAlignment="Stretch" Margin="0,8,0,40" IsEnabled="False" />
+            <m3:NavigationDrawerItem Content="Inbox" Icon="{m3:Symbol Inbox}" IsSelected="True" Click="GoToInbox" />
+            <m3:NavigationDrawerItem Content="Direct Messages" Icon="{m3:Symbol ChatBubble}" IsEnabled="False" />
+            <m3:NavigationDrawerItem Content="Articles" Icon="{m3:Symbol Article}" IsEnabled="False" />
+            <m3:NavigationDrawerItem Content="Groups" Icon="{m3:Symbol Group}" IsEnabled="False" />
+          </StackPanel>
+        </m3:ModalDrawerSheet>
+      </m3:ModalNavigationDrawer.DrawerContent>
+      <Grid RowDefinitions="*,Auto">
+        <Grid ColumnDefinitions="Auto,Auto,*">
+          <m3:PermanentDrawerSheet x:Name="DesktopDrawer" Width="240" CornerRadius="0"
+                                   Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}">
+            <Grid RowDefinitions="Auto,*" Margin="16,0" Height="{Binding #DesktopDrawer.Bounds.Height}">
+              <StackPanel Margin="0,16,0,0">
+                <TextBlock Text="REPLY" Margin="16" m3:MaterialText.Style="{m3:Typography TitleMedium}"
+                           FontWeight="SemiBold" Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+                <m3:ExtendedFloatingActionButton Content="Compose" Icon="{m3:Symbol Edit}" Classes="compose"
+                                                HorizontalAlignment="Stretch" Margin="0,8,0,40" IsEnabled="False" />
+              </StackPanel>
+              <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                <m3:NavigationDrawerItem Content="Inbox" Icon="{m3:Symbol Inbox}" IsSelected="True" Click="GoToInbox" />
+                <m3:NavigationDrawerItem Content="Direct Messages" Icon="{m3:Symbol ChatBubble}" IsEnabled="False" />
+                <m3:NavigationDrawerItem Content="Articles" Icon="{m3:Symbol Article}" IsEnabled="False" />
+                <m3:NavigationDrawerItem Content="Groups" Icon="{m3:Symbol Group}" IsEnabled="False" />
+              </StackPanel>
+            </Grid>
+          </m3:PermanentDrawerSheet>
+          <m3:NavigationRail x:Name="Rail" Grid.Column="1">
+            <m3:NavigationRail.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="4" VerticalAlignment="Center" />
+              </ItemsPanelTemplate>
+            </m3:NavigationRail.ItemsPanel>
+            <m3:NavigationRail.Header>
+              <StackPanel Spacing="8">
+                <m3:IconButton Symbol="Menu" Click="OpenDrawer" HorizontalAlignment="Center" AutomationProperties.Name="Navigation Drawer" />
+                <m3:FloatingActionButton Icon="{m3:Symbol Edit}" Classes="compose" Margin="0,0,0,32"
+                                        IsEnabled="False" AutomationProperties.Name="Compose" />
+              </StackPanel>
+            </m3:NavigationRail.Header>
+            <m3:NavigationRailItem Icon="{m3:Symbol Inbox}" IsSelected="True" Click="GoToInbox" AutomationProperties.Name="Inbox" />
+            <m3:NavigationRailItem Icon="{m3:Symbol ChatBubble}" IsEnabled="False" AutomationProperties.Name="Direct Messages" />
+            <m3:NavigationRailItem Icon="{m3:Symbol Article}" IsEnabled="False" AutomationProperties.Name="Articles" />
+            <m3:NavigationRailItem Icon="{m3:Symbol Group}" IsEnabled="False" AutomationProperties.Name="Groups" />
+          </m3:NavigationRail>
+          <Grid x:Name="MailPanes" Grid.Column="2" ColumnDefinitions="*,*">
+            <Border x:Name="ListPane">
+              <Grid RowDefinitions="Auto,Auto,*">
+                <TextBox x:Name="SearchBox" Text="{Binding SearchText, Mode=TwoWay}" Margin="16"
+                         PlaceholderText="Search emails" AutomationProperties.Name="Search emails"
+                         CornerRadius="28" BorderBrush="Transparent"
+                         Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}"
+                         m3:MaterialTextField.LeadingIcon="{m3:Symbol Search}">
+                  <m3:MaterialTextField.TrailingIcon>
+                    <Button Theme="{StaticResource AvatarButton}" Width="32" Height="32" AutomationProperties.Name="Profile">
+                      <Button.Flyout>
+                        <MenuFlyout>
+                          <MenuItem Header="Light" Click="UseLightTheme" />
+                          <MenuItem Header="Dark" Click="UseDarkTheme" />
+                          <MenuItem Header="System" Click="UseSystemTheme" />
+                        </MenuFlyout>
+                      </Button.Flyout>
+                      <Image Source="/Assets/avatar_6.jpg" Stretch="UniformToFill" />
+                    </Button>
+                  </m3:MaterialTextField.TrailingIcon>
+                </TextBox>
+                <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" Margin="16,0,16,8" IsVisible="{Binding HasSelection}">
+                  <m3:IconButton Symbol="Close" Click="ClearSelection" AutomationProperties.Name="Clear selection" />
+                  <TextBlock Grid.Column="1" Text="{Binding SelectionCount}" VerticalAlignment="Center" Margin="12,0" />
+                  <m3:IconButton Grid.Column="2" Symbol="Archive" Click="RemoveEmails" AutomationProperties.Name="Archive" ToolTip.Tip="Archive" />
+                  <m3:IconButton Grid.Column="3" Symbol="Delete" Click="RemoveEmails" AutomationProperties.Name="Delete" ToolTip.Tip="Delete" />
+                </Grid>
+                <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+                  <StackPanel Margin="0,0,0,16">
+                    <ItemsControl ItemsSource="{Binding Emails}" ItemTemplate="{StaticResource EmailTemplate}" />
+                    <TextBlock Text="No item found" Margin="32,16" IsVisible="{Binding IsEmpty}" />
+                  </StackPanel>
+                </ScrollViewer>
+              </Grid>
+            </Border>
+            <Border x:Name="DetailPane" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.InverseOnSurface}}">
+              <Grid RowDefinitions="Auto,*" IsVisible="{Binding OpenedEmail, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <m3:TopAppBar x:Name="DetailAppBar" ContentPadding="16,0"
+                              Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.InverseOnSurface}}">
+                  <m3:TopAppBar.NavigationIcon>
+                    <m3:IconButton x:Name="BackButton" Symbol="ArrowBack" Click="BackToList"
+                                   Theme="{StaticResource MaterialFilledIconButtonTheme}" Width="40" Height="40"
+                                   Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}"
+                                   Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}"
+                                   AutomationProperties.Name="Back">
+                      <m3:IconButton.Resources>
+                        <x:Double x:Key="{x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}">14</x:Double>
+                      </m3:IconButton.Resources>
+                    </m3:IconButton>
+                  </m3:TopAppBar.NavigationIcon>
+                  <m3:TopAppBar.Title>
+                    <StackPanel>
+                      <TextBlock Text="{Binding OpenedEmail.Subject}" m3:MaterialText.Style="{m3:Typography TitleMedium}"
+                                 FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
+                      <TextBlock Text="{Binding OpenedEmail.MessageCount}" Classes="caption" Margin="0,4,0,0"
+                                 Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+                    </StackPanel>
+                  </m3:TopAppBar.Title>
+                  <m3:IconButton Symbol="MoreVert" AutomationProperties.Name="More options">
+                    <m3:IconButton.Flyout>
+                      <MenuFlyout>
+                        <MenuItem Header="Archive" Click="RemoveEmails" />
+                        <MenuItem Header="Delete" Click="RemoveEmails" />
+                      </MenuFlyout>
+                    </m3:IconButton.Flyout>
+                  </m3:IconButton>
+                </m3:TopAppBar>
+                <ScrollViewer x:Name="ThreadScroll" Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                  <ItemsControl ItemsSource="{Binding OpenedEmail.Threads}" ItemTemplate="{StaticResource ThreadTemplate}" Margin="0,0,0,16" />
+                </ScrollViewer>
+              </Grid>
+            </Border>
+            <m3:ExtendedFloatingActionButton x:Name="MobileCompose" Grid.ColumnSpan="2" Content="Compose" Icon="{m3:Symbol Edit}"
+                                            Classes="compose" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16"
+                                            IsEnabled="False" />
+          </Grid>
+        </Grid>
+        <m3:NavigationBar x:Name="BottomNavigation" Grid.Row="1">
+          <m3:NavigationBarItem Icon="{m3:Symbol Inbox}" IsSelected="True" Click="GoToInbox" AutomationProperties.Name="Inbox" />
+          <m3:NavigationBarItem Icon="{m3:Symbol ChatBubble}" IsEnabled="False" AutomationProperties.Name="Direct Messages" />
+          <m3:NavigationBarItem Icon="{m3:Symbol Article}" IsEnabled="False" AutomationProperties.Name="Articles" />
+          <m3:NavigationBarItem Icon="{m3:Symbol Group}" IsEnabled="False" AutomationProperties.Name="Groups" />
+        </m3:NavigationBar>
+      </Grid>
+    </m3:ModalNavigationDrawer>
+  </Border>
+</Window>

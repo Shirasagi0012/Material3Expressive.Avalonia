@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/Reply/Reply.csproj" />
+  </Folder>
   <Folder Name="/modules/">
     <Project Path="modules/ComposeAnimation/Catalog/Catalog.csproj" />
     <Project Path="modules/ComposeAnimation/ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj" />

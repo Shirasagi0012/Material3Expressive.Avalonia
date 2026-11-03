@@ -1,0 +1,13 @@
+Reply for Avalonia
+
+Adapted from the Reply sample in android/compose-samples.
+Copyright 2022 The Android Open Source Project
+Licensed under the Apache License, Version 2.0.
+https://github.com/android/compose-samples/tree/main/Reply
+
+The email fixture, avatar images, theme colors, and visual layout originate from
+the Android Reply sample. The Kotlin/Compose implementation has been adapted to
+C#/Avalonia and Material3Expressive. Responsive layouts use ContainerQuery.
+Search results filter the inbox directly. Mail actions operate on local memory.
+The demonstration thread order is deterministic. Unimplemented destinations and
+compose/reply actions are disabled. Theme selection is available in the avatar menu.

@@ -1,0 +1,83 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="AvatarButton" TargetType="Button">
+      <Setter Property="Width" Value="40" />
+      <Setter Property="Height" Value="40" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="20" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border CornerRadius="{TemplateBinding CornerRadius}" ClipToBounds="True"
+                  Background="{TemplateBinding Background}">
+            <ContentPresenter Content="{TemplateBinding Content}" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:focus-visible /template/ Border">
+        <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        <Setter Property="BorderThickness" Value="2" />
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+
+  <Style Selector="TextBlock.caption">
+    <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelMedium}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.preview">
+    <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyMedium}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="MaxLines" Value="2" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+  <Style Selector="TextBlock.subject">
+    <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
+    <Setter Property="Margin" Value="0,12,0,8" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="m3|Card.email">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Margin" Value="16,4" />
+    <Setter Property="Padding" Value="20" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceVariant}}" />
+  </Style>
+  <Style Selector="m3|Card.email.opened">
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SecondaryContainer}}" />
+  </Style>
+  <Style Selector="m3|Card.email.selected">
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.PrimaryContainer}}" />
+  </Style>
+  <Style Selector="m3|Card.thread">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Margin" Value="16,4" />
+    <Setter Property="Padding" Value="20" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" />
+  </Style>
+  <Style Selector="m3|IconButton.star">
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
+    <Setter Property="CornerRadius" Value="20" />
+    <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" />
+  </Style>
+  <Style Selector="m3|IconButton.star.starred">
+    <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.PrimaryContainer}}" />
+  </Style>
+  <Style Selector="Button.reply-action">
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceBright}}" />
+    <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="m3|ExtendedFloatingActionButton.compose, m3|FloatingActionButton.compose">
+    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.TertiaryContainer}}" />
+    <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnTertiaryContainer}}" />
+  </Style>
+</Styles>
