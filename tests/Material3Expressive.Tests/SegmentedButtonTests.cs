@@ -115,6 +115,7 @@ public class SegmentedButtonTests
         Assert.True(surface.RenderTransform!.Value.M11 > 1);
         Assert.Null(MotionTestClockScope.Error(item));
         window.Close(); Assert.Equal(0, clock.PendingFrameCount);
+        Assert.Null(((MotionTestWindow)window).MotionRoot.Diagnostics.LastError);
     }
     [AvaloniaTheory]
     [InlineData(false)] [InlineData(true)]

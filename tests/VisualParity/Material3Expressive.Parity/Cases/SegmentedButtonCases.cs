@@ -113,7 +113,7 @@ public sealed class SegmentedButtonCases
                 Times(80000, 160000, 240000); Input(241000, "up", c.Action == "cancel" ? outside : center); Sample("release"); Times(256000, 400000, 800000); break;
         }
     }
-    private sealed class Scene
+    internal sealed class Scene
     {
         readonly AvaloniaHost host; readonly SegmentedButtonConfig c; readonly int[] clicks;
         public SegmentedButtonRow Row { get; }
@@ -161,14 +161,16 @@ public sealed class SegmentedButtonCases
         public void SetTheme(bool dark) { CaseDefaults.SetThemeColors(host, dark); host.Window.Resources[Sys.Color.Outline] = Color.Parse(dark ? "#938F99" : "#79747E"); }
         public ProbePoint[] Measure() => [new("row", "row", null, Layout(Row)), .. Items.SelectMany((item, i) => new[]
         {
-            new ProbePoint($"item-{i}", "button", "row", [.. Layout(item), Measurement.Flag("selected", item.IsSelected, definition: "segmented-button.selected"),
+            new ProbePoint($"item-{i}", "button", "row", [.. Layout(item),
+                .. c.Action.StartsWith("source-") ? new[] { Measurement.Numeric("zIndex", item.ZIndex, "none", definition: "segmented-button.sibling-z-index") } : [],
+                Measurement.Flag("selected", item.IsSelected, definition: "segmented-button.selected"),
                 Measurement.Flag("enabled", item.IsEffectivelyEnabled, definition: "segmented-button.enabled"), Measurement.Numeric("clicks", clicks[i], "count", definition: "segmented-button.clicks")]),
             new ProbePoint($"container-{i}", "container", $"item-{i}", Layout(item.GetVisualDescendants().OfType<MaterialSurface>().Single())),
             new ProbePoint($"label-{i}", "content", $"container-{i}", Layout(Labels[i])),
         }).ToArray()];
         Measurement[] Layout(Control control) => AvaloniaMeasurements.Geometry(control, host.Window).Where(m => m.Name is "box" or "size").ToArray();
     }
-    private sealed class Marker : Control
+    internal sealed class Marker : Control
     {
         protected override bool BypassFlowDirectionPolicies => true;
         private Size _size;

@@ -59,6 +59,35 @@ Background、CornerRadius、Padding 和 elevation 可定制表面。RichTooltip 
 `Comp.RichTooltip` 支持标题与正文首基线距离、正文留白及动作区最小高度和底部留白的动态 Token 覆盖。默认值为 28、24、16 / 4、36、8 DIP。
 普通 TextBlock 自动提供基线。复杂自定义槽可在根控件上调用 `TextBlock.SetBaselineOffset(control, baseline)`，由调用方随布局更新该值。
 
+**TooltipLabel：跟随交互的标签**
+
+`TooltipLabel` 为锚点提供跟随交互显示的标签，与 Avalonia 原生文字 `Label` 不同。
+`Content` / `ContentTemplate` 是锚点，`Label` / `LabelTemplate` 是标签槽；默认在锚点上方，
+空间不足时翻到下方，并约束到窗口边界。标签不增加锚点的布局尺寸，显隐没有动画。
+
+```xml
+<m3:TooltipLabel x:Name="SaveLabel">
+  <m3:TooltipLabel.Label><m3:PlainTooltip Content="保存到收藏夹" /></m3:TooltipLabel.Label>
+  <m3:AssistChip x:Name="SaveChip" Content="保存" />
+</m3:TooltipLabel>
+```
+
+```csharp
+SaveLabel.InteractionSource = SaveChip.InteractionSource = new();
+```
+
+标签和锚点共享同一个 `MaterialInteractionSource`。Press、Drag、Hover 任一交互仍活跃时显示；
+例如拖动期间退出 hover 不会提前隐藏。Focus 不触发显示，包装器不自行捕获鼠标或合成事件。
+未提供源时不会因悬停自动显示。可用 `IsPersistent="True"` 始终显示，此时不订阅交互源。
+各标签独立，可同时显示，也不抢占 TooltipBox 的显示互斥组。
+
+外部按下关闭非持续标签且继续传递输入；在所有现有交互结束前，新的 start 不会重新打开它。
+持续标签忽略该关闭请求。Escape、焦点、长按不会由包装器额外处理；提示不会夺取焦点。
+更换源、切换持续模式、卸载会结束旧订阅；重新挂载只接收后续事件，不回放旧状态。
+PlainTooltip/RichTooltip 的 caret 限制仍适用；不把它当作交互式弹窗或 Slider 输入适配层。
+纯 RenderTransform 更新时，标签的定位更新时机尚未与固定 Core 对齐；布局移动与尺寸变化已双端验证。
+具体范围见 [TooltipLabel 实现边界](INTERNALS.md#3-已确认决定与已知差异)。
+
 ## 使用限制与注意事项
 
 窗口模板需提供原生 popup layer，相关要求见 [Overlays](../../Foundation/Overlays/README.md)。两类提示表面均可独立放入普通布局，当前外形为无尖角矩形。

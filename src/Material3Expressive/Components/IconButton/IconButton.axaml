@@ -64,6 +64,7 @@
                               BorderThickness="{TemplateBinding BorderThickness}"
                               TextElement.Foreground="{TemplateBinding Foreground}"
                               CornerRadius="{TemplateBinding CornerRadius}"
+                              m3:ButtonSurfaceState.IsPressed="{TemplateBinding SourceIsPressed}"
                               PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
             <m3:IconButtonSymbol Symbol="{TemplateBinding Symbol}"
                                m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"

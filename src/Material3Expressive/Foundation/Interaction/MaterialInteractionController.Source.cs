@@ -14,16 +14,30 @@ internal sealed partial class MaterialInteractionController
     private readonly Dictionary<MaterialInteractionEvent.Press, RippleAnimation> _sourceRipples = [];
     private readonly HashSet<MaterialInteractionEvent> _previousIndicationStarts = [];
 
-    internal void ResetSourceIndication()
+    internal void ResetSourceIndication(bool preserveSurfaceMotion = false)
     {
         // A new Compose indication node observes future events only. The component's
         // independent interaction collector retains its active shape/color state.
-        ResetAnimations();
+        if (preserveSurfaceMotion)
+        {
+            // IconButton remembers its AnimatedShape outside the indication node. Replacing
+            // that node must not snap or restart a shape animation already using this scope.
+            _stateLayerSubscription?.Dispose();
+            _stateLayerSubscription = null;
+            _stateLayerAlpha?.Stop();
+            _stateLayerAlpha = null;
+            _shownInteraction = InteractionState.None;
+            _shownSourceInteraction = null;
+            foreach (var ripple in _ripples.ToArray()) ripple.Dispose();
+            _ripples.Clear();
+        }
+        else ResetAnimations();
         _sourceRipples.Clear();
         _previousIndicationStarts.Clear();
         _previousIndicationStarts.UnionWith(_sourceInteractions);
         ResetIndicationObservers();
-        _motion = ComposeAnimation.AnimationScope.Get(_owner).CreateChild("Interaction motion");
+        if (_motion is null || _motion.Lifetime.IsCancellationRequested)
+            _motion = ComposeAnimation.AnimationScope.Get(_owner).CreateChild("Interaction motion");
         _presenter?.OnInteractionFrame();
     }
 

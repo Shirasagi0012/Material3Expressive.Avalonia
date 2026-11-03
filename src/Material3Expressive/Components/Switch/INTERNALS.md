@@ -75,7 +75,7 @@ nullable IsChecked / IsThreeState 和原生 Toggle 自动化身份保留，null 
 可选 `Focus.InsetRing` 由 SwitchTrack 的独立视觉部件承载，位于轨道普通 outline 之下；
 thumb Surface 的 PresentsFocusRing=False，仍承担原有 ripple/hover。两者订阅同一个 owner，
 焦点环不替换 thumb 的 Surface attachment；默认 Opacity 行为保留。
-尚未实现完全等价的 `onCheckedChange=null` 与外部 MutableInteractionSource。
+尚未实现完全等价的 `onCheckedChange=null`。
 真实 OS 无障碍客户端、手工桌面输入和文字视觉未经双端验收。
 
 双端场景读实际 ThumbNode 布局，不复制拇指算法生成期望值；覆盖图标/空内容、preferred/required
@@ -107,3 +107,26 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
 不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
 分别说明执行错误、双端差异、稳定性及未覆盖项。
+
+## 外部源与 ThumbNode 计数
+
+2026-11-03 剩余移植批次授权下增加 `SwitchAppearance.InteractionSource`，沿用原生 ToggleSwitch +
+附加外观 API。null 使用模板实例的本地源；MaterialInteractionController 继续负责原生事件配对及 indication。
+ThumbNode.onAttach 的 collector 独立保存有符号 pressCount：每个 Press 加一，Release/Cancel 各减一，
+以 count > 0 决定按压尺寸。它不能改为 controller 聚合 flags 或去重集合。
+
+固定 AndroidX 与 Core 均仅在 onAttach 开始拇指 collector；ThumbElement.update 赋值 source 字段，
+却不重启 collector。本地同步保留该边界：换源只连接 indication，新源不驱动旧 thumb collector；
+同时调用现有 ScheduleThumbUpdate，对应上游 update() 根据首次测量惰性建立尺寸/偏移 Animatable。
+卸载取消原生事件、停止初始源 collector、清理计数和 thumb 作用域。未自行修正固定上游的换源行为。
+
+SwitchInteractionSourceTests 检查重复及未配对事件、禁用、换源的双订阅、原生切换与卸载；
+双端 switch-source 读取真实 ThumbNode/拇指布局，涵盖 off/on、LTR/RTL、重叠、负计数、换源与禁用。
+Switch 已确认的 ripple 中心跟随决定仍适用，不能为通过双端截图改回固定中心或放宽容差。
+
+2026-11-03 最终换源修正后，`switch-source` 16 例（`20261103-113340-5e7425d9`）全部布局/状态/回调
+事实相等、零捕获错误；16 例截图 different，已实际查看换源后旧源再次按压等图像，保留已确认的
+波纹中心跟随差异。Compose repeat 4 例、extraImages 5 例不稳定，Avalonia 两类检查稳定。
+原有 `switch` 75 例（`20261103-113429-f44f0bfd`）39 equal、11 withinTolerance、25 different，
+双端重复稳定、零捕获错误。原生输入、拖动、属性当帧与中心跟随等差异仍须按对应边界阅读，
+不将执行完成称为全匹配。相关行为测试 96 项通过；Catalog 实际检查了共享源标签和原生鼠标切换。

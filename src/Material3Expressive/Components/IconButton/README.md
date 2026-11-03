@@ -183,7 +183,7 @@ XS 的 32 DIP 也不是强制尺寸。形状变化不改变内容/尺寸布局�
 
 ## 使用边界
 
-- 尚未提供任意路径 Shape、外部 MutableInteractionSource；详见维护说明
+- 尚未提供任意路径 Shape；详见维护说明
 - Outlined 默认描边按上游 helper 对所有尺寸使用 Small 的 1 DIP；显式 BorderBrush / BorderThickness 仍可覆盖默认值
 - 模板内部图标按两轴约束分别缩小（例如 20×40 容器获得 20×24 图标盒）；替换模板需自行维护尺寸、形状和反馈接入
 - 默认焦点反馈为状态层；可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用共享内缩焦点环，各尺寸/变体尚未独立完成双端焦点环验收
@@ -191,3 +191,21 @@ XS 的 32 DIP 也不是强制尺寸。形状变化不改变内容/尺寸布局�
 
 主题示例见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)，工具栏组合见
 [FloatingToolbarDemo](../../../Material3Expressive.Catalog/FloatingToolbarDemo.axaml)。
+
+## 外部交互源
+
+`IconButton` 和 `IconToggleButton` 的可选 `InteractionSource` 接受已有 `MaterialInteractionSource`。
+设置同一个源可把原生按压、悬停与 `TooltipLabel` 连接：
+
+```csharp
+var source = new MaterialInteractionSource();
+iconButton.InteractionSource = source;
+tooltipLabel.InteractionSource = source;
+```
+
+类型命名空间为 `Material3Expressive.Foundation.Interaction`。外部 Emit 仅控制反馈和按压形状，
+不会执行 Click/Command 或修改 IsChecked；释放/取消应引用原来的 Press 对象。
+多个按压中最后一个结束才恢复形状。源不重放事件；换源清除旧波纹，原生开始事件配对取消。
+尚未结束的外部按压则按上游保留已记忆状态和正在进行的形变，直到新源首个事件重新计算状态。
+卸载停止订阅。
+从固定形状切换到形变会重新开始形状状态收集；按住期间才设置 PressedCornerRadius 不会重放旧按压。

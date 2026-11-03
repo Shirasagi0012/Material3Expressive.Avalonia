@@ -126,6 +126,7 @@ public sealed class MaterialSurface : Control
     private Border? _checkedOverlay;
     private AnimatedButtonBorder? _animatedBorder;
     private SpringSpec _shapeSpec;
+    private bool _shapeConfigurationInitialized;
     private bool _shapeCommitPending;
     private bool _shapeInteractionDeferred;
     private int _shapeGeneration;
@@ -258,7 +259,8 @@ public sealed class MaterialSurface : Control
         get
         {
             var fullFraction = ButtonSurfaceState.GetSplitOuterCorners(this) ? 1f : .5f;
-            if (_interactionController?.Interaction.HasFlag(InteractionState.Pressed) == true && PressedCornerRadius is { } pressed)
+            if ((ButtonSurfaceState.GetIsPressed(this) ?? _interactionController?.Interaction.HasFlag(InteractionState.Pressed)) == true
+                && PressedCornerRadius is { } pressed)
                 return new(pressed, fullFraction);
             if (ButtonSurfaceState.GetIsChecked(this) == true && ButtonSurfaceState.GetCheckedCornerRadius(this) is { } selected)
                 return new(selected);
@@ -500,6 +502,7 @@ public sealed class MaterialSurface : Control
         _shapeEffectTask = null;
         _shapeMorph?.Dispose();
         _shapeMorph = null;
+        _shapeConfigurationInitialized = false;
         _animatedBorder?.Dispose();
         _animatedBorder = null;
         UpdateCornerRadius();
@@ -638,6 +641,11 @@ public sealed class MaterialSurface : Control
 
     private void RecreateShapeMorph(AnimationScope motion, SpringSpec spec)
     {
+        // IconButton passes the shape instance to ripple(focusRingShape = shape). Replacing
+        // AnimatedShape also replaces that indication node; ongoing interactions are not replayed.
+        if (_shapeConfigurationInitialized && TemplatedParent is IconButton)
+            _interactionController?.ResetSourceIndication(preserveSurfaceMotion: true);
+        _shapeConfigurationInitialized = true;
         _shapeMorph?.Dispose();
         _shapeRest = CornerRadius;
         _shapePressed = PressedCornerRadius;

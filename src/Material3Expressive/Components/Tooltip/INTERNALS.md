@@ -20,6 +20,8 @@ AndroidX 是 Material 逻辑依据，Popup 的平台行为取固定 Core，尤�
 
 RichTooltip 的三槽表面由 RichTooltip.cs / RichTooltipLayout.cs 承担，RichTooltipTokenSource 保留 RichTooltipTokens.kt 的系统引用。两端固定 RichTooltip 与 textVerticalPadding 实现相同。
 
+TooltipLabel 对应固定 AndroidX/Core 的 Label.kt，两端文件相同；名称避免与原生文字 Label 冲突。内容槽沿用 Content/ContentTemplate 与 Label/LabelTemplate，事件复用 MaterialInteractionSource。
+
 ## 2. 关键机制与架构契约
 
 TooltipBox 的缩放/透明度规格由 Box Token 引用系统 motion，经主题绑定内部配置属性；Transition 捕获当前属性，不再自行解析 Token 或补 Expressive 默认。PlainTooltip 仍只负责静态表面。
@@ -74,6 +76,11 @@ RichTooltip 按标题、正文、动作顺序分配剩余高度，三槽分别�
 
 普通 TextBlock、显式原生 BaselineOffset 和 ContentPresenter 可提供基线。复杂容器应在槽根提供实际基线，自动透传任意布局需要全库 alignment-line 合约。
 
+TooltipLabel 的 HandleInteractions 保留有序 start 列表、按对象身份移除与 wasVisible 聚合边沿；Press、Drag、Hover 任一活跃即显示，Focus 不计入。外部 dismiss 只隐藏，不重置 collector，尚有活动交互时新 start 不会重开。
+上游每个 Label 使用私有 MutatorMutex，只有 collector 发起 UserInput show，无超时或公开 Show API；本地以局部显隐状态表达同一所有权，不引入等待任务或全局互斥。
+IsPersistent 对应始终可见、dismiss 无效且不订阅源的分支。换源、切换持续模式与卸载清理 collector，重新连接不重放；换模板只重接宿主，不重置 collector。
+Label 调用 BasicTooltipBox 而非 TooltipBox 动画包装，所以显隐立即完成；复用 overlay Popup、TooltipPresenter 自动化与 TooltipDefaults 物理像素定位，不夺焦点或追加 Escape、长按、焦点输入。外部按下仍向下传递。
+
 ## 3. 已确认决定与已知差异
 
 确认依据为 [拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Tooltip/README.md)：
@@ -85,6 +92,10 @@ RichTooltip 按标题、正文、动作顺序分配剩余高度，三槽分别�
 
 尚未实现 caret 的形状及背景、裁剪、阴影路径并集，任意自定义容器的基线透传也尚未实现。
 TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
+
+TooltipLabel 的纯 RenderTransform 更新尚未对齐固定 Core 的放置生命周期：Popup.skiko.kt 在 onPlaced 读取父坐标，graphicsLayer 变化不触发布局放置；本地 TooltipBox/Label 接入会跟随变换。该差异未获接受。
+建议在 Tooltip 内统一实现布局放置的锚点快照与失效条件，覆盖祖先移动、重新打开和内容尺寸变化，不在 Label 内复制布局跟踪。例如持续显示时设置 label.RenderTransform = new ScaleTransform(1.5, 1.25)，应区分纯绘制更新与实际布局，不能延后所有定位或改变容差来通过。
+Slider/RangeSlider 尚无公开交互源接线，Label 不能证明完整 Slider 标签集成；跨屏 DPI、字体栅格和真实触摸设备未经验收。Windows Catalog 已检查常驻标签、IconButton/Switch 悬停及点击关闭、分段按钮选择写回。
 
 ## 4. 验证入口
 
@@ -98,3 +109,5 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 self-test --family rich-tooltip --require-match
 ./tests/VisualParity/parity.ps1 self-test --family tooltip-box
 ```
+TooltipLabelTests 8 项行为测试通过。双端 tooltip-label 覆盖主题、RTL、边缘翻转、受限内容、交互身份与重叠、换源、卸载、持续模式、外部关闭、移动、尺寸及渲染变换。
+运行 20261103-115022-b0fa088d 的 36 例为 34 equal、2 different，双端重复稳定、零捕获错误；两个差异均为上述纯变换 Popup 位置，不代表已接受。使用 self-test --family tooltip-label 复验，读取不同值与实际截图，不修改参考或容差。

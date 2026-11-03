@@ -45,6 +45,21 @@
         </ControlTemplate>
       </Setter>
     </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:TooltipLabel}" TargetType="m3:TooltipLabel">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid x:Name="PART_Root">
+            <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                ContentTemplate="{TemplateBinding ContentTemplate}"
+                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:PlainTooltip}" TargetType="m3:PlainTooltip">
         <Setter Property="TooltipMaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MaxWidth}}" />
       <Setter Property="ClipToBounds" Value="False" />

@@ -91,7 +91,7 @@ Standard 继续取 provider 外的 ambient 内容色。无伪类与有伪类的�
 仍由 Surface 处理 pressed > checked > resting、DefaultEffects、目标中断及模板/挂载清理。
 这些新增组件 API 在 2026-11-02 的剩余移植批次授权内实施，不改变已有固定形状默认值。
 
-**尚未实现：** 任意 Shape 及独立 IconButton 的外部 InteractionSource。
+**尚未实现：** 任意 Shape。
 可选 InsetRing 通过 Surface 自动接入，IconButton 各尺寸/变体的独立双端焦点环验证尚未完成。
 对应原始 Token 可以存在，不意味着模板已经消费或有公开入口。
 
@@ -178,7 +178,7 @@ Avalonia Window 默认提供 OnSurface；用例在未指定 AmbientColor 时给 
 
 ## 当前验证
 
-2026-11-03，固定参考与最终代码重新运行 self-test：
+前次移植在 2026-11-03 使用固定参考重新运行 self-test（本批交互源补齐后的复验见下文）：
 
 - icon-toggle-button：226 例，218 equal、8 withinTolerance、0 different；其中 5 例快速反向按压
   出现 Compose repeat / extraImages 差异，Avalonia 两类重复检查全部稳定。唯一静态微差为
@@ -206,3 +206,52 @@ Catalog 提供四种切换外观及普通/Vibrant 颜色对照，Windows 桌面�
 一致的原 CI nupkg；MaterialSymbols 使用版本所标注的 e577ac071623f74411e19e28e440eaca73a33d81 源码重建，
 放在独立临时包缓存，恢复锁文件也放在 obj；仓库包版本、正式 packages.lock.json、参考提交和比较容差未改。
 上述运行证据属于该临时环境，原始 MaterialSymbols 锁定制品与字体双端像素验收仍缺失。
+
+## 外部交互源与形变生命周期
+
+2026-11-03 剩余移植批次的非破坏性组件 API 授权下，IconButton/IconToggleButton 增加可选
+`InteractionSource`，null 使用每实例内部源。原生 Button 仍拥有激活；源负责观察和反馈，不写 IsChecked。
+按固定 `PressInteraction.kt.collectIsPressedAsState` 保存 Press 列表及对象身份，每次事件重新计算 bool。
+源更换只重建列表，已记忆的 bool 保留到新事件；detach 取消原生开始事件、停止订阅并清理状态。
+模板内部 `ButtonSurfaceState.IsPressed` 仅向 Surface 提供独立 collector 的值，未设置该内部输入的其他
+组件仍用原来的 controller 聚合状态。该输入不改变公开 Button.IsPressed 或原生伪类。
+
+新 indication 节点不能重建记忆中的 AnimatedShape。现有内部 ResetSourceIndication 增加可选
+preserveSurfaceMotion，仅 IconButton 使用：结束旧 ripple/state-layer 动画和订阅，但保留 Surface
+形状作用域、当前插值及速度；其余调用方的默认行为不变。中途换源的连续性有行为测试及双端动画采样。
+固定形状与形变分支切换时清理形状 collector，保持上游静态分支不记忆按压的语义；
+按住期间才打开形变不会重放旧 Press，波纹与原生按压仍按独立生命周期继续。
+固定 AndroidX/Core 的 ripple 工厂都将 focusRingShape 纳入节点身份；key(shapes) 重建形状或
+切回静态形状时，Surface 同步重建 indication、清除旧波纹，保留形状 collector 的独立状态。
+首次形状配置不属于节点替换，不能清除挂载后刚收到的交互；重挂载会重置该初始化标记。
+原生按住时换源与禁用一样，在 Clickable 的组合更新期间取消 Press；复用控制器已有的下一次
+组合提交路径，使形状取消保留旧帧姿态和速度，不对普通源事件或外部 Press 换源统一增加延迟。
+测试入口为 IconButtonInteractionSourceTests、双端 `icon-button-source`；Catalog TooltipDemo 展示与 Label 共享源。
+
+新增场景保留换源当帧旧 Compose 波纹尚未重绘、本地已清除的差异；随后帧形状和波纹生命周期应分别比较。
+禁用时普通 Filled/Tonal 仍消费原有 StateLayerColor Token，而固定上游使用实际内容色；
+这会影响尚未结束的外部波纹。建议维护者决定是否将普通 Filled/Tonal 的反馈墨色迁至有效 Foreground，
+例如 `iconButton.Foreground = Brushes.Red` 时 ripple 同步为红色；已有独立状态层 Token 覆盖的调用方将受影响，
+需要兼容入口或明确迁移。当前未改写该 Token 合约，建议也未记为已批准。
+
+本批最终控件测试 1702/1702 通过，其中新交互源及 Label 行为用例 26 项；VisualParity 系统测试
+124/124 通过。期间全量测试曾有一次 IconButtonThemeTests 清理阶段 InvalidOperationException，
+该单例复跑以及随后两次全量测试通过；保留该稳定性事实，不把它归为已修复缺陷。
+
+2026-11-03 本批双端复验（容差、参考提交及用例均未删除或放宽）：
+
+- `icon-button` 279 例，255 equal、6 withinTolerance、18 different，零执行错误
+  （`20261103-115748-afb77612`）。原有 clear-shape / change-shape 两例现为 equal；剩余差异
+  涉及属性修改当帧、原生 Enter 和既有墨色边界，静态矩阵没有 different。
+  Compose repeat / extraImages 各 1 例不稳定，Avalonia 两类检查稳定。
+- `icon-button-source` 48 例，11 equal、13 withinTolerance、24 different，零执行错误
+  （`20261103-115919-b7ea4173`）。覆盖四种外观、固定/形变、重叠按压、换源、原生按压换源、
+  hover、禁用及 LTR/RTL 静态/形变往返。换源与形状重建的后续形变采样已对齐，变更当帧和
+  禁用墨色差异仍保留。Compose repeat 3 例、extraImages 4 例不稳定，Avalonia 两类检查稳定。
+- `icon-toggle-button` 226 例，218 equal、8 withinTolerance、0 different、零执行错误
+  （`20261103-120453-4bb7985d`）。微差为快速反向动画及 Outlined XS Narrow 未选中描边；
+  Compose repeat 3 例、extraImages 6 例不稳定，Avalonia 两类检查稳定。
+
+这些 self-test 完成并不表示双端全匹配；原始报告保留不同值、实际截图与重复性证据。
+最终解决方案构建通过，保留现有私有 API、可空性、过时属性及测试分析器警告；依赖验证范围仍受
+上文临时包缓存与原始字体制品缺失的限制。

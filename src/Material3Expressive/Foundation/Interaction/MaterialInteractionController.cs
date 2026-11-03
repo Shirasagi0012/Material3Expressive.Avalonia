@@ -547,12 +547,12 @@ internal sealed partial class MaterialInteractionController
         }
     }
 
-    private void NotifyInteractionChanged(bool deferShape = false)
+    internal void NotifyInteractionChanged(bool deferShape = false)
     {
         Changed?.Invoke();
         UpdateButtonElevation();
-        // Disabling cancels Clickable's press during composition. Its shape observer therefore
-        // invalidates the following composition, unlike cancellation by a pointer event.
+        // Disabling or replacing a source cancels Clickable's press during composition. Its shape
+        // observer invalidates the following composition, unlike cancellation by a pointer event.
         if (deferShape && Motion is { } motion && !motion.Lifetime.IsCancellationRequested)
         {
             _presenter?.DeferShapeInteraction();

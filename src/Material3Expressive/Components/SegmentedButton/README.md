@@ -118,6 +118,22 @@ Surface 反馈墨色跟随最终 Foreground。清除局部值后恢复剩余用�
 默认图标间距和动效可分别通过 `IconSpacing`、`IconEffectsAnimation`、`IconSpatialAnimation`、
 `LabelOffsetAnimation` Token 配置；无需替换整个模板。
 
-`BaseShape`/`CornerRadius` 只表达圆角矩形，不提供任意路径/切角 `Shape` 或外部 InteractionSource。
+`BaseShape`/`CornerRadius` 只表达圆角矩形，不提供任意路径/切角 `Shape`。
 文字和图标高度会参与测量，自定义内容可能改变默认尺寸；真实文字 raster、系统屏幕阅读器和桌面体验
 未由无字形双端场景证明。示例见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+
+## 外部交互源
+
+`InteractionSource` 可设置 `Material3Expressive.Foundation.Interaction.MaterialInteractionSource`，
+用于观察原生交互或从外部发出反馈，例如与 `TooltipLabel` 共用一个源：
+
+```csharp
+var source = new MaterialInteractionSource();
+segment.InteractionSource = source;
+label.InteractionSource = source;
+```
+
+外部事件不改变 `IsSelected`，也不执行 Click/Command。绘制层级采用上游的有符号事件计数：
+每个 Press/Focus 加一，每个 Release/CancelPress/Unfocus 减一，再加上选中态的 5；hover/drag 不抬高。
+正常调用应配对发送，未匹配的结束事件仍会减少计数。换源保留计数，但波纹从新源的后续事件重新开始；
+卸载清理订阅和计数。ItemsSource 模板的层级应用到实际同级 ContentPresenter。

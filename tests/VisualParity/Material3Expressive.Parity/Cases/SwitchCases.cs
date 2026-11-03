@@ -174,7 +174,7 @@ public sealed class SwitchCases
         }
     }
 
-    sealed class SwitchScene
+    internal sealed class SwitchScene
     {
         readonly AvaloniaHost host;
         int callbacks;

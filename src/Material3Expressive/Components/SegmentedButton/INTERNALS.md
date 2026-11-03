@@ -60,7 +60,7 @@ ItemsSource 的 ContentPresenter 只 ApplyTemplate，不在每次测量强制重
 避免 Avalonia 再次镜像已生成的物理圆角。CornerBasedShape 按 min(width,height)归一化每个竖向角对，
 不能改用 Avalonia 按两个轴分别归一化的默认行为。
 
-绘制层级为 selected×5 + press + focus，hover 不抬高；模板化 ItemsSource 应在实际 sibling ContentPresenter
+绘制层级为 selected×5 + interactionCount，Press/Focus 事件各加一，Release/CancelPress/Unfocus 各减一，hover 不抬高；模板化 ItemsSource 应在实际 sibling ContentPresenter
 设置层级，不能只提高它内部按钮。默认 Padding 按固定上游 `ButtonDefaults.ContentPadding` 的 12/8，
 不是 Expressive Small 的垂直 10。禁用描边按 colors factory 使用 Outline×0.12，不能误用原始 DisabledOutlineColor 的 OnSurface。
 
@@ -81,7 +81,7 @@ Space/Enter 释放激活，失焦/禁用清理待激活键；共享控制器仍�
 2026-10-04，维护者确认行/按钮 API、外部选择职责、十二槽颜色、原生属性覆盖及组件内部 intrinsic 测量适配。
 十二槽的当前入口按上面的 2026-10-05 配置确认迁到状态 Token / 原生属性，不再保留旧 nullable Colors 对象。
 目的在于保留 Compose 状态所有权和必要布局关系，不增加通用布局或 Shape 框架。
-任意路径/切角 Shape 及外部 hoisted InteractionSource 明确排除该阶段范围，仍属于尚未实现能力。
+任意路径/切角 Shape 及外部 hoisted InteractionSource 明确排除该阶段范围；后者在下述剩余移植批次补齐，Shape 仍未实现。
 
 进入途中反向曾暴露共享 AnimatedVisibility 缺口：Exit.None 缺失 fade/scale 规格时错误用 Snap，
 且缩放中心使用像素 Point/Snap 而非比例坐标 spring。历史确认保留在上面的拆分前组件记录，
@@ -92,7 +92,7 @@ origin 为比例坐标默认 spring、阈值 0.01。组件不复制依赖动画�
 
 ## 一致性边界与历史观测
 
-尚未实现的 Shape/InteractionSource 范围如上；真实桌面、文字 raster 和屏幕阅读器体验未经无字形场景验收。
+尚未实现的 Shape 范围如上；真实桌面、文字 raster 和屏幕阅读器体验未经无字形场景验收。
 旧主线合入记录中，全量双端结构化事实相等、截图在既定容差内且重复捕获稳定，未放宽门禁。
 当时代表性 FAB Default Extended 反向、菜单反向、Medium Toggle 反向和 FilterChip 反向选择回归也稳定，
 但不代表 FAB/Chip 全量验证；依赖升级后的状态应重新采集，不沿用历史通过结论。
@@ -121,3 +121,18 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
 不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
 分别说明执行错误、双端差异、稳定性及未覆盖项。
+
+## 外部交互源补齐
+
+2026-11-03 剩余移植批次授权新增可选 `InteractionSource`，复用 MaterialInteractionSource/controller。
+固定 SegmentedButton.kt 的 interactionCountAsState 以有符号计数累加事件，不使用 bool、身份集合或零下限。
+换源时保留 remember 的计数；旧原生事件在退订前配对取消，新 indication 不重放旧开始事件。
+外部选择职责、原生键盘激活以及 ItemsSource 的同级 ContentPresenter 层级保持原约定。
+卸载重置计数；图标槽 Stop 必须先取消 Transition 循环，再移除动画宿主和释放 CTS，单独 Dispose CTS 不会取消等待帧。
+
+SegmentedButtonInteractionSourceTests 覆盖重叠、未配对结束、换源、模板化 ItemsSource、禁用和原生事件配对。
+2026-11-03 `segmented-button-source` 24 例（运行 `20261103-112456-12bcfe6a`）结构化事实全部相等，
+截图全部 withinTolerance，零执行错误；6 个 count 场景存在 Compose extraImages 不稳定，Avalonia 重复检查稳定。
+不能将此次 self-test 记为全通过。颜色描边与图标栅格的容差未修改；旧失败运行保留为清理缺陷修复前证据。
+随后原有 `segmented-button` 全部 75 例（`20261103-113608-3b8f6809`）完成 self-test：
+2 equal、73 withinTolerance、0 different、0 执行错误，双端两类重复检查全部稳定。

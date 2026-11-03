@@ -2,12 +2,19 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Material appearance for the native ToggleSwitch; state and activation remain native.</summary>
 public static class SwitchAppearance
 {
+    /// <summary>A shared interaction stream. Input and checked-state ownership remain native.</summary>
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<ToggleSwitch, MaterialInteractionSource?>("InteractionSource", typeof(SwitchAppearance));
+    public static MaterialInteractionSource? GetInteractionSource(ToggleSwitch owner) => owner.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(ToggleSwitch owner, MaterialInteractionSource? value) => owner.SetValue(InteractionSourceProperty, value);
+
     public static readonly AttachedProperty<object?> ThumbIconProperty =
         AvaloniaProperty.RegisterAttached<ToggleSwitch, object?>("ThumbIcon", typeof(SwitchAppearance));
     public static object? GetThumbIcon(ToggleSwitch owner) => owner.GetValue(ThumbIconProperty);

@@ -3,6 +3,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
+using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Tokens;
 using MaterialSymbols;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -17,6 +19,95 @@ namespace Material3Expressive.Components;
 /// </summary>
 public class IconButton : Button
 {
+    /// <summary>An optional shared stream for observing input and emitting feedback interactions.</summary>
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<IconButton, MaterialInteractionSource?>(nameof(InteractionSource));
+
+    public MaterialInteractionSource? InteractionSource
+    {
+        get => GetValue(InteractionSourceProperty);
+        set => SetValue(InteractionSourceProperty, value);
+    }
+
+    // collectIsPressedAsState is independent of the indication node. In particular its remembered
+    // bool survives source replacement, while the new collector starts with an empty press list.
+    internal static readonly StyledProperty<bool> SourceIsPressedProperty =
+        AvaloniaProperty.Register<IconButton, bool>(nameof(SourceIsPressed));
+    internal bool SourceIsPressed { get => GetValue(SourceIsPressedProperty); private set => SetValue(SourceIsPressedProperty, value); }
+    private readonly MaterialInteractionSource _localSource = new();
+    private readonly List<MaterialInteractionEvent.Press> _presses = [];
+    private MaterialInteractionSource? _source;
+    private bool _usesAnimatedShape;
+
+    private void UpdateShapeCollection()
+    {
+        // The static shapeForInteraction branch has no remembered press collector. Keep the
+        // source connection for indication, but recreate the shape collector at this boundary.
+        var animated = MaterialButton.GetPressedCornerRadius(this) is not null
+            || this is IconToggleButton { CheckedCornerRadius: not null };
+        if (_usesAnimatedShape == animated) return;
+        _usesAnimatedShape = animated;
+        _presses.Clear();
+        SourceIsPressed = false;
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ConnectSource();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        MaterialInteraction.GetOrCreate(this).ConnectSource(null);
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = null;
+        _presses.Clear();
+        SourceIsPressed = false;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        // Reset before template bindings observe a newly enabled target and initialize its shape.
+        if (change.Property == MaterialButton.PressedCornerRadiusProperty
+            || change.Property == IconToggleButton.CheckedCornerRadiusProperty)
+            UpdateShapeCollection();
+        base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
+    }
+
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(source, _source)) return;
+        var replacing = _source is not null;
+        var cancelsNativePress = replacing && IsPressed;
+        var controller = MaterialInteraction.GetOrCreate(this);
+        controller.ConnectSource(null);
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = source;
+        _presses.Clear();
+        source.Interaction += ReceiveInteraction;
+        controller.ConnectSource(source);
+        if (replacing) controller.ResetSourceIndication(preserveSurfaceMotion: true);
+        // Clickable disposes its native Press while applying the new source in composition.
+        // As with disabling, the shape observer commits that cancellation in the following frame.
+        if (cancelsNativePress) controller.NotifyInteractionChanged(deferShape: true);
+    }
+
+    private void ReceiveInteraction(MaterialInteractionEvent interaction)
+    {
+        switch (interaction)
+        {
+            case MaterialInteractionEvent.Press press: _presses.Add(press); break;
+            case MaterialInteractionEvent.Release release: _presses.Remove(release.Start); break;
+            case MaterialInteractionEvent.CancelPress cancel: _presses.Remove(cancel.Start); break;
+        }
+        SourceIsPressed = _presses.Count != 0;
+    }
+
     /// <summary>Defines the <see cref="WidthOption"/> property.</summary>
     public static readonly StyledProperty<IconButtonWidthOption> WidthOptionProperty =
         AvaloniaProperty.Register<IconButton, IconButtonWidthOption>(nameof(WidthOption), IconButtonWidthOption.Uniform);

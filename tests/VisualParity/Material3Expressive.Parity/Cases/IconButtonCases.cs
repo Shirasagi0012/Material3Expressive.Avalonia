@@ -214,7 +214,7 @@ public sealed class IconButtonCases
         }
     }
 
-    sealed class IconScene
+    internal sealed class IconScene
     {
         readonly AvaloniaHost host;
         readonly IconButtonConfig config;
@@ -292,7 +292,8 @@ public sealed class IconButtonCases
             if (config.Action != "none")
             {
                 buttonFields.Add(Measurement.Flag("enabled", Button.IsEffectivelyEnabled, definition: "icon-button.enabled", source: "IconButton.IsEffectivelyEnabled"));
-                buttonFields.Add(Measurement.Flag("pressed", Interaction("Pressed"), definition: "icon-button.pressed", source: "Material interaction controller active Pressed flag"));
+                buttonFields.Add(Measurement.Flag("pressed", config.Action.StartsWith("source-") ? Button.SourceIsPressed : Interaction("Pressed"),
+                    definition: "icon-button.pressed", source: config.Action.StartsWith("source-") ? "IconButton independent source press collector" : "Material interaction controller active Pressed flag"));
                 buttonFields.Add(Measurement.Flag("hovered", Interaction("Hovered"), definition: "icon-button.hovered", source: "Material interaction controller active Hovered flag"));
                 buttonFields.Add(Measurement.Flag("focused", Button.IsFocused, definition: "icon-button.focused", source: "IconButton.IsFocused"));
                 buttonFields.Add(Measurement.Numeric("clickCount", clicks, "count", definition: "icon-button.on-click-count", source: "real IconButton.Click callback"));

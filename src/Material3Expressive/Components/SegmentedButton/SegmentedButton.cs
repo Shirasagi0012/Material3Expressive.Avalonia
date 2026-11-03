@@ -16,6 +16,10 @@ namespace Material3Expressive.Components;
 /// <summary>Single-choice selectable or multi-choice toggleable segment, with external selection.</summary>
 public sealed class SegmentedButton : Button
 {
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<SegmentedButton, MaterialInteractionSource?>(nameof(InteractionSource));
+    /// <summary>The shared input/feedback stream. Null uses a component-local source.</summary>
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
     public static readonly StyledProperty<bool> IsSelectedProperty = AvaloniaProperty.Register<SegmentedButton, bool>(nameof(IsSelected));
     public static readonly StyledProperty<bool> ShowSelectionIconProperty = AvaloniaProperty.Register<SegmentedButton, bool>(nameof(ShowSelectionIcon), true);
     public static readonly StyledProperty<object?> ActiveIconProperty = AvaloniaProperty.Register<SegmentedButton, object?>(nameof(ActiveIcon));
@@ -36,10 +40,12 @@ public sealed class SegmentedButton : Button
     private MaterialSurface? _surface;
     private Key? _activationKey;
     private bool _suppressKeyboardClick;
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+    private int _interactionCount;
     internal SegmentedButtonRow? Row => this.GetVisualAncestors().OfType<SegmentedButtonRow>().FirstOrDefault();
     public SegmentedButton()
     {
-        MaterialInteraction.GetOrCreate(this).Changed += RefreshZIndex;
         LostFocus += (_, _) => _activationKey = null;
     }
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -56,15 +62,21 @@ public sealed class SegmentedButton : Button
     }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        base.OnAttachedToVisualTree(e); Refresh();
+        base.OnAttachedToVisualTree(e); ConnectSource(); Refresh();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _activationKey = null; base.OnDetachedFromVisualTree(e);
+        _activationKey = null;
+        MaterialInteraction.GetOrCreate(this).ConnectSource(null);
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = null; _interactionCount = 0;
+        RefreshZIndex();
+        base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
         if (change.Property == IsSelectedProperty) PseudoClasses.Set(":selected", IsSelected);
         if (change.Property == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) _activationKey = null;
         if (change.Property == TemplateProperty)
@@ -131,11 +143,41 @@ public sealed class SegmentedButton : Button
     }
     private void RefreshZIndex()
     {
-        var interaction = MaterialInteraction.GetOrCreate(this).Interaction;
-        var z = (IsSelected ? 5 : 0) + (interaction.HasFlag(InteractionState.Pressed) ? 1 : 0) + (interaction.HasFlag(InteractionState.Focused) ? 1 : 0);
+        var z = (IsSelected ? 5 : 0) + _interactionCount;
         // ItemsControl can wrap templated data in a ContentPresenter. The sibling is the drawing layer.
         if (this.GetVisualParent() is Avalonia.Controls.Presenters.ContentPresenter presenter) presenter.ZIndex = z;
         else ZIndex = z;
+    }
+
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(source, _source)) return;
+        var replacing = _source is not null;
+        var controller = MaterialInteraction.GetOrCreate(this);
+        controller.ConnectSource(null);
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = source;
+        // SegmentedButton.kt remembers the counter outside LaunchedEffect(source). Preserve it
+        // across source replacement; unlike collectIsPressedAsState there is no local start list.
+        source.Interaction += ReceiveInteraction;
+        controller.ConnectSource(source);
+        if (replacing) controller.ResetSourceIndication();
+    }
+
+    private void ReceiveInteraction(MaterialInteractionEvent interaction)
+    {
+        // Deliberately a signed event count, not aggregate flags or an identity set. The fixed
+        // upstream also decrements unmatched ends; hover and drag do not affect stacking order.
+        switch (interaction)
+        {
+            case MaterialInteractionEvent.Press or MaterialInteractionEvent.Focus: _interactionCount++; break;
+            case MaterialInteractionEvent.Release or MaterialInteractionEvent.CancelPress or MaterialInteractionEvent.Unfocus:
+                _interactionCount--; break;
+            default: return;
+        }
+        RefreshZIndex();
     }
     internal Size IntrinsicSize(double height)
     {

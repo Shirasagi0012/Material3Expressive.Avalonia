@@ -28,6 +28,10 @@ internal sealed class SwitchThumbLayout : Panel
 
     private ToggleSwitch? _owner;
     private MaterialInteractionController? _interaction;
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _thumbSource;
+    private int _pressCount;
+    private bool _sourcePressed;
     private AnimationChildScope? _attachScope;
     private Animatable<float>? _sizeAnim, _offsetAnim;
     private float _initialSize = float.NaN, _initialOffset = float.NaN;
@@ -52,6 +56,9 @@ internal sealed class SwitchThumbLayout : Panel
         _interaction.IsRippleBounded = false;
         _interaction.RippleRadius = 20;
         _interaction.RippleFollowsPresenterCenter = true;
+        _thumbSource = SwitchAppearance.GetInteractionSource(_owner) ?? _localSource;
+        _thumbSource.Interaction += ReceiveThumbInteraction;
+        _interaction.ConnectSource(_thumbSource);
         // Observe the existing controller after its tunnel handlers, without another input
         // state machine or an activation path.
         _owner.AddHandler(InputElement.PointerPressedEvent, InputChanged, RoutingStrategies.Tunnel, true);
@@ -68,6 +75,11 @@ internal sealed class SwitchThumbLayout : Panel
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _interaction?.ConnectSource(null);
+        if (_thumbSource is not null) _thumbSource.Interaction -= ReceiveThumbInteraction;
+        _thumbSource = null;
+        _pressCount = 0;
+        _sourcePressed = false;
         AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
         if (_owner is { } owner)
         {
@@ -152,6 +164,16 @@ internal sealed class SwitchThumbLayout : Panel
     }
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == SwitchAppearance.InteractionSourceProperty && _owner is { } owner)
+        {
+            // Fixed ThumbNode collects only in onAttach: changing its source field does not
+            // restart that collector. The indication node does move to the replacement source.
+            _interaction!.ConnectSource(SwitchAppearance.GetInteractionSource(owner) ?? _localSource);
+            _interaction.ResetSourceIndication();
+            // ThumbElement.update also calls ThumbNode.update even when checked is unchanged;
+            // it initializes the lazy size/offset Animatables from their first measurement.
+            ScheduleThumbUpdate();
+        }
         if (e.Property == InputElement.IsEffectivelyEnabledProperty)
         {
             if (_owner?.IsEffectivelyEnabled == false) EndDrag();
@@ -161,6 +183,19 @@ internal sealed class SwitchThumbLayout : Panel
             InvalidateMeasure();
         if (e.Property != Avalonia.Controls.Primitives.ToggleButton.IsCheckedProperty) return;
         ScheduleThumbUpdate();
+    }
+    private void ReceiveThumbInteraction(MaterialInteractionEvent interaction)
+    {
+        // ThumbNode counts events, including unmatched ends; it does not maintain identities.
+        switch (interaction)
+        {
+            case MaterialInteractionEvent.Press: _pressCount++; break;
+            case MaterialInteractionEvent.Release or MaterialInteractionEvent.CancelPress: _pressCount--; break;
+        }
+        var pressed = _pressCount > 0;
+        if (_sourcePressed == pressed) return;
+        _sourcePressed = pressed;
+        InvalidateMeasure();
     }
     private void ScheduleThumbUpdate()
     {
@@ -201,7 +236,7 @@ internal sealed class SwitchThumbLayout : Panel
         var content = this.GetVisualDescendants().OfType<ContentPresenter>().First();
         content.Measure(Size.Infinity);
         var hasContent = content.DesiredSize.Width != 0 && content.DesiredSize.Height != 0;
-        var pressed = _interaction?.Interaction.HasFlag(InteractionState.Pressed) == true;
+        var pressed = _sourcePressed;
         var size = (pressed ? 28 : hasContent || _checked ? 24 : 16) * scale;
         var minBound = (32 * scale - size) / 2;
         var maxBound = ((52 - 24) - (32 - 24) / 2) * scale;

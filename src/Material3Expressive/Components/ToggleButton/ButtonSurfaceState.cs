@@ -7,6 +7,10 @@ namespace Material3Expressive.Components;
 // Template-only inputs to the existing Surface shape engine. No extra input or ripple mechanism.
 internal static class ButtonSurfaceState
 {
+    // Optional independently collected press state. Null keeps the existing controller aggregate.
+    public static readonly AttachedProperty<bool?> IsPressedProperty = AvaloniaProperty.RegisterAttached<MaterialSurface, bool?>("IsPressed", typeof(ButtonSurfaceState));
+    public static bool? GetIsPressed(MaterialSurface owner) => owner.GetValue(IsPressedProperty);
+    public static void SetIsPressed(MaterialSurface owner, bool? value) => owner.SetValue(IsPressedProperty, value);
     // Split's resting/pressed OuterCornerSize is 100%; its checked CircleShape remains 50%.
     public static readonly AttachedProperty<bool> SplitOuterCornersProperty = AvaloniaProperty.RegisterAttached<MaterialSurface, bool>("SplitOuterCorners", typeof(ButtonSurfaceState));
     public static bool GetSplitOuterCorners(MaterialSurface owner) => owner.GetValue(SplitOuterCornersProperty);
@@ -38,6 +42,7 @@ internal static class ButtonSurfaceState
 
     static ButtonSurfaceState()
     {
+        IsPressedProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
         SplitOuterCornersProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
         IsCheckedProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());
         CheckedCornerRadiusProperty.Changed.AddClassHandler<MaterialSurface>((s, _) => s.OnButtonStateChanged());

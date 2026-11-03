@@ -1,5 +1,6 @@
 @file:OptIn(androidx.compose.ui.InternalComposeUiApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package parity
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -85,7 +86,8 @@ class SegmentedButtonCases {
             }
         }
     }
-    private class Scene(val c:SegmentedButtonConfig) {
+    internal class Scene(val c:SegmentedButtonConfig) {
+        val sources=List(c.count){MutableInteractionSource()}.toMutableStateList()
         val selected=mutableStateListOf<Boolean>().apply { repeat(c.count) { add(it==0 && c.selected) } }
         val enabled=mutableStateListOf<Boolean>().apply { repeat(c.count) { add(c.enabled) } }; var dark by mutableStateOf(c.dark)
         var grown by mutableStateOf(false); var radius by mutableStateOf(c.radius); var extraIcon by mutableStateOf(false)
@@ -125,11 +127,13 @@ class SegmentedButtonCases {
                         if(c.multi) MultiChoiceSegmentedButtonRow(modifier,c.border.toFloat().dp) {
                             repeat(c.count) { i -> SegmentedButton(checked=selected[i],onCheckedChange={ clicked(i) },shape=SegmentedButtonDefaults.itemShape(i,c.count,shape),
                                 modifier=itemModifier(i),enabled=enabled[i],colors=colors,contentPadding=padding,
+                                interactionSource=if(c.action.startsWith("source-"))sources[i] else null,
                                 border=SegmentedButtonDefaults.borderStroke(if(!enabled[i]) { if(selected[i]) colors.disabledActiveBorderColor else colors.disabledInactiveBorderColor } else { if(selected[i]) colors.activeBorderColor else colors.inactiveBorderColor },c.border.toFloat().dp),
                                 icon={ Icon(i) },label={ Label(i) }) }
                         } else SingleChoiceSegmentedButtonRow(modifier,c.border.toFloat().dp) {
                             repeat(c.count) { i -> SegmentedButton(selected=selected[i],onClick={ clicked(i) },shape=SegmentedButtonDefaults.itemShape(i,c.count,shape),
                                 modifier=itemModifier(i),enabled=enabled[i],colors=colors,contentPadding=padding,
+                                interactionSource=if(c.action.startsWith("source-"))sources[i] else null,
                                 border=SegmentedButtonDefaults.borderStroke(if(!enabled[i]) { if(selected[i]) colors.disabledActiveBorderColor else colors.disabledInactiveBorderColor } else { if(selected[i]) colors.activeBorderColor else colors.inactiveBorderColor },c.border.toFloat().dp),
                                 icon={ Icon(i) },label={ Label(i) }) }
                         }
@@ -144,7 +148,10 @@ class SegmentedButtonCases {
                 val node=checkNotNull(field(checkNotNull(probe.coordinates),"layoutNode"))
                 val semantics=checkNotNull(field(node,"_semanticsConfiguration")) as SemanticsConfiguration
                 val active=if(c.multi) semantics[SemanticsProperties.ToggleableState]==ToggleableState.On else semantics[SemanticsProperties.Selected]
-                result+=ProbePoint("item-$i","button","row",bounds(probe)+listOf(flag("selected",active,definition="segmented-button.selected"),
+                val stacking=if(c.action.startsWith("source-")) listOf(number("zIndex",
+                    (node.javaClass.getDeclaredMethod("getZIndex").apply{isAccessible=true}.invoke(node) as Float).toDouble(),
+                    "none",definition="segmented-button.sibling-z-index")) else emptyList()
+                result+=ProbePoint("item-$i","button","row",bounds(probe)+stacking+listOf(flag("selected",active,definition="segmented-button.selected"),
                     flag("enabled",!semantics.contains(SemanticsProperties.Disabled),definition="segmented-button.enabled"),number("clicks",clicks[i].toDouble(),"count",definition="segmented-button.clicks")))
                 var coordinator:Any?=probe.coordinates; var clipped:LayoutCoordinates?=null
                 while(coordinator!=null) {

@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        x:Class="Material3Expressive.Catalog.TooltipDemo" Width="640" Height="640" Title="Tooltips">
+        x:Class="Material3Expressive.Catalog.TooltipDemo" Width="640" Height="900" Title="Tooltips">
+  <ScrollViewer>
   <StackPanel Margin="40" Spacing="24">
     <TextBlock Text="ToolTip.Tip" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
     <StackPanel Orientation="Horizontal" Spacing="24">
@@ -46,5 +47,36 @@
       </m3:TooltipBox.Tooltip>
       <Button Content="About collections" Click="OnShowRich" />
     </m3:TooltipBox>
+    <TextBlock Text="TooltipLabel" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="The label shares the chip's hover/press stream; focus alone does not show it." TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="48" Margin="0,24,0,0">
+      <m3:TooltipLabel x:Name="InteractionLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Save to collection" /></m3:TooltipLabel.Label>
+        <m3:AssistChip x:Name="LabelChip" Content="Save" />
+      </m3:TooltipLabel>
+      <m3:TooltipLabel IsPersistent="True">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Always visible" /></m3:TooltipLabel.Label>
+        <m3:AssistChip Content="Pinned label" />
+      </m3:TooltipLabel>
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="32" Margin="0,24,0,0">
+      <m3:TooltipLabel x:Name="IconLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Add an item" /></m3:TooltipLabel.Label>
+        <m3:IconButton x:Name="LabelIcon" Symbol="Add" AutomationProperties.Name="Add an item"
+                       m3:MaterialButton.PressedCornerRadius="8" />
+      </m3:TooltipLabel>
+      <m3:TooltipLabel x:Name="SegmentLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Select a period" /></m3:TooltipLabel.Label>
+        <m3:SingleChoiceSegmentedButtonRow>
+          <m3:SegmentedButton x:Name="LabelDay" Content="Day" IsSelected="True" Click="OnChoosePeriod" />
+          <m3:SegmentedButton x:Name="LabelWeek" Content="Week" Click="OnChoosePeriod" />
+        </m3:SingleChoiceSegmentedButtonRow>
+      </m3:TooltipLabel>
+      <m3:TooltipLabel x:Name="SwitchLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Enable sync" /></m3:TooltipLabel.Label>
+        <ToggleSwitch x:Name="LabelSwitch" AutomationProperties.Name="Enable sync" />
+      </m3:TooltipLabel>
+    </StackPanel>
   </StackPanel>
+  </ScrollViewer>
 </Window>

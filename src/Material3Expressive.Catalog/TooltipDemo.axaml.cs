@@ -15,6 +15,17 @@ public partial class TooltipDemo : Window
         // Keep hover/focus requests from rejecting this programmatic demo's Default priority.
         Programmatic.State = new TooltipState(isPersistent: false, mutatorMutex: new());
         RichHelp.State = new TooltipState(isPersistent: true, mutatorMutex: new());
+        InteractionLabel.InteractionSource = LabelChip.InteractionSource = new();
+        IconLabel.InteractionSource = LabelIcon.InteractionSource = new();
+        SegmentLabel.InteractionSource = LabelDay.InteractionSource = LabelWeek.InteractionSource = new();
+        SwitchLabel.InteractionSource = new();
+        SwitchAppearance.SetInteractionSource(LabelSwitch, SwitchLabel.InteractionSource);
+    }
+
+    private void OnChoosePeriod(object? sender, RoutedEventArgs e)
+    {
+        LabelDay.IsSelected = ReferenceEquals(sender, LabelDay);
+        LabelWeek.IsSelected = ReferenceEquals(sender, LabelWeek);
     }
 
     private async void OnShow(object? sender, RoutedEventArgs e)

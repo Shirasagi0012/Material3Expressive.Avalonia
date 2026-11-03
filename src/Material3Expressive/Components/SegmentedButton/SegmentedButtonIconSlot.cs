@@ -45,6 +45,9 @@ internal sealed class SegmentedButtonIconSlot : Decorator
     }
     internal void Stop()
     {
+        // Cancel the transition before removing its animation hosts. Disposing a CTS alone
+        // leaves the loop awaiting the owner's next frame, including after root teardown.
+        _loopCancellation?.Cancel();
         // A retired Crossfade slot can be absent from the visual tree while its nested
         // presenter still owns caller content. Release our own presenters explicitly.
         foreach (var presenter in _icons.OfType<ContentPresenter>())

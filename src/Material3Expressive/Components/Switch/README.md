@@ -97,5 +97,24 @@ Enter 按下激活，`Space` 默认松开激活。
 不提供完全等价的 Compose `onCheckedChange=null` 模式；关闭普通输入仍保留原生 `ToggleProvider`。
 默认原生自动化 peer 的 ControlType 为 Button 并提供 TogglePattern，不另外映射为 Compose Role.Switch。
 可通过 `m3:MaterialInteraction.FocusFeedback="InsetRing"` 启用轨道上的内缩焦点环，配置见
-[交互反馈](../../Foundation/Interaction/README.md)。外部 MutableInteractionSource 尚未实现；文字、实际屏幕阅读器和真实桌面
+[交互反馈](../../Foundation/Interaction/README.md)。文字、实际屏幕阅读器和真实桌面
 双端体验未经完整验收。示例见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+
+## 外部交互源
+
+`SwitchAppearance.InteractionSource` 接受共享 `MaterialInteractionSource`（命名空间
+`Material3Expressive.Foundation.Interaction`）。原生开关保持原有切换与拖动职责：
+
+```csharp
+var source = new MaterialInteractionSource();
+SwitchAppearance.SetInteractionSource(toggle, source);
+tooltipLabel.InteractionSource = source;
+```
+
+外部 Press/Release/CancelPress 控制拇指按压反馈，不改变 IsChecked 或执行 Click；hover/focus/drag
+只参与各自指示反馈。拇指按上游使用有符号事件计数，所有结束事件都会减一，应配对发送。
+禁用仅取消开关自己的输入事件，不取消其他发送者的事件。
+
+固定上游存在特殊换源行为：波纹改用新源，拇指仍监听挂载时的原源，直到控件卸载并重挂载。
+本地保留这一行为；建议同一控件生命周期保持源实例稳定。卸载会结束两侧订阅，不重放旧事件。
+实际组合示例见 [TooltipDemo](../../../Material3Expressive.Catalog/TooltipDemo.axaml)。

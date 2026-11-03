@@ -128,7 +128,8 @@ class SwitchCases {
         }
     }
 
-    private class SwitchScene(val c:SwitchConfig) {
+    internal class SwitchScene(val c:SwitchConfig) {
+        var source by mutableStateOf(androidx.compose.foundation.interaction.MutableInteractionSource())
         var checked by mutableStateOf(c.state=="on")
         var enabled by mutableStateOf(c.enabled)
         var dark by mutableStateOf(c.dark)
@@ -152,7 +153,7 @@ class SwitchCases {
                             Color(0x90556677),Color(0x50365A80),Color(0xA0775533),Color(0xFFF0E080))
                             else SwitchDefaults.colors()
                         Switch(checked=checked,onCheckedChange={ callbacks++; checked=it },modifier=modifier,
-                            enabled=enabled,colors=colors,
+                            enabled=enabled,colors=colors,interactionSource=if(c.action.startsWith("source-")) source else null,
                             thumbContent=if(thumb=="none") null else ({
                                 val large=thumb=="large" || thumb=="required-large"
                                 val width=if(thumb=="empty") 0.dp else if(large) 40.dp else 16.dp

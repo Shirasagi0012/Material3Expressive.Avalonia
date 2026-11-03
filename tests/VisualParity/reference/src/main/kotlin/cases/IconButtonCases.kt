@@ -143,14 +143,14 @@ class IconButtonCases {
         }
     }
 
-    private class IconScene(val config:IconButtonConfig) {
+    internal class IconScene(val config:IconButtonConfig) {
         var ambientColor by mutableStateOf(config.ambientColor)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
         var size by mutableStateOf(config.size)
         var pressedRadius by mutableStateOf(config.pressedRadius)
         val container=Probe(); val icon=Probe()
-        val interactions=MutableInteractionSource()
+        var interactions by mutableStateOf(MutableInteractionSource())
         val requester=FocusRequester()
         var focusManager:FocusManager?=null
         var focused=false; var pressed=false; var hovered=false; var clicks=0

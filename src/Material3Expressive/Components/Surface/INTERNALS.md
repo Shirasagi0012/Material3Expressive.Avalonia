@@ -53,6 +53,10 @@ attach 接入 owner 的控制器。独立 Surface 不注册一套输入状态机
 
 按压形状、选中形状、静止形状依次选择目标，形状更新在共享时钟帧合并。取消旧 effect 后再启动
 下一目标，保留速度和上游记忆键规则；Button 与 Split 的配置更新策略并不完全相同。
+IconButton 通过内部 ButtonSurfaceState.IsPressed 传入独立的 source collector；未提供时仍读取 controller。
+其换源重建 indication 时使用现有控制器的保留 Surface motion 选项，不能连带取消记忆中的形变。
+IconButton 形状实例重建还会使 ripple 的 focusRingShape 身份改变，须清除旧 indication；首次配置和
+每帧形变采样不会触发这次清理，详见该组件的 [生命周期说明](../IconButton/INTERNALS.md#外部交互源与形变生命周期)。
 背景、描边、阴影、ripple clip 必须共用实际圆角；尺寸变化与 spring 过冲还要归一化轮廓。
 静态目标同样参与归一化，不再依赖是否存在形状动画。内部 CornerShape.Defined 将公开 CornerRadius
 中精确的 1000 值按既有 Full 约定解析为 50%，普通数值保持 DIP；Split 的静止/按压 Full 为 100%，
