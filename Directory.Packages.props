@@ -2,39 +2,36 @@
   <PropertyGroup>
     <!-- Enable central package management, https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Pinned Avalonia baseline for the rewrite and root-owned modules. -->
-    <AvaloniaVersion>12.1.2</AvaloniaVersion>
     <!--
       Material Symbols needs SkiaSharp's variable-font instancing API, which first ships in 4.x.
       Avalonia 12.1 declares a pre-4.0 dependency range; this repository deliberately runs it
-      against the tested 4.150.1 managed/native set and guards the override with render tests.
+      against the managed/native version below; render tests guard this override.
     -->
-    <SkiaSharpVersion>4.150.1</SkiaSharpVersion>
     <NoWarn>$(NoWarn);NU1608</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Avalonia" Version="12.1.5" />
-    <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.5" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.5" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.5" />
     <PackageVersion Include="Avalonia.Skia" Version="12.1.5" />
     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
     <PackageVersion Include="PropertyGenerator.Avalonia" Version="1.3.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="SkiaSharp" Version="4.154.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="$(SkiaSharpVersion)" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="$(SkiaSharpVersion)" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.154.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.154.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="4.154.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.WebAssembly" Version="4.154.0" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="YamlDotNet" Version="16.3.0" />
-    <PackageVersion Include="Avalonia.Markup.Xaml.Loader" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Markup.Xaml.Loader" Version="12.1.5" />
     <PackageVersion Include="HotAvalonia" Version="3.1.4" />
-    <PackageVersion Include="Shirasagi0012.MaterialColorUtilities" Version="0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c" />
-    <PackageVersion Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" Version="0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81" />
+    <PackageVersion Include="Shirasagi0012.MaterialColorUtilities" Version="0.4.0-alpha" />
+    <PackageVersion Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" Version="0.1.2-alpha" />
     <PackageVersion Include="Shirasagi0012.SmoothScroll.Avalonia" Version="12.0.0.1" />
   </ItemGroup>
 </Project>
