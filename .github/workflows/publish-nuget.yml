@@ -11,7 +11,6 @@ on:
 
 permissions:
     contents: read
-    packages: read
     id-token: write
 
 concurrency:
@@ -37,9 +36,6 @@ jobs:
 
             - name: Pack all libraries with their project versions
               shell: bash
-              env:
-                  NuGetPackageSourceCredentials_shirasagi0012: >-
-                      Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
               run: |
                   set -euo pipefail
                   projects=(

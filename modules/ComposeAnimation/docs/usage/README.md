@@ -5,8 +5,8 @@ ComposeAnimation 是把 Jetpack Compose 动画系统移植到 Avalonia 的动画
 ## 安装与引用
 
 在本仓库内，通过 `modules/ComposeAnimation` 下的项目引用直接构建和调试，无需预先打包。
-外部项目通过 GitHub Packages 安装，包源和发布方式见[根 README](../../../../README.md#版本与发布)。
-引用控件层包时会传递引入 Runtime；以下示例使用迁移后的版本，需待维护者发布后安装：
+外部项目通过 nuget.org 安装，发布方式见[根 README](../../../../README.md#版本与发布)。
+引用控件层包时会传递引入 Runtime；以下示例的版本需按 nuget.org 实际可用版本调整：
 
 ```xml
 <ItemGroup>

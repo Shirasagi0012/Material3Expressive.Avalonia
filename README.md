@@ -36,8 +36,8 @@
 
 ## 本地开发
 
-需要 .NET 10 SDK；VisualParity 脚本另需 PowerShell。部分依赖从 GitHub Packages 恢复，
-环境与身份验证准备见[接入指南](docs/GETTING_STARTED.md#源码与依赖)。不需要初始化 Git 子模块。
+需要 .NET 10 SDK；VisualParity 脚本另需 PowerShell。NuGet 依赖统一从 nuget.org 恢复，
+环境准备见[接入指南](docs/GETTING_STARTED.md#源码与依赖)。不需要初始化 Git 子模块。
 
 ```powershell
 dotnet restore Material3Expressive.slnx

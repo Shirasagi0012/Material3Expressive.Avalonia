@@ -7,7 +7,7 @@
 
 需要 .NET 10 SDK；VisualParity 脚本另需 PowerShell。
 Avalonia、SkiaSharp 与外部依赖的版本见根目录 [Directory.Packages.props](../Directory.Packages.props)，
-包源及映射见 [nuget.config](../nuget.config)。仓内模块保留各自的项目及中央包配置，
+包源配置见 [nuget.config](../nuget.config)。仓内模块保留各自的项目及中央包配置，
 不要只升级其中一个包而忽略原生渲染依赖。
 
 ```powershell
@@ -20,10 +20,8 @@ MaterialTypography.Roboto 直接随仓库提供，主库通过仓内 ProjectRefe
 MaterialColorUtilities、MaterialSymbols Rounded 与 SmoothScroll 使用 `Shirasagi0012.*` NuGet 包；
 不需要相邻依赖仓库、旧 submodule 目录或预先执行本地打包脚本。
 
-首次使用需让自己的 NuGet 环境能读取 GitHub Packages 源
-`https://nuget.pkg.github.com/Shirasagi0012/index.json`。身份验证方式见
-[GitHub Packages 的 NuGet 说明](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry)；
-凭证放在用户配置或受支持的凭证管理器中，不写入仓库。若 restore 返回 401/403，先检查账户的包读取权限。
+NuGet 依赖统一从 nuget.org 获取，无需配置包源身份验证。
+若恢复时找不到指定版本，先确认该版本已上传并可从 nuget.org 下载；刚发布的包可能尚未完成索引。
 
 ```powershell
 dotnet restore src/Material3Expressive.Catalog/Material3Expressive.Catalog.csproj
@@ -37,7 +35,6 @@ dotnet run --project src/Material3Expressive.Catalog --no-restore -- --text-fiel
 
 本指南通过项目引用使用当前源码 API。主库包 ID 为 `Shirasagi0012.Material3Expressive.Avalonia`，
 发布目标包源为 nuget.org；Roboto 字体模块使用独立包 `Shirasagi0012.MaterialTypography.Roboto`。
-当前外部依赖仍需上文的 GitHub Packages 源。
 安装发布包时，以包源实际可用版本及对应版本文档为准，不把项目文件中的默认 Version 当作已经发布的证明。
 
 仓库的 [发布工作流](../.github/workflows/publish-nuget.yml)通过手动运行选择 ref，
@@ -49,8 +46,7 @@ MaterialShapes、Shadow、Roboto 与主库，再按依赖顺序推送至 nuget.o
 及 `NuGet/login@v1` 获取临时 API key。首次运行前，在拥有这些包发布权限的 nuget.org 账户中，
 为本 GitHub 仓库配置 Trusted Publishing，工作流文件名填写 `publish-nuget.yml`。
 手动运行时的 `nuget_user` 默认为 `Shirasagi0012`，应与配置 Trusted Publishing 的账户一致；
-不需要配置长期 NuGet API key secret。GitHub token 仅用于恢复 GitHub Packages 依赖，
-仓库仍须具有这些依赖包的读取权限。
+不需要配置长期 NuGet API key secret。
 
 新增工作流、源码构建成功或[已有 Release](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/releases)
 都不单独证明某次包发布已完成。不要从配套模块的历史版本推断主库可用版本；旧版包不保证包含当前源码的 API。
