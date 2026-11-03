@@ -61,11 +61,28 @@ SelectedColor、UnselectedColor、DisabledSelectedColor、DisabledUnselectedColo
 在 C# 中调用 `RadioButtonAppearance.SetColors(radio, colors)`（`Material3Expressive.Components`），
 传 null 恢复动态 Token；`with` 表达式可在已有配置上修改个别槽。
 
+## 外部交互源
+
+`RadioButtonAppearance.InteractionSource` 可绑定 `MaterialInteractionSource`。该源观察原生交互，
+也允许主动发送按对象身份配对的预览事件，不修改 IsChecked、GroupName 或调用 Click/Command：
+
+```csharp
+var source = new MaterialInteractionSource(); // Material3Expressive.Foundation.Interaction
+RadioButtonAppearance.SetInteractionSource(radio, source);
+var hover = new MaterialInteractionEvent.HoverEnter();
+source.Emit(hover);
+source.Emit(new MaterialInteractionEvent.HoverExit(hover));
+```
+
+调用须在 UI 线程；null 恢复内部源。替换源和重新挂载不回放先前事件。
+XAML 可写 `m3:RadioButtonAppearance.InteractionSource="{Binding SelectionSource}"`，
+绑定对象需提供该源。Catalog 的 shared feedback 行演示与 CheckBox 共用反馈、独立选择。
+
 ## 使用边界
 
 - 需要 Avalonia.Skia；样式不改变原生输入、命令、access key 或选择自动化
 - 不提供 Compose `onClick=null` 的完全等价模式；禁止普通输入仍不会移除选择自动化语义
-- 不提供外部 `MutableInteractionSource` 或可配置 inset focus ring 的对象映射
+- 可选 inset focus ring 使用现有 `MaterialInteraction.FocusFeedback="InsetRing"` 配置
 - 原生尺寸约束可调整布局，没有单独的 `LocalMinimumInteractiveComponentSize` 环境覆盖 API
 - 文字视觉、屏幕阅读器和真实桌面双端体验未经验收
 

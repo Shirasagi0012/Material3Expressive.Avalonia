@@ -87,6 +87,7 @@
     <StyleInclude Source="/Components/ButtonGroup/ButtonGroup.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
     <StyleInclude Source="/Components/NavigationDrawer/NavigationDrawer.axaml" />
+    <StyleInclude Source="/Components/SwipeToDismissBox/SwipeToDismissBox.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />
     <StyleInclude Source="/Components/CommandBar/CommandBar.axaml" />
     <StyleInclude Source="/Components/ShortNavigationBar/ShortNavigationBar.axaml" />

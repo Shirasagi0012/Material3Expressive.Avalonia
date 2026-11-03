@@ -9,6 +9,7 @@
         Title="Material3Expressive.Catalog">
     <Window.Resources>
         <converters:ColorToBrushConverter x:Key="FabIconBrushConverter" />
+        <m3:MaterialInteractionSource x:Key="SelectionPreviewSource" />
     </Window.Resources>
     <Grid ColumnDefinitions="Auto,*">
         <m3:ModalWideNavigationRail x:Name="DemoNavigationRail">
@@ -52,6 +53,7 @@
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="Date / time pickers" Click="OnDateTimePickerDemo" HorizontalAlignment="Left" />
                 <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />
+                <Button Content="Swipe to dismiss" Click="OnSwipeToDismissDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="NumericUpDown demo" Click="OnNumericUpDownDemo" HorizontalAlignment="Left" />
                 <Button Content="RepeatButton demo" Click="OnRepeatButtonDemo" HorizontalAlignment="Left" />
@@ -239,6 +241,12 @@
                               IsChecked="{x:Null}" Click="OnGroupCheckBoxClick" />
                     <CheckBox x:Name="GroupFirst" Content="First" IsChecked="True" Click="OnGroupChildClick" />
                     <CheckBox x:Name="GroupSecond" Content="Second" Click="OnGroupChildClick" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <CheckBox Content="Shared feedback" m3:CheckBoxAppearance.InteractionSource="{StaticResource SelectionPreviewSource}" />
+                    <RadioButton Content="Independent selection" GroupName="SourcePreview"
+                                 m3:RadioButtonAppearance.InteractionSource="{StaticResource SelectionPreviewSource}" />
+                    <Button Content="Toggle hover preview" Click="OnSelectionHoverPreview" />
                 </StackPanel>
                 <TextBlock Text="Scaffold" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>

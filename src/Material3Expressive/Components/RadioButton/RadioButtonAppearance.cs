@@ -1,12 +1,18 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Material colors for the native Avalonia RadioButton; selection and input remain native.</summary>
 public static class RadioButtonAppearance
 {
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<RadioButton, MaterialInteractionSource?>("InteractionSource", typeof(RadioButtonAppearance));
+    public static MaterialInteractionSource? GetInteractionSource(RadioButton owner) => owner.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(RadioButton owner, MaterialInteractionSource? value) => owner.SetValue(InteractionSourceProperty, value);
+
     public static readonly AttachedProperty<RadioButtonColors?> ColorsProperty =
         AvaloniaProperty.RegisterAttached<RadioButton, RadioButtonColors?>("Colors", typeof(RadioButtonAppearance));
     public static RadioButtonColors? GetColors(RadioButton owner) => owner.GetValue(ColorsProperty);

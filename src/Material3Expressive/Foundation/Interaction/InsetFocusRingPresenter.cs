@@ -56,7 +56,7 @@ internal sealed class InsetFocusRingPresenter : Control
     // invalidate an idle ring's recorded draw. Read the current bound colors on its next draw.
     // Avalonia may call Render again because a parent changed, even if Compose would retain
     // this node's draw. Capture palette colors only at the ring's own draw invalidations.
-    private void InvalidateRing()
+    internal void InvalidateRing()
     {
         _captureDefaultColors = true;
         InvalidateVisual();

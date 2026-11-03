@@ -89,5 +89,16 @@ source.Emit(new MaterialInteractionEvent.DragStop(drag));
 前后槽提供缩小后的最小交互布局尺寸，默认 20 DIP；CheckBox / RadioButton 仍保留自身 24 DIP 绘制盒。
 `MaterialInteractiveSize.Minimum` 可在祖先上调整这个继承环境，它不会创建额外触摸命中区。
 
-尚不支持任意路径/切角 Shape 和可配置 inset focus ring，焦点使用默认 opacity 反馈。
+默认使用 opacity 焦点反馈。可在条目或祖先上设置 `m3:MaterialInteraction.FocusFeedback="InsetRing"`，
+内缩焦点环跟随当前形变轮廓；普通和分组条目使用同一入口：
+
+```xml
+<m3:ListItem Content="键盘焦点" InteractionMode="Click"
+             m3:MaterialInteraction.FocusFeedback="InsetRing"
+             m3:MaterialInteraction.FocusRingOuterColor="#006A6A"
+             m3:MaterialInteraction.FocusRingInnerColor="#FFFFFF" />
+```
+
+可用 `MaterialInteraction.FocusRingMetrics` 调整描边和内缩，详见[交互反馈](../../Foundation/Interaction/README.md)。
+切换 Opacity / InsetRing 保留正在进行的波纹和交互收集。任意路径/切角 Shape 仍不支持。
 Catalog 入口为 [ListItemDemo](../../../Material3Expressive.Catalog/ListItemDemo.axaml)；维护机制和验证范围见 [INTERNALS](INTERNALS.md)。

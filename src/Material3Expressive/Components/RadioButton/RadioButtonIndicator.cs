@@ -19,6 +19,12 @@ namespace Material3Expressive.Components;
 // Template part: paint and animation only. Native RadioButton owns selection, grouping and automation.
 internal sealed class RadioButtonIndicator : Control
 {
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<RadioButtonIndicator, MaterialInteractionSource?>(nameof(InteractionSource));
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionController? _interaction;
+
     public static readonly StyledProperty<Foundation.Motion.SpringSpec?> DotAnimationProperty =
         AvaloniaProperty.Register<RadioButtonIndicator, Foundation.Motion.SpringSpec?>(nameof(DotAnimation));
     public Foundation.Motion.SpringSpec? DotAnimation { get => GetValue(DotAnimationProperty); set => SetValue(DotAnimationProperty, value); }
@@ -63,6 +69,8 @@ internal sealed class RadioButtonIndicator : Control
             var interaction = MaterialInteraction.GetOrCreate(owner);
             interaction.IsRippleBounded = false;
             interaction.RippleRadius = 20;
+            _interaction = interaction;
+            interaction.ConnectSource(InteractionSource ?? _localSource);
         }
         var motion = _attachScope = AnimationScope.Get(this).CreateChild("RadioButton indicator");
         _dotRadius = new Animatable<float>(new FloatConverter(), RadiusTarget, VisibilityThresholds.Float);
@@ -74,6 +82,8 @@ internal sealed class RadioButtonIndicator : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _interaction?.ConnectSource(null);
+        _interaction = null;
         _attachScope?.Dispose(); _attachScope = null;
         _dotRadius = null;
         _color = null;
@@ -84,6 +94,11 @@ internal sealed class RadioButtonIndicator : Control
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty && _interaction is { } interaction)
+        {
+            interaction.ConnectSource(InteractionSource ?? _localSource);
+            interaction.ResetSourceIndication();
+        }
         if (change.Property == DotAnimationProperty || change.Property == ColorAnimationProperty ||
             change.Property == IsCheckedProperty || change.Property == IsEffectivelyEnabledProperty ||
             change.Property == ColorsProperty || change.Property.PropertyType == typeof(Color)) UpdateTargets();

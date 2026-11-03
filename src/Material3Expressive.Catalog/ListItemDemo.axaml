@@ -22,6 +22,16 @@
       <m3:ListItem Content="Custom rounded shapes" InteractionMode="Click" Click="OnClick">
         <m3:ListItem.Shapes><m3:ListItemShapes Shape="2" HoveredShape="8" PressedShape="24" SelectedShape="16" FocusedShape="16" DraggedShape="16" /></m3:ListItem.Shapes>
       </m3:ListItem>
+      <StackPanel Spacing="2" m3:MaterialInteraction.FocusFeedback="InsetRing">
+        <TextBlock Text="Keyboard focus · use Tab" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <m3:ListItem Content="Animated focus outline" InteractionMode="Click" Click="OnClick" />
+        <m3:SegmentedListItem Content="Grouped focus outline" GroupIndex="0" GroupCount="2"
+                             InteractionMode="Click" Click="OnClick" />
+        <m3:SegmentedListItem Content="Custom focus colors" GroupIndex="1" GroupCount="2"
+                             InteractionMode="Click" Click="OnClick"
+                             m3:MaterialInteraction.FocusRingOuterColor="#006A6A"
+                             m3:MaterialInteraction.FocusRingInnerColor="#FFFFFF" />
+      </StackPanel>
       <TextBlock x:Name="Status" Text="Ready" />
     </StackPanel>
   </ScrollViewer>

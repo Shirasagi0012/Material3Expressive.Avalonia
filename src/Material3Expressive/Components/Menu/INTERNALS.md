@@ -101,11 +101,37 @@ Catalog 宽度修复后的 self-test：`linux-dropdown-menu-intrinsic-width` 为
 全部通过，37 个用例均重复稳定、无执行错误。剩余两个 Surface 暗色圆角用例的两端截图
 SHA-256 与 `linux-native-menu-container-2` 完全相同，未产生新差异。Catalog 构建通过。
 
-尚未实现：任意 Compose Shape / CutCornerShape（现有 Surface 只提供 CornerRadius）、可注入的
-外部 InteractionSource、任意 Arrangement 对象、系统平台 inset 与预测返回。
+尚未实现：任意 Compose Shape / CutCornerShape（现有 Surface 只提供 CornerRadius）、
+任意 Arrangement 对象、系统平台 inset 与预测返回。
 项目间距可配置 LeadingSpacing/TrailingSpacing；更复杂排列可替换项目模板。
 这些是当前基础能力/API 覆盖缺口，不标记为已接受的语义删减。
 新增独立入口不提供已隐藏的二进制兼容重载，也不涉及 ExposedDropdownMenuBox。
+
+### 项目交互源
+
+`DropdownMenuItem.InteractionSource` 对应固定 AndroidX/Core `Menu.kt` 的 nullable
+`MutableInteractionSource`；勾选、单选子类继承该属性。沿用共享交互控制器的原生输入配对、
+按实例配对的外部事件和无重放订阅，不改变点击/受控选择/关闭请求。源替换重置 indication；
+卸载断开旧源并取消原生 press，重挂与模板替换不重放仍未结束的外部 press。
+普通 Expressive 项目仍须显式选择 `MaterialExpressiveDropdownMenuItemTheme`，设置 Shapes 不切换模板。
+
+`MenuInteractionSourceTests` 覆盖四种项目的配对、替换、重挂和原生输入；`menu-source`
+双端用例覆盖 press、重叠、替换、禁用、hover/drag、重挂及恢复 null 源后的原生点击。
+
+`DropdownMenuGroup.InteractionSource` 复用同一事件流和 AnimatedCornerRadius。
+其私有 hover 列表直接对应 Foundation `HoverInteraction.kt/collectIsHoveredAsState`，不能用
+indication 控制器的聚合状态替代：固定上游在源替换时重建列表，但保留 remembered hover 布尔值；
+新源收到任何事件（包括非 hover）才按列表重新发布。hasBeenHovered 则在下一组合帧观察 hover，
+同帧 enter/exit 不算“曾悬停”。原生 hover 的 exit 发往旧源，卸载重置两种记忆并释放订阅。
+`menu-group-source` 覆盖重叠、替换、同帧进出、重挂、动画反向及原生指针。
+
+2026-11-03 Windows 补充验证：`menu-source` 28 项为 13 equal、15 withinTolerance，
+几何、受控状态和点击次数一致、零执行错误。6 个用例的 Compose 重复采集不稳定，差异已检查为
+单通道最多 1；其中两个还有被动截图检查差异。Avalonia repeat/extraImages 均稳定。
+未放宽门限，整族 self-test 仍报告失败。产物：`artifacts/visual-parity/runs/20261103-103710-ba397fff`。
+`menu-group-source` 6 项为 5 equal、1 withinTolerance（动画反向），零执行错误且重复/被动截图均稳定；
+产物位于 `20261103-103959-ee34847a`，修正重复样本 ID 后的 native 用例位于 `20261103-104130-8db6af9d`。
+两种菜单交互源的 18 项行为测试通过，包含模板替换和原生 hover 的旧源退出配对。
 
 
 

@@ -17,6 +17,8 @@ public partial class App : Application
         {
             desktop.MainWindow = System.Array.IndexOf(desktop.Args ?? [], "--app-bars") >= 0
                 ? new AppBarDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--swipe-to-dismiss") >= 0
+                ? new SwipeToDismissDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--drag-handles") >= 0
                 ? new DragHandleDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--tooltips") >= 0

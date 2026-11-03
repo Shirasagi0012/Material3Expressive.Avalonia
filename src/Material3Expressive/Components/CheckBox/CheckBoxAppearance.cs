@@ -1,12 +1,18 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Material paint options for the native Avalonia CheckBox. State and input remain native.</summary>
 public static class CheckBoxAppearance
 {
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<CheckBox, MaterialInteractionSource?>("InteractionSource", typeof(CheckBoxAppearance));
+    public static MaterialInteractionSource? GetInteractionSource(CheckBox owner) => owner.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(CheckBox owner, MaterialInteractionSource? value) => owner.SetValue(InteractionSourceProperty, value);
+
     public static readonly AttachedProperty<CheckBoxColors?> ColorsProperty =
         AvaloniaProperty.RegisterAttached<CheckBox, CheckBoxColors?>("Colors", typeof(CheckBoxAppearance));
     public static CheckBoxColors? GetColors(CheckBox owner) => owner.GetValue(ColorsProperty);

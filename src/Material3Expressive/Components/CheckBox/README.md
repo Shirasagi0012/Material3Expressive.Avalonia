@@ -70,11 +70,29 @@ Enter 在按下时激活，`Space` 默认在松开时激活；禁用阻止输入
 其十三个槽见 [CheckBoxAppearance.cs](CheckBoxAppearance.cs)。传 `null` 恢复动态 Token。
 默认基线不消费 `DisabledCheckmarkColor`，禁用勾号仍使用 `CheckedCheckmarkColor`。
 
+## 外部交互源
+
+`CheckBoxAppearance.InteractionSource` 接受已有的 `MaterialInteractionSource`，可观察原生按压、
+释放、hover 和焦点事件，也可在 UI 线程主动发送配对交互以预览反馈：
+
+```csharp
+var source = new MaterialInteractionSource(); // Material3Expressive.Foundation.Interaction
+CheckBoxAppearance.SetInteractionSource(checkBox, source);
+var hover = new MaterialInteractionEvent.HoverEnter();
+source.Emit(hover);
+source.Emit(new MaterialInteractionEvent.HoverExit(hover));
+```
+
+交互不会设置 IsChecked 或触发 Click/Command。结束事件必须引用同一个开始事件对象。
+传 null 恢复内部交互源；替换源、模板重建或重新挂载只观察后续事件，不回放旧按压。
+XAML 可用 `m3:CheckBoxAppearance.InteractionSource="{Binding SelectionSource}"`，
+其中 SelectionSource 是视图模型持有的源；共享源只共享反馈，不联动选择。
+
 ## 使用边界
 
 - 需要 Avalonia.Skia 绘制；公共接入说明包含宿主配置
 - 不提供完全等价于 Compose `onClick=null` 的只显示模式。关闭命中、焦点和 Material 交互仍保留原生 Toggle 自动化语义
 - 自定义 Stroke 支持 dash 参数，不支持任意 Compose PathEffect 对象
-- 未提供外部 `MutableInteractionSource` 对象映射；实际 OS 无障碍客户端、文字视觉和真实桌面双端体验尚未验收
+- 实际 OS 无障碍客户端、文字视觉和真实桌面双端体验尚未验收
 
 两态、三态、描边和全选组合见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

@@ -11,6 +11,8 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
+using Avalonia.VisualTree;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -35,6 +37,12 @@ public static class MenuDefaults
 /// <summary>A menu action. Content is the text slot; activation never closes or selects implicitly.</summary>
 public class DropdownMenuItem : Button
 {
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<DropdownMenuItem, MaterialInteractionSource?>(nameof(InteractionSource));
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _connectedSource;
+
     public static readonly StyledProperty<object?> LeadingIconProperty = AvaloniaProperty.Register<DropdownMenuItem, object?>(nameof(LeadingIcon));
     public static readonly StyledProperty<IDataTemplate?> LeadingIconTemplateProperty = AvaloniaProperty.Register<DropdownMenuItem, IDataTemplate?>(nameof(LeadingIconTemplate));
     public static readonly StyledProperty<object?> SelectedLeadingIconProperty = AvaloniaProperty.Register<DropdownMenuItem, object?>(nameof(SelectedLeadingIcon));
@@ -74,15 +82,41 @@ public class DropdownMenuItem : Button
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
+        var replacing = _layout is not null;
         _layout?.SetOwner(null);
         base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<DropdownMenuItemLayout>("PART_Layout");
         _layout?.SetOwner(this);
         Refresh();
+        if (replacing && this.IsAttachedToVisualTree()) MaterialInteraction.GetOrCreate(this).ResetSourceIndication();
+    }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ConnectSource();
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        MaterialInteraction.GetOrCreate(this).ConnectSource(null);
+        _connectedSource = null;
+        _enterPressed = false;
+        base.OnDetachedFromVisualTree(e);
+    }
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(source, _connectedSource)) return;
+        var replacing = _connectedSource is not null;
+        _connectedSource = source;
+        var controller = MaterialInteraction.GetOrCreate(this);
+        controller.ConnectSource(source);
+        if (replacing) controller.ResetSourceIndication();
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
         if (change.Property == LeadingIconProperty || change.Property == SelectedLeadingIconProperty
             || change.Property == TrailingContentProperty || change.Property == SupportingTextProperty)
         {

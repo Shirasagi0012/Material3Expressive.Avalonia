@@ -70,7 +70,7 @@ Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，�
 切换 Opacity / InsetRing 仅更新配置，不清空按压波纹、状态层或焦点交互。
 共享呈现部件在两种模式下均维持同一次订阅，见 [Interaction](../../Foundation/Interaction/README.md)。
 
-尚未实现 null 回调完全等价模式、外部 MutableInteractionSource、独立最小交互尺寸环境覆盖。
+尚未实现 null 回调完全等价模式、独立最小交互尺寸环境覆盖。
 文字视觉、实际 OS 无障碍客户端、真实桌面手工交互和非 Windows
 平台未作双端验收。
 
@@ -79,6 +79,20 @@ Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，�
 旧记录中闪点修正前的像素回归在 256ms 失败，正常和十倍时长均可复现；修正后的新增像素差异
 局限于中心 1 DIP 半径区域，几何、选择、启用状态和回调计数保持相等。
 这一观察不表示所有像素或所有平台相等；回归应保留尾段状态与实际像素两种读数。
+
+## 外部交互源
+
+`RadioButtonAppearance.InteractionSource` 经模板交给 Indicator，挂载连接现有交互控制器、卸载断开。
+null 使用内部源；替换源重建 indication，旧 starts 不回放，按压结束按对象身份配对。
+源事件只影响反馈，原生选择、组互斥和命令次序保持不变。对应固定 RadioButtonImpl 的 selectable
+interactionSource 参数；AndroidX/Core 两份固定组件文件一致。
+
+`SelectionInteractionSourceTests` 验证原生事件发布、外部事件不激活、配对、源替换与重挂。
+双端 `selection-source.radio.*` 的布局/选择/回调一致；按压早期采样有像素差异落入既有容差，
+不是严格像素相等。禁用场景的参考端额外截图曾出现重复性差异，本地重复和额外截图稳定，
+仍保留真实结果，不修改参考、采样或比较器来掩盖。
+2026-11-03 产物见 `artifacts/visual-parity/runs/20261103-101906-e7957986`；
+参考端 radio.disable 的不稳定像素最大通道差为 1。整族统计见 CheckBox/INTERNALS 的同批记录。
 
 ## 验证入口
 

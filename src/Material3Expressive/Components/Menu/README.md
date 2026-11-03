@@ -59,6 +59,26 @@ private void Copy(object? sender, RoutedEventArgs e)
 `DismissGroupedMenu` 将 `IsMenuOpen` 设为 false。单选项由 Click/Command 写回 `IsSelected`，
 同组其他项目也由业务方更新。没有原生 MenuItem 的 `GroupName` 或自动勾选行为。
 
+独立项目的 `InteractionSource` 可观察原生输入，也可注入外部反馈；普通、Expressive、勾选、单选项目共用此 API。
+源中的事件不会触发 `Click`、更改选择或关闭菜单。`null` 使用项目自身的内部源：
+
+```csharp
+var source = new MaterialInteractionSource();
+var item = new CheckableDropdownMenuItem { Content = "只读", InteractionSource = source };
+item.CheckedChangeRequested += (_, e) => item.IsChecked = e.Value;
+var hover = new MaterialInteractionEvent.HoverEnter();
+source.Emit(hover); // 挂接后发送；新订阅不会重放挂接前的事件。
+source.Emit(new MaterialInteractionEvent.HoverExit(hover));
+```
+
+类型位于 `Material3Expressive.Foundation.Interaction`。结束事件必须携带同一个开始事件实例。
+替换源、模板或卸载时会释放旧反馈；重新挂接只接收后续事件。
+
+`DropdownMenuGroup.InteractionSource` 使用相同事件类型，只通过 hover 驱动组形状，不呈现波纹。
+例如 `group.InteractionSource = source` 后发送上面的 enter/exit，即可预览悬停形变。
+分组开始时使用正常形状，只有某一帧实际观察到 hover 后，退出才会切换到 inactive 形状。
+替换源保留当前 hover 布尔值，直到新源的下一条事件重新计算；卸载则清空该记忆。这与固定上游一致。
+
 - `Shapes` 使用 `MenuDefaults.ItemShape(index, count)` / `GroupShape(index, count)`；位置由调用方给出，
   分隔线不会隐式成为组边界。`MenuDefaults.GroupSpacing` 为 2 DIP。
 - `LeadingIcon`、`SelectedLeadingIcon`、`TrailingContent`、`SupportingText` 都有对应模板槽；

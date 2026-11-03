@@ -16,6 +16,7 @@ internal sealed class ListItemMotion : IDisposable
     private readonly Transition<ColorState> _transition;
     private readonly Transition<ColorState>.TransitionAnimationState<Color>[] _colors;
     private readonly Animatable<float> _elevation;
+    private double _paintedShapeProgress = double.NaN;
     private float _elevationTarget;
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationRun;
@@ -170,7 +171,9 @@ internal sealed class ListItemMotion : IDisposable
     {
         if (_shape is null || _owner.Surface is not { } surface) return;
         _shape.Size = surface.Bounds.Size;
-        surface.SetAnimatedCorners(_shape.Current);
+        var progress = _shape.Progress;
+        surface.SetAnimatedCorners(_shape.Current, shapeStateChanged: _paintedShapeProgress != progress);
+        _paintedShapeProgress = progress;
     }
     public void Dispose()
     {

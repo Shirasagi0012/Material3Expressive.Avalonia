@@ -78,7 +78,7 @@ RoundedCornerShape(25%)；背景与无界 ripple 形状保持原有输入，不�
 固定 Checkbox.kt 使用同一个 ripple node；切换 Opacity / InsetRing 仅更新配置，
 不清空按压波纹、状态层或焦点交互。共享呈现部件在两种模式下均维持同一次订阅。
 
-尚未实现任意 PathEffect 的跨框架映射、完全等价的 null 回调模式与外部 MutableInteractionSource。
+尚未实现任意 PathEffect 的跨框架映射与完全等价的 null 回调模式。
 关闭 `IsHitTestVisible`、`Focusable`、`MaterialInteraction.IsInteractive` 只阻止相应输入与反馈，
 不会移除原生 ToggleProvider。
 
@@ -86,6 +86,22 @@ RoundedCornerShape(25%)；背景与无界 ripple 形状保持原有输入，不�
 RTL 和尺寸约束。`dynamic.input.enter`、`dynamic.input.tri-cycle` 与 `static.stroke.round.on`
 仍呈现上述已接受差异，参考端不重写原生循环或绘制以消除它们。
 文字视觉、实际 OS 无障碍客户端和真实桌面手工输入未经双端验收；无字形 parity 不能证明这些能力。
+
+## 外部交互源
+
+`CheckBoxAppearance.InteractionSource` 将源通过模板传到 Indicator，挂载后连接已有交互控制器。
+null 使用该模板实例的内部源；替换源重建 indication，清除旧 ripple 和状态层，不重放旧事件。
+卸载/模板替换断开源，原生未结束输入通过对应 Cancel/Exit 事件结束。选择和三态循环仍由原生控件负责。
+此入口对应固定 CheckboxImpl 的 triStateToggleable interactionSource 参数，两份固定上游文件一致。
+
+`SelectionInteractionSourceTests` 覆盖身份配对、不激活、原生事件、替换及重挂。
+双端 `selection-source` 对 boolean / tri / radio 覆盖外部 press、重叠、hover/drag、替换、禁用、
+重挂和 null 回退。三态 null-native 保留已批准的原生三态循环差异。
+重叠 ripple 和禁用期间的部分 Compose 重复/额外截图出现像素不稳定，本地重复捕获稳定；
+不是整族严格通过的声明，也没有改变比较器容差。普通按压与重挂等场景的布局、选择和回调一致。
+2026-11-03 产物 `artifacts/visual-parity/runs/20261103-101906-e7957986` 共 21 项：
+13 equal、7 withinTolerance、1 different（三态循环）；零执行错误。3 项参考端稳定性检查差异
+均已检查为最多 1 个通道值，本地 repeat/extraImages 稳定。
 
 ## 验证入口
 

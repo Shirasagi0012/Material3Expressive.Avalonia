@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Material3Expressive.Components;
 
 namespace Material3Expressive.Foundation.Interaction;
 
@@ -13,9 +14,9 @@ internal sealed partial class MaterialInteractionController
     private int _indicationGeneration;
     private readonly HashSet<InteractionState> _previousNativeIndicationStates = [];
 
-    // Checkbox.kt and RadioButton.kt keep one ripple node across focus-theme changes.
+    // Checkbox.kt, RadioButton.kt and ListItem.kt keep one ripple node across focus-theme changes.
     // Surface/Switch instead add a focus-only indication and replace the clickable ripple.
-    internal bool HasSeparateFocusIndication => _owner is not (CheckBox or RadioButton);
+    internal bool HasSeparateFocusIndication => _owner is not (CheckBox or RadioButton or ListItem);
 
     private void ResetRippleForFocusFeedback()
     {

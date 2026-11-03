@@ -138,7 +138,7 @@ Button 的 `ContentPadding` 是本地复合槽，依据固定上游 `ButtonDefau
 仍供 shape / elevation 消费。独立 InsetFocusRingPresenter 持有进度、订阅和动画子作用域，
 按固定 Core Desktop 在每次订阅内过滤焦点，计数随重建或卸载清除，不保存在 owner 控制器上。
 呈现部件不占用唯一的 Surface ripple attachment；父部件负责位置和当前四角圆角。
-Surface / Switch 的焦点模式变化重建 indication；CheckBox / RadioButton 的单一 ripple
+Surface / Switch 的焦点模式变化重建 indication；CheckBox / RadioButton / ListItem 的单一 ripple
 只更新配置，保留波纹、状态层和焦点进度，呈现部件在 Opacity 下也持续收集交互。
 纯视觉节点显式取得父部件的 inheritance context、主题及资源变更通知，不加入 LogicalChildren。
 Surface 将环置于内容、状态层与普通描边之后；Switch 放在 track 内、轨道 outline 之前。

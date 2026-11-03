@@ -45,6 +45,7 @@
 - [ListItem / SegmentedListItem](../src/Material3Expressive/Components/ListItem/README.md)：五槽列表行、受控选择与分组圆角
 - [Surface](../src/Material3Expressive/Components/Surface/README.md)：表面、圆角、描边与高度
 - [Card](../src/Material3Expressive/Components/Card/README.md)：填充、阴影与描边卡片
+- [SwipeToDismissBox](../src/Material3Expressive/Components/SwipeToDismissBox/README.md)：横向滑动消除、状态与固定背景
 - [Scaffold](../src/Material3Expressive/Components/Scaffold/README.md)：屏幕槽位、Padding 与 Insets
 - [Divider](../src/Material3Expressive/Components/Divider/README.md)：原生 Separator 与水平/垂直分隔
 - [VerticalDragHandle](../src/Material3Expressive/Components/DragHandle/README.md)：横向拖动的竖向把手外观与共享交互源

@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.InternalComposeUiApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.ui.InternalComposeUiApi::class)
 package parity
 
 import androidx.compose.foundation.BorderStroke
@@ -50,6 +50,13 @@ class FocusRingCases {
                             if(c.kind=="switch") Switch(checked=c.checked,onCheckedChange={},modifier=modifier,enabled=enabled)
                             else if(c.kind=="checkbox") Checkbox(checked=false,onCheckedChange={},modifier=modifier,enabled=enabled)
                             else if(c.kind=="radio") RadioButton(selected=false,onClick={},modifier=modifier,enabled=enabled)
+                            else if(c.kind=="list-item") ListItem(onClick={},modifier=modifier.width(180.dp),enabled=enabled) {
+                                Box(Modifier.size(32.dp,16.dp).background(Color.Blue))
+                            }
+                            else if(c.kind=="segmented-list-item") SegmentedListItem(onClick={},modifier=modifier.width(180.dp),enabled=enabled,
+                                shapes=ListItemDefaults.segmentedShapes(0,3)) {
+                                Box(Modifier.size(32.dp,16.dp).background(Color.Blue))
+                            }
                             else {
                                 val shape=when(c.shape) {
                                     "asymmetric" -> AbsoluteRoundedCornerShape(24.dp,8.dp,0.dp,16.dp)

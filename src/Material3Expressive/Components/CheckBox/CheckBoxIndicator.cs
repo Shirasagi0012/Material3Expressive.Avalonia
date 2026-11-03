@@ -19,6 +19,12 @@ namespace Material3Expressive.Components;
 // Private template part; it owns paint and animation, never changes the native CheckBox state.
 internal sealed class CheckBoxIndicator : Control
 {
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<CheckBoxIndicator, MaterialInteractionSource?>(nameof(InteractionSource));
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionController? _interaction;
+
     public static readonly StyledProperty<Foundation.Motion.SpringSpec?> ShapeAnimationProperty =
         AvaloniaProperty.Register<CheckBoxIndicator, Foundation.Motion.SpringSpec?>(nameof(ShapeAnimation));
     public Foundation.Motion.SpringSpec? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
@@ -99,6 +105,8 @@ internal sealed class CheckBoxIndicator : Control
             var interaction = MaterialInteraction.GetOrCreate(owner);
             interaction.IsRippleBounded = false;
             interaction.RippleRadius = 20;
+            _interaction = interaction;
+            interaction.ConnectSource(InteractionSource ?? _localSource);
         }
         _attachScope = AnimationScope.Get(this).CreateChild("CheckBox indicator");
         EnsureShapeTransition();
@@ -129,6 +137,8 @@ internal sealed class CheckBoxIndicator : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _interaction?.ConnectSource(null);
+        _interaction = null;
         if (_transition is not null) _transition.PropertyChanged -= TransitionChanged;
         _transitionRun?.Cancel();
         _transitionRun?.Dispose();
@@ -145,6 +155,11 @@ internal sealed class CheckBoxIndicator : Control
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty && _interaction is { } interaction)
+        {
+            interaction.ConnectSource(InteractionSource ?? _localSource);
+            interaction.ResetSourceIndication();
+        }
         if (change.Property == CheckmarkStrokeProperty || change.Property == OutlineStrokeProperty) InvalidateVisual();
         if (change.Property == ShapeAnimationProperty) EnsureShapeTransition();
         if (change.Property == ShapeAnimationProperty || change.Property == ColorAnimationProperty || change.Property == UncheckColorAnimationProperty ||

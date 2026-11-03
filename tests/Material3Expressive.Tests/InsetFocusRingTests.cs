@@ -19,6 +19,82 @@ namespace Material3Expressive.Tests;
 
 public class InsetFocusRingTests
 {
+    [AvaloniaFact]
+    public void ListItemShapeRetargetRefreshesCachedRingPaletteBeforeOutlineMoves()
+    {
+        using var clock = new MotionTestClockScope();
+        var item = new ListItem { Width = 180, InteractionMode = ListItemInteractionMode.Click,
+            Content = new Border { Width = 32, Height = 16 } };
+        MaterialInteraction.SetFocusFeedback(item, FocusFeedback.InsetRing);
+        var window = DialogTests.Show(item);
+        void Frames(int count) { for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); } }
+        (int R, int G, int B) TopPixel()
+        {
+            var p = item.TranslatePoint(new Point(item.Bounds.Width / 2, 0), window)!.Value;
+            using var frame = window.CaptureRenderedFrame()!;
+            return PixelAt(frame, (int)p.X, (int)p.Y);
+        }
+        try
+        {
+            window.Resources[Sys.Color.Secondary] = Colors.Red;
+            item.Focus(NavigationMethod.Tab); Frames(60);
+            Assert.Equal((255, 0, 0), TopPixel());
+            window.Resources[Sys.Color.Secondary] = Colors.Blue; Frames(2);
+            Assert.Equal((255, 0, 0), TopPixel()); // Palette changes alone retain the cached draw.
+            var ring = Assert.Single(item.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+            var corners = ring.Corners;
+            window.FocusManager!.Focus(null); Frames(1);
+            Assert.Equal(corners, ring.Corners); Assert.Equal(1f, ring.Progress);
+            Assert.Equal((0, 0, 255), TopPixel()); // Shape progress snapped 1 -> 0 with the same visible outline.
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void ListItemModeChangePreservesRippleAndTracksAnimatedOutline(bool segmented, bool startWithRing)
+    {
+        using var clock = new MotionTestClockScope();
+        ListItem item = segmented ? new SegmentedListItem { GroupIndex = 0, GroupCount = 3 } : new ListItem();
+        item.Width = 180; item.InteractionMode = ListItemInteractionMode.Click;
+        item.Content = new Border { Width = 32, Height = 16, Background = Brushes.Blue };
+        var source = new MaterialInteractionSource(); item.InteractionSource = source;
+        MaterialInteraction.SetFocusFeedback(item, startWithRing ? FocusFeedback.InsetRing : FocusFeedback.Opacity);
+        var window = DialogTests.Show(item);
+        void Frames(int count) { for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); } }
+        try
+        {
+            var controller = MaterialInteraction.GetOrCreate(item);
+            var press = new MaterialInteractionEvent.Press(new Point(90, 28));
+            source.Emit(new MaterialInteractionEvent.HoverEnter()); source.Emit(press); Frames(4);
+            var ring = Assert.Single(item.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+            var surface = item.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            Assert.Equal(1, controller.RippleCount);
+            MaterialInteraction.SetFocusFeedback(item, startWithRing ? FocusFeedback.Opacity : FocusFeedback.InsetRing);
+            Frames(2);
+            Assert.Same(ring, Assert.Single(item.GetVisualDescendants().OfType<InsetFocusRingPresenter>()));
+            Assert.Equal(1, controller.RippleCount);
+            Assert.Equal(surface.EffectiveCornerRadius, ring.Corners);
+            source.Emit(new MaterialInteractionEvent.CancelPress(press)); Frames(40);
+            Assert.Equal(0, controller.RippleCount);
+            MaterialInteraction.SetFocusFeedback(item, FocusFeedback.InsetRing);
+            Assert.True(item.Focus(NavigationMethod.Tab)); Frames(60);
+            Assert.Equal(1f, ring.Progress);
+            Assert.Equal(surface.EffectiveCornerRadius, ring.Corners);
+            window.Content = null; Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, clock.PendingFrameCount);
+            window.Content = item; window.UpdateLayout();
+            Assert.True(item.Focus(NavigationMethod.Tab)); Frames(60);
+            ring = Assert.Single(item.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+            Assert.Equal(1f, ring.Progress);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaTheory]
     [InlineData(false, false)]
     [InlineData(false, true)]

@@ -58,6 +58,28 @@ Core CombinedClickable 不在鼠标按下时请求行焦点，故仅取消行本
 
 配对交互源、继承最小交互尺寸和内部关闭 tonal 着色的共享决定见 [DECISIONS](../../../../docs/DECISIONS.md)。
 
+## 内缩焦点环
+
+固定两端 ListItem.kt 都在 combinedClickable 上使用单一 `ripple(focusRingShape = shape)`。
+共享控制器按 ListItem（含 SegmentedListItem）识别这一生命周期：切换 Opacity / InsetRing
+仅更新配置，不按 Surface 的双 indication 路径清空 ripple 或重建焦点订阅。
+复用 MaterialSurface 的环部件，轮廓取当前 AnimatedCornerRadius，无新增公共形状框架。
+
+AnimatedShape 在重定向时将 progress 重设为 0，轮廓可能暂时不动，但 Compose 的可观察 progress
+仍使绘制缓存失效。ListItemMotion 将这一 progress 变化传给 Surface 的内部 shapeStateChanged 输入，
+让焦点环在相同帧重新读取主题色；只比较最终 CornerRadius 会让主题切换后的失焦首帧仍绘制旧颜色。
+纯主题色变更仍保留静止环的缓存，未改变已确认的共享缓存语义。
+
+`InsetFocusRingTests` 覆盖普通/分组项的模式切换、波纹保留、跟随形状、卸载重挂和主题首帧像素。
+双端 `focus-ring.dynamic.list-item.*` / `segmented-list-item.*` 覆盖进入/退出、反向、hover交错、禁用、
+模式、主题和自定义描边。切换期间的 ripple 场景严格一致；圆角环边缘仍有既有栅格差异，
+部分场景为 withinTolerance，不能称全部像素严格相等。具体结果由 self-test 重新产生。
+2026-11-03 Windows 本批 18 项最终结果为 4 equal、14 withinTolerance，零执行错误且重复与
+额外被动截图均稳定。原始产物见 `20261103-102232-92ea10b7`；模式切换修正后的四项见
+`20261103-102654-3fc7c2d0`、`20261103-102700-4915a61a`、`20261103-102803-4b485601`、
+`20261103-102810-b1cb0a2c`，主题首帧修正后的两项见 `20261103-102933-db59028e`、
+`20261103-102941-ae88c994`（均位于 `artifacts/visual-parity/runs/`）。
+
 ## 验证与边界
 
 单元/headless 测试位于 `tests/Material3Expressive.Tests/ListItemTests.cs` 和 `Fixtures/ListItem.axaml`，
@@ -71,5 +93,5 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 self-test --family list-item
 ```
 
-尚未实现：上述任意 Shape / inset focus ring。已接受适配：显式模式、受控事件、行启用语义、HelpText 长按替代和复杂模板基线限制。
+尚未实现：上述任意 Shape。已接受适配：显式模式、受控事件、行启用语义、HelpText 长按替代和复杂模板基线限制。
 未经验证：真实桌面辅助技术操作与字体栅格；headless automation provider 检查不替代屏幕阅读器验收。

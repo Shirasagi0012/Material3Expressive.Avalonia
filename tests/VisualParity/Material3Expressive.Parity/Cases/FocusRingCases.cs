@@ -31,6 +31,12 @@ public sealed class FocusRingCases
                 yield return new($"dynamic.{kind}.{action}", "Focus-theme changes keep the existing indication", new(Kind: kind, Action: action));
         }
         yield return new("dynamic.button.source-old-end", "Recreated collector receives an old source end", new(Action: "source-old-end"));
+        foreach (var kind in new[] { "list-item", "segmented-list-item" })
+        {
+            foreach (var action in new[] { "focus", "reverse", "hover-blur", "disable", "mode", "press-to-ring", "press-to-opacity", "theme" })
+                yield return new($"dynamic.{kind}.{action}", "List item focus ring follows its animated shape", new(Kind: kind, Action: action));
+            yield return new($"dynamic.{kind}.custom", "List item custom focus ring metrics", new(Kind: kind, Custom: true));
+        }
         foreach (var check in new[] { false, true })
         foreach (var dark in new[] { false, true })
             yield return new($"dynamic.switch.{(check ? "on" : "off")}.{(dark ? "dark" : "light")}", "Track focus independent of thumb", new(Kind: "switch", Dark: dark, Checked: check));
@@ -59,6 +65,11 @@ public sealed class FocusRingCases
             "switch" => new ToggleSwitch { IsChecked = config.Checked },
             "checkbox" => new CheckBox(),
             "radio" => new RadioButton(),
+            "list-item" => new ListItem { Width = 180, InteractionMode = ListItemInteractionMode.Click,
+                Content = new Border { Width = 32, Height = 16, Background = Brushes.Blue } },
+            "segmented-list-item" => new SegmentedListItem { Width = 180, GroupIndex = 0, GroupCount = 3,
+                InteractionMode = ListItemInteractionMode.Click,
+                Content = new Border { Width = 32, Height = 16, Background = Brushes.Blue } },
             _ => new Button { Width = 100, Height = 50, Padding = new Thickness(0),
                 CornerRadius = config.Shape switch { "asymmetric" => new(24, 8, 0, 16), "square" => new(0), "small-radius" => new(0.5), _ => new(16) },
                 BorderBrush = Brushes.Red, BorderThickness = new Thickness(1.1),

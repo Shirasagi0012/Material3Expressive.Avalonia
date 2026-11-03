@@ -2,6 +2,9 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         x:Class="Material3Expressive.Catalog.MenuDemo"
         Title="M3 menus" Width="760" Height="620">
+    <Window.Resources>
+        <m3:MaterialInteractionSource x:Key="PreviewSource" />
+    </Window.Resources>
     <StackPanel Margin="24" Spacing="20">
         <TextBlock Text="MenuFlyout" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock Text="Vertical Standard / Vertical Vibrant / Baseline" TextWrapping="Wrap" />
@@ -103,6 +106,13 @@
                                                SelectedLeadingIcon="{m3:Symbol Check}" Click="OnSelectDate" />
             </m3:DropdownMenuGroup>
         </m3:DropdownMenuPopup>
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <m3:DropdownMenuGroup InteractionSource="{StaticResource PreviewSource}" ShadowElevation="0">
+                <m3:CheckableDropdownMenuItem Content="External hover preview" Width="250"
+                    InteractionSource="{StaticResource PreviewSource}" />
+            </m3:DropdownMenuGroup>
+            <Button Content="Toggle feedback" Click="OnPreview" />
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="12">
             <Button Content="Light / dark" Click="OnTheme" />
             <Button Content="LTR / RTL" Click="OnDirection" />

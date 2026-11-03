@@ -40,7 +40,7 @@ MaterialInteraction.SetFocusRingInnerColor(panel, Colors.White);
 Desktop 焦点过滤计数属于各次订阅，重建或卸载时清除。固定 Core 收到订阅前 Focus 的
 Unfocus 时仍直接递减计数；因此新订阅先收到旧 Unfocus 后，第一个新 Focus 可能被过滤。
 这是固定上游的边界行为，由 `source-old-end` 双端用例保留，不把旧计数带入新订阅来补偿。
-Surface / Switch 切换焦点模式会重建 indication；CheckBox / RadioButton 只更新现有 ripple
+Surface / Switch 切换焦点模式会重建 indication；CheckBox / RadioButton / ListItem 只更新现有 ripple
 配置，保留活动波纹、状态层和焦点进度。
 固定上游在仅改变主题色时不主动使静止环的绘制缓存失效：绑定值立即更新，画面在下一次
 动画、尺寸变化等绘制失效时读取新颜色。本地保留该时机；显式颜色或尺寸配置变更会触发重绘。
@@ -51,6 +51,7 @@ Surface / Switch 切换焦点模式会重建 indication；CheckBox / RadioButton
 支持矩形、统一圆角与四角不等的圆角矩形；形变时跟随 Surface 当前有效圆角。
 Switch 在 track 上绘制环，thumb 的 Surface 仅承担原有 ripple / 状态层。
 CheckBox 显式使用 24 DIP 反馈区域的 25% 圆角，RadioButton 使用该区域的圆形轮廓。
+ListItem / SegmentedListItem 的焦点环使用当前动画轮廓，支持共享的颜色与描边配置。
 
 这不代表所有 Surface 调用方已通过独立的组件视觉验证。导航、菜单、组合控件等仍须按各自
 上游形状、坐标映射及裁剪核对。Slider / RangeSlider 的专用 inset padding 和轨道间距分支

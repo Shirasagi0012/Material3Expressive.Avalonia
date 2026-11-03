@@ -268,10 +268,13 @@ public sealed class MaterialSurface : Control
     private CornerRadius CurrentCornerRadius => _animatedCorners ?? _shapeMorph?.Current ?? SelectedShape.Resolve(_shapeSize);
 
     // Chip/Menu own their animation. These are evaluated DIP values, never legacy Full inputs.
-    internal void SetAnimatedCorners(CornerRadius? corners)
+    internal void SetAnimatedCorners(CornerRadius? corners, bool shapeStateChanged = false)
     {
         _animatedCorners = corners;
         UpdateInteractionVisuals();
+        // AnimatedShape's progress is observable even when its new coordinate system resolves
+        // to the same outline. A consumer can preserve that draw invalidation at retargeting.
+        if (shapeStateChanged) _focusRing?.InvalidateRing();
     }
 
     public override void Render(DrawingContext context)

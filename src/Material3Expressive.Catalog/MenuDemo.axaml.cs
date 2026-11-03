@@ -5,11 +5,19 @@ using Avalonia.Styling;
 using ComposeAnimation;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Overlays;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Catalog;
 
 public partial class MenuDemo : Window
 {
+    private MaterialInteractionEvent.HoverEnter? _previewHover;
+    private void OnPreview(object? sender, RoutedEventArgs e)
+    {
+        var source = (MaterialInteractionSource)Resources["PreviewSource"]!;
+        if (_previewHover is { } hover) { source.Emit(new MaterialInteractionEvent.HoverExit(hover)); _previewHover = null; }
+        else { _previewHover = new(); source.Emit(_previewHover); }
+    }
     public MenuDemo()
     {
         AnimationScope.Initialize(this); InitializeComponent();

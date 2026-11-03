@@ -8,6 +8,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using ComposeAnimation;
+using Material3Expressive.Foundation.Interaction;
 using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
 using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
@@ -15,6 +16,8 @@ namespace Material3Expressive.Components;
 
 public class DropdownMenuGroup : ItemsControl
 {
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty = AvaloniaProperty.Register<DropdownMenuGroup, MaterialInteractionSource?>(nameof(InteractionSource));
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
     public static readonly StyledProperty<MenuGroupShapes?> ShapesProperty = AvaloniaProperty.Register<DropdownMenuGroup, MenuGroupShapes?>(nameof(Shapes));
     public static readonly StyledProperty<double> TonalElevationProperty = AvaloniaProperty.Register<DropdownMenuGroup, double>(nameof(TonalElevation));
     public static readonly StyledProperty<double> ShadowElevationProperty = AvaloniaProperty.Register<DropdownMenuGroup, double>(nameof(ShadowElevation));
@@ -29,22 +32,62 @@ public class DropdownMenuGroup : ItemsControl
     private AnimatedCornerRadius? _shape;
     private AnimationChildScope? _attachScope;
     private bool _hasBeenHovered, _pending;
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+    private MaterialInteractionEvent.HoverEnter? _nativeHover;
+    private readonly List<MaterialInteractionEvent.HoverEnter> _hoverInteractions = [];
+    private bool _hovered;
     private (CornerRadius, CornerRadius, MaterialSpring)? _configuration;
-    private CornerRadius Target => _hasBeenHovered && !IsPointerOver ? InactiveCornerRadius : CornerRadius;
+    private CornerRadius Target => _hasBeenHovered && !_hovered ? InactiveCornerRadius : CornerRadius;
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     { Stop(); base.OnApplyTemplate(e); _surface = e.NameScope.Find<MaterialSurface>("PART_GroupSurface"); Initialize(); }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    { base.OnAttachedToVisualTree(e); _attachScope = AnimationScope.Get(this).CreateChild("Menu group"); Initialize(); }
+    { base.OnAttachedToVisualTree(e); _attachScope = AnimationScope.Get(this).CreateChild("Menu group"); ConnectSource(); Initialize(); }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    { Stop(); _hasBeenHovered = false; _attachScope?.Dispose(); _attachScope = null; base.OnDetachedFromVisualTree(e); }
+    {
+        EndNativeHover();
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = null; _hoverInteractions.Clear(); _hovered = false;
+        Stop(); _hasBeenHovered = false; _attachScope?.Dispose(); _attachScope = null; base.OnDetachedFromVisualTree(e);
+    }
     protected override void OnPointerEntered(PointerEventArgs e)
-    { base.OnPointerEntered(e); Queue(); }
+    {
+        base.OnPointerEntered(e);
+        if (_source is not null && _nativeHover is null)
+        { _nativeHover = new(); _source.Emit(_nativeHover); }
+    }
     protected override void OnPointerExited(PointerEventArgs e)
-    { base.OnPointerExited(e); Queue(); }
+    { base.OnPointerExited(e); EndNativeHover(); }
+    private void EndNativeHover()
+    {
+        if (_nativeHover is not { } hover) return;
+        _nativeHover = null; _source?.Emit(new MaterialInteractionEvent.HoverExit(hover));
+    }
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(source, _source)) return;
+        EndNativeHover();
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = source; _hoverInteractions.Clear();
+        // collectIsHoveredAsState remembers the Boolean outside LaunchedEffect(source),
+        // but creates its list inside it. Replacement retains the Boolean until any event.
+        _source.Interaction += ReceiveInteraction;
+    }
+    private void ReceiveInteraction(MaterialInteractionEvent interaction)
+    {
+        if (interaction is MaterialInteractionEvent.HoverEnter enter) _hoverInteractions.Add(enter);
+        else if (interaction is MaterialInteractionEvent.HoverExit exit) _hoverInteractions.Remove(exit.Start);
+        var hovered = _hoverInteractions.Count != 0;
+        if (_hovered == hovered) return;
+        _hovered = hovered; Queue();
+    }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
         if (change.Property == CornerRadiusProperty || change.Property == InactiveCornerRadiusProperty || change.Property == ShapeAnimationProperty)
         { Initialize(); Queue(); }
         if (change.Property == BoundsProperty) Paint();
@@ -77,7 +120,7 @@ public class DropdownMenuGroup : ItemsControl
             await motion.NextFrameAsync(ct); _pending = false;
             if (_shape is null) return;
             // Like the composable, remember hover only when a composition observes it.
-            _hasBeenHovered |= IsPointerOver;
+            _hasBeenHovered |= _hovered;
             if (ShapeAnimation is not { } spec) return;
             if (_configuration != (CornerRadius, InactiveCornerRadius, spec)) ResetShape(spec);
             if (_shape is { } shape && shape.Target != Target)

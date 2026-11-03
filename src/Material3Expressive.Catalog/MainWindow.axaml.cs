@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Overlays;
+using Material3Expressive.Foundation.Interaction;
 using System.Linq;
 using System;
 using System.Threading;
@@ -12,6 +13,18 @@ namespace Material3Expressive.Catalog;
 
 public partial class MainWindow : Window
 {
+    private MaterialInteractionEvent.HoverEnter? _selectionPreviewHover;
+    private void OnSelectionHoverPreview(object? sender, RoutedEventArgs e)
+    {
+        var source = (MaterialInteractionSource)Resources["SelectionPreviewSource"]!;
+        if (_selectionPreviewHover is { } hover)
+        {
+            source.Emit(new MaterialInteractionEvent.HoverExit(hover));
+            _selectionPreviewHover = null;
+        }
+        else source.Emit(_selectionPreviewHover = new MaterialInteractionEvent.HoverEnter());
+    }
+
     private void OnIconCheckedChange(object? sender, IconCheckedChangeEventArgs e) => ((IconToggleButton)sender!).IsChecked = e.Value;
 
     private void OnDateTimePickerDemo(object? sender, RoutedEventArgs e) => new DateTimePickerDemo().Show(this);
@@ -21,6 +34,7 @@ public partial class MainWindow : Window
     private void OnDragHandleDemo(object? sender, RoutedEventArgs e) => new DragHandleDemo().Show(this);
     private void OnSnackbarDemo(object? sender, RoutedEventArgs e) => new SnackbarDemo().Show(this);
     private void OnNavigationDrawerDemo(object? sender, RoutedEventArgs e) => new NavigationDrawerDemo().Show(this);
+    private void OnSwipeToDismissDemo(object? sender, RoutedEventArgs e) => new SwipeToDismissDemo().Show(this);
     private void OnInsetFocusRingDemo(object? sender, RoutedEventArgs e) => new InsetFocusRingDemo().Show(this);
     private void OnTextFieldDemo(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => new TextFieldDemo().Show(this);
     private void OnComboBoxDemo(object? sender, RoutedEventArgs e) => new ComboBoxDemo().Show(this);

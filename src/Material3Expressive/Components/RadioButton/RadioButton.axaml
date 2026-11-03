@@ -22,6 +22,7 @@
                   ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.ColorAnimation}}"
                   x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
                   Colors="{TemplateBinding m3:RadioButtonAppearance.Colors}"
+                  InteractionSource="{TemplateBinding m3:RadioButtonAppearance.InteractionSource}"
                   SelectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.SelectedColor}}"
                   UnselectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.UnselectedColor}}"
                   DisabledSelectedColor="{m3:Token {x:Static m3:MaterialTokens+Comp+RadioButton.DisabledSelectedColor}}"

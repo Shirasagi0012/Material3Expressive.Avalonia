@@ -23,6 +23,7 @@
                   UncheckColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckColorAnimation}}"
                   x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
                   Colors="{TemplateBinding m3:CheckBoxAppearance.Colors}"
+                  InteractionSource="{TemplateBinding m3:CheckBoxAppearance.InteractionSource}"
                   CheckmarkStroke="{TemplateBinding m3:CheckBoxAppearance.CheckmarkStroke}"
                   OutlineStroke="{TemplateBinding m3:CheckBoxAppearance.OutlineStroke}"
                   CheckedCheckmarkColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.CheckedCheckmarkColor}}"
